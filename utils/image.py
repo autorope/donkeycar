@@ -1,7 +1,5 @@
 from io import BytesIO
 from PIL import Image
-from skimage import color, transform, util, img_as_float, io, filters, morphology, exposure
-from skimage.restoration import denoise_tv_chambolle
 
 def square(im):
     ''' 
@@ -51,21 +49,3 @@ def binary_to_img(binary):
     return Image.open(img)
 
 
-def arr_preprocess(arr):
-    '''
-    accepts: greyscale image array
-    returns: greyscale immage array that has been denoised and globally equalized.
-    '''
-    arr_denoise = denoise_tv_chambolle(arr, weight=0.03, multichannel=True)
-    arr_global_equalized =  exposure.equalize_hist(arr_denoise)
-    return arr_global_equalized
-
-def arr_edges(arr):
-    '''
-    accepts: greyscale image array
-    returns: greyscale immage array of image edges
-    '''
-    arr_v = filters.prewitt_v(arr)
-    arr_h = filters.prewitt_h(arr)
-    arr_t = arr_v + arr_h
-    return arr_t
