@@ -1,10 +1,9 @@
 
-import tty, sys #used for live keyboard input
 import argparse
 from time import sleep
-import curses
 import os 
 from PIL import Image
+import io
 
 from whip import Whip
 from utils import image as image_utils
@@ -25,7 +24,7 @@ def drive():
     whip = Whip(BASE_URL)
 
 
-def record(stdscr):
+def record():
     ''' record pictures on an interval '''
 
     file_num = 0
@@ -39,7 +38,7 @@ def record(stdscr):
 
         # Create the in-memory stream
         stream = io.BytesIO()
-        with picamera.PiCamera() as camera:
+        with PiCamera() as camera:
             camera.resolution = (640, 480)
             camera.capture(stream, format='jpeg', resize=(320, 240))
         # "Rewind" the stream to the beginning so we can read its content
