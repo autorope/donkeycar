@@ -9,8 +9,8 @@ def square(im):
     
     width, height = im.size
     size = min(height, width)
-    width_diff = (width-size)/2
-    height_diff = (height-size)/2
+    width_diff = (width-size)//2
+    height_diff = (height-size)//2
     x1 = width_diff
     x2 = width - width_diff
     y1 = height_diff

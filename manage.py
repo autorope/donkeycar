@@ -9,8 +9,6 @@ from whip import Whip
 from utils import image as image_utils
 
 from picamera import PiCamera
-camera = PiCamera()
-
 
 BASE_URL = 'http://localhost:8000/'
 IMG_DIR =  os.path.expanduser("~") + '/donkey_imgs/'
@@ -39,9 +37,10 @@ def record():
         # Create the in-memory stream
         stream = io.BytesIO()
 
-        camera =  picamera.PiCamera()
+        camera =  PiCamera()
         camera.resolution = (640, 480)
-        camera.capture(stream, format='jpeg', resize=(320, 240))
+        camera.capture(stream, format='jpeg')
+        camera.close()
 
         # "Rewind" the stream to the beginning so we can read its content
         stream.seek(0)
