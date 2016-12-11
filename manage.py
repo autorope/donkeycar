@@ -4,7 +4,7 @@ import argparse
 from time import sleep
 import curses
 
-#from picamera import PiCamera
+from picamera import PiCamera
 
 from whip import Whip
 
@@ -28,29 +28,19 @@ def drive():
 
 def record(stdscr):
     ''' record pictures on an interval '''
-    #camera = PiCamera()
+    camera = PiCamera()
 
     file_num = 0
 
-    # do not wait for input when calling getch
-    stdscr.nodelay(1)
     while True:
-        # get keyboard input, returns -1 if none available
-        c = stdscr.getch()
-        if c != -1:
-            # print numeric value
-            stdscr.addstr(str(c) + ' ')
-            stdscr.refresh()
-            # return curser to start position
-            stdscr.move(0, 0)
 
         sleep(1)
         print('capturing')
-        #camera.capture()
 
-        file_name = 'donkey_' + str(file_num)
+        file_name = 'donkey_' + str(file_num) + '.jpg'
         file_num += 1
 
+        camera.capture(file_name)
 
 
 
