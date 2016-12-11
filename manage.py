@@ -39,9 +39,9 @@ def record(stdscr):
 
         # Create the in-memory stream
         stream = io.BytesIO()
-        with picamera.PiCamera() as camera:
-            camera.resolution = (640, 480)
-            camera.capture(stream, format='jpeg', resize=(320, 240))
+        camera =  picamera.PiCamera()
+        camera.resolution = (640, 480)
+        camera.capture(stream, format='jpeg', resize=(320, 240))
         # "Rewind" the stream to the beginning so we can read its content
         stream.seek(0)
         img = Image.open(stream)
