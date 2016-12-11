@@ -31,7 +31,6 @@ def record():
 
     while True:
 
-        sleep(3)
         print('capturing picture' + str(file_num))
         file_name = 'donkey_' + str(file_num) + '.jpg'
         file_num += 1
@@ -39,7 +38,7 @@ def record():
         # Create the in-memory stream
         stream = io.BytesIO()
 
-        camera =  picamera.PiCamera()
+        camera = picamera.PiCamera()
         camera.resolution = (640, 480)
         camera.capture(stream, format='jpeg', resize=(320, 240))
 
@@ -50,6 +49,7 @@ def record():
         img = image_utils.scale(img, 128)
 
         img.save(file_name, 'jpeg')
+        sleep(1)
 
 
 
