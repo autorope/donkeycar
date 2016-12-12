@@ -1,6 +1,6 @@
 env/*
 data/*
 donkey*
-.ipynb
-.pyc
+*.ipynb
+*.pyc
 

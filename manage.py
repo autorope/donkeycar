@@ -1,4 +1,3 @@
-
 import argparse
 from time import sleep
 import os 
@@ -48,7 +47,7 @@ def record():
         img = image_utils.square(img)
         img = image_utils.scale(img, 128)
 
-        img.save(file_name, 'jpeg')
+        img.save(IMG_DIR + file_name, 'jpeg')
 
 
 
@@ -70,8 +69,8 @@ if __name__ == '__main__':
             print('starting donkey in drive mode') 
             drive()
         elif args.subparser_name == 'record':
-            print('starting donkey in drive mode') 
+            print('starting donkey in record mode') 
             record()
         elif args.subparser_name == 'setup':
-            print('starting donkey in drive mode') 
+            print('setting up donkey') 
             setup()
