@@ -1,10 +1,12 @@
 
-import os
-from PIL import Image
 import io
+from PIL import Image
+from picamera import PiCamera
 
+from utils import image as image_utils
+
+cam =  PiCamera()
 FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
-
 
 
 class Camera():
@@ -49,3 +51,4 @@ class FakeCamera():
 
         self.counter = (self.counter + 1) % len(self.file_list)
         return  stream.getvalue()
+

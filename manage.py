@@ -1,8 +1,6 @@
 import argparse
 from time import sleep
 import os 
-from PIL import Image
-import io
 
 from whipclient import Whip
 from utils import image as image_utils
