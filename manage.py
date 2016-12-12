@@ -17,10 +17,10 @@ def setup():
     ''' Create necessary directories '''
     if not os.path.exists(IMG_DIR):
         os.makedirs(IMG_DIR)
-
+ 
 def drive():
     whip = Whip(BASE_URL)
-
+ 
 
 def record():
     ''' record pictures on an interval '''
