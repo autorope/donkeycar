@@ -1,2 +1,6 @@
 env/*
 data/*
+donkey*
+*.ipynb
+*.pyc
+

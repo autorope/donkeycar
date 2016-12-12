@@ -37,14 +37,14 @@ class Whip():
         
         
         
-    def record(self, img, env, steer_angle, speed):
+    def record(self, img, env, angle, speed):
         '''Accepts: image and control attributes and saves them to learn how to drive.'''
 
         #load features
         data = {
                 'time':dt.utcnow().isoformat(),
                 'env': env,
-                'steer_angle': steer_angle,
+                'angle': angle,
                 'speed': speed
                 }
 

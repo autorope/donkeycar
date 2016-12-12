@@ -1,4 +1,3 @@
-
 import argparse
 from time import sleep
 import os 
@@ -7,22 +6,22 @@ import io
 
 from whip import Whip
 from utils import image as image_utils
+import camera
 
-from picamera import PiCamera
-camera = PiCamera()
 
 
 BASE_URL = 'http://localhost:8000/'
 IMG_DIR =  os.path.expanduser("~") + '/donkey_imgs/'
 
-
+ 
 def setup():
+    ''' Create necessary directories '''
     if not os.path.exists(IMG_DIR):
         os.makedirs(IMG_DIR)
-
+ 
 def drive():
     whip = Whip(BASE_URL)
-
+ 
 
 def record():
     ''' record pictures on an interval '''
@@ -35,24 +34,10 @@ def record():
         file_name = 'donkey_' + str(file_num) + '.jpg'
         file_num += 1
 
-        # Create the in-memory stream
-        stream = io.BytesIO()
-
-        camera = picamera.PiCamera()
-        camera.resolution = (640, 480)
-        camera.capture(stream, format='jpeg', resize=(320, 240))
-
-        # "Rewind" the stream to the beginning so we can read its content
-        stream.seek(0)
-        img = Image.open(stream)
-        img = image_utils.square(img)
-        img = image_utils.scale(img, 128)
-
-        img.save(file_name, 'jpeg')
-        sleep(1)
+        img = camera
 
 
-
+        img.save(IMG_DIR + file_name, 'jpeg')
 
 
 parser = argparse.ArgumentParser()
@@ -71,8 +56,8 @@ if __name__ == '__main__':
             print('starting donkey in drive mode') 
             drive()
         elif args.subparser_name == 'record':
-            print('starting donkey in drive mode') 
+            print('starting donkey in record mode') 
             record()
         elif args.subparser_name == 'setup':
-            print('starting donkey in drive mode') 
+            print('setting up donkey') 
             setup()
