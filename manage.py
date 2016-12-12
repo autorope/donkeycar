@@ -14,6 +14,7 @@ IMG_DIR =  os.path.expanduser("~") + '/donkey_imgs/'
 
 
 def setup():
+    ''' Create necessary directories '''
     if not os.path.exists(IMG_DIR):
         os.makedirs(IMG_DIR)
 
