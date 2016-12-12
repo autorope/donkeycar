@@ -1,11 +1,8 @@
 import argparse
 from time import sleep
 import os 
-from PIL import Image
-import io
 
-from whip import Whip
-from utils import image as image_utils
+from whipclient import Whip
 import camera
 
 
@@ -34,9 +31,7 @@ def record():
         file_name = 'donkey_' + str(file_num) + '.jpg'
         file_num += 1
 
-        img = camera
-
-
+        img = camera.capture_img()
         img.save(IMG_DIR + file_name, 'jpeg')
 
 
