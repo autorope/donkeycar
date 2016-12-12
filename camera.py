@@ -1,11 +1,10 @@
 
 import io
+import os
 from PIL import Image
-from picamera import PiCamera
 
 from utils import image as image_utils
 
-cam =  PiCamera()
 FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
 
 

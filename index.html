@@ -53,10 +53,34 @@ $( document ).ready(function() {
     velocity.bind()
 });
 
+$(document).keydown(function(e) {
+    if(e.which == 73) {
+      // 'i'  speed up
+        velocity.speedUp()
+    } 
+
+    if(e.which == 75) {
+      // 'k'  slow down
+        velocity.speedDown()
+    }
+
+    if(e.which == 74) {
+      // 'j' turn left
+        velocity.angleLeft()
+    }
+
+    if(e.which == 76) {
+      // 'l' turn right
+        velocity.angleRight()
+    }
+});
+
 
 var velocity = (function() {
     //functions to change velocity of vehicle
 
+    var angle = 0
+    var speed = 0
     var angleEl = "#angleInput"
     var speedEl = "#speedInput"
     var sendURL = "/velocity"
@@ -71,17 +95,46 @@ var velocity = (function() {
         });
     };
 
-    var sendVelocity = function(x, y) {
-        //add a dot to the image where it was clicked.
-        console.log('sendVelocity called')
-        angle = $(angleEl).val()
-        speed = $(speedEl).val()
+    var sendVelocity = function() {
+        //Send angle and speed values
         data = JSON.stringify({ 'angle': angle, 'speed':speed})
         $.post(sendURL, data)
     };
 
+    var speedUp = function(){
+        //Bind a function to capture the coordinates of the click.
+        speed = speed + 5
+        $(speedEl).val(speed)
+        sendVelocity()
+        };
+
+    var speedDown = function(){
+        //Bind a function to capture the coordinates of the click.
+        speed = speed - 5
+        $(speedEl).val(speed);
+        sendVelocity()
+    };
+
+    var angleLeft = function(){
+      //Bind a function to capture the coordinates of the click.
+      angle = angle - 5
+      $(angleEl).val(angle);
+      sendVelocity()
+    };
+
+    var angleRight = function(){
+      //Bind a function to capture the coordinates of the click.
+      angle = angle + 5
+      $(angleEl).val(angle);
+      sendVelocity()
+    };
+
     return {
                 bind: bind,
+                speedUp: speedUp,
+                speedDown: speedDown,
+                angleLeft: angleLeft,
+                angleRight: angleRight,
                 sendVelocity: sendVelocity,
             };
 })();
