@@ -4,10 +4,14 @@ import os
 from PIL import Image
 import io
 
-from whip import Whip
+from whipclient import Whip
 from utils import image as image_utils
-import camera
+from camera import FakeCamera as Cam
 
+from server import app
+
+
+cam = Cam()
 
 
 BASE_URL = 'http://localhost:8000/'
@@ -34,9 +38,8 @@ def record():
         file_name = 'donkey_' + str(file_num) + '.jpg'
         file_num += 1
 
-        img = camera
-
-
+        #get PIL image from PiCamera
+        img = cam.capture()
         img.save(IMG_DIR + file_name, 'jpeg')
 
 

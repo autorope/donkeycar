@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>tornado WebSocket example</title>
+  <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+  <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+</head>
+<body>
+  
+  <div class="container">
+    <h1>Donkey Brains</h1>
+    <hr>
+      WebSocket status : <span id="message"></span>
+    <hr>
+    <div class="row">
+      <div class="span4">
+        <h3>Image Stream (MJPEG) </h3>
+          <img src="http://localhost:8888/mjpeg/test.mjpeg"/>
+      </div>
+    </div>
+
+    <hr> 
+    <div class="row">
+      <div class="span4">
+        <h3>Velocity </h3>
+          <label> Angle </label>
+          <input id='angleInput'/>
+
+          <label> Speed </label>
+          <input id='speedInput'/>
+      </div>
+    </div>
+    
+    <hr>
+    <h3>Keyboard Shortcuts</h3>
+    <ul>
+      <li>i - speed up </li>
+      <li>k - slow down </li>
+      <li>j - turn right </li>
+      <li>l - turn left  </li>
+    </ul>
+  </div>
+
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+
+  <script>
+
+$( document ).ready(function() {
+    console.log( "ready!" );
+    velocity.bind()
+});
+
+
+var velocity = (function() {
+    //functions to change velocity of vehicle
+
+    var angleEl = "#angleInput"
+    var speedEl = "#speedInput"
+    var sendURL = "/velocity"
+
+    var bind = function(data){
+        //Bind a function to capture the coordinates of the click.
+        $(angleEl).change(function(e) {
+            sendVelocity()
+        });
+        $(speedEl).change(function(e) {
+            sendVelocity()
+        });
+    };
+
+    var sendVelocity = function(x, y) {
+        //add a dot to the image where it was clicked.
+        console.log('sendVelocity called')
+        angle = $(angleEl).val()
+        speed = $(speedEl).val()
+        data = JSON.stringify({ 'angle': angle, 'speed':speed})
+        $.post(sendURL, data)
+    };
+
+    return {
+                bind: bind,
+                sendVelocity: sendVelocity,
+            };
+})();
+
+  </script>
+</body>
+</html>

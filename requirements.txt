@@ -1,6 +1,6 @@
-numpy==1.11.2
 Pillow==3.4.2
 pynput==1.1.6
 python-dateutil==2.6.0
 requests==2.12.3
+tornado
 
