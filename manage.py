@@ -12,7 +12,7 @@ from picamera import PiCamera
 BASE_URL = 'http://localhost:8000/'
 IMG_DIR =  os.path.expanduser("~") + '/donkey_imgs/'
 
-
+ 
 def setup():
     ''' Create necessary directories '''
     if not os.path.exists(IMG_DIR):
