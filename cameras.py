@@ -1,6 +1,9 @@
 
 import io
 import os
+import time
+import threading
+
 from PIL import Image
 
 from utils import image as image_utils
@@ -12,10 +15,11 @@ class Camera():
     '''
     Wrapper around PiCamera to create common convienience menthods
     '''
-    self.img #last image from the stream
+    img=None #last image from the stream
 
     def __init__(self):
         print('Loading PiCamera... ', end='')
+        self.stream = io.BytesIO()
 
         from picamera import PiCamera
         self.cam = PiCamera()
@@ -34,18 +38,20 @@ class Camera():
         t.start()
 
     def update(self):
+        lock = threading.Lock()
         
-        stream = io.BytesIO()
-        for foo in self.cam.capture_continuous(stream, format='jpeg'):
-            # Truncate the stream to the current position (in case
-            # prior iterations output a longer image)
-            stream.truncate()
-            stream.seek(0)
-            self.img = Image.open(stream)
+        while True:
+            with lock:
+                self.cam.capture(self.stream, 'jpeg')
+                self.stream.seek(0)
+
+            time.sleep(.1)
+
 
 
     def capture_img(self):
-        img = self.img
+        img = Image.open(self.stream)
+        
         return normalize(img)
 
 

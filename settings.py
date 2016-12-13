@@ -11,7 +11,7 @@ from os.path import expanduser
 #ENV='pi'
 ENV='laptop'
 
-LOOP_DELAY = 3 #seconds between vehicle updates
+LOOP_DELAY = .1 #seconds between vehicle updates
 
 #CAMERA
 try:
