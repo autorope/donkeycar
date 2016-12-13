@@ -1,4 +1,4 @@
-import settings
+import settings #call this first to set global vars
 
 import tornado.ioloop
 import tornado.web
@@ -9,8 +9,6 @@ from io import BytesIO
 from PIL import Image
 import threading
 from time import sleep
-
-
 
 ''' 
 CONFIG
@@ -55,7 +53,7 @@ class MJPEGHandler(tornado.web.RequestHandler):
         my_boundary = "--boundarydonotcross"
         while True:
             
-            interval = .1
+            interval = .2
             if self.served_image_timestamp + interval < time.time():
                 img = cam.capture()
                 self.write(my_boundary)
