@@ -14,14 +14,18 @@ class Camera():
     '''
 
     def __init__(self):
-        print('Loading PiCamera')
+        print('Loading PiCamera... ', end='')
 
         from picamera import PiCamera
         self.cam = PiCamera()
+        #let camera warm up. 
+        time.sleep(1)
+        print('success')
 
     def capture_img(self):
         # Create the in-memory stream
         stream = io.BytesIO()
+
         self.cam.resolution = (640, 480)
         self.cam.capture(stream, format='jpeg')
 
