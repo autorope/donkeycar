@@ -31,14 +31,14 @@ class VelocityHandler(tornado.web.RequestHandler):
 
 
         if angle is not "":
-            settings.angle = int(data['angle'])
+            settings.angle_manual = int(data['angle'])
         else:
-            settings.angle = 0
+            settings.angle_manual = 0
 
         if speed is not "":
-            settings.speed = int(data['speed'])
+            settings.speed_manual = int(data['speed'])
         else:
-            settings.speed = 0            
+            settings.speed_manual = 0            
 
 
 
@@ -55,7 +55,7 @@ class MJPEGHandler(tornado.web.RequestHandler):
             
             interval = .2
             if self.served_image_timestamp + interval < time.time():
-                img = cam.capture()
+                img = cam.capture_binary()
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
                 self.write("Content-length: %s\r\n\r\n" % len(img)) 

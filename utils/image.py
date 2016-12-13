@@ -37,7 +37,7 @@ def img_to_binary(img):
     '''
 
     f = BytesIO()
-    img.save(f, format='png')
+    img.save(f, format='jpeg')
     return f.getvalue()
 
 def binary_to_img(binary):

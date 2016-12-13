@@ -1,22 +1,15 @@
 '''
 Code to manually set the speed and angle of the vehicle. 
-
 angle: the angle of the wheels ranging between -90 (full left)
         and 90 (full right)
-
 speed: desired speed of the vehicle ranging between 100 (full forward)
         and -100 full backward
 
 Key Commands:
-
 i - speed up
 k - slow down
 j - turn left
 l - turn right
-
-TODO: This could be improved by increasing changing angle and speed 
-by the time the key is pressed. There is currently a lag between the 
-first key stroke and sequential ones. 
 
 '''
 

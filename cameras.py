@@ -9,29 +9,33 @@ FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
 
 
 class Camera():
+    '''
+    Wrapper around PiCamera to create common convienience menthods
+    '''
+
     def __init__(self):
         print('Loading PiCamera')
+
         from picamera import PiCamera
         self.cam = PiCamera()
 
-    def capture(self, capture_resolution = (640, 480), square_size = 128):
+    def capture_img(self):
         # Create the in-memory stream
         stream = io.BytesIO()
-
-
-        self.cam.resolution = capture_resolution
+        self.cam.resolution = (640, 480)
         self.cam.capture(stream, format='jpeg')
 
         # "Rewind" the stream to the beginning so we can read its content
         stream.seek(0)
         img = Image.open(stream)
-        img = image_utils.square(img)
-        img = image_utils.scale(img, square_size)
 
-        stream = io.BytesIO()
-        img.save(stream, format="JPEG")
+        return normalize(img)
 
-        return stream.getvalue()
+
+    def capture_binary(self):
+        img = self.capture_img()
+        return image_utils.img_to_binary(img)
+
 
 
 class FakeCamera():
@@ -44,14 +48,28 @@ class FakeCamera():
         self.file_list = file_list = os.listdir(FAKE_CAMERA_IMG_DIR)
         self.counter = 0
 
-    def capture(self):
+    def capture_img(self):
 
         #print('capturing file: %s' % self.file_list[self.counter])
 
         img = Image.open("img/" + self.file_list[self.counter])
-        stream = io.BytesIO()
-        img.save(stream, format="JPEG")
+        self.counter += 1
+        return normalize(img)
+        
+    def capture_binary(self):
 
-        self.counter = (self.counter + 1) % len(self.file_list)
-        return  stream.getvalue()
+        img = self.capture_img()
+        return image_utils.img_to_binary(img)
 
+
+
+
+def normalize(img):
+    '''
+    The way I've chosen to normalize all images.
+
+    Accepts and returns PIL image.
+    '''
+    img = image_utils.square(img)
+    img = image_utils.scale(img, 128)
+    return img

@@ -9,9 +9,9 @@ Options:
 
 """
 
+import settings
 
-import argparse
-from time import sleep
+import time
 import os 
 import threading
 
@@ -20,13 +20,13 @@ import tornado
 
 from whipclient import Whip
 from utils import image as image_utils
-
-import settings
-
-from server import app
+from webserver import app
 
 
-cam = settings.cam
+cam = settings.cam  #camera 
+vehicle = settings.vehicle
+recorder = settings.recorder
+predictor = settings.predictor
 
 
 
@@ -39,6 +39,8 @@ if args['record']:
     we_are_autonomous = False
     we_are_recording = True
     print("\n------ Ready to record training data ------\n")
+
+
 elif args['auto']:
     we_are_autonomous = True
     we_are_recording = True
@@ -46,47 +48,36 @@ elif args['auto']:
 
 
 
- 
-def setup():
-    ''' Create necessary directories '''
-    if not os.path.exists(settings.IMG_DIR):
-        os.makedirs(settings.IMG_DIR)
- 
-def drive():
-    whip = Whip(settings.BASE_URL)
- 
 
-def main_loop():
+def drive_loop():
     ''' record pictures on an interval '''
-    file_num = 0
+    start_time = time.time()
 
     while True:
-        #get global values
-        angle = settings.angle
-        speed = settings.speed
+        now = time.time()
+        milliseconds = int( (now - start_time) * 1000)
 
+        #get global values manually controlled from the webserver
+        angle = settings.angle_manual
+        speed = settings.speed_manual
 
-        adjust_car(settings,angle, settings.speed)
-
-        record_state(img, settings.angle, settings.speed)
-
-        predict_velocity(img)
-
-        file_name = "donkey_{:0>5}.jpg".format(file_num)
-        
-
-        print('capturing: ' + str(file_name))
-        print('angle: %s   speed: %s' %(settings.angle, settings.speed))
-
-        file_num += 1
+        print('angle: %s   speed: %s' %(angle, speed))
 
         #get PIL image from PiCamera
-        img = cam.capture()
-        img = image_utils.binary_to_img(img)
-        img.save(IMG_DIR + file_name, 'jpeg')
-        sleep(.5)
+        img = cam.capture_img()
+
+        if we_are_autonomous:
+            angle_predicted, speed_predicted = tf_driver.predict(img)
 
 
+        if settings.car_connected:
+            angle_vehicle, speed_vehicle = vehicle.update(angle, speed)
+
+        if we_are_recording:
+            recorder.record(img, angle, speed, milliseconds)
+
+
+        time.sleep(settings.LOOP_DELAY)
 
 
 
@@ -97,10 +88,21 @@ def start_webserver():
 
 if __name__ == '__main__':
 
-    #Start webserver http://localhost:8888
-    #Used to view camera stream and control c ar. 
-    t = threading.Thread(target=start_webserver)
-    t.daemon = True #to close thread on Ctrl-c
-    t.start()
+
+    if settings.use_webserver == True:
+        #Start webserver http://localhost:8888
+        #Used to view camera stream and control c ar. 
+        print('Starting webserver at <ip_address>:8888')
+        t = threading.Thread(target=start_webserver)
+        t.daemon = True #to close thread on Ctrl-c
+        t.start()
+
+
+    #Start the main driving loop.
+    if args['record'] or args['auto']:
+
+        drive_loop()
+
+
 
 
