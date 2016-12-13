@@ -18,12 +18,13 @@ class Camera():
 
         from picamera import PiCamera
         self.cam = PiCamera()
+        self.cam.resolution = (640, 480)
+
 
     def capture_img(self):
         # Create the in-memory stream
         stream = io.BytesIO()
-        self.cam.resolution = (640, 480)
-        self.cam.capture(stream, format='jpeg')
+        self.cam.capture(stream, 'jpeg')
 
         # "Rewind" the stream to the beginning so we can read its content
         stream.seek(0)
