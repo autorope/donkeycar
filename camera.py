@@ -27,7 +27,11 @@ class Camera():
         img = Image.open(stream)
         img = image_utils.square(img)
         img = image_utils.scale(img, square_size)
-        return img
+
+        stream = io.BytesIO()
+        img.save(stream, format="JPEG")
+
+        return stream.getvalue()
 
 
 class FakeCamera():

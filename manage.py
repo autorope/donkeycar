@@ -20,14 +20,13 @@ import tornado
 
 from whipclient import Whip
 from utils import image as image_utils
-from camera import FakeCamera as Cam
 
 import settings
 
 from server import app
 
 
-cam = Cam()
+cam = settings.cam
 
 
 
@@ -85,7 +84,7 @@ def main_loop():
         img = cam.capture()
         img = image_utils.binary_to_img(img)
         img.save(IMG_DIR + file_name, 'jpeg')
-        sleep(3)
+        sleep(.5)
 
 
 
