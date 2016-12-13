@@ -12,6 +12,7 @@ class Camera():
     '''
     Wrapper around PiCamera to create common convienience menthods
     '''
+    self.img #last image from the stream
 
     def __init__(self):
         print('Loading PiCamera... ', end='')
@@ -20,19 +21,31 @@ class Camera():
         self.cam = PiCamera()
         #let camera warm up. 
         time.sleep(1)
+        self.cam.resolution = (640, 480)
         print('success')
 
-    def capture_img(self):
-        # Create the in-memory stream
+        print('starting camera stream')
+        self.start_stream()
+
+
+    def start_stream(self):
+        t = threading.Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
+
+    def update(self):
+        
         stream = io.BytesIO()
+        for foo in self.cam.capture_continuous(stream, format='jpeg'):
+            # Truncate the stream to the current position (in case
+            # prior iterations output a longer image)
+            stream.truncate()
+            stream.seek(0)
+            self.img = Image.open(stream)
 
-        self.cam.resolution = (640, 480)
-        self.cam.capture(stream, format='jpeg')
 
-        # "Rewind" the stream to the beginning so we can read its content
-        stream.seek(0)
-        img = Image.open(stream)
-
+    def capture_img(self):
+        img = self.img
         return normalize(img)
 
 
