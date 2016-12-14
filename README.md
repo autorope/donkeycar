@@ -1,33 +1,44 @@
-## Donkey 
-The the sidewalk self driving vehicle (auto). 
+## Donkey (or Poney) 
+A RC car controled by a Raspbery Pi. 
+
+Project goal: The the sidewalk self driving vehicle (auto). 
+
+### Use
+
+clone repo & create virtual env
+    git clone git@github.com:wroscoe/donkey.git
+    cd donkey
+    virtualenv env -p python3
+    source env/bin/activate
+
+
+
+drive (control in browser at <localhost or ip_address>:8889)
+    python manage.py record  (manual mode)
+    python manage.py auto 	 (autopilot mode)
+
+train predictors from recorded data
+    python manage.py train --indir  <indir path>
+
 
 
 ### Driving
 
-Find your Raspberry Pi:
-   sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
+
+
+
+### Other Stuff 
+* Find your Raspberry Pi:
+    sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
+
 
 
 TODO: 
 
-Try running tornado in it's own thread. Or some other way to start the server from the main script 
-and stop it when Ctrl-C is pressed. 
-
-Try setting global variables (angle & speed) from a Tornado Webpage. 
-	If this doesn't work. Write them to an sqldatabase and read them from the drive loop. 
-
-Stream the video from the camera.
-http://www.chioka.in/python-live-video-streaming-example/
-
-Work on recording, uploading, driving commands 
-
-
-Try controling vehicle from the tornado site running on raspbery pi. 
-
-Train Network on new data. 
-
-
-Try loading tensorflow on Pi to run Trained Network. 
+-[ ] Threadsafe image capture (for webserver + recorder)
+-[ ] Update vehicle to drive given manual input.
+-[ ] Try loading tensor flow on Raspberry Pi
+-[ ] Train Convolution network from numpy arrays
 
 Email Adam, Keven and Jeff about the Jan 22nd Race 
 
