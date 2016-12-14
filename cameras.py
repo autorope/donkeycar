@@ -76,73 +76,6 @@ class PiVideoStream:
         self.stopped = True
 
 
-class Camera():
-    '''
-    Wrapper around PiCamera to create common convienience menthods
-    '''
-    img=None #last image from the stream
-
-    def __init__(self):
-        
-        
-        print('Loading PiCamera... ', end='')
-        from picamera import PiCamera
-        self.cam = PiCamera()
-        time.sleep(1) #let camera warm up. 
-        self.cam.resolution = (640, 480)
-        print('success')
-
-        
-    def capture_img(self):
-        '''return PIL image from camera'''
-        stream = io.BytesIO()
-        self.cam.capture(stream, format='jpeg')
-        stream.seek(0)
-        img = Image.open(stream)
-        return normalize(img)
-
-
-    def capture_binary(self):
-        '''return binary stream of image for webserver'''
-        img = self.capture_img()
-        return image_utils.img_to_binary(img)
-
-
-class ThreadedCamera(Camera):
-    ''' 
-    This is an attempt to solve the issue of many threads accessing 
-    the same stream and getting corrupt streams before they are written completely.
-    
-    It curretnly does not work.
-
-    '''
-    
-    def __init__(self):
-        Camera.__init__(self)
-        self.start_stream()
-        self.stream = io.BytesIO()
-        print('starting camera stream')
-
-    def start_stream(self):
-        t = threading.Thread(target=self.update, args=())
-        t.daemon = True
-        t.start()
-
-    def update(self):
-        lock = threading.Lock()
-        
-        while True:
-            with lock:
-                self.cam.capture(self.stream, 'jpeg')
-                self.stream.seek(0)
-
-            time.sleep(.1)
-
-    def capture_img(self):
-        img = Image.open(self.stream)
-        
-        return normalize(img)
-
 
 
 class FakeCamera():
@@ -167,7 +100,6 @@ class FakeCamera():
 
         img = self.capture_img()
         return image_utils.img_to_binary(img)
-
 
 
 
