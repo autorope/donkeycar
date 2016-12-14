@@ -1,49 +1,52 @@
-## Donkey (or Poney) 
-A RC car controled by a Raspbery Pi. 
+# The Donkey 
+A small utilitarian self driving vehicle. 
 
-Project goal: The the sidewalk self driving vehicle (auto). 
+* Project goal: The the sidewalk self driving vehicle (auto). 
 
-### Use
+### Build your own.
+Here are [instructions](get_started.md) and part lists to build your own car. 
 
-clone repo & create virtual env
 
+## How to use.
+All of these examples assume you're connected to your donkey via SSH and you've activated the virtual environment. 
+
+### Activate the virtual environment
 ```
-git clone git@github.com:wroscoe/donkey.git
-cd donkey
-virtualenv env -p python3
-source env/bin/activate
+cd code/donkey
+source env/bin/activate 
 ```
 
+### Train a route
 
-drive (control in browser at <localhost or ip_address>:8889)
-
+1. Start recording steering and images 
 ```bash
-python manage.py record  (manual mode)
-python manage.py auto 	 (autopilot mode)
+python manage.py record --filerecorder --webcontrol
 ```
 
-train predictors from recorded data
+2. Go to '<pi_ip_address>:8889' in your browser to control the car.
+
+3. End training by typing `Ctrl-c` in your ssh sesion.
+
+### Create a predictor for the route. 
+
+Train predictors from recorded data
 
 ```
 python manage.py train --indir  <indir path>
 ```
 
 
-### Driving
+### Let the predictor drive the trained rout. 
+
+```
+python manage.py auto --indir  <indir path>
+```
+Where indir is the directory of the images used to train the predictor. 
 
 
+##TODO: 
 
-
-### Other Stuff 
-* Find your Raspberry Pi:
-	'''
-    sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
-    '''
-
-
-TODO: 
-
-- [ ] Threadsafe image capture (for webserver + recorder)
+- [ ] Threadsafe image capture (for webserver + recorder) http://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
 - [ ] Update vehicle to drive given manual input.
 - [ ] Try loading tensor flow on Raspberry Pi
 - [ ] Train Convolution network from numpy arrays

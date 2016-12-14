@@ -5,7 +5,9 @@ This doc will walk you through how to setup your donkey.
 ## Bill of Materials.
 #### Required
 * Raspberry Pi 3 B ($35)
+* Raspberry Pi Camera ($15)
 * Micro USB power adapter. ($9)
+* USB Battery Pack ($15)
 * USB Keyboard 
 * USB Mouse
 * Monitor 
@@ -50,3 +52,67 @@ Since the RPi is not as powerful as a laptop, it can take a long time to install
 	dpkg -l > ~/Desktop/packages.list
 	pip freeze > ~/Desktop/pip-freeze-initial.list
 	```
+
+3. Install the necessary libraries 
+
+	```
+	sudo apt-get install xsel xclip libxml2-dev libxslt-dev libzmq-dev libspatialindex-dev virtualenv
+	```
+4. Pandas & Jupyter Requirements
+	```
+	sudo apt-get install python3-lxml python3-h5py python3-numexpr python3-dateutil python3-tz python3-bs4 python3-xlrd python3-tables python3-sqlalchemy python3-xlsxwriter python3-httplib2 python3-zmq 
+	```
+5. Scientific Python
+	```
+	sudo apt-get python3-numpy python3-matplotlib python3-scipy python3-pandas 
+	```
+
+6. Install Jupyter
+	```
+	sudo pip3 install jupyter notebook
+	```
+
+#### Install your Camera
+Follow the instructions [here](https://www.raspberrypi.org/learning/getting-started-with-picamera/worksheet/).
+
+
+1. Connect your camera to the RPi.
+2. Enable your camera in the Menu > Preferences > Raspberry Pi Config 
+3. Restart your Pi. `sudo reboot`
+
+
+#### Connect your servo sheild. 
+
+Not sure how to do this yet. 
+
+
+#### Install Donkey
+
+
+clone repo & create virtual env
+
+```
+mkdir code
+cd code
+git clone http://github.com/wroscoe/donkey.git
+cd donkey
+virtualenv --system-site-packages -p python3 env 
+source env/bin/activate
+pip install -r requirements.txt
+```
+
+
+#### Connect to your donkey remotely.
+
+Find the ip address of your Pi.
+* If you have you have your monitor and keyboard connected to your Pi:
+   1. Open terminal.
+   2. Type `ifconfig`
+
+* If there is no monitor connected to your Pi but your computer is connected to the same wireless network as your Pi.  
+   1. Open a terminal.
+   2. Find your own Ip address by typing `ifconfig'
+   3. Search for your Pi's address with the command: 
+   	```
+    sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
+    ```
