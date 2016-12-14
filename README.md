@@ -6,20 +6,24 @@ Project goal: The the sidewalk self driving vehicle (auto).
 ### Use
 
 clone repo & create virtual env
+    ```
     git clone git@github.com:wroscoe/donkey.git
     cd donkey
     virtualenv env -p python3
     source env/bin/activate
-
+    ```
 
 
 drive (control in browser at <localhost or ip_address>:8889)
+	```bash
     python manage.py record  (manual mode)
     python manage.py auto 	 (autopilot mode)
+    ```
 
 train predictors from recorded data
+    ```
     python manage.py train --indir  <indir path>
-
+    ```
 
 
 ### Driving
@@ -35,10 +39,10 @@ train predictors from recorded data
 
 TODO: 
 
--[ ] Threadsafe image capture (for webserver + recorder)
--[ ] Update vehicle to drive given manual input.
--[ ] Try loading tensor flow on Raspberry Pi
--[ ] Train Convolution network from numpy arrays
+- [ ] Threadsafe image capture (for webserver + recorder)
+- [ ] Update vehicle to drive given manual input.
+- [ ] Try loading tensor flow on Raspberry Pi
+- [ ] Train Convolution network from numpy arrays
 
 Email Adam, Keven and Jeff about the Jan 22nd Race 
 
