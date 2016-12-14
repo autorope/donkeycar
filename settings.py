@@ -1,5 +1,5 @@
 
-import cameras
+from donkey import cameras
 import recorders
 import predictors
 import vehicles
@@ -43,8 +43,5 @@ predictor = predictors.BasePredictor()
 #Global vars used to control the vehicle from the webserver.
 use_webserver = True
 
-global angle_manual
-global speed_manual
-angle_manual = 0
-speed_manual = 0 
+
 

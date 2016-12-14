@@ -8,12 +8,14 @@ from PIL import Image
 
 from utils import image as image_utils
 
-from picamera.array import PiRGBArray
-from picamera import PiCamera
+
 from threading import Thread
  
 class PiVideoStream:
     def __init__(self, resolution=(320, 240), framerate=32):
+        from picamera.array import PiRGBArray
+        from picamera import PiCamera
+
         # initialize the camera and stream
         self.camera = PiCamera()
         self.camera.resolution = resolution
