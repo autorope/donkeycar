@@ -1,11 +1,12 @@
 """Records training data and / or drives the car with tensorflow.
 Usage:
     manage.py record
-    manage.py autopilot
-
+    manage.py auto
+    manage.py train [--indir=<path>] [--outdir=<path>]
 
 Options:
-    -h --help    show this
+  --indir=<path>   path to input npy files [default: ~/training-data]
+  --outdir=<path>  [default: ~/training-results]
 
 """
 
@@ -41,7 +42,7 @@ if args['record']:
     print("\n------ Ready to record training data ------\n")
 
 
-elif args['auto']:
+if args['auto']:
     we_are_autonomous = True
     we_are_recording = True
     print("\n****** READY TO DRIVE BY NEURAL NET and record data ******\n")
@@ -67,42 +68,57 @@ def drive_loop():
         img = cam.capture_img()
 
         if we_are_autonomous:
+            #get predicted angles (not working)
             angle_predicted, speed_predicted = tf_driver.predict(img)
 
-
         if settings.car_connected:
+            #update vehicle with given velocity vars (not working)
             angle_vehicle, speed_vehicle = vehicle.update(angle, speed)
 
         if we_are_recording:
+            #record img and velocity vars
             recorder.record(img, angle, speed, milliseconds)
-
 
         time.sleep(settings.LOOP_DELAY)
 
 
+def train(indir):
+    if indir is not None:
+        recorder.session_dir = indir
+    else:
+        recorder.use_last_session()
+
+    recorder.create_array_files()
+
 
 def start_webserver():
-    app.listen(8888)
+    app.listen(8889)
     tornado.ioloop.IOLoop.instance().start()
 
 
 if __name__ == '__main__':
 
-
-    if settings.use_webserver == True:
-        #Start webserver http://localhost:8888
-        #Used to view camera stream and control c ar. 
-        print('Starting webserver at <ip_address>:8888')
-        t = threading.Thread(target=start_webserver)
-        t.daemon = True #to close thread on Ctrl-c
-        t.start()
-
-
-    #Start the main driving loop.
+    
     if args['record'] or args['auto']:
+        #Start the main driving loop.
+
+        if settings.use_webserver == True:
+            #Start webserver http://localhost:8888
+            #Used to view camera stream and control c ar. 
+            print('Starting webserver at <ip_address>:8888')
+            t = threading.Thread(target=start_webserver)
+            t.daemon = True #to close thread on Ctrl-c
+            t.start()
 
         drive_loop()
 
+
+    if args['train']:
+        #Read in pictures and velocities and create a predictor
+        if 'indir' in args: indir = args['indir']
+        else: indir = None
+
+        train(indir)
 
 
 

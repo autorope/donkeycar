@@ -11,7 +11,7 @@ from os.path import expanduser
 #ENV='pi'
 ENV='laptop'
 
-LOOP_DELAY = .1 #seconds between vehicle updates
+LOOP_DELAY = 1 #seconds between vehicle updates
 
 #CAMERA
 try:
@@ -27,13 +27,11 @@ vehicle = vehicles.BaseVehicle()
 car_connected=True
 
 #RECORDER
-
 DATA_DIR = '~/donkey_data/'
 recorder = recorders.FileRecorder()
 
 
 #predictor
-
 predictor = predictors.BasePredictor()
 
 
@@ -48,11 +46,3 @@ global speed_manual
 angle_manual = 0
 speed_manual = 0 
 
-
-
-
-
-
-
-#WHIP (remote service)
-BASE_URL='http://localhost:8888/'
