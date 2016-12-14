@@ -112,6 +112,6 @@ Find the ip address of your Pi.
    1. Open a terminal.
    2. Find your own Ip address by typing `ifconfig'
    3. Search for your Pi's address with the command: 
-   	'''
+   	```
     sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
-  psudo   '''
+    ```

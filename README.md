@@ -4,21 +4,32 @@ A small utilitarian self driving vehicle.
 * Project goal: The the sidewalk self driving vehicle (auto). 
 
 ### Build your own.
-Here are [detailed instructions](get_started.md) and part lists to build your own car. 
+Here are [instructions](get_started.md) and part lists to build your own car. 
 
 
 ## How to use.
+All of these examples assume you're connected to your donkey via SSH. 
+ ```
+ ```
+
+### Activate the virtual environment
+```
+cd code/donkey
+source env/bin/activate 
+```
 
 ### Train a route
- (control in browser at <localhost or ip_address>:8889)
 
-Start the car 
+1. Start recording steering and images 
 ```bash
 python manage.py record --webcontrol
 ```
 
+2. Go to '<pi_ip_address>:8889' in your browser to control the car.
 
-### Let the donkey drive itself. 
+3. End training by typing `Ctrl-c` in your ssh sesion.
+
+### Create a predictor for the route. 
 
 train predictors from recorded data
 
@@ -27,19 +38,15 @@ python manage.py train --indir  <indir path>
 ```
 
 
-### Driving
+### Let the predictor drive the trained rout. 
+
+```
+python manage.py auto --indir  <indir path>
+```
+Where indir is the directory of the images used to train the predictor. 
 
 
-
-
-### Other Stuff 
-* Find your Raspberry Pi:
-	'''
-    sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
-    '''
-
-
-TODO: 
+##TODO: 
 
 - [ ] Threadsafe image capture (for webserver + recorder)
 - [ ] Update vehicle to drive given manual input.
