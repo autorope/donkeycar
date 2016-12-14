@@ -1,26 +1,24 @@
-## Donkey (or Poney) 
-A RC car controled by a Raspbery Pi. 
+# The Donkey 
+A small utilitarian self driving vehicle. 
 
-Project goal: The the sidewalk self driving vehicle (auto). 
+* Project goal: The the sidewalk self driving vehicle (auto). 
 
-### Use
-
-clone repo & create virtual env
-
-```
-git clone git@github.com:wroscoe/donkey.git
-cd donkey
-virtualenv env -p python3
-source env/bin/activate
-```
+### Build your own.
+Here are [detailed instructions](get_started.md) and part lists to build your own car. 
 
 
-drive (control in browser at <localhost or ip_address>:8889)
+## How to use.
 
+### Train a route
+ (control in browser at <localhost or ip_address>:8889)
+
+Start the car 
 ```bash
-python manage.py record  (manual mode)
-python manage.py auto 	 (autopilot mode)
+python manage.py record --webcontrol
 ```
+
+
+### Let the donkey drive itself. 
 
 train predictors from recorded data
 
