@@ -19,16 +19,15 @@ import threading
 from docopt import docopt
 import tornado
 
-from whipclient import Whip
 from utils import image as image_utils
-from webserver import app
 
 
-cam = settings.cam  #camera 
+
+camera = settings.camera  
+controller = settings.controller
 vehicle = settings.vehicle
 recorder = settings.recorder
 predictor = settings.predictor
-
 
 
 # Get args.
@@ -59,19 +58,19 @@ def drive_loop():
         milliseconds = int( (now - start_time) * 1000)
 
         #get global values manually controlled from the webserver
-        angle = settings.angle_manual
-        speed = settings.speed_manual
-
+        angle = controller.angle
+        speed = controller.speed
         print('angle: %s   speed: %s' %(angle, speed))
 
         #get PIL image from PiCamera
-        img = cam.capture_img()
+        img = camera.capture_img()
 
         if we_are_autonomous:
             #get predicted angles (not working)
-            angle_predicted, speed_predicted = tf_driver.predict(img)
+            angle_predicted, speed_predicted = predictor.predict(img)
+            print('predicted angle and speed (%s, %s)' %(angle_predicted, speed_predicted))
 
-        if settings.car_connected:
+        if vehicle is not None:
             #update vehicle with given velocity vars (not working)
             angle_vehicle, speed_vehicle = vehicle.update(angle, speed)
 
@@ -79,7 +78,7 @@ def drive_loop():
             #record img and velocity vars
             recorder.record(img, angle, speed, milliseconds)
 
-        time.sleep(settings.LOOP_DELAY)
+        time.sleep(settings.DRIVE_LOOP_DELAY)
 
 
 def train(indir):
@@ -91,24 +90,12 @@ def train(indir):
     recorder.create_array_files()
 
 
-def start_webserver():
-    app.listen(8889)
-    tornado.ioloop.IOLoop.instance().start()
-
 
 if __name__ == '__main__':
 
     
     if args['record'] or args['auto']:
         #Start the main driving loop.
-
-        if settings.use_webserver == True:
-            #Start webserver http://localhost:8888
-            #Used to view camera stream and control c ar. 
-            print('Starting webserver at <ip_address>:8888')
-            t = threading.Thread(target=start_webserver)
-            t.daemon = True #to close thread on Ctrl-c
-            t.start()
 
         drive_loop()
 

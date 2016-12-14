@@ -1,47 +1,60 @@
 
 from donkey import cameras
-import recorders
-import predictors
-import vehicles
+from donkey import recorders
+from donkey import predictors
+from donkey import vehicles
+from donkey import webcontroller
 
 import os
 from os.path import expanduser
 
 
-#ENV='pi'
-ENV='laptop'
+DRIVE_LOOP_DELAY = 1 #seconds between vehicle updates
 
-LOOP_DELAY = 1 #seconds between vehicle updates
-
-#CAMERA
+''' 
+Camera - Takes pictures.
+'''
 try:
-    cam = cameras.PiVideoStream() #Raspberry Pi Camera
+    camera = cameras.PiVideoStream() #Raspberry Pi Camera
 except ImportError:
     print("Cound not load PiCamera. Trying FakeCamera for testing.")
-    cam = cameras.FakeCamera() #For testing
     FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
+    camera = cameras.FakeCamera() #For testing
 
 
-
-#VEHICLE
-#What's used to change update the vehicle's steering angle and throttle.
+'''
+Vehicle - Updates the vehicle's steering angle and throttle.
+'''
 vehicle = vehicles.BaseVehicle()
-car_connected=True
 
-#RECORDER
+
+''' 
+Recorder - Save images and vehicle variables to a filesytem or webserver
+'''
 DATA_DIR = '~/donkey_data/'
 recorder = recorders.FileRecorder()
 
 
-#predictor
-predictor = predictors.BasePredictor()
+'''
+Predictor - Accepts image and returns steering angle and throttle.
+'''
+predictor = predictors.RandomPredictor()
 
 
+'''
+Controller - Get the users input to control vehicle. 
+'''
+controller = webcontroller.Controller()
 
 
-#WEBSERVER CONTROL
-#Global vars used to control the vehicle from the webserver.
-use_webserver = True
+'''
+GLOBAL
 
+angle and speed variables that are set by
+the controller and accessed in the drive_loop.
+'''
 
-
+global angle_manual
+global speed_manual
+angle_manual = 0
+speed_manual = 0 
