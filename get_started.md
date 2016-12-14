@@ -40,12 +40,13 @@ Since the RPi is not as powerful as a laptop, it can take a long time to install
 
 1. Open a terminal (Ctrl-Alt-t) and upgrade your system packages.
 
-```
-sudo apt-get update
-sudo apt-get upgrade
-```
+	```
+	sudo apt-get update
+	sudo apt-get upgrade
+	```
 2. Save These initial conditions.
-```
-dpkg -l > ~/Desktop/packages.list
-pip freeze > ~/Desktop/pip-freeze-initial.list
-```
+
+	```
+	dpkg -l > ~/Desktop/packages.list
+	pip freeze > ~/Desktop/pip-freeze-initial.list
+	```
