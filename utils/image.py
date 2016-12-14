@@ -49,3 +49,11 @@ def binary_to_img(binary):
     return Image.open(img)
 
 
+def img_to_greyarr(img):
+    '''
+    Accepts PIL immage and returns flat greyscale numpy array
+    '''
+    arr=img.convert('L') #makes it greyscale
+    arr=np.asarray(arr.getdata(),dtype=np.float64).reshape((arr.size[1],arr.size[0]))
+    arr = arr/255
+    return arr

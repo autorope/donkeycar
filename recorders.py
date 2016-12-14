@@ -5,8 +5,8 @@ import io
 import time
 
 from PIL import Image
-from skimage import color
 import numpy as np
+import utils.image as image_utils
 
 '''
 Datastore Classes to standardize interface.
@@ -47,7 +47,7 @@ class FileRecorder():
         y = [] #velocity (angel, speed)
         for f in files:
             img = Image.open(os.path.join(self.session_dir, f))
-            img_arr = color.rgb2grey(np.array(img))
+            img_arr = image_utils.img_to_greyarr(img)
             x.append(img_arr)
             y.append(np.array(self.parse_file_name(f)))
             
