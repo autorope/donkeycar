@@ -54,8 +54,8 @@ class FileRecorder():
         x = np.array(x) #image array [[image1],[image2]...]
         y = np.array(y) #array [[angle1, speed1],[angle2, speed2] ...]
 
-        np.save(os.path.join(self.session_dir, 'img_array'), x, 'imageArray')
-        np.save(os.path.join(self.session_dir, 'vel_array'), y, 'velArray')
+        np.save(os.path.join(self.session_dir, 'img_array'), x)
+        np.save(os.path.join(self.session_dir, 'vel_array'), y)
 
     def parse_file_name(self, f):
         f = f.split('.')[0]
