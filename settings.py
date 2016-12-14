@@ -4,7 +4,7 @@ import recorders
 import predictors
 import vehicles
 
-
+import os
 from os.path import expanduser
 
 
@@ -15,10 +15,12 @@ LOOP_DELAY = 1 #seconds between vehicle updates
 
 #CAMERA
 try:
-    cam = cameras.Camera() #Raspberry Pi Camera
+    cam = cameras.PiVideoStream() #Raspberry Pi Camera
 except ImportError:
     print("Cound not load PiCamera. Trying FakeCamera for testing.")
     cam = cameras.FakeCamera() #For testing
+    FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
+
 
 
 #VEHICLE

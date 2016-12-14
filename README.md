@@ -8,9 +8,7 @@ Here are [instructions](get_started.md) and part lists to build your own car.
 
 
 ## How to use.
-All of these examples assume you're connected to your donkey via SSH. 
- ```
- ```
+All of these examples assume you're connected to your donkey via SSH and you've activated the virtual environment. 
 
 ### Activate the virtual environment
 ```
@@ -22,7 +20,7 @@ source env/bin/activate
 
 1. Start recording steering and images 
 ```bash
-python manage.py record --webcontrol
+python manage.py record --filerecorder --webcontrol
 ```
 
 2. Go to '<pi_ip_address>:8889' in your browser to control the car.
@@ -31,7 +29,7 @@ python manage.py record --webcontrol
 
 ### Create a predictor for the route. 
 
-train predictors from recorded data
+Train predictors from recorded data
 
 ```
 python manage.py train --indir  <indir path>
@@ -48,7 +46,7 @@ Where indir is the directory of the images used to train the predictor.
 
 ##TODO: 
 
-- [ ] Threadsafe image capture (for webserver + recorder)
+- [ ] Threadsafe image capture (for webserver + recorder) http://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
 - [ ] Update vehicle to drive given manual input.
 - [ ] Try loading tensor flow on Raspberry Pi
 - [ ] Train Convolution network from numpy arrays

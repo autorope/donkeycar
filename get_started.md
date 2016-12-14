@@ -7,6 +7,7 @@ This doc will walk you through how to setup your donkey.
 * Raspberry Pi 3 B ($35)
 * Raspberry Pi Camera ($15)
 * Micro USB power adapter. ($9)
+* USB Battery Pack ($15)
 * USB Keyboard 
 * USB Mouse
 * Monitor 

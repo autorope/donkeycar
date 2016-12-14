@@ -22,7 +22,7 @@ class FileRecorder():
     def record(self, img, angle, speed, milliseconds):
         ''' save image and encode angle, speed and milliseconds into the filename'''
 
-        if session_dir is not None:
+        if self.session_dir is not None:
             self.frame_count += 1
             '''Save image and ecode variables into file name'''
             file_name = str("%s/" % self.session_dir +
