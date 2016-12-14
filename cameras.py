@@ -18,7 +18,7 @@ class Camera():
     img=None #last image from the stream
 
     def __init__(self):
-        self.stream = io.BytesIO()
+        
         
         print('Loading PiCamera... ', end='')
         from picamera import PiCamera
@@ -30,8 +30,10 @@ class Camera():
         
     def capture_img(self):
         '''return PIL image from camera'''
-        self.cam.capture(self.stream, format='jpeg')
-        img = Image.open(self.stream)
+        stream = io.BytesIO()
+        self.cam.capture(stream, format='jpeg')
+        stream.seek(0)
+        img = Image.open(stream)
         return normalize(img)
 
 
@@ -53,6 +55,7 @@ class ThreadedCamera(Camera):
     def __init__(self):
         Camera.__init__(self)
         self.start_stream()
+        self.stream = io.BytesIO()
         print('starting camera stream')
 
     def start_stream(self):
