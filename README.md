@@ -46,10 +46,10 @@ Where indir is the directory of the images used to train the predictor.
 
 ##TODO: 
 
-- [ ] Threadsafe image capture (for webserver + recorder) http://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
-- [ ] Update vehicle to drive given manual input.
-- [ ] Try loading tensor flow on Raspberry Pi
-- [ ] Train Convolution network from numpy arrays
+- [x] Threadsafe image capture (for webserver + recorder) 
+- [ ] Update vehicle to drive given manual input. (Adam)
+- [ ] Try loading tensor flow on Raspberry Pi (Will)
+- [ ] Train Convolution network from numpy arrays (Will)
 
 Email Adam, Keven and Jeff about the Jan 22nd Race 
 

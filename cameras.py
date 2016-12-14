@@ -26,11 +26,16 @@ class PiVideoStream:
         # if the thread should be stopped
         self.frame = None
         self.stopped = False
+        print('PiVideoStream loaded.. .warming camera')
+        time.sleep(2)
+        self.start()
 
 
     def start(self):
         # start the thread to read frames from the video stream
-        Thread(target=self.update, args=()).start()
+        t = Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
         return self
  
     def update(self):
@@ -54,8 +59,15 @@ class PiVideoStream:
         return self.frame
  
     def capture_img(self):
-        img = Image.open(self.read())
+        arr = self.read()
+        print(arr.shape)
+        img = Image.fromarray(arr)
         return img
+
+    def capture_binary(self):
+        '''return binary stream of image for webserver'''
+        img = self.capture_img()
+        return image_utils.img_to_binary(img)
 
     def stop(self):
         # indicate that the thread should be stopped
