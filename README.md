@@ -6,24 +6,27 @@ Project goal: The the sidewalk self driving vehicle (auto).
 ### Use
 
 clone repo & create virtual env
-    ```
-    git clone git@github.com:wroscoe/donkey.git
-    cd donkey
-    virtualenv env -p python3
-    source env/bin/activate
-    ```
+
+```
+git clone git@github.com:wroscoe/donkey.git
+cd donkey
+virtualenv env -p python3
+source env/bin/activate
+```
 
 
 drive (control in browser at <localhost or ip_address>:8889)
-	```bash
-    python manage.py record  (manual mode)
-    python manage.py auto 	 (autopilot mode)
-    ```
+
+```bash
+python manage.py record  (manual mode)
+python manage.py auto 	 (autopilot mode)
+```
 
 train predictors from recorded data
-    ```
-    python manage.py train --indir  <indir path>
-    ```
+
+```
+python manage.py train --indir  <indir path>
+```
 
 
 ### Driving
