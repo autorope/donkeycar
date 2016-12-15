@@ -1,10 +1,10 @@
 # The Donkey 
-A small utilitarian self driving vehicle. 
+A small DIY self driving vehicle made from an RC Car and Raspbery Pi. 
 
 * Project goal: The the sidewalk self driving vehicle (auto). 
 
 ### Build your own.
-Here are [instructions](get_started.md) and part lists to build your own car. 
+Here are [instructions](docs/get_started.md) and part lists to build your own car. 
 
 
 ## How to use.
@@ -46,11 +46,22 @@ Where indir is the directory of the images used to train the predictor.
 
 ##TODO: 
 
+Web & Python
 - [x] Threadsafe image capture (for webserver + recorder) 
+- [ ] Create togle on LocalWebControler to togle autonomous mode. (Will)
+- [ ] Create `manage.py serve` command to run local server to act as a remote Recorder and Predictor. (Will)
+- [ ] Separate Keras Predictors so they don't need to be run on the Pi.
+
+Vehicle Control 
 - [ ] Update vehicle to drive given manual input. (Adam)
 - [ ] Try loading tensor flow on Raspberry Pi (Will)
+
+Machine Learning
 - [ ] Train Convolution network from numpy arrays (Will)
 
-Email Adam, Keven and Jeff about the Jan 22nd Race 
+Refactor Worthy
+- [ ] Figure out a better 
+
+
 
 
