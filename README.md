@@ -1,20 +1,15 @@
 # The Donkey 
 A small DIY self driving vehicle made from an RC Car and Raspbery Pi. 
 
-* Project goal: The the sidewalk self driving vehicle (auto). 
+>Project goal: Build a vehicle that can navigate safely around any city block without being shown the route.
 
 ### Build your own.
 Here are [instructions](docs/get_started.md) and part lists to build your own car. 
 
 
 ## How to use.
-All of these examples assume you're connected to your donkey via SSH and you've activated the virtual environment. 
+***All of these examples assume you're connected to your donkey via SSH and you've activated the virtual environment.***
 
-### Activate the virtual environment
-```
-cd code/donkey
-source env/bin/activate 
-```
 
 ### Train a route
 
