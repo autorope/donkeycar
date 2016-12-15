@@ -18,31 +18,36 @@ source env/bin/activate
 
 ### Train a route
 
-1. Start recording steering and images 
-```bash
-python manage.py record --filerecorder --webcontrol
+1. Start driving mode. 
+```
+python manage.py drive --session firstdrive
 ```
 
-2. Go to '<pi_ip_address>:8889' in your browser to control the car.
+2. Go to `<pi_ip_address>:8889` in your browser to control the car.
 
-3. End training by typing `Ctrl-c` in your ssh sesion.
 
 ### Create a predictor for the route. 
 
 Train predictors from recorded data
 
 ```
-python manage.py train --indir  <indir path>
+python manage.py train --session firstdrive --model firstmodel
 ```
 
 
-### Let the predictor drive the trained rout. 
+### Test out the self driving. 
+
+1. Start the donkey so data is recorded in a different session and load the predictor you trained. 
 
 ```
-python manage.py auto --indir  <indir path>
+python manage.py drive --session seconddrive --model firstmodel
 ```
-Where indir is the directory of the images used to train the predictor. 
+2. Go to `<pi_ip_address>:8889` and click **Start Self Driving** button. Your dokney should now drive it's self based on what you taught it. 
 
+
+##Next Steps
+
+Try changing or creating your own predictor. 
 
 ##TODO: 
 
