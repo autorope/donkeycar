@@ -51,6 +51,7 @@ Web & Python
 - [ ] Create togle on LocalWebControler to togle autonomous mode. (Will)
 - [ ] Create `manage.py serve` command to run local server to act as a remote Recorder and Predictor. (Will)
 - [ ] Separate Keras Predictors so they don't need to be run on the Pi.
+- [ ] Write Tests
 
 Vehicle Control 
 - [ ] Update vehicle to drive given manual input. (Adam)
@@ -60,7 +61,7 @@ Machine Learning
 - [ ] Train Convolution network from numpy arrays (Will)
 
 Refactor Worthy
-- [ ] Figure out a better 
+- [ ] Get rid of all the global variables (GLB) 
 
 
 
