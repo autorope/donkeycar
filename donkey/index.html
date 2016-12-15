@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>tornado WebSocket example</title>
+  <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+  <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+</head>
+<body>
+  
+  <div class="container">
+    <h1>Donkey Brains</h1>
+    <hr>
+      WebSocket status : <span id="message"></span>
+    <hr>
+    <div class="row">
+      <div class="span4">
+        <h3>Image Stream (MJPEG) </h3>
+		  <!-- COMMENTED OUT UNTIL THREADED CAMERA IS FIXED -->
+          <img src="/mjpeg/test.mjpeg"/>
+      </div>
+    </div>
+
+    <hr> 
+    <div class="row">
+      <div class="span4">
+        <h3>Velocity </h3>
+          <label> Angle </label>
+          <input id='angleInput'/>
+
+          <label> Speed </label>
+          <input id='speedInput'/>
+      </div>
+    </div>
+    
+    <hr>
+    <h3>Keyboard Shortcuts</h3>
+    <ul>
+      <li>i - speed up </li>
+      <li>k - slow down </li>
+      <li>j - turn right </li>
+      <li>l - turn left  </li>
+    </ul>
+  </div>
+
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+
+  <script>
+
+$( document ).ready(function() {
+    console.log( "ready!" );
+    velocity.bind()
+});
+
+$(document).keydown(function(e) {
+    if(e.which == 73) {
+      // 'i'  speed up
+        velocity.speedUp()
+    } 
+
+    if(e.which == 75) {
+      // 'k'  slow down
+        velocity.speedDown()
+    }
+
+    if(e.which == 74) {
+      // 'j' turn left
+        velocity.angleLeft()
+    }
+
+    if(e.which == 76) {
+      // 'l' turn right
+        velocity.angleRight()
+    }
+});
+
+
+var velocity = (function() {
+    //functions to change velocity of vehicle
+
+    var angle = 0
+    var speed = 0
+    var angleEl = "#angleInput"
+    var speedEl = "#speedInput"
+    var sendURL = "/velocity"
+
+    var bind = function(data){
+        //Bind a function to capture the coordinates of the click.
+        $(angleEl).change(function(e) {
+            sendVelocity()
+        });
+        $(speedEl).change(function(e) {
+            sendVelocity()
+        });
+    };
+
+    var sendVelocity = function() {
+        //Send angle and speed values
+        data = JSON.stringify({ 'angle': angle, 'speed':speed})
+        $.post(sendURL, data)
+    };
+
+    var speedUp = function(){
+        //Bind a function to capture the coordinates of the click.
+        speed = speed + 5
+        $(speedEl).val(speed)
+        sendVelocity()
+        };
+
+    var speedDown = function(){
+        //Bind a function to capture the coordinates of the click.
+        speed = speed - 5
+        $(speedEl).val(speed);
+        sendVelocity()
+    };
+
+    var angleLeft = function(){
+      //Bind a function to capture the coordinates of the click.
+      angle = angle - 5
+      $(angleEl).val(angle);
+      sendVelocity()
+    };
+
+    var angleRight = function(){
+      //Bind a function to capture the coordinates of the click.
+      angle = angle + 5
+      $(angleEl).val(angle);
+      sendVelocity()
+    };
+
+    return {
+                bind: bind,
+                speedUp: speedUp,
+                speedDown: speedDown,
+                angleLeft: angleLeft,
+                angleRight: angleRight,
+                sendVelocity: sendVelocity,
+            };
+})();
+
+  </script>
+</body>
+</html>
