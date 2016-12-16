@@ -55,8 +55,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-#predictor = RandomPredictor
-predictor = ConvolutionPredictor
+predictor = RandomPredictor
+#predictor = ConvolutionPredictor
 
 
 '''

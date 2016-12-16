@@ -21,6 +21,7 @@ class BasePredictor():
     def __init__(self):
         self.model = None
 
+    def create(self, model=None): pass
 
     def save(self):
         pass
