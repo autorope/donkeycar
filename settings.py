@@ -6,8 +6,10 @@ from donkey import cameras
 from donkey import recorders
 from donkey import vehicles
 from donkey import controllers
+from donkey import whip
 
 from donkey.predictors.base import RandomPredictor
+
 
 try:
     from donkey.predictors.keras import ConvolutionPredictor
@@ -39,6 +41,7 @@ Vehicle
 Updates the vehicle's steering angle and throttle.
 '''
 vehicle = vehicles.BaseVehicle
+#vehicle = vehicles.AdamsVehicle
 
 
 '''
@@ -52,15 +55,26 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-predictor = RandomPredictor
-#predictor = predictors.ConvolutionPredictor
+#predictor = RandomPredictor
+predictor = ConvolutionPredictor
 
 
 '''
 Controller
 Get the users input to control vehicle. 
 '''
-
 controller = controllers.BaseController
+#controller = controllers.XboxController
 
 
+
+'''
+Connection to remote autopilot.
+'''
+drive_client = whip.WhipClient
+
+
+'''
+Server used to remotely autopilot vehicles. Not used on car.
+'''
+drive_server = whip.WhipServer

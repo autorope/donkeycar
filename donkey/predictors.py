@@ -12,11 +12,55 @@ import random
 
 from utils import file as file_utils
 
+class BasePredictor():
+    '''
+    Base class to define common functions.
+    When creating a class, only override the funtions you'd like to replace.
+    '''
+    
+    def __init__(self):
+        self.model = None
+
+
+    def save(self):
+        pass
+
+    def load(self, model):
+        self.model_path = os.path.join(settings.MODELS_DIR, self.model_name)
+        print('loading model from %' %self.model_path)
+        self.model = open(self.model_path)
+
+
+    def predict(self):
+        angle = 0
+        speed = 0
+
+        #Do prediction magic
+
+        return angle, speed
+
+
+class RandomPredictor(BasePredictor):
+    '''
+    Example predictor to demontrate the format.
+    '''
+
+    def predict(self, img):
+        angle = random.randrange(-90, 91)
+        speed = random.randrange(-100,101)
+        return angle, speed
+
+
+    def fit(self, x, y):
+        model = "some model to save"
+        return model
+
+    def load(self): 
+        print('This model doesnt need to Load')
+
 from keras.models import Sequential, load_model
 from keras.layers import Convolution2D, MaxPooling2D, Convolution1D, MaxPooling1D
 from keras.layers import Activation, Dropout, Flatten, Dense
-
-from .base import BasePredictor
 
 class ConvolutionPredictor(BasePredictor):
     def __init__(self):

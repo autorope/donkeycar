@@ -16,12 +16,17 @@ class FileRecorder():
     ''' 
     A class to store images and vehicle data to the local filesystem.
     '''
-    def __init__(self, session=None):
-        print('Loading FileRecorder session: %s' %session)
-        self.frame_count = 0
+    def __init__(self):
+        print('Loading FileRecorder')
+        
+
+    def load(self, session):
+        print('Starting Session: %s' %session)
         self.session_dir = make_session_dir(settings.RECORDS_DIR,
                                             session_name=session)
 
+        #TODO: this frame count should start at the last frame number
+        self.frame_count = 0
 
     def record(self, img, angle, speed, milliseconds):
         ''' 
