@@ -31,8 +31,11 @@ class PiVideoStream:
         self.frame = None
         self.stopped = False
         print('PiVideoStream loaded.. .warming camera')
+
         time.sleep(2)
         self.start()
+
+
 
 
     def start(self):
@@ -40,6 +43,7 @@ class PiVideoStream:
         t = Thread(target=self.update, args=())
         t.daemon = True
         t.start()
+        time.sleep(1)
         return self
  
     def update(self):
@@ -64,6 +68,8 @@ class PiVideoStream:
  
     def capture_img(self):
         arr = self.read()
+
+    
         print(arr.shape)
         img = Image.fromarray(arr)
         return img
