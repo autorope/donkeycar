@@ -24,12 +24,15 @@ RECORDS_DIR = os.path.join(DATA_DIR, 'records')
 MODELS_DIR = os.path.join(DATA_DIR, 'models')
 
 
+
+
 ''' 
 Camera - Takes pictures.
 '''
 try:
     import picamera
     camera = cameras.PiVideoStream #Raspberry Pi Camera
+    PI_CAMERA_RESOLUTION = (128,128)
 except ImportError:
     print("Cound not load PiCamera. Using FakeCamera for testing.")
     FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'

@@ -20,10 +20,10 @@ class Car:
         self.model=model
         self.remote_url = remote_url
 
-        self.camera = settings.camera()
+        self.camera = settings.camera(resolution=settings.PI_CAMERA_RESOLUTION)
         self.controller = settings.controller()
         self.vehicle = settings.vehicle()
-        
+
         self.recorder = settings.recorder()
         self.recorder.load(self.session)
         
