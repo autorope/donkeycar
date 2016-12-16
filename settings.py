@@ -6,7 +6,7 @@ from donkey import cameras
 from donkey import recorders
 from donkey import predictors
 from donkey import vehicles
-from donkey import webcontroller
+from donkey import controllers
 
 
 DRIVE_LOOP_DELAY = .2 #seconds between vehicle updates
@@ -15,8 +15,6 @@ DATA_DIR = expanduser('~/donkey_data/')
 RECORDS_DIR = os.path.join(DATA_DIR, 'records')
 MODELS_DIR = os.path.join(DATA_DIR, 'models')
 
-#The address of the whip server running on another machine.
-WHIP_URL = 'http://168.192.1.4:8888' 
 
 ''' 
 Camera - Takes pictures.
@@ -57,6 +55,6 @@ Controller
 Get the users input to control vehicle. 
 '''
 
-controller = webcontroller.LocalWebController
+controller = controllers.BaseController
 
 

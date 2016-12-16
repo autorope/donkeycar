@@ -11,6 +11,7 @@ Options:
 """
 
 import settings
+from car import Car
 
 import time
 import os 
@@ -32,72 +33,6 @@ folders = [settings.DATA_DIR,
 for f in folders:
     file_utils.make_dir(f)
 
-class Car():
-    def __init__(self):
-        pass
-
-CAR = Car()
-
-def local_drive_loop():
-    ''' 
-    The main driving loop controls the car.
-    The CAR global variable is used to access objects with threaded processes. 
-    '''
-    start_time = time.time()
-
-    while True:
-        now = time.time()
-        milliseconds = int( (now - start_time) * 1000)
-
-        #get PIL image from camera
-        img = CAR.camera.capture_img()
-
-        #read values from controller
-        c_angle = CAR.controller.angle
-        c_speed = CAR.controller.speed
-        drive_mode = CAR.controller.drive_mode
-
-
-        if remote_url is None:
-            #record and predict locally
-            CAR.recorder.record(img, 
-                                c_angle,
-                                c_speed, 
-                                milliseconds)
-
-            #send image and data to predictor to get estimates
-            arr = image_utils.img_to_greyarr(img)
-            p_angle, p_speed = CAR.predictor.predict(arr)
-
-        else:
-            p_angle, p_speed = CAR.remote_driver(remote_url,
-                                                 img,
-                                                 c_angle, 
-                                                 c_speed,
-                                                 milliseconds)
-
-
-
-
-
-
-        if CAR.controller.drive_mode == 'manual':
-            #update vehicle with given velocity vars (not working)
-            CAR.vehicle.update(c_angle, c_speed)
-        else:
-            CAR.vehicle.update(p_angle, p_speed)
-
-
-
-        #print current car state
-        print('A/P: >(%s, %s)  speed(%s/%s)  drive_mode: %s' %(CAR.controller.angle, 
-                                p_angle, 
-                                CAR.controller.speed,
-                                p_speed,
-                                CAR.controller.drive_mode))
-
-        time.sleep(settings.DRIVE_LOOP_DELAY)
-
 
 
 def train(recorder, predictor):
@@ -117,21 +52,8 @@ if __name__ == '__main__':
 
 
     if args['drive']:
-
-        CAR.camera = settings.camera()
-        CAR.controller = settings.controller()
-        CAR.vehicle = settings.vehicle()
-        
-        CAR.recorder = settings.recorder(session)
-
-        if model is not None:
-            print('Loading predictor model: %s' %model)
-            CAR.predictor = settings.predictor()
-            CAR.predictor.load(model)
-        else:
-            print('No model given. Auto mode will not work.')
-            CAR.predictor = settings.predictor()
-        local_drive_loop()
+        CAR = Car(session, model, remote_url)
+        CAR.drive_loop()
 
 
     elif args['train']:

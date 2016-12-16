@@ -1,55 +1,9 @@
 import time
-import os
-import threading
-from time import sleep
-from io import BytesIO
+
 
 import tornado.ioloop
 import tornado.web
 from tornado import gen
-
-from PIL import Image
-
-
-''' 
-A Tornado Webserver that serves a simple web page that allows
-a user to monitor and control the vehicle. 
-
-This runs localy on the Raspberry Pi of the vehicle.
-'''
-
-
-
-class LocalWebController():
-    ''' Wrapper to create common interface for angle and driving controls'''
-    port = 8887
-    angle=0
-    speed=0
-    drive_mode = 'manual'
-
-    def __init__(self):
-        
-        print('Starting webserver at <ip_address>:%s' %self.port)
-        t = threading.Thread(target=self.start)
-        t.daemon = True #to close thread on Ctrl-c
-        t.start()
-
-
-    def start(self):
-
-        app = tornado.web.Application([
-            (r"/", IndexHandler),
-            #Here we pass in self so the webserve can update angle and speed asynch
-            (r"/velocity", VelocityHandler, dict(controller = self)),
-            #(r"/mjpeg/([^/]*)", MJPEGHandler)
-        ])
-
-        app.listen(self.port)
-        tornado.ioloop.IOLoop.instance().start()
-
-   
-
-
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -57,7 +11,7 @@ class IndexHandler(tornado.web.RequestHandler):
 
 
 
-class VelocityHandler(tornado.web.RequestHandler):
+class ControllerHandler(tornado.web.RequestHandler):
     def initialize(self, controller):
         #the parrent controller
          self.controller = controller
@@ -87,12 +41,12 @@ class VelocityHandler(tornado.web.RequestHandler):
             self.controller.speed = 0            
 
 
-'''
-REMOVING UNTIL THIS GOES INTO A BROADER CAR OBJECT
-It doesn't make sense to call camera from the controller
-'''
-"""
-class MJPEGHandler(tornado.web.RequestHandler):
+
+class CameraMJPEGHandler(tornado.web.RequestHandler):
+    def initialize(self, camera):
+         self.camera = camera
+
+
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def get(self, file):
@@ -108,7 +62,7 @@ class MJPEGHandler(tornado.web.RequestHandler):
             
             interval = .2
             if self.served_image_timestamp + interval < time.time():
-                img = GLB.camera.capture_binary()
+                img = self.camera.capture_binary()
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
                 self.write("Content-length: %s\r\n\r\n" % len(img)) 
@@ -118,6 +72,6 @@ class MJPEGHandler(tornado.web.RequestHandler):
             else:
                 yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)
 
-"""
+
 
 
