@@ -4,9 +4,15 @@ from os.path import expanduser
 
 from donkey import cameras
 from donkey import recorders
-from donkey import predictors
 from donkey import vehicles
 from donkey import controllers
+
+from donkey.predictors.base import RandomPredictor
+
+try:
+    from donkey.predictors.keras import ConvolutionPredictor
+except ImportError:
+    'Print could not import Keras predictors'
 
 
 DRIVE_LOOP_DELAY = .2 #seconds between vehicle updates
@@ -46,8 +52,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-#predictor = predictors.RandomPredictor
-predictor = predictors.ConvolutionPredictor
+predictor = RandomPredictor
+#predictor = predictors.ConvolutionPredictor
 
 
 '''

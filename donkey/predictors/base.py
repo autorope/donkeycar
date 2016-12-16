@@ -55,7 +55,7 @@ class RandomPredictor(BasePredictor):
         model = "some model to save"
         return model
 
-    def load(self): 
+    def load(self, model): 
         print('This model doesnt need to Load')
 
 from keras.models import Sequential, load_model
