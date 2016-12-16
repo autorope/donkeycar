@@ -5,6 +5,7 @@ import io
 import os
 import time
 import threading
+from itertools import cycle
 
 from PIL import Image
 
@@ -30,6 +31,7 @@ class PiVideoStream:
         # if the thread should be stopped
         self.frame = None
         self.stopped = False
+        
         print('PiVideoStream loaded.. .warming camera')
 
         time.sleep(2)
@@ -95,13 +97,14 @@ class FakeCamera():
         print('loading FakeCamera')
         print(settings)
         self.file_list = os.listdir(settings.FAKE_CAMERA_IMG_DIR)
+        self.file_cycle = cycle(self.file_list) #create infinite iterator
         self.counter = 0
 
     def capture_img(self):
 
         #print('capturing file: %s' % self.file_list[self.counter])
 
-        img = Image.open("img/" + self.file_list[self.counter])
+        img = Image.open("img/" + next(self.file_cycle))
         self.counter += 1
         return normalize(img)
         

@@ -26,10 +26,12 @@ from utils import file as file_utils
 # Get args.
 args = docopt(__doc__)
 
+
 #Make sure folder structure exists. 
 folders = [settings.DATA_DIR, 
             settings.RECORDS_DIR, 
             settings.MODELS_DIR]
+
 for f in folders:
     file_utils.make_dir(f)
 
@@ -52,16 +54,28 @@ if __name__ == '__main__':
 
 
     if args['drive']:
+        #Start your car
         CAR = Car(session, model, remote_url)
         CAR.drive_loop()
 
 
     elif args['train']:
         #Read in pictures and velocities and create a predictor
-        recorder = settings.recorder(session)
+        recorder = settings.recorder()
+        recorder.load(session)
+        
         predictor = settings.predictor()
         predictor.create(model)
         train(recorder, predictor)
 
+    elif args['serve']:
+        #set predictor and recorder for drive server to use
+        predictor = settings.predictor()
+        predictor.create(model)
 
-
+        recorder = settings.recorder()
+        recorder.load(session)
+        
+        #start webserver to act as the remote for a car.
+        server = settings.drive_server(recorder, predictor)
+        server.start()

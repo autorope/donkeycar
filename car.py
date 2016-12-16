@@ -23,8 +23,19 @@ class Car:
         self.camera = settings.camera()
         self.controller = settings.controller()
         self.vehicle = settings.vehicle()
-        self.recorder = settings.recorder(self.session)
+        
+        self.recorder = settings.recorder()
+        self.recorder.load(self.session)
+        
         self.predictor = settings.predictor()
+        self.predictor.create(self.model)
+
+
+        self.drive_client = settings.drive_client(self.remote_url, 
+                                                  self.session,
+                                                  self.model)
+
+
         if model is not None:
             self.predictor.load(self.model)
         else:
@@ -55,7 +66,7 @@ class Car:
 
 
             if self.remote_url is None:
-                #record and predict locally
+                #when no remote, use two functions to record and predict
                 self.recorder.record(img, 
                                     c_angle,
                                     c_speed, 
@@ -66,11 +77,12 @@ class Car:
                 p_angle, p_speed = self.predictor.predict(arr)
 
             else:
-                p_angle, p_speed = self.remote_driver(remote_url,
-                                                     img,
-                                                     c_angle, 
-                                                     c_speed,
-                                                     milliseconds)
+                #when using a remote connection combine the record adn predic functions 
+                #into one call. 
+                p_angle, p_speed = self.drive_client.post( img,
+                                                            c_angle, 
+                                                            c_speed,
+                                                            milliseconds)
 
 
 
