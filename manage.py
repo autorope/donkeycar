@@ -1,16 +1,16 @@
 """Records training data and / or drives the car with tensorflow.
 Usage:
-    manage.py drive [--session=<name>] [--model=<name>]
+    manage.py drive [--session=<name>] [--model=<name>] [--remote=<name>]
     manage.py train [--session=<name>] [--model=<name>]
     manage.py serve [--model=<name>]
 
 Options:
   --model=<name>     model name for predictor to use 
   --session=<name>   recording session name
+  --remote=<name>   recording session name
 """
 
 import settings
-from globalvars import GLB
 
 import time
 import os 
@@ -32,12 +32,16 @@ folders = [settings.DATA_DIR,
 for f in folders:
     file_utils.make_dir(f)
 
+class Car():
+    def __init__(self):
+        pass
 
+CAR = Car()
 
-def drive_loop():
+def local_drive_loop():
     ''' 
     The main driving loop controls the car.
-    The GLB global variable is used to access objects with threaded processes. 
+    The CAR global variable is used to access objects with threaded processes. 
     '''
     start_time = time.time()
 
@@ -46,27 +50,51 @@ def drive_loop():
         milliseconds = int( (now - start_time) * 1000)
 
         #get PIL image from camera
-        img = GLB.camera.capture_img()
+        img = CAR.camera.capture_img()
 
-        arr = image_utils.img_to_greyarr(img)
+        #read values from controller
+        c_angle = CAR.controller.angle
+        c_speed = CAR.controller.speed
+        drive_mode = CAR.controller.drive_mode
 
-        p_angle, p_speed = GLB.predictor.predict(arr)
 
-        print('A/P: >(%s, %s)  speed(%s/%s)' %(GLB.controller.angle, 
+        if remote_url is None:
+            #record and predict locally
+            CAR.recorder.record(img, 
+                                c_angle,
+                                c_speed, 
+                                milliseconds)
+
+            #send image and data to predictor to get estimates
+            arr = image_utils.img_to_greyarr(img)
+            p_angle, p_speed = CAR.predictor.predict(arr)
+
+        else:
+            p_angle, p_speed = CAR.remote_driver(remote_url,
+                                                 img,
+                                                 c_angle, 
+                                                 c_speed,
+                                                 milliseconds)
+
+
+
+
+
+
+        if CAR.controller.drive_mode == 'manual':
+            #update vehicle with given velocity vars (not working)
+            CAR.vehicle.update(c_angle, c_speed)
+        else:
+            CAR.vehicle.update(p_angle, p_speed)
+
+
+
+        #print current car state
+        print('A/P: >(%s, %s)  speed(%s/%s)  drive_mode: %s' %(CAR.controller.angle, 
                                 p_angle, 
-                                GLB.controller.speed,
-                                p_speed))
-
-
-        #update vehicle with given velocity vars (not working)
-        GLB.vehicle.update(GLB.controller.angle, 
-                            GLB.controller.speed)
-
-        #record image and velocity vars
-        GLB.recorder.record(img, 
-                            GLB.controller.angle,
-                            GLB.controller.speed, 
-                            milliseconds)
+                                CAR.controller.speed,
+                                p_speed,
+                                CAR.controller.drive_mode))
 
         time.sleep(settings.DRIVE_LOOP_DELAY)
 
@@ -83,27 +111,27 @@ if __name__ == '__main__':
 
     session = args['--session'] or None
     model = args['--model'] or None
+    remote_url = args['--remote'] or None
 
     print('session name: %s,  model name: %s ' %(session, model))
 
 
     if args['drive']:
 
-        GLB.camera = settings.camera()
-        GLB.controller = settings.controller()
-        GLB.vehicle = settings.vehicle()
+        CAR.camera = settings.camera()
+        CAR.controller = settings.controller()
+        CAR.vehicle = settings.vehicle()
         
-        GLB.recorder = settings.recorder(session)
-        #GLB.recorder.create(session)
+        CAR.recorder = settings.recorder(session)
 
         if model is not None:
             print('Loading predictor model: %s' %model)
-            GLB.predictor = settings.predictor()
-            GLB.predictor.load(model)
+            CAR.predictor = settings.predictor()
+            CAR.predictor.load(model)
         else:
             print('No model given. Auto mode will not work.')
-            GLB.predictor = settings.predictor()
-        drive_loop()
+            CAR.predictor = settings.predictor()
+        local_drive_loop()
 
 
     elif args['train']:

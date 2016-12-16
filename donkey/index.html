@@ -30,6 +30,10 @@
           <label> Speed </label>
           <input id='speedInput'/>
       </div>
+      <div>
+        <label> Drive Mode </label>
+        <input id='driveMode'/>
+      </div>
     </div>
     
     <hr>
@@ -39,6 +43,7 @@
       <li>k - slow down </li>
       <li>j - turn right </li>
       <li>l - turn left  </li>
+      <li>space - toggle drive mode (auto/manaul)  </li>
     </ul>
   </div>
 
@@ -74,6 +79,11 @@ $(document).keydown(function(e) {
       // 'l' turn right
         velocity.angleRight()
     }
+
+    if(e.which == 32) {
+      // 'l' turn right
+        velocity.toggleDriveMode()
+    }
 });
 
 
@@ -82,6 +92,7 @@ var velocity = (function() {
 
     var angle = 0
     var speed = 0
+    var driveMode = 'manual'
     var angleEl = "#angleInput"
     var speedEl = "#speedInput"
     var sendURL = "/velocity"
@@ -98,7 +109,7 @@ var velocity = (function() {
 
     var sendVelocity = function() {
         //Send angle and speed values
-        data = JSON.stringify({ 'angle': angle, 'speed':speed})
+        data = JSON.stringify({ 'angle': angle, 'speed':speed, 'drive_mode':driveMode})
         $.post(sendURL, data)
     };
 
@@ -130,6 +141,17 @@ var velocity = (function() {
       sendVelocity()
     };
 
+    var toggleDriveMode = function(){
+      //Bind a function to capture the coordinates of the click.
+      if (driveMode == 'manual') {
+        driveMode = 'auto'
+      } else {
+        driveMode = 'manual'
+      }
+      $('#driveMode').val(angle);
+      sendVelocity()
+    };
+
     return {
                 bind: bind,
                 speedUp: speedUp,
@@ -137,6 +159,7 @@ var velocity = (function() {
                 angleLeft: angleLeft,
                 angleRight: angleRight,
                 sendVelocity: sendVelocity,
+                toggleDriveMode: toggleDriveMode
             };
 })();
 

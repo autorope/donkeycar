@@ -1,6 +1,4 @@
 
-from globalvars import GLB
-
 import os
 from os.path import expanduser
 

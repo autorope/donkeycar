@@ -1,5 +1,3 @@
-from globalvars import GLB
-
 import time
 import os
 import threading
@@ -38,6 +36,14 @@ class LocalWebController():
 
 
     def start(self):
+
+        app = tornado.web.Application([
+            (r"/", IndexHandler),
+            #Here we pass in self so the webserve can update angle and speed asynch
+            (r"/velocity", VelocityHandler, dict(controller = self)),
+            #(r"/mjpeg/([^/]*)", MJPEGHandler)
+        ])
+
         app.listen(self.port)
         tornado.ioloop.IOLoop.instance().start()
 
@@ -52,6 +58,10 @@ class IndexHandler(tornado.web.RequestHandler):
 
 
 class VelocityHandler(tornado.web.RequestHandler):
+    def initialize(self, controller):
+        #the parrent controller
+         self.controller = controller
+
     def post(self):
         '''
         Receive post requests as user changes the angle
@@ -61,19 +71,27 @@ class VelocityHandler(tornado.web.RequestHandler):
         print(data)
         angle = data['angle']
         speed = data['speed']
+        drive_mode = data['drive_mode']
+
+
+        self.controller.drive_mode = drive_mode
 
         if angle is not "":
-            GLB.controller.angle = int(data['angle'])
+            self.controller.angle = int(data['angle'])
         else:
-            GLB.controller.angle = 0
+            self.controller.angle = 0
 
         if speed is not "":
-            GLB.controller.speed = int(data['speed'])
+            self.controller.speed = int(data['speed'])
         else:
-            GLB.controller.speed = 0            
+            self.controller.speed = 0            
 
 
-
+'''
+REMOVING UNTIL THIS GOES INTO A BROADER CAR OBJECT
+It doesn't make sense to call camera from the controller
+'''
+"""
 class MJPEGHandler(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
@@ -100,12 +118,6 @@ class MJPEGHandler(tornado.web.RequestHandler):
             else:
                 yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)
 
-
-
-app = tornado.web.Application([
-    (r"/", IndexHandler),
-    (r"/velocity", VelocityHandler),
-    (r"/mjpeg/([^/]*)", MJPEGHandler)
-])
+"""
 
 

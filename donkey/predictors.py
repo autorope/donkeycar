@@ -5,7 +5,6 @@ are used to control the vehicle autonomously.
 
 '''
 import os
-from globalvars import GLB
 import settings
 import numpy as np
 
