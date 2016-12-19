@@ -32,18 +32,21 @@ Camera - Takes pictures.
 try:
     import picamera
     camera = cameras.PiVideoStream #Raspberry Pi Camera
-    PI_CAMERA_RESOLUTION = (128,128)
+
 except ImportError:
     print("Cound not load PiCamera. Using FakeCamera for testing.")
     FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
     camera = cameras.FakeCamera #For testing
+
+CAMERA_RESOLUTION = (128,128)
 
 
 '''
 Vehicle
 Updates the vehicle's steering angle and throttle.
 '''
-vehicle = vehicles.HelionConquest
+vehicle = vehicles.BaseVehicle
+#vehicle = vehicles.HelionConquest
 #vehicle = vehicles.AdamsVehicle
 
 
@@ -58,8 +61,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-predictor = RandomPredictor
-#predictor = ConvolutionPredictor
+#predictor = RandomPredictor
+predictor = ConvolutionPredictor
 
 
 '''

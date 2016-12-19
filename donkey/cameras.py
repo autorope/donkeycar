@@ -90,7 +90,7 @@ class FakeCamera():
     Class that acts like a PiCamera but reads files from a dir.
     Used for testing on non-Pi devices.
     '''
-    def __init__(self):
+    def __init__(self, **kwargs):
         print('loading FakeCamera')
         print(settings)
         self.file_list = os.listdir(settings.FAKE_CAMERA_IMG_DIR)
