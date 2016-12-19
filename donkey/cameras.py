@@ -70,9 +70,6 @@ class PiVideoStream:
  
     def capture_img(self):
         arr = self.read()
-
-    
-        print(arr.shape)
         img = Image.fromarray(arr)
         return img
 

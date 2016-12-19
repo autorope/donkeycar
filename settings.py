@@ -43,7 +43,7 @@ except ImportError:
 Vehicle
 Updates the vehicle's steering angle and throttle.
 '''
-vehicle = vehicles.BaseVehicle
+vehicle = vehicles.HelionConquest
 #vehicle = vehicles.AdamsVehicle
 
 

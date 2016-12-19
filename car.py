@@ -30,8 +30,8 @@ class Car:
         self.predictor = settings.predictor()
         self.predictor.create(self.model)
 
-
-        self.drive_client = settings.drive_client(self.remote_url, 
+        if remote_url is not None:
+            self.drive_client = settings.drive_client(self.remote_url, 
                                                   self.session,
                                                   self.model)
 
