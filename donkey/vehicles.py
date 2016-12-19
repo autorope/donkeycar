@@ -25,11 +25,11 @@ class BaseVehicle():
         #map absolute angle to angle that vehicle can implement.
         pass
 
-    def update_speed(self, speed):
+    def update_throttle(self, speed):
         pass
 
     def update(self, angle, speed):
-        self.update_speed(speed)
+        self.update_throttle(speed)
         self.update_angle(angle)
         #return actual angle and speed
         return 0, 0
