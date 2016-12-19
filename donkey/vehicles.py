@@ -17,6 +17,10 @@ import time
 class BaseVehicle():
     ''' Placeholder until real logic is implemented '''
 
+    #max angle wheels can turn
+    LEFT_ANGLE = -45 
+    RIGHT_ANGLE = 45
+
     def update_angle(self, angle):
         #map absolute angle to angle that vehicle can implement.
         pass
@@ -35,79 +39,111 @@ class BaseVehicle():
         self.update(0,0)
 
 
+    def map_range(x, X_min, X_max, Y_min, Y_max):
+        X_range = X_max - X_min
+        Y_range = Y_max - Y_min
+        XY_ratio = X_range/Y_range
+        print(XY_ratio)
+        
+        y = x / XY_ratio + Y_min + .5 * Y_range
+        return y
+
+    def test_steering(self):
+        self.update_angle(0)
+        time.sleep(1)
+        self.update_angle(LEFT_ANGLE)
+        time.sleep(1)
+        self.update_angle(0)
+        time.sleep(1)
+        self.update_angle(RIGHT_ANGLE)
+        time.sleep(1)
+        self.update_angle(0)
+
+    def test_throttle(self):
+        self.update_speed(0)
+        time.sleep(1)
+        self.update_speed(-50)
+        time.sleep(1)
+        self.update_speed(-100)
+        time.sleep(1)
+        self.update_speed(0)
+        time.sleep(1)
+        self.update_speed(50)
+        time.sleep(1)
+        self.update(100)
+        time.sleep(1)
+        self.update_speed(0)
 
 
 
+class Adafruit_PCA9685(BaseVehicle):
+    STEERING_CHANNEL = 1
+    THROTTLE_CHANNEL = 0
 
-class Adam():
     def __init__(self):
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
         self.pwm = Adafruit_PCA9685.PCA9685()
 
-        # Configure min and max servo pulse lengths
-        self.servo_min = 250  # Min pulse length out of 4096
-        self.servo_max = 500  # Max pulse length out of 4096
-
         # Set frequency to 60hz, good for servos.
         self.pwm.set_pwm_freq(60)
 
-    # Helper function to make setting a servo pulse width simpler.
-    def set_servo_pulse(self, channel, pulse):
-        pulse_length = 1000000    # 1,000,000 us per second
-        pulse_length //= 60       # 60 Hz
-        print('{0}us per period'.format(pulse_length))
-        pulse_length //= 4096     # 12 bits of resolution
-        print('{0}us per bit'.format(pulse_length))
-        pulse *= 1000
-        pulse //= pulse_length
-        self.pwm.set_pwm(channel, 0, pulse)
+    def update_angle(angle):
+        pulse = map_range(angel, 
+                            LEFT_ANGLE, RIGHT_ANGLE, 
+                            LEFT_PULSE, RIGHT_PULSE)
+
+        self.pwm.set_pwm(STEERING_CHANNEL, 0, pulse)
 
 
-    def calibrate_ESC_channel(self, channel):
+    def update_throttle(throttle):
+        pulse = map_range(throttle,
+                             -100, 100, 
+                             MIN_THROTLE_PULSE, MAX_THROTLE_PULSE)
 
-        #Calibrate ESC
-        self.pwm.set_pwm(ESCChannel, 0, 600)
-        time.sleep(2)
-        self.pwm.set_pwm(ESCChannel, 0, 150)
-        time.sleep(2)
-        self.pwm.set_pwm(ESCChannel, 0, 375)
-
-
-    def calibrate_steering_channel(channel):
-        self.pwm.set_pwm(SteeringChannel, 0, 400)
+        self.pwm.set_pwm(STEERING_CHANNEL, 0, pulse)
 
 
 
+class HelionConquest(Adafruit_PCA9685):
+    ''' Will's Vehicle'''
 
-    def move_forward(seconds):
-        self.pwm.set_pwm(ESCChannel, 0, 390)
-        time.sleep(seconds)
-        self.pwm.set_pwm(ESCChannel, 0, 375)
+    #max angle wheels can turn
+    LEFT_ANGLE = -45 
+    RIGHT_ANGLE = 45
 
+    #pwm pulse length to turn wheels to max angles
+    LEFT_PULSE = 325
+    RIGHT_PULSE = 475
 
-    def move_forward_right(seconds):
-        self.pwm.set_pwm(ESCChannel, 0, 390)
-        self.pwm.set_pwm(SteeringChannel, 0, 500)
-        time.sleep(seconds)
-        self.set_pwm(ESCChannel, 0, 375)
-        self.set_pwm(SteeringChannel, 0, 400)
+    #pwm pulse length to move wheelse 
+    MIN_THROTLE_PULSE = 280 #max reverse
+    MAX_THROTLE_PULSE = 320 #max forward
 
 
 
 
-    
+
+
+
+class Adam(Adafruit_PCA9685):
+
+
+    #max angle wheels can turn
+    LEFT_ANGLE = -45 
+    RIGHT_ANGLE = 45
+
+    #pwm pulse length to turn wheels to max angles
+    LEFT_PULSE = 325
+    RIGHT_PULSE = 475
+
+    #pwm pulse length to move wheelse 
+    MIN_THROTLE_PULSE = 375 #max reverse
+    MAX_THROTLE_PULSE = 390 #max forward
+
 
 if __name__ == '__main__':
-    SteeringChannel = input("set steering channel?  ")
-    ESCChannel = input("set ESC Channel")
-
-    vehicle = Adam()
-    vehicle.calibrate_steering_channel(SteeringChannel)
-    vehicle.calibrate_ESC_channel(ESCChannel)
-
-    time.sleep(1)
-
-    vehicle.move_forward(1)
-    time.sleep(1)
-    vehicle.move_forward_right(2)
+    car = HelionConquest()
+    car.test_steering()
+    time.sleep(2)
+    car.test_throttle()
