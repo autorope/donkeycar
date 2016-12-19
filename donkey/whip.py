@@ -41,8 +41,8 @@ class WhipClient():
                                     'json': json.dumps(data)}) #hack to put json in file
         
         data = json.loads(r.text)
-        angle = data['angle']
-        speed = data['speed']
+        angle = int(float(data['angle']))
+        speed = int(float(data['speed']))
         print('drive client: %s' %r.text)
 
         return angle, speed

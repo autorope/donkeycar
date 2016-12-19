@@ -23,14 +23,14 @@
       <div class="span4">
         <h3>Velocity </h3>
           <label> Angle </label>
-          <input id='angleInput'/>
+          <input id='angleInput'disabled />
 
           <label> Speed </label>
-          <input id='speedInput'/>
+          <input id='speedInput' disabled />
       </div>
       <div>
         <label> Drive Mode </label>
-        <input id='driveMode'/>
+        <input id='driveMode' disabled />
       </div>
     </div>
     
@@ -113,28 +113,28 @@ var velocity = (function() {
 
     var speedUp = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = speed + 5
+        speed = speed + 25
         $(speedEl).val(speed)
         sendVelocity()
         };
 
     var speedDown = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = speed - 5
+        speed = speed - 25
         $(speedEl).val(speed);
         sendVelocity()
     };
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = angle - 5
+      angle = angle - 20
       $(angleEl).val(angle);
       sendVelocity()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = angle + 5
+      angle = angle + 20
       $(angleEl).val(angle);
       sendVelocity()
     };
