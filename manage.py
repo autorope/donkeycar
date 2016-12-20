@@ -38,7 +38,9 @@ for f in folders:
 
 
 def train(recorder, predictor):
+    print('getting arrays')
     x, y = recorder.get_arrays()
+    print('fitting model')
     predictor.fit(x, y)
     predictor.save()
 
