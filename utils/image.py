@@ -2,6 +2,8 @@ from io import BytesIO
 from PIL import Image
 import numpy as np
 
+import envoy
+
 def square(im):
     ''' 
     accepts: PIL image
@@ -58,3 +60,20 @@ def img_to_greyarr(img):
     arr=np.asarray(arr.getdata(),dtype=np.float64).reshape((arr.size[1],arr.size[0]))
     arr = arr/255
     return arr
+
+
+def create_video(img_dir_path, output_video_path):
+
+    # Setup path to the images with telemetry.
+    full_path = os.path.join(img_dir_path, 'frame_*.png')
+
+    # Run ffmpeg.
+    command = ("""ffmpeg
+               -framerate 30/1
+               -pattern_type glob -i '%s'
+               -c:v libx264
+               -r 15
+               -pix_fmt yuv420p
+               -y
+               %s""" % (full_path, output_video_path))
+    response = envoy.run(command)

@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>tornado WebSocket example</title>
-  <link href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
   <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
 </head>
 <body>
@@ -20,29 +20,39 @@
 
     <hr> 
     <div class="row">
-      <div class="span4">
-        <h3>Velocity </h3>
-          <label> Angle </label>
-          <input id='angleInput'disabled />
+      <div class="col-lg-8">
 
-          <label> Speed </label>
-          <input id='speedInput' disabled />
-      </div>
-      <div>
-        <label> Drive Mode </label>
-        <input id='driveMode' disabled />
+        <form class="form-inline">
+
+          <table class="table">
+            <tbody>
+              <tr>
+                <th> </th>
+                <th>Value</th>
+                <th>Key Shortcuts</th>
+              </tr>
+
+              <tr>
+                <th class='text-left'><label class='col-xs-3'> Angle </label></th>
+                <td><input id='angleInput' class='form-control' disabled /></td>
+                <td>j: left   l: right</td>
+              </tr>
+              <tr>
+                <th><label class='col-xs-3'> Speed </label></th>
+                <td><input id='speedInput' class='form-control' disabled /></td>
+                <td>i: faster   k: slower </td>
+              </tr>
+              <tr>
+                <th><label class='col-xs-3'> Drive Mode </label></th>
+                <td><input id='driveMode' class='form-control' disabled /></td>
+                <td>space bar: toggle manual / auto </td>
+              </tr>
+            </tbody>
+          </table>
+
+        </form>
       </div>
     </div>
-    
-    <hr>
-    <h3>Keyboard Shortcuts</h3>
-    <ul>
-      <li>i - speed up </li>
-      <li>k - slow down </li>
-      <li>j - turn right </li>
-      <li>l - turn left  </li>
-      <li>space - toggle drive mode (auto/manaul)  </li>
-    </ul>
   </div>
 
 <script
@@ -113,28 +123,28 @@ var velocity = (function() {
 
     var speedUp = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = speed + 25
+        speed = Math.min(speed + 25, 100);
         $(speedEl).val(speed)
         sendVelocity()
         };
 
     var speedDown = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = speed - 25
+        speed = Math.max(speed - 25, -100);
         $(speedEl).val(speed);
         sendVelocity()
     };
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = angle - 20
+      angle = Math.max(angle - 10, -45)
       $(angleEl).val(angle);
       sendVelocity()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = angle + 20
+      angle = Math.min(angle + 10, 45)
       $(angleEl).val(angle);
       sendVelocity()
     };
