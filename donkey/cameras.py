@@ -38,8 +38,6 @@ class PiVideoStream:
         self.start()
 
 
-
-
     def start(self):
         # start the thread to read frames from the video stream
         t = Thread(target=self.update, args=())
@@ -94,16 +92,35 @@ class FakeCamera():
         print('loading FakeCamera')
         print(settings)
         self.file_list = os.listdir(settings.FAKE_CAMERA_IMG_DIR)
+        self.file_list.sort()
         self.file_cycle = cycle(self.file_list) #create infinite iterator
         self.counter = 0
+
+        # if the thread should be stopped
+        self.frame = None
+        self.start()
+
+    def start(self):
+        # start the thread to read frames from the video stream
+        t = Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
+        time.sleep(1)
+        return self
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        for f in self.file_cycle:
+            # grab the frame from the stream and clear the stream in
+            # preparation for the next frame
+            self.frame = Image.open("img/" + f)
+            self.counter += 1
+            time.sleep(1) 
 
     def capture_img(self):
 
         #print('capturing file: %s' % self.file_list[self.counter])
-
-        img = Image.open("img/" + next(self.file_cycle))
-        self.counter += 1
-        return normalize(img)
+        return normalize(self.frame)
         
     def capture_binary(self):
 
