@@ -45,19 +45,19 @@ class BaseVehicle():
         X_range = X_max - X_min
         Y_range = Y_max - Y_min
         XY_ratio = X_range/Y_range
-        print(XY_ratio)
         
-        y = x / XY_ratio + Y_min + .5 * Y_range
-        return y
+        y = (x / XY_ratio + Y_min + .5 * Y_range) // 1
+
+        return int(y)
 
     def test_steering(self):
         self.update_angle(0)
         time.sleep(1)
-        self.update_angle(LEFT_ANGLE)
+        self.update_angle(self.LEFT_ANGLE)
         time.sleep(1)
         self.update_angle(0)
         time.sleep(1)
-        self.update_angle(RIGHT_ANGLE)
+        self.update_angle(self.RIGHT_ANGLE)
         time.sleep(1)
         self.update_angle(0)
 
@@ -90,22 +90,22 @@ class Adafruit_PCA9685(BaseVehicle):
         # Set frequency to 60hz, good for servos.
         self.pwm.set_pwm_freq(60)
 
-    def update_angle(angle):
+    def update_angle(self, angle):
         print('updating throttle: %s' %angle)
-        pulse = map_range(angel, 
-                            LEFT_ANGLE, RIGHT_ANGLE, 
-                            LEFT_PULSE, RIGHT_PULSE)
+        pulse = self.map_range(angle, 
+                            self.LEFT_ANGLE, self.RIGHT_ANGLE, 
+                            self.LEFT_PULSE, self.RIGHT_PULSE)
 
-        self.pwm.set_pwm(STEERING_CHANNEL, 0, pulse)
+        self.pwm.set_pwm(self.STEERING_CHANNEL, 0, pulse)
 
 
-    def update_throttle(throttle):
+    def update_throttle(self, throttle):
         print('updating throttle: %s' %throttle)
-        pulse = map_range(throttle,
+        pulse = self.map_range(throttle,
                              -100, 100, 
-                             MIN_THROTLE_PULSE, MAX_THROTLE_PULSE)
+                             self.MIN_THROTLE_PULSE, self.MAX_THROTLE_PULSE)
 
-        self.pwm.set_pwm(STEERING_CHANNEL, 0, pulse)
+        self.pwm.set_pwm(self.THROTTLE_CHANNEL, 0, pulse)
 
 
 
