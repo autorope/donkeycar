@@ -38,7 +38,7 @@ except ImportError:
     FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
     camera = cameras.FakeCamera #For testing
 
-CAMERA_RESOLUTION = (128,128)
+CAMERA_RESOLUTION = (320,240)
 
 
 '''
@@ -61,8 +61,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-#predictor = RandomPredictor
-predictor = ConvolutionPredictor
+predictor = RandomPredictor
+#predictor = ConvolutionPredictor
 
 
 '''

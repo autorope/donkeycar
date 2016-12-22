@@ -120,21 +120,10 @@ class FakeCamera():
     def capture_img(self):
 
         #print('capturing file: %s' % self.file_list[self.counter])
-        return normalize(self.frame)
+        return self.frame
         
     def capture_binary(self):
 
         img = self.capture_img()
         return image_utils.img_to_binary(img)
 
-
-
-def normalize(img):
-    '''
-    The way I've chosen to normalize all images.
-
-    Accepts and returns PIL image.
-    '''
-    img = image_utils.square(img)
-    img = image_utils.scale(img, 128)
-    return img
