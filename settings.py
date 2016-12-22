@@ -38,8 +38,8 @@ except ImportError:
     FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
     camera = cameras.FakeCamera #For testing
 
-CAMERA_RESOLUTION = (320,240)
-
+CAMERA_RESOLUTION = (160,120)
+#CAMERA_RESOLUTION = (340,240)
 
 '''
 Vehicle
