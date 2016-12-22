@@ -17,7 +17,7 @@ except ImportError:
     'Print could not import Keras predictors'
 
 
-DRIVE_LOOP_DELAY = 1 #seconds between vehicle updates
+DRIVE_LOOP_DELAY = .1 #seconds between vehicle updates
 
 DATA_DIR = expanduser('~/donkey_data/')
 RECORDS_DIR = os.path.join(DATA_DIR, 'records')

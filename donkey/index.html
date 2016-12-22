@@ -123,28 +123,28 @@ var velocity = (function() {
 
     var speedUp = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = Math.min(speed + 25, 100);
+        speed = Math.min(speed + 25, 300);
         $(speedEl).val(speed)
         sendVelocity()
         };
 
     var speedDown = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = Math.max(speed - 25, -100);
+        speed = Math.max(speed - 25, -300);
         $(speedEl).val(speed);
         sendVelocity()
     };
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.max(angle - 10, -45)
+      angle = Math.max(angle - 20, -90)
       $(angleEl).val(angle);
       sendVelocity()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.min(angle + 10, 45)
+      angle = Math.min(angle + 20, 90)
       $(angleEl).val(angle);
       sendVelocity()
     };
