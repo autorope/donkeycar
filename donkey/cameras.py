@@ -88,10 +88,15 @@ class FakeCamera():
     Class that acts like a PiCamera but reads files from a dir.
     Used for testing on non-Pi devices.
     '''
-    def __init__(self, **kwargs):
+    def __init__(self, img_dir=None, **kwargs):
         print('loading FakeCamera')
-        print(settings)
-        self.file_list = os.listdir(settings.FAKE_CAMERA_IMG_DIR)
+
+        self.img_dir = img_dir
+        if img_dir is None: 
+            self.img_dir = settings.FAKE_CAMERA_IMG_DIR
+        
+        self.file_list = os.listdir(self.img_dir)
+        self.file_list = [f for f in self.file_list if f[-3:] == 'jpg']
         self.file_list.sort()
         self.file_cycle = cycle(self.file_list) #create infinite iterator
         self.counter = 0
@@ -113,28 +118,18 @@ class FakeCamera():
         for f in self.file_cycle:
             # grab the frame from the stream and clear the stream in
             # preparation for the next frame
-            self.frame = Image.open("img/" + f)
+            img_path = os.path.join(self.img_dir, f)
+            self.frame = Image.open(img_path)
             self.counter += 1
             time.sleep(1) 
 
     def capture_img(self):
 
         #print('capturing file: %s' % self.file_list[self.counter])
-        return normalize(self.frame)
+        return self.frame
         
     def capture_binary(self):
 
         img = self.capture_img()
         return image_utils.img_to_binary(img)
 
-
-
-def normalize(img):
-    '''
-    The way I've chosen to normalize all images.
-
-    Accepts and returns PIL image.
-    '''
-    img = image_utils.square(img)
-    img = image_utils.scale(img, 128)
-    return img
