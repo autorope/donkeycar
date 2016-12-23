@@ -49,7 +49,6 @@ class Car:
 
         if model is not None:
             self.predictor = settings.predictor()
-            self.predictor.create(self.model)
             self.predictor.load(self.model)
         else:
             self.predictor = None

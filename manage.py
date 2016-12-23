@@ -63,8 +63,6 @@ if __name__ == '__main__':
         recorder.load(session)
         
         predictor = settings.predictor()
-        predictor.create(model)
-        train(recorder, predictor)
 
         print('getting arrays')
         x, y = recorder.get_arrays()
@@ -76,7 +74,7 @@ if __name__ == '__main__':
     elif args['serve']:
         #set predictor and recorder for drive server to use
         predictor = settings.predictor()
-        predictor.create(model)
+        predictor.load(model)
 
         recorder = settings.recorder()
         recorder.load(session)
