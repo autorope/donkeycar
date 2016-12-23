@@ -20,7 +20,7 @@ class WhipClient():
     
     def __init__(self, remote_url, session, model):
 
-        self.record_url = remote_url + '/drive/' + session + '/' + model
+        self.record_url = remote_url + '/drive/'
 
         
         
