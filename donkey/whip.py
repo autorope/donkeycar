@@ -2,6 +2,8 @@ import time
 import json
 import io
 
+import numpy as np
+
 import requests
 import tornado.ioloop
 import tornado.web
@@ -75,9 +77,11 @@ class WhipServer():
         app = tornado.web.Application([
             (r"/", IndexHandler),
             #Here we pass in self so the webserve can update angle and speed asynch
-            (r"/drive/?(?P<session>[A-Za-z0-9-]+)?/?(?P<model>[A-Za-z0-9-]+)?", 
-                    DriveHandler, 
-                    dict(predictor=self.predictor, recorder=self.recorder))       
+            (
+                #r"/drive/?(?P<session>[A-Za-z0-9-]+)?/?(?P<model>[A-Za-z0-9-]+)?",
+                r"/drive/", 
+                DriveHandler, 
+                dict(predictor=self.predictor, recorder=self.recorder))       
             ])
 
         app.listen(self.port)
@@ -99,7 +103,7 @@ class DriveHandler(tornado.web.RequestHandler):
          self.predictor = predictor
          self.recorder = recorder
 
-    def post(self, session, model):
+    def post(self):
         '''
         Receive post requests as user changes the angle
         and speed of the vehicle on a the controller webpage
@@ -120,8 +124,9 @@ class DriveHandler(tornado.web.RequestHandler):
                             c_speed, 
                             milliseconds)
 
-        arr = image_utils.img_to_greyarr(img)
+        arr = np.array(img)
         p_angle, p_speed = self.predictor.predict(arr)
+        print('predicted: A: %s   S:%s' %(p_angle, p_speed))
 
 
         self.write(json.dumps({'angle': str(p_angle), 'speed': str(p_angle)}))
