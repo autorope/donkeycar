@@ -64,7 +64,9 @@ class Car:
 
 
     def drive_loop(self):
+
         start_time = time.time()
+
         while True:
             now = time.time()
             milliseconds = int( (now - start_time) * 1000)

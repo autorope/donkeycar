@@ -45,8 +45,8 @@ CAMERA_RESOLUTION = (160,120)
 Vehicle
 Updates the vehicle's steering angle and throttle.
 '''
-#vehicle = vehicles.BaseVehicle
-vehicle = vehicles.HelionConquest
+vehicle = vehicles.BaseVehicle
+#vehicle = vehicles.HelionConquest
 #vehicle = vehicles.AdamsVehicle
 
 
@@ -61,8 +61,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-predictor = RandomPredictor
-#predictor = ConvolutionPredictor
+#predictor = RandomPredictor
+predictor = ConvolutionPredictor
 
 
 '''

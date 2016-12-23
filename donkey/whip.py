@@ -117,7 +117,6 @@ class DriveHandler(tornado.web.RequestHandler):
         c_angle = data['angle']
         c_speed = data['speed']
         milliseconds = data['milliseconds']
-        print('angle: %s,  speed: %s ' %(c_angle, c_speed))
 
         self.recorder.record(img, 
                             c_angle,
@@ -129,4 +128,4 @@ class DriveHandler(tornado.web.RequestHandler):
         print('predicted: A: %s   S:%s' %(p_angle, p_speed))
 
 
-        self.write(json.dumps({'angle': str(p_angle), 'speed': str(p_angle)}))
+        self.write(json.dumps({'angle': str(p_angle), 'speed': str(p_speed)}))

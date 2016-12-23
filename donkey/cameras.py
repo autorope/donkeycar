@@ -110,7 +110,7 @@ class FakeCamera():
         t = Thread(target=self.update, args=())
         t.daemon = True
         t.start()
-        time.sleep(1)
+        time.sleep(.2)
         return self
 
     def update(self):
@@ -121,7 +121,7 @@ class FakeCamera():
             img_path = os.path.join(self.img_dir, f)
             self.frame = Image.open(img_path)
             self.counter += 1
-            time.sleep(1) 
+            time.sleep(.2) 
 
     def capture_img(self):
 
