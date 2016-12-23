@@ -61,7 +61,8 @@ class FileRecorder():
         Y = [] #velocity (angle, speed)
         for f in files:
             img = Image.open(os.path.join(self.session_dir, f))
-            img_arr = image_utils.img_to_greyarr(img)
+            #img_arr = image_utils.img_to_greyarr(img)
+            img_arr = np.array(img)
             X.append(img_arr)
             Y.append(np.array(self.parse_file_name(f)))
             

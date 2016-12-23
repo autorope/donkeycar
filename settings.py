@@ -1,4 +1,4 @@
-
+    
 import os
 from os.path import expanduser
 
@@ -11,6 +11,8 @@ from donkey import whip
 from donkey.predictors.base import RandomPredictor
 
 
+from donkey.predictors.keras import CarputerPredictor
+
 try:
     from donkey.predictors.keras import ConvolutionPredictor
 except ImportError:
@@ -20,7 +22,7 @@ except ImportError:
 DRIVE_LOOP_DELAY = 1 #seconds between vehicle updates
 
 DATA_DIR = expanduser('~/donkey_data/')
-RECORDS_DIR = os.path.join(DATA_DIR, 'records')
+RECORDS_DIR = os.path.join(DATA_DIR, 'sessions')
 MODELS_DIR = os.path.join(DATA_DIR, 'models')
 
 
@@ -61,8 +63,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-predictor = RandomPredictor
-#predictor = ConvolutionPredictor
+#predictor = CarputerPredictor
+predictor = ConvolutionPredictor
 
 
 '''
