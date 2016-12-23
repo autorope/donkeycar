@@ -64,7 +64,7 @@ Since the RPi is not as powerful as a laptop, it can take a long time to install
 	```
 5. Scientific Python
 	```
-	sudo apt-get python3-numpy python3-matplotlib python3-scipy python3-pandas 
+	sudo apt-get install python3-numpy python3-matplotlib python3-scipy python3-pandas 
 	```
 
 6. Install Jupyter

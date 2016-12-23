@@ -1,4 +1,8 @@
 import settings
+
+import numpy as np
+
+
 import time
 import threading 
 from utils import image as image_utils
@@ -12,23 +16,30 @@ import tornado
 
 
 class Car:
-    def __init__(self, session=None, model=None, remote_url=None):
+    def __init__(self, 
+                session=None, 
+                model=None, 
+                remote_url=None,
+                fake_camera_img_dir=None):
         
         self.monitor_port = 8887
 
         self.session=session
         self.model=model
         self.remote_url = remote_url
+        
+        if fake_camera_img_dir is None:
+            self.camera = settings.camera(resolution=settings.CAMERA_RESOLUTION)
+        else:
+            self.camera = settings.camera(img_dir=fake_camera_img_dir)
 
-        self.camera = settings.camera(resolution=settings.CAMERA_RESOLUTION)
         self.controller = settings.controller()
         self.vehicle = settings.vehicle()
 
         self.recorder = settings.recorder()
         self.recorder.load(self.session)
         
-        self.predictor = settings.predictor()
-        self.predictor.create(self.model)
+
 
         if remote_url is not None:
             self.drive_client = settings.drive_client(self.remote_url, 
@@ -37,8 +48,11 @@ class Car:
 
 
         if model is not None:
+            self.predictor = settings.predictor()
+            self.predictor.create(self.model)
             self.predictor.load(self.model)
         else:
+            self.predictor = None
             print("No model specified. Autodrive will not work.")
 
 
@@ -72,9 +86,15 @@ class Car:
                                     c_speed, 
                                     milliseconds)
 
-                #send image and data to predictor to get estimates
-                arr = image_utils.img_to_greyarr(img)
-                p_angle, p_speed = self.predictor.predict(arr)
+                if self.predictor is not None:
+                    #send image and data to predictor to get estimates
+                    #arr = image_utils.img_to_greyarr(img)
+                    arr = np.array(img)
+                    p_angle, p_speed = self.predictor.predict(arr)
+                
+                else: 
+                    p_angle, p_speed = 0, 0
+
 
             else:
                 #when using a remote connection combine the record adn predic functions 
