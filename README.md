@@ -1,17 +1,27 @@
-# The Donkey 
-A small DIY self driving vehicle made from an RC Car and Raspbery Pi. 
+# Donkey: a self driving library for small scale DIY vehicles. 
 
->Project goal: Build a vehicle that can navigate safely around any city block without being shown the route.
+Donkey is minimalist and modular self driving library written in Python. It is developed with a focus on being easily accessable and allowing fast experimentation. 
 
-### Build your own.
-Here are [instructions](docs/get_started.md) and part lists to build your own car. 
-
-
-## How to use.
-***All of these examples assume you're connected to your donkey via SSH and you've activated the virtual environment.***
+Use Donkey if you want to:
+* quickly [build your own self driving RC Car]((docs/get_started.md) with a Raspbery Pi.
+* test out your self driving idea 
 
 
-### Train a route
+Guiding Principles
+* **Modularity**: A self driving system is composed of standalone, independently configurable modules that can be connected modules.
+
+* **Minimalism**: Each component should be kept short (<100 lines of code). Each peice of code should be transparent apon first reading. No black magic, it slows the speed of innovation. 
+
+* **Extensiblity**: New components should be simple to create by following a template. 
+
+* **Python**: Keep it simple. 
+
+*** These guidelines are nearly copied from Keras because they are so good *** 
+
+
+
+### How to use.
+After you've 
 
 1. Start driving mode. 
 ```
