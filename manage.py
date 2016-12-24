@@ -63,6 +63,7 @@ if __name__ == '__main__':
         recorder.load(session)
         
         predictor = settings.predictor()
+        predictor.create(model)
 
         print('getting arrays')
         x, y = recorder.get_arrays()
