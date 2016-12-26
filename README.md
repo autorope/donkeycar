@@ -20,58 +20,25 @@ Guiding Principles
 
 
 
-### How to use.
-After you've 
+## Get started.
+Once you have built your car this how you use Donkey.
+
+#### Drive your car from your computer.
 
 1. Start driving mode. 
 ```
-python manage.py drive --session firstdrive
+python manage.py drive --session sidewalk --model cnn-sidewalk 
 ```
 
-2. Go to `<pi_ip_address>:8889` in your browser to control the car.
+2. Go to `<pi_ip_address>:8887` in your browser to control the car.
 
 
-### Create a predictor for the route. 
-
-Train predictors from recorded data
+### Train a self driving pilot for a route. 
 
 ```
-python manage.py train --session firstdrive --model firstmodel
+python manage.py train --session sidewalk --model my-model
 ```
 
-
-### Test out the self driving. 
-
-1. Start the donkey so data is recorded in a different session and load the predictor you trained. 
-
-```
-python manage.py drive --session seconddrive --model firstmodel
-```
-2. Go to `<pi_ip_address>:8889` and click **Start Self Driving** button. Your dokney should now drive it's self based on what you taught it. 
-
-
-##Next Steps
-
-Try changing or creating your own predictor. 
-
-##TODO: 
-
-Web & Python
-- [x] Threadsafe image capture (for webserver + recorder) 
-- [ ] Create togle on LocalWebControler to togle autonomous mode. (Will)
-- [ ] Create `manage.py serve` command to run local server to act as a remote Recorder and Predictor. (Will)
-- [ ] Separate Keras Predictors so they don't need to be run on the Pi.
-- [ ] Write Tests
-
-Vehicle Control 
-- [ ] Update vehicle to drive given manual input. (Adam)
-- [ ] Try loading tensor flow on Raspberry Pi (Will)
-
-Machine Learning
-- [ ] Train Convolution network from numpy arrays (Will)
-
-Refactor Worthy
-- [ ] Get rid of all the global variables (GLB) 
 
 
 
