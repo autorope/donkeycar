@@ -123,14 +123,14 @@ var velocity = (function() {
 
     var speedUp = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = Math.min(speed + 25, 300);
+        speed = Math.min(speed + 25, 350);
         $(speedEl).val(speed)
         sendVelocity()
         };
 
     var speedDown = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = Math.max(speed - 25, -300);
+        speed = Math.max(speed - 25, -200);
         $(speedEl).val(speed);
         sendVelocity()
     };
