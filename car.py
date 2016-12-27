@@ -36,8 +36,7 @@ class Car:
         self.controller = settings.controller()
         self.vehicle = settings.vehicle()
 
-        self.recorder = settings.recorder()
-        self.recorder.load(self.session)
+        self.recorder = settings.recorder(self.session)
         
 
 
@@ -107,10 +106,9 @@ class Car:
 
 
 
-            if self.controller.drive_mode == 'manual':
-                #update vehicle with given velocity vars (not working)
+            if drive_mode == 'manual':
                 self.vehicle.update(c_angle, c_speed)
-            else:
+            elif drive_mode == 'auto':
                 self.vehicle.update(p_angle, p_speed)
 
 
@@ -122,6 +120,7 @@ class Car:
                                     p_speed,
                                     self.controller.drive_mode))
 
+            
             time.sleep(settings.DRIVE_LOOP_DELAY)
 
 

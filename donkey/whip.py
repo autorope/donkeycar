@@ -22,7 +22,7 @@ class WhipClient():
     
     def __init__(self, remote_url, session, model):
 
-        self.record_url = remote_url + '/drive/'
+        self.record_url = remote_url + '/drive/willcar/'
 
         
         
@@ -65,7 +65,10 @@ class WhipServer():
         self.recorder = recorder
         self.predictor = predictor
 
-        self.vehicles = {'willcar':{}}
+        vehicle_data = {'c_angle': 0, 'c_speed': 0, 'milliseconds': 0, 
+                        'drive_mode':'manual'}
+        self.vehicles = {'willcar':vehicle_data}
+
         pass
         
         
@@ -84,11 +87,11 @@ class WhipServer():
             ),
 
             #Here we pass in self so the webserve can update angle and speed asynch
-            (r"/camera/?(?P<vehicle_id>[A-Za-z0-9-]+)?/?(?P<file>[A-Za-z0-9-]+)?",
+            (r"/mjpeg/?(?P<vehicle_id>[A-Za-z0-9-]+)?/?(?P<file>[^/]*)?",
                 CameraMJPEGHandler,
                 dict(vehicles = self.vehicles)
             ),
-            (r"/drive/", 
+            (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
                 DriveHandler, 
                 dict(predictor=self.predictor, recorder=self.recorder, vehicles=self.vehicles)
             )       
@@ -163,7 +166,7 @@ class DriveHandler(tornado.web.RequestHandler):
         print('predicted: A: %s   S:%s' %(p_angle, p_speed))
 
 
-        V = self.vehicles['vehicle_id']
+        V = self.vehicles[vehicle_id]
         V['img'] = img
         V['p_angle'] = p_angle
         V['p_speed'] = p_speed
@@ -171,7 +174,7 @@ class DriveHandler(tornado.web.RequestHandler):
         self.recorder.record(img, 
                             V['c_angle'],
                             V['c_speed'], 
-                            milliseconds)
+                            V['milliseconds'])
 
 
         if V['drive_mode'] == 'manual':
@@ -204,7 +207,9 @@ class CameraMJPEGHandler(tornado.web.RequestHandler):
             interval = .2
             if self.served_image_timestamp + interval < time.time():
 
-                img = self.vehicles['vehicle_id']['img']
+
+                img = self.vehicles[vehicle_id]['img']
+                img = image_utils.img_to_binary(img)
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")

@@ -32,7 +32,7 @@ class BasePredictor():
         self.model = open(self.model_path)
 
 
-    def predict(self):
+    def predict(self, arr):
         angle = 0
         speed = 0
 
