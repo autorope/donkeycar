@@ -89,8 +89,8 @@ class ConvolutionPredictor(BaseKerasPredictor):
         x = np.array([x])
         angle, throttle = self.model.predict(x)[0]
 
-        return angle, throttle
-
+        #return angle, throttle
+        return angle, 375
 
 
 class CarputerPredictor(BaseKerasPredictor):

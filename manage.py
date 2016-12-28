@@ -59,8 +59,7 @@ if __name__ == '__main__':
 
     elif args['train']:
         #Read in pictures and velocities and create a predictor
-        recorder = settings.recorder()
-        recorder.load(session)
+        recorder = settings.recorder(session)
         
         predictor = settings.predictor()
         predictor.create(model)
