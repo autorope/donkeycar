@@ -3,3 +3,4 @@ docopt==0.6.2
 tornado
 envoy
 pillow
+numpy
