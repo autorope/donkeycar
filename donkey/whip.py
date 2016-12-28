@@ -21,9 +21,9 @@ class WhipClient():
     '''
        
     
-    def __init__(self, remote_url, session, model):
+    def __init__(self, remote_url, vehicle_id='mycar'):
 
-        self.record_url = remote_url + '/willcar/drive/'
+        self.record_url = remote_url + '/' + vehicle_id + '/drive/'
 
         
         

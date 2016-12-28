@@ -137,14 +137,14 @@ var velocity = (function() {
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.max(angle - 20, -90)
+      angle = Math.max(angle - 10, -90)
       $(angleEl).val(angle);
       sendVelocity()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.min(angle + 20, 90)
+      angle = Math.min(angle + 10, 90)
       $(angleEl).val(angle);
       sendVelocity()
     };

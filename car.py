@@ -17,16 +17,12 @@ import tornado
 
 class Car:
     def __init__(self, 
-                session=None, 
-                model=None, 
+                vehicle_id='mycar',
                 remote_url=None,
                 fake_camera_img_dir=None):
-        
-        self.monitor_port = 8887
 
-        self.session=session
-        self.model=model
         self.remote_url = remote_url
+        self.vehicle_id = vehicle_id
         
         if fake_camera_img_dir is None:
             self.camera = settings.camera(resolution=settings.CAMERA_RESOLUTION)
@@ -35,15 +31,11 @@ class Car:
 
         self.controller = settings.controller()
         self.vehicle = settings.vehicle()
-
-        self.recorder = settings.recorder(self.session)
         
 
-
-        if remote_url is not None:
-            self.drive_client = settings.drive_client(self.remote_url, 
-                                                  self.session,
-                                                  self.model)
+        self.drive_client = settings.drive_client(self.remote_url, 
+                                              self.session,
+                                              self.model)
 
 
         if model is not None:
@@ -65,6 +57,8 @@ class Car:
     def drive_loop(self):
 
         start_time = time.time()
+        angle = 0
+        speed = 0
 
         while True:
             now = time.time()
@@ -73,43 +67,13 @@ class Car:
             #get PIL image from camera
             img = self.camera.capture_img()
 
-            #read values from controller
-            c_angle = self.controller.angle
-            c_speed = self.controller.speed
-            drive_mode = self.controller.drive_mode
-
-
-            if self.remote_url is None:
-                #when no remote, use two functions to record and predict
-                self.recorder.record(img, 
-                                    c_angle,
-                                    c_speed, 
-                                    milliseconds)
-
-                if self.predictor is not None:
-                    #send image and data to predictor to get estimates
-                    #arr = image_utils.img_to_greyarr(img)
-                    arr = np.array(img)
-                    p_angle, p_speed = self.predictor.predict(arr)
-                
-                else: 
-                    p_angle, p_speed = 0, 0
-
-
-            else:
-                #when using a remote connection combine the record adn predic functions 
-                #into one call. 
-                p_angle, p_speed = self.drive_client.post( img,
-                                                            c_angle, 
-                                                            c_speed,
-                                                            milliseconds)
+            angle, speed = self.drive_client.post( img,
+                                                    angle, 
+                                                    speed,
+                                                    milliseconds)
 
 
 
-            if drive_mode == 'manual':
-                self.vehicle.update(c_angle, c_speed)
-            elif drive_mode == 'auto':
-                self.vehicle.update(p_angle, p_speed)
 
 
 
@@ -122,17 +86,3 @@ class Car:
 
             
             time.sleep(settings.DRIVE_LOOP_DELAY)
-
-
-
-    def start_web_monitor(self):
-
-        app = tornado.web.Application([
-            (r"/", IndexHandler),
-            #Here we pass in self so the webserve can update angle and speed asynch
-            (r"/velocity", ControllerHandler, dict(controller = self.controller)),
-            (r"/mjpeg/([^/]*)", CameraMJPEGHandler, dict(camera = self.camera))
-        ])
-
-        app.listen(self.monitor_port)
-        tornado.ioloop.IOLoop.instance().start()

@@ -90,7 +90,7 @@ class ConvolutionPredictor(BaseKerasPredictor):
         angle, throttle = self.model.predict(x)[0]
 
         #return angle, throttle
-        return angle, 375
+        return angle, 275
 
 
 class CarputerPredictor(BaseKerasPredictor):
