@@ -85,7 +85,7 @@ class ConvolutionPredictor(BaseKerasPredictor):
 
     def predict(self, x):
 
-        x=x.transpose(2, 0, 1)
+        x=x.transpose(2, 0, 1) #convert to keras array format
         x = np.array([x])
         angle, throttle = self.model.predict(x)[0]
 

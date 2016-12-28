@@ -36,8 +36,7 @@ class Car:
         self.controller = settings.controller()
         self.vehicle = settings.vehicle()
 
-        self.recorder = settings.recorder()
-        self.recorder.load(self.session)
+        self.recorder = settings.recorder(self.session)
         
 
 
@@ -49,7 +48,6 @@ class Car:
 
         if model is not None:
             self.predictor = settings.predictor()
-            self.predictor.create(self.model)
             self.predictor.load(self.model)
         else:
             self.predictor = None
@@ -65,7 +63,9 @@ class Car:
 
 
     def drive_loop(self):
+
         start_time = time.time()
+
         while True:
             now = time.time()
             milliseconds = int( (now - start_time) * 1000)
@@ -99,28 +99,18 @@ class Car:
             else:
                 #when using a remote connection combine the record adn predic functions 
                 #into one call. 
-                p_angle, p_speed = self.drive_client.post( img,
+                angle, speed = self.drive_client.post( img,
                                                             c_angle, 
                                                             c_speed,
                                                             milliseconds)
 
 
 
-            if self.controller.drive_mode == 'manual':
-                #update vehicle with given velocity vars (not working)
-                self.vehicle.update(c_angle, c_speed)
-            else:
-                self.vehicle.update(p_angle, p_speed)
-
+            self.vehicle.update(angle, speed)
 
 
             #print current car state
-            print('A/P: >(%s, %s)  speed(%s/%s)  drive_mode: %s' %(self.controller.angle, 
-                                    p_angle, 
-                                    self.controller.speed,
-                                    p_speed,
-                                    self.controller.drive_mode))
-
+            print('>: %s   S: %s' %(angle, speed) )           
             time.sleep(settings.DRIVE_LOOP_DELAY)
 
 
