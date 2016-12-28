@@ -187,8 +187,8 @@ class DriveHandler(tornado.web.RequestHandler):
 
         self.write(json.dumps({'angle': str(angle), 'speed': str(speed)}))
 
-    get = post
-
+    def get(self):
+        print('DriveHandler get function')
 
 
 class CameraMJPEGHandler(tornado.web.RequestHandler):
