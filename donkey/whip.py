@@ -23,7 +23,7 @@ class WhipClient():
     
     def __init__(self, remote_url, session, model):
 
-        self.record_url = remote_url + '/drive/willcar/'
+        self.record_url = remote_url + '/willcar/drive/'
 
         
         
@@ -80,19 +80,18 @@ class WhipServer():
 
         #load features
         app = tornado.web.Application([
-            (r"/", IndexHandler),
+            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", VehicleHandler),
 
-            (r"/velocity/?(?P<vehicle_id>[A-Za-z0-9-]+)?",
+            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/control/",
                 ControllerHandler,
                 dict(vehicles = self.vehicles)
             ),
-
             #Here we pass in self so the webserve can update angle and speed asynch
-            (r"/mjpeg/?(?P<vehicle_id>[A-Za-z0-9-]+)?/?(?P<file>[^/]*)?",
+            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/mjpeg/?(?P<file>[^/]*)?",
                 CameraMJPEGHandler,
                 dict(vehicles = self.vehicles)
             ),
-            (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
+            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/drive/", 
                 DriveHandler, 
                 dict(predictor=self.predictor, recorder=self.recorder, vehicles=self.vehicles)
             )       
@@ -105,9 +104,9 @@ class WhipServer():
 
 
 
-class IndexHandler(tornado.web.RequestHandler):
-    def get(self):
-        self.render("index.html")
+class VehicleHandler(tornado.web.RequestHandler):
+    def get(self, vehicle_id):
+        self.render("monitor.html")
 
 
 class ControllerHandler(tornado.web.RequestHandler):
@@ -155,9 +154,6 @@ class DriveHandler(tornado.web.RequestHandler):
         Receive post requests from vehicle with camera image. 
         Return the angle and speed the car should be goin. 
         '''    
-
-        print('DriveHandler post is was read.')
-
         img = self.request.files['img'][0]['body']
         img = Image.open(io.BytesIO(img))
 
@@ -166,7 +162,6 @@ class DriveHandler(tornado.web.RequestHandler):
 
         arr = np.array(img)
         p_angle, p_speed = self.predictor.predict(arr)
-        print('predicted: A: %s   S:%s' %(p_angle, p_speed))
 
 
         V = self.vehicles[vehicle_id]
@@ -180,10 +175,13 @@ class DriveHandler(tornado.web.RequestHandler):
                             V['milliseconds'])
 
 
+
         if V['drive_mode'] == 'manual':
             angle, speed  = V['c_angle'], V['c_speed']
         else:
             angle, speed  = V['p_angle'], V['p_speed']
+
+        print('%s: A: %s   S:%s' %(V['drive_mode'], angle, speed))
 
         self.write(json.dumps({'angle': str(angle), 'speed': str(speed)}))
 
