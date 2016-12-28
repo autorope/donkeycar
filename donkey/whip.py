@@ -156,6 +156,8 @@ class DriveHandler(tornado.web.RequestHandler):
         Return the angle and speed the car should be goin. 
         '''    
 
+        print('DriveHandler post is was read.')
+
         img = self.request.files['img'][0]['body']
         img = Image.open(io.BytesIO(img))
 
