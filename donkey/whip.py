@@ -1,6 +1,7 @@
 import time
 import json
 import io
+import os
 
 import numpy as np
 
@@ -61,7 +62,7 @@ class WhipServer():
     
     def __init__(self, recorder, predictor):
 
-        self.port = 8886
+        self.port = int(os.environ.get("PORT", 8886))
         self.recorder = recorder
         self.predictor = predictor
 
