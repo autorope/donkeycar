@@ -35,7 +35,7 @@ try:
 
 except ImportError:
     print("Cound not load PiCamera. Using FakeCamera for testing.")
-    FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/img/'
+    FAKE_CAMERA_IMG_DIR = os.path.dirname(os.path.realpath(__file__))+'/datasets/imgs/'
     camera = cameras.FakeCamera #For testing
 
 CAMERA_RESOLUTION = (160,120)
@@ -61,8 +61,8 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-#predictor = RandomPredictor
-predictor = ConvolutionPredictor
+predictor = RandomPredictor
+#predictor = ConvolutionPredictor
 
 
 '''
