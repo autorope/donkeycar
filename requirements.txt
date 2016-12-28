@@ -4,3 +4,4 @@ tornado
 envoy
 pillow
 numpy
+requests
