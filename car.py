@@ -99,28 +99,18 @@ class Car:
             else:
                 #when using a remote connection combine the record adn predic functions 
                 #into one call. 
-                p_angle, p_speed = self.drive_client.post( img,
+                angle, speed = self.drive_client.post( img,
                                                             c_angle, 
                                                             c_speed,
                                                             milliseconds)
 
 
 
-            if drive_mode == 'manual':
-                self.vehicle.update(c_angle, c_speed)
-            elif drive_mode == 'auto':
-                self.vehicle.update(p_angle, p_speed)
-
+            self.vehicle.update(angle, speed)
 
 
             #print current car state
-            print('A/P: >(%s, %s)  speed(%s/%s)  drive_mode: %s' %(self.controller.angle, 
-                                    p_angle, 
-                                    self.controller.speed,
-                                    p_speed,
-                                    self.controller.drive_mode))
-
-            
+            print('>: %s   S: %s' %(angle, speed) )           
             time.sleep(settings.DRIVE_LOOP_DELAY)
 
 
