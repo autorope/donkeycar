@@ -45,8 +45,8 @@ CAMERA_RESOLUTION = (160,120)
 Vehicle
 Updates the vehicle's steering angle and throttle.
 '''
-vehicle = vehicles.BaseVehicle
-#vehicle = vehicles.HelionConquest
+#vehicle = vehicles.BaseVehicle
+vehicle = vehicles.HelionConquest
 #vehicle = vehicles.AdamsVehicle
 
 
@@ -63,15 +63,6 @@ Accepts image arrays and returns steering angle and throttle.
 '''
 predictor = RandomPredictor
 #predictor = ConvolutionPredictor
-
-
-'''
-Controller
-Get the users input to control vehicle. 
-'''
-controller = controllers.BaseController
-#controller = controllers.XboxController
-
 
 
 '''

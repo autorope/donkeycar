@@ -68,7 +68,7 @@ class WhipServer():
 
         vehicle_data = {'c_angle': 0, 'c_speed': 0, 'milliseconds': 0, 
                         'drive_mode':'manual'}
-        self.vehicles = {'willcar':vehicle_data}
+        self.vehicles = {'mycar':vehicle_data}
 
         pass
         

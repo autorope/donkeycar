@@ -1,4 +1,4 @@
-import settings
+#import settings
 
 from donkey import whip
 from donkey.predictors import keras
