@@ -12,7 +12,7 @@ from donkey.predictors.base import RandomPredictor
 
 
 try:
-    from donkey.predictors.keras import ConvolutionPredictor
+    from donkey.predictors.keras import ConvolutionPredictor, CNNAnglePredictor
 except ImportError:
     'Print could not import Keras predictors'
 
@@ -45,8 +45,8 @@ CAMERA_RESOLUTION = (160,120)
 Vehicle
 Updates the vehicle's steering angle and throttle.
 '''
-#vehicle = vehicles.BaseVehicle
-vehicle = vehicles.HelionConquest
+vehicle = vehicles.BaseVehicle
+#vehicle = vehicles.HelionConquest
 #vehicle = vehicles.AdamsVehicle
 
 
@@ -61,9 +61,9 @@ recorder = recorders.FileRecorder
 Predictor
 Accepts image arrays and returns steering angle and throttle.
 '''
-predictor = RandomPredictor
+#predictor = RandomPredictor
 #predictor = ConvolutionPredictor
-
+predictor = CNNAnglePredictor
 
 '''
 Controller
