@@ -23,7 +23,7 @@ class WhipClient():
     
     def __init__(self, remote_url, session, model):
 
-        self.record_url = remote_url + '/willcar/drive/'
+        self.record_url = remote_url + '/mycar/drive/'
 
         
         
@@ -68,7 +68,7 @@ class WhipServer():
 
         vehicle_data = {'c_angle': 0, 'c_speed': 0, 'milliseconds': 0, 
                         'drive_mode':'manual'}
-        self.vehicles = {'willcar':vehicle_data}
+        self.vehicles = {'mycar':vehicle_data}
 
         pass
         

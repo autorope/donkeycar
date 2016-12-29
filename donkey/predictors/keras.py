@@ -93,6 +93,70 @@ class ConvolutionPredictor(BaseKerasPredictor):
         return angle, 375
 
 
+
+class CNNAnglePredictor(BaseKerasPredictor):
+    def __init__(self):
+        pass
+
+    def create(self, model_name):
+        self.model_path = os.path.join(settings.MODELS_DIR, model_name)
+        
+        model = Sequential()
+        model.add(Convolution2D(8, 3, 3, input_shape=(3, 120, 160)))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+
+        model.add(Convolution2D(12, 3, 3))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+
+        model.add(Convolution2D(16, 3, 3))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+
+        model.add(Convolution2D(32, 3, 3))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+
+        model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
+        model.add(Dense(256))
+        model.add(Activation('relu'))
+
+        model.add(Dropout(.2))
+        model.add(Dense(1))
+
+        model.compile(loss='mse', optimizer='adam')
+
+        self.model = model
+
+
+    def fit(self, X, Y):
+
+        #convert array to keras format (channels, width, height)
+        X_keras = []
+        for arr in X:
+            karr=arr.transpose(2, 0, 1)
+            X_keras.append(karr)
+        X = np.array(X_keras)
+
+
+        self.model.fit(X, Y,
+                        nb_epoch=50,
+                        batch_size=1000,
+                        shuffle=True,
+                        validation_data=(X[:10], Y[:10]))
+
+
+    def predict(self, x):
+
+        x=x.transpose(2, 0, 1) #convert to keras array format
+        x = np.array([x])
+        angle = self.model.predict(x)[0][0]
+
+        #return angle, throttle
+        return angle, 375
+
+
 class CarputerPredictor(BaseKerasPredictor):
     """ 
     This is an attept to replicate the NN used by the Carputer.
