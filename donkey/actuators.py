@@ -38,7 +38,7 @@ class BaseThrottleActuator():
 
 class Adafruit_PCA9685_Actuator():
 
-    def __init__(self, channel, frequency):
+    def __init__(self, channel, frequency=60):
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
         self.pwm = Adafruit_PCA9685.PCA9685()
