@@ -21,7 +21,6 @@ class FileRecorder():
         self.session_dir = make_session_dir(sessions_dir,
                                             session_name=session)
 
-        #TODO: this frame count should start at the last frame number
         self.frame_count = 0
 
     def record(self, img, angle, speed, milliseconds):

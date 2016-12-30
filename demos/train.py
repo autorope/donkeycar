@@ -1,33 +1,21 @@
-
- """Records training data and / or drives the car with tensorflow.
-Usage:
-    train.py [--session=<name>] [--model=<name>]
-
-Options:
-  --model=<name>     model name for predictor to use 
-  --session=<name>   recording session name
+"""
+Example of how to train a pilot from the images
+of saved in a prior drive session. 
 """
 
-import settings
+from donkey.pilots import keras
+from donkey.recorders import FileRecorder
 
-from docopt import docopt
+#Read in pictures and velocities and create a predictor
+recorder = FileRecorder(session='port',
+                        sessions_dir='~/donkey_data/sessions/')
 
-# Get args.
-args = docopt(__doc__)
-session = args['--session'] or None
-model = args['--model'] or None
+pilot = keras.CNN()
 
-if __name__ == '__main__':
+print('getting arrays')
+x, y = recorder.get_arrays()
 
+print('fitting model')
+pilot.train(x, y)
 
-    #Read in pictures and velocities and create a predictor
-    recorder = settings.recorder(session)
-    
-    predictor = settings.predictor()
-    predictor.create(model)
-
-    print('getting arrays')
-    x, y = recorder.get_arrays()
-    print('fitting model')
-    predictor.fit(x, y)
-    predictor.save()
+pilot.save('mycnn')

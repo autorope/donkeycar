@@ -2,6 +2,7 @@ import time
 import json
 import io
 import os
+import copy
 
 import numpy as np
 
@@ -19,16 +20,10 @@ class RemoteClient():
     '''
     Class used by vehicle to send driving data and recieve predictions.
     '''
-       
     
     def __init__(self, remote_url, vehicle_id='mycar'):
 
-<<<<<<< HEAD:donkey/remotes.py
         self.record_url = remote_url + '/' + vehicle_id + '/drive/'
-=======
-        self.record_url = remote_url + '/mycar/drive/'
->>>>>>> master:donkey/whip.py
-
         
         
     def decide(self, img, angle, throttle, milliseconds):
@@ -78,8 +73,6 @@ class RemoteServer():
 
         self.vehicles = {'mycar':vehicle_data}
 
-        pass
-        
         
     def start(self):
         '''
@@ -88,6 +81,11 @@ class RemoteServer():
 
         #load features
         app = tornado.web.Application([
+
+            #temporary redirect until vehicles is not a singleton
+            (r"/", tornado.web.RedirectHandler,
+                dict(url="/mycar/")),
+
             (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", VehicleHandler),
 
             (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/control/",
@@ -117,8 +115,8 @@ class VehicleHandler(tornado.web.RequestHandler):
 
 
 class ControllerHandler(tornado.web.RequestHandler):
+
     def initialize(self, vehicles):
-        #the parrent controller
          self.vehicles = vehicles
 
     def post(self, vehicle_id):
@@ -181,25 +179,19 @@ class DriveHandler(tornado.web.RequestHandler):
                             V['user_throttle'], 
                             V['milliseconds'])
 
-
-
         if V['drive_mode'] == 'user':
             angle, throttle  = V['user_angle'], V['user_throttle']
         else:
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
         print('%s: A: %s   T:%s' %(V['drive_mode'], angle, throttle))
-
         self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle)}))
 
-    def get(self):
-        print('DriveHandler get function')
 
 
 class CameraMJPEGHandler(tornado.web.RequestHandler):
     def initialize(self, vehicles):
          self.vehicles = vehicles
-
 
     @tornado.web.asynchronous
     @tornado.gen.coroutine

@@ -16,9 +16,9 @@ from keras.models import Sequential, load_model
 from keras.layers import Convolution2D, MaxPooling2D, Convolution1D, MaxPooling1D
 from keras.layers import Activation, Dropout, Flatten, Dense
 
-from .base import BasePredictor
+from .base import BasePilot
 
-class BaseKerasPredictor(BasePredictor): 
+class BaseKerasPilot(BasePilot): 
     def save(self, path):
         self.model.save(path)
 
@@ -27,13 +27,9 @@ class BaseKerasPredictor(BasePredictor):
 
 
 
-class ConvolutionPredictor(BaseKerasPredictor):
+class CNN(BaseKerasPilot):
     def __init__(self):
-        pass
 
-    def create(self, model_name):
-        self.model_path = os.path.join(settings.MODELS_DIR, model_name)
-        
         model = Sequential()
         model.add(Convolution2D(8, 3, 3, input_shape=(3, 120, 160)))
         model.add(Activation('relu'))
@@ -63,7 +59,7 @@ class ConvolutionPredictor(BaseKerasPredictor):
         self.model = model
 
 
-    def fit(self, X, Y):
+    def train(self, X, Y):
 
         #convert array to keras format (channels, width, height)
         X_keras = []
@@ -91,7 +87,7 @@ class ConvolutionPredictor(BaseKerasPredictor):
 
 
 
-class CNNAnglePredictor(BaseKerasPredictor):
+class CNNAnglePredictor(BaseKerasPilot):
     def __init__(self):
         pass
 
@@ -127,7 +123,7 @@ class CNNAnglePredictor(BaseKerasPredictor):
         self.model = model
 
 
-    def fit(self, X, Y):
+    def train(self, X, Y):
 
         #convert array to keras format (channels, width, height)
         X_keras = []
@@ -154,7 +150,7 @@ class CNNAnglePredictor(BaseKerasPredictor):
         return angle, 275
 
 
-class CarputerPredictor(BaseKerasPredictor):
+class CarputerPredictor(BaseKerasPilot):
     """ 
     This is an attept to replicate the NN used by the Carputer.
     https://github.com/otaviogood/carputer
@@ -208,7 +204,7 @@ class CarputerPredictor(BaseKerasPredictor):
 
 
 
-    def fit(self, X, Y):
+    def train(self, X, Y):
 
         #converte telelemetry data into categorical bins
         print(Y)

@@ -1,18 +1,11 @@
-import numpy as np
 import time
-import threading 
-from .utils import image_utils
-from .actuators import BaseSteeringActuator, BaseThrottleActuator
-
-
-import tornado
-
 
 class BaseVehicle:
     def __init__(self):
 
-        self.drive_loop_delay = .2
+        self.drive_loop_delay = .2 #how long to wait between loops
 
+        #these need tobe updated when vehicle is defined
         self.camera = None
         self.steering_actuator = None
         self.throttle_actuator = None
@@ -25,7 +18,7 @@ class BaseVehicle:
         angle = 0
         throttle = 0
 
-        #drive loop
+        #basic drive loop
         while True:
             now = time.time()
             milliseconds = int( (now - start_time) * 1000)

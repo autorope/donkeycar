@@ -1,11 +1,12 @@
-"""Records training data and / or drives the car with tensorflow.
+"""
+Script to run on Raspberry Pi to start your car. 
+
 Usage:
     drive.py [--remote=<name>] 
 
 
 Options:
   --remote=<name>   recording session name
-  --fake_camera=<path>    path to pictures to use as the camera
 """
 
 import os
