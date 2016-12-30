@@ -9,10 +9,11 @@ Options:
 """
 
 import os
+from docopt import docopt
 
 from donkey.sensors import PiVideoStream
-from donkey.actuators import (BaseSteeringActuator,
-                              BaseThrottleActuator)
+from donkey.actuators import (PWMSteeringActuator,
+                              PWMThrottleActuator)
 
 from donkey.vehicles import BaseVehicle
 from donkey.remotes import RemoteClient

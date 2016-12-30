@@ -85,6 +85,11 @@ class PiVideoStream(BaseCamera):
                 self.camera.close()
                 return
 
+    def capture_img(self):
+        arr = self.read()
+        img = Image.fromarray(arr)
+        return img
+
 
     def stop(self):
         # indicate that the thread should be stopped
