@@ -38,7 +38,7 @@
               </tr>
               <tr>
                 <th><label class='col-xs-3'> Speed </label></th>
-                <td><input id='speedInput' class='form-control' disabled /></td>
+                <td><input id='throttleInput' class='form-control' disabled /></td>
                 <td>i: faster   k: slower </td>
               </tr>
               <tr>
@@ -68,13 +68,13 @@ $( document ).ready(function() {
 
 $(document).keydown(function(e) {
     if(e.which == 73) {
-      // 'i'  speed up
-        velocity.speedUp()
+      // 'i'  throttle up
+        velocity.throttleUp()
     } 
 
     if(e.which == 75) {
       // 'k'  slow down
-        velocity.speedDown()
+        velocity.throttleDown()
     }
 
     if(e.which == 74) {
@@ -98,10 +98,10 @@ var velocity = (function() {
     //functions to change velocity of vehicle
 
     var angle = 0
-    var speed = 0
-    var driveMode = 'manual'
+    var throttle = 0
+    var driveMode = 'user'
     var angleEl = "#angleInput"
-    var speedEl = "#speedInput"
+    var throttleEl = "#throttleInput"
     var sendURL = "control/"
 
     var bind = function(data){
@@ -109,41 +109,41 @@ var velocity = (function() {
         $(angleEl).change(function(e) {
             sendVelocity()
         });
-        $(speedEl).change(function(e) {
+        $(throttleEl).change(function(e) {
             sendVelocity()
         });
     };
 
     var sendVelocity = function() {
-        //Send angle and speed values
-        data = JSON.stringify({ 'angle': angle, 'speed':speed, 'drive_mode':driveMode})
+        //Send angle and throttle values
+        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 'drive_mode':driveMode})
         $.post(sendURL, data)
     };
 
-    var speedUp = function(){
+    var throttleUp = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = Math.min(speed + 25, 400);
-        $(speedEl).val(speed)
+        throttle = Math.min(throttle + 25, 400);
+        $(throttleEl).val(throttle)
         sendVelocity()
         };
 
-    var speedDown = function(){
+    var throttleDown = function(){
         //Bind a function to capture the coordinates of the click.
-        speed = Math.max(speed - 25, -200);
-        $(speedEl).val(speed);
+        throttle = Math.max(throttle - 25, -200);
+        $(throttleEl).val(throttle);
         sendVelocity()
     };
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.max(angle - 20, -90)
+      angle = Math.max(angle - 10, -90)
       $(angleEl).val(angle);
       sendVelocity()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.min(angle + 20, 90)
+      angle = Math.min(angle + 10, 90)
       $(angleEl).val(angle);
       sendVelocity()
     };
@@ -161,8 +161,8 @@ var velocity = (function() {
 
     return {
                 bind: bind,
-                speedUp: speedUp,
-                speedDown: speedDown,
+                throttleUp: throttleUp,
+                throttleDown: throttleDown,
                 angleLeft: angleLeft,
                 angleRight: angleRight,
                 sendVelocity: sendVelocity,

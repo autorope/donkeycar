@@ -1,12 +1,10 @@
-import settings
-
 import os
 import io
 import time
 
 from PIL import Image
 import numpy as np
-import utils.image as image_utils
+from .utils import image_utils
 
 '''
 Recorders provide a consistent way to save and retrieve driving data. 
@@ -16,11 +14,11 @@ class FileRecorder():
     ''' 
     A class to store images and vehicle data to the local filesystem.
     '''
-    def __init__(self, session=None):
+    def __init__(self, session=None, sessions_dir=None):
         print('Loading FileRecorder')
         
         print('Starting Session: %s' %session)
-        self.session_dir = make_session_dir(settings.RECORDS_DIR,
+        self.session_dir = make_session_dir(sessions_dir,
                                             session_name=session)
 
         #TODO: this frame count should start at the last frame number
