@@ -23,7 +23,11 @@ class RemoteClient():
     
     def __init__(self, remote_url, vehicle_id='mycar'):
 
+<<<<<<< HEAD:donkey/remotes.py
         self.record_url = remote_url + '/' + vehicle_id + '/drive/'
+=======
+        self.record_url = remote_url + '/mycar/drive/'
+>>>>>>> master:donkey/whip.py
 
         
         
@@ -70,6 +74,7 @@ class RemoteServer():
                         'user_throttle': 0,  
                         'drive_mode':'user', 
                         'milliseconds': 0,}
+
 
         self.vehicles = {'mycar':vehicle_data}
 
