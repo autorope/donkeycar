@@ -95,24 +95,12 @@ clone repo & create virtual env
 mkdir code
 cd code
 git clone http://github.com/wroscoe/donkey.git
-cd donkey
+
+mkdir car
+cd car
 virtualenv --system-site-packages -p python3 env 
 source env/bin/activate
-pip install -r requirements.txt
+pip install -e ../donkey
 ```
 
 
-#### Connect to your donkey remotely.
-
-Find the ip address of your Pi.
-* If you have you have your monitor and keyboard connected to your Pi:
-   1. Open terminal.
-   2. Type `ifconfig`
-
-* If there is no monitor connected to your Pi but your computer is connected to the same wireless network as your Pi.  
-   1. Open a terminal.
-   2. Find your own Ip address by typing `ifconfig'
-   3. Search for your Pi's address with the command: 
-   	```
-    sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
-    ```

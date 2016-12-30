@@ -3,7 +3,7 @@
 Donkey is minimalist and modular self driving library written in Python. It is developed with a focus on being a toolbox to allowing fast experimentation for any hobbiest. 
 
 Use Donkey if you want to:
-* quickly [build your own self driving RC Car]((docs/get_started.md) with a Raspbery Pi.
+* quickly [build your own self driving RC Car](docs/get_started.md) with a Raspbery Pi.
 * test out your self driving idea 
 
 
