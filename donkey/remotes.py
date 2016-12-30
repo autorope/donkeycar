@@ -12,10 +12,10 @@ import tornado.web
 from PIL import Image
 
 
-from utils import image as image_utils
+from .utils import image_utils
 
 
-class WhipClient():
+class RemoteClient():
     '''
     Class used by vehicle to send driving data and recieve predictions.
     '''
@@ -27,7 +27,7 @@ class WhipClient():
 
         
         
-    def post(self, img, angle, speed, milliseconds):
+    def decide(self, img, angle, throttle, milliseconds):
         '''
         Accepts: image and control attributes and saves 
         them to learn how to drive.'''
@@ -35,39 +35,42 @@ class WhipClient():
         #load features
         data = {
                 'angle': angle,
-                'speed': speed,
+                'throttle': throttle,
                 'milliseconds': milliseconds
                 }
 
         r = requests.post(self.record_url, 
                             files={'img': image_utils.img_to_binary(img), 
-                                    'json': json.dumps(data)}) #hack to put json in file
+                                   'json': json.dumps(data)}) #hack to put json in file
         
         data = json.loads(r.text)
         angle = int(float(data['angle']))
-        speed = int(float(data['speed']))
-        print('drive client: %s' %r.text)
+        throttle = int(float(data['throttle']))
+        print('remote client: %s' %r.text)
 
-        return angle, speed
-
-
+        return angle, throttle
 
 
 
-class WhipServer():
+
+
+class RemoteServer():
     '''
     Class used to create server that accepts driving data, records it, 
     runs a predictor and returns the predictions.
     '''
     
-    def __init__(self, recorder, predictor):
+    def __init__(self, recorder, pilot):
 
-        self.port = int(os.environ.get("PORT", 8886))
+        self.port = int(os.environ.get("PORT", 8887))
         self.recorder = recorder
-        self.predictor = predictor
+        self.pilot = pilot
 
-        vehicle_data = {'c_angle': 0, 'c_speed': 0, 'milliseconds': 0, 
-                        'drive_mode':'manual'}
+        vehicle_data = {'user_angle': 0, 
+                        'user_throttle': 0,  
+                        'drive_mode':'user', 
+                        'milliseconds': 0,}
+
         self.vehicles = {'mycar':vehicle_data}
 
         pass
@@ -86,14 +89,13 @@ class WhipServer():
                 ControllerHandler,
                 dict(vehicles = self.vehicles)
             ),
-            #Here we pass in self so the webserve can update angle and speed asynch
             (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/mjpeg/?(?P<file>[^/]*)?",
                 CameraMJPEGHandler,
                 dict(vehicles = self.vehicles)
             ),
             (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/drive/", 
                 DriveHandler, 
-                dict(predictor=self.predictor, recorder=self.recorder, vehicles=self.vehicles)
+                dict(pilot=self.pilot, recorder=self.recorder, vehicles=self.vehicles)
             )       
             ])
 
@@ -106,7 +108,7 @@ class WhipServer():
 
 class VehicleHandler(tornado.web.RequestHandler):
     def get(self, vehicle_id):
-        self.render("monitor.html")
+        self.render("templates/monitor.html")
 
 
 class ControllerHandler(tornado.web.RequestHandler):
@@ -117,12 +119,12 @@ class ControllerHandler(tornado.web.RequestHandler):
     def post(self, vehicle_id):
         '''
         Receive post requests as user changes the angle
-        and speed of the vehicle on a the index webpage
+        and throttle of the vehicle on a the index webpage
         '''
         data = tornado.escape.json_decode(self.request.body)
 
         angle = data['angle']
-        speed = data['speed']
+        throttle = data['throttle']
         drive_mode = data['drive_mode']
 
         V = self.vehicles[vehicle_id]
@@ -130,29 +132,29 @@ class ControllerHandler(tornado.web.RequestHandler):
         V['drive_mode'] = drive_mode
 
         if angle is not "":
-            V['c_angle'] = int(data['angle'])
+            V['user_angle'] = int(angle)
         else:
-            V['c_angle'] = 0
+            V['user_angle'] = 0
 
-        if speed is not "":
-            V['c_speed'] = int(data['speed'])
+        if throttle is not "":
+            V['user_throttle'] = int(throttle)
         else:
-            V['c_speed'] = 0    
+            V['user_throttle'] = 0    
 
         print(V)
 
 
 class DriveHandler(tornado.web.RequestHandler):
-    def initialize(self, recorder, predictor, vehicles):
+    def initialize(self, recorder, pilot, vehicles):
         #the parrent controller
-         self.predictor = predictor
+         self.pilot = pilot
          self.recorder = recorder
          self.vehicles = vehicles
 
     def post(self, vehicle_id):
         '''
         Receive post requests from vehicle with camera image. 
-        Return the angle and speed the car should be goin. 
+        Return the angle and throttle the car should be goin. 
         '''    
         img = self.request.files['img'][0]['body']
         img = Image.open(io.BytesIO(img))
@@ -161,29 +163,29 @@ class DriveHandler(tornado.web.RequestHandler):
         #data = json.loads(self.request.files['json'][0]['body'].decode("utf-8") )
 
         arr = np.array(img)
-        p_angle, p_speed = self.predictor.predict(arr)
+        pilot_angle, pilot_throttle = self.pilot.decide(arr)
 
 
         V = self.vehicles[vehicle_id]
         V['img'] = img
-        V['p_angle'] = p_angle
-        V['p_speed'] = p_speed
+        V['pilot_angle'] = pilot_angle
+        V['pilot_throttle'] = pilot_throttle
 
         self.recorder.record(img, 
-                            V['c_angle'],
-                            V['c_speed'], 
+                            V['user_angle'],
+                            V['user_throttle'], 
                             V['milliseconds'])
 
 
 
-        if V['drive_mode'] == 'manual':
-            angle, speed  = V['c_angle'], V['c_speed']
+        if V['drive_mode'] == 'user':
+            angle, throttle  = V['user_angle'], V['user_throttle']
         else:
-            angle, speed  = V['p_angle'], V['p_speed']
+            angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
-        print('%s: A: %s   S:%s' %(V['drive_mode'], angle, speed))
+        print('%s: A: %s   T:%s' %(V['drive_mode'], angle, throttle))
 
-        self.write(json.dumps({'angle': str(angle), 'speed': str(speed)}))
+        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle)}))
 
     def get(self):
         print('DriveHandler get function')

@@ -15,6 +15,7 @@ def parse_file_name(f):
     return angle, speed
 
 
+
 def filter_session(session_path, speed_threshold = 200):
     """
     Get the paths to session images that are likely not before or after
@@ -92,3 +93,47 @@ def variant_generator(img_paths, variant_funcs = None):
                     x = np.expand_dims(x, axis=0)
                     y = y.reshape(1, 2)
                     yield (x, y)
+
+
+def variant_flip_generator(img_paths, variant_funcs = None):
+
+    def orient(arr, flip=False):
+        if flip == False:
+            return arr
+        else: 
+            return np.fliplr(arr)
+    
+    while True:
+        for flip in [True, False]:
+            for img_path in img_paths:
+                img = Image.open(img_path)
+                img = np.array(img)
+                img = orient(img, flip=flip)
+                x = img.transpose(2, 0, 1)
+                angle, speed = parse_file_name(img_path)
+                if flip == True: 
+                    angle = -angle #reverse stering angle
+                y = np.array([angle])
+                x = np.expand_dims(x, axis=0)
+                y = y.reshape(1, 1)
+                yield (x, y)
+
+
+def variant_noflip_generator(img_paths, variant_funcs = None):
+
+    def orient(arr, flip=False):
+        if flip == False:
+            return arr
+        else: 
+            return np.fliplr(arr)
+    
+    while True:
+        for img_path in img_paths:
+            img = Image.open(img_path)
+            img = np.array(img)
+            x = img.transpose(2, 0, 1)
+            angle, speed = parse_file_name(img_path)
+            y = np.array([angle])
+            x = np.expand_dims(x, axis=0)
+            y = y.reshape(1, 1)
+            yield (x, y)

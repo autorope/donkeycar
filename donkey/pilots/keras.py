@@ -5,13 +5,12 @@ are used to control the vehicle autonomously.
 
 '''
 import os
-import settings
 import numpy as np
 
 import random
 
-from utils import file as file_utils
-from utils import bins as bin_utils
+from ..utils import file_utils
+from ..utils import bin_utils
 
 from keras.models import Sequential, load_model
 from keras.layers import Convolution2D, MaxPooling2D, Convolution1D, MaxPooling1D
@@ -20,13 +19,11 @@ from keras.layers import Activation, Dropout, Flatten, Dense
 from .base import BasePredictor
 
 class BaseKerasPredictor(BasePredictor): 
-    def save(self):
-        self.model.save(self.model_path)
+    def save(self, path):
+        self.model.save(path)
 
-
-    def load(self, model_name):
-        self.model_path = os.path.join(settings.MODELS_DIR, model_name)
-        self.model = load_model(self.model_path)
+    def load(self, path):
+        self.model = load_model(path)
 
 
 

@@ -5,14 +5,13 @@ are used to control the vehicle autonomously.
 
 '''
 import os
-import settings
 import numpy as np
 
 import random
 
-from utils import file as file_utils
+from ..utils import file_utils
 
-class BasePredictor():
+class BasePilot():
     '''
     Base class to define common functions.
     When creating a class, only override the funtions you'd like to replace.
@@ -27,12 +26,10 @@ class BasePredictor():
         pass
 
     def load(self, model):
-        self.model_path = os.path.join(settings.MODELS_DIR, self.model_name)
-        print('loading model from %' %self.model_path)
-        self.model = open(self.model_path)
+        pass
 
 
-    def predict(self, arr):
+    def decide(self, arr):
         angle = 0
         speed = 0
 
@@ -41,20 +38,12 @@ class BasePredictor():
         return angle, speed
 
 
-class RandomPredictor(BasePredictor):
+class RandomPilot(BasePilot):
     '''
     Example predictor to demontrate the format.
     '''
 
-    def predict(self, img):
+    def decide(self, img):
         angle = random.randrange(-90, 91)
         speed = random.randrange(-100,101)
         return angle, speed
-
-
-    def fit(self, x, y):
-        model = "some model to save"
-        return model
-
-    def load(self, model): 
-        print('This model doesnt need to Load')

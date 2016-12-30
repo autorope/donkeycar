@@ -1,16 +1,14 @@
 
-import settings
-
 import io
 import os
 import time
-import threading
+from threading import Thread
 from itertools import cycle
 
 from PIL import Image
 
-from utils import image as image_utils
-from threading import Thread
+from .utils import image_utils
+
  
 class BaseCamera:
 
@@ -100,13 +98,10 @@ class FakeCamera(BaseCamera):
     Class that acts like a PiCamera but reads files from a dir.
     Used for testing on non-Pi devices.
     '''
-    def __init__(self, img_dir, **kwargs):
+    def __init__(self, img_paths, **kwargs):
         print('loading FakeCamera')
-
-        self.img_dir = img_dir
         
-        self.file_list = os.listdir(self.img_dir)
-        self.file_list = [f for f in self.file_list if f[-3:] == 'jpg']
+        self.file_list = img_paths
         self.file_list.sort()
         self.file_cycle = cycle(self.file_list) #create infinite iterator
         self.counter = 0
@@ -121,8 +116,7 @@ class FakeCamera(BaseCamera):
         for f in self.file_cycle:
             # grab the frame from the stream and clear the stream in
             # preparation for the next frame
-            img_path = os.path.join(self.img_dir, f)
-            self.frame = Image.open(img_path)
+            self.frame = Image.open(f)
             self.counter += 1
             time.sleep(.2) 
 
