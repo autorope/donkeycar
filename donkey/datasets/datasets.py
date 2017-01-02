@@ -2,18 +2,21 @@ from os.path import dirname, realpath
 import os
 import PIL
 
+from ..sessions import SessionHandler
+
 imgs_dir = dirname(dirname(realpath(__file__))+'/imgs/')
 print(os.listdir(imgs_dir))
 
 
-image_datasets = ['sidewalk']
+availible_sessions = ['sidewalk']
 
 
-def load_file_paths(dataset_name):
-    if dataset_name in image_datasets:
-        dataset_dir = os.path.join(imgs_dir, dataset_name)
-        files = os.listdir(dataset_dir)
-        file_paths = [os.path.join(dataset_dir, i) for i in files]
-        return file_paths
+def load(session_name):
+
+    sh = SessionHandler(imgs_dir)
+
+    if session_name in availible_sessions:
+        session = sh.load(session_name)
+        return session
     else:
         raise ValueError('The dataset: %s, is not availible.' %dataset_name)

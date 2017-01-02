@@ -59,10 +59,10 @@ class RemoteServer():
     runs a predictor and returns the predictions.
     '''
     
-    def __init__(self, recorder, pilot):
+    def __init__(self, session, pilot):
 
         self.port = int(os.environ.get("PORT", 8887))
-        self.recorder = recorder
+        self.session = session
         self.pilot = pilot
 
         vehicle_data = {'user_angle': 0, 
@@ -98,7 +98,7 @@ class RemoteServer():
             ),
             (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/drive/", 
                 DriveHandler, 
-                dict(pilot=self.pilot, recorder=self.recorder, vehicles=self.vehicles)
+                dict(pilot=self.pilot, session=self.session, vehicles=self.vehicles)
             )       
             ])
 
@@ -148,10 +148,10 @@ class ControllerHandler(tornado.web.RequestHandler):
 
 
 class DriveHandler(tornado.web.RequestHandler):
-    def initialize(self, recorder, pilot, vehicles):
+    def initialize(self, session, pilot, vehicles):
         #the parrent controller
          self.pilot = pilot
-         self.recorder = recorder
+         self.session = session
          self.vehicles = vehicles
 
     def post(self, vehicle_id):
@@ -174,13 +174,15 @@ class DriveHandler(tornado.web.RequestHandler):
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
 
-        self.recorder.record(img, 
+        self.session.record(img, 
                             V['user_angle'],
                             V['user_throttle'], 
                             V['milliseconds'])
 
         if V['drive_mode'] == 'user':
             angle, throttle  = V['user_angle'], V['user_throttle']
+        elif V['drive_mode'] == 'auto_angle':
+            angle, throttle  = V['pilot_angle'], V['user_throttle']
         else:
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 

@@ -4,16 +4,17 @@ of saved in a prior drive session.
 """
 
 from donkey.pilots import keras
-from donkey.recorders import FileRecorder
+from donkey.sessions import SessionHandler
 
 #Read in pictures and velocities and create a predictor
-recorder = FileRecorder(session='port',
-                        sessions_dir='~/donkey_data/sessions/')
-
-pilot = keras.CNN()
+sh = SessionHandler(sessions_path='~/donkey_data/sessions/')
+s = sh.load('port')
 
 print('getting arrays')
-x, y = recorder.get_arrays()
+x, y = s.get_arrays()
+
+
+pilot = keras.CNN()
 
 print('fitting model')
 pilot.train(x, y)

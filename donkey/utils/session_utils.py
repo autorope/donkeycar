@@ -137,3 +137,21 @@ def variant_noflip_generator(img_paths, variant_funcs = None):
             x = np.expand_dims(x, axis=0)
             y = y.reshape(1, 1)
             yield (x, y)
+
+
+def create_video(img_dir_path, output_video_path):
+
+    # Setup path to the images with telemetry.
+    full_path = os.path.join(img_dir_path, 'frame_*.png')
+
+    # Run ffmpeg.
+    command = ("""ffmpeg
+               -framerate 30/1
+               -pattern_type glob -i '%s'
+               -c:v libx264
+               -r 15
+               -pix_fmt yuv420p
+               -y
+               %s""" % (full_path, output_video_path))
+    response = envoy.run(command)
+

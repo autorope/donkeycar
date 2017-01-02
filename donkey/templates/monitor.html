@@ -44,7 +44,7 @@
               <tr>
                 <th><label class='col-xs-3'> Drive Mode </label></th>
                 <td><input id='driveMode' class='form-control' disabled /></td>
-                <td>space bar: toggle manual / auto </td>
+                <td>space bar: toggle user / auto </td>
               </tr>
             </tbody>
           </table>
@@ -150,10 +150,10 @@ var velocity = (function() {
 
     var toggleDriveMode = function(){
       //Bind a function to capture the coordinates of the click.
-      if (driveMode == 'manual') {
+      if (driveMode == 'user') {
         driveMode = 'auto'
       } else {
-        driveMode = 'manual'
+        driveMode = 'user'
       }
       $('#driveMode').val(driveMode);
       sendVelocity()

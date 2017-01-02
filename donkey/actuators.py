@@ -73,13 +73,29 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
     MIN_THROTLE = -100
     MAX_THROTLE =  100
 
-    MIN_THROTLE_PULSE = 275
-    MAX_THROTLE_PULSE = 400
+    MIN_THROTTLE_PULSE = 150
+    MAX_THROTTLE_PULSE = 600
+    CENTER_THROTTLE_PULSE = 225
+
+
+    def calibrate(self):
+        #Calibrate ESC
+        pwm.set_pwm(self.channel, 0, self.MAX_THROTTLE_PULSE)  #Set Max Throttle
+        time.sleep(2)
+        pwm.set_pwm(self.channel, 0, self.MIN_THROTTLE_PULSE)  #Set Min Throttle
+        time.sleep(2)
+        pwm.set_pwm(self.channel, 0, self.CENTER_THROTTLE_PULSE)  #Set Center Throttle. 
+
 
     def update(self, throttle):
-        pulse = map_range(throttle,
-                         self.MIN_THROTLE, self.MAX_THROTLE, 
-                         self.MIN_THROTLE_PULSE, self.MAX_THROTLE_PULSE)
+        if throttle > 0:
+            pulse = map_range(throttle,
+                              0, self.MAX_THROTLE, 
+                              self.CENTER_THROTLE_PULSE, self.MAX_THROTLE_PULSE)
+        else:
+            pulse = map_range(throttle,
+                              self.MIN_THROTLE, 0, 
+                              self.MIN_THROTTLE_PULSE, self.CENTER_THROTLE_PULSE)
 
         self.pwm.set_pwm(self.channel, 0, pulse)
 

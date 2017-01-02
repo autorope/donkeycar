@@ -20,7 +20,8 @@ from donkey.remotes import RemoteClient
 
 car = BaseVehicle()
 
-img_paths = datasets.load_file_paths('sidewalk')
+session = datasets.load('sidewalk')
+img_paths = session.img_paths()
 car.camera = FakeCamera(img_paths) #For testing
 
 car.steering_actuator = BaseSteeringActuator()
