@@ -4,7 +4,7 @@ of saved in a prior drive session.
 """
 
 from donkey.pilots import keras
-from donkey.sessions import SessionHandler
+from donkey.datasets
 
 #Read in pictures and velocities and create a predictor
 sh = SessionHandler(sessions_path='~/donkey_data/sessions/')

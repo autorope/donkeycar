@@ -122,14 +122,14 @@ var velocity = (function() {
 
     var throttleUp = function(){
         //Bind a function to capture the coordinates of the click.
-        throttle = Math.min(throttle + 25, 400);
+        throttle = Math.min(throttle + 10, 400);
         $(throttleEl).val(throttle)
         sendVelocity()
         };
 
     var throttleDown = function(){
         //Bind a function to capture the coordinates of the click.
-        throttle = Math.max(throttle - 25, -200);
+        throttle = Math.max(throttle - 10, -200);
         $(throttleEl).val(throttle);
         sendVelocity()
     };

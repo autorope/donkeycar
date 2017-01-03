@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 from PIL import Image
+from skimage import exposure
 
 class Session():
     ''' 
@@ -10,8 +11,24 @@ class Session():
     def __init__(self, path):
         print('Loading Session')
         self.session_dir = path
+        self.img_paths = self.get_img_paths()
+        self.img_count = len(self.img_paths)
+        self.train_cutoff = int( (self.img_count * .8) // 1 )
+        print(self.train_cutoff)
+        self.train_img_paths = self.img_paths[:self.train_cutoff]
+        self.test_img_paths = self.img_paths[self.train_cutoff:]
 
         self.frame_count = 0
+
+
+
+    def get_img_paths(self):
+        """ return list of file paths for the images in session """
+        files = os.listdir(self.session_dir)
+        files = [f for f in files if f[-3:] =='jpg']
+        files.sort()
+        file_paths = [os.path.join(self.session_dir, f) for f in files]
+        return file_paths
 
     def record(self, img, angle, throttle, milliseconds):
         ''' 
@@ -39,7 +56,7 @@ class Session():
             Where n is the number of recorded images.
         '''
 
-        gen = self.generator()
+        gen = self.generator(format=None)
 
         X = [] #images
         Y = [] #velocity (angle, speed)
@@ -53,25 +70,64 @@ class Session():
         return X, Y
 
 
-    def generator(self):
+    def generator(self, format='keras'):
         ''' Rerturn a generator that will return the image array and throttle variables. ''' 
         
         files = self.img_paths()
 
-        for f in files:
-            img = Image.open(os.path.join(self.session_dir, f))
-            x = np.array(img)
-            y = np.array(self.parse_file_name(f))
-            yield x, y
+        print('files: %s' % len(files))
+        while True:
+            for f in files:
+                img = Image.open(f)
+                x = np.array(img)
+                y = np.array(self.parse_file_name(f))
+                y = y.reshape((1,) + y.shape)
+                x = x.transpose(2, 0, 1)
+                x = x.reshape((1,) + x.shape)
+
+                yield x, y
 
 
-    def img_paths(self):
-        """ return list of file paths for the images in session """
-        files = os.listdir(self.session_dir)
-        files = [f for f in files if f[-3:] =='jpg']
-        files.sort()
-        file_paths = [os.path.join(self.session_dir, f) for f in files]
-        return file_paths
+    def variant_generator(self, img_paths, variant_funcs):
+
+        def orient(arr, flip=False):
+            if flip == False:
+                return arr
+            else: 
+                return np.fliplr(arr)
+        
+        print(len(img_paths))
+
+        while True:
+            for flip in [True, False]:
+                for v in variant_funcs:
+                    for img_path in img_paths:
+                        img = Image.open(img_path)
+                        img = np.array(img)
+                        img =  v['func'](img, **v['args'])
+                        img = orient(img, flip=flip)
+                        x = img.transpose(2, 0, 1)
+                        angle, speed = self.parse_file_name(img_path)
+                        if flip == True: 
+                            angle = -angle #reverse stering angle
+                        y = np.array([angle, speed])
+                        x = np.expand_dims(x, axis=0)
+                        y = y.reshape(1, 2)
+                        yield x, y
+
+    def training_data_generator(self):
+        variant_funcs = [
+             {'func': lambda x: x, 'args': {}},
+             {'func': exposure.adjust_sigmoid, 'args': {'cutoff':.4, 'gain':7}}
+            ]
+
+        return self.variant_generator(self.train_img_paths, variant_funcs)
+
+    def test_data_generator(self):
+        variant_funcs = [
+             {'func': lambda x: x, 'args': {}}
+             ]
+        return self.variant_generator(self.test_img_paths, variant_funcs)
 
 
     def parse_file_name(self, f):

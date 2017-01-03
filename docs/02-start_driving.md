@@ -11,6 +11,7 @@ Now that you have built your car, you'll want to drive it.
 
 1. Open another terminal
 2. Use this code to find the ip address of your pi. Change the IP base ip address to match your router.
+
    	```
     sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
     ```
