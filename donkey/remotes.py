@@ -161,23 +161,24 @@ class DriveHandler(tornado.web.RequestHandler):
         '''    
         img = self.request.files['img'][0]['body']
         img = Image.open(io.BytesIO(img))
+        img_arr = np.array(img)
 
         #Hack to take json from a file
         #data = json.loads(self.request.files['json'][0]['body'].decode("utf-8") )
-
-        arr = np.array(img)
-        pilot_angle, pilot_throttle = self.pilot.decide(arr)
-
+        
+        pilot_angle, pilot_throttle = self.pilot.decide(img_arr)
 
         V = self.vehicles[vehicle_id]
         V['img'] = img
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
 
-        self.session.record(img, 
-                            V['user_angle'],
-                            V['user_throttle'], 
-                            V['milliseconds'])
+
+
+        self.session.put(img, 
+                         angle=V['user_angle'],
+                         throttle=V['user_throttle'], 
+                         milliseconds=V['milliseconds'])
 
         if V['drive_mode'] == 'user':
             angle, throttle  = V['user_angle'], V['user_throttle']

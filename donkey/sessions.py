@@ -16,16 +16,11 @@ class Session():
 
         self.frame_count = 0
 
-    def put(self, img, data):
+    def put(self, img, angle=None, throttle=None, milliseconds=None):
         
         ''' 
         Save image with encoded angle, throttle and time data in the filename
         '''
-
-        throttle =     data['throttle']
-        angle =        data['angle']
-        milliseconds = data['milliseconds']
-
 
         self.frame_count += 1
 
@@ -76,7 +71,7 @@ class Session():
         return len(self.img_paths())
 
 
-    def load_data(self):
+    def load_data(self, img_paths=None):
         '''
         Returns image arrays and data arrays.
 
@@ -87,7 +82,7 @@ class Session():
             Where n is the number of recorded images.
         '''
 
-        gen = self.load_generator()
+        gen = self.load_generator(img_paths=img_paths)
 
         X = [] #images
         Y = [] #velocity (angle, speed)
@@ -102,24 +97,31 @@ class Session():
         return X, Y
 
 
-    def load_generator(self):
+    def load_generator(self, img_paths=None, add_dim=False):
         ''' 
         Rerturn a generator that will loops through image arrays and data labels.
-        ''' 
         
-        files = self.img_paths()
+        add_dim: add dimension to returned arrays as needed by keras 
+        ''' 
+        if img_paths == None:
+            img_paths = self.img_paths()
 
-        print('files: %s' % len(files))
         while True:
-            for f in files:
+            for f in img_paths:
+                
                 img_arr, data = self.get(f)
                 
+                
                 #return only angle for now
-                y = np.array(data['angle'])
-                y = y.reshape((1,) + y.shape)
-                x = img_arr.reshape((1,) + img_arr.shape)
+                data_arr = np.array(data['angle'])
 
-                yield x, y
+                if add_dim == True:
+                    data_arr = data_arr.reshape((1,) + data_arr.shape)
+                    img_arr = img_arr.reshape((1,) + img_arr.shape)
+
+                yield img_arr, data_arr
+
+
 
 
     def variant_generator(self, img_paths, variant_funcs):

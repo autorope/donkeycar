@@ -5,18 +5,10 @@ import numpy as np
 
 
 
-def parse_file_name(f):
-    f = f.split('/')[-1]
-    f = f.split('.')[0]
-    f = f.split('_')
-    speed = int(f[3])
-    angle = int(f[5])
-    #msecs = int(f[7])
-    return angle, speed
+def trim_sessions(img_paths, trim_)
 
 
-
-def filter_session(session_path, speed_threshold = 200):
+def filter_session(session_path, throttle_threshold = 200):
     """
     Get the paths to session images that are likely not before or after
     a crash. 
@@ -30,7 +22,7 @@ def filter_session(session_path, speed_threshold = 200):
 
     for i, x in enumerate(imgs):
         #remove images with speed < 200
-        if split_imgs[i][1] < speed_threshold:
+        if split_imgs[i][1] < throttle_threshold:
             keep_index[i]=0
         #remove the first and last 60 frames
         elif i < 60 or i > len(imgs) - 60:

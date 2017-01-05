@@ -45,7 +45,7 @@ class BaseCamera:
 
 
 class PiVideoStream(BaseCamera):
-    def __init__(self, resolution=(320, 240), framerate=32):
+    def __init__(self, resolution=(160, 120), framerate=32):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
 
