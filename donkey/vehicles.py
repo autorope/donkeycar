@@ -32,7 +32,9 @@ class BaseVehicle:
                                                  milliseconds)
 
             self.steering_actuator.update(angle)
-            self.throttle_actuator.update(throttle)
+            pulse =  self.throttle_actuator.update(throttle)
+            print(pulse)
+
 
             #print current car state
             print('angle: %s   throttle: %s' %(angle, throttle) )           

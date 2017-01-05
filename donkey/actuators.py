@@ -3,6 +3,7 @@
 # Attribution: hacked from sample code from Tony DiCola
 
 import time
+import sys
 
 # Import the PCA9685 module.
 
@@ -55,8 +56,8 @@ class PWMSteeringActuator(Adafruit_PCA9685_Actuator):
     RIGHT_ANGLE = 45
 
     #PWM pulse values for turns
-    LEFT_PULSE = 300
-    RIGHT_PULSE = 400
+    LEFT_PULSE = 290
+    RIGHT_PULSE = 490
 
     def update(self, angle):
         #map absolute angle to angle that vehicle can implement.
@@ -74,8 +75,8 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
     MAX_THROTTLE =  100
 
     MIN_THROTTLE_PULSE = 300
-    MAX_THROTTLE_PULSE = 400
-    CENTER_THROTTLE_PULSE = 325
+    MAX_THROTTLE_PULSE = 490
+    CENTER_THROTTLE_PULSE = 350
 
     def __init__(self, channel, frequency=60):
         super().__init__(channel, frequency)
@@ -99,7 +100,9 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
                               self.MIN_THROTTLE_PULSE, self.CENTER_THROTTLE_PULSE)
 
         print('pulse: %s' % pulse)
+        sys.stdout.flush()
         self.pwm.set_pwm(self.channel, 0, pulse)
+        return '123'
 
 
 
