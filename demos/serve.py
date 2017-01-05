@@ -11,7 +11,7 @@ from donkey.sessions import SessionHandler
 #setup how server will save files and which pilot to use
 pilot = BasePilot()
 
-sh = SessionHandler(sessions_path='~/donkey_data/sesions')
+sh = SessionHandler(sessions_path='~/donkey_data/sessions')
 session = sh.new()
 
 #start server
