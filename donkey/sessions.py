@@ -4,6 +4,10 @@ import numpy as np
 from PIL import Image
 from skimage import exposure
 
+import pickle
+
+import donkey as dk
+
 class Session():
     ''' 
     Class to store images and vehicle data to the local file system and later retrieve them
@@ -224,8 +228,8 @@ def pickle_sessions(sessions_folder, session_names, file_path):
     'sessions_folder' where the session folders reside
     'session_names' the names of the folders of the sessions to Combine
     'file_path' name of the pickled file that will be saved
-     
     '''
+
     sh = dk.sessions.SessionHandler(sessions_folder)
 
     X = []
