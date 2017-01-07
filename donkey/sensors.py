@@ -5,16 +5,19 @@ import time
 from threading import Thread
 from itertools import cycle
 
+import numpy as np
+
 from PIL import Image
 
-from .utils import image_utils
+from donkey import utils
 
  
 class BaseCamera:
 
-    def __init__(self):
-        self.frame = None
-
+    def __init__(self, resolution=(160, 120)):
+        self.resolution = resolution
+        self.frame = np.zeros(shape=(self.resolution[1], self.resolution[0], 3))
+        
     def start(self):
         # start the thread to read frames from the video stream
         t = Thread(target=self.update, args=())
@@ -28,24 +31,26 @@ class BaseCamera:
             pass
 
     def read(self):
-        # return the frame most recently read
         return self.frame
+
+    def capture_arr(self):
+        return self.read()
 
     def capture_img(self):
-
-        #print('capturing file: %s' % self.file_list[self.counter])
-        return self.frame
+        arr = self.capture_arr()
+        print(type(arr))
+        img = Image.fromarray(arr, 'RGB')
+        return img
         
     def capture_binary(self):
-
         img = self.capture_img()
-        return image_utils.img_to_binary(img)
+        return utils.img_to_binary(img)
 
 
 
 
 class PiVideoStream(BaseCamera):
-    def __init__(self, resolution=(320, 240), framerate=32):
+    def __init__(self, resolution=(160, 120), framerate=32):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
 
@@ -85,15 +90,32 @@ class PiVideoStream(BaseCamera):
                 self.camera.close()
                 return
 
-    def capture_img(self):
-        arr = self.read()
-        img = Image.fromarray(arr)
-        return img
-
 
     def stop(self):
         # indicate that the thread should be stopped
         self.stopped = True
+
+
+class ImgArrayCamera(BaseCamera):
+
+    def __init__(self, X):
+        self.X = X
+        self.frame = X[0]
+        self.start()
+
+
+    def generator(self):
+        while True:
+            for i in self.X:
+                yield i
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        for x in self.generator():
+            # grab the frame from the stream and clear the stream in
+            # preparation for the next frame
+            self.frame = x
+            time.sleep(.2) 
 
 
 
@@ -121,7 +143,7 @@ class FakeCamera(BaseCamera):
         for f in self.file_cycle:
             # grab the frame from the stream and clear the stream in
             # preparation for the next frame
-            self.frame = Image.open(f)
+            self.frame = np.array(Image.open(f))
             self.counter += 1
             time.sleep(.2) 
 

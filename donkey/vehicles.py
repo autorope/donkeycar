@@ -1,15 +1,20 @@
 import time
 
 class BaseVehicle:
-    def __init__(self):
+    def __init__(self,
+                 drive_loop_delay = .2,
+                 camera=None,
+                 steering_actuator=None,
+                 throttle_actuator=None,
+                 pilot=None):
 
-        self.drive_loop_delay = .2 #how long to wait between loops
+        self.drive_loop_delay = drive_loop_delay #how long to wait between loops
 
         #these need tobe updated when vehicle is defined
-        self.camera = None
-        self.steering_actuator = None
-        self.throttle_actuator = None
-        self.pilot = None
+        self.camera = camera
+        self.steering_actuator = steering_actuator
+        self.throttle_actuator = throttle_actuator
+        self.pilot = pilot
 
 
     def start(self):
@@ -23,16 +28,18 @@ class BaseVehicle:
             now = time.time()
             milliseconds = int( (now - start_time) * 1000)
 
-            #get PIL image from camera
-            img = self.camera.capture_img()
+            #get image array image from camera
+            img_arr = self.camera.capture_arr()
 
-            angle, throttle = self.pilot.decide( img,
+            angle, throttle = self.pilot.decide( img_arr,
                                                  angle, 
                                                  throttle,
                                                  milliseconds)
 
             self.steering_actuator.update(angle)
-            self.throttle_actuator.update(throttle)
+            pulse =  self.throttle_actuator.update(throttle)
+            print(pulse)
+
 
             #print current car state
             print('angle: %s   throttle: %s' %(angle, throttle) )           

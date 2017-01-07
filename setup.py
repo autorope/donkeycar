@@ -36,9 +36,19 @@ setup(name='donkey',
                       'pillow',
                       'docopt==0.6.2',
                       'tornado',
-                      'envoy',
                       'requests'
                      ],
+
+    extras_require={'server': [
+                        'keras',
+                        'h5py',
+                        'envoy',
+                        ],
+                    'pi': [
+                        'picamera',
+                        'Adafruit_PCA9685',
+                        ]
+                    },
 
     packages=find_packages(exclude=(['tests', 'docs', 'env'])),
 )

@@ -1,22 +1,25 @@
 """
-Example of how to train a pilot from the images
-of saved in a prior drive session. 
+Example of how to train a keras model from simulated images or a 
+previously recorded session.
+
 """
 
-from donkey.pilots import keras
-from donkey.datasets
+import donkey as dk
 
-#Read in pictures and velocities and create a predictor
-sh = SessionHandler(sessions_path='~/donkey_data/sessions/')
-s = sh.load('port')
-
-print('getting arrays')
-x, y = s.get_arrays()
+#Train on session pictures
+#sh = dk.sessions.SessionHandler(sessions_path='~/donkey_data/sessions/')
+#s = sh.load('test')
+#X, Y = s.load_dataset()
 
 
-pilot = keras.CNN()
+#Train on simulated pictures
+X, Y = dk.datasets.moving_square(n_frames=2000, return_x=True, return_y=False)
 
-print('fitting model')
-pilot.train(x, y)
 
-pilot.save('mycnn')
+model = dk.models.cnn3_full1()
+
+
+model.fit(X,Y, nb_epoch=10, validation_split=0.2)
+
+
+model.save('test_model')

@@ -3,6 +3,7 @@
 # Attribution: hacked from sample code from Tony DiCola
 
 import time
+import sys
 
 # Import the PCA9685 module.
 
@@ -33,7 +34,7 @@ class BaseThrottleActuator():
     ''' Placeholder until real logic is implemented '''
 
     def update(self, throttle):
-        print('BaseThrottleActuator.update: angle=%s' %angle)
+        print('BaseThrottleActuator.update: throttle=%s' %throttle)
 
 
 class Adafruit_PCA9685_Actuator():
@@ -54,15 +55,20 @@ class PWMSteeringActuator(Adafruit_PCA9685_Actuator):
     LEFT_ANGLE = -45 
     RIGHT_ANGLE = 45
 
-    #PWM pulse values for turns
-    LEFT_PULSE = 300
-    RIGHT_PULSE = 400
+    def __init__(self, channel=1, 
+                       frequency=60,
+                       left_pulse=290,
+                       right_pulse=490):
+
+        super().__init__(channel, frequency)
+        self.left_pulse = left_pulse
+        self.right_pulse = right_pulse
 
     def update(self, angle):
         #map absolute angle to angle that vehicle can implement.
         pulse = map_range(angle, 
                           self.LEFT_ANGLE, self.RIGHT_ANGLE,
-                          self.LEFT_PULSE, self.RIGHT_PULSE)
+                          self.left_pulse, self.right_pulse)
 
         self.pwm.set_pwm(self.channel, 0, pulse)
 
@@ -73,33 +79,41 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
     MIN_THROTTLE = -100
     MAX_THROTTLE =  100
 
-    MIN_THROTTLE_PULSE = 300
-    MAX_THROTTLE_PULSE = 400
-    CENTER_THROTTLE_PULSE = 325
+    def __init__(self, channel=0, 
+                       frequency=60,
+                       max_pulse=300,
+                       min_pulse=490,
+                       zero_pulse=350):
 
-    def __init__(self, channel, frequency=60):
         super().__init__(channel, frequency)
+        self.max_pulse = max_pulse
+        self.min_pulse = min_pulse
+        self.zero_pulse = zero_pulse
         self.calibrate()
 
+
     def calibrate(self):
-        #Calibrate ESC
-        print('center: %s' % self.CENTER_THROTTLE_PULSE)
-        self.pwm.set_pwm(self.channel, 0, self.CENTER_THROTTLE_PULSE)  #Set Max Throttle
+        #Calibrate ESC (TODO: THIS DOES NOT WORK YET)
+        print('center: %s' % self.zero_pulse)
+        self.pwm.set_pwm(self.channel, 0, self.zero_pulse)  #Set Max Throttle
         time.sleep(1)
+
 
     def update(self, throttle):
         print('throttle update: %s' %throttle)
         if throttle > 0:
             pulse = map_range(throttle,
                               0, self.MAX_THROTTLE, 
-                              self.CENTER_THROTTLE_PULSE, self.MAX_THROTTLE_PULSE)
+                              self.zero_pulse, self.max_pulse)
         else:
             pulse = map_range(throttle,
                               self.MIN_THROTTLE, 0, 
-                              self.MIN_THROTTLE_PULSE, self.CENTER_THROTTLE_PULSE)
+                              self.min_pulse, self.zero_pulse)
 
         print('pulse: %s' % pulse)
+        sys.stdout.flush()
         self.pwm.set_pwm(self.channel, 0, pulse)
+        return '123'
 
 
 
