@@ -3,6 +3,7 @@
 # Attribution: hacked from sample code from Tony DiCola
 
 import time
+import sys
 
 # Import the PCA9685 module.
 
@@ -56,8 +57,8 @@ class PWMSteeringActuator(Adafruit_PCA9685_Actuator):
 
     def __init__(self, channel=1, 
                        frequency=60,
-                       left_pulse=300,
-                       right_pulse=400):
+                       left_pulse=290,
+                       right_pulse=490):
 
         super().__init__(channel, frequency)
         self.left_pulse = left_pulse
@@ -81,7 +82,7 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
     def __init__(self, channel=0, 
                        frequency=60,
                        max_pulse=300,
-                       min_pulse=400,
+                       min_pulse=490,
                        zero_pulse=350):
 
         super().__init__(channel, frequency)
@@ -110,7 +111,9 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
                               self.min_pulse, self.zero_pulse)
 
         print('pulse: %s' % pulse)
+        sys.stdout.flush()
         self.pwm.set_pwm(self.channel, 0, pulse)
+        return '123'
 
 
 
