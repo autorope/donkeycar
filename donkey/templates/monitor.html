@@ -44,7 +44,7 @@
               <tr>
                 <th><label class='col-xs-3'> Drive Mode </label></th>
                 <td><input id='driveMode' class='form-control' disabled /></td>
-                <td>space bar: toggle user / auto </td>
+                <td>a: auto, s: angle_only, d:user </td>
               </tr>
             </tbody>
           </table>
@@ -87,9 +87,17 @@ $(document).keydown(function(e) {
         velocity.angleRight()
     }
 
-    if(e.which == 32) {
-      // 'l' turn right
-        velocity.toggleDriveMode()
+    if(e.which == 65) {
+      // 'a' turn on auto mode
+        velocity.updateDriveMode('auto')
+    }
+    if(e.which == 68) {
+      // 'a' turn on auto mode
+        velocity.updateDriveMode('user')
+    }
+      if(e.which == 83) {
+      // 'a' turn on auto mode
+        velocity.updateDriveMode('auto_angle')
     }
 });
 
@@ -148,14 +156,10 @@ var velocity = (function() {
       sendVelocity()
     };
 
-    var toggleDriveMode = function(){
+    var updateDriveMode = function(mode){
       //Bind a function to capture the coordinates of the click.
-      if (driveMode == 'user') {
-        driveMode = 'auto'
-      } else {
-        driveMode = 'user'
-      }
-      $('#driveMode').val(driveMode);
+      driveMode = mode;
+      $('#driveMode').val(mode);
       sendVelocity()
     };
 
@@ -166,7 +170,7 @@ var velocity = (function() {
                 angleLeft: angleLeft,
                 angleRight: angleRight,
                 sendVelocity: sendVelocity,
-                toggleDriveMode: toggleDriveMode
+                updateDriveMode: updateDriveMode
             };
 })();
 

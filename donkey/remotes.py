@@ -13,7 +13,7 @@ import tornado.web
 from PIL import Image
 
 
-from .utils import image_utils
+import donkey as dk
 
 
 class RemoteClient():
@@ -26,7 +26,7 @@ class RemoteClient():
         self.record_url = remote_url + '/' + vehicle_id + '/drive/'
         
         
-    def decide(self, img, angle, throttle, milliseconds):
+    def decide(self, img_arr, angle, throttle, milliseconds):
         '''
         Accepts: image and control attributes and saves 
         them to learn how to drive.'''
@@ -38,8 +38,9 @@ class RemoteClient():
                 'milliseconds': milliseconds
                 }
 
+
         r = requests.post(self.record_url, 
-                            files={'img': image_utils.img_to_binary(img), 
+                            files={'img': dk.utils.arr_to_binary(img_arr), 
                                    'json': json.dumps(data)}) #hack to put json in file
         
         data = json.loads(r.text)
@@ -161,7 +162,7 @@ class DriveHandler(tornado.web.RequestHandler):
         '''    
         img = self.request.files['img'][0]['body']
         img = Image.open(io.BytesIO(img))
-        img_arr = np.array(img)
+        img_arr = dk.utils.img_to_arr(img)
 
         #Hack to take json from a file
         #data = json.loads(self.request.files['json'][0]['body'].decode("utf-8") )
@@ -172,8 +173,6 @@ class DriveHandler(tornado.web.RequestHandler):
         V['img'] = img
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
-
-
 
         self.session.put(img, 
                          angle=V['user_angle'],
@@ -214,7 +213,7 @@ class CameraMJPEGHandler(tornado.web.RequestHandler):
 
 
                 img = self.vehicles[vehicle_id]['img']
-                img = image_utils.img_to_binary(img)
+                img = dk.utils.img_to_binary(img)
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")

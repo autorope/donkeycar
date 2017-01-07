@@ -71,7 +71,7 @@ class Session():
         return len(self.img_paths())
 
 
-    def load_data(self, img_paths=None):
+    def load_dataset(self, img_paths=None):
         '''
         Returns image arrays and data arrays.
 
@@ -152,23 +152,6 @@ class Session():
 
 
 
-    def training_data_generator(self):
-        variant_funcs = [
-             {'func': lambda x: x, 'args': {}},
-             {'func': exposure.adjust_sigmoid, 'args': {'cutoff':.4, 'gain':7}}
-            ]
-
-        return self.variant_generator(self.train_img_paths, variant_funcs)
-
-    def test_data_generator(self):
-        variant_funcs = [
-             {'func': lambda x: x, 'args': {}}
-             ]
-        return self.variant_generator(self.test_img_paths, variant_funcs)
-
-
-
-
 
 
 
@@ -231,3 +214,31 @@ class SessionHandler():
         if not os.path.exists(session_full_path):
             os.makedirs(session_full_path)
         return session_full_path
+
+
+def pickle_sessions(sessions_folder, session_names, file_path):
+
+    '''
+    Combine, pickle and safe session data to a file. 
+
+    'sessions_folder' where the session folders reside
+    'session_names' the names of the folders of the sessions to Combine
+    'file_path' name of the pickled file that will be saved
+     
+    '''
+    sh = dk.sessions.SessionHandler(sessions_folder)
+
+    X = []
+    Y = []
+
+    for name in session_names:
+        s = sh.load(name)
+        x, y = s.load_dataset()
+        X.append(x)
+        Y.append(y)
+
+    X = np.concatenate(X)
+    Y = np.concatenate(Y)
+
+    with open(file_path, 'wb') as f:
+        pkl = pickle.dump((X,Y), f)

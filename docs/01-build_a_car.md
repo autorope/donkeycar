@@ -67,11 +67,6 @@ Since the RPi is not as powerful as a laptop, it can take a long time to install
 	sudo apt-get install python3-numpy python3-matplotlib python3-scipy python3-pandas 
 	```
 
-6. Install Jupyter
-	```
-	sudo pip3 install jupyter notebook
-	```
-
 #### Install your Camera
 Follow the instructions [here](https://www.raspberrypi.org/learning/getting-started-with-picamera/worksheet/).
 
@@ -83,7 +78,7 @@ Follow the instructions [here](https://www.raspberrypi.org/learning/getting-star
 
 #### Connect your servo sheild. 
 
-Not sure how to do this yet. 
+1. Assemble and test your servo shield with the instructions given by Adafruit. 
 
 
 #### Install Donkey
@@ -100,7 +95,7 @@ mkdir car
 cd car
 virtualenv --system-site-packages -p python3 env 
 source env/bin/activate
-pip install -e ../donkey
+pip install -e ../donkey[pi]
 ```
 
 

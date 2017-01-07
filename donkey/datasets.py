@@ -2,24 +2,30 @@ from os.path import dirname, realpath
 import os
 import PIL
 import numpy as np
+import pickle
 
-from ..sessions import SessionHandler
+import requests
+import io
 
-sessions_dir = dirname(dirname(realpath(__file__))+'/sessions/')
-
-availible_sessions = ['sidewalk']
+from .sessions import SessionHandler
 
 
-def load_session(session_name):
+def save_dataset(X, Y, file_path):
+    with open(file_path, 'wb') as f:
+        pickel.dump((X, Y), f)
 
-    sh = SessionHandler(sessions_dir)
 
-    if session_name in availible_sessions:
-        session = sh.load(session_name)
-        return session
-    else:
-        raise ValueError('The dataset: %s, is not availible.' %dataset_name)
+def load_file(file_path):
+    with open(path, 'rb') as f:
+        X, Y = pickle.load(f)
+    return X,Y
 
+
+def load_url(url):
+    r = requests.get(url)
+    f = io.BytesIO(r.content)
+    X, Y = pickle.load(f)
+    return X, Y
 
 
 def moving_square(n_frames=100, return_x=True, return_y=True):
@@ -61,6 +67,8 @@ def moving_square(n_frames=100, return_x=True, return_y=True):
         movie[t, y - w: y + w, x - w: x + w,  1] += 1
         labels[t] = np.array([x, y])
         
+
+    movie = np.uint8(movie*255.999)
     #only return requested labels
     if return_x and return_y:
         return movie, labels
@@ -68,3 +76,7 @@ def moving_square(n_frames=100, return_x=True, return_y=True):
         return movie, labels[:,0]
     else:
         return movie, labels[:,1]
+
+
+
+

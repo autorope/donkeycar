@@ -38,6 +38,8 @@ def cnn3_full1():
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+
     return model
 
 
@@ -71,6 +73,7 @@ def cnn3_full1_rnn1():
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
+    model.compile(optimizer='adam', loss='mean_squared_error')
     return model
 
 
@@ -92,6 +95,7 @@ def cnn1_full1():
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
+    model.compile(optimizer='adam', loss='mean_squared_error')
     return model
 
 
@@ -122,4 +126,5 @@ def norm_cnn3_full1():
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
+    model.compile(optimizer='adam', loss='mean_squared_error')
     return model
