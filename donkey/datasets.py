@@ -16,7 +16,7 @@ def save_dataset(X, Y, file_path):
 
 
 def load_file(file_path):
-    with open(path, 'rb') as f:
+    with open(file_path, 'rb') as f:
         X, Y = pickle.load(f)
     return X,Y
 
