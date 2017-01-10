@@ -9,6 +9,10 @@
 	background-color: rgba(255, 0, 0, 0.1);
 }
 
+#mpeg-image {
+	width: 400px;
+}
+
 @media (max-width: 600px) {
 	#mpeg-image {
 		position: relative;
