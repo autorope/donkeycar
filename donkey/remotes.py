@@ -1,3 +1,7 @@
+"""
+Classes used to communicate between vehicle and server. 
+"""
+
 import time
 import json
 import io
@@ -74,6 +78,10 @@ class RemoteServer():
 
         self.vehicles = {'mycar':vehicle_data}
 
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        self.static_file_path = os.path.join(this_dir, 'templates', 'static')
+        print(self.static_file_path)
+
         
     def start(self):
         '''
@@ -100,7 +108,10 @@ class RemoteServer():
             (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/drive/", 
                 DriveHandler, 
                 dict(pilot=self.pilot, session=self.session, vehicles=self.vehicles)
-            )       
+            ),
+
+            (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
+
             ])
 
         app.listen(self.port)
@@ -110,15 +121,21 @@ class RemoteServer():
 
 
 
+
 class VehicleHandler(tornado.web.RequestHandler):
     def get(self, vehicle_id):
+        '''
+        Serves web page used to control the vehicle.
+        ''' 
         self.render("templates/monitor.html")
+
 
 
 class ControllerHandler(tornado.web.RequestHandler):
 
     def initialize(self, vehicles):
          self.vehicles = vehicles
+
 
     def post(self, vehicle_id):
         '''
@@ -148,6 +165,7 @@ class ControllerHandler(tornado.web.RequestHandler):
         print(V)
 
 
+
 class DriveHandler(tornado.web.RequestHandler):
     def initialize(self, session, pilot, vehicles):
         #the parrent controller
@@ -167,6 +185,7 @@ class DriveHandler(tornado.web.RequestHandler):
         #Hack to take json from a file
         #data = json.loads(self.request.files['json'][0]['body'].decode("utf-8") )
         
+        #Get angle/throttle from pilot loaded by the server.
         pilot_angle, pilot_throttle = self.pilot.decide(img_arr)
 
         V = self.vehicles[vehicle_id]
@@ -174,11 +193,13 @@ class DriveHandler(tornado.web.RequestHandler):
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
 
+        #save image with encoded angle/throttle values
         self.session.put(img, 
                          angle=V['user_angle'],
                          throttle=V['user_throttle'], 
                          milliseconds=V['milliseconds'])
 
+        #depending on the drive mode, return user or pilot values
         if V['drive_mode'] == 'user':
             angle, throttle  = V['user_angle'], V['user_throttle']
         elif V['drive_mode'] == 'auto_angle':
@@ -187,6 +208,8 @@ class DriveHandler(tornado.web.RequestHandler):
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
         print('%s: A: %s   T:%s' %(V['drive_mode'], angle, throttle))
+
+        #retun angel/throttle values to vehicle with json response
         self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle)}))
 
 
@@ -194,6 +217,7 @@ class DriveHandler(tornado.web.RequestHandler):
 class CameraMJPEGHandler(tornado.web.RequestHandler):
     def initialize(self, vehicles):
          self.vehicles = vehicles
+
 
     @tornado.web.asynchronous
     @tornado.gen.coroutine
