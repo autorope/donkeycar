@@ -16,7 +16,7 @@ def save_dataset(X, Y, file_path):
 
 
 def load_file(file_path):
-    with open(path, 'rb') as f:
+    with open(file_path, 'rb') as f:
         X, Y = pickle.load(f)
     return X,Y
 
@@ -67,8 +67,10 @@ def moving_square(n_frames=100, return_x=True, return_y=True):
         movie[t, y - w: y + w, x - w: x + w,  1] += 1
         labels[t] = np.array([x, y])
         
-
+    #convert array to dtype that PIL.Image accepts
+    #and scale it to 0-256
     movie = np.uint8(movie*255.999)
+
     #only return requested labels
     if return_x and return_y:
         return movie, labels
