@@ -1,0 +1,23 @@
+
+#joystick_container { 
+	position: fixed; 
+	bottom:0; 
+	right:0; 
+	width: 400px; 
+	height:40%; 
+	border:1pt solid black;
+	background-color: rgba(255, 0, 0, 0.1);
+}
+
+@media (max-width: 600px) {
+	#mpeg-image {
+		position: relative;
+		width: 100%;
+	}
+
+	#joystick_container { 
+		width:100%; 
+	}
+}
+
+

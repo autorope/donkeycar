@@ -1,179 +1,78 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>tornado WebSocket example</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Donkey Monitor </title>
   <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-  <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+
+  <script
+    src="https://code.jquery.com/jquery-3.1.1.min.js"
+    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+    crossorigin="anonymous"></script>
+
+  <script type="text/javascript" src="/static/nipple.js"></script>
+  <script type="text/javascript" src="/static/main.js"></script>
+  <link href="/static/style.css" rel="stylesheet">
+
 </head>
+
+
 <body>
   
   <div class="container">
     <h1>Donkey Monitor</h1>
     <span> This website is run on the vehicle </span>
+    
+    <hr>
+
     <div class="row">
-      <div class="span4">
-        <h3>Image Stream (MJPEG) </h3>
-          <img src="mjpeg/test.mjpeg"/>
+      <div class="col-md-6">
+        <p>Image Stream (MJPEG) </p>
+          <img id='mpeg-image' src="mjpeg/test.mjpeg"/>
       </div>
     </div>
 
     <hr> 
+    
     <div class="row">
-      <div class="col-lg-8">
+      <div class="col-md-6">
 
         <form class="form-inline">
-
           <table class="table">
             <tbody>
               <tr>
                 <th> </th>
                 <th>Value</th>
-                <th>Key Shortcuts</th>
               </tr>
 
               <tr>
                 <th class='text-left'><label class='col-xs-3'> Angle </label></th>
                 <td><input id='angleInput' class='form-control' disabled /></td>
-                <td>j: left   l: right</td>
               </tr>
               <tr>
-                <th><label class='col-xs-3'> Speed </label></th>
+                <th><label class='col-xs-3'> Speed2 </label></th>
                 <td><input id='throttleInput' class='form-control' disabled /></td>
-                <td>i: faster   k: slower </td>
               </tr>
               <tr>
                 <th><label class='col-xs-3'> Drive Mode </label></th>
                 <td><input id='driveMode' class='form-control' disabled /></td>
-                <td>a: auto, s: angle_only, d:user </td>
               </tr>
             </tbody>
           </table>
-
         </form>
+
       </div>
     </div>
+
+    <!--  Spacer -->
+    <div style='position: relative; height: 200px; width: 100%'> </div>
+
+    <div id="joystick_container">
+      <span> Joystic Container </span>
+    </div>
+
   </div>
 
-<script
-  src="https://code.jquery.com/jquery-3.1.1.min.js"
-  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
-  crossorigin="anonymous"></script>
-
-  <script>
-
-$( document ).ready(function() {
-    console.log( "ready!" );
-    velocity.bind()
-});
-
-$(document).keydown(function(e) {
-    if(e.which == 73) {
-      // 'i'  throttle up
-        velocity.throttleUp()
-    } 
-
-    if(e.which == 75) {
-      // 'k'  slow down
-        velocity.throttleDown()
-    }
-
-    if(e.which == 74) {
-      // 'j' turn left
-        velocity.angleLeft()
-    }
-
-    if(e.which == 76) {
-      // 'l' turn right
-        velocity.angleRight()
-    }
-
-    if(e.which == 65) {
-      // 'a' turn on auto mode
-        velocity.updateDriveMode('auto')
-    }
-    if(e.which == 68) {
-      // 'a' turn on auto mode
-        velocity.updateDriveMode('user')
-    }
-      if(e.which == 83) {
-      // 'a' turn on auto mode
-        velocity.updateDriveMode('auto_angle')
-    }
-});
-
-
-var velocity = (function() {
-    //functions to change velocity of vehicle
-
-    var angle = 0
-    var throttle = 0
-    var driveMode = 'user'
-    var angleEl = "#angleInput"
-    var throttleEl = "#throttleInput"
-    var sendURL = "control/"
-
-    var bind = function(data){
-        //Bind a function to capture the coordinates of the click.
-        $(angleEl).change(function(e) {
-            sendVelocity()
-        });
-        $(throttleEl).change(function(e) {
-            sendVelocity()
-        });
-    };
-
-    var sendVelocity = function() {
-        //Send angle and throttle values
-        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 'drive_mode':driveMode})
-        $.post(sendURL, data)
-    };
-
-    var throttleUp = function(){
-        //Bind a function to capture the coordinates of the click.
-        throttle = Math.min(throttle + 10, 400);
-        $(throttleEl).val(throttle)
-        sendVelocity()
-        };
-
-    var throttleDown = function(){
-        //Bind a function to capture the coordinates of the click.
-        throttle = Math.max(throttle - 10, -200);
-        $(throttleEl).val(throttle);
-        sendVelocity()
-    };
-
-    var angleLeft = function(){
-      //Bind a function to capture the coordinates of the click.
-      angle = Math.max(angle - 10, -90)
-      $(angleEl).val(angle);
-      sendVelocity()
-    };
-
-    var angleRight = function(){
-      //Bind a function to capture the coordinates of the click.
-      angle = Math.min(angle + 10, 90)
-      $(angleEl).val(angle);
-      sendVelocity()
-    };
-
-    var updateDriveMode = function(mode){
-      //Bind a function to capture the coordinates of the click.
-      driveMode = mode;
-      $('#driveMode').val(mode);
-      sendVelocity()
-    };
-
-    return {
-                bind: bind,
-                throttleUp: throttleUp,
-                throttleDown: throttleDown,
-                angleLeft: angleLeft,
-                angleRight: angleRight,
-                sendVelocity: sendVelocity,
-                updateDriveMode: updateDriveMode
-            };
-})();
-
-  </script>
+    
 </body>
 </html>

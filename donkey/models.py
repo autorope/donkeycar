@@ -128,3 +128,41 @@ def norm_cnn3_full1():
     model = Model(input=[img_in], output=[angle_out])
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
+
+
+def vision_2D(dropout_frac=.2):
+    ''' 
+    This is a 2D version of the 3d implementaion of the vision model
+    used by the winner of the steering angle project at Udacity.
+    https://github.com/udacity/self-driving-car/blob/master/steering-models/community-models/komanda/solution-komanda.ipynb
+    '''
+
+    img_in = Input(shape=(120, 160, 3), name='img_in')
+    
+    net =  Convolution2D(64, 12, 12, subsample=(6,6))(x)
+    net =  Dropout(dropout_frac)(x)
+    aux1 = Dense(128)(net)
+
+    net =  Convolution2D(64, 5, 5, subsample=(2,2))(net)
+    net =  Dropout(dropout_frac)(x)
+    aux2 = Dense(128)(net)
+
+    net =  Convolution2D(64, 5, 5, subsample=(2,2))(net)
+    net =  Dropout(dropout_frac)(x)
+    aux3 = Dense(128)(net)
+
+    net =  Convolution2D(64, 5, 5, subsample=(2,2))(net)
+    net =  Dropout(dropout_frac)(x)
+    aux4 = Dense(128)(net)
+
+    net =  Dense(512)(net)
+    net =  Dropout(dropout_frac)(x)    
+    net =  Dense(256)(net)
+    net =  Dropout(dropout_frac)(x)
+    net =  Dense(128)(net)
+
+    net = merge([net, aux1, aux2, aux3, aux4], mode=sum)
+    net = keras.layers.advanced_activations.ELU(alpha=1.0)(net)
+    net = BatchNormalization()(net)
+
+    return net

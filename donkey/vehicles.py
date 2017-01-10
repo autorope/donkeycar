@@ -23,7 +23,7 @@ class BaseVehicle:
         angle = 0
         throttle = 0
 
-        #basic drive loop
+        #drive loop
         while True:
             now = time.time()
             milliseconds = int( (now - start_time) * 1000)
