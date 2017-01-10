@@ -15,13 +15,13 @@ from operator import itemgetter
 import donkey as dk
 from keras.callbacks import ModelCheckpoint
 
-sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions/')
-s = sh.load('test')
+#sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions/')
+#s = sh.load('test')
 
 #datasets we want to test
+
 #datasets = {'square': dk.datasets.moving_square(1000, return_y=False)}
 datasets = {'square': dk.datasets.load_file('/home/wroscoe/code/notebooks/whiteline_dataset.pkl')}
-
 
 
 #the models we want to test
@@ -29,6 +29,7 @@ models = {
             #'cnn3_full1_rnn1': dk.models.cnn3_full1_rnn1(),
             'cnn3_full1': dk.models.cnn3_full1(),
             #'norm_cnn3_full1': dk.models.norm_cnn3_full1(),
+            'norm_cnn3_full1': dk.models.norm_cnn3_full1(),
             #'cnn1_full1': dk.models.cnn1_full1(),
         }
 
@@ -47,6 +48,7 @@ for ds_name, ds in datasets.items():
         callbacks_list = [checkpoint]
 
         X, Y = ds
+
         hist = m.fit(X, Y, batch_size=32, nb_epoch=10, 
                          validation_split=.2, callbacks=callbacks_list)
         
@@ -75,6 +77,5 @@ print(results)
 #pip install -e .
 #pip install keras tensorflow-gpu scikit-image
 #python demos/amazon_test.py
-
 
 #install cudu: https://developer.nvidia.com/cuda-downloads
