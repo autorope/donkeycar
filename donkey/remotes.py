@@ -73,7 +73,8 @@ class RemoteServer():
         vehicle_data = {'user_angle': 0, 
                         'user_throttle': 0,  
                         'drive_mode':'user', 
-                        'milliseconds': 0,}
+                        'milliseconds': 0,
+                        'recording': False}
 
 
         self.vehicles = {'mycar':vehicle_data}
@@ -112,7 +113,7 @@ class RemoteServer():
 
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
 
-            ])
+            ], debug=True)
 
         app.listen(self.port)
         tornado.ioloop.IOLoop.instance().start()
@@ -146,11 +147,18 @@ class ControllerHandler(tornado.web.RequestHandler):
 
         angle = data['angle']
         throttle = data['throttle']
-        drive_mode = data['drive_mode']
 
         V = self.vehicles[vehicle_id]
 
-        V['drive_mode'] = drive_mode
+        #Set recording mode
+        if data['recording'] == 'true':
+            V['recording'] = True
+        else:
+            V['recording'] = False
+
+
+        #update vehicle angel based on drive mode
+        V['drive_mode'] = data['drive_mode']
 
         if angle is not "":
             V['user_angle'] = int(angle)
@@ -193,11 +201,13 @@ class DriveHandler(tornado.web.RequestHandler):
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
 
-        #save image with encoded angle/throttle values
-        self.session.put(img, 
-                         angle=V['user_angle'],
-                         throttle=V['user_throttle'], 
-                         milliseconds=V['milliseconds'])
+
+        if V['recording'] == True:
+            #save image with encoded angle/throttle values
+            self.session.put(img, 
+                             angle=V['user_angle'],
+                             throttle=V['user_throttle'], 
+                             milliseconds=V['milliseconds'])
 
         #depending on the drive mode, return user or pilot values
         if V['drive_mode'] == 'user':

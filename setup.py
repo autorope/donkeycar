@@ -43,6 +43,7 @@ setup(name='donkey',
                         'keras',
                         'h5py',
                         'envoy',
+                        'scikit-image'
                         ],
                     'pi': [
                         'picamera',

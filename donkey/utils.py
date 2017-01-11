@@ -4,29 +4,18 @@ import math
 from io import BytesIO
 import os
 import glob
+import socket
 
 from PIL import Image
 import numpy as np
 
 import envoy
 
-def square(im):
-    ''' 
-    accepts: PIL image
-    returns: the center square of an PIL image
-    '''
-    
-    width, height = im.size
-    size = min(height, width)
-    width_diff = (width-size)//2
-    height_diff = (height-size)//2
-    x1 = width_diff
-    x2 = width - width_diff
-    y1 = height_diff
-    y2 = height - height_diff
-    im = im.crop((x1, y1, x2, y2))
-    return im
 
+
+'''
+IMAGES
+'''
 
 def scale(im, size=128):
     '''
@@ -85,19 +74,28 @@ def binary_to_img(binary):
     return Image.open(img)
 
 
-def img_to_greyarr(img):
-    '''
-    Accepts PIL immage and returns flat greyscale numpy array
-    '''
-    arr=img.convert('L') #makes it greyscale
-    arr=np.asarray(arr.getdata(),dtype=np.float64).reshape((arr.size[1],arr.size[0]))
-    arr = arr/255
-    return arr
+def create_video(img_dir_path, output_video_path):
+
+    # Setup path to the images with telemetry.
+    full_path = os.path.join(img_dir_path, 'frame_*.png')
+
+    # Run ffmpeg.
+    command = ("""ffmpeg
+               -framerate 30/1
+               -pattern_type glob -i '%s'
+               -c:v libx264
+               -r 15
+               -pix_fmt yuv420p
+               -y
+               %s""" % (full_path, output_video_path))
+    response = envoy.run(command)
 
 
 
 
-
+'''
+DATASETS
+'''
 
 def split_data(X, Y, test_frac=.8):
     count = len(X)
@@ -129,21 +127,11 @@ def split_list(L, sequential=False, test_frac=.8):
 
 
 
-def create_video(img_dir_path, output_video_path):
 
-    # Setup path to the images with telemetry.
-    full_path = os.path.join(img_dir_path, 'frame_*.png')
 
-    # Run ffmpeg.
-    command = ("""ffmpeg
-               -framerate 30/1
-               -pattern_type glob -i '%s'
-               -c:v libx264
-               -r 15
-               -pix_fmt yuv420p
-               -y
-               %s""" % (full_path, output_video_path))
-    response = envoy.run(command)
+
+
+
 
 
 '''
@@ -169,6 +157,16 @@ def make_dir(path):
 
 
 
+
+
+
+
+
+
+'''
+BINNING
+functions to help converte between floating point numbers and categories.
+'''
 
 def log_bin(a, has_negative=True):
     """ 
@@ -220,3 +218,16 @@ def unbin_telemetry(y):
     throttle = log_unbin(np.argmax(t_arr), has_negative=False)
     
     return angle, throttle
+
+
+
+
+
+'''
+NETWORKING
+'''
+
+def my_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(('192.0.0.8', 1027))
+    return s.getsockname()[0]
