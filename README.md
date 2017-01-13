@@ -8,6 +8,13 @@ Donkey is minimalist and modular self driving library written in Python. It is d
 * Use community datasets to create, improve and test autopilots that other people can use.  
 
 
+#### Library Features:
+* Data logging of image, steering angle, & throttle outputs. 
+* Wifi car controls (a virtual joystic).
+* Community contributed driving data and autopilots.
+* Hardware CAD designs for optional upgrades.
+
+
 ### Drive your car
 Once you have built your car you can use it like this.
 
