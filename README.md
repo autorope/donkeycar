@@ -18,18 +18,13 @@ Donkey is minimalist and modular self driving library written in Python. It is d
 ### Drive your car
 Once you have built your car you can use it like this.
 
-1. Start the default pilot server. 
-	```python
-	python demos/serve.py
-	```
-2. Start your car and connect it to the pilot server.
-	```python
-	#run on the vehicles raspberry pi
-	python demos/drive_pi.py  --remote http://<your_pilot_server_ip>:8887
-	```
+1. Start the default pilot server. `python demos/serve.py`
+
+2. Start your car and connect it to the pilot server. `python demos/drive_pi.py  --remote http://<your_pilot_server_ip>:8887`
+
 3. Go to `<your_pilot_server_ip>:8887` on your phone or computer to start driving your car. 
 
- Use [demos](demos) to see how to record driving data, train autopilots and more.
+ Use the [demos](demos) to see how to record driving data, train autopilots and more.
  
 
 
