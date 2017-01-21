@@ -13,7 +13,7 @@ sh = dk.sessions.SessionHandler(sessions_path=sessions_path)
 session = sh.new()
 
 #start server
-w = dk.remotes.RemoteServer(session, pilot)
+w = dk.remotes.RemoteServer(session, pilot, port=8886)
 w.start()
 
 #in a browser go to localhost:8887 to drive your car
