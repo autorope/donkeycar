@@ -31,6 +31,7 @@ models = {
             #'norm_cnn3_full1': dk.models.norm_cnn3_full1(),
             'norm_cnn3_full1': dk.models.norm_cnn3_full1(),
             #'cnn1_full1': dk.models.cnn1_full1(),
+            #'vision_2D' : dk.models.vision_2D()
         }
 
 

@@ -38,13 +38,14 @@ if __name__ == '__main__':
                                                   right_pulse=400)
 
     #asych img capture from picamera
-    mycamera = dk.sensors.PiVideoStream()
     
     #Get all autopilot signals from remote host
     mypilot = dk.remotes.RemoteClient(remote_url, vehicle_id='mycar')
 
     #Create your car your car
-    car = dk.vehicles.BaseVehicle(camera=mycamera,
+    car = dk.vehicles.BaseVehicle(
+                                  drive_loop_delay=.05, #seconds
+                                  camera=mycamera,
                                   steering_actuator=mysteering,
                                   throttle_actuator=mythrottle,
                                   pilot=mypilot)

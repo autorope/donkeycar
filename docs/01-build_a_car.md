@@ -1,5 +1,5 @@
 # Get Started
-This doc will walk you through how to setup your donkey.
+This doc will walk you through how make an RC car that can autonomousy folow lines, lanes and sidewalks. 
 
 
 ## Bill of Materials.
