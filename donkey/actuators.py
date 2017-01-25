@@ -24,17 +24,59 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
     return int(y)
 
 
-class BaseSteeringActuator():
-    ''' Placeholder until real logic is implemented '''
+class BaseMixer():
 
-    def update(self, angle):
+    def update_angle(self, angle):
         print('BaseSteeringActuator.update: angle=%s' %angle)
 
-class BaseThrottleActuator():
-    ''' Placeholder until real logic is implemented '''
-
-    def update(self, throttle):
+    def update_throttle(self, throttle):
         print('BaseThrottleActuator.update: throttle=%s' %throttle)
+
+    def update(self, angle=0, throttle=0):
+        '''Convenience function to update
+        angle and throttle at the same time'''
+        self.update_angle(angle)
+        self.update_throttle(throttle)
+
+
+class FrontSteeringMixer(BaseActuatorMixer):
+
+    def __init__(self, 
+                 steering_actuator=None, 
+                 throttle_actuator=None)
+        self.steering_actuator = steering_actuator
+        self.throttle_actuator = throttle_actuator
+
+    def update_angle(self, angle):
+        self.steering_actuator.update_angle(angle)
+
+    def update_throttle(self, throttle):
+        self.throttle_actuator.update_throttle(throttle)
+
+
+class DifferentialSteeringMixer(BaseActuatorMixer):
+
+    def __init__(self, 
+                 left_actuator=None, 
+                 right_actuator=None,
+                 angle_throttle_multiplier = 1.0)
+        self.left_actuator = left_actuator
+        self.right_actuator = right_actuator
+        self.angle = 0
+        self.throttle = 0
+        self.angle_throttle_multiplier = angle_throttle_multiplier
+
+    def update_angle(self, angle):
+        self.angle = angle
+        self.update_actuators()
+
+    def update_throttle(self, throttle):
+        self.throttle = throttle
+        self.update_actuators()
+
+    def update_actuators(self):
+        self.left_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
+        self.right_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
 
 
 class Adafruit_PCA9685_Actuator():
@@ -71,7 +113,6 @@ class PWMSteeringActuator(Adafruit_PCA9685_Actuator):
                           self.left_pulse, self.right_pulse)
 
         self.pwm.set_pwm(self.channel, 0, pulse)
-
 
 
 class PWMThrottleActuator(Adafruit_PCA9685_Actuator):

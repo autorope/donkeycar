@@ -37,16 +37,17 @@ if __name__ == '__main__':
                                                   left_pulse=300,
                                                   right_pulse=400)
 
+    mymixer = dk.actuators.FrontSteeringMixer(mysteering, mythrottle)
+
     #asych img capture from picamera
     mycamera = dk.sensors.PiVideoStream()
     
     #Get all autopilot signals from remote host
     mypilot = dk.remotes.RemoteClient(remote_url, vehicle_id='mycar')
 
-    #Create your car your car
+    #Create your car
     car = dk.vehicles.BaseVehicle(camera=mycamera,
-                                  steering_actuator=mysteering,
-                                  throttle_actuator=mythrottle,
+                                  actuator_mixer=mymixer,
                                   pilot=mypilot)
 
     
