@@ -2,9 +2,19 @@
 
 With donkey, you can build angle steering or differential steering vehicles. This document walks through how to build both types.
 
+#### Steps
+1. [Get Parts](#1.-get-parts)
+2. [Setup Raspbery Pi](#2.-setup-raspberry-pi) (30 min)
+3. [Install Pi Camera](#3.-install-pi-camera) (15 min)
+4. [Solder and install motor shield](#4.-solder-and-install-motor-shield) (30 min) 
+5. [Install Donkey](#5.-install-donkey)
+6. [Assemble vehicle](#6.-assemble-vehicle) (2 hr)
+7. Drive your vehicle.  (30 min)
+8. Train an autopilot.  (30 min)
+9. Load autopilot to drive car.  (15 min)
 
-## Angle Steering Vehicle
-This vehicle steers uses a servo to angle its front wheles. Use these instructions if your modifying an RC car. 
+
+### 1. Get Parts 
 
 #### Components
 * [Raspberry Pi 3 B](https://www.raspberrypi.org/products/raspberry-pi-3-model-b/) ($35)
@@ -30,15 +40,9 @@ These parts can be made using a 3D printer and laser cutter. ***If you don't hav
 
  
 
-#### Steps
-1. [Setup Raspbery Pi & Pi Camera](01-1-setup_raspberry_pi.md) (1 hr)
-2. Solder and install the servo shield. (1 hr) 
-3. Assemble your vehicle. (2 hr)
-4. Drive your vehicle.  (30 min)
-5. Train an autopilot.  (30 min)
-6. Load autopilot to drive car.  (15 min)
 
-### Setup the Raspberry Pi
+
+### 2. Setup Raspberry Pi
 This doc will walk you through how make an RC car that can autonomousy folow lines, lanes and sidewalks. 
 
 
@@ -85,7 +89,7 @@ Since the RPi is not as powerful as a laptop, it can take a long time to install
 	sudo apt-get install python3-numpy python3-matplotlib python3-scipy python3-pandas 
 	```
 
-#### Install your Camera
+### 3. Install Pi Camera
 Follow the instructions [here](https://www.raspberrypi.org/learning/getting-started-with-picamera/worksheet/).
 
 
@@ -94,12 +98,13 @@ Follow the instructions [here](https://www.raspberrypi.org/learning/getting-star
 3. Restart your Pi. `sudo reboot`
 
 
-#### Connect your servo sheild. 
+###4. Solder and Install Motor Sheild
 
 1. Assemble and test your servo shield with the instructions given by Adafruit. 
 
 
-#### Install Donkey
+
+###5. Install Donkey
 
 
 clone repo & create virtual env
@@ -115,6 +120,16 @@ virtualenv --system-site-packages -p python3 env
 source env/bin/activate
 pip install -e ../donkey[pi]
 ```
+
+
+###6. Assemble Vehicle
+
+This section explains how to create the custom structural components for your vehicle and use them to securely attach your camera, pi and battery.
+
+#### Create Custom Parts
+1. **Base Plate** The base plate is the structural member that provides a flat surface to attach the Pi, battery and camera.
+2. **Camera Mount** The camera mount holds the Pi Camera at the correct height and angle. 
+3. **Roll Bars** Protective bars to prevent damage to your camera and electronics. 
 
 
 
