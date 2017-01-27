@@ -1,7 +1,7 @@
 """
-Script to start controlling your car remotely via on Raspberry Pi that 
-constantly requests directions from a remote server. See serve_no_pilot.py
-to start a server on your laptop. 
+Script to run on the Raspberry PI to start your vehicle's drive loop. The drive loop
+will use post requests to the server specified in the remote argument. Use the
+serve.py script to start the remote server.
 
 Usage:
     drive.py [--remote=<name>] 
@@ -43,8 +43,7 @@ if __name__ == '__main__':
     mypilot = dk.remotes.RemoteClient(remote_url, vehicle_id='mycar')
 
     #Create your car your car
-    car = dk.vehicles.BaseVehicle(
-                                  drive_loop_delay=.05, #seconds
+    car = dk.vehicles.BaseVehicle(drive_loop_delay=.05, #seconds
                                   camera=mycamera,
                                   steering_actuator=mysteering,
                                   throttle_actuator=mythrottle,

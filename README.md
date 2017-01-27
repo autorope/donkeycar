@@ -24,7 +24,7 @@ Once you have built your car you can use it like this.
 
 3. Go to `<your_pilot_server_ip>:8887` on your phone or computer to start driving your car. 
 
- Use the [demos](demos) to see how to record driving data, train autopilots and more.
+ Use the [scripts](scripts) for more tools to manipulate datasets and train autopilots.
  
 
 

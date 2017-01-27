@@ -1,29 +1,6 @@
-# Get Started
+# Setup the Raspberry Pi
 This doc will walk you through how make an RC car that can autonomousy folow lines, lanes and sidewalks. 
 
-
-## Bill of Materials.
-#### Required
-* Raspberry Pi 3 B ($35)
-* Raspberry Pi Camera ($15)
-* Micro USB power adapter. ($9)
-* USB Battery Pack ($15)
-* USB Keyboard 
-* USB Mouse
-* Monitor 
-* HDMI cable (to connect monitor to PI) ($7)
-* Micro SD Card (campatible with Raspberry Pi) ($8)
-* Servo Sheild ($15)
-* RC CAR (($120-300))
-
-#### Optional
-* Xbox 360 Controller
-* Xbox USB Adapter
-
-
-
-## Setup
-These instructions are based on [Geoff Boeing's post on setting up scientific python on a Raspberry Pi](http://geoffboeing.com/2016/03/scientific-python-raspberry-pi/).
 
 #### Boot your Raspberry Pi
 These instructions assume you're using Ubuntu operationg system. If you don't have Ubuntu, try using the NOOB method.
@@ -39,6 +16,9 @@ These instructions assume you're using Ubuntu operationg system. If you don't ha
 
 #### Install Basic Libraries
 Since the RPi is not as powerful as a laptop, it can take a long time to install python packages (ie. numpy & PIL) using pip. Luckly Adafruit has precompiled these libraries into packages that can be installed via `apt-get`.
+
+These instructions are based on [Geoff Boeing's post on setting up scientific python on a Raspberry Pi](http://geoffboeing.com/2016/03/scientific-python-raspberry-pi/).
+
 
 1. Open a terminal (Ctrl-Alt-t) and upgrade your system packages.
 
