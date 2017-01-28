@@ -1,30 +1,31 @@
-# Donkey: a self driving library for small scale DIY vehicles. 
+# Donkey: a self driving library and control platform for small scale DIY vehicles. 
 
-Donkey is minimalist and modular self driving library written in Python. It is developed with a focus on being a toolbox to allowing fast experimentation for any hobbiest. 
+Donkey is minimalist and modular self driving library written in Python. It is developed for hobbiests with a focus on allowing fast experimentation and easy community contributions.  
 
 ####Use Donkey if you want to:
-* quickly [build your own self driving RC Car](docs/01-build_a_car.md) with a Raspbery Pi.
-* use proven algorithms to drive your car. 
-* test out your self driving idea against established methods 
+* [Quickly build your own self driving RC car.](docs/01-build_a_car.md) (~$200 + 5hrs).
+* Use existing autopilots to drive your car.
+* Use community datasets to create, improve and test autopilots that other people can use.  
 
 
-###Guiding Principles
-* **Modularity**: A self driving system is composed of standalone, independently configurable modules that can be connected modules.
-
-* **Minimalism**: Each component should be kept short (<100 lines of code). Each peice of code should be transparent apon first reading. No black magic, it slows the speed of innovation. 
-
-* **Extensiblity**: New components should be simple to create by following a template. 
-
-* **Python**: Keep it simple. 
-
-***These guidelines are nearly copied from Keras because they are so good*** 
+#### Library Features:
+* Data logging of image, steering angle, & throttle outputs. 
+* Wifi car controls (a virtual joystic).
+* Community contributed driving data and autopilots.
+* Hardware CAD designs for optional upgrades.
 
 
+### Drive your car
+Once you have built your car you can use it like this.
 
-### Get started.
-Once you have built your car see the [demos](demos) to see how to use the Donkey Library: 
+1. Start the default pilot server. `python demos/serve.py`
+
+2. Start your car and connect it to the pilot server. `python demos/drive_pi.py  --remote http://<your_pilot_server_ip>:8887`
+
+3. Go to `<your_pilot_server_ip>:8887` on your phone or computer to start driving your car. 
+
+ Use the [demos](demos) to see how to record driving data, train autopilots and more.
  
-
 
 
 

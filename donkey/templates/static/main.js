@@ -1,18 +1,37 @@
 
+$( document ).ready(function() {
+    console.log( "document ready!" );
+    velocity.bind()
+
+  var joystick_options = {
+      zone: document.getElementById('joystick_container'),                  // active zone
+      color: '#668AED',
+      size: 350,
+  };
+
+  var manager = nipplejs.create(joystick_options);
+
+  bindNipple(manager);
+
+});
+
+
+//Defaults
 var postLoopRunning=false;   
 var sendURL = "control/"
 
 
 function sendControl(angle, throttle, drive_mode, recording) {
+    //Send post request to server.
     data = JSON.stringify({ 'angle': angle, 
                             'throttle':throttle, 
                             'drive_mode':drive_mode,
                             'recording':recording})  
-           
   $.post(sendURL, data)
 }
 
 
+// Send control updates to the server every .1 seconds.
 function postLoop () {           
    setTimeout(function () {    
         sendControl($('#angleInput').val(),
@@ -30,25 +49,6 @@ function postLoop () {
 }
 
 
-
-
-$( document ).ready(function() {
-    console.log( "ready!" );
-    velocity.bind()
-
-  var options = {
-      zone: document.getElementById('joystick_container'),                  // active zone
-      color: '#668AED',
-      size: 400,
-  };
-
-  var manager = nipplejs.create(options);
-
-  bindNipple(manager);
-
-});
-
-
 function bindNipple(manager) {
   manager.on('start end', function(evt, data) {
     $('#angleInput').val(0);
@@ -60,7 +60,6 @@ function bindNipple(manager) {
     } else {
       postLoopRunning=false;
     }
-    
 
   }).on('move', function(evt, data) {
     angle = data['angle']['radian']
@@ -130,7 +129,7 @@ var velocity = (function() {
 
     var sendVelocity = function() {
         //Send angle and throttle values
-        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 'drive_mode':driveMode})
+        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 'drive_mode':driveMode, 'recording':'false'})
         $.post(sendURL, data)
     };
 

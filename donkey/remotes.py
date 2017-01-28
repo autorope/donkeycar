@@ -64,9 +64,9 @@ class RemoteServer():
     runs a predictor and returns the predictions.
     '''
     
-    def __init__(self, session, pilot):
-
-        self.port = int(os.environ.get("PORT", 8887))
+    def __init__(self, session, pilot, port=8887):
+        
+        self.port = int(port)
         self.session = session
         self.pilot = pilot
 
