@@ -1,6 +1,6 @@
 import time
 import sys
-import actuators
+from donkey import actuators
 
 class BaseMixer():
 
@@ -17,7 +17,7 @@ class BaseMixer():
         self.update_throttle(throttle)
 
 
-class FrontSteeringMixer(BaseActuatorMixer):
+class FrontSteeringMixer(BaseMixer):
 
     def __init__(self, 
                  steering_actuator=None, 
@@ -32,7 +32,7 @@ class FrontSteeringMixer(BaseActuatorMixer):
         self.throttle_actuator.update_throttle(throttle)
 
 
-class DifferentialSteeringMixer(BaseActuatorMixer):
+class DifferentialSteeringMixer(BaseMixer):
 
     def __init__(self, 
                  left_actuator=None, 
