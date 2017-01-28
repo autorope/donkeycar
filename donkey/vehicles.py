@@ -4,7 +4,7 @@ class BaseVehicle:
     def __init__(self,
                  drive_loop_delay = .2,
                  camera=None,
-                 actuator_mixer=None
+                 actuator_mixer=None,
                  pilot=None):
 
         self.drive_loop_delay = drive_loop_delay #how long to wait between loops
