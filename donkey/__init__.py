@@ -8,6 +8,7 @@ if uname[1] != 'raspberrypi':
                    remotes, 
                    sensors,
                    actuators,
+                   mixers,
                    vehicles,
                    pilots,
                    templates,) 

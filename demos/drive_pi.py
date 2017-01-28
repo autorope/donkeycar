@@ -26,14 +26,16 @@ if __name__ == '__main__':
 
     remote_url = args['--remote']
 
+    mythrottlecontroller = PCA9685_Controller(channel=0)
+    mysteeringcontroller = PCA9685_Controller(channel=1)
 
     #Set up your PWM values for your steering and throttle actuator here. 
-    mythrottle = dk.actuators.PWMThrottleActuator(channel=0,
+    mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
                                                   min_pulse=280,
                                                   max_pulse=490,
                                                   zero_pulse=350)
 
-    mysteering = dk.actuators.PWMSteeringActuator(channel=1,
+    mysteering = dk.actuators.PWMSteeringActuator(controller=mysteeringcontroller,
                                                   left_pulse=300,
                                                   right_pulse=400)
 
