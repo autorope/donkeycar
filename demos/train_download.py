@@ -4,7 +4,7 @@ Example how to download a pickled dataset from a url.
 import donkey as dk
 
 
-print('Downloading file, this could take some time.)
+print('Downloading file, this could take some time.')
 url = 'https://s3.amazonaws.com/donkey_resources/port.pkl'
 X, Y = dk.datasets.load_url(url)
 
