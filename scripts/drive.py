@@ -26,8 +26,8 @@ if __name__ == '__main__':
 
     remote_url = args['--remote']
 
-    mythrottlecontroller = PCA9685_Controller(channel=0)
-    mysteeringcontroller = PCA9685_Controller(channel=1)
+    mythrottlecontroller = dk.actuators.PCA9685_Controller(channel=0)
+    mysteeringcontroller = dk.actuators.PCA9685_Controller(channel=1)
 
     #Set up your PWM values for your steering and throttle actuator here. 
     mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
@@ -39,26 +39,17 @@ if __name__ == '__main__':
                                                   left_pulse=300,
                                                   right_pulse=400)
 
-    mymixer = dk.actuators.FrontSteeringMixer(mysteering, mythrottle)
+    mymixer = dk.mixers.FrontSteeringMixer(mysteering, mythrottle)
 
     #asych img capture from picamera
     
     #Get all autopilot signals from remote host
     mypilot = dk.remotes.RemoteClient(remote_url, vehicle_id='mycar')
 
-<<<<<<< HEAD:scripts/drive.py
-    #Create your car your car
-    car = dk.vehicles.BaseVehicle(drive_loop_delay=.05, #seconds
-                                  camera=mycamera,
-                                  steering_actuator=mysteering,
-                                  throttle_actuator=mythrottle,
-=======
     #Create your car
-    car = dk.vehicles.BaseVehicle(camera=mycamera,
-                                  actuator_mixer=mymixer,
->>>>>>> yconst/actuator_mixer:demos/drive_pi.py
-                                  pilot=mypilot)
-
+    car = dk.vehicles.BaseVehicle(drive_loop_delay=.05,
+                                  camera=mycamera,
+                                  actuator_mixer=mymixer)
     
     #Start the drive loop
     car.start()

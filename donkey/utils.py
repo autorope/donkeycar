@@ -9,10 +9,6 @@ import socket
 from PIL import Image
 import numpy as np
 
-import envoy
-
-
-
 '''
 IMAGES
 '''
@@ -75,7 +71,7 @@ def binary_to_img(binary):
 
 
 def create_video(img_dir_path, output_video_path):
-
+    import envoy
     # Setup path to the images with telemetry.
     full_path = os.path.join(img_dir_path, 'frame_*.png')
 
