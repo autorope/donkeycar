@@ -55,3 +55,27 @@ class DifferentialSteeringMixer(BaseMixer):
     def update_actuators(self):
         self.left_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
         self.right_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
+
+
+class MecanumMixer(DifferentialSteeringMixer):
+
+    def __init__(self, 
+                 lf_actuator=None, 
+                 rf_actuator=None,
+                 lr_actuator=None, 
+                 rr_actuator=None,
+                 angle_throttle_multiplier = 1.0):
+        self.lf_actuator = lf_actuator
+        self.rf_actuator = rf_actuator
+        self.lr_actuator = lr_actuator
+        self.rr_actuator = rr_actuator
+        self.angle = 0
+        self.throttle = 0
+        self.angle_throttle_multiplier = angle_throttle_multiplier
+
+    def update_actuators(self):
+        self.lf_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
+        self.rf_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
+        self.lr_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
+        self.rr_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
+        
