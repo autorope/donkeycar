@@ -27,7 +27,7 @@ class RemoteClient():
     
     def __init__(self, remote_url, vehicle_id='mycar'):
 
-        self.record_url = remote_url + '/' + vehicle_id + '/drive/'
+        self.record_url = remote_url + '/vehicle/' + vehicle_id + '/'
         
         
     def decide(self, img_arr, angle, throttle, milliseconds):
@@ -57,85 +57,164 @@ class RemoteClient():
 
 
 
+class DonkeyPilotApplication(tornado.web.Application):
 
-class RemoteServer():
-    '''
-    Class used to create server that accepts driving data, records it, 
-    runs a predictor and returns the predictions.
-    '''
-    
-    def __init__(self, session, pilot, port=8887):
-        
-        self.port = int(port)
-        self.session = session
-        self.pilot = pilot
+    def __init__(self, data_path='~/donkey_data/'):
 
-        vehicle_data = {'user_angle': 0, 
-                        'user_throttle': 0,  
-                        'drive_mode':'user', 
-                        'milliseconds': 0,
-                        'recording': False}
-
-
-        self.vehicles = {'mycar':vehicle_data}
+        self.vehicles = {}
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
-        print(self.static_file_path)
 
-        
-    def start(self):
-        '''
-        Start the webserver.
-        '''
+        self.data_path = os.path.expanduser(data_path)
+        self.sessions_path = os.path.join(self.data_path, 'sessions')
+        self.models_path = os.path.join(self.data_path, 'models')
 
-        #load features
-        app = tornado.web.Application([
+
+        handlers = [
 
             #temporary redirect until vehicles is not a singleton
-            (r"/", tornado.web.RedirectHandler,
-                dict(url="/mycar/")),
+            (r"/", HomeHandler),
 
-            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", VehicleHandler),
+            (r"/drive/", ChooseVehicleHandler),
 
-            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/control/",
-                ControllerHandler,
-                dict(vehicles = self.vehicles)
+            (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", DriveHandler),
+
+            (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/mjpeg/?(?P<file>[^/]*)?",
+                CameraMJPEGHandler
             ),
-            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/mjpeg/?(?P<file>[^/]*)?",
-                CameraMJPEGHandler,
-                dict(vehicles = self.vehicles)
+
+            (r"/vehicle/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", VehicleHandler),
+
+            (r"/sessions/", SessionListHandler),
+
+            (r"/sessions/?(?P<session_id>[^/]+)?/", SessionViewHandler),
+
+            (r"/session_image/?(?P<session_id>[^/]+)?/?(?P<img_name>[^/]+)?", 
+                SessionImageHandler
             ),
-            (r"/?(?P<vehicle_id>[A-Za-z0-9-]+)?/drive/", 
-                DriveHandler, 
-                dict(pilot=self.pilot, session=self.session, vehicles=self.vehicles)
-            ),
+
 
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
 
-            ], debug=True)
+            ]
 
-        app.listen(self.port)
+        settings = {'debug': True}
+
+        super().__init__(handlers, **settings)
+
+    def start(self, port=8887):
+        print(port)
+        self.port = int(port)
+        self.listen(self.port)
         tornado.ioloop.IOLoop.instance().start()
 
-        return True
+
+    def get_vehicle(self, vehicle_id):
+        if vehicle_id not in self.vehicles:
+            sh = dk.sessions.SessionHandler(self.sessions_path)
+            self.vehicles[vehicle_id] = dict({
+                        'user_angle': 0, 
+                        'user_throttle': 0,  
+                        'drive_mode':'user', 
+                        'milliseconds': 0,
+                        'recording': False,
+                        'pilot': dk.pilots.BasePilot(),
+                        'session': sh.new()})
+
+        return self.vehicles[vehicle_id]
+
+
+class HomeHandler(tornado.web.RequestHandler):
+    def get(self):
+        '''
+        Serves home page.
+        ''' 
+        self.render("templates/home.html")
+
+
+class ChooseVehicleHandler(tornado.web.RequestHandler):
+    def get(self):
+        '''
+        Serves home page.
+        ''' 
+        data = {'vehicles':self.application.vehicles}
+
+        self.render("templates/choose_vehicle.html", **data)
+
+
+class SessionImageHandler(tornado.web.RequestHandler):
+    def get(self, session_id, img_name):
+
+        print('SessionImageHandler')
+
+        sessions_path = self.application.sessions_path
+        path = os.path.join(sessions_path, session_id, img_name)
+        f = Image.open(path)
+        o = io.BytesIO()
+        f.save(o, format="JPEG")
+        s = o.getvalue()
+        self.set_header('Content-type', 'image/jpg')
+        self.set_header('Content-length', len(s))   
+
+        print('writing image')
+        self.write(s)   
 
 
 
+class SessionListHandler(tornado.web.RequestHandler):
 
-class VehicleHandler(tornado.web.RequestHandler):
+    def get(self):
+        '''
+        Receive post requests from vehicle with camera image. 
+        Return the angle and throttle the car should be goin. 
+        '''    
+
+        session_dirs = [f for f in os.scandir(self.application.sessions_path) if f.is_dir() ]
+        data = {'session_dirs': session_dirs}
+        self.render("templates/session_list.html", **data)
+
+
+
+class SessionViewHandler(tornado.web.RequestHandler):
+
+    def get(self, session_id):
+        '''
+        Receive post requests from vehicle with camera image. 
+        Return the angle and throttle the car should be goin. 
+        '''    
+        from operator import itemgetter
+
+        
+        sessions_path = self.application.sessions_path
+        path = os.path.join(sessions_path, session_id)
+        imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
+
+        sorted_imgs = sorted(imgs, key=itemgetter('name')) 
+        session = {'name':session_id, 'imgs': sorted_imgs[:100]}
+        data = {'session': session}
+        self.render("templates/session_view.html", **data)
+
+    def post(self, session_id):
+        data = tornado.escape.json_decode(self.request.body)
+
+        if data['action'] == 'delete_images':
+            sessions_path = self.application.sessions_path
+            path = os.path.join(sessions_path, session_id)
+
+            for i in data['imgs']:
+                os.remove(os.path.join(path, i))
+                print('%s removed' %i)
+
+
+
+class DriveHandler(tornado.web.RequestHandler):
     def get(self, vehicle_id):
         '''
-        Serves web page used to control the vehicle.
+        Serves page for users to control the vehicle.
         ''' 
+        V = self.application.get_vehicle(vehicle_id)
         self.render("templates/monitor.html")
-
-
-
-class ControllerHandler(tornado.web.RequestHandler):
-
-    def initialize(self, vehicles):
-         self.vehicles = vehicles
 
 
     def post(self, vehicle_id):
@@ -148,7 +227,7 @@ class ControllerHandler(tornado.web.RequestHandler):
         angle = data['angle']
         throttle = data['throttle']
 
-        V = self.vehicles[vehicle_id]
+        V = self.application.get_vehicle(vehicle_id)
 
         #Set recording mode
         if data['recording'] == 'true':
@@ -174,12 +253,7 @@ class ControllerHandler(tornado.web.RequestHandler):
 
 
 
-class DriveHandler(tornado.web.RequestHandler):
-    def initialize(self, session, pilot, vehicles):
-        #the parrent controller
-         self.pilot = pilot
-         self.session = session
-         self.vehicles = vehicles
+class VehicleHandler(tornado.web.RequestHandler):
 
     def post(self, vehicle_id):
         '''
@@ -193,10 +267,11 @@ class DriveHandler(tornado.web.RequestHandler):
         #Hack to take json from a file
         #data = json.loads(self.request.files['json'][0]['body'].decode("utf-8") )
         
-        #Get angle/throttle from pilot loaded by the server.
-        pilot_angle, pilot_throttle = self.pilot.decide(img_arr)
+        V = self.application.vehicles[vehicle_id]
 
-        V = self.vehicles[vehicle_id]
+        #Get angle/throttle from pilot loaded by the server.
+        pilot_angle, pilot_throttle = V['pilot'].decide(img)
+        
         V['img'] = img
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
@@ -204,7 +279,7 @@ class DriveHandler(tornado.web.RequestHandler):
 
         if V['recording'] == True:
             #save image with encoded angle/throttle values
-            self.session.put(img, 
+            V['session'].put(img, 
                              angle=V['user_angle'],
                              throttle=V['user_throttle'], 
                              milliseconds=V['milliseconds'])
@@ -225,9 +300,6 @@ class DriveHandler(tornado.web.RequestHandler):
 
 
 class CameraMJPEGHandler(tornado.web.RequestHandler):
-    def initialize(self, vehicles):
-         self.vehicles = vehicles
-
 
     @tornado.web.asynchronous
     @tornado.gen.coroutine
@@ -246,7 +318,7 @@ class CameraMJPEGHandler(tornado.web.RequestHandler):
             if self.served_image_timestamp + interval < time.time():
 
 
-                img = self.vehicles[vehicle_id]['img']
+                img = self.application.vehicles[vehicle_id]['img']
                 img = dk.utils.img_to_binary(img)
 
                 self.write(my_boundary)

@@ -20,7 +20,7 @@ import donkey as dk
 # Get args.
 args = docopt(__doc__)
 
-
+"""
 model_path = args['--model']
 
 if model_path is None: 
@@ -48,3 +48,9 @@ w.start()
 
 #in a browser go to localhost:8887 to drive your car
 
+
+"""
+
+#start server
+w = dk.remotes.DonkeyPilotApplication()
+w.start()

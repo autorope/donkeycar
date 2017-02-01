@@ -18,7 +18,7 @@ $( document ).ready(function() {
 
 //Defaults
 var postLoopRunning=false;   
-var sendURL = "control/"
+var sendURL = ""
 
 
 function sendControl(angle, throttle, drive_mode, recording) {
@@ -115,7 +115,7 @@ var velocity = (function() {
     var driveMode = 'user'
     var angleEl = "#angleInput"
     var throttleEl = "#throttleInput"
-    var sendURL = "control/"
+    var sendURL = ""
 
     var bind = function(data){
         //Bind a function to capture the coordinates of the click.

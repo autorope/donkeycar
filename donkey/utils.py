@@ -227,3 +227,10 @@ def my_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('192.0.0.8', 1027))
     return s.getsockname()[0]
+
+
+def merge_two_dicts(x, y):
+    """Given two dicts, merge them into a new dict as a shallow copy."""
+    z = x.copy()
+    z.update(y)
+    return z

@@ -1,0 +1,74 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+	<body>
+
+
+
+
+	  <style>
+	  #selectable .ui-selecting { background: #FECA40; }
+	  #selectable .ui-selected { background: #F39814; color: white; }
+	  </style>
+
+		<h2> Sessions {{ escape(session['name'])}} </h2>
+
+
+		<div class="dropdown">
+		  <button id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+		    Actions
+		    <span class="caret"></span>
+		  </button>
+		  <ul class="dropdown-menu" id="deleteButton" aria-labelledby="dLabel">
+		    <li><a href="#">Delete Selected</a></li>
+		  </ul>
+		</div>
+
+
+		<div id="selectable">
+		{% for img in session['imgs'] %}
+			<div class="img ui-state-default" id="{{ img['name'] }}">
+				<img src="/session_image/{{session['name']}}/{{ img['name'] }}" > 
+
+				<div class="desc">Angle: {{img['angle']}}</div>
+			</div>
+
+		{% end %}
+		</div>
+		<script>
+		$( function() {
+			var selected = new Array();
+			$("#selectable").selectable({
+			    stop: function( event, ui ) {      
+			    	selected = []
+			    	$('.img.ui-selected').each(function() {
+					    selected.push(this.id);
+					});     
+					console.log(selected)
+			    }
+			});
+
+			var deleteImages = function () {
+				
+			}
+
+
+		    $('#deleteButton').click(function(){
+						           //Send post request to server.
+				    data = JSON.stringify({ 'imgs': selected, 
+				                            'session_id': $('#session_id').data('id'),
+				                            'action':'delete_images'});
+				    console.log(data)
+
+				  $.post('', data)
+		    });
+		} );
+		</script>
+	
+	<div class='meta' style="display:none">
+		<span id="session_id" data-id={{ escape(session['name'])}}>session_id:  {{ escape(session['name'])}} </span>
+	</div>
+
+	</body>
+{% end %}
