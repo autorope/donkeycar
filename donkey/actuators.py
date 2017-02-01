@@ -36,7 +36,9 @@ class PCA9685_Controller:
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
 
-
+    def set_pulse(self, pulse):
+        self.pwm.set_pwm(self.channel, 0, pulse) 
+        
 class PWMSteeringActuator:
     #max angle wheels can turn
     LEFT_ANGLE = -45 
@@ -56,7 +58,7 @@ class PWMSteeringActuator:
                           self.LEFT_ANGLE, self.RIGHT_ANGLE,
                           self.left_pulse, self.right_pulse)
 
-        self.controller.pwm.set_pwm(self.channel, 0, pulse)
+        self.controller.set_pulse(pulse)
 
 
 class PWMThrottleActuator:
@@ -69,7 +71,8 @@ class PWMThrottleActuator:
                        min_pulse=490,
                        zero_pulse=350):
 
-        super().__init__(channel, frequency)
+        #super().__init__(channel, frequency)
+        self.controller = controller
         self.max_pulse = max_pulse
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
@@ -79,7 +82,7 @@ class PWMThrottleActuator:
     def calibrate(self):
         #Calibrate ESC (TODO: THIS DOES NOT WORK YET)
         print('center: %s' % self.zero_pulse)
-        self.pwm.set_pwm(self.channel, 0, self.zero_pulse)  #Set Max Throttle
+        self.controller.set_pulse(self.zero_pulse)  #Set Max Throttle
         time.sleep(1)
 
 
@@ -96,5 +99,5 @@ class PWMThrottleActuator:
 
         print('pulse: %s' % pulse)
         sys.stdout.flush()
-        self.pwm.set_pwm(self.channel, 0, pulse)
+        self.controller.set_pulse(pulse)
         return '123'

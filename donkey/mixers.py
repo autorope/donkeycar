@@ -26,10 +26,10 @@ class FrontSteeringMixer(BaseMixer):
         self.throttle_actuator = throttle_actuator
 
     def update_angle(self, angle):
-        self.steering_actuator.update_angle(angle)
+        self.steering_actuator.update(angle)
 
     def update_throttle(self, throttle):
-        self.throttle_actuator.update_throttle(throttle)
+        self.throttle_actuator.update(throttle)
 
 
 class DifferentialSteeringMixer(BaseMixer):
