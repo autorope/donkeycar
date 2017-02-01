@@ -28,9 +28,9 @@ class Session():
 
         self.frame_count += 1
 
-        filepath = create_img_filepath(directory, frame_count, angle, throttle, milliseconds)
+        filepath = create_img_filepath(self.session_dir, self.frame_count, angle, throttle, milliseconds)
 
-        img.save(file_name, 'jpeg')
+        img.save(filepath, 'jpeg')
 
 
     def get(self, file_path):
@@ -250,8 +250,8 @@ def parse_img_filepath(filepath):
         return data
 
 def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
-    filepath = str("%s/" % self.session_dir +
-                "frame_" + str(self.frame_count).zfill(5) +
+    filepath = str("%s/" % directory +
+                "frame_" + str(frame_count).zfill(5) +
                 "_ttl_" + str(throttle) +
                 "_agl_" + str(angle) +
                 "_mil_" + str(milliseconds) +

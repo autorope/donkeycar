@@ -80,7 +80,7 @@ class DonkeyPilotApplication(tornado.web.Application):
 
             (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", DriveHandler),
 
-            (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/mpeg/?(?P<file>[^/]*)?",
+            (r"/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/mjpeg/?(?P<file>[^/]*)?",
                 CameraMJPEGHandler
             ),
 
@@ -112,14 +112,15 @@ class DonkeyPilotApplication(tornado.web.Application):
 
     def get_vehicle(self, vehicle_id):
         if vehicle_id not in self.vehicles:
+            sh = dk.sessions.SessionHandler(self.sessions_path)
             self.vehicles[vehicle_id] = dict({
                         'user_angle': 0, 
                         'user_throttle': 0,  
                         'drive_mode':'user', 
                         'milliseconds': 0,
                         'recording': False,
-                        'pilot': None,
-                        'session': None})
+                        'pilot': dk.pilots.BasePilot(),
+                        'session': sh.new()})
 
         return self.vehicles[vehicle_id]
 
@@ -278,7 +279,7 @@ class VehicleHandler(tornado.web.RequestHandler):
 
         if V['recording'] == True:
             #save image with encoded angle/throttle values
-            self.session.put(img, 
+            V['session'].put(img, 
                              angle=V['user_angle'],
                              throttle=V['user_throttle'], 
                              milliseconds=V['milliseconds'])
