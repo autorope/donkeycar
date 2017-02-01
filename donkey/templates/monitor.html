@@ -1,23 +1,5 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Donkey Monitor </title>
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-
-  <script
-    src="https://code.jquery.com/jquery-3.1.1.min.js"
-    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
-    crossorigin="anonymous"></script>
-
-  <script type="text/javascript" src="/static/nipple.js"></script>
-  <script type="text/javascript" src="/static/main.js"></script>
-  <link href="/static/style.css" rel="stylesheet">
-
-</head>
-
-
-<body>
+{% extends "base.html" %}
+{% block content %}
   
   <div class="container">
     <h1>Donkey Control</h1>
@@ -72,7 +54,4 @@
     </div>
 
   </div>
-
-    
-</body>
-</html>
+{% end %}
