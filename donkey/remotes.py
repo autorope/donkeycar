@@ -8,6 +8,7 @@ import json
 import io
 import os
 import copy
+import math
 
 import numpy as np
 
@@ -129,7 +130,7 @@ class DonkeyPilotApplication(tornado.web.Application):
 
             (r"/sessions/", SessionListView),
 
-            (r"/sessions/?(?P<session_id>[^/]+)?/", 
+            (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?", 
                 SessionView),
 
             (r"/session_image/?(?P<session_id>[^/]+)?/?(?P<img_name>[^/]+)?", 
@@ -413,21 +414,34 @@ class SessionListView(tornado.web.RequestHandler):
 
 class SessionView(tornado.web.RequestHandler):
 
-    def get(self, session_id):
+    def get(self, session_id, page):
         '''
         Shows all the images saved in the session. 
         TODO: Add pagination.
         '''    
         from operator import itemgetter
 
-        
         sessions_path = self.application.sessions_path
         path = os.path.join(sessions_path, session_id)
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
+        img_count = len(imgs)
+        print ('page: %s'%page)
+
+        perpage = 100
+        pages = math.ceil(img_count/perpage)
+        if page is None: 
+            page = 1
+        else:
+            page = int(page)
+        end = page * perpage
+        start = end - perpage
+        end = min(end, img_count)
+
 
         sorted_imgs = sorted(imgs, key=itemgetter('name')) 
-        session = {'name':session_id, 'imgs': sorted_imgs[:100]}
-        data = {'session': session}
+        page_list = [p+1 for p in range(pages)]
+        session = {'name':session_id, 'imgs': sorted_imgs[start:end]}
+        data = {'session': session, 'page_list': page_list}
         self.render("templates/session.html", **data)
 
     def post(self, session_id):
