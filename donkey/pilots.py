@@ -128,13 +128,10 @@ class OpenCVLineDetector(BasePilot):
                                 self.rho, 
                                 self.theta,
                                 )    
-        #print(lines)
         if lines is not None:
             line_data = self.compute_lines(lines)
             clustered = self.cluster_angles(line_data)
-            #print('clustered: ', clustered)
             angle = self.decide_angle(clustered)
-            print('angle', angle)
         else:
             angle = 0
         return angle, self.throttle
@@ -212,7 +209,6 @@ class OpenCVLineDetector(BasePilot):
         for i, c in enumerate(clustered_angles):
             #sum lenght of lines found in clusters, filter out angles > 80 (likely in horizon)
             cluster_length = sum([l for a, l in c if abs(a) < 80])
-            #print('cluster length', cluster_length)
             if cluster_length > max_length:
                 max_length = cluster_length
                 max_cluster_id = i
@@ -221,7 +217,6 @@ class OpenCVLineDetector(BasePilot):
             angles = [a for a, l in clustered_angles[max_cluster_id]]
             #return average angle of cluster
             return sum(angles)/len(angles)
-        #print(angles)
         else:
             return 0 
 

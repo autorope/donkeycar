@@ -210,7 +210,6 @@ class VehicleView(tornado.web.RequestHandler):
         V = self.application.get_vehicle(vehicle_id)
         pilots = self.application.pilots
         data = {'vehicle': V, 'pilots': pilots}
-        print(data)
         self.render("templates/vehicle.html", **data)
 
 
@@ -225,7 +224,6 @@ class VehicleAPI(tornado.web.RequestHandler):
         V = self.application.get_vehicle(vehicle_id)
 
         data = tornado.escape.json_decode(self.request.body)
-        print(data)
         pilot = next(filter(lambda p: p.name == data['pilot'], self.application.pilots))
         V['pilot'] = pilot.load()
 
@@ -268,9 +266,7 @@ class DriveAPI(tornado.web.RequestHandler):
         else:
             V['user_throttle'] = 0    
 
-        print(V)
-
-
+        print('Drive: %s: A: %s   T:%s' %(V['drive_mode'], angle, throttle))
 
 class ControlAPI(tornado.web.RequestHandler):
 
@@ -291,8 +287,6 @@ class ControlAPI(tornado.web.RequestHandler):
 
         #Get angle/throttle from pilot loaded by the server.
         pilot_angle, pilot_throttle = V['pilot'].decide(img_arr)
-        
-        print('pilot_angle ', pilot_angle)
 
         V['img'] = img
         V['pilot_angle'] = pilot_angle
@@ -314,7 +308,7 @@ class ControlAPI(tornado.web.RequestHandler):
         else:
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
-        print('%s: A: %s   T:%s' %(V['drive_mode'], angle, throttle))
+        print('Control: %s: A: %s   T:%s' %(V['drive_mode'], angle, throttle))
         
 
         #retun angel/throttle values to vehicle with json response
@@ -427,7 +421,6 @@ class SessionView(tornado.web.RequestHandler):
         path = os.path.join(sessions_path, session_id)
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
-        print ('page: %s'%page)
 
         perpage = 100
         pages = math.ceil(img_count/perpage)
