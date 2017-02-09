@@ -12,6 +12,7 @@ var driveHandler = (function() {
     var angleEl = "#angleInput"
     var throttleEl = "#throttleInput"
 
+    var joystick_options = {}
     var joystickLoopRunning=false;   
     var vehicle_id = ""
     var driveURL = ""
@@ -26,7 +27,7 @@ var driveHandler = (function() {
       bindKeys()
       bindPilotSelect()
 
-      var joystick_options = {
+      joystick_options = {
         zone: document.getElementById('joystick_container'),  // active zone
         color: '#668AED',
         size: 350,
@@ -102,7 +103,7 @@ var driveHandler = (function() {
         distance = data['distance']
 
         angle = Math.round(distance * Math.cos(radian)/2)
-        throttle = Math.round(distance * Math.sin(radian)/2)
+        throttle = Math.round(distance/joystick_options['size']*200)
         recording = true
 
       });

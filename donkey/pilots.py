@@ -37,7 +37,7 @@ class BasePilot():
 
 
     def load(self):
-        pass
+        return self
 
 
 
@@ -94,7 +94,8 @@ class KerasAngle(BasePilot):
 class OpenCVLineDetector(BasePilot): 
 
     def __init__(self, M=None, blur_pixels=5, canny_threshold1=100, canny_threshold2=130,
-                 rho=2, theta=.02, min_line_length=80, max_gap=20, hough_threshold=9, **kwargs):
+                 rho=2, theta=.02, min_line_length=80, max_gap=20, hough_threshold=9, 
+                 throttle=30, **kwargs):
 
 
         self.blur_pixels = blur_pixels
@@ -109,6 +110,8 @@ class OpenCVLineDetector(BasePilot):
             self.M = M
         else: 
             self.M = self.get_M() 
+
+        self.throttle = throttle
 
         super().__init__(**kwargs)
 
@@ -130,10 +133,10 @@ class OpenCVLineDetector(BasePilot):
             line_data = self.compute_lines(lines)
             clustered = self.cluster_angles(line_data)
             #print('clustered: ', clustered)
-            angle = self.decide_angle(clustered)
+            angle = self.decide_angle(clustered), self.throttle
         else:
             angle = 0
-        return angle
+        return angle, self.throttle
 
 
 
@@ -216,10 +219,10 @@ class OpenCVLineDetector(BasePilot):
         if max_cluster_id>-1:
             angles = [a for a, l in clustered_angles[max_cluster_id]]
             #return average angle of cluster
-            return sum(angles)/len(angles)  
+            return sum(angles)/len(angles)
         #print(angles)
         else:
-            return 0
+            return 0 
 
 
 class PilotHandler():

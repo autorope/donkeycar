@@ -43,7 +43,8 @@ setup(name='donkey',
     extras_require={'server': [
                         'keras',
                         'h5py',
-                        'scikit-image'
+                        'scikit-image',
+                        'opencv-python'
                         ],
                     'pi': [
                         'picamera',

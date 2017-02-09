@@ -1,5 +1,6 @@
 """
-Classes used to communicate between vehicle and server. 
+Classes needed to run a webserver so that the donkey can
+be controlled remotely by the user or an auto pilot. 
 """
 
 import time
@@ -22,18 +23,21 @@ import donkey as dk
 
 class RemoteClient():
     '''
-    Class used by vehicle to send driving data and recieve predictions.
+    Class used by a vehicle to send driving data and 
+    recieve predictions from a remote webserver.
     '''
     
     def __init__(self, remote_url, vehicle_id='mycar'):
 
-        self.record_url = remote_url + '/api/vehicles/control/' + vehicle_id + '/'
+        self.control_url = remote_url + '/api/vehicles/control/' + vehicle_id + '/'
+        self.last_milliseconds = 0
         
         
     def decide(self, img_arr, angle, throttle, milliseconds):
         '''
-        Accepts: image and control attributes and saves 
-        them to learn how to drive.'''
+        Posts current car sensor data to webserver and returns
+        angle and throttle recommendations. 
+        '''
 
         #load features
         data = {
@@ -46,11 +50,15 @@ class RemoteClient():
         r = None
 
         while r == None:
-
+            #Try connecting to server until connection is made.
+            
             try:
-                r = requests.post(self.record_url, 
+                start = time.time()
+                r = requests.post(self.control_url, 
                                 files={'img': dk.utils.arr_to_binary(img_arr), 
                                        'json': json.dumps(data)}) #hack to put json in file 
+                end = time.time()
+                lag = end-start
             except (requests.ConnectionError) as err:
                 print("Vehicle could not connect to server. Make sure you've " + 
                     "started your server and you're referencing the right port.")
@@ -61,7 +69,8 @@ class RemoteClient():
         data = json.loads(r.text)
         angle = int(float(data['angle']))
         throttle = int(float(data['throttle']))
-        print('remote client: %s' %r.text)
+        
+        print('vehicle <> server: request lag: %s' %lag)
 
         return angle, throttle
 
@@ -71,6 +80,10 @@ class RemoteClient():
 class DonkeyPilotApplication(tornado.web.Application):
 
     def __init__(self, data_path='~/donkey_data/'):
+        ''' 
+        Create and publish variables needed on many of 
+        the web handlers.
+        '''
 
         self.vehicles = {}
 
@@ -134,6 +147,7 @@ class DonkeyPilotApplication(tornado.web.Application):
         super().__init__(handlers, **settings)
 
     def start(self, port=8887):
+        ''' Start the tornado webserver. '''
         print(port)
         self.port = int(port)
         self.listen(self.port)
@@ -141,6 +155,8 @@ class DonkeyPilotApplication(tornado.web.Application):
 
 
     def get_vehicle(self, vehicle_id):
+        ''' Returns vehicle if it exists or creates a new one '''
+
         if vehicle_id not in self.vehicles:
             print('new vehicle')
             sh = dk.sessions.SessionHandler(self.sessions_path)
@@ -167,16 +183,13 @@ class DonkeyPilotApplication(tornado.web.Application):
 
 class HomeView(tornado.web.RequestHandler):
     def get(self):
-        '''
-        Serves home page.
-        ''' 
         self.render("templates/home.html")
 
 
 class VehicleListView(tornado.web.RequestHandler):
     def get(self):
         '''
-        Serves home page.
+        Serves a list of the vehicles posting requests to the server.
         ''' 
         data = {'vehicles':self.application.vehicles}
 
@@ -199,6 +212,7 @@ class VehicleView(tornado.web.RequestHandler):
 
 class VehicleAPI(tornado.web.RequestHandler):
 
+
     def post(self, vehicle_id):
         '''
         Currently this only changes the pilot. 
@@ -210,6 +224,9 @@ class VehicleAPI(tornado.web.RequestHandler):
         print(data)
         pilot = next(filter(lambda p: p.name == data['pilot'], self.application.pilots))
         V['pilot'] = pilot.load()
+
+
+
 
 
 
@@ -253,12 +270,15 @@ class DriveAPI(tornado.web.RequestHandler):
         print(V)
 
 
+
 class ControlAPI(tornado.web.RequestHandler):
 
     def post(self, vehicle_id):
         '''
-        Receive post requests from vehicle with camera image. 
-        Return the angle and throttle the car should be goin. 
+        Receive post requests from a vehicle and returns 
+        the angle and throttle the car should use. Depending on 
+        the drive mode the values can come from the user or
+        an autopilot.
         '''    
 
         V = self.application.get_vehicle(vehicle_id)
@@ -267,9 +287,6 @@ class ControlAPI(tornado.web.RequestHandler):
         img = Image.open(io.BytesIO(img))
         img_arr = dk.utils.img_to_arr(img)
 
-        #Hack to take json from a file
-        #data = json.loads(self.request.files['json'][0]['body'].decode("utf-8") )
-        
 
         #Get angle/throttle from pilot loaded by the server.
         pilot_angle, pilot_throttle = V['pilot'].decide(img_arr)
@@ -303,13 +320,13 @@ class ControlAPI(tornado.web.RequestHandler):
 
 
 class VideoAPI(tornado.web.RequestHandler):
-
+    '''
+    Serves a MJPEG of the images posted from the vehicle. 
+    '''
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def get(self, vehicle_id):
-        '''
-        Show a video of the pictures captured by the vehicle.
-        '''
+
         ioloop = tornado.ioloop.IOLoop.current()
         self.set_header("Content-type", "multipart/x-mixed-replace;boundary=--boundarydonotcross")
 
@@ -364,8 +381,7 @@ class PilotListView(tornado.web.RequestHandler):
 
 class SessionImageView(tornado.web.RequestHandler):
     def get(self, session_id, img_name):
-
-        print('SessionImageHandler')
+        ''' Returns jpg images from a session folder '''
 
         sessions_path = self.application.sessions_path
         path = os.path.join(sessions_path, session_id, img_name)
@@ -373,10 +389,10 @@ class SessionImageView(tornado.web.RequestHandler):
         o = io.BytesIO()
         f.save(o, format="JPEG")
         s = o.getvalue()
+
         self.set_header('Content-type', 'image/jpg')
         self.set_header('Content-length', len(s))   
-
-        print('writing image')
+        
         self.write(s)   
 
 
@@ -384,9 +400,9 @@ class SessionImageView(tornado.web.RequestHandler):
 class SessionListView(tornado.web.RequestHandler):
 
     def get(self):
-        '''
-        Receive post requests from vehicle with camera image. 
-        Return the angle and throttle the car should be goin. 
+        '''  
+        Serves a page showing a list of all the session folders.  
+        TODO: Move this list creation to the session handler. 
         '''    
 
         session_dirs = [f for f in os.scandir(self.application.sessions_path) if f.is_dir() ]
@@ -399,8 +415,8 @@ class SessionView(tornado.web.RequestHandler):
 
     def get(self, session_id):
         '''
-        Receive post requests from vehicle with camera image. 
-        Return the angle and throttle the car should be goin. 
+        Shows all the images saved in the session. 
+        TODO: Add pagination.
         '''    
         from operator import itemgetter
 
@@ -412,9 +428,13 @@ class SessionView(tornado.web.RequestHandler):
         sorted_imgs = sorted(imgs, key=itemgetter('name')) 
         session = {'name':session_id, 'imgs': sorted_imgs[:100]}
         data = {'session': session}
-        self.render("templates/session_view.html", **data)
+        self.render("templates/session.html", **data)
 
     def post(self, session_id):
+        ''' 
+        Deletes selected images 
+        '''
+        
         data = tornado.escape.json_decode(self.request.body)
 
         if data['action'] == 'delete_images':
