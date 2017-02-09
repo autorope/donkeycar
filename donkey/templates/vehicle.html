@@ -2,7 +2,7 @@
 {% block content %}
   
   <div class="container">
-    <h1>Donkey Control</h1>
+    <h1>Vehicle: {{vehicle['id']}}</h1>
     <span> Use this website to drive your vehicle. Data will only be recorded when you are actively steering. </span>
     
     <hr>
@@ -10,11 +10,19 @@
     <div class="row">
       <div class="col-md-6">
         <p>Image Stream (MJPEG) </p>
-          <img id='mpeg-image' src="mjpeg/test.mjpeg"/>
+          <img id='mpeg-image' src="/api/vehicles/video/{{vehicle['id']}}"/>
       </div>
     </div>
 
     <hr> 
+
+    <span> Pilot: </span>
+    <select id="pilot_select">
+        <option> None </option>
+      {% for p in pilots %}
+        <option href='?pilot={{p.name}}'>{{ p.name}} </option>
+      {% end %}
+    </select>
     
     <div class="row">
       <div class="col-md-6">
@@ -53,5 +61,20 @@
       <span> Click/touch to use joystic. </span>
     </div>
 
+  <div class='meta'>
+    <span id='vehicle_id' data-id={{vehicle['id']}}> </span>
   </div>
+
+  </div>
+
+<script type="text/javascript">
+  $( document ).ready(function() {
+      console.log( "document ready!" );
+      driveHandler.load()
+
+  });
+
+
+</script>
+
 {% end %}

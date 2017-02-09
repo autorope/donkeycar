@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+{% block content %}
+	<div class="container">
+		<h2> Pilots </h2>
+
+		    <ul>
+		      {% for pilot in pilots %}
+				<div class="panel panel-default">
+				<a href="/pilots/{{ escape(pilot.name)}}/">
+				  <div class="panel-heading">
+				    <h3 class="panel-title">{{ escape(pilot.name) }}</h3>
+				  </div>
+				 </a>
+				  <div class="panel-body">
+				  	Model details go here.
+				  </div>
+				</div>
+		      {% end %}
+		    </ul>
+		    
+	</div>
+{% end %}
