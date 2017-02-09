@@ -151,7 +151,13 @@ def make_dir(path):
     return real_path
 
 
+def create_donkey_data(path):
+    make_dir(path)
 
+    models_path = os.path.join(path, 'models')
+    sessions_path = os.path.join(path, 'sessions')
+    make_dir(models_path)
+    make_dir(sessions_path)
 
 
 

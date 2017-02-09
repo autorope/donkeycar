@@ -85,6 +85,9 @@ class DonkeyPilotApplication(tornado.web.Application):
         the web handlers.
         '''
 
+        #create necessary directors if they don't exist
+        dk.utils.create_donkey_data(data_path)
+
         self.vehicles = {}
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -247,11 +250,8 @@ class DriveAPI(tornado.web.RequestHandler):
 
         
 
-        #Set recording mode
-        if data['recording'] == 'true':
-            V['recording'] = True
-        else:
-            V['recording'] = False
+        #set if vehicle is recording
+        V['recording'] = data['recording']
 
 
         #update vehicle angel based on drive mode
