@@ -292,6 +292,8 @@ class ControlAPI(tornado.web.RequestHandler):
         #Get angle/throttle from pilot loaded by the server.
         pilot_angle, pilot_throttle = V['pilot'].decide(img_arr)
         
+        print('pilot_angle ', pilot_angle)
+
         V['img'] = img
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
@@ -444,9 +446,10 @@ class SessionView(tornado.web.RequestHandler):
         data = {'session': session, 'page_list': page_list}
         self.render("templates/session.html", **data)
 
-    def post(self, session_id):
+    def post(self, session_id, page):
         ''' 
         Deletes selected images 
+        TODO: move this to an api cal. Page is not needed.
         '''
         
         data = tornado.escape.json_decode(self.request.body)

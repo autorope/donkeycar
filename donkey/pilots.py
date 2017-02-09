@@ -56,7 +56,7 @@ class SwervePilot(BasePilot):
         new_angle = self.angle + random.randrange(-4, 5)
         self.angle = min(max(-45, new_angle), 45)
 
-        return self, angle, self.throttle
+        return angle, self.throttle
 
 
 
@@ -133,7 +133,8 @@ class OpenCVLineDetector(BasePilot):
             line_data = self.compute_lines(lines)
             clustered = self.cluster_angles(line_data)
             #print('clustered: ', clustered)
-            angle = self.decide_angle(clustered), self.throttle
+            angle = self.decide_angle(clustered)
+            print('angle', angle)
         else:
             angle = 0
         return angle, self.throttle
