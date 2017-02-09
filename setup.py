@@ -36,14 +36,15 @@ setup(name='donkey',
                       'pillow',
                       'docopt==0.6.2',
                       'tornado',
-                      'requests'
+                      'requests',
+                      'envoy',
                      ],
 
     extras_require={'server': [
                         'keras',
                         'h5py',
-                        'envoy',
-                        'scikit-image'
+                        'scikit-image',
+                        'opencv-python'
                         ],
                     'pi': [
                         'picamera',

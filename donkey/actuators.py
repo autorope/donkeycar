@@ -7,8 +7,6 @@ import sys
 
 # Import the PCA9685 module.
 
-
-
 # Uncomment to enable debug output.
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -23,44 +21,34 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
 
     return int(y)
 
+class Dummy_Controller:
 
-class BaseSteeringActuator():
-    ''' Placeholder until real logic is implemented '''
+    def __init__(self, channel, frequency):
+        pass
 
-    def update(self, angle):
-        print('BaseSteeringActuator.update: angle=%s' %angle)
-
-class BaseThrottleActuator():
-    ''' Placeholder until real logic is implemented '''
-
-    def update(self, throttle):
-        print('BaseThrottleActuator.update: throttle=%s' %throttle)
-
-
-class Adafruit_PCA9685_Actuator():
-
+class PCA9685_Controller:
+    # Init with 60hz frequency by default, good for servos.
     def __init__(self, channel, frequency=60):
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
         self.pwm = Adafruit_PCA9685.PCA9685()
 
-        # Set frequency to 60hz, good for servos.
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
 
-
-class PWMSteeringActuator(Adafruit_PCA9685_Actuator):
-
+    def set_pulse(self, pulse):
+        self.pwm.set_pwm(self.channel, 0, pulse) 
+        
+class PWMSteeringActuator:
     #max angle wheels can turn
     LEFT_ANGLE = -45 
     RIGHT_ANGLE = 45
 
-    def __init__(self, channel=1, 
-                       frequency=60,
+    def __init__(self, controller=None,
                        left_pulse=290,
                        right_pulse=490):
 
-        super().__init__(channel, frequency)
+        self.controller = controller
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
 
@@ -70,22 +58,21 @@ class PWMSteeringActuator(Adafruit_PCA9685_Actuator):
                           self.LEFT_ANGLE, self.RIGHT_ANGLE,
                           self.left_pulse, self.right_pulse)
 
-        self.pwm.set_pwm(self.channel, 0, pulse)
+        self.controller.set_pulse(pulse)
 
 
-
-class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
+class PWMThrottleActuator:
 
     MIN_THROTTLE = -100
     MAX_THROTTLE =  100
 
-    def __init__(self, channel=0, 
-                       frequency=60,
+    def __init__(self, controller=None,
                        max_pulse=300,
                        min_pulse=490,
                        zero_pulse=350):
 
-        super().__init__(channel, frequency)
+        #super().__init__(channel, frequency)
+        self.controller = controller
         self.max_pulse = max_pulse
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
@@ -95,7 +82,7 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
     def calibrate(self):
         #Calibrate ESC (TODO: THIS DOES NOT WORK YET)
         print('center: %s' % self.zero_pulse)
-        self.pwm.set_pwm(self.channel, 0, self.zero_pulse)  #Set Max Throttle
+        self.controller.set_pulse(self.zero_pulse)  #Set Max Throttle
         time.sleep(1)
 
 
@@ -112,19 +99,5 @@ class PWMThrottleActuator(Adafruit_PCA9685_Actuator):
 
         print('pulse: %s' % pulse)
         sys.stdout.flush()
-        self.pwm.set_pwm(self.channel, 0, pulse)
+        self.controller.set_pulse(pulse)
         return '123'
-
-
-
-
-
-
-
-
-
-
-
-
-
-

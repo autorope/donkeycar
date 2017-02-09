@@ -16,6 +16,11 @@ X, Y = s.load_dataset()
 #X, Y = dk.datasets.moving_square(n_frames=2000, return_x=True, return_y=False)
 
 
+print('Downloading file, this could take some time.)
+url = 'https://s3.amazonaws.com/donkey_resources/port.pkl'
+X, Y = dk.datasets.load_url(url)
+
+print('Loading Model.')
 model = dk.models.cnn3_full1()
 
 

@@ -1,26 +1,8 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Donkey Monitor </title>
-  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
-
-  <script
-    src="https://code.jquery.com/jquery-3.1.1.min.js"
-    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
-    crossorigin="anonymous"></script>
-
-  <script type="text/javascript" src="/static/nipple.js"></script>
-  <script type="text/javascript" src="/static/main.js"></script>
-  <link href="/static/style.css" rel="stylesheet">
-
-</head>
-
-
-<body>
+{% extends "base.html" %}
+{% block content %}
   
   <div class="container">
-    <h1>Donkey Control</h1>
+    <h1>Vehicle: {{vehicle['id']}}</h1>
     <span> Use this website to drive your vehicle. Data will only be recorded when you are actively steering. </span>
     
     <hr>
@@ -28,11 +10,19 @@
     <div class="row">
       <div class="col-md-6">
         <p>Image Stream (MJPEG) </p>
-          <img id='mpeg-image' src="mjpeg/test.mjpeg"/>
+          <img id='mpeg-image' src="/api/vehicles/video/{{vehicle['id']}}"/>
       </div>
     </div>
 
     <hr> 
+
+    <span> Pilot: </span>
+    <select id="pilot_select">
+        <option> None </option>
+      {% for p in pilots %}
+        <option href='?pilot={{p.name}}'>{{ p.name}} </option>
+      {% end %}
+    </select>
     
     <div class="row">
       <div class="col-md-6">
@@ -71,8 +61,20 @@
       <span> Click/touch to use joystic. </span>
     </div>
 
+  <div class='meta'>
+    <span id='vehicle_id' data-id={{vehicle['id']}}> </span>
   </div>
 
-    
-</body>
-</html>
+  </div>
+
+<script type="text/javascript">
+  $( document ).ready(function() {
+      console.log( "document ready!" );
+      driveHandler.load()
+
+  });
+
+
+</script>
+
+{% end %}
