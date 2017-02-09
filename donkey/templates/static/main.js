@@ -1,180 +1,193 @@
 
-$( document ).ready(function() {
-    console.log( "document ready!" );
-    velocity.bind()
 
-  var joystick_options = {
-      zone: document.getElementById('joystick_container'),                  // active zone
-      color: '#668AED',
-      size: 350,
-  };
-
-  var manager = nipplejs.create(joystick_options);
-
-  bindNipple(manager);
-
-});
-
-
-//Defaults
-var postLoopRunning=false;   
-var sendURL = ""
-
-
-function sendControl(angle, throttle, drive_mode, recording) {
-    //Send post request to server.
-    data = JSON.stringify({ 'angle': angle, 
-                            'throttle':throttle, 
-                            'drive_mode':drive_mode,
-                            'recording':recording})  
-  $.post(sendURL, data)
-}
-
-
-// Send control updates to the server every .1 seconds.
-function postLoop () {           
-   setTimeout(function () {    
-        sendControl($('#angleInput').val(),
-                    $('#throttleInput').val(),
-                    'user',
-                    'true')
-
-      if (postLoopRunning) {      
-         postLoop();             
-      } else {
-        // Send zero angle, throttle and stop recording
-        sendControl(0,  0, 'user', 'false')
-      }
-   }, 100)
-}
-
-
-function bindNipple(manager) {
-  manager.on('start end', function(evt, data) {
-    $('#angleInput').val(0);
-    $('#throttleInput').val(0);
-
-    if (!postLoopRunning) {
-      postLoopRunning=true;
-      postLoop();
-    } else {
-      postLoopRunning=false;
-    }
-
-  }).on('move', function(evt, data) {
-    angle = data['angle']['radian']
-    distance = data['distance']
-
-    $('#angleInput').val(Math.round(distance * Math.cos(angle)/2));
-    $('#throttleInput').val(Math.round(distance * Math.sin(angle)/2));
-  });
-}
-
-
-$(document).keydown(function(e) {
-    if(e.which == 73) {
-      // 'i'  throttle up
-        velocity.throttleUp()
-    } 
-
-    if(e.which == 75) {
-      // 'k'  slow down
-        velocity.throttleDown()
-    }
-
-    if(e.which == 74) {
-      // 'j' turn left
-        velocity.angleLeft()
-    }
-
-    if(e.which == 76) {
-      // 'l' turn right
-        velocity.angleRight()
-    }
-
-    if(e.which == 65) {
-      // 'a' turn on auto mode
-        velocity.updateDriveMode('auto')
-    }
-    if(e.which == 68) {
-      // 'a' turn on auto mode
-        velocity.updateDriveMode('user')
-    }
-      if(e.which == 83) {
-      // 'a' turn on auto mode
-        velocity.updateDriveMode('auto_angle')
-    }
-});
-
-
-var velocity = (function() {
-    //functions to change velocity of vehicle
+var driveHandler = (function() {
+    //functions used to drive the vehicle. 
 
     var angle = 0
     var throttle = 0
     var driveMode = 'user'
+    var recording = false
+    var pilot = 'None'
+
     var angleEl = "#angleInput"
     var throttleEl = "#throttleInput"
-    var sendURL = ""
 
-    var bind = function(data){
-        //Bind a function to capture the coordinates of the click.
-        $(angleEl).change(function(e) {
-            sendVelocity()
-        });
-        $(throttleEl).change(function(e) {
-            sendVelocity()
-        });
+    var joystick_options = {}
+    var joystickLoopRunning=false;   
+    var vehicle_id = ""
+    var driveURL = ""
+    var vehicleURL = ""
+
+    var load = function() {
+
+      vehicle_id = $('#vehicle_id').data('id') 
+      driveURL = '/api/vehicles/drive/' + vehicle_id + "/"
+      vehicleURL = '/api/vehicles/' + vehicle_id + "/"
+
+      bindKeys()
+      bindPilotSelect()
+
+      joystick_options = {
+        zone: document.getElementById('joystick_container'),  // active zone
+        color: '#668AED',
+        size: 350,
+      };
+
+      var manager = nipplejs.create(joystick_options);
+      
+      bindNipple(manager)
     };
 
-    var sendVelocity = function() {
+
+
+    var bindKeys = function() {
+      //Bind a function to capture the coordinates of the click.
+      $(angleEl).change(function(e) {
+          postDrive()
+      });
+      $(throttleEl).change(function(e) {
+          postDrive()
+      });
+
+      $(document).keydown(function(e) {
+          if(e.which == 73) {
+            // 'i'  throttle up
+              throttleUp()
+          } 
+
+          if(e.which == 75) {
+            // 'k'  slow down
+              throttleDown()
+          }
+
+          if(e.which == 74) {
+            // 'j' turn left
+              angleLeft()
+          }
+
+          if(e.which == 76) {
+            // 'l' turn right
+              angleRight()
+          }
+
+          if(e.which == 65) {
+            // 'a' turn on auto mode
+              updateDriveMode('auto')
+          }
+          if(e.which == 68) {
+            // 'a' turn on auto mode
+              updateDriveMode('user')
+          }
+            if(e.which == 83) {
+            // 'a' turn on auto mode
+              updateDriveMode('auto_angle')
+          }
+      });
+    };
+
+
+    function bindNipple(manager) {
+      manager.on('start end', function(evt, data) {
+        $('#angleInput').val(0);
+        $('#throttleInput').val(0);
+
+        if (!joystickLoopRunning) {
+          joystickLoopRunning=true;
+          joystickLoop();
+        } else {
+          joystickLoopRunning=false;
+        }
+
+      }).on('move', function(evt, data) {
+        radian = data['angle']['radian']
+        distance = data['distance']
+
+        angle = Math.round(distance * Math.cos(radian)/2)
+        throttle = Math.round(distance/joystick_options['size']*200)
+        recording = true
+
+      });
+    }
+
+
+    var bindPilotSelect = function(){
+        $('#pilot_select').on('change', function () {
+                  pilot = $(this).val(); // get selected value
+                  postPilot()
+              });
+    };
+
+
+    var postPilot = function(){
+        data = JSON.stringify({ 'pilot': pilot })
+        console.log(data)
+        $.post(vehicleURL, data)
+    }
+
+
+    var updateDisplay = function() {
+      $(throttleEl).val(throttle);
+      $(angleEl).val(angle);
+      $('#driveMode').val(driveMode);
+    };
+
+    var postDrive = function() {
         //Send angle and throttle values
-        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 'drive_mode':driveMode, 'recording':'false'})
-        $.post(sendURL, data)
+        updateDisplay()
+        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 
+          'drive_mode':driveMode, 'recording': recording})
+        console.log(data)
+        $.post(driveURL, data)
     };
+
+
+    // Send control updates to the server every .1 seconds.
+    function joystickLoop () {           
+       setTimeout(function () {    
+            postDrive()
+
+          if (joystickLoopRunning) {      
+             joystickLoop();             
+          } else {
+            // Send zero angle, throttle and stop recording
+            angle = 0
+            throttle = 0
+            recording = 0
+            postDrive()
+          }
+       }, 100)
+    }
 
     var throttleUp = function(){
         //Bind a function to capture the coordinates of the click.
         throttle = Math.min(throttle + 5, 400);
-        $(throttleEl).val(throttle)
-        sendVelocity()
+        postDrive()
         };
 
     var throttleDown = function(){
         //Bind a function to capture the coordinates of the click.
         throttle = Math.max(throttle - 10, -200);
-        $(throttleEl).val(throttle);
-        sendVelocity()
+        postDrive()
     };
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
       angle = Math.max(angle - 10, -90)
-      $(angleEl).val(angle);
-      sendVelocity()
+      postDrive()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
       angle = Math.min(angle + 10, 90)
-      $(angleEl).val(angle);
-      sendVelocity()
+      postDrive()
     };
 
     var updateDriveMode = function(mode){
       //Bind a function to capture the coordinates of the click.
       driveMode = mode;
-      $('#driveMode').val(mode);
-      sendVelocity()
+      postDrive()
     };
 
-    return {
-                bind: bind,
-                throttleUp: throttleUp,
-                throttleDown: throttleDown,
-                angleLeft: angleLeft,
-                angleRight: angleRight,
-                sendVelocity: sendVelocity,
-                updateDriveMode: updateDriveMode
-            };
+
+    return {  load: load };
 })();
