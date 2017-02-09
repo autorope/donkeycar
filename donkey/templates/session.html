@@ -14,6 +14,11 @@
 
 		<h2> Sessions {{ escape(session['name'])}} </h2>
 
+		<div>
+		{% for p in page_list %}
+			<span> <a href="./{{p}}"> {{p}} </a> </span> 
+		{% end %}
+		</div>
 
 		<div class="dropdown">
 		  <button id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
