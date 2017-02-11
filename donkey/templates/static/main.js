@@ -105,11 +105,7 @@ var driveHandler = (function() {
         //console.log(data)
 
         angle = Math.round(distance * Math.cos(radian)/2)
-        throttle = Math.round(distance/joystick_options['size']*200)
-        
-        if (data['angle']['degree'] > 180 ){
-          throttle = throttle * -1
-        }
+        throttle = Math.min(Math.round(distance * Math.sin(radian)), 100)
 
         recording = true
 
