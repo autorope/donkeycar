@@ -102,8 +102,15 @@ var driveHandler = (function() {
         radian = data['angle']['radian']
         distance = data['distance']
 
+        //console.log(data)
+
         angle = Math.round(distance * Math.cos(radian)/2)
         throttle = Math.round(distance/joystick_options['size']*200)
+        
+        if (data['angle']['degree'] > 180 ){
+          throttle = throttle * -1
+        }
+
         recording = true
 
       });
@@ -120,7 +127,6 @@ var driveHandler = (function() {
 
     var postPilot = function(){
         data = JSON.stringify({ 'pilot': pilot })
-        console.log(data)
         $.post(vehicleURL, data)
     }
 
@@ -152,7 +158,7 @@ var driveHandler = (function() {
             // Send zero angle, throttle and stop recording
             angle = 0
             throttle = 0
-            recording = 0
+            recording = false
             postDrive()
           }
        }, 100)
