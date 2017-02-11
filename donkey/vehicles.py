@@ -34,7 +34,6 @@ class BaseVehicle:
 
             self.actuator_mixer.update_angle(angle)
             pulse =  self.actuator_mixer.update_throttle(throttle)
-            print(pulse)
 
             #print current car state
             print('angle: %s   throttle: %s' %(angle, throttle) )           
