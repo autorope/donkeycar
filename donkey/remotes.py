@@ -257,12 +257,12 @@ class DriveAPI(tornado.web.RequestHandler):
         V['drive_mode'] = data['drive_mode']
 
         if angle is not "":
-            V['user_angle'] = int(angle)
+            V['user_angle'] = angle
         else:
             V['user_angle'] = 0
 
         if throttle is not "":
-            V['user_throttle'] = int(throttle)
+            V['user_throttle'] = throttle
         else:
             V['user_throttle'] = 0    
 

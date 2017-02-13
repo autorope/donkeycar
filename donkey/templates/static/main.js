@@ -104,9 +104,9 @@ var driveHandler = (function() {
 
         //console.log(data)
 
-        angle = Math.round(distance * Math.cos(radian)/2)
-        throttle = Math.min(Math.round(distance * Math.sin(radian)), 100)
-
+        angle = Math.max(Math.min(Math.cos(radian), 1), -1)
+        throttle = Math.max(Math.min(Math.sin(radian), 1), -1)
+        
         recording = true
 
       });
@@ -123,6 +123,7 @@ var driveHandler = (function() {
 
     var postPilot = function(){
         data = JSON.stringify({ 'pilot': pilot })
+
         $.post(vehicleURL, data)
     }
 
@@ -162,25 +163,25 @@ var driveHandler = (function() {
 
     var throttleUp = function(){
         //Bind a function to capture the coordinates of the click.
-        throttle = Math.min(throttle + 5, 400);
+        throttle = Math.min(throttle + .05, 1);
         postDrive()
         };
 
     var throttleDown = function(){
         //Bind a function to capture the coordinates of the click.
-        throttle = Math.max(throttle - 10, -200);
+        throttle = Math.max(throttle - .05, -1);
         postDrive()
     };
 
     var angleLeft = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.max(angle - 10, -90)
+      angle = Math.max(angle - .1, -1)
       postDrive()
     };
 
     var angleRight = function(){
       //Bind a function to capture the coordinates of the click.
-      angle = Math.min(angle + 10, 90)
+      angle = Math.min(angle + .1, 1)
       postDrive()
     };
 
