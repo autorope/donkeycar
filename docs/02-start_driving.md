@@ -23,7 +23,7 @@ Now that you have built your car, you'll want to drive it.
 	```
 5. Start your drive script.
 	```
-	python demos/drive_pi.py
+	python scripts/drive.py  --remote http://<your server address>:8887
 	``` `
 
 
