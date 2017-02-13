@@ -16,8 +16,8 @@ class BaseVehicle:
 
     def start(self):
         start_time = time.time()
-        angle = 0
-        throttle = 0
+        angle = 0.
+        throttle = 0.
 
         #drive loop
         while True:
@@ -32,8 +32,7 @@ class BaseVehicle:
                                                  throttle,
                                                  milliseconds)
 
-            self.actuator_mixer.update_angle(angle)
-            pulse =  self.actuator_mixer.update_throttle(throttle)
+            self.actuator_mixer.update(throttle, angle)
 
             #print current car state
             print('angle: %s   throttle: %s' %(angle, throttle) )           
