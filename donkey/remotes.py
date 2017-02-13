@@ -65,13 +65,15 @@ class RemoteClient():
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
 
-
+        print(r.text)
         
         data = json.loads(r.text)
-        angle = int(float(data['angle']))
-        throttle = int(float(data['throttle']))
+        
+        angle = float(data['angle'])
+        throttle = float(data['throttle'])
         
         print('vehicle <> server: request lag: %s' %lag)
+
 
         return angle, throttle
 

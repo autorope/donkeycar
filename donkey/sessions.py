@@ -42,7 +42,7 @@ class Session():
             img_arr = np.array(img)
         
         
-        data = parse_img_filename(path)
+        data = parse_img_filepath(file_path)
         
         return img_arr, data
 
