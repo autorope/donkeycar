@@ -13,4 +13,5 @@ Outputs:
 
 ## Driving Datasets
 [Blog post showing how to train a model from these datasets](https://wroscoe.github.io/keras-lane-following-autopilot.html#keras-lane-following-autopilot)
-DIYRobocars 1/10th scale track on Feb 11th - [warehouseRGB.pkl](https://s3.amazonaws.com/donkey_resources/warehouseRGB.pkl)
+
+* DIYRobocars 1/10th scale track on Feb 11th - [warehouseRGB.pkl](https://s3.amazonaws.com/donkey_resources/warehouseRGB.pkl)
