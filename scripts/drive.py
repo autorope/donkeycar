@@ -32,7 +32,7 @@ if __name__ == '__main__':
     #Set up your PWM values for your steering and throttle actuator here. 
     mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
                                                   min_pulse=280,
-                                                  max_pulse=400,
+                                                  max_pulse=450,
                                                   zero_pulse=350)
 
     mysteering = dk.actuators.PWMSteeringActuator(controller=mysteeringcontroller,
