@@ -12,13 +12,4 @@ Outputs:
 
 
 ## Driving Datasets
-
-### Line Following
-
-
-### Lane Keeping
-
-
-### Sidewalk
-
-### 
+DIYRobocars 1/10th scale track on Feb 11th - [warehouseRGB.pkl](https://s3.amazonaws.com/donkey_resources/warehouseRGB.pkl)
