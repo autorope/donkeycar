@@ -10,7 +10,7 @@ class BaseMixer():
     def update_throttle(self, throttle):
         print('BaseThrottleActuator.update: throttle=%s' %throttle)
 
-    def update(self, angle=0, throttle=0):
+    def update(self, throttle=0, angle=0):
         '''Convenience function to update
         angle and throttle at the same time'''
         self.update_angle(angle)
@@ -25,7 +25,7 @@ class FrontSteeringMixer(BaseMixer):
         self.steering_actuator = steering_actuator
         self.throttle_actuator = throttle_actuator
 
-    def update_angle(self, throttle, angle):
+    def update(self, throttle, angle):
         self.steering_actuator.update(angle)
 
         self.throttle_actuator.update(throttle)

@@ -32,7 +32,7 @@ if __name__ == '__main__':
     #Set up your PWM values for your steering and throttle actuator here. 
     mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
                                                   min_pulse=280,
-                                                  max_pulse=450,
+                                                  max_pulse=440,
                                                   zero_pulse=350)
 
     mysteering = dk.actuators.PWMSteeringActuator(controller=mysteeringcontroller,
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     mypilot = dk.remotes.RemoteClient(remote_url, vehicle_id='mycar')
 
     #Create your car
-    car = dk.vehicles.BaseVehicle(drive_loop_delay=.05,
+    car = dk.vehicles.BaseVehicle(drive_loop_delay=.1,
                                   camera=mycamera,
                                   actuator_mixer=mymixer,
                                   pilot=mypilot)
