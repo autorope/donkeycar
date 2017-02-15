@@ -41,8 +41,8 @@ class PCA9685_Controller:
         
 class PWMSteeringActuator:
     #max angle wheels can turn
-    LEFT_ANGLE = -45 
-    RIGHT_ANGLE = 45
+    LEFT_ANGLE = -1 
+    RIGHT_ANGLE = 1
 
     def __init__(self, controller=None,
                        left_pulse=290,
@@ -63,8 +63,8 @@ class PWMSteeringActuator:
 
 class PWMThrottleActuator:
 
-    MIN_THROTTLE = -100
-    MAX_THROTTLE =  100
+    MIN_THROTTLE = -1
+    MAX_THROTTLE =  1
 
     def __init__(self, controller=None,
                        max_pulse=300,
