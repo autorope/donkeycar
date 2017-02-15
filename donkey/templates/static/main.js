@@ -20,12 +20,6 @@ var driveHandler = (function() {
                   'lag': 0
                   }
 
-    var angle = 0
-    var throttle = 0
-    var driveMode = 'user'
-    var recording = false
-    var pilot = 'None'
-
     var joystick_options = {}
     var joystickLoopRunning=false;   
 
@@ -49,6 +43,8 @@ var driveHandler = (function() {
 
       var manager = nipplejs.create(joystick_options);
       bindNipple(manager)
+    
+      
     };
 
 
@@ -92,8 +88,14 @@ var driveHandler = (function() {
 
         //console.log(data)
 
-        state.tele.user.angle = Math.max(Math.min(Math.cos(radian), 1), -1)
-        state.tele.user.throttle = Math.max(Math.min(Math.sin(radian), 1), -1)
+        state.tele.user.angle = Math.max(Math.min(Math.cos(radian)/70*distance, 1), -1)
+        state.tele.user.throttle = Math.max(Math.min(Math.sin(radian)/70*distance , 1), -1)
+
+        if (state.tele.user.throttle < .001) {
+          state.tele.user.angle = 0
+        }
+
+
         state.recording = true
 
       });
@@ -107,11 +109,12 @@ var driveHandler = (function() {
 
 
     var updateUI = function() {
-
       $("#throttleInput").val(state.tele.user.throttle);
       $("#angleInput").val(state.tele.user.angle);
       $('#driveMode').val(state.driveMode);
+      //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
+
 
     var postDrive = function() {
         //Send angle and throttle values
@@ -138,7 +141,17 @@ var driveHandler = (function() {
             state.tele.user.angle = 0
             state.tele.user.throttle = 0
             state.recording = false
-            postDrive()
+            postDrive() 
+
+            function sendStop () {          
+               setTimeout(function () {   
+                  console.log('sendStop')
+                  postDrive()         //  your code here                
+                  if (!joystickLoopRunning) sendStop();      //  decrement i and call myLoop again if i > 0
+               }, 3000)
+            };       
+            sendStop()
+
           }
        }, 100)
     }
@@ -168,5 +181,38 @@ var driveHandler = (function() {
       postDrive()
     };
 
+    var drawLine = function(angle, throttle) {
+
+      throttleConstant = 100
+      throttle = throttle * throttleConstant
+      angleSign = Math.sign(angle)
+      angle = toRadians(Math.abs(angle*90))
+
+      var canvas = document.getElementById("angleView"),
+      context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      base={'x':canvas.width/2, 'y':canvas.height}
+
+      pointX = Math.sin(angle) * throttle * angleSign
+      pointY = Math.cos(angle) * throttle
+      xPoint = {'x': pointX + base.x, 'y': base.y - pointY}
+
+      context.beginPath();
+      context.moveTo(base.x, base.y);
+      context.lineTo(xPoint.x, xPoint.y);
+      context.lineWidth = 5;
+      context.strokeStyle = '#ff0000';
+      context.stroke();
+      context.closePath();
+
+    };
+
     return {  load: load };
+
 })();
+
+
+function toRadians (angle) {
+  return angle * (Math.PI / 180);
+}
