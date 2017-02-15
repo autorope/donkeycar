@@ -13,7 +13,8 @@ var driveHandler = (function() {
                                   'throttle': 0,
                                   }
                           },
-                  'recording': "no",
+                  'brakeOn': true, 
+                  'recording': false,
                   'driveMode': "user",
                   'pilot': 'None',
                   'session': 'None',
@@ -52,6 +53,8 @@ var driveHandler = (function() {
     var setBindings = function() {
 
       $(document).keydown(function(e) {
+          if(e.which == 32) { brake() }  // 'space'  brake
+          if(e.which == 82) { toggleRecording() }  // 'r'  toggle recording
           if(e.which == 73) { throttleUp() }  // 'i'  throttle up
           if(e.which == 75) { throttleDown() } // 'k'  slow down
           if(e.which == 74) { angleLeft() } // 'j' turn left
@@ -71,32 +74,28 @@ var driveHandler = (function() {
 
 
     function bindNipple(manager) {
-      manager.on('start end', function(evt, data) {
+      manager.on('start', function(evt, data) {
         state.tele.user.angle = 0
         state.tele.user.throttle = 0
+        state.recording = true
+        joystickLoopRunning=true;
+        joystickLoop();
 
-        if (!joystickLoopRunning) {
-          joystickLoopRunning=true;
-          joystickLoop();
-        } else {
-          joystickLoopRunning=false;
-        }
+      }).on('end', function(evt, data) {
+        joystickLoopRunning=false;
+        brake()
 
       }).on('move', function(evt, data) {
         radian = data['angle']['radian']
         distance = data['distance']
 
         //console.log(data)
-
         state.tele.user.angle = Math.max(Math.min(Math.cos(radian)/70*distance, 1), -1)
         state.tele.user.throttle = Math.max(Math.min(Math.sin(radian)/70*distance , 1), -1)
 
         if (state.tele.user.throttle < .001) {
           state.tele.user.angle = 0
         }
-
-
-        state.recording = true
 
       });
     }
@@ -112,6 +111,7 @@ var driveHandler = (function() {
       $("#throttleInput").val(state.tele.user.throttle);
       $("#angleInput").val(state.tele.user.angle);
       $('#driveMode').val(state.driveMode);
+      $('#recording').val(state.recording);
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
@@ -136,23 +136,7 @@ var driveHandler = (function() {
 
           if (joystickLoopRunning) {      
              joystickLoop();             
-          } else {
-            // Send zero angle, throttle and stop recording
-            state.tele.user.angle = 0
-            state.tele.user.throttle = 0
-            state.recording = false
-            postDrive() 
-
-            function sendStop () {          
-               setTimeout(function () {   
-                  console.log('sendStop')
-                  postDrive()         //  your code here                
-                  if (!joystickLoopRunning) sendStop();      //  decrement i and call myLoop again if i > 0
-               }, 3000)
-            };       
-            sendStop()
-
-          }
+          } 
        }, 100)
     }
 
@@ -180,6 +164,31 @@ var driveHandler = (function() {
       state.driveMode = mode;
       postDrive()
     };
+
+    var toggleRecording = function(){
+      state.recording = !state.recording
+      postDrive()
+    };
+
+    var brake = function(i=0){
+          console.log('post drive: ' + i)
+          state.tele.user.angle = 0
+          state.tele.user.throttle = 0
+          state.recording = false
+          postDrive()    
+
+
+      i++    
+      if (i < 5) {
+        setTimeout(function () {   
+          console.log('calling brake:' + i)       
+          brake(i);
+        }, 500)
+      };
+
+
+    };
+
 
     var drawLine = function(angle, throttle) {
 

@@ -29,7 +29,7 @@ div.img {
     margin: 5px;
     border: 1px solid #ccc;
     float: left;
-    width: 180px;
+    width: 100px;
 }
 
 div.img:hover {
@@ -41,9 +41,10 @@ div.img img {
     height: auto;
 }
 
-div.desc {
-    padding: 15px;
+span.desc {
+    padding: 5px;
     text-align: center;
+    font-size: 10pt;
 }
 
 
