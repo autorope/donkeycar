@@ -36,6 +36,11 @@ var driveHandler = (function() {
       var manager = nipplejs.create(joystick_options);
       
       bindNipple(manager)
+
+      if(!!navigator.getGamepads){
+         gamePadLoop(); 
+      }
+
     };
 
 
@@ -105,7 +110,11 @@ var driveHandler = (function() {
         //console.log(data)
 
         angle = Math.round(distance * Math.cos(radian)/2)
-        throttle = Math.min(Math.round(distance * Math.sin(radian)), 100)
+        throttle = Math.round(distance/joystick_options['size']*200)
+        
+        if (data['angle']['degree'] > 180 ){
+          throttle = throttle * -1
+        }
 
         recording = true
 
@@ -142,6 +151,40 @@ var driveHandler = (function() {
         $.post(driveURL, data)
     };
 
+var applyDeadzone = function(number, threshold){
+   percentage = (Math.abs(number) - threshold) / (1 - threshold);
+
+   if(percentage < 0)
+      percentage = 0;
+
+   return percentage * (number > 0 ? 1 : -1);
+}
+
+    function gamePadLoop()
+    {
+       setTimeout(gamePadLoop,100);
+
+    var gamepads = navigator.getGamepads();
+
+    for (var i = 0; i < gamepads.length; ++i)
+    {
+        var pad = gamepads[i];
+        // some pads are NULL I think.. some aren't.. use one that isn't null
+        if (pad)
+        {
+        	var joystickX = applyDeadzone(pad.axes[2], 0.05);
+        	//console.log(joystickX);
+        	angle = joystickX * 90;
+        	//console.log('angle:'+angle);
+        	var joystickY = applyDeadzone(pad.axes[3], 0.15);
+        	//console.log(joystickY);
+        	throttle= joystickY * -100 ;
+        	//console.log('throttle:'+throttle);
+            postDrive()
+	}
+        // todo; simple demo of displaying pad.axes and pad.buttons
+    }
+   }
 
     // Send control updates to the server every .1 seconds.
     function joystickLoop () {           
