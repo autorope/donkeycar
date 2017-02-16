@@ -170,16 +170,21 @@ var applyDeadzone = function(number, threshold){
     {
         var pad = gamepads[i];
         // some pads are NULL I think.. some aren't.. use one that isn't null
-        if (pad)
+        if (pad && pad.timestamp!=0)
         {
         	var joystickX = applyDeadzone(pad.axes[2], 0.05);
         	//console.log(joystickX);
         	angle = joystickX * 90;
         	//console.log('angle:'+angle);
-        	var joystickY = applyDeadzone(pad.axes[3], 0.15);
+        	var joystickY = applyDeadzone(pad.axes[1], 0.15);
         	//console.log(joystickY);
         	throttle= joystickY * -100 ;
         	//console.log('throttle:'+throttle);
+        	if (throttle> 10 || throttle<-10)
+                  recording = true
+        	else 
+                  recording = false
+
             postDrive()
 	}
         // todo; simple demo of displaying pad.axes and pad.buttons
