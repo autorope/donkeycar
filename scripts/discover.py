@@ -15,19 +15,24 @@ from operator import itemgetter
 import donkey as dk
 from keras.callbacks import ModelCheckpoint
 
-#sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions/')
-#s = sh.load('test')
+sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions/')
+s = sh.load('diff_lines')
 
 #datasets we want to test
 
 #datasets = {'square': dk.datasets.moving_square(1000, return_y=False)}
-datasets = {'square': dk.datasets.load_file('/home/wroscoe/code/notebooks/whiteline_dataset.pkl')}
+#datasets = {'square': dk.datasets.load_file('/home/wroscoe/code/notebooks/whiteline_dataset.pkl')}
+datasets = {'diff_lines': s.load_dataset()}
 
 
 #the models we want to test
 models = {
             'cnn3_full1_rnn1': dk.models.cnn3_full1_rnn1(),
             'cnn3_full1': dk.models.cnn3_full1(),
+            'cnn3_full1_linear_tanh': dk.models.cnn3_full1_linear_tanh(),
+            'cnn3_full1_tanh_tanh': dk.models.cnn3_full1_tanh_tanh(),
+            'cnn3_full1_2dense_linear_tanh':dk.models.cnn3_full1_2dense_linear_tanh(),
+
         }
 
 
@@ -46,7 +51,7 @@ for ds_name, ds in datasets.items():
 
         X, Y = ds
 
-        hist = m.fit(X, Y, batch_size=32, nb_epoch=100, 
+        hist = m.fit(X, Y, batch_size=32, nb_epoch=25, 
                          validation_split=.2, callbacks=callbacks_list)
         
         print(hist.history)
