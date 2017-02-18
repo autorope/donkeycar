@@ -424,7 +424,7 @@ class SessionView(tornado.web.RequestHandler):
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
 
-        perpage = 100
+        perpage = 1000
         pages = math.ceil(img_count/perpage)
         if page is None: 
             page = 1
@@ -438,7 +438,7 @@ class SessionView(tornado.web.RequestHandler):
         sorted_imgs = sorted(imgs, key=itemgetter('name')) 
         page_list = [p+1 for p in range(pages)]
         session = {'name':session_id, 'imgs': sorted_imgs[start:end]}
-        data = {'session': session, 'page_list': page_list}
+        data = {'session': session, 'page_list': page_list, 'this_page':page}
         self.render("templates/session.html", **data)
 
     def post(self, session_id, page):

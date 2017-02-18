@@ -14,26 +14,12 @@
 
 		<h2> Sessions {{ escape(session['name'])}} </h2>
 
-		<div>
-		{% for p in page_list %}
-			<span> <a href="./{{p}}"> {{p}} </a> </span> 
-		{% end %}
-		</div>
 
-		<div class="dropdown">
-		  <button id="dLabel" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-		    Actions
-		    <span class="caret"></span>
-		  </button>
-		  <ul class="dropdown-menu" id="deleteButton" aria-labelledby="dLabel">
-		    <li><a href="#">Delete Selected</a></li>
-		  </ul>
-		</div>
 
 
 		<div id="selectable">
-		{% for img in session['imgs'] %}
-			<div class="img ui-state-default" id="{{ img['name'] }}">
+		{% for i, img in enumerate(session['imgs']) %}
+			<div class="img ui-state-default" id={{i}} data-id="{{ img['name'] }}">
 				<img src="/session_image/{{session['name']}}/{{ img['name'] }}" > 
 
 				<span class="desc">Angle: {{img['angle']}}</span>
@@ -42,39 +28,64 @@
 
 		{% end %}
 		</div>
-		<script>
-		$( function() {
-			var selected = new Array();
-			$("#selectable").selectable({
-			    stop: function( event, ui ) {      
-			    	selected = []
-			    	$('.img.ui-selected').each(function() {
-					    selected.push(this.id);
-					});     
-					console.log(selected)
-			    }
-			});
 
-			var deleteImages = function () {
-				
-			}
-
-
-		    $('#deleteButton').click(function(){
-						           //Send post request to server.
-				    data = JSON.stringify({ 'imgs': selected, 
-				                            'session_id': $('#session_id').data('id'),
-				                            'action':'delete_images'});
-				    console.log(data)
-
-				  $.post('', data)
-		    });
-		} );
-		</script>
 	
+
+	<footer class='footer' >
+		<div class="container">
+			<button id="deleteButton" type="button" style="padding:5px; margin:5px;">
+				Delete Selected
+		  </button>
+
+		 <div style="display:inline-block;">
+		{% for p in page_list %}
+			<span> <a href="./{{p}}"> {{p}} </a> </span> 
+		{% end %}
+			<a href="./{{this_page+1}}"> <button id="next" type="button" style="padding:5px; margin:5px;">
+				Next
+		  </button></a>
+		</div>
+
+		</div>
+	</footer>
+
 	<div class='meta' style="display:none">
 		<span id="session_id" data-id={{ escape(session['name'])}}>session_id:  {{ escape(session['name'])}} </span>
 	</div>
+
+	<script>
+	$( function() {
+		var selected_ids = new Array();
+		var selected_imgs = new Array();
+		$("#selectable").selectable({
+		    stop: function( event, ui ) {      
+		    	selected_ids = []
+		    	$('.img.ui-selected').each(function() {
+				    selected_ids.push(this.id);
+				    selected_imgs.push($(this).data('id'));
+				});     
+				console.log(selected_ids)
+		    }
+		});
+
+
+	    $('#deleteButton').click(function(){
+
+			    data = JSON.stringify({ 'imgs': selected_imgs, 
+			                            'session_id': $('#session_id').data('id'),
+			                            'action':'delete_images'});
+			    console.log(data)
+
+			  //$.post('', data)
+			  $.each(selected_ids, function(index, value) {
+			  	id = "#"+value
+			  	console.log($(id)[0])
+			  	$("#"+value).remove()
+			  });
+	    	
+	    });
+	} );
+	</script>
 
 	</body>
 {% end %}
