@@ -39,7 +39,7 @@ if __name__ == "__main__":
     #X, Y = dk.datasets.load_url(url)
 
     print('Loading Model.')
-    m = dk.models.cnn3_full1()
+    m = dk.models.cnn3_full1_relu()
     #m = keras.models.load_model('/home/wroscoe/donkey_data/models/best-diff_lines2.hdf5')
 
 
