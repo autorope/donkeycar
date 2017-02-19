@@ -3,17 +3,27 @@
 var driveHandler = (function() {
     //functions used to drive the vehicle. 
 
-    var angle = 0
-    var throttle = 0
-    var driveMode = 'user'
-    var recording = false
-    var pilot = 'None'
-
-    var angleEl = "#angleInput"
-    var throttleEl = "#throttleInput"
+    var state = {'tele': {
+                          "user": {
+                                  'angle': 0,
+                                  'throttle': 0,
+                                  },
+                          "pilot": {
+                                  'angle': 0,
+                                  'throttle': 0,
+                                  }
+                          },
+                  'brakeOn': true, 
+                  'recording': false,
+                  'driveMode': "user",
+                  'pilot': 'None',
+                  'session': 'None',
+                  'lag': 0
+                  }
 
     var joystick_options = {}
     var joystickLoopRunning=false;   
+
     var vehicle_id = ""
     var driveURL = ""
     var vehicleURL = ""
@@ -24,8 +34,7 @@ var driveHandler = (function() {
       driveURL = '/api/vehicles/drive/' + vehicle_id + "/"
       vehicleURL = '/api/vehicles/' + vehicle_id + "/"
 
-      bindKeys()
-      bindPilotSelect()
+      setBindings()
 
       joystick_options = {
         zone: document.getElementById('joystick_container'),  // active zone
@@ -34,8 +43,8 @@ var driveHandler = (function() {
       };
 
       var manager = nipplejs.create(joystick_options);
-      
       bindNipple(manager)
+
 
       if(!!navigator.getGamepads){
          gamePadLoop(); 
@@ -45,69 +54,49 @@ var driveHandler = (function() {
 
 
 
-    var bindKeys = function() {
-      //Bind a function to capture the coordinates of the click.
-      $(angleEl).change(function(e) {
-          postDrive()
-      });
-      $(throttleEl).change(function(e) {
-          postDrive()
-      });
+    var setBindings = function() {
 
       $(document).keydown(function(e) {
-          if(e.which == 73) {
-            // 'i'  throttle up
-              throttleUp()
-          } 
-
-          if(e.which == 75) {
-            // 'k'  slow down
-              throttleDown()
-          }
-
-          if(e.which == 74) {
-            // 'j' turn left
-              angleLeft()
-          }
-
-          if(e.which == 76) {
-            // 'l' turn right
-              angleRight()
-          }
-
-          if(e.which == 65) {
-            // 'a' turn on auto mode
-              updateDriveMode('auto')
-          }
-          if(e.which == 68) {
-            // 'a' turn on auto mode
-              updateDriveMode('user')
-          }
-            if(e.which == 83) {
-            // 'a' turn on auto mode
-              updateDriveMode('auto_angle')
-          }
+          if(e.which == 32) { brake() }  // 'space'  brake
+          if(e.which == 82) { toggleRecording() }  // 'r'  toggle recording
+          if(e.which == 73) { throttleUp() }  // 'i'  throttle up
+          if(e.which == 75) { throttleDown() } // 'k'  slow down
+          if(e.which == 74) { angleLeft() } // 'j' turn left
+          if(e.which == 76) { angleRight() } // 'l' turn right
+          if(e.which == 65) { updateDriveMode('auto') } // 'a' turn on auto mode
+          if(e.which == 68) { updateDriveMode('user') } // 'd' turn on manual mode
+          if(e.which == 83) { updateDriveMode('auto_angle') } // 'a' turn on auto mode
       });
+
+
+      $('#pilot_select').on('change', function () {
+          state.pilot = $(this).val(); // get selected value
+          postPilot()
+      });
+
     };
 
 
     function bindNipple(manager) {
-      manager.on('start end', function(evt, data) {
-        $('#angleInput').val(0);
-        $('#throttleInput').val(0);
+      manager.on('start', function(evt, data) {
+        state.tele.user.angle = 0
+        state.tele.user.throttle = 0
+        state.recording = true
+        joystickLoopRunning=true;
+        joystickLoop();
 
-        if (!joystickLoopRunning) {
-          joystickLoopRunning=true;
-          joystickLoop();
-        } else {
-          joystickLoopRunning=false;
-        }
+      }).on('end', function(evt, data) {
+        joystickLoopRunning=false;
+        brake()
 
       }).on('move', function(evt, data) {
         radian = data['angle']['radian']
         distance = data['distance']
 
         //console.log(data)
+        state.tele.user.angle = Math.max(Math.min(Math.cos(radian)/70*distance, 1), -1)
+        state.tele.user.throttle = Math.max(Math.min(Math.sin(radian)/70*distance , 1), -1)
+
 
         angle = Math.round(distance * Math.cos(radian)/2)
         throttle = Math.round(distance/joystick_options['size']*200)
@@ -118,37 +107,40 @@ var driveHandler = (function() {
 
         recording = true
 
+        if (state.tele.user.throttle < .001) {
+          state.tele.user.angle = 0
+        }
+
+
       });
     }
 
 
-    var bindPilotSelect = function(){
-        $('#pilot_select').on('change', function () {
-                  pilot = $(this).val(); // get selected value
-                  postPilot()
-              });
-    };
-
-
     var postPilot = function(){
-        data = JSON.stringify({ 'pilot': pilot })
+        data = JSON.stringify({ 'pilot': state.pilot })
         $.post(vehicleURL, data)
     }
 
 
-    var updateDisplay = function() {
-      $(throttleEl).val(throttle);
-      $(angleEl).val(angle);
-      $('#driveMode').val(driveMode);
+    var updateUI = function() {
+      $("#throttleInput").val(state.tele.user.throttle);
+      $("#angleInput").val(state.tele.user.angle);
+      $('#driveMode').val(state.driveMode);
+      $('#recording').val(state.recording);
+      //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
+
 
     var postDrive = function() {
         //Send angle and throttle values
-        updateDisplay()
-        data = JSON.stringify({ 'angle': angle, 'throttle':throttle, 
-          'drive_mode':driveMode, 'recording': recording})
+
+        data = JSON.stringify({ 'angle': state.tele.user.angle, 
+                                'throttle':state.tele.user.throttle, 
+                                'drive_mode':state.driveMode, 
+                                'recording': state.recording})
         console.log(data)
         $.post(driveURL, data)
+        updateUI()
     };
 
 var applyDeadzone = function(number, threshold){
@@ -198,46 +190,92 @@ var applyDeadzone = function(number, threshold){
 
           if (joystickLoopRunning) {      
              joystickLoop();             
-          } else {
-            // Send zero angle, throttle and stop recording
-            angle = 0
-            throttle = 0
-            recording = false
-            postDrive()
-          }
+          } 
        }, 100)
     }
 
     var throttleUp = function(){
-        //Bind a function to capture the coordinates of the click.
-        throttle = Math.min(throttle + 5, 400);
-        postDrive()
-        };
+      state.tele.user.throttle = Math.min(state.tele.user.throttle + .05, 1);
+      postDrive()
+    };
 
     var throttleDown = function(){
-        //Bind a function to capture the coordinates of the click.
-        throttle = Math.max(throttle - 10, -200);
-        postDrive()
+      state.tele.user.throttle = Math.max(state.tele.user.throttle - .05, -1);
+      postDrive()
     };
 
     var angleLeft = function(){
-      //Bind a function to capture the coordinates of the click.
-      angle = Math.max(angle - 10, -90)
+      state.tele.user.angle = Math.max(state.tele.user.angle - .1, -1)
       postDrive()
     };
 
     var angleRight = function(){
-      //Bind a function to capture the coordinates of the click.
-      angle = Math.min(angle + 10, 90)
+      state.tele.user.angle = Math.min(state.tele.user.angle + .1, 1)
       postDrive()
     };
 
     var updateDriveMode = function(mode){
-      //Bind a function to capture the coordinates of the click.
-      driveMode = mode;
+      state.driveMode = mode;
       postDrive()
     };
 
+    var toggleRecording = function(){
+      state.recording = !state.recording
+      postDrive()
+    };
+
+    var brake = function(i=0){
+          console.log('post drive: ' + i)
+          state.tele.user.angle = 0
+          state.tele.user.throttle = 0
+          state.recording = false
+          postDrive()    
+
+
+      i++    
+      if (i < 5) {
+        setTimeout(function () {   
+          console.log('calling brake:' + i)       
+          brake(i);
+        }, 500)
+      };
+
+
+    };
+
+
+    var drawLine = function(angle, throttle) {
+
+      throttleConstant = 100
+      throttle = throttle * throttleConstant
+      angleSign = Math.sign(angle)
+      angle = toRadians(Math.abs(angle*90))
+
+      var canvas = document.getElementById("angleView"),
+      context = canvas.getContext('2d');
+      context.clearRect(0, 0, canvas.width, canvas.height);
+
+      base={'x':canvas.width/2, 'y':canvas.height}
+
+      pointX = Math.sin(angle) * throttle * angleSign
+      pointY = Math.cos(angle) * throttle
+      xPoint = {'x': pointX + base.x, 'y': base.y - pointY}
+
+      context.beginPath();
+      context.moveTo(base.x, base.y);
+      context.lineTo(xPoint.x, xPoint.y);
+      context.lineWidth = 5;
+      context.strokeStyle = '#ff0000';
+      context.stroke();
+      context.closePath();
+
+    };
 
     return {  load: load };
+
 })();
+
+
+function toRadians (angle) {
+  return angle * (Math.PI / 180);
+}

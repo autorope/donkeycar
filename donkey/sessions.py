@@ -239,11 +239,11 @@ def pickle_sessions(sessions_folder, session_names, file_path):
 
 def parse_img_filepath(filepath):
         f = filepath.split('/')[-1]
-        f = f.split('.')[0]
+        f = f[:-4] #remove ".jpg"
         f = f.split('_')
 
-        throttle = int(f[3])
-        angle = int(f[5])
+        throttle = round(float(f[3]), 2)
+        angle = round(float(f[5]), 2)
         milliseconds = int(f[7])
         
         data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds} 

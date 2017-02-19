@@ -62,11 +62,11 @@ class SwervePilot(BasePilot):
 
 
 class KerasAngle(BasePilot):
-    def __init__(self, model_path, throttle=25, **kwargs):
+    def __init__(self, model_path, throttle=.8, **kwargs):
         self.model_path = model_path
         self.model = None #load() loads the model
         self.throttle = throttle
-        self.last_angle = 0
+        self.last_angle = 0.0
         super().__init__(**kwargs)
 
 
@@ -74,12 +74,15 @@ class KerasAngle(BasePilot):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle = self.model.predict(img_arr)
         angle = angle[0][0]
+        print(angle)
 
         #add some smoothing
+
         a = .8
-        angel = a * angle + (1-a) * self.last_angle
+        #angle = a * angle * 1.5  + (1.0-a) * self.last_angle
+        angle = angle * 1.2
         self.last_angle = angle
-        
+
         return angle, self.throttle
 
     def load(self):

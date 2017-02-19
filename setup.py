@@ -34,7 +34,7 @@ setup(name='donkey',
 
     install_requires=['numpy', 
                       'pillow',
-                      'docopt==0.6.2',
+                      'docopt',
                       'tornado',
                       'requests',
                       'envoy',
