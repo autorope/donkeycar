@@ -12,30 +12,6 @@
 			</div>
 			
 			<div class="row">
-				<div class="col-md-12">
-					<nav aria-label="Page navigation">
-						<ul class="pagination">
-							<li>
-								<a href="./{{this_page - 1}}" aria-label="Previous">
-									<span aria-hidden="true">&laquo;</span>
-								</a>
-							</li>
-
-							{% for p in page_list %}
-								<li ><a href="./{{p}}"> {{p}} </a></li>
-							{% end %}
-
-							<li>
-								<a href="./{{this_page + 1}}" aria-label="Next">
-									<span aria-hidden="true">&raquo;</span>
-								</a>
-							</li>
-						</ul>
-					</nav>
-				</div>
-			</div>
-			
-			<div class="row">
 				<div class="col-md-12 session-thumbnails">
 					{% for img in session['imgs'] %}					
 						<div class="checkbox" id="{{ img['name'] }}">
