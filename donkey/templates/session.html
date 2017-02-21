@@ -3,89 +3,128 @@
 {% block content %}
 
 	<body>
-
-
-
-
-	  <style>
-	  #selectable .ui-selecting { background: #FECA40; }
-	  #selectable .ui-selected { background: #F39814; color: white; }
-	  </style>
-
-		<h2> Sessions {{ escape(session['name'])}} </h2>
-
-
-
-
-		<div id="selectable">
-		{% for i, img in enumerate(session['imgs']) %}
-			<div class="img ui-state-default" id={{i}} data-id="{{ img['name'] }}">
-				<img src="/session_image/{{session['name']}}/{{ img['name'] }}" > 
-
-				<span class="desc">Angle: {{img['angle']}}</span>
-				<span class="desc">Throttle: {{img['throttle']}}</span>
+		<div class="container-fluid">
+			<div class="row">
+				<div class="col-md-12">
+					<h2><span class="text-muted">Session:</span> {{ escape(session['name'])}} </h2>
+				</div>
 			</div>
 
-		{% end %}
+			<div class="row">
+				<div class="col-md-12">
+					<nav aria-label="Page navigation">
+					  <ul class="pagination">
+					    <li>
+					      <a href="./{{this_page - 1}}" aria-label="Previous">
+					        <span aria-hidden="true">&laquo;</span>
+					      </a>
+					    </li>
+
+							{% for p in page_list %}
+								<li ><a href="./{{p}}"> {{p}} </a></li>
+							{% end %}
+
+					    <li>
+					      <a href="./{{this_page + 1}}" aria-label="Next">
+					        <span aria-hidden="true">&raquo;</span>
+					      </a>
+					    </li>
+					  </ul>
+					</nav>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-10">
+					<div class="checkbox">
+						<label>
+							<input type="checkbox" value="" id="select-all">
+							Select All Images on Current Page
+						</label>
+					</div>
+				</div>
+				<div class="col-md-2">
+					<input class="btn btn-danger" type="button" value="Delete Selected" id="delete-all">
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-12 session-thumbnails">
+					{% for img in session['imgs'] %}
+					<div class="checkbox" id="{{ img['name'] }}">
+						<label>
+							<input type="checkbox" class="img-check" value="{{ img['name'] }}">
+							<div class="thumbnail">
+								<img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
+								<div class="caption">
+									<p class="small desc">Angle: {{img['angle']}}</p>
+									<p class="small desc">Throttle: {{img['throttle']}}</p>
+								</div>
+							</div>
+						</label>
+					</div>
+
+					{% end %}
+					<div class="row">
+						<div class="col-md-12">
+							<nav aria-label="Page navigation">
+								<ul class="pagination">
+									<li>
+										<a href="./{{this_page - 1}}" aria-label="Previous">
+											<span aria-hidden="true">&laquo;</span>
+										</a>
+									</li>
+
+									{% for p in page_list %}
+										<li ><a href="./{{p}}"> {{p}} </a></li>
+									{% end %}
+
+									<li>
+										<a href="./{{this_page + 1}}" aria-label="Next">
+											<span aria-hidden="true">&raquo;</span>
+										</a>
+									</li>
+								</ul>
+							</nav>
+						</div>
+				</div>
+			</div>
 		</div>
 
-	
-
-	<footer class='footer' >
-		<div class="container">
-			<button id="deleteButton" type="button" style="padding:5px; margin:5px;">
-				Delete Selected
-		  </button>
-
-		 <div style="display:inline-block;">
-		{% for p in page_list %}
-			<span> <a href="./{{p}}"> {{p}} </a> </span> 
-		{% end %}
-			<a href="./{{this_page+1}}"> <button id="next" type="button" style="padding:5px; margin:5px;">
-				Next
-		  </button></a>
+		<div class='meta' style="display:none">
+			<span id="session_id" data-id={{ escape(session['name'])}}>session_id:  {{ escape(session['name'])}} </span>
 		</div>
 
-		</div>
-	</footer>
+		<script>
+		$(document).ready(function() {
 
-	<div class='meta' style="display:none">
-		<span id="session_id" data-id={{ escape(session['name'])}}>session_id:  {{ escape(session['name'])}} </span>
-	</div>
+			$('#select-all').click(function(event) {
+				$(".img-check").prop('checked', $(this).prop("checked"));
+			});
 
-	<script>
-	$( function() {
-		var selected_ids = new Array();
-		var selected_imgs = new Array();
-		$("#selectable").selectable({
-		    stop: function( event, ui ) {      
-		    	selected_ids = []
-		    	$('.img.ui-selected').each(function() {
-				    selected_ids.push(this.id);
-				    selected_imgs.push($(this).data('id'));
-				});     
-				console.log(selected_ids)
-		    }
-		});
+	    $('#delete-all').click(function(){
+			  var selected = []
 
+				// Build array of selected images
+				$(".img-check:checked").each(function() {
+					selected.push($(this).val());
+				});
 
-	    $('#deleteButton').click(function(){
+				//Send post request to server.
+		    data = JSON.stringify({ 'imgs': selected,
+		                            'session_id': $('#session_id').data('id'),
+		                            'action':'delete_images'});
 
-			    data = JSON.stringify({ 'imgs': selected_imgs, 
-			                            'session_id': $('#session_id').data('id'),
-			                            'action':'delete_images'});
-			    console.log(data)
+		    console.log(data);
+		  	$.post('', data);
 
-			  //$.post('', data)
-			  $.each(selected_ids, function(index, value) {
-			  	id = "#"+value
-			  	console.log($(id)[0])
-			  	$("#"+value).remove()
-			  });
-	    	
+				$(selected).each(function( index, value ) {
+					console.log(value);
+					$("[id='" + value + "']").remove();
+				});
 	    });
-	} );
-	</script>
+		} );
+		</script>
 
 	</body>
 {% end %}
