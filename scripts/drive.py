@@ -30,14 +30,15 @@ if __name__ == '__main__':
     mysteeringcontroller = dk.actuators.PCA9685_Controller(channel=1)
 
     #Set up your PWM values for your steering and throttle actuator here. 
+    #Default settings are for Exceed Magnet 1/16th scale truck
     mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
-                                                  min_pulse=280,
-                                                  max_pulse=420,
-                                                  zero_pulse=350)
+                                                  min_pulse=220,
+                                                  max_pulse=370,
+                                                  zero_pulse=520)
 
     mysteering = dk.actuators.PWMSteeringActuator(controller=mysteeringcontroller,
-                                                  left_pulse=310,
-                                                  right_pulse=490)
+                                                  left_pulse=523,
+                                                  right_pulse=225)
 
     mymixer = dk.mixers.FrontSteeringMixer(mysteering, mythrottle)
 
