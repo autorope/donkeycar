@@ -59,6 +59,10 @@ div.session-thumbnails .checkbox {
 	display:inline;
 }
 
+div.session-thumbnails .caption {
+	padding:5px 5px 0px 5px;
+}
+
 div.session-thumbnails label {
 	padding-left: 0px;
 }
