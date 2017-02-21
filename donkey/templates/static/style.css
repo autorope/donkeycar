@@ -1,10 +1,10 @@
 
-#joystick_container { 
-	position: fixed; 
-	bottom:0; 
-	right:0; 
-	width: 400px; 
-	height:40%; 
+#joystick_container {
+	position: fixed;
+	bottom:0;
+	right:0;
+	width: 400px;
+	height:40%;
 	border:1pt solid black;
 	background-color: rgba(255, 0, 0, 0.1);
 }
@@ -19,8 +19,8 @@
 		width: 100%;
 	}
 
-	#joystick_container { 
-		width:100%; 
+	#joystick_container {
+		width:100%;
 	}
 }
 
@@ -44,4 +44,26 @@ div.img img {
 div.desc {
     padding: 15px;
     text-align: center;
+}
+
+div.session-thumbnails img {
+	width: 160px;
+	height: auto;
+}
+
+div.session-thumbnails .desc {
+	margin-bottom:0px;
+}
+
+div.session-thumbnails .checkbox {
+	display:inline;
+}
+
+div.session-thumbnails label {
+	padding-left: 0px;
+}
+
+div.session-thumbnails input[type=checkbox] {
+	margin-top: 10px;
+	margin-left: 10px;
 }
