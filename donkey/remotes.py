@@ -150,7 +150,7 @@ class DonkeyPilotApplication(tornado.web.Application):
 
         settings = {'debug': True}
 
-        super().__init__(handlers, debug=True)
+        super().__init__(handlers, **settings)
 
     def start(self, port=8887):
         ''' Start the tornado webserver. '''
