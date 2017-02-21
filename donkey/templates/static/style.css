@@ -50,6 +50,14 @@ div.session-thumbnails input[type=checkbox] {
 	margin-left: 10px;
 }
 
+div.img-controls {
+	margin: 20px 0;
+}
+
+div.img-controls .checkbox {
+	margin-top: 5px;
+}
+
 
 
 .videoOutsideWrapper{ 
