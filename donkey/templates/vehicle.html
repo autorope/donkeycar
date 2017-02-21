@@ -2,30 +2,25 @@
 {% block content %}
   
   <div class="container">
-    <h1>Vehicle: {{vehicle['id']}}</h1>
-    <span> Use this website to drive your vehicle. Data will only be recorded when you are actively steering. </span>
-    
-    <hr>
 
-    <div class="row">
-      <div class="col-md-6">
-        <p>Image Stream (MJPEG) </p>
-          <img id='mpeg-image' src="/api/vehicles/video/{{vehicle['id']}}"/>
-      </div>
-    </div>
+    <div class="row"> 
+      <div class="col-md-6"> <!-- Right Column -->
+        <h1>Vehicle: {{vehicle['id']}}</h1>
 
-    <hr> 
+        <div class="videoOutsideWrapper">
+            <div class="videoInsideWrapper">
+                <img id='mpeg-image', class='coveredVideo' src="/api/vehicles/video/{{vehicle['id']}}"/> </img>
+                <canvas id='angleView' class='coveringCanvas'> </canvas>
+            </div>
+        </div>
 
-    <span> Pilot: </span>
-    <select id="pilot_select">
-        <option> None </option>
-      {% for p in pilots %}
-        <option href='?pilot={{p.name}}'>{{ p.name}} </option>
-      {% end %}
-    </select>
-    
-    <div class="row">
-      <div class="col-md-6">
+        <span> Pilot: </span>
+        <select id="pilot_select">
+            <option> None </option>
+          {% for p in pilots %}
+            <option href='?pilot={{p.name}}'>{{ p.name}} </option>
+          {% end %}
+        </select>
 
         <form class="form-inline">
           <table class="table">
@@ -47,25 +42,34 @@
                 <th><label class='col-xs-3'> Drive Mode </label></th>
                 <td><input id='driveMode' class='form-control' disabled /></td>
               </tr>
+              <tr>
+                <th><label class='col-xs-3'> Recording </label></th>
+                <td><input id='recording' class='form-control' disabled /></td>
+              </tr>
             </tbody>
           </table>
         </form>
 
-      </div>
-    </div>
+        <!--  Spacer -->
+        <div style='position: relative; height: 200px; width: 100%'> </div>
 
-    <!--  Spacer -->
-    <div style='position: relative; height: 200px; width: 100%'> </div>
+      </div> <!-- END Right Column -->
 
-    <div id="joystick_container">
-      <span> Click/touch to use joystic. </span>
-    </div>
 
-  <div class='meta'>
-    <span id='vehicle_id' data-id={{vehicle['id']}}> </span>
-  </div>
 
-  </div>
+      <div class="col-md-6"> <!-- LEFT Column -->
+
+        <div id="joystick_container">
+          <span> Click/touch to use joystic. </span>
+        </div>
+
+        <div class='meta'>
+          <span id='vehicle_id' data-id={{vehicle['id']}}> </span>
+        </div>
+    </div><!-- END Left Column -->
+
+  </div> <!-- END Container -->
+
 
 <script type="text/javascript">
   $( document ).ready(function() {

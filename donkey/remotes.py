@@ -65,13 +65,15 @@ class RemoteClient():
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
 
-
+        print(r.text)
 
         data = json.loads(r.text)
-        angle = int(float(data['angle']))
-        throttle = int(float(data['throttle']))
+
+        angle = float(data['angle'])
+        throttle = float(data['throttle'])
 
         print('vehicle <> server: request lag: %s' %lag)
+
 
         return angle, throttle
 
@@ -257,12 +259,12 @@ class DriveAPI(tornado.web.RequestHandler):
         V['drive_mode'] = data['drive_mode']
 
         if angle is not "":
-            V['user_angle'] = int(angle)
+            V['user_angle'] = angle
         else:
             V['user_angle'] = 0
 
         if throttle is not "":
-            V['user_throttle'] = int(throttle)
+            V['user_throttle'] = throttle
         else:
             V['user_throttle'] = 0
 
@@ -422,7 +424,7 @@ class SessionView(tornado.web.RequestHandler):
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
 
-        perpage = 100
+        perpage = 1000
         pages = math.ceil(img_count/perpage)
         if page is None:
             page = 1
@@ -436,7 +438,7 @@ class SessionView(tornado.web.RequestHandler):
         sorted_imgs = sorted(imgs, key=itemgetter('name'))
         page_list = [p+1 for p in range(pages)]
         session = {'name':session_id, 'imgs': sorted_imgs[start:end]}
-        data = {'session': session, 'page_list': page_list, 'page': page}
+        data = {'session': session, 'page_list': page_list, 'this_page':page}
         self.render("templates/session.html", **data)
 
     def post(self, session_id, page):
