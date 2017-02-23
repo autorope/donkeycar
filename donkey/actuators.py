@@ -42,7 +42,10 @@ class PCA9685_Controller:
         self.pwm.set_pwm(self.channel, 0, value)
 
 class NAVIO2_Controller:
-    def __init__(self, channel=0, frequency=60):
+
+    # due to a longstanding bug in NAVIO2, a PWM frequency
+    # 400Hz works best.
+    def __init__(self, channel=0, frequency=400):
         from navio import pwm
         
         # Initialise the NAVIO2 STM32
@@ -110,45 +113,4 @@ class PWMThrottleActuator:
         print('pulse: %s' % pulse)
         sys.stdout.flush()
         self.controller.set_pwm(pulse)
-        return '123'
-
-class PWM3PinThrottleActuator:
-
-    MIN_THROTTLE = -1.0
-    MAX_THROTTLE =  1.0
-
-    def __init__(self, controllerPWM=None,
-                       controllerF=None,
-                       controllerR=None,
-                       max_pulse=300,
-                       min_pulse=490,
-                       zero_pulse=350,
-                       max_frpulse=300,
-                       min_frpulse=490):
-        self.calibrate()
-
-    def calibrate(self):
-        #Calibrate ESC (TODO: THIS DOES NOT WORK YET)
-        print('center: %s' % self.zero_pulse)
-        self.controllerPWM.set_pwm(self.zero_pulse)  #Set Max Throttle
-        time.sleep(1)
-
-    def update(self, throttle):
-        print('throttle update: %s' %throttle)
-        if throttle > 0:
-            pulse = map_range(throttle,
-                              0, self.MAX_THROTTLE, 
-                              self.zero_pulse, self.max_pulse)
-            self.controllerF.set_pwm(max_frpulse)
-            self.controllerR.set_pwm(min_frpulse)
-        else:
-            pulse = map_range(throttle,
-                              self.MIN_THROTTLE, 0, 
-                              self.min_pulse, self.zero_pulse)
-            self.controllerF.set_pwm(max_frpulse)
-            self.controllerR.set_pwm(min_frpulse)
-
-        print('pulse: %s' % pulse)
-        sys.stdout.flush()
-        self.controllerPWM.set_pwm(pulse)
         return '123'

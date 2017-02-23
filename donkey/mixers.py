@@ -1,5 +1,6 @@
 import time
 import sys
+import math
 from donkey import actuators
 
 class BaseMixer():
@@ -37,7 +38,7 @@ class DifferentialSteeringMixer(BaseMixer):
     def __init__(self, 
                  left_actuator=None, 
                  right_actuator=None,
-                 angle_throttle_multiplier = 1.0):
+                 angle_throttle_multiplier = 1.0/math.pi):
         self.left_actuator = left_actuator
         self.right_actuator = right_actuator
         self.angle = 0
@@ -64,7 +65,7 @@ class MecanumMixer(DifferentialSteeringMixer):
                  rf_actuator=None,
                  lr_actuator=None, 
                  rr_actuator=None,
-                 angle_throttle_multiplier = 1.0):
+                 angle_throttle_multiplier = 1.0/math.pi):
         self.lf_actuator = lf_actuator
         self.rf_actuator = rf_actuator
         self.lr_actuator = lr_actuator
