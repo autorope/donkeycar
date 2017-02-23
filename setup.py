@@ -34,7 +34,7 @@ setup(name='donkey',
 
     install_requires=['numpy', 
                       'pillow',
-                      'docopt==0.6.2',
+                      'docopt',
                       'tornado',
                       'requests',
                       'envoy',
@@ -43,7 +43,8 @@ setup(name='donkey',
     extras_require={'server': [
                         'keras',
                         'h5py',
-                        'scikit-image'
+                        'scikit-image',
+                        'opencv-python'
                         ],
                     'pi': [
                         'picamera',

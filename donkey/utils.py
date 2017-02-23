@@ -151,7 +151,13 @@ def make_dir(path):
     return real_path
 
 
+def create_donkey_data(path):
+    make_dir(path)
 
+    models_path = os.path.join(path, 'models')
+    sessions_path = os.path.join(path, 'sessions')
+    make_dir(models_path)
+    make_dir(sessions_path)
 
 
 
@@ -227,3 +233,10 @@ def my_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('192.0.0.8', 1027))
     return s.getsockname()[0]
+
+
+def merge_two_dicts(x, y):
+    """Given two dicts, merge them into a new dict as a shallow copy."""
+    z = x.copy()
+    z.update(y)
+    return z

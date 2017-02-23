@@ -11,7 +11,7 @@ class BaseMixer():
     def update_throttle(self, throttle):
         print('BaseThrottleActuator.update: throttle=%s' %throttle)
 
-    def update(self, angle=0, throttle=0):
+    def update(self, throttle=0, angle=0):
         '''Convenience function to update
         angle and throttle at the same time'''
         self.update_angle(angle)
@@ -26,57 +26,56 @@ class FrontSteeringMixer(BaseMixer):
         self.steering_actuator = steering_actuator
         self.throttle_actuator = throttle_actuator
 
-    def update_angle(self, angle):
-        self.steering_actuator.update_angle(angle)
+    def update(self, throttle, angle):
+        self.steering_actuator.update(angle)
 
-    def update_throttle(self, throttle):
-        self.throttle_actuator.update_throttle(throttle)
+        self.throttle_actuator.update(throttle)
 
 
-class DifferentialSteeringMixer(BaseMixer):
+class DifferentialDriveMixer:
+    """
+    A class to encompass the steering and throttle
+    actions of a a differential drive vehicle. 
+    """
+    def __init__(self, left_motor, right_motor):
 
-    def __init__(self, 
-                 left_actuator=None, 
-                 right_actuator=None,
-                 angle_throttle_multiplier = 1.0/math.pi):
-        self.left_actuator = left_actuator
-        self.right_actuator = right_actuator
-        self.angle = 0
-        self.throttle = 0
-        self.angle_throttle_multiplier = angle_throttle_multiplier
-
-    def update_angle(self, angle):
-        self.angle = angle
-        self.update_actuators()
-
-    def update_throttle(self, throttle):
+        self.left_motor = left_motor
+        self.right_motor = right_motor
+                
+        self.angle=0
+        self.throttle=0
+    
+    def update(self, throttle, angle):
         self.throttle = throttle
-        self.update_actuators()
-
-    def update_actuators(self):
-        self.left_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
-        self.right_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
-
-
-class MecanumMixer(DifferentialSteeringMixer):
-
-    def __init__(self, 
-                 lf_actuator=None, 
-                 rf_actuator=None,
-                 lr_actuator=None, 
-                 rr_actuator=None,
-                 angle_throttle_multiplier = 1.0/math.pi):
-        self.lf_actuator = lf_actuator
-        self.rf_actuator = rf_actuator
-        self.lr_actuator = lr_actuator
-        self.rr_actuator = rr_actuator
-        self.angle = 0
-        self.throttle = 0
-        self.angle_throttle_multiplier = angle_throttle_multiplier
-
-    def update_actuators(self):
-        self.lf_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
-        self.rf_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
-        self.lr_actuator.update(self.throttle - self.angle * angle_throttle_multiplier)
-        self.rr_actuator.update(self.throttle + self.angle * angle_throttle_multiplier)
+        self.angle = angle
         
+        if throttle == 0 and angle == 0:
+           self.stop()
+        else:
+            
+            l_speed = ((self.left_motor.speed + throttle)/3 - angle/5)
+            r_speed = ((self.right_motor.speed + throttle)/3 + angle/5)
+            l_speed = min(max(l_speed, -1), 1)
+            r_speed = min(max(r_speed, -1), 1)
+            
+            self.left_motor.turn(l_speed)
+            self.right_motor.turn(r_speed)
+            
+            
+    def test(self, seconds=1):
+        telemetry = [(0, -.5), (0, -.5), (0, 0), (0, .5), (0, .5),  (0, 0), ]
+        for t in telemetry:
+            
+            
+            self.update(*t)
+            print('throttle: %s   angle: %s' % (self.throttle, self.angle))
+            print('l_speed: %s  r_speed: %s' % (self.left_motor.speed, 
+                                                self.right_motor.speed))
+            time.sleep(seconds)
+            
+        print('test complete')
+        
+        
+    def stop(self):
+        self.left_motor.turn(0)
+        self.right_motor.turn(0)

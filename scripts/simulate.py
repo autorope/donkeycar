@@ -21,10 +21,11 @@ camera_sim = dk.sensors.ImgArrayCamera(X) #For testing
 
 mixer = dk.mixers.BaseMixer()
 
-remote_pilot = dk.remotes.RemoteClient('http://localhost:8887', vehicle_id='mycar')
+remote_pilot = dk.remotes.RemoteClient('http://localhost:8887', vehicle_id='mycar2')
 
 
-car = dk.vehicles.BaseVehicle(camera=camera_sim,
+car = dk.vehicles.BaseVehicle(drive_loop_delay=.5,
+                              camera=camera_sim,
 							  actuator_mixer=mixer,
                               pilot=remote_pilot)
 

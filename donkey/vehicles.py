@@ -2,7 +2,7 @@ import time
 
 class BaseVehicle:
     def __init__(self,
-                 drive_loop_delay = .2,
+                 drive_loop_delay = .08,
                  camera=None,
                  actuator_mixer=None,
                  pilot=None):
@@ -16,8 +16,8 @@ class BaseVehicle:
 
     def start(self):
         start_time = time.time()
-        angle = 0
-        throttle = 0
+        angle = 0.
+        throttle = 0.
 
         #drive loop
         while True:
@@ -32,9 +32,7 @@ class BaseVehicle:
                                                  throttle,
                                                  milliseconds)
 
-            self.actuator_mixer.update_angle(angle)
-            pulse =  self.actuator_mixer.update_throttle(throttle)
-            print(pulse)
+            self.actuator_mixer.update(throttle, angle)
 
             #print current car state
             print('angle: %s   throttle: %s' %(angle, throttle) )           
