@@ -60,21 +60,24 @@ class RemoteClient():
 
 
         r = None
-
         while r == None:
             #Try connecting to server until connection is made.
             start = time.time()
+            
             try:
                 r = self.session.post(self.control_url, 
                                 files={'img': dk.utils.arr_to_binary(img_arr), 
                                        'json': json.dumps(data)},
                                        timeout=0.2) #hack to put json in file 
+                
             except (requests.ConnectionError) as err:
                 print("Vehicle could not connect to server. Make sure you've " + 
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
+            
             except (requests.exceptions.ReadTimeout) as err:
                 print("Request took too long. Retrying")
+                return angle, throttle * .8
                 
 
         end = time.time()
