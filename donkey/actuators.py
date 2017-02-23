@@ -26,7 +26,7 @@ class Dummy_Controller:
     def __init__(self, channel, frequency):
         pass
 
-    def set_pwm(pwm):
+    def set_pulse(pwm):
         pass
 
 class PCA9685_Controller:
@@ -40,7 +40,22 @@ class PCA9685_Controller:
 
     def set_pulse(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 
+
+
+class NAVIO2_Controller:
+    def __init__(self, channel=0, frequency=400):
+        from navio import pwm
         
+        # Initialise the NAVIO2 STM32
+        self.pwm = pwm.PWM(channel)
+
+        # Here "period" is actually frequency
+        self.pwm.set_period(frequency)
+
+    def set_pulse(value):
+        self.pwm.set_duty_cycle(value)
+
+
 class PWMSteeringActuator:
     #max angle wheels can turn
     LEFT_ANGLE = -1 
