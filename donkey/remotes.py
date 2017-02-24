@@ -4,6 +4,7 @@ be controlled remotely by the user or an auto pilot.
 """
 
 import time
+from datetime import datetime
 import json
 import io
 import os
@@ -32,6 +33,16 @@ class RemoteClient():
 
         self.control_url = remote_url + '/api/vehicles/control/' + vehicle_id + '/'
         self.last_milliseconds = 0
+        self.session = requests.Session()
+
+        self.log('time,lag\n', write_method='w')
+
+    def log(self, line, path='lag_log.csv', write_method='a'):
+        with open('lag_log.csv', write_method) as f:
+            f.write(line)
+
+
+
         
         
     def decide(self, img_arr, angle, throttle, milliseconds):
@@ -49,31 +60,38 @@ class RemoteClient():
 
 
         r = None
-
         while r == None:
             #Try connecting to server until connection is made.
+            start = time.time()
             
             try:
-                start = time.time()
-                r = requests.post(self.control_url, 
+                r = self.session.post(self.control_url, 
                                 files={'img': dk.utils.arr_to_binary(img_arr), 
-                                       'json': json.dumps(data)}) #hack to put json in file 
-                end = time.time()
-                lag = end-start
+                                       'json': json.dumps(data)},
+                                       timeout=0.2) #hack to put json in file 
+                
             except (requests.ConnectionError) as err:
                 print("Vehicle could not connect to server. Make sure you've " + 
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
+            
+            except (requests.exceptions.ReadTimeout) as err:
+                print("Request took too long. Retrying")
+                return angle, throttle * .8
+                
 
-        print(r.text)
-        
+        end = time.time()
+        lag = end-start
+        self.log('{}, {} \n'.format(datetime.now().time() , lag ))
+        print('vehicle <> server: request lag: %s' %lag)
+
         data = json.loads(r.text)
         
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         
-        print('vehicle <> server: request lag: %s' %lag)
-
+        
+        
 
         return angle, throttle
 
