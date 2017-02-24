@@ -3,3 +3,4 @@ data/*
 *.pyc
 .ipynb_checkpoints
 *.egg-info/
+.git.bfg-report

@@ -11,6 +11,7 @@ Options:
   --epochs=<epochs>   number of epochs [default: 3].
 """
 
+import os
 from docopt import docopt
 
 import donkey as dk
@@ -19,13 +20,15 @@ import keras
 
 # Get args.
 args = docopt(__doc__)
+sessions_path = '~/donkey_data/sessions/'
+models_path = os.path.expanduser('~/donkey_data/models/')
 
 if __name__ == "__main__":
     print(args)
     sessions = args['--sessions'].split(',')
     epochs = int(args['--epochs'])
     #Train on session pictures
-    sh = dk.sessions.SessionHandler(sessions_path='~/donkey_data/sessions/')
+    sh = dk.sessions.SessionHandler(sessions_path=sessions_path)
     s = sh.load(sessions[0])
     X, Y = s.load_dataset()
 
@@ -43,8 +46,10 @@ if __name__ == "__main__":
     #m = keras.models.load_model('/home/wroscoe/donkey_data/models/best-diff_lines2.hdf5')
 
 
-    filepath="best-"+sessions[0]+".hdf5"
-    checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, 
+    file_name="best-"+sessions[0]+".hdf5"
+    file_path = os.path.join(models_path, file_name)
+
+    checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
                                  save_best_only=True, mode='min')
     callbacks_list = [checkpoint]
 
