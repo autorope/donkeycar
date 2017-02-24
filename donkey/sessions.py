@@ -1,6 +1,7 @@
 import os
 import time
 import numpy as np
+import h5py
 from PIL import Image
 from skimage import exposure
 
@@ -15,7 +16,7 @@ class Session():
     '''
 
     def __init__(self, path):
-        print('Loading Session')
+        print('Loading Session: %s' %path)
         self.session_dir = path
         self.frame_count = 0
 
@@ -49,7 +50,7 @@ class Session():
         return len(self.img_paths())
 
 
-    def load_dataset(self, img_paths=None, angle_only=True):
+    def load_dataset(self, angle_only=True):
         '''
         Returns image arrays and data arrays.
 
@@ -59,7 +60,7 @@ class Session():
 
             Where n is the number of recorded images.
         '''
-        X, Y = load_dataset(img_paths)
+        X, Y = load_dataset(self.img_paths())
         #select only the angle
         if angle_only == True:
             Y = Y[:,0].reshape(Y.shape[0], 1)
@@ -226,6 +227,7 @@ def sessions_to_hdf5(sessions_folder, session_names, file_path):
     X = np.concatenate(X)
     Y = np.concatenate(Y)
 
+    print('Saving HDF5 file to %s' %file_path)
     dataset_to_hdf5(X, Y, file_path)
 
 
