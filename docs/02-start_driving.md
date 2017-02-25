@@ -16,4 +16,16 @@ Now that you have built your car, you'll want to drive it.
     sudo nmap -sP 192.168.1.0/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'
     ```
 3. Connect to your pi by running `ssh pi@<your_pi_ip_address>`
-4. Run the `drive_pi.py` demo script
+4. Activate your python virtual environment 
+	```
+	cd donkey
+	source env/bin/activate
+	```
+5. Start your drive script.
+	```
+	python scripts/drive.py  --remote http://<your server address>:8887
+	``` `
+
+
+#### Control your car
+You can now control your car with the virtual joystic on your computer or your phone.

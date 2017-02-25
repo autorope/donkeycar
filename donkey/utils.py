@@ -9,10 +9,6 @@ import socket
 from PIL import Image
 import numpy as np
 
-import envoy
-
-
-
 '''
 IMAGES
 '''
@@ -75,7 +71,7 @@ def binary_to_img(binary):
 
 
 def create_video(img_dir_path, output_video_path):
-
+    import envoy
     # Setup path to the images with telemetry.
     full_path = os.path.join(img_dir_path, 'frame_*.png')
 
@@ -155,7 +151,13 @@ def make_dir(path):
     return real_path
 
 
+def create_donkey_data(path):
+    make_dir(path)
 
+    models_path = os.path.join(path, 'models')
+    sessions_path = os.path.join(path, 'sessions')
+    make_dir(models_path)
+    make_dir(sessions_path)
 
 
 
@@ -231,3 +233,10 @@ def my_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('192.0.0.8', 1027))
     return s.getsockname()[0]
+
+
+def merge_two_dicts(x, y):
+    """Given two dicts, merge them into a new dict as a shallow copy."""
+    z = x.copy()
+    z.update(y)
+    return z
