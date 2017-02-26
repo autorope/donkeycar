@@ -12,6 +12,7 @@ Options:
 
 
 import os
+import sys
 import time
 import itertools
 
@@ -133,3 +134,5 @@ if __name__ == '__main__':
                 all_results.append(results)
                 
                 save_results(results, name)
+
+                sys.stdout.flush()
