@@ -1,5 +1,6 @@
 import os
 import time
+import itertools
 import numpy as np
 import h5py
 from PIL import Image
@@ -293,3 +294,14 @@ def variant_generator(img_paths, variant_funcs):
                     x = np.expand_dims(x, axis=0)
                     y = y.reshape(1, 2)
                     yield x, y
+
+
+
+
+def param_gen(params):
+    '''
+    Accepts a dictionary of parameter options and returns 
+    a list of dictionary with the permutations of the parameters.
+    '''
+    for p in itertools.product(*params.values()):
+        yield dict(zip(params.keys(), p ))

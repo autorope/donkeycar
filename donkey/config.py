@@ -3,7 +3,12 @@ import os
 import configparser
 config = configparser.ConfigParser()
 
-def get_config(config_path):
+my_path = os.path.expanduser('~/mydonkey/')
+sessions_path = os.path.join(my_path, 'sessions')
+models_path = os.path.join(my_path, 'models')
+
+
+def parse_config(config_path):
     config_path = os.path.expanduser(config_path)
     config.read(config_path)
 

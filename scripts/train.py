@@ -8,7 +8,7 @@ Usage:
 
 Options:
   --sessions=<name>   session to train on
-  --epochs=<epochs>   number of epochs [default: 3].
+  --epochs=<epochs>   number of epochs [default: 3]
 """
 
 import os
@@ -20,15 +20,15 @@ import keras
 
 # Get args.
 args = docopt(__doc__)
-sessions_path = '~/donkey_data/sessions/'
-models_path = os.path.expanduser('~/donkey_data/models/')
+#sessions_path = '~/donkey_data/sessions/'
+#models_path = os.path.expanduser('~/donkey_data/models/')
 
 if __name__ == "__main__":
     print(args)
     sessions = args['--sessions'].split(',')
     epochs = int(args['--epochs'])
     #Train on session pictures
-    sh = dk.sessions.SessionHandler(sessions_path=sessions_path)
+    sh = dk.sessions.SessionHandler(sessions_path=dk.config.sessions_path)
     s = sh.load(sessions[0])
     X, Y = s.load_dataset()
 
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 
     file_name="best-"+sessions[0]+".hdf5"
-    file_path = os.path.join(models_path, file_name)
+    file_path = os.path.join(dk.config.models_path, file_name)
 
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
                                  save_best_only=True, mode='min')

@@ -39,8 +39,8 @@ def cnn3_full1():
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
-    adam = keras.optimizers.Adam(lr=0.01, decay=0.0)
-    model.compile(optimizer=adam, loss='mean_squared_error')
+    #adam = keras.optimizers.Adam(lr=0.01, decay=0.0)
+    #model.compile(optimizer=adam, loss='mean_squared_error')
 
     return model
 
@@ -219,66 +219,37 @@ def vision_2D(dropout_frac=.2):
     return model
 
 
-def regularized_cnn4():
-    reg = l2(0.005)
+def conv_factory(x, filters, i, j):
+    x = Convolution2D(filters, i, j)(x)
+    x = Activation('relu')(x)
+    x = MaxPooling2D(pool_size=(2, 2))(x)
+    return x
+
+def dense_factory(x, neurons, dropout):
+    x = Dense(neurons)(x)
+    x = Activation('relu')(x)
+    x = Dropout(dropout)(x)
+    return x
+
+
+def cnn3_full1_relu(conv, dense, dropout):
 
     img_in = Input(shape=(120, 160,3), name='img_in')
-    angle_in = Input(shape=(1,), name='angle_in')
 
     x = img_in
-    x = Convolution2D(4, 3, 3,W_regularizer=reg)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
-
-    x = Convolution2D(8, 3, 3, W_regularizer=reg)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
-
-    x = Convolution2D(16, 3, 3, W_regularizer=reg)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
-
-    x = Convolution2D(32, 3, 3, W_regularizer=reg)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    
+    #create 
+    for c in conv:
+        x = conv_factory(x, c[0], c[1], c[2])
+        
     x = Flatten()(x)
-
-    x = Dense(128, W_regularizer=reg)(x)
-    x = Activation('linear')(x)
-    x = Dropout(.2)(x)
-
+    
+    for d in dense:
+        x = dense_factory(x, d, dropout)
+    
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
-    model.compile(optimizer='adam', loss='mean_squared_error')
-    return model
-
-
-def cnn3_full1_relu():
-
-    img_in = Input(shape=(120, 160, 3), name='img_in')
-    angle_in = Input(shape=(1,), name='angle_in')
-    
-    x = Convolution2D(8, 3, 3)(img_in)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
-
-    x = Convolution2D(16, 3, 3)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
-
-    x = Convolution2D(32, 3, 3)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
-    
-    merged = Flatten()(x)
-    
-    x = Dense(256)(merged)
-    x = Activation('relu')(x)
-    x = Dropout(.2)(x)
-    angle_out = Dense(1, name='angle_out')(x)
-
-    model = Model(input=[img_in], output=[angle_out])
-    model.compile(optimizer='adam', loss='mean_squared_error')
+    #model.compile(optimizer='adam', loss='mean_squared_error')
 
     return model
