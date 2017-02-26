@@ -2,12 +2,13 @@
 Script to 
 
 Usage:
-    explore.py (--url=<url>) (--name=<name)
+    explore.py (--url=<url>) (--name=<name) [--loops=<loops]
 
 
 Options:
   --url=<url>   url of the hdf5 dataset
-  --name=<name> name of the test
+  --loops=<loops>   times to loop through the tests [default: 1]
+  --name=<name>  name of the test
 """
 
 
@@ -15,6 +16,7 @@ import os
 import sys
 import time
 import itertools
+import random
 
 from docopt import docopt
 import pandas as pd
@@ -23,13 +25,14 @@ import keras
 import donkey as dk
 
 
-def train_model(X, Y, model, batch_size=64, epochs=1, results=None, shuffle=True):
+def train_model(X, Y, model, batch_size=64, epochs=1, results=None, 
+                shuffle=True, seed=None):
     '''
     Train a model, test it using common evaluation techiques and 
     record the results.
     '''
     #split data
-    train, val, test = dk.utils.split_dataset(X, Y, shuffle=shuffle)
+    train, val, test = dk.utils.split_dataset(X, Y, shuffle=shuffle, seed=seed)
     X_train, Y_train = train
     X_val, Y_val = val
     X_test, Y_test = test
@@ -69,19 +72,16 @@ if __name__ == '__main__':
 
     url = args['--url']
     name = args['--name']
+    loops = int(args['--loops'])
 
 
 
     model_params ={
              'conv': [
                         [(8,3,3), (16,3,3), (32,3,3)],
-                        [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
-                        [(16,3,3), (32,3,3), (64,3,3)],
-                        [(4,3,3),(8,3,3), (16,3,3), (32,3,3)],
-                        [(2,3,3), (4,3,3), (8,3,3), (16,3,3), (32,3,3)]
                     ],
-             'dense': [ [32], [64], [128], [256], [16, 8], [32, 16], [64, 32]],
-             'dropout': [.2, .4, .6]
+             'dense': [ [128]],
+             'dropout': [.2]
             }
 
     optimizer_params = {
@@ -91,7 +91,7 @@ if __name__ == '__main__':
 
     training_params = {
         'batch_size': [32, 64, 128],
-        'epochs': [5, 10, 20, 50]
+        'epochs': [1]
     }
 
 
@@ -102,37 +102,41 @@ if __name__ == '__main__':
     optimizer_params = list(dk.utils.param_gen(optimizer_params))
     training_params = list(dk.utils.param_gen(training_params))
 
-    param_count = len(model_params) * len(optimizer_params) * len(training_params)
+    param_count = len(model_params) * len(optimizer_params) * len(training_params) * loops
 
     print('total params to test: %s' % param_count)
 
     all_results = []
     test_count = 0
-    for mp in model_params:
-        model = dk.models.cnn3_full1_relu(**mp)
-        
-        for op in optimizer_params:
-            optimizer = keras.optimizers.Adam(**op)
-            model.compile(optimizer=optimizer, loss='mean_squared_error')
+    for i in range(loops):
+        seed = random.randint(0, 10000)
+
+        for mp in model_params:
+            model = dk.models.cnn3_full1_relu(**mp)
             
-            for tp in training_params:
-                test_count += 1
-                print('test %s of %s' %(test_count, param_count))
-                results = {}
-                results['conv_layers'] = str([i[0] for i in mp['conv']])
-                results['dense_layers'] = str([i for i in mp['dense']])
-                results['dropout'] = mp['dropout']
-                results['learning rate'] = op['lr']
-                results['decay'] = op['decay']
+            for op in optimizer_params:
+                optimizer = keras.optimizers.Adam(**op)
+                model.compile(optimizer=optimizer, loss='mean_squared_error')
                 
-                
-                trained_model, results = train_model(X, Y[:,0], model, 
-                                                     results=results, **tp)
-                
+                for tp in training_params:
+                    test_count += 1
+                    print('test %s of %s' %(test_count, param_count))
+                    results = {}
+                    results['random_seed'] = seed
+                    results['conv_layers'] = str([i[0] for i in mp['conv']])
+                    results['dense_layers'] = str([i for i in mp['dense']])
+                    results['dropout'] = mp['dropout']
+                    results['learning rate'] = op['lr']
+                    results['decay'] = op['decay']
+                    
+                    
+                    trained_model, results = train_model(X, Y[:,0], model, 
+                                                         results=results, seed=seed, **tp)
+                    
 
-                
-                all_results.append(results)
-                
-                save_results(results, name)
+                    
+                    all_results.append(results)
+                    
+                    save_results(results, name)
 
-                sys.stdout.flush()
+                    sys.stdout.flush()

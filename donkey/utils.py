@@ -96,14 +96,19 @@ def create_video(img_dir_path, output_video_path):
 DATASETS
 '''
 
-def split_dataset(X, Y, val_frac=.05, test_frac=.05, shuffle=True):
+def split_dataset(X, Y, val_frac=.05, test_frac=.05, 
+                  shuffle=True, seed=None):
     count = len(X)
     assert len(X) == len(Y)
     
     if shuffle == True:
         #shuffle values from both arrays in unison
-        seed = random.randint(0, 1000)
+        if seed is None:
+            seed = random.randint(0, 10000)
+
+        print('shuffle seed: %s' %seed)
         for i in [X, Y]:
+
             np.random.seed(seed=seed)
             np.random.shuffle(i)
         
