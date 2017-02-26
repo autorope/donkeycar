@@ -91,12 +91,12 @@ if __name__ == '__main__':
             }
 
     optimizer_params = {
-        'lr': [.001, .0001],
+        'lr': [.001],
         'decay': [0.0]
     }
 
     training_params = {
-        'batch_size': [32, 64, 128],
+        'batch_size': [128],
         'epochs': [1]
     }
 
@@ -104,10 +104,11 @@ if __name__ == '__main__':
     print('loading data from %s' %url)
     X, Y = dk.datasets.load_url(url)
 
+    dataset_name = url.rsplit('/', 1)[-1]
+
     model_params = list(dk.utils.param_gen(model_params))
     optimizer_params = list(dk.utils.param_gen(optimizer_params))
     training_params = list(dk.utils.param_gen(training_params))
-
 
     param_count = len(model_params) * len(optimizer_params) * len(training_params) * loops
 
@@ -130,6 +131,7 @@ if __name__ == '__main__':
                     test_count += 1
                     print('test %s of %s' %(test_count, param_count))
                     results = {}
+                    results['dataset_name'] = dataset_name
                     results['random_seed'] = seed
                     results['conv_layers'] = str([i[0] for i in mp['conv']])
                     results['dense_layers'] = str([i for i in mp['dense']])
