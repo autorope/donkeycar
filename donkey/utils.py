@@ -96,8 +96,10 @@ def create_video(img_dir_path, output_video_path):
 DATASETS
 '''
 
+
 def split_dataset(X, Y, val_frac=.05, test_frac=.05, 
                   shuffle=True, seed=None):
+
     count = len(X)
     assert len(X) == len(Y)
     
@@ -109,12 +111,14 @@ def split_dataset(X, Y, val_frac=.05, test_frac=.05,
         print('shuffle seed: %s' %seed)
         for i in [X, Y]:
 
+
             np.random.seed(seed=seed)
             np.random.shuffle(i)
         
     
     val_cutoff = math.ceil(count * (1 - (val_frac + test_frac)))
     test_cutoff = math.ceil(count * (1- test_frac))
+
     
     X_train = X[:val_cutoff]
     Y_train = Y[:val_cutoff]

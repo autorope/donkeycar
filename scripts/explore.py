@@ -18,6 +18,7 @@ import time
 import itertools
 import random
 
+
 from docopt import docopt
 import pandas as pd
 import keras
@@ -25,14 +26,18 @@ import keras
 import donkey as dk
 
 
+
 def train_model(X, Y, model, batch_size=64, epochs=1, results=None, 
                 shuffle=True, seed=None):
+
     '''
     Train a model, test it using common evaluation techiques and 
     record the results.
     '''
     #split data
+
     train, val, test = dk.utils.split_dataset(X, Y, shuffle=shuffle, seed=seed)
+
     X_train, Y_train = train
     X_val, Y_val = val
     X_test, Y_test = test
@@ -76,6 +81,7 @@ if __name__ == '__main__':
 
 
 
+
     model_params ={
              'conv': [
                         [(8,3,3), (16,3,3), (32,3,3)],
@@ -102,12 +108,14 @@ if __name__ == '__main__':
     optimizer_params = list(dk.utils.param_gen(optimizer_params))
     training_params = list(dk.utils.param_gen(training_params))
 
+
     param_count = len(model_params) * len(optimizer_params) * len(training_params) * loops
 
     print('total params to test: %s' % param_count)
 
     all_results = []
     test_count = 0
+
     for i in range(loops):
         seed = random.randint(0, 10000)
 
@@ -140,3 +148,4 @@ if __name__ == '__main__':
                     save_results(results, name)
 
                     sys.stdout.flush()
+
