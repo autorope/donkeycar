@@ -26,7 +26,7 @@ class Dummy_Controller:
     def __init__(self, channel, frequency):
         pass
 
-    def set_pulse(pwm):
+    def set_pulse(self, pwm):
         pass
 
 class PCA9685_Controller:
@@ -52,7 +52,7 @@ class NAVIO2_Controller:
         # Here "period" is actually frequency
         self.pwm.set_period(frequency)
 
-    def set_pulse(value):
+    def set_pulse(self, value):
         self.pwm.set_duty_cycle(value)
 
 
