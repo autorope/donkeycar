@@ -13,20 +13,18 @@
 			
 			<div class="row">
 				<div class="col-md-12 session-thumbnails">
-					{% for img in session['imgs'] %}					
-						<div class="checkbox" id="{{ img['name'] }}">
-							<label>
-								<input type="checkbox" class="img-check" value="{{ img['name'] }}">
-								<div class="thumbnail">
-									<img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
-									<div class="caption">
-										<p class="small desc">Angle: {{img['angle']}}</p>
-										<p class="small desc">Throttle: {{img['throttle']}}</p>
-									</div>
+					<ol id="selectable">
+						<p class="text-muted"><em>Click and drag to select images, command + click to select multiple single images.</em></p>
+						{% for img in session['imgs'] %}					
+							<li class="thumbnail" id="{{ img['name'] }}">
+								<img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
+								<div class="caption">
+									<p class="small desc">Angle: {{img['angle']}}</p>
+									<p class="small desc">Throttle: {{img['throttle']}}</p>
 								</div>
-							</label>
-						</div>
-					{% end %}
+							</li>
+						{% end %}
+					</ol>
 				</div>
 			</div>
 		</div>
@@ -58,12 +56,12 @@
 			
 			<div class="col-md-3 img-controls text-right">
 				<div class="form-inline">
-					<div class="checkbox">
-						<label>
-							<input type="checkbox" value="" id="select-all">
-							Select All
-						</label>
-					</div>
+					<label>
+						<span id="select-result">0</span> selected
+					</label>
+					<label class="btn btn-default">
+						<input id="select-all" type="checkbox"> Select All
+					</label>
 					<input class="btn btn-danger" type="button" value="Delete Selected" id="delete-all">
 				</div>
 			</div>
@@ -77,18 +75,39 @@
 
 	<script>
 		$(document).ready(function() {
-
-			$('#select-all').click(function(event) {
-				$(".img-check").prop('checked', $(this).prop("checked"));
+			
+			$( "#selectable" ).selectable({
+			  filter: 'li',
+				autoRefresh: false,
+				
+				stop: function() {
+					$( "#select-result" ).text(function( index ) {
+					  return $('.ui-selected').length;
+					});
+      	}
 			});
+			
+			$('#select-all').on('click', function () {
+				if ($(this).is(":checked")) {
+					$('.thumbnail').addClass('ui-selected');
+				} else {
+					$('.thumbnail').removeClass('ui-selected');
+				}
+				
+				$( "#select-result" ).text(function( index ) {
+					return $('.ui-selected').length;
+				});
+			})
 
 			$('#delete-all').click(function(){
 				var selected = []
 
 				// Build array of selected images
-				$(".img-check:checked").each(function() {
-					selected.push($(this).val());
+				$(".ui-selected").each(function() {
+					selected.push(this.id);
 				});
+				
+				console.log(selected);
 
 				//Send post request to server.
 				data = JSON.stringify({ 'imgs': selected,
@@ -102,6 +121,7 @@
 				$(selected).each(function( index, value ) {
 					console.log(value);
 					$("[id='" + value + "']").remove();
+					$( "#selectable" ).selectable( "refresh" );
 				});
 			});
 			
