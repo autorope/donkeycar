@@ -4,14 +4,17 @@ previously recorded session.
 
 Usage:
     train.py (--sessions=<sessions>) [--epochs=<epochs>] 
+    train.py (--url=<url>) [--epochs=<epochs>] 
 
 
 Options:
   --sessions=<name>   session to train on
-  --epochs=<epochs>   number of epochs [default: 3]
+  --url=<url>   url of dataset
+  --epochs=<epochs>   number of epochs [default: 20]
 """
 
 import os
+import time
 from docopt import docopt
 
 import donkey as dk
@@ -23,35 +26,54 @@ args = docopt(__doc__)
 #sessions_path = '~/donkey_data/sessions/'
 #models_path = os.path.expanduser('~/donkey_data/models/')
 
+
 if __name__ == "__main__":
     print(args)
-    sessions = args['--sessions'].split(',')
+    if args['--sessions'] is not None:
+        sessions = args['--sessions'].split(',')
+        X,Y = dk.sessions.sessions_to_dataset(sessions)
+        dataset_name = sessions[0]
+    elif args['--url'] is not None:
+        url = args['--url']
+        X, Y = dk.datasets.load_url(url)
+        dataset_name = url.split('/')[-1]
+    
     epochs = int(args['--epochs'])
-    #Train on session pictures
-    sh = dk.sessions.SessionHandler(sessions_path=dk.config.sessions_path)
-    s = sh.load(sessions[0])
-    X, Y = s.load_dataset()
+   
 
-
-    #Train on simulated pictures
-    #X, Y = dk.datasets.moving_square(n_frames=2000, return_x=True, return_y=False)
-
-
-    #print('Downloading file, this could take some time.')
-    #url = 'https://s3.amazonaws.com/donkey_resources/port.pkl'
-    #X, Y = dk.datasets.load_url(url)
 
     print('Loading Model.')
-    m = dk.models.cnn3_full1_relu()
-    #m = keras.models.load_model('/home/wroscoe/donkey_data/models/best-diff_lines2.hdf5')
+    
+    conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
+    dense=[32]
+    dropout=.2
+    learning_rate = .0001
+    decay = 0.0
+    batch_size=128
+    validation_split=0.2
 
+    model = dk.models.cnn3_full1_relu(conv, dense, dropout)
 
-    file_name="best-"+sessions[0]+".hdf5"
+    optimizer = keras.optimizers.Adam(lr=learning_rate, decay=decay)
+    model.compile(optimizer=optimizer, loss='mean_squared_error')
+                
+
+    file_name="best-"+dataset_name+".hdf5"
     file_path = os.path.join(dk.config.models_path, file_name)
 
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
-                                 save_best_only=True, mode='min')
+                                 save_best_only=False, mode='min')
     callbacks_list = [checkpoint]
 
-    hist = m.fit(X, Y, batch_size=64, nb_epoch=epochs, 
-                     validation_split=.2, callbacks=callbacks_list)
+    train, val, test = dk.utils.split_dataset(X, Y, shuffle=True)
+
+    X_train, Y_train = train
+    X_val, Y_val = val
+    X_test, Y_test = test
+
+
+    hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
+                    validation_data=(X_val, Y_val), callbacks=callbacks_list)
+
+
+    print(trained_model.evaluate(X, Y))

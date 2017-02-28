@@ -23,7 +23,8 @@ if __name__ == '__main__':
     file_path = args['--file_path']
 
 
-    dk.sessions.sessions_to_hdf5(sessions_folder=sessions_folder,
-                                session_names=session_names,
-                                file_path=file_path)
+    X, Y = dk.sessions.sessions_to_dataset(sessions_folder=sessions_folder,
+                                    session_names=session_names,
+                                    )
 
+    dk.sessions.dataset_to_hdf5(X, Y, file_path)

@@ -204,7 +204,7 @@ def load_dataset(img_paths):
     return X, Y
 
 
-def sessions_to_hdf5(sessions_folder, session_names, file_path):
+def sessions_to_dataset(session_names):
 
     '''
     Combine, pickle and safe session data to a file. 
@@ -214,7 +214,7 @@ def sessions_to_hdf5(sessions_folder, session_names, file_path):
     'file_path' name of the pickled file that will be saved
     '''
 
-    sh = dk.sessions.SessionHandler(sessions_folder)
+    sh = dk.sessions.SessionHandler(dk.config.sessions_path)
 
     X = []
     Y = []
@@ -227,12 +227,11 @@ def sessions_to_hdf5(sessions_folder, session_names, file_path):
 
     X = np.concatenate(X)
     Y = np.concatenate(Y)
-
-    print('Saving HDF5 file to %s' %file_path)
-    dataset_to_hdf5(X, Y, file_path)
+    return X, Y
 
 
 def dataset_to_hdf5(X, Y, file_path):
+    print('Saving HDF5 file to %s' %file_path)
     f = h5py.File(file_path, "w")
     f.create_dataset("X", data=X, compression='gzip')
     f.create_dataset("Y", data=Y, compression='gzip')
