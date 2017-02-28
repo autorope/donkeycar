@@ -10,7 +10,7 @@ Usage:
 Options:
   --sessions=<name>   session to train on
   --url=<url>   url of dataset
-  --epochs=<epochs>   number of epochs [default: 20]
+  --epochs=<epochs>   number of epochs [default: 50]
 """
 
 import os
@@ -22,13 +22,12 @@ from keras.callbacks import ModelCheckpoint
 import keras
 
 # Get args.
-args = docopt(__doc__)
-#sessions_path = '~/donkey_data/sessions/'
-#models_path = os.path.expanduser('~/donkey_data/models/')
 
 
 if __name__ == "__main__":
-    print(args)
+    args = docopt(__doc__)
+
+    #Load dataset from either sesions or url
     if args['--sessions'] is not None:
         sessions = args['--sessions'].split(',')
         X,Y = dk.sessions.sessions_to_dataset(sessions)
@@ -42,18 +41,17 @@ if __name__ == "__main__":
    
 
 
-    print('Loading Model.')
-    
+    #Suggested model parameters    
     conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
-    dense=[32]
+    dense=[64]
     dropout=.2
     learning_rate = .0001
     decay = 0.0
     batch_size=128
     validation_split=0.2
 
+    #Generate and compile model
     model = dk.models.cnn3_full1_relu(conv, dense, dropout)
-
     optimizer = keras.optimizers.Adam(lr=learning_rate, decay=decay)
     model.compile(optimizer=optimizer, loss='mean_squared_error')
                 
@@ -61,19 +59,14 @@ if __name__ == "__main__":
     file_name="best-"+dataset_name+".hdf5"
     file_path = os.path.join(dk.config.models_path, file_name)
 
+    #checkpoint to save model after each epoch
     checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
                                  save_best_only=False, mode='min')
     callbacks_list = [checkpoint]
 
-    train, val, test = dk.utils.split_dataset(X, Y, shuffle=True)
-
-    X_train, Y_train = train
-    X_val, Y_val = val
-    X_test, Y_test = test
-
 
     hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
-                    validation_data=(X_val, Y_val), callbacks=callbacks_list)
+                    validation_split=.2, callbacks=callbacks_list)
 
 
     print(trained_model.evaluate(X, Y))
