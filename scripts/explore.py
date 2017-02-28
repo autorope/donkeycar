@@ -3,10 +3,12 @@ Script to
 
 Usage:
     explore.py (--url=<url>) (--name=<name) [--loops=<loops]
+    explore.py (--dataset=<dataset>) (--name=<name) [--loops=<loops]
 
 
 Options:
   --url=<url>   url of the hdf5 dataset
+  --dataset=<dataset>   file path of the hdf5 dataset
   --loops=<loops>   times to loop through the tests [default: 1]
   --name=<name>  name of the test
 """
@@ -71,24 +73,35 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
     results['validation_loss'] = model.evaluate(X_val, Y_val, verbose=0)
     results['test_loss'] = model.evaluate(X_test, Y_test, verbose=0)
     results['model_params'] = model.count_params()
-    
     return model, results
-
 
 
 def save_results(results, name):
     df = pd.DataFrame(all_results)
-    df.to_csv(name + '_training_results.csv')
+    df.to_csv(name + '_results.csv')
 
 
 args = docopt(__doc__)
 
 if __name__ == '__main__':
 
-    url = args['--url']
+    if args['--dataset'] is not None:
+        dataset_path = args['--dataset']
+        print('loading data from %s' %dataset_path)
+        X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+        dataset_name = os.path.basename(dataset_path)
+
+    elif args['--url'] is not None:
+        url = args['--url']
+        print('loading data from %s' %url)
+        X, Y = dk.datasets.load_url(url)
+        dataset_name = url.rsplit('/', 1)[-1]
+
     name = args['--name']
     loops = int(args['--loops'])
 
+
+    #Define the model parameters you'd like to explore.
     model_params ={
              'conv': [
                         [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
@@ -108,10 +121,7 @@ if __name__ == '__main__':
         'epochs': [100]
     }
 
-    print('loading data from %s' %url)
-    X, Y = dk.datasets.load_url(url)
-
-    dataset_name = url.rsplit('/', 1)[-1]
+    
 
     model_params = list(dk.utils.param_gen(model_params))
     optimizer_params = list(dk.utils.param_gen(optimizer_params))
@@ -139,19 +149,17 @@ if __name__ == '__main__':
                     test_count += 1
                     print('test %s of %s' %(test_count, param_count))
                     results = {}
-                    results['dataset_name'] = dataset_name
+                    results['dataset'] = dataset_name
                     results['random_seed'] = seed
                     results['conv_layers'] = str([i[0] for i in mp['conv']])
                     results['dense_layers'] = str([i for i in mp['dense']])
                     results['dropout'] = mp['dropout']
-                    results['learning rate'] = op['lr']
+                    results['learning_rate'] = op['lr']
                     results['decay'] = op['decay']
                     
                     
                     trained_model, results = train_model(X, Y[:,0], model, 
                                                          results=results, seed=seed, **tp)
-                    
-
                     
                     all_results.append(results)
                     
