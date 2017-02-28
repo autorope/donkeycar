@@ -102,7 +102,7 @@ def split_dataset(X, Y, val_frac=.1, test_frac=.1,
 
     count = len(X)
     assert len(X) == len(Y)
-    
+    diff
     if shuffle == True:
         #shuffle values from both arrays in unison
         if seed is None:
@@ -173,18 +173,6 @@ def make_dir(path):
     if not os.path.exists(real_path):
         os.makedirs(real_path)
     return real_path
-
-
-def setup_mydonkey_paths(path='~/'):
-    make_dir(path)
-
-    models_path = os.path.join(path, 'models')
-    make_dir(models_path)
-
-    sessions_path = os.path.join(path, 'sessions')
-    make_dir(sessions_path)
-
-
 
 
 

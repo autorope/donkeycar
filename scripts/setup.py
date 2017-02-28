@@ -21,8 +21,7 @@ import donkey as dk
 # Get args.
 args = docopt(__doc__)
 
+print('Setting up mydonkey folders.')
+dk.config.setup_paths()
 
-mydonkey_path = os.path.expanduser('~/mydonkey')
-dk.utils.setup_mydonkey_paths(path=mydonkey_path)
-
-shutil.copyfile('./config/vehicle.ini', os.path.join(mydonkey_path, 'vehicle.ini'))
+shutil.copyfile('./config/vehicle.ini', os.path.join(dk.config.my_path, 'vehicle.ini'))

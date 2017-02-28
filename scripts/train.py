@@ -3,14 +3,14 @@ Example of how to train a keras model from simulated images or a
 previously recorded session.
 
 Usage:
-    train.py (--sessions=<sessions>) [--epochs=<epochs>] 
-    train.py (--url=<url>) [--epochs=<epochs>] 
+    train.py (--sessions=<sessions>) (--name=<name>)
+    train.py (--url=<url>) (--name=<name>) 
 
 
 Options:
-  --sessions=<name>   session to train on
+  --sessions=<sessions>   session to train on
   --url=<url>   url of dataset
-  --epochs=<epochs>   number of epochs [default: 50]
+  --name=<name>   name of model to be saved
 """
 
 import os
@@ -31,15 +31,12 @@ if __name__ == "__main__":
     if args['--sessions'] is not None:
         sessions = args['--sessions'].split(',')
         X,Y = dk.sessions.sessions_to_dataset(sessions)
-        dataset_name = sessions[0]
     elif args['--url'] is not None:
         url = args['--url']
         X, Y = dk.datasets.load_url(url)
-        dataset_name = url.split('/')[-1]
     
-    epochs = int(args['--epochs'])
+    model_name = args['--name']
    
-
 
     #Suggested model parameters    
     conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
@@ -48,7 +45,7 @@ if __name__ == "__main__":
     learning_rate = .0001
     decay = 0.0
     batch_size=32
-    validation_split=0.2
+    validation_split=0.1
 
     #Generate and compile model
     model = dk.models.cnn3_full1_relu(conv, dense, dropout)
@@ -56,13 +53,17 @@ if __name__ == "__main__":
     model.compile(optimizer=optimizer, loss='mean_squared_error')
                 
 
-    file_name="best-"+dataset_name+".hdf5"
-    file_path = os.path.join(dk.config.models_path, file_name)
+    file_path = os.path.join(dk.config.models_path, model_name+".hdf5")
 
     #checkpoint to save model after each epoch
-    checkpoint = ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
-                                 save_best_only=False, mode='min')
-    callbacks_list = [checkpoint]
+    save_best = callbacks.ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
+                                          save_best_only=False, mode='min')
+
+    #stop training if the validation error stops improving.
+    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
+                                         verbose=1, mode='auto')
+
+    callbacks_list = [save_best, early_stop]
 
 
     hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 

@@ -1,11 +1,25 @@
 
 import os
 import configparser
+
+import donkey as dk
 config = configparser.ConfigParser()
 
 my_path = os.path.expanduser('~/mydonkey/')
 sessions_path = os.path.join(my_path, 'sessions')
 models_path = os.path.join(my_path, 'models')
+datasets_path = os.path.join(my_path, 'datasets')
+results_path = os.path.join(my_path, 'results')
+
+
+def setup_paths():
+    dk.utils.make_dir(my_path)
+
+    paths = [sessions_path, models_path, 
+             datasets_path, results_path]
+
+    for p in paths:
+        dk.utils.make_dir(p)
 
 
 def parse_config(config_path):
