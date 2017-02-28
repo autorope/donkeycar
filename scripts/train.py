@@ -43,11 +43,11 @@ if __name__ == "__main__":
 
     #Suggested model parameters    
     conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
-    dense=[64]
+    dense=[32]
     dropout=.2
     learning_rate = .0001
     decay = 0.0
-    batch_size=128
+    batch_size=32
     validation_split=0.2
 
     #Generate and compile model
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
 
     hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
-                    validation_split=.2, callbacks=callbacks_list)
+                    validation_split=validation_split, callbacks=callbacks_list)
 
 
     print(trained_model.evaluate(X, Y))

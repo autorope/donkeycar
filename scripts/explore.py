@@ -28,16 +28,17 @@ import donkey as dk
 
 
 
-def train_model(X, Y, model, batch_size=64, epochs=1, results=None, 
+def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
                 shuffle=True, seed=None):
 
     '''
-    Train a model, test it using common evaluation techiques and 
+    Train a model, test it using common evaluation techiques and
     record the results.
     '''
     #split data
 
-    train, val, test = dk.utils.split_dataset(X, Y, shuffle=shuffle, seed=seed)
+    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=.1,
+                                              shuffle=shuffle, seed=seed)
 
     X_train, Y_train = train
     X_val, Y_val = val
@@ -127,13 +128,14 @@ if __name__ == '__main__':
         seed = random.choice([1234, 2345, 3456, 4567])
 
         for mp in model_params:
-            model = dk.models.cnn3_full1_relu(**mp)
+            
             
             for op in optimizer_params:
-                optimizer = keras.optimizers.Adam(**op)
-                model.compile(optimizer=optimizer, loss='mean_squared_error')
-                
+
                 for tp in training_params:
+                    model = dk.models.cnn3_full1_relu(**mp)
+                    optimizer = keras.optimizers.Adam(**op)
+                    model.compile(optimizer=optimizer, loss='mean_squared_error')
                     test_count += 1
                     print('test %s of %s' %(test_count, param_count))
                     results = {}
