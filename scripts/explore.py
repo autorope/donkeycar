@@ -79,27 +79,24 @@ if __name__ == '__main__':
     name = args['--name']
     loops = int(args['--loops'])
 
-
-
-
     model_params ={
              'conv': [
                         [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
+                        [(8,3,3), (16,3,3), (32,3,3)]
                     ],
-             'dense': [ [31]],
+             'dense': [ [32, 256]],
              'dropout': [.2]
             }
 
     optimizer_params = {
-        'lr': [.001],
+        'lr': [.001, .0001],
         'decay': [0.0]
     }
 
     training_params = {
-        'batch_size': [128],
-        'epochs': [1]
+        'batch_size': [128,32],
+        'epochs': [20]
     }
-
 
     print('loading data from %s' %url)
     X, Y = dk.datasets.load_url(url)
@@ -118,7 +115,7 @@ if __name__ == '__main__':
     test_count = 0
 
     for i in range(loops):
-        seed = random.randint(0, 10000)
+        seed = random.choise([1234, 2345, 3456, 4567])
 
         for mp in model_params:
             model = dk.models.cnn3_full1_relu(**mp)
