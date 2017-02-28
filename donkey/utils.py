@@ -97,7 +97,7 @@ DATASETS
 '''
 
 
-def split_dataset(X, Y, val_frac=.05, test_frac=.05, 
+def split_dataset(X, Y, val_frac=.1, test_frac=.1, 
                   shuffle=True, seed=None):
 
     count = len(X)

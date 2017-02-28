@@ -2,7 +2,7 @@
 Create a single file containing the dataset of one or many sessions.
 
 Usage:
-    sessions_to_hdf5.py [--sessions=<name>] [--file_path=<name>]
+    sessions_to_hdf5.py (--sessions=<name>) (--file_path=<name>)
 
 Options:
   --sessions=<name>   sessions to combine (separated by commas, no spaces)
@@ -23,8 +23,6 @@ if __name__ == '__main__':
     file_path = args['--file_path']
 
 
-    X, Y = dk.sessions.sessions_to_dataset(sessions_folder=sessions_folder,
-                                    session_names=session_names,
-                                    )
+    X, Y = dk.sessions.sessions_to_dataset(session_names=session_names)
 
     dk.sessions.dataset_to_hdf5(X, Y, file_path)

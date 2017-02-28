@@ -50,7 +50,7 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
     
 
     #stop training if the validation loss doesn't improve for 5 consecutive epochs.
-    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=5, 
+    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
                                          verbose=1, mode='auto')
 
     callbacks_list = [early_stop]
@@ -65,9 +65,9 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
     results['training_duration'] = end-start
     
     results['batch_size']=batch_size
-    results['epochs'] = epochs
     results['training_loss'] = model.evaluate(X_train, Y_train, verbose=0)
     results['training_loss_progress'] = hist.history
+    results['epochs'] = len(hist.history['val_loss'])
     results['validation_loss'] = model.evaluate(X_val, Y_val, verbose=0)
     results['test_loss'] = model.evaluate(X_test, Y_test, verbose=0)
     results['model_params'] = model.count_params()
@@ -94,8 +94,8 @@ if __name__ == '__main__':
                         [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
                         [(8,3,3), (16,3,3), (32,3,3)]
                     ],
-             'dense': [ [32], [256]],
-             'dropout': [.2]
+             'dense': [ [32], [256], [128]],
+             'dropout': [.2, .4]
             }
 
     optimizer_params = {
@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     training_params = {
         'batch_size': [128,32],
-        'epochs': [20]
+        'epochs': [100]
     }
 
     print('loading data from %s' %url)
