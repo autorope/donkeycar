@@ -24,6 +24,16 @@
 	}
 }
 
+div.session-thumbnails .ui-selecting {
+	background-color: #fcf8e3;
+	border-color: #faebcc;
+}
+
+div.session-thumbnails .ui-selected {
+	background-color: #f2dede;
+	border-color: #ebccd1;
+}
+
 div.session-thumbnails img {
 	width: 160px;
 	height: auto;
@@ -33,8 +43,10 @@ div.session-thumbnails .desc {
 	margin-bottom:0px;
 }
 
-div.session-thumbnails .checkbox {
-	display:inline;
+div.session-thumbnails li.thumbnail {
+	width:170px;
+	float: left;
+	margin-right:5px;
 }
 
 div.session-thumbnails .caption {
@@ -45,17 +57,8 @@ div.session-thumbnails label {
 	padding-left: 0px;
 }
 
-div.session-thumbnails input[type=checkbox] {
-	margin-top: 10px;
-	margin-left: 10px;
-}
-
 div.img-controls {
 	margin: 20px 0;
-}
-
-div.img-controls .checkbox {
-	margin-right: 10px;
 }
 
 

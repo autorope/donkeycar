@@ -444,7 +444,7 @@ class SessionView(tornado.web.RequestHandler):
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
 
-        perpage = 1000
+        perpage = 500
         pages = math.ceil(img_count/perpage)
         if page is None: 
             page = 1
