@@ -22,6 +22,7 @@ import random
 from docopt import docopt
 import pandas as pd
 import keras
+from keras import callbacks
 
 import donkey as dk
 
@@ -46,9 +47,17 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
     results['validation_samples'] = X_val.shape[0]
     results['test_samples'] = X_test.shape[0]
     
+
+    #stop training if the validation loss doesn't improve for 5 consecutive epochs.
+    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=5, 
+                                         verbose=1, mode='auto')
+
+    callbacks_list = [early_stop]
+
     start = time.time()
     hist = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=epochs, 
-                     validation_data=(X_val, Y_val), verbose=0)    
+                     validation_data=(X_val, Y_val), verbose=1, 
+                     callbacks=callbacks_list)    
     
     end = time.time()
 
@@ -84,7 +93,7 @@ if __name__ == '__main__':
                         [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
                         [(8,3,3), (16,3,3), (32,3,3)]
                     ],
-             'dense': [ [32, 256]],
+             'dense': [ [32], [256]],
              'dropout': [.2]
             }
 
@@ -115,7 +124,7 @@ if __name__ == '__main__':
     test_count = 0
 
     for i in range(loops):
-        seed = random.choise([1234, 2345, 3456, 4567])
+        seed = random.choice([1234, 2345, 3456, 4567])
 
         for mp in model_params:
             model = dk.models.cnn3_full1_relu(**mp)
