@@ -24,7 +24,8 @@ args = docopt(__doc__)
 
 if __name__ == '__main__':
 
-    cfg = dk.config_parser.get_config('~/mydonkey/vehicle.ini')
+
+    cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
 
     remote_url = args['--remote']
 
