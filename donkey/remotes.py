@@ -4,6 +4,7 @@ be controlled remotely by the user or an auto pilot.
 """
 
 import time
+from datetime import datetime
 import json
 import io
 import os
@@ -32,6 +33,16 @@ class RemoteClient():
 
         self.control_url = remote_url + '/api/vehicles/control/' + vehicle_id + '/'
         self.last_milliseconds = 0
+        self.session = requests.Session()
+
+        self.log('time,lag\n', write_method='w')
+
+    def log(self, line, path='lag_log.csv', write_method='a'):
+        with open('lag_log.csv', write_method) as f:
+            f.write(line)
+
+
+
         
         
     def decide(self, img_arr, angle, throttle, milliseconds):
@@ -49,31 +60,38 @@ class RemoteClient():
 
 
         r = None
-
         while r == None:
             #Try connecting to server until connection is made.
+            start = time.time()
             
             try:
-                start = time.time()
-                r = requests.post(self.control_url, 
+                r = self.session.post(self.control_url, 
                                 files={'img': dk.utils.arr_to_binary(img_arr), 
-                                       'json': json.dumps(data)}) #hack to put json in file 
-                end = time.time()
-                lag = end-start
+                                       'json': json.dumps(data)},
+                                       timeout=0.2) #hack to put json in file 
+                
             except (requests.ConnectionError) as err:
                 print("Vehicle could not connect to server. Make sure you've " + 
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
+            
+            except (requests.exceptions.ReadTimeout) as err:
+                print("Request took too long. Retrying")
+                return angle, throttle * .8
+                
 
-        print(r.text)
-        
+        end = time.time()
+        lag = end-start
+        self.log('{}, {} \n'.format(datetime.now().time() , lag ))
+        print('vehicle <> server: request lag: %s' %lag)
+
         data = json.loads(r.text)
         
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         
-        print('vehicle <> server: request lag: %s' %lag)
-
+        
+        
 
         return angle, throttle
 
@@ -82,23 +100,25 @@ class RemoteClient():
 
 class DonkeyPilotApplication(tornado.web.Application):
 
-    def __init__(self, data_path='~/donkey_data/'):
+    def __init__(self, mydonkey_path='~/mydonkey/'):
         ''' 
         Create and publish variables needed on many of 
         the web handlers.
         '''
 
-        #create necessary directors if they don't exist
-        dk.utils.create_donkey_data(data_path)
+        print('hello')
+        if not os.path.exists(os.path.expanduser(mydonkey_path)):
+            raise ValueError('Could not find mydonkey folder. Please run "python scripts/setup.py"')
+
 
         self.vehicles = {}
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
 
-        self.data_path = os.path.expanduser(data_path)
-        self.sessions_path = os.path.join(self.data_path, 'sessions')
-        self.models_path = os.path.join(self.data_path, 'models')
+        self.mydonkey_path = os.path.expanduser(mydonkey_path)
+        self.sessions_path = os.path.join(self.mydonkey_path, 'sessions')
+        self.models_path = os.path.join(self.mydonkey_path, 'models')
 
         ph = dk.pilots.PilotHandler(self.models_path)
         self.pilots = ph.default_pilots()
@@ -424,7 +444,7 @@ class SessionView(tornado.web.RequestHandler):
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
 
-        perpage = 1000
+        perpage = 500
         pages = math.ceil(img_count/perpage)
         if page is None: 
             page = 1
