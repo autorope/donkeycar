@@ -78,7 +78,8 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
 
 def save_results(results, name):
     df = pd.DataFrame(all_results)
-    df.to_csv(name + '_results.csv')
+    results_path = os.path.join(dk.config.results_path, name + '.csv')
+    df.to_csv(results_path, index=False)
 
 
 args = docopt(__doc__)
@@ -118,7 +119,7 @@ if __name__ == '__main__':
 
     training_params = {
         'batch_size': [128,32],
-        'epochs': [100]
+        'epochs': [1]
     }
 
     

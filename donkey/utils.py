@@ -102,7 +102,7 @@ def split_dataset(X, Y, val_frac=.1, test_frac=.1,
 
     count = len(X)
     assert len(X) == len(Y)
-    diff
+
     if shuffle == True:
         #shuffle values from both arrays in unison
         if seed is None:
