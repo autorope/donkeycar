@@ -5,11 +5,13 @@ previously recorded session.
 Usage:
     train.py (--sessions=<sessions>) (--name=<name>)
     train.py (--url=<url>) (--name=<name>) 
+    train.py (--dataset=<dataset>) (--name=<name>) 
 
 
 Options:
   --sessions=<sessions>   session to train on
   --url=<url>   url of dataset
+  --dataset=<dataset>   file path of dataset
   --name=<name>   name of model to be saved
 """
 
@@ -34,6 +36,10 @@ if __name__ == "__main__":
     elif args['--url'] is not None:
         url = args['--url']
         X, Y = dk.datasets.load_url(url)
+    elif args['--dataset'] is not None:
+        dataset_path = args['--dataset']
+        print('loading data from %s' %dataset_path)
+        X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
     
     model_name = args['--name']
    
@@ -46,6 +52,7 @@ if __name__ == "__main__":
     decay = 0.0
     batch_size=32
     validation_split=0.1
+    epochs = 100
 
     #Generate and compile model
     model = dk.models.cnn3_full1_relu(conv, dense, dropout)
@@ -56,11 +63,11 @@ if __name__ == "__main__":
     file_path = os.path.join(dk.config.models_path, model_name+".hdf5")
 
     #checkpoint to save model after each epoch
-    save_best = callbacks.ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
+    save_best = keras.callbacks.ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
                                           save_best_only=False, mode='min')
 
     #stop training if the validation error stops improving.
-    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
                                          verbose=1, mode='auto')
 
     callbacks_list = [save_best, early_stop]
