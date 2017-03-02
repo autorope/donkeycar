@@ -11,11 +11,18 @@ RUN apt-get -y install python3-skimage
 RUN pip install numpy
 RUN pip install tensorflow
 
-ADD . /donkey/
-RUN pip install -e ./donkey/[server]
+# First copy only setup.py, run pip install, and then copy the whole donkey dir.
+# This is so only changes to setup.py trigger a pip install.
+COPY ./setup.py /donkey/setup.py
+RUN pip install -e /donkey/[server]
+COPY . /donkey/
+
+# Change workdir and run scripts/setup.py
+WORKDIR /donkey
+RUN python /donkey/scripts/setup.py
 
 EXPOSE 8886
 EXPOSE 8887
 
-WORKDIR /donkey/scripts
+# Run the server
 ENTRYPOINT ["python", "/donkey/scripts/serve.py"]
