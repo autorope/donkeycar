@@ -9,7 +9,6 @@ import os
 
 import donkey as dk
 
-
 X, Y = dk.datasets.moving_square(n_frames=1000)
 
 #sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions')
@@ -21,7 +20,7 @@ camera_sim = dk.sensors.ImgArrayCamera(X) #For testing
 
 mixer = dk.mixers.BaseMixer()
 
-remote_pilot = dk.remotes.RemoteClient('http://localhost:8887', vehicle_id='mycar2')
+remote_pilot = dk.remotes.RemoteClient('http://localhost:8887', vehicle_id='mysim')
 
 
 car = dk.vehicles.BaseVehicle(drive_loop_delay=.5,

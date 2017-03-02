@@ -6,6 +6,9 @@ import os
 import glob
 import socket
 
+
+import itertools
+
 from PIL import Image
 import numpy as np
 
@@ -93,19 +96,40 @@ def create_video(img_dir_path, output_video_path):
 DATASETS
 '''
 
-def split_data(X, Y, test_frac=.8):
+
+def split_dataset(X, Y, val_frac=.1, test_frac=.1, 
+                  shuffle=True, seed=None):
+
     count = len(X)
     assert len(X) == len(Y)
+
+    if shuffle == True:
+        #shuffle values from both arrays in unison
+        if seed is None:
+            seed = random.randint(0, 10000)
+
+        print('shuffle seed: %s' %seed)
+        for i in [X, Y]:
+
+
+            np.random.seed(seed=seed)
+            np.random.shuffle(i)
+        
     
-    cutoff = int((count * test_frac) // 1)
+    val_cutoff = math.ceil(count * (1 - (val_frac + test_frac)))
+    test_cutoff = math.ceil(count * (1- test_frac))
+
     
-    X_train = X[:cutoff]
-    Y_train = Y[:cutoff]
+    X_train = X[:val_cutoff]
+    Y_train = Y[:val_cutoff]
     
-    X_test = X[cutoff:]
-    Y_test = Y[cutoff:]
+    X_val = X[val_cutoff:test_cutoff]
+    Y_val = Y[val_cutoff:test_cutoff]
     
-    return X_train, Y_train, X_test, Y_test
+    X_test = X[test_cutoff:]
+    Y_test = Y[test_cutoff:]
+    
+    return (X_train, Y_train), (X_val, Y_val), (X_test, Y_test)
 
 
 def split_list(L, sequential=False, test_frac=.8):
@@ -149,17 +173,6 @@ def make_dir(path):
     if not os.path.exists(real_path):
         os.makedirs(real_path)
     return real_path
-
-
-def create_donkey_data(path):
-    make_dir(path)
-
-    models_path = os.path.join(path, 'models')
-    sessions_path = os.path.join(path, 'sessions')
-    make_dir(models_path)
-    make_dir(sessions_path)
-
-
 
 
 
@@ -240,3 +253,13 @@ def merge_two_dicts(x, y):
     z = x.copy()
     z.update(y)
     return z
+
+
+
+def param_gen(params):
+    '''
+    Accepts a dictionary of parameter options and returns 
+    a list of dictionary with the permutations of the parameters.
+    '''
+    for p in itertools.product(*params.values()):
+        yield dict(zip(params.keys(), p ))
