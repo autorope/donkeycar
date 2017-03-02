@@ -44,7 +44,8 @@ setup(name='donkey',
                         'keras',
                         'h5py',
                         'scikit-image',
-                        'opencv-python'
+                        'opencv-python',
+                        'pandas'
                         ],
                     'pi': [
                         'picamera',

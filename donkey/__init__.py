@@ -11,8 +11,9 @@ if not uname[4].startswith("arm"):
                    mixers,
                    vehicles,
                    pilots,
-                   templates,) 
+                   templates,
+                   config) 
 
 else:
     print('Detected running on rasberrypi. Only importing select modules.')
-    from . import actuators, mixers, remotes, sensors, vehicles
+    from . import actuators, mixers, remotes, sensors, vehicles, config
