@@ -4,6 +4,10 @@
 	}
 }
 
+#vehicle_controls input {
+	width: 100%;
+}
+
 #mpeg-image {
 	width:100%;
 }

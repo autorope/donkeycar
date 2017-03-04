@@ -10,51 +10,46 @@
         </div>
       </div>
       <div class="col-xs-4 col-sm-2 col-md-2">
-        <div class="panel panel-default">
-          <div class="panel-body">
-            <form>
-              <label>Steering &amp; Throttle</label>
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon"><span class="glyphicon glyphicon-resize-horizontal"></span></div>
-                  <input id='angleInput' class='form-control' readonly />
-                </div>
-              </div>
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon"><span class="glyphicon glyphicon-resize-vertical"></span></div>
-                  <input id='throttleInput' class='form-control' readonly />
-                </div>
-              </div>
-              <div class="form-group">
-                <button type="button" class="btn btn-success btn-block">Start</button>
-              </div>
-              <label>Vehicle Options</label>
-              <div class="form-group">
-                <div class="input-group">
-                  <select id="pilot_select" class="form-control">
-                    <option> Select Pilot </option>
-                    {% for p in pilots %}
-                      <option href='?pilot={{p.name}}'>{{ p.name}} </option>
-                    {% end %}
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon"><span class="glyphicon glyphicon-cog"></span></div>
-                  <input id='driveMode' class='form-control' readonly />
-                </div>
-              </div>
-              <div class="form-group">
-                <div class="input-group">
-                  <div class="input-group-addon"><span class="glyphicon glyphicon glyphicon-record"></span></div>
-                  <input id='recording' class='form-control' readonly/>
-                </div>
-              </div>
-            </form>
+        <form>
+          <label>Steering &amp; Throttle</label>
+          <div class="form-group">
+            <div class="input-group">
+              <div class="input-group-addon"><span class="glyphicon glyphicon-resize-horizontal"></span></div>
+              <input id='angleInput' class='form-control' readonly />
+            </div>
           </div>
-        </div>
+          <div class="form-group">
+            <div class="input-group">
+              <div class="input-group-addon"><span class="glyphicon glyphicon-resize-vertical"></span></div>
+              <input id='throttleInput' class='form-control' readonly />
+            </div>
+          </div>
+          <div class="form-group">
+            <button type="button" id="stop_button" class="btn btn-danger btn-block">Stop Vehicle</button>
+          </div>
+          <label>Mode &amp; Pilot</label>
+          <div class="form-group">
+            <select id="mode_select" class="form-control">
+              <option disabled selected> Select Mode </option>
+              <option value="user">User (d)</option>
+              <option value="auto">Auto (a)</option>
+              <option value="auto_angle">Auto Angle (s)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <select id="pilot_select" class="form-control">
+              <option disabled selected> Select Pilot </option>
+              {% for p in pilots %}
+                <option href='?pilot={{p.name}}'>{{ p.name}} </option>
+              {% end %}
+            </select>
+          </div>
+          <div class="form-group">
+            <button type="button" id="record_button" class="btn btn-info btn-block">
+              Start Recording (r)
+            </button>
+          </div>
+        </form>
       </div>
       
       <div class="col-xs-8 col-sm-5 col-md-5"><!-- center column -->

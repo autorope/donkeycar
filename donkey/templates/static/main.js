@@ -69,8 +69,20 @@ var driveHandler = (function() {
 
 
       $('#pilot_select').on('change', function () {
-          state.pilot = $(this).val(); // get selected value
-          postPilot()
+        state.pilot = $(this).val(); // get selected value
+        postPilot()
+      });
+      
+      $('#mode_select').on('change', function () {
+        updateDriveMode($(this).val());
+      });
+      
+      $('#record_button').click(function () {
+        toggleRecording();
+      });
+      
+      $('#stop_button').click(function() {
+        brake();
       });
 
     };
@@ -113,8 +125,20 @@ var driveHandler = (function() {
     var updateUI = function() {
       $("#throttleInput").val(state.tele.user.throttle);
       $("#angleInput").val(state.tele.user.angle);
-      $('#driveMode').val(state.driveMode);
-      $('#recording').val(state.recording);
+      $('#mode_select').val(state.driveMode);
+      
+      if (state.recording) {
+        $('#record_button')
+          .html('Stop Recording (r)')
+          .removeClass('btn-info')
+          .addClass('btn-warning').end()
+      } else {
+        $('#record_button')
+          .html('Start Recording (r)')
+          .removeClass('btn-warning')
+          .addClass('btn-info').end()
+      }
+      
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
