@@ -2,83 +2,86 @@
 {% block content %}
   
   <div class="container">
-
     <div class="row"> 
-      <div class="col-md-6"> <!-- Right Column -->
-        <h1>Vehicle: {{vehicle['id']}}</h1>
-
-        <div class="videoOutsideWrapper">
-            <div class="videoInsideWrapper">
-                <img id='mpeg-image', class='coveredVideo' src="/api/vehicles/video/{{vehicle['id']}}"/> </img>
-                <canvas id='angleView' class='coveringCanvas'> </canvas>
-            </div>
+      <div class="col-md-12">
+        <div class="page-header">
+          <h1>Vehicle: {{vehicle['id']}}</h1>
         </div>
-
-        <span> Pilot: </span>
-        <select id="pilot_select">
-            <option> None </option>
-          {% for p in pilots %}
-            <option href='?pilot={{p.name}}'>{{ p.name}} </option>
-          {% end %}
-        </select>
-
-        <form class="form-inline">
-          <table class="table">
-            <tbody>
-              <tr>
-                <th> </th>
-                <th>Value</th>
-              </tr>
-
-              <tr>
-                <th class='text-left'><label class='col-xs-3'> Angle </label></th>
-                <td><input id='angleInput' class='form-control' disabled /></td>
-              </tr>
-              <tr>
-                <th><label class='col-xs-3'> Speed2 </label></th>
-                <td><input id='throttleInput' class='form-control' disabled /></td>
-              </tr>
-              <tr>
-                <th><label class='col-xs-3'> Drive Mode </label></th>
-                <td><input id='driveMode' class='form-control' disabled /></td>
-              </tr>
-              <tr>
-                <th><label class='col-xs-3'> Recording </label></th>
-                <td><input id='recording' class='form-control' disabled /></td>
-              </tr>
-            </tbody>
-          </table>
-        </form>
-
-        <!--  Spacer -->
-        <div style='position: relative; height: 200px; width: 100%'> </div>
-
-      </div> <!-- END Right Column -->
-
-
-
-      <div class="col-md-6"> <!-- LEFT Column -->
-
-        <div id="joystick_container">
-          <span> Click/touch to use joystic. </span>
+      </div>
+      <div class="col-md-2">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Controls</h3>
+          </div>
+          <div class="panel-body">
+            <form>
+              <label>Steering &amp; Throttle</label>
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon"><span class="glyphicon glyphicon-resize-horizontal"></span></div>
+                  <input id='angleInput' class='form-control' readonly />
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon"><span class="glyphicon glyphicon-resize-vertical"></span></div>
+                  <input id='throttleInput' class='form-control' readonly />
+                </div>
+              </div>
+              <label>Vehicle Options</label>
+              <div class="form-group">
+                <div class="input-group">
+                  <select id="pilot_select" class="form-control">
+                    <option> Select Pilot </option>
+                    {% for p in pilots %}
+                      <option href='?pilot={{p.name}}'>{{ p.name}} </option>
+                    {% end %}
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon"><span class="glyphicon glyphicon-cog"></span></div>
+                  <input id='driveMode' class='form-control' readonly />
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="input-group">
+                  <div class="input-group-addon"><span class="glyphicon glyphicon glyphicon-record"></span></div>
+                  <input id='recording' class='form-control' readonly/>
+                </div>
+              </div>
+            </form>
+          </div>
         </div>
+      </div>
+      
+      <div class="col-md-5"><!-- center column -->
+        <div class="thumbnail">
+          <img id='mpeg-image', class='img-responsive' src="/api/vehicles/video/{{vehicle['id']}}"/> </img>
+        </div>
+      </div><!-- end center column -->
+
+      <div class="col-md-5"> 
+        <div class="thumbnail">
+          <div id="joystick_container">
+            <p>Click/touch to use joystic.</p>
+          </div>
+        </div><!-- end right col -->
 
         <div class='meta'>
           <span id='vehicle_id' data-id={{vehicle['id']}}> </span>
         </div>
-    </div><!-- END Left Column -->
-
+      </div><!-- end right col -->
+    </div>
   </div> <!-- END Container -->
 
 
 <script type="text/javascript">
   $( document ).ready(function() {
-      console.log( "document ready!" );
-      driveHandler.load()
-
+    console.log( "document ready!" );
+    driveHandler.load()
   });
-
-
 </script>
 
 {% end %}
