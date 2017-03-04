@@ -49,6 +49,13 @@ var driveHandler = (function() {
          gamePadLoop(); 
       }
       
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation);
+        deviceOrientationLoop();
+      } else {
+        console.log("Device Orientation not supported by browser.");
+      }
+      
     };
 
 
@@ -142,7 +149,6 @@ var driveHandler = (function() {
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
-
     var postDrive = function() {
         //Send angle and throttle values
 
@@ -206,6 +212,49 @@ var driveHandler = (function() {
           if (joystickLoopRunning) {      
              joystickLoop();             
           } 
+       }, 100)
+    }
+    
+    // Control throttle and steering with device orientation
+    function handleOrientation(event) {
+      
+      var beta     = event.beta;
+      var gamma    = event.gamma;
+      
+      if (beta == null || gamma == null) {
+        return;
+      }
+      
+      var steering_tilt = 0;
+      var throttle_tilt = 0;
+      
+      steering_tilt = (beta / 45);
+      
+      if (Math.abs(steering_tilt) > 1) {
+        steering_tilt = Math.sign(steering_tilt);
+      }
+      
+      if (Math.abs(beta) > 90) {
+        steering_tilt = 0;
+      }
+      
+      if (gamma > 0 && state.tele.user.throttle < 0.1) {
+        throttle_tilt = 0;
+      } else {
+        throttle_tilt = 1 - (Math.abs(gamma) / 90);
+      }
+      
+      state.tele.user.angle = steering_tilt;
+      state.tele.user.throttle = throttle_tilt;
+    }
+    
+    function deviceOrientationLoop () {           
+       setTimeout(function () {    
+            postDrive()
+
+          if (true) {      
+            deviceOrientationLoop();             
+          }
        }, 100)
     }
 
