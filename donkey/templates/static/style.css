@@ -1,3 +1,8 @@
+@media (max-width: 768px) {
+	#joystick-column {
+		display: none;
+	}
+}
 
 #mpeg-image {
 	width:100%;
