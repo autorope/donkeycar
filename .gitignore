@@ -4,3 +4,4 @@ data/*
 .ipynb_checkpoints
 *.egg-info/
 .git.bfg-report
+.DS_Store
