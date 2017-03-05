@@ -46,6 +46,31 @@ def cnn3_full1_relu(conv, dense, dropout):
     angle_out = Dense(1, name='angle_out')(x)
 
     model = Model(input=[img_in], output=[angle_out])
-    #model.compile(optimizer='adam', loss='mean_squared_error')
+    
+    model.compile(optimizer='adam', loss='mean_squared_error')
 
+    return model
+
+
+def conv_dense_sigmoid(conv, dense, dropout):
+
+    img_in = Input(shape=(120, 160,3), name='img_in')
+
+    x = img_in
+    
+    #create 
+    for c in conv:
+        x = conv_factory(x, c[0], c[1], c[2])
+        
+    x = Flatten()(x)
+    
+    for d in dense:
+        x = dense_factory(x, d, dropout)
+    
+    x = Dense(15)(x)
+    angle_out = Activation('softmax')(x)
+
+    model = Model(input=[img_in], output=[angle_out])
+    model.compile(loss='categorical_crossentropy',
+                  optimizer='rmsprop')
     return model

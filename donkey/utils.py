@@ -5,6 +5,7 @@ from io import BytesIO
 import os
 import glob
 import socket
+import math
 
 
 import itertools
@@ -192,7 +193,10 @@ def log_bin(a, has_negative=True):
     If has_negative == False: bin range = 0-7 
     
     """
-    b = int(round(math.copysign(math.log(abs(a) + 1, 2.0), a)))
+    assert a <= 1 and a >= -1
+
+    a = a * 100
+    b = int(round(math.copysign(math.log(abs(a)+1, 2.0), a)))
     if has_negative: 
         b = b + 7
     return b
@@ -203,7 +207,35 @@ def log_unbin(b, has_negative=True):
         b = b - 7
         
     a = math.copysign(2 ** abs(b), b) - 1
+    return a/100
+
+
+def linear_bin(a):
+    a = a + 1
+    b = round(a / (2/14))
+    return int(b)
+
+def linear_unbin(b):
+    a = b *(2/14) - 1
     return a
+
+
+def bin_Y(Y):
+    d = []
+    for y in Y:
+        arr = np.zeros(15)
+        arr[linear_bin(y)] = 1
+        d.append(arr)
+    return np.array(d) 
+        
+def unbin_Y(Y):
+    d=[]
+    for y in Y:
+        v = np.argmax(y)
+        v = linear_unbin(v)
+        d.append(v)
+    return np.array(d)
+
 
 
 def bin_telemetry(angle, throttle):

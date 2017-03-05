@@ -46,6 +46,11 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
     X_val, Y_val = val
     X_test, Y_test = test
 
+    if model.output_shape[1] > 1:
+        Y_train = dk.utils.bin_Y(Y_train)
+        Y_val = dk.utils.bin_Y(Y_val)
+        Y_test = dk.utils.bin_Y(Y_test)
+
     results['training_samples'] = X_train.shape[0]
     results['validation_samples'] = X_val.shape[0]
     results['test_samples'] = X_test.shape[0]
@@ -108,27 +113,23 @@ if __name__ == '__main__':
                         [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
                         [(8,3,3), (16,3,3), (32,3,3)]
                     ],
-             'dense': [ [32], [256], [128]],
-             'dropout': [.2, .4]
+             'dense': [[8], [16],  [32], [128]],
+             'dropout': [.2],
+             #'learning_rate': [.001],
+             #'decay': [.0]
             }
 
-    optimizer_params = {
-        'lr': [.001, .0001],
-        'decay': [0.0]
-    }
-
     training_params = {
-        'batch_size': [128,32],
+        'batch_size': [128],
         'epochs': [100]
     }
 
     
 
     model_params = list(dk.utils.param_gen(model_params))
-    optimizer_params = list(dk.utils.param_gen(optimizer_params))
     training_params = list(dk.utils.param_gen(training_params))
 
-    param_count = len(model_params) * len(optimizer_params) * len(training_params) * loops
+    param_count = len(model_params) * len(training_params) * loops
 
     print('total params to test: %s' % param_count)
 
@@ -140,31 +141,27 @@ if __name__ == '__main__':
 
         for mp in model_params:
             
-            
-            for op in optimizer_params:
+            for tp in training_params:
+                #model = dk.models.cnn3_full1_relu(**mp)
+                model = dk.models.conv_dense_sigmoid(**mp)
+                test_count += 1
+                print('test %s of %s' %(test_count, param_count))
+                results = {}
+                results['dataset'] = dataset_name
+                results['random_seed'] = seed
+                results['conv_layers'] = str([i[0] for i in mp['conv']])
+                results['dense_layers'] = str([i for i in mp['dense']])
+                results['dropout'] = mp['dropout']
+                results['learning_rate'] = .001 #op['lr']
+                results['decay'] = .0 #op['decay']
+                
+                
+                trained_model, results = train_model(X, Y[:,0], model, 
+                                                     results=results, seed=seed, **tp)
+                
+                all_results.append(results)
+                
+                save_results(results, name)
 
-                for tp in training_params:
-                    model = dk.models.cnn3_full1_relu(**mp)
-                    optimizer = keras.optimizers.Adam(**op)
-                    model.compile(optimizer=optimizer, loss='mean_squared_error')
-                    test_count += 1
-                    print('test %s of %s' %(test_count, param_count))
-                    results = {}
-                    results['dataset'] = dataset_name
-                    results['random_seed'] = seed
-                    results['conv_layers'] = str([i[0] for i in mp['conv']])
-                    results['dense_layers'] = str([i for i in mp['dense']])
-                    results['dropout'] = mp['dropout']
-                    results['learning_rate'] = op['lr']
-                    results['decay'] = op['decay']
-                    
-                    
-                    trained_model, results = train_model(X, Y[:,0], model, 
-                                                         results=results, seed=seed, **tp)
-                    
-                    all_results.append(results)
-                    
-                    save_results(results, name)
-
-                    sys.stdout.flush()
+                sys.stdout.flush()
 
