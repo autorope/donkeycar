@@ -217,35 +217,34 @@ var driveHandler = (function() {
     
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
-      
+      var alpha     = event.alpha;
       var beta     = event.beta;
       var gamma    = event.gamma;
+      
+      $('#alpha').html(alpha)
+      $('#beta').html(beta)
+      $('#gamma').html(gamma)
       
       if (beta == null || gamma == null) {
         return;
       }
       
-      var steering_tilt = 0;
-      var throttle_tilt = 0;
-      
-      steering_tilt = (beta / 45);
-      
-      if (Math.abs(steering_tilt) > 1) {
-        steering_tilt = Math.sign(steering_tilt);
+      var newThrottle = gammaToThrottle(gamma);
+      var newAngle = betaToSteering(beta);
+    
+      // prevent unexpected switch between full forward and full reverse 
+      // when device is parallel to ground
+      if (state.tele.user.throttle > 0.9 && newThrottle < 0) {
+        newThrottle = 1.0
       }
       
-      if (Math.abs(beta) > 90) {
-        steering_tilt = 0;
+      if (state.tele.user.throttle < -0.9 && newThrottle > 0) {
+        newThrottle = -1.0
       }
       
-      if (gamma > 0 && state.tele.user.throttle < 0.1) {
-        throttle_tilt = 0;
-      } else {
-        throttle_tilt = 1 - (Math.abs(gamma) / 90);
-      }
+      state.tele.user.throttle = newThrottle;
+      state.tele.user.angle = newAngle;
       
-      state.tele.user.angle = steering_tilt;
-      state.tele.user.throttle = throttle_tilt;
     }
     
     function deviceOrientationLoop () {           
@@ -342,4 +341,81 @@ var driveHandler = (function() {
 
 function toRadians (angle) {
   return angle * (Math.PI / 180);
+}
+
+function remap( x, oMin, oMax, nMin, nMax ){
+  //range check
+  if (oMin == oMax){
+      console.log("Warning: Zero input range");
+      return None;
+  };
+
+  if (nMin == nMax){
+      console.log("Warning: Zero output range");
+      return None
+  }
+
+  //check reversed input range
+  var reverseInput = false;
+  oldMin = Math.min( oMin, oMax );
+  oldMax = Math.max( oMin, oMax );
+  if (oldMin != oMin){
+      reverseInput = true;
+  }
+
+  //check reversed output range
+  var reverseOutput = false;  
+  newMin = Math.min( nMin, nMax )
+  newMax = Math.max( nMin, nMax )
+  if (newMin != nMin){
+      reverseOutput = true;
+  };
+
+  var portion = (x-oldMin)*(newMax-newMin)/(oldMax-oldMin)
+  if (reverseInput){
+      portion = (oldMax-x)*(newMax-newMin)/(oldMax-oldMin);
+  };
+
+  var result = portion + newMin
+  if (reverseOutput){
+      result = newMax - portion;
+  }
+
+return result;
+}
+
+
+function betaToSteering (beta) {
+  const deadZone = 10;
+  var angle = 0.0;
+  
+  if (beta < -90.0 && beta > -180 + deadZone) {
+    angle = remap(beta, -90.0, -170.0, -1.0, 0.0);
+  } 
+  else if (beta > 90.0 && beta < 180 - deadZone) {
+    angle = remap(beta, 170.0, 90.0, 0.0, 1.0);
+  } 
+  else {
+    //angle = remap(beta, -90.0, 90.0, -1.0, 1.0);
+  }
+  
+  return angle;
+}
+
+function gammaToThrottle (gamma) {
+  const deadZone = 15;
+  var throttle = 0.0;
+  
+  // only set throttle value if outside of deadzone
+  if (Math.abs(gamma) < 90 - deadZone) {
+    if (gamma < 0) {
+      // negative gamma values happen when device is tilting forward
+      throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
+    } else {
+      // positive gamma values happen when device is tilting backward
+      throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
+    }
+  }
+    
+  return throttle;
 }
