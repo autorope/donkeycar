@@ -63,7 +63,7 @@ var driveHandler = (function() {
     var setBindings = function() {
 
       $(document).keydown(function(e) {
-          if(e.which == 32) { brake() }  // 'space'  brake
+          if(e.which == 32) { toggleBrake() }  // 'space'  brake
           if(e.which == 82) { toggleRecording() }  // 'r'  toggle recording
           if(e.which == 73) { throttleUp() }  // 'i'  throttle up
           if(e.which == 75) { throttleDown() } // 'k'  slow down
@@ -88,8 +88,8 @@ var driveHandler = (function() {
         toggleRecording();
       });
       
-      $('#stop_button').click(function() {
-        brake();
+      $('#brake_button').click(function() {
+        toggleBrake();
       });
 
     };
@@ -144,6 +144,18 @@ var driveHandler = (function() {
           .html('Start Recording (r)')
           .removeClass('btn-warning')
           .addClass('btn-info').end()
+      }
+      
+      if (state.brakeOn) {
+        $('#brake_button')
+          .html('Start Vehicle')
+          .removeClass('btn-danger')
+          .addClass('btn-success').end()
+      } else {
+        $('#brake_button')
+          .html('Stop Vehicle')
+          .removeClass('btn-success')
+          .addClass('btn-danger').end()
       }
       
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
@@ -249,11 +261,11 @@ var driveHandler = (function() {
     
     function deviceOrientationLoop () {           
        setTimeout(function () {    
+          if(!state.brakeOn){
             postDrive()
-
-          if (true) {      
-            deviceOrientationLoop();             
           }
+          
+          deviceOrientationLoop(); 
        }, 100)
     }
 
@@ -286,6 +298,14 @@ var driveHandler = (function() {
       state.recording = !state.recording
       postDrive()
     };
+    
+    var toggleBrake = function(){
+      state.brakeOn = !state.brakeOn;
+      
+      if (state.brakeOn) {
+        brake();
+      }
+    };
 
     var brake = function(i=0){
           console.log('post drive: ' + i)
@@ -307,31 +327,76 @@ var driveHandler = (function() {
     };
 
 
-    var drawLine = function(angle, throttle) {
-
-      throttleConstant = 100
-      throttle = throttle * throttleConstant
-      angleSign = Math.sign(angle)
-      angle = toRadians(Math.abs(angle*90))
-
-      var canvas = document.getElementById("angleView"),
-      context = canvas.getContext('2d');
-      context.clearRect(0, 0, canvas.width, canvas.height);
-
-      base={'x':canvas.width/2, 'y':canvas.height}
-
-      pointX = Math.sin(angle) * throttle * angleSign
-      pointY = Math.cos(angle) * throttle
-      xPoint = {'x': pointX + base.x, 'y': base.y - pointY}
-
-      context.beginPath();
-      context.moveTo(base.x, base.y);
-      context.lineTo(xPoint.x, xPoint.y);
-      context.lineWidth = 5;
-      context.strokeStyle = '#ff0000';
-      context.stroke();
-      context.closePath();
-
+    // var drawLine = function(angle, throttle) {
+    // 
+    //   throttleConstant = 100
+    //   throttle = throttle * throttleConstant
+    //   angleSign = Math.sign(angle)
+    //   angle = toRadians(Math.abs(angle*90))
+    // 
+    //   var canvas = document.getElementById("angleView"),
+    //   context = canvas.getContext('2d');
+    //   context.clearRect(0, 0, canvas.width, canvas.height);
+    // 
+    //   base={'x':canvas.width/2, 'y':canvas.height}
+    // 
+    //   pointX = Math.sin(angle) * throttle * angleSign
+    //   pointY = Math.cos(angle) * throttle
+    //   xPoint = {'x': pointX + base.x, 'y': base.y - pointY}
+    // 
+    //   context.beginPath();
+    //   context.moveTo(base.x, base.y);
+    //   context.lineTo(xPoint.x, xPoint.y);
+    //   context.lineWidth = 5;
+    //   context.strokeStyle = '#ff0000';
+    //   context.stroke();
+    //   context.closePath();
+    // 
+    // };
+ 
+    var betaToSteering = function(beta) {
+      const deadZone = 5;
+      var angle = 0.0;
+      var outsideDeadZone = false;
+      
+      if (Math.abs(beta) > 90) {
+        outsideDeadZone = Math.abs(beta) < 180 - deadZone;
+      } 
+      else {
+        outsideDeadZone = Math.abs(beta) > deadZone;
+      }
+      
+      if (outsideDeadZone && beta < -90.0) {
+        angle = remap(beta, -90.0, (-180.0 + deadZone), -1.0, 0.0);
+      } 
+      else if (outsideDeadZone && beta > 90.0) {
+        angle = remap(beta, (180.0 - deadZone), 90.0, 0.0, 1.0);
+      } 
+      else if (outsideDeadZone && beta < 0.0) {
+        angle = remap(beta, -90.0, 0.0 - deadZone, -1.0, 0);
+      }
+      else if (outsideDeadZone && beta > 0.0) {
+        angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
+      }
+      
+      return angle;
+    };
+    
+    var gammaToThrottle = function(gamma) {
+      const deadZone = 15;
+      var throttle = 0.0;
+      var outsideDeadZone = Math.abs(gamma) < (90 - deadZone);
+      
+      if (outsideDeadZone && gamma < 0) {
+        // negative gamma values happen when device is tilting forward
+        throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
+      } 
+      else if (outsideDeadZone && gamma > 0) {
+        // positive gamma values happen when device is tilting backward
+        throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
+      }
+     
+      return throttle;
     };
 
     return {  load: load };
@@ -382,51 +447,4 @@ function remap( x, oMin, oMax, nMin, nMax ){
   }
 
 return result;
-}
-
-
-function betaToSteering (beta) {
-  const deadZone = 5;
-  var angle = 0.0;
-  var outsideDeadZone = false;
-  
-  if (Math.abs(beta) > 90) {
-    outsideDeadZone = Math.abs(beta) < 180 - deadZone;
-  } 
-  else {
-    outsideDeadZone = Math.abs(beta) > deadZone;
-  }
-  
-  if (outsideDeadZone && beta < -90.0) {
-    angle = remap(beta, -90.0, (-180.0 + deadZone), -1.0, 0.0);
-  } 
-  else if (outsideDeadZone && beta > 90.0) {
-    angle = remap(beta, (180.0 - deadZone), 90.0, 0.0, 1.0);
-  } 
-  else if (outsideDeadZone && beta < 0.0) {
-    angle = remap(beta, -90.0, 0.0 - deadZone, -1.0, 0);
-  }
-  else if (outsideDeadZone && beta > 0.0) {
-    angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
-  }
-  
-  return angle;
-}
-
-function gammaToThrottle (gamma) {
-  const deadZone = 15;
-  var throttle = 0.0;
-  var outsideDeadZone = Math.abs(gamma) < (90 - deadZone);
-  
-  // only set throttle value if outside of deadzone
-  if (outsideDeadZone && gamma < 0) {
-    // negative gamma values happen when device is tilting forward
-    throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
-  } 
-  else if (outsideDeadZone) {
-    // positive gamma values happen when device is tilting backward
-    throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
-  }
- 
-  return throttle;
 }

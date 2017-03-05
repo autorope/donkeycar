@@ -20,6 +20,15 @@
 	background-color: #d9edf7;
 }
 
+#vehicle_footer {
+	height:auto;
+}
+
+#brake_button {
+	margin-top:5px;
+	margin-bottom: 5px;
+}
+
 div.session-thumbnails .ui-selecting {
 	background-color: #fcf8e3;
 	border-color: #faebcc;
