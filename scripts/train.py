@@ -55,9 +55,8 @@ if __name__ == "__main__":
     epochs = 100
 
     #Generate and compile model
-    model = dk.models.cnn3_full1_relu(conv, dense, dropout)
-    optimizer = keras.optimizers.Adam(lr=learning_rate, decay=decay)
-    model.compile(optimizer=optimizer, loss='mean_squared_error')
+    #model = dk.models.cnn3_full1_relu(conv, dense, dropout)
+    model = dk.models.conv_dense_sigmoid(conv, dense, dropout)
                 
 
     train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
@@ -65,6 +64,10 @@ if __name__ == "__main__":
 
     X_train, Y_train = train
     X_val, Y_val = val
+
+    if model.output_shape[1] > 1:
+        Y_train = dk.utils.bin_Y(Y_train)
+        Y_val = dk.utils.bin_Y(Y_val)
 
 
     file_path = os.path.join(dk.config.models_path, model_name+".hdf5")
@@ -80,7 +83,7 @@ if __name__ == "__main__":
     callbacks_list = [save_best, early_stop]
 
 
-    hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
+    hist = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=epochs, 
                     validation_data=(X_val, Y_val), callbacks=callbacks_list)
 
 

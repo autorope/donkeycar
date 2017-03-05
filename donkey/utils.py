@@ -224,7 +224,7 @@ def bin_Y(Y):
     d = []
     for y in Y:
         arr = np.zeros(15)
-        arr[linear_bin(y)] = 1
+        arr[linear_bin(y[0])] = 1
         d.append(arr)
     return np.array(d) 
         
