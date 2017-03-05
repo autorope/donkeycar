@@ -386,17 +386,28 @@ return result;
 
 
 function betaToSteering (beta) {
-  const deadZone = 10;
+  const deadZone = 5;
   var angle = 0.0;
+  var outsideDeadZone = false;
   
-  if (beta < -90.0 && beta > -180 + deadZone) {
-    angle = remap(beta, -90.0, -170.0, -1.0, 0.0);
-  } 
-  else if (beta > 90.0 && beta < 180 - deadZone) {
-    angle = remap(beta, 170.0, 90.0, 0.0, 1.0);
+  if (Math.abs(beta) > 90) {
+    outsideDeadZone = Math.abs(beta) < 180 - deadZone;
   } 
   else {
-    //angle = remap(beta, -90.0, 90.0, -1.0, 1.0);
+    outsideDeadZone = Math.abs(beta) > deadZone;
+  }
+  
+  if (outsideDeadZone && beta < -90.0) {
+    angle = remap(beta, -90.0, (-180.0 + deadZone), -1.0, 0.0);
+  } 
+  else if (outsideDeadZone && beta > 90.0) {
+    angle = remap(beta, (180.0 - deadZone), 90.0, 0.0, 1.0);
+  } 
+  else if (outsideDeadZone && beta < 0.0) {
+    angle = remap(beta, -90.0, 0.0 - deadZone, -1.0, 0);
+  }
+  else if (outsideDeadZone && beta > 0.0) {
+    angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
   }
   
   return angle;
@@ -405,17 +416,17 @@ function betaToSteering (beta) {
 function gammaToThrottle (gamma) {
   const deadZone = 15;
   var throttle = 0.0;
+  var outsideDeadZone = Math.abs(gamma) < (90 - deadZone);
   
   // only set throttle value if outside of deadzone
-  if (Math.abs(gamma) < 90 - deadZone) {
-    if (gamma < 0) {
-      // negative gamma values happen when device is tilting forward
-      throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
-    } else {
-      // positive gamma values happen when device is tilting backward
-      throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
-    }
+  if (outsideDeadZone && gamma < 0) {
+    // negative gamma values happen when device is tilting forward
+    throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
+  } 
+  else if (outsideDeadZone) {
+    // positive gamma values happen when device is tilting backward
+    throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
   }
-    
+ 
   return throttle;
 }
