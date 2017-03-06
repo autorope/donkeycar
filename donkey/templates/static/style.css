@@ -1,11 +1,25 @@
-@media (max-width: 768px) {
+/*@media (max-width: 768px) {
 	#joystick-column {
 		display: none;
 	}
+}*/
+
+#controls-column {
+	margin-top:10px;
+}
+#control-bars {
+	margin-top:10px;
+}
+.group-label {
+	width:100%;
 }
 
 #control-bars .progress {
-	width: 50%;
+	width: 40%;
+}
+
+#control-bars .glyphicon {
+	margin-right: 3px;
 }
 
 #control-bars .progress.negative {

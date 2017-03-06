@@ -8,11 +8,24 @@
         <div class="page-header">
           <h1>Vehicle: {{vehicle['id']}}</h1>
         </div>
+        <label class="group-label">Control Mode</label>
+        <div class="btn-group" data-toggle="buttons">
+          <label class="btn btn-primary active">
+            <input type="radio" name="options" id="joystick" autocomplete="off" checked> Joystick
+          </label>
+          <label class="btn btn-primary">
+            <input type="radio" name="options" id="tilt" autocomplete="off">Device Tilt
+          </label>
+        </div>
       </div>
+    </div>
+    <hr>
+    <div class="row">
       <div class="col-xs-4 col-sm-2 col-md-2">
         <div id="control-bars">
-          <label><span class="glyphicon glyphicon-resize-horizontal"></span> Steering: <span id="steering_label">0</span></label>
+          <label class="group-label">Angle &amp; Throttle</label>
           <div>
+            <span class="glyphicon glyphicon-resize-horizontal pull-left"></span>
             <div class="progress negative">
               <div id="angle-bar-backward" class="progress-bar progress-bar-warning pull-right" role="progressbar" style="width: 0%;">
               </div>
@@ -24,8 +37,8 @@
             </div>
           </div>
           
-          <label><span class="glyphicon glyphicon-resize-vertical"></span> Throttle: <span id="throttle_label">0</span></label>
           <div>
+            <span class="glyphicon glyphicon-resize-vertical pull-left"></span>
             <div class="progress negative">
               <div id="throttle-bar-backward" class="progress-bar progress-bar-danger pull-right" role="progressbar" style="width: 0%;">
               </div>
@@ -70,7 +83,7 @@
         </div>
       </div><!-- end center column -->
 
-      <div id="joystick-column" class="col-sm-5 col-md-5"> 
+      <div id="joystick-column" class="col-xs-10 col-sm-5 col-md-5"> 
         <div class="thumbnail">
           <div id="joystick_container">
             <p>Click/touch to use joystic.</p>
