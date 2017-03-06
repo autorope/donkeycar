@@ -2,6 +2,9 @@
 {% extends "base.html" %}
 {% block content %}
 
+<script type="text/javascript" src="/static/frameplayer.js"></script>
+<link href="/static/frameplayer.css" rel="stylesheet">
+
 	<body>
 
 
@@ -15,11 +18,13 @@
 		<h2> Sessions {{ escape(session['name'])}} </h2>
 
 
+    <div id="my-player" class="frameplayer" data-vidsrc=""></div>
+
 
 
 		<div id="selectable">
 		{% for i, img in enumerate(session['imgs']) %}
-			<div class="img ui-state-default" id={{i}} data-id="{{ img['name'] }}">
+			<div class="img ui-state-default" id={{i}} data-id="{{ img['name'] }}" data-angle="{{img['angle']}}" data-throttle="{{img['throttle']}}">
 				<img src="/session_image/{{session['name']}}/{{ img['name'] }}" > 
 
 				<span class="desc">Angle: {{img['angle']}}</span>
@@ -76,7 +81,7 @@
 			                            'action':'delete_images'});
 			    console.log(data)
 
-			  //$.post('', data)
+			  $.post('', data)
 			  $.each(selected_ids, function(index, value) {
 			  	id = "#"+value
 			  	console.log($(id)[0])
@@ -85,6 +90,75 @@
 	    	
 	    });
 	} );
+
+var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9+/=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/rn/g,"n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}}
+
+function getBase64FromImageUrl(url) {
+    var img = new Image();
+
+    img.setAttribute('crossOrigin', 'anonymous');
+
+    img.onload = function () {
+        var canvas = document.createElement("canvas");
+        canvas.width =this.width;
+        canvas.height =this.height;
+
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(this, 0, 0);
+
+        var dataURL = canvas.toDataURL("image/png");
+
+        console.log(dataURL.replace(/^data:image\/(png|jpg);base64,/, ""));
+    };
+
+    img.src = url;
+}
+
+function getBase64Image(img) {
+  var canvas = document.createElement("canvas");
+  canvas.width = img.width;
+  canvas.height = img.height;
+  var ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  var dataURL = canvas.toDataURL("image/png");
+  return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");
+}
+$(window).on("load", function() {
+    var dataurl;
+    // weave your magic here.
+     console.log("on load");
+     var images = new Array();
+     $(".img > img").each(function( index ) {
+      //console.log(this);
+
+     //console.log( index + ": " + this.src );
+     var inside = getBase64Image(this);
+     //console.log(inside);
+     images.push('data:image/jpeg;base64,'+inside);
+
+
+});
+
+    dataurl = 'javascript:{"frames": '+JSON.stringify(images)+"}";
+    //dataurl= 'data:application/json;base64,' + dataurl;
+    //console.log(dataurl);
+var options = ({
+    'rate': 5,
+    'controls': true,
+    'autoplay': true,
+    'backwards': false,
+    'startFrame': 0,
+    'width': '160px',
+    'height': '120px',
+    // 'radius': '50%'
+});
+// put the right url into the div
+
+$("#my-player").attr("data-vidsrc",dataurl);
+var player01 = new FramePlayer('my-player', options);
+player01.play();
+});
+
 	</script>
 
 	</body>

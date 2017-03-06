@@ -424,7 +424,8 @@ class SessionView(tornado.web.RequestHandler):
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
 
-        perpage = 1000
+        #perpage = 1000
+        perpage = 250
         pages = math.ceil(img_count/perpage)
         if page is None: 
             page = 1
@@ -449,12 +450,16 @@ class SessionView(tornado.web.RequestHandler):
         
         data = tornado.escape.json_decode(self.request.body)
 
+        print('inside delete')
         if data['action'] == 'delete_images':
             sessions_path = self.application.sessions_path
             path = os.path.join(sessions_path, session_id)
 
             for i in data['imgs']:
-                os.remove(os.path.join(path, i))
+                if os.path.exists(os.path.join(path, i)):
+                  os.remove(os.path.join(path, i))
+                else:
+                   print('failed to remove %s removed' %i)
                 print('%s removed' %i)
 
 
