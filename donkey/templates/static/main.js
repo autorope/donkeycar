@@ -49,6 +49,13 @@ var driveHandler = (function() {
          gamePadLoop(); 
       }
       
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation);
+        deviceOrientationLoop();
+      } else {
+        console.log("Device Orientation not supported by browser.");
+      }
+      
     };
 
 
@@ -56,7 +63,7 @@ var driveHandler = (function() {
     var setBindings = function() {
 
       $(document).keydown(function(e) {
-          if(e.which == 32) { brake() }  // 'space'  brake
+          if(e.which == 32) { toggleBrake() }  // 'space'  brake
           if(e.which == 82) { toggleRecording() }  // 'r'  toggle recording
           if(e.which == 73) { throttleUp() }  // 'i'  throttle up
           if(e.which == 75) { throttleDown() } // 'k'  slow down
@@ -69,8 +76,20 @@ var driveHandler = (function() {
 
 
       $('#pilot_select').on('change', function () {
-          state.pilot = $(this).val(); // get selected value
-          postPilot()
+        state.pilot = $(this).val(); // get selected value
+        postPilot()
+      });
+      
+      $('#mode_select').on('change', function () {
+        updateDriveMode($(this).val());
+      });
+      
+      $('#record_button').click(function () {
+        toggleRecording();
+      });
+      
+      $('#brake_button').click(function() {
+        toggleBrake();
       });
 
     };
@@ -113,11 +132,34 @@ var driveHandler = (function() {
     var updateUI = function() {
       $("#throttleInput").val(state.tele.user.throttle);
       $("#angleInput").val(state.tele.user.angle);
-      $('#driveMode').val(state.driveMode);
-      $('#recording').val(state.recording);
+      $('#mode_select').val(state.driveMode);
+      
+      if (state.recording) {
+        $('#record_button')
+          .html('Stop Recording (r)')
+          .removeClass('btn-info')
+          .addClass('btn-warning').end()
+      } else {
+        $('#record_button')
+          .html('Start Recording (r)')
+          .removeClass('btn-warning')
+          .addClass('btn-info').end()
+      }
+      
+      if (state.brakeOn) {
+        $('#brake_button')
+          .html('Start Vehicle')
+          .removeClass('btn-danger')
+          .addClass('btn-success').end()
+      } else {
+        $('#brake_button')
+          .html('Stop Vehicle')
+          .removeClass('btn-success')
+          .addClass('btn-danger').end()
+      }
+      
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
-
 
     var postDrive = function() {
         //Send angle and throttle values
@@ -184,6 +226,48 @@ var driveHandler = (function() {
           } 
        }, 100)
     }
+    
+    // Control throttle and steering with device orientation
+    function handleOrientation(event) {
+      var alpha     = event.alpha;
+      var beta     = event.beta;
+      var gamma    = event.gamma;
+      
+      $('#alpha').html(alpha)
+      $('#beta').html(beta)
+      $('#gamma').html(gamma)
+      
+      if (beta == null || gamma == null) {
+        return;
+      }
+      
+      var newThrottle = gammaToThrottle(gamma);
+      var newAngle = betaToSteering(beta);
+    
+      // prevent unexpected switch between full forward and full reverse 
+      // when device is parallel to ground
+      if (state.tele.user.throttle > 0.9 && newThrottle < 0) {
+        newThrottle = 1.0
+      }
+      
+      if (state.tele.user.throttle < -0.9 && newThrottle > 0) {
+        newThrottle = -1.0
+      }
+      
+      state.tele.user.throttle = newThrottle;
+      state.tele.user.angle = newAngle;
+      
+    }
+    
+    function deviceOrientationLoop () {           
+       setTimeout(function () {    
+          if(!state.brakeOn){
+            postDrive()
+          }
+          
+          deviceOrientationLoop(); 
+       }, 100)
+    }
 
     var throttleUp = function(){
       state.tele.user.throttle = Math.min(state.tele.user.throttle + .05, 1);
@@ -214,6 +298,14 @@ var driveHandler = (function() {
       state.recording = !state.recording
       postDrive()
     };
+    
+    var toggleBrake = function(){
+      state.brakeOn = !state.brakeOn;
+      
+      if (state.brakeOn) {
+        brake();
+      }
+    };
 
     var brake = function(i=0){
           console.log('post drive: ' + i)
@@ -235,31 +327,76 @@ var driveHandler = (function() {
     };
 
 
-    var drawLine = function(angle, throttle) {
-
-      throttleConstant = 100
-      throttle = throttle * throttleConstant
-      angleSign = Math.sign(angle)
-      angle = toRadians(Math.abs(angle*90))
-
-      var canvas = document.getElementById("angleView"),
-      context = canvas.getContext('2d');
-      context.clearRect(0, 0, canvas.width, canvas.height);
-
-      base={'x':canvas.width/2, 'y':canvas.height}
-
-      pointX = Math.sin(angle) * throttle * angleSign
-      pointY = Math.cos(angle) * throttle
-      xPoint = {'x': pointX + base.x, 'y': base.y - pointY}
-
-      context.beginPath();
-      context.moveTo(base.x, base.y);
-      context.lineTo(xPoint.x, xPoint.y);
-      context.lineWidth = 5;
-      context.strokeStyle = '#ff0000';
-      context.stroke();
-      context.closePath();
-
+    // var drawLine = function(angle, throttle) {
+    // 
+    //   throttleConstant = 100
+    //   throttle = throttle * throttleConstant
+    //   angleSign = Math.sign(angle)
+    //   angle = toRadians(Math.abs(angle*90))
+    // 
+    //   var canvas = document.getElementById("angleView"),
+    //   context = canvas.getContext('2d');
+    //   context.clearRect(0, 0, canvas.width, canvas.height);
+    // 
+    //   base={'x':canvas.width/2, 'y':canvas.height}
+    // 
+    //   pointX = Math.sin(angle) * throttle * angleSign
+    //   pointY = Math.cos(angle) * throttle
+    //   xPoint = {'x': pointX + base.x, 'y': base.y - pointY}
+    // 
+    //   context.beginPath();
+    //   context.moveTo(base.x, base.y);
+    //   context.lineTo(xPoint.x, xPoint.y);
+    //   context.lineWidth = 5;
+    //   context.strokeStyle = '#ff0000';
+    //   context.stroke();
+    //   context.closePath();
+    // 
+    // };
+ 
+    var betaToSteering = function(beta) {
+      const deadZone = 5;
+      var angle = 0.0;
+      var outsideDeadZone = false;
+      
+      if (Math.abs(beta) > 90) {
+        outsideDeadZone = Math.abs(beta) < 180 - deadZone;
+      } 
+      else {
+        outsideDeadZone = Math.abs(beta) > deadZone;
+      }
+      
+      if (outsideDeadZone && beta < -90.0) {
+        angle = remap(beta, -90.0, (-180.0 + deadZone), -1.0, 0.0);
+      } 
+      else if (outsideDeadZone && beta > 90.0) {
+        angle = remap(beta, (180.0 - deadZone), 90.0, 0.0, 1.0);
+      } 
+      else if (outsideDeadZone && beta < 0.0) {
+        angle = remap(beta, -90.0, 0.0 - deadZone, -1.0, 0);
+      }
+      else if (outsideDeadZone && beta > 0.0) {
+        angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
+      }
+      
+      return angle;
+    };
+    
+    var gammaToThrottle = function(gamma) {
+      const deadZone = 15;
+      var throttle = 0.0;
+      var outsideDeadZone = Math.abs(gamma) < (90 - deadZone);
+      
+      if (outsideDeadZone && gamma < 0) {
+        // negative gamma values happen when device is tilting forward
+        throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
+      } 
+      else if (outsideDeadZone && gamma > 0) {
+        // positive gamma values happen when device is tilting backward
+        throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
+      }
+     
+      return throttle;
     };
 
     return {  load: load };
@@ -269,4 +406,45 @@ var driveHandler = (function() {
 
 function toRadians (angle) {
   return angle * (Math.PI / 180);
+}
+
+function remap( x, oMin, oMax, nMin, nMax ){
+  //range check
+  if (oMin == oMax){
+      console.log("Warning: Zero input range");
+      return None;
+  };
+
+  if (nMin == nMax){
+      console.log("Warning: Zero output range");
+      return None
+  }
+
+  //check reversed input range
+  var reverseInput = false;
+  oldMin = Math.min( oMin, oMax );
+  oldMax = Math.max( oMin, oMax );
+  if (oldMin != oMin){
+      reverseInput = true;
+  }
+
+  //check reversed output range
+  var reverseOutput = false;  
+  newMin = Math.min( nMin, nMax )
+  newMax = Math.max( nMin, nMax )
+  if (newMin != nMin){
+      reverseOutput = true;
+  };
+
+  var portion = (x-oldMin)*(newMax-newMin)/(oldMax-oldMin)
+  if (reverseInput){
+      portion = (oldMax-x)*(newMax-newMin)/(oldMax-oldMin);
+  };
+
+  var result = portion + newMin
+  if (reverseOutput){
+      result = newMax - portion;
+  }
+
+return result;
 }
