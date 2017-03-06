@@ -4,6 +4,21 @@
 	}
 }
 
+#control-bars .progress {
+	width: 50%;
+}
+
+#control-bars .progress.negative {
+	float: left;
+	border-top-right-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+#control-bars .progress.positive {
+	border-top-left-radius: 0px;
+	border-bottom-left-radius: 0px;
+}
+
 #vehicle_controls input {
 	width: 100%;
 }
