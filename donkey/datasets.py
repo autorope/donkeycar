@@ -6,6 +6,8 @@ import pickle
 
 import requests
 import io
+import h5py
+import tempfile
 
 from .sessions import SessionHandler
 
@@ -22,9 +24,17 @@ def load_file(file_path):
 
 
 def load_url(url):
+    print('Starting download.')
     r = requests.get(url)
-    f = io.BytesIO(r.content)
-    X, Y = pickle.load(f)
+    name = tempfile.mktemp()
+    with open(name, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1024): 
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk)
+    print('loading hdf5 file')
+    f = h5py.File(name, "r")
+    X = np.array(f['X'])
+    Y = np.array(f['Y'])
     return X, Y
 
 
