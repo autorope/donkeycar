@@ -97,10 +97,12 @@ var driveHandler = (function() {
           if (this.value == 'joystick') {
             state.controlMode = "joystick";
             console.log('joystick mode');
+            $('#joystick-column').css('display', 'block');
           }
           else if (this.value == 'tilt') {
             console.log('tilt mode')
             state.controlMode = "tilt";
+            $('#joystick-column').css('display', 'none');
           }
       });
 
