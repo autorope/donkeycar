@@ -5,13 +5,13 @@ previously recorded session.
 Usage:
     train.py (--sessions=<sessions>) (--name=<name>)
     train.py (--url=<url>) (--name=<name>) 
-    train.py (--dataset=<dataset>) (--name=<name>) 
+    train.py (--datasets=<datasets>) (--name=<name>) 
 
 
 Options:
   --sessions=<sessions>   session to train on
   --url=<url>   url of dataset
-  --dataset=<dataset>   file path of dataset
+  --datasets=<datasets>   file path of dataset
   --name=<name>   name of model to be saved
 """
 
@@ -36,10 +36,12 @@ if __name__ == "__main__":
     elif args['--url'] is not None:
         url = args['--url']
         X, Y = dk.datasets.load_url(url)
-    elif args['--dataset'] is not None:
-        dataset_path = args['--dataset']
-        print('loading data from %s' %dataset_path)
-        X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+    elif args['--datasets'] is not None:
+        datasets = args['--datasets'].split(',')
+        datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
+        print('loading data from %s' %datasets)
+        #X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+        train, val, test = dk.datasets.split_datasets(datasets)
     
     model_name = args['--name']
    
@@ -48,7 +50,7 @@ if __name__ == "__main__":
     conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
     dense=[32]
     dropout=.2
-    learning_rate = .0001
+    learning_rate = .001
     decay = 0.0
     batch_size=32
     validation_split=0.1
@@ -60,11 +62,12 @@ if __name__ == "__main__":
     model.compile(optimizer=optimizer, loss='mean_squared_error')
                 
 
-    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
-                                              shuffle=True, seed=1234)
+    #train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
+    #                                          shuffle=True, seed=1234)
 
-    X_train, Y_train = train
-    X_val, Y_val = val
+    #X_train, Y_train = train
+    #X_val, Y_val = val
+
 
 
     file_path = os.path.join(dk.config.models_path, model_name+".hdf5")
@@ -80,8 +83,14 @@ if __name__ == "__main__":
     callbacks_list = [save_best, early_stop]
 
 
-    hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
-                    validation_data=(X_val, Y_val), callbacks=callbacks_list)
+    hist = model.fit_generator(
+                            train['gen'], 
+                            samples_per_epoch=train['n'], 
+                            nb_epoch=epochs, 
+                            verbose=1, 
+                            callbacks=callbacks_list, 
+                            validation_data=val['gen'], 
+                            nb_val_samples=val['n'])
 
-
-    print(model.evaluate(X, Y))
+    #hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
+    #                validation_data=(X_val, Y_val), callbacks=callbacks_list)
