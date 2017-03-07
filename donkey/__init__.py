@@ -6,6 +6,7 @@ if not uname[4].startswith("arm"):
     from . import (utils, 
                    models, 
                    datasets, 
+                   sessions,
                    remotes, 
                    sensors,
                    actuators,

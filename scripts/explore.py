@@ -2,13 +2,12 @@
 Script to 
 
 Usage:
-    explore.py (--url=<url>) (--name=<name) [--loops=<loops]
-    explore.py (--dataset=<dataset>) (--name=<name) [--loops=<loops]
+    explore.py (--datasets=<dataset>) (--name=<name) [--loops=<loops]
 
 
 Options:
   --url=<url>   url of the hdf5 dataset
-  --dataset=<dataset>   file path of the hdf5 dataset
+  --datasets=<datasets>   file path of the hdf5 dataset
   --loops=<loops>   times to loop through the tests [default: 1]
   --name=<name>  name of the test
 """
@@ -30,51 +29,6 @@ import donkey as dk
 
 
 
-def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
-                shuffle=True, seed=None):
-
-    '''
-    Train a model, test it using common evaluation techiques and
-    record the results.
-    '''
-    #split data
-
-    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=.1,
-                                              shuffle=shuffle, seed=seed)
-
-    X_train, Y_train = train
-    X_val, Y_val = val
-    X_test, Y_test = test
-
-    results['training_samples'] = X_train.shape[0]
-    results['validation_samples'] = X_val.shape[0]
-    results['test_samples'] = X_test.shape[0]
-    
-
-    #stop training if the validation loss doesn't improve for 5 consecutive epochs.
-    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.001, patience=4, 
-                                         verbose=1, mode='auto')
-
-    callbacks_list = [early_stop]
-
-    start = time.time()
-    hist = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=epochs, 
-                     validation_data=(X_val, Y_val), verbose=1, 
-                     callbacks=callbacks_list)    
-    
-    end = time.time()
-
-    results['training_duration'] = end-start
-    
-    results['batch_size']=batch_size
-    results['training_loss'] = model.evaluate(X_train, Y_train, verbose=0)
-    results['training_loss_progress'] = hist.history
-    results['epochs'] = len(hist.history['val_loss'])
-    results['validation_loss'] = model.evaluate(X_val, Y_val, verbose=0)
-    results['test_loss'] = model.evaluate(X_test, Y_test, verbose=0)
-    results['model_params'] = model.count_params()
-    return model, results
-
 
 def save_results(results, name):
     df = pd.DataFrame(all_results)
@@ -86,17 +40,14 @@ args = docopt(__doc__)
 
 if __name__ == '__main__':
 
-    if args['--dataset'] is not None:
-        dataset_path = args['--dataset']
-        print('loading data from %s' %dataset_path)
-        X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
-        dataset_name = os.path.basename(dataset_path)
-
-    elif args['--url'] is not None:
-        url = args['--url']
-        print('loading data from %s' %url)
-        X, Y = dk.datasets.load_url(url)
-        dataset_name = url.rsplit('/', 1)[-1]
+    if args['--datasets'] is not None:
+        datasets = args['--datasets'].split(',')
+        datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
+        dataset_name = str(datasets)
+        print('loading data from %s' %datasets)
+        #X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+        train, val, test = dk.datasets.split_datasets(datasets)
+    
 
     name = args['--name']
     loops = int(args['--loops'])
@@ -159,9 +110,47 @@ if __name__ == '__main__':
                     results['decay'] = op['decay']
                     
                     
-                    trained_model, results = train_model(X, Y[:,0], model, 
-                                                         results=results, seed=seed, **tp)
+                    train, val, test = dk.datasets.split_datasets(datasets, 
+                                                                  batch_size=tp['batch_size'])
+
+                    results['training_samples'] = train['n']
+                    results['validation_samples'] = val['n']
+                    results['test_samples'] = test['n']
                     
+
+                    #stop training if the validation loss doesn't improve for 5 consecutive epochs.
+                    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.001, patience=2, 
+                                                         verbose=1, mode='auto')
+
+                    callbacks_list = [early_stop]
+
+                    start = time.time()
+                    hist = model.fit_generator(
+                                            train['gen'], 
+                                            samples_per_epoch=train['n'], 
+                                            nb_epoch=tp['epochs'], 
+                                            verbose=1, 
+                                            callbacks=callbacks_list, 
+                                            validation_data=val['gen'], 
+                                            nb_val_samples=val['n'])
+
+
+                    end = time.time()
+
+                    results['training_duration'] = end-start
+                    
+                    results['batch_size']=tp['batch_size']
+                    results['training_loss'] = model.evaluate(X_train, Y_train, verbose=0)
+                    results['training_loss_progress'] = hist.history
+                    results['epochs'] = len(hist.history['val_loss'])
+                    results['validation_loss'] = model.evaluate_generator(val['gen'], 
+                                                    nb_samples=val['n'], verbose=0)
+
+                    results['test_loss'] = model.evaluate_generator(test['gen'], 
+                                                    nb_samples=test['n'], verbose=0)
+                    results['model_params'] = model.count_params()
+
+
                     all_results.append(results)
                     
                     save_results(results, name)

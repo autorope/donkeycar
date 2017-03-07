@@ -3,14 +3,10 @@ Example of how to train a keras model from simulated images or a
 previously recorded session.
 
 Usage:
-    train.py (--sessions=<sessions>) (--name=<name>)
-    train.py (--url=<url>) (--name=<name>) 
     train.py (--datasets=<datasets>) (--name=<name>) 
 
 
 Options:
-  --sessions=<sessions>   session to train on
-  --url=<url>   url of dataset
   --datasets=<datasets>   file path of dataset
   --name=<name>   name of model to be saved
 """
@@ -18,6 +14,7 @@ Options:
 import os
 import time
 from docopt import docopt
+import tempfile
 
 import donkey as dk
 from keras.callbacks import ModelCheckpoint
@@ -29,14 +26,7 @@ import keras
 if __name__ == "__main__":
     args = docopt(__doc__)
 
-    #Load dataset from either sesions or url
-    if args['--sessions'] is not None:
-        sessions = args['--sessions'].split(',')
-        X,Y = dk.sessions.sessions_to_dataset(sessions)
-    elif args['--url'] is not None:
-        url = args['--url']
-        X, Y = dk.datasets.load_url(url)
-    elif args['--datasets'] is not None:
+    if args['--datasets'] is not None:
         datasets = args['--datasets'].split(',')
         datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
         print('loading data from %s' %datasets)
