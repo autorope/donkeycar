@@ -57,6 +57,7 @@ if __name__ == '__main__':
     model_params ={
              'conv': [
                         [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
+                        [(8,3,3), (16,3,3), (32,3,3), (64,3,3)],
                         [(8,3,3), (16,3,3), (32,3,3)]
                     ],
              'dense': [ [32], [256], [128]],
@@ -70,7 +71,7 @@ if __name__ == '__main__':
 
     training_params = {
         'batch_size': [128,32],
-        'epochs': [100]
+        'epochs': [1]
     }
 
     
@@ -103,7 +104,7 @@ if __name__ == '__main__':
                     results = {}
                     results['dataset'] = dataset_name
                     results['random_seed'] = seed
-                    results['conv_layers'] = str([i[0] for i in mp['conv']])
+                    results['conv_layers'] = str(['{},{}'.format(i[0], i[1]) for i in mp['conv']])
                     results['dense_layers'] = str([i for i in mp['dense']])
                     results['dropout'] = mp['dropout']
                     results['learning_rate'] = op['lr']
@@ -140,14 +141,15 @@ if __name__ == '__main__':
                     results['training_duration'] = end-start
                     
                     results['batch_size']=tp['batch_size']
-                    results['training_loss'] = model.evaluate(X_train, Y_train, verbose=0)
+                    results['training_loss'] = model.evaluate_generator(train['gen'], 
+                                                    val_samples=train['n'])
                     results['training_loss_progress'] = hist.history
                     results['epochs'] = len(hist.history['val_loss'])
                     results['validation_loss'] = model.evaluate_generator(val['gen'], 
-                                                    nb_samples=val['n'], verbose=0)
+                                                    val_samples=val['n'])
 
                     results['test_loss'] = model.evaluate_generator(test['gen'], 
-                                                    nb_samples=test['n'], verbose=0)
+                                                    val_samples=test['n'])
                     results['model_params'] = model.count_params()
 
 
