@@ -18,7 +18,8 @@ var driveHandler = (function() {
                   'driveMode': "user",
                   'pilot': 'None',
                   'session': 'None',
-                  'lag': 0
+                  'lag': 0,
+                  'controlMode': 'joystick'
                   }
 
     var joystick_options = {}
@@ -90,6 +91,17 @@ var driveHandler = (function() {
       
       $('#brake_button').click(function() {
         toggleBrake();
+      });
+      
+      $('input[type=radio][name=controlMode]').change(function() {
+          if (this.value == 'joystick') {
+            state.controlMode = "joystick";
+            console.log('joystick mode');
+          }
+          else if (this.value == 'tilt') {
+            console.log('tilt mode')
+            state.controlMode = "tilt";
+          }
       });
 
     };
@@ -253,7 +265,7 @@ var driveHandler = (function() {
        setTimeout(function () {    
             postDrive()
 
-          if (joystickLoopRunning) {      
+          if (joystickLoopRunning && state.controlMode == "joystick") {      
              joystickLoop();             
           } 
        }, 100)
@@ -261,6 +273,10 @@ var driveHandler = (function() {
     
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
+      if(state.controlMode != "tilt"){
+        return;
+      }
+      
       var alpha     = event.alpha;
       var beta     = event.beta;
       var gamma    = event.gamma;
