@@ -23,7 +23,9 @@ var driveHandler = (function() {
                   }
 
     var joystick_options = {}
-    var joystickLoopRunning=false;   
+    var joystickLoopRunning=false;
+    
+    var gammaStart;   
 
     var vehicle_id = ""
     var driveURL = ""
@@ -275,21 +277,29 @@ var driveHandler = (function() {
     
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
-      if(state.controlMode != "tilt"){
-        return;
-      }
+      // if(state.controlMode != "tilt"){
+      //   return;
+      // }
       
       var alpha     = event.alpha;
       var beta     = event.beta;
       var gamma    = event.gamma;
       
-      $('#alpha').html(alpha)
-      $('#beta').html(beta)
-      $('#gamma').html(gamma)
+      $('#alpha').html(alpha);
+      $('#beta').html(beta);
+      $('#gamma').html(gamma);
+      $('#contGamma').html(gammaToContinuousGamma(gamma));
       
+
       if (beta == null || gamma == null) {
         return;
       }
+      
+      if(!gammaStart && gamma) {
+        gammaStart = gamma;
+      }
+      
+      $('#gammaStart').html(gammaStart);
       
       var newThrottle = gammaToThrottle(gamma);
       var newAngle = betaToSteering(beta);
@@ -306,6 +316,7 @@ var driveHandler = (function() {
       
       state.tele.user.throttle = newThrottle;
       state.tele.user.angle = newAngle;
+      previousGamma = gamma;
       
     }
     
@@ -433,21 +444,53 @@ var driveHandler = (function() {
     };
     
     var gammaToThrottle = function(gamma) {
-      const deadZone = 15;
       var throttle = 0.0;
-      var outsideDeadZone = Math.abs(gamma) < (90 - deadZone);
+      var gamma180 = gamma + 90;
+      var gammaStart180 = gammaStart + 90;
       
-      if (outsideDeadZone && gamma < 0) {
-        // negative gamma values happen when device is tilting forward
-        throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
+      var controlDirection = (Math.sign(gammaStart) * -1)
+      
+      
+      // 10 degree deadzone around the initial position
+      // 45 degrees of motion for forward and reverse
+      var minForward = gammaStart180 + (5 * controlDirection)
+      var maxForward = gammaStart180 + (50 * controlDirection)
+
+      var minReverse = gammaStart180 - (5 * controlDirection)
+      var maxReverse = gammaStart180 - (50 * controlDirection)
+      
+      var throttleCalcs = "<br/>gammaStart180: " + gammaStart180 + "<br/>minForward: " + minForward + "<br/>maxForward: " + maxForward + "<br/>minReverse: " + minReverse + "<br/>maxReverse: " + maxReverse
+      $('#throttleCalcs').html(throttleCalcs);
+      
+      
+      if(gamma180 > minForward && gamma180 < maxForward) {
+        // gamma in forward range
+        throttle = remap(gamma180, minForward, maxForward, 0.0, 1.0);
       } 
-      else if (outsideDeadZone && gamma > 0) {
-        // positive gamma values happen when device is tilting backward
-        throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
+      else if (gamma180 > minReverse && gamma180 < maxReverse) {
+        // gamma in reverse range
+        throttle = remap(gamma180, minReverse, maxReverse, 0.0, -1.0);
+      }
+      else {
+        // dead zone, do nothing
       }
      
       return throttle;
     };
+    
+    var gammaToContinuousGamma = function(gamma) {
+      var contGamma = (gamma + 90) ;
+      
+      // if(gamma < -80 && previousGamma > 80) {
+      //   contGamma = gamma + 180;
+      // } 
+      // 
+      // else if (gamma >= 0 && previousGamma > -10) {
+      //   contGamma = gamma + 180;
+      // }
+      
+      return contGamma;
+    }
 
     return {  load: load };
 
