@@ -96,12 +96,14 @@ var driveHandler = (function() {
       });
       
       $('input[type=radio][name=controlMode]').change(function() {
+          var tiltSupported = !$('#tilt-toggle').prop("disabled")
+          
           if (this.value == 'joystick') {
             state.controlMode = "joystick";
             console.log('joystick mode');
             $('#joystick-column').css('display', 'block');
           }
-          else if (this.value == 'tilt') {
+          else if (this.value == 'tilt' && tiltSupported) {
             console.log('tilt mode')
             state.controlMode = "tilt";
             $('#joystick-column').css('display', 'none');
@@ -277,15 +279,17 @@ var driveHandler = (function() {
     
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
-      // if(state.controlMode != "tilt"){
-      //   return;
-      // }
-      
+
       var alpha     = event.alpha;
       var beta     = event.beta;
       var gamma    = event.gamma;
 
       if (beta == null || gamma == null) {
+        $('#tilt-toggle').prop("disabled", true);
+        return;
+      }
+      
+      if(state.controlMode != "tilt"){
         return;
       }
       
