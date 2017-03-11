@@ -8,7 +8,7 @@ Usage:
 Options:
   --url=<url>   url of the hdf5 dataset
   --datasets=<datasets>   file path of the hdf5 dataset
-  --loops=<loops>   times to loop through the tests [default: 1]
+  --loops=<loops>   times to loop through the tests [default: 10]
   --name=<name>  name of the test
 """
 
@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     training_params = {
         'batch_size': [128,32],
-        'epochs': [1]
+        'epochs': [100]
     }
 
     
