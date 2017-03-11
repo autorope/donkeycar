@@ -137,7 +137,7 @@ var driveHandler = (function() {
 
         //console.log(data)
         state.tele.user.angle = Math.max(Math.min(Math.cos(radian)/70*distance, 1), -1)
-        state.tele.user.throttle = Math.max(Math.min(Math.sin(radian)/70*distance , 1), -1)
+        state.tele.user.throttle = limitedThrottle(Math.max(Math.min(Math.sin(radian)/70*distance , 1), -1))
 
         if (state.tele.user.throttle < .001) {
           state.tele.user.angle = 0
@@ -242,12 +242,10 @@ var driveHandler = (function() {
     };
 
     var postDrive = function() {
-        //override throttle with maxThrottle if needed
-        var throttle = Math.min(state.tele.user.throttle, maxThrottle)
         
         //Send angle and throttle values
         data = JSON.stringify({ 'angle': state.tele.user.angle, 
-                                'throttle':throttle, 
+                                'throttle':state.tele.user.throttle, 
                                 'drive_mode':state.driveMode, 
                                 'recording': state.recording})
         console.log(data)
@@ -348,7 +346,7 @@ var driveHandler = (function() {
         newThrottle = -1.0
       }
       
-      state.tele.user.throttle = newThrottle;
+      state.tele.user.throttle = limitedThrottle(newThrottle);
       state.tele.user.angle = newAngle;
     }
     
@@ -365,12 +363,12 @@ var driveHandler = (function() {
     }
 
     var throttleUp = function(){
-      state.tele.user.throttle = Math.min(state.tele.user.throttle + .05, 1);
+      state.tele.user.throttle = limitedThrottle(Math.min(state.tele.user.throttle + .05, 1));
       postDrive()
     };
 
     var throttleDown = function(){
-      state.tele.user.throttle = Math.max(state.tele.user.throttle - .05, -1);
+      state.tele.user.throttle = limitedThrottle(Math.max(state.tele.user.throttle - .05, -1));
       postDrive()
     };
 
@@ -420,6 +418,20 @@ var driveHandler = (function() {
       };
 
     };
+    
+    var limitedThrottle = function(newThrottle){
+      var limitedThrottle = 0;
+      
+      if (newThrottle > 0) {
+        limitedThrottle = Math.min(state.maxThrottle, newThrottle);
+      }
+      
+      if (newThrottle < 0) {
+        limitedThrottle = Math.max((state.maxThrottle * -1), newThrottle);
+      }
+      
+      return limitedThrottle;
+    }
 
 
     // var drawLine = function(angle, throttle) {
