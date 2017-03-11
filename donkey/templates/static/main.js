@@ -25,7 +25,8 @@ var driveHandler = (function() {
     var joystick_options = {}
     var joystickLoopRunning=false;
     
-    var gammaStart;   
+    var deviceHasOrientation=false;
+    var initialGamma;
 
     var vehicle_id = ""
     var driveURL = ""
@@ -54,11 +55,12 @@ var driveHandler = (function() {
       
       if (window.DeviceOrientationEvent) {
         window.addEventListener("deviceorientation", handleOrientation);
-        deviceOrientationLoop();
+        console.log("Browser supports device orientation, setting control mode to tilt.");
+        state.controlMode = 'tilt';
       } else {
-        console.log("Device Orientation not supported by browser.");
+        console.log("Device Orientation not supported by browser, setting control mode to joystick.");
+        state.controlMode = 'joystick';
       }
-      
     };
 
 
@@ -96,18 +98,15 @@ var driveHandler = (function() {
       });
       
       $('input[type=radio][name=controlMode]').change(function() {
-          var tiltSupported = !$('#tilt-toggle').prop("disabled")
-          
-          if (this.value == 'joystick') {
-            state.controlMode = "joystick";
-            console.log('joystick mode');
-            $('#joystick-column').css('display', 'block');
-          }
-          else if (this.value == 'tilt' && tiltSupported) {
-            console.log('tilt mode')
-            state.controlMode = "tilt";
-            $('#joystick-column').css('display', 'none');
-          }
+        if (this.value == 'joystick') {
+          state.controlMode = "joystick";
+          console.log('joystick mode');
+        }
+        else if (this.value == 'tilt' && deviceHasOrientation) {
+          state.controlMode = "tilt";
+          console.log('tilt mode')
+        }
+        updateUI();
       });
 
     };
@@ -126,6 +125,7 @@ var driveHandler = (function() {
         brake()
 
       }).on('move', function(evt, data) {
+        state.brakeOn = false;
         radian = data['angle']['radian']
         distance = data['distance']
 
@@ -210,6 +210,28 @@ var driveHandler = (function() {
           .addClass('btn-danger').end()
       }
       
+      if(deviceHasOrientation) {
+        $('#tilt-toggle').removeAttr("disabled")
+        $('#tilt').removeAttr("disabled")
+      } else {
+        $('#tilt-toggle').attr("disabled", "disabled");
+        $('#tilt').prop("disabled", true);
+      }
+      
+      if (state.controlMode == "joystick") {
+        $('#joystick-column').show();
+        $('#tilt-toggle').removeClass("active");
+        $('#joystick-toggle').addClass("active");
+        $('#joystick').attr("checked", "checked")
+        $('#tilt').removeAttr("checked")
+      } else if (state.controlMode == "tilt") {
+        $('#joystick-column').hide();
+        $('#joystick-toggle').removeClass("active");
+        $('#tilt-toggle').addClass("active");
+        $('#joystick').removeAttr("checked");
+        $('#tilt').attr("checked", "checked");
+      }
+      
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
@@ -282,21 +304,27 @@ var driveHandler = (function() {
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
 
-      var alpha     = event.alpha;
-      var beta     = event.beta;
-      var gamma    = event.gamma;
+      var alpha = event.alpha;
+      var beta = event.beta;
+      var gamma = event.gamma;
 
       if (beta == null || gamma == null) {
-        $('#tilt-toggle').prop("disabled", true);
+        deviceHasOrientation = false;
+        state.controlMode = "joystick";
+        console.log("Invalid device orientation values, switched to joystick mode.")
+      } else {
+        deviceHasOrientation = true;
+        console.log("device has valid orientation values")
+      }
+      
+      updateUI();
+      
+      if(state.controlMode != "tilt" || !deviceHasOrientation || state.brakeOn){
         return;
       }
       
-      if(state.controlMode != "tilt"){
-        return;
-      }
-      
-      if(!gammaStart && gamma) {
-        gammaStart = gamma;
+      if(!initialGamma && gamma) {
+        initialGamma = gamma;
       }
       
       var newThrottle = gammaToThrottle(gamma);
@@ -324,7 +352,9 @@ var driveHandler = (function() {
             postDrive()
           }
           
-          deviceOrientationLoop(); 
+          if (state.controlMode == "tilt") {
+            deviceOrientationLoop(); 
+          }
        }, 100)
     }
 
@@ -360,7 +390,7 @@ var driveHandler = (function() {
     
     var toggleBrake = function(){
       state.brakeOn = !state.brakeOn;
-      gammaStart = null;
+      initialGamma = null;
       
       if (state.brakeOn) {
         brake();
@@ -418,7 +448,7 @@ var driveHandler = (function() {
       const deadZone = 5;
       var angle = 0.0;
       var outsideDeadZone = false;
-      var controlDirection = (Math.sign(gammaStart) * -1)
+      var controlDirection = (Math.sign(initialGamma) * -1)
       
       //max steering angle at device 35º tilt
       var fullLeft = -35.0;
@@ -465,15 +495,15 @@ var driveHandler = (function() {
     var gammaToThrottle = function(gamma) {
       var throttle = 0.0;
       var gamma180 = gamma + 90;
-      var gammaStart180 = gammaStart + 90;
-      var controlDirection = (Math.sign(gammaStart) * -1);
+      var initialGamma180 = initialGamma + 90;
+      var controlDirection = (Math.sign(initialGamma) * -1);
       
       // 10 degree deadzone around the initial position
       // 45 degrees of motion for forward and reverse
-      var minForward = Math.min((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)));
-      var maxForward = Math.max((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)));
-      var minReverse = Math.min((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)));
-      var maxReverse = Math.max((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)));
+      var minForward = Math.min((initialGamma180 + (5 * controlDirection)), (initialGamma180 + (50 * controlDirection)));
+      var maxForward = Math.max((initialGamma180 + (5 * controlDirection)), (initialGamma180 + (50 * controlDirection)));
+      var minReverse = Math.min((initialGamma180 - (50 * controlDirection)), (initialGamma180 - (5 * controlDirection)));
+      var maxReverse = Math.max((initialGamma180 - (50 * controlDirection)), (initialGamma180 - (5 * controlDirection)));
       
       //constrain control input ranges to 0..180 continuous range
       minForward = Math.max(minForward, 0);
