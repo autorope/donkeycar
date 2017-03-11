@@ -288,8 +288,6 @@ var driveHandler = (function() {
       $('#alpha').html(alpha);
       $('#beta').html(beta);
       $('#gamma').html(gamma);
-      $('#contGamma').html(gammaToContinuousGamma(gamma));
-      
 
       if (beta == null || gamma == null) {
         return;
@@ -306,11 +304,11 @@ var driveHandler = (function() {
     
       // prevent unexpected switch between full forward and full reverse 
       // when device is parallel to ground
-      if (state.tele.user.throttle > 0.9 && newThrottle < 0) {
+      if (state.tele.user.throttle > 0.9 && newThrottle <= 0) {
         newThrottle = 1.0
       }
       
-      if (state.tele.user.throttle < -0.9 && newThrottle > 0) {
+      if (state.tele.user.throttle < -0.9 && newThrottle >= 0) {
         newThrottle = -1.0
       }
       
@@ -362,6 +360,7 @@ var driveHandler = (function() {
     
     var toggleBrake = function(){
       state.brakeOn = !state.brakeOn;
+      gammaStart = null;
       
       if (state.brakeOn) {
         brake();
@@ -419,6 +418,7 @@ var driveHandler = (function() {
       const deadZone = 5;
       var angle = 0.0;
       var outsideDeadZone = false;
+      var controlDirection = (Math.sign(gammaStart) * -1)
       
       if (Math.abs(beta) > 90) {
         outsideDeadZone = Math.abs(beta) < 180 - deadZone;
@@ -440,58 +440,46 @@ var driveHandler = (function() {
         angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
       }
       
-      return angle;
+      return angle * controlDirection;
     };
     
     var gammaToThrottle = function(gamma) {
       var throttle = 0.0;
       var gamma180 = gamma + 90;
       var gammaStart180 = gammaStart + 90;
-      
       var controlDirection = (Math.sign(gammaStart) * -1)
-      
       
       // 10 degree deadzone around the initial position
       // 45 degrees of motion for forward and reverse
-      var minForward = gammaStart180 + (5 * controlDirection)
-      var maxForward = gammaStart180 + (50 * controlDirection)
+      var minForward = Math.min((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)))
+      var maxForward = Math.max((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)))
 
-      var minReverse = gammaStart180 - (5 * controlDirection)
-      var maxReverse = gammaStart180 - (50 * controlDirection)
+      var minReverse = Math.min((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)))
+      var maxReverse = Math.max((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)))
       
-      var throttleCalcs = "<br/>gammaStart180: " + gammaStart180 + "<br/>minForward: " + minForward + "<br/>maxForward: " + maxForward + "<br/>minReverse: " + minReverse + "<br/>maxReverse: " + maxReverse
+      var throttleCalcs = "<br/>control directin: " + controlDirection + "<br/>gammaStart180: " + gammaStart180 + "<br/>minForward: " + minForward + "<br/>maxForward: " + maxForward + "<br/>minReverse: " + minReverse + "<br/>maxReverse: " + maxReverse
       $('#throttleCalcs').html(throttleCalcs);
       
       
       if(gamma180 > minForward && gamma180 < maxForward) {
         // gamma in forward range
-        throttle = remap(gamma180, minForward, maxForward, 0.0, 1.0);
-      } 
-      else if (gamma180 > minReverse && gamma180 < maxReverse) {
+        if (controlDirection == -1) {
+          throttle = remap(gamma180, minForward, maxForward, 1.0, 0.0);
+        } else {
+          throttle = remap(gamma180, minForward, maxForward, 0.0, 1.0);
+        }
+      } else if (gamma180 > minReverse && gamma180 < maxReverse) {
         // gamma in reverse range
-        throttle = remap(gamma180, minReverse, maxReverse, 0.0, -1.0);
-      }
-      else {
-        // dead zone, do nothing
+        if (controlDirection == -1) {
+          throttle = remap(gamma180, minReverse, maxReverse, 0.0, -1.0);
+        } else  {
+          throttle = remap(gamma180, minReverse, maxReverse, -1.0, 0.0);
+        }
       }
      
       return throttle;
     };
     
-    var gammaToContinuousGamma = function(gamma) {
-      var contGamma = (gamma + 90) ;
-      
-      // if(gamma < -80 && previousGamma > 80) {
-      //   contGamma = gamma + 180;
-      // } 
-      // 
-      // else if (gamma >= 0 && previousGamma > -10) {
-      //   contGamma = gamma + 180;
-      // }
-      
-      return contGamma;
-    }
-
     return {  load: load };
 
 })();
