@@ -1,8 +1,16 @@
-/*@media (max-width: 768px) {
+@media (max-width: 768px) {
 	#joystick-column {
-		display: none;
+		position: fixed; 
+		bottom:100; 
+		right:0; 
+		width:100%; 
+		height:40%; 
 	}
-}*/
+	
+	#joystick-padding {
+		height:220px;
+	}
+}
 
 #controls-column {
 	margin-top:10px;
