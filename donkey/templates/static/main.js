@@ -152,36 +152,38 @@ var driveHandler = (function() {
       $("#angleInput").val(state.tele.user.angle);
       $('#mode_select').val(state.driveMode);
       
-      var throttle_percent = Math.round(Math.abs(state.tele.user.throttle) * 100) + '%';
-      var steering_percent = Math.round(Math.abs(state.tele.user.angle) * 100) + '%';
+      var throttlePercent = Math.round(Math.abs(state.tele.user.throttle) * 100) + '%';
+      var steeringPercent = Math.round(Math.abs(state.tele.user.angle) * 100) + '%';
+      var throttleRounded = state.tele.user.throttle.toFixed(2)
+      var steeringRounded = state.tele.user.angle.toFixed(2)
       
-      $('#throttle_label').html(state.tele.user.throttle.toFixed(2));
-      $('#steering_label').html(state.tele.user.angle.toFixed(2));
+      $('#throttle_label').html(throttleRounded);
+      $('#steering_label').html(steeringRounded);
       
       if(state.tele.user.throttle < 0) {
-        $('#throttle-bar-backward').css('width', throttle_percent)
-        $('#throttle-bar-forward').css('width', '0%')
+        $('#throttle-bar-backward').css('width', throttlePercent).html(throttleRounded)
+        $('#throttle-bar-forward').css('width', '0%').html('')
       } 
       else if (state.tele.user.throttle > 0) {
-        $('#throttle-bar-backward').css('width', '0%')
-        $('#throttle-bar-forward').css('width', throttle_percent)
+        $('#throttle-bar-backward').css('width', '0%').html('')
+        $('#throttle-bar-forward').css('width', throttlePercent).html(throttleRounded)
       } 
       else {
-        $('#throttle-bar-forward').css('width', '0%')
-        $('#throttle-bar-backward').css('width', '0%')
+        $('#throttle-bar-forward').css('width', '0%').html('')
+        $('#throttle-bar-backward').css('width', '0%').html('')
       }
       
       if(state.tele.user.angle < 0) {
-        $('#angle-bar-backward').css('width', steering_percent)
-        $('#angle-bar-forward').css('width', '0%')
+        $('#angle-bar-backward').css('width', steeringPercent).html(steeringRounded)
+        $('#angle-bar-forward').css('width', '0%').html('')
       } 
       else if (state.tele.user.angle > 0) {
-        $('#angle-bar-backward').css('width', '0%')
-        $('#angle-bar-forward').css('width', steering_percent)
+        $('#angle-bar-backward').css('width', '0%').html('')
+        $('#angle-bar-forward').css('width', steeringPercent).html(steeringRounded)
       } 
       else {
-        $('#angle-bar-forward').css('width', '0%')
-        $('#angle-bar-backward').css('width', '0%')
+        $('#angle-bar-forward').css('width', '0%').html('')
+        $('#angle-bar-backward').css('width', '0%').html('')
       }
       
       if (state.recording) {
