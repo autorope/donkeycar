@@ -300,7 +300,7 @@ var driveHandler = (function() {
       $('#gammaStart').html(gammaStart);
       
       var newThrottle = gammaToThrottle(gamma);
-      var newAngle = betaToSteering(beta);
+      var newAngle = betaToSteering(beta, gamma);
     
       // prevent unexpected switch between full forward and full reverse 
       // when device is parallel to ground
@@ -414,11 +414,22 @@ var driveHandler = (function() {
     // 
     // };
  
-    var betaToSteering = function(beta) {
+    var betaToSteering = function(beta, gamma) {
       const deadZone = 5;
       var angle = 0.0;
       var outsideDeadZone = false;
       var controlDirection = (Math.sign(gammaStart) * -1)
+      
+      //max steering angle at device 35º tilt
+      var fullLeft = -35.0;
+      var fullRight = 35.0;
+      
+      //handle beta 90 to 180 discontinuous transition
+      if (beta > 90) {
+        beta = (beta - 180) * Math.sign(gamma * -1) * controlDirection
+      } else if (beta < -90) {
+        beta = (beta + 180) * Math.sign(gamma * -1) * controlDirection
+      }
       
       if (Math.abs(beta) > 90) {
         outsideDeadZone = Math.abs(beta) < 180 - deadZone;
@@ -428,16 +439,23 @@ var driveHandler = (function() {
       }
       
       if (outsideDeadZone && beta < -90.0) {
-        angle = remap(beta, -90.0, (-180.0 + deadZone), -1.0, 0.0);
+        angle = remap(beta, fullLeft, (-180.0 + deadZone), -1.0, 0.0);
       } 
       else if (outsideDeadZone && beta > 90.0) {
-        angle = remap(beta, (180.0 - deadZone), 90.0, 0.0, 1.0);
+        angle = remap(beta, (180.0 - deadZone), fullRight, 0.0, 1.0);
       } 
       else if (outsideDeadZone && beta < 0.0) {
-        angle = remap(beta, -90.0, 0.0 - deadZone, -1.0, 0);
+        angle = remap(beta, fullLeft, 0.0 - deadZone, -1.0, 0);
       }
       else if (outsideDeadZone && beta > 0.0) {
-        angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
+        angle = remap(beta, 0.0 + deadZone, fullRight, 0.0, 1.0);
+      }
+      
+      // sent full turn if abs(angle) > 1
+      if (angle < -1) {
+        angle = -1;
+      } else if (angle > 1) {
+        angle = 1;
       }
       
       return angle * controlDirection;
