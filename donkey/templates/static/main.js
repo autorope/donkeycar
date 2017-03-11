@@ -19,7 +19,8 @@ var driveHandler = (function() {
                   'pilot': 'None',
                   'session': 'None',
                   'lag': 0,
-                  'controlMode': 'joystick'
+                  'controlMode': 'joystick',
+                  'maxThrottle' : 1,
                   }
 
     var joystick_options = {}
@@ -88,6 +89,10 @@ var driveHandler = (function() {
       
       $('#mode_select').on('change', function () {
         updateDriveMode($(this).val());
+      });
+      
+      $('#max_throttle_select').on('change', function () {
+        state.maxThrottle = $(this).val();
       });
       
       $('#record_button').click(function () {
@@ -237,10 +242,12 @@ var driveHandler = (function() {
     };
 
     var postDrive = function() {
+        //override throttle with maxThrottle if needed
+        var throttle = Math.min(state.tele.user.throttle, maxThrottle)
+        
         //Send angle and throttle values
-
         data = JSON.stringify({ 'angle': state.tele.user.angle, 
-                                'throttle':state.tele.user.throttle, 
+                                'throttle':throttle, 
                                 'drive_mode':state.driveMode, 
                                 'recording': state.recording})
         console.log(data)
