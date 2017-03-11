@@ -54,6 +54,7 @@ class KerasAngle(BasePilot):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle = self.model.predict(img_arr)
         angle = angle[0][0]
+         
 
         return angle, self.throttle
 
