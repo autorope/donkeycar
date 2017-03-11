@@ -18,11 +18,15 @@ var driveHandler = (function() {
                   'driveMode': "user",
                   'pilot': 'None',
                   'session': 'None',
-                  'lag': 0
+                  'lag': 0,
+                  'controlMode': 'joystick'
                   }
 
     var joystick_options = {}
-    var joystickLoopRunning=false;   
+    var joystickLoopRunning=false;
+    
+    var deviceHasOrientation=false;
+    var initialGamma;
 
     var vehicle_id = ""
     var driveURL = ""
@@ -51,11 +55,13 @@ var driveHandler = (function() {
       
       if (window.DeviceOrientationEvent) {
         window.addEventListener("deviceorientation", handleOrientation);
+        console.log("Browser supports device orientation, setting control mode to tilt.");
+        state.controlMode = 'tilt';
         deviceOrientationLoop();
       } else {
-        console.log("Device Orientation not supported by browser.");
+        console.log("Device Orientation not supported by browser, setting control mode to joystick.");
+        state.controlMode = 'joystick';
       }
-      
     };
 
 
@@ -91,6 +97,18 @@ var driveHandler = (function() {
       $('#brake_button').click(function() {
         toggleBrake();
       });
+      
+      $('input[type=radio][name=controlMode]').change(function() {
+        if (this.value == 'joystick') {
+          state.controlMode = "joystick";
+          console.log('joystick mode');
+        }
+        else if (this.value == 'tilt' && deviceHasOrientation) {
+          state.controlMode = "tilt";
+          console.log('tilt mode')
+        }
+        updateUI();
+      });
 
     };
 
@@ -108,6 +126,7 @@ var driveHandler = (function() {
         brake()
 
       }).on('move', function(evt, data) {
+        state.brakeOn = false;
         radian = data['angle']['radian']
         distance = data['distance']
 
@@ -134,6 +153,40 @@ var driveHandler = (function() {
       $("#angleInput").val(state.tele.user.angle);
       $('#mode_select').val(state.driveMode);
       
+      var throttlePercent = Math.round(Math.abs(state.tele.user.throttle) * 100) + '%';
+      var steeringPercent = Math.round(Math.abs(state.tele.user.angle) * 100) + '%';
+      var throttleRounded = state.tele.user.throttle.toFixed(2)
+      var steeringRounded = state.tele.user.angle.toFixed(2)
+      
+      $('#throttle_label').html(throttleRounded);
+      $('#steering_label').html(steeringRounded);
+      
+      if(state.tele.user.throttle < 0) {
+        $('#throttle-bar-backward').css('width', throttlePercent).html(throttleRounded)
+        $('#throttle-bar-forward').css('width', '0%').html('')
+      } 
+      else if (state.tele.user.throttle > 0) {
+        $('#throttle-bar-backward').css('width', '0%').html('')
+        $('#throttle-bar-forward').css('width', throttlePercent).html(throttleRounded)
+      } 
+      else {
+        $('#throttle-bar-forward').css('width', '0%').html('')
+        $('#throttle-bar-backward').css('width', '0%').html('')
+      }
+      
+      if(state.tele.user.angle < 0) {
+        $('#angle-bar-backward').css('width', steeringPercent).html(steeringRounded)
+        $('#angle-bar-forward').css('width', '0%').html('')
+      } 
+      else if (state.tele.user.angle > 0) {
+        $('#angle-bar-backward').css('width', '0%').html('')
+        $('#angle-bar-forward').css('width', steeringPercent).html(steeringRounded)
+      } 
+      else {
+        $('#angle-bar-forward').css('width', '0%').html('')
+        $('#angle-bar-backward').css('width', '0%').html('')
+      }
+      
       if (state.recording) {
         $('#record_button')
           .html('Stop Recording (r)')
@@ -156,6 +209,28 @@ var driveHandler = (function() {
           .html('Stop Vehicle')
           .removeClass('btn-success')
           .addClass('btn-danger').end()
+      }
+      
+      if(deviceHasOrientation) {
+        $('#tilt-toggle').removeAttr("disabled")
+        $('#tilt').removeAttr("disabled")
+      } else {
+        $('#tilt-toggle').attr("disabled", "disabled");
+        $('#tilt').prop("disabled", true);
+      }
+      
+      if (state.controlMode == "joystick") {
+        $('#joystick-column').show();
+        $('#tilt-toggle').removeClass("active");
+        $('#joystick-toggle').addClass("active");
+        $('#joystick').attr("checked", "checked")
+        $('#tilt').removeAttr("checked")
+      } else if (state.controlMode == "tilt") {
+        $('#joystick-column').hide();
+        $('#joystick-toggle').removeClass("active");
+        $('#tilt-toggle').addClass("active");
+        $('#joystick').removeAttr("checked");
+        $('#tilt').attr("checked", "checked");
       }
       
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
@@ -221,7 +296,7 @@ var driveHandler = (function() {
        setTimeout(function () {    
             postDrive()
 
-          if (joystickLoopRunning) {      
+          if (joystickLoopRunning && state.controlMode == "joystick") {      
              joystickLoop();             
           } 
        }, 100)
@@ -229,34 +304,45 @@ var driveHandler = (function() {
     
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
-      var alpha     = event.alpha;
-      var beta     = event.beta;
-      var gamma    = event.gamma;
-      
-      $('#alpha').html(alpha)
-      $('#beta').html(beta)
-      $('#gamma').html(gamma)
-      
+
+      var alpha = event.alpha;
+      var beta = event.beta;
+      var gamma = event.gamma;
+
       if (beta == null || gamma == null) {
+        deviceHasOrientation = false;
+        state.controlMode = "joystick";
+        console.log("Invalid device orientation values, switched to joystick mode.")
+      } else {
+        deviceHasOrientation = true;
+        console.log("device has valid orientation values")
+      }
+      
+      updateUI();
+      
+      if(state.controlMode != "tilt" || !deviceHasOrientation || state.brakeOn){
         return;
       }
       
+      if(!initialGamma && gamma) {
+        initialGamma = gamma;
+      }
+      
       var newThrottle = gammaToThrottle(gamma);
-      var newAngle = betaToSteering(beta);
+      var newAngle = betaToSteering(beta, gamma);
     
       // prevent unexpected switch between full forward and full reverse 
       // when device is parallel to ground
-      if (state.tele.user.throttle > 0.9 && newThrottle < 0) {
+      if (state.tele.user.throttle > 0.9 && newThrottle <= 0) {
         newThrottle = 1.0
       }
       
-      if (state.tele.user.throttle < -0.9 && newThrottle > 0) {
+      if (state.tele.user.throttle < -0.9 && newThrottle >= 0) {
         newThrottle = -1.0
       }
       
       state.tele.user.throttle = newThrottle;
       state.tele.user.angle = newAngle;
-      
     }
     
     function deviceOrientationLoop () {           
@@ -264,8 +350,10 @@ var driveHandler = (function() {
           if(!state.brakeOn){
             postDrive()
           }
-          
-          deviceOrientationLoop(); 
+
+          if (state.controlMode == "tilt") {
+            deviceOrientationLoop(); 
+          }
        }, 100)
     }
 
@@ -301,6 +389,7 @@ var driveHandler = (function() {
     
     var toggleBrake = function(){
       state.brakeOn = !state.brakeOn;
+      initialGamma = null;
       
       if (state.brakeOn) {
         brake();
@@ -322,7 +411,6 @@ var driveHandler = (function() {
           brake(i);
         }, 500)
       };
-
 
     };
 
@@ -354,11 +442,24 @@ var driveHandler = (function() {
     // 
     // };
  
-    var betaToSteering = function(beta) {
+    var betaToSteering = function(beta, gamma) {
       const deadZone = 5;
       var angle = 0.0;
       var outsideDeadZone = false;
+      var controlDirection = (Math.sign(initialGamma) * -1)
       
+      //max steering angle at device 35º tilt
+      var fullLeft = -35.0;
+      var fullRight = 35.0;
+      
+      //handle beta 90 to 180 discontinuous transition at gamma 90
+      if (beta > 90) {
+        beta = (beta - 180) * Math.sign(gamma * -1) * controlDirection
+      } else if (beta < -90) {
+        beta = (beta + 180) * Math.sign(gamma * -1) * controlDirection
+      }
+      
+      // set the deadzone for neutral sterring
       if (Math.abs(beta) > 90) {
         outsideDeadZone = Math.abs(beta) < 180 - deadZone;
       } 
@@ -367,38 +468,66 @@ var driveHandler = (function() {
       }
       
       if (outsideDeadZone && beta < -90.0) {
-        angle = remap(beta, -90.0, (-180.0 + deadZone), -1.0, 0.0);
+        angle = remap(beta, fullLeft, (-180.0 + deadZone), -1.0, 0.0);
       } 
       else if (outsideDeadZone && beta > 90.0) {
-        angle = remap(beta, (180.0 - deadZone), 90.0, 0.0, 1.0);
+        angle = remap(beta, (180.0 - deadZone), fullRight, 0.0, 1.0);
       } 
       else if (outsideDeadZone && beta < 0.0) {
-        angle = remap(beta, -90.0, 0.0 - deadZone, -1.0, 0);
+        angle = remap(beta, fullLeft, 0.0 - deadZone, -1.0, 0);
       }
       else if (outsideDeadZone && beta > 0.0) {
-        angle = remap(beta, 0.0 + deadZone, 90.0, 0.0, 1.0);
+        angle = remap(beta, 0.0 + deadZone, fullRight, 0.0, 1.0);
       }
       
-      return angle;
+      // set full turn if abs(angle) > 1
+      if (angle < -1) {
+        angle = -1;
+      } else if (angle > 1) {
+        angle = 1;
+      }
+      
+      return angle * controlDirection;
     };
     
     var gammaToThrottle = function(gamma) {
-      const deadZone = 15;
       var throttle = 0.0;
-      var outsideDeadZone = Math.abs(gamma) < (90 - deadZone);
+      var gamma180 = gamma + 90;
+      var initialGamma180 = initialGamma + 90;
+      var controlDirection = (Math.sign(initialGamma) * -1);
       
-      if (outsideDeadZone && gamma < 0) {
-        // negative gamma values happen when device is tilting forward
-        throttle = remap(gamma, (-90.0 + deadZone), 0.0, 0.0, 1.0);
-      } 
-      else if (outsideDeadZone && gamma > 0) {
-        // positive gamma values happen when device is tilting backward
-        throttle = remap(gamma, 0.0, (90.0 - deadZone), -1.0, 0.0);
+      // 10 degree deadzone around the initial position
+      // 45 degrees of motion for forward and reverse
+      var minForward = Math.min((initialGamma180 + (5 * controlDirection)), (initialGamma180 + (50 * controlDirection)));
+      var maxForward = Math.max((initialGamma180 + (5 * controlDirection)), (initialGamma180 + (50 * controlDirection)));
+      var minReverse = Math.min((initialGamma180 - (50 * controlDirection)), (initialGamma180 - (5 * controlDirection)));
+      var maxReverse = Math.max((initialGamma180 - (50 * controlDirection)), (initialGamma180 - (5 * controlDirection)));
+      
+      //constrain control input ranges to 0..180 continuous range
+      minForward = Math.max(minForward, 0);
+      maxForward = Math.min(maxForward, 180);
+      minReverse = Math.max(minReverse, 0);
+      maxReverse = Math.min(maxReverse, 180);
+      
+      if(gamma180 > minForward && gamma180 < maxForward) {
+        // gamma in forward range
+        if (controlDirection == -1) {
+          throttle = remap(gamma180, minForward, maxForward, 1.0, 0.0);
+        } else {
+          throttle = remap(gamma180, minForward, maxForward, 0.0, 1.0);
+        }
+      } else if (gamma180 > minReverse && gamma180 < maxReverse) {
+        // gamma in reverse range
+        if (controlDirection == -1) {
+          throttle = remap(gamma180, minReverse, maxReverse, 0.0, -1.0);
+        } else  {
+          throttle = remap(gamma180, minReverse, maxReverse, -1.0, 0.0);
+        }
       }
      
       return throttle;
     };
-
+    
     return {  load: load };
 
 })();

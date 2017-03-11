@@ -8,22 +8,50 @@
         <div class="page-header">
           <h1>Vehicle: {{vehicle['id']}}</h1>
         </div>
+        <label class="group-label">Control Mode</label>
+        <div class="btn-group" data-toggle="buttons">
+          <label class="btn btn-primary" id="joystick-toggle">
+            <input type="radio" name="controlMode" id="joystick" autocomplete="off" value="joystick"> Joystick
+          </label>
+          <label class="btn btn-primary" id="tilt-toggle">
+            <input type="radio" name="controlMode" id="tilt" autocomplete="off" value="tilt">Device Tilt
+          </label>
+        </div>
       </div>
+    </div>
+    <hr>
+    <div class="row">
       <div class="col-xs-4 col-sm-2 col-md-2">
+        <div id="control-bars">
+          <label class="group-label">Angle &amp; Throttle</label>
+          <div>
+            <span class="glyphicon glyphicon-resize-horizontal pull-left"></span>
+            <div class="progress negative">
+              <div id="angle-bar-backward" class="progress-bar progress-bar-warning pull-right" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+            
+            <div class="progress positive">
+              <div id="angle-bar-forward" class="progress-bar progress-bar-info" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <span class="glyphicon glyphicon-resize-vertical pull-left"></span>
+            <div class="progress negative">
+              <div id="throttle-bar-backward" class="progress-bar progress-bar-danger pull-right" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+            
+            <div class="progress positive">
+              <div id="throttle-bar-forward" class="progress-bar progress-bar-success" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+          </div>
+        </div>
+
         <form>
-          <label>Steering &amp; Throttle</label>
-          <div class="form-group">
-            <div class="input-group">
-              <div class="input-group-addon"><span class="glyphicon glyphicon-resize-horizontal"></span></div>
-              <input id='angleInput' class='form-control' readonly />
-            </div>
-          </div>
-          <div class="form-group">
-            <div class="input-group">
-              <div class="input-group-addon"><span class="glyphicon glyphicon-resize-vertical"></span></div>
-              <input id='throttleInput' class='form-control' readonly />
-            </div>
-          </div>
           <label>Mode &amp; Pilot</label>
           <div class="form-group">
             <select id="mode_select" class="form-control">
@@ -55,7 +83,7 @@
         </div>
       </div><!-- end center column -->
 
-      <div id="joystick-column" class="col-sm-5 col-md-5"> 
+      <div id="joystick-column" class="col-xs-10 col-sm-5 col-md-5"> 
         <div class="thumbnail">
           <div id="joystick_container">
             <p>Click/touch to use joystic.</p>
@@ -67,17 +95,7 @@
         </div>
       </div><!-- end right col -->
     </div>
-    
-    <!-- For debugging, remove prior to merge -->
-    <div class="row">
-      <div class="col-md-12">
-        <h4>DeviceOrientation</h4>
-        <p>Alpha: <span id="alpha"></span></p>
-        <p>Beta: <span id="beta"></span></p>
-        <p>Gamma: <span id="gamma"></span></p>
-      </div>
-    </div>
-    <!-- end debug info -->
+    <div id="joystick-padding"></div>
     
   </div> <!-- END Container -->
   <footer class="footer" id="vehicle_footer">

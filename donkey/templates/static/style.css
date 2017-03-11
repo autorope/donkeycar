@@ -1,7 +1,44 @@
 @media (max-width: 768px) {
 	#joystick-column {
-		display: none;
+		position: fixed; 
+		bottom:100; 
+		right:0; 
+		width:100%; 
+		height:40%; 
 	}
+	
+	#joystick-padding {
+		height:220px;
+	}
+}
+
+#controls-column {
+	margin-top:10px;
+}
+#control-bars {
+	margin-top:10px;
+}
+.group-label {
+	width:100%;
+}
+
+#control-bars .progress {
+	width: 40%;
+}
+
+#control-bars .glyphicon {
+	margin-right: 3px;
+}
+
+#control-bars .progress.negative {
+	float: left;
+	border-top-right-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+#control-bars .progress.positive {
+	border-top-left-radius: 0px;
+	border-bottom-left-radius: 0px;
 }
 
 #vehicle_controls input {
