@@ -343,7 +343,6 @@ var driveHandler = (function() {
       
       state.tele.user.throttle = newThrottle;
       state.tele.user.angle = newAngle;
-      previousGamma = gamma;      
     }
     
     function deviceOrientationLoop () {           
