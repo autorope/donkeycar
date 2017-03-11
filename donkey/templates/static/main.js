@@ -284,10 +284,6 @@ var driveHandler = (function() {
       var alpha     = event.alpha;
       var beta     = event.beta;
       var gamma    = event.gamma;
-      
-      $('#alpha').html(alpha);
-      $('#beta').html(beta);
-      $('#gamma').html(gamma);
 
       if (beta == null || gamma == null) {
         return;
@@ -296,8 +292,6 @@ var driveHandler = (function() {
       if(!gammaStart && gamma) {
         gammaStart = gamma;
       }
-      
-      $('#gammaStart').html(gammaStart);
       
       var newThrottle = gammaToThrottle(gamma);
       var newAngle = betaToSteering(beta, gamma);
@@ -431,6 +425,7 @@ var driveHandler = (function() {
         beta = (beta + 180) * Math.sign(gamma * -1) * controlDirection
       }
       
+      // set the deadzone for neutral sterring
       if (Math.abs(beta) > 90) {
         outsideDeadZone = Math.abs(beta) < 180 - deadZone;
       } 
@@ -451,7 +446,7 @@ var driveHandler = (function() {
         angle = remap(beta, 0.0 + deadZone, fullRight, 0.0, 1.0);
       }
       
-      // sent full turn if abs(angle) > 1
+      // set full turn if abs(angle) > 1
       if (angle < -1) {
         angle = -1;
       } else if (angle > 1) {
@@ -479,10 +474,6 @@ var driveHandler = (function() {
       maxForward = Math.min(maxForward, 180);
       minReverse = Math.max(minReverse, 0);
       maxReverse = Math.min(maxReverse, 180);
-      
-      var throttleCalcs = "<br/>control directin: " + controlDirection + "<br/>gammaStart180: " + gammaStart180 + "<br/>minForward: " + minForward + "<br/>maxForward: " + maxForward + "<br/>minReverse: " + minReverse + "<br/>maxReverse: " + maxReverse
-      $('#throttleCalcs').html(throttleCalcs);
-      
       
       if(gamma180 > minForward && gamma180 < maxForward) {
         // gamma in forward range
