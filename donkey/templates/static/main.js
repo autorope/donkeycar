@@ -424,7 +424,7 @@ var driveHandler = (function() {
       var fullLeft = -35.0;
       var fullRight = 35.0;
       
-      //handle beta 90 to 180 discontinuous transition
+      //handle beta 90 to 180 discontinuous transition at gamma 90
       if (beta > 90) {
         beta = (beta - 180) * Math.sign(gamma * -1) * controlDirection
       } else if (beta < -90) {
