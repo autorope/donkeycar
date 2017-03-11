@@ -447,15 +447,20 @@ var driveHandler = (function() {
       var throttle = 0.0;
       var gamma180 = gamma + 90;
       var gammaStart180 = gammaStart + 90;
-      var controlDirection = (Math.sign(gammaStart) * -1)
+      var controlDirection = (Math.sign(gammaStart) * -1);
       
       // 10 degree deadzone around the initial position
       // 45 degrees of motion for forward and reverse
-      var minForward = Math.min((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)))
-      var maxForward = Math.max((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)))
-
-      var minReverse = Math.min((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)))
-      var maxReverse = Math.max((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)))
+      var minForward = Math.min((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)));
+      var maxForward = Math.max((gammaStart180 + (5 * controlDirection)), (gammaStart180 + (50 * controlDirection)));
+      var minReverse = Math.min((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)));
+      var maxReverse = Math.max((gammaStart180 - (50 * controlDirection)), (gammaStart180 - (5 * controlDirection)));
+      
+      //constrain control input ranges to 0..180 continuous range
+      minForward = Math.max(minForward, 0);
+      maxForward = Math.min(maxForward, 180);
+      minReverse = Math.max(minReverse, 0);
+      maxReverse = Math.min(maxReverse, 180);
       
       var throttleCalcs = "<br/>control directin: " + controlDirection + "<br/>gammaStart180: " + gammaStart180 + "<br/>minForward: " + minForward + "<br/>maxForward: " + maxForward + "<br/>minReverse: " + minReverse + "<br/>maxReverse: " + maxReverse
       $('#throttleCalcs').html(throttleCalcs);
