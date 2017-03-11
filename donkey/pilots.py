@@ -41,32 +41,12 @@ class BasePilot():
 
 
 
-class SwervePilot(BasePilot):
-    '''
-    Example predictor that should not be used.
-    '''
-    def __init__(self, **kwargs):
-        self.angle= random.randrange(-45, 46)
-        self.throttle = 20
-        super().__init__(**kwargs)
-
-
-    def decide(self, img_arr):
-
-        new_angle = self.angle + random.randrange(-4, 5)
-        self.angle = min(max(-45, new_angle), 45)
-
-        return angle, self.throttle
-
-
-
 
 class KerasAngle(BasePilot):
     def __init__(self, model_path, throttle=.8, **kwargs):
         self.model_path = model_path
         self.model = None #load() loads the model
         self.throttle = throttle
-        self.last_angle = 0.0
         super().__init__(**kwargs)
 
 
@@ -74,19 +54,10 @@ class KerasAngle(BasePilot):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle = self.model.predict(img_arr)
         angle = angle[0][0]
-        print(angle)
-
-        #add some smoothing
-
-        a = .8
-        #angle = a * angle * 1.5  + (1.0-a) * self.last_angle
-        angle = angle * 1.2
-        self.last_angle = angle
 
         return angle, self.throttle
 
     def load(self):
-
         self.model = keras.models.load_model(self.model_path)
         return self
 
@@ -237,7 +208,7 @@ class PilotHandler():
         pilot_list = []
         for d in models_list:
             last_modified = datetime.fromtimestamp(d.stat().st_mtime)
-            pilot = KerasAngle(d.path, throttle=25, name=d.name, 
+            pilot = KerasAngle(d.path, throttle=.8, name=d.name, 
                                 last_modified=last_modified)
             pilot_list.append(pilot)
         return pilot_list

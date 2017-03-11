@@ -60,6 +60,13 @@ if __name__ == "__main__":
     model.compile(optimizer=optimizer, loss='mean_squared_error')
                 
 
+    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
+                                              shuffle=True, seed=1234)
+
+    X_train, Y_train = train
+    X_val, Y_val = val
+
+
     file_path = os.path.join(dk.config.models_path, model_name+".hdf5")
 
     #checkpoint to save model after each epoch
@@ -74,7 +81,7 @@ if __name__ == "__main__":
 
 
     hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
-                    validation_split=validation_split, callbacks=callbacks_list)
+                    validation_data=(X_val, Y_val), callbacks=callbacks_list)
 
 
-    print(trained_model.evaluate(X, Y))
+    print(model.evaluate(X, Y))

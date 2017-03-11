@@ -25,7 +25,19 @@ class Dummy_Controller:
 
     def __init__(self, channel, frequency):
         pass
-
+    
+class RasPiRobot_Controller:
+    def __init__(self, driveLeft, driveRight):
+        import rrb3
+        rr = RRB3(9, 6)
+        leftDir = 0
+        rightDir = 0
+        if driveLeft < 0:  # change direction if number is negative
+            leftDir = 1
+        if driveRight < 0:
+            rightDir = 1
+        rr.set_motors(abs(driveLeft), leftDir, abs(driveRight), rightDir)
+        
 class PCA9685_Controller:
     # Init with 60hz frequency by default, good for servos.
     def __init__(self, channel, frequency=60):

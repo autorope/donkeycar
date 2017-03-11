@@ -52,7 +52,7 @@ def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
     
 
     #stop training if the validation loss doesn't improve for 5 consecutive epochs.
-    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
+    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.001, patience=4, 
                                          verbose=1, mode='auto')
 
     callbacks_list = [early_stop]
@@ -119,7 +119,7 @@ if __name__ == '__main__':
 
     training_params = {
         'batch_size': [128,32],
-        'epochs': [1]
+        'epochs': [100]
     }
 
     

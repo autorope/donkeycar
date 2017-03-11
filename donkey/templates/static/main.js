@@ -57,6 +57,7 @@ var driveHandler = (function() {
         window.addEventListener("deviceorientation", handleOrientation);
         console.log("Browser supports device orientation, setting control mode to tilt.");
         state.controlMode = 'tilt';
+        deviceOrientationLoop();
       } else {
         console.log("Device Orientation not supported by browser, setting control mode to joystick.");
         state.controlMode = 'joystick';
@@ -342,8 +343,7 @@ var driveHandler = (function() {
       
       state.tele.user.throttle = newThrottle;
       state.tele.user.angle = newAngle;
-      previousGamma = gamma;
-      
+      previousGamma = gamma;      
     }
     
     function deviceOrientationLoop () {           
@@ -351,7 +351,7 @@ var driveHandler = (function() {
           if(!state.brakeOn){
             postDrive()
           }
-          
+
           if (state.controlMode == "tilt") {
             deviceOrientationLoop(); 
           }
@@ -412,7 +412,6 @@ var driveHandler = (function() {
           brake(i);
         }, 500)
       };
-
 
     };
 
