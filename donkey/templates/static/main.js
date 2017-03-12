@@ -156,16 +156,16 @@ var driveHandler = (function() {
           {
             var joystickX = applyDeadzone(pad.axes[2], 0.05);
             //console.log(joystickX);
-            angle = joystickX * 90;
+            state.tele.user.angle= joystickX ;
             //console.log('angle:'+angle);
             var joystickY = applyDeadzone(pad.axes[1], 0.15);
             //console.log(joystickY);
-            throttle= joystickY * -100 ;
+            state.tele.user.throttle= joystickY * -1 ;
             //console.log('throttle:'+throttle);
-            if (throttle> 10 || throttle<-10)
-                    recording = true
+            if (state.tele.user.throttle> 10 || state.tele.user.throttle<-10)
+      		state.recording = true
             else 
-                    recording = false
+      		state.recording = false
 
               postDrive()
           }
