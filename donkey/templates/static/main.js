@@ -26,6 +26,8 @@ var driveHandler = (function() {
     var joystick_options = {}
     var joystickLoopRunning=false;
     
+    var hasGamepad = false;
+    
     var deviceHasOrientation=false;
     var initialGamma;
 
@@ -51,7 +53,8 @@ var driveHandler = (function() {
       bindNipple(manager)
     
       if(!!navigator.getGamepads){
-         gamePadLoop(); 
+        console.log("Device has gamepad support.")
+        hasGamepad = true;
       }
       
       if (window.DeviceOrientationEvent) {
@@ -106,11 +109,18 @@ var driveHandler = (function() {
       $('input[type=radio][name=controlMode]').change(function() {
         if (this.value == 'joystick') {
           state.controlMode = "joystick";
+          joystickLoopRunning = true;
           console.log('joystick mode');
-        }
-        else if (this.value == 'tilt' && deviceHasOrientation) {
+          joystickLoop();
+        } else if (this.value == 'tilt' && deviceHasOrientation) {
+          joystickLoopRunning = false;
           state.controlMode = "tilt";
           console.log('tilt mode')
+        } else if (this.value == 'gamepad' && hasGamepad) {
+          joystickLoopRunning = false;
+          state.controlMode = "gamepad";
+          console.log('gamepad mode')
+          gamePadLoop();
         }
         updateUI();
       });
@@ -224,6 +234,14 @@ var driveHandler = (function() {
         $('#tilt').prop("disabled", true);
       }
       
+      if(hasGamepad) {
+        $('#gamepad-toggle').removeAttr("disabled")
+        $('#gamepad').removeAttr("disabled")
+      } else {
+        $('#gamepad-toggle').attr("disabled", "disabled");
+        $('#gamepad').prop("disabled", true);
+      }
+      
       if (state.controlMode == "joystick") {
         $('#joystick-column').show();
         $('#tilt-toggle').removeClass("active");
@@ -264,32 +282,44 @@ var driveHandler = (function() {
 
 
 
-    function gamePadLoop()
-      {
-         setTimeout(gamePadLoop,100);
-
+    function gamePadLoop() {
+      setTimeout(gamePadLoop,100);
+      
+      if (state.controlMode != "gamepad") {
+        return;
+      }
+      
       var gamepads = navigator.getGamepads();
-
+      
       for (var i = 0; i < gamepads.length; ++i)
         {
           var pad = gamepads[i];
           // some pads are NULL I think.. some aren't.. use one that isn't null
           if (pad && pad.timestamp!=0)
           {
+            
             var joystickX = applyDeadzone(pad.axes[2], 0.05);
-            //console.log(joystickX);
-            angle = joystickX * 90;
-            //console.log('angle:'+angle);
-            var joystickY = applyDeadzone(pad.axes[1], 0.15);
-            //console.log(joystickY);
-            throttle= joystickY * -100 ;
-            //console.log('throttle:'+throttle);
-            if (throttle> 10 || throttle<-10)
-                    recording = true
-            else 
-                    recording = false
+            console.log("gamepadX: " + joystickX);
 
-              postDrive()
+            var joystickY = applyDeadzone(pad.axes[1], 0.15);
+            console.log("gamepadY: " + joystickY);
+            
+            state.tele.user.angle = joystickX;
+            state.tele.user.throttle = limitedThrottle((joystickY * -1));
+            
+            if (state.tele.user.throttle == 0 && state.tele.user.throttle == 0) {
+              state.brakeOn = true;
+            } else {
+              state.brakeOn = false;
+            }
+            
+            if (state.tele.user.throttle != 0) {
+              state.recording = true;
+            } else {
+              state.recording = false;
+            }
+
+            postDrive()
           }
             // todo; simple demo of displaying pad.axes and pad.buttons
         }
@@ -416,7 +446,9 @@ var driveHandler = (function() {
           brake(i);
         }, 500)
       };
-
+      
+      state.brakeOn = true;
+      updateUI();
     };
     
     var limitedThrottle = function(newThrottle){
