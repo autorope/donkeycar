@@ -299,10 +299,7 @@ var driveHandler = (function() {
           {
             
             var joystickX = applyDeadzone(pad.axes[2], 0.05);
-            console.log("gamepadX: " + joystickX);
-
             var joystickY = applyDeadzone(pad.axes[1], 0.15);
-            console.log("gamepadY: " + joystickY);
             
             state.tele.user.angle = joystickX;
             state.tele.user.throttle = limitedThrottle((joystickY * -1));
