@@ -10,10 +10,19 @@
         </div>
         <div class="form-inline">
           <div class="form-group">
-            <label class="group-label">Control Mode</label><br/>
+            <label class="group-label">
+              Control Mode
+              <a data-toggle="modal" class="btn btn-primary btn-xs" data-target="#aboutControlModes">
+                <span class="glyphicon glyphicon-info-sign"></span>
+              </a>
+            </label>
+            <br/>
             <div class="btn-group" data-toggle="buttons">
               <label class="btn btn-primary" id="joystick-toggle">
                 <input type="radio" name="controlMode" id="joystick" autocomplete="off" value="joystick"> Joystick
+              </label>
+              <label class="btn btn-primary" id="gamepad-toggle">
+                <input type="radio" name="controlMode" id="gamepad" autocomplete="off" value="gamepad"> Gamepad
               </label>
               <label class="btn btn-primary" id="tilt-toggle">
                 <input type="radio" name="controlMode" id="tilt" autocomplete="off" value="tilt">Device Tilt
@@ -122,6 +131,39 @@
       </div>
     </div>
   </footer>
+
+  <!-- Modal -->
+  <div class="modal fade" id="aboutControlModes" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel">About Control Modes</h4>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Joystick</strong> control is provided via the blue touch/click area on screen. Click or touch and drag to control throttle and steering. In joystick mode, you can also use the following keyboard keys:
+            <ul>
+              <li>Forward: <code>I</code></li>
+              <li>Reverse: <code>K</code></li>
+              <li>Left: <code>J</code> </li>
+              <li>Right: <code>L</code></li>
+            </ul>
+          </p>
+          <p>
+            <strong>Gamepad</strong> control is enabled by the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API">HTML5 gamepad API</a>, currently supported by Chrome and Firefox. Playstation 3 controllers have been confirmed to work.
+          </p>
+          <p>
+            <strong>Device tilt</strong> control is enabled for devices with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Detecting_device_orientation">device orientation sensors</a>, and should work with most modern smartphones. Hold your device in landscape mode, tilt  forward/backward for throttle and left/right for steering.
+          </p> 
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script type="text/javascript">
   $( document ).ready(function() {
