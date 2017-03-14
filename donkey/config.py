@@ -3,6 +3,12 @@ import os
 import configparser
 
 import donkey as dk
+
+import keras
+
+if int(keras.__version__.split('.')[0]) < 3:
+    raise ImportError('You need keras version 2.0.0 or higher. Run "pip install keras --upgrade"')
+
 config = configparser.ConfigParser()
 
 my_path = os.path.expanduser('~/mydonkey/')
