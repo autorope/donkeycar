@@ -2,9 +2,11 @@
 import os
 uname = os.uname()
 if not uname[4].startswith("arm"):
+    print('Loading modules for server.')
     from . import (utils, 
                    models, 
                    datasets, 
+                   sessions,
                    remotes, 
                    sensors,
                    actuators,
@@ -16,4 +18,9 @@ if not uname[4].startswith("arm"):
 
 else:
     print('Detected running on rasberrypi. Only importing select modules.')
-    from . import actuators, mixers, remotes, sensors, vehicles, config
+    from . import (actuators, 
+                   mixers, 
+                   remotes, 
+                   sensors, 
+                   vehicles, 
+                   config)

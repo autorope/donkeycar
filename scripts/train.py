@@ -3,21 +3,18 @@ Example of how to train a keras model from simulated images or a
 previously recorded session.
 
 Usage:
-    train.py (--sessions=<sessions>) (--name=<name>)
-    train.py (--url=<url>) (--name=<name>) 
-    train.py (--dataset=<dataset>) (--name=<name>) 
+    train.py (--datasets=<datasets>) (--name=<name>) 
 
 
 Options:
-  --sessions=<sessions>   session to train on
-  --url=<url>   url of dataset
-  --dataset=<dataset>   file path of dataset
+  --datasets=<datasets>   file path of dataset
   --name=<name>   name of model to be saved
 """
 
 import os
 import time
 from docopt import docopt
+import tempfile
 
 import donkey as dk
 from keras.callbacks import ModelCheckpoint
@@ -29,17 +26,12 @@ import keras
 if __name__ == "__main__":
     args = docopt(__doc__)
 
-    #Load dataset from either sesions or url
-    if args['--sessions'] is not None:
-        sessions = args['--sessions'].split(',')
-        X,Y = dk.sessions.sessions_to_dataset(sessions)
-    elif args['--url'] is not None:
-        url = args['--url']
-        X, Y = dk.datasets.load_url(url)
-    elif args['--dataset'] is not None:
-        dataset_path = args['--dataset']
-        print('loading data from %s' %dataset_path)
-        X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+    if args['--datasets'] is not None:
+        datasets = args['--datasets'].split(',')
+        datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
+        print('loading data from %s' %datasets)
+        #X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+        train, val, test = dk.datasets.split_datasets(datasets)
     
     model_name = args['--name']
    
@@ -48,7 +40,7 @@ if __name__ == "__main__":
     conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
     dense=[32]
     dropout=.2
-    learning_rate = .0001
+    learning_rate = .001
     decay = 0.0
     batch_size=32
     validation_split=0.1
@@ -59,11 +51,12 @@ if __name__ == "__main__":
     model = dk.models.conv_dense_sigmoid(conv, dense, dropout)
                 
 
-    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
-                                              shuffle=True, seed=1234)
+    #train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
+    #                                          shuffle=True, seed=1234)
 
-    X_train, Y_train = train
-    X_val, Y_val = val
+    #X_train, Y_train = train
+    #X_val, Y_val = val
+
 
     if model.output_shape[1] > 1:
         Y_train = dk.utils.bin_Y(Y_train)
@@ -83,8 +76,20 @@ if __name__ == "__main__":
     callbacks_list = [save_best, early_stop]
 
 
+<<<<<<< HEAD
     hist = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=epochs, 
                     validation_data=(X_val, Y_val), callbacks=callbacks_list)
 
+=======
+    hist = model.fit_generator(
+                            train['gen'], 
+                            samples_per_epoch=train['n'], 
+                            nb_epoch=epochs, 
+                            verbose=1, 
+                            callbacks=callbacks_list, 
+                            validation_data=val['gen'], 
+                            nb_val_samples=val['n'])
+>>>>>>> wr/multi_dataset
 
-    print(model.evaluate(X, Y))
+    #hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
+    #                validation_data=(X_val, Y_val), callbacks=callbacks_list)

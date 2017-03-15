@@ -233,8 +233,8 @@ def sessions_to_dataset(session_names):
 def dataset_to_hdf5(X, Y, file_path):
     print('Saving HDF5 file to %s' %file_path)
     f = h5py.File(file_path, "w")
-    f.create_dataset("X", data=X, compression='gzip')
-    f.create_dataset("Y", data=Y, compression='gzip')
+    f.create_dataset("X", data=X)
+    f.create_dataset("Y", data=Y)
     f.close()
     
 

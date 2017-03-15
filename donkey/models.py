@@ -15,10 +15,13 @@ from keras.regularizers import l2
 
 
 
-def conv_factory(x, filters, i, j):
-    x = Convolution2D(filters, i, j)(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+
+
+
+def conv_factory(x, filters, kernal, strides):
+    x = Convolution2D(filters, kernal, strides=strides, 
+                      activation='relu')(x)
+    #x = MaxPooling2D(pool_size=(2, 2))(x)
     return x
 
 def dense_factory(x, neurons, dropout):
@@ -45,7 +48,7 @@ def cnn3_full1_relu(conv, dense, dropout):
     
     angle_out = Dense(1, name='angle_out')(x)
 
-    model = Model(input=[img_in], output=[angle_out])
+    model = Model(inputs=[img_in], outputs=[angle_out])
     
     model.compile(optimizer='adam', loss='mean_squared_error')
 
@@ -70,7 +73,7 @@ def conv_dense_sigmoid(conv, dense, dropout):
     x = Dense(15)(x)
     angle_out = Activation('softmax')(x)
 
-    model = Model(input=[img_in], output=[angle_out])
+    model = Model(inputs=[img_in], outputs=[angle_out])
     model.compile(loss='categorical_crossentropy',
                   optimizer='rmsprop')
     return model
