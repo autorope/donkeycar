@@ -4,11 +4,12 @@ will use post requests to the server specified in the remote argument. Use the
 serve.py script to start the remote server.
 
 Usage:
-    drive.py [--remote=<name>] 
+    drive.py [--remote=<name>] [--config=<name>]
 
 
 Options:
   --remote=<name>   recording session name
+  --config=<name>   vehicle configuration file name (without extension)  [default: vehicle]
 """
 
 import os
@@ -16,16 +17,12 @@ from docopt import docopt
 
 import donkey as dk
 
-
-
 # Get args.
 args = docopt(__doc__)
 
-
 if __name__ == '__main__':
 
-
-    cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
+    cfg = dk.config.parse_config('~/mydonkey/' + args['--config'] + '.ini')
 
     remote_url = args['--remote']
 
