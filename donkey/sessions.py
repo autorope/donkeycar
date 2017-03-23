@@ -62,9 +62,11 @@ class Session():
             Where n is the number of recorded images.
         '''
         X, Y = load_dataset(self.img_paths())
+        '''
         #select only the angle
         if angle_only == True:
             Y = Y[:,0].reshape(Y.shape[0], 1)
+        '''
         return X, Y
 
 

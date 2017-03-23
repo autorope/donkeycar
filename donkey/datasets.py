@@ -11,6 +11,8 @@ import tempfile
 import numpy as np
 import math
 
+import donkey as dk
+
 def load_url(url):
     print('Starting download.')
     r = requests.get(url)
@@ -63,7 +65,7 @@ def moving_square(n_frames=100, return_x=True, return_y=True):
             
         #draw square and record labels
         movie[t, y - w: y + w, x - w: x + w,  1] += 1
-        labels[t] = np.array([x, y])
+        labels[t] = np.array([(x-col/2)/(col/2), y/row])
         
     #convert array to dtype that PIL.Image accepts
     #and scale it to 0-256
@@ -89,7 +91,7 @@ def row_gen(h5_path, ix):
     
     while True:
         i = np.random.choice(ix)
-        yield f['X'][i, :], f['Y'][i, :]
+        yield dk.utils.norm_img(f['X'][i, :]), f['Y'][i, :]
         
         
 def batch_gen(dataset_list, batch_size=128):
@@ -104,7 +106,11 @@ def batch_gen(dataset_list, batch_size=128):
             x, y = next(rg)
             X.append(x)
             Y.append(y)
-        yield np.array(X), np.array(Y)
+
+        X = np.array(X)
+        Y = np.array(Y)
+
+        yield X, {'angle_out': dk.utils.bin_Y(Y[:, 0]), 'throttle_out': Y[:, 1]}
     
     
 def split_datasets(h5_paths, val_frac=.1, test_frac=.1, batch_size=128):
@@ -117,6 +123,7 @@ def split_datasets(h5_paths, val_frac=.1, test_frac=.1, batch_size=128):
 
     ds = []
     for p in h5_paths:
+        #create a dictionary of the datasets and their index
         d = {}
         file = h5py.File(p, "r")
         n = file['X'].shape[0]
@@ -129,10 +136,10 @@ def split_datasets(h5_paths, val_frac=.1, test_frac=.1, batch_size=128):
         
         ds.append(d)
         
+
     ds_train = []
     ds_val =   []
     ds_test =  []
-    
     
     for d in ds:
         d_train = {'path': d['path']}

@@ -19,12 +19,7 @@ from docopt import docopt
 
 args = docopt(__doc__)  
 
-X, Y = dk.datasets.moving_square(n_frames=1000)
-
-#sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions')
-#s = sh.load('test')
-#X, Y = s.load_dataset()
-
+X, Y = dk.datasets.moving_square(n_frames=3000)
 
 camera_sim = dk.sensors.ImgArrayCamera(X) #For testing
 
