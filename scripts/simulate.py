@@ -30,13 +30,15 @@ if args['--remote'] is not None:
 else:
     remote_url = 'http://localhost:8887'
 
-remote_pilot = dk.remotes.RemoteClient(remote_url, vehicle_id='mysim')
+remote = dk.remotes.RemoteClient(remote_url, vehicle_id='mysim')
+pilot = dk.pilots.KerasCategorical(model_path='/home/wroscoe/mydonkey/models/ms.h5')
+pilot.load()
 
-
-car = dk.vehicles.BaseVehicle(drive_loop_delay=.5,
+car = dk.vehicles.BaseVehicle(drive_loop_delay=.05,
                               camera=camera_sim,
 							  actuator_mixer=mixer,
-                              pilot=remote_pilot)
+                              remote=remote,
+                              pilot=pilot)
 
 #start the drive loop
 car.start()

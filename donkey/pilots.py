@@ -13,7 +13,6 @@ from operator import itemgetter
 from datetime import datetime
 
 import numpy as np
-import cv2
 import keras
 
 from donkey import utils
@@ -30,11 +29,7 @@ class BasePilot():
     def decide(self, img_arr):
         angle = 0.0
         speed = 0.0
-
-        #Do prediction magic
-
         return angle, speed
-
 
     def load(self):
         return self

@@ -74,10 +74,10 @@ def train_gen(model, model_path, train_gen, val_gen, n=10):
 
     #checkpoint to save model after each epoch
     save_best = keras.callbacks.ModelCheckpoint(model_path, monitor='val_loss', verbose=1, 
-                                          save_best_only=False, mode='min')
+                                          save_best_only=True, mode='min')
 
     #stop training if the validation error stops improving.
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=6, 
                                          verbose=1, mode='auto')
 
     callbacks_list = [save_best, early_stop]
