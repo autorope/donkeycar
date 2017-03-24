@@ -10,7 +10,7 @@ import io
 import os
 import copy
 import math
-
+from threading import Thread
 import numpy as np
 
 import requests
@@ -37,13 +37,54 @@ class RemoteClient():
 
         self.log('time,lag\n', write_method='w')
 
+        #initialize state variables (used for threading)
+        state = {'img_arr': np.zeros(shape=(120,160)),
+                 'angle': 0.0,
+                 'throttle': 0.0,
+                 'milliseconds': 0,
+                 'drive_mode': 'user'}
+
+        self.state = state
+        self.start()
+
     def log(self, line, path='lag_log.csv', write_method='a'):
         with open('lag_log.csv', write_method) as f:
             f.write(line)
 
 
+    def start(self):
+        # start the thread send images to and updates from remote
+        t = Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
+        return self
 
         
+    def update(self):
+        while True:
+            #get latest value from server
+            resp  = self.decide(self.state['img_arr'], 
+                                                      self.state['angle'],
+                                                      self.state['throttle'],
+                                                      self.state['milliseconds'],)
+            angle, throttle, drive_mode = resp
+            #update sate with current values
+            self.state['angle'] = angle
+            self.state['throttle'] = throttle
+            self.state['drive_mode'] = drive_mode
+            time.sleep(.02)
+
+
+    def decide_threaded(self, img_arr, angle, throttle, milliseconds):
+        ''' 
+        Return the last returned state of the remote_url
+        '''
+        #update the state's image
+        self.state['img_arr'] = img_arr
+
+        #return last returned last remote response.
+        return self.state['angle'], self.state['throttle'], self.state['drive_mode']
+
         
     def decide(self, img_arr, angle, throttle, milliseconds):
         '''
@@ -53,9 +94,9 @@ class RemoteClient():
 
         #load features
         data = {
-                'angle': angle,
-                'throttle': throttle,
-                'milliseconds': milliseconds
+                'angle': str(angle),
+                'throttle': str(throttle),
+                'milliseconds': str(milliseconds)
                 }
 
 
@@ -76,24 +117,24 @@ class RemoteClient():
                 time.sleep(3)
             
             except (requests.exceptions.ReadTimeout) as err:
+            #Lower throttle if their is a long lag.
                 print("Request took too long. Retrying")
-                return angle, throttle * .8
+                return angle, throttle * .8, None
                 
 
         end = time.time()
         lag = end-start
         self.log('{}, {} \n'.format(datetime.now().time() , lag ))
-        print('vehicle <> server: request lag: %s' %lag)
+        print('remote lag: %s' %lag)
 
         data = json.loads(r.text)
         
         angle = float(data['angle'])
         throttle = float(data['throttle'])
-        
-        
+        drive_mode = str(data['drive_mode'])
         
 
-        return angle, throttle
+        return angle, throttle, drive_mode
 
 
 
@@ -334,7 +375,7 @@ class ControlAPI(tornado.web.RequestHandler):
         
 
         #retun angel/throttle values to vehicle with json response
-        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle)}))
+        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']) }))
 
 
 

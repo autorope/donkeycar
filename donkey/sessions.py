@@ -62,9 +62,7 @@ class Session():
             Where n is the number of recorded images.
         '''
         X, Y = load_dataset(self.img_paths())
-        #select only the angle
-        if angle_only == True:
-            Y = Y[:,0].reshape(Y.shape[0], 1)
+
         return X, Y
 
 
@@ -129,6 +127,8 @@ class SessionHandler():
         if not os.path.exists(session_full_path):
             os.makedirs(session_full_path)
         return session_full_path
+
+
 
 
 def img_paths(folder):
@@ -233,8 +233,8 @@ def sessions_to_dataset(session_names):
 def dataset_to_hdf5(X, Y, file_path):
     print('Saving HDF5 file to %s' %file_path)
     f = h5py.File(file_path, "w")
-    f.create_dataset("X", data=X, compression='gzip')
-    f.create_dataset("Y", data=Y, compression='gzip')
+    f.create_dataset("X", data=X)
+    f.create_dataset("Y", data=Y)
     f.close()
     
 
@@ -266,33 +266,6 @@ def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
                 "_mil_" + str(milliseconds) +
                 '.jpg')
     return filepath
-
-
-def variant_generator(img_paths, variant_funcs):
-
-    def orient(arr, flip=False):
-        if flip == False:
-            return arr
-        else: 
-            return np.fliplr(arr)
-    
-    print('images before variants %s' % len(img_paths))
-
-    while True:
-        for flip in [True, False]:
-            for v in variant_funcs:
-                for img_path in img_paths:
-                    img = Image.open(img_path)
-                    img = np.array(img)
-                    img =  v['func'](img, **v['args'])
-                    img = orient(img, flip=flip)
-                    angle, speed = parse_img_filepath(img_path)
-                    if flip == True: 
-                        angle = -angle #reverse stering angle
-                    y = np.array([angle, speed])
-                    x = np.expand_dims(x, axis=0)
-                    y = y.reshape(1, 2)
-                    yield x, y
 
 
 

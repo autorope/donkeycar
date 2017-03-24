@@ -3,6 +3,12 @@ import os
 import configparser
 
 import donkey as dk
+
+import keras
+
+if int(keras.__version__.split('.')[0]) < 2:
+    raise ImportError('You need keras version 2.0.0 or higher. Run "pip install keras --upgrade"')
+
 config = configparser.ConfigParser()
 
 my_path = os.path.expanduser('~/mydonkey/')
@@ -45,5 +51,8 @@ def parse_config(config_path):
     cfg['steering_actuator_channel'] = s_act.getint('channel')
     cfg['steering_actuator_min_pulse'] = s_act.getint('left_pulse')
     cfg['steering_actuator_max_pulse'] = s_act.getint('right_pulse')
+
+    pilot = config['pilot']
+    cfg['pilot_model_path'] = os.path.expanduser(pilot.get('model_path'))
 
     return cfg

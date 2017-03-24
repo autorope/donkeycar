@@ -8,20 +8,10 @@ import requests
 import io
 import h5py
 import tempfile
+import numpy as np
+import math
 
-from .sessions import SessionHandler
-
-
-def save_dataset(X, Y, file_path):
-    with open(file_path, 'wb') as f:
-        pickel.dump((X, Y), f)
-
-
-def load_file(file_path):
-    with open(file_path, 'rb') as f:
-        X, Y = pickle.load(f)
-    return X,Y
-
+import donkey as dk
 
 def load_url(url):
     print('Starting download.')
@@ -75,7 +65,7 @@ def moving_square(n_frames=100, return_x=True, return_y=True):
             
         #draw square and record labels
         movie[t, y - w: y + w, x - w: x + w,  1] += 1
-        labels[t] = np.array([x, y])
+        labels[t] = np.array([(x-col/2)/(col/2), y/row])
         
     #convert array to dtype that PIL.Image accepts
     #and scale it to 0-256
@@ -92,3 +82,87 @@ def moving_square(n_frames=100, return_x=True, return_y=True):
 
 
 
+def row_gen(h5_path, ix):
+    ''' 
+    A generator to loop an hdf5 dataset referencing only
+    the rows given in the index (ix).
+    '''
+    f = h5py.File(h5_path, "r")
+    
+    while True:
+        i = np.random.choice(ix)
+        yield dk.utils.norm_img(f['X'][i, :]), f['Y'][i, :]
+        
+        
+def batch_gen(dataset_list, batch_size=128):
+       
+    rgens = [row_gen(d['path'], d['ix']) for d in dataset_list]
+    
+    while True:
+        X = []
+        Y = []
+        for i in range(batch_size):
+            rg = np.random.choice(rgens)
+            x, y = next(rg)
+            X.append(x)
+            Y.append(y)
+
+        X = np.array(X)
+        Y = np.array(Y)
+
+        yield X, {'angle_out': dk.utils.bin_Y(Y[:, 0]), 'throttle_out': Y[:, 1]}
+    
+    
+def split_datasets(h5_paths, val_frac=.1, test_frac=.1, batch_size=128):
+    '''
+    Return three shuffled generators for train, val and test.
+    '''
+    #1. load each dataset and read its shape. 
+    #2. read size of each dataset
+    #3. create generator 
+
+    ds = []
+    for p in h5_paths:
+        #create a dictionary of the datasets and their index
+        d = {}
+        file = h5py.File(p, "r")
+        n = file['X'].shape[0]
+        ix = np.arange(n)
+        np.random.shuffle(ix)
+        
+        d['path'] = p
+        d['n'] = n
+        d['ix'] = ix
+        
+        ds.append(d)
+        
+
+    ds_train = []
+    ds_val =   []
+    ds_test =  []
+    
+    for d in ds:
+        d_train = {'path': d['path']}
+        d_val =  {'path': d['path']}
+        d_test = {'path': d['path']}
+        
+        val_cutoff = math.ceil(d['n'] * (1 - (val_frac + test_frac)))
+        test_cutoff = math.ceil(d['n'] * (1- test_frac))
+        
+        d_train['ix'] = np.sort(d['ix'][:val_cutoff])
+        d_val['ix'] = np.sort(d['ix'][val_cutoff:test_cutoff])
+        d_test['ix']= np.sort(d['ix'][test_cutoff:])
+        
+        d_train['n'] = len(d_train['ix'])
+        d_val['n'] = len(d_val['ix'])
+        d_test['n'] = len(d_test['ix'])
+
+        ds_train.append(d_train)
+        ds_val.append(d_val)
+        ds_test.append(d_test)
+
+    train = {'gen': batch_gen(ds_train), 'n': sum([i['n'] for i in ds_train])}
+    val = {'gen': batch_gen(ds_val), 'n': sum([i['n'] for i in ds_val])}
+    test = {'gen': batch_gen(ds_test), 'n': sum([i['n'] for i in ds_test])}
+
+    return train, val, test   

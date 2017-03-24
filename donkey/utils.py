@@ -5,6 +5,7 @@ from io import BytesIO
 import os
 import glob
 import socket
+import math
 
 
 import itertools
@@ -73,6 +74,9 @@ def binary_to_img(binary):
     return Image.open(img)
 
 
+def norm_img(img):
+    return (img - img.mean() / np.std(img))/255.0
+
 def create_video(img_dir_path, output_video_path):
     import envoy
     # Setup path to the images with telemetry.
@@ -89,61 +93,6 @@ def create_video(img_dir_path, output_video_path):
                %s""" % (full_path, output_video_path))
     response = envoy.run(command)
 
-
-
-
-'''
-DATASETS
-'''
-
-
-def split_dataset(X, Y, val_frac=.1, test_frac=.1, 
-                  shuffle=True, seed=None):
-
-    count = len(X)
-    assert len(X) == len(Y)
-
-    if shuffle == True:
-        #shuffle values from both arrays in unison
-        if seed is None:
-            seed = random.randint(0, 10000)
-
-        print('shuffle seed: %s' %seed)
-        for i in [X, Y]:
-
-
-            np.random.seed(seed=seed)
-            np.random.shuffle(i)
-        
-    
-    val_cutoff = math.ceil(count * (1 - (val_frac + test_frac)))
-    test_cutoff = math.ceil(count * (1- test_frac))
-
-    
-    X_train = X[:val_cutoff]
-    Y_train = Y[:val_cutoff]
-    
-    X_val = X[val_cutoff:test_cutoff]
-    Y_val = Y[val_cutoff:test_cutoff]
-    
-    X_test = X[test_cutoff:]
-    Y_test = Y[test_cutoff:]
-    
-    return (X_train, Y_train), (X_val, Y_val), (X_test, Y_test)
-
-
-def split_list(L, sequential=False, test_frac=.8):
-
-    count = len(L)
-    cutoff = int((count * test_frac) // 1)
-    
-    if sequential == False:
-        random.shuffle(L)
-
-    L_train = L[:cutoff]
-    L_test =  L[cutoff:]
-
-    return L_train, L_test
 
 
 
@@ -183,27 +132,32 @@ BINNING
 functions to help converte between floating point numbers and categories.
 '''
 
-def log_bin(a, has_negative=True):
-    """ 
-    Returns bin number (between 0 and 14) of a number
-    num (between -100 and 100).
+def linear_bin(a):
+    a = a + 1
+    b = round(a / (2/14))
+    return int(b)
 
-    If has_negative == True:  bin range = 0-14
-    If has_negative == False: bin range = 0-7 
-    
-    """
-    b = int(round(math.copysign(math.log(abs(a) + 1, 2.0), a)))
-    if has_negative: 
-        b = b + 7
-    return b
-
-
-def log_unbin(b, has_negative=True):
-    if has_negative: 
-        b = b - 7
-        
-    a = math.copysign(2 ** abs(b), b) - 1
+def linear_unbin(b):
+    a = b *(2/14) - 1
     return a
+
+
+def bin_Y(Y):
+    d = []
+    for y in Y:
+        arr = np.zeros(15)
+        arr[linear_bin(y)] = 1
+        d.append(arr)
+    return np.array(d) 
+        
+def unbin_Y(Y):
+    d=[]
+    for y in Y:
+        v = np.argmax(y)
+        v = linear_unbin(v)
+        d.append(v)
+    return np.array(d)
+
 
 
 def bin_telemetry(angle, throttle):
