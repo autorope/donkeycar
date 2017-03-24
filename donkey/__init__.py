@@ -23,4 +23,6 @@ else:
                    remotes, 
                    sensors, 
                    vehicles, 
-                   config)
+                   config,
+                   pilots,
+                   models)

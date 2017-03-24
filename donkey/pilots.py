@@ -13,7 +13,6 @@ from operator import itemgetter
 from datetime import datetime
 
 import numpy as np
-import cv2
 import keras
 
 from donkey import utils

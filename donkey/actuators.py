@@ -109,7 +109,6 @@ class PWMThrottleActuator:
                               self.MIN_THROTTLE, 0, 
                               self.min_pulse, self.zero_pulse)
 
-        print('pulse: %s' % pulse)
         sys.stdout.flush()
         self.controller.set_pulse(pulse)
         return '123'
