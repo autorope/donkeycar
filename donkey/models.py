@@ -61,7 +61,7 @@ def categorical_model_factory(conv=None, dense=None):
 
     #define loss function that weights angle loss more than throttle loss
     model.compile(optimizer='rmsprop',
-                  loss={'angle_out': 'categorical_crossentropy', 'throttle_out': 'mean_squared_error'},
+                  loss={'angle_out': 'categorical_crossentropy', 'throttle_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 1., 'throttle_out': .3})
     
     return model

@@ -14,7 +14,6 @@ Options:
   --name=<name>  name of the test
 """
 
-
 import os
 import sys
 import time
@@ -26,8 +25,6 @@ import pandas as pd
 import keras
 
 import donkey as dk
-
-
 
 
 def save_results(results, name):
@@ -137,6 +134,7 @@ if __name__ == '__main__':
                                         val_gen=val['gen'] , steps=train['n']/batch_size, 
                                         epochs=100)
 
+            model = keras.models.load_model(model_path)
             end = time.time()
 
             results['training_duration'] = end-start
