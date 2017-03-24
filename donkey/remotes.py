@@ -119,7 +119,7 @@ class RemoteClient():
                 r = self.session.post(self.control_url, 
                                 files={'img': dk.utils.arr_to_binary(img_arr), 
                                        'json': json.dumps(data)},
-                                       timeout=0.2)
+                                       timeout=0.25)
                 
             except (requests.ConnectionError) as err:
                 #try to reconnect every 3 seconds
@@ -139,7 +139,6 @@ class RemoteClient():
         #print('remote lag: %s' %lag)
 
         data = json.loads(r.text)
-        
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])

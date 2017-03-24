@@ -1,5 +1,7 @@
 """
-Script to 
+explore.py
+
+Used to train and test many different types of models to find the best one.
 
 Usage:
     explore.py (--datasets=<dataset>) (--name=<name) [--loops=<loops]
@@ -19,69 +21,14 @@ import time
 import itertools
 import random
 
-
 from docopt import docopt
 import pandas as pd
 import keras
-from keras import callbacks
 
 import donkey as dk
 
 
 
-<<<<<<< HEAD
-def train_model(X, Y, model, batch_size=64, epochs=1, results=None,
-                shuffle=True, seed=None):
-
-    '''
-    Train a model, test it using common evaluation techiques and
-    record the results.
-    '''
-    #split data
-
-    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=.1,
-                                              shuffle=shuffle, seed=seed)
-
-    X_train, Y_train = train
-    X_val, Y_val = val
-    X_test, Y_test = test
-
-    if model.output_shape[1] > 1:
-        Y_train = dk.utils.bin_Y(Y_train)
-        Y_val = dk.utils.bin_Y(Y_val)
-        Y_test = dk.utils.bin_Y(Y_test)
-
-    results['training_samples'] = X_train.shape[0]
-    results['validation_samples'] = X_val.shape[0]
-    results['test_samples'] = X_test.shape[0]
-    
-
-    #stop training if the validation loss doesn't improve for 5 consecutive epochs.
-    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.001, patience=4, 
-                                         verbose=1, mode='auto')
-
-    callbacks_list = [early_stop]
-
-    start = time.time()
-    hist = model.fit(X_train, Y_train, batch_size=batch_size, nb_epoch=epochs, 
-                     validation_data=(X_val, Y_val), verbose=1, 
-                     callbacks=callbacks_list)    
-    
-    end = time.time()
-
-    results['training_duration'] = end-start
-    
-    results['batch_size']=batch_size
-    results['training_loss'] = model.evaluate(X_train, Y_train, verbose=0)
-    results['training_loss_progress'] = hist.history
-    results['epochs'] = len(hist.history['val_loss'])
-    results['validation_loss'] = model.evaluate(X_val, Y_val, verbose=0)
-    results['test_loss'] = model.evaluate(X_test, Y_test, verbose=0)
-    results['model_params'] = model.count_params()
-    return model, results
-
-=======
->>>>>>> wr/multi_dataset
 
 def save_results(results, name):
     df = pd.DataFrame(all_results)
@@ -93,144 +40,123 @@ args = docopt(__doc__)
 
 if __name__ == '__main__':
 
+    test_name = args['--name']
+    loops = int(args['--loops'])
+
+    test_dir_path = os.path.join(dk.config.results_path, test_name)
+    dk.utils.make_dir(test_dir_path)
+
+
+    #load data
     if args['--datasets'] is not None:
         datasets = args['--datasets'].split(',')
         datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
         dataset_name = str(datasets)
-        print('loading data from %s' %datasets)
-        #X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
         train, val, test = dk.datasets.split_datasets(datasets)
     
 
-    name = args['--name']
-    loops = int(args['--loops'])
-
-
     #Define the model parameters you'd like to explore.
+
+    nvidia_dense2 = [{'units': 256, 'dropout': .2}]
+
+    nvidia_conv2 = [{'filters': 24, 'kernal': (5,5), 'strides':(2,2)}, 
+            {'filters': 32, 'kernal': (5,5), 'strides':(2,3)},
+            {'filters': 64, 'kernal': (5,5), 'strides':(2,2)},
+            {'filters': 64, 'kernal': (3,3), 'strides':(2,2)},
+            {'filters': 64, 'kernal': (3,3), 'strides':(1,1)}]
+
+    nvidia_conv3 = [{'filters': 24, 'kernal': (5,5), 'strides':(2,2)}, 
+            {'filters': 32, 'kernal': (5,5), 'strides':(2,3)},
+            {'filters': 64, 'kernal': (5,5), 'strides':(2,2)},
+            {'filters': 64, 'kernal': (3,3), 'strides':(2,2)},
+            {'filters': 64, 'kernal': (3,3), 'strides':(1,1)},
+            {'filters': 64, 'kernal': (3,3), 'strides':(1,1)}]
+
+    nvidia_conv4 = [{'filters': 24, 'kernal': (5,5), 'strides':(2,2), 'pool':(2,2)}, 
+            {'filters': 32, 'kernal': (5,5), 'strides':(2,2)},
+            {'filters': 64, 'kernal': (5,5), 'strides':(2,2)},
+            {'filters': 64, 'kernal': (3,3), 'strides':(2,2)}]
+
+    nvidia_conv5 = [
+            {'filters': 8, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)}, 
+            {'filters': 16, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)},
+            {'filters': 32, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)}
+            ]
+
     model_params ={
-             'conv': [
-                        [(8,3,3), (16,3,3), (32,3,3), (32,3,3)],
-                        [(8,3,3), (16,3,3), (32,3,3), (64,3,3)],
-                        [(8,3,3), (16,3,3), (32,3,3)]
-                    ],
-             'dense': [[8], [16],  [32], [128]],
-             'dropout': [.2],
-             #'learning_rate': [.001],
-             #'decay': [.0]
+             'conv': [ dk.models.nvidia_conv, nvidia_conv2, nvidia_conv3, nvidia_conv4, nvidia_conv5  ],
+             'dense':[ dk.models.nvidia_dense, nvidia_dense2 ],
             }
 
-    training_params = {
-        'batch_size': [128],
-        'epochs': [100]
-    }
+
+    batch_size = 128
 
     
-
+    #create permutations of the models. 
     model_params = list(dk.utils.param_gen(model_params))
-    training_params = list(dk.utils.param_gen(training_params))
 
-    param_count = len(model_params) * len(training_params) * loops
-
+    param_count = len(model_params) * loops
     print('total params to test: %s' % param_count)
 
     all_results = []
     test_count = 0
 
     for i in range(loops):
-        seed = random.choice([1234, 2345, 3456, 4567])
 
         for mp in model_params:
             
-<<<<<<< HEAD
-            for tp in training_params:
-                #model = dk.models.cnn3_full1_relu(**mp)
-                model = dk.models.conv_dense_sigmoid(**mp)
-                test_count += 1
-                print('test %s of %s' %(test_count, param_count))
-                results = {}
-                results['dataset'] = dataset_name
-                results['random_seed'] = seed
-                results['conv_layers'] = str([i[0] for i in mp['conv']])
-                results['dense_layers'] = str([i for i in mp['dense']])
-                results['dropout'] = mp['dropout']
-                results['learning_rate'] = .001 #op['lr']
-                results['decay'] = .0 #op['decay']
-                
-                
-                trained_model, results = train_model(X, Y[:,0], model, 
-                                                     results=results, seed=seed, **tp)
-                
-                all_results.append(results)
-                
-                save_results(results, name)
 
-                sys.stdout.flush()
-=======
+            test_count += 1
+
+            print('test %s of %s' %(test_count, param_count))
+
+            results = {}
+            results['dataset'] = dataset_name
+
+            #MODEL
+            model = dk.models.categorical_model_factory(**mp)
+            model_path = os.path.join(test_dir_path, test_name + str(test_count))
+
+            results['conv_layers'] = str(mp['conv'])
+            results['dense_layers'] = str(mp['dense'])
             
-            for op in optimizer_params:
 
-                for tp in training_params:
-                    model = dk.models.cnn3_full1_relu(**mp)
-                    optimizer = keras.optimizers.Adam(**op)
-                    model.compile(optimizer=optimizer, loss='mean_squared_error')
-                    test_count += 1
-                    print('test %s of %s' %(test_count, param_count))
-                    results = {}
-                    results['dataset'] = dataset_name
-                    results['random_seed'] = seed
-                    results['conv_layers'] = str(['{},{}'.format(i[0], i[1]) for i in mp['conv']])
-                    results['dense_layers'] = str([i for i in mp['dense']])
-                    results['dropout'] = mp['dropout']
-                    results['learning_rate'] = op['lr']
-                    results['decay'] = op['decay']
-                    
-                    
-                    train, val, test = dk.datasets.split_datasets(datasets, 
-                                                                  batch_size=tp['batch_size'])
+            #DATASET
+            train, val, test = dk.datasets.split_datasets(datasets, 
+                                                          batch_size=batch_size)
 
-                    results['training_samples'] = train['n']
-                    results['validation_samples'] = val['n']
-                    results['test_samples'] = test['n']
-                    
-
-                    #stop training if the validation loss doesn't improve for 5 consecutive epochs.
-                    early_stop = callbacks.EarlyStopping(monitor='val_loss', min_delta=.001, patience=2, 
-                                                         verbose=1, mode='auto')
-
-                    callbacks_list = [early_stop]
-
-                    start = time.time()
-                    hist = model.fit_generator(
-                                            train['gen'], 
-                                            samples_per_epoch=train['n'], 
-                                            nb_epoch=tp['epochs'], 
-                                            verbose=1, 
-                                            callbacks=callbacks_list, 
-                                            validation_data=val['gen'], 
-                                            nb_val_samples=val['n'])
+            results['training_samples'] = train['n']
+            results['validation_samples'] = val['n']
+            results['test_samples'] = test['n']
 
 
-                    end = time.time()
+            start = time.time()
 
-                    results['training_duration'] = end-start
-                    
-                    results['batch_size']=tp['batch_size']
-                    results['training_loss'] = model.evaluate_generator(train['gen'], 
-                                                    val_samples=train['n'])
-                    results['training_loss_progress'] = hist.history
-                    results['epochs'] = len(hist.history['val_loss'])
-                    results['validation_loss'] = model.evaluate_generator(val['gen'], 
-                                                    val_samples=val['n'])
+            #train the model
+            hist = dk.models.train_gen(model, model_path, train_gen=train['gen'], 
+                                        val_gen=val['gen'] , steps=train['n']/batch_size, 
+                                        epochs=100)
 
-                    results['test_loss'] = model.evaluate_generator(test['gen'], 
-                                                    val_samples=test['n'])
-                    results['model_params'] = model.count_params()
+            end = time.time()
+
+            results['training_duration'] = end-start
+            results['batch_size']=batch_size
+            results['training_loss'] = model.evaluate_generator(train['gen'], 
+                                            steps=1)
+
+            results['training_loss_progress'] = hist.history
+            results['epochs'] = len(hist.history['val_loss'])
+            results['validation_loss'] = model.evaluate_generator(val['gen'], 
+                                            steps=val['n']/batch_size)
+
+            results['test_loss'] = model.evaluate_generator(test['gen'], 
+                                            steps=test['n']/batch_size)
+            results['model_params'] = model.count_params()
 
 
-                    all_results.append(results)
-                    
-                    save_results(results, name)
+            all_results.append(results)
+            
+            test_results_path = os.path.join(test_dir_path, test_name)
+            save_results(results, test_results_path)
 
-                    sys.stdout.flush()
->>>>>>> wr/multi_dataset
-
+            sys.stdout.flush()

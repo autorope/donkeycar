@@ -43,7 +43,7 @@ if __name__ == "__main__":
         datasets = [dataset_path]
         train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
 
-    n = round(train['n'] / batch_size)
+    steps = round(train['n'] / batch_size)
 
 
     model_name = args['--name']
@@ -55,4 +55,4 @@ if __name__ == "__main__":
     model_path = os.path.join(dk.config.models_path, model_name+".hdf5")
 
     #train the model
-    dk.models.train_gen(model, model_path, train_gen=train['gen'], val_gen=val['gen'] , n=n)
+    dk.models.train_gen(model, model_path, train_gen=train['gen'], val_gen=val['gen'] , steps=n)

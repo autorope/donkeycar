@@ -15,11 +15,13 @@ from keras.regularizers import l2
 
 
 def conv_layer_factory(x, filters=None, kernal=None, 
-                          strides=None, activation='relu'):
+                          strides=None, pool=None, 
+                          activation='relu'):
     
     x = Convolution2D(filters, kernal, strides=strides, 
                       activation=activation)(x)
-    #x = MaxPooling2D(pool_size=(2, 2))(x)
+    if pool is not None:
+        x = MaxPooling2D(pool_size=pool)(x)
     return x
 
 
@@ -88,7 +90,7 @@ nvidia_arch = {'conv': nvidia_conv, 'dense':nvidia_dense}
 
 
 
-def train_gen(model, model_path, train_gen, val_gen, n=10):
+def train_gen(model, model_path, train_gen, val_gen, steps=10, epochs=100, ):
     '''
     Function to train models and save their best models after each epoch.
     Return the hist object.
@@ -108,11 +110,11 @@ def train_gen(model, model_path, train_gen, val_gen, n=10):
 
     hist = model.fit_generator(
                             train_gen, 
-                            steps_per_epoch=n, 
-                            nb_epoch=100, 
+                            steps_per_epoch=steps, 
+                            nb_epoch=epochs, 
                             verbose=1, 
                             callbacks=callbacks_list, 
                             validation_data=val_gen, 
-                            nb_val_samples=n*.2)
+                            nb_val_samples=steps*.2)
 
     return hist
