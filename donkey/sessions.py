@@ -1,3 +1,13 @@
+''' 
+sessions.py
+
+Class to simplify how data is saved while recording.
+
+TODO: This should be merged with the dataset abstraction and made into
+something like ROSBAGS. 
+
+'''
+
 import os
 import time
 import itertools

@@ -1,3 +1,10 @@
+'''
+vehicles.py
+
+Class to pull together all parts that operate the vehicle including,
+sensors, actuators, pilots and remotes.
+'''
+
 import time
 
 class BaseVehicle:
@@ -26,7 +33,7 @@ class BaseVehicle:
             now = time.time()
             milliseconds = int( (now - start_time) * 1000)
 
-            #get image array image from camera
+            #get image array image from camera (threaded)
             img_arr = self.camera.capture_arr()
 
             angle, throttle, drive_mode = self.remote.decide_threaded(img_arr,
@@ -35,12 +42,14 @@ class BaseVehicle:
                                                  milliseconds)
 
             if drive_mode == 'local':
+                angle, throttle = self.pilot.decide(img_arr)
 
-                angle, throttle = self.pilot.decide( img_arr)
-
+            if drive_mode == 'local_angle':
+                #only update angle from local pilot
+                angle, _ = self.pilot.decide(img_arr)
 
             self.actuator_mixer.update(throttle, angle)
 
             #print current car state
-            print('angle: %s   throttle: %s' %(angle, throttle) )           
+            print('\r CAR: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, drive_mode), end='')           
             time.sleep(self.drive_loop_delay)

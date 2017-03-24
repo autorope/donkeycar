@@ -1,5 +1,7 @@
 '''
 
+pilots.py
+
 Methods to create, use, save and load pilots. Pilots 
 contain the highlevel logic used to determine the angle
 and throttle of a vehicle. Pilots can include one or more 
@@ -32,7 +34,7 @@ class BasePilot():
         return angle, speed
 
     def load(self):
-        return self
+        pass
 
 
 
@@ -42,6 +44,7 @@ class KerasCategorical(BasePilot):
         self.model = None #load() loads the model
         super().__init__(**kwargs)
 
+
     def decide(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
@@ -49,16 +52,17 @@ class KerasCategorical(BasePilot):
         angle_unbinned = utils.unbin_Y(angle_binned)
         return angle_unbinned[0], throttle[0][0]
 
+
     def load(self):
         self.model = keras.models.load_model(self.model_path)
-        return self
 
 
 
 class PilotHandler():
-    """ Convinience class to load default pilots """
+    """ 
+    Convenience class to load default pilots 
+    """
     def __init__(self, models_path):
-
         self.models_path = os.path.expanduser(models_path)
         
         
@@ -70,7 +74,10 @@ class PilotHandler():
             last_modified = datetime.fromtimestamp(d.stat().st_mtime)
             pilot = KerasCategorical(d.path, name=d.name, last_modified=last_modified)
             pilot_list.append(pilot)
+
+        print (pilot_list)
         return pilot_list
+
 
     def default_pilots(self):
         """ Load pilots from models and add CV pilots """

@@ -1,3 +1,9 @@
+'''
+utils.py
+
+Functions that don't fit anywhere else.
+
+'''
 import random 
 import pickle
 import math
@@ -22,7 +28,6 @@ def scale(im, size=128):
     accepts: PIL image, size of square sides
     returns: PIL image scaled so sides lenght = size 
     '''
-    
     size = (size,size)
     im.thumbnail(size, Image.ANTIALIAS)
     return im
@@ -33,7 +38,6 @@ def img_to_binary(img):
     accepts: PIL image
     returns: binary stream (used to save to database)
     '''
-
     f = BytesIO()
     img.save(f, format='jpeg')
     return f.getvalue()
@@ -77,6 +81,7 @@ def binary_to_img(binary):
 def norm_img(img):
     return (img - img.mean() / np.std(img))/255.0
 
+
 def create_video(img_dir_path, output_video_path):
     import envoy
     # Setup path to the images with telemetry.
@@ -104,7 +109,7 @@ def create_video(img_dir_path, output_video_path):
 
 
 '''
-file utilities
+FILES
 '''
 
 
@@ -160,36 +165,6 @@ def unbin_Y(Y):
 
 
 
-def bin_telemetry(angle, throttle):
-    #convert angle between -90 (left) and 90 (right) into a 15 bin array.
-    a_arr = np.zeros(15, dtype='float')
-    a_arr[log_bin(angle)] = 1
-    
-    #convert throttle between 0 (stopped) and 100 (full throttle) into a 5 bin array.
-    t_arr = np.zeros(7, dtype='float')
-    t_arr[log_bin(throttle, has_negative=False)] = 1    
-     
-    y = np.concatenate([a_arr, t_arr])
-    
-    #return array containing both angle and throttle bins.
-    #y.shape = (15+6)
-    return y
-
-
-
-def unbin_telemetry(y):
-    #convert binned telemetry array to angle and throttle
-    a_arr = y[:15]
-    t_arr = y[15:]
-    
-    angle = log_unbin(np.argmax(a_arr)) #not 90 so 0 angle is possible
-    print(np.argmax(a_arr))
-    throttle = log_unbin(np.argmax(t_arr), has_negative=False)
-    
-    return angle, throttle
-
-
-
 
 
 '''
@@ -202,6 +177,11 @@ def my_ip():
     return s.getsockname()[0]
 
 
+
+
+'''
+OTHER
+'''
 def merge_two_dicts(x, y):
     """Given two dicts, merge them into a new dict as a shallow copy."""
     z = x.copy()
