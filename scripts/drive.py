@@ -48,13 +48,18 @@ if __name__ == '__main__':
     #asych img capture from picamera
     mycamera = dk.sensors.PiVideoStream()
     
-    #Get all autopilot signals from remote host
-    mypilot = dk.remotes.RemoteClient(remote_url, vehicle_id=cfg['vehicle_id'])
+    #setup the remote host
+    myremote = dk.remotes.RemoteClient(remote_url, vehicle_id=cfg['vehicle_id'])
+
+    #setup a local pilot
+    mypilot = dk.pilots.KerasCategorical(model_path=cfg['local_pilot_model'])
+    mypilot.load()
 
     #Create your car
     car = dk.vehicles.BaseVehicle(drive_loop_delay=cfg['vehicle_loop_delay'],
                                   camera=mycamera,
                                   actuator_mixer=mymixer,
+                                  remote=myremote,
                                   pilot=mypilot)
     
     #Start the drive loop

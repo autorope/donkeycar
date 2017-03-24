@@ -30,11 +30,7 @@ class BasePilot():
     def decide(self, img_arr):
         angle = 0.0
         speed = 0.0
-
-        #Do prediction magic
-
         return angle, speed
-
 
     def load(self):
         return self
