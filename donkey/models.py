@@ -45,7 +45,7 @@ def categorical_model_factory(conv=None, dense=None):
     for c in conv:
         x = conv_layer_factory(x, **c)
         
-    x = Flatten()(x)
+    x = Flatten(name='flattened')(x)
     
     #create dense layers
     for d in dense:
@@ -55,14 +55,14 @@ def categorical_model_factory(conv=None, dense=None):
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)
     
     #continous output of throttle
-    throttle_out = Dense(1, activation='linear', name='throttle_out')(x)
+    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
 
     #define loss function that weights angle loss more than throttle loss
     model.compile(optimizer='rmsprop',
                   loss={'angle_out': 'categorical_crossentropy', 'throttle_out': 'mean_absolute_error'},
-                  loss_weights={'angle_out': 1., 'throttle_out': .3})
+                  loss_weights={'angle_out': 0.9, 'throttle_out': .1})
     
     return model
 
@@ -102,7 +102,7 @@ def train_gen(model, model_path, train_gen, val_gen, steps=10, epochs=100, ):
                                           save_best_only=True, mode='min')
 
     #stop training if the validation error stops improving.
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=6, 
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
                                          verbose=1, mode='auto')
 
     callbacks_list = [save_best, early_stop]
