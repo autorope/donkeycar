@@ -366,11 +366,11 @@ class ControlAPI(tornado.web.RequestHandler):
         V['pilot_throttle'] = pilot_throttle
 
         #depending on the drive mode, return user or pilot values
-        if V['drive_mode'] == 'user':
-            angle, throttle  = V['user_angle'], V['user_throttle']
-        elif V['drive_mode'] == 'auto_angle':
+
+        angle, throttle  = V['user_angle'], V['user_throttle']
+        if V['drive_mode'] == 'auto_angle':
             angle, throttle  = V['pilot_angle'], V['user_throttle']
-        else:
+        elif V['drive_mode'] == 'auto':
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
         print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
