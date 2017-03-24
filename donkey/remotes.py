@@ -65,8 +65,8 @@ class RemoteClient():
             #get latest value from server
             angle, throttle, drive_mode = self.decide(self.state['img_arr'], 
                                                       self.state['angle'],
-                                                      self.state['throttle']
-                                                      self.state['milliseconds']
+                                                      self.state['throttle'],
+                                                      self.state['milliseconds'],)
             #update sate with current values
             self.state['angle'] = angle
             self.state['throttle'] = throttle
@@ -116,6 +116,7 @@ class RemoteClient():
                 time.sleep(3)
             
             except (requests.exceptions.ReadTimeout) as err:
+            #Lower throttle if their is a long lag.
                 print("Request took too long. Retrying")
                 return angle, throttle * .8
                 
