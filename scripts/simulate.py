@@ -2,31 +2,43 @@
 Run a fake car on the same machine as your server. Fake images are 
 created for the camera.
 
+Usage:
+    simulate.py [--remote=<name>] 
+
+
+Options:
+  --remote=<name>   remote url
+
 """
 
 
 import os
 
 import donkey as dk
+from docopt import docopt
 
-X, Y = dk.datasets.moving_square(n_frames=1000)
+args = docopt(__doc__)  
 
-#sh = dk.sessions.SessionHandler('/home/wroscoe/donkey_data/sessions')
-#s = sh.load('test')
-#X, Y = s.load_dataset()
-
+X, Y = dk.datasets.moving_square(n_frames=3000)
 
 camera_sim = dk.sensors.ImgArrayCamera(X) #For testing
 
 mixer = dk.mixers.BaseMixer()
 
-remote_pilot = dk.remotes.RemoteClient('http://localhost:8887', vehicle_id='mysim')
+if args['--remote'] is not None:
+    remote_url = args['--remote']
+else:
+    remote_url = 'http://localhost:8887'
 
+remote = dk.remotes.RemoteClient(remote_url, vehicle_id='mysim')
+pilot = dk.pilots.KerasCategorical(model_path='/home/wroscoe/mydonkey/models/ms.h5')
+pilot.load()
 
-car = dk.vehicles.BaseVehicle(drive_loop_delay=.5,
+car = dk.vehicles.BaseVehicle(drive_loop_delay=.05,
                               camera=camera_sim,
 							  actuator_mixer=mixer,
-                              pilot=remote_pilot)
+                              remote=remote,
+                              pilot=pilot)
 
 #start the drive loop
 car.start()
