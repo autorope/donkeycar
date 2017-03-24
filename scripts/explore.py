@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
             #MODEL
             model = dk.models.categorical_model_factory(**mp)
-            model_path = os.path.join(test_dir_path, test_name + str(test_count))
+            model_path = os.path.join(test_dir_path, test_name + '_' + str(test_count))
 
             results['conv_layers'] = str(mp['conv'])
             results['dense_layers'] = str(mp['dense'])

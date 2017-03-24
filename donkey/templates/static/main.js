@@ -299,6 +299,7 @@ var driveHandler = (function() {
           {
             
             var joystickX = applyDeadzone(pad.axes[2], 0.05);
+
             var joystickY = applyDeadzone(pad.axes[1], 0.15);
             
             state.tele.user.angle = joystickX;
@@ -317,6 +318,7 @@ var driveHandler = (function() {
             }
 
             postDrive()
+
           }
             // todo; simple demo of displaying pad.axes and pad.buttons
         }
@@ -625,3 +627,4 @@ function remap( x, oMin, oMax, nMin, nMax ){
 
 return result;
 }
+
