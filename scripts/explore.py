@@ -54,39 +54,31 @@ if __name__ == '__main__':
 
     #Define the model parameters you'd like to explore.
 
-    nvidia_dense2 = [{'units': 256, 'dropout': .2}]
+    dense1 = [{'units': 32, 'dropout': .2}]
 
-    nvidia_conv2 = [{'filters': 24, 'kernal': (5,5), 'strides':(2,2)}, 
-            {'filters': 32, 'kernal': (5,5), 'strides':(2,3)},
-            {'filters': 64, 'kernal': (5,5), 'strides':(2,2)},
-            {'filters': 64, 'kernal': (3,3), 'strides':(2,2)},
-            {'filters': 64, 'kernal': (3,3), 'strides':(1,1)}]
+    dense2 = [{'units': 64, 'dropout': .2}]
 
-    nvidia_conv3 = [{'filters': 24, 'kernal': (5,5), 'strides':(2,2)}, 
-            {'filters': 32, 'kernal': (5,5), 'strides':(2,3)},
-            {'filters': 64, 'kernal': (5,5), 'strides':(2,2)},
-            {'filters': 64, 'kernal': (3,3), 'strides':(2,2)},
-            {'filters': 64, 'kernal': (3,3), 'strides':(1,1)},
-            {'filters': 64, 'kernal': (3,3), 'strides':(1,1)}]
 
-    nvidia_conv4 = [{'filters': 24, 'kernal': (5,5), 'strides':(2,2), 'pool':(2,2)}, 
-            {'filters': 32, 'kernal': (5,5), 'strides':(2,2)},
-            {'filters': 64, 'kernal': (5,5), 'strides':(2,2)},
-            {'filters': 64, 'kernal': (3,3), 'strides':(2,2)}]
-
-    nvidia_conv5 = [
+    conv1 = [
             {'filters': 8, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)}, 
             {'filters': 16, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)},
             {'filters': 32, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)}
             ]
 
+    conv2 = [
+            {'filters': 8, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)}, 
+            {'filters': 16, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)},
+            {'filters': 32, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)},
+            {'filters': 32, 'kernal': (3,3), 'strides':(1,1), 'pool':(2,2)}
+            ]
+
     model_params ={
-             'conv': [ dk.models.nvidia_conv, nvidia_conv2, nvidia_conv3, nvidia_conv4, nvidia_conv5  ],
-             'dense':[ dk.models.nvidia_dense, nvidia_dense2 ],
+             'conv': [ conv1, conv2, ],
+             'dense':[ dense1, dense2 ],
             }
 
 
-    batch_size = 128
+    batch_size = 64
 
     
     #create permutations of the models. 
