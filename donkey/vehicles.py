@@ -31,12 +31,14 @@ class BaseVehicle:
         #drive loop
         while True:
             now = time.time()
+            start = now
+
             milliseconds = int( (now - start_time) * 1000)
 
             #get image array image from camera (threaded)
             img_arr = self.camera.capture_arr()
 
-            angle, throttle, drive_mode = self.remote.decide_threaded(img_arr,
+            angle, throttle, drive_mode = self.remote.decide(img_arr,
                                                  angle, 
                                                  throttle,
                                                  milliseconds)
@@ -51,5 +53,8 @@ class BaseVehicle:
             self.actuator_mixer.update(throttle, angle)
 
             #print current car state
-            print('\r CAR: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, drive_mode), end='')           
+            end = time.time()
+            lag = end - start
+            print('\r CAR: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}  lag: {:+04.2f}'.format(angle, throttle, drive_mode, lag), end='')           
+            
             time.sleep(self.drive_loop_delay)
