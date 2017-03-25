@@ -46,7 +46,7 @@ if __name__ == '__main__':
                                                   right_pulse=cfg['steering_actuator_max_pulse'])
 
     #abstract class to combine actuators
-    mymixer = dk.mixers.FrontSteeringMixer(mysteering, mythrottle)
+    mymixer = dk.mixers.AckermannSteeringMixer(mysteering, mythrottle)
 
     #asych img capture from picamera
     mycamera = dk.sensors.PiVideoStream()
