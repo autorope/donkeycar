@@ -57,7 +57,7 @@ class NAVIO2_Controller:
     ''' 
     NAVIO2 HAT Controller.
     '''
-    def __init__(self, channel=0, frequency=400):
+    def __init__(self, channel=0, frequency=50):
         from navio import pwm
         
         # Initialise the NAVIO2 STM32
@@ -67,7 +67,8 @@ class NAVIO2_Controller:
         self.pwm.set_period(frequency)
 
     def set_pulse(self, value):
-        self.pwm.set_duty_cycle(value)
+        #pulse is scaled by 1000 to convert from us -> ms
+        self.pwm.set_duty_cycle(float(value) / 1000.0)
 
 
 class PWMSteeringActuator:
