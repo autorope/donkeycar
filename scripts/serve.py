@@ -1,6 +1,7 @@
 """
-Script to start the server to controll your car remotely via on Raspberry Pi that 
-constantly requests directions from a remote server.
+serve.py
+
+Script to start the remote server to controll your car.
 
 """
 

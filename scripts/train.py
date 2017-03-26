@@ -3,21 +3,19 @@ Example of how to train a keras model from simulated images or a
 previously recorded session.
 
 Usage:
-    train.py (--sessions=<sessions>) (--name=<name>)
-    train.py (--url=<url>) (--name=<name>) 
-    train.py (--dataset=<dataset>) (--name=<name>) 
+    train.py [--datasets=<datasets>] [--sessions=<sessions>] (--name=<name>) 
 
 
 Options:
-  --sessions=<sessions>   session to train on
-  --url=<url>   url of dataset
-  --dataset=<dataset>   file path of dataset
+  --datasets=<datasets>   file path of dataset
+  --sessions=<sessions>   file path of sessions
   --name=<name>   name of model to be saved
 """
 
 import os
 import time
 from docopt import docopt
+import tempfile
 
 import donkey as dk
 from keras.callbacks import ModelCheckpoint
@@ -29,59 +27,32 @@ import keras
 if __name__ == "__main__":
     args = docopt(__doc__)
 
-    #Load dataset from either sesions or url
-    if args['--sessions'] is not None:
-        sessions = args['--sessions'].split(',')
-        X,Y = dk.sessions.sessions_to_dataset(sessions)
-    elif args['--url'] is not None:
-        url = args['--url']
-        X, Y = dk.datasets.load_url(url)
-    elif args['--dataset'] is not None:
-        dataset_path = args['--dataset']
-        print('loading data from %s' %dataset_path)
-        X,Y = dk.sessions.hdf5_to_dataset(dataset_path)
+    batch_size = 128
+
+    if args['--datasets'] is not None:
+        datasets = args['--datasets'].split(',')
+        datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
+        print('loading data from %s' %datasets)
+        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
     
+    elif args['--sessions'] is not None:
+        session_names = args['--sessions'].split(',')
+        X, Y = dk.sessions.sessions_to_dataset(session_names=session_names)
+        dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
+        dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
+        datasets = [dataset_path]
+        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
+
+    steps = round(train['n'] / batch_size)
+
+
     model_name = args['--name']
    
+    #create model
+    model = dk.models.categorical_model_factory(**dk.models.nvidia_arch)
 
-    #Suggested model parameters    
-    conv=[(8,3,3), (16,3,3), (32,3,3), (32,3,3)]
-    dense=[32]
-    dropout=.2
-    learning_rate = .0001
-    decay = 0.0
-    batch_size=32
-    validation_split=0.1
-    epochs = 100
+    #path to save the model
+    model_path = os.path.join(dk.config.models_path, model_name+".hdf5")
 
-    #Generate and compile model
-    model = dk.models.cnn3_full1_relu(conv, dense, dropout)
-    optimizer = keras.optimizers.Adam(lr=learning_rate, decay=decay)
-    model.compile(optimizer=optimizer, loss='mean_squared_error')
-                
-
-    train, val, test = dk.utils.split_dataset(X, Y, val_frac=.1, test_frac=0.0,
-                                              shuffle=True, seed=1234)
-
-    X_train, Y_train = train
-    X_val, Y_val = val
-
-
-    file_path = os.path.join(dk.config.models_path, model_name+".hdf5")
-
-    #checkpoint to save model after each epoch
-    save_best = keras.callbacks.ModelCheckpoint(file_path, monitor='val_loss', verbose=1, 
-                                          save_best_only=False, mode='min')
-
-    #stop training if the validation error stops improving.
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4, 
-                                         verbose=1, mode='auto')
-
-    callbacks_list = [save_best, early_stop]
-
-
-    hist = model.fit(X, Y, batch_size=batch_size, nb_epoch=epochs, 
-                    validation_data=(X_val, Y_val), callbacks=callbacks_list)
-
-
-    print(model.evaluate(X, Y))
+    #train the model
+    dk.models.train_gen(model, model_path, train_gen=train['gen'], val_gen=val['gen'] , steps=n)
