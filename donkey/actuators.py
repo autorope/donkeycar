@@ -1,18 +1,19 @@
-# Simple car movement using the PCA9685 PWM servo/LED controller library.
-# 
-# Attribution: hacked from sample code from Tony DiCola
+"""
+actuators.py
+
+Classes to control the motors and servos. These classes 
+are wrapped in a mixer class before being used in the drive loop.
+
+"""
 
 import time
 import sys
 
-# Import the PCA9685 module.
-
-# Uncomment to enable debug output.
-#import logging
-#logging.basicConfig(level=logging.DEBUG)
-
 
 def map_range(x, X_min, X_max, Y_min, Y_max):
+    ''' 
+    Linear mapping between two ranges of values 
+    '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
@@ -21,13 +22,27 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
 
     return int(y)
 
-class Dummy_Controller:
 
-    def __init__(self, channel, frequency):
-        pass
+    
+class RasPiRobot_Controller:
+    def __init__(self, driveLeft, driveRight):
+        import rrb3
+        rr = RRB3(9, 6)
+        leftDir = 0
+        rightDir = 0
+        if driveLeft < 0:  # change direction if number is negative
+            leftDir = 1
+        if driveRight < 0:
+            rightDir = 1
+        rr.set_motors(abs(driveLeft), leftDir, abs(driveRight), rightDir)
 
+
+        
 class PCA9685_Controller:
-    # Init with 60hz frequency by default, good for servos.
+    ''' 
+    Adafruit PWM controler. 
+    This is used for most RC Cars
+    '''
     def __init__(self, channel, frequency=60):
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
@@ -38,6 +53,8 @@ class PCA9685_Controller:
 
     def set_pulse(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 
+
+
         
 class PWMSteeringActuator:
     #max angle wheels can turn
@@ -52,6 +69,7 @@ class PWMSteeringActuator:
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
 
+
     def update(self, angle):
         #map absolute angle to angle that vehicle can implement.
         pulse = map_range(angle, 
@@ -59,6 +77,7 @@ class PWMSteeringActuator:
                           self.left_pulse, self.right_pulse)
 
         self.controller.set_pulse(pulse)
+
 
 
 class PWMThrottleActuator:
@@ -87,7 +106,6 @@ class PWMThrottleActuator:
 
 
     def update(self, throttle):
-        print('throttle update: %s' %throttle)
         if throttle > 0:
             pulse = map_range(throttle,
                               0, self.MAX_THROTTLE, 
@@ -97,13 +115,17 @@ class PWMThrottleActuator:
                               self.MIN_THROTTLE, 0, 
                               self.min_pulse, self.zero_pulse)
 
-        print('pulse: %s' % pulse)
         sys.stdout.flush()
         self.controller.set_pulse(pulse)
         return '123'
 
 
+
 class Adafruit_Motor_Hat_Controller:
+    ''' 
+    Adafruit DC Motor Controller 
+    For differential drive cars you need one controller for each motor.
+    '''
     def __init__(self, motor_num):
         from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
         import atexit
@@ -119,11 +141,16 @@ class Adafruit_Motor_Hat_Controller:
         self.speed = 0
         self.throttle = 0
     
+
     def turn_off_motors(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
 
         
     def turn(self, speed):
+        '''
+        Update the speed of the motor where 1 is full forward and
+        -1 is full backwards.
+        '''
         if speed > 1 or speed < -1:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         
@@ -136,6 +163,7 @@ class Adafruit_Motor_Hat_Controller:
             self.motor.run(self.BACKWARD)
             
         self.motor.setSpeed(self.throttle)
+        
         
     def test(self, seconds=.5):
         speeds = [-.5, -1, -.5, 0, .5, 1, 0]

@@ -1,14 +1,21 @@
+'''
+mixers.py
+
+Classes to wrap motor controllers into a functional drive unit.
+'''
+
 import time
 import sys
 from donkey import actuators
 
+
 class BaseMixer():
 
     def update_angle(self, angle):
-        print('BaseSteeringActuator.update: angle=%s' %angle)
+        pass
 
     def update_throttle(self, throttle):
-        print('BaseThrottleActuator.update: throttle=%s' %throttle)
+        pass
 
     def update(self, throttle=0, angle=0):
         '''Convenience function to update
@@ -17,24 +24,29 @@ class BaseMixer():
         self.update_throttle(throttle)
 
 
-class FrontSteeringMixer(BaseMixer):
 
+class AckermannSteeringMixer(BaseMixer):
+    '''
+    Mixer for vehicles steered by changing the angle of the front wheels.
+    This is used for RC cars
+    '''
     def __init__(self, 
                  steering_actuator=None, 
                  throttle_actuator=None):
         self.steering_actuator = steering_actuator
         self.throttle_actuator = throttle_actuator
 
+
     def update(self, throttle, angle):
         self.steering_actuator.update(angle)
-
         self.throttle_actuator.update(throttle)
+
 
 
 class DifferentialDriveMixer:
     """
-    A class to encompass the steering and throttle
-    actions of a a differential drive vehicle. 
+    Mixer for vehicles driving differential drive vehicle.
+    Currently designed for cars with 2 wheels.
     """
     def __init__(self, left_motor, right_motor):
 
@@ -44,6 +56,7 @@ class DifferentialDriveMixer:
         self.angle=0
         self.throttle=0
     
+
     def update(self, throttle, angle):
         self.throttle = throttle
         self.angle = angle
