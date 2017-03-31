@@ -38,7 +38,7 @@ class BaseVehicle:
             #get image array image from camera (threaded)
             img_arr = self.camera.capture_arr()
 
-            angle, throttle, drive_mode = self.remote.decide(img_arr,
+            angle, throttle, drive_mode = self.remote.decide_threaded(img_arr,
                                                  angle, 
                                                  throttle,
                                                  milliseconds)
