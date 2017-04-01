@@ -34,9 +34,18 @@
             <div class="form-group">
               <select id="max_throttle_select" class="form-control">
                 <option disabled selected> Select Max Throttle </option>
-                {% for t in [10, 20, 40, 60, 80, 100] %}
+                {% for t in [5, 10, 15, 20, 25, 30, 35, 40, 60, 80, 100] %}
                   <option value="{{ t / 100.0 }}">{{ t }}%</option>
                 {% end %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="max-width:30%;">
+            <label class="group-label">Throttle Mode</label><br/>
+            <div class="form-group">
+              <select id="throttle_mode_select" class="form-control">
+                <option value="user" selected>User</option>
+                <option value="constant">Constant (Selected Max)</option>
               </select>
             </div>
           </div>
