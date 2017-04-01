@@ -16,6 +16,7 @@ import os
 
 import donkey as dk
 from docopt import docopt
+from os.path import expanduser
 
 args = docopt(__doc__)  
 
@@ -30,8 +31,9 @@ if args['--remote'] is not None:
 else:
     remote_url = 'http://localhost:8887'
 
+model_path = expanduser("~") + '/mydonkey/models/default.h5'
 remote = dk.remotes.RemoteClient(remote_url, vehicle_id='mysim')
-pilot = dk.pilots.KerasCategorical(model_path='/home/wroscoe/mydonkey/models/ms.h5')
+pilot = dk.pilots.KerasCategorical(model_path=model_path)
 pilot.load()
 
 car = dk.vehicles.BaseVehicle(drive_loop_delay=.05,

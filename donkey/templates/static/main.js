@@ -21,6 +21,7 @@ var driveHandler = (function() {
                   'lag': 0,
                   'controlMode': 'joystick',
                   'maxThrottle' : 1,
+                  'throttleMode' : 'user',
                   }
 
     var joystick_options = {}
@@ -95,7 +96,11 @@ var driveHandler = (function() {
       });
       
       $('#max_throttle_select').on('change', function () {
-        state.maxThrottle = $(this).val();
+        state.maxThrottle = parseFloat($(this).val());
+      });
+      
+      $('#throttle_mode_select').on('change', function () {
+        state.throttleMode = $(this).val();
       });
       
       $('#record_button').click(function () {
@@ -459,6 +464,10 @@ var driveHandler = (function() {
       
       if (newThrottle < 0) {
         limitedThrottle = Math.max((state.maxThrottle * -1), newThrottle);
+      }
+      
+      if (state.throttleMode == 'constant') {
+        limitedThrottle = state.maxThrottle;
       }
       
       return limitedThrottle;
