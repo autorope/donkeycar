@@ -262,7 +262,7 @@ def parse_img_filepath(filepath):
 
     throttle = round(float(f[3]), 2)
     angle = round(float(f[5]), 2)
-    milliseconds = int(f[7])
+    milliseconds = round(float(f[7]))
     
     data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds} 
     return data
