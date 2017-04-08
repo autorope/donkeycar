@@ -22,7 +22,7 @@
 * DriveAPI - receive POST requests from VehicleView to control steering and throttle
 * VideoAPI - serves a MJPEG of images from the vehicle updated at 5fps
 * ControlAPI - Receive POST from vehicle and return steering/throttle from a pilot
-** Logs - REMOTE angle: throttle: drive_mode:
+* Logs - REMOTE angle: throttle: drive_mode:
 
 # runs on the RPi on the car - scripts/drive.py
 * started with URL to server as argument
@@ -40,8 +40,8 @@
 ### RemoteClient - send post requests to the server
 * update - loop to request the server, delay 20ms
 * decide - post sensor data to server and get angle/throttle back
-** connection failures retry after 3s
-** timeouts after 250ms, reduce throttle to 80%
+* connection failures retry after 3s
+* timeouts after 250ms, reduce throttle to 80%
 ## mixers.py - blend steering and throttle
 * options for separate steering servo and for differential motor drive
 ## sensors.py - camera and a test fake camera only
@@ -68,6 +68,21 @@
 ## scripts/sessions_to_hdf5.py - create a model containing dataset from session(s)
 ## scripts/simulate.py - run a fake car on the server, generate fake images
 ## scripts/train.py - train a keras model from simulated or recorded sessions
+* batch size 128
+* sessions.sessions_to_dataset - combine multiple sessions into a dataset
+* datasets.split_datasets - separate training and validation data, 10% chunks
+* models.categorical_model_factory - create model using nvidia_conv
+* models.train_gen - steps set to number of training batches (I think?)
+## models.py - create and train models
+### nvidia_conv - five convolution layers and two dense layers
+### categorical_model_factory - create model with categorical angle/continuous throttle outputs
+* model.compile - loss function weights angle loss 0.9 more than throttle loss 0.1
+### train_gen - train and save the best until validation error stops improving
+* model.fit_generator - default 10 steps per epoch - set by amount of data, 100 epochs
+## datasets.py - datasets are images and and angle/throttle values
+### split_datasets - return three shuffled generators for train, validate and test
+## sessions.py - images with angle, throttle and milliseconds since start in filename
+* Example frame_01359_ttl_0.25_agl_3.4989908547067235e-18_mil_0.0.jpg
 
 # Utilities
 ## scripts/setup.py - create default folder, copy config file and model to be customized
