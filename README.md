@@ -2,7 +2,7 @@
 
 Donkey is minimalist and modular self driving library written in Python. It is developed for hobbiests with a focus on allowing fast experimentation and easy community contributions.  
 
-####Use Donkey if you want to:
+#### Use Donkey if you want to:
 * [Quickly build your own self driving RC car.](https://docs.google.com/document/d/11IPqZcDcLTd2mtYaR5ONpDxFgL9Y1nMNTDvEarST8Wk/edit#heading=h.rqp8wbm837hn) (~$200 + 4hrs).
 * Use existing autopilots to drive your car.
 * Use community datasets to create, improve and test autopilots that other people can use.  
@@ -16,11 +16,15 @@ Donkey is minimalist and modular self driving library written in Python. It is d
 
 
 ### Drive your car
-Once you have built your car you can use it like this.
+Once you have built your car and it's connected to the same wifi as your computer.
 
-1. Start the default pilot server. `python scripts/serve.py`
-2. Start your car and connect it to the pilot server. `python scripts/drive.py  --remote http://<your_pilot_server_ip>:8887`
-3. Go to `<your_pilot_server_ip>:8887` on your phone or computer to start driving your car. 
+1. Open a terminal and clone the donkey repo: `git clone https://github.com/wroscoe/donkey`
+2. Start the default pilot server using docker: `bash start-server.py`
+3. Open a new terminal and find your car's Raspberry Pi's IP address: `python scripts/find_car.py` 
+4. SSH to your car's Raspberry Pi: `ssh pi@<your pi's ip address>` (default password = raspberry) 
+5. Start your car's driver loop: `python scripts/drive.py  --remote http://<your computers ip address>:8887`
+6. Turn on your car.
+7. Go to `<your_pilot_server_ip>:8887` on your phone or computer to start driving your car. 
 
  
 
