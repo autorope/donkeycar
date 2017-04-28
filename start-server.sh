@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#make directory that will be mounted in the docker instance.
+mkdir -p ~/mydonkey
+
 # First check whether the named volume and image exist; if not, build/initialize them.
 
 # Create volume if not already there
@@ -34,7 +37,7 @@ while getopts ":vbd" opt; do
 		;;
     d)
 		echo "start-server: Running Donkey server container without serve.py and attaching..." >&2
-		docker run -p 8887:8887 -v mydonkey:/root/mydonkey --entrypoint=/bin/bash -it donkey
+		docker run -p 8887:8887 -v ~/mydonkey:/root/mydonkey --entrypoint=/bin/bash -it donkey
 		exit
 		;;
     \?)
@@ -45,4 +48,4 @@ while getopts ":vbd" opt; do
 done
 
 echo "start-server: Running Donkey server container..." >&2
-docker run -p 8887:8887 -v mydonkey:/root/mydonkey donkey
+docker run -p 8887:8887 -v ~/mydonkey:/root/mydonkey donkey

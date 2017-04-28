@@ -55,4 +55,4 @@ if __name__ == "__main__":
     model_path = os.path.join(dk.config.models_path, model_name+".hdf5")
 
     #train the model
-    dk.models.train_gen(model, model_path, train_gen=train['gen'], val_gen=val['gen'] , steps=n)
+    dk.models.train_gen(model, model_path, train_gen=train['gen'], val_gen=val['gen'] , steps=steps)
