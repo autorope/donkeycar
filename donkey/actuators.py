@@ -54,6 +54,35 @@ class PCA9685_Controller:
     def set_pulse(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 
 
+class Maestro_Controller:
+    '''
+    Pololu Maestro Servo controller
+    Use the MaestroControlCenter to set the speed & acceleration values to 0!
+    '''
+    import serial
+    import threading
+
+    usb_device = None
+    lock = threading.Lock()
+
+    def __init__(self, channel, frequency = 60):
+        if Maestro_Controller.usb_device == None:
+            Maestro_Controller.usb_device = serial.Serial('/dev/ttyACM0', 115200)
+
+        self.channel = channel
+        self.frequency = frequency
+
+    def set_pulse(self, pulse):
+        # Recalculate pulse width from the Adafruit values
+        w = pulse * (1 / (self.frequency * 4096)) # in seconds
+        w *= 1000 * 1000  # in milliseconds
+        w *= 4  # in quarter millisenconds the maestro wants
+
+        with Maestro_Controller.lock:
+            Maestro_Controller.usb_device.write(bytearray([ 0x84,
+                                                            self.channel,
+                                                            (w & 0x7F),
+                                                            ((w >> 7) & 0x7F)]))
 
         
 class PWMSteeringActuator:
