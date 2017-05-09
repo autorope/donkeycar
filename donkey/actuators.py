@@ -59,13 +59,13 @@ class Maestro_Controller:
     Pololu Maestro Servo controller
     Use the MaestroControlCenter to set the speed & acceleration values to 0!
     '''
-    import serial
     import threading
 
     usb_device = None
     lock = threading.Lock()
 
     def __init__(self, channel, frequency = 60):
+        import serial
         if Maestro_Controller.usb_device == None:
             Maestro_Controller.usb_device = serial.Serial('/dev/ttyACM0', 115200)
 
@@ -84,10 +84,10 @@ class Maestro_Controller:
                                                             (w & 0x7F),
                                                             ((w >> 7) & 0x7F)]))
 
-        
+
 class PWMSteeringActuator:
     #max angle wheels can turn
-    LEFT_ANGLE = -1 
+    LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
     def __init__(self, controller=None,
