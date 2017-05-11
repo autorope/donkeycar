@@ -32,8 +32,8 @@ if __name__ == '__main__':
     cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
 
     #load the actuators (default is the adafruit servo hat)
-    mythrottlecontroller = dk.actuators.PCA9685_Controller(cfg['throttle_actuator_channel'])
-    mysteeringcontroller = dk.actuators.PCA9685_Controller(cfg['steering_actuator_channel'])
+    mythrottlecontroller = dk.actuators.Maestro_Controller(cfg['throttle_actuator_channel'])
+    mysteeringcontroller = dk.actuators.Maestro_Controller(cfg['steering_actuator_channel'])
 
     #set the PWM ranges
     mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     mymixer = dk.mixers.AckermannSteeringMixer(mysteering, mythrottle)
 
     #asych img capture from picamera
-    mycamera = dk.sensors.PiVideoStream()
+    mycamera = dk.sensors.WebcamVideoStream()
     
     #setup the remote host
     myremote = dk.remotes.RemoteClient(remote_url, vehicle_id=cfg['vehicle_id'])
