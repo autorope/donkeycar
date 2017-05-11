@@ -15,6 +15,7 @@ from threading import Thread
 import numpy as np
 
 import requests
+import tornado.gen
 import tornado.ioloop
 import tornado.web
 
