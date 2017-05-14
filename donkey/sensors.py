@@ -47,9 +47,11 @@ class BaseCamera:
         return utils.img_to_binary(img)
 
 class WebcamVideoStream(BaseCamera):
-    def __init__(self, resolution=(160, 120), framerate=20):
+    def __init__(self, resolution = (160, 120), framerate = 20):
         import pygame
         import pygame.camera
+
+        super().__init__(resolution = resolution)
 
         pygame.init()
         pygame.camera.init()
@@ -58,9 +60,8 @@ class WebcamVideoStream(BaseCamera):
         self.cam.start()
         self.framerate = framerate
 
-        # initialize the frame and the variable used to indicate
+        # initialize variable used to indicate
         # if the thread should be stopped
-        self.frame = None
         self.stopped = False
 
         print('WebcamVideoStream loaded.. .warming camera')
@@ -78,7 +79,8 @@ class WebcamVideoStream(BaseCamera):
                 # snapshot = self.cam.get_image()
                 # self.frame = list(pygame.image.tostring(snapshot, "RGB", False))
                 snapshot = self.cam.get_image()
-                self.frame = pygame.surfarray.pixels3d(pygame.transform.rotate(pygame.transform.flip(snapshot, True, False), 90))
+                snapshot1 = pygame.transform.scale(snapshot, self.resolution)
+                self.frame = pygame.surfarray.pixels3d(pygame.transform.rotate(pygame.transform.flip(snapshot1, True, False), 90))
 
             stop = datetime.now()
             s = 1 / self.framerate - (stop - start).total_seconds()
@@ -86,6 +88,10 @@ class WebcamVideoStream(BaseCamera):
                 time.sleep(s)
 
         self.cam.stop()
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
 
 class PiVideoStream(BaseCamera):
     def __init__(self, resolution=(160, 120), framerate=20):
