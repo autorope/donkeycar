@@ -128,7 +128,7 @@ class RemoteClient():
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
             
-            except (requests.exceptions.ReadTimeout) as err:
+            except (requests.ReadTimeout) as err:
                 #Lower throttle if their is a long lag.
                 print("\n Request took too long. Retrying")
                 return angle, throttle * .8, None
