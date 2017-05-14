@@ -2,7 +2,7 @@
 drive.py
 
 Script to run on the Raspberry PI to start your vehicle's drive loop. The drive loop
-will use post requests to the server specified in the remote argument. Run the 
+will use post requests to the server specified in the remote argument. Run the
 serve.py script on a different computer to start the remote server.
 
 Usage:
@@ -27,7 +27,7 @@ if __name__ == '__main__':
 
     #get the url for the remote host (for user control)
     remote_url = args['--remote']
-    
+
     #load config file
     cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
 
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     mysteeringcontroller = dk.actuators.Maestro_Controller(cfg['steering_actuator_channel'])
 
     #set the PWM ranges
-    mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
+    mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller,
                                                   min_pulse=cfg['throttle_actuator_min_pulse'],
                                                   max_pulse=cfg['throttle_actuator_max_pulse'],
                                                   zero_pulse=cfg['throttle_actuator_zero_pulse'])
@@ -50,7 +50,8 @@ if __name__ == '__main__':
 
     #asych img capture from picamera
     mycamera = dk.sensors.WebcamVideoStream()
-    
+    myspeed = dk.sensors.MaestroSpeed()
+
     #setup the remote host
     myremote = dk.remotes.RemoteClient(remote_url, vehicle_id=cfg['vehicle_id'])
 
@@ -61,9 +62,10 @@ if __name__ == '__main__':
     #Create your car
     car = dk.vehicles.BaseVehicle(drive_loop_delay=cfg['vehicle_loop_delay'],
                                   camera=mycamera,
+                                  speed = myspeed,
                                   actuator_mixer=mymixer,
                                   remote=myremote,
                                   pilot=mypilot)
-    
+
     #Start the drive loop
     car.start()

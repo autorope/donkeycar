@@ -1,4 +1,3 @@
-
 import io
 import os
 import time
@@ -11,13 +10,11 @@ from PIL import Image
 
 from donkey import utils
 
- 
 class BaseCamera:
-
     def __init__(self, resolution=(160, 120)):
         self.resolution = resolution
         self.frame = np.zeros(shape=(self.resolution[1], self.resolution[0], 3))
-        
+
     def start(self):
         # start the thread to read frames from the video stream
         t = Thread(target=self.update, args=())
@@ -41,7 +38,7 @@ class BaseCamera:
         print(type(arr))
         img = Image.fromarray(arr, 'RGB')
         return img
-        
+
     def capture_binary(self):
         img = self.capture_img()
         return utils.img_to_binary(img)
@@ -105,19 +102,17 @@ class PiVideoStream(BaseCamera):
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
             format="rgb", use_video_port=True)
- 
+
         # initialize the frame and the variable used to indicate
         # if the thread should be stopped
         self.frame = None
         self.stopped = False
-        
+
         print('PiVideoStream loaded.. .warming camera')
 
         time.sleep(2)
         self.start()
 
-
- 
     def update(self):
         # keep looping infinitely until the thread is stopped
         for f in self.stream:
@@ -125,7 +120,7 @@ class PiVideoStream(BaseCamera):
             # preparation for the next frame
             self.frame = f.array
             self.rawCapture.truncate(0)
- 
+
             # if the thread indicator variable is set, stop the thread
             # and resource camera resources
             if self.stopped:
@@ -159,19 +154,16 @@ class ImgArrayCamera(BaseCamera):
             # grab the frame from the stream and clear the stream in
             # preparation for the next frame
             self.frame = x
-            time.sleep(.2) 
-
-
-
+            time.sleep(.2)
 
 class FakeCamera(BaseCamera):
-    ''' 
+    '''
     Class that acts like a PiCamera but reads files from a dir.
     Used for testing on non-Pi devices.
     '''
     def __init__(self, img_paths, **kwargs):
         print('loading FakeCamera')
-        
+
         self.file_list = img_paths
         self.file_list.sort()
         self.file_cycle = cycle(self.file_list) #create infinite iterator
@@ -189,7 +181,71 @@ class FakeCamera(BaseCamera):
             # preparation for the next frame
             self.frame = np.array(Image.open(f))
             self.counter += 1
-            time.sleep(.2) 
+            time.sleep(.2)
 
+class BaseSpeed:
+    def __init__(self):
+        self.speed = 0
+        # initialize variable used to indicate
+        # if the thread should be stopped
+        self.stopped = False
 
+    def start(self):
+        # start the thread to read frames from the video stream
+        t = Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
+        time.sleep(1)
+        return self
+
+    def update(self):
+        while True:
+            pass
+
+    def read(self):
+        return self.speed
+
+class MaestroSpeed(BaseSpeed):
+    def __init__(self):
+        import donkey as dk
+        super().__init__()
+        self.sensor = dk.actuators.Maestro_Controller(5);
+
+        print('WebcamVideoStream loaded.. .warming camera')
+
+        time.sleep(2)
+        self.start()
+
+    def update(self):
+        from datetime import datetime, timedelta
+        import re
+        while not self.stopped:
+            start = datetime.now()
+
+            l = self.sensor.readline()
+            if l:
+                m = re.match('^E ([-0-9]+)( ([-0-9]+))?( ([-0-9]+))?$', l)
+
+                if m:
+                    value = int(m.group(1))
+                    # rospy.loginfo("%s: Receiver E got %d" % (self.node_name, value))
+                    # Speed
+                    # 40 ticks/wheel rotation,
+                    # circumfence 0.377m
+                    # every 0.1 seconds
+                    if len(m.group(3)) > 0:
+                        period = 0.001 * int(m.group(3))
+                    else:
+                        period = 0.1
+
+                    self.speed = 0.377 * (float(value) / 40) / period   # now in m/s
+
+            stop = datetime.now()
+            s = 0.1 - (stop - start).total_seconds()
+            if s > 0:
+                time.sleep(s)
+
+    def stop(self):
+        # indicate that the thread should be stopped
+        self.stopped = True
 

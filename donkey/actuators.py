@@ -74,7 +74,7 @@ class Maestro_Controller:
         self.frequency = frequency
 
         if Maestro_Controller.astar_device == None:
-            Maestro_Controller.astar_device = serial.Serial('/dev/ttyACM2', 115200)
+            Maestro_Controller.astar_device = serial.Serial('/dev/ttyACM2', 115200, timeout= 0.05)
 
     def set_pulse(self, pulse):
         # Recalculate pulse width from the Adafruit values
@@ -100,6 +100,15 @@ class Maestro_Controller:
 
     def set_brake(self, v):
         Maestro_Controller.astar_device.write(bytearray('B' if v else 'b', 'ascii'))
+
+    def readline(self):
+        ret = None
+        # expecting lines like
+        # E n nnn n
+        while Maestro_Controller.astar_device.in_waiting > 8:
+            ret = Maestro_Controller.astar_device.readline().rstrip()
+
+        return ret
 
 class PWMSteeringActuator:
     #max angle wheels can turn

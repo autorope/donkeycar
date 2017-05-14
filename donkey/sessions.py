@@ -1,10 +1,10 @@
-''' 
+'''
 sessions.py
 
 Class to simplify how data is saved while recording.
 
 TODO: This should be merged with the dataset abstraction and made into
-something like ROSBAGS. 
+something like ROSBAGS.
 
 '''
 
@@ -21,7 +21,7 @@ import pickle
 import donkey as dk
 
 class Session():
-    ''' 
+    '''
     Class to store images and vehicle data to the local file system and later retrieve them
     as arrays or generators.
     '''
@@ -31,18 +31,22 @@ class Session():
         self.session_dir = path
         self.frame_count = 0
 
-    def put(self, img, angle=None, throttle=None, milliseconds=None):
-        
-        ''' 
+    def put(self, img, angle=None, throttle=None, milliseconds=None, req = None):
+        '''
         Save image with encoded angle, throttle and time data in the filename
         '''
         self.frame_count += 1
         filepath = create_img_filepath(self.session_dir, self.frame_count, angle, throttle, milliseconds)
         img.save(filepath, 'jpeg')
+        if req:
+            filepath = create_json_filepath(self.session_dir, self.frame_count, angle, throttle, milliseconds)
+            f = open(filepath, 'w')
+            req.dump(f)
+            f.close()
 
 
     def get(self, file_path):
-        ''' 
+        '''
         Retrieve an image and the data saved with it.
         '''
         img_arr, data = load_frame(file_path)
@@ -50,8 +54,8 @@ class Session():
 
 
     def img_paths(self):
-        """ 
-        Returns a list of file paths for the images in the session. 
+        """
+        Returns a list of file paths for the images in the session.
         """
         imgs = img_paths(self.session_dir)
         return imgs
@@ -65,8 +69,8 @@ class Session():
         '''
         Returns image arrays and data arrays.
 
-            X - array of n samples of immage arrays representing.  
-            Y - array with the shape (samples, 1) containing the 
+            X - array of n samples of immage arrays representing.
+            Y - array with the shape (samples, 1) containing the
                 angle lable for each image
 
             Where n is the number of recorded images.
@@ -87,7 +91,7 @@ class SessionHandler():
     def __init__(self, sessions_path):
 
         self.sessions_path = os.path.expanduser(sessions_path)
-        
+
 
     def new(self, name=None):
         '''
@@ -121,10 +125,10 @@ class SessionHandler():
 
     def make_session_dir(self, base_path, session_name=None):
         '''
-        Make a new dir with a given name. If name doesn't exist 
+        Make a new dir with a given name. If name doesn't exist
         use the current date/time.
         '''
-        
+
         base_path = os.path.expanduser(base_path)
         if session_name is None:
             session_dir_name = time.strftime('%Y_%m_%d__%I_%M_%S_%p')
@@ -142,8 +146,8 @@ class SessionHandler():
 
 
 def img_paths(folder):
-    """ 
-    Returns a list of file paths for the images in the session. 
+    """
+    Returns a list of file paths for the images in the session.
     """
     files = os.listdir(folder)
     files = [f for f in files if f[-3:] =='jpg']
@@ -153,7 +157,7 @@ def img_paths(folder):
 
 
 def load_frame(file_path):
-    ''' 
+    '''
     Retrieve an image and its telemetry data.
     '''
 
@@ -166,9 +170,9 @@ def load_frame(file_path):
 
 
 def frame_generator(img_paths):
-    ''' 
-    Generator that loops through image arrays and their telemetry data. 
-    ''' 
+    '''
+    Generator that loops through image arrays and their telemetry data.
+    '''
     while True:
         for f in img_paths:
 
@@ -186,7 +190,7 @@ def batch_generator(img_paths, batch_size=32):
     frame_gen = frame_generator(img_paths)
 
     while True:
-        
+
         X, Y = [], []
         for _ in range(batch_size):
             x, y = next(frame_gen)
@@ -203,8 +207,8 @@ def load_dataset(img_paths):
     '''
     Returns image arrays and data arrays.
 
-        X - array of n samples of immage arrays representing.  
-        Y - array with the shape (samples, 1) containing the 
+        X - array of n samples of immage arrays representing.
+        Y - array with the shape (samples, 1) containing the
             angle lable for each image
 
         Where n is the number of recorded images.
@@ -217,7 +221,7 @@ def load_dataset(img_paths):
 def sessions_to_dataset(session_names):
 
     '''
-    Combine, pickle and safe session data to a file. 
+    Combine, pickle and safe session data to a file.
 
     'sessions_folder' where the session folders reside
     'session_names' the names of the folders of the sessions to Combine
@@ -246,7 +250,7 @@ def dataset_to_hdf5(X, Y, file_path):
     f.create_dataset("X", data=X)
     f.create_dataset("Y", data=Y)
     f.close()
-    
+
 
 def hdf5_to_dataset(file_path):
     f = h5py.File(file_path, "r")
@@ -260,11 +264,16 @@ def parse_img_filepath(filepath):
     f = f[:-4] #remove ".jpg"
     f = f.split('_')
 
+    jn = '/'.join(filepath.split("/")[0:-1]) + '_'.join(f[0:1]) + ".json"
+    f = open(jn, 'w')
+    req = json.load(f)
+    f.close()
+
     throttle = round(float(f[3]), 2)
     angle = round(float(f[5]), 2)
     milliseconds = round(float(f[7]))
-    
-    data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds} 
+
+    data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds, 'req' : req }
     return data
 
 
@@ -277,12 +286,18 @@ def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
                 '.jpg')
     return filepath
 
+def create_json_filepath(directory, frame_count, angle, throttle, milliseconds):
+    filepath = str("%s/" % directory +
+                "frame_" + str(frame_count).zfill(5) +
+                '.json')
+    return filepath
+
 
 
 
 def param_gen(params):
     '''
-    Accepts a dictionary of parameter options and returns 
+    Accepts a dictionary of parameter options and returns
     a list of dictionary with the permutations of the parameters.
     '''
     for p in itertools.product(*params.values()):
