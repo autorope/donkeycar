@@ -547,6 +547,6 @@ class SessionView(tornado.web.RequestHandler):
                 os.remove(os.path.join(path, i))
                 print('%s removed' %i)
                 f = i.split('_')
-                f = '_'.join(f[0:1]) + ".json"
+                f = '_'.join(f[0:2]) + ".json"
                 os.remove(os.path.join(path, f))
                 print('%s removed' % f)
