@@ -20,6 +20,7 @@ class BaseVehicle:
 
         #these need tobe updated when vehicle is defined
         self.camera = camera
+        self.speed = speed
         self.actuator_mixer = actuator_mixer
         self.pilot = pilot
         self.remote = remote

@@ -211,20 +211,20 @@ class MaestroSpeed(BaseSpeed):
         super().__init__()
         self.sensor = dk.actuators.Maestro_Controller(5);
 
-        print('WebcamVideoStream loaded.. .warming camera')
-
-        time.sleep(2)
         self.start()
 
     def update(self):
         from datetime import datetime, timedelta
         import re
+
+        pattern = re.compile('^E ([-0-9]+)( ([-0-9]+))?( ([-0-9]+))?$')
+
         while not self.stopped:
             start = datetime.now()
 
             l = self.sensor.readline()
             if l:
-                m = re.match('^E ([-0-9]+)( ([-0-9]+))?( ([-0-9]+))?$', l)
+                m = pattern.match(l.decode('utf-8'))
 
                 if m:
                     value = int(m.group(1))
