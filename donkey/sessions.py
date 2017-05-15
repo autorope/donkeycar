@@ -180,7 +180,11 @@ def frame_generator(img_paths):
             img_arr, data = load_frame(f)
 
             #return only angle for now
-            data_arr = np.array([data['angle'], data['throttle']])
+            speed = 0.0
+            if 'req' in data.keys() and 'extra' in data['req'].keys() and 'speed' in data['req']['extra'].keys():
+                speed = round(float(data['req']['extra']['speed']), 2)
+
+            data_arr = np.array([data['angle'], data['throttle'], speed])
             yield img_arr, data_arr
 
 
@@ -271,13 +275,15 @@ def parse_img_filepath(filepath):
 
     data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds}
 
-    jn = '/'.join(filepath.split("/")[0:-1]) + '/' + '_'.join(f[0:1]) + ".json"
+    jn = '/'.join(filepath.split("/")[0:-1]) + '/' + '_'.join(f[0:2]) + ".json"
 
     if os.path.exists(jn):
         f = open(jn, 'r')
         req = json.load(f)
         f.close()
         data['req'] = req
+        if 'extra' in req.keys() and 'speed' in req['extra'].keys():
+            data['speed'] = round(float(req['extra']['speed']), 2)
 
     return data
 

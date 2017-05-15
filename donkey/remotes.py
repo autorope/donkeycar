@@ -89,7 +89,7 @@ class RemoteClient():
             self.state['angle'] = angle
             self.state['throttle'] = throttle
             self.state['drive_mode'] = drive_mode
-            self.state['extra'] = extra
+            self.state['resp_extra'] = extra
 
             time.sleep(.02)
 
@@ -378,6 +378,10 @@ class ControlAPI(tornado.web.RequestHandler):
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
 
+        V['speed'] = 0
+        if 'extra' in req.keys() and 'speed' in req['extra'].keys():
+            V['speed'] = float(req['extra']['speed'])
+
         #depending on the drive mode, return user or pilot values
 
         angle, throttle  = V['user_angle'], V['user_throttle']
@@ -386,7 +390,7 @@ class ControlAPI(tornado.web.RequestHandler):
         elif V['drive_mode'] == 'auto':
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
 
-        print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
+        print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   speed: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['speed'], V['drive_mode']), end='')
 
 
         if V['recording'] == True:
@@ -501,7 +505,6 @@ class SessionView(tornado.web.RequestHandler):
     def get(self, session_id, page):
         '''
         Shows all the images saved in the session.
-        TODO: Add pagination.
         '''
         from operator import itemgetter
 
