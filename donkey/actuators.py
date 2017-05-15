@@ -105,7 +105,7 @@ class Maestro_Controller:
         ret = None
         # expecting lines like
         # E n nnn n
-        while Maestro_Controller.astar_device.in_waiting > 8:
+        while Maestro_Controller.astar_device.inWaiting() > 8:
             ret = Maestro_Controller.astar_device.readline().rstrip()
 
         return ret
