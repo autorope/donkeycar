@@ -8,6 +8,7 @@ something like ROSBAGS.
 
 '''
 
+import json
 import os
 import time
 import itertools
@@ -41,7 +42,7 @@ class Session():
         if req:
             filepath = create_json_filepath(self.session_dir, self.frame_count, angle, throttle, milliseconds)
             f = open(filepath, 'w')
-            req.dump(f)
+            json.dump(req, f)
             f.close()
 
 
@@ -264,18 +265,21 @@ def parse_img_filepath(filepath):
     f = f[:-4] #remove ".jpg"
     f = f.split('_')
 
-    jn = '/'.join(filepath.split("/")[0:-1]) + '_'.join(f[0:1]) + ".json"
-    f = open(jn, 'w')
-    req = json.load(f)
-    f.close()
-
     throttle = round(float(f[3]), 2)
     angle = round(float(f[5]), 2)
     milliseconds = round(float(f[7]))
 
-    data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds, 'req' : req }
-    return data
+    data = {'throttle':throttle, 'angle':angle, 'milliseconds': milliseconds}
 
+    jn = '/'.join(filepath.split("/")[0:-1]) + '/' + '_'.join(f[0:1]) + ".json"
+
+    if os.path.exists(jn):
+        f = open(jn, 'r')
+        req = json.load(f)
+        f.close()
+        data['req'] = req
+
+    return data
 
 def create_img_filepath(directory, frame_count, angle, throttle, milliseconds):
     filepath = str("%s/" % directory +

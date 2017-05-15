@@ -420,16 +420,18 @@ class VideoAPI(tornado.web.RequestHandler):
             interval = .2
             if self.served_image_timestamp + interval < time.time():
 
+                v = self.application.vehicles[vehicle_id]
 
-                img = self.application.vehicles[vehicle_id]['img']
-                img = dk.utils.img_to_binary(img)
+                if 'img' in v.keys():
+                    img = v['img']
+                    img = dk.utils.img_to_binary(img)
 
-                self.write(my_boundary)
-                self.write("Content-type: image/jpeg\r\n")
-                self.write("Content-length: %s\r\n\r\n" % len(img))
-                self.write(img)
-                self.served_image_timestamp = time.time()
-                yield tornado.gen.Task(self.flush)
+                    self.write(my_boundary)
+                    self.write("Content-type: image/jpeg\r\n")
+                    self.write("Content-length: %s\r\n\r\n" % len(img))
+                    self.write(img)
+                    self.served_image_timestamp = time.time()
+                    yield tornado.gen.Task(self.flush)
             else:
                 yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)
 
@@ -505,7 +507,7 @@ class SessionView(tornado.web.RequestHandler):
 
         sessions_path = self.application.sessions_path
         path = os.path.join(sessions_path, session_id)
-        imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
+        imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() and f.name[-3:] =='jpg' ]
         img_count = len(imgs)
 
         perpage = 500
@@ -514,6 +516,10 @@ class SessionView(tornado.web.RequestHandler):
             page = 1
         else:
             page = int(page)
+
+        if page == 0:
+            page = 1
+
         end = page * perpage
         start = end - perpage
         end = min(end, img_count)
@@ -540,3 +546,7 @@ class SessionView(tornado.web.RequestHandler):
             for i in data['imgs']:
                 os.remove(os.path.join(path, i))
                 print('%s removed' %i)
+                f = i.split('_')
+                f = '_'.join(f[0:1]) + ".json"
+                os.remove(os.path.join(path, f))
+                print('%s removed' % f)
