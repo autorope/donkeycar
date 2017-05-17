@@ -84,9 +84,9 @@ def batch_gen(dataset_list, batch_size=128):
         X = np.array(X)
         Y = np.array(Y)
 
-        yield X, {'angle_out': dk.utils.bin_Y(Y[:, 0]), 'throttle_out': Y[:, 1]}
-    
-    
+        yield X, {'angle_out': dk.utils.bin_Y(Y[:, 0]), 'throttle_out': Y[:, 1], 'speed_out': Y[:, 2]}
+
+
 def split_datasets(h5_paths, val_frac=.1, test_frac=.1, batch_size=128):
     '''
     Return three shuffled generators for train, val and test.
