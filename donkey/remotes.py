@@ -82,8 +82,12 @@ class RemoteClient():
                                 self.state['extra'])
             if len(resp) == 5:
                 angle, throttle, drive_mode, drive, extra = resp
-            else:
+            elif len(resp) == 4:
                 angle, throttle, drive_mode, drive  = resp
+                extra = None
+            else:
+                angle, throttle, drive_mode  = resp
+                drive = False
                 extra = None
 
             #update sate with current values
@@ -125,7 +129,7 @@ class RemoteClient():
             data['extra'] = extra
 
         r = None
-        while r == None:
+        while r == None or r.text == None:
             #Try connecting to server until connection is made.
             start = time.time()
 
@@ -156,7 +160,8 @@ class RemoteClient():
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])
-        drive = bool(data['drive'])
+        drive = data['drive']
+
         if 'extra' in data.keys():
             return angle, throttle, drive_mode, drive, data['extra']
 
@@ -369,7 +374,9 @@ class ControlAPI(tornado.web.RequestHandler):
         img = Image.open(io.BytesIO(img))
         img_arr = dk.utils.img_to_arr(img)
 
-        req = json.loads(self.request.files['json'][0]['body'])
+        req = None
+        if self.request.files['json'][0]['body']:
+            req = json.loads((self.request.files['json'][0]['body']).decode('utf-8'))
 
         #Get angle/throttle from pilot loaded by the server.
         if V['pilot'] is not None:
@@ -384,7 +391,7 @@ class ControlAPI(tornado.web.RequestHandler):
         V['pilot_throttle'] = pilot_throttle
 
         V['speed'] = 0
-        if 'extra' in req.keys() and 'speed' in req['extra'].keys():
+        if req != None and 'extra' in req.keys() and 'speed' in req['extra'].keys():
             V['speed'] = float(req['extra']['speed'])
 
         #depending on the drive mode, return user or pilot values
