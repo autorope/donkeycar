@@ -407,7 +407,7 @@ class ControlAPI(tornado.web.RequestHandler):
                              req = req)
 
         #retun angel/throttle values to vehicle with json response
-        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']), 'drive': str(V['drive']) }))
+        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']), 'drive': V['drive'] }))
 
 
 
