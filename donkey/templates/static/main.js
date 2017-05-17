@@ -265,12 +265,13 @@ var driveHandler = (function() {
     };
 
     var postDrive = function() {
-        
+
         //Send angle and throttle values
-        data = JSON.stringify({ 'angle': state.tele.user.angle, 
-                                'throttle':state.tele.user.throttle, 
-                                'drive_mode':state.driveMode, 
-                                'recording': state.recording})
+        data = JSON.stringify({ 'angle': state.tele.user.angle,
+                                'throttle':state.tele.user.throttle,
+                                'drive_mode':state.driveMode,
+                                'recording': state.recording,
+                                'drive': !state.brakeOn })
         console.log(data)
         $.post(driveURL, data)
         updateUI()

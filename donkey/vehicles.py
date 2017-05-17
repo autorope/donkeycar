@@ -45,7 +45,7 @@ class BaseVehicle:
                 speed = self.speed.read()
                 extra = { 'speed': speed }
 
-            angle, throttle, drive_mode = self.remote.decide_threaded(img_arr,
+            angle, throttle, drive_mode, drive = self.remote.decide_threaded(img_arr,
                                                  angle,
                                                  throttle,
                                                  milliseconds,
@@ -63,6 +63,6 @@ class BaseVehicle:
             #print current car state
             end = time.time()
             lag = end - start
-            print('\r CAR: angle: {:+04.2f}   throttle: {:+04.2f}   speed: {:+04.2f}  drive_mode: {}  lag: {:+04.2f}'.format(angle, throttle, speed, drive_mode, lag), end='')
+            print('\r CAR: angle: {:+04.2f}   throttle: {:+04.2f}   speed: {:+04.2f}  drive_mode: {}  drive: {}  lag: {:+04.2f}'.format(angle, throttle, speed, drive_mode, drive, lag), end='')
 
             time.sleep(self.drive_loop_delay)

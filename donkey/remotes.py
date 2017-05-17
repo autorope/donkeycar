@@ -45,6 +45,7 @@ class RemoteClient():
                  'throttle': 0.0,
                  'milliseconds': 0,
                  'drive_mode': 'user',
+                 'drive': False,
                  'extra': None }
 
         self.state = state
@@ -79,16 +80,17 @@ class RemoteClient():
                                 self.state['throttle'],
                                 self.state['milliseconds'],
                                 self.state['extra'])
-            if len(resp) == 4:
-                angle, throttle, drive_mode, extra = resp
+            if len(resp) == 5:
+                angle, throttle, drive_mode, drive, extra = resp
             else:
-                angle, throttle, drive_mode = resp
+                angle, throttle, drive_mode, drive  = resp
                 extra = None
 
             #update sate with current values
             self.state['angle'] = angle
             self.state['throttle'] = throttle
             self.state['drive_mode'] = drive_mode
+            self.state['drive'] = drive
             self.state['resp_extra'] = extra
 
             time.sleep(.02)
@@ -104,7 +106,7 @@ class RemoteClient():
             self.state['extra'] = extra
 
         #return last returned last remote response.
-        return self.state['angle'], self.state['throttle'], self.state['drive_mode']
+        return self.state['angle'], self.state['throttle'], self.state['drive_mode'], self.state['drive']
 
     def decide(self, img_arr, angle, throttle, milliseconds, extra = None):
         '''
@@ -154,10 +156,11 @@ class RemoteClient():
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])
+        drive = bool(data['drive'])
         if 'extra' in data.keys():
-            return angle, throttle, drive_mode, data['extra']
+            return angle, throttle, drive_mode, drive, data['extra']
 
-        return angle, throttle, drive_mode
+        return angle, throttle, drive_mode, drive
 
 
 class DonkeyPilotApplication(tornado.web.Application):
@@ -253,6 +256,7 @@ class DonkeyPilotApplication(tornado.web.Application):
                         'user_angle': 0,
                         'user_throttle': 0,
                         'drive_mode':'user',
+                        'drive': False,
                         'milliseconds': 0,
                         'recording': False,
                         'pilot': dk.pilots.BasePilot(),
@@ -336,6 +340,7 @@ class DriveAPI(tornado.web.RequestHandler):
 
         #update vehicle angel based on drive mode
         V['drive_mode'] = data['drive_mode']
+        V['drive'] = data['drive']
 
         if angle is not "":
             V['user_angle'] = angle
@@ -402,7 +407,7 @@ class ControlAPI(tornado.web.RequestHandler):
                              req = req)
 
         #retun angel/throttle values to vehicle with json response
-        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']) }))
+        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']), 'drive': str(V['drive']) }))
 
 
 
