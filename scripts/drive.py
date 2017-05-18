@@ -36,14 +36,11 @@ if __name__ == '__main__':
     mysteeringcontroller = dk.actuators.PCA9685_Controller(cfg['steering_actuator_channel'])
 
     #set the PWM ranges
-    mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
-                                                  min_pulse=cfg['throttle_actuator_min_pulse'],
-                                                  max_pulse=cfg['throttle_actuator_max_pulse'],
-                                                  zero_pulse=cfg['throttle_actuator_zero_pulse'])
+    mythrottle = dk.actuators.GPIOThrottleActuator(fwd_channel=cfg['fwd_channel'],
+                                                   bwd_channel=cfg['bwd_channel'])
 
-    mysteering = dk.actuators.PWMSteeringActuator(controller=mysteeringcontroller,
-                                                  left_pulse=cfg['steering_actuator_min_pulse'],
-                                                  right_pulse=cfg['steering_actuator_max_pulse'])
+    mysteering = dk.actuators.GPIOSteeringAcutator(left_channel=cfg['left_channel'],
+                                                   right_channel=cfg['right_channel'])
 
     #abstract class to combine actuators
     mymixer = dk.mixers.AckermannSteeringMixer(mysteering, mythrottle)
