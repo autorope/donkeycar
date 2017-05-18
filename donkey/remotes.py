@@ -396,7 +396,7 @@ class ControlAPI(tornado.web.RequestHandler):
 
         #depending on the drive mode, return user or pilot values
 
-        angle, throttle  = V['user_angle'], V['user_throttle']
+        angle, throttle, speed  = V['user_angle'], V['user_throttle'], 'NaN'
         if V['drive_mode'] == 'auto_angle':
             angle, throttle, speed  = V['pilot_angle'], V['user_throttle'], 'NaN'
         elif V['drive_mode'] == 'auto':
