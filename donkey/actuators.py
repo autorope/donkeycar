@@ -60,7 +60,9 @@ class GPIOSteeringAcutator:
         GPIO.setmode(GPIO.BOARD)
         self.left_channel = left_channel
         self.right_channel = right_channel
-        GPIO.setup([left_channel, right_channel], GPIO.OUT)
+        GPIO.setup(left_channel, GPIO.OUT)
+        GPIO.setup(right_channel, GPIO.OUT)
+
 
     def update(self, angle):
         if angle > 0:
@@ -80,7 +82,9 @@ class GPIOThrottleActuator:
         GPIO.setmode(GPIO.BOARD)
         self.bwd_channel = bwd_channel
         self.fwd_channel = fwd_channel
-        GPIO.setup([fwd_channel, bwd_channel], GPIO.OUT)
+        GPIO.setup(fwd_channel, GPIO.OUT)
+        GPIO.setup(bwd_channel, GPIO.OUT)
+
 
     def update(self, throttle):
         if throttle > 0:
