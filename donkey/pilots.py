@@ -31,7 +31,7 @@ class BasePilot():
     def decide(self, img_arr):
         angle = 0.0
         speed = 0.0
-        return angle, speed
+        return angle, speed, 'NaN'
 
     def load(self):
         pass
@@ -47,10 +47,17 @@ class KerasCategorical(BasePilot):
 
     def decide(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned, throttle = self.model.predict(img_arr)
+        l = self.model.predict(img_arr)
+        if len(l) == 3:
+            angle_binned, throttle, speed = l
+            speed = speed[0][0]
+        else:
+            angle_binned, throttle = l
+            speed = 'NaN'
+        # angle_binned, throttle = self.model.predict(img_arr)
         angle_certainty = max(angle_binned[0])
         angle_unbinned = utils.unbin_Y(angle_binned)
-        return angle_unbinned[0], throttle[0][0]
+        return angle_unbinned[0], throttle[0][0], speed
 
 
     def load(self):

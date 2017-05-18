@@ -80,22 +80,22 @@ class RemoteClient():
                                 self.state['throttle'],
                                 self.state['milliseconds'],
                                 self.state['extra'])
-            if len(resp) == 5:
-                angle, throttle, drive_mode, drive, extra = resp
-            elif len(resp) == 4:
-                angle, throttle, drive_mode, drive  = resp
-                extra = None
+            if len(resp) == 4:
+                angle, throttle, drive_mode, extra = resp
             else:
                 angle, throttle, drive_mode  = resp
-                drive = False
                 extra = None
 
             #update sate with current values
             self.state['angle'] = angle
             self.state['throttle'] = throttle
             self.state['drive_mode'] = drive_mode
-            self.state['drive'] = drive
             self.state['resp_extra'] = extra
+
+            if extra and 'drive' in extra.keys():
+                self.state['drive'] = bool(extra['drive'])
+            else:
+                self.state['drive'] = throttle != 0.0
 
             time.sleep(.02)
 
@@ -160,12 +160,11 @@ class RemoteClient():
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])
-        drive = data['drive']
 
         if 'extra' in data.keys():
-            return angle, throttle, drive_mode, drive, data['extra']
+            return angle, throttle, drive_mode, data['extra']
 
-        return angle, throttle, drive_mode, drive
+        return angle, throttle, drive_mode
 
 
 class DonkeyPilotApplication(tornado.web.Application):
@@ -380,15 +379,16 @@ class ControlAPI(tornado.web.RequestHandler):
 
         #Get angle/throttle from pilot loaded by the server.
         if V['pilot'] is not None:
-            pilot_angle, pilot_throttle = V['pilot'].decide(img_arr)
+            pilot_angle, pilot_throttle, pilot_speed = V['pilot'].decide(img_arr)
         else:
             print('no pilot')
-            pilot_angle, pilot_throttle = 0.0, 0.0
+            pilot_angle, pilot_throttle, pilot_speed = 0.0, 0.0, 'NaN'
 
         V['img'] = img
         V['req'] = req
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
+        V['pilot_speed'] = pilot_speed
 
         V['speed'] = 0
         if req != None and 'extra' in req.keys() and 'speed' in req['extra'].keys():
@@ -398,9 +398,9 @@ class ControlAPI(tornado.web.RequestHandler):
 
         angle, throttle  = V['user_angle'], V['user_throttle']
         if V['drive_mode'] == 'auto_angle':
-            angle, throttle  = V['pilot_angle'], V['user_throttle']
+            angle, throttle, speed  = V['pilot_angle'], V['user_throttle'], 'NaN'
         elif V['drive_mode'] == 'auto':
-            angle, throttle  = V['pilot_angle'], V['pilot_throttle']
+            angle, throttle, speed  = V['pilot_angle'], V['pilot_throttle'], V['pilot_speed']
 
         print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   speed: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['speed'], V['drive_mode']), end='')
 
@@ -414,7 +414,7 @@ class ControlAPI(tornado.web.RequestHandler):
                              req = req)
 
         #retun angel/throttle values to vehicle with json response
-        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']), 'drive': V['drive'] }))
+        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']), 'extra': { 'drive': V['drive'], 'speed': str(speed) }}))
 
 
 
