@@ -42,13 +42,15 @@ def parse_config(config_path):
     cfg['camera_loop_delay'] = camera.getfloat('loop_delay')
 
     t_act = config['throttle_actuator']
-    cfg['throttle_actuator_channel'] = t_act.getint('channel')
+    cfg['fwd_channel'] = t_act.getint('fwd_channel')
+    cfg['bwd_channel'] = t_act.getint('bwd_channel')
     cfg['throttle_actuator_min_pulse'] = t_act.getint('min_pulse')
     cfg['throttle_actuator_max_pulse'] = t_act.getint('max_pulse')
     cfg['throttle_actuator_zero_pulse'] = t_act.getint('zero_pulse')
 
     s_act = config['steering_actuator']
-    cfg['steering_actuator_channel'] = s_act.getint('channel')
+    cfg['left_channel'] = s_act.getint('left_channel')
+    cfg['right_channel'] = s_act.getint('right_channel')
     cfg['steering_actuator_min_pulse'] = s_act.getint('left_pulse')
     cfg['steering_actuator_max_pulse'] = s_act.getint('right_pulse')
 
