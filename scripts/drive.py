@@ -31,10 +31,6 @@ if __name__ == '__main__':
     #load config file
     cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
 
-    #load the actuators (default is the adafruit servo hat)
-    mythrottlecontroller = dk.actuators.PCA9685_Controller(cfg['throttle_actuator_channel'])
-    mysteeringcontroller = dk.actuators.PCA9685_Controller(cfg['steering_actuator_channel'])
-
     #set the PWM ranges
     mythrottle = dk.actuators.GPIOThrottleActuator(fwd_channel=cfg['fwd_channel'],
                                                    bwd_channel=cfg['bwd_channel'])
