@@ -67,17 +67,28 @@ class GPIOSteeringAcutator:
         self.right_channel = right_channel
         GPIO.setup(left_channel, GPIO.OUT)
         GPIO.setup(right_channel, GPIO.OUT)
+        self.state = 'FORWARD'
 
     def update(self, angle):
-        if angle > 0:
+        if angle > 0.1:
+            if self.state == 'RIGHT':
+                return
             GPIO.output(self.right_channel, GPIO.HIGH)
             GPIO.output(self.left_channel, GPIO.LOW)
-        elif angle == 0:
-            GPIO.output(self.left_channel, GPIO.LOW)
-            GPIO.output(self.right_channel, GPIO.LOW)
-        else:
+            self.state = 'RIGHT'
+        elif angle < 0.1:
+            if self.state == 'LEFT':
+                return
             GPIO.output(self.left_channel, GPIO.HIGH)
             GPIO.output(self.right_channel, GPIO.LOW)
+            self.state = 'LEFT'
+        else:
+            if self.state == 'FORWARD':
+                return
+            GPIO.output(self.left_channel, GPIO.LOW)
+            GPIO.output(self.right_channel, GPIO.LOW)
+            self.state = 'FORWARD'
+
 
 
 class GPIOThrottleActuator:
@@ -87,17 +98,28 @@ class GPIOThrottleActuator:
         self.fwd_channel = fwd_channel
         GPIO.setup(fwd_channel, GPIO.OUT)
         GPIO.setup(bwd_channel, GPIO.OUT)
+        self.state = 'STOP'
+
 
     def update(self, throttle):
-        if throttle > 0:
+        if throttle > 0.1:
+            if self.state == 'FORWARD':
+                return
             GPIO.output(self.fwd_channel, GPIO.HIGH)
             GPIO.output(self.bwd_channel, GPIO.LOW)
-        elif throttle < 0:
+            self.state = 'FORWARD'
+        elif throttle < 0.1:
+            if self.state == 'BACKWARD':
+                return
             GPIO.output(self.fwd_channel, GPIO.LOW)
             GPIO.output(self.bwd_channel, GPIO.HIGH)
+            self.state = 'BACKWARD'
         else:
+            if self.state == 'STOP':
+                return
             GPIO.output(self.fwd_channel, GPIO.LOW)
             GPIO.output(self.bwd_channel, GPIO.LOW)
+            self.state = 'STOP'
 
 
 class PWMSteeringActuator:
