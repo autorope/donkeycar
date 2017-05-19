@@ -8,7 +8,11 @@ are wrapped in a mixer class before being used in the drive loop.
 
 import time
 import sys
-import RPi.GPIO as GPIO
+
+try:
+    import RPi.GPIO as GPIO
+except Exception as err:
+    print("Error importing RPi.GPIO")
 
 
 def map_range(x, X_min, X_max, Y_min, Y_max):
@@ -63,15 +67,26 @@ class GPIOSteeringAcutator:
         GPIO.setup(left_channel, GPIO.OUT)
         GPIO.setup(right_channel, GPIO.OUT)
 
-
     def update(self, angle):
         if angle > 0:
+            print("Turning right: right_channel("
+                + self.right_channel
+                + ")=HIGH, left_channel("
+                + self.left_channel + ")=LOW")
             GPIO.output(self.right_channel, GPIO.HIGH)
             GPIO.output(self.left_channel, GPIO.LOW)
         elif angle == 0:
+            print("No Turning: right_channel("
+                  + self.right_channel
+                  + ")=LOW, left_channel("
+                  + self.left_channel + ")=LOW")
             GPIO.output(self.left_channel, GPIO.LOW)
             GPIO.output(self.right_channel, GPIO.LOW)
         else:
+            print("Turning left: right_channel("
+                  + self.right_channel
+                  + ")=LOW, left_channel("
+                  + self.left_channel + ")=HIGH")
             GPIO.output(self.left_channel, GPIO.HIGH)
             GPIO.output(self.right_channel, GPIO.LOW)
 
@@ -83,7 +98,6 @@ class GPIOThrottleActuator:
         self.fwd_channel = fwd_channel
         GPIO.setup(fwd_channel, GPIO.OUT)
         GPIO.setup(bwd_channel, GPIO.OUT)
-
 
     def update(self, throttle):
         if throttle > 0:
