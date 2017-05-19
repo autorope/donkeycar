@@ -8,6 +8,7 @@ are wrapped in a mixer class before being used in the drive loop.
 
 import time
 import sys
+import RPi.GPIO as GPIO
 
 
 def map_range(x, X_min, X_max, Y_min, Y_max):
@@ -56,8 +57,7 @@ class PCA9685_Controller:
 
 class GPIOSteeringAcutator:
     def __init__(self, left_channel, right_channel):
-        import RPi.GPIO as GPIO
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(GPIO.BCM)
         self.left_channel = left_channel
         self.right_channel = right_channel
         GPIO.setup(left_channel, GPIO.OUT)
@@ -78,8 +78,7 @@ class GPIOSteeringAcutator:
 
 class GPIOThrottleActuator:
     def __init__(self, fwd_channel, bwd_channel):
-        import RPi.GPIO as GPIO
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(GPIO.BCM)
         self.bwd_channel = bwd_channel
         self.fwd_channel = fwd_channel
         GPIO.setup(fwd_channel, GPIO.OUT)
