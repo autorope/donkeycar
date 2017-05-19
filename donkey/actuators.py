@@ -73,21 +73,21 @@ class GPIOSteeringAcutator:
         if angle > 0.1:
             if self.state == 'RIGHT':
                 return
-            print("Turning right: "+angle+"\n")
+            print("Turning right: "+str(angle)+"\n")
             GPIO.output(self.right_channel, GPIO.HIGH)
             GPIO.output(self.left_channel, GPIO.LOW)
             self.state = 'RIGHT'
         elif angle < 0.1:
             if self.state == 'LEFT':
                 return
-            print("Turning left: "+angle+"\n")
+            print("Turning left: "+str(angle)+"\n")
             GPIO.output(self.left_channel, GPIO.HIGH)
             GPIO.output(self.right_channel, GPIO.LOW)
             self.state = 'LEFT'
         else:
             if self.state == 'FORWARD':
                 return
-            print("Stop turning: "+angle+"\n")
+            print("Stop turning: "+str(angle)+"\n")
             GPIO.output(self.left_channel, GPIO.LOW)
             GPIO.output(self.right_channel, GPIO.LOW)
             self.state = 'FORWARD'
@@ -108,21 +108,21 @@ class GPIOThrottleActuator:
         if throttle > 0.1:
             if self.state == 'FORWARD':
                 return
-            print("Going forward: "+throttle+"\n")
+            print("Going forward: "+str(throttle)+"\n")
             GPIO.output(self.fwd_channel, GPIO.HIGH)
             GPIO.output(self.bwd_channel, GPIO.LOW)
             self.state = 'FORWARD'
         elif throttle < 0.1:
             if self.state == 'BACKWARD':
                 return
-            print("Going backward: "+throttle+"\n")
+            print("Going backward: "+str(throttle)+"\n")
             GPIO.output(self.fwd_channel, GPIO.LOW)
             GPIO.output(self.bwd_channel, GPIO.HIGH)
             self.state = 'BACKWARD'
         else:
             if self.state == 'STOP':
                 return
-            print("Stopping: "+throttle+"\n")
+            print("Stopping: "+str(throttle)+"\n")
             GPIO.output(self.fwd_channel, GPIO.LOW)
             GPIO.output(self.bwd_channel, GPIO.LOW)
             self.state = 'STOP'
