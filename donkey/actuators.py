@@ -11,6 +11,7 @@ import sys
 
 try:
     import RPi.GPIO as GPIO
+    GPIO.cleanup()
 except Exception as err:
     print("Error importing RPi.GPIO")
 
@@ -69,24 +70,12 @@ class GPIOSteeringAcutator:
 
     def update(self, angle):
         if angle > 0:
-            print("Turning right: right_channel("
-                + str(self.right_channel)
-                + ")=HIGH, left_channel("
-                + str(self.left_channel) + ")=LOW")
             GPIO.output(self.right_channel, GPIO.HIGH)
             GPIO.output(self.left_channel, GPIO.LOW)
         elif angle == 0:
-            print("No Turning: right_channel("
-                  + str(self.right_channel)
-                  + ")=LOW, left_channel("
-                  + str(self.left_channel) + ")=LOW")
             GPIO.output(self.left_channel, GPIO.LOW)
             GPIO.output(self.right_channel, GPIO.LOW)
         else:
-            print("Turning left: right_channel("
-                  + str(self.right_channel)
-                  + ")=LOW, left_channel("
-                  + str(self.left_channel) + ")=HIGH")
             GPIO.output(self.left_channel, GPIO.HIGH)
             GPIO.output(self.right_channel, GPIO.LOW)
 
