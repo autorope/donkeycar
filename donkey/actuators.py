@@ -70,14 +70,14 @@ class GPIOSteeringAcutator:
         self.state = 'FORWARD'
 
     def update(self, angle):
-        if angle > 0.1:
+        if angle > 0.2:
             if self.state == 'RIGHT':
                 return
             print("Turning right: "+str(angle)+"\n")
             GPIO.output(self.right_channel, GPIO.HIGH)
             GPIO.output(self.left_channel, GPIO.LOW)
             self.state = 'RIGHT'
-        elif angle < 0.1:
+        elif angle < 0.2:
             if self.state == 'LEFT':
                 return
             print("Turning left: "+str(angle)+"\n")
@@ -105,14 +105,14 @@ class GPIOThrottleActuator:
 
 
     def update(self, throttle):
-        if throttle > 0.1:
+        if throttle > 0.2:
             if self.state == 'FORWARD':
                 return
             print("Going forward: "+str(throttle)+"\n")
             GPIO.output(self.fwd_channel, GPIO.HIGH)
             GPIO.output(self.bwd_channel, GPIO.LOW)
             self.state = 'FORWARD'
-        elif throttle < 0.1:
+        elif throttle < 0.2:
             if self.state == 'BACKWARD':
                 return
             print("Going backward: "+str(throttle)+"\n")
