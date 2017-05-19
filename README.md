@@ -2,8 +2,7 @@
 
 Donkey is minimalist and modular self driving library written in Python. It is developed for hobbiests with a focus on allowing fast experimentation and easy community contributions.  
 
-### [Build a Donkey Car.](http://www.donkeycar.com) 
-It costs ~$200  and takes 2hrs to build one. Almost all parts can be ordered on amazon. 
+### [Build a Donkey Car.](http://www.donkeycar.com) ($200 + 2 hours)
 
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
