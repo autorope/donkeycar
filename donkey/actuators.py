@@ -54,11 +54,65 @@ class PCA9685_Controller:
     def set_pulse(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 
 
+class Maestro_Controller:
+    '''
+    Pololu Maestro Servo controller
+    Use the MaestroControlCenter to set the speed & acceleration values to 0!
+    '''
+    import threading
 
-        
+    maestro_device = None
+    astar_device = None
+    lock = threading.Lock()
+
+    def __init__(self, channel, frequency = 60):
+        import serial
+        if Maestro_Controller.maestro_device == None:
+            Maestro_Controller.maestro_device = serial.Serial('/dev/ttyACM0', 115200)
+
+        self.channel = channel
+        self.frequency = frequency
+
+        if Maestro_Controller.astar_device == None:
+            Maestro_Controller.astar_device = serial.Serial('/dev/ttyACM2', 115200, timeout= 0.05)
+
+    def set_pulse(self, pulse):
+        # Recalculate pulse width from the Adafruit values
+        w = pulse * (1 / (self.frequency * 4096)) # in seconds
+        w *= 1000 * 1000  # in microseconds
+        w *= 4  # in quarter microsenconds the maestro wants
+        w = int(w)
+
+        with Maestro_Controller.lock:
+            Maestro_Controller.maestro_device.write(bytearray([ 0x84,
+                                                            self.channel,
+                                                            (w & 0x7F),
+                                                            ((w >> 7) & 0x7F)]))
+
+    def set_turn_left(self, v):
+        Maestro_Controller.astar_device.write(bytearray('L' if v else 'l', 'ascii'))
+
+    def set_turn_right(self, v):
+        Maestro_Controller.astar_device.write(bytearray('R' if v else 'r', 'ascii'))
+
+    def set_headlight(self, v):
+        Maestro_Controller.astar_device.write(bytearray('H' if v else 'h', 'ascii'))
+
+    def set_brake(self, v):
+        Maestro_Controller.astar_device.write(bytearray('B' if v else 'b', 'ascii'))
+
+    def readline(self):
+        ret = None
+        # expecting lines like
+        # E n nnn n
+        while Maestro_Controller.astar_device.inWaiting() > 8:
+            ret = Maestro_Controller.astar_device.readline().rstrip()
+
+        return ret
+
 class PWMSteeringActuator:
     #max angle wheels can turn
-    LEFT_ANGLE = -1 
+    LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
     def __init__(self, controller=None,
@@ -78,7 +132,8 @@ class PWMSteeringActuator:
 
         self.controller.set_pulse(pulse)
 
-
+        self.controller.set_turn_left(angle < -0.2)
+        self.controller.set_turn_right(angle > 0.2)
 
 class PWMThrottleActuator:
 
@@ -117,6 +172,10 @@ class PWMThrottleActuator:
 
         sys.stdout.flush()
         self.controller.set_pulse(pulse)
+
+        self.controller.set_brake(throttle < 0)
+        self.controller.set_headlight(throttle != 0)
+
         return '123'
 
 
