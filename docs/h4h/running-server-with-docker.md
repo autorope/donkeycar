@@ -40,3 +40,17 @@ Use `start-server.sh` from root of this repository.
 ```
 $ bash start-server.sh
 ```
+
+Running Commands on the Server
+------------------------------
+
+Use `docker exec` to open a shell "inside" a running instance of the
+server or run a shell in a new instance of the server.
+
+```
+$ docker exec -it donkey /bin/bash
+
+OR
+
+$ bash start-server.sh -d
+```
