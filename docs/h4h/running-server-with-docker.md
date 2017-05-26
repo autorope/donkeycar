@@ -54,3 +54,27 @@ OR
 
 $ bash start-server.sh -d
 ```
+
+The web interface should now be accessible with your browser on
+(http://localhost:8887)
+
+
+Make Server Accessible
+----------------------
+
+The server by default runs on port 8887 which must be made accessible
+from the Raspberry Pi. This can be done using `ufw` to manage your
+iptables configuration.
+
+```
+$ sudo apt install ufw    # If not already installed
+$ sudo ufw enable
+$ sudo ufw allow 8887/tcp
+$ sudo ufw status         # Check status
+$ sudo ufw reset          # Close port and disable
+```
+
+You should now be able to open the web interface from anywhere on the
+wifi e.g. from your phone using (http://<server IP address>:8887).
+
+(Check IP address with `$ ifconfig`)
