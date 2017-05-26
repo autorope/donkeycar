@@ -48,4 +48,4 @@ while getopts ":vbd" opt; do
 done
 
 echo "start-server: Running Donkey server container..." >&2
-docker run -p 8887:8887 -v ~/mydonkey:/root/mydonkey donkey
+docker run --rm -p 8887:8887 -v ~/mydonkey:/root/mydonkey donkey
