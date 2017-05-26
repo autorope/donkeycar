@@ -37,7 +37,7 @@ while getopts ":vbd" opt; do
 		;;
     d)
 		echo "start-server: Running Donkey server container without serve.py and attaching..." >&2
-		docker run -p 8887:8887 -v ~/mydonkey:/root/mydonkey --entrypoint=/bin/bash -it donkey
+		docker run --rm -p 8887:8887 -v ~/mydonkey:/root/mydonkey --entrypoint=/bin/bash -it --name donkey donkey
 		exit
 		;;
     \?)
@@ -48,4 +48,4 @@ while getopts ":vbd" opt; do
 done
 
 echo "start-server: Running Donkey server container..." >&2
-docker run --rm -p 8887:8887 -v ~/mydonkey:/root/mydonkey donkey
+docker run --rm -p 8887:8887 -v ~/mydonkey:/root/mydonkey --name donkey donkey
