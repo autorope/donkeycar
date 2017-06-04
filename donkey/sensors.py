@@ -97,6 +97,9 @@ class PiVideoStream(BaseCamera):
 
 
 class ImgArrayCamera(BaseCamera):
+    """
+    Used by simulate script.
+    """
 
     def __init__(self, X):
         self.X = X

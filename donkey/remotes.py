@@ -144,7 +144,6 @@ class RemoteClient():
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])
         
-
         return angle, throttle, drive_mode
 
 
@@ -158,7 +157,7 @@ class DonkeyPilotApplication(tornado.web.Application):
         the web handlers.
         '''
 
-        print('hello')
+        print('Starting Donkey Server...')
         if not os.path.exists(os.path.expanduser(mydonkey_path)):
             raise ValueError('Could not find mydonkey folder. Please run "python scripts/setup.py"')
 
@@ -203,9 +202,7 @@ class DonkeyPilotApplication(tornado.web.Application):
 
 
             (r"/sessions/", SessionListView),
-            (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?/download",
-                 SessionDownload
-            ),
+            (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?/download", SessionDownload),
 
             (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?", 
                 SessionView),
