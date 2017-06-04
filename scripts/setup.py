@@ -54,8 +54,9 @@ if __name__ == "__main__":
 
     print("Copying default autopilot.")
     file_name = "default.h5"
+    mydonkey_models_folder = os.path.join(mydonkey_path, 'models')
     dk_model_file_path = os.path.join(dk_config_path, file_name)
-    mydonkey_model_file_path = os.path.join(mydonkey_path, file_name)
+    mydonkey_model_file_path = os.path.join(mydonkey_models_folder, file_name)
     shutil.copyfile(dk_model_file_path, mydonkey_model_file_path)
 
     print("Donkey setup complete.")
