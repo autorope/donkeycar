@@ -9,12 +9,7 @@ models to help direct the vehicles motion.
 
 '''
 import os
-import math
-import random
-from operator import itemgetter
 from datetime import datetime
-
-import numpy as np
 import keras
 
 from donkey import utils

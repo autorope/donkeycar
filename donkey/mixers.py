@@ -5,8 +5,6 @@ Classes to wrap motor controllers into a functional drive unit.
 '''
 
 import time
-import sys
-from donkey import actuators
 
 
 class BaseMixer():

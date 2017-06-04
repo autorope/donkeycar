@@ -14,9 +14,6 @@ import itertools
 import numpy as np
 import h5py
 from PIL import Image
-from skimage import exposure
-
-import pickle
 
 import donkey as dk
 
@@ -105,17 +102,6 @@ class SessionHandler():
         '''
         path = os.path.join(self.sessions_path, name)
         session = Session(path)
-        return session
-
-
-    def last(self):
-        '''
-        Return the last created session.
-        '''
-        dirs = [ name for name in os.listdir(self.sessions_path) if os.path.isdir(os.path.join(self.sessions_path, name)) ]
-        dirs.sort()
-        path = os.join(self.sessions_path, dirs[-1])
-        session = Seession(path)
         return session
 
 

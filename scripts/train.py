@@ -13,14 +13,8 @@ Options:
 """
 
 import os
-import time
 from docopt import docopt
-import tempfile
-
 import donkey as dk
-from keras.callbacks import ModelCheckpoint
-import keras
-
 # Get args.
 
 
