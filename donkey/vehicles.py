@@ -148,8 +148,9 @@ class BaseVehicle:
             speed = 0
             extra = None
             if self.speed:
-                speed = self.speed.read()
-                extra = { 'speed': speed }
+                speed = self.speed.read_speed()
+                la = self.speed.read_linaccel()
+                extra = { 'speed': speed, 'linaccel': la }
 
             angle, throttle, drive_mode, drive = self.remote.decide_threaded(img_arr,
                                                  angle,

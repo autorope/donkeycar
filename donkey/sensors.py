@@ -186,6 +186,7 @@ class FakeCamera(BaseCamera):
 class BaseSpeed:
     def __init__(self):
         self.speed = 0
+        self.linaccel = None
         # initialize variable used to indicate
         # if the thread should be stopped
         self.stopped = False
@@ -202,8 +203,11 @@ class BaseSpeed:
         while True:
             pass
 
-    def read(self):
+    def read_speed(self):
         return self.speed
+
+    def read_linaccel(self):
+        return self.linaccel
 
 class MaestroSpeed(BaseSpeed):
     def __init__(self):
@@ -217,14 +221,15 @@ class MaestroSpeed(BaseSpeed):
         from datetime import datetime, timedelta
         import re
 
-        pattern = re.compile('^E ([-0-9]+)( ([-0-9]+))?( ([-0-9]+))?$')
+        encoder_pattern = re.compile('^E ([-0-9]+)( ([-0-9]+))?( ([-0-9]+))?$')
+        linaccel_pattern = re.compile('^L ([-.0-9]+) ([-.0-9]+) ([-.0-9]+) ([-0-9]+)$')
 
         while not self.stopped:
             start = datetime.now()
 
             l = self.sensor.readline()
-            if l:
-                m = pattern.match(l.decode('utf-8'))
+            while l:
+                m = encoder_pattern.match(l.decode('utf-8'))
 
                 if m:
                     value = int(m.group(1))
@@ -239,6 +244,15 @@ class MaestroSpeed(BaseSpeed):
                         period = 0.1
 
                     self.speed = 0.377 * (float(value) / 40) / period   # now in m/s
+                else:
+                    m = linaccel_pattern.match(l.decode('utf-8'))
+
+                    if m:
+                        la = { 'x': float(m.group(1)), 'y': float(m.group(2)), 'z': float(m.group(2)) }
+
+                         self.linaccel = la
+
+                l = self.sensor.readline()
 
             stop = datetime.now()
             s = 0.1 - (stop - start).total_seconds()

@@ -4,18 +4,18 @@
 
 	<body>
 		<div class="container-fluid">
-			
+
 			<div class="row">
 				<div class="col-md-12">
 					<h2><span class="text-muted">Session:</span> {{ escape(session['name'])}} </h2>
 				</div>
 			</div>
-			
+
 			<div class="row">
 				<div class="col-md-12 session-thumbnails">
 					<ol id="selectable">
 						<p class="text-muted"><em>Click and drag to select images, command + click to select multiple single images.</em></p>
-						{% for img in session['imgs'] %}					
+						{% for img in session['imgs'] %}
 							<li class="thumbnail" id="{{ img['name'] }}">
 								<img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
 								<div class="caption">
@@ -46,7 +46,7 @@
 
 	<footer class='footer' >
 		<div class="container-fluid">
-			
+
 			<div class="col-md-8">
 				<nav aria-label="Page navigation">
 					<ul class="pagination">
@@ -68,7 +68,7 @@
 					</ul>
 				</nav>
 			</div>
-			
+
 			<div class="col-md-4 img-controls text-right">
 				<div class="form-inline">
 					<label>
@@ -80,7 +80,7 @@
 					<input class="btn btn-danger" type="button" value="Delete Selected" id="delete-all">
 				</div>
 			</div>
-			
+
 		</div>
 	</footer>
 
@@ -90,25 +90,25 @@
 
 	<script>
 		$(document).ready(function() {
-			
+
 			$( "#selectable" ).selectable({
 			  filter: 'li',
 				autoRefresh: false,
-				
+
 				stop: function() {
 					$( "#select-result" ).text(function( index ) {
 					  return $('.ui-selected').length;
 					});
-      	}
+	}
 			});
-			
+
 			$('#select-all').on('click', function () {
 				if ($(this).is(":checked")) {
 					$('.thumbnail').addClass('ui-selected');
 				} else {
 					$('.thumbnail').removeClass('ui-selected');
 				}
-				
+
 				$( "#select-result" ).text(function( index ) {
 					return $('.ui-selected').length;
 				});
@@ -121,7 +121,7 @@
 				$(".ui-selected").each(function() {
 					selected.push(this.id);
 				});
-				
+
 				console.log(selected);
 
 				//Send post request to server.
@@ -131,7 +131,7 @@
 
 				console.log(data);
 				$.post('', data);
-				
+
 				//Remove deleted images from page
 				$(selected).each(function( index, value ) {
 					console.log(value);
@@ -139,7 +139,7 @@
 					$( "#selectable" ).selectable( "refresh" );
 				});
 			});
-			
+
 		} );
 	</script>
 
