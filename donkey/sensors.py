@@ -250,7 +250,7 @@ class MaestroSpeed(BaseSpeed):
                     if m:
                         la = { 'x': float(m.group(1)), 'y': float(m.group(2)), 'z': float(m.group(2)) }
 
-                         self.linaccel = la
+                        self.linaccel = la
 
                 l = self.sensor.readline()
 
