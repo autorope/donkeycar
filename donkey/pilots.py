@@ -68,11 +68,12 @@ class PilotHandler():
         
     def pilots_from_models(self):
         """ Load pilots from keras models saved in the models directory. """
-        models_list = [f for f in os.scandir(self.models_path)]
+        models_list = os.listdir(self.models_path)
         pilot_list = []
         for d in models_list:
-            last_modified = datetime.fromtimestamp(d.stat().st_mtime)
-            pilot = KerasCategorical(d.path, name=d.name, last_modified=last_modified)
+            mp = self.models_path + '/' + d
+            last_modified = datetime.fromtimestamp(os.stat(mp).st_mtime)
+            pilot = KerasCategorical(mp, name=d, last_modified=last_modified)
             pilot_list.append(pilot)
 
         print (pilot_list)
