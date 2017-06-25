@@ -7,3 +7,4 @@ data/*
 .DS_Store
 lag_log.csv
 .spyproject
+.cache

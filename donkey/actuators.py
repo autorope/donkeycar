@@ -7,38 +7,11 @@ are wrapped in a mixer class before being used in the drive loop.
 """
 
 import time
-import sys
 
-
-def map_range(x, X_min, X_max, Y_min, Y_max):
-    ''' 
-    Linear mapping between two ranges of values 
-    '''
-    X_range = X_max - X_min
-    Y_range = Y_max - Y_min
-    XY_ratio = X_range/Y_range
-
-    y = ((x-X_min) / XY_ratio + Y_min) // 1
-
-    return int(y)
-
-
-    
-class RasPiRobot_Controller:
-    def __init__(self, driveLeft, driveRight):
-        import rrb3
-        rr = RRB3(9, 6)
-        leftDir = 0
-        rightDir = 0
-        if driveLeft < 0:  # change direction if number is negative
-            leftDir = 1
-        if driveRight < 0:
-            rightDir = 1
-        rr.set_motors(abs(driveLeft), leftDir, abs(driveRight), rightDir)
-
+from . import utils
 
         
-class PCA9685_Controller:
+class PWM_Hat:
     ''' 
     Adafruit PWM controler. 
     This is used for most RC Cars
@@ -47,16 +20,15 @@ class PCA9685_Controller:
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
         self.pwm = Adafruit_PCA9685.PCA9685()
-
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
 
-    def set_pulse(self, pulse):
+    def run(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 
 
 
         
-class PWMSteeringActuator:
+class PWMSteering:
     #max angle wheels can turn
     LEFT_ANGLE = -1 
     RIGHT_ANGLE = 1
@@ -70,17 +42,17 @@ class PWMSteeringActuator:
         self.right_pulse = right_pulse
 
 
-    def update(self, angle):
+    def run(self, angle):
         #map absolute angle to angle that vehicle can implement.
-        pulse = map_range(angle, 
-                          self.LEFT_ANGLE, self.RIGHT_ANGLE,
-                          self.left_pulse, self.right_pulse)
+        pulse = utils.map_range(angle, 
+                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                self.left_pulse, self.right_pulse)
 
-        self.controller.set_pulse(pulse)
+        self.controller.run(pulse)
 
 
 
-class PWMThrottleActuator:
+class PWMThrottle:
 
     MIN_THROTTLE = -1
     MAX_THROTTLE =  1
@@ -90,38 +62,31 @@ class PWMThrottleActuator:
                        min_pulse=490,
                        zero_pulse=350):
 
-        #super().__init__(channel, frequency)
         self.controller = controller
         self.max_pulse = max_pulse
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
-        self.calibrate()
-
-
-    def calibrate(self):
-        #Calibrate ESC (TODO: THIS DOES NOT WORK YET)
-        print('center: %s' % self.zero_pulse)
-        self.controller.set_pulse(self.zero_pulse)  #Set Max Throttle
+        
+        #send zero pulse to calibrate ESC
+        self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
 
 
-    def update(self, throttle):
+    def run(self, throttle):
         if throttle > 0:
-            pulse = map_range(throttle,
-                              0, self.MAX_THROTTLE, 
-                              self.zero_pulse, self.max_pulse)
+            pulse = utils.map_range(throttle,
+                                    0, self.MAX_THROTTLE, 
+                                    self.zero_pulse, self.max_pulse)
         else:
-            pulse = map_range(throttle,
-                              self.MIN_THROTTLE, 0, 
-                              self.min_pulse, self.zero_pulse)
+            pulse = utils.map_range(throttle,
+                                    self.MIN_THROTTLE, 0, 
+                                    self.min_pulse, self.zero_pulse)
 
-        sys.stdout.flush()
         self.controller.set_pulse(pulse)
-        return '123'
 
 
 
-class Adafruit_Motor_Hat_Controller:
+class Adafruit_DCMotor_Hat:
     ''' 
     Adafruit DC Motor Controller 
     For differential drive cars you need one controller for each motor.
@@ -141,12 +106,8 @@ class Adafruit_Motor_Hat_Controller:
         self.speed = 0
         self.throttle = 0
     
-
-    def turn_off_motors(self):
-        self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
-
         
-    def turn(self, speed):
+    def run(self, speed):
         '''
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
@@ -155,7 +116,7 @@ class Adafruit_Motor_Hat_Controller:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         
         self.speed = speed
-        self.throttle = int(map_range(abs(speed), -1, 1, -255, 255))
+        self.throttle = int(utils.map_range(abs(speed), -1, 1, -255, 255))
         
         if speed > 0:            
             self.motor.run(self.FORWARD)
@@ -164,13 +125,6 @@ class Adafruit_Motor_Hat_Controller:
             
         self.motor.setSpeed(self.throttle)
         
-        
-    def test(self, seconds=.5):
-        speeds = [-.5, -1, -.5, 0, .5, 1, 0]
-        for s in speeds:
-            self.turn(s)
-            time.sleep(seconds)
-            print('speed: %s   throttle: %s' % (self.speed, self.throttle))
-        print('motor #%s test complete'% self.motor_num)
-        
 
+    def shutdown(self):
+        self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)

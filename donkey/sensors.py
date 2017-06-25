@@ -1,52 +1,20 @@
+"""
+Cameras
+"""
+
+
 import time
-from threading import Thread
-from itertools import cycle
 
 import numpy as np
 
-from PIL import Image
 
-from donkey import utils
-
- 
 class BaseCamera:
-
-    def __init__(self, resolution=(160, 120)):
-        self.resolution = resolution
-        self.frame = np.zeros(shape=(self.resolution[1], self.resolution[0], 3))
-        
-    def start(self):
-        # start the thread to read frames from the video stream
-        t = Thread(target=self.update, args=())
-        t.daemon = True
-        t.start()
-        time.sleep(1)
-        return self
-
-    def update(self):
-        while True:
-            pass
-
-    def read(self):
+    
+    def run_threaded(self):
         return self.frame
 
-    def capture_arr(self):
-        return self.read()
 
-    def capture_img(self):
-        arr = self.capture_arr()
-        print(type(arr))
-        img = Image.fromarray(arr, 'RGB')
-        return img
-        
-    def capture_binary(self):
-        img = self.capture_img()
-        return utils.img_to_binary(img)
-
-
-
-
-class PiVideoStream(BaseCamera):
+class PiCamera(BaseCamera):
     def __init__(self, resolution=(160, 120), framerate=20):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
@@ -62,13 +30,10 @@ class PiVideoStream(BaseCamera):
         # initialize the frame and the variable used to indicate
         # if the thread should be stopped
         self.frame = None
-        self.stopped = False
+        self.on = True
         
-        print('PiVideoStream loaded.. .warming camera')
-
+        print('PiCamera loaded.. .warming camera')
         time.sleep(2)
-        self.start()
-
 
  
     def update(self):
@@ -80,21 +45,22 @@ class PiVideoStream(BaseCamera):
             self.rawCapture.truncate(0)
  
             # if the thread indicator variable is set, stop the thread
-            # and resource camera resources
-            if self.stopped:
-                self.stream.close()
-                self.rawCapture.close()
-                self.camera.close()
-                return
+            if not self.on: 
+                break
 
 
-    def stop(self):
+    def shutdown(self):
         # indicate that the thread should be stopped
-        self.stopped = True
+        self.on = False
+        print('stoping PiCamera')
+        time.sleep(.5)
+        self.stream.close()
+        self.rawCapture.close()
+        self.camera.close()
 
 
 
-class RPLidarSensor():
+class RPLidar():
     def __init__(self, port='/dev/ttyUSB0'):
         from rplidar import RPLidar
         self.port = port
@@ -103,90 +69,45 @@ class RPLidarSensor():
         self.lidar.clear_input()
         time.sleep(1)
         self.on = True
-        self.start()
-        
-    def stop(self):
-        self.on = False
-        self.t.join()
-        self.lidar.stop()
-        self.lidar.disconnect()
-        
-        
+
+
     def update(self):
         self.measurements = self.lidar.iter_measurments(500)
         for new_scan, quality, angle, distance in self.measurements:
             angle = int(angle)
-            #print(angle, ', ', distance)
             self.frame[angle] = 2*distance/3 + self.frame[angle]/3
-            if not self.on: break
-            #time.sleep(.1)
-        
-    def read(self):
-        return self.frame
+            if not self.on: 
+                break
+            
+
+
+class SquareBoxCamera:
+    """
+    Fake camera that returns an image with a square box.
     
-    def read_gen(self):
-        "return an iterator over the frame"
-        def gen():
-            while True:
-                yield self.read()
-        return gen()
-
-
-
-
-class ImgArrayCamera(BaseCamera):
-    """
-    Used by simulate script.
+    This can be used to test if a learning algorithm can learn.
     """
 
-    def __init__(self, X):
-        self.X = X
-        self.frame = X[0]
-        self.start()
-
-
-    def generator(self):
-        while True:
-            for i in self.X:
-                yield i
-
-    def update(self):
-        # keep looping infinitely until the thread is stopped
-        for x in self.generator():
-            # grab the frame from the stream and clear the stream in
-            # preparation for the next frame
-            self.frame = x
-            time.sleep(.2) 
-
-
-
-
-class FakeCamera(BaseCamera):
-    ''' 
-    Class that acts like a PiCamera but reads files from a dir.
-    Used for testing on non-Pi devices.
-    '''
-    def __init__(self, img_paths, **kwargs):
-        print('loading FakeCamera')
+    def __init__(self, resolution=(120,160), box_size=4, color=(255, 0, 0)):
+        self.resolution = resolution
+        self.box_size = box_size
+        self.color = color
         
-        self.file_list = img_paths
-        self.file_list.sort()
-        self.file_cycle = cycle(self.file_list) #create infinite iterator
-        self.counter = 0
+        
+    def run(self, x,y, box_size=None, color=None):
+        """
+        Create an image of a square box at a given coordinates.
+        """
+        radius = int((box_size or self.box_size)/2)
+        color = color or self.color
+        print(radius)
+        print(color)
+        
+        frame = np.zeros(shape=self.resolution + (3,))
+        frame[y - radius: y + radius,
+              x - radius: x + radius,  :] = color
+        return frame
 
-        # if the thread should be stopped
-        self.frame = None
-        self.start()
-
-
-    def update(self):
-        # keep looping infinitely until the thread is stopped
-        for f in self.file_cycle:
-            # grab the frame from the stream and clear the stream in
-            # preparation for the next frame
-            self.frame = np.array(Image.open(f))
-            self.counter += 1
-            time.sleep(.2) 
 
 
 
