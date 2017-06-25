@@ -9,7 +9,6 @@ from datetime import datetime
 import json
 import io
 import os
-import copy
 import math
 from threading import Thread
 import numpy as np

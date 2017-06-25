@@ -2,8 +2,6 @@
 import os
 import configparser
 
-import donkey as dk
-
 import keras
 
 if int(keras.__version__.split('.')[0]) < 2:

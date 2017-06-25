@@ -13,7 +13,6 @@ Options:
   --config=<name>   vehicle configuration file name (without extension)  [default: vehicle]
 """
 
-import os
 from docopt import docopt
 
 import donkey as dk

@@ -1,6 +1,3 @@
-
-import io
-import os
 import time
 from threading import Thread
 from itertools import cycle
@@ -94,6 +91,47 @@ class PiVideoStream(BaseCamera):
     def stop(self):
         # indicate that the thread should be stopped
         self.stopped = True
+
+
+
+class RPLidarSensor():
+    def __init__(self, port='/dev/ttyUSB0'):
+        from rplidar import RPLidar
+        self.port = port
+        self.frame = np.zeros(shape=365)
+        self.lidar = RPLidar(self.port)
+        self.lidar.clear_input()
+        time.sleep(1)
+        self.on = True
+        self.start()
+        
+    def stop(self):
+        self.on = False
+        self.t.join()
+        self.lidar.stop()
+        self.lidar.disconnect()
+        
+        
+    def update(self):
+        self.measurements = self.lidar.iter_measurments(500)
+        for new_scan, quality, angle, distance in self.measurements:
+            angle = int(angle)
+            #print(angle, ', ', distance)
+            self.frame[angle] = 2*distance/3 + self.frame[angle]/3
+            if not self.on: break
+            #time.sleep(.1)
+        
+    def read(self):
+        return self.frame
+    
+    def read_gen(self):
+        "return an iterator over the frame"
+        def gen():
+            while True:
+                yield self.read()
+        return gen()
+
+
 
 
 class ImgArrayCamera(BaseCamera):

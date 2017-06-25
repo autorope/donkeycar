@@ -17,8 +17,6 @@ Options:
 import os
 import sys
 import time
-import itertools
-import random
 
 from docopt import docopt
 import pandas as pd

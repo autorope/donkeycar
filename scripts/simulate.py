@@ -11,9 +11,6 @@ Options:
 
 """
 
-
-import os
-
 import donkey as dk
 from docopt import docopt
 from os.path import expanduser

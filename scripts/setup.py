@@ -12,8 +12,6 @@ import os
 import shutil
 import configparser
 
-from docopt import docopt
-
 def make_dir(path):
     real_path = os.path.expanduser(path)
     print('making dir ', real_path)
