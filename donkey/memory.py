@@ -12,8 +12,11 @@ class Memory():
         pass
     
     def put(self, keys, inputs):
-        for i, key in enumerate(keys):
-            self.dict[key] = inputs[i]
+        if len(keys) > 1:
+            for i, key in enumerate(keys):
+                self.dict[key] = inputs[i]
+        else:
+            self.dict[keys[0]] = inputs
             
     def get(self, keys):
         result = [self.dict.get(k) for k in keys]
