@@ -4,4 +4,5 @@ from . import (actuators,
                memory,
                pilots,
                utils,
-               vehicle)
+               vehicle,
+               simulations)

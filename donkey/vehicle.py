@@ -8,12 +8,15 @@ Created on Sun Jun 25 10:44:24 2017
 
 import time
 from threading import Thread
+from donkey.memory import Memory
 
 
 class Vehicle():
-    def __init__(self, mem):
+    def __init__(self, mem=None):
         
-        self.mem = mem
+        if not mem:
+            mem = Memory()
+        self.mem = mem 
         self.parts = [] 
         self.on = True
         self.threads = []
@@ -67,6 +70,7 @@ class Vehicle():
             used for testing the all the parts of the vehicle work.
         """
         
+        self.on = True
         
         for entry in self.parts:
             if entry.get('thread'):

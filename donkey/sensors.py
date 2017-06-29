@@ -99,10 +99,7 @@ class SquareBoxCamera:
         Create an image of a square box at a given coordinates.
         """
         radius = int((box_size or self.box_size)/2)
-        color = color or self.color
-        print(radius)
-        print(color)
-        
+        color = color or self.color      
         frame = np.zeros(shape=self.resolution + (3,))
         frame[y - radius: y + radius,
               x - radius: x + radius,  :] = color

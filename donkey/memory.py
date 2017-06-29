@@ -6,18 +6,44 @@ Created on Sun Jun 25 11:07:48 2017
 @author: wroscoe
 """
 
-class Memory():
-    def __init__(self):
-        self.dict = {}
-        pass
+class Memory:
+    def __init__(self, *args, **kw):
+        self.d = {}
     
+    def __setitem__(self, key, value):
+        if type(key) is not tuple:
+            print('tuples')
+            key = (key,)
+            value=(value,)
+        
+        for i, k in enumerate(key):
+            self.d[k] = value[i]
+        
+    def __getitem__(self, key):
+        if type(key) is tuple:
+            return [self.d[k] for k in key]
+        else:
+            return self.d[key]
+        
+    def update(self, new_d):
+        self.d.update(new_d)
+        
     def put(self, keys, inputs):
         if len(keys) > 1:
             for i, key in enumerate(keys):
-                self.dict[key] = inputs[i]
+                self.d[key] = inputs[i]
         else:
-            self.dict[keys[0]] = inputs
+            self.d[keys[0]] = inputs
             
     def get(self, keys):
-        result = [self.dict.get(k) for k in keys]
+        result = [self.d.get(k) for k in keys]
         return result
+    
+    def keys(self):
+        return self.d.keys()
+    
+    def values(self):
+        return self.d.values()
+    
+    def iteritems(self):
+        return self.d.iteritems()
