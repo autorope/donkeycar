@@ -285,7 +285,7 @@ def parse_img_filepath(filepath):
         if 'extra' in req.keys() and 'speed' in req['extra'].keys():
             data['speed'] = round(float(req['extra']['speed']), 2)
 
-        if 'extra' in req.keys() and 'linaccel' in req['linaccel'].keys():
+        if 'extra' in req.keys() and 'linaccel' in req['extra'].keys():
             data['linaccel'] = {
                 'x': float(req['extra']['linaccel']['x']),
                 'y': float(req['extra']['linaccel']['y']),
