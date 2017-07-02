@@ -61,7 +61,8 @@ class Maestro_Controller:
 
     maestro_device = None
     astar_device = None
-    lock = threading.Lock()
+    maestro_lock = threading.Lock()
+    astar_lock = threading.Lock()
 
     def __init__(self, channel, frequency = 60):
         import serial
@@ -70,6 +71,10 @@ class Maestro_Controller:
 
         self.channel = channel
         self.frequency = frequency
+        self.lturn = False
+        self.rturn = False
+        self.headlights = False
+        self.brakelights = False
 
         if Maestro_Controller.astar_device == None:
             Maestro_Controller.astar_device = serial.Serial('/dev/ttyACM2', 115200, timeout= 0.05)
@@ -81,30 +86,47 @@ class Maestro_Controller:
         w *= 4  # in quarter microsenconds the maestro wants
         w = int(w)
 
-        with Maestro_Controller.lock:
+        with Maestro_Controller.maestro_lock:
             Maestro_Controller.maestro_device.write(bytearray([ 0x84,
                                                             self.channel,
                                                             (w & 0x7F),
                                                             ((w >> 7) & 0x7F)]))
 
     def set_turn_left(self, v):
-        Maestro_Controller.astar_device.write(bytearray('L' if v else 'l', 'ascii'))
+        if self.lturn != v:
+            self.lturn = v
+            b = bytearray('L' if v else 'l', 'ascii')
+            with Maestro_Controller.astar_lock:
+                Maestro_Controller.astar_device.write(b)
 
     def set_turn_right(self, v):
-        Maestro_Controller.astar_device.write(bytearray('R' if v else 'r', 'ascii'))
+        if self.rturn != v:
+            self.rturn = v
+            b = bytearray('R' if v else 'r', 'ascii')
+            with Maestro_Controller.astar_lock:
+                Maestro_Controller.astar_device.write(b)
 
     def set_headlight(self, v):
-        Maestro_Controller.astar_device.write(bytearray('H' if v else 'h', 'ascii'))
+        if self.headlights != v:
+            self.headlights = v
+            b = bytearray('H' if v else 'h', 'ascii')
+            with Maestro_Controller.astar_lock:
+                Maestro_Controller.astar_device.write(b)
 
     def set_brake(self, v):
-        Maestro_Controller.astar_device.write(bytearray('B' if v else 'b', 'ascii'))
+        if self.brakelights != v:
+            self.brakelights = v
+            b = bytearray('B' if v else 'b', 'ascii')
+            with Maestro_Controller.astar_lock:
+                Maestro_Controller.astar_device.write(b)
 
     def readline(self):
         ret = None
-        # expecting lines like
-        # E n nnn n
-        if Maestro_Controller.astar_device.inWaiting() > 8:
-            ret = Maestro_Controller.astar_device.readline().rstrip()
+        with Maestro_Controller.astar_lock:
+            # expecting lines like
+            # E n nnn n
+            if Maestro_Controller.astar_device.inWaiting() > 8:
+                ret = Maestro_Controller.astar_device.readline().rstrip()
 
         return ret
 
