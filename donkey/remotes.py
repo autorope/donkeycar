@@ -155,6 +155,9 @@ class RemoteClient():
         lag = end-start
         self.log('{}, {} \n'.format(datetime.now().time() , lag ))
         #print('remote lag: %s' %lag)
+        if r.status_code != 200:
+            print("Failed request! Code: " + r.status_code)
+            return angle, throttle * .8, None
 
         data = json.loads(r.text)
         angle = float(data['angle'])
