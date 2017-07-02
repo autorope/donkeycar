@@ -244,13 +244,15 @@ class MaestroSpeed(BaseSpeed):
                         period = 0.1
 
                     self.speed = 0.377 * (float(value) / 40) / period   # now in m/s
+                    print("mw speed= " + str(self.speed))
                 else:
                     m = linaccel_pattern.match(l.decode('utf-8'))
 
                     if m:
-                        la = { 'x': float(m.group(1)), 'y': float(m.group(2)), 'z': float(m.group(2)) }
+                        la = { 'x': float(m.group(1)), 'y': float(m.group(2)), 'z': float(m.group(3)) }
 
                         self.linaccel = la
+                        print("mw linaccel= " + str(self.linaccel))
 
                 l = self.sensor.readline()
 
