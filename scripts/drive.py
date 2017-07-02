@@ -14,6 +14,7 @@ Options:
 """
 
 import os
+import sys
 from docopt import docopt
 
 import donkey as dk
@@ -28,8 +29,13 @@ if __name__ == '__main__':
 
     #get the url for the remote host (for user control)
     remote_url = args['--remote']
+    if remote_url == None:
+        print('ERROR! : Must specify remote url')
+        sys.exit()
     if not '//' in remote_url:
         remote_url = 'http://'+remote_url
+    if not ':' in remote_url:
+        remote_url += ':8887'
 
     #load the actuators (default is the adafruit servo hat)
     mythrottlecontroller = dk.actuators.PCA9685_Controller(cfg['throttle_actuator_channel'])
