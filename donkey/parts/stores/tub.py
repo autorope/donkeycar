@@ -98,11 +98,11 @@ class Tub():
         ''' Save the key and value to disk.'''
         
         assert len(self.inputs) == len(args)
-        
+        self.record_time = int(time.time() - self.start_time)
+
         record = self.prepare_record(args)
-        
         self.write_log_record(record)
-        
+        self.record_id += 1
         
     def prepare_record(self, vals):
         """
@@ -112,8 +112,6 @@ class Tub():
         """
         
         record = []
-        self.record_id += 1
-        self.record_time = int(time.time() - self.start_time)
         
         for i, val in enumerate(vals):
             typ = self.types[i]

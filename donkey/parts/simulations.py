@@ -5,6 +5,8 @@ Created on Sun Jun 25 17:30:28 2017
 
 @author: wroscoe
 """
+import numpy as np
+
 import random
 
 class MovingSquareTelemetry:
@@ -39,3 +41,29 @@ class MovingSquareTelemetry:
         
         return int(self.x), int(self.y)
         
+
+class SquareBoxCamera:
+    """
+    Fake camera that returns an image with a square box.
+    
+    This can be used to test if a learning algorithm can learn.
+    """
+
+    def __init__(self, resolution=(120,160), box_size=4, color=(255, 0, 0)):
+        self.resolution = resolution
+        self.box_size = box_size
+        self.color = color
+        
+        
+    def run(self, x,y, box_size=None, color=None):
+        """
+        Create an image of a square box at a given coordinates.
+        """
+        radius = int((box_size or self.box_size)/2)
+        color = color or self.color      
+        frame = np.zeros(shape=self.resolution + (3,))
+        frame[y - radius: y + radius,
+              x - radius: x + radius,  :] = color
+        return frame
+
+

@@ -1,18 +1,10 @@
-"""
-Cameras
-"""
-
-
 import time
-
-import numpy as np
 
 
 class BaseCamera:
     
     def run_threaded(self):
         return self.frame
-
 
 class PiCamera(BaseCamera):
     def __init__(self, resolution=(160, 120), framerate=20):
@@ -57,54 +49,3 @@ class PiCamera(BaseCamera):
         self.stream.close()
         self.rawCapture.close()
         self.camera.close()
-
-
-
-class RPLidar():
-    def __init__(self, port='/dev/ttyUSB0'):
-        from rplidar import RPLidar
-        self.port = port
-        self.frame = np.zeros(shape=365)
-        self.lidar = RPLidar(self.port)
-        self.lidar.clear_input()
-        time.sleep(1)
-        self.on = True
-
-
-    def update(self):
-        self.measurements = self.lidar.iter_measurments(500)
-        for new_scan, quality, angle, distance in self.measurements:
-            angle = int(angle)
-            self.frame[angle] = 2*distance/3 + self.frame[angle]/3
-            if not self.on: 
-                break
-            
-
-
-class SquareBoxCamera:
-    """
-    Fake camera that returns an image with a square box.
-    
-    This can be used to test if a learning algorithm can learn.
-    """
-
-    def __init__(self, resolution=(120,160), box_size=4, color=(255, 0, 0)):
-        self.resolution = resolution
-        self.box_size = box_size
-        self.color = color
-        
-        
-    def run(self, x,y, box_size=None, color=None):
-        """
-        Create an image of a square box at a given coordinates.
-        """
-        radius = int((box_size or self.box_size)/2)
-        color = color or self.color      
-        frame = np.zeros(shape=self.resolution + (3,))
-        frame[y - radius: y + radius,
-              x - radius: x + radius,  :] = color
-        return frame
-
-
-
-

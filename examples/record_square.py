@@ -9,15 +9,15 @@ and records the frames and coordinates to disk.
 import donkey as dk 
 
 #make the membory 
-V = dk.vehicle.Vehicle()
+V = dk.Vehicle()
 
 #telemetry simulator to make box bounce off walls
-tel = dk.simulations.MovingSquareTelemetry(max_velocity=5)
+tel = dk.parts.MovingSquareTelemetry(max_velocity=5)
 V.add(tel, 
       outputs=['square/x', 'square/y'])
 
 #fake camera that shows a square at specific coordinates
-cam = dk.sensors.SquareBoxCamera(resolution=(120,160), 
+cam = dk.parts.SquareBoxCamera(resolution=(120,160), 
                                  box_size=10, 
                                  color=[33,200,2])
 V.add(cam, 
@@ -28,7 +28,7 @@ V.add(cam,
 inputs = ['square/x', 'square/y', 'square/image_array']
 types = ['float', 'float', 'image_array']
 path='~/mydonkey/sessions/tub_test'
-tub = dk.stores.Tub(path, inputs, types)
+tub = dk.parts.Tub(path, inputs, types)
 V.add(tub, inputs=inputs)
 
 

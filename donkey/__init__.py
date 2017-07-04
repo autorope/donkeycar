@@ -1,10 +1,5 @@
-from . import (actuators,
-               sensors,
-               controllers,
-               stores,
-               memory,
-               pilots,
-               utils,
-               vehicle,
-               simulations,
-               transforms)
+from .parts import *
+
+from .vehicle import Vehicle
+from .memory import Memory
+from . import utils
