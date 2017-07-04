@@ -10,7 +10,7 @@ models to help direct the vehicles motion.
 '''
 import os
 from datetime import datetime
-import keras
+
 
 from donkey import utils
 
@@ -35,6 +35,7 @@ class BasePilot():
 
 class KerasCategorical(BasePilot):
     def __init__(self, model_path, **kwargs):
+        import keras
         self.model_path = model_path
         self.model = None #load() loads the model
         super().__init__(**kwargs)

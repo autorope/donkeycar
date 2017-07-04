@@ -97,7 +97,8 @@ class Vehicle():
                     outputs = p.run(*inputs)
                 
                 #save the output to memory
-                self.mem.put(entry['outputs'], outputs)
+                if outputs is not None:
+                    self.mem.put(entry['outputs'], outputs)
 
             #TODO: This should only add the needed time to match the frequency                 
             time.sleep(1/rate_hz)
@@ -105,3 +106,10 @@ class Vehicle():
             #stop drive loop if loop_count exceeds max_loopcount
             if max_loop_count and loop_count > max_loop_count:
                 self.on = False
+                
+    def stop(self):
+        for entry in self.parts():
+            try:
+                entry['part'].shutdown()
+            except Exception as e:
+                print(e)
