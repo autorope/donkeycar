@@ -2,7 +2,7 @@
 drive.py
 
 Script to run on the Raspberry PI to start your vehicle's drive loop. The drive loop
-will use post requests to the server specified in the remote argument. Run the 
+will use post requests to the server specified in the remote argument. Run the
 serve.py script on a different computer to start the remote server.
 
 Usage:
@@ -14,6 +14,7 @@ Options:
 """
 
 import os
+import sys
 from docopt import docopt
 
 import donkey as dk
@@ -22,19 +23,26 @@ import donkey as dk
 args = docopt(__doc__)
 
 if __name__ == '__main__':
-    
+
     #load config file
     cfg = dk.config.parse_config('~/mydonkey/' + args['--config'] + '.ini')
 
     #get the url for the remote host (for user control)
     remote_url = args['--remote']
+    if remote_url == None:
+        print('ERROR! : Must specify remote url')
+        sys.exit()
+    if not '//' in remote_url:
+        remote_url = 'http://'+remote_url
+    if not ':' in remote_url:
+        remote_url += ':8887'
 
     #load the actuators (default is the adafruit servo hat)
     mythrottlecontroller = dk.actuators.PCA9685_Controller(cfg['throttle_actuator_channel'])
     mysteeringcontroller = dk.actuators.PCA9685_Controller(cfg['steering_actuator_channel'])
 
     #set the PWM ranges
-    mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller, 
+    mythrottle = dk.actuators.PWMThrottleActuator(controller=mythrottlecontroller,
                                                   min_pulse=cfg['throttle_actuator_min_pulse'],
                                                   max_pulse=cfg['throttle_actuator_max_pulse'],
                                                   zero_pulse=cfg['throttle_actuator_zero_pulse'])
@@ -48,7 +56,7 @@ if __name__ == '__main__':
 
     #asych img capture from picamera
     mycamera = dk.sensors.PiVideoStream()
-    
+
     #setup the remote host
     myremote = dk.remotes.RemoteClient(remote_url, vehicle_id=cfg['vehicle_id'])
 
@@ -62,6 +70,6 @@ if __name__ == '__main__':
                                   actuator_mixer=mymixer,
                                   remote=myremote,
                                   pilot=mypilot)
-    
+
     #Start the drive loop
     car.start()
