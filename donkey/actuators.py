@@ -77,7 +77,7 @@ class Maestro_Controller:
         self.brakelights = False
 
         if Maestro_Controller.astar_device == None:
-            Maestro_Controller.astar_device = serial.Serial('/dev/ttyACM2', 115200, timeout= 0.05)
+            Maestro_Controller.astar_device = serial.Serial('/dev/ttyACM2', 115200, timeout= 0.01)
 
     def set_pulse(self, pulse):
         # Recalculate pulse width from the Adafruit values
@@ -126,7 +126,10 @@ class Maestro_Controller:
             # expecting lines like
             # E n nnn n
             if Maestro_Controller.astar_device.inWaiting() > 8:
-                ret = Maestro_Controller.astar_device.readline().rstrip()
+                ret = Maestro_Controller.astar_device.readline()
+
+        if ret != None:
+            ret = ret.rstrip()
 
         return ret
 
