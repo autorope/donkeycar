@@ -37,10 +37,8 @@ var driveHandler = (function() {
     var vehicleURL = ""
 
     var load = function() {
-
-      vehicle_id = $('#vehicle_id').data('id') 
-      driveURL = '/api/vehicles/drive/' + vehicle_id + "/"
-      vehicleURL = '/api/vehicles/' + vehicle_id + "/"
+      driveURL = '/drive'
+      vehicleURL = '/drive'
 
       setBindings()
 

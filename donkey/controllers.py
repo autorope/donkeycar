@@ -10,13 +10,23 @@ remotes.py
 The client and web server needed to control a car remotely. 
 """
 
+
+import os
 import json
+import time
 
 import requests
 
+import tornado.ioloop
+import tornado.web
+import tornado.gen
+
+import donkey as dk
+
+
 class RemoteWebServer():
     '''
-    A controller that repeatedly polls a remoet webserver and expects
+    A controller that repeatedly polls a remote webserver and expects
     the response to be angle, throttle and drive mode. 
     '''
     
@@ -53,7 +63,7 @@ class RemoteWebServer():
         return self.angle, self.throttle, self.mode
 
         
-    def run(self, time):
+    def run(self):
         '''
         Posts current car sensor data to webserver and returns
         angle and throttle recommendations. 
@@ -86,3 +96,99 @@ class RemoteWebServer():
         drive_mode = str(data['drive_mode'])
         
         return angle, throttle, drive_mode
+    
+    
+class LocalWebController(tornado.web.Application):
+
+    def __init__(self):
+        ''' 
+        Create and publish variables needed on many of 
+        the web handlers.
+        '''
+
+        print('Starting Donkey Server...')
+
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        self.static_file_path = os.path.join(this_dir, 'templates', 'static')
+        
+        self.angle = 0.0
+        self.throttle = 0.0
+        self.mode = 0.0
+        self.recording = False
+
+        handlers = [
+            (r"/drive", DriveAPI),
+            (r"/video",VideoAPI),
+            (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
+            ]
+
+        settings = {'debug': True}
+
+        super().__init__(handlers, **settings)
+
+    def update(self, port=8887):
+        ''' Start the tornado webserver. '''
+        print(port)
+        self.port = int(port)
+        self.listen(self.port)
+        tornado.ioloop.IOLoop.instance().start()
+
+
+    def run_threaded(self, img_arr=None):
+        self.img_arr = img_arr
+        print(self.angle)
+        return self.angle, self.throttle, self.mode
+        
+
+
+
+class DriveAPI(tornado.web.RequestHandler):
+
+    def get(self):
+        data = {}
+        self.render("templates/vehicle.html", **data)
+    
+    
+    def post(self):
+        '''
+        Receive post requests as user changes the angle
+        and throttle of the vehicle on a the index webpage
+        '''
+        data = tornado.escape.json_decode(self.request.body)
+        self.application.angle = data['angle']
+        self.application.throttle = data['throttle']
+        self.application.mode = data['drive_mode']
+        self.application.recording = data['recording']
+        
+        print(self.application.angle, self.application.throttle)
+
+
+class VideoAPI(tornado.web.RequestHandler):
+    '''
+    Serves a MJPEG of the images posted from the vehicle. 
+    '''
+    @tornado.web.asynchronous
+    @tornado.gen.coroutine
+    def get(self):
+
+        ioloop = tornado.ioloop.IOLoop.current()
+        self.set_header("Content-type", "multipart/x-mixed-replace;boundary=--boundarydonotcross")
+
+        self.served_image_timestamp = time.time()
+        my_boundary = "--boundarydonotcross"
+        while True:
+            
+            interval = .1
+            if self.served_image_timestamp + interval < time.time():
+
+
+                img = dk.utils.arr_to_binary(self.application.img_arr)
+
+                self.write(my_boundary)
+                self.write("Content-type: image/jpeg\r\n")
+                self.write("Content-length: %s\r\n\r\n" % len(img)) 
+                self.write(img)
+                self.served_image_timestamp = time.time()
+                yield tornado.gen.Task(self.flush)
+            else:
+                yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)

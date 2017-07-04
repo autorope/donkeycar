@@ -1,9 +1,10 @@
 from . import (actuators,
                sensors,
                controllers,
-               datastores,
+               stores,
                memory,
                pilots,
                utils,
                vehicle,
-               simulations)
+               simulations,
+               transforms)

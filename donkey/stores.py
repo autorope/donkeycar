@@ -105,6 +105,12 @@ class Tub():
         
         
     def prepare_record(self, vals):
+        """
+        Save values like images that can't be saved in the csv log and
+        return a record with references to the saved values that can
+        be saved in a csv.
+        """
+        
         record = []
         self.record_id += 1
         self.record_time = int(time.time() - self.start_time)

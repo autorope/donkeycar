@@ -11,9 +11,9 @@ import time
 from . import utils
 
         
-class PWM_Hat:
+class PCA9685:
     ''' 
-    Adafruit PWM controler. 
+    PWM motor controler using PCA9685 boards. 
     This is used for most RC Cars
     '''
     def __init__(self, channel, frequency=60):
@@ -29,7 +29,9 @@ class PWM_Hat:
 
         
 class PWMSteering:
-    #max angle wheels can turn
+    """
+    Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
+    """
     LEFT_ANGLE = -1 
     RIGHT_ANGLE = 1
 
@@ -53,7 +55,10 @@ class PWMSteering:
 
 
 class PWMThrottle:
-
+    """
+    Wrapper over a PWM motor cotnroller to convert -1 to 1 throttle
+    values to PWM pulses.
+    """
     MIN_THROTTLE = -1
     MAX_THROTTLE =  1
 
@@ -89,7 +94,7 @@ class PWMThrottle:
 class Adafruit_DCMotor_Hat:
     ''' 
     Adafruit DC Motor Controller 
-    For differential drive cars you need one controller for each motor.
+    Used for each motor on a differential drive car.
     '''
     def __init__(self, motor_num):
         from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor

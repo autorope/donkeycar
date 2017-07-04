@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Record a moving square example.
 
+This example simulates a square that bounces around a frame
+and records the frames and coordinates to disk.
+
+"""
 import donkey as dk 
 
 #make the membory 
@@ -22,7 +28,7 @@ V.add(cam,
 inputs = ['square/x', 'square/y', 'square/image_array']
 types = ['float', 'float', 'image_array']
 path='~/mydonkey/sessions/tub_test'
-tub = dk.datastores.Tub(path, inputs, types)
+tub = dk.stores.Tub(path, inputs, types)
 V.add(tub, inputs=inputs)
 
 

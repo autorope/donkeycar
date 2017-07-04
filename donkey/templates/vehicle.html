@@ -6,7 +6,6 @@
     <div class="row"> 
       <div class="col-md-12">
         <div class="page-header">
-          <h1>Vehicle: {{vehicle['id']}}</h1>
         </div>
         <div class="form-inline">
           <div class="form-group">
@@ -97,14 +96,6 @@
             </select>
           </div>
           <div class="form-group">
-            <select id="pilot_select" class="form-control">
-              <option disabled selected> Select Pilot </option>
-              {% for p in pilots %}
-                <option href='?pilot={{p.name}}'>{{ p.name}} </option>
-              {% end %}
-            </select>
-          </div>
-          <div class="form-group">
             <button type="button" id="record_button" class="btn btn-info btn-block">
               Start Recording (r)
             </button>
@@ -114,7 +105,7 @@
       
       <div class="col-xs-8 col-sm-5 col-md-5"><!-- center column -->
         <div class="thumbnail">
-          <img id='mpeg-image', class='img-responsive' src="/api/vehicles/video/{{vehicle['id']}}"/> </img>
+          <img id='mpeg-image', class='img-responsive' src="/video"/> </img>
         </div>
       </div><!-- end center column -->
 
@@ -124,10 +115,6 @@
             <p>Click/touch to use joystic.</p>
           </div>
         </div><!-- end right col -->
-
-        <div class='meta'>
-          <span id='vehicle_id' data-id={{vehicle['id']}}> </span>
-        </div>
       </div><!-- end right col -->
     </div>
     <div id="joystick-padding"></div>
