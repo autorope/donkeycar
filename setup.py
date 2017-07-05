@@ -36,7 +36,6 @@ setup(name='donkey',
                       'docopt',
                       'tornado',
                       'requests',
-                      'envoy',
                       'pandas==0.19.2',
                      ],
 
@@ -54,5 +53,5 @@ setup(name='donkey',
                         ]
                     },
 
-    packages=find_packages(exclude=(['tests', 'docs', 'env'])),
+    packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
 )
