@@ -25,7 +25,6 @@ setup(name='donkey',
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
 
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
@@ -38,7 +37,7 @@ setup(name='donkey',
                       'tornado',
                       'requests',
                       'envoy',
-                      'pandas',
+                      'pandas=0.19.2',
                      ],
 
     extras_require={'server': [
