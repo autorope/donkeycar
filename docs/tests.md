@@ -7,5 +7,9 @@ don't break something unintended.
 ``` python -m unittest ```
 
 
-### Run tests on the Pi.
-Note that many of the parts require specific hardware. 
+### Organization 
+The test code is in `tests` foders in the same folder as the code. This is to
+help keep the test code linked to the code its self. If you change the code, 
+change the tests. :)
+
+> TODO: Skip tests that require specific hardware.
