@@ -2,7 +2,7 @@
 Lidar
 """
 
-
+import time
 import numpy as np
 
 
@@ -24,4 +24,6 @@ class RPLidar():
             self.frame[angle] = 2*distance/3 + self.frame[angle]/3
             if not self.on: 
                 break
-
+            
+    def run_threaded(self):
+        return self.frame

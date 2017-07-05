@@ -1,17 +1,31 @@
-# Datasets
+# Stores
 
-Donkey has several builtin datasets to help users test their autopilots and confirm that they can learn from image sequences. 
+Stores are components to save and retrieve data produced by other parts. 
 
-## Moving Square
-A single color moving square bounces around the screen.
+## Tub
+This is the standard donkey data store and it is modeled after the ROSBAG.
 
-Outputs:
-* X - 120x160px image of moving square on black background.
-* Y - x and y cordinates of center of square in the image. (use options to only return x or y)
+> TODO: The structure of the Tub part is not ideal and should be changed.
+
+> * types should not need to be specified and could be inspected and saved 
+on the first loop.
+
+
+Example creation 
+
+```python
+import donkey as dk
+
+T = dk.parts.Tub(path, inputs, types)
+
+```
 
 
 
-## Driving Datasets
-[Blog post showing how to train a model from these datasets](https://wroscoe.github.io/keras-lane-following-autopilot.html#keras-lane-following-autopilot)
 
-* DIYRobocars 1/10th scale track on Feb 11th - [warehouseRGB.pkl](https://s3.amazonaws.com/donkey_resources/warehouseRGB.pkl)
+
+
+### Accepted Types
+* `float` - saved as record
+* `int` - saved as record
+ 

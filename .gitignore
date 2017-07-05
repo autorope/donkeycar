@@ -8,3 +8,4 @@ data/*
 lag_log.csv
 .spyproject
 .cache
+site/*
