@@ -2,6 +2,8 @@
 
 Donkey is minimalist and modular self driving library written in Python. It is developed for hobbiests with a focus on allowing fast experimentation and easy community contributions.  
 
+![https://travis-ci.org/wroscoe/donkey.svg?branch=master]
+
 ### [Build a Donkey Car.](http://www.donkeycar.com) ($200 + 2 hours)
 
 #### Use Donkey if you want to:

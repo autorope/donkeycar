@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='donkey',
-    version='0.01',
+    version='2.1',
     description='A library for small scale DIY self driving cars',
     url='https//github.com/wroscoe/donkey',
     author='Will Roscoe',
