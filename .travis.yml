@@ -4,9 +4,9 @@ python:
   - "3.5"
   - "3.6"
 # command to install dependencies
-install: "pip install . -e"
+install: "pip install -e ."
 # command to run tests
-script: pytest
+script: python -m unittest
 
 # safelist
 branches:
