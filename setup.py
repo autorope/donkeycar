@@ -38,6 +38,7 @@ setup(name='donkey',
                       'tornado',
                       'requests',
                       'envoy',
+                      'pandas',
                      ],
 
     extras_require={'server': [
