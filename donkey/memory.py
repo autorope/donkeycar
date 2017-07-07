@@ -7,6 +7,9 @@ Created on Sun Jun 25 11:07:48 2017
 """
 
 class Memory:
+    """
+    A convenience class to save key/value pairs.
+    """
     def __init__(self, *args, **kw):
         self.d = {}
     

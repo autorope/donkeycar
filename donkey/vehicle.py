@@ -70,45 +70,52 @@ class Vehicle():
             used for testing the all the parts of the vehicle work.
         """
         
-        self.on = True
-        
-        for entry in self.parts:
-            if entry.get('thread'):
-                #start the update thread
-                entry.get('thread').start()
-        
-        #wait until the parts warm up.
-        print('Starting vehicle...')
-        time.sleep(1)
-        
-        loop_count = 0
-        while self.on:
-            loop_count += 1
+        try:
+
+            self.on = True
             
             for entry in self.parts:
-                p = entry['part']
-                #get inputs from memory
-                inputs = self.mem.get(entry['inputs'])
-                
-                #run the part
                 if entry.get('thread'):
-                    outputs = p.run_threaded(*inputs)
-                else:
-                    outputs = p.run(*inputs)
+                    #start the update thread
+                    entry.get('thread').start()
+            
+            #wait until the parts warm up.
+            print('Starting vehicle...')
+            time.sleep(1)
+            
+            loop_count = 0
+            while self.on:
+                loop_count += 1
                 
-                #save the output to memory
-                if outputs is not None:
-                    self.mem.put(entry['outputs'], outputs)
+                for entry in self.parts:
+                    p = entry['part']
+                    #get inputs from memory
+                    inputs = self.mem.get(entry['inputs'])
+                    
+                    #run the part
+                    if entry.get('thread'):
+                        outputs = p.run_threaded(*inputs)
+                    else:
+                        outputs = p.run(*inputs)
+                    
+                    #save the output to memory
+                    if outputs is not None:
+                        self.mem.put(entry['outputs'], outputs)
+    
+                #TODO: This should only add the needed time to match the frequency                 
+                time.sleep(1/rate_hz)
+                    
+                #stop drive loop if loop_count exceeds max_loopcount
+                if max_loop_count and loop_count > max_loop_count:
+                    self.on = False
 
-            #TODO: This should only add the needed time to match the frequency                 
-            time.sleep(1/rate_hz)
-                
-            #stop drive loop if loop_count exceeds max_loopcount
-            if max_loop_count and loop_count > max_loop_count:
-                self.on = False
+        except KeyboardInterrupt:
+            pass
+        finally:
+            self.stop()
                 
     def stop(self):
-        for entry in self.parts():
+        for entry in self.parts:
             try:
                 entry['part'].shutdown()
             except Exception as e:

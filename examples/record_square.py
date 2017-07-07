@@ -28,7 +28,7 @@ V.add(cam,
 inputs = ['square/x', 'square/y', 'square/image_array']
 types = ['float', 'float', 'image_array']
 path='~/mydonkey/sessions/tub_test'
-tub = dk.parts.Tub(path, inputs, types)
+tub = dk.parts.TubWriter(path, inputs, types)
 V.add(tub, inputs=inputs)
 
 

@@ -7,7 +7,7 @@ Created on Tue Jul  4 12:32:53 2017
 """
 import os
 import time
-import csv 
+import json
 
 from PIL import Image
 
@@ -31,110 +31,122 @@ class Tub():
     
     """
     
-    
-    
-    def __init__(self, path, inputs, types, overwrite=False):
+    def __init__(self, path, inputs=None, types=None):
                
         self.path = os.path.expanduser(path)
-        self.log_path = os.path.join(self.path, 'log.txt')
+        self.log_path = os.path.join(self.path, 'log.csv')
+        self.meta_path = os.path.join(self.path, 'meta.json')
         
-        self.inputs = inputs
-        self.types = types
+        exists = os.path.exists(self.path)
+        self.current_ix = 0
         
-        if overwrite:
-            if os.path.exists(self.path):
-                self.delete()
-
-        self.load_log(overwrite=overwrite)
-        self.record_id = 0
-        self.start_time = time.time()
-            
-    def load_log(self, overwrite=False):
-        """
-        Create the datastore directory and open it's log.
-        """
-        if not os.path.exists(self.path):
-            os.makedirs(self.path)    
+        #TODO: Current handeling of existing tubs is bad.
+        #If a tub already exists it will get overwritten silently.
         
-        exists=False
-        if os.path.exists(self.log_path):
-            exists = True
+        if exists:
+            #load log and meta
+            self.log = pd.read_csv(self.log_path,  index_col='ix')
+            with open(self.meta_path, 'r') as f:
+                self.meta = json.load(f)
                 
-        self.log_file = open(self.log_path, 'a')
-        self.log_writer = csv.writer(self.log_file)
+        elif not exists and inputs and types:
+            #create log and save meta
+            os.makedirs(self.path)    
+            self.log = pd.DataFrame(columns=inputs)
+            self.log.index.name = 'ix'
+            self.meta = {'inputs': inputs, 'types':types}
+            with open(self.meta_path, 'w') as f:
+                json.dump(self.meta, f)
+        else:
+            raise AttributeError('The path doesnt exist and you didnt give inputs and types')
         
-        if not exists:
-            self.write_log_header()
-            
-            
-    def write_log_header(self):
-        self.write_log_record(self.inputs)
         
+        self.start_time = time.time()
         
-    def write_log_record(self, line):
-        self.log_writer.writerow(line)
+    def get_last_ix(self):
+        if len(self.log)<1:
+            return 0
+        else:
+            return self.log.index[-1]
         
+    @property
+    def inputs(self):
+        return self.meta['inputs']
     
-    def close_log(self):
-        self.log_file.close()
-            
-    def read_log(self):
-        self.close_log()
-        return pd.read_csv(self.log_path)
+    @property
+    def types(self):
+        return self.meta['types']
+        
+    def write_line(self, line):
+        self.log.loc[self.current_ix] = line
+        self.current_ix += 1
+        
+    def read_line(self, keys, ix):           
+        line = dict(self.log.loc[ix, keys])
+        return line
     
+    def save_log(self):
+        self.log.to_csv(self.log_path)
         
-    def save_image(self, path, image):
-            image.save(path)
-            return path
-        
-    def save_array(self, key, array):
-            file_path = self.make_file_path(key, ext='.npy')
-            array.tofile(file_path)
-            return file_path
-    
-    
-    def run(self, *args):
-        
-        ''' Save the key and value to disk.'''
-        
-        assert len(self.inputs) == len(args)
-        self.record_time = int(time.time() - self.start_time)
-
-        record = self.prepare_record(args)
-        self.write_log_record(record)
-        self.record_id += 1
-        
-    def prepare_record(self, vals):
+    def put_record(self, vals):
         """
         Save values like images that can't be saved in the csv log and
         return a record with references to the saved values that can
         be saved in a csv.
         """
         
-        record = []
+        line = []
         
         for i, val in enumerate(vals):
             typ = self.types[i]
             key = self.inputs[i]
             
             if typ in ['str', 'float', 'int']:
-                record.append(val)       
+                line.append(val)       
 
             elif typ is 'image':
                 path = self.make_file_path(key)
-                self.save_image(path, val)
-                record.append(path)
+                val.save(path)
+                line.append(path)
                 
-            elif typ is 'image_array':
-                path = self.make_file_path(key)
+            elif typ == 'image_array':
+                path = self.make_file_path(key, ext='.png')
                 img = Image.fromarray(np.uint8(val))
-                self.save_image(path, img)
-                record.append(path)
+                img.save(path)
+                line.append(path)
 
             else:
-                raise TypeError('Tub does not know what to do with this type {}'.format(typ))
+                msg = 'Tub does not know what to do with this type {}'.format(typ)
+                raise TypeError(msg)
         
+        #write csv line
+        self.write_line(line)
+    
+    def get_record(self, *args, ix=None):
+        if ix is None:
+            ix = self.current_ix
+        if len(args) < 0:
+            keys = self.inputs
+        else:
+            keys = args
+        
+        log_record = self.read_line(keys, ix)
+        record = {}
+        
+        for key, val in log_record.items():
+            typ = self.types[self.inputs.index(key)]
+            
+            #load objects that were saved as separate files
+            if typ == 'image':
+                val = Image.open(val)
+            elif typ == 'image_array':
+                img = Image.open(val)
+                val = np.array(img)
+            
+            record[key] = val
+            
         return record
+            
     
     @staticmethod
     def clean_file_name(name):
@@ -142,7 +154,7 @@ class Tub():
         return name
     
     def make_file_path(self, key, ext='.png'):
-        name = '_'.join([str(self.record_id), key, str(self.record_time), ext])
+        name = '_'.join([str(self.current_ix), key, ext])
         name = self.clean_file_name(name)
         file_path = os.path.join(self.path, name)
         return file_path
@@ -151,3 +163,42 @@ class Tub():
         """ Delete the folder and files for this tub. """
         import shutil
         shutil.rmtree(self.path)
+        
+    def shutdown(self):
+        self.save_log()
+    
+    
+class TubWriter(Tub):
+    def __init__(self, *args, **kwargs):
+        super(TubWriter, self).__init__(*args, **kwargs)
+    
+    
+    def run(self, *args):
+        ''' 
+        API function needed to use as a Donkey part.
+        
+        Accepts values, pairs them with their inputs keys and saves them
+        to disk.
+        '''
+        
+        assert len(self.inputs) == len(args)
+        self.record_time = int(time.time() - self.start_time)
+        self.put_record(args)
+        
+        
+        
+class TubReader(Tub):
+    def __init__(self, *args, **kwargs):
+        super(TubReader, self).__init__(*args, **kwargs)
+    
+    
+    def run(self, *args):
+        ''' 
+        API function needed to use as a Donkey part.
+        
+        Accepts keys to read from the tub and retrieves them sequentially.
+        '''
+        
+        record = self.get_record(args)
+        record = [record[key] for key in args ]
+        return record
