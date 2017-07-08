@@ -1,4 +1,6 @@
 from .actuators.actuators import PCA9685
+from .actuators.actuators import PWMSteering
+from .actuators.actuators import PWMThrottle
 
 from .controllers.web import LocalWebController
 
