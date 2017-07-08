@@ -23,14 +23,13 @@ V.add(ctr,
       threaded=True)
 
 
-#initialize values
-
-
 steering_controller = dk.parts.PCA9685(1)
-steering = dk.parts.PWMSteering(controller=steering_controller)
+steering = dk.parts.PWMSteering(controller=steering_controller,
+                                left_pulse=460, right_pulse=260)
 
 throttle_controller = dk.parts.PCA9685(0)
-throttle = dk.parts.PWMThrottle(controller=throttle_controller)
+throttle = dk.parts.PWMThrottle(controller=throttle_controller,
+                                max_pulse=500, zero_pulse=370, min_pulse=220)
 
 V.add(steering, inputs=['user/angle'])
 V.add(throttle, inputs=['user/throttle'])
