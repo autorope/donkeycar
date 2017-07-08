@@ -14,11 +14,11 @@ import donkey as dk
 V = dk.vehicle.Vehicle()
 
 cam = dk.parts.PiCamera()
-V.add(cam, outputs=['cam/image_array'])
+V.add(cam, outputs=['cam/image_array'], threaded=True)
 
 ctr = dk.parts.LocalWebController()
 V.add(ctr, 
-      inputs=['square/image_array'],
+      inputs=['cam/image_array'],
       outputs=['user/angle', 'user/throttle', 'user/mode'],
       threaded=True)
 

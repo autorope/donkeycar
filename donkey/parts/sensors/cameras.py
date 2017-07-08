@@ -40,6 +40,8 @@ class PiCamera(BaseCamera):
             if not self.on: 
                 break
 
+    def run_threaded(self):
+        return self.frame
 
     def shutdown(self):
         # indicate that the thread should be stopped
