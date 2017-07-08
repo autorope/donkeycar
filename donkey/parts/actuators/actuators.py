@@ -8,7 +8,7 @@ are wrapped in a mixer class before being used in the drive loop.
 
 import time
 
-from .. import utils
+from ... import utils
 
         
 class PCA9685:

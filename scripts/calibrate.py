@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
 	
 	channel = int(input('Enter the channel your actuator uses (0-15).'))
-	c = dk.actuators.PCA9685(channel)
+	c = dk.parts.PCA9685(channel)
 	
 	for i in range(10):
 		pmw = int(input('Enter a PWM setting to test(0-1500)'))
