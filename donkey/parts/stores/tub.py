@@ -188,7 +188,7 @@ class TubWriter(Tub):
         
         
 class TubReader(Tub):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, *args, **kwargs):
         super(TubReader, self).__init__(*args, **kwargs)
     
     

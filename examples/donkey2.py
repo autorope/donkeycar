@@ -34,6 +34,10 @@ throttle = dk.parts.PWMThrottle(controller=throttle_controller,
 V.add(steering, inputs=['user/angle'])
 V.add(throttle, inputs=['user/throttle'])
 
+path='~/mydonkey/sessions/tub1'
+tub=dk.parts.TubWriter(path)
+
+V.add()
 #run the vehicle for 20 seconds
 V.start(rate_hz=50, max_loop_count=1000)
 
