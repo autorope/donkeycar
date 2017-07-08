@@ -23,9 +23,6 @@ V.add(ctr,
       threaded=True)
 
 
-#initialize values
-
-
 steering_controller = dk.parts.PCA9685(1)
 steering = dk.parts.PWMSteering(controller=steering_controller,
                                 left_pulse=460, right_pulse=260)
