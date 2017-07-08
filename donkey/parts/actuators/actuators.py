@@ -23,10 +23,11 @@ class PCA9685:
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
 
-    def run(self, pulse):
+    def set_pulse(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 
 
-
+    def run(self, pulse):
+        self.set_pulse(pulse)
         
 class PWMSteering:
     """
@@ -50,7 +51,7 @@ class PWMSteering:
                                 self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                 self.left_pulse, self.right_pulse)
 
-        self.controller.run(pulse)
+        self.controller.set_pulse(pulse)
 
 
 
