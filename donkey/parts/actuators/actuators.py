@@ -53,6 +53,9 @@ class PWMSteering:
 
         self.controller.set_pulse(pulse)
 
+    def shutdown(self):
+        self.run(0) #set steering straight
+
 
 
 class PWMThrottle:
@@ -89,6 +92,9 @@ class PWMThrottle:
                                     self.min_pulse, self.zero_pulse)
 
         self.controller.set_pulse(pulse)
+        
+    def shutdown(self):
+        self.run(0) #stop vehicle
 
 
 
