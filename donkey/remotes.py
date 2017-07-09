@@ -336,7 +336,8 @@ class DriveAPI(tornado.web.RequestHandler):
         #set if vehicle is recording
         if 'recording' in data:
             if data['recording']:
-                V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
+                if not  V['session']:
+                    V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
             else:
                 V['session'] = None
 
