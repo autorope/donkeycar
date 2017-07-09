@@ -240,16 +240,13 @@ class DonkeyPilotApplication(tornado.web.Application):
 
         if vehicle_id not in self.vehicles:
             print('new vehicle')
-            sh = dk.sessions.SessionHandler(self.sessions_path)
             self.vehicles[vehicle_id] = dict({
                         'id': vehicle_id, 
                         'user_angle': 0, 
                         'user_throttle': 0,  
                         'drive_mode':'user', 
                         'milliseconds': 0,
-                        'recording': False,
-                        'pilot': dk.pilots.BasePilot(),
-                        'session': sh.new()})
+                        'pilot': dk.pilots.BasePilot()})
 
         #eprint(self.vehicles)
         return self.vehicles[vehicle_id]
@@ -336,7 +333,8 @@ class DriveAPI(tornado.web.RequestHandler):
         throttle = data['throttle']
 
         #set if vehicle is recording
-        V['recording'] = data['recording']
+        if data['recording']:
+            V['session'] = dk.sessions.SessionHandler(self.sessions_path).new()
 
         #update vehicle angel based on drive mode
         V['drive_mode'] = data['drive_mode']
@@ -391,7 +389,7 @@ class ControlAPI(tornado.web.RequestHandler):
         print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
 
 
-        if V['recording'] == True:
+        if V['session']:
             #save image with encoded angle/throttle values
             V['session'].put(img, 
                              angle=angle,
