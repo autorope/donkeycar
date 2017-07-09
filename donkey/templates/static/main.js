@@ -112,7 +112,10 @@ var driveHandler = (function() {
       });
       
       $('#erase_last_button').click(function () {
-        eraseRecording('last');
+        var r = confirm("Your entire last session will be erased! Are you sure?");
+        if (r == true) {
+            eraseRecording('last');
+        }
       });
       
       $('#brake_button').click(function() {
