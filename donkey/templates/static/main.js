@@ -230,6 +230,8 @@ var driveHandler = (function() {
           .addClass('btn-info').end()
       }
       
+      $('#erase_last_button').prop('disabled', state.recording);
+
       if (state.brakeOn) {
         $('#brake_button')
           .html('Start Vehicle')
@@ -441,7 +443,6 @@ var driveHandler = (function() {
 
     var toggleRecording = function(){
       state.recording = !state.recording
-      $('#erase_last_button').prop('disabled', state.recording);
       postDrive()
     };
     
