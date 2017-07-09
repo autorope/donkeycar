@@ -106,6 +106,10 @@ var driveHandler = (function() {
         toggleRecording();
       });
       
+      $('#erase_1s_button').click(function () {
+        erase1sRecording();
+      });
+      
       $('#brake_button').click(function() {
         toggleBrake();
       });
@@ -286,7 +290,9 @@ var driveHandler = (function() {
        return percentage * (number > 0 ? 1 : -1);
     }
 
-
+    var erase1sRecording = function() {
+        $.post(eraseUrl, JSON.stringify({duration: '1s'}));
+    };
 
     function gamePadLoop() {
       setTimeout(gamePadLoop,100);
