@@ -334,7 +334,7 @@ class DriveAPI(tornado.web.RequestHandler):
 
         #set if vehicle is recording
         if data['recording']:
-            V['session'] = dk.sessions.SessionHandler(self.sessions_path).new()
+            V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
 
         #update vehicle angel based on drive mode
         V['drive_mode'] = data['drive_mode']
@@ -389,7 +389,7 @@ class ControlAPI(tornado.web.RequestHandler):
         print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
 
 
-        if V['session']:
+        if 'session' in V:
             #save image with encoded angle/throttle values
             V['session'].put(img, 
                              angle=angle,
