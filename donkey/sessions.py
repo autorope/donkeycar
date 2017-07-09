@@ -48,6 +48,17 @@ class Session():
         img_arr, data = load_frame(file_path)
         return img_arr, data
 
+    def delete(self):
+        '''
+        Delete all data in this session
+        '''
+        import shutil
+        shutil.rmtree(self.session_dir);
+
+    def delete_1s(self):
+        files = [f for f in os.listdir(self.session_dir) if os.path.isfile(os.path.join(self.session_dir, f))]
+        for f in files[-7:]: # for last 7 files - it is roughly 1s worth of duration
+            os.remove(os.path.join(self.session_dir, f))
 
     def img_paths(self):
         """ 
@@ -113,9 +124,12 @@ class SessionHandler():
         Return the last created session.
         '''
         dirs = [ name for name in os.listdir(self.sessions_path) if os.path.isdir(os.path.join(self.sessions_path, name)) ]
+        if not dirs:
+            return None
+
         dirs.sort()
-        path = os.join(self.sessions_path, dirs[-1])
-        session = Seession(path)
+        path = os.path.join(self.sessions_path, dirs[-1])
+        session = Session(path)
         return session
 
 
@@ -127,7 +141,7 @@ class SessionHandler():
         
         base_path = os.path.expanduser(base_path)
         if session_name is None:
-            session_dir_name = time.strftime('%Y_%m_%d__%I_%M_%S_%p')
+            session_dir_name = time.strftime('%Y_%m_%d__%H_%M_%S')
         else:
             session_dir_name = session_name
 

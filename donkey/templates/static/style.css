@@ -104,8 +104,11 @@ div.img-controls {
 }
 
 .fat-btn {
-    display: inline-block;
     height: 75vh;
+}
+
+.half-fat-btn {
+    height: 36vh;
 }
 
 body {

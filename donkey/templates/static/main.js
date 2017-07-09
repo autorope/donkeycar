@@ -34,6 +34,7 @@ var driveHandler = (function() {
     var vehicle_id = ""
     var driveURL = ""
     var vehicleURL = ""
+    var sessionURL = "/api/sessions/"
 
     var load = function() {
 
@@ -107,7 +108,11 @@ var driveHandler = (function() {
       });
       
       $('#erase_1s_button').click(function () {
-        erase1sRecording();
+        eraseRecording('1s');
+      });
+      
+      $('#erase_last_button').click(function () {
+        eraseRecording('last');
       });
       
       $('#brake_button').click(function() {
@@ -290,8 +295,11 @@ var driveHandler = (function() {
        return percentage * (number > 0 ? 1 : -1);
     }
 
-    var erase1sRecording = function() {
-        $.post(eraseUrl, JSON.stringify({duration: '1s'}));
+    var eraseRecording = function(scope) {
+        $.ajax({
+            url: sessionURL + '?' + $.param({[scope]: true}),
+            type: 'DELETE',
+        });
     };
 
     function gamePadLoop() {
@@ -430,6 +438,7 @@ var driveHandler = (function() {
 
     var toggleRecording = function(){
       state.recording = !state.recording
+      $('#erase_last_button').prop('disabled', state.recording);
       postDrive()
     };
     

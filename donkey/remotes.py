@@ -203,6 +203,7 @@ class DonkeyPilotApplication(tornado.web.Application):
             (r"/api/vehicles/control/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
                 ControlAPI),
 
+            (r"/api/sessions/", SessionAPI),
 
             (r"/sessions/", SessionListView),
             (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?/download", SessionDownload),
@@ -333,8 +334,11 @@ class DriveAPI(tornado.web.RequestHandler):
         throttle = data['throttle']
 
         #set if vehicle is recording
-        if data['recording']:
-            V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
+        if 'recording' in data:
+            if data['recording']:
+                V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
+            else:
+                V['session'] = None
 
         #update vehicle angel based on drive mode
         V['drive_mode'] = data['drive_mode']
@@ -389,7 +393,7 @@ class ControlAPI(tornado.web.RequestHandler):
         print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
 
 
-        if 'session' in V:
+        if 'session' in V and V['session']:
             #save image with encoded angle/throttle values
             V['session'].put(img, 
                              angle=angle,
@@ -432,6 +436,14 @@ class VideoAPI(tornado.web.RequestHandler):
             else:
                 yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)
 
+class SessionAPI(tornado.web.RequestHandler):
+
+    def delete(self):
+        if self.get_query_argument('1s', None, True):
+            dk.sessions.SessionHandler(self.application.sessions_path).last().delete_1s()
+
+        if self.get_query_argument('last', None, True):
+            dk.sessions.SessionHandler(self.application.sessions_path).last().delete()
 
 #####################
 #                   #
