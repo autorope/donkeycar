@@ -55,9 +55,9 @@ class Session():
         import shutil
         shutil.rmtree(self.session_dir);
 
-    def delete_1s(self):
+    def delete_3s(self):
         files = [f for f in os.listdir(self.session_dir) if os.path.isfile(os.path.join(self.session_dir, f))]
-        for f in files[-7:]: # for last 7 files - it is roughly 1s worth of duration
+        for f in files[-20:]: # for last 20 files - it is roughly 3s worth of duration
             os.remove(os.path.join(self.session_dir, f))
 
     def img_paths(self):

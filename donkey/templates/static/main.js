@@ -107,8 +107,8 @@ var driveHandler = (function() {
         toggleRecording();
       });
       
-      $('#erase_1s_button').click(function () {
-        eraseRecording('1s');
+      $('#erase_3s_button').click(function () {
+        eraseRecording('3s');
       });
       
       $('#erase_last_button').click(function () {

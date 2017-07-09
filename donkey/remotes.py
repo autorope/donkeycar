@@ -439,11 +439,15 @@ class VideoAPI(tornado.web.RequestHandler):
 class SessionAPI(tornado.web.RequestHandler):
 
     def delete(self):
-        if self.get_query_argument('1s', None, True):
-            dk.sessions.SessionHandler(self.application.sessions_path).last().delete_1s()
+        last_session = dk.sessions.SessionHandler(self.application.sessions_path).last()
+        if not last_session:
+            return
+
+        if self.get_query_argument('3s', None, True):
+            last_session.delete_3s()
 
         if self.get_query_argument('last', None, True):
-            dk.sessions.SessionHandler(self.application.sessions_path).last().delete()
+            last_session.delete()
 
 #####################
 #                   #
