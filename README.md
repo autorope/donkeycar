@@ -3,7 +3,9 @@
 Donkey is minimalist and modular self driving library written in Python. It is developed for hobbiests with a focus on allowing fast experimentation and easy community contributions.  
 
 ** REFACTOR IN PROGRESS ** 
-*We've learned a lot in the past couple months and working to implement many of those changes in a new version Donkey 2.1. This version will make it easy for users to contribe new pilots, sensors, controllers, and actuators rather than needing to rewrite the the whole code base. This new ROS'ish version lives in the dev branch and will be merged into master on July 16th.
+
+*
+We've learned a lot in the past couple months and working to implement many of those changes in a new version Donkey 2.1. This version will make it easy for users to contribe new pilots, sensors, controllers, and actuators rather than needing to rewrite the the whole code base. This new ROS'ish version lives in the dev branch and will be merged into master on July 16th.
 
 All the hardware in the standard build will be supported and most of the funcationality for driving/training will remain.
 *
