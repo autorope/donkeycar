@@ -1,5 +1,4 @@
 
-
 var driveHandler = (function() {
     //functions used to drive the vehicle. 
 
@@ -249,12 +248,14 @@ var driveHandler = (function() {
       
       if (state.controlMode == "joystick") {
         $('#joystick-column').show();
+        $('#joystick-padding').show();
         $('#tilt-toggle').removeClass("active");
         $('#joystick-toggle').addClass("active");
         $('#joystick').attr("checked", "checked")
         $('#tilt').removeAttr("checked")
       } else if (state.controlMode == "tilt") {
         $('#joystick-column').hide();
+        $('#joystick-padding').hide();
         $('#joystick-toggle').removeClass("active");
         $('#tilt-toggle').addClass("active");
         $('#joystick').removeAttr("checked");

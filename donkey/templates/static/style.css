@@ -103,6 +103,11 @@ div.img-controls {
 	margin: 20px 0;
 }
 
+.fat-btn {
+    display: inline-block;
+    height: 75vh;
+}
+
 body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;

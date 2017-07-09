@@ -185,6 +185,9 @@ class DonkeyPilotApplication(tornado.web.Application):
             (r"/vehicles/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
                 VehicleView),
 
+            (r"/vehicles/?(?P<vehicle_id>[A-Za-z0-9-]+)?/device_tilt", 
+                DeviceTiltView),
+
 
             (r"/api/vehicles/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
                 VehicleAPI),
@@ -273,6 +276,17 @@ class VehicleListView(tornado.web.RequestHandler):
 
         self.render("templates/vehicle_list.html", **data)
 
+
+class DeviceTiltView(tornado.web.RequestHandler):
+    def get(self, vehicle_id):
+        '''
+        Serves page for users to control the vehicle.
+        ''' 
+
+        V = self.application.get_vehicle(vehicle_id)
+        pilots = self.application.pilots
+        data = {'vehicle': V, 'pilots': pilots}
+        self.render("templates/device_tilt.html", **data)
 
 
 class VehicleView(tornado.web.RequestHandler):
