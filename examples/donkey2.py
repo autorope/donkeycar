@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 
-# -*- coding: utf-8 -*-
-
 """
-Web controller.
-
-This example shows how a user use a web controller to controll
-a square that move around the image frame.
+Script to drive a donkey car using a webserver hosted on the vehicle.
 
 """
 import donkey as dk 

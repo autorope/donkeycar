@@ -159,8 +159,6 @@ class DriveAPI(tornado.web.RequestHandler):
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
         self.application.recording = data['recording']
-        
-        print(self.application.angle, self.application.throttle)
 
 
 class VideoAPI(tornado.web.RequestHandler):
