@@ -13,8 +13,8 @@
 			     </div>
 			    </a>
 			    <div class="panel-body">
-                    {% for tag in tags %}
-                    <button type="button" class="btn btn-xs tagging btn-info" data-dirname="{{escape(dir.name)}}" data-tagname="{{tag}}"  data-toggle="button" aria-pressed="false" autocomplete="off" onclick="tagToggled(this)">
+                    {% for tag in tags.all_tags() %}
+                    <button type="button" class="btn btn-xs tagging btn-info {{'active' if tag in tags.session_tags(dir.name) else ''}}" data-dirname="{{escape(dir.name)}}" data-tagname="{{tag}}"  data-toggle="button" aria-pressed="false" autocomplete="off" onclick="tagToggled(this)">
                             {{tag}}
                         </button>
                     {% end %}

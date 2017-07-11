@@ -23,7 +23,7 @@
             <div class="row">
                 <div class="col-md-12">
                     {% for tag in tags %}
-                    <button type="button" class="btn btn-xs tagging btn-info {{'active' if tag in applied else ''}}" data-dirname="{{session['name']}}" data-tagname="{{tag}}"  data-toggle="button" aria-pressed="false" autocomplete="off" onclick="tagToggled(this)">
+                    <button type="button" class="btn btn-xs tagging btn-info {{'active' if tag in session_tags else ''}}" data-dirname="{{session['name']}}" data-tagname="{{tag}}"  data-toggle="button" aria-pressed="false" autocomplete="off" onclick="tagToggled(this)">
                             {{tag}}
                         </button>
                     {% end %}

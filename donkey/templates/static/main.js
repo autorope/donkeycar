@@ -658,7 +658,14 @@ return result;
 }
 
 var tagToggled = function(el) {
+    var sessionURL = "/api/sessions/"
+
     var tagName = $(el).data('tagname');
     var dirName = $(el).data('dirname');
+    var verb = $(el).hasClass('active') ? 'DELETE' : 'PUT';  // class has not changed when onclick is called. So having 'active' means 'it's about to become inactive
+    $.ajax({
+        url: sessionURL + dirName + '/tags/' + tagName + '/',
+        type: verb
+    });
 }
 

@@ -23,6 +23,7 @@ from PIL import Image
 
 
 import donkey as dk
+from donkey.tags import Tags
 
 
 class RemoteClient():
@@ -205,7 +206,7 @@ class DonkeyPilotApplication(tornado.web.Application):
 
             (r"/api/sessions/", SessionAPI),
 
-            (r"/api/sessions/?(?P<session_name>[A-Za-z0-9-]+)?/tags/", TagAPI),
+            (r"/api/sessions/?(?P<session_id>[^/]+)?/tags/?(?P<tag>[^/]+)?/", TagAPI),
 
             (r"/sessions/", SessionListView),
             (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?/download", SessionDownload),
@@ -454,8 +455,11 @@ class SessionAPI(tornado.web.RequestHandler):
 
 class TagAPI(tornado.web.RequestHandler):
 
-    def put(self):
-        pass
+    def put(self, session_id, tag):
+        Tags(self.application.sessions_path).add_tag_to_session(session_id, tag)
+
+    def delete(self, session_id, tag):
+        Tags(self.application.sessions_path).delete_tag_from_session(session_id, tag)
 
 #####################
 #                   #
@@ -512,14 +516,7 @@ class SessionListView(tornado.web.RequestHandler):
         '''    
 
         session_dirs = [f for f in os.scandir(self.application.sessions_path) if f.is_dir() ]
-        tags = []
-        try:
-            with open(os.path.join(self.application.sessions_path, 'tags')) as f:
-                tags = [t.strip() for t in f.readlines()]
-        except:
-            pass
-
-        data = {'session_dirs': session_dirs, 'tags': tags}
+        data = {'session_dirs': session_dirs, 'tags': Tags(self.application.sessions_path)}
         self.render("templates/session_list.html", **data)
 
 
@@ -542,16 +539,6 @@ class SessionView(tornado.web.RequestHandler):
         if cur_idx < len(session_dirs) - 1:
             next_session_id = session_dirs[cur_idx + 1];
 
-        tags = []
-        applied_tags = []
-        try:
-            with open(os.path.join(self.application.sessions_path, 'tags')) as f:
-                data = json.load(f)
-                tags = data['all_tags']
-                applied_tags = data['sessions'].get(session_id, [])
-        except:
-            pass
-
         path = os.path.join(sessions_path, session_id)
         imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() ]
         img_count = len(imgs)
@@ -570,7 +557,8 @@ class SessionView(tornado.web.RequestHandler):
         sorted_imgs = sorted(imgs, key=itemgetter('name')) 
         page_list = [p+1 for p in range(pages)]
         session = {'name':session_id, 'imgs': sorted_imgs[start:end]}
-        data = {'session': session, 'page_list': page_list, 'this_page':page, 'prev': prev_session_id, 'next': next_session_id, 'tags': tags, 'applied': applied_tags}
+        tags = Tags(self.application.sessions_path)
+        data = {'session': session, 'page_list': page_list, 'this_page':page, 'prev': prev_session_id, 'next': next_session_id, 'tags': tags.all_tags(), 'session_tags': tags.session_tags(session_id)}
         self.render("templates/session.html", **data)
 
 
