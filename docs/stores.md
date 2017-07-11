@@ -1,6 +1,6 @@
 # Stores
 
-Stores are components to save and retrieve data produced by other parts. 
+Stores are parts that record and replay vehicle data produced by other parts. 
 
 ## Tub
 This is the standard donkey data store and it is modeled after the ROSBAG.
