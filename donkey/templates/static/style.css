@@ -104,11 +104,37 @@ div.img-controls {
 }
 
 .fat-btn {
-    height: 75vh;
+    height: 242px;
+}
+.half-fat-btn {
+    height: 121px;
 }
 
-.half-fat-btn {
-    height: 36vh;
+@media (min-height: 375px) {
+    .fat-btn {
+        height: 276px;
+    }
+    .half-fat-btn {
+        height: 138px;
+    }
+}
+
+@media (min-height: 410px) {
+    .fat-btn {
+        height: 312px;
+    }
+    .half-fat-btn {
+        height: 156px;
+    }
+}
+
+@media (min-height: 768px) {
+    .fat-btn {
+        height: 612px;
+    }
+    .half-fat-btn {
+        height: 306px;
+    }
 }
 
 body {

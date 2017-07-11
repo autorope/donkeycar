@@ -67,6 +67,7 @@ var driveHandler = (function() {
         console.log("Device Orientation not supported by browser, setting control mode to joystick.");
         state.controlMode = 'joystick';
       }
+      updateUI();
     };
 
 
@@ -138,7 +139,6 @@ var driveHandler = (function() {
           console.log('gamepad mode')
           gamePadLoop();
         }
-        updateUI();
       });
 
     };
@@ -178,12 +178,7 @@ var driveHandler = (function() {
         $.post(vehicleURL, data)
     }
 
-
-    var updateUI = function() {
-      $("#throttleInput").val(state.tele.user.throttle);
-      $("#angleInput").val(state.tele.user.angle);
-      $('#mode_select').val(state.driveMode);
-      
+    var updateIndicator = function() {
       var throttlePercent = Math.round(Math.abs(state.tele.user.throttle) * 100) + '%';
       var steeringPercent = Math.round(Math.abs(state.tele.user.angle) * 100) + '%';
       var throttleRounded = state.tele.user.throttle.toFixed(2)
@@ -217,6 +212,12 @@ var driveHandler = (function() {
         $('#angle-bar-forward').css('width', '0%').html('')
         $('#angle-bar-backward').css('width', '0%').html('')
       }
+    }      
+
+    var updateUI = function() {
+      $("#throttleInput").val(state.tele.user.throttle);
+      $("#angleInput").val(state.tele.user.angle);
+      $('#mode_select').val(state.driveMode);
       
       if (state.recording) {
         $('#record_button')
@@ -288,7 +289,6 @@ var driveHandler = (function() {
                                 'recording': state.recording})
         console.log(data)
         $.post(driveURL, data)
-        updateUI()
     };
 
     var applyDeadzone = function(number, threshold){
@@ -369,15 +369,13 @@ var driveHandler = (function() {
       var gamma = event.gamma;
 
       if (beta == null || gamma == null) {
-        deviceHasOrientation = false;
+        deviceHasOrientation = true;
         state.controlMode = "joystick";
         console.log("Invalid device orientation values, switched to joystick mode.")
       } else {
         deviceHasOrientation = true;
         console.log("device has valid orientation values")
       }
-      
-      updateUI();
       
       if(state.controlMode != "tilt" || !deviceHasOrientation || state.brakeOn){
         return;
@@ -444,6 +442,7 @@ var driveHandler = (function() {
     var toggleRecording = function(){
       state.recording = !state.recording
       postDrive()
+      updateUI();
     };
     
     var toggleBrake = function(){
@@ -453,6 +452,7 @@ var driveHandler = (function() {
       if (state.brakeOn) {
         brake();
       }
+      updateUI();
     };
 
     var brake = function(i=0){
