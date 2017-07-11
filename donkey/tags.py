@@ -35,3 +35,12 @@ class Tags():
         self.tags.get('sessions', {})[session_id] = list(tags)
         with open(self.file_path, 'w') as outfile:
                 json.dump(self.tags, outfile, sort_keys=True, indent=4)
+
+    def sessions_with_tags(self, tags):
+        results = set()
+        for session in self.tags.get('sessions', {}):
+            session_tags = self.tags.get('sessions', {})[session]
+            if set(session_tags).intersection(tags):
+                results.add(session)
+
+        return list(results)

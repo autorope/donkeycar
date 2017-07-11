@@ -3,12 +3,13 @@ Example of how to train a keras model from simulated images or a
 previously recorded session.
 
 Usage:
-    train.py [--datasets=<datasets>] [--sessions=<sessions>] (--name=<name>) 
+    train.py [--datasets <datasets>] [--sessions <sessions>] [--tags <tags>] (--name=<name>) 
 
 
 Options:
   --datasets=<datasets>   file path of dataset
   --sessions=<sessions>   file path of sessions
+  --tags=<tags>   tags for the sessions 
   --name=<name>   name of model to be saved
 """
 
@@ -38,6 +39,17 @@ if __name__ == "__main__":
     elif args['--sessions'] is not None:
         session_names = args['--sessions'].split(',')
         X, Y = dk.sessions.sessions_to_dataset(session_names=session_names)
+        dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
+        dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
+        datasets = [dataset_path]
+        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
+
+    elif args['--tags'] is not None:
+        tag_names = args['--tags'].split(',')
+        sessions = dk.tags.Tags(dk.config.sessions_path).sessions_with_tags(set(tag_names))
+        existed_sessions = [s for s in sessions if os.path.isdir(os.path.join(dk.config.sessions_path, s))]
+        import pdb; pdb.set_trace()
+        X, Y = dk.sessions.sessions_to_dataset(session_names=existed_sessions)
         dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
         dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
         datasets = [dataset_path]

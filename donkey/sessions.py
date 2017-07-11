@@ -254,6 +254,29 @@ def sessions_to_dataset(session_names):
     Y = np.concatenate(Y)
     return X, Y
 
+def tagged_sessions_to_dataset(tag_names):
+
+    '''
+    Combine, pickle and save data of session with specified tags to a file. 
+
+    'tag_names' the names of the tag for the sessions to Combine
+    '''
+
+    sh = dk.sessions.SessionHandler(dk.config.sessions_path)
+
+    X = []
+    Y = []
+
+    for name in session_names:
+        s = sh.load(name)
+        x, y = s.load_dataset()
+        X.append(x)
+        Y.append(y)
+
+    X = np.concatenate(X)
+    Y = np.concatenate(Y)
+    return X, Y
+
 
 def dataset_to_hdf5(X, Y, file_path):
     print('Saving HDF5 file to %s' %file_path)
