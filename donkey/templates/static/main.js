@@ -276,6 +276,7 @@ var driveHandler = (function() {
         $('#tilt').attr("checked", "checked");
       }
       
+      setTimeout(updateUI,50);
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
@@ -288,7 +289,6 @@ var driveHandler = (function() {
                                 'recording': state.recording})
         console.log(data)
         $.post(driveURL, data)
-        updateUI()
     };
 
     var applyDeadzone = function(number, threshold){
@@ -376,8 +376,6 @@ var driveHandler = (function() {
         deviceHasOrientation = true;
         console.log("device has valid orientation values")
       }
-      
-      updateUI();
       
       if(state.controlMode != "tilt" || !deviceHasOrientation || state.brakeOn){
         return;
@@ -472,7 +470,6 @@ var driveHandler = (function() {
       };
       
       state.brakeOn = true;
-      updateUI();
     };
     
     var limitedThrottle = function(newThrottle){
