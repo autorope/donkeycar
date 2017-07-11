@@ -246,6 +246,8 @@ def sessions_to_dataset(session_names):
 
     for name in session_names:
         s = sh.load(name)
+        if s.img_count() == 0:
+            next
         x, y = s.load_dataset()
         X.append(x)
         Y.append(y)
