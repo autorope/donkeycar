@@ -48,7 +48,6 @@ if __name__ == "__main__":
         tag_names = args['--tags'].split(',')
         sessions = dk.tags.Tags(dk.config.sessions_path).sessions_with_tags(set(tag_names))
         existed_sessions = [s for s in sessions if os.path.isdir(os.path.join(dk.config.sessions_path, s))]
-        import pdb; pdb.set_trace()
         X, Y = dk.sessions.sessions_to_dataset(session_names=existed_sessions)
         dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
         dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
