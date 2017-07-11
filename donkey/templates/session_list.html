@@ -2,20 +2,29 @@
 {% extends "base.html" %}
 {% block content %}
 	<div class="container">
-		    <ul>
-		      {% for dir in session_dirs %}
-				<div class="panel panel-default">
-				<a href="/sessions/{{ escape(dir.name)}}/">
-				  <div class="panel-heading">
-				    <h3 class="panel-title">{{ escape(dir.name) }}</h3>
-				  </div>
-				 </a>
-				  <div class="panel-body">
-				    Sesssion Details
-				  </div>
-				</div>
-		      {% end %}
-		    </ul>
+	    {% for idx, dir in enumerate(session_dirs) %}
+            {% if idx%4 == 0 %} 
+                <div class="row">
+            {% end %}
+			<div class="col-xs-12 col-sm-12 col-md-6 col-lg-3 panel panel-default">
+			    <a href="/sessions/{{ escape(dir.name)}}/">
+			     <div class="panel-heading">
+			       <h3 class="panel-title">{{ escape(dir.name) }}</h3>
+			     </div>
+			    </a>
+			    <div class="panel-body">
+                    {% for tag in tags %}
+                    <button type="button" class="btn btn-xs tagging btn-info" data-dirname="{{escape(dir.name)}}" data-tagname="{{tag}}"  data-toggle="button" aria-pressed="false" autocomplete="off" onclick="tagToggled(this)">
+                            {{tag}}
+                        </button>
+                    {% end %}
+			    </div>
+            </div>
+            {% if idx%4 == 3 %} 
+                </div> <!-- row -->
+            {% end %}
+       {% end %}
 		    
 	</div>
+
 {% end %}

@@ -137,6 +137,14 @@ div.img-controls {
     }
 }
 
+.tagging {
+    margin-bottom: 4px;
+}
+
+.tagging.active {
+    background-color: #269aff;
+}
+
 body {
   /* Margin bottom by footer height */
   margin-bottom: 60px;

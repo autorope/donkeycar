@@ -657,3 +657,8 @@ function remap( x, oMin, oMax, nMin, nMax ){
 return result;
 }
 
+var tagToggled = function(el) {
+    var tagName = $(el).data('tagname');
+    var dirName = $(el).data('dirname');
+}
+
