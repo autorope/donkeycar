@@ -7,7 +7,9 @@
 			
 			<div class="row">
 				<div class="col-md-8">
-					<h2><span class="text-muted">Session:</span> {{ escape(session['name'])}} </h2>
+					<h2><span class="text-muted">Session:</span> {{ escape(session['name'])}} 
+                        <button type="button" class="btn btn-danger" data-dirname="{{session['name']}}" onclick="deleteSession(this)">DELETE</button>
+                    </h2>
 				</div>
 				<div class="col-md-2">
                     {% if prev %}

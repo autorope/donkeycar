@@ -204,7 +204,7 @@ class DonkeyPilotApplication(tornado.web.Application):
             (r"/api/vehicles/control/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
                 ControlAPI),
 
-            (r"/api/sessions/", SessionAPI),
+            (r"/api/sessions/?(?P<session_id>[^/]+)?/", SessionAPI),
 
             (r"/api/sessions/?(?P<session_id>[^/]+)?/tags/?(?P<tag>[^/]+)?/", TagAPI),
 
@@ -442,16 +442,18 @@ class VideoAPI(tornado.web.RequestHandler):
 
 class SessionAPI(tornado.web.RequestHandler):
 
-    def delete(self):
+    def delete(self, session_id):
         last_session = dk.sessions.SessionHandler(self.application.sessions_path).last()
         if not last_session:
             return
 
-        if self.get_query_argument('3s', None, True):
+        if session_id == '3s':
             last_session.delete_3s()
-
-        if self.get_query_argument('last', None, True):
+        elif session_id == 'last':
             last_session.delete()
+        else:
+            dk.sessions.SessionHandler(self.application.sessions_path).load(session_id).delete()
+
 
 class TagAPI(tornado.web.RequestHandler):
 

@@ -302,7 +302,7 @@ var driveHandler = (function() {
 
     var eraseRecording = function(scope) {
         $.ajax({
-            url: sessionURL + '?' + $.param({[scope]: true}),
+            url: sessionURL + scope+ '/',
             type: 'DELETE',
         });
     };
@@ -664,8 +664,18 @@ var tagToggled = function(el) {
     var dirName = $(el).data('dirname');
     var verb = $(el).hasClass('active') ? 'DELETE' : 'PUT';  // class has not changed when onclick is called. So having 'active' means 'it's about to become inactive
     $.ajax({
-        url: sessionURL + dirName + '/tags/' + tagName + '/',
+        url: "/api/sessions/" + dirName + '/tags/' + tagName + '/',
         type: verb
     });
-}
+};
 
+var deleteSession = function(el) {
+    var dirName = $(el).data('dirname');
+    $.ajax({
+        url: "/api/sessions/" + dirName + '/',
+        type: 'DELETE',
+    })
+    .done(function() {
+        window.location.href = '/sessions/';
+    });
+};
