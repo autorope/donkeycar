@@ -36,10 +36,12 @@ var driveHandler = (function() {
     var vehicleURL = ""
     var sessionURL = "/api/sessions/"
 
+    var websocket;
+
     var load = function() {
 
       vehicle_id = $('#vehicle_id').data('id') 
-      driveURL = '/api/vehicles/drive/' + vehicle_id + "/"
+      driveURL = "ws://" + location.host + "/ws/drives/" + vehicle_id + "/"
       vehicleURL = '/api/vehicles/' + vehicle_id + "/"
 
       setBindings()
@@ -68,6 +70,8 @@ var driveHandler = (function() {
         state.controlMode = 'joystick';
       }
       updateUI();
+
+      websocket = new WebSocket(driveURL);
     };
 
 
@@ -288,7 +292,7 @@ var driveHandler = (function() {
                                 'drive_mode':state.driveMode, 
                                 'recording': state.recording})
         console.log(data)
-        $.post(driveURL, data)
+        websocket.send(data);
     };
 
     var applyDeadzone = function(number, threshold){
@@ -411,7 +415,7 @@ var driveHandler = (function() {
           if (state.controlMode == "tilt") {
             deviceOrientationLoop(); 
           }
-       }, 100)
+       }, 10)
     }
 
     var throttleUp = function(){

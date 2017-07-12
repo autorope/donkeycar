@@ -18,6 +18,7 @@ import requests
 import tornado.ioloop
 import tornado.web
 import tornado.gen
+import tornado.websocket
 
 from PIL import Image
 
@@ -194,9 +195,6 @@ class DonkeyPilotApplication(tornado.web.Application):
                 VehicleAPI),
 
 
-            (r"/api/vehicles/drive/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
-                DriveAPI),
-
             (r"/api/vehicles/video/?(?P<vehicle_id>[A-Za-z0-9-]+)?",
                 VideoAPI
             ),
@@ -221,6 +219,7 @@ class DonkeyPilotApplication(tornado.web.Application):
 
             (r"/pilots/", PilotListView),
 
+            (r"/ws/drives/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", DriveWebSocket),
 
 
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
@@ -319,43 +318,6 @@ class VehicleAPI(tornado.web.RequestHandler):
         pilot = next(filter(lambda p: p.name == data['pilot'], self.application.pilots))
         pilot.load()
         V['pilot'] = pilot 
-
-
-
-class DriveAPI(tornado.web.RequestHandler):
-
-    def post(self, vehicle_id):
-        '''
-        Receive post requests as user changes the angle
-        and throttle of the vehicle on a the index webpage
-        '''
-
-        V = self.application.get_vehicle(vehicle_id)
-
-        data = tornado.escape.json_decode(self.request.body)
-        angle = data['angle']
-        throttle = data['throttle']
-
-        #set if vehicle is recording
-        if 'recording' in data:
-            if data['recording']:
-                if not  V['session']:
-                    V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
-            else:
-                V['session'] = None
-
-        #update vehicle angel based on drive mode
-        V['drive_mode'] = data['drive_mode']
-
-        if angle is not "":
-            V['user_angle'] = angle
-        else:
-            V['user_angle'] = 0
-
-        if throttle is not "":
-            V['user_throttle'] = throttle
-        else:
-            V['user_throttle'] = 0    
 
 
 class ControlAPI(tornado.web.RequestHandler):
@@ -607,5 +569,35 @@ class SessionDownload(tornado.web.RequestHandler):
         raise HTTPError(500)
 
 
+class DriveWebSocket(tornado.websocket.WebSocketHandler):
 
+    def open(self, vehicle_id):
+        self.vehicle = self.application.get_vehicle(vehicle_id)
+
+    def on_message(self, message):
+        V = self.vehicle
+        data = tornado.escape.json_decode(message)
+        angle = data['angle']
+        throttle = data['throttle']
+
+        #set if vehicle is recording
+        if 'recording' in data:
+            if data['recording']:
+                if not 'session' in V or not V['session']:
+                    V['session'] = dk.sessions.SessionHandler(self.application.sessions_path).new()
+            else:
+                V['session'] = None
+
+        #update vehicle angel based on drive mode
+        V['drive_mode'] = data['drive_mode']
+
+        if angle is not "":
+            V['user_angle'] = angle
+        else:
+            V['user_angle'] = 0
+
+        if throttle is not "":
+            V['user_throttle'] = throttle
+        else:
+            V['user_throttle'] = 0    
 
