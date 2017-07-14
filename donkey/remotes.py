@@ -21,12 +21,65 @@ import tornado.gen
 import tornado.websocket
 
 from PIL import Image
+from scripts import drive
+from queue import Queue
 
 
 import donkey as dk
 from donkey.tags import Tags
 
+Q = Queue(maxsize=1)
 
+def control(application, vehicle_id='mycar'):
+    '''
+    Receive post requests from a vehicle and returns 
+    the angle and throttle the car should use. Depending on 
+    the drive mode the values can come from the user or
+    an autopilot.
+    '''    
+
+    while True:
+        data = Q.get()
+        V = self.application.get_vehicle(vehicle_id)
+    
+        img = data['img']
+        img = Image.open(io.BytesIO(img))
+        img_arr = dk.utils.img_to_arr(img)
+    
+    
+        #Get angle/throttle from pilot loaded by the server.
+        if V['pilot'] is not None:
+            pilot_angle, pilot_throttle = V['pilot'].decide(img_arr)
+        else: 
+            print('no pilot')
+            pilot_angle, pilot_throttle = 0.0, 0.0
+    
+        V['img'] = img
+        V['pilot_angle'] = pilot_angle
+        V['pilot_throttle'] = pilot_throttle
+    
+        #depending on the drive mode, return user or pilot values
+    
+        angle, throttle  = V['user_angle'], V['user_throttle']
+        if V['drive_mode'] == 'auto_angle':
+            angle, throttle  = V['pilot_angle'], V['user_throttle']
+        elif V['drive_mode'] == 'auto':
+            angle, throttle  = V['pilot_angle'], V['pilot_throttle']
+    
+        print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
+    
+    
+        if 'session' in V and V['session']:
+            #save image with encoded angle/throttle values
+            V['session'].put(img, 
+                             angle=angle,
+                             throttle=throttle, 
+                             milliseconds=0.0)
+    
+        #retun angel/throttle values to vehicle with json response
+        Q.put({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']) })
+    
+    
 class RemoteClient():
     '''
     Class used by a vehicle to send (http post requests) driving data and 
@@ -113,35 +166,15 @@ class RemoteClient():
                 }
 
 
-        r = None
-        while r == None:
-            #Try connecting to server until connection is made.
-            start = time.time()
-            
-            try:
-                r = self.session.post(self.control_url, 
-                                files={'img': dk.utils.arr_to_binary(img_arr), 
-                                       'json': json.dumps(data)},
-                                       timeout=0.25)
-                
-            except (requests.ConnectionError) as err:
-                #try to reconnect every 3 seconds
-                print("\n Vehicle could not connect to server. Make sure you've " + 
-                    "started your server and you're referencing the right port.")
-                time.sleep(3)
-            
-            except (requests.exceptions.ReadTimeout) as err:
-                #Lower throttle if their is a long lag.
-                print("\n Request took too long. Retrying")
-                return angle, throttle * .8, None
-                
-
+        start = time.time()
+        Q.put({'img': dk.utils.arr_to_binary(img_arr), 
+                          'json': data})
+        data = Q.get()
         end = time.time()
         lag = end-start
         self.log('{}, {} \n'.format(datetime.now().time() , lag ))
         #print('remote lag: %s' %lag)
 
-        data = json.loads(r.text)
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])
@@ -199,9 +232,6 @@ class DonkeyPilotApplication(tornado.web.Application):
                 VideoAPI
             ),
 
-            (r"/api/vehicles/control/?(?P<vehicle_id>[A-Za-z0-9-]+)?/", 
-                ControlAPI),
-
             (r"/api/sessions/?(?P<session_id>[^/]+)?/", SessionAPI),
 
             (r"/api/sessions/?(?P<session_id>[^/]+)?/tags/?(?P<tag>[^/]+)?/", TagAPI),
@@ -231,6 +261,16 @@ class DonkeyPilotApplication(tornado.web.Application):
         super().__init__(handlers, **settings)
 
     def start(self, port=8887):
+        
+        cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
+        drive_thread = Thread(target=drive.drive, args=(cfg, ''))
+        drive_thread.daemon = True
+        drive_thread.start()
+
+        control_thread = Thread(target=control, args=(self,'mycar'))
+        control_thread.daemon = True
+        control_thread.start()
+
         ''' Start the tornado webserver. '''
         print(port)
         self.port = int(port)
@@ -319,55 +359,6 @@ class VehicleAPI(tornado.web.RequestHandler):
         pilot.load()
         V['pilot'] = pilot 
 
-
-class ControlAPI(tornado.web.RequestHandler):
-
-    def post(self, vehicle_id):
-        '''
-        Receive post requests from a vehicle and returns 
-        the angle and throttle the car should use. Depending on 
-        the drive mode the values can come from the user or
-        an autopilot.
-        '''    
-
-        V = self.application.get_vehicle(vehicle_id)
-
-        img = self.request.files['img'][0]['body']
-        img = Image.open(io.BytesIO(img))
-        img_arr = dk.utils.img_to_arr(img)
-
-
-        #Get angle/throttle from pilot loaded by the server.
-        if V['pilot'] is not None:
-            pilot_angle, pilot_throttle = V['pilot'].decide(img_arr)
-        else: 
-            print('no pilot')
-            pilot_angle, pilot_throttle = 0.0, 0.0
-
-        V['img'] = img
-        V['pilot_angle'] = pilot_angle
-        V['pilot_throttle'] = pilot_throttle
-
-        #depending on the drive mode, return user or pilot values
-
-        angle, throttle  = V['user_angle'], V['user_throttle']
-        if V['drive_mode'] == 'auto_angle':
-            angle, throttle  = V['pilot_angle'], V['user_throttle']
-        elif V['drive_mode'] == 'auto':
-            angle, throttle  = V['pilot_angle'], V['pilot_throttle']
-
-        print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
-
-
-        if 'session' in V and V['session']:
-            #save image with encoded angle/throttle values
-            V['session'].put(img, 
-                             angle=angle,
-                             throttle=throttle, 
-                             milliseconds=0.0)
-
-        #retun angel/throttle values to vehicle with json response
-        self.write(json.dumps({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']) }))
 
 
 
