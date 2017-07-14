@@ -350,7 +350,6 @@ class VehicleAPI(tornado.web.RequestHandler):
         print('pilot request')
         print(data)
         pilot = next(filter(lambda p: p.name == data['pilot'], self.application.pilots))
-        pilot.load()
         V['pilot'] = pilot 
 
 
