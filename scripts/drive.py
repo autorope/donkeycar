@@ -44,7 +44,7 @@ def drive(cfg, remote_url):
     myremote = dk.remotes.RemoteClient(remote_url, vehicle_id=cfg['vehicle_id'])
 
     #setup a local pilot
-    mypilot = dk.pilots.KerasCategorical(model_path=cfg['pilot_model_path'])
+    #mypilot = dk.pilots.KerasCategorical(model_path=cfg['pilot_model_path'])
     #mypilot.load()
 
     #Create your car
@@ -52,7 +52,7 @@ def drive(cfg, remote_url):
                                   camera=mycamera,
                                   actuator_mixer=mymixer,
                                   remote=myremote,
-                                  pilot=mypilot)
+                                  pilot=None)
 
     #Start the drive loop
     car.start()
