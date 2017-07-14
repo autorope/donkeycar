@@ -46,6 +46,8 @@ class KerasCategorical(BasePilot):
 
 
     def decide(self, img_arr):
+        if not self.model:
+            self.load()
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
         angle_certainty = max(angle_binned[0])
