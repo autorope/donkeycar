@@ -45,7 +45,7 @@ def drive(cfg, remote_url):
 
     #setup a local pilot
     mypilot = dk.pilots.KerasCategorical(model_path=cfg['pilot_model_path'])
-    mypilot.load()
+    #mypilot.load()
 
     #Create your car
     car = dk.vehicles.BaseVehicle(drive_loop_delay=cfg['vehicle_loop_delay'],
