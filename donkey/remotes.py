@@ -40,13 +40,8 @@ def control(application, vehicle_id='mycar'):
     '''    
 
     while True:
-        data = reqQ.get()
+        img_arr = reqQ.get()
         V = application.get_vehicle(vehicle_id)
-    
-        img = data['img']
-        img = Image.open(io.BytesIO(img))
-        img_arr = dk.utils.img_to_arr(img)
-    
     
         #Get angle/throttle from pilot loaded by the server.
         if V['pilot'] is not None:
@@ -55,7 +50,7 @@ def control(application, vehicle_id='mycar'):
             print('no pilot')
             pilot_angle, pilot_throttle = 0.0, 0.0
     
-        V['img'] = img
+        V['img'] = img_arr
         V['pilot_angle'] = pilot_angle
         V['pilot_throttle'] = pilot_throttle
     
@@ -72,7 +67,7 @@ def control(application, vehicle_id='mycar'):
     
         if 'session' in V and V['session']:
             #save image with encoded angle/throttle values
-            V['session'].put(img, 
+            V['session'].put(dk.utils.arr_to_img(img_arr),
                              angle=angle,
                              throttle=throttle, 
                              milliseconds=0.0)
@@ -103,7 +98,7 @@ class RemoteClient():
                  'drive_mode': 'user'}
 
         self.state = state
-        self.start()
+        # self.start()
 
 
     def log(self, line, path='lag_log.csv', write_method='a'):
@@ -166,10 +161,8 @@ class RemoteClient():
                 'milliseconds': str(milliseconds)
                 }
 
-
         start = time.time()
-        reqQ.put({'img': dk.utils.arr_to_binary(img_arr), 
-                          'json': data})
+        reqQ.put(img_arr)
         data = resQ.get()
         end = time.time()
         lag = end-start
@@ -383,7 +376,7 @@ class VideoAPI(tornado.web.RequestHandler):
 
 
                 img = self.application.vehicles[vehicle_id]['img']
-                img = dk.utils.img_to_binary(img)
+                img = dk.utils.arr_to_binary(img)
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
