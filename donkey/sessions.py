@@ -58,7 +58,7 @@ class Session():
     def delete_3s(self):
         files = [f for f in os.listdir(self.session_dir) if os.path.isfile(os.path.join(self.session_dir, f))]
         files.sort()
-        for f in files[-50:]: # for last 50 files - it is roughly 3s worth of duration
+        for f in files[-100:]: # for last 100 files - it is roughly 3s worth of duration
             os.remove(os.path.join(self.session_dir, f))
 
     def img_paths(self):
