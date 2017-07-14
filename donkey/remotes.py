@@ -28,7 +28,8 @@ from queue import Queue
 import donkey as dk
 from donkey.tags import Tags
 
-Q = Queue(maxsize=1)
+reqQ = Queue(maxsize=1)
+resQ = Queue(maxsize=1)
 
 def control(application, vehicle_id='mycar'):
     '''
@@ -39,8 +40,8 @@ def control(application, vehicle_id='mycar'):
     '''    
 
     while True:
-        data = Q.get()
-        V = self.application.get_vehicle(vehicle_id)
+        data = reqQ.get()
+        V = application.get_vehicle(vehicle_id)
     
         img = data['img']
         img = Image.open(io.BytesIO(img))
@@ -66,7 +67,7 @@ def control(application, vehicle_id='mycar'):
         elif V['drive_mode'] == 'auto':
             angle, throttle  = V['pilot_angle'], V['pilot_throttle']
     
-        print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
+        # print('\r REMOTE: angle: {:+04.2f}   throttle: {:+04.2f}   drive_mode: {}'.format(angle, throttle, V['drive_mode']), end='')
     
     
         if 'session' in V and V['session']:
@@ -77,7 +78,7 @@ def control(application, vehicle_id='mycar'):
                              milliseconds=0.0)
     
         #retun angel/throttle values to vehicle with json response
-        Q.put({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']) })
+        resQ.put({'angle': str(angle), 'throttle': str(throttle), 'drive_mode': str(V['drive_mode']) })
     
     
 class RemoteClient():
@@ -167,9 +168,9 @@ class RemoteClient():
 
 
         start = time.time()
-        Q.put({'img': dk.utils.arr_to_binary(img_arr), 
+        reqQ.put({'img': dk.utils.arr_to_binary(img_arr), 
                           'json': data})
-        data = Q.get()
+        data = resQ.get()
         end = time.time()
         lag = end-start
         self.log('{}, {} \n'.format(datetime.now().time() , lag ))
