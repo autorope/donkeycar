@@ -19,24 +19,7 @@ from docopt import docopt
 
 import donkey as dk
 
-# Get args.
-args = docopt(__doc__)
-
-if __name__ == '__main__':
-
-    #load config file
-    cfg = dk.config.parse_config('~/mydonkey/' + args['--config'] + '.ini')
-
-    #get the url for the remote host (for user control)
-    remote_url = args['--remote']
-    if remote_url == None:
-        print('ERROR! : Must specify remote url')
-        sys.exit()
-    if not '//' in remote_url:
-        remote_url = 'http://'+remote_url
-    if not ':' in remote_url:
-        remote_url += ':8887'
-
+def drive(cfg, remote_url):
     #load the actuators (default is the adafruit servo hat)
     mythrottlecontroller = dk.actuators.PCA9685_Controller(cfg['throttle_actuator_channel'])
     mysteeringcontroller = dk.actuators.PCA9685_Controller(cfg['steering_actuator_channel'])
@@ -73,3 +56,23 @@ if __name__ == '__main__':
 
     #Start the drive loop
     car.start()
+
+# Get args.
+args = docopt(__doc__)
+
+if __name__ == '__main__':
+    #load config file
+    cfg = dk.config.parse_config('~/mydonkey/' + args['--config'] + '.ini')
+
+    #get the url for the remote host (for user control)
+    remote_url = args['--remote']
+    if remote_url == None:
+        print('ERROR! : Must specify remote url')
+        sys.exit()
+    if not '//' in remote_url:
+        remote_url = 'http://'+remote_url
+    if not ':' in remote_url:
+        remote_url += ':8887'
+
+    drive(cfg, remote_url)
+
