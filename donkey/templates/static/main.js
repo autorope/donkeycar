@@ -415,7 +415,7 @@ var driveHandler = (function() {
           if (state.controlMode == "tilt") {
             deviceOrientationLoop(); 
           }
-       }, 10)
+       }, 40)
     }
 
     var throttleUp = function(){
