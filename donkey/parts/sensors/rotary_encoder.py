@@ -17,6 +17,7 @@ class RotaryEncoder():
         self.last_time = time.time()
         self.meters_per_second = 0
         self.counter = 0
+        self.on = True
     
     def isr(self, arg1, arg2):
         self.counter += 1
