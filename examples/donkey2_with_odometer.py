@@ -33,7 +33,7 @@ odometer = dk.parts.RotaryEncoder(m_per_tick=0.0329, pin=23)
 V.add(odometer, outputs=['odometer/meters', 'odometer/meters_per_second'], threaded=True)
 
 #add tub to save data
-path='~/mydonkey/sessions/odometer_test_2'
+path='~/mydonkey/sessions/odometer_with_dist'
 inputs=['user/angle', 'user/throttle', 'cam/image_array', 'odometer/meters', 'odometer/meters_per_second']
 types=['float', 'float', 'image_array', 'float', 'float']
 tub=dk.parts.TubWriter(path, inputs=inputs, types=types)
