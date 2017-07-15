@@ -37,7 +37,10 @@
 						<p class="text-muted"><em>Click and drag to select images, command + click to select multiple single images.</em></p>
 						{% for img in session['imgs'] %}					
 							<li class="thumbnail" id="{{ img['name'] }}">
-								<img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
+                            <div style="position: relative">
+                                <div> <img style="position: absolute; transform: rotate({{ img['angle'] * 60 }}deg);" src="/static/line.png" />
+                                <img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
+                            </div>
 								<div class="caption">
 									<p class="small desc">
 										{% if img['angle'] < 0 %}
