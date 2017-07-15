@@ -47,4 +47,6 @@ class RotaryEncoder():
         self.on = False
         print('stopping Rotary Encoder')
         time.sleep(.5)
+        
+        import RPi.GPIO as GPIO
         GPIO.cleanup() 
