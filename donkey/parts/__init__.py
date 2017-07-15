@@ -6,7 +6,7 @@ from .controllers.web import LocalWebController
 
 from .sensors.cameras import PiCamera
 from .sensors.lidar import RPLidar
-
+from .sensors.rotary_encoder import RotaryEncoder
 
 from .pilots.keras import KerasCategorical
 

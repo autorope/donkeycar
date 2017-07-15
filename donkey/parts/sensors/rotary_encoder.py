@@ -1,3 +1,7 @@
+"""
+Rotary Encoder
+"""
+
 import time
 
 class RotaryEncoder():
