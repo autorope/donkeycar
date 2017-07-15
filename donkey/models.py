@@ -67,6 +67,8 @@ def categorical_model_factory(conv=None, dense=None):
                   loss={'angle_out': 'categorical_crossentropy', 'throttle_out': 'mean_absolute_error', 'speed_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': 0.1, 'speed_out': 0.1})
 
+    model.summary()
+
     return model
 
 
@@ -105,7 +107,7 @@ def train_gen(model, model_path, train_gen, val_gen, steps=10, epochs=100, ):
                                           save_best_only=True, mode='min')
 
     #stop training if the validation error stops improving.
-    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=4,
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=.0005, patience=6,
                                          verbose=1, mode='auto')
 
     callbacks_list = [save_best, early_stop]
