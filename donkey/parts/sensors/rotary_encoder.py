@@ -40,7 +40,7 @@ class RotaryEncoder():
                 self.meters_per_second = distance / seconds
 
     def run_threaded(self):
-        return self.meters_per_second
+        return self.meters, self.meters_per_second
 
     def shutdown(self):
         # indicate that the thread should be stopped
