@@ -19,7 +19,7 @@ class RotaryEncoder():
         self.counter = 0
         self.on = True
     
-    def isr(self, arg1, arg2):
+    def isr(self, channel):
         self.counter += 1
         
     def update(self):
