@@ -161,7 +161,7 @@ class BaseVehicle:
             if drive_mode == 'local':
                 angle, throttle, pilot_speed = self.pilot.decide(img_arr)
 
-            if drive_mode == 'local_angle':
+            elif drive_mode == 'local_angle':
                 #only update angle from local pilot
                 angle, _ = self.pilot.decide(img_arr)
                 pilot_speed = 'NaN'

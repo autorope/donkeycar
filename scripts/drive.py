@@ -14,6 +14,7 @@ Options:
 """
 
 import os
+import sys
 from docopt import docopt
 
 import donkey as dk
@@ -23,13 +24,19 @@ args = docopt(__doc__)
 
 if __name__ == '__main__':
 
+    #load config file
     cfg = dk.config.parse_config('~/mydonkey/' + args['--config'] + '.ini')
 
     #get the url for the remote host (for user control)
     remote_url = args['--remote']
 
-    #load config file
-    cfg = dk.config.parse_config('~/mydonkey/vehicle.ini')
+    if remote_url == None:
+        print('ERROR! : Must specify remote url')
+        sys.exit()
+    if not '//' in remote_url:
+        remote_url = 'http://'+remote_url
+    if not ':' in remote_url:
+        remote_url += ':8887'
 
     #load the actuators (default is the adafruit servo hat)
     mythrottlecontroller = dk.actuators.Maestro_Controller(cfg['throttle_actuator_channel'])

@@ -18,16 +18,6 @@ datasets_path = os.path.join(my_path, 'datasets')
 results_path = os.path.join(my_path, 'results')
 
 
-def setup_paths():
-    dk.utils.make_dir(my_path)
-
-    paths = [sessions_path, models_path, 
-             datasets_path, results_path]
-
-    for p in paths:
-        dk.utils.make_dir(p)
-
-
 def parse_config(config_path):
     config_path = os.path.expanduser(config_path)
     config.read(config_path)

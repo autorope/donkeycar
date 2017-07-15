@@ -45,7 +45,8 @@ setup(name='donkey',
                         'h5py',
                         'scikit-image',
                         'opencv-python',
-                        'pandas'
+                        'pandas',
+                        'tensorflow',
                         ],
                     'pi': [
                         'picamera',

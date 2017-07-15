@@ -12,7 +12,7 @@ import os
 import glob
 import socket
 import math
-
+import zipfile
 
 import itertools
 
@@ -128,6 +128,20 @@ def make_dir(path):
         os.makedirs(real_path)
     return real_path
 
+
+def zip_dir(dir_path, zip_path):
+    """ 
+    Create and save a zipfile of a one level directory
+    """
+    file_paths = glob.glob(dir_path + "/*") #create path to search for files.
+    
+    zf = zipfile.ZipFile(zip_path, 'w')
+    dir_name = os.path.basename(dir_path)
+    for p in file_paths:
+        file_name = os.path.basename(p)
+        zf.write(p, arcname=os.path.join(dir_name, file_name))
+    zf.close()
+    return zip_path
 
 
 
