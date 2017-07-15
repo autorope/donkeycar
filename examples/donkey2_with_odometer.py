@@ -30,7 +30,7 @@ V.add(steering, inputs=['user/angle'])
 V.add(throttle, inputs=['user/throttle'])
 
 odometer = dk.parts.RotaryEncoder(m_per_tick=0.0329, pin=23)
-V.add(odometer, outputs['odometer/velocity'], threaded=True)
+V.add(odometer, outputs=['odometer/velocity'], threaded=True)
 
 #add tub to save data
 path='~/mydonkey/sessions/tub1'
