@@ -58,9 +58,9 @@ def drive(cfg, remote_url):
     car.start()
 
 # Get args.
-args = docopt(__doc__)
-
 if __name__ == '__main__':
+    args = docopt(__doc__)
+
     #load config file
     cfg = dk.config.parse_config('~/mydonkey/' + args['--config'] + '.ini')
 
