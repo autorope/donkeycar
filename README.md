@@ -31,7 +31,7 @@ Donkey is minimalist and modular self driving library written in Python. It is d
 Once you have built your car and it's connected to the same wifi as your computer.
 
 1. Open a terminal and clone the donkey repo: `git clone https://github.com/wroscoe/donkey`
-2. Start the default pilot server using docker: `bash start-server.py`
+2. Start the default pilot server using docker: `bash start-server.sh`
 3. Open a new terminal and find your car's Raspberry Pi's IP address: `python scripts/find_car.py` 
 4. SSH to your car's Raspberry Pi: `ssh pi@<your pi's ip address>` (default password = raspberry) 
 5. Start your car's driver loop: `python scripts/drive.py  --remote http://<your computers ip address>:8887`
