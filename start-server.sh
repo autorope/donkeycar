@@ -1,7 +1,8 @@
 #!/bin/sh
 
 #make directory that will be mounted in the docker instance.
-mkdir -p ~/mydonkey
+mkdir -p ~/mydonkey/models
+mkdir -p ~/mydonkey/datasets
 
 # First check whether the named volume and image exist; if not, build/initialize them.
 
