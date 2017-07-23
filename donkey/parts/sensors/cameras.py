@@ -51,7 +51,7 @@ class PiCamera(BaseCamera):
         self.rawCapture.close()
         self.camera.close()
 
-class WebcamVideoStream(BaseCamera):
+class Webcam(BaseCamera):
     def __init__(self, resolution = (160, 120), framerate = 20):
         import pygame
         import pygame.camera
@@ -100,6 +100,6 @@ class WebcamVideoStream(BaseCamera):
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('stoping PiCamera')
+        print('stoping Webcam')
         time.sleep(.5)
 
