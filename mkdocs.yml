@@ -1,0 +1,18 @@
+site_name: Donkey Car
+theme: readthedocs
+
+repo_url: https://github.com/wroscoe/donkey
+edit_uri: edit/master/docs
+google_analytics: ['UA-99215530-2', 'github.io/donkey']
+extra_css: 
+    - extra.css
+
+pages:
+    - Home: index.md
+    - Build a Car: build_instructions.md
+    - Parts: 
+        - 'Parts Overview': about-parts.md
+        - 'Actuators': actuators.md
+        - 'Stores': stores.md
+    - Contribute : contribute.md
+    - Tests : tests.md

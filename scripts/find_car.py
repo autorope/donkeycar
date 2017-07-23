@@ -23,8 +23,6 @@ print('Your IP address: %s ' %s.getsockname()[0])
 s.close()
 
 
-import subprocess
-
 print("Finding your car's IP address...")
 cmd = "sudo nmap -sP " + ip + "/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'"
 print("Your car's ip address is:" )

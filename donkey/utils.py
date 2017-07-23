@@ -4,14 +4,10 @@ utils.py
 Functions that don't fit anywhere else.
 
 '''
-import random 
-import pickle
-import math
 from io import BytesIO
 import os
 import glob
 import socket
-import math
 import zipfile
 
 import itertools
@@ -177,7 +173,17 @@ def unbin_Y(Y):
         d.append(v)
     return np.array(d)
 
+def map_range(x, X_min, X_max, Y_min, Y_max):
+    ''' 
+    Linear mapping between two ranges of values 
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
 
+    y = ((x-X_min) / XY_ratio + Y_min) // 1
+
+    return int(y)
 
 
 
