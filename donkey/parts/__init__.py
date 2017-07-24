@@ -10,6 +10,8 @@ from .sensors.cameras import PiCamera
 from .sensors.cameras import Webcam
 from .sensors.lidar import RPLidar
 from .sensors.rotary_encoder import RotaryEncoder
+from .sensors.astar_speed import AStarSpeed
+from .sensors.teensy_rcin import TeensyRCin
 
 from .pilots.keras import KerasCategorical
 

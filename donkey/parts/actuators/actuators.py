@@ -34,6 +34,7 @@ class Maestro:
     Pololu Maestro Servo controller
     Use the MaestroControlCenter to set the speed & acceleration values to 0!
     '''
+    import serial
     import threading
 
     maestro_device = None
@@ -42,7 +43,6 @@ class Maestro:
     astar_lock = threading.Lock()
 
     def __init__(self, channel, frequency = 60):
-        import serial
         if Maestro.maestro_device == None:
             Maestro.maestro_device = serial.Serial('/dev/ttyACM0', 115200)
 
@@ -114,6 +114,7 @@ class Teensy:
     '''
     Teensy Servo controller
     '''
+    import serial
     import threading
 
     teensy_device = None
@@ -122,7 +123,6 @@ class Teensy:
     astar_lock = threading.Lock()
 
     def __init__(self, channel, frequency = 60):
-        import serial
         if Teensy.teensy_device == None:
             Teensy.teensy_device = serial.Serial('/dev/teensy', 115200, timeout = 0.01)
 
@@ -172,20 +172,20 @@ class Teensy:
             with Teensy.astar_lock:
                 Teensy.astar_device.write(b)
 
-    def readline_teensy(self):
+    def teensy_readline(self):
         ret = None
-        with Teensy.astar_lock:
+        with Teensy.teensy_lock:
             # expecting lines like
             # E n nnn n
-            if Teensy.astar_device.inWaiting() > 8:
-                ret = Teensy.astar_device.readline()
+            if Teensy.teensy_device.inWaiting() > 8:
+                ret = Teensy.teensy_device.readline()
 
         if ret != None:
             ret = ret.rstrip()
 
         return ret
 
-    def readline_astar(self):
+    def astar_readline(self):
         ret = None
         with Teensy.astar_lock:
             # expecting lines like

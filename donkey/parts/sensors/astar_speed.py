@@ -1,13 +1,14 @@
 from datetime import datetime, timedelta
 import donkey as dk
 import re
+import time
 
 class AStarSpeed:
     def __init__(self):
         self.speed = 0
         self.linaccel = None
 
-        self.sensor = dk.actuators.Teensy(0);
+        self.sensor = dk.parts.Teensy(0);
 
         self.on = True
 
@@ -44,7 +45,7 @@ class AStarSpeed:
                         self.linaccel = la
                         print("mw linaccel= " + str(self.linaccel))
 
-                l = self.sensor.readline()
+                l = self.sensor.astar_readline()
 
             stop = datetime.now()
             s = 0.1 - (stop - start).total_seconds()
