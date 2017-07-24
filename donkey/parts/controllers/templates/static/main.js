@@ -63,10 +63,6 @@ var driveHandler = (function() {
         console.log("Device Orientation not supported by browser, setting control mode to joystick.");
         state.controlMode = 'joystick';
       }
-
-      updateUI();
-
-      websocket = new WebSocket(driveURL);
     };
 
 
@@ -269,10 +265,9 @@ var driveHandler = (function() {
         data = JSON.stringify({ 'angle': state.tele.user.angle,
                                 'throttle':state.tele.user.throttle,
                                 'drive_mode':state.driveMode,
-                                'recording': state.recording,
-                                'drive': !state.brakeOn })
+                                'recording': state.recording})
         console.log(data)
-        websocket.send(data);
+        $.post(driveURL, data)
         updateUI()
     };
 
@@ -393,7 +388,7 @@ var driveHandler = (function() {
           if (state.controlMode == "tilt") {
             deviceOrientationLoop();
           }
-       }, 10)
+       }, 100)
     }
 
     var throttleUp = function(){

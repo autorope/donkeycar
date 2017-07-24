@@ -56,12 +56,13 @@ class Webcam(BaseCamera):
         import pygame
         import pygame.camera
 
-        super().__init__(resolution = resolution)
+        super().__init__()
 
         pygame.init()
         pygame.camera.init()
         l = pygame.camera.list_cameras()
         self.cam = pygame.camera.Camera(l[0], resolution, "RGB")
+        self.resolution = resolution
         self.cam.start()
         self.framerate = framerate
 

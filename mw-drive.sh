@@ -5,8 +5,8 @@
 cwd=$(pwd)
 ip=$(echo $SSH_CLIENT | awk '{ print $1; }')
 
-source env/bin/activate
+# source env/bin/activate
 
 export PYTHONPATH=$cwd
 
-exec python  scripts/drive.py --remote http://$ip:8887
+exec python3 examples/tk1.py
