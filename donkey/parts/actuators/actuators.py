@@ -34,7 +34,6 @@ class Maestro:
     Pololu Maestro Servo controller
     Use the MaestroControlCenter to set the speed & acceleration values to 0!
     '''
-    import serial
     import threading
 
     maestro_device = None
@@ -43,6 +42,8 @@ class Maestro:
     astar_lock = threading.Lock()
 
     def __init__(self, channel, frequency = 60):
+        import serial
+
         if Maestro.maestro_device == None:
             Maestro.maestro_device = serial.Serial('/dev/ttyACM0', 115200)
 
@@ -114,7 +115,6 @@ class Teensy:
     '''
     Teensy Servo controller
     '''
-    import serial
     import threading
 
     teensy_device = None
@@ -123,6 +123,8 @@ class Teensy:
     astar_lock = threading.Lock()
 
     def __init__(self, channel, frequency = 60):
+        import serial
+
         if Teensy.teensy_device == None:
             Teensy.teensy_device = serial.Serial('/dev/teensy', 115200, timeout = 0.01)
 
@@ -214,13 +216,14 @@ class PWMSteering:
         self.right_pulse = right_pulse
 
 
-    def run(self, angle):
+    def run(self, angle, mode = None):
         #map absolute angle to angle that vehicle can implement.
         pulse = utils.map_range(angle,
                                 self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                 self.left_pulse, self.right_pulse)
 
-        self.controller.set_pulse(pulse)
+        if mode != 'user':
+            self.controller.set_pulse(pulse)
 
         self.controller.set_turn_left(angle < -0.2)
         self.controller.set_turn_right(angle > 0.2)
@@ -253,7 +256,7 @@ class PWMThrottle:
         time.sleep(1)
 
 
-    def run(self, throttle):
+    def run(self, throttle, mode = None):
         if throttle > 0:
             pulse = utils.map_range(throttle,
                                     0, self.MAX_THROTTLE,
@@ -263,10 +266,11 @@ class PWMThrottle:
                                     self.MIN_THROTTLE, 0,
                                     self.min_pulse, self.zero_pulse)
 
-        self.controller.set_pulse(pulse)
+        if mode != 'user':
+            self.controller.set_pulse(pulse)
 
         self.controller.set_brake(throttle < 0)
-        self.controller.set_headlight(throttle != 0)
+        self.controller.set_headlight(throttle < -0.02 or throttle > 0.02)
 
     def shutdown(self):
         self.run(0) #stop vehicle

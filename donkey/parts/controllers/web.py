@@ -106,7 +106,7 @@ class LocalWebController(tornado.web.Application):
 
         self.angle = 0.0
         self.throttle = 0.0
-        self.mode = 0.0
+        self.mode = 'user'
         self.recording = False
 
         handlers = [
@@ -126,8 +126,13 @@ class LocalWebController(tornado.web.Application):
         self.listen(self.port)
         tornado.ioloop.IOLoop.instance().start()
 
-    def run_threaded(self, img_arr=None):
+    def run_threaded(self, img_arr = None, rcin_angle = 0.0, rcin_throttle = 0.0):
         self.img_arr = img_arr
+
+        if self.mode == 'user':
+            self.angle = rcin_angle
+            self.throttle = rcin_throttle
+
         print(self.angle)
         return self.angle, self.throttle, self.mode
 
