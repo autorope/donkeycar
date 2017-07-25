@@ -112,6 +112,11 @@ class LocalWebController(tornado.web.Application):
         handlers = [
             (r"/drive", DriveAPI),
             (r"/video",VideoAPI),
+            (r"/sessions/", SessionListView),
+            (r"/sessions/?(?P<session_id>[^/]+)?/?(?P<page>[^/]+)?",
+                SessionView),
+            (r"/session_image/?(?P<session_id>[^/]+)?/?(?P<img_name>[^/]+)?",
+                SessionImageView),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
             ]
 
@@ -186,3 +191,98 @@ class VideoAPI(tornado.web.RequestHandler):
                 yield tornado.gen.Task(self.flush)
             else:
                 yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)
+
+####################
+#                   #
+#     sessions      #
+#                   #
+#####################
+
+
+
+class SessionImageView(tornado.web.RequestHandler):
+    def get(self, session_id, img_name):
+        ''' Returns jpg images from a session folder '''
+
+        sessions_path = self.application.sessions_path
+        path = os.path.join(sessions_path, session_id, img_name)
+        f = Image.open(path)
+        o = io.BytesIO()
+        f.save(o, format="JPEG")
+        s = o.getvalue()
+
+        self.set_header('Content-type', 'image/jpg')
+        self.set_header('Content-length', len(s))
+
+        self.write(s)
+
+
+
+class SessionListView(tornado.web.RequestHandler):
+
+    def get(self):
+        '''
+        Serves a page showing a list of all the session folders.
+        TODO: Move this list creation to the session handler.
+        '''
+
+        session_dirs = [f for f in os.scandir(self.application.sessions_path) if f.is_dir() ]
+        data = {'session_dirs': sorted(session_dirs, key = lambda d: d.name, reverse = True)}
+        self.render("templates/session_list.html", **data)
+
+
+
+class SessionView(tornado.web.RequestHandler):
+
+    def get(self, session_id, page):
+        '''
+        Shows all the images saved in the session.
+        '''
+        from operator import itemgetter
+
+        sessions_path = self.application.sessions_path
+        path = os.path.join(sessions_path, session_id)
+        imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() and f.name[-3:] =='jpg' ]
+        img_count = len(imgs)
+
+        perpage = 500
+        pages = math.ceil(img_count/perpage)
+        if page is None:
+            page = 1
+        else:
+            page = int(page)
+
+        if page == 0:
+            page = 1
+
+        end = page * perpage
+        start = end - perpage
+        end = min(end, img_count)
+
+
+        sorted_imgs = sorted(imgs, key=itemgetter('name'))
+        page_list = [p+1 for p in range(pages)]
+        session = {'name':session_id, 'imgs': sorted_imgs[start:end]}
+        data = {'session': session, 'page_list': page_list, 'this_page':page}
+        self.render("templates/session.html", **data)
+
+    def post(self, session_id, page):
+        '''
+        Deletes selected images
+        TODO: move this to an api cal. Page is not needed.
+        '''
+
+        data = tornado.escape.json_decode(self.request.body)
+
+        if data['action'] == 'delete_images':
+            sessions_path = self.application.sessions_path
+            path = os.path.join(sessions_path, session_id)
+
+            for i in data['imgs']:
+                os.remove(os.path.join(path, i))
+                print('%s removed' %i)
+                f = i.split('_')
+                f = '_'.join(f[0:2]) + ".json"
+                os.remove(os.path.join(path, f))
+                print('%s removed' % f)
+
