@@ -16,13 +16,17 @@ import json
 import time
 
 import requests
-
 import tornado.ioloop
 import tornado.web
 import tornado.gen
 
 import donkey as dk
 
+
+if hasattr(os, 'scandir'):
+    from os import scandir
+else:
+    from scandir import scandir
 
 class RemoteWebServer():
     '''
@@ -93,7 +97,7 @@ class RemoteWebServer():
 
 class LocalWebController(tornado.web.Application):
 
-    def __init__(self):
+    def __init__(self, mydonkey_path='~/mydonkey/'):
         '''
         Create and publish variables needed on many of
         the web handlers.
@@ -103,6 +107,10 @@ class LocalWebController(tornado.web.Application):
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
+
+        self.mydonkey_path = os.path.expanduser(mydonkey_path)
+        self.sessions_path = os.path.join(self.mydonkey_path, 'sessions')
+        self.models_path = os.path.join(self.mydonkey_path, 'models')
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -139,7 +147,7 @@ class LocalWebController(tornado.web.Application):
             self.throttle = rcin_throttle
 
         print(self.angle)
-        return self.angle, self.throttle, self.mode
+        return self.angle, self.throttle, self.mode, self.recording
 
     def shutdown(self):
         # indicate that the thread should be stopped
@@ -226,7 +234,7 @@ class SessionListView(tornado.web.RequestHandler):
         TODO: Move this list creation to the session handler.
         '''
 
-        session_dirs = [f for f in os.scandir(self.application.sessions_path) if f.is_dir() ]
+        session_dirs = [f for f in scandir(self.application.sessions_path) if f.is_dir() ]
         data = {'session_dirs': sorted(session_dirs, key = lambda d: d.name, reverse = True)}
         self.render("templates/session_list.html", **data)
 
@@ -242,7 +250,7 @@ class SessionView(tornado.web.RequestHandler):
 
         sessions_path = self.application.sessions_path
         path = os.path.join(sessions_path, session_id)
-        imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in os.scandir(path) if f.is_file() and f.name[-3:] =='jpg' ]
+        imgs = [dk.utils.merge_two_dicts({'name':f.name}, dk.sessions.parse_img_filepath(f.path)) for f in scandir(path) if f.is_file() and f.name[-3:] =='jpg' ]
         img_count = len(imgs)
 
         perpage = 500

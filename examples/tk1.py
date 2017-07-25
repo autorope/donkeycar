@@ -4,6 +4,7 @@
 Script to drive a donkey car using a webserver hosted on the vehicle.
 
 """
+from datetime import datetime
 import donkey as dk
 
 V = dk.vehicle.Vehicle()
@@ -20,7 +21,7 @@ V.add(speed_controller, outputs = [ 'odo/speed' ], threaded = True)
 ctr = dk.parts.LocalWebController()
 V.add(ctr,
       inputs = [ 'cam/image_array', 'rcin/angle', 'rcin/throttle' ],
-      outputs = [ 'user/angle', 'user/throttle', 'user/mode' ],
+      outputs = [ 'user/angle', 'user/throttle', 'user/mode', 'user/recording' ],
       threaded = True)
 
 steering_controller = dk.parts.Teensy('S')
@@ -35,13 +36,13 @@ V.add(steering, inputs = [ 'user/angle', 'user/mode' ])
 V.add(throttle, inputs = [ 'user/throttle', 'user/mode' ])
 
 #add tub to save data
-path = '~/mydonkey/sessions/tub1'
-inputs = [ 'user/angle', 'user/throttle', 'cam/image_array', 'rcin/angle', 'rcin/throttle', 'odo/speed' ]
-types = [ 'float', 'float', 'image_array', 'float', 'float', 'float' ]
+path = '~/mydonkey/sessions/' + datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
+inputs = [ 'user/angle', 'user/throttle', 'cam/image_array', 'rcin/angle', 'rcin/throttle', 'odo/speed', 'user/recording' ]
+types = [ 'float', 'float', 'image_array', 'float', 'float', 'float', 'boolean' ]
 tub = dk.parts.TubWriter(path, inputs = inputs, types = types)
 V.add(tub, inputs = inputs)
 
 #run the vehicle for 20 seconds
-V.start(rate_hz = 20, max_loop_count = 1000)
+V.start(rate_hz = 20) # , max_loop_count = 1000)
 
 #you can now go to localhost:8887 to move a square around the image
