@@ -31,7 +31,7 @@ class RemoteClient():
     recieve predictions from a remote webserver.
     '''
     
-    def __init__(self, remote_url, vehicle_id='mycar'):
+    def __init__(self, remote_url: str, vehicle_id='mycar'):
 
         self.control_url = remote_url + '/api/vehicles/control/' + vehicle_id + '/'
         self.last_milliseconds = 0
