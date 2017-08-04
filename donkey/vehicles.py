@@ -23,7 +23,7 @@ class BaseVehicle:
 
         self.drive_loop_delay = drive_loop_delay #how long to wait between loops
 
-        # these need tobe updated when vehicle is defined
+        # these need to be updated when vehicle is defined
         self.camera = camera
         self.actuator_mixer = actuator_mixer
         self.pilot = pilot
