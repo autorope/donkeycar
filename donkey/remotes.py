@@ -31,7 +31,7 @@ class RemoteClient():
     recieve predictions from a remote webserver.
     '''
     
-    def __init__(self, remote_url, vehicle_id='mycar'):
+    def __init__(self, remote_url: str, vehicle_id='mycar'):
 
         self.control_url = remote_url + '/api/vehicles/control/' + vehicle_id + '/'
         self.last_milliseconds = 0
@@ -44,7 +44,8 @@ class RemoteClient():
                  'angle': 0.0,
                  'throttle': 0.0,
                  'milliseconds': 0,
-                 'drive_mode': 'user'}
+                 'drive_mode': 'user',
+                 'connect_attempts': 0}
 
         self.state = state
         self.start()
@@ -77,6 +78,7 @@ class RemoteClient():
                                 self.state['angle'],
                                 self.state['throttle'],
                                 self.state['milliseconds'],)
+
             angle, throttle, drive_mode = resp
 
             #update sate with current values
@@ -103,13 +105,15 @@ class RemoteClient():
         angle and throttle recommendations. 
         '''
 
+        if self.state['connect_attempts'] >= 3:
+            return angle, 0, None
+
         #load features
         data = {
                 'angle': str(angle),
                 'throttle': str(throttle),
                 'milliseconds': str(milliseconds)
                 }
-
 
         r = None
         while r == None:
@@ -121,12 +125,15 @@ class RemoteClient():
                                 files={'img': dk.utils.arr_to_binary(img_arr), 
                                        'json': json.dumps(data)},
                                        timeout=0.25)
-                
+                self.state['connect_attempts'] = 0
+            
             except (requests.ConnectionError) as err:
                 #try to reconnect every 3 seconds
                 print("\n Vehicle could not connect to server. Make sure you've " + 
                     "started your server and you're referencing the right port.")
-                time.sleep(3)
+                self.state['connect_attempts'] = self.state['connect_attempts'] + 1
+                # slow it down, so we can try connecting a few times before stopping it
+                return angle, throttle * .8, None
             
             except (requests.exceptions.ReadTimeout) as err:
                 #Lower throttle if their is a long lag.
