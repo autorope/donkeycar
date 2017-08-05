@@ -1,9 +1,10 @@
-# Build a donkey vehicle. 
+# Instructions to build a Donkey Car
 
+
+### Build
 
 The standard hardware build instructions can be found in this 
 [google doc](https://docs.google.com/document/d/11IPqZcDcLTd2mtYaR5ONpDxFgL9Y1nMNTDvEarST8Wk/edit#heading=h.ayg28mpf8hvb).
-
 
 Once you have the car built and the Raspbery Pi running with the given
 disk image follow these steps to start running the latest version of Donkey. 
@@ -14,7 +15,8 @@ git fetch origin dev
 get checkout dev
 ```
 
-### Calibrate your vehicle.
+### Calibrate
+
 The goal of calibrating your vehicle is to make it run the same as other vehicles
 when given the same `angle` and `throttle` values. For example if you give the
 car an angle=0 and throttle=0 the wheels should point straight and the 
@@ -27,7 +29,7 @@ your car.
 Enter the PWM values determined during your calibration into the 
 
 
-### Drive the car.
+### Drive
 
 ** put your car in a box or on blocks to avoid it running away **
 
@@ -35,12 +37,12 @@ After you've updated the script you use to drive your car with the correct
 PWM settings then you can run the script that will start your vehicles 
 drive loop. 
 
-
 ```
 python examples/donkey2.py
 ```
 
+### Explore
 
-
-
-4. Run the drive script 
+Now that you have a working car you can modify it with different sensors
+ or autopilots. See other parts of this documentation to see what you can do.
+ 

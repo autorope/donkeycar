@@ -4,7 +4,8 @@ Donkey is a high level self driving library written in Python and capable of
 controlling ackerman or differential drive vehicles. It was developed with a 
 focus on enabling fast experimentation and easy contribution.
 
-*Use Donkey if you want to...*
+#### Use Donkey if you want to...
+
 * Build your own small scale self driving car.
 * Implement computer vision or neural network based auto-pilots.
 * Use an arbitrary number of sensors on your car. 
@@ -41,10 +42,9 @@ cam = dk.parts.PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #record the images
-inputs=['image']
-types=['image_array']
-path = '~/mydonkey/gettings_started'
-tub = dk.parts.Tub(path, inputs, types)
+tub = dk.parts.Tub(path='~/mydonkey/gettings_started', 
+                   inputs=['image'], 
+                   types=['image_array'])
 V.add(tub, inputs=inputs)
 
 #start the drive loop
