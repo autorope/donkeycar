@@ -63,8 +63,8 @@ def arr_to_img(arr):
 
 def img_to_arr(img):
     '''
-    accepts: numpy array with shape (Hight, Width, Channels)
-    returns: binary stream (used to save to database)
+    accepts: binary stream (used to save to database)
+    returns: numpy array with shape (Hight, Width, Channels)
     '''
     return np.array(img)
 
