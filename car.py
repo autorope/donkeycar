@@ -11,7 +11,11 @@ V = dk.vehicle.Vehicle()
 cam = dk.parts.PiCamera()
 V.add(cam, outputs=['cam/image_array'], threaded=True)
 
-ctr = dk.parts.LocalWebController()
+# a pilot that uses local joystick
+ctr = dk.parts.JoystickPilot()
+
+#ctr = dk.parts.LocalWebController()
+
 V.add(ctr, 
       inputs=['cam/image_array'],
       outputs=['user/angle', 'user/throttle', 'user/mode'],

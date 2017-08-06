@@ -139,8 +139,8 @@ class LocalWebController(tornado.web.Application):
         #print(self.angle)
         return self.angle, self.throttle, self.mode
         
-
-
+    def shutdown(self):
+        pass
 
 class DriveAPI(tornado.web.RequestHandler):
 
