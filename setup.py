@@ -21,7 +21,6 @@ setup(name='donkeycar',
                       'pandas==0.19.2',
                       'docopt',
                       'keras',
-                      'opencv-python',
                       'h5py',
                      ],
 
