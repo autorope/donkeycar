@@ -6,7 +6,7 @@ This example simulates a square that bounces around a frame
 and records the frames and coordinates to disk.
 
 """
-import donkey as dk 
+import donkeycar as dk 
 
 #make the membory 
 V = dk.Vehicle()

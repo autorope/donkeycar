@@ -21,7 +21,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.gen
 
-import donkey as dk
+from ... import utils
 
 
 class RemoteWebServer():
@@ -180,7 +180,7 @@ class VideoAPI(tornado.web.RequestHandler):
             if self.served_image_timestamp + interval < time.time():
 
 
-                img = dk.utils.arr_to_binary(self.application.img_arr)
+                img = utils.arr_to_binary(self.application.img_arr)
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")

@@ -7,7 +7,7 @@ This example shows how a user use a web controller to controll
 a square that move around the image frame.
 
 """
-import donkey as dk 
+import donkeycar as dk 
 
 V = dk.vehicle.Vehicle()
 

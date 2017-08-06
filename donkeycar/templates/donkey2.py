@@ -1,13 +1,17 @@
-# -*- coding: utf-8 -*-
+c# -*- coding: utf-8 -*-
 
 """
 Script to drive a donkey car using a webserver hosted on the vehicle.
 
 """
-import donkey as dk 
+import os
+import donkeycar as dk 
 
+CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
+DATA_PATH = os.path.join(CAR_PATH, 'data')
+
+#Initialized car
 V = dk.vehicle.Vehicle()
-
 cam = dk.parts.PiCamera()
 V.add(cam, outputs=['cam/image_array'], threaded=True)
 
@@ -30,13 +34,18 @@ V.add(steering, inputs=['user/angle'])
 V.add(throttle, inputs=['user/throttle'])
 
 #add tub to save data
-path='~/mydonkey/sessions/tub1'
+path=os.path.join(DATA_PATH, 'tub1')
 inputs=['user/angle', 'user/throttle', 'cam/image_array']
 types=['float', 'float', 'image_array']
 tub=dk.parts.TubWriter(path, inputs=inputs, types=types)
 V.add(tub, inputs=inputs)
 
 #run the vehicle for 20 seconds
+
+
+
+
 V.start(rate_hz=10, max_loop_count=1000)
 
-#you can now go to localhost:8887 to move a square around the image
+print("You can now go to localhost:8887 to move a square around the image.")
+#
