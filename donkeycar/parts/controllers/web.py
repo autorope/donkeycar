@@ -136,7 +136,7 @@ class LocalWebController(tornado.web.Application):
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
-        print(self.angle)
+        #print(self.angle)
         return self.angle, self.throttle, self.mode
         
 
