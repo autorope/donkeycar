@@ -52,7 +52,7 @@ class CreateCar(BaseCommand):
         docker can build the folder structure for docker to mount to.
         """
         
-        path = path or '~/mydonky'
+        path = path or '~/mydonkey'
         template = template or 'donkey2'
         
         

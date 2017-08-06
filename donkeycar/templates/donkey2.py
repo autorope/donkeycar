@@ -1,9 +1,15 @@
-c# -*- coding: utf-8 -*-
-
+#!/usr/bin/env python3
 """
-Script to drive a donkey car using a webserver hosted on the vehicle.
+Upload a file to S3 (requires amazon credentials).
 
+Usage:
+    drive.py (--rate_hz=<rate_hz>) [--bucket=<buck
+
+Options:
+  --file_path=<file_path> name of dataset file to save.
+  --bucket=<bucket>  name of S3 bucket to upload data. [default: donkey_resources].
 """
+
 import os
 import donkeycar as dk 
 
