@@ -4,7 +4,7 @@
 Script to drive a donkey car using a webserver hosted on the vehicle.
 
 """
-import donkey as dk 
+import donkeycar as dk 
 
 V = dk.vehicle.Vehicle()
 
@@ -29,10 +29,13 @@ throttle = dk.parts.PWMThrottle(controller=throttle_controller,
 V.add(steering, inputs=['user/angle'])
 V.add(throttle, inputs=['user/throttle'])
 
+odometer = dk.parts.RotaryEncoder(m_per_tick=0.0329, pin=23)
+V.add(odometer, outputs=['odometer/meters', 'odometer/meters_per_second'], threaded=True)
+
 #add tub to save data
-path='~/mydonkey/sessions/tub1'
-inputs=['user/angle', 'user/throttle', 'cam/image_array']
-types=['float', 'float', 'image_array']
+path='~/mydonkey/sessions/odometer_with_dist'
+inputs=['user/angle', 'user/throttle', 'cam/image_array', 'odometer/meters', 'odometer/meters_per_second']
+types=['float', 'float', 'image_array', 'float', 'float']
 tub=dk.parts.TubWriter(path, inputs=inputs, types=types)
 V.add(tub, inputs=inputs)
 

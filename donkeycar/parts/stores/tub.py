@@ -8,6 +8,7 @@ Created on Tue Jul  4 12:32:53 2017
 import os
 import time
 import json
+import datetime
 
 from PIL import Image
 
@@ -219,3 +220,38 @@ class TubReader(Tub):
         record = self.get_record(args)
         record = [record[key] for key in args ]
         return record
+
+
+class TubHandler():
+    def __init__(self, path):
+        self.path = os.path.expanduser(path)
+
+    def get_tub_list(self,path):
+        folders = next(os.walk(path))[1]
+        return folders
+
+    def next_tub_number(self, path):
+        def get_tub_num(tub_name):
+            try:
+                num = int(tub_name.split('_')[1])
+            except:
+                num = 0
+            return num
+
+        folders = self.get_tub_list(path)
+        numbers = [get_tub_num(x) for x in folders]
+        #numbers = [i for i in numbers if i is not None]
+        next_number = max(numbers+[0]) + 1
+        return next_number
+
+    def create_tub_path(self):
+        tub_num = self.next_tub_number(self.path)
+        date = datetime.datetime.now().strftime('%y-%m-%d')
+        name = '_'.join(['tub',str(tub_num),date])
+        tub_path = os.path.join(self.path, name)
+        return tub_path
+
+    def new_tub_writer(self, inputs, types):
+        tub_path = self.create_tub_path()
+        tw = TubWriter(path=tub_path, inputs=inputs, types=types)
+        return tw

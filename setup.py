@@ -1,12 +1,34 @@
 from setuptools import setup, find_packages
 
-setup(name='donkey',
-    version='2.1',
-    description='A library for small scale DIY self driving cars',
-    url='https//github.com/wroscoe/donkey',
+setup(name='donkeycar',
+    version='2.1.0',
+    description='Self driving library for python.',
+    url='https://github.com/wroscoe/donkey',
+    download_url='https://github.com/wroscoe/donkey/archive/2.1.0.tar.gz',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
+    entry_points={
+        'console_scripts': [
+            'donkey=donkeycar.management.base:execute_from_command_line',
+        ],
+    },
+    install_requires=['numpy', 
+                      'pillow',
+                      'docopt',
+                      'tornado',
+                      'requests',
+                      'pandas',
+                      'keras',
+                      'h5py',
+                     ],
+
+    extras_require={
+                    'pi': [
+                        'picamera',
+                        'Adafruit_PCA9685',
+                        ]
+                    },
 
     classifiers=[
         # How mature is this project? Common values are
@@ -30,28 +52,6 @@ setup(name='donkey',
         'Programming Language :: Python :: 3.6',
     ],
     keywords='selfdriving cars drive',
-
-    install_requires=['numpy', 
-                      'pillow',
-                      'docopt',
-                      'tornado',
-                      'requests',
-                      'pandas==0.19.2',
-                     ],
-
-    extras_require={'server': [
-                        'keras',
-                        'h5py',
-                        'scikit-image',
-                        'opencv-python',
-                        'pandas',
-                        'tensorflow',
-                        ],
-                    'pi': [
-                        'picamera',
-                        'Adafruit_PCA9685',
-                        ]
-                    },
 
     packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
 )

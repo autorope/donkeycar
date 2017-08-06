@@ -1,5 +1,5 @@
-var driveHandler = (function() {
-    //functions used to drive the vehicle.
+var driveHandler = new function() {
+    //functions used to drive the vehicle. 
 
     var state = {'tele': {
                           "user": {
@@ -34,7 +34,7 @@ var driveHandler = (function() {
     var driveURL = ""
     var vehicleURL = ""
 
-    var load = function() {
+    this.load = function() {
       driveURL = '/drive'
       vehicleURL = '/drive'
 
@@ -430,7 +430,7 @@ var driveHandler = (function() {
       }
     };
 
-    var brake = function(i=0){
+    var brake = function(i){
           console.log('post drive: ' + i)
           state.tele.user.angle = 0
           state.tele.user.throttle = 0
@@ -582,9 +582,7 @@ var driveHandler = (function() {
       return throttle;
     };
 
-    return {  load: load };
-
-})();
+}();
 
 
 function toRadians (angle) {

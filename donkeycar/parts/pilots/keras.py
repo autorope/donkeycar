@@ -11,7 +11,7 @@ models to help direct the vehicles motion.
 import os
 from datetime import datetime
 
-from donkey import utils
+from ... import utils
 
 
 

@@ -1,13 +1,23 @@
-# -*- coding: utf-8 -*-
-
+#!/usr/bin/env python3
 """
-Script to drive a donkey car using a webserver hosted on the vehicle.
+Upload a file to S3 (requires amazon credentials).
 
+Usage:
+    drive.py (--rate_hz=<rate_hz>) [--bucket=<buck
+
+Options:
+  --file_path=<file_path> name of dataset file to save.
+  --bucket=<bucket>  name of S3 bucket to upload data. [default: donkey_resources].
 """
-import donkey as dk 
 
+import os
+import donkeycar as dk 
+
+CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
+DATA_PATH = os.path.join(CAR_PATH, 'data')
+
+#Initialized car
 V = dk.vehicle.Vehicle()
-
 cam = dk.parts.PiCamera()
 V.add(cam, outputs=['cam/image_array'], threaded=True)
 
@@ -29,17 +39,16 @@ throttle = dk.parts.PWMThrottle(controller=throttle_controller,
 V.add(steering, inputs=['user/angle'])
 V.add(throttle, inputs=['user/throttle'])
 
-odometer = dk.parts.RotaryEncoder(m_per_tick=0.0329, pin=23)
-V.add(odometer, outputs=['odometer/meters', 'odometer/meters_per_second'], threaded=True)
-
 #add tub to save data
-path='~/mydonkey/sessions/odometer_with_dist'
-inputs=['user/angle', 'user/throttle', 'cam/image_array', 'odometer/meters', 'odometer/meters_per_second']
-types=['float', 'float', 'image_array', 'float', 'float']
-tub=dk.parts.TubWriter(path, inputs=inputs, types=types)
+inputs=['user/angle', 'user/throttle', 'cam/image_array']
+types=['float', 'float', 'image_array']
+
+th = dk.parts.TubHandler(path=DATA_PATH)
+tub = th.new_tub_writer(inputs=inputs, types=types)
 V.add(tub, inputs=inputs)
 
 #run the vehicle for 20 seconds
 V.start(rate_hz=10, max_loop_count=1000)
 
-#you can now go to localhost:8887 to move a square around the image
+print("You can now go to localhost:8887 to move a square around the image.")
+#

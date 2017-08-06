@@ -6,7 +6,11 @@ This example simulates a square that bounces around a frame
 and records the frames and coordinates to disk.
 
 """
-import donkey as dk 
+import donkeycar as dk 
+import os
+
+CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
+DATA_PATH = os.path.join(CAR_PATH, 'data')
 
 #make the membory 
 V = dk.Vehicle()
@@ -27,8 +31,10 @@ V.add(cam,
 #Add a datastore to record the images.
 inputs = ['square/x', 'square/y', 'square/image_array']
 types = ['float', 'float', 'image_array']
-path='~/mydonkey/sessions/tub_test'
-tub = dk.parts.TubWriter(path, inputs, types)
+#add tub to save data
+th = dk.parts.TubHandler(path=DATA_PATH)
+tub = th.new_tub_writer(inputs=inputs, types=types)
+V.add(tub, inputs=inputs)
 V.add(tub, inputs=inputs)
 
 
