@@ -33,7 +33,7 @@ if __name__ == "__main__":
         datasets = args['--datasets'].split(',')
         datasets = [os.path.join(dk.config.datasets_path,d) for d in datasets]
         print('loading data from %s' %datasets)
-        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
+        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=batch_size)
     
     elif args['--sessions'] is not None:
         session_names = args['--sessions'].split(',')
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
         dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
         datasets = [dataset_path]
-        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
+        train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=batch_size)
 
     steps = round(train['n'] / batch_size)
 
