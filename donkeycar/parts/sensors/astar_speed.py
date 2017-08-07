@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-import donkey as dk
+import donkeycar as dk
 import re
 import time
 

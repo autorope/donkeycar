@@ -5,7 +5,7 @@ Script to drive a donkey car using a webserver hosted on the vehicle.
 
 """
 from datetime import datetime
-import donkey as dk
+import donkeycar as dk
 
 V = dk.vehicle.Vehicle()
 
