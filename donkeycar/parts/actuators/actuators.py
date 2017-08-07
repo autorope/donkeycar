@@ -140,3 +140,17 @@ class Adafruit_DCMotor_Hat:
 
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
+
+class MockController:
+    '''
+    A sync for env with no controller, just to test other things, cam, joystick, etc..
+    '''
+    def __init__(self, channel, frequency=60):
+        self.frequency = frequency
+        self.channel = channel
+
+    def set_pulse(self, pulse):
+        pass
+
+    def run(self, pulse):
+        pass

@@ -190,12 +190,15 @@ class JoystickPilot():
     '''
     Joystick client using access to local physical input
     '''
-    def __init__(self, poll_delay=0.0166):
+    def __init__(self, poll_delay=0.0166, scale_throttle=1.0, steering_axis='x', throttle_axis='rz'):
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = 0
         self.poll_delay = poll_delay
         self.running = True
+        self.scale_throttle = scale_throttle
+        self.steering_axis = steering_axis
+        self.throttle_axis = throttle_axis
 
         #init joystick
         self.js = Joystick()
@@ -214,20 +217,19 @@ class JoystickPilot():
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
         
-            if axis == 'x':
-                self.angle = (1.0 * axis_val)
+            if axis == self.steering_axis:
+                self.angle = axis_val
                 print("angle", self.angle)
 
-            if axis == 'rz':
+            if axis == self.throttle_axis:
                 #this value is reversed, with positive value when pulling down
-                self.throttle = (-1 * axis_val)
+                self.throttle = (-1 * axis_val * self.scale_throttle)
                 print("throttle", self.throttle)
 
             time.sleep(self.poll_delay)
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
-        #print(self.angle)
         return self.angle, self.throttle, self.mode
 
     def shutdown(self):

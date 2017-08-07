@@ -1,4 +1,6 @@
 import time
+import numpy as np
+from PIL import Image
 
 
 class BaseCamera:
@@ -40,9 +42,6 @@ class PiCamera(BaseCamera):
             if not self.on: 
                 break
 
-    def run_threaded(self):
-        return self.frame
-
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
@@ -51,3 +50,13 @@ class PiCamera(BaseCamera):
         self.stream.close()
         self.rawCapture.close()
         self.camera.close()
+
+class MockCamera(BaseCamera):
+    def __init__(self, resolution=(160, 120)):
+        self.frame = Image.new('RGB', resolution)
+
+    def update(self):
+        pass
+
+    def shutdown(self):
+        pass
