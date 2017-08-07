@@ -1,0 +1,9 @@
+numpy
+pillow
+docopt
+tornado
+requests
+pandas==0.19.2
+docopt
+keras
+h5py
