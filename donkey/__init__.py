@@ -1,6 +1,6 @@
 
-import os
-uname = os.uname()
+import platform
+uname = platform.platform()
 if not uname[4].startswith("arm"):
     print('Loading modules for server.')
     from . import (utils, 

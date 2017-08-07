@@ -7,6 +7,8 @@ setup(name='donkey',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
+    package_data = { 'donkey' : ['templates/*.*', 
+                                    'templates/static/*.*']},
 
     classifiers=[
         # How mature is this project? Common values are
