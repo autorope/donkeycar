@@ -35,7 +35,6 @@ types = ['float', 'float', 'image_array']
 th = dk.parts.TubHandler(path=DATA_PATH)
 tub = th.new_tub_writer(inputs=inputs, types=types)
 V.add(tub, inputs=inputs)
-V.add(tub, inputs=inputs)
 
 
 #Run vehicel for 10 loops
