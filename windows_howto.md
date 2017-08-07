@@ -1,25 +1,26 @@
 
-# pi3, manual setup:
+# pi3 manual setup:
+### this uses minimal space on your memory card
 
 flash 8GB memory card with minimal jessie:
-https://downloads.raspberrypi.org/raspbian_lite_latest
-https://sourceforge.net/projects/win32diskimager/files/latest/download
+* https://downloads.raspberrypi.org/raspbian_lite_latest
+* https://sourceforge.net/projects/win32diskimager/files/latest/download
 
 
 login:
-username: pi
-password: raspberry
+* username: pi
+* password: raspberry
 
 ```bash
 sudo raspi-config
 ```
 
-change hostname
-change password
-5 interface options: 
-    P1 enable camera
-    P2 enable SSH
-    P5 enable I2C
+* change hostname
+* change password
+* 5 interface options: 
+*    P1 enable camera
+*    P2 enable SSH
+*    P5 enable I2C
     
 ```bash
 sudo apt-get update --fix-missing
