@@ -59,7 +59,10 @@ pip install tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
 this can take a long time as it involves compiling the latest numpy.
 
 
-
+setup initial files and dir for data
+```bash
+python make_paths.py
+```
 
 
 # windows setup:

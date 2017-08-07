@@ -1,4 +1,5 @@
 import os
+import shutil
 
 def make_path(rel_path):
     path = os.path.expanduser(rel_path)
@@ -6,6 +7,12 @@ def make_path(rel_path):
         os.makedirs(path)
     except:
         pass
+
+def copy_file(src, dest):
+    dest_path = os.path.expanduser(dest)
+    shutil.copyfile(src, dest)
         
 make_path('~/mydonkey/datasets')
 make_path('~/mydonkey/models')
+copy_file('config/default.h5', '~/mydonkey/models')
+copy_file('config/vehicle.ini', '~/mydonkey/')
