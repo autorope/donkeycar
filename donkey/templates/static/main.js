@@ -1,6 +1,6 @@
 
 
-var driveHandler = (function() {
+var driveHandler = new function() {
     //functions used to drive the vehicle. 
 
     var state = {'tele': {
@@ -36,8 +36,7 @@ var driveHandler = (function() {
     var driveURL = ""
     var vehicleURL = ""
 
-    var load = function() {
-
+    this.load = function() {
       vehicle_id = $('#vehicle_id').data('id') 
       driveURL = '/api/vehicles/drive/' + vehicle_id + "/"
       vehicleURL = '/api/vehicles/' + vehicle_id + "/"
@@ -52,7 +51,7 @@ var driveHandler = (function() {
 
       var manager = nipplejs.create(joystick_options);
       bindNipple(manager)
-    
+      
       if(!!navigator.getGamepads){
         console.log("Device has gamepad support.")
         hasGamepad = true;
@@ -340,7 +339,7 @@ var driveHandler = (function() {
           } 
        }, 100)
     }
-    
+
     // Control throttle and steering with device orientation
     function handleOrientation(event) {
 
@@ -435,7 +434,7 @@ var driveHandler = (function() {
       }
     };
 
-    var brake = function(i=0){
+    var brake = function(i){
           console.log('post drive: ' + i)
           state.tele.user.angle = 0
           state.tele.user.throttle = 0
@@ -454,7 +453,7 @@ var driveHandler = (function() {
       state.brakeOn = true;
       updateUI();
     };
-    
+
     var limitedThrottle = function(newThrottle){
       var limitedThrottle = 0;
       
@@ -586,10 +585,8 @@ var driveHandler = (function() {
      
       return throttle;
     };
-    
-    return {  load: load };
 
-})();
+}();
 
 
 function toRadians (angle) {
