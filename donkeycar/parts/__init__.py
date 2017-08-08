@@ -9,6 +9,8 @@ from .sensors.lidar import RPLidar
 from .sensors.rotary_encoder import RotaryEncoder
 
 from .pilots.keras import KerasCategorical
+from .pilots.keras import KerasLinear
+from .pilots.keras import KerasModels
 
 from .stores.tub import Tub
 from .stores.tub import TubReader

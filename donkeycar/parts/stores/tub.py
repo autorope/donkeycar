@@ -126,10 +126,10 @@ class Tub():
                 json_data[key]=path
                 
             elif typ == 'image_array':
-                path = self.make_file_path(key, ext='.png')
                 img = Image.fromarray(np.uint8(val))
-                img.save(path)
-                json_data[key]=path
+                name = self.make_file_name(key, ext='.png')
+                img.save(os.path.join(self.path, name))
+                json_data[key]=name
 
             else:
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
@@ -148,39 +148,38 @@ class Tub():
             
             #load objects that were saved as separate files
             if typ == 'image':
-                val = Image.open(val)
+                val = Image.open(os.path.join(self.path, val))
             elif typ == 'image_array':
-                img = Image.open(val)
+                img = Image.open(os.path.join(self.path, val))
                 val = np.array(img)
             
             data[key] = val
             
         return data
-            
-    @staticmethod
-    def clean_file_name(name):
-        name = name.replace('/', '-')
-        return name
+
     
-    def make_file_path(self, key, ext='.png'):
+    def make_file_name(self, key, ext='.png'):
         name = '_'.join([str(self.current_ix), key, ext])
-        name = self.clean_file_name(name)
-        file_path = os.path.join(self.path, name)
-        return file_path
+        name = name = name.replace('/', '-')
+        return name
         
     def delete(self):
         """ Delete the folder and files for this tub. """
         import shutil
         shutil.rmtree(self.path)
         
-    def record_gen(self, index):
+    def record_gen(self, index=None):
+        if index==None:
+            index=self.get_index()
         while True:
             for i in index:
                 record = self.get_record(i)
                 yield record
                 
-    def batch_gen(self, keys, index, batch_size=32):
+    def batch_gen(self, keys=None, index=None, batch_size=32):
         record_gen = self.record_gen(index)
+        if keys==None:
+            keys = self.inputs
         while True:
             record_list = []
             for _ in range(batch_size):
@@ -193,6 +192,7 @@ class Tub():
                 #    arr = arr.reshape(arr.shape + (1,))
                 batch_arrays[k] = arr
                 
+            #TODO: Return this in a format so keras can read it. 
             yield batch_arrays
     
     
