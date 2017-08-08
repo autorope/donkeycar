@@ -27,12 +27,14 @@ sudo apt-get update --fix-missing
 sudo apt-get upgrade
 ```
 
+install packages from ubuntu
 ```bash
 sudo apt-get install git
 sudo apt-get install python3 python3-pip python3-virtualenv
 sudo apt-get install python3-pip python3-dev
 ```
 
+get latest donkey code
 ```bash
 git clone https://github.com/tawnkramer/donkey
 cd donkey
@@ -40,7 +42,7 @@ cd donkey
 
 install anaconda:
 ```bash
-#wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-armv7l.sh
+wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-armv7l.sh
 bash Miniconda3-latest-Linux-armv7l.sh
 ```
 
@@ -85,10 +87,11 @@ cd projects
 get the latest donkey from my repo. This has fixes to run correctly on windows.
 ```bash
 git clone https://github.com/tawnkramer/donkey
+cd donkey
 ```
 
+create the python anaconda environmment
 ```bash
-cd donkey
 conda env create -f environment.yml
 activate donkey
 ```
