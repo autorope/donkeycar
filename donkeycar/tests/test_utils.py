@@ -7,7 +7,7 @@ Created on Sun Jun 25 14:17:59 2017
 """
 
 import unittest
-from donkey.utils import map_range
+from ..utils import map_range
 
 
 class TestMapping(unittest.TestCase):
