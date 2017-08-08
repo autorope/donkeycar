@@ -32,4 +32,5 @@ dependencies:
   - six==1.10.0
   - spidev==3.2
   - theano==0.9.0
+  - h5py
 

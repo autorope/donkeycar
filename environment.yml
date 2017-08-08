@@ -57,5 +57,5 @@ dependencies:
   - tornado==4.5.1
   - urllib3==1.22
   - werkzeug==0.12.2
-prefix: D:\Miniconda3\envs\donkey
+
 
