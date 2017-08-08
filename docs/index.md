@@ -25,7 +25,25 @@ template.
 ***These guidelines are nearly copied from [Keras](http://keras.io) because they are so good*** 
 
 
+## Installation
 
+### Developement version
+
+```bash
+git clone https://github.com/wroscoe/donkey donkeycar
+cd donkeycar
+git fetch origin dev
+git checkout dev
+pip install -e .
+```
+
+Now create a fake car on your computer to see if it works. 
+```bash
+donkey createcar --path sdonk --template record_square
+cd ~/sdonk
+python car.py drive
+python car.py train --tub <your_tub_name> --model <your_new_model_name>
+```
 
 ## Getting started in 30 seconds. 
 

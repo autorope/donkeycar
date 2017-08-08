@@ -12,7 +12,6 @@ import datetime
 
 from PIL import Image
 
-import pandas as pd
 import numpy as np
 
 
@@ -35,150 +34,138 @@ class Tub():
     def __init__(self, path, inputs=None, types=None):
 
         self.path = os.path.expanduser(path)
-        self.log_path = os.path.join(self.path, 'log.csv')
         self.meta_path = os.path.join(self.path, 'meta.json')
 
         exists = os.path.exists(self.path)
-        self.current_ix = 0
-
-        #TODO: Current handeling of existing tubs is bad.
-        #If a tub already exists it will get overwritten silently.
 
         if exists:
             #load log and meta
-            self.log = pd.read_csv(self.log_path,  index_col='ix')
+            print("Tub does exist")
             with open(self.meta_path, 'r') as f:
                 self.meta = json.load(f)
+            self.current_ix = self.get_last_ix() + 1
 
-        elif not exists and inputs and types:
+        elif not exists and inputs:
+            print('tub does NOT exist')
             #create log and save meta
             os.makedirs(self.path)
-
-            meta_inputs = []
-            meta_types = []
-            for i, v in enumerate(types):
-                if v != 'boolean':
-                    meta_inputs.append(inputs[i])
-                    meta_types.append(v)
-
-            self.log = pd.DataFrame(columns = meta_inputs)
-            self.log.index.name = 'ix'
-
-            self.orig = { 'inputs': inputs, 'types': types }
-            self.meta = { 'inputs': meta_inputs, 'types': meta_types }
+            self.meta = {'inputs': inputs, 'types': types}
             with open(self.meta_path, 'w') as f:
                 json.dump(self.meta, f)
+            self.current_ix = 0
         else:
-            raise AttributeError('The path doesnt exist and you didnt give inputs and types')
-
+            raise AttributeError('The path doesnt exist and you pass meta info.')
 
         self.start_time = time.time()
 
+
     def get_last_ix(self):
-        if len(self.log)<1:
-            return 0
-        else:
-            return self.log.index[-1]
+        index = self.get_index()
+        return max(index)
+
+    def get_index(self):
+        files = next(os.walk(self.path))[2]
+        record_files = [f for f in files if f[:6]=='record']
+        def get_file_ix(file_name):
+            try:
+                name = file_name.split('.')[0]
+                num = int(name.split('_')[1])
+            except:
+                num = 0
+            return num
+
+        nums = [get_file_ix(f) for f in record_files]
+        return nums
 
     @property
     def inputs(self):
-        return self.meta['inputs']
+        return list(self.meta['inputs'])
 
     @property
     def types(self):
-        return self.meta['types']
+        return list(self.meta['types'])
 
-    def write_line(self, line):
-        self.log.loc[self.current_ix] = line
-        self.current_ix += 1
+    def get_input_type(self, key):
+        input_types = dict(zip(self.inputs, self.types))
+        return input_types.get(key)
 
-    def read_line(self, keys, ix):
-        line = dict(self.log.loc[ix, keys])
-        return line
+    def write_json_record(self, json_data):
+        path = self.get_json_record_path(self.current_ix)
+        with open(path, 'w') as fp:
+            json.dump(json_data, fp)
 
-    def save_log(self):
-        self.log.to_csv(self.log_path)
+    def get_json_record_path(self, ix):
+        return os.path.join(self.path, 'record_'+str(ix)+'.json')
 
-    def put_record(self, vals):
+    def get_json_record(self, ix):
+        path = self.get_json_record_path(ix)
+        with open(path, 'r') as fp:
+            json_data = json.load(fp)
+        return json_data
+
+    def put_record(self, data):
         """
         Save values like images that can't be saved in the csv log and
         return a record with references to the saved values that can
         be saved in a csv.
         """
-
-        line = []
+        json_data = {}
         write = False
 
-        for i, val in enumerate(vals):
-            typ = self.orig['types'][i]
-            key = self.orig['inputs'][i]
+        for key, val in data.items():
+            typ = self.get_input_type(key)
 
             if typ == 'boolean':      # the recording value
                 write = val
 
         if write:
-            for i, val in enumerate(vals):
-                typ = self.orig['types'][i]
-                key = self.orig['inputs'][i]
+            for key, val in data.items():
+                typ = self.get_input_type(key)
 
-                if typ in ['str', 'float', 'int']:
-                    line.append(val)
+                if typ in ['str', 'float', 'int', 'boolean']:
+                    json_data[key] = val
 
                 elif typ is 'image':
                     path = self.make_file_path(key)
                     val.save(path)
-                    line.append(path)
+                    json_data[key]=path
 
                 elif typ == 'image_array':
-                    path = self.make_file_path(key, ext='.png')
                     img = Image.fromarray(np.uint8(val))
-                    img.save(path)
-                    line.append(path)
-                elif typ == 'boolean':      # the recording value
-                    write = val
+                    name = self.make_file_name(key, ext='.png')
+                    img.save(os.path.join(self.path, name))
+                    json_data[key]=name
 
                 else:
                     msg = 'Tub does not know what to do with this type {}'.format(typ)
                     raise TypeError(msg)
 
-            #write csv line
-            self.write_line(line)
+            self.write_json_record(json_data)
+            self.current_ix += 1
 
-    def get_record(self, *args, ix=None):
-        if ix is None:
-            ix = self.current_ix
-        if len(args) < 0:
-            keys = self.inputs
-        else:
-            keys = args
+    def get_record(self, ix):
 
-        log_record = self.read_line(keys, ix)
-        record = {}
-
-        for key, val in log_record.items():
-            typ = self.types[self.inputs.index(key)]
+        json_data = self.get_json_record(ix)
+        data={}
+        for key, val in json_data.items():
+            typ = self.get_input_type(key)
 
             #load objects that were saved as separate files
             if typ == 'image':
-                val = Image.open(val)
+                val = Image.open(os.path.join(self.path, val))
             elif typ == 'image_array':
-                img = Image.open(val)
+                img = Image.open(os.path.join(self.path, val))
                 val = np.array(img)
 
-            record[key] = val
+            data[key] = val
 
-        return record
+        return data
 
-    @staticmethod
-    def clean_file_name(name):
-        name = name.replace('/', '-')
-        return name
 
-    def make_file_path(self, key, ext='.png'):
+    def make_file_name(self, key, ext='.png'):
         name = '_'.join([str(self.current_ix), key, ext])
-        name = self.clean_file_name(name)
-        file_path = os.path.join(self.path, name)
-        return file_path
+        name = name = name.replace('/', '-')
+        return name
 
     def delete(self):
         """ Delete the folder and files for this tub. """
@@ -186,7 +173,35 @@ class Tub():
         shutil.rmtree(self.path)
 
     def shutdown(self):
-        self.save_log()
+        pass
+
+
+    def record_gen(self, index=None):
+        if index==None:
+            index=self.get_index()
+        while True:
+            for i in index:
+                record = self.get_record(i)
+                yield record
+
+    def batch_gen(self, keys=None, index=None, batch_size=32):
+        record_gen = self.record_gen(index)
+        if keys==None:
+            keys = self.inputs
+        while True:
+            record_list = []
+            for _ in range(batch_size):
+                record_list.append(next(record_gen))
+
+            batch_arrays = {}
+            for i, k in enumerate(keys):
+                arr = np.array([r[k] for r in record_list])
+                #if len(arr.shape) == 1:
+                #    arr = arr.reshape(arr.shape + (1,))
+                batch_arrays[k] = arr
+
+            #TODO: Return this in a format so keras can read it.
+            yield batch_arrays
 
 
 class TubWriter(Tub):
@@ -203,7 +218,8 @@ class TubWriter(Tub):
         assert len(self.orig['inputs']) == len(args)
 
         self.record_time = int(time.time() - self.start_time)
-        self.put_record(args)
+        record = dict(zip(self.inputs, args))
+        self.put_record(record)
 
 
 class TubReader(Tub):
@@ -217,7 +233,7 @@ class TubReader(Tub):
         Accepts keys to read from the tub and retrieves them sequentially.
         '''
 
-        record = self.get_record(args)
+        record = self.get_record()
         record = [record[key] for key in args ]
         return record
 
