@@ -27,7 +27,7 @@ def drive():
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
     # a pilot that uses local joystick
-    ctr = dk.parts.JoystickPilot()
+    ctr = dk.parts.JoystickPilot(scale_throttle=0.3)
 
     #ctr = dk.parts.LocalWebController()
 

@@ -2,8 +2,12 @@ import os
 import struct
 import array
 import time
+import math
 from fcntl import ioctl
 from threading import Thread
+
+#smallest throttle value we record
+SMALLEST_THROTTLE_TO_RECORD = 0.01
 
 class Joystick():
     '''
@@ -230,8 +234,16 @@ class JoystickPilot():
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
+
+        '''
+        when no throttle, return no values
+        '''
+        if math.fabs(self.throttle) < SMALLEST_THROTTLE_TO_RECORD :
+            return None
+
         return self.angle, self.throttle, self.mode
 
     def shutdown(self):
         self.running = False
+        time.sleep(0.5)
 
