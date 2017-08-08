@@ -31,7 +31,10 @@ template.
 
 ```bash
 git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e donkeycar
+cd donkeycar
+git fetch origin dev
+git checkout dev
+pip install -e .
 ```
 
 Now create a fake car on your computer to see if it works. 
