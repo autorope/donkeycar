@@ -46,17 +46,25 @@ class TeensyRCin:
                 m = rcin_pattern.match(l.decode('utf-8'))
 
                 if m:
-                    i = float(m.group(1)) / (1000.0 * 1000.0) # in seconds
-                    i *= self.sensor.frequency * 4096.0
-                    self.inSteering = self.map_range(i,
-                                                      TeensyRCin.LEFT_PULSE, TeensyRCin.RIGHT_PULSE,
-                                                      TeensyRCin.LEFT_ANGLE, TeensyRCin.RIGHT_ANGLE)
+                    i = float(m.group(1))
+                    if i == 0.0:
+                        self.inSteering = 0.0
+                    else:
+                        i = i / (1000.0 * 1000.0) # in seconds
+                        i *= self.sensor.frequency * 4096.0
+                        self.inSteering = self.map_range(i,
+                                                         TeensyRCin.LEFT_PULSE, TeensyRCin.RIGHT_PULSE,
+                                                         TeensyRCin.LEFT_ANGLE, TeensyRCin.RIGHT_ANGLE)
 
-                    k = float(m.group(2)) / (1000.0 * 1000.0) # in seconds
-                    k *= self.sensor.frequency * 4096.0
-                    self.inThrottle = self.map_range(k,
-                                                      TeensyRCin.MIN_PULSE, TeensyRCin.MAX_PULSE,
-                                                      TeensyRCin.MIN_THROTTLE, TeensyRCin.MAX_THROTTLE)
+                    k = float(m.group(2))
+                    if k == 0.0:
+                        self.inThrottle = 0.0
+                    else:
+                        k = k / (1000.0 * 1000.0) # in seconds
+                        k *= self.sensor.frequency * 4096.0
+                        self.inThrottle = self.map_range(k,
+                                                         TeensyRCin.MIN_PULSE, TeensyRCin.MAX_PULSE,
+                                                         TeensyRCin.MIN_THROTTLE, TeensyRCin.MAX_THROTTLE)
 
                     # print("matched %.1f  %.1f  %.1f  %.1f" % (i, self.inSteering, k, self.inThrottle))
                 l = self.sensor.teensy_readline()

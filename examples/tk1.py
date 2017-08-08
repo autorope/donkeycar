@@ -37,9 +37,9 @@ V.add(throttle, inputs = [ 'user/throttle', 'user/mode' ])
 
 #add tub to save data
 path = '~/mydonkey/sessions/' + datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
-inputs = [ 'user/angle', 'user/throttle', 'cam/image_array', 'rcin/angle', 'rcin/throttle', 'odo/speed', 'user/recording' ]
-types = [ 'float', 'float', 'image_array', 'float', 'float', 'float', 'boolean' ]
-tub = dk.parts.TubWriter(path, inputs = inputs, types = types)
+inputs = [ 'user/angle', 'user/throttle', 'cam/image_array', 'user/mode', 'odo/speed', 'user/recording' ]
+types = [ 'float', 'float', 'image_array', 'str', 'float', 'boolean' ]
+tub = dk.parts.OriginalWriter(path, inputs = inputs, types = types)
 V.add(tub, inputs = inputs)
 
 #run the vehicle for 20 seconds
