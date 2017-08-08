@@ -11,19 +11,23 @@ login:
 * username: pi
 * password: raspberry
 
+
+use rasp-config to setup some useful options
 ```bash
 sudo raspi-config
 ```
-
 * change hostname
 * change password
-* 5 interface options: 
-*    P1 enable camera
-*    P2 enable SSH
-*    P5 enable I2C
-    
+* interface options: 
+  * enable camera
+  * enable SSH
+  * enable I2C
+
+reboot.
+
+do a package refresh and get latest:    
 ```bash
-sudo apt-get update --fix-missing
+sudo apt-get update
 sudo apt-get upgrade
 ```
 
@@ -44,6 +48,7 @@ install anaconda:
 ```bash
 wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-armv7l.sh
 bash Miniconda3-latest-Linux-armv7l.sh
+source ~/.bashrc
 ```
 
 setup python environment
@@ -53,13 +58,16 @@ source activate donkey
 python setup.py install
 ```
 
+upgrade numpy. This can take a long time as it involves compiling the latest.
+```bash
+pip install --upgrade numpy
+```
+
 setup tensorflow
 ```bash
 wget https://github.com/samjabrahams/tensorflow-on-raspberry-pi/releases/download/v1.1.0/tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
 pip install tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
 ```
-this can take a long time as it involves compiling the latest numpy.
-
 
 setup initial files and dir for data
 ```bash
@@ -67,7 +75,7 @@ python make_paths.py
 ```
 
 
-# windows setup:
+# Windows setup:
 
 install miniconda:
 https://conda.io/miniconda.html
@@ -107,6 +115,15 @@ to run server:
 python scripts/serve.py
 ```
 
+you should be able to connect to the server now from your pi.
+
+---
+# Normal usage
+in future runs, when you start a new session, you will want to:
+* start a new Anaconda Prompt from windows start menu
+* cd projects\donkey
+* activate donkey
+* python scripts/serve.py
 
  
 
