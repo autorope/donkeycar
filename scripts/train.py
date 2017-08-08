@@ -37,8 +37,9 @@ if __name__ == "__main__":
         train, val, test = dk.datasets.split_datasets(datasets, val_frac=.1, test_frac=.1, batch_size=128)
     
     elif args['--sessions'] is not None:
-        session_names = args['--sessions'].split(',')
-        X, Y = dk.sessions.sessions_to_dataset(session_names=session_names)
+        sessions = args['--sessions'].split(',')
+        existed_sessions = [s for s in sessions if os.path.isdir(os.path.join(dk.config.sessions_path, s)) and os.listdir(os.path.join(dk.config.sessions_path, s))]
+        X, Y = dk.sessions.sessions_to_dataset(session_names=existed_sessions)
         dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
         dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
         datasets = [dataset_path]
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     elif args['--tags'] is not None:
         tag_names = args['--tags'].split(',')
         sessions = dk.tags.Tags(dk.config.sessions_path).sessions_with_tags(set(tag_names))
-        existed_sessions = [s for s in sessions if os.path.isdir(os.path.join(dk.config.sessions_path, s))]
+        existed_sessions = [s for s in sessions if os.path.isdir(os.path.join(dk.config.sessions_path, s)) and os.listdir(os.path.join(dk.config.sessions_path, s))]
         X, Y = dk.sessions.sessions_to_dataset(session_names=existed_sessions)
         dataset_path = os.path.join(dk.config.datasets_path, 'temp.h5')
         dk.sessions.dataset_to_hdf5(X, Y, dataset_path)
