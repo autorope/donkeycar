@@ -1,8 +1,8 @@
 
-# pi3 manual setup:
-### this uses minimal space on your memory card
+# Pi3 Manual Setup:
+##### This uses minimal space on your memory card, is easy to upgrade and make changes to source
 
-flash 8GB memory card with minimal jessie:
+flash 8GB+ memory card with minimal jessie:
 * https://downloads.raspberrypi.org/raspbian_lite_latest
 * https://sourceforge.net/projects/win32diskimager/files/latest/download
 
@@ -74,8 +74,15 @@ setup initial files and dir for data
 python make_paths.py
 ```
 
+get your server running with the steps below, then come back here and startup the python drive client using the server ip.
+```bash
+python scripts/drive.py --remote http://<server ip>:8887
+```
 
-# Windows setup:
+---
+
+# Windows Donkey Server Setup
+##### Many python projects do not provide a docker install. It's useful to know how to setup the windows environment to run Donkey and/or any other python project. Its also easier to modify source.
 
 install miniconda:
 https://conda.io/miniconda.html
@@ -108,6 +115,11 @@ once to setup:
 ```bash
 python make_paths.py
 python setup.py install
+```
+
+check your server ip address, use this as the argument you pass to the client
+```bash
+ipconfig
 ```
 
 to run server:
