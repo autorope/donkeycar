@@ -110,35 +110,27 @@ class Tub():
         be saved in a csv.
         """
         json_data = {}
-        write = False
-
+        
         for key, val in data.items():
             typ = self.get_input_type(key)
 
-            if typ == 'boolean':      # the recording value
-                write = val
+            if typ in ['str', 'float', 'int', 'boolean']:
+                json_data[key] = val
 
-        if write:
-            for key, val in data.items():
-                typ = self.get_input_type(key)
+            elif typ is 'image':
+                path = self.make_file_path(key)
+                val.save(path)
+                json_data[key]=path
 
-                if typ in ['str', 'float', 'int', 'boolean']:
-                    json_data[key] = val
+            elif typ == 'image_array':
+                img = Image.fromarray(np.uint8(val))
+                name = self.make_file_name(key, ext='.png')
+                img.save(os.path.join(self.path, name))
+                json_data[key]=name
 
-                elif typ is 'image':
-                    path = self.make_file_path(key)
-                    val.save(path)
-                    json_data[key]=path
-
-                elif typ == 'image_array':
-                    img = Image.fromarray(np.uint8(val))
-                    name = self.make_file_name(key, ext='.png')
-                    img.save(os.path.join(self.path, name))
-                    json_data[key]=name
-
-                else:
-                    msg = 'Tub does not know what to do with this type {}'.format(typ)
-                    raise TypeError(msg)
+            else:
+                msg = 'Tub does not know what to do with this type {}'.format(typ)
+                raise TypeError(msg)
 
             self.write_json_record(json_data)
             self.current_ix += 1
