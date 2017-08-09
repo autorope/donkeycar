@@ -23,7 +23,6 @@ people can use.
 * Hardware CAD designs for optional upgrades.
 
 
-
 ### Getting started. 
 After building and calibrating the standard Donkey2 you can drive your car 
 with your phone by running the following via ssh on the cars Raspberry Pi. 

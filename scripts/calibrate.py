@@ -1,9 +1,12 @@
 """
 calibrate.py
 
-Script to run on the Raspberry PI to start your vehicle's drive loop. The drive loop
-will use post requests to the server specified in the remote argument. Run the 
-serve.py script on a different computer to start the remote server.
+### WARNING: Make sure your car's wheel's are off the groud so it doesn't run away.
+
+Run this script to test what PWM values will work for your car's steering and 
+throttle control. You'll be promted to enter the channel to test and then enter 
+PWM test values. Start at ~100 and work your way up until you get the desired result.
+
 
 Usage:
     calibrate.py 
