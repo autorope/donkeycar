@@ -215,7 +215,7 @@ class TubWriter(Tub):
         Accepts values, pairs them with their inputs keys and saves them
         to disk.
         '''
-        assert len(self.orig['inputs']) == len(args)
+        assert len(self.inputs) == len(args)
 
         self.record_time = int(time.time() - self.start_time)
         record = dict(zip(self.inputs, args))
