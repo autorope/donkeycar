@@ -15,6 +15,7 @@ var driveHandler = (function() {
                   'brakeOn': true, 
                   'recording': false,
                   'driveMode': "user",
+                  'angleMultiplier': "1.0",
                   'pilot': 'None',
                   'session': 'None',
                   'lag': 0,
@@ -94,6 +95,10 @@ var driveHandler = (function() {
       $('#pilot_select').on('change', function () {
         state.pilot = $(this).val(); // get selected value
         postPilot()
+      });
+      
+      $('#angle_multiplier').on('change', function () {
+        updateAngleMultiplier($(this).val());
       });
       
       $('#mode_select').on('change', function () {
@@ -222,6 +227,7 @@ var driveHandler = (function() {
       $("#throttleInput").val(state.tele.user.throttle);
       $("#angleInput").val(state.tele.user.angle);
       $('#mode_select').val(state.driveMode);
+      $('#angle_multiplier').val(state.angleMultiplier);
       
       if (state.recording) {
         $('#record_button')
@@ -290,6 +296,7 @@ var driveHandler = (function() {
         data = JSON.stringify({ 'angle': state.tele.user.angle, 
                                 'throttle':state.tele.user.throttle, 
                                 'drive_mode':state.driveMode, 
+                                'angle_multiplier':state.angleMultiplier, 
                                 'recording': state.recording})
         console.log(data)
         websocket.send(data);
@@ -440,6 +447,11 @@ var driveHandler = (function() {
 
     var updateDriveMode = function(mode){
       state.driveMode = mode;
+      postDrive()
+    };
+
+    var updateAngleMultiplier = function(v){
+      state.angleMultiplier = v;
       postDrive()
     };
 
