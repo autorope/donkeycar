@@ -9,7 +9,7 @@ Usage:
 """
 
 import os
-import docopt
+from docopt import docopt
 import donkeycar as dk 
 
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -78,6 +78,13 @@ def train(tub_name, model_name):
     
     model_path = os.path.join(MODELS_PATH, model_name)
     kl.train(keras_gen, None, saved_model_path=model_path, epochs=10)
-    
+
 if __name__ == '__main__':
-    pass
+    args = docopt(__doc__)
+
+    if args['drive']:
+        drive()
+    elif args['train']:
+        tub = args['--tub']
+        model = args['--model']
+        train(tub, model)

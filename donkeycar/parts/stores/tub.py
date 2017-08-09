@@ -132,8 +132,8 @@ class Tub():
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
                 raise TypeError(msg)
 
-            self.write_json_record(json_data)
-            self.current_ix += 1
+        self.write_json_record(json_data)
+        self.current_ix += 1
 
     def get_record(self, ix):
 
