@@ -141,6 +141,12 @@ class LocalWebController(tornado.web.Application):
         
     def shutdown(self):
         pass
+        return self.angle, self.throttle, self.mode
+        
+    def run(self, img_arr=None):
+        self.img_arr = img_arr
+        return self.angle, self.throttle, self.mode
+
 
 class DriveAPI(tornado.web.RequestHandler):
 

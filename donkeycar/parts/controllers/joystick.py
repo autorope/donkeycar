@@ -6,9 +6,6 @@ import math
 from fcntl import ioctl
 from threading import Thread
 
-#smallest throttle value we record
-SMALLEST_THROTTLE_TO_RECORD = 0.01
-
 class Joystick():
     '''
     An interface to a physical joystick available at /dev/input
@@ -194,6 +191,9 @@ class JoystickPilot():
     '''
     Joystick client using access to local physical input
     '''
+    #smallest throttle value we record
+    SMALLEST_THROTTLE_TO_RECORD = 0.01
+
     def __init__(self, poll_delay=0.0166, scale_throttle=1.0, steering_axis='x', throttle_axis='rz'):
         self.angle = 0.0
         self.throttle = 0.0
@@ -238,7 +238,7 @@ class JoystickPilot():
         '''
         when no throttle, return no values
         '''
-        if math.fabs(self.throttle) < SMALLEST_THROTTLE_TO_RECORD :
+        if math.fabs(self.throttle) < self.SMALLEST_THROTTLE_TO_RECORD :
             return None
 
         return self.angle, self.throttle, self.mode

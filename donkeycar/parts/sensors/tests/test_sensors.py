@@ -1,6 +1,6 @@
 import unittest
 
-import donkey as dk
+import donkeycar as dk
 
 class TestBaseCamera(unittest.TestCase):
 

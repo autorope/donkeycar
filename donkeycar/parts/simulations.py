@@ -28,6 +28,8 @@ class MovingSquareTelemetry:
         self.x = random.random() * x_max
         self.y = random.random() * y_max 
         
+        self.tel = self.x, self.y
+        
     def run(self):
         #move
         self.x += self.x_direction * self.velocity
@@ -40,6 +42,12 @@ class MovingSquareTelemetry:
             self.x_direction *= -1
         
         return int(self.x), int(self.y)
+    
+    def update(self):
+        self.tel = self.run()
+    
+    def run_threaded(self):
+        return self.tel
         
 
 class SquareBoxCamera:
