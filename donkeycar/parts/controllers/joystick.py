@@ -191,18 +191,25 @@ class JoystickPilot():
     '''
     Joystick client using access to local physical input
     '''
-    #smallest throttle value we record
-    SMALLEST_THROTTLE_TO_RECORD = 0.01
 
-    def __init__(self, poll_delay=0.0166, scale_throttle=1.0, steering_axis='x', throttle_axis='rz', dev='/dev/input/js0'):
+    def __init__(self, poll_delay=0.0166,
+            max_throttle=1.0,
+            steering_axis='x',
+            throttle_axis='rz',
+            steering_scale=1.0,
+            throttle_scale=-1.0,
+            dev='/dev/input/js0'):
+
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = 0
         self.poll_delay = poll_delay
         self.running = True
-        self.scale_throttle = scale_throttle
+        self.max_throttle = max_throttle
         self.steering_axis = steering_axis
         self.throttle_axis = throttle_axis
+        self.steering_scale = steering_scale
+        self.throttle_scale = throttle_scale
 
         #init joystick
         self.js = Joystick(dev)
@@ -222,24 +229,18 @@ class JoystickPilot():
             button, button_state, axis, axis_val = self.js.poll()
         
             if axis == self.steering_axis:
-                self.angle = axis_val
+                self.angle = self.steering_scale * axis_val
                 print("angle", self.angle)
 
             if axis == self.throttle_axis:
-                #this value is reversed, with positive value when pulling down
-                self.throttle = (-1 * axis_val * self.scale_throttle)
+                #this value is often reversed, with positive value when pulling down
+                self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
 
             time.sleep(self.poll_delay)
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
-
-        '''
-        when no throttle, return no values
-        '''
-        if math.fabs(self.throttle) < self.SMALLEST_THROTTLE_TO_RECORD :
-            return None
 
         return self.angle, self.throttle, self.mode
 

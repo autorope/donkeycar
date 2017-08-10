@@ -3,7 +3,7 @@ pillow
 docopt
 tornado
 requests
-pandas==0.19.2
+pandas
 docopt
 keras
 h5py

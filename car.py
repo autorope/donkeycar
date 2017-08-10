@@ -10,7 +10,7 @@ Usage:
 
 """
 import os
-import docopt
+from docopt import docopt
 import donkeycar as dk 
 
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -22,12 +22,12 @@ def drive():
 
     V = dk.vehicle.Vehicle()
 
-    cam = dk.parts.MockCamera()
-    #cam = dk.parts.PiCamera()
+    #cam = dk.parts.MockCamera()
+    cam = dk.parts.PiCamera()
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
     # a pilot that uses local joystick
-    ctr = dk.parts.JoystickPilot(scale_throttle=0.3)
+    ctr = dk.parts.JoystickPilot(max_throttle=0.3)
 
     #ctr = dk.parts.LocalWebController()
 
@@ -62,13 +62,12 @@ def drive():
     V.start(rate_hz=30)
 
     #you can now use joystick and drive to record images
-def train(tub_name, model_name):
+def train(tub_path, model_name):
     
     km = dk.parts.KerasModels()
     model = km.default_linear()
     kl = dk.parts.KerasLinear(model)
     
-    tub_path = os.path.join(DATA_PATH, tub_name)
     tub = dk.parts.Tub(tub_path)
     batch_gen = tub.batch_gen()
     
@@ -88,4 +87,13 @@ def train(tub_name, model_name):
     kl.train(keras_gen, None, saved_model_path=model_path, epochs=10)
     
 if __name__ == '__main__':
-    pass
+    args = docopt(__doc__)
+    import sys
+    for arg in sys.argv:
+        if arg == 'drive':
+            drive()
+        elif arg == 'train':
+            train(args['--tub'], args['--model'])
+
+    print('done')
+
