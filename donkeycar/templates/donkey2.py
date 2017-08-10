@@ -8,6 +8,7 @@ Usage:
 
 """
 
+
 import os
 from docopt import docopt
 import donkeycar as dk 
@@ -15,6 +16,7 @@ import donkeycar as dk
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
+
 
 def drive():
     #Initialized car
@@ -46,7 +48,7 @@ def drive():
     
     th = dk.parts.TubHandler(path=DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
-    V.add(tub, inputs=inputs)
+    V.add(tub, inputs=inputs, run_condition=)
     
     #run the vehicle for 20 seconds
     V.start(rate_hz=10, max_loop_count=1000)

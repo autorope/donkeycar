@@ -13,3 +13,5 @@ class Lambda:
         
     def run(self, *args, **kwargs):
         return self.f(*args, **kwargs)
+    
+    
