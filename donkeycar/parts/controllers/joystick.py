@@ -10,12 +10,13 @@ class Joystick():
     '''
     An interface to a physical joystick available at /dev/input
     '''
-    def __init__(self):
+    def __init__(self, dev='/dev/input/js0'):
         self.axis_states = {}
         self.button_states = {}
         self.axis_map = []
         self.button_map = []
         self.jsdev = None
+        self.dev = dev
         
         # These constants were borrowed from linux/input.h
         self.axis_names = {
@@ -101,9 +102,8 @@ class Joystick():
         call once to setup connection to dev/input/js0 and map buttons
         '''
         # Open the joystick device.
-        fn = '/dev/input/js0'
-        print('Opening %s...' % fn)
-        self.jsdev = open(fn, 'rb')        
+        print('Opening %s...' % self.dev)
+        self.jsdev = open(self.dev, 'rb')
     
         # Get the device name.
         buf = array.array('B', [0] * 64)
@@ -194,7 +194,7 @@ class JoystickPilot():
     #smallest throttle value we record
     SMALLEST_THROTTLE_TO_RECORD = 0.01
 
-    def __init__(self, poll_delay=0.0166, scale_throttle=1.0, steering_axis='x', throttle_axis='rz'):
+    def __init__(self, poll_delay=0.0166, scale_throttle=1.0, steering_axis='x', throttle_axis='rz', dev='/dev/input/js0'):
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = 0
@@ -205,7 +205,7 @@ class JoystickPilot():
         self.throttle_axis = throttle_axis
 
         #init joystick
-        self.js = Joystick()
+        self.js = Joystick(dev)
         self.js.init()
 
         #start thread to poll it
