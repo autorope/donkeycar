@@ -11,7 +11,9 @@ Options:
 """
 
 from docopt import docopt
-import sys, os
+import sys
+import os
+import socket
 import shutil
 import argparse
 
@@ -52,7 +54,7 @@ class CreateCar(BaseCommand):
         docker can build the folder structure for docker to mount to.
         """
         
-        path = path or '~/mydonky'
+        path = path or '~/mydonkey'
         template = template or 'donkey2'
         
         
@@ -66,11 +68,13 @@ class CreateCar(BaseCommand):
             
         print("Copying car template.")
         template_path = os.path.join(TEMPLATES_PATH, template+'.py')
-        new_path = os.path.join(path, 'drive.py')
+        new_path = os.path.join(path, 'car.py')
         shutil.copyfile(template_path, new_path)
         print(new_path)
 
         print("Donkey setup complete.")
+
+
 
 class UploadData(BaseCommand):
     
@@ -82,10 +86,33 @@ class UploadData(BaseCommand):
         parsed_args = parser.parse_args(args)
         return parsed_args
 
+
+
+class FindCar(BaseCommand):
+    def parse_args(self, args):
+        pass        
+
+        
+    def run(self, args):
+        print('Looking up your computer IP address...')
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8",80))
+        ip = s.getsockname()[0] 
+        print('Your IP address: %s ' %s.getsockname()[0])
+        s.close()
+        
+        print("Finding your car's IP address...")
+        cmd = "sudo nmap -sP " + ip + "/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'"
+        print("Your car's ip address is:" )
+        os.system(cmd)
+        
+
+
 def execute_from_command_line():
     
     commands = {
             'createcar': CreateCar,
+            'findcar': FindCar
             #'calibratesteering': CalibrateSteering,
                 }
     

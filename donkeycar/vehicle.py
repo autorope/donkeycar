@@ -115,6 +115,7 @@ class Vehicle():
             self.stop()
                 
     def stop(self):
+        print('Shutting down vehicle and its parts...')
         for entry in self.parts:
             try:
                 entry['part'].shutdown()
