@@ -68,7 +68,7 @@ def control(application, vehicle_id='mycar'):
         
         if angle > 1.0:
             angle = 1.0
-        if angle < -1.0
+        if angle < -1.0:
             angle = -1.0
     
         if 'session' in V and V['session']:
