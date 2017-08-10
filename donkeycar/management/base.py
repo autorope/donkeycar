@@ -57,7 +57,7 @@ class CreateCar(BaseCommand):
         path = path or '~/mydonkey'
         template = template or 'donkey2'
         
-        
+        #TODO: Check if exists and prompt to overwrite.
         path = make_dir(path)
         
         print("Creating folders to hold training data and pilot models.")

@@ -118,6 +118,7 @@ class LocalWebController(tornado.web.Application):
         self.recording = False
 
         handlers = [
+            (r"/", tornado.web.RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
             (r"/video",VideoAPI),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
