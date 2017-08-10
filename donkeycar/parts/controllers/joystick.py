@@ -10,13 +10,13 @@ class Joystick():
     '''
     An interface to a physical joystick available at /dev/input
     '''
-    def __init__(self, dev='/dev/input/js0'):
+    def __init__(self, dev_fn='/dev/input/js0'):
         self.axis_states = {}
         self.button_states = {}
         self.axis_map = []
         self.button_map = []
         self.jsdev = None
-        self.dev = dev
+        self.dev_fn = dev_fn
         
         # These constants were borrowed from linux/input.h
         self.axis_names = {
@@ -102,8 +102,8 @@ class Joystick():
         call once to setup connection to dev/input/js0 and map buttons
         '''
         # Open the joystick device.
-        print('Opening %s...' % self.dev)
-        self.jsdev = open(self.dev, 'rb')
+        print('Opening %s...' % self.dev_fn)
+        self.jsdev = open(self.dev_fn, 'rb')
     
         # Get the device name.
         buf = array.array('B', [0] * 64)
@@ -193,12 +193,12 @@ class JoystickPilot():
     '''
 
     def __init__(self, poll_delay=0.0166,
-            max_throttle=1.0,
-            steering_axis='x',
-            throttle_axis='rz',
-            steering_scale=1.0,
-            throttle_scale=-1.0,
-            dev='/dev/input/js0'):
+                 max_throttle=1.0,
+                 steering_axis='x',
+                 throttle_axis='rz',
+                 steering_scale=1.0,
+                 throttle_scale=-1.0,
+                 dev_fn='/dev/input/js0'):
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -212,7 +212,7 @@ class JoystickPilot():
         self.throttle_scale = throttle_scale
 
         #init joystick
-        self.js = Joystick(dev)
+        self.js = Joystick(dev_fn)
         self.js.init()
 
         #start thread to poll it
