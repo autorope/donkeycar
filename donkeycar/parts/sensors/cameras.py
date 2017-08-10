@@ -50,15 +50,6 @@ class PiCamera(BaseCamera):
         self.rawCapture.close()
         self.camera.close()
 
-class MockCamera(BaseCamera):
-    def __init__(self, resolution=(160, 120)):
-        self.frame = Image.new('RGB', resolution)
-
-    def update(self):
-        pass
-
-    def shutdown(self):
-        pass
 class Webcam(BaseCamera):
     def __init__(self, resolution = (160, 120), framerate = 20):
         import pygame
@@ -112,3 +103,18 @@ class Webcam(BaseCamera):
         print('stoping Webcam')
         time.sleep(.5)
 
+class MockCamera(BaseCamera):
+    '''
+    Fake camera. Returns only a single static frame
+    '''
+    def __init__(self, resolution=(160, 120), image=None):
+        if image is not None:
+            self.frame = image
+        else:
+            self.frame = Image.new('RGB', resolution)
+
+    def update(self):
+        pass
+
+    def shutdown(self):
+        pass

@@ -9,11 +9,8 @@ from .controllers.web import LocalWebController
 from .controllers.joystick import JoystickPilot
 
 from .sensors.cameras import PiCamera
-<<<<<<< HEAD
 from .sensors.cameras import MockCamera
-=======
 from .sensors.cameras import Webcam
->>>>>>> 61d5f232e7be5c3ac604e6901a3eb47fc07f34f3
 from .sensors.lidar import RPLidar
 from .sensors.rotary_encoder import RotaryEncoder
 from .sensors.astar_speed import AStarSpeed
