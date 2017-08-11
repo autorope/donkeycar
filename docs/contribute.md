@@ -1,7 +1,22 @@
 
 # Contribute to Donkey
 Donkey is an opensource project to help accelerate the developement of 
-self driving autos. See below how you can contribute. 
+self driving autos. 
+
+###Guiding Developement Principles
+
+* **Modularity**: A self driving system is composed of standalone, 
+independently configurable components that can be combined to make a car.
+* **Minimalism**: Each component should be kept short (<100 lines of code). 
+Each peice of code should be transparent apon first reading. No black magic, 
+it slows the speed of innovation. 
+* **Extensiblity**: New components should be simple to create by following a 
+template. 
+* **Python**: Keep it simple. 
+
+***These guidelines are nearly copied from [Keras](http://keras.io) because they are so good*** 
+
+
 
 ### Add a part. 
 Are you a hardware specialist that can write a donkey part wrapper for a

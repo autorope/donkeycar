@@ -34,7 +34,8 @@ V.add(odometer, outputs=['odometer/meters', 'odometer/meters_per_second'], threa
 
 #add tub to save data
 path='~/mydonkey/sessions/odometer_with_dist'
-inputs=['user/angle', 'user/throttle', 'cam/image_array', 'odometer/meters', 'odometer/meters_per_second']
+inputs=['user/angle', 'user/throttle', 'cam/image_array', 
+        'odometer/meters', 'odometer/meters_per_second']
 types=['float', 'float', 'image_array', 'float', 'float']
 tub=dk.parts.TubWriter(path, inputs=inputs, types=types)
 V.add(tub, inputs=inputs)

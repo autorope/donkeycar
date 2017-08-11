@@ -9,10 +9,17 @@ extra_css:
 
 pages:
     - Home: index.md
-    - Build a Car: build_instructions.md
+    - User Guide:
+        - 'Build a car.': guide/build_hardware.md
+        - 'Install the software.': guide/install_software.md
+        - 'Get driving.': guide/get_driving.md
+        - 'Calibrate steering and throttle.': guide/calibrate.md
+        - 'Train an autopilot.': guide/train_autopilot.md
     - Parts: 
-        - 'Parts Overview': about-parts.md
-        - 'Actuators': actuators.md
-        - 'Stores': stores.md
+        - 'About': parts/about.md
+        - 'Actuators': parts/actuators.md
+        - 'Stores': parts/stores.md
+
     - Contribute : contribute.md
     - Tests : tests.md
+    - FAQ : faq.md

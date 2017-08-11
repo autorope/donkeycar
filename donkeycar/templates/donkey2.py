@@ -81,12 +81,29 @@ def train(tub_name, model_name):
     model_path = os.path.join(MODELS_PATH, model_name)
     kl.train(keras_gen, None, saved_model_path=model_path, epochs=10)
 
+
+
+def calibrate():
+    channel = int(input('Enter the channel your actuator uses (0-15).'))
+    c = dk.parts.PCA9685(channel)
+    
+    for i in range(10):
+        pmw = int(input('Enter a PWM setting to test(100-600)'))
+        c.run(pmw)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
 
     if args['drive']:
         drive()
+    elif args['calibrate']:
+        calibrate()
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
         train(tub, model)
+
+
+
+

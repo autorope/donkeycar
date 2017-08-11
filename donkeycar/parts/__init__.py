@@ -13,9 +13,9 @@ from .sensors.rotary_encoder import RotaryEncoder
 from .sensors.astar_speed import AStarSpeed
 from .sensors.teensy_rcin import TeensyRCin
 
-from .pilots.keras import KerasCategorical
-from .pilots.keras import KerasLinear
-from .pilots.keras import KerasModels
+from .ml.keras import KerasCategorical
+from .ml.keras import KerasLinear
+from .ml.keras import KerasModels
 
 from .stores.original import OriginalWriter
 
