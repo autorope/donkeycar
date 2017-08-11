@@ -37,7 +37,7 @@ class RemoteWebServer():
         self.angle = 0.
         self.throttle = 0.
         self.mode = 'user'
-        
+        self.recording = False
         #use one session for all requests
         self.session = requests.Session()
 
@@ -51,7 +51,7 @@ class RemoteWebServer():
 
         while True:
             #get latest value from server
-            self.angle, self.throttle, self.mode = self.run()
+            self.angle, self.throttle, self.mode, self.recording = self.run()
 
 
     def run_threaded(self):
@@ -60,7 +60,7 @@ class RemoteWebServer():
         '''
         
         #return last returned last remote response.
-        return self.angle, self.throttle, self.mode
+        return self.angle, self.throttle, self.mode, self.recording
 
         
     def run(self):
@@ -94,8 +94,9 @@ class RemoteWebServer():
         angle = float(data['angle'])
         throttle = float(data['throttle'])
         drive_mode = str(data['drive_mode'])
+        recording = bool(data['recording'])
         
-        return angle, throttle, drive_mode
+        return angle, throttle, drive_mode, recording
     
     
 class LocalWebController(tornado.web.Application):
@@ -117,6 +118,7 @@ class LocalWebController(tornado.web.Application):
         self.recording = False
 
         handlers = [
+            (r"/", tornado.web.RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
             (r"/video",VideoAPI),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
@@ -136,16 +138,11 @@ class LocalWebController(tornado.web.Application):
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
-        #print(self.angle)
-        return self.angle, self.throttle, self.mode
-        
-    def shutdown(self):
-        pass
-        return self.angle, self.throttle, self.mode
+        return self.angle, self.throttle, self.mode, self.recording
         
     def run(self, img_arr=None):
         self.img_arr = img_arr
-        return self.angle, self.throttle, self.mode
+        return self.angle, self.throttle, self.mode, self.recording
 
 
 class DriveAPI(tornado.web.RequestHandler):

@@ -22,7 +22,8 @@ class Vehicle():
         self.threads = []
 
 
-    def add(self, part, inputs=[], outputs=[], threaded=False):
+    def add(self, part, inputs=[], outputs=[], 
+            threaded=False, run_condition=None):
         """
         Method to add a part to the vehicle drive loop.
 
@@ -42,6 +43,7 @@ class Vehicle():
         entry['part'] = p
         entry['inputs'] = inputs
         entry['outputs'] = outputs
+        entry['run_condition'] = run_condition
 
         if threaded:
             t = Thread(target=part.update, args=())
@@ -89,27 +91,35 @@ class Vehicle():
                 loop_count += 1
 
                 for entry in self.parts:
-                    p = entry['part']
-                    #get inputs from memory
-                    inputs = self.mem.get(entry['inputs'])
-
-                    #run the part
-                    if entry.get('thread'):
-                        outputs = p.run_threaded(*inputs)
-                    else:
-                        outputs = p.run(*inputs)
-
-                    #save the output to memory
-                    if outputs is not None:
-                        self.mem.put(entry['outputs'], outputs)
-
-                #stop drive loop if loop_count exceeds max_loopcount
-                if max_loop_count and loop_count > max_loop_count:
-                    self.on = False
-
-                sleep_time = 1.0 / rate_hz - (time.time() - start_time)
-                if sleep_time > 0.0:
-                    time.sleep(sleep_time)
+                    #don't run if there is a run condition that is False
+                    run = True
+                    if entry.get('run_condition'):
+                        run_condition = entry.get('run_condition')
+                        run = self.mem.get([run_condition])[0]
+                        #print('run_condition', entry['part'], entry.get('run_condition'), run)
+                    
+                    if run:
+                        p = entry['part']
+                        #get inputs from memory
+                        inputs = self.mem.get(entry['inputs'])
+    
+                        #run the part
+                        if entry.get('thread'):
+                            outputs = p.run_threaded(*inputs)
+                        else:
+                            outputs = p.run(*inputs)
+    
+                        #save the output to memory
+                        if outputs is not None:
+                            self.mem.put(entry['outputs'], outputs)
+    
+                    #stop drive loop if loop_count exceeds max_loopcount
+                    if max_loop_count and loop_count > max_loop_count:
+                        self.on = False
+    
+                    sleep_time = 1.0 / rate_hz - (time.time() - start_time)
+                    if sleep_time > 0.0:
+                        time.sleep(sleep_time)
 
         except KeyboardInterrupt:
             pass
@@ -123,3 +133,4 @@ class Vehicle():
                 entry['part'].shutdown()
             except Exception as e:
                 print(e)
+        print(self.mem.d)

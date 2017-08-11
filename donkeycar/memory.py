@@ -34,9 +34,16 @@ class Memory:
     def put(self, keys, inputs):
         if len(keys) > 1:
             for i, key in enumerate(keys):
-                self.d[key] = inputs[i]
+                try:
+                    self.d[key] = inputs[i]
+                except IndexError as e:
+                    error = str(e) + ' issue with keys: ' + str(key)
+                    raise IndexError(error)
+        
         else:
             self.d[keys[0]] = inputs
+
+            
             
     def get(self, keys):
         result = [self.d.get(k) for k in keys]

@@ -8,10 +8,13 @@ import os
 class TestMovingSquareTelemetry(unittest.TestCase):
     def setUp(self):
         tempfolder = tempfile.TemporaryDirectory()
-        path = os.path.join(tempfolder.name, 'new')
-        inputs = ['name', 'age', 'pic']
-        types = ['str', 'float', 'str']
-        self.tub = TubWriter(path, inputs=inputs, types=types)
+        self.path = os.path.join(tempfolder.name, 'new')
+        self.inputs = ['name', 'age', 'pic']
+        self.types = ['str', 'float', 'str']
         
     def test_tub_create(self):
-        self.tub.run('will', 323, 'asdfasdf')
+        tub = TubWriter(self.path, inputs=self.inputs, types=self.types)
+        
+    def test_tub_path(self):
+        tub = TubWriter(self.path, inputs=self.inputs, types=self.types)
+        tub.run('will', 323, 'asdfasdf')
