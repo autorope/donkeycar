@@ -6,32 +6,36 @@ Donkey is minimalist and modular self driving library written in Python. It is
 developed for hobbiests with a focus on allowing fast experimentation and easy 
 community contributions.  
 
-[Documentation](http://docs.donkeycar.com)
-
-#### Build the standard [Donkey2](http://www.donkeycar.com) ($200 + 2 hours)
+#### Quick Links
+* [Code Documentation](http://docs.donkeycar.com)
+* [Instructions to build a Donkey2 car.](http://www.donkeycar.com)
 
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
 * Compete in self driving races like [DIY Robocars](diyrobocars.com)
 * Experiment with different driving methods.
 * Add parts and sensors to your car.
-
-#### Features:
-* Data logging. (images, user inputs, sensor readings) 
-* Web or hardware car controls.
-* Library of parts and pilots.
-* Community contributed driving data.
-* Hardware CAD designs for optional upgrades.
+* Log sensor data. (images, user inputs, sensor readings) 
+* Drive yoru car via a web or game controler.
+* Leverage community contributed driving data.
+* Use existing hardware CAD designs for upgrades.
 
 ### Getting started. 
-After building your Donkey2 you can install donkeycar and start driving 
-with your phone by running the following via ssh on the cars Raspberry Pi. 
+After building a Donkey2, here are the steps to start driving.
 
+install donkey
 ```
 pip install donkeycar
-
-donkey createcar --path ~/d2
-
-python car.py drive
 ```
+
+Create a car folder.
+```
+donkey createcar --path ~/d2
+```
+
+Start your car.
+```
+python ~/d2/manage.py drive
+```
+
 Now you can control your car by going to `<ip_address_of_your_pi>:8887/drive`
