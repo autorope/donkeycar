@@ -210,6 +210,7 @@ class JoystickPilot():
         self.throttle_axis = throttle_axis
         self.steering_scale = steering_scale
         self.throttle_scale = throttle_scale
+        self.recording = False
 
         #init joystick
         self.js = Joystick(dev_fn)
@@ -237,12 +238,13 @@ class JoystickPilot():
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
 
+            self.recording = (self.throttle == 0.0)                
+
             time.sleep(self.poll_delay)
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
-
-        return self.angle, self.throttle, self.mode
+        return self.angle, self.throttle, self.mode, self.recording
 
     def shutdown(self):
         self.running = False
