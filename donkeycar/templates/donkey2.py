@@ -94,7 +94,7 @@ def drive(model_path=None):
     V.add(tub, inputs=inputs, run_condition='recording')
     
     #run the vehicle for 20 seconds
-    V.start(rate_hz=10, max_loop_count=1000)
+    V.start(rate_hz=20, max_loop_count=100000)
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
