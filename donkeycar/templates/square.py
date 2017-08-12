@@ -8,7 +8,7 @@ a square that move around the image frame.
 
 
 Usage:
-    car.py (drive)
+    car.py (drive) [--model=<model>]
     car.py (train) (--tub=<tub>) (--model=<model>)
 
 """
@@ -26,55 +26,86 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 def drive(model=None):
     V = dk.vehicle.Vehicle()
     #initialize values
-    V.mem.put(['square/x', 'square/y'], (100,100))
+    V.mem.put(['square/angle', 'square/throttle'], (100,100))
     
     
     #display square box given by cooridantes.
-    cam = dk.parts.SquareBoxCamera(resolution=(200,200))
+    cam = dk.parts.SquareBoxCamera(resolution=(120,160))
     V.add(cam, 
-          inputs=['square/x', 'square/y'],
-          outputs=['square/image_array'])
+          inputs=['square/angle', 'square/throttle'],
+          outputs=['cam/image_array'])
     
     #display the image and read user values from a local web controller
     ctr = dk.parts.LocalWebController()
     V.add(ctr, 
-          inputs=['square/image_array'],
+          inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 
                    'user/mode', 'recording'],
           threaded=True)
     
-    def run_pilot(mode):
+    #See if we should even run the pilot module. 
+    #This is only needed because the part run_contion only accepts boolean
+    def pilot_condition(mode):
         if mode == 'user':
             return False
         else:
             return True
         
-    pilot_test = dk.parts.Lambda(run_pilot)
-    V.add(pilot_test, inputs=['user/mode'], outputs=['run_pilot'])
+    pilot_condition_part = dk.parts.Lambda(pilot_condition)
+    V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
+    #Run the pilot if the mode is not user.
     kl = dk.parts.KerasLinear(model)
-    V.add(kl, inputs=['square/image_array'], 
+    V.add(kl, inputs=['cam/image_array'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
+    
+    
+    #See if we should even run the pilot module. 
+    def drive_mode(mode, 
+                   user_angle, user_throttle,
+                   pilot_angle, pilot_throttle):
+        if mode == 'user':
+            return user_angle, user_throttle
+        
+        elif mode == 'pilot_angle':
+            return pilot_angle, user_throttle
+        
+        else: 
+            return pilot_angle, pilot_throttle
+        
+    drive_mode_part = dk.parts.Lambda(drive_mode)
+    V.add(drive_mode_part, 
+          inputs=['user/mode', 'user/angle', 'user/throttle',
+                  'pilot/angle', 'pilot/throttle'], 
+          outputs=['angle', 'throttle'])
+    
     
     
     #transform angle and throttle values to coordinate values
     f = lambda x : int(x * 100 + 100)
     l = dk.parts.Lambda(f)
-    V.add(l, inputs=['user/angle'], outputs=['square/x'])
-    V.add(l, inputs=['user/throttle'], outputs=['square/y'])
+    V.add(l, inputs=['user/angle'], outputs=['square/angle'])
+    V.add(l, inputs=['user/throttle'], outputs=['square/throttle'])
     
     #add tub to save data
-    inputs=['user/angle', 'user/throttle', 'square/image_array',
-            'pilot/angle', 'pilot/throttle', 'user/mode']
-    types=['float', 'float', 'image_array', 'float', 'float', 'str']
+    inputs=['cam/image_array',
+            'user/angle', 'user/throttle', 
+            'pilot/angle', 'pilot/throttle', 
+            'square/angle', 'square/throttle',
+            'user/mode']
+    types=['image_array',
+           'float', 'float',  
+           'float', 'float', 
+           'float', 'float',
+           'str']
     
     th = dk.parts.TubHandler(path=DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
     
     #run the vehicle for 20 seconds
-    V.start(rate_hz=50, max_loop_count=1000)
+    V.start(rate_hz=50, max_loop_count=100000)
     
     
     
@@ -86,11 +117,12 @@ def train(tub_name, model_name):
     kl = dk.parts.KerasLinear(model)
     
     tub_path = os.path.join(DATA_PATH, tub_name)
+    print(tub_path)
     tub = dk.parts.Tub(tub_path)
     batch_gen = tub.batch_gen()
     
-    X_keys = ['square/image_array']
-    Y_keys = ['square/x', 'square/y']
+    X_keys = ['cam/image_array']
+    Y_keys = ['square/angle', 'square/throttle']
     
     def train_gen(gen, X_keys, y_keys):
         while True:
@@ -111,7 +143,7 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     if args['drive']:
-        drive()
+        drive(args['--model'])
     elif args['train']:
         tub = args['--tub']
         model = args['--model']

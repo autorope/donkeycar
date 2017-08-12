@@ -13,7 +13,7 @@ models to help direct the vehicles motion.
 
 
 import os
-
+import keras
 from ... import utils
 
 
@@ -21,13 +21,14 @@ import donkeycar as dk
 from donkeycar import utils
 
 class KerasPilot():
-    def __init__(self, model, **kwargs):
+    def __init__(self, model_path, **kwargs):
         
-        self.model = model  
+        
+        self.model =  keras.models.load_model(model_path) 
     
     def train(self, train_gen, validation_gen, 
               saved_model_path, epochs=100, steps=10, ):
-        import keras
+        
         """
         train_gen: generator that yields an array of images an array of 
         
@@ -80,7 +81,7 @@ class KerasLinear(KerasPilot):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle, throttle = self.model.predict(img_arr)
         #angle_certainty = max(angle_binned[0])
-        return angle, throttle
+        return angle[0][0], throttle[0][0]
 
 
 
