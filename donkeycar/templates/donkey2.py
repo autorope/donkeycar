@@ -139,7 +139,7 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     if args['drive']:
-        drive()
+        drive(model = args['--model'])
     elif args['calibrate']:
         calibrate()
     elif args['train']:

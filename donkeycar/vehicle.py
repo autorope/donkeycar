@@ -120,6 +120,7 @@ class Vehicle():
                     sleep_time = 1.0 / rate_hz - (time.time() - start_time)
                     if sleep_time > 0.0:
                         time.sleep(sleep_time)
+                print(self.mem.d)
 
         except KeyboardInterrupt:
             pass

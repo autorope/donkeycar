@@ -24,7 +24,6 @@ class KerasPilot():
     def __init__(self, model_path=None, **kwargs):
         if model_path:
             self.model =  keras.models.load_model(model_path) 
-        pass
     
     def train(self, train_gen, validation_gen, 
               saved_model_path, epochs=100, steps=10, ):
