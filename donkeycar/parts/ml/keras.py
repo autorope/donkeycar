@@ -21,10 +21,10 @@ import donkeycar as dk
 from donkeycar import utils
 
 class KerasPilot():
-    def __init__(self, model_path, **kwargs):
-        
-        
-        self.model =  keras.models.load_model(model_path) 
+    def __init__(self, model_path=None, **kwargs):
+        if model_path:
+            self.model =  keras.models.load_model(model_path) 
+        pass
     
     def train(self, train_gen, validation_gen, 
               saved_model_path, epochs=100, steps=10, ):
@@ -63,7 +63,7 @@ class KerasPilot():
 class KerasCategorical(KerasPilot):
     def __init__(self, *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
-
+        
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
@@ -76,7 +76,7 @@ class KerasCategorical(KerasPilot):
 class KerasLinear(KerasPilot):
     def __init__(self, *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
-
+        
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle, throttle = self.model.predict(img_arr)

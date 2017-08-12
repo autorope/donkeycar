@@ -18,7 +18,7 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 
-def drive(model=None):
+def drive(model_path=None):
     #Initialized car
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera()
@@ -42,7 +42,7 @@ def drive(model=None):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasLinear(model)
+    kl = dk.parts.KerasLinear(model_path)
     V.add(kl, inputs=['cam/image_array'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
@@ -102,8 +102,8 @@ def drive(model=None):
 def train(tub_name, model_name):
     
     km = dk.parts.KerasModels()
-    model = km.default_linear()
-    kl = dk.parts.KerasLinear(model)
+    kl = dk.parts.KerasLinear()
+    kl.model = km.default_linear()
     
     tub_path = os.path.join(DATA_PATH, tub_name)
     tub = dk.parts.Tub(tub_path)
