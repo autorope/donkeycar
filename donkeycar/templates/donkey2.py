@@ -3,7 +3,7 @@
 Scripts to drive a donkey 2 car and train a model for it. 
 
 Usage:
-    car.py (drive)
+    car.py (drive) [--model=<model>]
     car.py (train) (--tub=<tub>) (--model=<model>)
     car.py (calibrate) 
 """
@@ -30,7 +30,42 @@ def drive(model=None):
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     
-
+    #See if we should even run the pilot module. 
+    #This is only needed because the part run_contion only accepts boolean
+    def pilot_condition(mode):
+        if mode == 'user':
+            return False
+        else:
+            return True
+        
+    pilot_condition_part = dk.parts.Lambda(pilot_condition)
+    V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
+    
+    #Run the pilot if the mode is not user.
+    kl = dk.parts.KerasLinear(model)
+    V.add(kl, inputs=['cam/image_array'], 
+          outputs=['pilot/angle', 'pilot/throttle'],
+          run_condition='run_pilot')
+    
+    
+    #Choose what inputs should change the car.
+    def drive_mode(mode, 
+                   user_angle, user_throttle,
+                   pilot_angle, pilot_throttle):
+        if mode == 'user':
+            return user_angle, user_throttle
+        
+        elif mode == 'pilot_angle':
+            return pilot_angle, user_throttle
+        
+        else: 
+            return pilot_angle, pilot_throttle
+        
+    drive_mode_part = dk.parts.Lambda(drive_mode)
+    V.add(drive_mode_part, 
+          inputs=['user/mode', 'user/angle', 'user/throttle',
+                  'pilot/angle', 'pilot/throttle'], 
+          outputs=['angle', 'throttle'])
     
     
     steering_controller = dk.parts.PCA9685(1)
@@ -41,12 +76,18 @@ def drive(model=None):
     throttle = dk.parts.PWMThrottle(controller=throttle_controller,
                                     max_pulse=500, zero_pulse=370, min_pulse=220)
     
-    V.add(steering, inputs=['user/angle'])
-    V.add(throttle, inputs=['user/throttle'])
+    V.add(steering, inputs=['angle'])
+    V.add(throttle, inputs=['throttle'])
     
     #add tub to save data
-    inputs=['user/angle', 'user/throttle', 'cam/image_array']
-    types=['float', 'float', 'image_array']
+    inputs=['cam/image_array',
+            'user/angle', 'user/throttle', 
+            'pilot/angle', 'pilot/throttle', 
+            'user/mode']
+    types=['image_array',
+           'float', 'float',  
+           'float', 'float', 
+           'str']
     
     th = dk.parts.TubHandler(path=DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)

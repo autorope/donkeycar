@@ -92,7 +92,6 @@ class KerasModels():
 
 
     def default_categorical(self):
-        import keras
         from keras.layers import Input, Dense, merge
         from keras.models import Model
         from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
@@ -128,8 +127,8 @@ class KerasModels():
         return model
 
 
+
     def default_linear(self):
-        import keras
         from keras.layers import Input, Dense, merge
         from keras.models import Model
         from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
@@ -163,3 +162,41 @@ class KerasModels():
                       loss_weights={'angle_out': 0.9, 'throttle_out': .1})
 
         return model
+
+
+
+    def default_relu(self):
+        from keras.layers import Input, Dense, merge
+        from keras.models import Model
+        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+        from keras.layers import Activation, Dropout, Flatten, Dense
+        
+        img_in = Input(shape=(120,160,3), name='img_in')
+        x = img_in
+        x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+        x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+        
+        x = Flatten(name='flattened')(x)
+        x = Dense(100, activation='relu')(x)
+        x = Dropout(.1)(x)
+        x = Dense(50, activation='relu')(x)
+        x = Dropout(.1)(x)
+        #categorical output of the angle
+        angle_out = Dense(1, activation='relu', name='angle_out')(x)
+        
+        #continous output of throttle
+        throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
+        
+        model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+        
+        
+        model.compile(optimizer='rmsprop',
+                      loss={'angle_out': 'mean_squared_error', 
+                            'throttle_out': 'mean_squared_error'},
+                      loss_weights={'angle_out': 0.9, 'throttle_out': .1})
+
+        return model
+
