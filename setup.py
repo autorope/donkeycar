@@ -20,7 +20,6 @@ setup(name='donkeycar',
                       'requests',
                       'pandas',
                       'keras',
-                      'h5py',
                      ],
 
     extras_require={

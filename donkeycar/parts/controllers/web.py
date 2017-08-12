@@ -114,7 +114,7 @@ class LocalWebController(tornado.web.Application):
         
         self.angle = 0.0
         self.throttle = 0.0
-        self.mode = 0.0
+        self.mode = 'user'
         self.recording = False
 
         handlers = [

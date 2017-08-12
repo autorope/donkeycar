@@ -5,7 +5,7 @@ Scripts to drive a donkey 2 car and train a model for it.
 Usage:
     car.py (drive)
     car.py (train) (--tub=<tub>) (--model=<model>)
-
+    car.py (calibrate) 
 """
 
 
@@ -18,7 +18,7 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 
-def drive():
+def drive(model=None):
     #Initialized car
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera()
@@ -29,6 +29,8 @@ def drive():
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
+    
+
     
     
     steering_controller = dk.parts.PCA9685(1)

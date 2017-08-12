@@ -1,9 +1,9 @@
 ![travis](https://travis-ci.org/wroscoe/donkey.svg?branch=dev)
 
-# Donkey: a python self driving library 
+# donkeycar: a python self driving library 
 
-Donkey is minimalist and modular self driving library written in Python. It is 
-developed for hobbiests with a focus on allowing fast experimentation and easy 
+Donkeycar is minimalist and modular self driving library written in Python. It is 
+developed for hobbiests and students with a focus on allowing fast experimentation and easy 
 community contributions.  
 
 #### Quick Links

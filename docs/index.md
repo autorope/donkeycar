@@ -15,7 +15,7 @@ focus on enabling fast experimentation and easy contribution.
 1. Build a car.
 2. Install the donkeycar libary. `pip install donkeycar`
 3. Create the drive script for your car from a template.  `donkey createcar ~/d2`
-4. Start driving your car. `python ~/d2/car.py drive`
+4. Start driving your car. `python ~/d2/manage.py drive`
 5. Control your car in a browser at `<your pi's ip address>:8887` 
 
 
