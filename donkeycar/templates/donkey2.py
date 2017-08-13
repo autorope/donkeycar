@@ -42,7 +42,7 @@ def drive(model_path=None):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasLinear(model_path)
+    kl = dk.parts.KerasCategorical()
     V.add(kl, inputs=['cam/image_array'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     if args['drive']:
-        drive(model = args['--model'])
+        drive(model_path = args['--model'])
     elif args['calibrate']:
         calibrate()
     elif args['train']:
