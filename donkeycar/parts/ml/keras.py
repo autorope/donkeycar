@@ -21,11 +21,8 @@ import donkeycar as dk
 from donkeycar import utils
 
 class KerasPilot():
-    def __init__(self, model_path=None, **kwargs):
-        if model_path:
-            self.model =  keras.models.load_model(model_path) 
-    
-    def train(self, train_gen, validation_gen, 
+ 
+    def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=10, ):
         
         """
@@ -35,13 +32,13 @@ class KerasPilot():
 
         #checkpoint to save model after each epoch
         save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
-                                                    monitor='loss', 
+                                                    monitor='val_loss', 
                                                     verbose=1, 
                                                     save_best_only=True, 
                                                     mode='min')
         
         #stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(monitor='loss', 
+        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                    min_delta=.0005, 
                                                    patience=4, 
                                                    verbose=1, 
@@ -54,21 +51,23 @@ class KerasPilot():
                         steps_per_epoch=steps, 
                         nb_epoch=epochs, 
                         verbose=1, 
+                        validation_data=val_gen,
                         callbacks=callbacks_list, 
                         nb_val_samples=steps*.2)
         return hist
 
 
 class KerasCategorical(KerasPilot):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model=None, *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
+        self.model = default_categorical()
         
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
         #angle_certainty = max(angle_binned[0])
-        angle_unbinned = utils.unbin_Y(angle_binned)
-        return angle_unbinned[0], throttle[0][0]
+        angle_unbinned = utils.linear_unbin(angle_binned)
+        return angle_unbinned, throttle[0][0]
     
     
     
@@ -84,118 +83,114 @@ class KerasLinear(KerasPilot):
 
 
 
-class KerasModels():
-
-    def init(self):
-        pass
 
 
-    def default_categorical(self):
-        from keras.layers import Input, Dense, merge
-        from keras.models import Model
-        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-        from keras.layers import Activation, Dropout, Flatten, Dense
-        
-        img_in = Input(shape=(120, 160,3), name='img_in')
-        x = img_in
-        x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
-        
-        x = Flatten(name='flattened')(x)
-        x = Dense(100, activation='relu')(x)
-        x = Dropout(.1)(x)
-        x = Dense(50, activation='relu')(x)
-        x = Dropout(.1)(x)
-        #categorical output of the angle
-        angle_out = Dense(15, activation='softmax', name='angle_out')(x)
-        
-        #continous output of throttle
-        throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
-        
-        model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-        
-        
-        model.compile(optimizer='rmsprop',
-                      loss={'angle_out': 'categorical_crossentropy', 
-                            'throttle_out': 'mean_absolute_error'},
-                      loss_weights={'angle_out': 0.9, 'throttle_out': .1})
+def default_categorical():
+    from keras.layers import Input, Dense, merge
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Dense
+    
+    img_in = Input(shape=(120, 160,3), name='img_in')
+    x = img_in
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(.1)(x)
+    x = Dense(50, activation='relu')(x)
+    x = Dropout(.1)(x)
+    #categorical output of the angle
+    angle_out = Dense(15, activation='softmax', name='angle_out')(x)
+    
+    #continous output of throttle
+    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
+    
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+    
+    
+    model.compile(optimizer='rmsprop',
+                  loss={'angle_out': 'categorical_crossentropy', 
+                        'throttle_out': 'mean_absolute_error'},
+                  loss_weights={'angle_out': 0.9, 'throttle_out': .1})
 
-        return model
+    return model
 
 
 
-    def default_linear(self):
-        from keras.layers import Input, Dense, merge
-        from keras.models import Model
-        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-        from keras.layers import Activation, Dropout, Flatten, Dense
-        
-        img_in = Input(shape=(120,160,3), name='img_in')
-        x = img_in
-        x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
-        
-        x = Flatten(name='flattened')(x)
-        x = Dense(100, activation='linear')(x)
-        x = Dropout(.1)(x)
-        x = Dense(50, activation='linear')(x)
-        x = Dropout(.1)(x)
-        #categorical output of the angle
-        angle_out = Dense(1, activation='linear', name='angle_out')(x)
-        
-        #continous output of throttle
-        throttle_out = Dense(1, activation='linear', name='throttle_out')(x)
-        
-        model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-        
-        
-        model.compile(optimizer='rmsprop',
-                      loss={'angle_out': 'mean_squared_error', 
-                            'throttle_out': 'mean_squared_error'},
-                      loss_weights={'angle_out': 0.9, 'throttle_out': .1})
+def default_linear():
+    from keras.layers import Input, Dense, merge
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Dense
+    
+    img_in = Input(shape=(120,160,3), name='img_in')
+    x = img_in
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='linear')(x)
+    x = Dropout(.1)(x)
+    x = Dense(50, activation='linear')(x)
+    x = Dropout(.1)(x)
+    #categorical output of the angle
+    angle_out = Dense(1, activation='linear', name='angle_out')(x)
+    
+    #continous output of throttle
+    throttle_out = Dense(1, activation='linear', name='throttle_out')(x)
+    
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+    
+    
+    model.compile(optimizer='rmsprop',
+                  loss={'angle_out': 'mean_squared_error', 
+                        'throttle_out': 'mean_squared_error'},
+                  loss_weights={'angle_out': 0.9, 'throttle_out': .1})
 
-        return model
+    return model
 
 
 
-    def default_relu(self):
-        from keras.layers import Input, Dense, merge
-        from keras.models import Model
-        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-        from keras.layers import Activation, Dropout, Flatten, Dense
-        
-        img_in = Input(shape=(120,160,3), name='img_in')
-        x = img_in
-        x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
-        
-        x = Flatten(name='flattened')(x)
-        x = Dense(100, activation='relu')(x)
-        x = Dropout(.1)(x)
-        x = Dense(50, activation='relu')(x)
-        x = Dropout(.1)(x)
-        #categorical output of the angle
-        angle_out = Dense(1, activation='relu', name='angle_out')(x)
-        
-        #continous output of throttle
-        throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
-        
-        model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-        
-        
-        model.compile(optimizer='rmsprop',
-                      loss={'angle_out': 'mean_squared_error', 
-                            'throttle_out': 'mean_squared_error'},
-                      loss_weights={'angle_out': 0.9, 'throttle_out': .1})
+def default_relu():
+    from keras.layers import Input, Dense, merge
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Dense
+    
+    img_in = Input(shape=(120,160,3), name='img_in')
+    x = img_in
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(.1)(x)
+    x = Dense(50, activation='relu')(x)
+    x = Dropout(.1)(x)
+    #categorical output of the angle
+    angle_out = Dense(1, activation='relu', name='angle_out')(x)
+    
+    #continous output of throttle
+    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
+    
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+    
+    
+    model.compile(optimizer='rmsprop',
+                  loss={'angle_out': 'mean_squared_error', 
+                        'throttle_out': 'mean_squared_error'},
+                  loss_weights={'angle_out': 0.9, 'throttle_out': .1})
 
-        return model
+    return model
 

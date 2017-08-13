@@ -99,30 +99,27 @@ def drive(model_path=None):
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
 
+
 def train(tub_name, model_name):
     
-    km = dk.parts.KerasModels()
-    kl = dk.parts.KerasLinear()
-    kl.model = km.default_linear()
+    kl = dk.parts.KerasCategorical()
     
     tub_path = os.path.join(DATA_PATH, tub_name)
     tub = dk.parts.Tub(tub_path)
-    batch_gen = tub.batch_gen()
     
     X_keys = ['cam/image_array']
-    Y_keys = ['user/angle', 'user/throttle']
+    y_keys = ['user/angle', 'user/throttle']
     
-    def train_gen(gen, X_keys, y_keys):
-        while True:
-            batch = next(gen)
-            X = [batch[k] for k in X_keys]
-            y = [batch[k] for k in y_keys]
-            yield X, y
-            
-    keras_gen = train_gen(batch_gen, X_keys, Y_keys)
+    def rt(record):
+        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        return record
+    
+    train_gen, val_gen = tub.train_val_gen(X_keys, y_keys, 
+                                           record_transform=rt, batch_size=128)
     
     model_path = os.path.join(MODELS_PATH, model_name)
-    kl.train(keras_gen, None, saved_model_path=model_path, epochs=10)
+    kl.train(train_gen, None, saved_model_path=model_path)
+
 
 
 

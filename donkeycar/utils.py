@@ -150,9 +150,13 @@ functions to help converte between floating point numbers and categories.
 def linear_bin(a):
     a = a + 1
     b = round(a / (2/14))
-    return int(b)
+    arr = np.zeros(15)
+    arr[int(b)] = 1
+    return arr
 
-def linear_unbin(b):
+
+def linear_unbin(arr):
+    b = np.argmax(arr)
     a = b *(2/14) - 1
     return a
 
