@@ -4,7 +4,7 @@ setup(name='donkeycar',
     version='2.1.1',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
-    download_url='https://github.com/wroscoe/donkey/archive/2.1.0.tar.gz',
+    download_url='https://github.com/wroscoe/donkey/archive/2.1.1a.tar.gz',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
@@ -52,4 +52,8 @@ setup(name='donkeycar',
     keywords='selfdriving cars drive',
 
     packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
+<<<<<<< HEAD
+=======
+    include_package_data=True
+>>>>>>> dev
 )
