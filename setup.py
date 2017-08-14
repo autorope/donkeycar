@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(name='donkeycar',
-    version='2.1.1a',
+    version='2.1.1b',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
-    download_url='https://github.com/wroscoe/donkey/archive/2.1.1a.tar.gz',
+    download_url='https://github.com/wroscoe/donkey/archive/2.1.1b.tar.gz',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
