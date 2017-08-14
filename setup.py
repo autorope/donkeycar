@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='donkeycar',
-    version='2.1.1',
+    version='2.1.1a',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
     download_url='https://github.com/wroscoe/donkey/archive/2.1.1a.tar.gz',
@@ -52,5 +52,4 @@ setup(name='donkeycar',
     keywords='selfdriving cars drive',
 
     packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
-    include_package_data=True
 )
