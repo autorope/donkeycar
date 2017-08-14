@@ -52,8 +52,5 @@ setup(name='donkeycar',
     keywords='selfdriving cars drive',
 
     packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
-<<<<<<< HEAD
-=======
     include_package_data=True
->>>>>>> dev
 )
