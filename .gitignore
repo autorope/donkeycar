@@ -1,5 +1,6 @@
 env/*
 data/*
+dist/*
 *.pyc
 .ipynb_checkpoints
 *.egg-info/
@@ -7,3 +8,5 @@ data/*
 .DS_Store
 lag_log.csv
 .spyproject
+.cache
+site/*

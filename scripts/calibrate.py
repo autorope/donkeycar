@@ -12,18 +12,16 @@ Usage:
     calibrate.py 
 
 """
-from time import sleep
-
 import donkey as dk
 
 
 if __name__ == '__main__':
 
 	
-	channel = int(input('What actuator channel'))
-	c = dk.actuators.PCA9685_Controller(channel)
+	channel = int(input('Enter the channel your actuator uses (0-15).'))
+	c = dk.parts.PCA9685(channel)
 	
 	for i in range(10):
-		pmw = int(input('What PMW setting? '))
-		c.set_pulse(pmw)
+		pmw = int(input('Enter a PWM setting to test(0-1500)'))
+		c.run(pmw)
 

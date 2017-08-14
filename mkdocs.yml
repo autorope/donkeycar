@@ -1,0 +1,25 @@
+site_name: Donkey Car
+theme: readthedocs
+
+repo_url: https://github.com/wroscoe/donkey
+edit_uri: edit/master/docs
+google_analytics: ['UA-99215530-2', 'github.io/donkey']
+extra_css: 
+    - extra.css
+
+pages:
+    - Home: index.md
+    - User Guide:
+        - 'Build a car.': guide/build_hardware.md
+        - 'Install the software.': guide/install_software.md
+        - 'Get driving.': guide/get_driving.md
+        - 'Calibrate steering and throttle.': guide/calibrate.md
+        - 'Train an autopilot.': guide/train_autopilot.md
+    - Parts: 
+        - 'About': parts/about.md
+        - 'Actuators': parts/actuators.md
+        - 'Stores': parts/stores.md
+
+    - Contribute : contribute.md
+    - Tests : tests.md
+    - FAQ : faq.md
