@@ -1,5 +1,3 @@
-![travis](https://travis-ci.org/wroscoe/donkey.svg?branch=dev)
-
 # donkeycar: a python self driving library 
 
 Donkeycar is minimalist and modular self driving library written in Python. It is 
