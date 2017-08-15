@@ -4,25 +4,28 @@ Donkey is a high level self driving library written in Python and capable of
 controlling ackerman or differential drive vehicles. It was developed with a 
 focus on enabling fast experimentation and easy contribution.
 
-#### What can you do with Donkey?
+---------
 
-* Build your own small scale self driving car.
-* Implement computer vision or neural network based auto-pilots.
-* Experiement with different sensors on your car. 
+### Build your own Donkey2
 
-### Get started.
+Donkey2 is the standard car that most people start with. The parts cost $200
+and take 2 hours to assemple. Here are the main steps to build your own car: 
 
-1. Build a car.
-2. Install the donkeycar libary. `pip install donkeycar`
-3. Create the drive script for your car from a template.  `donkey createcar ~/d2`
-4. Start driving your car. `python ~/d2/manage.py drive`
-5. Control your car in a browser at `<your pi's ip address>:8887` 
+1. [Build a car.](guide/build_hardware.md).
+2. [Install the software.](guide/install_software.md)
+3. [Calibrate your car.](guide/calibrate.md)
+4. [Start driving.](guide/get_driving.md) 
+5. [Train an autopilot.](guide/train_autopilot.md) 
+
+
+---------------
 
 
 ### Hello World. 
 
-Here's a drive script that will record images from a camera and 
-save them to disk. 
+Donkeycar is designed to make it easy to customize your car by adding or 
+removing parts. Here's a simple example of a car that just captures
+images from the camera and saves them.
 
 ```python
 
@@ -35,7 +38,7 @@ cam = dk.parts.PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #record the images
-tub = dk.parts.Tub(path='~/mydonkey/gettings_started', 
+tub = dk.parts.Tub(path='~/d2/gettings_started', 
                    inputs=['image'], 
                    types=['image_array'])
 V.add(tub, inputs=inputs)
@@ -43,3 +46,30 @@ V.add(tub, inputs=inputs)
 #start the drive loop
 V.start(max_loop_count=100)
 ```
+
+----------------
+
+### Installation
+
+The donkeycar package can be installed two ways.
+
+Use pypi to install the stable version:
+```bash
+pip install donkeycar
+```
+
+
+Clone the master branch to get the lastest version. Use this if you plan 
+to contribute code.. 
+```bash
+git clone https://github.com/wroscoe/donkey donkeycar
+pip install -e donkeycar
+```
+-----------------------
+
+### Why the name Donkey?
+
+The ultimate goal of this project is to build something useful. Donkey's were
+one of the first domesticated pack animals, they're notoriously stubborn, and 
+they are kid safe. Until the car can nagigate from one side of a city to the 
+other, we'll hold off naming it after some celestial being.
