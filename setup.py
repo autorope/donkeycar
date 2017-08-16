@@ -27,6 +27,13 @@ setup(name='donkeycar',
                         'Adafruit_PCA9685',
                         ]
                     },
+    package_data={
+        'donkeycar.parts.controllers.templates': ['*'], 
+        'donkeycar.parts.controllers.templates.static': ['*'], 
+        'donkeycar.templates': ['*'], 
+        },
+
+    include_package_data=True,
 
     classifiers=[
         # How mature is this project? Common values are
