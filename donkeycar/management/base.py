@@ -68,7 +68,7 @@ class CreateCar(BaseCommand):
             
         print("Copying car template.")
         template_path = os.path.join(TEMPLATES_PATH, template+'.py')
-        new_path = os.path.join(path, 'car.py')
+        new_path = os.path.join(path, 'manage.py')
         shutil.copyfile(template_path, new_path)
         print(new_path)
 

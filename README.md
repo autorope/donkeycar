@@ -1,33 +1,41 @@
 ![travis](https://travis-ci.org/wroscoe/donkey.svg?branch=dev)
 
-# Donkey: a self driving library and control platform for small scale DIY 
-vehicles. 
+# donkeycar: a python self driving library 
 
-Donkey is minimalist and modular self driving library written in Python. It is 
-developed for hobbiests with a focus on allowing fast experimentation and easy 
+Donkeycar is minimalist and modular self driving library written in Python. It is 
+developed for hobbiests and students with a focus on allowing fast experimentation and easy 
 community contributions.  
 
-#### Build the standard Donkey2 (http://www.donkeycar.com) ($200 + 2 hours)
+#### Quick Links
+* [Code Documentation](http://docs.donkeycar.com)
+* [Instructions to build a Donkey2 car.](http://www.donkeycar.com)
 
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
 * Compete in self driving races like [DIY Robocars](diyrobocars.com)
-* Use existing autopilots to drive your car.
-* Use community datasets to create, improve and test autopilots that other 
-people can use.  
-
-#### Features:
-* Data logging of image, steering angle, & throttle outputs. 
-* Web based car controls.
-* Community contributed driving data and autopilots.
-* Hardware CAD designs for optional upgrades.
-
+* Experiment with different driving methods.
+* Add parts and sensors to your car.
+* Log sensor data. (images, user inputs, sensor readings) 
+* Drive yoru car via a web or game controler.
+* Leverage community contributed driving data.
+* Use existing hardware CAD designs for upgrades.
 
 ### Getting started. 
-After building and calibrating the standard Donkey2 you can drive your car 
-with your phone by running the following via ssh on the cars Raspberry Pi. 
+After building a Donkey2, here are the steps to start driving.
 
+install donkey
 ```
-python examples/donkey2.py
+pip install donkeycar
 ```
+
+Create a car folder.
+```
+donkey createcar --path ~/d2
+```
+
+Start your car.
+```
+python ~/d2/manage.py drive
+```
+
 Now you can control your car by going to `<ip_address_of_your_pi>:8887/drive`

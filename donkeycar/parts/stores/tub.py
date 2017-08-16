@@ -9,6 +9,7 @@ import os
 import time
 import json
 import datetime
+import random
 
 from PIL import Image
 
@@ -63,9 +64,10 @@ class Tub():
         index = self.get_index()
         return max(index)
 
-    def get_index(self):
+    def get_index(self, shuffled=True):
         files = next(os.walk(self.path))[2]
         record_files = [f for f in files if f[:6]=='record']
+        
         def get_file_ix(file_name):
             try:
                 name = file_name.split('.')[0]
@@ -75,7 +77,14 @@ class Tub():
             return num
 
         nums = [get_file_ix(f) for f in record_files]
-        return nums
+        
+        if shuffled:
+            random.shuffle(nums)
+        else:
+            nums = sorted(nums)
+            
+        return nums 
+
 
     @property
     def inputs(self):
@@ -124,7 +133,7 @@ class Tub():
 
             elif typ == 'image_array':
                 img = Image.fromarray(np.uint8(val))
-                name = self.make_file_name(key, ext='.png')
+                name = self.make_file_name(key, ext='.jpg')
                 img.save(os.path.join(self.path, name))
                 json_data[key]=name
 
@@ -168,16 +177,19 @@ class Tub():
         pass
 
 
-    def record_gen(self, index=None):
+    def record_gen(self, index=None, record_transform=None):
         if index==None:
-            index=self.get_index()
+            index=self.get_index(shuffled=True)
         while True:
             for i in index:
                 record = self.get_record(i)
+                if record_transform:
+                    record = record_transform(record)
                 yield record
 
-    def batch_gen(self, keys=None, index=None, batch_size=32):
-        record_gen = self.record_gen(index)
+    def batch_gen(self, keys=None, index=None, batch_size=32,
+                  record_tranform=None):
+        record_gen = self.record_gen(index, record_tranform)
         if keys==None:
             keys = self.inputs
         while True:
@@ -192,8 +204,33 @@ class Tub():
                 #    arr = arr.reshape(arr.shape + (1,))
                 batch_arrays[k] = arr
 
-            #TODO: Return this in a format so keras can read it.
             yield batch_arrays
+
+
+    def train_gen(self, X_keys, Y_keys, index=None, batch_size=32,
+                  record_transform=None):
+        batch_gen = self.batch_gen(X_keys+Y_keys, index, batch_size, record_transform)
+        while True:
+            batch = next(batch_gen)
+            X = [batch[k] for k in X_keys]
+            Y = [batch[k] for k in Y_keys]
+            yield X, Y
+
+            
+    def train_val_gen(self, X_keys, Y_keys, batch_size=32, record_transform=None, train_split=.8):
+        index = self.get_index(shuffled=True)
+        train_cutoff = int(len(index)*.8)
+        train_index = index[:train_cutoff]
+        val_index = index[train_cutoff:]
+    
+        train_gen = self.train_gen(X_keys=X_keys, Y_keys=Y_keys, index=train_index, 
+                              batch_size=batch_size, record_transform=record_transform)
+        
+        val_gen = self.train_gen(X_keys=X_keys, Y_keys=Y_keys, index=val_index, 
+                              batch_size=batch_size, record_transform=record_transform)
+        
+        return train_gen, val_gen
+
 
 
 class TubWriter(Tub):
