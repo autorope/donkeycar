@@ -65,6 +65,9 @@ class KerasCategorical(KerasPilot):
         else:
             self.model = default_categorical()
         
+    def load(self, model_path):
+        self.model = keras.models.load_model(model_path)
+        
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
