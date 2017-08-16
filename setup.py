@@ -1,5 +1,22 @@
 from setuptools import setup, find_packages
 
+import os
+
+#include the non python files
+def package_files(directory):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            paths.append(os.path.join('..', path, filename))
+    return paths
+
+car_tempaltes=['templates/*']
+web_controller_html = package_files('donkeycar/parts/controllers/templates')
+
+
+extra_files = car_tempaltes + web_controller_html
+print('extra_files', extra_files)
+
 setup(name='donkeycar',
     version='2.1.1b',
     description='Self driving library for python.',
@@ -28,7 +45,7 @@ setup(name='donkeycar',
                         ]
                     },
     package_data={
-        'donkeycar': ['templates/*', 'parts/controllers/templates/*'], 
+        'donkeycar': extra_files, 
         },
 
     include_package_data=True,
