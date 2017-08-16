@@ -28,9 +28,7 @@ setup(name='donkeycar',
                         ]
                     },
     package_data={
-        'donkeycar.parts.controllers.templates': ['*'], 
-        'donkeycar.parts.controllers.templates.static': ['*'], 
-        'donkeycar.templates': ['*'], 
+        'donkeycar': ['templates/*', 'parts/controllers/templates/*'], 
         },
 
     include_package_data=True,
