@@ -1,7 +1,6 @@
 language: python
 python:
   - "3.4"
-  - "3.5"
   - "3.6"
 
 before_install:
@@ -9,7 +8,9 @@ before_install:
   - sudo apt-get install -y python-numpy
 
 # command to install dependencies
-install: "pip install -e ."
+install: 
+  - "pip install tensorflow"
+  - "pip install -e ."
 
 # command to run tests
 script: python -m unittest

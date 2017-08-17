@@ -22,6 +22,10 @@ from donkeycar import utils
 
 class KerasPilot():
  
+    def load(self, model_path):
+        self.model = keras.models.load_model(model_path)
+    
+    
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=10, ):
         
@@ -64,9 +68,6 @@ class KerasCategorical(KerasPilot):
             self.model = model
         else:
             self.model = default_categorical()
-        
-    def load(self, model_path):
-        self.model = keras.models.load_model(model_path)
         
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)

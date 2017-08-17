@@ -17,6 +17,8 @@ import socket
 import shutil
 import argparse
 
+import donkeycar as dk
+
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
 
@@ -44,7 +46,6 @@ class CreateCar(BaseCommand):
         
     def run(self, args):
         args = self.parse_args(args)
-        print(args.path)
         self.create_car(path=args.path, template=args.template)
     
     def create_car(self, path, template):
@@ -106,13 +107,33 @@ class FindCar(BaseCommand):
         print("Your car's ip address is:" )
         os.system(cmd)
         
+        
+        
+class CalibrateCar(BaseCommand):
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
+        parser.add_argument('--channel', help='The channel youd like to calibrate [1-15]')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args)        :
+        args = self.parse_args(args)
+        channel = int(args.channel)
+        c = dk.parts.PCA9685(channel)
+        
+        for i in range(10):
+            pmw = int(input('Enter a PWM setting to test(0-1500)'))
+            c.run(pmw)
+
 
 
 def execute_from_command_line():
     
     commands = {
             'createcar': CreateCar,
-            'findcar': FindCar
+            'findcar': FindCar,
+            'calibrate': CalibrateCar,
             #'calibratesteering': CalibrateSteering,
                 }
     
