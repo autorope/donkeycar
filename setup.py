@@ -20,10 +20,10 @@ print('extra_files', extra_files)
 
 
 setup(name='donkeycar',
-    version='2.1.2.0',
+    version='2.1.2.1',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
-    download_url='https://github.com/wroscoe/donkey/archive/2.1.2.0.tar.gz',
+    download_url='https://github.com/wroscoe/donkey/archive/2.1.2.1.tar.gz',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',

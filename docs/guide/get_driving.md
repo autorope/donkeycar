@@ -21,7 +21,8 @@ ssh pi@<your pi's ip address>
 
 Ugrade the install of donkeycar. 
 ```
-pip install -U donkeycar
+pip uninstall donkeycar
+pip install donkeycar
 ```
 
 Use a template to create a car folder structure.
