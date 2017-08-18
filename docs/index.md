@@ -51,14 +51,6 @@ V.start(max_loop_count=100)
 
 ### Installation
 
-The donkeycar package can be installed two ways.
-
-Use pypi to install the stable version:
-```bash
-pip install donkeycar
-```
-
-
 Clone the master branch to get the lastest version. Use this if you plan 
 to contribute code.. 
 ```bash

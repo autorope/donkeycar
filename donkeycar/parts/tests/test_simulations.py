@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
-from ..simulations import MovingSquareTelemetry
+import numpy as np
+from ..simulations import MovingSquareTelemetry, SquareBoxCamera
 
 
 class TestMovingSquareTelemetry(unittest.TestCase):
@@ -11,3 +12,12 @@ class TestMovingSquareTelemetry(unittest.TestCase):
         x, y = self.tel.run()
         assert type(x) == int
         assert type(y) == int
+        
+        
+class TestSquareBoxCamera(unittest.TestCase):
+    def setUp(self):
+        self.cam = SquareBoxCamera()
+        
+    def test_run_types(self):
+        arr = self.cam.run(50, 50)
+        assert type(arr) == np.ndarray

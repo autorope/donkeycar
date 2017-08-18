@@ -55,7 +55,7 @@ def drive(model=None):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasLinear(model)
+    kl = dk.parts.KerasCategorical(model)
     V.add(kl, inputs=['cam/image_array'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')

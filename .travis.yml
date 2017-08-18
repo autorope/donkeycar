@@ -1,18 +1,21 @@
+dist: trusty
 language: python
 python:
   - "3.4"
-  - "3.5"
   - "3.6"
 
 before_install:
   - sudo apt-get -qq update
-  - sudo apt-get install -y python-numpy
+  - sudo apt-get install -y python3-numpy
+  - sudo apt-get install -y python3-dev 
 
 # command to install dependencies
-install: "pip install -e ."
+install: 
+  - "pip install tensorflow"
+  - "pip install -e ."
 
 # command to run tests
-script: python -m unittest
+script: pytest
 
 # safelist
 branches:

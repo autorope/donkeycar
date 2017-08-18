@@ -9,7 +9,7 @@ The method for using a disk image to create a bootable SD card varies between
 operating systems. These instructions are for Ubuntu but you can see more 
 instructions [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 
-1. Download [zipped disk image](https://www.dropbox.com/s/pn3czsbgy4t9n8y/donkey_2.img.zip?dl=0) (900MB). 
+1. Download [zipped disk image](https://www.dropbox.com/s/vb9wlju4aqx7i5o/donkey_2.img.zip?dl=0) (900MB). 
 2. Unzip the disk image.
 3. Plug your SD card into your computer.
 4. Open the "Startup Disk Creator" application.
