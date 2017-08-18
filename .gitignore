@@ -1,6 +1,8 @@
 env/*
 data/*
 dist/*
+build/*
+.idea/*
 *.pyc
 .ipynb_checkpoints
 *.egg-info/
