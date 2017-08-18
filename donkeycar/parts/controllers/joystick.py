@@ -202,7 +202,7 @@ class JoystickPilot():
 
         self.angle = 0.0
         self.throttle = 0.0
-        self.mode = 0
+        self.mode = 'user'
         self.poll_delay = poll_delay
         self.running = True
         self.max_throttle = max_throttle
@@ -238,7 +238,14 @@ class JoystickPilot():
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
 
-            self.recording = (self.throttle == 0.0)                
+            if button == 'triangle' and button_state == 1:
+                if self.mode == 'user':
+                    self.mode = 'auto'
+                else:
+                    self.mode = 'user'
+                print('new mode:', self.mode)
+
+            self.recording = (self.throttle != 0.0)                
 
             time.sleep(self.poll_delay)
 
