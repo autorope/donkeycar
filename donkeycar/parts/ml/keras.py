@@ -25,7 +25,7 @@ class KerasPilot():
  
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
-    
+        self.model.summary()
     
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=10, ):
@@ -49,7 +49,7 @@ class KerasPilot():
                                                    #monitor='angle_out_loss',
                                                    monitor='loss',
                                                    min_delta=.0005,
-                                                   patience=5,
+                                                   patience=4,
                                                    verbose=1, 
                                                    mode='auto')
         
