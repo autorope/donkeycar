@@ -12,7 +12,7 @@ community contributions.
 
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
-* Compete in self driving races like [DIY Robocars](diyrobocars.com)
+* Compete in self driving races like [DIY Robocars](http://diyrobocars.com)
 * Experiment with different driving methods.
 * Add parts and sensors to your car.
 * Log sensor data. (images, user inputs, sensor readings) 

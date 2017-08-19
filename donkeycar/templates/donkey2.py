@@ -55,7 +55,7 @@ def drive(model_path=None):
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
-        if mode == 'user':
+        if mode == 'user': 
             return user_angle, user_throttle
         
         elif mode == 'local_angle':
