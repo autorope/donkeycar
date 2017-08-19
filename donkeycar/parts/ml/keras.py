@@ -37,8 +37,9 @@ class KerasPilot():
 
         #checkpoint to save model after each epoch
         save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
-                                                    monitor='val_loss',
+                                                    #monitor='val_loss',
                                                     #monitor='angle_out_loss',
+                                                    monitor='loss',
                                                     verbose=1,
                                                     save_best_only=True, 
                                                     mode='min')
