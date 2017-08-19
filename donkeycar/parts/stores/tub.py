@@ -101,7 +101,12 @@ class Tub():
     def write_json_record(self, json_data):
         path = self.get_json_record_path(self.current_ix)
         with open(path, 'w') as fp:
-            json.dump(json_data, fp)
+            try:
+                json.dump(json_data, fp)
+            except TypeError as te:
+                print('Type Error in tub::write_json_record: ', te)
+            except Exception as e:
+                print('Exception in tub::write_json_record', e)
 
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')
