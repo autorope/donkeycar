@@ -104,7 +104,7 @@ class Tub():
             try:
                 json.dump(json_data, fp)
             except TypeError as te:
-                print('Type Error in tub::write_json_record: ' + json_data, te)
+                print('Type Error in tub::write_json_record: ' + str(json_data), te)
             except Exception as e:
                 print('Exception in tub::write_json_record', e)
 
