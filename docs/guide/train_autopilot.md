@@ -17,13 +17,14 @@ your car with `Ctrl-c` in the ssh session for your car.
 
 
 ## Transfer data from your car to you computer. 
+
 Since the Raspberry Pi is not very powerful we need to transfer the data
 to our computer to train. 
 
 In a new terminal session on your comptuer use rsync to copy your cars 
 folder. 
 ```
-rsync pi@<your_pi_ip_address>:~/d2  ~/d2
+rsync pi@<your_pi_ip_address>:~/d2/data  ~/d2/data
 ```
 
 
@@ -35,7 +36,7 @@ rsync pi@<your_pi_ip_address>:~/d2  ~/d2
 
 6. Now you can use rsync again to move your pilot back to your car. 
 ```
-rsync ~/d2 pi@<your_ip_address>:~/d2
+rsync ~/d2/models pi@<your_ip_address>:~/d2/models
 ```
 
 7. Now you can start your car again and pass it your model to drive.
