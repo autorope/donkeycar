@@ -1,21 +1,33 @@
-# Train an Machine Learning Autopilot with Keras
+# Train an autopilot with Keras
 
-After you have built a car you want to make it drive it's self. One way that's 
-show to work well is by training a neural network to replicate your actions
-based on the images it sees. 
+Now that you're able to drive your car reliably you can use Keras to train a
+neural network to drive like you. Here are the steps.
 
-1. Start your car.
-2. While driving your car around a track, press the record button in the 
-web controller. This will start recording images and steering and throttle 
-vallues. 
-3. After you've driving the track 20-30 times, stop the car with Ctr-c in
-the ssh session. 
-4. In a new terminal session on your comptuer use rsync to copy your cars 
+## Collect Data
+
+Make sure you collect good data. 
+
+1. Practice driving around the track a couple times without recording data.
+2. When you're confident you can drive 10 laps without mistake press `Start Recording`
+3. If you crash or run off the track press Stop Car imediatly to stop recording. 
+A little bad data won't affect your autopilot. 
+4. After you've collected 10-20 laps of good data (5-20k images) you can stop 
+your car with `Ctrl-c` in the ssh session for your car.
+5. The data you've collected is in the data folder in the most recent tub folder.
+
+
+## Transfer data from your car to you computer. 
+Since the Raspberry Pi is not very powerful we need to transfer the data
+to our computer to train. 
+
+In a new terminal session on your comptuer use rsync to copy your cars 
 folder. 
 ```
 rsync pi@<your_pi_ip_address>:~/d2  ~/d2
 ```
 
+
+## Train a model.
 5. In the same terminal you can now run the training script on the latest tub.
 ```
  python ~/d2/manage.py train --model mypilot
