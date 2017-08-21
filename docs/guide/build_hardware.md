@@ -1,4 +1,4 @@
-# Instructions to build a Donkey Car
+# Instructions to build a Donkey2 Car
 
 The standard hardware build instructions can be found in this 
 [google doc](https://docs.google.com/document/d/11nu6_ReReoIxA1KVq-sCy7Tczbk6io0izcItucrw7hI/edit?usp=sharing).

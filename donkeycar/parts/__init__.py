@@ -1,3 +1,9 @@
+import sys
+
+if sys.version_info.major < 3:
+    msg = 'Donkey Requires Python 3.4 or greater. You are using {}'.format(sys.version)
+    raise ValueError(msg)
+
 from .actuators.actuators import PCA9685
 from .actuators.actuators import Maestro
 from .actuators.actuators import Teensy

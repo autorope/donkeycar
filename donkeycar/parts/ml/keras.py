@@ -43,7 +43,7 @@ class KerasPilot():
                                                     mode='min')
         
         #stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
+        early_stop = keras.callbacks.EarlyStopping(monitor='loss',
                                                    min_delta=.0005,
                                                    patience=4,
                                                    verbose=1, 
