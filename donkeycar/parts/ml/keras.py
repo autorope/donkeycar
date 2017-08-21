@@ -36,18 +36,14 @@ class KerasPilot():
         """
 
         #checkpoint to save model after each epoch
-        save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
-                                                    #monitor='val_loss',
-                                                    #monitor='angle_out_loss',
+        save_best = keras.callbacks.ModelCheckpoint(saved_model_path,
                                                     monitor='loss',
                                                     verbose=1,
                                                     save_best_only=True, 
                                                     mode='min')
         
         #stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(#monitor='val_loss',
-                                                   #monitor='angle_out_loss',
-                                                   monitor='loss',
+        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss',
                                                    min_delta=.0005,
                                                    patience=4,
                                                    verbose=1, 
