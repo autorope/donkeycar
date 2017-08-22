@@ -256,7 +256,7 @@ def hdf5_to_dataset(file_path):
 
 
 def parse_img_filepath(filepath):
-    f = filepath.split('/')[-1]
+    f = os.path.basename(filepath)
     f = f[:-4] #remove ".jpg"
     f = f.split('_')
 
