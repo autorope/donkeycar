@@ -25,7 +25,7 @@ class KerasPilot():
  
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
-    
+        self.model.summary()
     
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=10, ):
@@ -36,16 +36,16 @@ class KerasPilot():
         """
 
         #checkpoint to save model after each epoch
-        save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
-                                                    monitor='val_loss', 
-                                                    verbose=1, 
+        save_best = keras.callbacks.ModelCheckpoint(saved_model_path,
+                                                    monitor='loss',
+                                                    verbose=1,
                                                     save_best_only=True, 
                                                     mode='min')
         
         #stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                   min_delta=.0005, 
-                                                   patience=4, 
+        early_stop = keras.callbacks.EarlyStopping(monitor='loss',
+                                                   min_delta=.0005,
+                                                   patience=4,
                                                    verbose=1, 
                                                    mode='auto')
         
