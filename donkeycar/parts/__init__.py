@@ -11,8 +11,7 @@ from .actuators.actuators import PWMSteering
 from .actuators.actuators import PWMThrottle
 
 from .controllers.web import LocalWebController
-from .controllers.joystick import Joysticks
-from .controllers.joystick import JoystickPilots
+from .controllers.joystick import JoystickPilot
 
 from .sensors.cameras import PiCamera
 from .sensors.cameras import Webcam
