@@ -12,7 +12,7 @@ Usage:
 import os
 from docopt import docopt
 import donkeycar as dk
-import joystick
+#import joystick
 
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
@@ -26,7 +26,7 @@ def drive(model_path=None):
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
     #ctr = dk.parts.LocalWebController()
-    ctr = joystick.JoystickPilot(max_throttle=0.22)
+    ctr = dk.parts.JoystickPilot(max_throttle=0.22)
     V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
