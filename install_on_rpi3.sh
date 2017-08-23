@@ -7,9 +7,11 @@ RSYNC_FOLDER=~/ricar
 # Uninstall the old package
 pip uninstall donkeycar
 
+# Build the latest changes
+python setup.py build
+
 # Reinstall this project
 pip install -e .
-
 
 # Move the manage.py file, it may be updated
 echo "Copying manage.py to " $RSYNC_FOLDER

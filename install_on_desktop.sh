@@ -7,6 +7,9 @@ RSYNC_RPI3_FOLDER=../rpi
 # Uninstall the old package
 pip uninstall donkeycar
 
+# Build the latest changes
+python setup.py build
+
 # Reinstall this project
 pip install -e .
 
