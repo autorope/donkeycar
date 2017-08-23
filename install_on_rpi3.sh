@@ -7,7 +7,7 @@ RSYNC_FOLDER=~/ricar
 # Uninstall the old package
 pip uninstall donkeycar
 
-# Get the latest code 
+# Get the latest code
 git pull origin master
 
 # Build the latest changes
