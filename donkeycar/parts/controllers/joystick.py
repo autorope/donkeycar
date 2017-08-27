@@ -186,8 +186,8 @@ class Joystick():
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
                     axis_val = fvalue
-                    print("Axis: ", axis)
-                    print("fvalue: ", fvalue)
+                    #print("Axis: ", axis)
+                    #print("fvalue: ", fvalue)
 
         return button, button_state, axis, axis_val
 
@@ -200,7 +200,7 @@ class JoystickPilot():
     def __init__(self, poll_delay=0.0166,
                  max_throttle=1.0,
                  steering_axis='x',             # 0x00
-                 throttle_axis='ry',            # 'rz' 0x05
+                 throttle_axis='rx',            # 'rx' 0x03
                  steering_scale=1.0,            # No Scale
                  throttle_scale=-1.0,           # Negative Scale
                  dev_fn='/dev/input/js0'):
@@ -233,7 +233,7 @@ class JoystickPilot():
         '''
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
-        
+
             if axis == self.steering_axis:
                 self.angle = self.steering_scale * axis_val
                 print("angle", self.angle)

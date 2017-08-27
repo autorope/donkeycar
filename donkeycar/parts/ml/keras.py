@@ -28,7 +28,7 @@ class KerasPilot():
         self.model.summary()
     
     def train(self, train_gen, val_gen, 
-              saved_model_path, epochs=200, steps=10, ):
+              saved_model_path, epochs=500, steps=10, ):
         
         """
         train_gen: generator that yields an array of images an array of 
