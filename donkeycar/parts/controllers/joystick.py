@@ -29,7 +29,7 @@ class Joystick():
             0x03 : 'rx',
             0x04 : 'ry',
             0x05 : 'rz',
-            0x06 : 'trottle',
+            0x06 : 'throttle',
             0x07 : 'rudder',
             0x08 : 'wheel',
             0x09 : 'gas',
@@ -197,10 +197,10 @@ class JoystickPilot():
 
     def __init__(self, poll_delay=0.0166,
                  max_throttle=0.23,
-                 steering_axis='x',
-                 throttle_axis='rz',
-                 steering_scale=1.0,
-                 throttle_scale=-1.0,
+                 steering_axis='x',             # 0x00
+                 throttle_axis='rz',            # 0x05
+                 steering_scale=1.0,            # No Scale
+                 throttle_scale=1.0,           # Negative Scale
                  dev_fn='/dev/input/js0'):
 
         self.angle = 0.0
