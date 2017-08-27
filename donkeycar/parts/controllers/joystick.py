@@ -196,7 +196,7 @@ class JoystickPilot():
     '''
 
     def __init__(self, poll_delay=0.0166,
-                 max_throttle=1.0,
+                 max_throttle=0.23,
                  steering_axis='x',
                  throttle_axis='rz',
                  steering_scale=1.0,
