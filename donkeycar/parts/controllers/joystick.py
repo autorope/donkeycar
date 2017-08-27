@@ -186,6 +186,8 @@ class Joystick():
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
                     axis_val = fvalue
+                    print("Axis: ", axis)
+                    print("fvalue: ", fvalue)
 
         return button, button_state, axis, axis_val
 
