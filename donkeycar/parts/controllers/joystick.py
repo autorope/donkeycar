@@ -239,17 +239,44 @@ class JoystickPilot():
                 print("angle", self.angle)
 
             if axis == self.throttle_axis:
-                print("Axis Val: ", axis_val)
                 #this value is often reversed, with positive value when pulling down
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
 
+            # Mode options are:
+            # user
+            # auto
+            # auto_angle
+            # local
+            # local_angle
             if button == 'triangle' and button_state == 1:
                 if self.mode == 'user':
                     self.mode = 'auto'
                 else:
                     self.mode = 'user'
                 print('new mode:', self.mode)
+
+            if button == 'circle' and button_state == 1:
+                if self.mode == 'user':
+                    self.mode = 'auto_angle'
+                else:
+                    self.mode = 'user'
+                print('new mode:', self.mode)
+
+            if button == 'x' and button_state == 1:
+                if self.mode == 'user':
+                    self.mode = 'local'
+                else:
+                    self.mode = 'user'
+                print('new mode:', self.mode)
+
+            if button == 'square' and button_state == 1:
+                if self.mode == 'user':
+                    self.mode = 'local_angle'
+                else:
+                    self.mode = 'user'
+                print('new mode:', self.mode)
+
 
             self.recording = (self.throttle != 0.0)                
 
