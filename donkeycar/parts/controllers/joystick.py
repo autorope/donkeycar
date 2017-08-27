@@ -200,7 +200,7 @@ class JoystickPilot():
                  steering_axis='x',             # 0x00
                  throttle_axis='rz',            # 0x05
                  steering_scale=1.0,            # No Scale
-                 throttle_scale=1.0,           # Negative Scale
+                 throttle_scale=-1.0,           # Negative Scale
                  dev_fn='/dev/input/js0'):
 
         self.angle = 0.0
@@ -237,6 +237,7 @@ class JoystickPilot():
                 print("angle", self.angle)
 
             if axis == self.throttle_axis:
+                print("Axis Val: ", axis_val)
                 #this value is often reversed, with positive value when pulling down
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
