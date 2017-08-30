@@ -239,13 +239,21 @@ class JoystickPilot():
                 print("throttle", self.throttle)
 
             if button == 'triangle' and button_state == 1:
+                '''
+                switch modes from:
+                user: human controlled steer and throttle
+                local_angle: ai steering, human throttle
+                local: ai steering, ai throttle
+                '''
                 if self.mode == 'user':
-                    self.mode = 'auto'
+                    self.mode = 'local_angle'
+                elif self.mode == 'local_angle':
+                    self.mode = 'local'
                 else:
                     self.mode = 'user'
                 print('new mode:', self.mode)
 
-            self.recording = (self.throttle != 0.0)                
+            self.recording = (self.throttle != 0.0 and self.mode == 'user')                
 
             time.sleep(self.poll_delay)
 
