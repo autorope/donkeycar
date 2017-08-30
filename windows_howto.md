@@ -52,9 +52,8 @@ source ~/.bashrc
 
 setup python environment
 ```bash
-conda env create -f pi_environment.yml
+conda env create -f donkey_env.yml
 source activate donkey
-python setup.py install
 ```
 
 upgrade numpy. This can take a long time as it involves compiling the latest.
@@ -68,19 +67,25 @@ wget https://github.com/samjabrahams/tensorflow-on-raspberry-pi/releases/downloa
 pip install tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
 ```
 
-setup initial files and dir for data
-```bash
-python make_paths.py
+setup donkey
+```
+pip install -e .
 ```
 
-get your server running with the steps below, then come back here and startup the python drive client using the server ip.
+setup initial files and dir for data
 ```bash
-python scripts/drive.py --remote http://<server ip>:8887
+donkey createcar --template donkey2_with_joystick --path ~/d2_wj 
+```
+
+to run your donkey with a joystick control
+```bash
+cd ~/d2_wj
+python manage.py drive
 ```
 
 ---
 
-# Windows Donkey Server Setup
+# Windows Donkey Setup
 ##### Many python projects do not provide a docker install. It's useful to know how to setup the windows environment to run Donkey and/or any other python project. Its also easier to modify source.
 
 install miniconda:
@@ -106,27 +111,14 @@ cd donkey
 
 create the python anaconda environmment
 ```bash
-conda env create -f environment.yml
+conda env create -f win_environment.yml
 activate donkey
 ```
 
 once to setup:
 ```bash
-python make_paths.py
-python setup.py install
+donkey createcar --path ~/d2
 ```
-
-check your server ip address, use this as the argument you pass to the client
-```bash
-ipconfig
-```
-
-to run server:
-```bash
-python scripts/serve.py
-```
-
-you should be able to connect to the server now from your pi.
 
 ---
 # Normal usage
@@ -134,7 +126,7 @@ in future runs, when you start a new session, you will want to:
 * start a new Anaconda Prompt from windows start menu
 * cd projects\donkey
 * activate donkey
-* python scripts/serve.py
+* cd ~/d2 or ~/d2_js on pi
 
  
 
