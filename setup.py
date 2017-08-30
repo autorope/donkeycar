@@ -27,10 +27,6 @@ setup(name='donkeycar',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
-<<<<<<< HEAD
-    package_data = { 'donkey' : ['templates/*.*', 
-                                    'templates/static/*.*']},
-=======
     entry_points={
         'console_scripts': [
             'donkey=donkeycar.management.base:execute_from_command_line',
@@ -56,7 +52,6 @@ setup(name='donkeycar',
         },
 
     include_package_data=True,
->>>>>>> dev-mainline
 
     classifiers=[
         # How mature is this project? Common values are

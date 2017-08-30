@@ -104,7 +104,7 @@ class Tub():
         try:
             with open(path, 'w') as fp:
                 json.dump(json_data, fp)
-                print('wrote record:', json_data)
+                #print('wrote record:', json_data)
         except TypeError:
             print('troubles with record:', json_data)
         except:

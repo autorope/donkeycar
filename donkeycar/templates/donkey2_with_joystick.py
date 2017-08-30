@@ -24,7 +24,7 @@ def drive(model_path=None):
     cam = dk.parts.PiCamera()
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
-    ctr = dk.parts.LocalWebController()
+    ctr = dk.parts.JoystickPilot()
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
@@ -55,7 +55,7 @@ def drive(model_path=None):
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
-        if mode == 'user': 
+        if mode == 'user' or model_path is None:
             return user_angle, user_throttle
         
         elif mode == 'local_angle':
@@ -97,7 +97,7 @@ def drive(model_path=None):
     V.add(tub, inputs=inputs, run_condition='recording')
     
     #run the vehicle for 20 seconds
-    V.start(rate_hz=20, max_loop_count=100000)
+    V.start(rate_hz=20)
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
@@ -121,7 +121,7 @@ def train(tub_name, model_name):
                                            record_transform=rt, batch_size=128)
     
     model_path = os.path.join(MODELS_PATH, model_name)
-    kl.train(train_gen, val_gen, saved_model_path=model_path)
+    kl.train(train_gen, None, saved_model_path=model_path)
 
 
 
