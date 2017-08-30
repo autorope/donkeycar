@@ -38,6 +38,7 @@ setup(name='donkeycar',
                       'tornado',
                       'requests',
                       'keras',
+                      'h5py',
                      ],
 
     extras_require={
