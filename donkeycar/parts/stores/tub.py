@@ -6,6 +6,7 @@ Created on Tue Jul  4 12:32:53 2017
 @author: wroscoe
 """
 import os
+import sys
 import time
 import json
 import datetime
@@ -100,8 +101,15 @@ class Tub():
 
     def write_json_record(self, json_data):
         path = self.get_json_record_path(self.current_ix)
-        with open(path, 'w') as fp:
-            json.dump(json_data, fp)
+        try:
+            with open(path, 'w') as fp:
+                json.dump(json_data, fp)
+                print('wrote record:', json_data)
+        except TypeError:
+            print('troubles with record:', json_data)
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise
 
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')

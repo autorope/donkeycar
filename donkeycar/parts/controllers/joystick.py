@@ -1,9 +1,8 @@
 import os
-import struct
 import array
 import time
 import math
-from fcntl import ioctl
+import struct
 from threading import Thread
 
 class Joystick():
@@ -98,6 +97,7 @@ class Joystick():
 
 
     def init(self):
+        from fcntl import ioctl
         '''
         call once to setup connection to dev/input/js0 and map buttons
         '''
