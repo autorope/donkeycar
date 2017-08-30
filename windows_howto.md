@@ -117,6 +117,7 @@ activate donkey
 
 once to setup:
 ```bash
+pip install -e .
 donkey createcar --path ~/d2
 ```
 
