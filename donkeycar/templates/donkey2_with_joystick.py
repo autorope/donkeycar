@@ -124,7 +124,7 @@ def train(tub_name, model_name):
                                            record_transform=rt, batch_size=128)
     
     model_path = os.path.join(MODELS_PATH, model_name)
-    kl.train(train_gen, None, saved_model_path=model_path)
+    kl.train(train_gen, val_gen, saved_model_path=model_path)
 
 
 
