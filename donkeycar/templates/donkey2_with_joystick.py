@@ -24,7 +24,10 @@ def drive(model_path=None):
     cam = dk.parts.PiCamera()
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
-    ctr = dk.parts.JoystickPilot()
+    #modify max_throttle closer to 1.0 to have more power
+    #modify steering_scale lower than 1.0 to have less responsive steering
+    ctr = dk.parts.JoystickPilot(max_throttle=0.2, steering_scale=1.0)
+
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
