@@ -76,7 +76,7 @@ def drive(model_path=None):
     
     steering_controller = dk.parts.PCA9685(1)
     steering = dk.parts.PWMSteering(controller=steering_controller,
-                                    left_pulse=460, right_pulse=260)
+                                    left_pulse=460, right_pulse=290)
     
     throttle_controller = dk.parts.PCA9685(0)
     throttle = dk.parts.PWMThrottle(controller=throttle_controller,
