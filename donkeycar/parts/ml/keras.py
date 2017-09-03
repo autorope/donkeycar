@@ -69,11 +69,11 @@ class KerasCategorical(KerasPilot):
         if model:
             self.model = model
         else:
-            self.model = default_categorical()
+            self.model = default_categorical()                              # There is also relu or linear
         
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned, throttle = self.model.predict(img_arr)
+        angle_binned, throttle = self.model.predict(img_arr, verbose=1)
         #angle_certainty = max(angle_binned[0])
         angle_unbinned = utils.linear_unbin(angle_binned)
         return angle_unbinned, throttle[0][0]
@@ -86,7 +86,7 @@ class KerasLinear(KerasPilot):
         
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle, throttle = self.model.predict(img_arr)
+        angle, throttle = self.model.predict(img_arr, verbose=1)
         #angle_certainty = max(angle_binned[0])
         return angle[0][0], throttle[0][0]
 
@@ -100,7 +100,7 @@ def default_categorical():
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense
     
-    img_in = Input(shape=(120, 160,3), name='img_in')
+    img_in = Input(shape=(120, 160, 3), name='img_in')                       # Shape comes from camera.py resolution
     x = img_in
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
@@ -114,10 +114,10 @@ def default_categorical():
     x = Dense(50, activation='relu')(x)
     x = Dropout(.1)(x)
     #categorical output of the angle
-    angle_out = Dense(15, activation='softmax', name='angle_out')(x)
+    angle_out = Dense(15, activation='softmax', name='angle_out')(x)            # Softmax to find best one between 0-1
     
     #continous output of throttle
-    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
+    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)          # Positive number only
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     

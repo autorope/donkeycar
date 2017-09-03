@@ -89,6 +89,9 @@ class PWMThrottle:
                                     self.MIN_THROTTLE, 0, 
                                     self.min_pulse, self.zero_pulse)
 
+        print("PwmThrottle Throttle: ", throttle)
+        print("PwmThrottle Pulse:    ", pulse)
+
         self.controller.set_pulse(pulse)
         
     def shutdown(self):

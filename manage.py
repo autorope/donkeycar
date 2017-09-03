@@ -3,9 +3,9 @@
 Scripts to drive a donkey 2 car and train a model for it. 
 
 Usage:
-    car.py (drive) [--model=<model>]
-    car.py (train) (--tub=<tub>) (--model=<model>)
-    car.py (calibrate) 
+    manage.py drive [--model=<model>] [--web=<True/False>] [--throttle=<Throttle 0.0-1.0>]
+    manage.py train (--tub=<tub>) (--model=<model>)
+    manage.py calibrate
 """
 
 
@@ -18,21 +18,28 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 
-def drive(model_path=None):
+def drive(model_path=None, web_control=False, max_throttle=0.40):
     #Initialized car
     V = dk.vehicle.Vehicle()
+
+    # Setup camera
     cam = dk.parts.PiCamera()
     V.add(cam, outputs=['cam/image_array'], threaded=True)
-    
-    #ctr = dk.parts.LocalWebController()
-    ctr = dk.parts.JoystickPilot(max_throttle=0.22)
+
+    # Select if only use bluetooth PS3 controller
+    # Or web controller
+    # Also set the max throttle
+    if web_control:
+        ctr = dk.parts.LocalWebController()
+    else:
+        ctr = dk.parts.JoystickPilot(max_throttle=max_throttle)
     V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     
-    #See if we should even run the pilot module. 
-    #This is only needed because the part run_contion only accepts boolean
+    # See if we should even run the pilot module.
+    # This is only needed because the part run_contion only accepts boolean
     def pilot_condition(mode):
         if mode == 'user':
             return False
@@ -42,8 +49,8 @@ def drive(model_path=None):
     pilot_condition_part = dk.parts.Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasCategorical()
+    # Run the pilot if the mode is not user
+    kl = dk.parts.KerasCategorical()                                            # There is also KereasLinear()
     if model_path:
         print(model_path)
         kl.load(model_path)
@@ -51,9 +58,8 @@ def drive(model_path=None):
     V.add(kl, inputs=['cam/image_array'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
-    
-    
-    #Choose what inputs should change the car.
+
+    # Choose what inputs should change the car.
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
@@ -71,8 +77,10 @@ def drive(model_path=None):
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
-    
-    
+
+    # Configure the throttle and angle control hardware
+    # Calibrate min/max for steering angle
+    # Calibrate min/max/zero for throttle
     steering_controller = dk.parts.PCA9685(1)
     steering = dk.parts.PWMSteering(controller=steering_controller,
                                     left_pulse=460, right_pulse=260)
@@ -84,21 +92,21 @@ def drive(model_path=None):
     V.add(steering, inputs=['angle'])
     V.add(throttle, inputs=['throttle'])
     
-    #add tub to save data
-    inputs=['cam/image_array',
-            'user/angle', 'user/throttle', 
-            'pilot/angle', 'pilot/throttle', 
-            'user/mode']
-    types=['image_array',
-           'float', 'float',  
-           'float', 'float', 
-           'str']
+    # Add tub to save data
+    inputs = ['cam/image_array',
+              'user/angle', 'user/throttle',
+              'pilot/angle', 'pilot/throttle',
+              'user/mode']
+    types = ['image_array',
+             'float', 'float',
+             'float', 'float',
+             'str']
     
     th = dk.parts.TubHandler(path=DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types)
-    V.add(tub, inputs=inputs, run_condition='recording')
+    tub_writer = th.new_tub_writer(inputs=inputs, types=types)
+    V.add(tub_writer, inputs=inputs, run_condition='recording')
     
-    #run the vehicle for 20 seconds
+    # Run the vehicle for 20 seconds
     V.start(rate_hz=20, max_loop_count=100000)
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
@@ -117,6 +125,7 @@ def train(tub_name, model_name):
     
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        #record['user/throttle'] = dk.utils.linear_bin(record['user/throttle'])      # !!! Possible where to fix throttle
         return record
     
     train_gen, val_gen = tub.train_val_gen(X_keys, y_keys, 
@@ -141,7 +150,10 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     if args['drive']:
-        drive(model_path = args['--model'])
+        model = args['--model']
+        web = args['--web']
+        throttle = args['--throttle']
+        drive(model_path=model, web_control=web, max_throttle=throttle)
     elif args['calibrate']:
         calibrate()
     elif args['train']:
