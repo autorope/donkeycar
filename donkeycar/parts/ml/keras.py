@@ -38,7 +38,7 @@ class KerasPilot():
         #checkpoint to save model after each epoch
         save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
                                                     monitor='val_loss', 
-                                                    verbose=1, 
+                                                    verbose=0, 
                                                     save_best_only=True, 
                                                     mode='min')
         
@@ -55,11 +55,11 @@ class KerasPilot():
         hist = self.model.fit_generator(
                         train_gen, 
                         steps_per_epoch=steps, 
-                        nb_epoch=epochs, 
+                        epochs=epochs, 
                         verbose=1, 
                         validation_data=val_gen,
                         callbacks=callbacks_list, 
-                        nb_val_samples=steps*.2)
+                        validation_steps=steps*.2)
         return hist
 
 
