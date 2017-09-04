@@ -49,7 +49,8 @@ class KerasPilot():
                                                    verbose=1, 
                                                    mode='auto')
         
-        callbacks_list = [save_best, early_stop]
+        #callbacks_list = [save_best, early_stop]
+        callbacks_list = [save_best]
         
         hist = self.model.fit_generator(
                         train_gen, 
