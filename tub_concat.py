@@ -5,6 +5,12 @@ import json
 import shutil
 
 def go(src_path, dest_path):
+    '''
+    takes a src and dest full path to two tub dir
+    copies all data from src to the dest
+    re-numbers as it copies so that it creates one continuous
+    record
+    '''
     print('adding tub', src_path, 'to', dest_path)
     src_files = glob.glob(os.path.join(src_path, '*.jpg'))
     dest_files = glob.glob(os.path.join(dest_path, '*.jpg'))
