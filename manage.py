@@ -32,7 +32,7 @@ def drive(model_path=None, web_control=False, max_throttle=0.40):
     if web_control:
         ctr = dk.parts.LocalWebController()
     else:
-        ctr = dk.parts.JoystickPilot(max_throttle=max_throttle)
+        ctr = dk.parts.JoystickPilot(max_throttle=float(max_throttle))
     V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],

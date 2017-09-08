@@ -200,7 +200,7 @@ class JoystickPilot():
     def __init__(self, poll_delay=0.0166,
                  max_throttle=1.0,
                  steering_axis='x',             # 0x00
-                 throttle_axis='rx',            # 'rx' 0x03
+                 throttle_axis='rz',            # 'rx' 0x03
                  steering_scale=1.0,            # No Scale
                  throttle_scale=-1.0,           # Negative Scale
                  dev_fn='/dev/input/js0'):
@@ -216,6 +216,8 @@ class JoystickPilot():
         self.steering_scale = steering_scale
         self.throttle_scale = throttle_scale
         self.recording = False
+
+        print("Max Throttle Set: ", self.max_throttle)
 
         #init joystick
         self.js = Joystick(dev_fn)

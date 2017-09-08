@@ -129,7 +129,7 @@ class Tub():
             typ = self.get_input_type(key)
 
             if typ in ['str', 'float', 'int', 'boolean']:
-                json_data[key] = val
+                json_data[key] = str(val)           # Cast all to a str, does not like writing a decimal
 
             elif typ is 'image':
                 path = self.make_file_path(key)
