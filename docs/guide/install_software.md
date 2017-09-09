@@ -68,10 +68,26 @@ ssh pi@<your_pi_ip_address>
 The default username is 'pi' and the password is 'raspberry'
 
 
-### Create your car app
+### Create your car application.
 
+#### with web browser.
 ```
-donkey createcar --path ~/d2
+donkey createcar --template donkey2 --path ~/d2
 ```
 
 
+#### with PS3 controller
+```
+donkey createcar --template donkey2_with_joystick --path ~/d2_wj
+```
+
+
+
+#### Install another fork of donkeycar
+
+``` 
+pip uninstall donkeycar
+git clone --depth=1 https://github.com/tawnkramer/donkey donkey_tkramer
+cd donkey_tkramer
+pip install -e .
+```
