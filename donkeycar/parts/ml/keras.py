@@ -93,13 +93,14 @@ class KerasLinear(KerasPilot):
 
 
 
-def default_categorical():
+def default_categorical(img_resolution=(120,160)):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense
     
-    img_in = Input(shape=(120, 160,3), name='img_in')
+    img_resolution = img_resolution + (3,)
+    img_in = Input(shape=(img_resolution), name='img_in')
     x = img_in
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
