@@ -46,7 +46,8 @@ donkeycar now.
 ```
 virtualenv env -p python3
 source env/bin/activate
-pip install donkeycar
+git clone https://github.com/wroscoe/donkey donkeycar
+pip install -e donkeycar
 donkeycar findcar
 ```
 
