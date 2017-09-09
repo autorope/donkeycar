@@ -24,7 +24,10 @@ def drive(model_path=None):
     cam = dk.parts.PiCamera()
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
-    ctr = dk.parts.LocalWebController()
+    #modify max_throttle closer to 1.0 to have more power
+    #modify steering_scale lower than 1.0 to have less responsive steering
+    ctr = dk.parts.JoystickPilot(max_throttle=0.2, steering_scale=1.0)
+
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
@@ -55,7 +58,7 @@ def drive(model_path=None):
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
-        if mode == 'user': 
+        if mode == 'user' or model_path is None:
             return user_angle, user_throttle
         
         elif mode == 'local_angle':
@@ -73,7 +76,7 @@ def drive(model_path=None):
     
     steering_controller = dk.parts.PCA9685(1)
     steering = dk.parts.PWMSteering(controller=steering_controller,
-                                    left_pulse=460, right_pulse=260)
+                                    left_pulse=460, right_pulse=290)
     
     throttle_controller = dk.parts.PCA9685(0)
     throttle = dk.parts.PWMThrottle(controller=throttle_controller,
@@ -97,7 +100,7 @@ def drive(model_path=None):
     V.add(tub, inputs=inputs, run_condition='recording')
     
     #run the vehicle for 20 seconds
-    V.start(rate_hz=20, max_loop_count=100000)
+    V.start(rate_hz=20)
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 

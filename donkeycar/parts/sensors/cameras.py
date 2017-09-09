@@ -1,4 +1,6 @@
 import time
+import numpy as np
+from PIL import Image
 
 class BaseCamera:
 
@@ -38,9 +40,6 @@ class PiCamera(BaseCamera):
             # if the thread indicator variable is set, stop the thread
             if not self.on:
                 break
-
-    def run_threaded(self):
-        return self.frame
 
     def shutdown(self):
         # indicate that the thread should be stopped
@@ -104,3 +103,18 @@ class Webcam(BaseCamera):
         print('stoping Webcam')
         time.sleep(.5)
 
+class MockCamera(BaseCamera):
+    '''
+    Fake camera. Returns only a single static frame
+    '''
+    def __init__(self, resolution=(160, 120), image=None):
+        if image is not None:
+            self.frame = image
+        else:
+            self.frame = Image.new('RGB', resolution)
+
+    def update(self):
+        pass
+
+    def shutdown(self):
+        pass
