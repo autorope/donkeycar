@@ -48,7 +48,7 @@ var driveHandler = new function() {
 
       var manager = nipplejs.create(joystick_options);
       bindNipple(manager)
-
+      
       if(!!navigator.getGamepads){
         console.log("Device has gamepad support.")
         hasGamepad = true;

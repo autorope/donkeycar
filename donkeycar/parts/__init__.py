@@ -9,10 +9,13 @@ from .actuators.actuators import Maestro
 from .actuators.actuators import Teensy
 from .actuators.actuators import PWMSteering
 from .actuators.actuators import PWMThrottle
+from .actuators.actuators import MockController
 
 from .controllers.web import LocalWebController
+from .controllers.joystick import JoystickPilot
 
 from .sensors.cameras import PiCamera
+from .sensors.cameras import MockCamera
 from .sensors.cameras import Webcam
 from .sensors.lidar import RPLidar
 from .sensors.rotary_encoder import RotaryEncoder
