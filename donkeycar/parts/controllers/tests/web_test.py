@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
 import json
-import tempfile
 from ..web import LocalWebController
 
 @pytest.fixture
@@ -16,4 +15,5 @@ def test_json_output(server):
     json_result = json.dumps(result)
     d = json.loads(json_result)
     print(d)
-    assert d['user/angle'] is not None
+    assert d is not None
+    assert int(d[0]) == 0
