@@ -309,3 +309,13 @@ class Teensy:
             ret = ret.rstrip()
 
         return ret
+
+class MockController(object):
+    def __init__(self):
+        pass
+
+    def run(self, pulse):
+        pass
+
+    def shutdown(self):
+        pass
