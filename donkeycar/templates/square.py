@@ -109,32 +109,36 @@ def drive(model=None):
     
     
     
-    #you can now go to localhost:8887 to move a square around the image
-def train(tub_name, model_name):
-    
-    km = dk.parts.KerasModels()
-    model = km.default_linear()
-    kl = dk.parts.KerasLinear(model)
-    
-    tub_path = os.path.join(DATA_PATH, tub_name)
-    print(tub_path)
-    tub = dk.parts.Tub(tub_path)
-    batch_gen = tub.batch_gen()
+def train(tub_names, model_name):
     
     X_keys = ['cam/image_array']
-    Y_keys = ['square/angle', 'square/throttle']
+    y_keys = ['user/angle', 'user/throttle']
     
-    def train_gen(gen, X_keys, y_keys):
-        while True:
-            batch = next(gen)
-            X = [batch[k] for k in X_keys]
-            y = [batch[k] for k in y_keys]
-            yield X, y
-            
-    keras_gen = train_gen(batch_gen, X_keys, Y_keys)
+    def rt(record):
+        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        return record
+
+    def combined_gen(gens):
+        import itertools
+        combined_gen = itertools.chain()
+        for gen in gens:
+            combined_gen = itertools.chain(combined_gen, gen)
+        return combined_gen
     
+    kl = dk.parts.KerasCategorical()
+    
+    if tub_names:
+        tub_paths = [os.path.join(DATA_PATH, n) for n in tub_names.split(',')]
+    else:
+        tub_paths = [os.path.join(DATA_PATH, n) for n in os.listdir(DATA_PATH)]
+    tubs = [dk.parts.Tub(p) for p in tub_paths]
+
+    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
+    train_gens = [gen[0] for gen in gens]
+    val_gens = [gen[1] for gen in gens]
+
     model_path = os.path.join(MODELS_PATH, model_name)
-    kl.train(keras_gen, None, saved_model_path=model_path, epochs=10)
+    kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
 
 
 
