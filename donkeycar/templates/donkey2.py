@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scripts to drive a donkey 2 car and train a model for it. 
+Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     manage.py (drive) [--model=<model>]
@@ -11,7 +11,7 @@ Usage:
 
 import os
 from docopt import docopt
-import donkeycar as dk 
+import donkeycar as dk
 
 
 def drive(cfg, model_path=None):
@@ -19,7 +19,7 @@ def drive(cfg, model_path=None):
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
-    
+
     ctr = dk.parts.LocalWebController()
 
     '''
@@ -154,13 +154,13 @@ def calibrate():
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
-    
+
     if args['drive']:
         drive(cfg, model_path = args['--model'])
-    
+
     elif args['calibrate']:
         calibrate()
-    
+
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
