@@ -1,9 +1,0 @@
-numpy
-pillow
-docopt
-tornado
-requests
-pandas
-docopt
-keras
-h5py

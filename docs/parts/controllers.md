@@ -5,7 +5,7 @@
 The default controller to drive the car with your phone or browser.
 
 
-## PS# Joystic
+## PS3 Joystic
 
 https://github.com/RetroPie/RetroPie-Setup/wiki/PS3-Controller
 

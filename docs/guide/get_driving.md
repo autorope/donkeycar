@@ -7,6 +7,46 @@ After you've calibrated your car you can start driving it.
 > *** Put your car in a safe place where the wheels are off the ground *** This
 is the step were the car can take off. 
 
+---
+# Normal usage
+in future runs, when you start a new session, you will want to:
+* start a new Anaconda Prompt from windows start menu
+* cd projects\donkey
+* activate donkey
+* cd ~/d2 or ~/d2_js on pi
+
+This will show your ip address, promt for your password, and then search 
+for your cars ip address. 
+
+> If your car's ip address is not shown then:
+> 1. find another way to scan your local network for your raspbery pi 
+> 2. connect a monitor to your pi to connect to the the same wifi as your computer. 
+
+
+Assuming that you did find your pi on the network. You can now connect to it
+remotely via ssh. 
+
+```
+ssh pi@<your_pi_ip_address>
+```
+
+The default username is 'pi' and the password is 'raspberry'
+
+
+### Create your car application.
+
+with web browser.
+```
+donkey createcar --template donkey2 --path ~/d2
+```
+
+with PS3 controller
+```
+donkey createcar --template donkey2_with_joystick --path ~/d2_wj
+```
+
+
+#### Start your car.
 Open your car's folder and start our car. 
 ```
 cd ~/d2
