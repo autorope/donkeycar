@@ -7,8 +7,10 @@ developed for hobbiests and students with a focus on allowing fast experimentati
 community contributions.  
 
 #### Quick Links
-* [Code Documentation](http://docs.donkeycar.com)
-* [Instructions to build a Donkey2 car.](http://www.donkeycar.com)
+* [Donkeycar Updates & Examples](http://donkeycar.com)
+* [Vehicle Build Instructions](http://www.donkeycar.com)
+* [Software documentation](http://docs.donkeycar.com)
+* [Slack / Chat](https://donkey-slackin.herokuapp.com/)
 
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
