@@ -9,7 +9,7 @@ a square that move around the image frame.
 
 Usage:
     car.py (drive) [--model=<model>]
-    car.py (train) (--tub=<tub>) (--model=<model>)
+    car.py (train) [--tub=<tub1,tub2,...tubn>] (--model=<model>)
 
 """
 

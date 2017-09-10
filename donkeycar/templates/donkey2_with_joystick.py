@@ -4,7 +4,7 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     car.py (drive) [--model=<model>]
-    car.py (train) (--tub=<tub>) (--model=<model>)
+    car.py (train) [--tub=<tub1,tub2,...tubn>] (--model=<model>)
     car.py (calibrate) 
 """
 
