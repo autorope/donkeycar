@@ -43,43 +43,49 @@ The easiest way (on Ubuntu) is to use the `findcar` donkey command. Regardless
 you will wand donkeycar installed on your computer for training so lets install
 donkeycar now. 
 
+#### Install donkeycar on Linux
+
 ```
 virtualenv env -p python3
 source env/bin/activate
 git clone https://github.com/wroscoe/donkey donkeycar
 pip install -e donkeycar
-donkeycar findcar
 ```
 
-This will show your ip address, promt for your password, and then search 
-for your cars ip address. 
+# Windows Donkey Setup
+##### Many python projects do not provide a docker install. It's useful to know how to setup the windows environment to run Donkey and/or any other python project. Its also easier to modify source.
 
-> If your car's ip address is not shown then:
-> 1. find another way to scan your local network for your raspbery pi 
-> 2. connect a monitor to your pi to connect to the the same wifi as your computer. 
+install miniconda:
+https://conda.io/miniconda.html
 
+install git:
+https://git-scm.com/download/win
+use the setup for your platform. probably 64bit
 
-Assuming that you did find your pi on the network. You can now connect to it
-remotely via ssh. 
+from the start menu start the Andconda Prompt.
 
-```
-ssh pi@<your_pi_ip_address>
-```
-
-The default username is 'pi' and the password is 'raspberry'
-
-
-### Create your car application.
-
-#### with web browser.
-```
-donkey createcar --template donkey2 --path ~/d2
+change to a dir you would like to use as the head of your projects.
+```bash
+mkdir projects
+cd projects
 ```
 
-
-#### with PS3 controller
+get the latest donkey from my repo. This has fixes to run correctly on windows.
+```bash
+git clone https://github.com/tawnkramer/donkey
+cd donkey
 ```
-donkey createcar --template donkey2_with_joystick --path ~/d2_wj
+
+create the python anaconda environmment
+```bash
+conda env create -f envs\windows.yml
+activate donkey
+```
+
+once to setup:
+```bash
+pip install -e .
+donkey createcar --path ~/d2
 ```
 
 

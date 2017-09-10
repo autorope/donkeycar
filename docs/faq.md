@@ -1,35 +1,90 @@
-# How do I create my own Raspberry Pi Disk?
-If you don't want to use the disk image for the Raspberry Pi you can 
-install the packages like this.
+#FAQ 
 
-1. Setup OS on Raspberry Pi
-Follow [these instructions](https://www.raspberrypi.org/learning/software-guide/quickstart/)
-to install the Raspbian Jessie operating system using the NOOBS method 
-on your SD card.
-P
-2. ut the SD card into your Raspberry Pi.
-3. Power up your Raspberry Pi using the USB cable.
-4. Connect to a wifi internet connection. 
+## How do I create my own Raspberry Pi Disk?
 
-##### Install Basic Libraries
-Since the Raspberry Pi is not as fast as larger computers, it can take a long time to install python packages (ie. numpy & PIL) using pip. Luckily Adafruit has precompiled these libraries into packages that can be installed via `apt-get`.
+3 Manual Setup:
+##### This uses minimal space on your memory card, is easy to upgrade and make changes to source
 
-1. Open a terminal (Ctrl-Alt-t) and upgrade your system packages.
+flash 8GB+ memory card with minimal jessie:
+* https://downloads.raspberrypi.org/raspbian_lite_latest
+* https://sourceforge.net/projects/win32diskimager/files/latest/download
+
+
+login:
+* username: pi
+* password: raspberry
+
+
+use rasp-config to setup some useful options
+```bash
+sudo raspi-config
 ```
+* change hostname
+* change password
+* interface options: 
+  * enable camera
+  * enable SSH
+  * enable I2C
+
+reboot.
+
+do a package refresh and get latest:    
+```bash
 sudo apt-get update
 sudo apt-get upgrade
 ```
 
-2. Install necessary libraries 
+install packages from ubuntu
+```bash
+sudo apt-get install git
+sudo apt-get install python3 python3-pip python3-virtualenv
+sudo apt-get install python3-pip python3-dev
 ```
-sudo apt-get install xsel xclip libxml2-dev libxslt-dev libzmq-dev libspatialindex-dev virtualenv
-```
-3. Pandas & Jupyter Requirements
 
+get latest donkey code
+```bash
+git clone https://github.com/tawnkramer/donkey
+cd donkey
 ```
-sudo apt-get install python3-lxml python3-h5py python3-numexpr python3-dateutil python3-tz python3-bs4 python3-xlrd python3-tables python3-sqlalchemy python3-xlsxwriter python3-httplib2 python3-zmq 
+
+install anaconda:
+```bash
+wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-armv7l.sh
+bash Miniconda3-latest-Linux-armv7l.sh
+source ~/.bashrc
 ```
-5. Scientific Python
+
+setup python environment
+```bash
+conda env create -f donkey_env.yml
+source activate donkey
 ```
-sudo apt-get install python3-numpy python3-matplotlib python3-scipy python3-pandas 
+
+upgrade numpy. This can take a long time as it involves compiling the latest.
+```bash
+pip install --upgrade numpy
 ```
+
+setup tensorflow
+```bash
+wget https://github.com/samjabrahams/tensorflow-on-raspberry-pi/releases/download/v1.1.0/tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
+pip install tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
+```
+
+setup donkey
+```
+pip install -e .
+```
+
+setup initial files and dir for data
+```bash
+donkey createcar --template donkey2_with_joystick --path ~/d2_wj 
+```
+
+to run your donkey with a joystick control
+```bash
+cd ~/d2_wj
+python manage.py drive
+```
+
+---
