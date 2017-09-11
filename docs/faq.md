@@ -73,5 +73,25 @@
     ```
 
 18. Setup initial files and dir for data. Refer to [setup instructions](guide/install_software.md) for options.
-    
+---
+## After a reboot, I don't see the (donkey) in front of the prompt, and I get python errors when I run.
+1. If you used this disc setup guide above, you used conda to manage your virtual environment. You need to activate the donkey conda environment with:
+    ```
+    source activate donkey
+    ```
+2. optionally you can add that line to the last line of your ~/.bashrc to have it active each time you login.
+
+----
+## How to get latest Donkey source
+1. When donkey has changed you can get the latest source. You've installed it directly from the github repo, so getting latest is easy:
+     ```
+    cd donkey
+    git pull origin master
+    ```
+
+2. Occasionally also the template files have changed with fixes that affect manage.py. You can create a new user directory to test. Use the same options you used to create it [from setup instructs](guide/install_software.md) but a new path. For instance:
+    ```
+    donkey createcar --path ~/d2_new
+    ```
+
 ---
