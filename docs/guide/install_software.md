@@ -68,9 +68,9 @@ donkeycar now.
     cd projects
     ```
 
-5. Get the latest donkey from my repo. This has fixes to run correctly on windows.
+5. Get the latest donkey.
     ```bash
-    git clone https://github.com/tawnkramer/donkey
+    git clone https://github.com/wroscoe/donkey
     cd donkey
     ```
 
