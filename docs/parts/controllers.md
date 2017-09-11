@@ -11,7 +11,7 @@ The default controller to drive the car with your phone or browser. This has a w
 
 ## Physical Joystick Controller
 
-The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the os device /dev/input/js0 by default. In theory, any joystick device that the os mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.amazon.com/Dualshock-Wireless-Controller-Charcoal-playstation-3). Other controllers may work, but will require alternative bluetooth installs, and tweaks to the software for correct axis and buttons.
+The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the os device /dev/input/js0 by default. In theory, any joystick device that the os mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.amazon.com/Dualshock-Wireless-Controller-Charcoal-playstation-3). Other controllers may work, but will require alternative bluetooth installs, and tweaks to the software for correct axis and buttons.
 
 These can be used plugged in with a usb cable - but the default code and os driver has a bug polling this configuration. It's been much more stable, and convenient, to setup bluetooth for a wireless, responsive control.
 
