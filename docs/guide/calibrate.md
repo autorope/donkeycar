@@ -41,7 +41,7 @@ PCA board. This is your throttle channel.
 2. run `donkey calibrate --channel <your_throttle_channel>`
 3. Enter `370` when prompted for a PWM value.
 4. You should hear your ESC beep indicating that it's calibrated. 
-5. Enter `400` and you should see yoru cars wheels start to go forward. If not,
+5. Enter `400` and you should see your cars wheels start to go forward. If not,
 its likely that this is reverse, try entering `330` instead.
 6. Keep trying different values until you've found a reasonable max speed and
 remember this PWM value.
