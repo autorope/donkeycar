@@ -4,7 +4,7 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     car.py (drive) [--model=<model>]
-    car.py (train) (--tub=<tub>) (--model=<model>)
+    car.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     car.py (calibrate) 
 """
 
@@ -103,12 +103,7 @@ def drive(model_path=None):
 
 
 
-def train(tub_name, model_name):
-    
-    kl = dk.parts.KerasCategorical()
-    
-    tub_path = os.path.join(DATA_PATH, tub_name)
-    tub = dk.parts.Tub(tub_path)
+def train(tub_names, model_name):
     
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
@@ -116,12 +111,28 @@ def train(tub_name, model_name):
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
+
+    def combined_gen(gens):
+        import itertools
+        combined_gen = itertools.chain()
+        for gen in gens:
+            combined_gen = itertools.chain(combined_gen, gen)
+        return combined_gen
     
-    train_gen, val_gen = tub.train_val_gen(X_keys, y_keys, 
-                                           record_transform=rt, batch_size=128)
+    kl = dk.parts.KerasCategorical()
     
+    if tub_names:
+        tub_paths = [os.path.join(DATA_PATH, n) for n in tub_names.split(',')]
+    else:
+        tub_paths = [os.path.join(DATA_PATH, n) for n in os.listdir(DATA_PATH)]
+    tubs = [dk.parts.Tub(p) for p in tub_paths]
+
+    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
+    train_gens = [gen[0] for gen in gens]
+    val_gens = [gen[1] for gen in gens]
+
     model_path = os.path.join(MODELS_PATH, model_name)
-    kl.train(train_gen, val_gen, saved_model_path=model_path)
+    kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
 
 
 

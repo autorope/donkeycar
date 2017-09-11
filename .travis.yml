@@ -12,6 +12,7 @@ before_install:
 # command to install dependencies
 install: 
   - "pip install tensorflow"
+  - "pip install -U pytest"
   - "pip install -e ."
 
 # command to run tests

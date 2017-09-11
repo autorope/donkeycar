@@ -55,7 +55,7 @@ a reverse PWM setting...
 2. Enter the reverse value, then the zero throttle value, then the reverse 
 value again. 
 3. Enter values +/- 10 of the reverse value to find a reasonable reverse speed.
-Rember this reverse PWM value. 
+Remember this reverse PWM value. 
 
 
 Now open your `manage.py` script and enter the PWM values for your car into

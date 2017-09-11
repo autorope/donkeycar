@@ -2,9 +2,6 @@
 import pytest
 from ..keras import KerasPilot, KerasCategorical, default_categorical
 # content of ./test_smtpsimple.py
-import pytest
-
-
 
 @pytest.fixture
 def pilot():
