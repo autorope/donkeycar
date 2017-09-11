@@ -7,7 +7,7 @@ The default controller to drive the car with your phone or browser.
 
 ## PS3 Joystick
 
-### Setup:
+### Bluetooth Setup:
 
 Follow [this guide](https://pythonhosted.org/triangula/sixaxis.html). You can ignore steps past the 'Accessing the SixAxis from Python' section.
 
@@ -22,6 +22,8 @@ ls /dev/input/js0
 ### Charging PS3 Sixaxis joystick
 
 For some reason, they don't like to charge in a powered usb port that doesn't have an active bluetooth control and os driver. So a phone type usb charger won't work. Try a powered linux or mac laptop usb port. You should see the lights blink after plugging in and hitting center PS logo.
+
+After charging, you will need to plug-in the controller again to the Pi, hit the PS logo, then unplug to pair again.
 
 ### New Battery for PS3 Sixaxis joystick
 
