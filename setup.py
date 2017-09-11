@@ -20,7 +20,7 @@ print('extra_files', extra_files)
 
 
 setup(name='donkeycar',
-    version='2.1.2.1',
+    version='2.1.3',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
     download_url='https://github.com/wroscoe/donkey/archive/2.1.2.1.tar.gz',

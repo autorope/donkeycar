@@ -64,7 +64,7 @@ class Joystick():
             #PS3 sixaxis specific
             0x12c : "triangle", 
             0x12d : "circle",
-            0x12e : "x",
+            0x12e : "cross",
             0x12f : 'square',
 
             0x130 : 'a',
