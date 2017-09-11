@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 class ImgGreyscale():
 
@@ -49,6 +50,29 @@ class ImgCrop:
                           self.left: width-self.right]
         return img_arr
         
+
+class ImgStack:
+    """
+    Stack N previous images into a single N channel image, after converting each to greyscale
+    """
+    def __init__(self, num_channels=3):
+        self.img_arr = None
+        self.num_channels = num_channels
+        
+    def run(self, img_arr):
+        width, height, _ = img_arr.shape        
+        gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
+        
+        if self.img_arr is None:
+            self.img_arr = np.zeros([width, height, self.num_channels], dtype=np.dtype('B'))
+
+        for ch in range(self.num_channels - 1):
+            self.img_arr[...,ch] = self.img_arr[...,ch+1]
+
+        self.img_arr[...,self.num_channels - 1:] = np.reshape(gray, (width, height, 1))
+
+        return self.img_arr
+
         
         
 class Pipeline():

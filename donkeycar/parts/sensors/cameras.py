@@ -1,6 +1,8 @@
+import os
 import time
 import numpy as np
 from PIL import Image
+import glob
 
 class BaseCamera:
 
@@ -115,6 +117,45 @@ class MockCamera(BaseCamera):
 
     def update(self):
         pass
+
+    def shutdown(self):
+        pass
+
+class ImageListCamera(BaseCamera):
+    '''
+    Use the images from a tub as a fake camera output
+    '''
+    def __init__(self, path_mask='~/d2/data/**/*.jpg'):
+        self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
+    
+        def get_image_index(fnm):
+            sl = os.path.basename(fnm).split('_')
+            return int(sl[0])
+
+        '''
+        I feel like sorting by modified time is almost always
+        what you want. but if you tared and moved your data around,
+        sometimes it doesn't preserve a nice modified time.
+        so, sorting by image index works better, but only with one path.
+        '''
+        self.image_filenames.sort(key=get_image_index)
+        #self.image_filenames.sort(key=os.path.getmtime)
+        self.num_images = len(self.image_filenames)
+        print('%d images loaded.' % self.num_images)
+        print( self.image_filenames[:10])
+        self.i_frame = 0
+        self.frame = None
+        self.update()
+
+    def update(self):
+        pass
+
+    def run_threaded(self):        
+        if self.num_images > 0:
+            self.i_frame = (self.i_frame + 1) % self.num_images
+            self.frame = Image.open(self.image_filenames[self.i_frame]) 
+
+        return np.asarray(self.frame)
 
     def shutdown(self):
         pass

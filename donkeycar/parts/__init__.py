@@ -15,8 +15,10 @@ from .controllers.web import LocalWebController
 from .controllers.joystick import JoystickPilot
 
 from .sensors.cameras import PiCamera
-from .sensors.cameras import MockCamera
 from .sensors.cameras import Webcam
+from .sensors.cameras import MockCamera
+from .sensors.cameras import ImageListCamera
+
 from .sensors.lidar import RPLidar
 from .sensors.rotary_encoder import RotaryEncoder
 from .sensors.astar_speed import AStarSpeed
@@ -36,3 +38,5 @@ from .transforms import Lambda
 
 from .simulations import SquareBoxCamera
 from .simulations import MovingSquareTelemetry
+
+from .cv.cv import ImgStack
