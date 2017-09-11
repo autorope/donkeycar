@@ -4,15 +4,31 @@
 
 	<div class="container">
         <div class="row">
-            <div class="col-md-5 col-md-offset-2">
+            <div class="col-md-5 col-md-offset-3">
                 <img id="img-stream" class="train-img" src="" />
             </div>
             <div class="col-md-1">
                 <button type="button" id="play-stream" class="btn btn-primary btn-lg">
                     <i class="glyphicon glyphicon-play"></i>&nbsp;Play
                 </button>
+                <button type="button" id="split-stream" class="btn btn-primary btn-lg">
+                    <i class="glyphicon glyphicon-scissors"></i>&nbsp;Split
+                </button>
             </div>
         </div>
+   	    <div class="row clips">
+		    <table class="table">
+			  <thead>
+			    <tr>
+			      <th style="width: 85%"></th>
+			      <th style="width: 15%"></th>
+			    </tr>
+			  </thead>
+
+		      <tbody id="clips">
+		      </tbody>
+		    </table>
+	    </div>
 	</div>
 
     <script type="text/javascript" src="/static/tub.js"></script>

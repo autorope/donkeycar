@@ -1,3 +1,21 @@
+@media (min-width: 1600px) {
+	.container {
+	    width: 1570px;
+	}
+}
+
 .train-img {
     width: 100%
+}
+
+.clips {
+	margin: 20px;
+}
+
+img.stream-thumbnail {
+    width: 12%;
+}
+
+tr.active {
+    background-color: #f5f5dc;
 }

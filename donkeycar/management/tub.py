@@ -68,7 +68,7 @@ class TubApi(tornado.web.RequestHandler):
             seqs = [ int(f.split("_")[0]) for f in os.listdir(tub_path) if f.endswith('.jpg') ]
             seqs.sort()
             with open(tub_json, 'w') as outfile:
-                json.dump({'slices': [seqs]}, outfile)
+                json.dump({'clips': [seqs]}, outfile)
 
         with open(tub_json,'r') as f:
             self.set_header("Content-Type", "application/json; charset=UTF-8")
