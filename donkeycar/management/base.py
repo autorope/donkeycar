@@ -18,6 +18,7 @@ import shutil
 import argparse
 
 import donkeycar as dk
+from .tub import TubManager
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -134,6 +135,7 @@ def execute_from_command_line():
             'createcar': CreateCar,
             'findcar': FindCar,
             'calibrate': CalibrateCar,
+            'tub': TubManager,
             #'calibratesteering': CalibrateSteering,
                 }
     
