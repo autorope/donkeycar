@@ -71,4 +71,5 @@ class TubApi(tornado.web.RequestHandler):
                 json.dump({'slices': [seqs]}, outfile)
 
         with open(tub_json,'r') as f:
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
             self.write(f.read())
