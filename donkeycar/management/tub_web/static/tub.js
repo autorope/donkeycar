@@ -10,6 +10,30 @@ $(document).ready(function(){
         return clips[selectedClipIdx];
     };
 
+    var pause = function() {
+        if (playing) {
+            clearInterval(playing);
+            playing = null;
+        }
+        updateStreamControls();
+    };
+    
+    var play = function() {
+        if (playing === null) {
+            playing = setInterval(function(){
+                currentFrameIdx ++;
+                if (currentFrameIdx >= selectedClip().frames.length) {
+                    currentFrameIdx = 0;
+                    clearInterval(playing);
+                    playing = null;
+                    updateStreamControls();
+                }
+                updateStreamImg();
+            }, 30);
+        }
+        updateStreamControls();
+    };
+
     var getTub = function(tId, cb) {
         $.getJSON('/api/tubs/' + tubId, function( data ) {
             clips = data.clips.map(function(clip) {
@@ -23,7 +47,9 @@ $(document).ready(function(){
 
     // UI elements update
     var updateStreamImg = function() {
-        $('#img-stream').attr('src', '/tub_data/' + tubId + '/' + selectedClip().frames[currentFrameIdx] + '_cam-image_array_.jpg');
+        var curFrame = selectedClip().frames[currentFrameIdx];
+        $('#img-stream').attr('src', '/tub_data/' + tubId + '/' + curFrame + '_cam-image_array_.jpg');
+        $('#cur-frame').text('Frame #: ' + curFrame);
     };
 
     var updateStreamControls = function() {
@@ -38,9 +64,14 @@ $(document).ready(function(){
         $('tbody#clips tr').remove();
         clips.forEach(function(clip, i) {
             clz = i === selectedClipIdx ? 'active' : '';
-            $('tbody#clips').append('<tr class="' + clz + '"><td>' + thumnailsOfClip(i) + '</td><td>' + deleteButtonOfClip(i) + '</td></tr>');
+            $('tbody#clips').append('<tr class="' + clz + '"><td>' + playBtnOfClip(i) + '</td><td>' + thumnailsOfClip(i) + '</td><td>' + deleteButtonOfClip(i) + '</td></tr>');
             $('#mark-to-delete-' + i).click(function() {toggleMarkToDelete(i);});
+            $('#play-clip-' + i).click(function() {playClipBtnClicked(i);});
         });
+    };
+
+    var playBtnOfClip = function(clipIdx) {
+        return '<button type="button" class="btn btn-xs" id="play-clip-' + clipIdx + '"> <span class="glyphicon glyphicon-play"></span>&nbsp; </button>';
     };
 
     var deleteButtonOfClip = function(clipIdx) {
@@ -68,21 +99,10 @@ $(document).ready(function(){
     // UI event handlers
     var playBtnClicked = function(event) {
         if (playing) {
-            clearInterval(playing);
-            playing = null;
+            pause();
         } else {
-            playing = setInterval(function(){
-                currentFrameIdx ++;
-                if (currentFrameIdx >= selectedClip().frames.length) {
-                    currentFrameIdx = 0;
-                    clearInterval(playing);
-                    playing = null;
-                    updateStreamControls();
-                }
-                updateStreamImg();
-            }, 30);
+            play();
         }
-        updateStreamControls();
     };
 
     var splitBtnClicked = function(event) {
@@ -104,6 +124,14 @@ $(document).ready(function(){
         clips[clipIdx].markedToDelete = !clips[clipIdx].markedToDelete;
         updateClipTable();
     }
+
+    var playClipBtnClicked = function(clipIdx) {
+        pause();
+        selectedClipIdx = clipIdx;
+        currentFrameIdx = 0;
+        play();
+        updateClipTable();
+    };
 
     getTub();
 

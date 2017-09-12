@@ -19,3 +19,7 @@ img.stream-thumbnail {
 tr.active {
     background-color: #f5f5dc;
 }
+
+tbody#clips td {
+    vertical-align: middle;
+}
