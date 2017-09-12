@@ -14,7 +14,7 @@
 }
 
 img.clip-thumbnail {
-    width: 12.5%;
+    width: 6.25%;
 }
 
 tr.active td:first-child,
@@ -31,7 +31,7 @@ tbody#clips td {
 }
 
 .affix + #clips-container {
-  padding-top: 272px;
+  padding-top: 284px;
 }
 
 .preview {
@@ -41,6 +41,8 @@ tbody#clips td {
 .preview-centered {
   width: 320px;
   margin: 0 auto;
+  background-color: white;
+  padding-bottom: 12px;
 }
 
 .preview-toolbar {
@@ -48,14 +50,20 @@ tbody#clips td {
 }
 
 .preview-toolbar button {
-    margin-left: 5px;
+    margin: 0px 5px;
     width: 92px;
 }
 
-.progress .progress-bar {
+tbody#clips .progress {
+    height: 3px;
+    margin-bottom: 10px;
+}
+
+tbody#clips .progress .progress-bar {
     -webkit-transition: none;
     -moz-transition: none;
     -ms-transition: none;
     -o-transition: none;
     transition: none;
+    height: 3px;
 }

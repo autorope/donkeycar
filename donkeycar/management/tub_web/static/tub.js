@@ -86,8 +86,8 @@ $(document).ready(function(){
 
 	var thumnailsOfClip = function(clipIdx) {
         var frames = clips[clipIdx].frames;
-        var html = [0,1,2,3,4,5,6,7].map(function(i) {
-            return Math.round(frames.length/8*i);
+        var html = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function(i) {
+            return Math.round(frames.length/16*i);
         })
         .map(function(frameIdx) {
             return '<img class="clip-thumbnail" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" />';
@@ -105,7 +105,7 @@ $(document).ready(function(){
 		return '\
 			<div class="progress">\
 			  <div id="preview-progress" class="progress-bar" role="progressbar" aria-valuenow="0"\
-			  aria-valuemin="0" aria-valuemax="100" style="height: 2px; width:0%">\
+			  aria-valuemin="0" aria-valuemax="100" style="width:0%">\
 			  </div>\
 			</div>';
     };
