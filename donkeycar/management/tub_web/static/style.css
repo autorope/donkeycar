@@ -5,14 +5,15 @@
 }
 
 .train-img {
-    width: 100%
+    width: 320px;
+	height: 240px;
 }
 
-.clips {
-	margin: 20px;
+#cur-frame {
+    display: inline;
 }
 
-img.stream-thumbnail {
+img.clip-thumbnail {
     width: 12%;
 }
 
@@ -22,4 +23,30 @@ tr.active {
 
 tbody#clips td {
     vertical-align: middle;
+}
+.affix {
+  top: 0;
+  width: 100%;
+}
+
+.affix + #clips-container {
+  padding-top: 272px;
+}
+
+.preview {
+	width: 100%;
+}
+
+.preview-centered {
+  width: 320px;
+  margin: 0 auto;
+}
+
+.preview-toolbar {
+    margin-top: 5px;
+}
+
+.preview-toolbar button {
+    margin-left: 5px;
+    width: 92px;
 }

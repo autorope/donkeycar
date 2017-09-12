@@ -2,28 +2,30 @@
 {% extends "base.html" %}
 {% block content %}
 
-	<div class="container">
-        <div class="row">
-            <div class="col-md-5 col-md-offset-3">
-                <img id="img-stream" class="train-img" src="" />
-            </div>
-            <div class="col-md-1">
-                <button type="button" id="play-stream" class="btn btn-primary btn-lg">
-                    <i class="glyphicon glyphicon-play"></i>&nbsp;Play
-                </button>
-                <button type="button" id="split-stream" class="btn btn-primary btn-lg">
-                    <i class="glyphicon glyphicon-scissors"></i>&nbsp;Split
-                </button>
-                <h3 id="cur-frame">Frame #: 0</h3>
-            </div>
+	<div data-spy="affix" data-offset-top="72">
+		<div class="preview">
+        	<div class="preview-centered">
+        	        <img id="img-stream" class="train-img" src="" />
+					<div class="preview-toolbar">
+        	        <h3 id="cur-frame">0</h3>
+        	        <button type="button" id="split-stream" class="btn btn-primary pull-right">
+        	            <i class="glyphicon glyphicon-scissors"></i>&nbsp;Split
+        	        </button>
+        	        <button type="button" id="play-stream" class="btn btn-primary pull-right">
+        	            <i class="glyphicon glyphicon-play"></i>&nbsp;Play
+        	        </button>
+                    </div>
+        	</div>
         </div>
-   	    <div class="row clips">
+    </div>
+	<div id="clips-container" class="container">
+        <div class="row">
 		    <table class="table">
 			  <thead>
 			    <tr>
 			      <th style="width: 5%"></th>
-			      <th style="width: 80%"></th>
-			      <th style="width: 15%"></th>
+			      <th style="width: 90%"></th>
+			      <th style="width: 5%"></th>
 			    </tr>
 			  </thead>
 
@@ -31,6 +33,13 @@
 		      </tbody>
 		    </table>
 	    </div>
+        <div class="row">
+            <div class="pull-right">
+                <button type="button" id="split-stream" class="btn btn-danger">
+                    Delete selected clips!
+                </button>
+            </div>
+        </div>
 	</div>
 
     <script type="text/javascript" src="/static/tub.js"></script>

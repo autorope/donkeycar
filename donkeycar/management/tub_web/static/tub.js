@@ -49,7 +49,7 @@ $(document).ready(function(){
     var updateStreamImg = function() {
         var curFrame = selectedClip().frames[currentFrameIdx];
         $('#img-stream').attr('src', '/tub_data/' + tubId + '/' + curFrame + '_cam-image_array_.jpg');
-        $('#cur-frame').text('Frame #: ' + curFrame);
+        $('#cur-frame').text(curFrame);
     };
 
     var updateStreamControls = function() {
@@ -64,7 +64,7 @@ $(document).ready(function(){
         $('tbody#clips tr').remove();
         clips.forEach(function(clip, i) {
             clz = i === selectedClipIdx ? 'active' : '';
-            $('tbody#clips').append('<tr class="' + clz + '"><td>' + playBtnOfClip(i) + '</td><td>' + thumnailsOfClip(i) + '</td><td>' + deleteButtonOfClip(i) + '</td></tr>');
+            $('tbody#clips').append('<tr class="' + clz + '"><td>' + playBtnOfClip(i) + '</td><td>' + thumnailsOfClip(i) + '</td><td>' + checkboxOfClip(i) + '</td></tr>');
             $('#mark-to-delete-' + i).click(function() {toggleMarkToDelete(i);});
             $('#play-clip-' + i).click(function() {playClipBtnClicked(i);});
         });
@@ -74,25 +74,24 @@ $(document).ready(function(){
         return '<button type="button" class="btn btn-xs" id="play-clip-' + clipIdx + '"> <span class="glyphicon glyphicon-play"></span>&nbsp; </button>';
     };
 
-    var deleteButtonOfClip = function(clipIdx) {
+    var checkboxOfClip = function(clipIdx) {
         var frames = clips[clipIdx].frames;
-
         if (clips[clipIdx].markedToDelete) {
-            return '<button class="btn btn-warning" id="mark-to-delete-' + clipIdx + '">Bring Back (' + frames.length + ')</button>';
+            return '<input type="checkbox" id="mark-to-delete-' + clipIdx + '" checked />';
         } else {
-            return '<button class="btn btn-danger" id="mark-to-delete-' + clipIdx + '">Mark To Delete (' + frames.length + ')</button>';
+            return '<input type="checkbox" id="mark-to-delete-' + clipIdx + '"/>';
         }
     };
 
 	var thumnailsOfClip = function(clipIdx) {
         var frames = clips[clipIdx].frames;
         return [0,1,2,3,4,5,6,7].map(function(i) {
-            return Math.round(frames.length/8)*i;
+            return Math.round(frames.length/8*i);
         })
         .map(function(frameIdx) {
-            return '<img class="stream-thumbnail" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" />';
+            return '<img class="clip-thumbnail" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" />';
         })
-        .join();
+        .join('');
     };
 
 
