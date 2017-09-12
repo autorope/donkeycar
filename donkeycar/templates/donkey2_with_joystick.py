@@ -26,7 +26,7 @@ def drive(model_path=None):
     
     #modify max_throttle closer to 1.0 to have more power
     #modify steering_scale lower than 1.0 to have less responsive steering
-    ctr = dk.parts.JoystickPilot(max_throttle=0.2, steering_scale=1.0)
+    ctr = dk.parts.JoystickPilot(max_throttle=0.25, steering_scale=1.0)
 
     V.add(ctr, 
           inputs=['cam/image_array'],

@@ -62,7 +62,7 @@ class ImgFIFO:
         
     def run(self, img_arr):
         width, height, _ = img_arr.shape        
-        gray = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
         
         if self.img_arr is None:
             self.img_arr = np.zeros([width, height, self.num_channels], dtype=np.dtype('B'))
