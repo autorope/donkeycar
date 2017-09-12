@@ -23,7 +23,7 @@ class WebServer(tornado.web.Application):
         
         handlers = [
             (r"/", tornado.web.RedirectHandler, dict(url="/tubs")),
-            (r"/tubs", TubsView),
+            (r"/tubs", TubsView, dict(data_path=data_path)),
             (r"/tubs/?(?P<tub_id>[^/]+)?", TubView),
             (r"/api/tubs/?(?P<tub_id>[^/]+)?", TubApi, dict(data_path=data_path)),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": static_file_path}),
@@ -43,8 +43,12 @@ class WebServer(tornado.web.Application):
 
 class TubsView(tornado.web.RequestHandler):
 
+    def initialize(self, data_path):
+        self.data_path = data_path
+
     def get(self):
-        data = {}
+        import fnmatch
+        data = {"tubs": fnmatch.filter(os.listdir(self.data_path), 'tub_*')}
         self.render("tub_web/tubs.html", **data)
 
 
@@ -62,8 +66,8 @@ class TubApi(tornado.web.RequestHandler):
 
     def get(self, tub_id):
         tub_path = os.path.join(self.data_path, tub_id)
-
         tub_json = os.path.join(tub_path, 'tub.json')
+
         if not os.path.isfile(tub_json):
             seqs = [ int(f.split("_")[0]) for f in os.listdir(tub_path) if f.endswith('.jpg') ]
             seqs.sort()
@@ -73,3 +77,24 @@ class TubApi(tornado.web.RequestHandler):
         with open(tub_json,'r') as f:
             self.set_header("Content-Type", "application/json; charset=UTF-8")
             self.write(f.read())
+
+    def post(self, tub_id):
+        tub_path = os.path.join(self.data_path, tub_id)
+        tub_json = os.path.join(tub_path, 'tub.json')
+
+        with open(tub_json) as infile:
+            old_clips = json.load(infile)
+
+        new_clips = tornado.escape.json_decode(self.request.body)
+
+        with open(tub_json, 'w') as outfile:
+            json.dump(new_clips, outfile)
+
+        import itertools
+        old_frames = list(itertools.chain(*old_clips['clips']))
+        new_frames = list(itertools.chain(*new_clips['clips']))
+        frames_to_delete = [str(item) for item in old_frames if item not in new_frames]
+        import pdb; pdb.set_trace()
+        for frm in frames_to_delete:
+            os.remove(os.path.join(tub_path, "record_" + frm + ".json"))
+            os.remove(os.path.join(tub_path, frm + "_cam-image_array_.jpg"))

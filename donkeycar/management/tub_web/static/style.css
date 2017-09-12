@@ -17,8 +17,9 @@ img.clip-thumbnail {
     width: 12%;
 }
 
-tr.active {
-    background-color: #f5f5dc;
+tr.active td:first-child,
+tr.active td:last-child  {
+    background-color: #5bc0de !important;
 }
 
 tbody#clips td {

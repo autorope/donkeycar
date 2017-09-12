@@ -29,6 +29,7 @@ $(document).ready(function(){
                     updateStreamControls();
                 }
                 updateStreamImg();
+                updatePreviewProgress();
             }, 30);
         }
         updateStreamControls();
@@ -48,7 +49,7 @@ $(document).ready(function(){
     // UI elements update
     var updateStreamImg = function() {
         var curFrame = selectedClip().frames[currentFrameIdx];
-        $('#img-stream').attr('src', '/tub_data/' + tubId + '/' + curFrame + '_cam-image_array_.jpg');
+        $('#img-preview').attr('src', '/tub_data/' + tubId + '/' + curFrame + '_cam-image_array_.jpg');
         $('#cur-frame').text(curFrame);
     };
 
@@ -85,13 +86,33 @@ $(document).ready(function(){
 
 	var thumnailsOfClip = function(clipIdx) {
         var frames = clips[clipIdx].frames;
-        return [0,1,2,3,4,5,6,7].map(function(i) {
+        var html = [0,1,2,3,4,5,6,7].map(function(i) {
             return Math.round(frames.length/8*i);
         })
         .map(function(frameIdx) {
             return '<img class="clip-thumbnail" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" />';
         })
         .join('');
+
+        if (clipIdx === selectedClipIdx) {
+            html += previewProgress();
+        }
+
+        return html;
+    };
+
+    var previewProgress = function() {
+		return '\
+			<div class="progress">\
+			  <div id="preview-progress" class="progress-bar" role="progressbar" aria-valuenow="0"\
+			  aria-valuemin="0" aria-valuemax="100" style="height: 2px; width:0%">\
+			  </div>\
+			</div>';
+    };
+
+    var updatePreviewProgress = function() {
+        var progress = currentFrameIdx*100/selectedClip().frames.length;
+        $('#preview-progress').css('width', progress+'%').attr('aria-valuenow', progress);
     };
 
 
@@ -132,8 +153,29 @@ $(document).ready(function(){
         updateClipTable();
     };
 
+    var submitBtnClicked = function() {
+        var clipsToKeep = clips.filter(function(clip) {
+            return !clip.markedToDelete;
+        })
+        .map(function(clip) {
+            return clip.frames;
+        });
+
+		$.ajax({
+		    type: 'POST',
+		    url: '/api/tubs/' + tubId,
+		    data: JSON.stringify({clips: clipsToKeep}),
+		    contentType: "application/json",
+		    dataType: 'json',
+            complete: function() {
+                location.reload();
+            }
+		});
+    }
+
     getTub();
 
     $('button#play-stream').click(playBtnClicked);
     $('button#split-stream').click(splitBtnClicked);
+    $('button#submit').click(submitBtnClicked);
 });

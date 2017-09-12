@@ -3,7 +3,12 @@
 {% block content %}
 
 	<body>
-		<div class="container-fluid">
+		<div class="container">
+     <ul>
+       {% for tub in tubs %}
+         <li><a href={{ "/tubs/" + escape(tub) }}>{{ escape(tub) }}</a></li>
+       {% end %}
+     </ul>
 
 		</div>
 

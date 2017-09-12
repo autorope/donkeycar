@@ -5,7 +5,7 @@
 	<div data-spy="affix" data-offset-top="72">
 		<div class="preview">
         	<div class="preview-centered">
-        	        <img id="img-stream" class="train-img" src="" />
+        	        <img id="img-preview" class="train-img" src="" />
 					<div class="preview-toolbar">
         	        <h3 id="cur-frame">0</h3>
         	        <button type="button" id="split-stream" class="btn btn-primary pull-right">
@@ -21,22 +21,14 @@
 	<div id="clips-container" class="container">
         <div class="row">
 		    <table class="table">
-			  <thead>
-			    <tr>
-			      <th style="width: 5%"></th>
-			      <th style="width: 90%"></th>
-			      <th style="width: 5%"></th>
-			    </tr>
-			  </thead>
-
 		      <tbody id="clips">
 		      </tbody>
 		    </table>
 	    </div>
         <div class="row">
             <div class="pull-right">
-                <button type="button" id="split-stream" class="btn btn-danger">
-                    Delete selected clips!
+                <button id="submit" type="button" class="btn btn-danger">
+                    Delete Checked Clips!
                 </button>
             </div>
         </div>
