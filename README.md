@@ -18,7 +18,7 @@ community contributions.
 * Experiment with different driving methods.
 * Add parts and sensors to your car.
 * Log sensor data. (images, user inputs, sensor readings) 
-* Drive yoru car via a web or game controler.
+* Drive your car via a web or game controler.
 * Leverage community contributed driving data.
 * Use existing hardware CAD designs for upgrades.
 
