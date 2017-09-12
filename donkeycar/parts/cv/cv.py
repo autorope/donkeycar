@@ -51,9 +51,10 @@ class ImgCrop:
         return img_arr
         
 
-class ImgStack:
+class ImgFIFO:
     """
-    Stack N previous images into a single N channel image, after converting each to greyscale
+    Stack N previous images into a single N channel image, after converting each to grayscale.
+    The most recent image is the last channel, and pushes previous images towards the front.
     """
     def __init__(self, num_channels=3):
         self.img_arr = None
@@ -73,7 +74,6 @@ class ImgStack:
 
         return self.img_arr
 
-        
         
 class Pipeline():
     def __init__(self, steps):

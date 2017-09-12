@@ -12,6 +12,9 @@ Usage:
 import os
 from docopt import docopt
 import donkeycar as dk 
+from PIL import Image
+import numpy as np
+import cv2
 
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
@@ -26,14 +29,14 @@ def drive(model_path=None):
     
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
-    img_stack = dk.parts.ImgStack()
-    V.add(img_stack, inputs=['cam/image_array'],
-        outputs=['pipeline/image_stack'])
+    img_fifo = dk.parts.ImgFIFO()
+    V.add(img_fifo, inputs=['cam/image_array'],
+        outputs=['pipeline/image_fifo'])
     
     
     ctr = dk.parts.LocalWebController()
     V.add(ctr, 
-          inputs=['pipeline/image_stack'],
+          inputs=['pipeline/image_fifo'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     
@@ -115,6 +118,56 @@ def drive(model_path=None):
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
+class TubImageStacker(dk.parts.Tub):
+    '''
+    A Tub to try out training against images that are saved out in the normal format, not the one created above.
+    If you drive with the image fifo part, then you don't need to do any extra work on the training. Just make
+    sure your inference pass also sees the same fifo image.
+    '''
+    
+    def stack3Images(self, img_a, img_b, img_c):
+        '''
+        convert 3 rgb images into grayscale and put them into the 3 channels of
+        a single output image
+        '''
+        width, height, _ = img_a.shape
+
+        gray_a = cv2.cvtColor(img_a, cv2.COLOR_RGB2GRAY)
+        gray_b = cv2.cvtColor(img_b, cv2.COLOR_RGB2GRAY)
+        gray_c = cv2.cvtColor(img_c, cv2.COLOR_RGB2GRAY)
+        
+        img_arr = np.zeros([width, height, 3], dtype=np.dtype('B'))
+
+        img_arr[...,0] = np.reshape(gray_a, (width, height))
+        img_arr[...,1] = np.reshape(gray_b, (width, height))
+        img_arr[...,2] = np.reshape(gray_c, (width, height))
+
+        return img_arr
+
+    def get_record(self, ix):
+        '''
+        get the current record and two previous.
+        stack the 3 images into a single image.
+        '''
+        data = super(TubImageStacker, self).get_record(ix)
+
+        if ix > 1:
+            data_ch1 = super(TubImageStacker, self).get_record(ix - 1)
+            data_ch0 = super(TubImageStacker, self).get_record(ix - 2)
+
+            json_data = self.get_json_record(ix)
+            for key, val in json_data.items():
+                typ = self.get_input_type(key)
+
+                #load objects that were saved as separate files
+                if typ == 'image':
+                    val = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
+                    data[key] = val
+                elif typ == 'image_array':
+                    img = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
+                    val = np.array(img)
+
+        return data
 
 
 def train(tub_names, model_name):
@@ -139,7 +192,7 @@ def train(tub_names, model_name):
         tub_paths = [os.path.join(DATA_PATH, n) for n in tub_names.split(',')]
     else:
         tub_paths = [os.path.join(DATA_PATH, n) for n in os.listdir(DATA_PATH)]
-    tubs = [dk.parts.Tub(p) for p in tub_paths]
+    tubs = [TubImageStacker(p) for p in tub_paths]
 
     gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
     train_gens = [gen[0] for gen in gens]

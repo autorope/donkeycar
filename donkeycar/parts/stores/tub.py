@@ -17,7 +17,7 @@ from PIL import Image
 import numpy as np
 
 
-class Tub():
+class Tub(object):
     """
     A datastore to store sensor data in a key, value format.
 
