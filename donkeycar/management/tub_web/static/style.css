@@ -14,7 +14,7 @@
 }
 
 img.clip-thumbnail {
-    width: 12%;
+    width: 12.5%;
 }
 
 tr.active td:first-child,
@@ -50,4 +50,12 @@ tbody#clips td {
 .preview-toolbar button {
     margin-left: 5px;
     width: 92px;
+}
+
+.progress .progress-bar {
+    -webkit-transition: none;
+    -moz-transition: none;
+    -ms-transition: none;
+    -o-transition: none;
+    transition: none;
 }

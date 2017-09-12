@@ -94,7 +94,6 @@ class TubApi(tornado.web.RequestHandler):
         old_frames = list(itertools.chain(*old_clips['clips']))
         new_frames = list(itertools.chain(*new_clips['clips']))
         frames_to_delete = [str(item) for item in old_frames if item not in new_frames]
-        import pdb; pdb.set_trace()
         for frm in frames_to_delete:
             os.remove(os.path.join(tub_path, "record_" + frm + ".json"))
             os.remove(os.path.join(tub_path, frm + "_cam-image_array_.jpg"))
