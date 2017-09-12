@@ -51,6 +51,7 @@ class ImgCrop:
         return img_arr
         
 
+
 class ImgFIFO:
     """
     Stack N previous images into a single N channel image, after converting each to grayscale.
@@ -74,6 +75,7 @@ class ImgFIFO:
 
         return self.img_arr
 
+        
         
 class Pipeline():
     def __init__(self, steps):

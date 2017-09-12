@@ -33,6 +33,7 @@ from .stores.tub import Tub
 from .stores.tub import TubReader
 from .stores.tub import TubWriter
 from .stores.tub import TubHandler
+from .stores.tub import TubImageStacker
 
 from .transforms import Lambda
 
