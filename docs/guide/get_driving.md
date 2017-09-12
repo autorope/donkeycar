@@ -59,7 +59,7 @@ from a web browser at the url: `<your car's ip's address>:8887`
 
 ![drive UI](../assets/drive_UI.png)
 
-## Driving
+## Driving with Web Controller
 On your phone you can now press start to set your phones current tilt to be
 zero throttle and steering. Now tilting your phone forward will increase throttle
 and tilting it side to side will turn the steering. 
@@ -79,4 +79,39 @@ races if you have a pilot that will steer but doesn't control throttle.
 * `k` : decrease throttle
 * `j` : turn left 
 * `l` : turn right 
+
+----
+
+## Driving with Physical Joystick Controller
+
+### Start car
+```
+cd ~/d2_wj
+python manage.py drive
+```
+
+
+### Joystick Controls
+
+* left analog stick left and right to adjust steering
+* right analog stick forward to increase forward throttle
+* pull back twice on right analog to reverse
+
+> Whenever the throttle is not zero, driving data will be recorded.
+
+
+### Start car for self-driving
+```
+cd ~/d2_wj
+python manage.py drive --model <path/to/model>
+```
+
+Hit Triangle button to toggle between three modes - User, Local Angle, and Local Throttle & Angle.
+
+* User - User controls both steering and throttle with joystick
+* Local Angle - Ai controls steering. User controls throttle.
+* Local Throttle & Angle - Ai controls both steering and throttle
+
+
+
 
