@@ -30,7 +30,7 @@ $(document).ready(function(){
                 }
                 updateStreamImg();
                 updatePreviewProgress();
-            }, 30);
+            }, 1000/$('#preview-speed').val());
         }
         updateStreamControls();
     };

@@ -11,6 +11,12 @@
                     </div>
 					<div class="preview-toolbar">
             	        <h3 id="cur-frame">0</h3>
+		  				<select id="preview-speed" class="form-control">
+          				  <option value='7'>0.5x playback</option>
+          				  <option value='15' selected>1x playback</option>
+          				  <option value='30'>2x playback</option>
+          				  <option value='60'>4x playback</option>
+          				</select>
             	        <button type="button" id="play-stream" class="btn btn-primary pull-right">
             	            <i class="glyphicon glyphicon-play"></i>&nbsp;Play
             	        </button>
@@ -35,7 +41,7 @@
         <div class="row">
             <div class="pull-right">
                 <button id="submit" type="button" class="btn btn-danger">
-                    Delete Checked Clips!
+                    Save and Delete Checked Training Data!
                 </button>
             </div>
         </div>

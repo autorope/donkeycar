@@ -10,7 +10,7 @@
 }
 
 #cur-frame {
-    margin-bottom: 50px;
+    margin-bottom: 20px;
     padding: 5px;
 }
 
@@ -59,6 +59,11 @@ tbody#clips td {
 }
 
 .preview-toolbar button {
+    margin: 5px;
+    width: 120px;
+}
+
+.preview-toolbar select {
     margin: 5px;
     width: 120px;
 }
