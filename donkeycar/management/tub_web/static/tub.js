@@ -187,4 +187,22 @@ $(document).ready(function(){
     $('button#split-stream').click(splitBtnClicked);
     $('button#rewind-stream').click(rewindBtnClicked);
     $('button#submit').click(submitBtnClicked);
+    $(document).keydown(function(e) {
+        switch(e.which) {
+            case 32: // space
+                playBtnClicked();
+                break;
+    
+            case 66: // 'b'
+                rewindBtnClicked();
+                break;
+    
+            case 67: // 'c'
+                splitBtnClicked();
+                break;
+    
+            default: return; // exit this handler for other keys
+        }
+        e.preventDefault(); // prevent the default action (scroll / move caret)
+    });
 });

@@ -45,7 +45,7 @@ tbody#clips td {
 }
 
 .preview-centered {
-  width: 320px;
+  width: 460px;
   margin: 0 auto;
   padding-bottom: 12px;
 }
@@ -65,12 +65,12 @@ tbody#clips td {
 
 .preview-toolbar button {
     margin: 5px;
-    width: 120px;
+    width: 140px;
 }
 
 .preview-toolbar select {
     margin: 5px;
-    width: 120px;
+    width: 140px;
 }
 
 tbody#clips .progress {
