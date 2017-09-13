@@ -5,16 +5,23 @@
 	<div data-spy="affix" data-offset-top="72">
 		<div class="preview">
         	<div class="preview-centered">
-        	        <img id="img-preview" class="train-img" src="" />
-					<div class="preview-toolbar">
-        	        <h3 id="cur-frame">0</h3>
-        	        <button type="button" id="split-stream" class="btn btn-primary pull-right">
-        	            <i class="glyphicon glyphicon-scissors"></i>&nbsp;Split
-        	        </button>
-        	        <button type="button" id="play-stream" class="btn btn-primary pull-right">
-        	            <i class="glyphicon glyphicon-play"></i>&nbsp;Play
-        	        </button>
+                <div class="preview-wrapper">
+                    <div class="preview-img">
+        	            <img id="img-preview" class="train-img" src="" />
                     </div>
+					<div class="preview-toolbar">
+            	        <h3 id="cur-frame">0</h3>
+            	        <button type="button" id="play-stream" class="btn btn-primary pull-right">
+            	            <i class="glyphicon glyphicon-play"></i>&nbsp;Play
+            	        </button>
+            	        <button type="button" id="rewind-stream" class="btn btn-primary pull-right">
+            	            <i class="glyphicon glyphicon-backward"></i>&nbsp;Rewind 1s
+            	        </button>
+            	        <button type="button" id="split-stream" class="btn btn-primary pull-right">
+            	            <i class="glyphicon glyphicon-scissors"></i>&nbsp;Split
+            	        </button>
+                    </div>
+                </div>
         	</div>
         </div>
     </div>

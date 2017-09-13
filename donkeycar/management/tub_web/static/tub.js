@@ -125,6 +125,14 @@ $(document).ready(function(){
         }
     };
 
+    var rewindBtnClicked = function(event) {
+        currentFrameIdx -= 10;
+        if (currentFrameIdx < 0) {
+            currentFrameIdx = 0;
+        }
+        updateStreamImg();
+    };
+
     var splitBtnClicked = function(event) {
         if (currentFrameIdx === 0 || currentFrameIdx >= selectedClip().frames.length-1) {
             return;
@@ -177,5 +185,6 @@ $(document).ready(function(){
 
     $('button#play-stream').click(playBtnClicked);
     $('button#split-stream').click(splitBtnClicked);
+    $('button#rewind-stream').click(rewindBtnClicked);
     $('button#submit').click(submitBtnClicked);
 });

@@ -10,7 +10,8 @@
 }
 
 #cur-frame {
-    display: inline;
+    margin-bottom: 50px;
+    padding: 5px;
 }
 
 img.clip-thumbnail {
@@ -31,7 +32,7 @@ tbody#clips td {
 }
 
 .affix + #clips-container {
-  padding-top: 284px;
+  padding-top: 252;
 }
 
 .preview {
@@ -41,17 +42,25 @@ tbody#clips td {
 .preview-centered {
   width: 320px;
   margin: 0 auto;
-  background-color: white;
   padding-bottom: 12px;
 }
 
+.preview-wrapper {
+    display: flex;
+}
+
+.preview-img {
+    flex: 0 0 65%;
+}
+
 .preview-toolbar {
-    margin-top: 5px;
+    flex: 1;
+    background-color: white;
 }
 
 .preview-toolbar button {
-    margin: 0px 5px;
-    width: 92px;
+    margin: 5px;
+    width: 120px;
 }
 
 tbody#clips .progress {
