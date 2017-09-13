@@ -3,22 +3,24 @@ from setuptools import setup, find_packages
 import os
 
 #include the non python files
-def package_files(directory):
+def package_files(directory, strip_leading):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         for filename in filenames:
-            paths.append(os.path.join('..', path, filename))
+            package_file = os.path.join(path, filename)
+            paths.append(package_file[len(strip_leading):])
     return paths
 
-car_tempaltes=['templates/*']
-web_controller_html = package_files('donkeycar/parts/controllers/templates')
+car_templates=['templates/*']
+web_controller_html = package_files('donkeycar/parts/controllers/templates', 'donkeycar/')
 
 
-extra_files = car_tempaltes + web_controller_html
+extra_files = car_templates + web_controller_html
 print('extra_files', extra_files)
 
+
 setup(name='donkeycar',
-    version='2.1.2.1',
+    version='2.1.3',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
     download_url='https://github.com/wroscoe/donkey/archive/2.1.2.1.tar.gz',

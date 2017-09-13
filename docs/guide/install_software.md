@@ -42,36 +42,72 @@ so you can connect to it via SSH.
 The easiest way (on Ubuntu) is to use the `findcar` donkey command. Regardless 
 you will wand donkeycar installed on your computer for training so lets install
 donkeycar now. 
+----
+## Install donkeycar on Linux
 
 ```
 virtualenv env -p python3
 source env/bin/activate
-pip install donkeycar
-donkeycar findcar
+git clone https://github.com/wroscoe/donkey donkeycar
+pip install -e donkeycar
 ```
 
-This will show your ip address, promt for your password, and then search 
-for your cars ip address. 
+----
 
-> If your car's ip address is not shown then:
-> 1. find another way to scan your local network for your raspbery pi 
-> 2. connect a monitor to your pi to connect to the the same wifi as your computer. 
+## Install donkeycar on Windows
 
+1. Install [miniconda](https://conda.io/miniconda.html)
 
-Assuming that you did find your pi on the network. You can now connect to it
-remotely via ssh. 
+2. Install [git](https://git-scm.com/download/win). Use 64bit setup
 
-```
-ssh pi@<your_pi_ip_address>
-```
+3. From the start menu start the Andconda Prompt.
 
-The default username is 'pi' and the password is 'raspberry'
-
-
-### Create your car app
+4. Change to a dir you would like to use as the head of your projects.
 
 ```
+mkdir projects
+cd projects
+```
+
+5. Get the latest donkey.
+
+```
+git clone https://github.com/wroscoe/donkey
+cd donkey
+```
+
+6. Create the python anaconda environmment
+
+```
+conda env create -f envs\windows.yml
+activate donkey
+```
+
+7. once to setup:
+
+```
+pip install -e .
 donkey createcar --path ~/d2
 ```
 
+-------
 
+### Install another fork of donkeycar
+
+Occasionally you may want to run with changes from a separate fork of donkey. You may uninstall one and install another. That's fastest, but leaves you with only the forked version installed:
+
+``` 
+pip uninstall donkeycar
+git clone --depth=1 https://github.com/<username>/donkey donkey_<username>
+cd donkey_<username>
+pip install -e .
+```
+
+To get back to stock donkey install:
+
+```
+pip uninstall donkeycar
+git clone --depth=1 https://github.com/wroscoe/donkey donkey
+cd donkey
+pip install -e .
+```

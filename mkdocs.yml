@@ -18,8 +18,10 @@ pages:
     - Parts: 
         - 'About': parts/about.md
         - 'Actuators': parts/actuators.md
+        - 'Controllers': parts/controllers.md
         - 'Stores': parts/stores.md
 
     - Contribute : contribute.md
     - Tests : tests.md
+    - Releases : release.md
     - FAQ : faq.md
