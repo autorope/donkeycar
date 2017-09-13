@@ -162,6 +162,7 @@ $(document).ready(function(){
     };
 
     var submitBtnClicked = function() {
+        $('button#submit').prop('disabled', true);
         var clipsToKeep = clips.filter(function(clip) {
             return !clip.markedToDelete;
         })
