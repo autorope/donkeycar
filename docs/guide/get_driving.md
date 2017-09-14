@@ -9,16 +9,22 @@ is the step were the car can take off.
 
 ---
 # Normal usage
-in future runs, when you start a new session, you will want to:
+In future runs, when you start a new session, you will want to:
+
+On Windows:
+
 * start a new Anaconda Prompt from windows start menu
-* cd projects\donkey
-* activate donkey
-* cd ~/d2 or ~/d2_js on pi
+* Activate mappings to donkey python setup with: ```activate donkey```
+* Change to your local dir for managing donkey: ```cd ~/d2```
+* Find your pi
+
+
 
 This will show your ip address, promt for your password, and then search 
 for your cars ip address. 
 
 > If your car's ip address is not shown then:
+>
 > 1. find another way to scan your local network for your raspbery pi 
 > 2. connect a monitor to your pi to connect to the the same wifi as your computer. 
 
