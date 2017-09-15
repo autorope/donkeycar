@@ -86,3 +86,10 @@ tbody#clips .progress .progress-bar {
     transition: none;
     height: 3px;
 }
+
+.steering-bar .progress {
+    width: 50%;
+    margin-bottom: 0px;
+    border-radius: 0px;
+    float: left;
+}

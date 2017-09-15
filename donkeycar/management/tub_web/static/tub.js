@@ -17,7 +17,7 @@ $(document).ready(function(){
         }
         updateStreamControls();
     };
-    
+
     var play = function() {
         if (playing === null) {
             playing = setInterval(function(){
@@ -51,6 +51,19 @@ $(document).ready(function(){
         var curFrame = selectedClip().frames[currentFrameIdx];
         $('#img-preview').attr('src', '/tub_data/' + tubId + '/' + curFrame + '_cam-image_array_.jpg');
         $('#cur-frame').text(curFrame);
+        $.getJSON('/tub_data/' + tubId + '/' + 'record_' + curFrame + '.json', function(data) {
+            var angle = data["user/angle"];
+            var steeringPercent = Math.round(Math.abs(angle) * 100) + '%';
+            var steeringRounded = angle.toFixed(2)
+
+            $('.steering-bar .progress-bar').css('width', '0%').html('');
+            if(angle < 0) {
+                $('#angle-bar-backward').css('width', steeringPercent).html(steeringRounded)
+            }
+            if (angle > 0) {
+                $('#angle-bar-forward').css('width', steeringPercent).html(steeringRounded)
+            }
+        });
     };
 
     var updateStreamControls = function() {
@@ -193,15 +206,15 @@ $(document).ready(function(){
             case 32: // space
                 playBtnClicked();
                 break;
-    
+
             case 66: // 'b'
                 rewindBtnClicked();
                 break;
-    
+
             case 67: // 'c'
                 splitBtnClicked();
                 break;
-    
+
             default: return; // exit this handler for other keys
         }
         e.preventDefault(); // prevent the default action (scroll / move caret)
