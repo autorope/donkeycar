@@ -196,9 +196,16 @@ cd donkey
 * Create the python anaconda environmment
 
 ```
-conda env create -f envs\mac.yml
+conda env create -f envs/mac.yml
 source activate donkey
 ```
+
+* Install Tensorflow
+
+```
+pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-py3-none-any.whl
+```
+
 
 * Install donkey source and create your local working dir:
 
