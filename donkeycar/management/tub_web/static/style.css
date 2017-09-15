@@ -33,11 +33,11 @@ tbody#clips td {
 
 /* https://stackoverflow.com/questions/20652581/bootstrap-affix-nav-causes-div-below-to-jump-up */
 .affix-wrapper {
-    min-height: 244px;
+    min-height: 272px;
 }
 
 .affix + #clips-container {
-  padding-top: 252;
+  padding-top: 272;
 }
 
 .preview {
@@ -88,8 +88,20 @@ tbody#clips .progress .progress-bar {
 }
 
 .steering-bar .progress {
-    width: 50%;
+    width: 48%;
     margin-bottom: 0px;
     border-radius: 0px;
     float: left;
+}
+
+.steering-bar .progress.negative {
+    border-right-style: solid;
+    border-right-width: thin;
+    border-right-color: red;
+}
+
+.steering-bar .progress.positive {
+    border-left-style: solid;
+    border-left-width: thin;
+    border-left-color: red;
 }
