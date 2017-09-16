@@ -195,7 +195,7 @@ class Tub(object):
                     record = record_transform(record)
                 yield record
 
-    def batch_gen(self, keys=None, index=None, batch_size=32,
+    def batch_gen(self, keys=None, index=None, batch_size=128,
                   record_tranform=None):
         record_gen = self.record_gen(index, record_tranform)
         if keys==None:
@@ -215,7 +215,7 @@ class Tub(object):
             yield batch_arrays
 
 
-    def train_gen(self, X_keys, Y_keys, index=None, batch_size=32,
+    def train_gen(self, X_keys, Y_keys, index=None, batch_size=128,
                   record_transform=None):
         batch_gen = self.batch_gen(X_keys+Y_keys, index, batch_size, record_transform)
         while True:
