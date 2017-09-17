@@ -35,4 +35,18 @@ class Config:
             if key.isupper():
                 result.append((key, getattr(self,key)))
         return str(result)
+
+
+
+def load_config(config_path=None):
     
+    if config_path is None:
+        import __main__ as main
+        main_path = os.path.dirname(os.path.realpath(main.__file__))
+        config_path = os.path.join(main_path, 'config.py')
+    
+    print('loading config file: {}'.format(config_path))
+    cfg = Config()
+    cfg.from_pyfile(config_path)
+    print('config loaded')
+    return cfg

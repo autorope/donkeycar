@@ -5,11 +5,11 @@ other vehicles. These instructions
 
 ## How to adjust your car's settings.
 
-All of the car's settings are in the `manage.py` script generated when 
+All of the car's settings are in the `config.py` script generated when 
 you ran the `donkey createcar --path ~/d2` command. You can edit
 this file on your car by running:
 ```bash
-nano ~/d2/manage.py
+nano ~/d2/config.py
 ```
 
 Our goal is to edit these settings so your car will drive like every
@@ -30,8 +30,8 @@ enter `400` or `300`.
 5. Next enter values +/- 10 from your starting value to find the PWM setting
 that makes your car turn all the way left and all the way right. Remember 
 these values. 
-6. Enter these values in your `manage.py` script as inputs into your 
-steering_controller part as the `left_pulse` and `right_pulse`. 
+6. Enter these values in `config.py` script as `STEERING_RIGHT_PWM` and 
+`STEERING_LEFT_PWM`. 
 
 
 ## Throttle Calibration
@@ -58,11 +58,11 @@ value again.
 Remember this reverse PWM value. 
 
 
-Now open your `manage.py` script and enter the PWM values for your car into
+Now open your `config.py` script and enter the PWM values for your car into
 the throttle_controller part. 
-* `max_puse` = PWM value for full throttle forward
-* `zero_pulse` = PWM value for zero throttle
-* `min_pulse` = PWM value at full reverse throttle
+* `THROTTLE_FORWARD_PWM` = PWM value for full throttle forward
+* `THROTTLE_STOPPED_PWM` = PWM value for zero throttle
+* `THROTTLE_REVERSE_PWM` = PWM value at full reverse throttle
 
 
 
