@@ -49,7 +49,7 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template)
     
-    def create_car(self, path, template):
+    def create_car(self, path, template, overwrite=False):
         """
         This script sets up the folder struction for donkey to work. 
         It must run without donkey installed so that people installing with
@@ -59,23 +59,34 @@ class CreateCar(BaseCommand):
         path = path or '~/mydonkey'
         template = template or 'donkey2'
         
-        #TODO: Check if exists and prompt to overwrite.
+        print("Creating car folder: {}".format(path))
         path = make_dir(path)
         
-        print("Creating folders to hold training data and pilot models.")
+        print("Creating data & model folders.")
         folders = ['models', 'data', 'logs']
         folder_paths = [os.path.join(path, f) for f in folders]   
         for fp in folder_paths:
             make_dir(fp)
             
-        print("Copying car template.")
-        template_path = os.path.join(TEMPLATES_PATH, template+'.py')
-        new_path = os.path.join(path, 'manage.py')
-        shutil.copyfile(template_path, new_path)
-        print(new_path)
-
+        #add car application and config files if they don't exist
+        app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
+        config_template_path = os.path.join(TEMPLATES_PATH, 'config_defaults.py')
+        car_app_path = os.path.join(path, 'manage.py')
+        car_config_path = os.path.join(path, 'config.py')
+        
+        if os.path.exists(car_app_path):
+            print('Car app already exists. Delete it and rerun createcar to replace.')
+        else:
+            print("Copying car application template: {}".format(template))
+            shutil.copyfile(app_template_path, car_app_path)
+            
+        if os.path.exists(car_config_path):
+            print('Car config already exists. Delete it and rerun createcar to replace.')
+        else:
+            print("Copying car config defaults. Adjust these before starting your car.")
+            shutil.copyfile(config_template_path, car_config_path)
+ 
         print("Donkey setup complete.")
-
 
 
 class UploadData(BaseCommand):

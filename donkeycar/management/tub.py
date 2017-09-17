@@ -48,7 +48,7 @@ class TubsView(tornado.web.RequestHandler):
 
     def get(self):
         import fnmatch
-        data = {"tubs": fnmatch.filter(os.listdir(self.data_path), 'tub_*')}
+        data = {"tubs": fnmatch.filter(os.listdir(self.data_path), '*')}
         self.render("tub_web/tubs.html", **data)
 
 

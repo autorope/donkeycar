@@ -13,15 +13,11 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 
-CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
-DATA_PATH = os.path.join(CAR_PATH, 'data')
-MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
-
-def drive(model_path=None):
+def drive(cfg, model_path=None):
     #Initialized car
     V = dk.vehicle.Vehicle()
-    cam = dk.parts.PiCamera()
+    cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
     ctr = dk.parts.LocalWebController()
@@ -71,13 +67,16 @@ def drive(model_path=None):
           outputs=['angle', 'throttle'])
     
     
-    steering_controller = dk.parts.PCA9685(1)
+    steering_controller = dk.parts.PCA9685(cfg.STEERING_CHANNEL)
     steering = dk.parts.PWMSteering(controller=steering_controller,
-                                    left_pulse=460, right_pulse=260)
+                                    left_pulse=cfg.STEERING_LEFT_PWM, 
+                                    right_pulse=cfg.STEERING_RIGHT_PWM)
     
-    throttle_controller = dk.parts.PCA9685(0)
+    throttle_controller = dk.parts.PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = dk.parts.PWMThrottle(controller=throttle_controller,
-                                    max_pulse=500, zero_pulse=370, min_pulse=220)
+                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
     
     V.add(steering, inputs=['angle'])
     V.add(throttle, inputs=['throttle'])
@@ -92,18 +91,19 @@ def drive(model_path=None):
            #'float', 'float', 
            'str']
     
-    th = dk.parts.TubHandler(path=DATA_PATH)
+    th = dk.parts.TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
     
     #run the vehicle for 20 seconds
-    V.start(rate_hz=20, max_loop_count=100000)
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
+            max_loop_count=cfg.MAX_LOOPS)
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
 
 
-def train(tub_names, model_name):
+def train(cfg, tub_names, model_name):
     
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
@@ -122,16 +122,16 @@ def train(tub_names, model_name):
     kl = dk.parts.KerasCategorical()
     
     if tub_names:
-        tub_paths = [os.path.join(DATA_PATH, n) for n in tub_names.split(',')]
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
     else:
-        tub_paths = [os.path.join(DATA_PATH, n) for n in os.listdir(DATA_PATH)]
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
 
     gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
     train_gens = [gen[0] for gen in gens]
     val_gens = [gen[1] for gen in gens]
 
-    model_path = os.path.join(MODELS_PATH, model_name)
+    model_path = os.path.join(cfg.MODELS_PATH, model_name)
     kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
 
 
@@ -148,15 +148,18 @@ def calibrate():
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-
+    cfg = dk.load_config()
+    
     if args['drive']:
-        drive(model_path = args['--model'])
+        drive(cfg, model_path = args['--model'])
+    
     elif args['calibrate']:
         calibrate()
+    
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
-        train(tub, model)
+        train(cfg, tub, model)
 
 
 
