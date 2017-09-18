@@ -8,7 +8,7 @@ class PIDController:
     """
     def __init__(self, p=0, i=0, d=0, debug=False):
         
-        # initialze gains
+        # initialize gains
         self.Kp = p
         self.Ki = i
         self.Kd = d
