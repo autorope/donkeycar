@@ -50,9 +50,13 @@ python manage.py drive --model ~/d2/models/mypilot
 1. **Mode & Pilot**: Congratulations on getting it this far. The first thing to note after running the command above, is to look at the options in the Mode & Pilot menu. It can be pretty confusing. So here's what the different options mean:
 	
 	a. **User** : As you guessed, this is where you are in control of both the steering and throttle control.
+	
 	b. **Local Angle** : Not too obvious, but this is where the trained model (mypilot from above) controls the steering. The _Local_ refers to the trained model which is locally hosted on the raspberry-pi.
+	
 	c. **Local Pilot** : This is where the trained model (mypilot) assumes control of both the steering and the throttle. As of now, it's purportedly not very reliable.
+	
 	d. **Auto Angle** : Same as Local Angle, except for it's relying on a model (pilot) running in a separate server. 
+	
 	e. **Auto Pilot** : Same as Local Pilot, but as you guessed, a remote model assumes control of both the steering and the throttle.
 
     Be sure to also check out the **Max Throttle** and **Throttle Mode** options, and play around with a few settings. Can help with training quite a lot. 
