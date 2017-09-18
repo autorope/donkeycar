@@ -24,14 +24,14 @@ to our computer to train.
 In a new terminal session on your comptuer use rsync to copy your cars 
 folder. 
 ```
-rsync pi@<your_pi_ip_address>:~/d2/data  ~/d2/data
+rsync -r pi@<your_pi_ip_address>:~/d2/data  ~/d2/data
 ```
 
 
 ## Train a model.
 5. In the same terminal you can now run the training script on the latest tub.
 ```
- python ~/d2/manage.py train --model mypilot
+ python ~/d2/manage.py train --tub <tub folder names comma separated> --model mypilot
 ```
 
 6. Now you can use rsync again to move your pilot back to your car. 
@@ -41,4 +41,5 @@ rsync ~/d2/models pi@<your_ip_address>:~/d2/models
 
 7. Now you can start your car again and pass it your model to drive.
 ```
-python ~/d2/manage.py drive --model mypilot
+python manage.py drive --model ~/d2/models/mypilot
+```
