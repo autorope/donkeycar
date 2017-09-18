@@ -5,7 +5,7 @@ Rotary Encoder
 import time
 
 class RotaryEncoder():
-    def __init__(self, mm_per_tick=0.306096, pin=27, poll_delay=0.0166):
+    def __init__(self, mm_per_tick=0.306096, pin=27, poll_delay=0.0166, debug=False):
         import RPi.GPIO as GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.IN)
@@ -19,6 +19,7 @@ class RotaryEncoder():
         self.meters_per_second = 0
         self.counter = 0
         self.on = True
+        self.debug = debug
     
     def isr(self, channel):
         self.counter += 1
@@ -46,7 +47,7 @@ class RotaryEncoder():
             self.meters_per_second = velocity
 
             #console output for debugging
-            if(ticks > 0):
+            if(self.debug):
                 print('seconds:', seconds)
                 print('distance:', distance)
                 print('velocity:', velocity)
