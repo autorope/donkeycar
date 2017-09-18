@@ -18,19 +18,14 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 
-CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
-DATA_PATH = os.path.join(CAR_PATH, 'data')
-MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
-
-def drive(model=None):
+def drive(cfg, model=None):
     V = dk.vehicle.Vehicle()
     #initialize values
-    V.mem.put(['square/angle', 'square/throttle'], (100,100))
-    
+    V.mem.put(['square/angle', 'square/throttle'], (100,100))  
     
     #display square box given by cooridantes.
-    cam = dk.parts.SquareBoxCamera(resolution=(120,160))
+    cam = dk.parts.SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, 
           inputs=['square/angle', 'square/throttle'],
           outputs=['cam/image_array'])
@@ -100,7 +95,7 @@ def drive(model=None):
            'float', 'float',
            'str']
     
-    th = dk.parts.TubHandler(path=DATA_PATH)
+    th = dk.parts.TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
     
@@ -109,7 +104,7 @@ def drive(model=None):
     
     
     
-def train(tub_names, model_name):
+def train(cfg, tub_names, model_name):
     
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
@@ -128,16 +123,16 @@ def train(tub_names, model_name):
     kl = dk.parts.KerasCategorical()
     
     if tub_names:
-        tub_paths = [os.path.join(DATA_PATH, n) for n in tub_names.split(',')]
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
     else:
-        tub_paths = [os.path.join(DATA_PATH, n) for n in os.listdir(DATA_PATH)]
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
 
     gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
     train_gens = [gen[0] for gen in gens]
     val_gens = [gen[1] for gen in gens]
 
-    model_path = os.path.join(MODELS_PATH, model_name)
+    model_path = os.path.join(cfg.MODELS_PATH, model_name)
     kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
 
 
@@ -145,10 +140,12 @@ def train(tub_names, model_name):
     
 if __name__ == '__main__':
     args = docopt(__doc__)
-
+    cfg = dk.load_config()
+    
     if args['drive']:
-        drive(args['--model'])
+        drive(cfg, args['--model'])
+        
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
-        train(tub, model)
+        train(cfg, tub, model)
