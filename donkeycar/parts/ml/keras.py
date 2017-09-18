@@ -28,7 +28,7 @@ class KerasPilot():
     
     
     def train(self, train_gen, val_gen, 
-              saved_model_path, epochs=100, steps=10, ):
+              saved_model_path, epochs=100, steps=100, ):
         
         """
         train_gen: generator that yields an array of images an array of 
@@ -45,7 +45,7 @@ class KerasPilot():
         #stop training if the validation error stops improving.
         early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                    min_delta=.0005, 
-                                                   patience=4, 
+                                                   patience=5, 
                                                    verbose=1, 
                                                    mode='auto')
         
