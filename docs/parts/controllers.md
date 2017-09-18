@@ -21,9 +21,9 @@ comment out the line:
 ```
 #ctr = dk.parts.LocalWebController()
 ```
-and add the line:
+and enable the line:
 ```
-ctr = dk.parts.JoystickPilot(max_throttle=0.25, steering_scale=1.0)
+ctr = dk.parts.JoystickPilot()
 ```
 
 This disables the live preview of the camera and the web page features.

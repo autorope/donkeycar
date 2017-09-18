@@ -41,16 +41,11 @@ The default username is 'pi' and the password is 'raspberry'
 
 ### Create your car application.
 
-with web browser.
 ```
 donkey createcar --template donkey2 --path ~/d2
 ```
 
-with PS3 controller
-```
-donkey createcar --template donkey2_with_joystick --path ~/d2_wj
-```
-
+> For PS3 controller support, edit ~/d2/manage.py following commented instructions there.
 
 #### Start your car.
 Open your car's folder and start our car. 
@@ -92,7 +87,7 @@ races if you have a pilot that will steer but doesn't control throttle.
 
 ### Start car
 ```
-cd ~/d2_wj
+cd ~/d2
 python manage.py drive
 ```
 
@@ -108,7 +103,7 @@ python manage.py drive
 
 ### Start car for self-driving
 ```
-cd ~/d2_wj
+cd ~/d2
 python manage.py drive --model <path/to/model>
 ```
 
