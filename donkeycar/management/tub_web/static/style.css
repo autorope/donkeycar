@@ -78,13 +78,12 @@ tbody#clips .progress {
     margin-bottom: 10px;
 }
 
-tbody#clips .progress .progress-bar {
+.progress .progress-bar {
     -webkit-transition: none;
     -moz-transition: none;
     -ms-transition: none;
     -o-transition: none;
     transition: none;
-    height: 3px;
 }
 
 .steering-bar .progress {
