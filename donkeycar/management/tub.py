@@ -96,18 +96,11 @@ class TubApi(tornado.web.RequestHandler):
 
     def post(self, tub_id):
         tub_path = os.path.join(self.data_path, tub_id)
-        tub_json = os.path.join(tub_path, 'tub.json')
-
-        with open(tub_json) as infile:
-            old_clips = json.load(infile)
-
+        old_clips = self.clips_of_tub(tub_path)
         new_clips = tornado.escape.json_decode(self.request.body)
 
-        with open(tub_json, 'w') as outfile:
-            json.dump(new_clips, outfile)
-
         import itertools
-        old_frames = list(itertools.chain(*old_clips['clips']))
+        old_frames = list(itertools.chain(*old_clips))
         new_frames = list(itertools.chain(*new_clips['clips']))
         frames_to_delete = [str(item) for item in old_frames if item not in new_frames]
         for frm in frames_to_delete:
