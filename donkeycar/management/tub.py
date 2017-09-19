@@ -94,25 +94,6 @@ class TubApi(tornado.web.RequestHandler):
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(json.dumps({'clips': clips}))
 
-        entries = ((os.stat(self.image_path(tub_path, seq))[ST_MTIME], seq) for seq in seqs)
-
-        (last_ts, seq) = next(entries)
-        clips = [[seq]]
-        for next_ts, next_seq in entries:
-            if next_ts - last_ts > 1:  #greater than 1s apart
-                clips.append([next_seq])
-            else:
-                clips[-1].append(next_seq)
-            last_ts = next_ts
-
-        return clips
-
-    def get(self, tub_id):
-        clips = self.clips_of_tub(os.path.join(self.data_path, tub_id))
-
-        self.set_header("Content-Type", "application/json; charset=UTF-8")
-        self.write(json.dumps({'clips': clips}))
-
     def post(self, tub_id):
         tub_path = os.path.join(self.data_path, tub_id)
         old_clips = self.clips_of_tub(tub_path)
