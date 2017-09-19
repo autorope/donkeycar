@@ -5,7 +5,7 @@ Scripts to drive a donkey 2 car and train a model for it.
 Usage:
     manage.py (drive) [--model=<model>]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
-    manage.py (calibrate) 
+    manage.py (calibrate)
 """
 
 
