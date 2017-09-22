@@ -19,7 +19,7 @@ from docopt import docopt
 import donkeycar as dk 
 
 
-def drive(cfg, model=None):
+def drive(cfg, model_path=None):
     V = dk.vehicle.Vehicle()
     #initialize values
     V.mem.put(['square/angle', 'square/throttle'], (100,100))  
@@ -50,8 +50,11 @@ def drive(cfg, model=None):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasCategorical(model)
-    V.add(kl, inputs=['cam/image_array'], 
+    kl = dk.parts.KerasCategorical()
+    if model_path:
+        kl.load(model_path)
+
+    V.add(kl, inputs=['cam/image_array'],
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
     
