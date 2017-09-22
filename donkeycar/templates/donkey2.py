@@ -122,13 +122,6 @@ def train(cfg, tub_names, model_name):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
 
-    def combined_gen(gens):
-        import itertools
-        combined_gen = itertools.chain()
-        for gen in gens:
-            combined_gen = itertools.chain(combined_gen, gen)
-        return combined_gen
-    
     kl = dk.parts.KerasCategorical()
     
     if tub_names:
@@ -137,12 +130,18 @@ def train(cfg, tub_names, model_name):
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
 
+    import itertools
+
     gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
-    train_gens = [gen[0] for gen in gens]
-    val_gens = [gen[1] for gen in gens]
+
+
+    # Training data generator is the one that keeps cycling through training data generator of all tubs chained together
+    # The same for validation generator
+    train_gens = itertools.cycle(itertools.chain(*[gen[0] for gen in gens]))
+    val_gens = itertools.cycle(itertools.chain(*[gen[1] for gen in gens]))
 
     model_path = os.path.join(cfg.MODELS_PATH, model_name)
-    kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
+    kl.train(train_gens, val_gens, saved_model_path=model_path)
 
 
 
