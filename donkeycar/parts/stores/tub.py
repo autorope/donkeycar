@@ -193,12 +193,11 @@ class Tub(object):
     def record_gen(self, index=None, record_transform=None):
         if index==None:
             index=self.get_index(shuffled=True)
-        while True:
-            for i in index:
-                record = self.get_record(i)
-                if record_transform:
-                    record = record_transform(record)
-                yield record
+        for i in index:
+            record = self.get_record(i)
+            if record_transform:
+                record = record_transform(record)
+            yield record
 
     def batch_gen(self, keys=None, index=None, batch_size=128,
                   record_tranform=None):

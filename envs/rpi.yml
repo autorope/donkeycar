@@ -17,6 +17,7 @@ dependencies:
 - python-dateutil=2.4.2=py34_0
 - pytz=2015.4=py34_0
 - requests=2.7.0=py34_0
+- scipy=0.16.0=np19py34_1
 - setuptools=18.1=py34_0
 - six=1.9.0=py34_0
 - sqlite=3.8.4.1=1
