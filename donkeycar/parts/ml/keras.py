@@ -28,7 +28,7 @@ class KerasPilot():
     
     
     def train(self, train_gen, val_gen, 
-              saved_model_path, epochs=100, steps=100, ):
+              saved_model_path, epochs=100, steps=100, train_split=0.8):
         
         """
         train_gen: generator that yields an array of images an array of 
@@ -58,7 +58,7 @@ class KerasPilot():
                         verbose=1, 
                         validation_data=val_gen,
                         callbacks=callbacks_list, 
-                        validation_steps=steps*.2)
+                        validation_steps=steps*(1.0 - train_split))
         return hist
 
 

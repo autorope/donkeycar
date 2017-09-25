@@ -231,7 +231,7 @@ class Tub(object):
             
     def train_val_gen(self, X_keys, Y_keys, batch_size=32, record_transform=None, train_split=.8):
         index = self.get_index(shuffled=True)
-        train_cutoff = int(len(index)*.8)
+        train_cutoff = int(len(index)*train_split)
         train_index = index[:train_cutoff]
         val_index = index[train_cutoff:]
     
