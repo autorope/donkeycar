@@ -133,7 +133,7 @@ def train(cfg, tub_names, model_name):
 
     import itertools
 
-    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
+    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT) for tub in tubs]
 
 
     # Training data generator is the one that keeps cycling through training data generator of all tubs chained together
@@ -142,9 +142,19 @@ def train(cfg, tub_names, model_name):
     val_gens = itertools.cycle(itertools.chain(*[gen[1] for gen in gens]))
 
     model_path = os.path.join(cfg.MODELS_PATH, model_name)
-    kl.train(train_gens, val_gens, saved_model_path=model_path)
 
+    total_records = sum([t.get_num_records() for t in tubs])
+    total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
+    total_val = total_records - total_train
+    print('train: %d, validation: %d' %(total_train, total_val))
+    steps_per_epoch = total_train // cfg.BATCH_SIZE
+    print('steps_per_epoch', steps_per_epoch)
 
+    kl.train(train_gens, 
+        val_gens, 
+        saved_model_path=model_path,
+        steps=steps_per_epoch,
+        train_split=cfg.TRAIN_TEST_SPLIT)
 
 
 def calibrate():
