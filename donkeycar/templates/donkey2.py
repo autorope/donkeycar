@@ -137,12 +137,21 @@ def train(cfg, tub_names, model_name):
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
 
-    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
+    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=cfg.BATCH_SIZE) for tub in tubs]
     train_gens = [gen[0] for gen in gens]
     val_gens = [gen[1] for gen in gens]
 
     model_path = os.path.join(cfg.MODELS_PATH, model_name)
-    kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
+    total_records = sum([t.get_num_records() for t in tubs])
+    total_train = int(total_records * 0.8)
+    total_val = total_records - total_train
+    print('train: %d, validation: %d' %(total_train, total_val))
+    steps_per_epoch = total_train // cfg.BATCH_SIZE
+
+    kl.train(combined_gen(train_gens), 
+        combined_gen(val_gens), 
+        saved_model_path=model_path,
+        steps=steps_per_epoch)
 
 
 

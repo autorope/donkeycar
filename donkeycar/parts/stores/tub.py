@@ -111,6 +111,11 @@ class Tub(object):
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
+    def get_num_records(self):
+        import glob
+        files = glob.glob(os.path.join(self.path, 'record_*.json'))
+        return len(files)
+
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')
 
