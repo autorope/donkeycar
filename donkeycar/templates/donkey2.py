@@ -6,6 +6,7 @@ Usage:
     manage.py (drive) [--model=<model>]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     manage.py (calibrate)
+    manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
 """
 
 
@@ -154,6 +155,20 @@ def calibrate():
         pmw = int(input('Enter a PWM setting to test(100-600)'))
         c.run(pmw)
 
+def check(cfg, tub_names, fix=False):
+    '''
+    Check for any problems. Looks at tubs and find problems in any records or images that won't open.
+    If fix is True, then delete images and records that cause problems.
+    '''
+    if tub_names:
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
+    else:
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
+
+    tubs = [dk.parts.Tub(p) for p in tub_paths]
+
+    for t in tubs:
+        tubs.check(fix=fix)
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -169,6 +184,11 @@ if __name__ == '__main__':
         tub = args['--tub']
         model = args['--model']
         train(cfg, tub, model)
+
+    elif args['check']:
+        tub = args['--tub']
+        fix = args['--fix']
+        check(cfg, tub, fix)
 
 
 
