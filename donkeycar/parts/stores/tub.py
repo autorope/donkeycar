@@ -111,6 +111,11 @@ class Tub(object):
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
+    def get_num_records(self):
+        import glob
+        files = glob.glob(os.path.join(self.path, 'record_*.json'))
+        return len(files)
+
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')
 
@@ -226,7 +231,7 @@ class Tub(object):
             
     def train_val_gen(self, X_keys, Y_keys, batch_size=32, record_transform=None, train_split=.8):
         index = self.get_index(shuffled=True)
-        train_cutoff = int(len(index)*.8)
+        train_cutoff = int(len(index)*train_split)
         train_index = index[:train_cutoff]
         val_index = index[train_cutoff:]
     
