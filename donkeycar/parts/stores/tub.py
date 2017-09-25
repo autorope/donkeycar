@@ -121,9 +121,38 @@ class Tub(object):
 
     def get_json_record(self, ix):
         path = self.get_json_record_path(ix)
-        with open(path, 'r') as fp:
-            json_data = json.load(fp)
+        try:
+            with open(path, 'r') as fp:
+                json_data = json.load(fp)
+        except UnicodeDecodeError:
+            raise Exception('bad record: %d. You may want to run `python manage.py check --fix`' % ix)            
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
+            raise
+
         return json_data
+
+    def check(self, fix=False):
+        '''
+        Iterate over all records and make sure we can load them.
+        Optionally remove records that cause a problem.
+        '''
+        for ix in self.get_index(shuffled=False):
+            try:
+                self.get_record(ix)
+            except:
+                if fix == False:
+                    print('problems with record:', self.path, ix)
+                else:
+                    print('problems with record, removing:', self.path, ix)
+                    self.remove_record(ix)
+
+    def remove_record(self, ix):
+        '''
+        remove data associate with a record
+        '''
+        record = self.get_json_record_path(ix)
+        os.unlink(record)
 
     def put_record(self, data):
         """
