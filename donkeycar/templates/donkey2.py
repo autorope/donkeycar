@@ -95,11 +95,9 @@ def drive(cfg, model_path=None):
     #add tub to save data
     inputs=['cam/image_array',
             'user/angle', 'user/throttle', 
-            #'pilot/angle', 'pilot/throttle', 
             'user/mode']
     types=['image_array',
            'float', 'float',  
-           #'float', 'float', 
            'str']
     
     th = dk.parts.TubHandler(path=cfg.DATA_PATH)
@@ -126,7 +124,7 @@ def train(cfg, tub_names, model_name):
     kl = dk.parts.KerasCategorical()
     
     if tub_names:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
     else:
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
@@ -141,7 +139,7 @@ def train(cfg, tub_names, model_name):
     train_gens = itertools.cycle(itertools.chain(*[gen[0] for gen in gens]))
     val_gens = itertools.cycle(itertools.chain(*[gen[1] for gen in gens]))
 
-    model_path = os.path.join(cfg.MODELS_PATH, model_name)
+    model_path = os.path.expanduser(model_name)
 
     total_records = sum([t.get_num_records() for t in tubs])
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
@@ -171,7 +169,7 @@ def check(cfg, tub_names, fix=False):
     If fix is True, then delete images and records that cause problems.
     '''
     if tub_names:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
     else:
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
 
