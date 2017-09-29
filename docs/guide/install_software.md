@@ -115,12 +115,12 @@ or via Putty - username: __pi__, password: __raspberry__ hostname:`<your pi ip a
 
 If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a d2 and donkey directory. 
 
-> Note: Check manage.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open manage.py ```nano ~/d2/manage.py``` and make sure that you see the lines:
+> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
 >
-> * steering_controller = dk.parts.PCA9685(1)
-> * throttle_controller = dk.parts.PCA9685(0)
+> * STEERING_CHANNEL = 1
+> * THROTTLE_CHANNEL = 0
 >
-> The (1) and (0) for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
+> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
 
 ----
 Now let's setup things on your PC. Install varies depending on platform.
