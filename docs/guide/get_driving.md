@@ -45,8 +45,6 @@ The default username is 'pi' and the password is 'raspberry'
 donkey createcar --template donkey2 --path ~/d2
 ```
 
-> For PS3 controller support, edit ~/d2/manage.py following commented instructions there.
-
 #### Start your car.
 Open your car's folder and start our car. 
 ```
@@ -84,6 +82,17 @@ races if you have a pilot that will steer but doesn't control throttle.
 ----
 
 ## Driving with Physical Joystick Controller
+
+You may find that it helps to use a physical joystick device to control your vehicle.
+
+### Setup Bluetooth and pair joystick
+Check the [Controllers](/parts/controllers/#physical-joystick-controller) section to read about setting up the bluetooth connection.
+
+### Enable joystick support
+edit ~/d2/manage.py following commented instructions there.
+```
+nano ~/d2/manage.py
+```
 
 ### Start car
 ```

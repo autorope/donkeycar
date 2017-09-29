@@ -12,7 +12,7 @@ from .actuators.actuators import PWMThrottle
 from .actuators.actuators import MockController
 
 from .controllers.web import LocalWebController
-from .controllers.joystick import JoystickPilot
+from .controllers.joystick import JoystickController
 from .controllers.pid import PIDController
 
 from .sensors.cameras import PiCamera

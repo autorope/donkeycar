@@ -3,10 +3,16 @@
 Scripts to drive a donkey 2 car and train a model for it. 
 
 Usage:
-    manage.py (drive) [--model=<model>]
+    manage.py (drive) [--model=<model>] [--js]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
+
+Options:
+    -h --help     Show this screen.
+    --js          Use physical joystick.
+    --fix         Remove records which cause problems.
+
 """
 
 
@@ -15,22 +21,23 @@ from docopt import docopt
 import donkeycar as dk 
 
 
-def drive(cfg, model_path=None):
+def drive(cfg, model_path=None, use_joystick=False):
     #Initialized car
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
-    ctr = dk.parts.LocalWebController()
+    if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
+        #modify max_throttle closer to 1.0 to have more power
+        #modify steering_scale lower than 1.0 to have less responsive steering
+        ctr = dk.parts.JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
+                                    steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                    auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+    else:        
+        #This web controller will create a web server that is capable
+        #of managing steering, throttle, and modes, and more.
+        ctr = dk.parts.LocalWebController()
 
-    '''
-    #Joystick pilot below is an alternative controller.
-    #Comment out the above ctr= and enable the below ctr= to switch.
-    #modify max_throttle closer to 1.0 to have more power
-    #modify steering_scale lower than 1.0 to have less responsive steering
-    ctr = dk.parts.JoystickPilot(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
-                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE)
-    '''
     
     V.add(ctr, 
           inputs=['cam/image_array'],
@@ -95,11 +102,9 @@ def drive(cfg, model_path=None):
     #add tub to save data
     inputs=['cam/image_array',
             'user/angle', 'user/throttle', 
-            #'pilot/angle', 'pilot/throttle', 
             'user/mode']
     types=['image_array',
            'float', 'float',  
-           #'float', 'float', 
            'str']
     
     th = dk.parts.TubHandler(path=cfg.DATA_PATH)
@@ -126,7 +131,7 @@ def train(cfg, tub_names, model_name):
     kl = dk.parts.KerasCategorical()
     
     if tub_names:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
     else:
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
@@ -141,7 +146,7 @@ def train(cfg, tub_names, model_name):
     train_gens = itertools.cycle(itertools.chain(*[gen[0] for gen in gens]))
     val_gens = itertools.cycle(itertools.chain(*[gen[1] for gen in gens]))
 
-    model_path = os.path.join(cfg.MODELS_PATH, model_name)
+    model_path = os.path.expanduser(model_name)
 
     total_records = sum([t.get_num_records() for t in tubs])
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
@@ -171,7 +176,7 @@ def check(cfg, tub_names, fix=False):
     If fix is True, then delete images and records that cause problems.
     '''
     if tub_names:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
     else:
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
 
@@ -185,7 +190,7 @@ if __name__ == '__main__':
     cfg = dk.load_config()
     
     if args['drive']:
-        drive(cfg, model_path = args['--model'])
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
     
     elif args['calibrate']:
         calibrate()
