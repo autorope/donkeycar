@@ -266,23 +266,6 @@ class JoystickController():
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
                 self.on_throttle_changes()
-
-                
-            if button == 'triangle' and button_state == 1:
-                '''
-                switch modes from:
-                user: human controlled steer and throttle
-                local_angle: ai steering, human throttle
-                local: ai steering, ai throttle
-                '''
-                if self.mode == 'user':
-                    self.mode = 'local_angle'
-                elif self.mode == 'local_angle':
-                    self.mode = 'local'
-                else:
-                    self.mode = 'user'
-                print('new mode:', self.mode)
-
             
             if button == 'trigger' and button_state == 1:
                 '''
