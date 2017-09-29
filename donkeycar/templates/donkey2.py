@@ -7,7 +7,7 @@ Usage:
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
-    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>)
+    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
 
 Options:
     -h --help     Show this screen.
@@ -216,7 +216,7 @@ def check(cfg, tub_names, fix=False):
     for t in tubs:
         tubs.check(fix=fix)
 
-def anaylze(cfg, tub_names, op):
+def anaylze(cfg, tub_names, op, record):
     '''
     look at the tub data and produce some analysis
     '''
@@ -224,17 +224,17 @@ def anaylze(cfg, tub_names, op):
 
     if op == 'histogram':
         import matplotlib.pyplot as plt
-        steering_samples = []
-       #typical keys are ['user/angle', 'user/throttle']
+        samples = []
         for tub in tubs:
             num_records = tub.get_num_records()
             for iRec in range(0, num_records):
                 json_data = tub.get_json_record(iRec)
-                angle = json_data['user/angle']
-                steering_samples.append(float(angle))
+                sample = json_data[record]
+                samples.append(float(sample))
 
-        plt.hist(steering_samples, 50)
-        plt.show()        
+        plt.hist(samples, 50)
+        plt.xlabel(record)
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -260,7 +260,8 @@ if __name__ == '__main__':
     elif args['analyze']:
         tub = args['--tub']
         op = args['--op']
-        anaylze(cfg, tub, op)
+        rec = args['--rec']
+        anaylze(cfg, tub, op, rec)
 
 
 
