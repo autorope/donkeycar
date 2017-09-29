@@ -187,7 +187,7 @@ class Joystick():
         return button, button_state, axis, axis_val
 
 
-class JoystickController():
+class JoystickController(object):
     '''
     Joystick client using access to local physical input
     '''

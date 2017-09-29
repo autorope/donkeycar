@@ -7,6 +7,7 @@ Usage:
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
+    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>)
 
 Options:
     -h --help     Show this screen.
@@ -14,8 +15,6 @@ Options:
     --fix         Remove records which cause problems.
 
 """
-
-
 import os
 from docopt import docopt
 import donkeycar as dk 
@@ -145,6 +144,18 @@ def expand_path_masks(paths):
     return expanded_paths
 
 
+def gather_tubs(cfg, tub_names):
+    
+    if tub_names:
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        tub_paths = expand_path_masks(tub_paths)
+    else:
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
+
+    tubs = [dk.parts.Tub(p) for p in tub_paths]
+    return tubs
+
+
 def train(cfg, tub_names, model_name):
     '''
     use the specified data in tub_names to train an artifical neural network
@@ -159,12 +170,7 @@ def train(cfg, tub_names, model_name):
 
     kl = dk.parts.KerasCategorical()
     
-    if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]        
-        tub_paths = expand_path_masks(tub_paths)
-    else:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-    tubs = [dk.parts.Tub(p) for p in tub_paths]
+    tubs = gather_tubs(cfg, tub_names)
 
     import itertools
 
@@ -205,16 +211,31 @@ def check(cfg, tub_names, fix=False):
     Check for any problems. Looks at tubs and find problems in any records or images that won't open.
     If fix is True, then delete images and records that cause problems.
     '''
-    if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        tub_paths = expand_path_masks(tub_paths)
-    else:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-
-    tubs = [dk.parts.Tub(p) for p in tub_paths]
+    tubs = gather_tubs(cfg, tub_names)
 
     for t in tubs:
         tubs.check(fix=fix)
+
+def anaylze(cfg, tub_names, op):
+    '''
+    look at the tub data and produce some analysis
+    '''
+    tubs = gather_tubs(cfg, tub_names)
+
+    if op == 'histogram':
+        import matplotlib.pyplot as plt
+        steering_samples = []
+       #typical keys are ['user/angle', 'user/throttle']
+        for tub in tubs:
+            num_records = tub.get_num_records()
+            for iRec in range(0, num_records):
+                json_data = tub.get_json_record(iRec)
+                angle = json_data['user/angle']
+                steering_samples.append(float(angle))
+
+        plt.hist(steering_samples, 50)
+        plt.show()        
+
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -235,6 +256,11 @@ if __name__ == '__main__':
         tub = args['--tub']
         fix = args['--fix']
         check(cfg, tub, fix)
+
+    elif args['analyze']:
+        tub = args['--tub']
+        op = args['--op']
+        anaylze(cfg, tub, op)
 
 
 

@@ -17,7 +17,6 @@ import socket
 import shutil
 import argparse
 
-import donkeycar as dk
 from .tub import TubManager
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -122,7 +121,7 @@ class FindCar(BaseCommand):
         
         
         
-class CalibrateCar(BaseCommand):
+class CalibrateCar(BaseCommand):    
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
@@ -130,7 +129,9 @@ class CalibrateCar(BaseCommand):
         parsed_args = parser.parse_args(args)
         return parsed_args
 
-    def run(self, args)        :
+    def run(self, args):
+        import donkeycar as dk
+    
         args = self.parse_args(args)
         channel = int(args.channel)
         c = dk.parts.PCA9685(channel)
