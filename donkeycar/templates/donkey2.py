@@ -22,7 +22,17 @@ import donkeycar as dk
 
 
 def drive(cfg, model_path=None, use_joystick=False):
-    #Initialized car
+    '''
+    Construct a working robotic vehicle from many parts.
+    Each part runs as a job in the Vehicle loop, calling either
+    it's run or run_threaded method depending on the constructor flag `threaded`.
+    All parts are updated one after another at the framerate given in
+    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
+    Parts may have named outputs and inputs. The framework handles passing named outputs
+    to parts requesting the same named input.
+    '''
+
+    #Initialize car
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
@@ -118,9 +128,28 @@ def drive(cfg, model_path=None, use_joystick=False):
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
 
+def expand_path_masks(paths):
+    '''
+    take a list of paths and expand any wildcards
+    returns a new list of paths fully expanded
+    '''
+    import glob
+    expanded_paths = []
+    for path in paths:
+        if '*' in path or '?' in path:
+            mask_paths = glob.glob(path)
+            expanded_paths += mask_paths
+        else:
+            expanded_paths.append(path)
+
+    return expanded_paths
+
 
 def train(cfg, tub_names, model_name):
-    
+    '''
+    use the specified data in tub_names to train an artifical neural network
+    saves the output trained model as model_name
+    '''
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
     
@@ -131,7 +160,8 @@ def train(cfg, tub_names, model_name):
     kl = dk.parts.KerasCategorical()
     
     if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]        
+        tub_paths = expand_path_masks(tub_paths)
     else:
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
     tubs = [dk.parts.Tub(p) for p in tub_paths]
@@ -177,6 +207,7 @@ def check(cfg, tub_names, fix=False):
     '''
     if tub_names:
         tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        tub_paths = expand_path_masks(tub_paths)
     else:
         tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
 

@@ -41,13 +41,14 @@ class CreateCar(BaseCommand):
         parser = argparse.ArgumentParser(prog='createcar', usage='%(prog)s [options]')
         parser.add_argument('--path', help='path where to create car folder')
         parser.add_argument('--template', help='name of car template to use')
+        parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
         
         parsed_args = parser.parse_args(args)
         return parsed_args
         
     def run(self, args):
         args = self.parse_args(args)
-        self.create_car(path=args.path, template=args.template)
+        self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
     
     def create_car(self, path, template, overwrite=False):
         """
@@ -74,13 +75,13 @@ class CreateCar(BaseCommand):
         car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
         
-        if os.path.exists(car_app_path):
+        if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
         else:
             print("Copying car application template: {}".format(template))
             shutil.copyfile(app_template_path, car_app_path)
             
-        if os.path.exists(car_config_path):
+        if os.path.exists(car_config_path) and not overwrite:
             print('Car config already exists. Delete it and rerun createcar to replace.')
         else:
             print("Copying car config defaults. Adjust these before starting your car.")

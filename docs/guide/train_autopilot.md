@@ -29,11 +29,11 @@ rsync -r pi@<your_pi_ip_address>:~/d2/data/  ~/d2/data/
 
 
 ## Train a model.
-* In the same terminal you can now run the training script on the latest tub by passing the full path to that tub as an argument.
+* In the same terminal you can now run the training script on the latest tub by passing the path to that tub as an argument. You can optionally pass path masks, such as ./data/* or ./data/tub_?_17-08-28 to gather multiple tubs. For example:
 ```bash
  python ~/d2/manage.py train --tub <tub folder names comma separated> --model ./models/mypilot
 ```
-Optionally you can pass no arguments for the tub, and then all tubs will be used.
+Optionally you can pass no arguments for the tub, and then all tubs will be used in the default data dir.
 ```bash
  python ~/d2/manage.py train --model ~/d2/models/mypilot
 ```
