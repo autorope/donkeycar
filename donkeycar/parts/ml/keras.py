@@ -161,10 +161,10 @@ def default_linear():
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     
     
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer='adam',
                   loss={'angle_out': 'mean_squared_error', 
                         'throttle_out': 'mean_squared_error'},
-                  loss_weights={'angle_out': 0.9, 'throttle_out': .001})
+                  loss_weights={'angle_out': 0.5, 'throttle_out': .5})
 
     return model
 
