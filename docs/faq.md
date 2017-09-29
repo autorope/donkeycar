@@ -41,7 +41,7 @@ sudo apt-get upgrade
 ``` bash
 sudo apt-get install git
 sudo apt-get install python3 python3-pip python3-virtualenv python3-dev virtualenv
-sudo apt-get install build-essential gofortran libhd5-dev
+sudo apt-get install build-essential gfortran libhdf5-dev
 ```
 
 * Get latest donkey code:

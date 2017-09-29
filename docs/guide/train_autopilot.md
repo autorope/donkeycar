@@ -24,7 +24,7 @@ to a PC computer to train.
 In a new terminal session on your host PC use rsync to copy your cars 
 folder from the raspberrypi.
 ```bash
-rsync -r pi@<your_pi_ip_address>:~/d2/data  ~/d2/data
+rsync -r pi@<your_pi_ip_address>:~/d2/data/  ~/d2/data/
 ```
 
 
@@ -41,7 +41,7 @@ Optionally you can pass no arguments for the tub, and then all tubs will be used
 
 * Now you can use rsync again to move your pilot back to your car. 
 ```bash
-rsync ~/d2/models pi@<your_ip_address>:~/d2/models
+rsync -r ~/d2/models/ pi@<your_ip_address>:~/d2/models/
 ```
 
 * Now you can start your car again and pass it your model to drive.
