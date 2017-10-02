@@ -35,6 +35,7 @@ from .stores.tub import TubReader
 from .stores.tub import TubWriter
 from .stores.tub import TubHandler
 from .stores.tub import TubImageStacker
+from .stores.tub import TubTimeStacker
 
 from .transforms import Lambda
 

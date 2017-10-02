@@ -38,7 +38,7 @@ class KerasPilot():
         #checkpoint to save model after each epoch
         save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
                                                     monitor='val_loss', 
-                                                    verbose=1, 
+                                                    verbose=0, 
                                                     save_best_only=True, 
                                                     mode='min')
         
@@ -46,7 +46,7 @@ class KerasPilot():
         early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
                                                    min_delta=.0005, 
                                                    patience=5, 
-                                                   verbose=1, 
+                                                   verbose=0, 
                                                    mode='auto')
         
         callbacks_list = [save_best, early_stop]
@@ -80,18 +80,18 @@ class KerasCategorical(KerasPilot):
     
     
 class KerasLinear(KerasPilot):
-    def __init__(self, model=None, *args, **kwargs):
+    def __init__(self, model=None, num_outputs=None, *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
         if model:
             self.model = model
+        elif num_outputs is not None:
+            self.model = default_n_linear(num_outputs)
         else:
             self.model = default_linear()
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle, throttle = self.model.predict(img_arr)
-        #angle_certainty = max(angle_binned[0])
-        return angle[0][0], throttle[0][0]
-
+        outputs = self.model.predict(img_arr)
+        return outputs[0][0], outputs[0][1]
 
 
 
@@ -170,7 +170,7 @@ def default_linear():
 
 
 
-def default_relu():
+def default_n_linear(num_outputs):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
@@ -189,19 +189,17 @@ def default_relu():
     x = Dropout(.1)(x)
     x = Dense(50, activation='relu')(x)
     x = Dropout(.1)(x)
-    #categorical output of the angle
-    angle_out = Dense(1, activation='relu', name='angle_out')(x)
+
+    outputs = [] 
     
-    #continous output of throttle
-    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='relu', name='n_outputs' + str(i))(x))
+        
+    model = Model(inputs=[img_in], outputs=outputs)
     
-    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     
-    
-    model.compile(optimizer='rmsprop',
-                  loss={'angle_out': 'mean_squared_error', 
-                        'throttle_out': 'mean_squared_error'},
-                  loss_weights={'angle_out': 0.9, 'throttle_out': .001})
+    model.compile(optimizer='adam',
+                  loss='mse')
 
     return model
 

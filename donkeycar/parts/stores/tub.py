@@ -107,6 +107,8 @@ class Tub(object):
                 #print('wrote record:', json_data)
         except TypeError:
             print('troubles with record:', json_data)
+        except FileNotFoundError:
+            raise
         except:
             print("Unexpected error:", sys.exc_info()[0])
             raise
@@ -126,6 +128,8 @@ class Tub(object):
                 json_data = json.load(fp)
         except UnicodeDecodeError:
             raise Exception('bad record: %d. You may want to run `python manage.py check --fix`' % ix)            
+        except FileNotFoundError:
+            raise
         except:
             print("Unexpected error:", sys.exc_info()[0])
             raise
@@ -354,6 +358,7 @@ class TubImageStacker(Tub):
     '''
     
     def stack3Images(self, img_a, img_b, img_c):
+        import cv2
         '''
         convert 3 rgb images into grayscale and put them into the 3 channels of
         a single output image
@@ -394,5 +399,59 @@ class TubImageStacker(Tub):
                 elif typ == 'image_array':
                     img = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
                     val = np.array(img)
+
+        return data
+
+class TubTimeStacker(TubImageStacker):
+    '''
+    A Tub for training N with records stacked through time. 
+    The idea here is to force the network to learn to look ahead in time.
+    Init with an array of time offsets from the current time.
+    '''
+
+    def __init__(self, frame_list, *args, **kwargs):
+        '''
+        frame_list of [0, 10] would stack the current and 10 frames from now records togther in a single record
+        with just the current image returned.
+        [5, 90, 200] would return 3 frames of records, ofset 5, 90, and 200 frames in the future.
+
+        '''
+        super(TubTimeStacker, self).__init__(*args, **kwargs)
+        self.frame_list = frame_list
+  
+    def get_record(self, ix):
+        '''
+        stack the N records into a single record.
+        Each key value has the record index with a suffix of _N where N is
+        the frame offset into the data.
+        '''
+        data = {}
+        for i, iOffset in enumerate(self.frame_list):
+            iRec = ix + iOffset
+            try:
+                json_data = self.get_json_record(iRec)
+            except FileNotFoundError:
+                pass
+            except:
+                pass
+            for key, val in json_data.items():
+                typ = self.get_input_type(key)
+
+                #load only the first image saved as separate files
+                if typ == 'image' and i == 0:
+                    val = Image.open(os.path.join(self.path, val))
+                    data[key] = val                    
+                elif typ == 'image_array' and i == 0:
+                    #img = Image.open(os.path.join(self.path, val))
+                    #val = np.array(img)
+                    d = super(TubTimeStacker, self).get_record(ix)
+                    data[key] = d[key]
+                else:
+                    '''
+                    we append a _offset to the key
+                    so user/angle out now be user/angle_0
+                    '''
+                    new_key = key + "_" + str(iOffset)
+                    data[new_key] = val
 
         return data
