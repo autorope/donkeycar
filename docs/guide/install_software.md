@@ -1,5 +1,13 @@
 # Install Software
 
+This guide will help you to setup the software to run Donkey on your Raspberry Pi, as well as the host PC operating system of your choice.
+
+* Setup [RaspberryPi](#get-the-raspberry-pi-working)
+* Setup [Linux Host PC](#install-donkeycar-on-linux)
+* Setup [Windows Host PC](#install-donkeycar-on-windows)
+* Setup [Mac Host PC](#install-donkeycar-on-mac)
+
+----
 ### Get the Raspberry Pi working.
 
 Before we can do anything we have to get our car's computer connected to the 
@@ -32,8 +40,8 @@ ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 
 network={
-    ssid=”<your network name>”
-    psk=”<your password>”
+    ssid="<your network name>"
+    psk="<your password>"
 }
 
 ```
@@ -73,10 +81,10 @@ The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try 
 If you are having troubles locating your Pi on the network, you will want to plug in an HDMI monitor and USB keyboard into the Pi. Boot it. Login with username: __pi__, password: __raspberry__. Then try the command:
 
 ```
-ifconfig
+ifconfig wlan0
 ```
 
-Look for a section called wlan0. If this has a valid ip V4 address, 4 numbers separated with a dot, then you can try that with your ssh command. If you don't see anything like that, then your wifi config might have a mistake. You can try to fix with
+If this has a valid ip V4 address, 4 numbers separated with a dot, then you can try that with your ssh command. If you don't see anything like that, then your wifi config might have a mistake. You can try to fix with
 
 ```
 sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
@@ -107,12 +115,12 @@ or via Putty - username: __pi__, password: __raspberry__ hostname:`<your pi ip a
 
 If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a d2 and donkey directory. 
 
-> Note: For a short time there was a bug in manage.py that used different settings for the PWM channel for steering and throttle. Open manage.py ```nano ~/d2/manage.py``` and make sure that you see the lines:
+> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
 >
-> * steering_controller = dk.parts.PCA9685(1)
-> * throttle_controller = dk.parts.PCA9685(0)
+> * STEERING_CHANNEL = 1
+> * THROTTLE_CHANNEL = 0
 >
-> The (1) and (0) for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
+> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
 
 ----
 Now let's setup things on your PC. Install varies depending on platform.
@@ -120,7 +128,8 @@ Now let's setup things on your PC. Install varies depending on platform.
 
 ## Install donkeycar on Linux
 
-```
+```bash
+sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
 virtualenv env -p python3
 source env/bin/activate
 git clone https://github.com/wroscoe/donkey donkeycar
@@ -131,7 +140,7 @@ pip install -e donkeycar
 
 ## Install donkeycar on Windows
 
-* Install [miniconda Python 3.6 64 bit](https://conda.io/miniconda.html)
+* Install [miniconda Python 3.6 64 bit](https://conda.io/miniconda.html). Be sure to check the box to allow it to modify your system path variable to add conda.
 
 * Install [git 64 bit](https://git-scm.com/download/win)
 

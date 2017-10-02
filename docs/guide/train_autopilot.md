@@ -16,31 +16,36 @@ your car with `Ctrl-c` in the ssh session for your car.
 5. The data you've collected is in the data folder in the most recent tub folder.
 
 
-## Transfer data from your car to you computer. 
+## Transfer data from your car to your computer. 
 
-Since the Raspberry Pi is not very powerful we need to transfer the data
-to our computer to train. 
+Since the Raspberry Pi is not very powerful, we need to transfer the data
+to a PC computer to train.
 
-In a new terminal session on your comptuer use rsync to copy your cars 
-folder. 
-```
-rsync -r pi@<your_pi_ip_address>:~/d2/data  ~/d2/data
+In a new terminal session on your host PC use rsync to copy your cars 
+folder from the raspberrypi.
+```bash
+rsync -r pi@<your_pi_ip_address>:~/d2/data/  ~/d2/data/
 ```
 
 
 ## Train a model.
-5. In the same terminal you can now run the training script on the latest tub.
+* In the same terminal you can now run the training script on the latest tub by passing the path to that tub as an argument. You can optionally pass path masks, such as ./data/* or ./data/tub_?_17-08-28 to gather multiple tubs. For example:
+```bash
+ python ~/d2/manage.py train --tub <tub folder names comma separated> --model ./models/mypilot
 ```
- python ~/d2/manage.py train --tub <tub folder names comma separated> --model mypilot
+Optionally you can pass no arguments for the tub, and then all tubs will be used in the default data dir.
+```bash
+ python ~/d2/manage.py train --model ~/d2/models/mypilot
 ```
 
-6. Now you can use rsync again to move your pilot back to your car. 
-```
-rsync ~/d2/models pi@<your_ip_address>:~/d2/models
+
+* Now you can use rsync again to move your pilot back to your car. 
+```bash
+rsync -r ~/d2/models/ pi@<your_ip_address>:~/d2/models/
 ```
 
-7. Now you can start your car again and pass it your model to drive.
-```
+* Now you can start your car again and pass it your model to drive.
+```bash
 python manage.py drive --model ~/d2/models/mypilot
 ```
 
