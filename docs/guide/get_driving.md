@@ -88,16 +88,15 @@ You may find that it helps to use a physical joystick device to control your veh
 ### Setup Bluetooth and pair joystick
 Check the [Controllers](/parts/controllers/#physical-joystick-controller) section to read about setting up the bluetooth connection.
 
-### Enable joystick support
-edit ~/d2/manage.py following commented instructions there.
-```
-nano ~/d2/manage.py
-```
-
 ### Start car
 ```
 cd ~/d2
-python manage.py drive
+python manage.py drive --js
+```
+
+Optionally, if you want joystick use to be sticky and don't want to add the --js each time, modify your config.py so that USE_JOYSTICK_AS_DEFAULT = True
+```
+nano config.py
 ```
 
 
@@ -107,21 +106,32 @@ python manage.py drive
 * right analog stick forward to increase forward throttle
 * pull back twice on right analog to reverse
 
-> Whenever the throttle is not zero, driving data will be recorded.
+> Whenever the throttle is not zero, driving data will be recorded - as long as you are in User mode!
+
+* select button switches modes - "User, Local Angle, Local(angle and throttle)"
+* Triangle - increase max throtlle
+* X  - decrease max thottle
+* Circle - toggle recording(disabled by default. auto record on throttle is enabled by default)
+* dpad up - increase throttle scale
+* dpad down - decrease throttle scale
+* dpad left - increase steering scale
+* dpad right - decrease steering scale
+* start - toggle constant throttle. Sets to max throttle ( modified by X and Triangle ).
 
 
 ### Start car for self-driving
 ```
 cd ~/d2
-python manage.py drive --model <path/to/model>
+python manage.py drive --model <path/to/model> --js
 ```
 
-Hit Triangle button to toggle between three modes - User, Local Angle, and Local Throttle & Angle.
+Hit Select button to toggle between three modes - User, Local Angle, and Local Throttle & Angle.
 
 * User - User controls both steering and throttle with joystick
 * Local Angle - Ai controls steering. User controls throttle.
 * Local Throttle & Angle - Ai controls both steering and throttle
 
+When the car is in Local Angle mode, the NN will steer. You must provide throttle.
 
 
 
