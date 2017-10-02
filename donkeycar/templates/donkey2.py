@@ -213,8 +213,8 @@ def check(cfg, tub_names, fix=False):
     '''
     tubs = gather_tubs(cfg, tub_names)
 
-    for t in tubs:
-        tubs.check(fix=fix)
+    for tub in tubs:
+        tub.check(fix=fix)
 
 def anaylze(cfg, tub_names, op, record):
     '''
