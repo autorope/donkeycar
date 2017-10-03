@@ -41,3 +41,5 @@ from .transforms import Lambda
 
 from .simulations import SquareBoxCamera
 from .simulations import MovingSquareTelemetry
+
+from .cv.cv import ImgStack

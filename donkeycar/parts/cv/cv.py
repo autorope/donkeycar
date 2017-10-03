@@ -52,7 +52,7 @@ class ImgCrop:
         
 
 
-class ImgFIFO:
+class ImgStack:
     """
     Stack N previous images into a single N channel image, after converting each to grayscale.
     The most recent image is the last channel, and pushes previous images towards the front.

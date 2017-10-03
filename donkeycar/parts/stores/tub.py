@@ -193,6 +193,8 @@ class Tub(object):
     def get_record(self, ix):
 
         json_data = self.get_json_record(ix)
+        #print(json_data)
+        
         data={}
         for key, val in json_data.items():
             typ = self.get_input_type(key)
@@ -205,6 +207,7 @@ class Tub(object):
                 val = np.array(img)
 
             data[key] = val
+
 
         return data
 
@@ -394,10 +397,10 @@ class TubImageStacker(Tub):
 
                 #load objects that were saved as separate files
                 if typ == 'image':
-                    val = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
+                    val = self.stack3Images(data_ch0[key], data_ch1[key], data[key])
                     data[key] = val
                 elif typ == 'image_array':
-                    img = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
+                    img = self.stack3Images(data_ch0[key], data_ch1[key], data[key])
                     val = np.array(img)
 
         return data
@@ -453,5 +456,8 @@ class TubTimeStacker(TubImageStacker):
                     '''
                     new_key = key + "_" + str(iOffset)
                     data[new_key] = val
+                    #print(new_key, val, end=' ')
 
+        #print(data)
+        #print()
         return data
