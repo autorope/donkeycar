@@ -131,7 +131,7 @@ def gradcam_video(cfg, tub_path, model_path, out):
             predicted_angle, _ = model.predict(img_in)
             predicted_class = np.argmax(predicted_angle[0])
             cam, heatmap = grad_cam(model, img_in, predicted_class, 'conv2d_5')
-            if (i % 100 == 0): print('Processing %.2f% ...'.format(i*100./len(idx)))
+            if (i % 100 == 0): print('Processing {}% ...'.format(int(i*100./len(idx))))
             img = mix_heatmap(img_in, heatmap)
             img = cv2.resize(img, (0, 0), fx = 4, fy = 4, interpolation = cv2.INTER_LINEAR)
             cv2.imwrite(os.path.join(temp_dir, '{0:06d}.jpg'.format(i)), img)
