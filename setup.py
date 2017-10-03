@@ -39,6 +39,7 @@ setup(name='donkeycar',
                       'requests',
                       'keras',
                       'h5py',
+                      'opencv-python',
                      ],
 
     extras_require={
