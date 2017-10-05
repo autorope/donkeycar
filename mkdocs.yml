@@ -15,6 +15,7 @@ pages:
         - 'Get driving.': guide/get_driving.md
         - 'Calibrate steering and throttle.': guide/calibrate.md
         - 'Train an autopilot.': guide/train_autopilot.md
+        - 'Donkey Simulator.': guide/simulator.md
     - Parts: 
         - 'About': parts/about.md
         - 'Actuators': parts/actuators.md
