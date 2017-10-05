@@ -42,4 +42,6 @@ from .transforms import Lambda
 from .simulations import SquareBoxCamera
 from .simulations import MovingSquareTelemetry
 
+from .sim_server import SteeringServer
+
 from .cv.cv import ImgStack
