@@ -8,7 +8,7 @@ Usage:
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
     manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
-    manage.py (grad-cam) (--tub=<tub>) (--model=<model>) (--out=<out.mp4>)
+    manage.py (visualize) (--tub=<tub>) (--model=<model>) (--out=<out.mp4>) [--grad-cam]
 
 Options:
     -h --help     Show this screen.
@@ -19,7 +19,7 @@ Options:
 import os
 from docopt import docopt
 import donkeycar as dk 
-from donkeycar.gradcam import gradcam_video
+from donkeycar.visualization import visualize
 
 
 def drive(cfg, model_path=None, use_joystick=False):
@@ -265,11 +265,12 @@ if __name__ == '__main__':
         rec = args['--rec']
         anaylze(cfg, tub, op, rec)
 
-    elif args['grad-cam']:
+    elif args['visualize']:
         tub = args['--tub']
         model = args['--model']
         out = args['--out']
-        gradcam_video(cfg, tub, model, out)
+        gradcam = args['--grad-cam']
+        visualize(cfg, tub, model, out, gradcam)
 
 
 
