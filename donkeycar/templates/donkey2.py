@@ -8,7 +8,7 @@ Usage:
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
     manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
-    manage.py (visualize) (--tub=<tub>) (--model=<model>) (--out=<out.mp4>) [--grad-cam]
+    manage.py (visualize) (--tub=<tub>) (--model=<model>) (--out=<out.mp4>)
 
 Options:
     -h --help     Show this screen.
@@ -269,8 +269,7 @@ if __name__ == '__main__':
         tub = args['--tub']
         model = args['--model']
         out = args['--out']
-        gradcam = args['--grad-cam']
-        visualize(cfg, tub, model, out, gradcam)
+        visualize(cfg, tub, model, out)
 
 
 
