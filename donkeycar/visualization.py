@@ -202,34 +202,14 @@ def activationModel(model):
         else:
            act_stack.insert(0, layer)
 
-  # grab the activation layers connected to the conv layers
-  # TODO - this is a bad way to do it!!
-  #for layer in model.layers:
-  #  if layer.name.startswith("activ"):
-  #      act_stack.insert(0, layer)
-
-  #if (len(act_stack)==0):
-  #  for layer in model.layers:
-  #    if layer.name.startswith("elu"):
-  #      act_stack.insert(0, layer)
-
-
-  #if (len(act_stack)<len(current_stack)):
-  #  act_stack.insert(0,current_stack[0])
-  #start=len(act_stack)-len(current_stack)
-  #act_stack=act_stack[start:]
-
-  #current_stack.pop(0)
-  #act_stack.pop(0)
-
-  #print("current stack:")
-  #for layer in current_stack:
-    #print(layer.name)
-    #print(layer.outbound_nodes[0].outbound_layer.name)
-  #print("act stack:")
-  #for layer in act_stack:
-    #print(layer.name)
-  #print("---------")
+  print("current stack:")
+  for layer in current_stack:
+    print(layer.name)
+    print(layer.outbound_nodes[0].outbound_layer.name)
+  print("act stack:")
+  for layer in act_stack:
+    print(layer.name)
+  print("---------")
 
 
 
@@ -280,14 +260,11 @@ def activationModel(model):
     #print("nb_col,nb_row:",nb_col,nb_row)
     #print("bigger_shape:",bigger_shape)
     name='deconv_new_'+str(i)
-    #print(name)
-    #print('Deconvolution2D(1,',nb_row, nb_col,'output_shape=',bigger_shape,'subsample= ',subsample,'border_mode=valid','activation=relu','init=one','name=',name)
+    print(name)
+    print('Deconvolution2D(1,',nb_row, nb_col,'output_shape=',bigger_shape,'subsample= ',subsample,'border_mode=valid','activation=relu','init=one','name=',name)
     d1 = Deconvolution2D(1, nb_row, nb_col,output_shape=bigger_shape,subsample= subsample,border_mode='valid',activation='relu',init='one',name=name)(r1)
 
-    #attrs = vars(d1)
-    #print (', '.join("%s: %s" % item for item in attrs.items()))
-
-    if (d1._keras_shape[1]!=bigger_shape[1]):
+    if (d1._keras_shape[1]!=bigger_shape[1] or d1._keras_shape[2]!=bigger_shape[2]):
        print("d1:",d1._keras_shape)
        pad=0
        if (d1._keras_shape[1]<bigger_shape[1]):
@@ -308,10 +285,6 @@ def activationModel(model):
        lastone=c1
     else:
        lastone=d1
-
-    #d4 = Deconvolution2D(1, 3, 3,output_shape=(None,4,17,1),subsample= (2, 2),border_mode='valid',activation='relu',init='one')(r4)
-
-
 
   model2 = Model(input=model.input,output=[lastone])
   model2.summary()
