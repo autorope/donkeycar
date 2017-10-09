@@ -141,6 +141,40 @@ class CalibrateCar(BaseCommand):
             c.run(pmw)
 
 
+class MakeMovie(BaseCommand):    
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='movie', usage='%(prog)s [options]')
+        parser.add_argument('--tub', help='The tub to make movie from')
+        parser.add_argument('--out', help='The movie filename to create')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        import donkeycar as dk
+        import moviepy.editor as mpy
+
+        
+        cfg = dk.load_config('./config.py')
+        args = self.parse_args(args)
+        self.tub = dk.parts.Tub(args.tub)
+        self.num_rec = self.tub.get_num_records()
+        self.iRec = 0
+
+        print('making movie', args.out, 'from', self.num_rec, 'images')
+        clip = mpy.VideoClip(self.make_frame, duration=self.num_rec//20) # 2 seconds
+        clip.write_videofile(args.out,fps=20)
+
+        print('done')
+
+    def make_frame(self, t):
+        self.iRec = self.iRec + 1
+        if self.iRec == self.num_rec - 1:
+            return None
+        rec = self.tub.get_record(self.iRec)
+        image = rec['cam/image_array']
+        
+        return image # returns a 8-bit RGB array
 
 def execute_from_command_line():
     
@@ -149,6 +183,7 @@ def execute_from_command_line():
             'findcar': FindCar,
             'calibrate': CalibrateCar,
             'tub': TubManager,
+            'movie': MakeMovie,
             #'calibratesteering': CalibrateSteering,
                 }
     
