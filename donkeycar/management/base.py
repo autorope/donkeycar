@@ -184,8 +184,8 @@ class MakeMovie(BaseCommand):
         self.iRec = 0
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
-        clip = mpy.VideoClip(self.make_frame, duration=self.num_rec//20) # 2 seconds
-        clip.write_videofile(args.out,fps=20)
+        clip = mpy.VideoClip(self.make_frame, duration=self.num_rec//cfg.DRIVE_LOOP_HZ)
+        clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
 
         print('done')
 
