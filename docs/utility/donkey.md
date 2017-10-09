@@ -56,7 +56,7 @@ This command allows you to create a movie file from the images in a Tub.
 
 Usage:
 ```bash
-donkey movie --tub=<dir> [--out=<tub_movie.mp4>] [--config=<config.py>]
+donkey makemovie --tub=<dir> [--out=<tub_movie.mp4>] [--config=<config.py>]
 ```
 
 * This command may be run from ~/d2 dir

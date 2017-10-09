@@ -144,7 +144,7 @@ class CalibrateCar(BaseCommand):
 class MakeMovie(BaseCommand):    
     
     def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='movie')
+        parser = argparse.ArgumentParser(prog='makemovie')
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
@@ -184,7 +184,7 @@ class MakeMovie(BaseCommand):
         self.iRec = 0
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
-        clip = mpy.VideoClip(self.make_frame, duration=self.num_rec//cfg.DRIVE_LOOP_HZ)
+        clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
         clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
 
         print('done')
@@ -213,7 +213,7 @@ def execute_from_command_line():
             'findcar': FindCar,
             'calibrate': CalibrateCar,
             'tub': TubManager,
-            'movie': MakeMovie,
+            'makemovie': MakeMovie,
             #'calibratesteering': CalibrateSteering,
                 }
     
