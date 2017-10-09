@@ -45,6 +45,8 @@ The default username is 'pi' and the password is 'raspberry'
 donkey createcar --template donkey2 --path ~/d2
 ```
 
+See also [more information.](/utility/donkey/#create-car)
+
 #### Start your car.
 Open your car's folder and start our car. 
 ```

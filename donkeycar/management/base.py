@@ -125,7 +125,7 @@ class CalibrateCar(BaseCommand):
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
-        parser.add_argument('--channel', help='The channel youd like to calibrate [1-15]')
+        parser.add_argument('--channel', help='The channel youd like to calibrate [0-15]')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
