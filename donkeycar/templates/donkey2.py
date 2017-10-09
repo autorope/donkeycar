@@ -7,7 +7,7 @@ Usage:
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
-    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
+    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=histogram|plot) (--rec=<"user/angle">) [--model=<model path>]
     manage.py (sim) [--model=<model>]
 
 Options:
@@ -217,7 +217,7 @@ def check(cfg, tub_names, fix=False):
     for tub in tubs:
         tub.check(fix=fix)
 
-def anaylze(cfg, tub_names, op, record):
+def anaylze(cfg, tub_names, op, record, model_path):
     '''
     look at the tub data and produce some analysis
     '''
@@ -237,6 +237,30 @@ def anaylze(cfg, tub_names, op, record):
         plt.xlabel(record)
         plt.show()
 
+    elif op == 'plot':
+        '''
+        make a gaph of predicted vs actual
+        '''
+        import matplotlib.pyplot as plt
+        kl = dk.parts.KerasCategorical()
+        kl.load(os.path.expanduser(model_path))
+
+        samples = []
+        pred_samples = []
+        for tub in tubs:
+            num_records = tub.get_num_records()
+            for iRec in range(0, num_records):
+                rec = tub.get_record(iRec)
+                sample = rec[record]
+                samples.append(float(sample))
+                img = rec['cam/image_array']
+                steering, throttle = kl.run(img)
+                pred_samples.append(steering)
+
+        plt.plot(samples, color="red", label="human")
+        plt.plot(pred_samples, color="blue", label="NN")
+        plt.show()
+
 
 def serve_sim(cfg, model_path):
     '''
@@ -251,7 +275,7 @@ def serve_sim(cfg, model_path):
 
     sio = socketio.Server()
 
-    ss = dk.parts.sim_server.SteeringServer(sio, kpart=kl, image_part=img_stack)
+    ss = dk.parts.sim_server.SteeringServer(sio, kpart=kl, top_speed=5.0, image_part=img_stack)
                
     @sio.on('telemetry')
     def telemetry(sid, data):
@@ -288,7 +312,8 @@ if __name__ == '__main__':
         tub = args['--tub']
         op = args['--op']
         rec = args['--rec']
-        anaylze(cfg, tub, op, rec)
+        model = args['--model']
+        anaylze(cfg, tub, op, rec, model)
 
     elif args['sim']:
         model = args['--model']

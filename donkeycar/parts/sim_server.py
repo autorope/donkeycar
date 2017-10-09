@@ -36,20 +36,21 @@ class FPSTimer(object):
             self.iter = 0
 
 class SteeringServer(object):
-    def __init__(self, _sio, kpart, image_part=None):
+    def __init__(self, _sio, kpart, top_speed=4.0, image_part=None):
         self.model = None
         self.timer = FPSTimer()
         self.sio = _sio
         self.app = Flask(__name__)
         self.kpart = kpart
         self.image_part = image_part
-        self.steering_scale = 25.0
+        self.steering_scale = 6.0
+        self.top_speed = top_speed
 
     def throttle_control(self, last_steering, last_throttle, speed, nn_throttle):
         '''
         super basic throttle control, derive from this Server and override as needed
         '''
-        if speed < 4.0:
+        if speed < self.top_speed:
             return 0.3
         return 0.0
 
@@ -76,7 +77,10 @@ class SteeringServer(object):
             #filter throttle here, as our NN doesn't always do a greate job
             throttle = self.throttle_control(last_steering, last_throttle, speed, throttle)
 
-            self.send_control(steering * self.steering_scale, throttle)
+            #simular takes -25 + 25 angle. so must be scaled up from out -1 to +1
+            steering *= self.steering_scale
+
+            self.send_control(steering, throttle)
 
         else:
             # NOTE: DON'T EDIT THIS.
