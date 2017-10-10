@@ -36,14 +36,14 @@ class FPSTimer(object):
             self.iter = 0
 
 class SteeringServer(object):
-    def __init__(self, _sio, kpart, top_speed=4.0, image_part=None):
+    def __init__(self, _sio, kpart, top_speed=4.0, image_part=None, steering_scale=7.0):
         self.model = None
         self.timer = FPSTimer()
         self.sio = _sio
         self.app = Flask(__name__)
         self.kpart = kpart
         self.image_part = image_part
-        self.steering_scale = 6.0
+        self.steering_scale = steering_scale
         self.top_speed = top_speed
 
     def throttle_control(self, last_steering, last_throttle, speed, nn_throttle):
@@ -52,34 +52,49 @@ class SteeringServer(object):
         '''
         if speed < self.top_speed:
             return 0.3
+        
         return 0.0
 
     def telemetry(self, sid, data):
+        '''
+        Callback when we get new data from Unity simulator.
+        We use it to process the image, do a forward inference,
+        then send controls back to client.
+        Takes sid (?) and data, a dictionary of json elements.
+        '''
         if data:
             # The current steering angle of the car
             last_steering = float(data["steering_angle"])
+
             # The current throttle of the car
             last_throttle = float(data["throttle"])
+
             # The current speed of the car
             speed = float(data["speed"])
+
             # The current image from the center camera of the car
             imgString = data["image"]
 
+            #decode string based data into bytes, then to Image
             image = Image.open(BytesIO(base64.b64decode(imgString)))
 
+            #then as numpy array
             image_array = np.asarray(image)
 
+            #optional change to pre-preocess image before NN sees it
             if self.image_part is not None:
                 image_array = self.image_part.run(image_array)
 
+            #forward pass - inference
             steering, throttle = self.kpart.run(image_array)
 
             #filter throttle here, as our NN doesn't always do a greate job
             throttle = self.throttle_control(last_steering, last_throttle, speed, throttle)
 
-            #simular takes -25 + 25 angle. so must be scaled up from out -1 to +1
+            #simular takes -25 + 25 wheel angle. so must be scaled up from our -1 to +1
             steering *= self.steering_scale
 
+            #send command back to Unity simulator
             self.send_control(steering, throttle)
 
         else:
