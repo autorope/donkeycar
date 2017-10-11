@@ -8,6 +8,7 @@ Usage:
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
     manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
+    manage.py (plot_predictions) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
 
 Options:
     -h --help     Show this screen.
@@ -236,6 +237,59 @@ def anaylze(cfg, tub_names, op, record):
         plt.xlabel(record)
         plt.show()
 
+def plot_predictions(cfg, tub_names, model_name):
+    '''
+    Plot model predictions for angle and throttle against data from tubs.
+
+    '''
+    import matplotlib.pyplot as plt
+    import pandas as pd
+
+    tubs = gather_tubs(cfg, tub_names)
+    
+    model_path = os.path.expanduser(model_name)
+    model = dk.parts.KerasCategorical()
+    model.load(model_path)
+
+    user_angles = []
+    user_throttles = []
+    pilot_angles = []
+    pilot_throttles = []
+
+    for tub in tubs:
+        num_records = tub.get_num_records()
+        for iRec in range(0, num_records):
+            record = tub.get_record(iRec)
+            
+            img = record["cam/image_array"]    
+            user_angle = float(record["user/angle"])
+            user_throttle = float(record["user/throttle"])
+            pilot_angle, pilot_throttle = model.run(img)
+
+            user_angles.append(user_angle)
+            user_throttles.append(user_throttle)
+            pilot_angles.append(pilot_angle)
+            pilot_throttles.append(pilot_throttle)
+
+    angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
+    throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+
+    fig = plt.figure()
+
+    title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
+    fig.suptitle(title)
+
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+
+    angles_df.plot(ax=ax1)
+    throttles_df.plot(ax=ax2)
+
+    ax1.legend(loc=4)
+    ax2.legend(loc=4)
+
+    plt.show()
+
 
 if __name__ == '__main__':
     args = docopt(__doc__)
@@ -262,6 +316,11 @@ if __name__ == '__main__':
         op = args['--op']
         rec = args['--rec']
         anaylze(cfg, tub, op, rec)
+
+    elif args['plot_predictions']:
+        tub = args['--tub']
+        model = args['--model']
+        plot_predictions(cfg, tub, model)
 
 
 
