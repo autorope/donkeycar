@@ -36,7 +36,7 @@ class FPSTimer(object):
             self.iter = 0
 
 class SteeringServer(object):
-    def __init__(self, _sio, kpart, top_speed=4.0, image_part=None, steering_scale=7.0):
+    def __init__(self, _sio, kpart, top_speed=4.0, image_part=None, steering_scale=1.0):
         self.model = None
         self.timer = FPSTimer()
         self.sio = _sio
@@ -91,7 +91,8 @@ class SteeringServer(object):
             #filter throttle here, as our NN doesn't always do a greate job
             throttle = self.throttle_control(last_steering, last_throttle, speed, throttle)
 
-            #simular takes -25 + 25 wheel angle. so must be scaled up from our -1 to +1
+            #simulator will scale our steering based on it's angle based input.
+            #but we have an opportunity for more adjustment here.
             steering *= self.steering_scale
 
             #send command back to Unity simulator
