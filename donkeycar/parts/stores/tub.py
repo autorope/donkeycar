@@ -141,15 +141,21 @@ class Tub(object):
         Iterate over all records and make sure we can load them.
         Optionally remove records that cause a problem.
         '''
+        print('Checking tub:%s.' % self.path)
+        print('Found: %d records.' % self.get_num_records())
+        problems = False
         for ix in self.get_index(shuffled=False):
             try:
                 self.get_record(ix)
             except:
+                problems = True
                 if fix == False:
                     print('problems with record:', self.path, ix)
                 else:
                     print('problems with record, removing:', self.path, ix)
                     self.remove_record(ix)
+        if not problems:
+            print("No problems found.")
 
     def remove_record(self, ix):
         '''

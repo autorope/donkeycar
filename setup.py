@@ -43,6 +43,7 @@ setup(name='donkeycar',
                       'flask',
                       'eventlet',
                       'opencv-python',
+                      'moviepy',
                      ],
 
     extras_require={

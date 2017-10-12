@@ -15,24 +15,45 @@ The default web controller may be replaced with a one line change to use a physi
 
 These can be used plugged in with a usb cable - but the default code and os driver has a bug polling this configuration. It's been much more stable, and convenient, to setup bluetooth for a wireless, responsive control.
 
-### Change to manage.py
+### Change to config.py or run with --js
 
-comment out the line:
 ```
-#ctr = dk.parts.LocalWebController()
-```
-and enable the line:
-```
-ctr = dk.parts.JoystickPilot()
+python manage.py drive --js
 ```
 
-This disables the live preview of the camera and the web page features.
+Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify config.py to make USE_JOYSTICK_AS_DEFAULT = True, then you do not need to run with the --js.
 
 ### Bluetooth Setup
 
-Follow [this guide](https://pythonhosted.org/triangula/sixaxis.html). You can ignore steps past the 'Accessing the SixAxis from Python' section.
+Follow [this guide](https://pythonhosted.org/triangula/sixaxis.html). You can ignore steps past the 'Accessing the SixAxis from Python' section. I will include steps here in case the link becomes stale.
 
-Be sure to reboot after changing user group.
+``` bash
+sudo apt-get install bluetooth libbluetooth3 libusb-dev
+sudo systemctl enable bluetooth.service
+sudo usermod -G bluetooth -a pi
+```
+
+Reboot after changing user group.
+
+Plug in the PS3 with usb cable. Hit center PS logo button. Get and build the command line pairing tool. Run it:
+
+```bash
+wget http://www.pabr.org/sixlinux/sixpair.c
+gcc -o sixpair sixpair.c -lusb
+sudo ./sixpair
+```
+
+Use bluetoothctl to pair
+```bash
+bluetoothctl
+agent on
+devices
+trust <MAC ADDRESS>
+default-agent
+quit
+```
+
+Unplug USB cable. Hit center PS logo button.
 
 To test that the Bluetooth PS3 remote is working, verify that /dev/input/js0 exists.
 
