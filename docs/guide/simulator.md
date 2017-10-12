@@ -27,11 +27,15 @@ The purpose of this is to create a randomly generated road so that you can have 
 
 The purpose of this is to create a specific track that is somewhat similar to an actual course in use as the primary track for the Oakland DIYRobocars Meetup.
 
+____
+
 ### Menu Options:
 
 ##### Joystick/Keyboard No Rec
 
 Drive the donkey with a joystick or keyboard. I used a PS2 Joystick and a PS3 Joystick. Keyboard controls use arrow keys to steer. In this mode, no data is recorded.
+
+> Note: Keyboard data produces steering information that is stepped (ie. -1, 0, +1) and may be difficult to train with.
 
 ##### Joystick/Keyboard w Rec
 
@@ -53,7 +57,31 @@ In the generated road scene, this will switch out the road surface and track wid
 
 Use the current surface type, but generate a new random path and road.
 
+____
 
+## PID Controls
+
+##### Max Speed
+
+This setting determines the target speed during the pid auto drive. It will also affect the speed when driving by keyboard controls (not recommended).
+
+##### Prop
+
+This is short for porportional. This is the P part of PID that attempts to adjust steering back to the path in porportion to the deviation.
+
+##### Diff
+
+This is short for derivative. This is the D part of PID that attempts to limit steering back to the path as derivative to the trend of deviation, designed to limit overshoot.
+
+##### Max Steering
+
+>Note - Max Steering is an important adjustment. This affects categorical training quite strongly. As the steering data is normalized when written, and multiplies after coming from python, this angle should remain constant over training and simulation. Take care when changing this value. And seperate data and models by max steering setting.
+
+Max steering can only be adjusted when using `Auto Drive No Rec`. It will also affect joystick and keyboard steering range, and should be saved and reloaded for you.
+
+The defualt categorical model has 16 bins, or classes. And so, with a max steering of +-16, each bin will represent 2 degrees. It is helpful to graph the model training vs the example data to get and intuition about how it fits the data.
+
+____
 
 ## Typical Use
 * Start simulator
