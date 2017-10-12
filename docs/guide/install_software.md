@@ -128,10 +128,17 @@ Now let's setup things on your PC. Install varies depending on platform.
 
 ## Install donkeycar on Linux
 
+Install dependencies, setup virtualenv
 ```bash
 sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
 virtualenv env -p python3
 source env/bin/activate
+pip install keras==2.0.6
+pip install tensorflow==1.3.0
+```
+
+Install donkeycar
+```bash
 git clone https://github.com/wroscoe/donkey donkeycar
 pip install -e donkeycar
 ```
