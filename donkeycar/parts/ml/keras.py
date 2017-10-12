@@ -177,14 +177,16 @@ def default_n_linear(num_outputs):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     
     img_in = Input(shape=(120,160,3), name='img_in')
     x = img_in
+    x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
+    x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(1,1), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
     
     x = Flatten(name='flattened')(x)
@@ -196,7 +198,7 @@ def default_n_linear(num_outputs):
     outputs = [] 
     
     for i in range(num_outputs):
-        outputs.append(Dense(1, activation='relu', name='n_outputs' + str(i))(x))
+        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
         
     model = Model(inputs=[img_in], outputs=outputs)
     
