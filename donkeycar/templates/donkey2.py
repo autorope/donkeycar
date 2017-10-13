@@ -8,7 +8,6 @@ Usage:
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
     manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=histogram|plot) (--rec=<"user/angle">) [--model=<model path>]
-    manage.py (sim) [--model=<model>]
 
 Options:
     -h --help     Show this screen.
@@ -262,32 +261,6 @@ def anaylze(cfg, tub_names, op, record, model_path):
         plt.show()
 
 
-def serve_sim(cfg, model_path):
-    '''
-    Start a websocket SocketIO server to talk to a donkey simulator
-    '''
-    import socketio   
-    
-    kl = dk.parts.KerasCategorical()
-    img_stack = None
-
-    kl.load(model_path)  
-
-    sio = socketio.Server()
-
-    ss = dk.parts.sim_server.SteeringServer(sio, kpart=kl, top_speed=5.0, image_part=img_stack)
-               
-    @sio.on('telemetry')
-    def telemetry(sid, data):
-        ss.telemetry(sid, data)
-
-    @sio.on('connect')
-    def connect(sid, environ):
-        ss.connect(sid, environ)
-
-    ss.go(('0.0.0.0', 9090))
-
-
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
@@ -315,9 +288,6 @@ if __name__ == '__main__':
         model = args['--model']
         anaylze(cfg, tub, op, rec, model)
 
-    elif args['sim']:
-        model = args['--model']
-        serve_sim(cfg, model)
 
 
 

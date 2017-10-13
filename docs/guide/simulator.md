@@ -104,7 +104,7 @@ python manage.py train --tub=data/log --model=models/mypilot
 * Start the simulator server. 
 
 ``` bash
-python manage.py sim --model=models/mypilot
+donkey sim --model=models/mypilot
 ```
 
 Wait to see `wsgi starting up on http://0.0.0.0:9090`
