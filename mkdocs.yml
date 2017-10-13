@@ -20,6 +20,8 @@ pages:
         - 'Actuators': parts/actuators.md
         - 'Controllers': parts/controllers.md
         - 'Stores': parts/stores.md
+    - Utilities:
+        - 'donkey': utility/donkey.md
 
     - Contribute : contribute.md
     - Tests : tests.md

@@ -40,6 +40,7 @@ setup(name='donkeycar',
                       'keras',
                       'h5py',
                       'opencv-python',
+                      'moviepy',
                      ],
 
     extras_require={
