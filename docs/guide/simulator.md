@@ -35,7 +35,7 @@ ____
 
 Drive the donkey with a joystick or keyboard. I used a PS2 Joystick and a PS3 Joystick. Keyboard controls use arrow keys to steer. In this mode, no data is recorded.
 
-> Note: Keyboard data produces steering information that is stepped (ie. -1, 0, +1) and may be difficult to train with.
+> Note: Keyboard data produces steering information that is stepped (ie. -1, 0, +1) and may be difficult to train with. See below for joystick setup.
 
 ##### Joystick/Keyboard w Rec
 
@@ -71,7 +71,7 @@ This is short for porportional. This is the P part of PID that attempts to adjus
 
 ##### Diff
 
-This is short for derivative. This is the D part of PID that attempts to limit steering back to the path as derivative to the trend of deviation, designed to limit overshoot.
+This is the D part of PID that attempts to limit steering back to the path as derivative to the trend of deviation, designed to limit overshoot.
 
 ##### Max Steering
 
@@ -88,11 +88,14 @@ ____
 * Double check that `log` dir exists and is empty
 * Start scene of your choice
 * Hit `Auto Drive w Rec` button
+* Vary the Max Speed, Prop, and Diff sliders to obtain a variety of driving styles
 * Wait 10-15 minutes until you have recorded 10K+ frames of data.
 * Hit the `Stop` button
 * Hit the `Exit` button
 * Move the `log` dir to the `~/d2/data/` dir where you normally put tub data. This will create a `~/d2/data/log` path.
 * Train as usual. 
+
+> Note: I had problems w default categorical model. Linear model worked better for me.
 
 ``` bash
 python manage.py train --tub=data/log --model=models/mypilot
@@ -109,4 +112,57 @@ Wait to see `wsgi starting up on http://0.0.0.0:9090`
 * Enter the scene of your choice in the simulator
 * Hit the button `NN Steering w Websockets`
 * Your donkey should begin to move. You should see in the upper left two values for incoming steering and throttle.
+
+______
+
+## Joystick Setup
+
+Keyboard input provides a poor learning signal. I recommend using the joystick to provide manual driving data. 
+
+##### Linux Joystick Setup
+
+Unity on Linux uses the SDL library to see your joystick. And in particular the GamePad API. This is not setup by default. I needed to do this steps:
+
+```bash
+git clone https://github.com/Grumbel/sdl-jstest
+
+sudo apt-get install cmake
+sudo apt-get install libsdl1.2-dev
+sudo apt-get install libsdl2-dev
+sudo apt-get install libncurses5-dev
+cd sdl-jstest
+mkdir build
+cd build
+cmake ..
+make install
+
+
+./sdl2-jstest -l
+```
+
+look for:
+Joystick GUID: 030000004f04000008b1000000010000
+
+the GUID will be different depending on your device.
+
+then open:
+https://github.com/gabomdq/SDL_GameControllerDB/blob/master/gamecontrollerdb.txt
+
+and look for your GUID in linux section. One line is for one device type. Now modify your environment to specify information for your device:
+
+```bash
+sudo -H gedit /etc/environment
+```
+
+add the line SDL_GAMECONTROLLERCONFIG=, make sure to add the quotes at begin and end. ie.
+
+
+SDL_GAMECONTROLLERCONFIG="030000004f04000008b1000000010000, ... and the rest of the long line copied from gamecontrollerdb"
+
+* reboot
+* start sim
+* choose drive w joystick
+* move sticks
+* do happy dance
+
 
