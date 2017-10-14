@@ -11,6 +11,7 @@ import time
 import json
 import datetime
 import random
+import itertools
 
 from PIL import Image
 
@@ -402,3 +403,49 @@ class TubImageStacker(Tub):
                     val = np.array(img)
 
         return data
+
+
+class TubChain:
+    '''
+    Multiple tubs chained together to generate data in one single training session
+    '''
+
+    def __init__(self, tub_paths, X_keys, Y_keys, batch_size=32, record_transform=None, train_split=.8):
+        self.X_keys = X_keys
+        self.Y_keys = Y_keys
+        self.batch_size = batch_size
+        self.record_transform = record_transform
+
+        self.tub_dataset_splits = []
+
+        for p in tub_paths:
+            tub = Tub(p)
+            index = tub.get_index(shuffled=True)
+            train_cutoff = int(len(index)*train_split)
+            train_index = index[:train_cutoff]
+            val_index = index[train_cutoff:]
+            self.tub_dataset_splits.append((tub, train_index, val_index))
+    
+    def train_gen(self):
+        while True:
+            gens = [tub_ds[0].train_gen(X_keys=self.X_keys, Y_keys=self.Y_keys, index=tub_ds[1],
+                batch_size=self.batch_size, record_transform=self.record_transform)
+                for tub_ds in self.tub_dataset_splits]
+
+            for batch in itertools.chain(*gens):
+                yield batch
+
+    def val_gen(self):
+        while True:
+            gens = [tub_ds[0].train_gen(X_keys=self.X_keys, Y_keys=self.Y_keys, index=tub_ds[2],
+                batch_size=self.batch_size, record_transform=self.record_transform)
+                for tub_ds in self.tub_dataset_splits]
+
+            for batch in itertools.chain(*gens):
+                yield batch
+
+    def train_val_gen(self):
+        return self.train_gen(), self.val_gen()
+
+    def total_records(self):
+        return sum([t[0].get_num_records() for t in self.tub_dataset_splits])

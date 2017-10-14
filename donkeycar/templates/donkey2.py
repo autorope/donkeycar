@@ -148,12 +148,9 @@ def gather_tubs(cfg, tub_names):
     
     if tub_names:
         tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        tub_paths = expand_path_masks(tub_paths)
+        return expand_path_masks(tub_paths)
     else:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-
-    tubs = [dk.parts.Tub(p) for p in tub_paths]
-    return tubs
+        return [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
 
 
 def train(cfg, tub_names, model_name):
@@ -170,21 +167,14 @@ def train(cfg, tub_names, model_name):
 
     kl = dk.parts.KerasCategorical()
     
-    tubs = gather_tubs(cfg, tub_names)
+    tub_paths = gather_tubs(cfg, tub_names)
 
-    import itertools
-
-    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT) for tub in tubs]
-
-
-    # Training data generator is the one that keeps cycling through training data generator of all tubs chained together
-    # The same for validation generator
-    train_gens = itertools.cycle(itertools.chain(*[gen[0] for gen in gens]))
-    val_gens = itertools.cycle(itertools.chain(*[gen[1] for gen in gens]))
+    tub_chain = dk.parts.TubChain(tub_paths, X_keys, y_keys, record_transform=rt, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT)
+    train_gens, val_gens = tub_chain.train_val_gen()
 
     model_path = os.path.expanduser(model_name)
 
-    total_records = sum([t.get_num_records() for t in tubs])
+    total_records = tub_chain.total_records()
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
     total_val = total_records - total_train
     print('train: %d, validation: %d' %(total_train, total_val))
