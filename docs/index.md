@@ -15,6 +15,7 @@ and take 2 hours to assemble. Here are the main steps to build your own car:
 3. [Calibrate your car.](guide/calibrate.md)
 4. [Start driving.](guide/get_driving.md) 
 5. [Train an autopilot.](guide/train_autopilot.md) 
+6. [Experiment with simulator.](guide/simulator.md) 
 
 ---------------
 

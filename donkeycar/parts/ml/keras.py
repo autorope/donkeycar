@@ -28,7 +28,8 @@ class KerasPilot():
     
     
     def train(self, train_gen, val_gen, 
-              saved_model_path, epochs=100, steps=100, train_split=0.8):
+              saved_model_path, epochs=100, steps=100, train_split=0.8,
+              verbose=1, min_delta=.0005, patience=5, use_early_stop=True):
         
         """
         train_gen: generator that yields an array of images an array of 
@@ -38,18 +39,21 @@ class KerasPilot():
         #checkpoint to save model after each epoch
         save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
                                                     monitor='val_loss', 
-                                                    verbose=1, 
+                                                    verbose=verbose, 
                                                     save_best_only=True, 
                                                     mode='min')
         
         #stop training if the validation error stops improving.
         early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                   min_delta=.0005, 
-                                                   patience=5, 
-                                                   verbose=1, 
+                                                   min_delta=min_delta, 
+                                                   patience=patience, 
+                                                   verbose=verbose, 
                                                    mode='auto')
         
-        callbacks_list = [save_best, early_stop]
+        callbacks_list = [save_best]
+
+        if use_early_stop:
+            callbacks_list.append(early_stop)
         
         hist = self.model.fit_generator(
                         train_gen, 
@@ -73,6 +77,7 @@ class KerasCategorical(KerasPilot):
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
+        #print('throttle', throttle)
         #angle_certainty = max(angle_binned[0])
         angle_unbinned = utils.linear_unbin(angle_binned)
         return angle_unbinned, throttle[0][0]
@@ -80,19 +85,21 @@ class KerasCategorical(KerasPilot):
     
     
 class KerasLinear(KerasPilot):
-    def __init__(self, model=None, *args, **kwargs):
+    def __init__(self, model=None, num_outputs=None, *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
         if model:
             self.model = model
+        elif num_outputs is not None:
+            self.model = default_n_linear(num_outputs)
         else:
             self.model = default_linear()
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle, throttle = self.model.predict(img_arr)
-        #angle_certainty = max(angle_binned[0])
-        return angle[0][0], throttle[0][0]
-
-
+        outputs = self.model.predict(img_arr)
+        #print(len(outputs), outputs)
+        steering = outputs[0]
+        throttle = outputs[1]
+        return steering[0][0], throttle[0][0]
 
 
 
@@ -170,18 +177,20 @@ def default_linear():
 
 
 
-def default_relu():
+def default_n_linear(num_outputs):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     
     img_in = Input(shape=(120,160,3), name='img_in')
     x = img_in
+    x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
+    x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(1,1), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
     
     x = Flatten(name='flattened')(x)
@@ -189,19 +198,17 @@ def default_relu():
     x = Dropout(.1)(x)
     x = Dense(50, activation='relu')(x)
     x = Dropout(.1)(x)
-    #categorical output of the angle
-    angle_out = Dense(1, activation='relu', name='angle_out')(x)
+
+    outputs = [] 
     
-    #continous output of throttle
-    throttle_out = Dense(1, activation='relu', name='throttle_out')(x)
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+        
+    model = Model(inputs=[img_in], outputs=outputs)
     
-    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     
-    
-    model.compile(optimizer='rmsprop',
-                  loss={'angle_out': 'mean_squared_error', 
-                        'throttle_out': 'mean_squared_error'},
-                  loss_weights={'angle_out': 0.9, 'throttle_out': .001})
+    model.compile(optimizer='adam',
+                  loss='mse')
 
     return model
 

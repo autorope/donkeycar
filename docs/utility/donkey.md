@@ -101,3 +101,18 @@ python manage.py analyze [--tub <tubdir>] --op=histogram --rec=<"user/angle">
 * Will show a pop-up window showing the histogram of steering values in a given tub
 * When the --tub is ommited, it will check all tubs in the default data dir
 * In the future hopefully more analysis types can be added
+
+## Simulation Server
+
+This command allows you serve steering and throttle controls to a simulated vehicle using the [Donkey Simulator](/guide/simulator.md).
+
+Usage:
+```bash
+donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<speed>] [--config=<config.py>]
+```
+
+* This command may be run from ~/d2 dir
+* Run on the host computer
+* Uses the model to make predictions based on images and telemetry from the simulator
+* --type can specify whether the model needs angle output to be treated as categorical
+* top speed can be modified to ascertain stablity at different goal speeds

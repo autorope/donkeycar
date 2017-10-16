@@ -30,6 +30,28 @@ def make_dir(path):
     return real_path
 
 
+def load_config(config_path):
+    import donkeycar as dk
+
+    '''
+    load a config from the given path
+    '''
+    conf = os.path.expanduser(config_path)
+
+    if not os.path.exists(conf):
+        print("No config file at location: %s. Add --config to specify\
+                location or run from dir containing config.py." % conf)
+        return None
+
+    try:
+        cfg = dk.load_config(conf)
+    except:
+        print("Exception while loading config from", conf)
+        return None
+
+    return cfg
+
+
 class BaseCommand():
     pass
 
@@ -141,6 +163,7 @@ class CalibrateCar(BaseCommand):
             c.run(pmw)
 
 
+
 class MakeMovie(BaseCommand):    
     
     def parse_args(self, args):
@@ -166,17 +189,9 @@ class MakeMovie(BaseCommand):
             parser.print_help()
             return            
 
-        conf = os.path.expanduser(args.config)
+        cfg = load_config(args.config)
 
-        if not os.path.exists(conf):
-            print("No config file at location: %s. Add --config to specify\
-                 location or run from dir containing config.py." % conf)
-            return
-
-        try:
-            cfg = dk.load_config(conf)
-        except:
-            print("Exception while loading config from", conf)
+        if cfg is None:
             return
 
         self.tub = dk.parts.Tub(args.tub)
@@ -206,6 +221,73 @@ class MakeMovie(BaseCommand):
         
         return image # returns a 8-bit RGB array
 
+
+
+class Sim(BaseCommand):
+    '''
+    Start a websocket SocketIO server to talk to a donkey simulator    
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='sim')
+        parser.add_argument('--model', help='the model to use for predictions')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--type', default='categorical', help='model type to use when loading. categorical|linear')
+        parser.add_argument('--top_speed', default='3', help='what is top speed to drive')
+        parsed_args = parser.parse_args(args)
+        return parsed_args, parser
+
+    def run(self, args):
+        '''
+        Start a websocket SocketIO server to talk to a donkey simulator
+        '''
+        import socketio
+        import donkeycar as dk
+
+        args, parser = self.parse_args(args)
+
+        cfg = load_config(args.config)
+
+        if cfg is None:
+            return
+
+        if args.type == "categorical":
+            kl = dk.parts.KerasCategorical()
+        elif args.type == "linear":
+            kl = dk.parts.KerasLinear(num_outputs=2)
+        else:
+            print("didn't recognice type:", args.type)
+            return
+
+        #can provide an optional image filter part
+        img_stack = None
+
+        #load keras model
+        kl.load(args.model)  
+
+        #start socket server framework
+        sio = socketio.Server()
+
+        top_speed = float(args.top_speed)
+
+        #start sim server handler
+        ss = dk.parts.sim_server.SteeringServer(sio, kpart=kl, top_speed=top_speed, image_part=img_stack)
+                
+        #register events and pass to server handlers
+
+        @sio.on('telemetry')
+        def telemetry(sid, data):
+            ss.telemetry(sid, data)
+
+        @sio.on('connect')
+        def connect(sid, environ):
+            ss.connect(sid, environ)
+
+        ss.go(('0.0.0.0', 9090))
+
+
+
+
 def execute_from_command_line():
     
     commands = {
@@ -214,6 +296,7 @@ def execute_from_command_line():
             'calibrate': CalibrateCar,
             'tub': TubManager,
             'makemovie': MakeMovie,
+            'sim': Sim,
             #'calibratesteering': CalibrateSteering,
                 }
     
