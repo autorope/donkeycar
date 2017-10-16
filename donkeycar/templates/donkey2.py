@@ -4,7 +4,7 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     manage.py (drive) [--model=<model>] [--js]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--cache]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--no_cache]
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
     manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
@@ -13,6 +13,7 @@ Options:
     -h --help     Show this screen.
     --js          Use physical joystick.
     --fix         Remove records which cause problems.
+    --no_cache    During training, load image repeatedly on each epoch
 
 """
 import os
@@ -144,14 +145,26 @@ def expand_path_masks(paths):
     return expanded_paths
 
 
-def gather_tubs(cfg, tub_names):
-    
+def gather_tub_paths(cfg, tub_names=None):
+    '''
+    takes as input the configuration, and the comma seperated list of tub paths
+    returns a list of Tub paths
+    '''
     if tub_names:
         tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
         return expand_path_masks(tub_paths)
     else:
         return [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
 
+def gather_tubs(cfg, tub_names):
+    '''
+    takes as input the configuration, and the comma seperated list of tub paths
+    returns a list of Tub objects initialized to each path
+    '''
+    tub_paths = gather_tub_paths(cfg, tub_names)
+    tubs = [dk.parts.Tub(p) for p in tub_paths]
+
+    return tubs
 
 def train(cfg, tub_names, model_name, cache):
     '''
@@ -167,7 +180,12 @@ def train(cfg, tub_names, model_name, cache):
 
     kl = dk.parts.KerasCategorical()
     
-    tub_paths = gather_tubs(cfg, tub_names)
+    tub_paths = gather_tub_paths(cfg, tub_names)
+
+    if cache:
+        print('cache is ON')
+    else:
+        print('cache is OFF')
 
     tub_chain = dk.parts.TubChain(tub_paths, X_keys, y_keys, cache=cache, record_transform=rt, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT)
     train_gens, val_gens = tub_chain.train_val_gen()
@@ -217,10 +235,13 @@ def anaylze(cfg, tub_names, op, record):
         samples = []
         for tub in tubs:
             num_records = tub.get_num_records()
-            for iRec in range(0, num_records):
-                json_data = tub.get_json_record(iRec)
-                sample = json_data[record]
-                samples.append(float(sample))
+            for iRec in tub.get_index(shuffled=False):
+                try:
+                    json_data = tub.get_json_record(iRec)
+                    sample = json_data[record]
+                    samples.append(float(sample))
+                except FileNotFoundError:
+                    pass
 
         plt.hist(samples, 50)
         plt.xlabel(record)
@@ -240,7 +261,7 @@ if __name__ == '__main__':
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
-        cache = args['--cache']
+        cache = not args['--no_cache']
         train(cfg, tub, model, cache)
 
     elif args['check']:
