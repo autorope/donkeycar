@@ -7,7 +7,7 @@ Usage:
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--no_cache]
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
-    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
+    manage.py (histogram) [--tub=<tub1,tub2,..tubn>] (--rec=<"user/angle">)
     manage.py (plot_predictions) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
 
 Options:
@@ -225,28 +225,30 @@ def check(cfg, tub_names, fix=False):
     for tub in tubs:
         tub.check(fix=fix)
 
-def anaylze(cfg, tub_names, op, record):
+def histogram(cfg, tub_names, record):
     '''
-    look at the tub data and produce some analysis
+    Produce a histogram of record type frequency in the given tub
     '''
     tubs = gather_tubs(cfg, tub_names)
 
-    if op == 'histogram':
-        import matplotlib.pyplot as plt
-        samples = []
-        for tub in tubs:
-            num_records = tub.get_num_records()
-            for iRec in tub.get_index(shuffled=False):
-                try:
-                    json_data = tub.get_json_record(iRec)
-                    sample = json_data[record]
-                    samples.append(float(sample))
-                except FileNotFoundError:
-                    pass
+    import matplotlib.pyplot as plt
+    samples = []
+    for tub in tubs:
+        num_records = tub.get_num_records()
+        for iRec in tub.get_index(shuffled=False):
+            try:
+                json_data = tub.get_json_record(iRec)
+                sample = json_data[record]
+                samples.append(float(sample))
+            except FileNotFoundError:
+                pass
 
-        plt.hist(samples, 50)
-        plt.xlabel(record)
-        plt.show()
+    fig = plt.figure()
+    plt.hist(samples, 50)
+    title = "Histgram of %s in %s " % (record, tub_names)
+    fig.suptitle(title)
+    plt.xlabel(record)
+    plt.show()
 
 def plot_predictions(cfg, tub_names, model_name):
     '''
@@ -269,7 +271,7 @@ def plot_predictions(cfg, tub_names, model_name):
 
     for tub in tubs:
         num_records = tub.get_num_records()
-        for iRec in range(0, num_records):
+        for iRec in tub.get_index(shuffled=False):
             record = tub.get_record(iRec)
             
             img = record["cam/image_array"]    
@@ -323,11 +325,10 @@ if __name__ == '__main__':
         fix = args['--fix']
         check(cfg, tub, fix)
 
-    elif args['analyze']:
+    elif args['histogram']:
         tub = args['--tub']
-        op = args['--op']
         rec = args['--rec']
-        anaylze(cfg, tub, op, rec)
+        histogram(cfg, tub, rec)
 
     elif args['plot_predictions']:
         tub = args['--tub']

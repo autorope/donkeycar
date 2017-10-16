@@ -40,6 +40,7 @@ setup(name='donkeycar',
                       'keras',
                       'h5py',
                       'moviepy',
+                      'pandas',
                      ],
 
     extras_require={
