@@ -128,45 +128,6 @@ def drive(cfg, model_path=None, use_joystick=False):
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
-
-def expand_path_masks(paths):
-    '''
-    take a list of paths and expand any wildcards
-    returns a new list of paths fully expanded
-    '''
-    import glob
-    expanded_paths = []
-    for path in paths:
-        if '*' in path or '?' in path:
-            mask_paths = glob.glob(path)
-            expanded_paths += mask_paths
-        else:
-            expanded_paths.append(path)
-
-    return expanded_paths
-
-
-def gather_tub_paths(cfg, tub_names=None):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub paths
-    '''
-    if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        return expand_path_masks(tub_paths)
-    else:
-        return [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-
-def gather_tubs(cfg, tub_names):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub objects initialized to each path
-    '''
-    tub_paths = gather_tub_paths(cfg, tub_names)
-    tubs = [dk.parts.Tub(p) for p in tub_paths]
-
-    return tubs
-
 def train(cfg, tub_names, model_name, cache):
     '''
     use the specified data in tub_names to train an artifical neural network
@@ -181,7 +142,7 @@ def train(cfg, tub_names, model_name, cache):
 
     kl = dk.parts.KerasCategorical()
     
-    tub_paths = gather_tub_paths(cfg, tub_names)
+    tub_paths = dk.utils.gather_tub_paths(cfg, tub_names)
 
     if cache:
         print('cache is ON')
@@ -220,7 +181,7 @@ def check(cfg, tub_names, fix=False):
     Check for any problems. Looks at tubs and find problems in any records or images that won't open.
     If fix is True, then delete images and records that cause problems.
     '''
-    tubs = gather_tubs(cfg, tub_names)
+    tubs = dk.utils.gather_tubs(cfg, tub_names)
 
     for tub in tubs:
         tub.check(fix=fix)
@@ -229,7 +190,7 @@ def histogram(cfg, tub_names, record):
     '''
     Produce a histogram of record type frequency in the given tub
     '''
-    tubs = gather_tubs(cfg, tub_names)
+    tubs = dk.utils.gather_tubs(cfg, tub_names)
 
     import matplotlib.pyplot as plt
     samples = []
@@ -258,7 +219,7 @@ def plot_predictions(cfg, tub_names, model_name):
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    tubs = gather_tubs(cfg, tub_names)
+    tubs = dk.utils.gather_tubs(cfg, tub_names)
     
     model_path = os.path.expanduser(model_name)
     model = dk.parts.KerasCategorical()
@@ -302,30 +263,6 @@ def plot_predictions(cfg, tub_names, model_name):
     ax2.legend(loc=4)
 
     plt.show()
-
-    elif op == 'plot':
-        '''
-        make a gaph of predicted vs actual
-        '''
-        import matplotlib.pyplot as plt
-        kl = dk.parts.KerasCategorical()
-        kl.load(os.path.expanduser(model_path))
-
-        samples = []
-        pred_samples = []
-        for tub in tubs:
-            num_records = tub.get_num_records()
-            for iRec in range(0, num_records):
-                rec = tub.get_record(iRec)
-                sample = rec[record]
-                samples.append(float(sample))
-                img = rec['cam/image_array']
-                steering, throttle = kl.run(img)
-                pred_samples.append(steering)
-
-        plt.plot(samples, color="red", label="human")
-        plt.plot(pred_samples, color="blue", label="NN")
-        plt.show()
 
 
 if __name__ == '__main__':
