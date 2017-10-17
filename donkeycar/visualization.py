@@ -20,6 +20,7 @@ from keras.layers import merge
 import keras
 import tempfile
 import shutil
+from subprocess import call
 
 from distutils.version import LooseVersion
 
