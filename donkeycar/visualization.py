@@ -18,6 +18,8 @@ from keras.models import Sequential
 from keras import backend as K
 from keras.layers import merge
 import keras
+import tempfile
+import shutil
 
 from distutils.version import LooseVersion
 
@@ -29,6 +31,7 @@ from PIL import Image, ImageEnhance, ImageOps
 import matplotlib.cm as cm
 from keras.models import Model
 
+import donkeycar as dk
 
 def almostEquals(a,b,thres=50):
     return all(abs(a[i]-b[i])<thres for i in range(len(a)))
@@ -228,6 +231,6 @@ def backprop_video(cfg, tub_path, model_path, out):
     finally:
         shutil.rmtree(temp_dir)
 
-def visualize(cfg, tub_path, model_path, out, gradcam):
+def visualize(cfg, tub_path, model_path, out):
     backprop_video(cfg, tub_path, model_path, out)
 
