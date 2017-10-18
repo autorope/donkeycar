@@ -60,10 +60,16 @@ class ImgStack:
     def __init__(self, num_channels=3):
         self.img_arr = None
         self.num_channels = num_channels
+
+    def rgb2gray(self, rgb):
+        '''
+        take a numpy rgb image return a new single channel image converted to greyscale
+        '''
+        return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
         
     def run(self, img_arr):
         width, height, _ = img_arr.shape        
-        gray = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
+        gray = self.rgb2gray(img_arr)
         
         if self.img_arr is None:
             self.img_arr = np.zeros([width, height, self.num_channels], dtype=np.dtype('B'))

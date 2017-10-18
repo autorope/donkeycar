@@ -351,17 +351,22 @@ class TubImageStacker(Tub):
     Just make sure your inference pass uses the ImageFIFO that the NN will now expect.
     '''
     
+    def rgb2gray(self, rgb):
+        '''
+        take a numpy rgb image return a new single channel image converted to greyscale
+        '''
+        return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+
     def stack3Images(self, img_a, img_b, img_c):
-        import cv2
         '''
         convert 3 rgb images into grayscale and put them into the 3 channels of
         a single output image
         '''
         width, height, _ = img_a.shape
 
-        gray_a = cv2.cvtColor(img_a, cv2.COLOR_RGB2GRAY)
-        gray_b = cv2.cvtColor(img_b, cv2.COLOR_RGB2GRAY)
-        gray_c = cv2.cvtColor(img_c, cv2.COLOR_RGB2GRAY)
+        gray_a = self.rgb2gray(img_a)
+        gray_b = self.rgb2gray(img_b)
+        gray_c = self.rgb2gray(img_c)
         
         img_arr = np.zeros([width, height, 3], dtype=np.dtype('B'))
 

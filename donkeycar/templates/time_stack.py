@@ -35,6 +35,12 @@ def drive(cfg, model_path=None, use_joystick=False):
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
+
+    #this part stacks the last 3 images into channels of a single output image
+    img_stack = dk.parts.cv.ImgStack()
+    V.add(img_stack, 
+        inputs=['cam/image_array'],
+        outputs=['img_stack'])
     
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -46,10 +52,9 @@ def drive(cfg, model_path=None, use_joystick=False):
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
         ctr = dk.parts.LocalWebController()
-
     
     V.add(ctr, 
-          inputs=['cam/image_array'],
+          inputs=['img_stack'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     
@@ -69,7 +74,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     if model_path:
         kl.load(model_path)
     
-    V.add(kl, inputs=['cam/image_array'], 
+    V.add(kl, inputs=['img_stack'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
     
@@ -166,6 +171,9 @@ def train(cfg, tub_names, model_name):
     '''
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
+
+    #use these offsets from the current frame as points to learn the future
+    #steering values.
     frames = [0, 20, 40, 120]
 
     new_y_keys = []
@@ -175,19 +183,12 @@ def train(cfg, tub_names, model_name):
 
     y_keys = new_y_keys
     
-    def rt(record):
-        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
-        return record
-
-    #kl = dk.parts.KerasCategorical()
-    kl = dk.parts.KerasLinear(num_outputs=len(y_keys))
-    rt = None
-    
+    kl = dk.parts.KerasLinear(num_outputs=len(y_keys))    
     tubs = gather_tubs(cfg, tub_names, frames)
 
     import itertools
 
-    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT) for tub in tubs]
+    gens = [tub.train_val_gen(X_keys, y_keys, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT) for tub in tubs]
 
 
     # Training data generator is the one that keeps cycling through training data generator of all tubs chained together

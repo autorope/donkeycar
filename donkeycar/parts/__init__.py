@@ -45,4 +45,5 @@ from .simulations import MovingSquareTelemetry
 
 from .sim_server import SteeringServer
 
-from .cv.cv import ImgStack
+#when ready to introduce OpenCV dependencies
+#from .cv.cv import ImgStack
