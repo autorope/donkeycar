@@ -85,9 +85,11 @@ python manage.py check [--tub <tubdir>] [--fix]
 * It will print the records that throw an exception while reading
 * The optional --fix will delte records that have problems
 
+
 ## Histogram
 
 This command will show a pop-up window showing the histogram of record values in a given tub.
+
 
 > Note: This should be moved from manage.py to donkey command
 
@@ -98,6 +100,7 @@ python manage.py histogram [--tub <tubdir>] --rec=<"user/angle">
 
 * This command may be run from ~/d2 dir
 * Run on the host computer
+
 * When the --tub is ommited, it will check all tubs in the default data dir
 
 ## Plot Predictions
@@ -131,3 +134,4 @@ donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<spee
 * Uses the model to make predictions based on images and telemetry from the simulator
 * --type can specify whether the model needs angle output to be treated as categorical
 * top speed can be modified to ascertain stablity at different goal speeds
+
