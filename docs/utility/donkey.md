@@ -85,19 +85,49 @@ python manage.py check [--tub <tubdir>] [--fix]
 * It will print the records that throw an exception while reading
 * The optional --fix will delte records that have problems
 
-## Analyze - Histogram
+## Histogram
 
-This command allows you to see various stats about your data.
+This command will show a pop-up window showing the histogram of record values in a given tub.
 
 > Note: This should be moved from manage.py to donkey command
 
 Usage:
 ```bash
-python manage.py analyze [--tub <tubdir>] --op=histogram --rec=<"user/angle">
+python manage.py histogram [--tub <tubdir>] --rec=<"user/angle">
 ```
 
 * This command may be run from ~/d2 dir
 * Run on the host computer
-* Will show a pop-up window showing the histogram of steering values in a given tub
 * When the --tub is ommited, it will check all tubs in the default data dir
-* In the future hopefully more analysis types can be added
+
+## Plot Predictions
+
+This command allows you plot steering and throttle agains predictions coming from a trained model.
+
+> Note: This should be moved from manage.py to donkey command
+
+Usage:
+```bash
+python manage.py plot_predictions [--tub=<tub_path>] [--model=<model_path>] 
+```
+
+* This command may be run from ~/d2 dir
+* Run on the host computer
+* Will show a pop-up window showing the plot of steering values in a given tub compared to NN predictions from the trained model
+* When the --tub is ommited, it will check all tubs in the default data dir
+
+
+## Simulation Server
+
+This command allows you serve steering and throttle controls to a simulated vehicle using the [Donkey Simulator](/guide/simulator.md).
+
+Usage:
+```bash
+donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<speed>] [--config=<config.py>]
+```
+
+* This command may be run from ~/d2 dir
+* Run on the host computer
+* Uses the model to make predictions based on images and telemetry from the simulator
+* --type can specify whether the model needs angle output to be treated as categorical
+* top speed can be modified to ascertain stablity at different goal speeds

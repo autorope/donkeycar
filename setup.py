@@ -39,7 +39,12 @@ setup(name='donkeycar',
                       'requests',
                       'keras',
                       'h5py',
+                      'python-socketio',
+                      'flask',
+                      'eventlet',
+                      'opencv-python',
                       'moviepy',
+                      'pandas',
                      ],
 
     extras_require={

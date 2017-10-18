@@ -11,6 +11,7 @@ import time
 import json
 import datetime
 import random
+import itertools
 
 from PIL import Image
 
@@ -107,6 +108,8 @@ class Tub(object):
                 #print('wrote record:', json_data)
         except TypeError:
             print('troubles with record:', json_data)
+        except FileNotFoundError:
+            raise
         except:
             print("Unexpected error:", sys.exc_info()[0])
             raise
@@ -126,6 +129,8 @@ class Tub(object):
                 json_data = json.load(fp)
         except UnicodeDecodeError:
             raise Exception('bad record: %d. You may want to run `python manage.py check --fix`' % ix)            
+        except FileNotFoundError:
+            raise
         except:
             print("Unexpected error:", sys.exc_info()[0])
             raise
@@ -195,6 +200,8 @@ class Tub(object):
     def get_record(self, ix):
 
         json_data = self.get_json_record(ix)
+        #print(json_data)
+        
         data={}
         for key, val in json_data.items():
             typ = self.get_input_type(key)
@@ -207,6 +214,7 @@ class Tub(object):
                 val = np.array(img)
 
             data[key] = val
+
 
         return data
 
@@ -262,22 +270,6 @@ class Tub(object):
             X = [batch[k] for k in X_keys]
             Y = [batch[k] for k in Y_keys]
             yield X, Y
-
-            
-    def train_val_gen(self, X_keys, Y_keys, batch_size=32, record_transform=None, train_split=.8):
-        index = self.get_index(shuffled=True)
-        train_cutoff = int(len(index)*train_split)
-        train_index = index[:train_cutoff]
-        val_index = index[train_cutoff:]
-    
-        train_gen = self.train_gen(X_keys=X_keys, Y_keys=Y_keys, index=train_index, 
-                              batch_size=batch_size, record_transform=record_transform)
-        
-        val_gen = self.train_gen(X_keys=X_keys, Y_keys=Y_keys, index=val_index, 
-                              batch_size=batch_size, record_transform=record_transform)
-        
-        return train_gen, val_gen
-
 
 
 class TubWriter(Tub):
@@ -360,6 +352,7 @@ class TubImageStacker(Tub):
     '''
     
     def stack3Images(self, img_a, img_b, img_c):
+        import cv2
         '''
         convert 3 rgb images into grayscale and put them into the 3 channels of
         a single output image
@@ -395,10 +388,129 @@ class TubImageStacker(Tub):
 
                 #load objects that were saved as separate files
                 if typ == 'image':
-                    val = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
+                    val = self.stack3Images(data_ch0[key], data_ch1[key], data[key])
                     data[key] = val
                 elif typ == 'image_array':
-                    img = self.stack3Images(data_ch0[key], data_ch0[key], data[key])
+                    img = self.stack3Images(data_ch0[key], data_ch1[key], data[key])
                     val = np.array(img)
 
         return data
+
+
+
+class TubTimeStacker(TubImageStacker):
+    '''
+    A Tub for training N with records stacked through time. 
+    The idea here is to force the network to learn to look ahead in time.
+    Init with an array of time offsets from the current time.
+    '''
+
+    def __init__(self, frame_list, *args, **kwargs):
+        '''
+        frame_list of [0, 10] would stack the current and 10 frames from now records togther in a single record
+        with just the current image returned.
+        [5, 90, 200] would return 3 frames of records, ofset 5, 90, and 200 frames in the future.
+
+        '''
+        super(TubTimeStacker, self).__init__(*args, **kwargs)
+        self.frame_list = frame_list
+  
+    def get_record(self, ix):
+        '''
+        stack the N records into a single record.
+        Each key value has the record index with a suffix of _N where N is
+        the frame offset into the data.
+        '''
+        data = {}
+        for i, iOffset in enumerate(self.frame_list):
+            iRec = ix + iOffset
+            
+            try:
+                json_data = self.get_json_record(iRec)
+            except FileNotFoundError:
+                pass
+            except:
+                pass
+
+            for key, val in json_data.items():
+                typ = self.get_input_type(key)
+
+                #load only the first image saved as separate files
+                if typ == 'image' and i == 0:
+                    val = Image.open(os.path.join(self.path, val))
+                    data[key] = val                    
+                elif typ == 'image_array' and i == 0:
+                    d = super(TubTimeStacker, self).get_record(ix)
+                    data[key] = d[key]
+                else:
+                    '''
+                    we append a _offset to the key
+                    so user/angle out now be user/angle_0
+                    '''
+                    new_key = key + "_" + str(iOffset)
+                    data[new_key] = val
+        return data
+
+
+
+class TubChain:
+    '''
+    Multiple tubs chained together to generate data in one single training session
+    '''
+
+    def __init__(self, tub_paths, X_keys, Y_keys, cache=True, batch_size=32, record_transform=None, train_split=.8):
+        self.X_keys = X_keys
+        self.Y_keys = Y_keys
+        self.cache = cache
+        self.batch_size = batch_size
+        self.record_transform = record_transform
+
+        self.tub_dataset_splits = []
+
+        for p in tub_paths:
+            tub = Tub(p)
+            index = tub.get_index(shuffled=True)
+            train_cutoff = int(len(index)*train_split)
+            train_index = index[:train_cutoff]
+            val_index = index[train_cutoff:]
+            self.tub_dataset_splits.append((tub, train_index, val_index))
+    
+    def cached_train_gen(self):
+        gens = [tub_ds[0].train_gen(X_keys=self.X_keys, Y_keys=self.Y_keys, index=tub_ds[1],
+                batch_size=self.batch_size, record_transform=self.record_transform)
+                for tub_ds in self.tub_dataset_splits]
+        return itertools.cycle(itertools.chain(*gens))
+
+    def train_gen(self):
+        while True:
+            gens = [tub_ds[0].train_gen(X_keys=self.X_keys, Y_keys=self.Y_keys, index=tub_ds[1],
+                batch_size=self.batch_size, record_transform=self.record_transform)
+                for tub_ds in self.tub_dataset_splits]
+
+            for batch in itertools.chain(*gens):
+                yield batch
+
+    def cached_val_gen(self):
+        gens = [tub_ds[0].train_gen(X_keys=self.X_keys, Y_keys=self.Y_keys, index=tub_ds[2],
+            batch_size=self.batch_size, record_transform=self.record_transform)
+            for tub_ds in self.tub_dataset_splits]
+
+        return itertools.cycle(itertools.chain(*gens))
+
+    def val_gen(self):
+        while True:
+            gens = [tub_ds[0].train_gen(X_keys=self.X_keys, Y_keys=self.Y_keys, index=tub_ds[2],
+                batch_size=self.batch_size, record_transform=self.record_transform)
+                for tub_ds in self.tub_dataset_splits]
+
+            for batch in itertools.chain(*gens):
+                yield batch
+
+    def train_val_gen(self):
+        if self.cache:
+            return self.cached_train_gen(), self.cached_val_gen()
+        else:
+            return self.train_gen(), self.val_gen()
+
+    def total_records(self):
+        return sum([t[0].get_num_records() for t in self.tub_dataset_splits])
