@@ -163,6 +163,70 @@ class CalibrateCar(BaseCommand):
             c.run(pmw)
 
 
+class MakeMovie(BaseCommand):    
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='makemovie')
+        parser.add_argument('--tub', help='The tub to make movie from')
+        parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parsed_args = parser.parse_args(args)
+        return parsed_args, parser
+
+    def run(self, args):
+        '''
+        Load the images from a tub and create a movie from them.
+        Movie
+        '''
+        import donkeycar as dk
+        import moviepy.editor as mpy
+        import os
+
+        args, parser = self.parse_args(args)
+
+        if args.tub is None:
+            parser.print_help()
+            return            
+
+        conf = os.path.expanduser(args.config)
+
+        if not os.path.exists(conf):
+            print("No config file at location: %s. Add --config to specify\
+                 location or run from dir containing config.py." % conf)
+            return
+
+        try:
+            cfg = dk.load_config(conf)
+        except:
+            print("Exception while loading config from", conf)
+            return
+
+        self.tub = dk.parts.Tub(args.tub)
+        self.num_rec = self.tub.get_num_records()
+        self.iRec = 0
+
+        print('making movie', args.out, 'from', self.num_rec, 'images')
+        clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
+        clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
+
+        print('done')
+
+    def make_frame(self, t):
+        '''
+        Callback to return an image from from our tub records.
+        This is called from the VideoClip as it references a time.
+        We don't use t to reference the frame, but instead increment
+        a frame counter. This assumes sequential access.
+        '''
+        self.iRec = self.iRec + 1
+        
+        if self.iRec >= self.num_rec - 1:
+            return None
+
+        rec = self.tub.get_record(self.iRec)
+        image = rec['cam/image_array']
+        
+        return image # returns a 8-bit RGB array
 
 class MakeMovie(BaseCommand):    
     
