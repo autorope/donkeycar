@@ -122,6 +122,17 @@ If you are using the prebuilt image specified above, then your Pi is ready to go
 >
 > The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
 
+
+### Update Donkeycar python code and install
+
+The donkeycar python code on the memory card image is likely older than the that on the github repo. So update things once you have the Pi running.
+
+```bash
+cd ~/donkeycar
+git pull
+pip install -e .
+```
+
 ----
 Now let's setup things on your PC. Install varies depending on platform.
 
