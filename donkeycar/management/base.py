@@ -30,6 +30,28 @@ def make_dir(path):
     return real_path
 
 
+def load_config(config_path):
+    import donkeycar as dk
+
+    '''
+    load a config from the given path
+    '''
+    conf = os.path.expanduser(config_path)
+
+    if not os.path.exists(conf):
+        print("No config file at location: %s. Add --config to specify\
+                location or run from dir containing config.py." % conf)
+        return None
+
+    try:
+        cfg = dk.load_config(conf)
+    except:
+        print("Exception while loading config from", conf)
+        return None
+
+    return cfg
+
+
 class BaseCommand():
     pass
 
@@ -206,6 +228,130 @@ class MakeMovie(BaseCommand):
         
         return image # returns a 8-bit RGB array
 
+class MakeMovie(BaseCommand):    
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='makemovie')
+        parser.add_argument('--tub', help='The tub to make movie from')
+        parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parsed_args = parser.parse_args(args)
+        return parsed_args, parser
+
+    def run(self, args):
+        '''
+        Load the images from a tub and create a movie from them.
+        Movie
+        '''
+        import donkeycar as dk
+        import moviepy.editor as mpy
+        import os
+
+        args, parser = self.parse_args(args)
+
+        if args.tub is None:
+            parser.print_help()
+            return            
+
+        cfg = load_config(args.config)
+
+        if cfg is None:
+            return
+
+        self.tub = dk.parts.Tub(args.tub)
+        self.num_rec = self.tub.get_num_records()
+        self.iRec = 0
+
+        print('making movie', args.out, 'from', self.num_rec, 'images')
+        clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
+        clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
+
+        print('done')
+
+    def make_frame(self, t):
+        '''
+        Callback to return an image from from our tub records.
+        This is called from the VideoClip as it references a time.
+        We don't use t to reference the frame, but instead increment
+        a frame counter. This assumes sequential access.
+        '''
+        self.iRec = self.iRec + 1
+        
+        if self.iRec >= self.num_rec - 1:
+            return None
+
+        rec = self.tub.get_record(self.iRec)
+        image = rec['cam/image_array']
+        
+        return image # returns a 8-bit RGB array
+
+
+
+class Sim(BaseCommand):
+    '''
+    Start a websocket SocketIO server to talk to a donkey simulator    
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='sim')
+        parser.add_argument('--model', help='the model to use for predictions')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--type', default='categorical', help='model type to use when loading. categorical|linear')
+        parser.add_argument('--top_speed', default='3', help='what is top speed to drive')
+        parsed_args = parser.parse_args(args)
+        return parsed_args, parser
+
+    def run(self, args):
+        '''
+        Start a websocket SocketIO server to talk to a donkey simulator
+        '''
+        import socketio
+        import donkeycar as dk
+
+        args, parser = self.parse_args(args)
+
+        cfg = load_config(args.config)
+
+        if cfg is None:
+            return
+
+        if args.type == "categorical":
+            kl = dk.parts.KerasCategorical()
+        elif args.type == "linear":
+            kl = dk.parts.KerasLinear(num_outputs=2)
+        else:
+            print("didn't recognice type:", args.type)
+            return
+
+        #can provide an optional image filter part
+        img_stack = None
+
+        #load keras model
+        kl.load(args.model)  
+
+        #start socket server framework
+        sio = socketio.Server()
+
+        top_speed = float(args.top_speed)
+
+        #start sim server handler
+        ss = dk.parts.sim_server.SteeringServer(sio, kpart=kl, top_speed=top_speed, image_part=img_stack)
+                
+        #register events and pass to server handlers
+
+        @sio.on('telemetry')
+        def telemetry(sid, data):
+            ss.telemetry(sid, data)
+
+        @sio.on('connect')
+        def connect(sid, environ):
+            ss.connect(sid, environ)
+
+        ss.go(('0.0.0.0', 9090))
+
+
+
+
 def execute_from_command_line():
     
     commands = {
@@ -214,6 +360,7 @@ def execute_from_command_line():
             'calibrate': CalibrateCar,
             'tub': TubManager,
             'makemovie': MakeMovie,
+            'sim': Sim,
             #'calibratesteering': CalibrateSteering,
                 }
     

@@ -20,10 +20,10 @@ print('extra_files', extra_files)
 
 
 setup(name='donkeycar',
-    version='2.1.3',
+    version='2.1.5',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
-    download_url='https://github.com/wroscoe/donkey/archive/2.1.2.1.tar.gz',
+    download_url='https://github.com/wroscoe/donkey/archive/2.1.5.tar.gz',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
@@ -39,7 +39,11 @@ setup(name='donkeycar',
                       'requests',
                       'keras',
                       'h5py',
+                      'python-socketio',
+                      'flask',
+                      'eventlet',
                       'moviepy',
+                      'pandas',
                      ],
 
     extras_require={

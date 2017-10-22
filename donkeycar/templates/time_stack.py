@@ -4,17 +4,15 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     manage.py (drive) [--model=<model>] [--js]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--no_cache]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
     manage.py (calibrate)
     manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
-    manage.py (histogram) [--tub=<tub1,tub2,..tubn>] (--rec=<"user/angle">)
-    manage.py (plot_predictions) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
+    manage.py (analyze) [--tub=<tub1,tub2,..tubn>] (--op=<histogram>) (--rec=<"user/angle">)
 
 Options:
     -h --help     Show this screen.
     --js          Use physical joystick.
     --fix         Remove records which cause problems.
-    --no_cache    During training, load image repeatedly on each epoch
 
 """
 import os
@@ -37,6 +35,12 @@ def drive(cfg, model_path=None, use_joystick=False):
     V = dk.vehicle.Vehicle()
     cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
+
+    #this part stacks the last 3 images into channels of a single output image
+    img_stack = dk.parts.cv.ImgStack()
+    V.add(img_stack, 
+        inputs=['cam/image_array'],
+        outputs=['img_stack'])
     
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -48,10 +52,9 @@ def drive(cfg, model_path=None, use_joystick=False):
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
         ctr = dk.parts.LocalWebController()
-
     
     V.add(ctr, 
-          inputs=['cam/image_array'],
+          inputs=['img_stack'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     
@@ -71,7 +74,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     if model_path:
         kl.load(model_path)
     
-    V.add(kl, inputs=['cam/image_array'], 
+    V.add(kl, inputs=['img_stack'], 
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
     
@@ -128,33 +131,74 @@ def drive(cfg, model_path=None, use_joystick=False):
     
     print("You can now go to <your pi ip address>:8887 to drive your car.")
 
-def train(cfg, tub_names, model_name, cache):
+
+def expand_path_masks(paths):
+    '''
+    take a list of paths and expand any wildcards
+    returns a new list of paths fully expanded
+    '''
+    import glob
+    expanded_paths = []
+    for path in paths:
+        if '*' in path or '?' in path:
+            mask_paths = glob.glob(path)
+            expanded_paths += mask_paths
+        else:
+            expanded_paths.append(path)
+
+    return expanded_paths
+
+
+def gather_tubs(cfg, tub_names, frames=None):
+    
+    if tub_names:
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        tub_paths = expand_path_masks(tub_paths)
+    else:
+        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
+
+    if frames is None:
+        tubs = [dk.parts.Tub(path=p) for p in tub_paths]
+    else:
+        tubs = [dk.parts.TubTimeStacker(path=p, frame_list=frames) for p in tub_paths]
+    return tubs
+
+
+def train(cfg, tub_names, model_name):
     '''
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
     '''
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
+
+    #use these offsets from the current frame as points to learn the future
+    #steering values.
+    frames = [0, 20, 40, 120]
+
+    new_y_keys = []
+    for iFrame in frames:
+        for key in y_keys:
+            new_y_keys.append(key + "_" + str(iFrame))
+
+    y_keys = new_y_keys
     
-    def rt(record):
-        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
-        return record
+    kl = dk.parts.KerasLinear(num_outputs=len(y_keys))    
+    tubs = gather_tubs(cfg, tub_names, frames)
 
-    kl = dk.parts.KerasCategorical()
-    
-    tub_paths = dk.utils.gather_tub_paths(cfg, tub_names)
+    import itertools
 
-    if cache:
-        print('cache is ON')
-    else:
-        print('cache is OFF')
+    gens = [tub.train_val_gen(X_keys, y_keys, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT) for tub in tubs]
 
-    tub_chain = dk.parts.TubChain(tub_paths, X_keys, y_keys, cache=cache, record_transform=rt, batch_size=cfg.BATCH_SIZE, train_split=cfg.TRAIN_TEST_SPLIT)
-    train_gens, val_gens = tub_chain.train_val_gen()
+
+    # Training data generator is the one that keeps cycling through training data generator of all tubs chained together
+    # The same for validation generator
+    train_gens = itertools.cycle(itertools.chain(*[gen[0] for gen in gens]))
+    val_gens = itertools.cycle(itertools.chain(*[gen[1] for gen in gens]))
 
     model_path = os.path.expanduser(model_name)
 
-    total_records = tub_chain.total_records()
+    total_records = sum([t.get_num_records() for t in tubs])
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
     total_val = total_records - total_train
     print('train: %d, validation: %d' %(total_train, total_val))
@@ -181,88 +225,30 @@ def check(cfg, tub_names, fix=False):
     Check for any problems. Looks at tubs and find problems in any records or images that won't open.
     If fix is True, then delete images and records that cause problems.
     '''
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
+    tubs = gather_tubs(cfg, tub_names)
 
-    for tub in tubs:
-        tub.check(fix=fix)
+    for t in tubs:
+        tubs.check(fix=fix)
 
-def histogram(cfg, tub_names, record):
+def anaylze(cfg, tub_names, op, record):
     '''
-    Produce a histogram of record type frequency in the given tub
+    look at the tub data and produce some analysis
     '''
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
+    tubs = gather_tubs(cfg, tub_names)
 
-    import matplotlib.pyplot as plt
-    samples = []
-    for tub in tubs:
-        num_records = tub.get_num_records()
-        for iRec in tub.get_index(shuffled=False):
-            try:
+    if op == 'histogram':
+        import matplotlib.pyplot as plt
+        samples = []
+        for tub in tubs:
+            num_records = tub.get_num_records()
+            for iRec in range(0, num_records):
                 json_data = tub.get_json_record(iRec)
                 sample = json_data[record]
                 samples.append(float(sample))
-            except FileNotFoundError:
-                pass
 
-    fig = plt.figure()
-    plt.hist(samples, 50)
-    title = "Histgram of %s in %s " % (record, tub_names)
-    fig.suptitle(title)
-    plt.xlabel(record)
-    plt.show()
-
-def plot_predictions(cfg, tub_names, model_name):
-    '''
-    Plot model predictions for angle and throttle against data from tubs.
-
-    '''
-    import matplotlib.pyplot as plt
-    import pandas as pd
-
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
-    
-    model_path = os.path.expanduser(model_name)
-    model = dk.parts.KerasCategorical()
-    model.load(model_path)
-
-    user_angles = []
-    user_throttles = []
-    pilot_angles = []
-    pilot_throttles = []
-
-    for tub in tubs:
-        num_records = tub.get_num_records()
-        for iRec in tub.get_index(shuffled=False):
-            record = tub.get_record(iRec)
-            
-            img = record["cam/image_array"]    
-            user_angle = float(record["user/angle"])
-            user_throttle = float(record["user/throttle"])
-            pilot_angle, pilot_throttle = model.run(img)
-
-            user_angles.append(user_angle)
-            user_throttles.append(user_throttle)
-            pilot_angles.append(pilot_angle)
-            pilot_throttles.append(pilot_throttle)
-
-    angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-    throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
-
-    fig = plt.figure()
-
-    title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
-    fig.suptitle(title)
-
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
-
-    angles_df.plot(ax=ax1)
-    throttles_df.plot(ax=ax2)
-
-    ax1.legend(loc=4)
-    ax2.legend(loc=4)
-
-    plt.show()
+        plt.hist(samples, 50)
+        plt.xlabel(record)
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -278,23 +264,18 @@ if __name__ == '__main__':
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
-        cache = not args['--no_cache']
-        train(cfg, tub, model, cache)
+        train(cfg, tub, model)
 
     elif args['check']:
         tub = args['--tub']
         fix = args['--fix']
         check(cfg, tub, fix)
 
-    elif args['histogram']:
+    elif args['analyze']:
         tub = args['--tub']
+        op = args['--op']
         rec = args['--rec']
-        histogram(cfg, tub, rec)
-
-    elif args['plot_predictions']:
-        tub = args['--tub']
-        model = args['--model']
-        plot_predictions(cfg, tub, model)
+        anaylze(cfg, tub, op, rec)
 
 
 
