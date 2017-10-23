@@ -78,7 +78,7 @@ so you can connect to it via SSH.
 
 The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping raspberrypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full ip address (unless using cygwin). 
 
-If you are having troubles locating your Pi on the network, you will want to plug in an HDMI monitor and USB keyboard into the Pi. Boot it. Login with username: __pi__, password: __raspberry__. Then try the command:
+If you are having troubles locating your Pi on the network, you will want to plug in an HDMI monitor and USB keyboard into the Pi. Boot it. Login with username: __pi__, password: __raspberry__ (the new disk image has the password `asdfasdf`). Then try the command:
 
 ```
 ifconfig wlan0
