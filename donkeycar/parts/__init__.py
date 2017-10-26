@@ -43,7 +43,7 @@ from .transforms import Lambda
 from .simulations import SquareBoxCamera
 from .simulations import MovingSquareTelemetry
 
-from .sim_server import SteeringServer
+#from .sim_server import SteeringServer
 
 #when ready to introduce OpenCV dependencies
 #from .cv.cv import ImgStack
