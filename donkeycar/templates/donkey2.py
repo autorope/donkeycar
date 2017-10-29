@@ -275,7 +275,7 @@ if __name__ == '__main__':
         tub = args['--tub']
         model = args['--model']
         cache = not args['--no_cache']
-        train(cfg, tub, model, cache)
+        train(cfg, tub, model)
 
     elif args['check']:
         tub = args['--tub']

@@ -567,8 +567,9 @@ class TubGroup(Tub):
 
 
     def resolve_tub_paths(self, path_list):
-        if type(path_list) == str:
-            path_list = [path_list]
+        print("path_list: {}".format(path_list))
+
+        path_list = path_list.split(",")
 
         resolved_paths = []
         for path in path_list:
