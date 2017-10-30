@@ -339,18 +339,6 @@ class Tub(object):
 
 
 
-class MultiTub(Tub):
-    def __init__(self, tub_paths):
-
-        tubs = [Tub(path) for path in tub_paths]
-        for t in tubs:
-            t.update_df()
-
-        self.df = pd.concat([t.df for t in tubs], axis=0, join='inner')
-
-
-
-
 
 class TubWriter(Tub):
     def __init__(self, *args, **kwargs):
@@ -554,7 +542,8 @@ class TubGroup(Tub):
 
         print('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
                                                                                          int(record_count / 300000)))
-        self.df = pd.concat([t.df for t in tubs])
+        self.df = pd.concat([t.df for t in tubs], axis=0, join='inner')
+
 
 
     def find_tub_paths(self, path):
