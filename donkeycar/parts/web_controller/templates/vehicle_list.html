@@ -1,0 +1,23 @@
+
+{% extends "base.html" %}
+{% block content %}
+	<div class="container">
+		<h2> Vehicles </h2>
+
+		    <ul>
+		      {% for name, data in vehicles.items() %}
+				<div class="panel panel-default">
+				<a href="/vehicles/{{ escape(name)}}/">
+				  <div class="panel-heading">
+				    <h3 class="panel-title">{{ escape(name) }}</h3>
+				  </div>
+				 </a>
+				  <div class="panel-body">
+				    Sesssion Details
+				  </div>
+				</div>
+		      {% end %}
+		    </ul>
+		    
+	</div>
+{% end %}
