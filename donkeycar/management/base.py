@@ -50,8 +50,8 @@ class CreateCar(BaseCommand):
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='createcar', usage='%(prog)s [options]')
-        parser.add_argument('--path', help='path where to create car folder')
-        parser.add_argument('--template', help='name of car template to use')
+        parser.add_argument('--path', default=None, help='path where to create car folder')
+        parser.add_argument('--template', default=None, help='name of car template to use')
         parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
         
         parsed_args = parser.parse_args(args)
@@ -61,16 +61,18 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
     
-    def create_car(self, path, template, overwrite=False):
+    def create_car(self, path, template='donkey2', overwrite=False):
         """
         This script sets up the folder struction for donkey to work. 
         It must run without donkey installed so that people installing with
         docker can build the folder structure for docker to mount to.
         """
-        
-        path = path or '~/mydonkey'
+
+        #these are neeeded incase None is passed as path
+        path = path or '~/d2'
         template = template or 'donkey2'
-        
+
+
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
         
