@@ -173,11 +173,10 @@ class Tub(object):
             self.current_ix = 0
             print('New tub created at: {}'.format(self.path))
         else:
-            msg = """
-            The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types) 
-            to create a new tub. Please check your tub path or provide meta info to create a new tub.
-            """
-            raise AttributeError('')
+            msg = "The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types)" + \
+                  "to create a new tub. Please check your tub path or provide meta info to create a new tub."
+
+            raise AttributeError(msg)
 
         self.start_time = time.time()
 

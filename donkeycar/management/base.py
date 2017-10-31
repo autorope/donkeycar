@@ -218,61 +218,7 @@ class MakeMovie(BaseCommand):
         
         return image # returns a 8-bit RGB array
 
-class MakeMovie(BaseCommand):    
-    
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='makemovie')
-        parser.add_argument('--tub', help='The tub to make movie from')
-        parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parsed_args = parser.parse_args(args)
-        return parsed_args, parser
 
-    def run(self, args):
-        '''
-        Load the images from a tub and create a movie from them.
-        Movie
-        '''
-        import moviepy.editor as mpy
-
-
-        args, parser = self.parse_args(args)
-
-        if args.tub is None:
-            parser.print_help()
-            return            
-
-        cfg = load_config(args.config)
-
-        if cfg is None:
-            return
-
-        self.tub = Tub(args.tub)
-        self.num_rec = self.tub.get_num_records()
-        self.iRec = 0
-
-        print('making movie', args.out, 'from', self.num_rec, 'images')
-        clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
-        clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
-
-        print('done')
-
-    def make_frame(self, t):
-        '''
-        Callback to return an image from from our tub records.
-        This is called from the VideoClip as it references a time.
-        We don't use t to reference the frame, but instead increment
-        a frame counter. This assumes sequential access.
-        '''
-        self.iRec = self.iRec + 1
-        
-        if self.iRec >= self.num_rec - 1:
-            return None
-
-        rec = self.tub.get_record(self.iRec)
-        image = rec['cam/image_array']
-        
-        return image # returns a 8-bit RGB array
 
 
 
@@ -342,98 +288,116 @@ class Sim(BaseCommand):
 
 
 
+class TubCheck(BaseCommand):
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
+        parser.add_argument('tubs', nargs='+', help='paths to tubs')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
 
-def check(cfg, tub_names, fix=False):
-    '''
-    Check for any problems. Looks at tubs and find problems in any records or images that won't open.
-    If fix is True, then delete images and records that cause problems.
-    '''
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
+    def check(self, tub_paths, fix=False):
+        '''
+        Check for any problems. Looks at tubs and find problems in any records or images that won't open.
+        If fix is True, then delete images and records that cause problems.
+        '''
+        tubs = [Tub(path) for path in tub_paths]
 
-    for tub in tubs:
-        tub.check(fix=fix)
+        for tub in tubs:
+            tub.check(fix=fix)
 
-
-def histogram(cfg, tub_names, record):
-    '''
-    Produce a histogram of record type frequency in the given tub
-    '''
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
-
-    import matplotlib.pyplot as plt
-    samples = []
-    for tub in tubs:
-        num_records = tub.get_num_records()
-        for iRec in tub.get_index(shuffled=False):
-            try:
-                json_data = tub.get_json_record(iRec)
-                sample = json_data[record]
-                samples.append(float(sample))
-            except FileNotFoundError:
-                pass
-
-    fig = plt.figure()
-    plt.hist(samples, 50)
-    title = "Histgram of %s in %s " % (record, tub_names)
-    fig.suptitle(title)
-    plt.xlabel(record)
-    plt.show()
+    def run(self, args):
+        args = self.parse_args(args)
+        self.check(args.tubs)
 
 
-def plot_predictions(cfg, tub_names, model_name):
-    '''
-    Plot model predictions for angle and throttle against data from tubs.
+class ShowHistogram(BaseCommand):
 
-    '''
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    from donkeycar.parts.keras import KerasCategorical
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='tubhist', usage='%(prog)s [options]')
+        parser.add_argument('tubs', nargs='+', help='paths to tubs')
+        parser.add_argument('--record', default=None, help='name of record to create histogram')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
 
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
+    def show_histogram(self, tub_paths, record_name):
+        '''
+        Produce a histogram of record type frequency in the given tub
+        '''
+        from matplotlib import pyplot as plt
+        from donkeycar.parts.datastore import TubGroup
 
-    model_path = os.path.expanduser(model_name)
-    model = KerasCategorical()
-    model.load(model_path)
+        tg = TubGroup(tub_paths=tub_paths)
+        if record_name is not None:
+            tg.df[record_name].hist(bins=50)
+        else:
+            tg.df.hist(bins=50)
+        plt.show()
 
-    user_angles = []
-    user_throttles = []
-    pilot_angles = []
-    pilot_throttles = []
+    def run(self, args):
+        args = self.parse_args(args)
+        args.tubs = ','.join(args.tubs)
+        self.show_histogram(args.tubs, args.record)
 
-    for tub in tubs:
-        num_records = tub.get_num_records()
-        for iRec in tub.get_index(shuffled=False):
-            record = tub.get_record(iRec)
 
-            img = record["cam/image_array"]
-            user_angle = float(record["user/angle"])
-            user_throttle = float(record["user/throttle"])
-            pilot_angle, pilot_throttle = model.run(img)
+class ShowPredictionPlots(BaseCommand):
 
-            user_angles.append(user_angle)
-            user_throttles.append(user_throttle)
-            pilot_angles.append(pilot_angle)
-            pilot_throttles.append(pilot_throttle)
+    def plot_predictions(cfg, tub_paths, model_path):
+        '''
+        Plot model predictions for angle and throttle against data from tubs.
 
-    angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-    throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+        '''
+        import matplotlib.pyplot as plt
+        import pandas as pd
+        from donkeycar.parts.datastore import TubGroup
+        from donkeycar.parts.keras import KerasCategorical
 
-    fig = plt.figure()
+        tg = TubGroup(tub_paths)
 
-    title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
-    fig.suptitle(title)
+        model_path = os.path.expanduser(model_path)
+        model = KerasCategorical()
+        model.load(model_path)
 
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
+        gen = tg.get_batch_gen(batch_size=len(tg.df),shuffle=False)
+        arr = next(gen)
 
-    angles_df.plot(ax=ax1)
-    throttles_df.plot(ax=ax2)
+        """
+        THIS WILL SHOW the output of a predicted model.
+        
+        
+        for tub in tubs:
+            num_records = tub.get_num_records()
+            for iRec in tub.get_index(shuffled=False):
+                record = tub.get_record(iRec)
 
-    ax1.legend(loc=4)
-    ax2.legend(loc=4)
+                img = record["cam/image_array"]
+                user_angle = float(record["user/angle"])
+                user_throttle = float(record["user/throttle"])
+                pilot_angle, pilot_throttle = model.run(img)
 
-    plt.show()
+                user_angles.append(user_angle)
+                user_throttles.append(user_throttle)
+                pilot_angles.append(pilot_angle)
+                pilot_throttles.append(pilot_throttle)
 
+        angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
+        throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+
+        fig = plt.figure()
+
+        title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
+        fig.suptitle(title)
+
+        ax1 = fig.add_subplot(211)
+        ax2 = fig.add_subplot(212)
+
+        angles_df.plot(ax=ax1)
+        throttles_df.plot(ax=ax2)
+
+        ax1.legend(loc=4)
+        ax2.legend(loc=4)
+
+        plt.show()
+        """
 
 def execute_from_command_line():
     """
@@ -443,7 +407,9 @@ def execute_from_command_line():
             'createcar': CreateCar,
             'findcar': FindCar,
             'calibrate': CalibrateCar,
-            'tub': TubManager,
+            'tubclean': TubManager,
+            'tubhist': ShowHistogram,
+            'tubcheck': TubCheck,
             'makemovie': MakeMovie,
             'sim': Sim,
                 }
