@@ -261,8 +261,8 @@ def gather_tubs(cfg, tub_names):
     takes as input the configuration, and the comma seperated list of tub paths
     returns a list of Tub objects initialized to each path
     '''
-    from .parts import Tub
-    
+    from donkeycar.parts.tub import Tub
+
     tub_paths = gather_tub_paths(cfg, tub_names)
     tubs = [Tub(p) for p in tub_paths]
 

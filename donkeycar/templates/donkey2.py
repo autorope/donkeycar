@@ -19,7 +19,11 @@ Options:
 """
 import os
 from docopt import docopt
-import donkeycar as dk 
+
+import donkeycar as dk
+from donkeycar.parts.sensors.cameras import PiCamera
+from donkeycar.parts.
+
 
 
 def drive(cfg, model_path=None, use_joystick=False):
@@ -35,7 +39,7 @@ def drive(cfg, model_path=None, use_joystick=False):
 
     #Initialize car
     V = dk.vehicle.Vehicle()
-    cam = dk.parts.PiCamera(resolution=cfg.CAMERA_RESOLUTION)
+    cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:

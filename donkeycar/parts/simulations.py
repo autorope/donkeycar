@@ -5,9 +5,9 @@ Created on Sun Jun 25 17:30:28 2017
 
 @author: wroscoe
 """
+import random
 import numpy as np
 
-import random
 
 class MovingSquareTelemetry:
     """

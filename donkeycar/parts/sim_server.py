@@ -5,7 +5,7 @@ https://github.com/tawnkramer/sdsandbox for source of simulator.
 Prebuilt simulators available:
 Windows: https://drive.google.com/file/d/0BxSsaxmEV-5YRC1ZWHZ4Y1dZTkE/view?usp=sharing
 '''
-import shutil
+
 import base64
 
 import numpy as np
