@@ -6,9 +6,9 @@ Created on Thu Oct 12 2017
 @author: tawnkramer
 """
 
-import os
+
 import unittest
-from donkeycar.parts.sim_server import SteeringServer, FPSTimer
+from donkeycar.parts.simulation import SteeringServer, FPSTimer
 from donkeycar.parts.keras import KerasCategorical
 
 class TestSimServer(unittest.TestCase):

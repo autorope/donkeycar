@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import tempfile
 import unittest
-from donkeycar.parts.tub import TubWriter, Tub
+from donkeycar.parts.datastore import TubWriter, Tub
 import os 
 
 

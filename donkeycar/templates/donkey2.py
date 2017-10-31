@@ -21,8 +21,14 @@ import os
 from docopt import docopt
 
 import donkeycar as dk
-from donkeycar.parts.sensors.cameras import PiCamera
-from donkeycar.parts.
+
+#import parts
+from donkeycar.parts.camera import PiCamera
+from donkeycar.parts.transform import Lambda
+from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
+from donkeycar.parts.datastore import TubHandler, TubGroup
+from donkeycar.parts.controller import LocalWebController, JoystickController
 
 
 
@@ -45,13 +51,13 @@ def drive(cfg, model_path=None, use_joystick=False):
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        ctr = dk.parts.JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
-                                    steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                    auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+        ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
+                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
     else:        
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
-        ctr = dk.parts.LocalWebController()
+        ctr = LocalWebController()
 
     
     V.add(ctr, 
@@ -67,11 +73,11 @@ def drive(cfg, model_path=None, use_joystick=False):
         else:
             return True
         
-    pilot_condition_part = dk.parts.Lambda(pilot_condition)
+    pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasCategorical()
+    kl = KerasCategorical()
     if model_path:
         kl.load(model_path)
     
@@ -93,20 +99,20 @@ def drive(cfg, model_path=None, use_joystick=False):
         else: 
             return pilot_angle, pilot_throttle
         
-    drive_mode_part = dk.parts.Lambda(drive_mode)
+    drive_mode_part = Lambda(drive_mode)
     V.add(drive_mode_part, 
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
     
     
-    steering_controller = dk.parts.PCA9685(cfg.STEERING_CHANNEL)
-    steering = dk.parts.PWMSteering(controller=steering_controller,
+    steering_controller = PCA9685(cfg.STEERING_CHANNEL)
+    steering = PWMSteering(controller=steering_controller,
                                     left_pulse=cfg.STEERING_LEFT_PWM, 
                                     right_pulse=cfg.STEERING_RIGHT_PWM)
     
-    throttle_controller = dk.parts.PCA9685(cfg.THROTTLE_CHANNEL)
-    throttle = dk.parts.PWMThrottle(controller=throttle_controller,
+    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
+    throttle = PWMThrottle(controller=throttle_controller,
                                     max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                     zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                     min_pulse=cfg.THROTTLE_REVERSE_PWM)
@@ -122,7 +128,7 @@ def drive(cfg, model_path=None, use_joystick=False):
            'float', 'float',  
            'str']
     
-    th = dk.parts.TubHandler(path=cfg.DATA_PATH)
+    th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
     
@@ -145,9 +151,9 @@ def train(cfg, tub_names, model_name):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
 
-    kl = dk.parts.KerasCategorical()
+    kl = KerasCategorical()
 
-    tubgroup = dk.parts.TubGroup(tub_names)
+    tubgroup = TubGroup(tub_names)
     train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
                                                     batch_size=cfg.BATCH_SIZE,
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
@@ -168,101 +174,7 @@ def train(cfg, tub_names, model_name):
              train_split=cfg.TRAIN_TEST_SPLIT)
 
 
-def calibrate():
-    channel = int(input('Enter the channel your actuator uses (0-15).'))
-    c = dk.parts.PCA9685(channel)
-    
-    for i in range(10):
-        pmw = int(input('Enter a PWM setting to test(100-600)'))
-        c.run(pmw)
 
-def check(cfg, tub_names, fix=False):
-    '''
-    Check for any problems. Looks at tubs and find problems in any records or images that won't open.
-    If fix is True, then delete images and records that cause problems.
-    '''
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
-
-    for tub in tubs:
-        tub.check(fix=fix)
-
-def histogram(cfg, tub_names, record):
-    '''
-    Produce a histogram of record type frequency in the given tub
-    '''
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
-
-    import matplotlib.pyplot as plt
-    samples = []
-    for tub in tubs:
-        num_records = tub.get_num_records()
-        for iRec in tub.get_index(shuffled=False):
-            try:
-                json_data = tub.get_json_record(iRec)
-                sample = json_data[record]
-                samples.append(float(sample))
-            except FileNotFoundError:
-                pass
-
-    fig = plt.figure()
-    plt.hist(samples, 50)
-    title = "Histgram of %s in %s " % (record, tub_names)
-    fig.suptitle(title)
-    plt.xlabel(record)
-    plt.show()
-
-def plot_predictions(cfg, tub_names, model_name):
-    '''
-    Plot model predictions for angle and throttle against data from tubs.
-
-    '''
-    import matplotlib.pyplot as plt
-    import pandas as pd
-
-    tubs = dk.utils.gather_tubs(cfg, tub_names)
-    
-    model_path = os.path.expanduser(model_name)
-    model = dk.parts.KerasCategorical()
-    model.load(model_path)
-
-    user_angles = []
-    user_throttles = []
-    pilot_angles = []
-    pilot_throttles = []
-
-    for tub in tubs:
-        num_records = tub.get_num_records()
-        for iRec in tub.get_index(shuffled=False):
-            record = tub.get_record(iRec)
-            
-            img = record["cam/image_array"]    
-            user_angle = float(record["user/angle"])
-            user_throttle = float(record["user/throttle"])
-            pilot_angle, pilot_throttle = model.run(img)
-
-            user_angles.append(user_angle)
-            user_throttles.append(user_throttle)
-            pilot_angles.append(pilot_angle)
-            pilot_throttles.append(pilot_throttle)
-
-    angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-    throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
-
-    fig = plt.figure()
-
-    title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
-    fig.suptitle(title)
-
-    ax1 = fig.add_subplot(211)
-    ax2 = fig.add_subplot(212)
-
-    angles_df.plot(ax=ax1)
-    throttles_df.plot(ax=ax2)
-
-    ax1.legend(loc=4)
-    ax2.legend(loc=4)
-
-    plt.show()
 
 
 if __name__ == '__main__':

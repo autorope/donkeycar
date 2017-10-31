@@ -1,7 +1,7 @@
 import unittest
 
 import donkeycar as dk
-from donkeycar.parts.cameras import BaseCamera
+from donkeycar.parts.camera import BaseCamera
 
 class TestBaseCamera(unittest.TestCase):
 

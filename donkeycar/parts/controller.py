@@ -5,6 +5,9 @@ import time
 import struct
 from threading import Thread
 
+#import for syntactical ease
+from donkeycar.parts.web_controller.web import LocalWebController
+
 class Joystick():
     '''
     An interface to a physical joystick available at /dev/input

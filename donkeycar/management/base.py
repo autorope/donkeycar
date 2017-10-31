@@ -1,23 +1,14 @@
-#!/usr/bin/env python3
-"""
-Upload a file to S3 (requires amazon credentials).
 
-Usage:
-     donkey <command> [--file_path=<file_path>]
-
-Options:
-  --file_path=<file_path> name of dataset file to save.
-  --bucket=<bucket>  name of S3 bucket to upload data. [default: donkey_resources].
-"""
-
-from docopt import docopt
 import sys
 import os
 import socket
 import shutil
 import argparse
 
+import donkeycar as dk
+from donkeycar.parts.datastore import Tub
 from .tub import TubManager
+
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -31,7 +22,6 @@ def make_dir(path):
 
 
 def load_config(config_path):
-    import donkeycar as dk
 
     '''
     load a config from the given path
@@ -111,6 +101,7 @@ class CreateCar(BaseCommand):
         print("Donkey setup complete.")
 
 
+
 class UploadData(BaseCommand):
     
     def parse_args(self, args):
@@ -152,11 +143,11 @@ class CalibrateCar(BaseCommand):
         return parsed_args
 
     def run(self, args):
-        import donkeycar as dk
+        from donkeycar.parts.actuator import PCA9685
     
         args = self.parse_args(args)
         channel = int(args.channel)
-        c = dk.parts.PCA9685(channel)
+        c = PCA9685(channel)
         
         for i in range(10):
             pmw = int(input('Enter a PWM setting to test(0-1500)'))
@@ -178,9 +169,8 @@ class MakeMovie(BaseCommand):
         Load the images from a tub and create a movie from them.
         Movie
         '''
-        import donkeycar as dk
         import moviepy.editor as mpy
-        import os
+
 
         args, parser = self.parse_args(args)
 
@@ -201,7 +191,7 @@ class MakeMovie(BaseCommand):
             print("Exception while loading config from", conf)
             return
 
-        self.tub = dk.parts.Tub(args.tub)
+        self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
         self.iRec = 0
 
@@ -243,9 +233,8 @@ class MakeMovie(BaseCommand):
         Load the images from a tub and create a movie from them.
         Movie
         '''
-        import donkeycar as dk
         import moviepy.editor as mpy
-        import os
+
 
         args, parser = self.parse_args(args)
 
@@ -258,7 +247,7 @@ class MakeMovie(BaseCommand):
         if cfg is None:
             return
 
-        self.tub = dk.parts.Tub(args.tub)
+        self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
         self.iRec = 0
 
@@ -306,7 +295,8 @@ class Sim(BaseCommand):
         Start a websocket SocketIO server to talk to a donkey simulator
         '''
         import socketio
-        import donkeycar as dk
+        from donkeycar.parts.simulation import SteeringServer
+        from donkeycar.parts.keras import KerasCategorical, KerasLinear
 
         args, parser = self.parse_args(args)
 
@@ -315,10 +305,11 @@ class Sim(BaseCommand):
         if cfg is None:
             return
 
+        #TODO: this logic should be in a pilot or modle handler part.
         if args.type == "categorical":
-            kl = dk.parts.KerasCategorical()
+            kl = KerasCategorical()
         elif args.type == "linear":
-            kl = dk.parts.KerasLinear(num_outputs=2)
+            kl = KerasLinear(num_outputs=2)
         else:
             print("didn't recognice type:", args.type)
             return
@@ -335,7 +326,7 @@ class Sim(BaseCommand):
         top_speed = float(args.top_speed)
 
         #start sim server handler
-        ss = dk.parts.sim_server.SteeringServer(sio, kpart=kl, top_speed=top_speed, image_part=img_stack)
+        ss = SteeringServer(sio, kpart=kl, top_speed=top_speed, image_part=img_stack)
                 
         #register events and pass to server handlers
 
@@ -352,8 +343,102 @@ class Sim(BaseCommand):
 
 
 
+def check(cfg, tub_names, fix=False):
+    '''
+    Check for any problems. Looks at tubs and find problems in any records or images that won't open.
+    If fix is True, then delete images and records that cause problems.
+    '''
+    tubs = dk.utils.gather_tubs(cfg, tub_names)
+
+    for tub in tubs:
+        tub.check(fix=fix)
+
+
+def histogram(cfg, tub_names, record):
+    '''
+    Produce a histogram of record type frequency in the given tub
+    '''
+    tubs = dk.utils.gather_tubs(cfg, tub_names)
+
+    import matplotlib.pyplot as plt
+    samples = []
+    for tub in tubs:
+        num_records = tub.get_num_records()
+        for iRec in tub.get_index(shuffled=False):
+            try:
+                json_data = tub.get_json_record(iRec)
+                sample = json_data[record]
+                samples.append(float(sample))
+            except FileNotFoundError:
+                pass
+
+    fig = plt.figure()
+    plt.hist(samples, 50)
+    title = "Histgram of %s in %s " % (record, tub_names)
+    fig.suptitle(title)
+    plt.xlabel(record)
+    plt.show()
+
+
+def plot_predictions(cfg, tub_names, model_name):
+    '''
+    Plot model predictions for angle and throttle against data from tubs.
+
+    '''
+    import matplotlib.pyplot as plt
+    import pandas as pd
+    from donkeycar.parts.keras import KerasCategorical
+
+    tubs = dk.utils.gather_tubs(cfg, tub_names)
+
+    model_path = os.path.expanduser(model_name)
+    model = KerasCategorical()
+    model.load(model_path)
+
+    user_angles = []
+    user_throttles = []
+    pilot_angles = []
+    pilot_throttles = []
+
+    for tub in tubs:
+        num_records = tub.get_num_records()
+        for iRec in tub.get_index(shuffled=False):
+            record = tub.get_record(iRec)
+
+            img = record["cam/image_array"]
+            user_angle = float(record["user/angle"])
+            user_throttle = float(record["user/throttle"])
+            pilot_angle, pilot_throttle = model.run(img)
+
+            user_angles.append(user_angle)
+            user_throttles.append(user_throttle)
+            pilot_angles.append(pilot_angle)
+            pilot_throttles.append(pilot_throttle)
+
+    angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
+    throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+
+    fig = plt.figure()
+
+    title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
+    fig.suptitle(title)
+
+    ax1 = fig.add_subplot(211)
+    ax2 = fig.add_subplot(212)
+
+    angles_df.plot(ax=ax1)
+    throttles_df.plot(ax=ax2)
+
+    ax1.legend(loc=4)
+    ax2.legend(loc=4)
+
+    plt.show()
+
+
 def execute_from_command_line():
-    
+    """
+    This is the fuction linked to the "donkey" terminal command.
+    """
     commands = {
             'createcar': CreateCar,
             'findcar': FindCar,
@@ -361,7 +446,6 @@ def execute_from_command_line():
             'tub': TubManager,
             'makemovie': MakeMovie,
             'sim': Sim,
-            #'calibratesteering': CalibrateSteering,
                 }
     
     args = sys.argv[:]

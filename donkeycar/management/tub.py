@@ -6,7 +6,7 @@ Manage tubs
 
 import os, sys, time
 import json
-import tornado
+import tornado.web
 from stat import S_ISREG, ST_MTIME, ST_MODE
 
 

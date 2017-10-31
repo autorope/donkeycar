@@ -10,7 +10,7 @@ import unittest
 import tempfile
 import shutil
 from donkeycar.utils import map_range, gather_tub_paths, gather_tubs
-from donkeycar.parts.tub import Tub, TubWriter
+from donkeycar.parts.datastore import Tub, TubWriter
 
 class TestMapping(unittest.TestCase):
     def test_positive(self):

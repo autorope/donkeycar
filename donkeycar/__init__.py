@@ -1,6 +1,6 @@
 __version__ = '2.2.0'
 
-print('donkey v{}'.format(__version__))
+print('using donkey v{} ...'.format(__version__))
 
 import sys
 
