@@ -129,7 +129,7 @@ def default_categorical():
     throttle_out = Dense(1, activation='relu', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer='adam',
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})

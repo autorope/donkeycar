@@ -300,6 +300,7 @@ class Tub(object):
         be saved in a csv.
         """
         json_data = {}
+        self.current_ix += 1
         
         for key, val in data.items():
             typ = self.get_input_type(key)
@@ -323,7 +324,7 @@ class Tub(object):
                 raise TypeError(msg)
 
         self.write_json_record(json_data)
-        self.current_ix += 1
+        return self.current_ix
 
 
     def get_json_record_path(self, ix):

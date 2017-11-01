@@ -5,10 +5,6 @@ Scripts to drive a donkey 2 car and train a model for it.
 Usage:
     manage.py (drive) [--model=<model>] [--js]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--no_cache]
-    manage.py (calibrate)
-    manage.py (check) [--tub=<tub1,tub2,..tubn>] [--fix]
-    manage.py (histogram) [--tub=<tub1,tub2,..tubn>] (--rec=<"user/angle">)
-    manage.py (plot_predictions) [--tub=<tub1,tub2,..tubn>] (--model=<model>)
 
 Options:
     -h --help     Show this screen.
@@ -66,7 +62,7 @@ def drive(cfg, model_path=None, use_joystick=False):
           threaded=True)
     
     #See if we should even run the pilot module. 
-    #This is only needed because the part run_contion only accepts boolean
+    #This is only needed because the part run_condition only accepts boolean
     def pilot_condition(mode):
         if mode == 'user':
             return False
@@ -121,12 +117,8 @@ def drive(cfg, model_path=None, use_joystick=False):
     V.add(throttle, inputs=['throttle'])
     
     #add tub to save data
-    inputs=['cam/image_array',
-            'user/angle', 'user/throttle', 
-            'user/mode']
-    types=['image_array',
-           'float', 'float',  
-           'str']
+    inputs=['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
+    types=['image_array', 'float', 'float',  'str']
     
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
