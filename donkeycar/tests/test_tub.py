@@ -3,7 +3,8 @@ import tempfile
 import unittest
 from donkeycar.parts.datastore import TubWriter, Tub
 import os 
-
+from .setup import create_sample_tub
+import pytest
 
 class TestMovingSquareTelemetry(unittest.TestCase):
     def setUp(self):
@@ -27,3 +28,29 @@ class TestMovingSquareTelemetry(unittest.TestCase):
         abs_record_dict = tub.make_record_paths_absolute(record_dict)
 
         assert abs_record_dict['file_path'] == os.path.join(self.path, rel_file_name)
+
+
+
+@pytest.fixture
+def tub_path(tmpdir):
+    tub_path = tmpdir.mkdir('tubs').join('tub')
+    return tub_path
+
+
+@pytest.fixture
+def tub(tub_path):
+    t = create_sample_tub(tub_path, records=10)
+    return t
+
+
+def test_tub_load(tub, tub_path):
+    """Tub loads from existing tub path."""
+    t = Tub(tub_path)
+    assert t is not None
+
+
+def test_tub_update_df(tub):
+    """ Tub updats its dataframe """
+    tub.update_df()
+    assert len(tub.df) == 10
+

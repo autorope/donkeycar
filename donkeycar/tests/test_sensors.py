@@ -1,15 +1,21 @@
 import unittest
 
-import donkeycar as dk
+import pytest
+from .setup import on_pi
 from donkeycar.parts.camera import BaseCamera
 
-class TestBaseCamera(unittest.TestCase):
 
-    def setUp(self):
-        self.camera = BaseCamera()
-        
+def test_base_camera():
+    cam = BaseCamera()
 
 
+@pytest.mark.skipif(on_pi() == False, reason='only works on RPi')
+def test_picamera():
+    from donkeycar.parts.camera import PiCamera
+    cam = PiCamera()
+    cam.update()
+    frame = cam.run_threaded()
+    assert frame.shape == cam.camera.resolution
 
-if __name__ == '__main__':
-    unittest.main()
+
+
