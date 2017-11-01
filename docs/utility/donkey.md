@@ -1,6 +1,6 @@
 # Donkey Command-line Utilities
 
-The `donkey` command is created when you install the donkeycar python package. This is a python script that adds some important functionality. The operations here are vehicle independant, and should work on any hardware configuration.
+The `donkey` command is created when you install the donkeycar Python package. This is a Python script that adds some important functionality. The operations here are vehicle independent, and should work on any hardware configuration.
 
 ## Create Car
 
@@ -13,8 +13,8 @@ donkey createcar --path <dir> [--overwrite] [--template <donkey2>]
 
 * This command may be run from any dir
 * Run on the host computer or the robot
-* It uses the --path as the destination dir to create. If .py files exist there, it will not overwrite them, unless the optional --overwrite is used. 
-* The optional --template will specify the template file to start from. For a list of templates, see the `donkeycar/templates` dir
+* It uses the `--path` as the destination dir to create. If `.py` files exist there, it will not overwrite them, unless the optional `--overwrite` is used. 
+* The optional `--template` will specify the template file to start from. For a list of templates, see the `donkeycar/templates` dir
 
 ## Find Car
 
@@ -26,8 +26,8 @@ donkey findcar
 ```
 
 * Run on the host computer
-* Prints the host computer ip address and the car ip address if found
-* Requires the nmap utlity:
+* Prints the host computer IP address and the car IP address if found
+* Requires the nmap utility:
 ```bash
 sudo apt install nmap
 ```
@@ -43,7 +43,7 @@ donkey calibrate --channel <0-15 channel id>
 ```
 
 * Run on the host computer
-* Opens the PWM chanel specified by --channel
+* Opens the PWM channel specified by `--channel`
 * Type integer values to specify PWM values and hit enter
 * Hit `Ctrl + C` to exit
 
@@ -71,9 +71,9 @@ donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>]
 ```
 
 * Run on the host computer or the robot
-* Uses the image records from --tub dir path given
-* Creates a movie given by --out. Codec is infered from file extension. Default: tub_movie.mp4
-* Optional argument to specify a different config.py other than default: config.py
+* Uses the image records from `--tub` dir path given
+* Creates a movie given by `--out`. Codec is inferred from file extension. Default: `tub_movie.mp4`
+* Optional argument to specify a different `config.py` other than default: `config.py`
 
 
 
@@ -91,7 +91,7 @@ donkey tubcheck <tub_path> [--fix]
 * Run on the host computer or the robot
 * It will print summary of record count and channels recorded for each tub
 * It will print the records that throw an exception while reading
-* The optional --fix will delte records that have problems
+* The optional `--fix` will delete records that have problems
 
 
 ## Histogram
@@ -108,11 +108,11 @@ donkey tubhist <tub_path> --rec=<"user/angle">
 
 * Run on the host computer
 
-* When the --tub is ommited, it will check all tubs in the default data dir
+* When the `--tub` is omitted, it will check all tubs in the default data dir
 
 ## Plot Predictions
 
-This command allows you plot steering and throttle agains predictions coming from a trained model.
+This command allows you plot steering and throttle against predictions coming from a trained model.
 
 > Note: This should be moved from manage.py to donkey command
 
@@ -121,10 +121,10 @@ Usage:
 donkey tubplot <tub_path> [--model=<model_path>]
 ```
 
-* This command may be run from ~/d2 dir
+* This command may be run from `~/d2` dir
 * Run on the host computer
 * Will show a pop-up window showing the plot of steering values in a given tub compared to NN predictions from the trained model
-* When the --tub is ommited, it will check all tubs in the default data dir
+* When the `--tub` is omitted, it will check all tubs in the default data dir
 
 
 ## Simulation Server
@@ -136,9 +136,9 @@ Usage:
 donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<speed>] [--config=<config.py>]
 ```
 
-* This command may be run from ~/d2 dir
+* This command may be run from `~/d2` dir
 * Run on the host computer
 * Uses the model to make predictions based on images and telemetry from the simulator
-* --type can specify whether the model needs angle output to be treated as categorical
-* top speed can be modified to ascertain stablity at different goal speeds
+* `--type` can specify whether the model needs angle output to be treated as categorical
+* Top speed can be modified to ascertain stability at different goal speeds
 

@@ -1,11 +1,11 @@
 # What is a Part
 
-A part python class that wraps a functional component of a vehicle. 
+A part Python class that wraps a functional component of a vehicle. 
 These include: 
 * Sensors - Cameras, Lidar, Odometers, GPS ...
 * Actuators - Motor Controllers
 * Pilots - Lane Detectors, Behavioral Cloning models, ...
-* Controllers - Web based or bluetooth.
+* Controllers - Web based or Bluetooth.
 * Stores - Tub, or a way to save data. 
 
 Here is an example how to use the PiCamera part to publish an image in the
