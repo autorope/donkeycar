@@ -12,10 +12,9 @@ def test_base_camera():
 @pytest.mark.skipif(on_pi() == False, reason='only works on RPi')
 def test_picamera():
     from donkeycar.parts.camera import PiCamera
-    cam = PiCamera()
-    cam.update()
-    frame = cam.run_threaded()
-    assert frame.shape == cam.camera.resolution
-
-
+    resolution = (120,160)
+    cam = PiCamera(resolution=resolution)
+    frame = cam.run()
+    #assert shape is as expected. img_array shape shows (width, height, channels)
+    assert frame.shape[:2] == resolution[::-1]
 

@@ -31,6 +31,12 @@ class PiCamera(BaseCamera):
         time.sleep(2)
 
 
+    def run(self):
+        f = next(self.stream)
+        frame = f.array
+        self.rawCapture.truncate(0)
+        return frame
+
     def update(self):
         # keep looping infinitely until the thread is stopped
         for f in self.stream:

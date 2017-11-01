@@ -13,7 +13,7 @@ def on_pi():
 @pytest.fixture
 def tub_path(tmpdir):
     tub_path = tmpdir.mkdir('tubs').join('tub')
-    return tub_path
+    return str(tub_path)
 
 
 @pytest.fixture
