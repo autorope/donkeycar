@@ -411,6 +411,7 @@ def execute_from_command_line():
             'calibrate': CalibrateCar,
             'tubclean': TubManager,
             'tubhist': ShowHistogram,
+            'tubplot': ShowPredictionPlots,
             'tubcheck': TubCheck,
             'makemovie': MakeMovie,
             'sim': Sim,
