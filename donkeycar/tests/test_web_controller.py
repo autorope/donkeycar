@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 import json
-from ..web import LocalWebController
+from donkeycar.parts.web_controller.web import LocalWebController
 
 @pytest.fixture
 def server():
@@ -17,3 +17,6 @@ def test_json_output(server):
     print(d)
     assert d is not None
     assert int(d[0]) == 0
+
+
+

@@ -25,7 +25,6 @@ Usage:
 donkey findcar
 ```
 
-* This command may be run from any dir
 * Run on the host computer
 * Prints the host computer ip address and the car ip address if found
 * Requires the nmap utlity:
@@ -43,10 +42,22 @@ Usage:
 donkey calibrate --channel <0-15 channel id>
 ```
 
-* This command may be run from any dir
 * Run on the host computer
 * Opens the PWM chanel specified by --channel
 * Type integer values to specify PWM values and hit enter
+* Hit `Ctrl + C` to exit
+
+## Clean data in Tub
+
+Opens a web server to delete bad data from a tub.
+
+Usage:
+```bash
+donkey tubclean <folder containing tubs>
+```
+
+* Run on pi or host computer.
+* Opens the web server to delete bad data.
 * Hit `Ctrl + C` to exit
 
 
@@ -56,10 +67,9 @@ This command allows you to create a movie file from the images in a Tub.
 
 Usage:
 ```bash
-donkey makemovie --tub=<dir> [--out=<tub_movie.mp4>] [--config=<config.py>]
+donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>]
 ```
 
-* This command may be run from ~/d2 dir
 * Run on the host computer or the robot
 * Uses the image records from --tub dir path given
 * Creates a movie given by --out. Codec is infered from file extension. Default: tub_movie.mp4
@@ -75,12 +85,10 @@ This command allows you to see how many records are contained in any/all tubs. I
 
 Usage:
 ```bash
-python manage.py check [--tub <tubdir>] [--fix]
+donkey tubcheck <tub_path> [--fix]
 ```
 
-* This command may be run from ~/d2 dir
 * Run on the host computer or the robot
-* When the --tub is ommited, it will check all tubs in the default data dir
 * It will print summary of record count and channels recorded for each tub
 * It will print the records that throw an exception while reading
 * The optional --fix will delte records that have problems
@@ -95,10 +103,9 @@ This command will show a pop-up window showing the histogram of record values in
 
 Usage:
 ```bash
-python manage.py histogram [--tub <tubdir>] --rec=<"user/angle">
+donkey tubhist <tub_path> --rec=<"user/angle">
 ```
 
-* This command may be run from ~/d2 dir
 * Run on the host computer
 
 * When the --tub is ommited, it will check all tubs in the default data dir
@@ -111,7 +118,7 @@ This command allows you plot steering and throttle agains predictions coming fro
 
 Usage:
 ```bash
-python manage.py plot_predictions [--tub=<tub_path>] [--model=<model_path>] 
+donkey tubplot <tub_path> [--model=<model_path>]
 ```
 
 * This command may be run from ~/d2 dir

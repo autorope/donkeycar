@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 import numpy as np
-from ..simulations import MovingSquareTelemetry, SquareBoxCamera
+from donkeycar.parts.simulation import MovingSquareTelemetry, SquareBoxCamera
 
 
 class TestMovingSquareTelemetry(unittest.TestCase):

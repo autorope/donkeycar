@@ -15,7 +15,7 @@ Here is an example how to use the PiCamera part to publish an image in the
 V = dk.Vehicle()
 
 #initialize the camera part
-cam = dk.parts.PiCamera()
+cam = PiCamera()
 
 #add the part to the vehicle.
 V.add(cam, outputs=['cam/img'])

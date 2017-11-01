@@ -15,11 +15,9 @@ models to help direct the vehicles motion.
 import os
 import numpy as np
 import keras
-from ... import utils
-
 
 import donkeycar as dk
-from donkeycar import utils
+
 
 class KerasPilot():
  
@@ -79,7 +77,7 @@ class KerasCategorical(KerasPilot):
         angle_binned, throttle = self.model.predict(img_arr)
         #print('throttle', throttle)
         #angle_certainty = max(angle_binned[0])
-        angle_unbinned = utils.linear_unbin(angle_binned)
+        angle_unbinned = dk.utils.linear_unbin(angle_binned)
         return angle_unbinned, throttle[0][0]
     
     
@@ -131,7 +129,7 @@ def default_categorical():
     throttle_out = Dense(1, activation='relu', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-    model.compile(optimizer='rmsprop',
+    model.compile(optimizer='adam',
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})

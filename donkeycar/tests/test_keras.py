@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
-from ..keras import KerasPilot, KerasCategorical, default_categorical
+from donkeycar.parts.keras import KerasPilot, KerasCategorical, default_categorical
 # content of ./test_smtpsimple.py
 
 @pytest.fixture
