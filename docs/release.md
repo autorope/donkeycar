@@ -16,12 +16,12 @@ see the last sector of the partition.
 
 Then run
 
-dd -if /def/sdb -of /
+`dd -if /def/sdb -of /`
 
 
 
 
 ### Create a release 
 
-Update setup.py
+Update `setup.py`
 1. update the version in set 

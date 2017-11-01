@@ -22,14 +22,14 @@ Since the Raspberry Pi is not very powerful, we need to transfer the data
 to a PC computer to train.
 
 In a new terminal session on your host PC use rsync to copy your cars 
-folder from the raspberrypi.
+folder from the raspberry pi.
 ```bash
 rsync -r pi@<your_pi_ip_address>:~/d2/data/  ~/d2/data/
 ```
 
 
-## Train a model.
-* In the same terminal you can now run the training script on the latest tub by passing the path to that tub as an argument. You can optionally pass path masks, such as ./data/* or ./data/tub_?_17-08-28 to gather multiple tubs. For example:
+## Train a model
+* In the same terminal you can now run the training script on the latest tub by passing the path to that tub as an argument. You can optionally pass path masks, such as `./data/*` or `./data/tub_?_17-08-28` to gather multiple tubs. For example:
 ```bash
  python ~/d2/manage.py train --tub <tub folder names comma separated> --model ./models/mypilot
 ```
