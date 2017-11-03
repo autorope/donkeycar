@@ -176,29 +176,12 @@ if __name__ == '__main__':
     if args['drive']:
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
     
-    elif args['calibrate']:
-        calibrate()
-    
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
         cache = not args['--no_cache']
         train(cfg, tub, model)
 
-    elif args['check']:
-        tub = args['--tub']
-        fix = args['--fix']
-        check(cfg, tub, fix)
-
-    elif args['histogram']:
-        tub = args['--tub']
-        rec = args['--rec']
-        histogram(cfg, tub, rec)
-
-    elif args['plot_predictions']:
-        tub = args['--tub']
-        model = args['--model']
-        plot_predictions(cfg, tub, model)
 
 
 
