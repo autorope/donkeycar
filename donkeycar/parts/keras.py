@@ -23,6 +23,10 @@ class KerasPilot():
  
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
+
+    
+    def shutdown(self):
+        pass
     
     
     def train(self, train_gen, val_gen, 
@@ -95,6 +99,27 @@ class KerasLinear(KerasPilot):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         #print(len(outputs), outputs)
+        steering = outputs[0]
+        throttle = outputs[1]
+        return steering[0][0], throttle[0][0]
+
+
+
+class KerasIMU(KerasPilot):
+    '''
+    A keras part that take an image and imu vector as input,
+    outputs steering and throttle
+    '''
+    def __init__(self, model=None, num_outputs=2, num_imu_inputs=7 , *args, **kwargs):
+        super(KerasIMU, self).__init__(*args, **kwargs)
+        self.num_imu_inputs = num_imu_inputs
+        self.model = default_imu(num_outputs = num_outputs, num_imu_inputs = num_imu_inputs)
+        
+    def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z, temp):
+        #TODO: would be nice to take a vector input array.
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        imu_arr = np.array([accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z, temp]).reshape(None,self.num_imu_inputs)
+        outputs = self.model.predict([img_arr, imu_arr])
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
@@ -210,3 +235,53 @@ def default_n_linear(num_outputs):
 
     return model
 
+
+
+def default_imu(num_outputs, num_imu_inputs):
+    '''
+    Notes: this model depends on concatenate which failed on keras < 2.0.8
+    '''
+
+    from keras.layers import Input, Dense
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
+    from keras.layers.merge import concatenate
+    
+    img_in = Input(shape=(120,160,3), name='img_in')
+    imu_in = Input(shape=(num_imu_inputs,), name="imu_in")
+    
+    x = img_in
+    x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
+    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(.1)(x)
+    
+    y = imu_in
+    y = Dense(14, activation='relu')(y)
+    y = Dense(14, activation='relu')(y)
+    y = Dense(14, activation='relu')(y)
+    
+    z = concatenate([x, y])
+    z = Dense(50, activation='relu')(z)
+    z = Dropout(.1)(z)
+    z = Dense(50, activation='relu')(z)
+    z = Dropout(.1)(z)
+
+    outputs = [] 
+    
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
+        
+    model = Model(inputs=[img_in, imu_in], outputs=outputs)
+    
+    model.compile(optimizer='adam',
+                  loss='mse')
+    
+    return model
