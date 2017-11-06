@@ -107,8 +107,27 @@ class KerasLinear(KerasPilot):
 
 class KerasIMU(KerasPilot):
     '''
-    A keras part that take an image and imu vector as input,
+    A Keras part that take an image and IMU vector as input,
     outputs steering and throttle
+
+    Note: When training, you will need to vectorize the input from the IMU.
+    Depending on the names you use for imu records, something like this will work:
+
+    X_keys = ['cam/image_array','imu_array']
+    y_keys = ['user/angle', 'user/throttle']
+    
+    def rt(rec):
+        rec['imu_array'] = np.array([ rec['imu/acl_x'], rec['imu/acl_y'], rec['imu/acl_z'],
+            rec['imu/gyr_x'], rec['imu/gyr_y'], rec['imu/gyr_z'], rec['imu/temp'] ])
+        return rec
+
+    kl = KerasIMU()
+
+    tubgroup = TubGroup(tub_names)
+    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
+                                                    batch_size=cfg.BATCH_SIZE,
+                                                    train_frac=cfg.TRAIN_TEST_SPLIT)
+
     '''
     def __init__(self, model=None, num_outputs=2, num_imu_inputs=7 , *args, **kwargs):
         super(KerasIMU, self).__init__(*args, **kwargs)
