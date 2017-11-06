@@ -18,6 +18,12 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 
+from donkeycar.parts.datastore import TubHandler
+from donkeycar.parts.transform import Lambda
+from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
+from donkeycar.parts.controller import LocalWebController
+from donkeycar.parts.keras import KerasCategorical
+
 
 def drive(cfg, model_path=None):
     V = dk.vehicle.Vehicle()
@@ -25,13 +31,13 @@ def drive(cfg, model_path=None):
     V.mem.put(['square/angle', 'square/throttle'], (100,100))  
     
     #display square box given by cooridantes.
-    cam = dk.parts.SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
+    cam = SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, 
           inputs=['square/angle', 'square/throttle'],
           outputs=['cam/image_array'])
     
     #display the image and read user values from a local web controller
-    ctr = dk.parts.LocalWebController()
+    ctr = LocalWebController()
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 
@@ -46,11 +52,11 @@ def drive(cfg, model_path=None):
         else:
             return True
         
-    pilot_condition_part = dk.parts.Lambda(pilot_condition)
+    pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = dk.parts.KerasCategorical()
+    kl = KerasCategorical()
     if model_path:
         kl.load(model_path)
 
@@ -72,7 +78,7 @@ def drive(cfg, model_path=None):
         else: 
             return pilot_angle, pilot_throttle
         
-    drive_mode_part = dk.parts.Lambda(drive_mode)
+    drive_mode_part = Lambda(drive_mode)
     V.add(drive_mode_part, 
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'], 
@@ -82,7 +88,7 @@ def drive(cfg, model_path=None):
     
     #transform angle and throttle values to coordinate values
     f = lambda x : int(x * 100 + 100)
-    l = dk.parts.Lambda(f)
+    l = Lambda(f)
     V.add(l, inputs=['user/angle'], outputs=['square/angle'])
     V.add(l, inputs=['user/throttle'], outputs=['square/throttle'])
     
@@ -98,12 +104,12 @@ def drive(cfg, model_path=None):
            'float', 'float',
            'str']
     
-    th = dk.parts.TubHandler(path=cfg.DATA_PATH)
+    th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
     
     #run the vehicle for 20 seconds
-    V.start(rate_hz=50, max_loop_count=100000)
+    V.start(rate_hz=50, max_loop_count=10000)
     
     
     

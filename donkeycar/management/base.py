@@ -425,8 +425,8 @@ def execute_from_command_line():
         c = command()
         c.run(args[2:])
     else:
-        print('The availible commands are:')
-        print(list(commands.keys()))
+        dk.utils.eprint('Usage: The availible commands are:')
+        dk.utils.eprint(list(commands.keys()))
         
     
     

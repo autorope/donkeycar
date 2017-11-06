@@ -175,7 +175,7 @@ if __name__ == '__main__':
     
     if args['drive']:
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
-    
+
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
