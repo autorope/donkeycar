@@ -1,11 +1,12 @@
 import os
+import platform
 import pytest
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 
 
 def on_pi():
-    if 'arm' in os.uname().machine:
+    if 'arm' in platform.machine():
         return True
     return False
 
