@@ -257,3 +257,37 @@ def kill(proc_id):
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
+
+"""
+Tub management
+
+
+
+def expand_path_masks(paths):
+    '''
+    take a list of paths and expand any wildcards
+    returns a new list of paths fully expanded
+    '''
+    import glob
+    expanded_paths = []
+    for path in paths:
+        if '*' in path or '?' in path:
+            mask_paths = glob.glob(path)
+            expanded_paths += mask_paths
+        else:
+            expanded_paths.append(path)
+
+    return expanded_paths
+
+
+def gather_tub_paths(tub_names):
+    '''
+    takes as input the configuration, and the comma seperated list of tub paths
+    returns a list of Tub paths
+    '''
+
+    tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+    return expand_path_masks(tub_paths)
+
+"""
