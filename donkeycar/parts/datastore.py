@@ -151,6 +151,7 @@ class Tub(object):
     def __init__(self, path, inputs=None, types=None):
 
         self.path = os.path.expanduser(path)
+        print('path_in_tub:', self.path)
         self.meta_path = os.path.join(self.path, 'meta.json')
         self.df = None
 
@@ -642,6 +643,7 @@ class TubTimeStacker(TubImageStacker):
 class TubGroup(Tub):
     def __init__(self, tub_paths):
         tub_paths = self.resolve_tub_paths(tub_paths)
+        print('TubGroup:tubpaths:', tub_paths)
         tubs = [Tub(path) for path in tub_paths]
         self.input_types = {}
 
@@ -665,17 +667,14 @@ class TubGroup(Tub):
     def find_tub_paths(self, path):
         matches = []
         path = os.path.expanduser(path)
-        for file in glob.glob(os.path.join(path)):
+        for file in glob.glob(path):
             if os.path.isdir(file):
-                matches.append(os.path.join(path, file))
+                matches.append(os.path.join(os.path.abspath(file)))
         return matches
 
 
     def resolve_tub_paths(self, path_list):
-        print("path_list: {}".format(path_list))
-
         path_list = path_list.split(",")
-
         resolved_paths = []
         for path in path_list:
             paths = self.find_tub_paths(path)
