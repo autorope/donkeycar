@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 from PIL import Image
+from donkeycar import utils
 
 
 class OriginalWriter:
@@ -641,8 +642,8 @@ class TubTimeStacker(TubImageStacker):
 
 
 class TubGroup(Tub):
-    def __init__(self, tub_paths):
-        tub_paths = self.resolve_tub_paths(tub_paths)
+    def __init__(self, tub_paths_arg):
+        tub_paths = utils.expand_path_arg(tub_paths_arg)
         print('TubGroup:tubpaths:', tub_paths)
         tubs = [Tub(path) for path in tub_paths]
         self.input_types = {}
@@ -663,20 +664,3 @@ class TubGroup(Tub):
         self.df = pd.concat([t.df for t in tubs], axis=0, join='inner')
 
 
-
-    def find_tub_paths(self, path):
-        matches = []
-        path = os.path.expanduser(path)
-        for file in glob.glob(path):
-            if os.path.isdir(file):
-                matches.append(os.path.join(os.path.abspath(file)))
-        return matches
-
-
-    def resolve_tub_paths(self, path_list):
-        path_list = path_list.split(",")
-        resolved_paths = []
-        for path in path_list:
-            paths = self.find_tub_paths(path)
-            resolved_paths += paths
-        return resolved_paths

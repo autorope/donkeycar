@@ -259,35 +259,22 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-"""
-Tub management
 
 
+def expand_path_mask(path):
+    matches = []
+    path = os.path.expanduser(path)
+    for file in glob.glob(path):
+        if os.path.isdir(file):
+            matches.append(os.path.join(os.path.abspath(file)))
+    return matches
 
-def expand_path_masks(paths):
-    '''
-    take a list of paths and expand any wildcards
-    returns a new list of paths fully expanded
-    '''
-    import glob
+
+def expand_path_arg(path_str):
+    path_list = path_str.split(",")
     expanded_paths = []
-    for path in paths:
-        if '*' in path or '?' in path:
-            mask_paths = glob.glob(path)
-            expanded_paths += mask_paths
-        else:
-            expanded_paths.append(path)
-
+    for path in path_list:
+        paths = expand_path_mask(path)
+        expanded_paths += paths
     return expanded_paths
 
-
-def gather_tub_paths(tub_names):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub paths
-    '''
-
-    tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-    return expand_path_masks(tub_paths)
-
-"""
