@@ -18,7 +18,7 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 
-from donkeycar.parts.datastore import TubHandler
+from donkeycar.parts.datastore import TubGroup, TubHandler
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 from donkeycar.parts.controller import LocalWebController
@@ -129,21 +129,29 @@ def train(cfg, tub_names, model_name):
             combined_gen = itertools.chain(combined_gen, gen)
         return combined_gen
     
-    kl = dk.parts.KerasCategorical()
-    
-    if tub_names:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in tub_names.split(',')]
-    else:
-        tub_paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-    tubs = [dk.parts.Tub(p) for p in tub_paths]
+    kl = KerasCategorical()
+    print('tub_names', tub_names)
+    if not tub_names:
+        tub_names = os.path.join(cfg.DATA_PATH, '*')
+    tubgroup = TubGroup(tub_names)
+    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
+                                                    batch_size=cfg.BATCH_SIZE,
+                                                    train_frac=cfg.TRAIN_TEST_SPLIT)
 
-    gens = [tub.train_val_gen(X_keys, y_keys, record_transform=rt, batch_size=128) for tub in tubs]
-    train_gens = [gen[0] for gen in gens]
-    val_gens = [gen[1] for gen in gens]
+    model_path = os.path.expanduser(model_name)
 
-    model_path = os.path.join(cfg.MODELS_PATH, model_name)
-    kl.train(combined_gen(train_gens), combined_gen(val_gens), saved_model_path=model_path)
+    total_records = len(tubgroup.df)
+    total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
+    total_val = total_records - total_train
+    print('train: %d, validation: %d' % (total_train, total_val))
+    steps_per_epoch = total_train // cfg.BATCH_SIZE
+    print('steps_per_epoch', steps_per_epoch)
 
+    kl.train(train_gen,
+             val_gen,
+             saved_model_path=model_path,
+             steps=steps_per_epoch,
+             train_split=cfg.TRAIN_TEST_SPLIT)
 
 
     
