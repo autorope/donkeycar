@@ -195,7 +195,7 @@ class JoystickController(object):
     Joystick client using access to local physical input
     '''
 
-    def __init__(self, poll_delay=0.0166,
+    def __init__(self, poll_delay=0.0,
                  max_throttle=1.0,
                  steering_axis='x',
                  throttle_axis='rz',
