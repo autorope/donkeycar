@@ -327,6 +327,25 @@ class Tub(object):
         self.write_json_record(json_data)
         return self.current_ix
 
+    def erase_last_n_records(self, num_erase):
+        '''
+        erase N records from the disc and move current back accordingly
+        '''
+        last_erase = self.current_ix
+        first_erase = last_erase - num_erase
+        self.current_ix = first_erase - 1
+        if self.current_ix < 0:
+            self.current_ix = 0
+
+        for i in range(first_erase, last_erase):
+            if i < 0:
+                continue
+            json_path = self.get_json_record_path(i)
+            os.unlink(json_path)
+            img_filename = '%d_cam-image_array_.jpg' % (i)
+            img_path = os.path.join(self.path, img_filename)
+            os.unlink(img_path)
+
 
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')

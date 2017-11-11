@@ -86,10 +86,10 @@ class Joystick():
             0x13d : 'thumbl',
             0x13e : 'thumbr',
 
-            0x220 : 'dpad_up',
-            0x221 : 'dpad_down',
-            0x222 : 'dpad_left',
-            0x223 : 'dpad_right',
+            0x124 : 'dpad_up',
+            0x126 : 'dpad_down',
+            0x127 : 'dpad_left',
+            0x125 : 'dpad_right',
 
             # XBox 360 controller uses these codes.
             0x2c0 : 'dpad_left',
@@ -195,6 +195,12 @@ class JoystickController(object):
     Joystick client using access to local physical input
     '''
 
+    ES_IDLE = -1
+    ES_START = 0
+    ES_THROTTLE_NEG_ONE = 1
+    ES_THROTTLE_POS_ONE = 2
+    ES_THROTTLE_NEG_TWO = 3
+
     def __init__(self, poll_delay=0.0,
                  max_throttle=1.0,
                  steering_axis='x',
@@ -219,11 +225,23 @@ class JoystickController(object):
         self.auto_record_on_throttle = auto_record_on_throttle
         self.dev_fn = dev_fn
         self.js = None
-
+        self.tub = None
+        self.estop_state = self.ES_IDLE
         #We expect that the framework for parts will start a new
         #thread for our update fn. We used to do that and it caused
         #two threads to be polling for js events.
 
+    def set_tub(self, tub):
+        self.tub = tub
+
+    def erase_last_N_records(self):
+        if self.tub is not None:
+            try:
+                self.tub.erase_last_n_records(100)
+                print('erased last 100 records.')                
+            except:
+                print('failed to erase')
+        
     def on_throttle_changes(self):
         '''
         turn on recording when non zero throttle in the user mode.
@@ -242,6 +260,14 @@ class JoystickController(object):
             print(self.dev_fn, "not found.")
             self.js = None
         return self.js is not None
+
+    def emergency_stop(self):
+        print('E-Stop!!!')
+        self.mode = "user"
+        self.recording = False
+        self.constant_throttle = False
+        self.estop_state = self.ES_START
+        self.throttle = 0.0
 
 
     def update(self):
@@ -313,6 +339,18 @@ class JoystickController(object):
 
             if button == 'triangle' and button_state == 1:
                 '''
+                erase last N records
+                '''
+                self.erase_last_N_records()
+
+            if button == 'cross' and button_state == 1:
+                '''
+                erase last N records
+                '''
+                self.emergency_stop()
+
+            if button == 'dpad_up' and button_state == 1:
+                '''
                 increase max throttle setting
                 '''
                 self.max_throttle = round(min(1.0, self.max_throttle + 0.01), 2)
@@ -322,7 +360,7 @@ class JoystickController(object):
 
                 print('max_throttle:', self.max_throttle)
 
-            if button == 'cross' and button_state == 1:
+            if button == 'dpad_down' and button_state == 1:
                 '''
                 decrease max throttle setting
                 '''
@@ -332,34 +370,6 @@ class JoystickController(object):
                     self.on_throttle_changes()
                     
                 print('max_throttle:', self.max_throttle)
-
-            if button == 'base' and button_state == 1:
-                '''
-                increase throttle scale
-                '''
-                self.throttle_scale = round(min(0.0, self.throttle_scale + 0.05), 2)
-                print('throttle_scale:', self.throttle_scale)
-
-            if button == 'top2' and button_state == 1:
-                '''
-                decrease throttle scale
-                '''
-                self.throttle_scale = round(max(-1.0, self.throttle_scale - 0.05), 2)
-                print('throttle_scale:', self.throttle_scale)
-
-            if button == 'base2' and button_state == 1:
-                '''
-                increase steering scale
-                '''
-                self.steering_scale = round(min(1.0, self.steering_scale + 0.05), 2)
-                print('steering_scale:', self.steering_scale)
-
-            if button == 'pinkie' and button_state == 1:
-                '''
-                decrease steering scale
-                '''
-                self.steering_scale = round(max(0.0, self.steering_scale - 0.05), 2)
-                print('steering_scale:', self.steering_scale)
 
             if button == 'top' and button_state == 1:
                 '''
@@ -379,6 +389,20 @@ class JoystickController(object):
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
+
+        if self.estop_state > self.ES_IDLE:
+            if self.estop_state == self.ES_START:
+                self.estop_state = self.ES_THROTTLE_NEG_ONE
+                return 0.0, -1.0, self.mode, False
+            elif self.estop_state == self.ES_THROTTLE_NEG_ONE:
+                self.estop_state = self.ES_THROTTLE_POS_ONE
+                return 0.0, 0.01, self.mode, False
+            elif self.estop_state == self.ES_THROTTLE_POS_ONE:
+                self.estop_state = self.ES_THROTTLE_NEG_TWO
+                return 0.0, -1.0, self.mode, False
+            elif self.estop_state == self.ES_THROTTLE_NEG_TWO:
+                self.estop_state = self.ES_IDLE            
+
         return self.angle, self.throttle, self.mode, self.recording
 
     def run(self, img_arr=None):
