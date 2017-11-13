@@ -13,19 +13,23 @@ def is_error(err):
     return False
 
 
-def test_createcar(tmpdir):
-    p = tmpdir.mkdir("d2")
-    cmd = ['donkey', 'createcar', '--path', p]
+@pytest.fixture
+def cardir(tmpdir):
+    path = str(tmpdir.mkdir("d2"))
+    return path
+
+
+def test_createcar(cardir):
+    cmd = ['donkey', 'createcar', '--path', cardir]
     out, err, proc_id = utils.run_shell_command(cmd)
     assert is_error(err) is False
 
 
-def test_drivesim(tmpdir):
-    p = tmpdir.mkdir("d2")
-    cmd = ['donkey', 'createcar', '--path', p ,'--template', 'square']
+def test_drivesim(cardir):
+    cmd = ['donkey', 'createcar', '--path', cardir ,'--template', 'square']
     out, err, proc_id = utils.run_shell_command(cmd, timeout=10)
     cmd = ['python', 'manage.py', 'drive']
-    out, err, proc_id = utils.run_shell_command(cmd, cwd = p)
+    out, err, proc_id = utils.run_shell_command(cmd, cwd = cardir)
     print(err)
 
     if is_error(err) is True:
@@ -33,17 +37,9 @@ def test_drivesim(tmpdir):
         print('error: ', err)
         raise ValueError (err)
 
-def test_bad_command_fails(tmpdir):
-    p = tmpdir.mkdir("d2")
+def test_bad_command_fails():
     cmd = ['donkey', 'not a comand']
     out, err, proc_id = utils.run_shell_command(cmd)
     print(err)
     print(out)
     assert is_error(err) is True
-
-## create car
-
-
-
-
-## drive car
