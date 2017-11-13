@@ -4,14 +4,12 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     manage.py (drive) [--model=<model>] [--js]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--no_cache]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--no_cache]
 
 Options:
-    -h --help     Show this screen.
-    --js          Use physical joystick.
-    --fix         Remove records which cause problems.
-    --no_cache    During training, load image repeatedly on each epoch
-
+    -h --help        Show this screen.
+    --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
+    --js             Use physical joystick.
 """
 import os
 from docopt import docopt
@@ -144,7 +142,9 @@ def train(cfg, tub_names, model_name):
         return record
 
     kl = KerasCategorical()
-
+    print('tub_names', tub_names)
+    if not tub_names:
+        tub_names = os.path.join(cfg.DATA_PATH, '*')
     tubgroup = TubGroup(tub_names)
     train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
                                                     batch_size=cfg.BATCH_SIZE,
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     
     if args['drive']:
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
-    
+
     elif args['train']:
         tub = args['--tub']
         model = args['--model']

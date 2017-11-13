@@ -10,12 +10,12 @@ class BaseCamera:
         return self.frame
 
 class PiCamera(BaseCamera):
-    def __init__(self, resolution=(160, 120), framerate=20):
+    def __init__(self, resolution=(120, 160), framerate=20):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
-
+        resolution = (resolution[1], resolution[0])
         # initialize the camera and stream
-        self.camera = PiCamera()
+        self.camera = PiCamera() #PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
         self.camera.framerate = framerate
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
