@@ -195,7 +195,7 @@ class JoystickController(object):
     Joystick client using access to local physical input
     '''
 
-    def __init__(self, poll_delay=0.0166,
+    def __init__(self, poll_delay=0.0,
                  max_throttle=1.0,
                  steering_axis='x',
                  throttle_axis='rz',
@@ -217,15 +217,12 @@ class JoystickController(object):
         self.recording = False
         self.constant_throttle = False
         self.auto_record_on_throttle = auto_record_on_throttle
+        self.dev_fn = dev_fn
+        self.js = None
 
-        #init joystick
-        self.js = Joystick(dev_fn)
-        self.js.init()
-
-        #start thread to poll it
-        self.thread = Thread(target=self.update)
-        self.thread.setDaemon(True)
-        self.thread.start()
+        #We expect that the framework for parts will start a new
+        #thread for our update fn. We used to do that and it caused
+        #two threads to be polling for js events.
 
     def on_throttle_changes(self):
         '''
@@ -233,6 +230,18 @@ class JoystickController(object):
         '''
         if self.auto_record_on_throttle:
             self.recording = (self.throttle != 0.0 and self.mode == 'user')
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = Joystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
 
 
     def update(self):
@@ -256,6 +265,10 @@ class JoystickController(object):
         * triangle = PS3 triangle => increase max throttle
         * cross = PS3 cross => decrease max throttle
         '''
+
+        #wait for joystick to be online
+        while self.running and not self.init_js():
+            time.sleep(5)
 
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
@@ -367,6 +380,10 @@ class JoystickController(object):
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
         return self.angle, self.throttle, self.mode, self.recording
+
+    def run(self, img_arr=None):
+        raise Exception("We expect for this part to be run with the threaded=True argument.")
+        return False
 
     def shutdown(self):
         self.running = False
