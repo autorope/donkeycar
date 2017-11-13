@@ -294,6 +294,7 @@ class TubCheck(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
+        parser.add_argument('--fix', action='store_true', help='remove problem records')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -309,7 +310,7 @@ class TubCheck(BaseCommand):
 
     def run(self, args):
         args = self.parse_args(args)
-        self.check(args.tubs)
+        self.check(args.tubs, args.fix)
 
 
 class ShowHistogram(BaseCommand):
