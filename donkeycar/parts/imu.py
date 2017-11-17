@@ -29,8 +29,11 @@ class Mpu6050:
             time.sleep(self.poll_delay)
                 
     def poll(self):
-        self.accel, self.gyro, self.temp = self.sensor.get_all_data()
-
+        try:
+            self.accel, self.gyro, self.temp = self.sensor.get_all_data()
+        except:
+            print('failed to read imu!!')
+            
     def run_threaded(self):
         return self.accel['x'], self.accel['y'], self.accel['z'], self.gyro['x'], self.gyro['y'], self.gyro['z'], self.temp
 
