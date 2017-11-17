@@ -2,23 +2,19 @@
 
 &nbsp;
 
-* Overview
-* Parts Needed
-* Hardware:
-    * Step 1: Print Parts
-    * Step 2: Clean up parts
-    * Step 3: Assemble Top plate and Roll Cage
+* [Overview](build_hardware.md#overview)
+* [Parts Needed](build_hardware.md#parts-needed)
+* [Hardware:](build_hardware.md#hardware)
+    * [Step 1: Print Parts](build_hardware.md#step-1-print-parts)
+    * [Step 2: Clean up parts](build_hardware.md#step-2-clean-up-parts)
+    * [Step 3: Assemble Top plate and Roll Cage](build_hardware.md#step-3-assemble-top-plate-and-roll-cage)
     * [Step 4: Connect Servo Shield to Raspberry Pi](build_hardware.md#step-4-connect-servo-shield-to-raspberry-pi)
-    * Step 5: Attach Raspberry Pi to 3D Printed bottom plate
-    * Step 6: Attach Camera
-    * Step 7: Put it all together
- * Software
-
-
- https://github.com/ezeeetm/donkey/blob/master/docs/guide/build_hardware.md#step-4-connect-servo-shield-to-raspberry-pi
+    * [Step 5: Attach Raspberry Pi to 3D Printed bottom plate](build_hardware.md#step-5-attach-raspberry-pi-to-3d-printed-bottom-plate)
+    * [Step 6: Attach Camera](build_hardware.md#step-6-attach-camera)
+    * [Step 7: Put it all together](build_hardware.md#step-7-put-it-all-together)
+ * [Software](install_software.md)
 
 &nbsp;
-
 
 ## Overview
 
@@ -144,4 +140,5 @@ Now you are done with the hardware!!
 &nbsp;
 ## Software
 Congrats!  Now to get your get your car moving, see the [software instructions](install_software.md) section.
-##IMAGE HERE##
+
+![donkey](../assets/build_hardware/donkey2.PNG)
