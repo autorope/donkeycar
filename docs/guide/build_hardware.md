@@ -8,11 +8,14 @@
     * Step 1: Print Parts
     * Step 2: Clean up parts
     * Step 3: Assemble Top plate and Roll Cage
-    * Step 4: Connect Servo Shield to Raspberry Pi
+    * [Step 4: Connect Servo Shield to Raspberry Pi](build_hardware.md#step-4-connect-servo-shield-to-raspberry-pi)
     * Step 5: Attach Raspberry Pi to 3D Printed bottom plate
     * Step 6: Attach Camera
     * Step 7: Put it all together
  * Software
+
+
+ https://github.com/ezeeetm/donkey/blob/master/docs/guide/build_hardware.md#step-4-connect-servo-shield-to-raspberry-pi
 
 &nbsp;
 
@@ -68,7 +71,7 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 ## Hardware
 ### Step 1: Print Parts
-If you do not have a 3D Printer, you can order parts from (Shapeways)[https://www.shapeways.com/] or (3dHubs)[https://www.3dhubs.com/].  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.  
+If you do not have a 3D Printer, you can order parts from [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.  
 
 &nbsp;
 ### Step 2: Clean up parts
