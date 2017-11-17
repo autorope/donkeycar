@@ -151,7 +151,7 @@ class Tub(object):
     def __init__(self, path, inputs=None, types=None):
 
         self.path = os.path.expanduser(path)
-        print('path_in_tub:', self.path)
+        #print('path_in_tub:', self.path)
         self.meta_path = os.path.join(self.path, 'meta.json')
         self.df = None
 
@@ -159,7 +159,7 @@ class Tub(object):
 
         if exists:
             #load log and meta
-            print("Tub exists: {}".format(self.path))
+            #print("Tub exists: {}".format(self.path))
             with open(self.meta_path, 'r') as f:
                 self.meta = json.load(f)
             self.current_ix = self.get_last_ix() + 1
