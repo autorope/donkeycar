@@ -4,18 +4,20 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     manage.py (drive) [--model=<model>] [--js]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--no_cache]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--no_cache]
 
 Options:
-    -h --help        Show this screen.
-    --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
-    --js             Use physical joystick.
+    -h --help     Show this screen.
+    --js          Use physical joystick.
+    --fix         Remove records which cause problems.
+    --no_cache    During training, load image repeatedly on each epoch
+
 """
 import os
 from docopt import docopt
 
 import donkeycar as dk
-
+import donkeycar.parts.mxnetpart as mxp
 #import parts
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
@@ -140,33 +142,34 @@ def train(cfg, tub_names, model_name):
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
-
-    kl = KerasCategorical()
-    print('tub_names', tub_names)
-    if not tub_names:
-        tub_names = os.path.join(cfg.DATA_PATH, '*')
+    
+    
     tubgroup = TubGroup(tub_names)
-    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
-                                                    batch_size=cfg.BATCH_SIZE,
-                                                    train_frac=cfg.TRAIN_TEST_SPLIT)
-
     model_path = os.path.expanduser(model_name)
-
     total_records = len(tubgroup.df)
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
     total_val = total_records - total_train
     print('train: %d, validation: %d' % (total_train, total_val))
     steps_per_epoch = total_train // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
-
-    kl.train(train_gen,
-             val_gen,
-             saved_model_path=model_path,
-             steps=steps_per_epoch,
-             train_split=cfg.TRAIN_TEST_SPLIT)
-
-
-
+    
+    if (cfg.ENGINE and cfg.ENGINE == "mxnet"):
+        df = tubgroup.df
+        train_df = train=df.sample(frac=cfg.TRAIN_TEST_SPLIT,random_state=200)
+        val_df = df.drop(train_df.index)
+        m1 = mxp.MxnetLinear()
+        train_iter, val_iter = m1.get_train_val_iter(train_df, val_df, cfg.BATCH_SIZE)
+        m1.train(train_iter, val_iter, saved_model_path=model_path, steps=steps_per_epoch, train_split=cfg.TRAIN_TEST_SPLIT)
+    else:
+        kl = KerasCategorical()
+        train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
+                                                    batch_size=cfg.BATCH_SIZE,
+                                                    train_frac=cfg.TRAIN_TEST_SPLIT)
+        kl.train(train_gen,
+         val_gen,
+         saved_model_path=model_path,
+         steps=steps_per_epoch,
+         train_split=cfg.TRAIN_TEST_SPLIT)
 
 
 if __name__ == '__main__':
@@ -175,14 +178,9 @@ if __name__ == '__main__':
     
     if args['drive']:
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
-
+    
     elif args['train']:
         tub = args['--tub']
         model = args['--model']
         cache = not args['--no_cache']
         train(cfg, tub, model)
-
-
-
-
-
