@@ -79,7 +79,8 @@ class MxnetLinear(MXNetPilot):
             self.model = default_mxnet_linear()
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model.predict(img_arr)
+        self.model.forward(Batch([mx.nd.array(img_arr)]))
+        outputs = self.model.get_outputs().asnumpy()
         #print(len(outputs), outputs)
         steering = outputs[0]
         throttle = outputs[1]

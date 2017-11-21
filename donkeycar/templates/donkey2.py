@@ -73,7 +73,11 @@ def drive(cfg, model_path=None, use_joystick=False):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    kl = KerasCategorical()
+    if (cfg.ENGINE and cfg.ENGINE == "mxnet"):
+        kl = MxnetLinear()
+    else:
+        kl = KerasCategorical()
+        
     if model_path:
         kl.load(model_path)
     
