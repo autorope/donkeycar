@@ -16,5 +16,5 @@ def test_picamera():
     cam = PiCamera(resolution=resolution)
     frame = cam.run()
     #assert shape is as expected. img_array shape shows (width, height, channels)
-    assert frame.shape[:2] == resolution[::-1]
+    assert frame.shape[:2] == resolution[:]
 
