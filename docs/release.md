@@ -1,27 +1,26 @@
 # Release notes
-Notes to remember how to release donkey.
+Notes on how to release donkey.
 
 ### Create a startup disk.
 
-The general steps of creating a startup disk are. 
-1. Make the disk perfect.
-2. Create startup disk.
-3. Publish image and update docs. 
 
+1. Download the previous disk image and create the starr tup disk.
+2. Move disk to you pi. 
+3. Pull the lastest donkeycar code. 
+4. Make your changes.  
+5. Move the disk back to your computer.
+6. Remove your wi fi password and change the host name to d2.
+7. Create the disk image from the SD card
 
-Once the SD card is ready and tested take it out of the Pi and into your 
-computer. Run `sudo gparted` to see the size of the disk partitions. Then resize
-the partitions to be as small as possible. Right click the partition and
-see the last sector of the partition. 
+    Run `sudo gparted` to see the size of the disk partitions.Resize the partitions
+    to be as small as possible. Right click the partition to see the last sector of the partition. 
+    
+    Run `sudo dd if=/dev/sda of=~/donkey_2-2-1.img bs=512 count=<last_sector>` 
 
-Then run
-
-`dd -if /def/sdb -of /`
-
-
-
-
+8. Zip the .img file and upload to Dropbox. 
+9. Update the link in the instructions.
+ 
 ### Create a release 
 
-Update `setup.py`
-1. update the version in set 
+1. Run the tests on computer and pi. `pytest`
+2. Update versions in `__init__` and `setup.py`
