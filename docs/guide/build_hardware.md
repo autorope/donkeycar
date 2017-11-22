@@ -28,18 +28,18 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
-| Magnet Car                                                                          | https://www.amazon.com/gp/product/9269803775                                          | $92              |
-| M2x6 screws (4)                                                                     | https://www.mcmaster.com/#91292a831/=177k4rp                                          | $6.38 *          |
-| M2.5x12 screws (8)                                                                  | https://www.mcmaster.com/#91292a016/=177k574                                          | $4.80 *          |
-| M2.5 nuts (8)                                                                       | https://www.mcmaster.com/#91828a113/=177k7ex                                          | $5.64 *          |
-| M2.5 washers (8)                                                                    | https://www.mcmaster.com/#93475a196/=177k7x6                                          | $1.58 *          |
-| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | https://www.amazon.com/gp/product/B00P7N0320                                          | $17              |
-| Raspberry Pi 3                                                                      | https://www.amazon.com/gp/product/B01CD5VC92                                          | $38              |
-| MicroSD Card (many will work, I like this one because it boots quickly)             | https://www.amazon.com/gp/product/B01HU3Q6F2/                                         | $18.99           |
-| Wide Angle Raspberry Pi Camera                                                      | https://www.amazon.com/gp/product/B00N1YJKFS/                                         | $25              |
-| Female to Female Jumper Wire                                                        | https://www.amazon.com/gp/product/B010L30SE8                                          | $7 *             |
-| Servo Driver PCA 9685                                                               | https://www.amazon.com/gp/product/B014KTSMLA                                          | $12 **           |
-| 3D Printed roll cage and top plate.                                                 | CAD Files: http://a360.co/2pf3Dam STL Files: http://www.thingiverse.com/thing:2260575 | ~                |
+| Magnet Car                                                                          | [amazon.com/gp/product/9269808912](https://www.amazon.com/gp/product/9269808912?tag=donkeycar-20)                                          | $92              |
+| M2x6 screws (4)                                                                     | [mcmaster.com/#91292a831/=177k4rp](https://www.mcmaster.com/#91292a831/=177k4rp)                                          | $6.38 *          |
+| M2.5x12 screws (8)                                                                  | [mcmaster.com/#91292a016/=177k574](https://www.mcmaster.com/#91292a016/=177k574)                                          | $4.80 *          |
+| M2.5 nuts (8)                                                                       | [mcmaster.com/#91828a113/=177k7ex](https://www.mcmaster.com/#91828a113/=177k7ex)                                          | $5.64 *          |
+| M2.5 washers (8)                                                                    | [mcmaster.com/#93475a196/=177k7x6](https://www.mcmaster.com/#93475a196/=177k7x6)                                          | $1.58 *          |
+| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [amazon.com/gp/product/B00P7N0320](https://www.amazon.com/gp/product/B00P7N0320?tag=donkeycar-20)                                          | $17              |
+| Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
+| MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
+| Wide Angle Raspberry Pi Camera                                                      | [amazon.com/gp/product/B00N1YJKFS](https://www.amazon.com/gp/product/B00N1YJKFS?tag=donkeycar-20)                                         | $25              |
+| Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 *             |
+| Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 **           |
+| 3D Printed roll cage and top plate.                                                 | CAD Files: [a360.co/2pf3Dam](http://a360.co/2pf3Dam) STL Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | ~                |
 
 
 
@@ -57,9 +57,9 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
-| LiPo Battery                                          | https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html | $8.94            |
-| Lipo Charger (takes 1hr to charge the above battery)  | http://a.co/fvmvByC                                               | $13              |
-| Lipo Battery Case (to prevent damage if they explode) | http://a.co/7GqZSsw                                               | $8               |
+| LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html) | $8.94            |
+| Lipo Charger (takes 1hr to charge the above battery)  | [amazon.com/gp/product/B00XU4ZR06](https://www.amazon.com/gp/product/B00XU4ZR06?tag=donkeycar-20)                                               | $13              |
+| Lipo Battery Case (to prevent damage if they explode) | [amazon.com/gp/product/B00T01LLP8](https://www.amazon.com/gp/product/B00T01LLP8?tag=donkeycar-20)                                               | $8               |
 
 
 
