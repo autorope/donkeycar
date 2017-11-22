@@ -63,9 +63,9 @@ ls /dev/input/js0
 
 ### Charging PS3 Sixaxis Joystick
 
-For some reason, they don't like to charge in a powered USB port that doesn't have an active Bluetooth control and OS driver. This means a phone type USB charger will not work. Try a powered Linux or mac laptop USB port. You should see the lights blink after plugging in and hitting center PS logo.
+For some reason, this joystick doesn't like to charge in a powered USB port that doesn't have an active Bluetooth control and OS driver. This means a phone type USB charger will not work, and charging from a Windows machine doesn't work either.
 
-After charging, you will need to plug-in the controller again to the Pi, hit the PS logo, then unplug to pair again.
+You can always charge from the Raspberry Pi, though.  Just plug the joystick into the Pi and power the Pi using a charger or your PC, and you are good to go.
 
 ### New Battery for PS3 Sixaxis Joystick
 
