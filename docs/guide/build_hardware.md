@@ -142,3 +142,6 @@ Now you are done with the hardware!!
 Congrats!  Now to get your get your car moving, see the [software instructions](install_software.md) section.
 
 ![donkey](../assets/build_hardware/donkey2.PNG)
+
+
+> We are a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for us to earn fees by linking to Amazon.com and affiliated sites.
