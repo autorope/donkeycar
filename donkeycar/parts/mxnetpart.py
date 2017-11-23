@@ -106,12 +106,16 @@ class MxnetLinear(MXNetPilot):
         else:
             self.model = default_mxnet_linear()
     def run(self, img_arr):
+        print(img_arr.shape)
+        img_arr = np.swapaxes(img_arr, 0, 2)
+        img_arr = np.swapaxes(img_arr, 1, 2)
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         self.model.forward(Batch([mx.nd.array(img_arr)]))
-        outputs = self.model.get_outputs().asnumpy()
+        outputs = self.model.get_outputs()
         #print(len(outputs), outputs)
-        steering = outputs[0]
-        throttle = outputs[1]
+        steering = outputs[0].asnumpy()
+        throttle = outputs[1].asnumpy()
+
         return steering[0][0], throttle[0][0]
         
 def default_mxnet_linear(ctx=[mx.gpu(0)]):
