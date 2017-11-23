@@ -12,6 +12,8 @@ import os
 import numpy as np
 import logging
 from PIL import Image
+from collections import namedtuple
+Batch = namedtuple('Batch', ['data'])
 
 
 head = '%(asctime)-15s %(message)s'
@@ -20,7 +22,12 @@ logging.basicConfig(level=logging.INFO, format=head)
 class MXNetPilot():
 
     def load(self, model_path):
-        self.model = mx.model.FeedForward.load(model_path)
+        f_params_file = model_path + "-best.params"
+        f_symbol_file = model_path + "-symbol.json"
+        sym, arg_params, aux_params = load_model(f_symbol_file, f_params_file)
+        self.model = mx.mod.Module(symbol=sym, label_names=None)
+        self.model.bind(for_training=False, data_shapes=[('data', (1, 3, 120, 160))])
+        self.model.set_params(arg_params, aux_params, allow_missing=True)
 
     def train(self, train_iter, val_iter, 
               saved_model_path, num_epoch=100, steps=100, train_split=0.8,
@@ -68,6 +75,27 @@ def getIter(df, batch):
     t_labels = np.stack(t_labels)
 
     return mx.io.NDArrayIter({'data': np_images}, {'angle': a_labels, 'throttle': t_labels}, batch_size=batch)
+
+def load_model(s_fname, p_fname):
+    """
+    Load model checkpoint from file.
+    :return: (arg_params, aux_params)
+    arg_params : dict of str to NDArray
+        Model parameter, dict of name to NDArray of net's weights.
+    aux_params : dict of str to NDArray
+        Model parameter, dict of name to NDArray of net's auxiliary states.
+    """
+    symbol = mx.symbol.load(s_fname)
+    save_dict = mx.nd.load(p_fname)
+    arg_params = {}
+    aux_params = {}
+    for k, v in save_dict.items():
+        tp, name = k.split(':', 1)
+        if tp == 'arg':
+            arg_params[name] = v
+        if tp == 'aux':
+            aux_params[name] = v
+    return symbol, arg_params, aux_params
 
 
 class MxnetLinear(MXNetPilot):
