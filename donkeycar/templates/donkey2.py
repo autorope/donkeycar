@@ -17,7 +17,6 @@ import os
 from docopt import docopt
 
 import donkeycar as dk
-import donkeycar.parts.mxnetpart as mxp
 #import parts
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
@@ -73,11 +72,12 @@ def drive(cfg, model_path=None, use_joystick=False):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     #Run the pilot if the mode is not user.
-    if (cfg.ENGINE and cfg.ENGINE == "mxnet"):
+    if (hasattr(cfg, 'ENGINE') and cfg.ENGINE == "mxnet"):
+        import donkeycar.parts.mxnetpart as mxp
         kl = MxnetLinear()
     else:
         kl = KerasCategorical()
-        
+
     if model_path:
         kl.load(model_path)
     
@@ -157,7 +157,8 @@ def train(cfg, tub_names, model_name):
     steps_per_epoch = total_train // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
     
-    if (cfg.ENGINE and cfg.ENGINE == "mxnet"):
+    if (hasattr(cfg, 'ENGINE') and cfg.ENGINE == "mxnet"):
+        import donkeycar.parts.mxnetpart as mxp
         df = tubgroup.df
         train_df = train=df.sample(frac=cfg.TRAIN_TEST_SPLIT,random_state=200)
         val_df = df.drop(train_df.index)

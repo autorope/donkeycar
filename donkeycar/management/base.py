@@ -245,7 +245,6 @@ class Sim(BaseCommand):
         import socketio
         from donkeycar.parts.simulation import SteeringServer
         from donkeycar.parts.keras import KerasCategorical, KerasLinear
-        from donkeycar.parts.mxnetpart import MxnetLinear
 
         args, parser = self.parse_args(args)
 
@@ -260,6 +259,7 @@ class Sim(BaseCommand):
         elif args.type == "linear":
             kl = KerasLinear(num_outputs=2)
         elif args.type == "mxlinear":
+            from donkeycar.parts.mxnetpart import MxnetLinear
             kl = MxnetLinear()
         else:
             print("didn't recognize type:", args.type)
