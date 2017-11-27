@@ -74,7 +74,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     #Run the pilot if the mode is not user.
     if (hasattr(cfg, 'ENGINE') and cfg.ENGINE == "mxnet"):
         import donkeycar.parts.mxnetpart as mxp
-        kl = MxnetLinear()
+        kl = mxp.MxnetLinear()
     else:
         kl = KerasCategorical()
 

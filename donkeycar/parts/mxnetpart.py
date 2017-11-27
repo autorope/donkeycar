@@ -106,7 +106,7 @@ class MxnetLinear(MXNetPilot):
         else:
             self.model = default_mxnet_linear()
     def run(self, img_arr):
-        print(img_arr.shape)
+        #print(img_arr.shape)
         img_arr = np.swapaxes(img_arr, 0, 2)
         img_arr = np.swapaxes(img_arr, 1, 2)
         img_arr = img_arr.reshape((1,) + img_arr.shape)
