@@ -46,10 +46,23 @@ def drive(cfg, model_path=None, use_joystick=False):
         # modify steering_scale lower than 1.0 to have less responsive steering
         ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-    else:
-        # This web controller will create a web server that is capable
-        # of managing steering, throttle, and modes, and more.
+                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE,
+                                 throttle_axis = cfg.JOYSTICK_THROTTLE_AXIS,
+                                 steering_axis = cfg.JOYSTICK_STEERING_AXIS,
+                                 btn_mode = cfg.JOYSTICK_DRIVING_MODE_BUTTON,
+                                 btn_record_toggle = cfg.JOYSTICK_RECORD_TOGGLE_BUTTON,
+                                 btn_inc_max_throttle = cfg.JOYSTICK_INCREASE_MAX_THROTTLE_BUTTON,
+                                 btn_dec_max_throttle = cfg.JOYSTICK_DECREASE_MAX_THROTTLE_BUTTON,
+                                 btn_inc_throttle_scale = cfg.JOYSTICK_INCREASE_THROTTLE_SCALE_BUTTON,
+                                 btn_dec_throttle_scale = cfg.JOYSTICK_DECREASE_THROTTLE_SCALE_BUTTON,
+                                 btn_inc_steer_scale = cfg.JOYSTICK_INCREASE_STEERING_SCALE_BUTTON,
+                                 btn_dec_steer_scale = cfg.JOYSTICK_DECREASE_STEERING_SCALE_BUTTON,
+                                 btn_toggle_const_throttle = cfg.JOYSTICK_TOGGLE_CONSTANT_THROTTLE_BUTTON,
+                                 verbose = cfg.JOYSTICK_VERBOSE
+                                 )
+    else:        
+        #This web controller will create a web server that is capable
+        #of managing steering, throttle, and modes, and more.
         ctr = LocalWebController()
 
     V.add(ctr,
