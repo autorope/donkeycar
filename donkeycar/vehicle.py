@@ -142,4 +142,4 @@ class Vehicle():
                 entry['part'].shutdown()
             except Exception as e:
                 print(e)
-        print(self.mem.d)
+        #print(self.mem.d)

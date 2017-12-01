@@ -164,7 +164,7 @@ def drive(cfg, model_path=None, use_joystick=False):
            'float', 'float',  
            'str']
 
-    if cfg.HAS_IMU:
+    if cfg.HAVE_IMU:
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
@@ -175,21 +175,16 @@ def drive(cfg, model_path=None, use_joystick=False):
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
-    #tell the controller about the tub
-    try:
-        ctr.set_tub(tub)
-    except:
-        #web contrl doesn't have this, just js
-        pass
-    
-    #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
-            max_loop_count=cfg.MAX_LOOPS)
-    
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
     elif type(ctr) is JoystickController:
         print("You can now move your joystick to drive your car.")
+        #tell the controller about the tub        
+        ctr.set_tub(tub)
+
+    #run the vehicle for 20 seconds
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
+            max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':

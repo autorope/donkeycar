@@ -20,3 +20,6 @@ class ThrottleFilter(object):
 
         self.last_throttle = throttle_out
         return throttle_out
+
+    def shutdown(self):
+        pass

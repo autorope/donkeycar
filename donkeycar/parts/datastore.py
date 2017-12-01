@@ -341,10 +341,12 @@ class Tub(object):
             if i < 0:
                 continue
             json_path = self.get_json_record_path(i)
-            os.unlink(json_path)
+            if os.path.exists(json_path):
+                os.unlink(json_path)
             img_filename = '%d_cam-image_array_.jpg' % (i)
             img_path = os.path.join(self.path, img_filename)
-            os.unlink(img_path)
+            if os.path.exists(img_path):
+                os.unlink(img_path)
 
 
     def get_json_record_path(self, ix):
