@@ -85,8 +85,10 @@ class CreateCar(BaseCommand):
         #add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
         config_template_path = os.path.join(TEMPLATES_PATH, 'config_defaults.py')
+        train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
+        train_app_path = os.path.join(path, 'train.py')
         
         if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
@@ -99,6 +101,12 @@ class CreateCar(BaseCommand):
         else:
             print("Copying car config defaults. Adjust these before starting your car.")
             shutil.copyfile(config_template_path, car_config_path)
+ 
+        if os.path.exists(train_app_path) and not overwrite:
+            print('Train already exists. Delete it and rerun createcar to replace.')
+        else:
+            print("Copying train script. Adjust these before starting your car.")
+            shutil.copyfile(train_template_path, train_app_path)
  
         print("Donkey setup complete.")
 
