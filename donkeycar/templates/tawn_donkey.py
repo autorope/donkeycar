@@ -26,7 +26,6 @@ from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.imu import Mpu6050
 import numpy as np
 from donkeycar.parts.throttle_filter import ThrottleFilter
-from train import train
 
 def drive(cfg, model_path=None, use_joystick=False):
     '''
@@ -201,6 +200,8 @@ if __name__ == '__main__':
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
     
     if args['train']:
+        from train import train
+        
         tub = args['--tub']
         model = args['--model']
         transfer = args['--transfer']
