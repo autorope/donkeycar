@@ -4,6 +4,8 @@ Scripts to drive a donkey 2 car
 
 Usage:
     manage.py (drive) [--model=<model>] [--js]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu)] [--continuous]
+
 
 Options:
     -h --help     Show this screen.
@@ -24,6 +26,7 @@ from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.imu import Mpu6050
 import numpy as np
 from donkeycar.parts.throttle_filter import ThrottleFilter
+from train import train
 
 def drive(cfg, model_path=None, use_joystick=False):
     '''
@@ -197,7 +200,13 @@ if __name__ == '__main__':
     if args['drive']:
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
     
-
+    if args['train']:
+        tub = args['--tub']
+        model = args['--model']
+        transfer = args['--transfer']
+        model_type = args['--type']
+        continuous = args['--continuous']
+        train(cfg, tub, model, transfer, model_type, continuous)
 
 
 
