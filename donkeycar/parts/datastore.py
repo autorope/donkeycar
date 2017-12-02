@@ -492,6 +492,7 @@ class TubWriter(Tub):
         self.record_time = int(time.time() - self.start_time)
         record = dict(zip(self.inputs, args))
         self.put_record(record)
+        return self.current_ix
 
 
 class TubReader(Tub):

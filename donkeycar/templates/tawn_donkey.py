@@ -74,10 +74,13 @@ def drive(cfg, model_path=None, use_joystick=False):
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    def led_cond(mode, recording):
+    def led_cond(mode, recording, num_records):
         '''
         returns a blink rate. 0 for off. -1 for on. positive for rate.
         '''
+
+        if num_records is not None and num_records % 10 == 0:
+            print("recorded", num_records, "records")
 
         if recording:
             return -1 #solid on
@@ -90,7 +93,7 @@ def drive(cfg, model_path=None, use_joystick=False):
         return 0 
 
     led_cond_part = Lambda(led_cond)
-    V.add(led_cond_part, inputs=['user/mode', 'recording'], outputs=['led/blink_rate'])
+    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records"], outputs=['led/blink_rate'])
 
     #led = LED(8)
     led = RGB_LED(12, 10, 16)
@@ -173,7 +176,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
-    V.add(tub, inputs=inputs, run_condition='recording')
+    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
