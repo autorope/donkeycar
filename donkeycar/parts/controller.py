@@ -399,9 +399,13 @@ class JoystickController(object):
                 return 0.0, 0.01, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_POS_ONE:
                 self.estop_state = self.ES_THROTTLE_NEG_TWO
-                return 0.0, -1.0, self.mode, False
+                self.throttle = -1.0
+                return 0.0, self.throttle, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_NEG_TWO:
-                self.estop_state = self.ES_IDLE            
+                self.throttle += 0.1
+                if self.throttle >= 0.0:
+                    self.estop_state = self.ES_IDLE
+                return 0.0, self.throttle, self.mode, False
 
         return self.angle, self.throttle, self.mode, self.recording
 
