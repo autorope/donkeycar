@@ -106,7 +106,12 @@ def gather_tub_paths(cfg, tub_names=None):
         tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
         return expand_path_masks(tub_paths)
     else:
-        return [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
+        paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
+        dir_paths = []
+        for p in paths:
+            if os.path.isdir(p)
+            dir_paths.append(p)
+        return dir_paths
 
 
 def gather_tubs(cfg, tub_names):
