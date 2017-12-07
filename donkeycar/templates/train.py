@@ -35,6 +35,9 @@ from sklearn.utils import shuffle
 from PIL import Image
 
 deterministic = False
+use_early_stop = True
+early_stop_patience = 5
+min_delta = .0005
 
 if deterministic:
     import tensorflow as tf
@@ -309,7 +312,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     opts['continuous'] = continuous
 
     records = gather_records(cfg, tub_names, opts)
-    print('collating sequences')
+    print('collating %d records ...' % (len(records)))
     collate_records(records, gen_records, opts)
 
     def generator(save_best, opts, data, batch_size, isTrainSet=True):
@@ -407,6 +410,13 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                                     save_best_only=True, 
                                     mode='min')
 
+    #stop training if the validation error stops improving.
+    early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                                min_delta=min_delta, 
+                                                patience=early_stop_patience, 
+                                                verbose=verbose, 
+                                                mode='auto')
+
     train_gen = generator(save_best, opts, gen_records, cfg.BATCH_SIZE, True)
     val_gen = generator(save_best, opts, gen_records, cfg.BATCH_SIZE, False)
  
@@ -444,8 +454,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     callbacks_list = [save_best]
 
-    #if use_early_stop:
-    #    callbacks_list.append(early_stop)
+    if use_early_stop:
+        callbacks_list.append(early_stop)
     
     hist = kl.model.fit_generator(
                     train_gen, 
