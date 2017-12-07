@@ -63,7 +63,7 @@ class Joystick():
             0x129 : 'base4',
             0x12a : 'base5',
             0x12b : 'base6',
-	   
+
             #PS3 sixaxis specific
             0x12c : "triangle", 
             0x12d : "circle",
@@ -202,7 +202,18 @@ class JoystickController(object):
                  steering_scale=1.0,
                  throttle_scale=-1.0,
                  dev_fn='/dev/input/js0',
-                 auto_record_on_throttle=True):
+                 auto_record_on_throttle=True,
+                 btn_mode = 'trigger',
+                 btn_record_toggle = 'circle',
+                 btn_inc_max_throttle = 'triangle',
+                 btn_dec_max_throttle = 'cross',
+                 btn_inc_throttle_scale = 'base',
+                 btn_dec_throttle_scale = 'top2',
+                 btn_inc_steer_scale = 'base2',
+                 btn_dec_steer_scale = 'pinkie',
+                 btn_toggle_const_throttle = 'top',
+                 verbose = False
+                 ):
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -219,6 +230,16 @@ class JoystickController(object):
         self.auto_record_on_throttle = auto_record_on_throttle
         self.dev_fn = dev_fn
         self.js = None
+        self.btn_mode = btn_mode
+        self.btn_record_toggle = btn_record_toggle
+        self.btn_inc_max_throttle = btn_inc_max_throttle
+        self.btn_dec_max_throttle = btn_dec_max_throttle
+        self.btn_inc_throttle_scale = btn_inc_throttle_scale
+        self.btn_dec_throttle_scale = btn_dec_throttle_scale
+        self.btn_inc_steer_scale = btn_inc_steer_scale
+        self.btn_dec_steer_scale = btn_dec_steer_scale
+        self.btn_toggle_const_throttle = btn_toggle_const_throttle
+        self.verbose = verbose
 
         #We expect that the framework for parts will start a new
         #thread for our update fn. We used to do that and it caused
@@ -238,6 +259,8 @@ class JoystickController(object):
         try:
             self.js = Joystick(self.dev_fn)
             self.js.init()
+            if self.verbose:
+                self.js.show_map()
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
@@ -272,18 +295,23 @@ class JoystickController(object):
 
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
-        
+
+            if self.verbose and button_state == 1:
+                print('button: ', button)
+
             if axis == self.steering_axis:
                 self.angle = self.steering_scale * axis_val
-                print("angle", self.angle)
+                if self.verbose:
+                    print("angle", self.angle)
 
             if axis == self.throttle_axis:
                 #this value is often reversed, with positive value when pulling down
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
-                print("throttle", self.throttle)
                 self.on_throttle_changes()
+                if self.verbose:
+                    print("throttle", self.throttle)
             
-            if button == 'trigger' and button_state == 1:
+            if button == self.btn_mode and button_state == 1:
                 '''
                 switch modes from:
                 user: human controlled steer and throttle
@@ -298,7 +326,7 @@ class JoystickController(object):
                     self.mode = 'user'
                 print('new mode:', self.mode)
 
-            if button == 'circle' and button_state == 1:
+            if button == self.btn_record_toggle and button_state == 1:
                 '''
                 toggle recording on/off
                 '''
@@ -311,7 +339,7 @@ class JoystickController(object):
 
                 print('recording:', self.recording)
 
-            if button == 'triangle' and button_state == 1:
+            if button == self.btn_inc_max_throttle and button_state == 1:
                 '''
                 increase max throttle setting
                 '''
@@ -322,7 +350,7 @@ class JoystickController(object):
 
                 print('max_throttle:', self.max_throttle)
 
-            if button == 'cross' and button_state == 1:
+            if button == self.btn_dec_max_throttle and button_state == 1:
                 '''
                 decrease max throttle setting
                 '''
@@ -333,35 +361,35 @@ class JoystickController(object):
                     
                 print('max_throttle:', self.max_throttle)
 
-            if button == 'base' and button_state == 1:
+            if button == self.btn_inc_throttle_scale and button_state == 1:
                 '''
                 increase throttle scale
                 '''
                 self.throttle_scale = round(min(0.0, self.throttle_scale + 0.05), 2)
                 print('throttle_scale:', self.throttle_scale)
 
-            if button == 'top2' and button_state == 1:
+            if button == self.btn_dec_throttle_scale and button_state == 1:
                 '''
                 decrease throttle scale
                 '''
                 self.throttle_scale = round(max(-1.0, self.throttle_scale - 0.05), 2)
                 print('throttle_scale:', self.throttle_scale)
 
-            if button == 'base2' and button_state == 1:
+            if button == self.btn_inc_steer_scale and button_state == 1:
                 '''
                 increase steering scale
                 '''
                 self.steering_scale = round(min(1.0, self.steering_scale + 0.05), 2)
                 print('steering_scale:', self.steering_scale)
 
-            if button == 'pinkie' and button_state == 1:
+            if button == self.btn_dec_steer_scale and button_state == 1:
                 '''
                 decrease steering scale
                 '''
                 self.steering_scale = round(max(0.0, self.steering_scale - 0.05), 2)
                 print('steering_scale:', self.steering_scale)
 
-            if button == 'top' and button_state == 1:
+            if button == self.btn_toggle_const_throttle and button_state == 1:
                 '''
                 toggle constant throttle
                 '''
