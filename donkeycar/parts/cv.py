@@ -45,7 +45,7 @@ class ImgCrop:
         self.right = right
         
     def run(self, img_arr):
-        width, height, _ = img_arr.shape
+        height, width, _ = img_arr.shape
         img_arr = img_arr[self.top:height-self.bottom, 
                           self.left: width-self.right]
         return img_arr
