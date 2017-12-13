@@ -87,10 +87,11 @@ class TubApi(tornado.web.RequestHandler):
         (last_ts, seq) = next(entries)
         clips = [[seq]]
         for next_ts, next_seq in entries:
-            if next_ts - last_ts > 100:  #greater than 1s apart
-                clips.append([next_seq])
-            else:
-                clips[-1].append(next_seq)
+            #if next_ts - last_ts > 100:  #greater than 1s apart
+            #    clips.append([next_seq])
+            #else:
+            #    clips[-1].append(next_seq)
+            clips[-1].append(next_seq)
             last_ts = next_ts
 
         return clips
