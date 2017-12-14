@@ -19,13 +19,54 @@ import donkeycar as dk
 #import parts
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.keras import KerasIMU, KerasCategorical
+from donkeycar.parts.keras import KerasIMU, KerasCategorical, KerasBehavioral
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubHandler, TubGroup
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.imu import Mpu6050
 import numpy as np
 from donkeycar.parts.throttle_filter import ThrottleFilter
+
+class BehaviorPart(object):
+    '''
+    Keep a list of states, and an active state. Keep track of switching.
+    And return active state information.
+    '''
+    def __init__(self, states):
+        '''
+        expects a list of strings to enumerate state
+        '''
+        self.states = states
+        self.active_state = 0
+        self.one_hot_state_array = []
+        for i in len(states):
+            self.one_hot_state_array.append(0.0)
+
+    def increment_state(self):
+        self.one_hot_state_array[self.active_state] = 0.0
+        self.active_state += 1
+        if self.active_state >= len(self.states):
+            self.active_state = 0
+        self.one_hot_state_array[self.active_state] = 1.0
+        print("In State:", self.states[self.active_state])
+
+    def decrement_state(self):
+        self.one_hot_state_array[self.active_state] = 0.0
+        self.active_state -= 1
+        if self.active_state < 0:
+            self.active_state = len(self.states) - 1
+        self.one_hot_state_array[self.active_state] = 1.0
+        print("In State:", self.states[self.active_state])
+
+    def set_state(self, iState):
+        self.one_hot_state_array[self.active_state] = 0.0
+        self.active_state = iState
+        self.one_hot_state_array[self.active_state] = 1.0
+        print("In State:", self.states[self.active_state])
+
+    def run(self):
+        return self.active_state, self.states[self.active_state], self.one_hot_state_array
+
 
 def drive(cfg, model_path=None, use_joystick=False):
     '''
@@ -76,13 +117,18 @@ def drive(cfg, model_path=None, use_joystick=False):
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    def led_cond(mode, recording, num_records):
+    def led_cond(mode, recording, num_records, behavior_state):
         '''
         returns a blink rate. 0 for off. -1 for on. positive for rate.
         '''
 
         if num_records is not None and num_records % 10 == 0:
             print("recorded", num_records, "records")
+
+        if behavior_state:
+            col = cfg.BEHAVIOR_LED_COLORS[behavior_state]
+            led.set_rgb(col)
+            return -1 #solid on
 
         if recording:
             return -1 #solid on
@@ -95,15 +141,26 @@ def drive(cfg, model_path=None, use_joystick=False):
         return 0 
 
     led_cond_part = Lambda(led_cond)
-    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records"], outputs=['led/blink_rate'])
+    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state'], outputs=['led/blink_rate'])
 
     #led = LED(8)
     led = RGB_LED(12, 10, 16)
     led.set_rgb(0, 0, 1)
     V.add(led, inputs=['led/blink_rate'])
-    
+
+    #Behavioral state
+    if cfg.TRAIN_BEHAVIORS:
+        bh = BehaviorPart(cfg.BEHAVIOR_LIST)
+        V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
+        try:
+            ctr.set_button_down_trigger('dpad_left', bh.increment_state)
+        except:
+            pass
+
+        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
+        inputs = ['cam/image_array', "behavior/one_hot_state_array"]  
     #IMU
-    if cfg.HAVE_IMU:
+    elif cfg.HAVE_IMU:
         imu = Mpu6050()
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
@@ -169,7 +226,11 @@ def drive(cfg, model_path=None, use_joystick=False):
            'float', 'float',  
            'str']
 
-    if cfg.HAVE_IMU:
+    if cfg.TRAIN_BEHAVIORS:
+        inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
+        types += ['int', 'str', 'vector']
+
+    elif cfg.HAVE_IMU:
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
