@@ -81,8 +81,6 @@ donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>]
 
 This command allows you to see how many records are contained in any/all tubs. It will also open each record and ensure that the data is readable and intact. If not, it will allow you to remove corrupt records.
 
-> Note: This should be moved from manage.py to donkey command
-
 Usage:
 ```bash
 donkey tubcheck <tub_path> [--fix]
@@ -99,8 +97,6 @@ donkey tubcheck <tub_path> [--fix]
 This command will show a pop-up window showing the histogram of record values in a given tub.
 
 
-> Note: This should be moved from manage.py to donkey command
-
 Usage:
 ```bash
 donkey tubhist <tub_path> --rec=<"user/angle">
@@ -110,11 +106,10 @@ donkey tubhist <tub_path> --rec=<"user/angle">
 
 * When the `--tub` is omitted, it will check all tubs in the default data dir
 
+
 ## Plot Predictions
 
 This command allows you plot steering and throttle against predictions coming from a trained model.
-
-> Note: This should be moved from manage.py to donkey command
 
 Usage:
 ```bash
