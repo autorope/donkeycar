@@ -292,7 +292,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     if model_type == "imu":
         kl = KerasIMU()
     elif model_type == "behavior":
-        kl = KerasBehaviorial()
+        kl = KerasBehavioral()
     elif model_type == "rnn":
         raise Exception("Not yet")
         #kl = KerasRNN_LSTM()
@@ -365,7 +365,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                 model_in_shape = kl.model.input.shape
 
             has_imu = type(kl) is KerasIMU
-            has_bvh = type(kl) is KerasBehavior
+            has_bvh = type(kl) is KerasBehavioral
 
             for key in keys:
 
