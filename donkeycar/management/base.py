@@ -328,7 +328,7 @@ class ShowHistogram(BaseCommand):
         from matplotlib import pyplot as plt
         from donkeycar.parts.datastore import TubGroup
 
-        tg = TubGroup(tub_paths=tub_paths)
+        tg = TubGroup(tub_paths)
         if record_name is not None:
             tg.df[record_name].hist(bins=50)
         else:
