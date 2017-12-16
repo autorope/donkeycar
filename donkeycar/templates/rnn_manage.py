@@ -65,6 +65,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     '''
+    from donkeycar.parts.led_status import RGB_LED
 
     #Initialize car
     V = dk.vehicle.Vehicle()
@@ -98,6 +99,32 @@ def drive(cfg, model_path=None, use_joystick=False):
         
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
+    
+    def led_cond(mode, recording, num_records):
+        '''
+        returns a blink rate. 0 for off. -1 for on. positive for rate.
+        '''
+
+        if num_records is not None and num_records % 10 == 0:
+            print("recorded", num_records, "records")
+
+        if recording:
+            return -1 #solid on
+        elif mode == 'user':
+            return 1
+        elif mode == 'local_angle':
+            return 0.5
+        elif mode == 'local':
+            return 0.1
+        return 0 
+
+    led_cond_part = Lambda(led_cond)
+    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records"], outputs=['led/blink_rate'])
+
+    #led = LED(8)
+    led = RGB_LED(12, 10, 16)
+    led.set_rgb(0, 0, 1)
+    V.add(led, inputs=['led/blink_rate'])
     
     #lastNImages = LastNImages(SEQ_LEN)
     #V.add(lastNImages, inputs=['cam/image_array'], outputs=['cam/last_N'])
