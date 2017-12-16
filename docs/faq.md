@@ -1,5 +1,40 @@
 # FAQ 
 ---------
+
+### What types of RC cars work with the donkey platform?
+Yes. Most hobby grade RC cars will work fine with the electronics but you'll need to make your own baseplate and camera
+holder. To make sure the car will work with Donkey check theses things. 
+
+* it has a separate ESC and reciever. Some of the cheaper cars have these combined so it would require soldering to
+connect the Donkey motor controller to the ESC.
+* The ESC uses three-wire connectors. This will make it easy to just plug into the Donkey hardware.
+* Brushed motors are easier because they can go slower but brushless motors can work as well. 
+
+### What car can I use if I'm not in the USA?
+The easiest thing to do would be to take your parts down to your local RC / hobby shop and check that the car you want
+works with the parts. Here are some parts people have said work in other countries. 
+
+* Austrailia: [KAOS](https://www.hobbywarehouse.com.au/hsp-94186-18694k-kaos-blue-rc-truck.html) (functionally equivallent to the Exceed Magnet)
+
+
+### How can I make my own track?
+You can use tape, ribbon or even rope. The most popular tracks are 4ft wide and have 2in white borders with a dashed
+yelloe center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
+* straightaways.
+* left and right turns
+* hairpin turn
+* start/finish line. 
+
+
+### Will Donkey Work on different hardware?
+Yes. It's all python so you can run it on any system. Usually the hard part of porting Donkey will be getting the hardware working.
+Here are a couple systems that people have tried or talked about.
+
+* NVIDA TX2 - This was implemented with a webcam and used a teensy to controll the motor/servos.
+* Pi-Zero - Untested but people have gotten OpenCV and Tensorflow installed so it seems possible.
+
+
+
 ### How do I create my own Raspberry Pi Disk?
 
 ##### This uses minimal space on your memory card, is easy to upgrade and make changes to source
