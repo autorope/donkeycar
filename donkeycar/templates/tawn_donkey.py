@@ -157,7 +157,7 @@ def drive(cfg, model_path=None, use_joystick=False):
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
         try:
-            ctr.set_button_down_trigger('dpad_left', bh.increment_state)
+            ctr.set_button_down_trigger('L1', bh.increment_state)
         except:
             pass
 

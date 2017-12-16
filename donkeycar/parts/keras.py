@@ -153,7 +153,7 @@ class KerasBehavioral(KerasPilot):
         super(KerasBehavioral, self).__init__(*args, **kwargs)
         self.model = default_bhv(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs)
         
-    def run(self, state_array):        
+    def run(self, img_arr, state_array):        
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1,len(state_array))
         outputs = self.model.predict([img_arr, bhv_arr])

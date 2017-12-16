@@ -59,10 +59,10 @@ class Joystick():
             0x125 : 'pinkie',
             0x126 : 'base',
             0x127 : 'base2',
-            0x128 : 'base3',
-            0x129 : 'base4',
-            0x12a : 'base5',
-            0x12b : 'base6',
+            0x128 : 'L2',
+            0x129 : 'R2',
+            0x12a : 'L1',
+            0x12b : 'R1',
 	   
             #PS3 sixaxis specific
             0x12c : "triangle", 
@@ -334,7 +334,7 @@ class JoystickController(object):
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
 
-            if axis and axis_val and axis in self.axis_trigger_map:
+            if axis is not None and axis in self.axis_trigger_map:
                 '''
                 then invoke the function attached to that axis
                 '''
