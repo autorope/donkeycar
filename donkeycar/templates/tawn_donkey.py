@@ -3,8 +3,8 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu)] [--continuous]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior)]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior)] [--continuous]
 
 
 Options:
@@ -132,7 +132,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
         if num_records is not None and num_records % 10 == 0:
             print("recorded", num_records, "records")
 
-        if behavior_state is not None:
+        if behavior_state is not None and model_type == 'behavior':
             r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
             led.set_rgb(r, g, b)
             return -1 #solid on
@@ -156,7 +156,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     V.add(led, inputs=['led/blink_rate'])
 
     #Behavioral state
-    if cfg.TRAIN_BEHAVIORS:
+    if cfg.TRAIN_BEHAVIORS and model_type == "behavior":
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
         try:
@@ -167,7 +167,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]  
     #IMU
-    elif cfg.HAVE_IMU:
+    elif cfg.HAVE_IMU and model_type == "imu":
         imu = Mpu6050()
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
@@ -236,11 +236,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
            'float', 'float',  
            'str']
 
-    if cfg.TRAIN_BEHAVIORS:
+    if cfg.TRAIN_BEHAVIORS and model_type == "behavior":
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
 
-    elif cfg.HAVE_IMU:
+    elif cfg.HAVE_IMU and model_type == "imu":
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
