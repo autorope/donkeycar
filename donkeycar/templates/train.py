@@ -28,7 +28,7 @@ import keras
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
-from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasCategorical, KerasBehavior
+from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasCategorical, KerasBehavioral
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -292,7 +292,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     if model_type == "imu":
         kl = KerasIMU()
     elif model_type == "behavior":
-        kl = KerasBehavior()
+        kl = KerasBehaviorial()
     elif model_type == "rnn":
         raise Exception("Not yet")
         #kl = KerasRNN_LSTM()

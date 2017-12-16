@@ -150,8 +150,8 @@ class KerasBehavioral(KerasPilot):
     outputs steering and throttle
     '''
     def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2 , *args, **kwargs):
-        super(KerasIMU, self).__init__(*args, **kwargs)
-        self.model = default_bhv(num_outputs = num_outputs, num_behavior_inputs = num_behavior_inputs)
+        super(KerasBehavioral, self).__init__(*args, **kwargs)
+        self.model = default_bhv(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs)
         
     def run(self, state_array):        
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -322,7 +322,7 @@ def default_imu(num_outputs, num_imu_inputs):
     return model
 
 
-def default_bvh(num_outputs, num_bvh_inputs):
+def default_bhv(num_outputs, num_bvh_inputs):
     '''
     Notes: this model depends on concatenate which failed on keras < 2.0.8
     '''
@@ -364,7 +364,7 @@ def default_bvh(num_outputs, num_bvh_inputs):
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
         
-    model = Model(inputs=[img_in, imu_in], outputs=outputs)
+    model = Model(inputs=[img_in, bvh_in], outputs=outputs)
     
     model.compile(optimizer='adam',
                   loss='mse')

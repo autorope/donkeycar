@@ -36,11 +36,13 @@ class BehaviorPart(object):
         '''
         expects a list of strings to enumerate state
         '''
+        print("bvh states:", states)
         self.states = states
         self.active_state = 0
         self.one_hot_state_array = []
-        for i in len(states):
+        for i in range(len(states)):
             self.one_hot_state_array.append(0.0)
+        self.one_hot_state_array[0] = 1.0
 
     def increment_state(self):
         self.one_hot_state_array[self.active_state] = 0.0
@@ -67,6 +69,8 @@ class BehaviorPart(object):
     def run(self):
         return self.active_state, self.states[self.active_state], self.one_hot_state_array
 
+    def shutdown(self):
+        pass
 
 def drive(cfg, model_path=None, use_joystick=False):
     '''
@@ -88,7 +92,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
+        ctr = JoystickController(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
                                  auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
     else:        
@@ -125,9 +129,9 @@ def drive(cfg, model_path=None, use_joystick=False):
         if num_records is not None and num_records % 10 == 0:
             print("recorded", num_records, "records")
 
-        if behavior_state:
-            col = cfg.BEHAVIOR_LED_COLORS[behavior_state]
-            led.set_rgb(col)
+        if behavior_state is not None:
+            r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
+            led.set_rgb(r, g, b)
             return -1 #solid on
 
         if recording:
