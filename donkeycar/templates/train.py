@@ -11,7 +11,7 @@ You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu)] [--continuous]
+    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior)] [--continuous]
 
 Options:
     -h --help     Show this screen.    
@@ -28,7 +28,7 @@ import keras
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
-from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasCategorical
+from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasCategorical, KerasBehavioral
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -205,6 +205,12 @@ def collate_records(records, gen_records, opts):
         except:
             pass
 
+        try:
+            behavior_arr = np.array(json_data['behavior/one_hot_state_array'])
+            sample["behavior_arr"] = behavior_arr
+        except:
+            pass
+
         sample['img_data'] = None
 
         #now assign test or val
@@ -277,11 +283,16 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     opts['categorical'] = False
 
+    if cfg.TRAIN_BEHAVIORS:
+        model_type = "behavior"
+
     if model_type is None:
         model_type = "categorical"
 
     if model_type == "imu":
         kl = KerasIMU()
+    elif model_type == "behavior":
+        kl = KerasBehavioral()
     elif model_type == "rnn":
         raise Exception("Not yet")
         #kl = KerasRNN_LSTM()
@@ -353,7 +364,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
             else:    
                 model_in_shape = kl.model.input.shape
 
-            has_imu = model_in_shape[1] == 1
+            has_imu = type(kl) is KerasIMU
+            has_bvh = type(kl) is KerasBehavioral
 
             for key in keys:
 
@@ -370,6 +382,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                 if len(batch_data) == batch_size:
                     inputs_img = []
                     inputs_imu = []
+                    inputs_bvh = []
                     angles = []
                     throttles = []
 
@@ -380,6 +393,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
+                        
+                        if has_bvh:
+                            inputs_bvh.append(record['behavior_arr'])
 
                         inputs_img.append(record['img_data'])
                         angles.append(record['angle'])
@@ -387,6 +403,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
                     if has_imu:
                         X = [np.array(inputs_img), np.array(inputs_imu)]
+                    elif has_bvh:
+                        X = [np.array(inputs_img), np.array(inputs_bvh)]
                     else:
                         X = [np.array(inputs_img)]
 

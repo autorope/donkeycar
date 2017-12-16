@@ -83,7 +83,7 @@ class Vehicle():
 
             #wait until the parts warm up.
             print('Starting vehicle...')
-            time.sleep(1)
+            #time.sleep(1)
 
             loop_count = 0
             while self.on:
