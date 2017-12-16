@@ -261,13 +261,13 @@ class Sim(BaseCommand):
         if cfg is None:
             return
 
-        #TODO: this logic should be in a pilot or modle handler part.
+        #TODO: this logic should be in a pilot or model handler part.
         if args.type == "categorical":
             kl = KerasCategorical()
         elif args.type == "linear":
             kl = KerasLinear(num_outputs=2)
         else:
-            print("didn't recognice type:", args.type)
+            print("didn't recognize type:", args.type)
             return
 
         #can provide an optional image filter part
