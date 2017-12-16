@@ -3,7 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu)]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu)] [--continuous]
 
 
@@ -19,7 +19,7 @@ import donkeycar as dk
 #import parts
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.keras import KerasIMU, KerasCategorical, KerasBehavioral
+from donkeycar.parts.keras import KerasIMU, KerasCategorical, KerasBehavioral, KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubHandler, TubGroup
 from donkeycar.parts.controller import LocalWebController, JoystickController
@@ -72,7 +72,7 @@ class BehaviorPart(object):
     def shutdown(self):
         pass
 
-def drive(cfg, model_path=None, use_joystick=False):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -83,6 +83,9 @@ def drive(cfg, model_path=None, use_joystick=False):
     to parts requesting the same named input.
     '''
     from donkeycar.parts.led_status import RGB_LED
+
+    if model_type is None:
+        model_type = "categorical"
     
     #Initialize car
     V = dk.vehicle.Vehicle()
@@ -175,7 +178,10 @@ def drive(cfg, model_path=None, use_joystick=False):
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
     else:
-        kl = KerasCategorical()
+        if model_type == "linear":
+            kl = KerasLinear()
+        else:
+            kl = KerasCategorical()
         inputs=['cam/image_array']
 
     if model_path:
@@ -262,7 +268,8 @@ if __name__ == '__main__':
     cfg = dk.load_config()
     
     if args['drive']:
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
+        model_type = args['--type']
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type)
     
     if args['train']:
         from train import train
