@@ -252,7 +252,8 @@ class Sim(BaseCommand):
         '''
         import socketio
         from donkeycar.parts.simulation import SteeringServer
-        from donkeycar.parts.keras import KerasCategorical, KerasLinear
+        from donkeycar.parts.keras import KerasCategorical, KerasLinear,\
+            Keras3D_CNN, KerasRNN_LSTM
 
         args, parser = self.parse_args(args)
 
@@ -266,6 +267,17 @@ class Sim(BaseCommand):
             kl = KerasCategorical()
         elif args.type == "linear":
             kl = KerasLinear(num_outputs=2)
+        elif args.type == "rnn":
+            kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                seq_length=cfg.SEQUENCE_LENGTH, num_outputs=2)
+        elif args.type == "3d":
+            kl = Keras3D_CNN(image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                seq_length=cfg.SEQUENCE_LENGTH,
+                num_outputs=2)
         else:
             print("didn't recognize type:", args.type)
             return

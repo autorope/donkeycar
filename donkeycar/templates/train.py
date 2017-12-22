@@ -11,7 +11,7 @@ You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior)] [--continuous]
+    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
 
 Options:
     -h --help     Show this screen.    
@@ -28,7 +28,10 @@ import keras
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
-from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasCategorical, KerasBehavioral
+from donkeycar.parts.keras import KerasLinear, KerasIMU,\
+     KerasCategorical, KerasBehavioral, Keras3D_CNN,\
+     KerasRNN_LSTM
+
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
@@ -283,9 +286,6 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     opts['categorical'] = False
 
-    if cfg.TRAIN_BEHAVIORS:
-        model_type = "behavior"
-
     if model_type is None:
         model_type = "categorical"
 
@@ -293,9 +293,6 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
         kl = KerasIMU()
     elif model_type == "behavior":
         kl = KerasBehavioral()
-    elif model_type == "rnn":
-        raise Exception("Not yet")
-        #kl = KerasRNN_LSTM()
     elif model_type == "linear":
         kl = KerasLinear(num_outputs=2)
     elif model_type == "categorical":
@@ -389,7 +386,10 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     for record in batch_data:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            record['img_data'] = np.array(Image.open(record['image_path']))
+                            img_arr = np.array(Image.open(record['image_path']))
+                            if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+                                img_arr = dk.utils.rgb2gray(img_arr)
+                            record['img_data'] = img_arr
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
@@ -401,12 +401,15 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                         angles.append(record['angle'])
                         throttles.append(record['throttle'])
 
+                    img_arr = np.array(inputs_img).reshape(batch_size,\
+                        cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+
                     if has_imu:
-                        X = [np.array(inputs_img), np.array(inputs_imu)]
+                        X = [img_arr, np.array(inputs_imu)]
                     elif has_bvh:
-                        X = [np.array(inputs_img), np.array(inputs_bvh)]
+                        X = [img_arr, np.array(inputs_bvh)]
                     else:
-                        X = [np.array(inputs_img)]
+                        X = [img_arr]
 
                     if model_out_shape[1] == 2:
                         y = [np.array([angles, throttles])]
@@ -487,6 +490,178 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     use_multiprocessing=use_multiprocessing)
 
 
+
+def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
+    '''
+    use the specified data in tub_names to train an artifical neural network
+    saves the output trained model as model_name
+    trains models which take sequence of images
+    '''
+    import sklearn
+    from sklearn.model_selection import train_test_split
+    from sklearn.utils import shuffle
+    from PIL import Image
+    import json
+
+    assert(not continuous)
+
+    print("sequence of images training")
+
+    if model_type == "rnn":
+        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W,
+            image_h=cfg.IMAGE_H,
+            image_d=cfg.IMAGE_DEPTH,
+            seq_length=cfg.SEQUENCE_LENGTH, num_outputs=2)
+
+    elif model_type == "3d":
+        kl = Keras3D_CNN(image_w=cfg.IMAGE_W,
+            image_h=cfg.IMAGE_H,
+            image_d=cfg.IMAGE_DEPTH,
+            seq_length=cfg.SEQUENCE_LENGTH,
+            num_outputs=2)
+    else:
+        raise Exception("unknown model type: %s" % model_type)
+
+    tubs = gather_tubs(cfg, tub_names)
+
+    records = []
+
+    for tub in tubs:
+        record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
+        print("Tub:", tub.path, "has", len(record_paths), 'records')
+
+        record_paths.sort(key=get_record_index)
+        records += record_paths
+
+
+    print('collating records')
+    gen_records = {}
+
+    for record_path in records:
+
+        with open(record_path, 'r') as fp:
+            json_data = json.load(fp)
+
+        basepath = os.path.dirname(record_path)
+        image_filename = json_data["cam/image_array"]
+        image_path = os.path.join(basepath, image_filename)
+        sample = { 'record_path' : record_path, "image_path" : image_path, "json_data" : json_data }
+
+        sample["tub_path"] = basepath
+        sample["index"] = get_image_index(image_filename)
+
+        angle = float(json_data['user/angle'])
+        throttle = float(json_data["user/throttle"])
+
+        sample['target_output'] = np.array([angle, throttle])
+
+        sample['img_data'] = None
+
+        key = make_key(sample)
+
+        gen_records[key] = sample
+
+
+
+    print('collating sequences')
+
+    sequences = []
+
+    for k, sample in gen_records.items():
+
+        seq = []
+
+        for i in range(cfg.SEQUENCE_LENGTH):
+            key = make_next_key(sample, i)
+            if key in gen_records:
+                seq.append(gen_records[key])
+            else:
+                continue
+
+        if len(seq) != cfg.SEQUENCE_LENGTH:
+            continue
+
+        sequences.append(seq)
+
+
+
+    #shuffle and split the data
+    train_data, val_data  = train_test_split(sequences, shuffle=True, test_size=(1 - cfg.TRAIN_TEST_SPLIT))
+
+
+    def generator(data, batch_size=cfg.BATCH_SIZE):
+        num_records = len(data)
+
+        while True:
+            #shuffle again for good measure
+            shuffle(data)
+
+            for offset in range(0, num_records, batch_size):
+                batch_data = data[offset:offset+batch_size]
+
+                if len(batch_data) != batch_size:
+                    break
+
+                b_inputs_img = []
+                b_labels = []
+
+                for seq in batch_data:
+                    inputs_img = []
+                    labels = []
+                    for record in seq:
+                        #get image data if we don't already have it
+                        if record['img_data'] is None:
+                            img_arr = np.array(Image.open(record['image_path']))
+                            if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+                                img_arr = dk.utils.rgb2gray(img_arr)
+                            record['img_data'] = img_arr
+                            
+                        inputs_img.append(record['img_data'])
+                    labels.append(seq[-1]['target_output'])
+
+                    b_inputs_img.append(inputs_img)
+                    b_labels.append(labels)
+
+                X = [np.array(b_inputs_img).reshape(batch_size,\
+                    cfg.SEQUENCE_LENGTH, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)]
+
+                y = np.array(b_labels).reshape(batch_size, 2)
+
+                yield X, y
+
+    train_gen = generator(train_data)
+    val_gen = generator(val_data)
+    
+
+    model_path = os.path.expanduser(model_name)
+
+    total_records = len(sequences)
+    total_train = len(train_data)
+    total_val = len(val_data)
+
+    print('train: %d, validation: %d' %(total_train, total_val))
+    steps_per_epoch = total_train // cfg.BATCH_SIZE
+    print('steps_per_epoch', steps_per_epoch)
+
+    kl.train(train_gen, 
+        val_gen, 
+        saved_model_path=model_path,
+        steps=steps_per_epoch,
+        train_split=cfg.TRAIN_TEST_SPLIT,
+        use_early_stop = False)
+
+
+
+def multi_train(cfg, tub, model, transfer, model_type, continuous):
+    '''
+    choose the right regime for the given model type
+    '''
+    train_fn = train
+    if model_type == "rnn" or model_type == '3d':
+        train_fn = sequence_train
+
+    train_fn(cfg, tub, model, transfer, model_type, continuous)
+    
 if __name__ == "__main__":
     args = docopt(__doc__)
     cfg = dk.load_config()
@@ -495,5 +670,5 @@ if __name__ == "__main__":
     transfer = args['--transfer']
     model_type = args['--type']
     continuous = args['--continuous']
-    train(cfg, tub, model, transfer, model_type, continuous)
+    multi_train(cfg, tub, model, transfer, model_type, continuous)
     

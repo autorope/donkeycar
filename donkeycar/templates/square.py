@@ -31,7 +31,7 @@ def drive(cfg, model_path=None):
     V.mem.put(['square/angle', 'square/throttle'], (100,100))  
     
     #display square box given by cooridantes.
-    cam = SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
+    cam = SquareBoxCamera(resolution=(cfg.IMAGE_H, cfg.IMAGE_W))
     V.add(cam, 
           inputs=['square/angle', 'square/throttle'],
           outputs=['cam/image_array'])

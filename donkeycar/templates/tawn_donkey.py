@@ -3,8 +3,8 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior)] [--continuous]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d)]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
 
 
 Options:
@@ -89,7 +89,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     
     #Initialize car
     V = dk.vehicle.Vehicle()
-    cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
+    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
@@ -155,8 +155,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     led.set_rgb(0, 0, 1)
     V.add(led, inputs=['led/blink_rate'])
 
+    #IMU
+    if cfg.HAVE_IMU:
+        imu = Mpu6050()
+        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
+
     #Behavioral state
-    if cfg.TRAIN_BEHAVIORS and model_type == "behavior":
+    if model_type == "behavior":
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
         try:
@@ -167,11 +173,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]  
     #IMU
-    elif cfg.HAVE_IMU and model_type == "imu":
-        imu = Mpu6050()
-        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
-    
+    elif model_type == "imu":
+        assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
         kl = KerasIMU(num_outputs=2, num_imu_inputs=6)
         inputs=['cam/image_array',
@@ -180,8 +183,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     else:
         if model_type == "linear":
             kl = KerasLinear()
+        elif model_type == "3d":
+            kl = Keras3D_CNN(seq_length=cfg.SEQUENCE_LENGTH)
+        elif model_type == "rnn":
+            kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH)
         else:
             kl = KerasCategorical()
+
         inputs=['cam/image_array']
 
     if model_path:
@@ -236,11 +244,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
            'float', 'float',  
            'str']
 
-    if cfg.TRAIN_BEHAVIORS and model_type == "behavior":
+    if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
-
-    elif cfg.HAVE_IMU and model_type == "imu":
+    
+    if cfg.HAVE_IMU:
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
@@ -272,14 +280,14 @@ if __name__ == '__main__':
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type)
     
     if args['train']:
-        from train import train
+        from train import multi_train
         
         tub = args['--tub']
         model = args['--model']
         transfer = args['--transfer']
         model_type = args['--type']
         continuous = args['--continuous']
-        train(cfg, tub, model, transfer, model_type, continuous)
+        multi_train(cfg, tub, model, transfer, model_type, continuous)
 
 
 

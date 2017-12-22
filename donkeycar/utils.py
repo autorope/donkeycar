@@ -96,7 +96,11 @@ def create_video(img_dir_path, output_video_path):
     response = envoy.run(command)
 
 
-
+def rgb2gray(rgb):
+    '''
+    take a numpy rgb image return a new single channel image converted to greyscale
+    '''
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
 
 
 

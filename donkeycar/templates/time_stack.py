@@ -39,7 +39,7 @@ def drive(cfg, model_path=None, use_joystick=False):
 
     #Initialize car
     V = dk.vehicle.Vehicle()
-    cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
+    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
     #this part stacks the last 3 images into channels of a single output image

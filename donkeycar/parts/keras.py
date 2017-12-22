@@ -372,20 +372,29 @@ def default_bhv(num_outputs, num_bvh_inputs):
     return model
 
 class KerasRNN_LSTM(KerasPilot):
-    def __init__(self, seq_length=3, num_outputs=2, *args, **kwargs):
+    def __init__(self, image_w =160, image_h=120, image_d=3, seq_length=3, num_outputs=2, *args, **kwargs):
         super(KerasRNN_LSTM, self).__init__(*args, **kwargs)
-        self.model = rnn_lstm(seq_length=seq_length, num_outputs=num_outputs)
+        image_shape = (image_h, image_w, image_d)
+        self.model = rnn_lstm(seq_length=seq_length,
+            num_outputs=num_outputs,
+            image_shape=image_shape)
         self.seq_length = seq_length
+        self.image_d = image_d
+        self.image_w = image_w
+        self.image_h = image_h
         self.img_seq = []
 
     def run(self, img_arr):
+        if img_arr.shape[2] == 3 and self.image_d == 1:
+            img_arr = dk.utils.rgb2gray(img_arr)
+
         while len(self.img_seq) < self.seq_length:
             self.img_seq.append(img_arr)
 
         self.img_seq = self.img_seq[1:]
         self.img_seq.append(img_arr)
         
-        img_arr = np.array(self.img_seq).reshape(1, self.seq_length, 120, 160, 3 )
+        img_arr = np.array(self.img_seq).reshape(1, self.seq_length, self.image_h, self.image_w, self.image_d )
         outputs = self.model.predict([img_arr])
         steering = outputs[0][0]
         throttle = outputs[0][1]
@@ -432,3 +441,109 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 
     return x
 
+
+class Keras3D_CNN(KerasPilot):
+    def __init__(self, image_w =160, image_h=120, image_d=3, seq_length=20, num_outputs=2, *args, **kwargs):
+        super(Keras3D_CNN, self).__init__(*args, **kwargs)
+        self.model = build_3d_cnn(w=image_w, h=image_h, d=image_d, s=seq_length, num_outputs=num_outputs)
+        self.seq_length = seq_length
+        self.image_d = image_d
+        self.image_w = image_w
+        self.image_h = image_h
+        self.img_seq = []
+
+    def run(self, img_arr):
+        
+        if img_arr.shape[2] == 3 and self.image_d == 1:
+            img_arr = dk.utils.rgb2gray(img_arr)
+
+        while len(self.img_seq) < self.seq_length:
+            self.img_seq.append(img_arr)
+
+        self.img_seq = self.img_seq[1:]
+        self.img_seq.append(img_arr)
+        
+        img_arr = np.array(self.img_seq).reshape(1, self.seq_length, self.image_h, self.image_w, self.image_d )
+        outputs = self.model.predict([img_arr])
+        steering = outputs[0][0]
+        throttle = outputs[0][1]
+        return steering, throttle
+
+
+def build_3d_cnn(w, h, d, s, num_outputs):
+    from keras.layers import Input, Dense
+    from keras.models import Sequential
+    from keras.layers import Conv3D, MaxPooling3D, Reshape, BatchNormalization, Merge
+    from keras.layers import Activation, Dropout, Flatten
+
+    #Credit: https://github.com/jessecha/DNRacing/blob/master/3D_CNN_Model/model.py
+    '''
+        w : width
+        h : height
+        d : depth
+        s : n_stacked
+    '''
+    input_shape=(s, h, w, d)
+
+    model = Sequential()
+    #First layer
+    #model.add(Cropping2D(cropping=((60,0), (0,0))), input_shape=input_shape ) #trim pixels off top
+    
+    # Second layer
+    model.add(Conv3D(
+        filters=16, kernel_size=(3,3,3), strides=(1,3,3),
+        data_format='channels_last', border_mode='same',
+        input_shape=input_shape)
+    )
+    model.add(Activation('relu'))
+    model.add(MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)
+    )
+    # Third layer
+    model.add(Conv3D(
+        filters=32, kernel_size=(3,3,3), strides=(1,1,1),
+        data_format='channels_last', border_mode='same')
+    )
+    model.add(Activation('relu'))
+    model.add(MaxPooling3D(
+        pool_size=(1, 2, 2), strides=(1,2,2), padding='valid', data_format=None)
+    )
+    # Fourth layer
+    model.add(Conv3D(
+        filters=64, kernel_size=(3,3,3), strides=(1,1,1),
+        data_format='channels_last', border_mode='same')
+    )
+    model.add(Activation('relu'))
+    model.add(MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)
+    )
+    # Fifth layer
+    model.add(Conv3D(
+        filters=128, kernel_size=(3,3,3), strides=(1,1,1),
+        data_format='channels_last', border_mode='same')
+    )
+    model.add(Activation('relu'))
+    model.add(MaxPooling3D(
+        pool_size=(1,2,2), strides=(1,2,2), padding='valid', data_format=None)
+    )
+    # Fully connected layer
+    model.add(Flatten())
+
+    model.add(Dense(256))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+
+    model.add(Dense(256))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+
+    model.add(Dense(num_outputs))
+    #model.add(Activation('tanh'))
+
+    model.compile(
+        loss='mean_squared_error', optimizer='adam', metrics=['accuracy']
+    )
+    print(model.summary())
+    return model
