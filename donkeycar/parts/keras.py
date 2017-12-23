@@ -474,7 +474,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     from keras.layers import Input, Dense
     from keras.models import Sequential
     from keras.layers import Conv3D, MaxPooling3D, Reshape, BatchNormalization, Merge
-    from keras.layers import Activation, Dropout, Flatten
+    from keras.layers import Activation, Dropout, Flatten, Cropping3D
 
     #Credit: https://github.com/jessecha/DNRacing/blob/master/3D_CNN_Model/model.py
     '''
@@ -487,13 +487,12 @@ def build_3d_cnn(w, h, d, s, num_outputs):
 
     model = Sequential()
     #First layer
-    #model.add(Cropping2D(cropping=((60,0), (0,0))), input_shape=input_shape ) #trim pixels off top
+    model.add(Cropping3D(cropping=((0,0), (50,10), (0,0)), input_shape=input_shape) ) #trim pixels off top
     
     # Second layer
     model.add(Conv3D(
         filters=16, kernel_size=(3,3,3), strides=(1,3,3),
-        data_format='channels_last', border_mode='same',
-        input_shape=input_shape)
+        data_format='channels_last', border_mode='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
