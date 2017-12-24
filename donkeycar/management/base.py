@@ -258,8 +258,11 @@ class Sim(BaseCommand):
             kl = KerasCategorical()
         elif args.type == "linear":
             kl = KerasLinear(num_outputs=2)
+        elif args.type == "mxlinear":
+            from donkeycar.parts.mxnetpart import MxnetLinear
+            kl = MxnetLinear()
         else:
-            print("didn't recognice type:", args.type)
+            print("didn't recognize type:", args.type)
             return
 
         #can provide an optional image filter part
