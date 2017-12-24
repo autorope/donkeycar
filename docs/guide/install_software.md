@@ -145,7 +145,8 @@ pip install -e .
 ```
 
 ----
-Now let's setup things on your PC. Install varies depending on platform.
+Now let's setup the same donkey library on your laptop or server so you can test and train autopilots. Install varies 
+depending on platform.
 
 
 ## Install donkeycar on Linux
@@ -159,11 +160,13 @@ pip install keras==2.0.6
 pip install tensorflow==1.3.0
 ```
 
-Install donkeycar
+* Install donkey source and create your local working dir:
 ```bash
 git clone https://github.com/wroscoe/donkey donkeycar
 pip install -e donkeycar
 ```
+
+[Next: Get Driving]((guide/get_driving.md) )
 
 ----
 
@@ -200,12 +203,15 @@ activate donkey
 
 ```
 pip install -e .
-donkey createcar --path ~/d2
 ```
+
+
 
 > Note: After closing the Anaconda Prompt, when you open it again, you will need to 
 > type ```activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
+
+[Next: Get Driving]((guide/get_driving.md) )
 
 ----
 
@@ -249,8 +255,9 @@ pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-p
 
 ```
 pip install -e .
-donkey createcar --path ~/d2
 ```
+
+[Next: Get Driving]((guide/get_driving.md) )
 
 > Note: After closing the Terminal, when you open it again, you will need to 
 > type ```source activate donkey``` to re-enable the mappings to donkey specific 
