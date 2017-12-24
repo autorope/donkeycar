@@ -38,8 +38,7 @@ ssh pi@<your_pi_ip_address>
 The default user name is 'pi' and the password is 'raspberry'.  If you are using the pre-built Donkey image, the password is 'asdfasdf'.
 
 
-### Create your car application.
-
+### Make sure you've created your car application.
 ```
 donkey createcar --template donkey2 --path ~/d2
 ```
