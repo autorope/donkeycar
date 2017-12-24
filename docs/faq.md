@@ -15,6 +15,7 @@ The easiest thing to do would be to take your parts down to your local RC / hobb
 works with the parts. Here are some parts people have said work in other countries. 
 
 * Austrailia: [KAOS](https://www.hobbywarehouse.com.au/hsp-94186-18694k-kaos-blue-rc-truck.html) (functionally equivallent to the Exceed Magnet)
+* Add your country to this list (click edit this in top left corner)
 
 
 ### How can I make my own track?
@@ -36,6 +37,7 @@ Here are a couple systems that people have tried or talked about.
 
 
 ### How do I create my own Raspberry Pi Disk?
+This requires an extra 4 hours when command. 
 
 ##### This uses minimal space on your memory card, is easy to upgrade and make changes to source
 

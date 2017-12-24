@@ -4,8 +4,8 @@ After you've calibrated your car you can start driving it.
 
 ### Start your car.
  
-> *** Put your car in a safe place where the wheels are off the ground *** This
-is the step were the car can take off. 
+> *** Put your car in a safe place where the wheels are off the ground ***  
+This is the step were the car can take off. 
 
 ---
 # Normal usage
