@@ -166,7 +166,7 @@ git clone https://github.com/wroscoe/donkey donkeycar
 pip install -e donkeycar
 ```
 
-[Next: Get Driving]((guide/get_driving.md) )
+[Next: Get Driving](./get_driving.md)
 
 ----
 
@@ -211,7 +211,7 @@ pip install -e .
 > type ```activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
 
-[Next: Get Driving]((guide/get_driving.md) )
+[Next: Get Driving](./get_driving.md)
 
 ----
 
@@ -257,7 +257,7 @@ pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-p
 pip install -e .
 ```
 
-[Next: Get Driving]((guide/get_driving.md) )
+[Next: Get Driving](./get_driving.md)
 
 > Note: After closing the Terminal, when you open it again, you will need to 
 > type ```source activate donkey``` to re-enable the mappings to donkey specific 
