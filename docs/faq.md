@@ -20,7 +20,7 @@ works with the parts. Here are some parts people have said work in other countri
 
 ### How can I make my own track?
 You can use tape, ribbon or even rope. The most popular tracks are 4ft wide and have 2in white borders with a dashed
-yelloe center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
+yellow center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
 * straightaways.
 * left and right turns
 * hairpin turn
