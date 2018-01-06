@@ -3,7 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d)]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--camera=(single|stereo)]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
 
 
@@ -72,7 +72,7 @@ class BehaviorPart(object):
     def shutdown(self):
         pass
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single'):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -86,12 +86,45 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
 
     if model_type is None:
         model_type = "categorical"
+
+    stereo_cam = camera_type == "stereo"
     
     #Initialize car
     V = dk.vehicle.Vehicle()
-    cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
-    V.add(cam, outputs=['cam/image_array'], threaded=True)
-    
+
+    if stereo_cam:
+        from donkeycar.parts.camera import Webcam
+
+        camA = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, iCam = 0)
+        V.add(camA, outputs=['cam/image_array_a'], threaded=True)
+
+        camB = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, iCam = 1)
+        V.add(camB, outputs=['cam/image_array_b'], threaded=True)
+
+        def stereo_pair(image_a, image_b):
+            if image_a is not None and image_b is not None:
+                width, height, _ = image_a.shape
+                grey_a = dk.utils.rgb2gray(image_a)
+                grey_b = dk.utils.rgb2gray(image_b)
+                grey_c = grey_a - grey_b
+                
+                stereo_image = np.zeros([width, height, 3], dtype=np.dtype('B'))
+                stereo_image[...,0] = np.reshape(grey_a, (width, height))
+                stereo_image[...,1] = np.reshape(grey_b, (width, height))
+                stereo_image[...,2] = np.reshape(grey_c, (width, height))
+            else:
+                stereo_image = []
+
+            return np.array(stereo_image)
+
+        image_sterero_pair_part = Lambda(stereo_pair)
+        V.add(image_sterero_pair_part, inputs=['cam/image_array_a', 'cam/image_array_b'], 
+            outputs=['cam/image_array'])
+
+    else:
+        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+        V.add(cam, outputs=['cam/image_array'], threaded=True)
+        
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -277,7 +310,8 @@ if __name__ == '__main__':
     
     if args['drive']:
         model_type = args['--type']
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type)
+        camera_type = args['--camera']
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type)
     
     if args['train']:
         from train import multi_train
@@ -286,7 +320,7 @@ if __name__ == '__main__':
         model = args['--model']
         transfer = args['--transfer']
         model_type = args['--type']
-        continuous = args['--continuous']
+        continuous = args['--continuous']        
         multi_train(cfg, tub, model, transfer, model_type, continuous)
 
 
