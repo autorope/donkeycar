@@ -17,6 +17,8 @@ Attach the Arduino or Teensy to the Raspberry Pi via a USB cable.
 
 Run the following to activate using the RC controller.
 
+donkey createcar --path ~/d2RC --template donkeyRC.py
+
 python manage.py drive --rc
 
 You can open the web page controller in order to see the video image. This is totally hacky right now.
