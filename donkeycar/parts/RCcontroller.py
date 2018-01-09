@@ -54,8 +54,8 @@ class TwoChannelRC():
     This was written for Arduino but also works with a Teensy. You will need to correctly ID the device as different
     Arduino show up in /dev/ with different names.
 
-    Arduino Uno:            /dev/ttyACM0
-    Arduino Duemilanove:    /dev/ttyUSB0
+    Arduino Uno, Due, Teensy:   /dev/ttyACM0
+    Arduino Duemilanove:        /dev/ttyUSB0
 
     In theory, the controller can be expanded to a N-channel controller such that you could pick up multiple channels
     off of the receiver including buttons and switches. I think it might be best to just copy this Receiver Class
@@ -64,10 +64,8 @@ class TwoChannelRC():
     '''
 
     def __init__(self,
-                    dev_fn='/dev/ttyACM0',
-                    low=[800, 850],
-                    high=[1950, 1930],
-                    center=[1400, 1352],
+                    dev_fn,
+                    cfg,
                     # deadband needs to be at least high enough to prevent 'auto-record' from
                     # triggering on spurious signals. In reality my car doesn't even begin to move
                     # until it's gone over 0.70 and the slowest it will move is around 0.57
@@ -75,23 +73,23 @@ class TwoChannelRC():
                     tolerance=100):
         self.dev_fn = dev_fn    # right now '/dev/ttyUSB0' corresponds with to Arduino Deminulova
         self.serial_fd = None
-        self.low = low
-        self.high = high
-        self.center = center
+        self.low = cfg.RC_LOW   # set in the config file. Each car will be a bit different.
+        self.high = cfg.RC_HIGH
+        self.center = cfg.RC_CENTER
         self.deadband = deadband
         self.tolerance = tolerance
         self.num_channels = 2
 
     def init(self):
-        print('Opening Microcontroller via Serial: %s...' % self.dev_fn, )
+        print('TwoChannelRC: Opening Microcontroller via Serial: %s...' % self.dev_fn, )
         try:
             self.serial_fd = serial.Serial(self.dev_fn, 57600)
             self.serial_fd.isOpen()
-            print('Microcontroller opened!')
+            print('TwoChannelRC: Microcontroller opened!')
         except IOError:
             self.serial_fd.close()
             self.serial_fd.open()
-            print('port was already open. Closed and reopened')
+            print('TwoChannelRC: port was already open. Closed and reopened')
 
     def getLatestStatus(self):
         ''' This clears the buffer and returns only the last value
@@ -104,7 +102,7 @@ class TwoChannelRC():
         '''
         status = b''  # an empty byte string
         if (not self.serial_fd.isOpen()):
-            print("**** Serial Port is not open anymore !! ****")
+            print("TwoChannelRC: **** Serial Port is not open anymore !! ****")
             time.sleep(5)
 
         while self.serial_fd.inWaiting() > 0:
@@ -122,7 +120,7 @@ class TwoChannelRC():
         except Exception:
             # unable to decode the values from the Arduino. Typically happens
             # at startup when the serial connection is being started and lasts
-            # a few cycles.
+            # a few cycles. Junk in the trunk..
             vel_angle_raw = ['0' for x in range(self.num_channels)]
 
             # map the string values to integers.
@@ -227,7 +225,7 @@ class RC_Controller(object):
         self.steering_scale = steering_scale
         self.throttle_scale = throttle_scale
         self.recording = False
-        self.record_minimum = 0.50
+        self.record_minimum = 0.20
         self.constant_throttle = False
         self.auto_record_on_throttle = auto_record_on_throttle
         self.dev_fn = dev_fn
@@ -240,27 +238,32 @@ class RC_Controller(object):
         turn on recording when non zero throttle in the user mode.
         '''
         if self.auto_record_on_throttle:
-            #TODO: set a tighter tolerance on throttle recording images??
+            #TODO: set a tighter tolerance on throttle for recording images??
             #TODO: my RC car stalls out at any throttle less than 0.57 and won't break
             #TODO: standstill until 0.70
+
             # TODO: should we cut off recording when throttle falls below a certain low threshold?
-            # this may be problematic for dynamics as the car may be moving during deceleration even
-            # if throttle has been released
+            # TODO: this may be problematic for dynamics as the car may be moving during deceleration even
+            # TODO: if throttle has been released. For example, one can still be steering through a curve
+            # TODO: even though the throttle has been released. ??
+            # TODO: Limitation of using throttle as a proxy for velocity rather than odometry.
+            # self.recording = (abs(self.throttle) < self.record_minimum and self.mode == 'user')
 
-            #print(self.throttle, self.mode == 'user', (self.throttle != 0.0 and self.mode == 'user'))
-            # self.recording = (abs(self.throttle) > self.record_minimum and self.mode == 'user')
+            if self.show_commands:
+                print("RC Controller: recording = ",
+                     (abs(self.throttle) > self.record_minimum  and self.mode == 'user'))
 
-            self.recording = (self.throttle != 0.0 and self.mode == 'user')
+            self.recording = (abs(self.throttle) > self.record_minimum and self.mode == 'user')
 
     def init_rc(self):
         '''
         attempt to init rc controller
         '''
         try:
-            self.rc_controller = TwoChannelRC(self.dev_fn)
+            self.rc_controller = TwoChannelRC(self.dev_fn,cfg=self.cfg)
             self.rc_controller.init()
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            print(self.dev_fn, "RC Controller: microcontroller not found.")
             self.rc_controller = None
         return self.rc_controller is not None
 
@@ -280,12 +283,13 @@ class RC_Controller(object):
             steering = normalized_values_ary[self.cfg.STEERING_CHANNEL]  # 1
 
             self.angle = self.steering_scale * steering
+
             # this value is often reversed, with positive value when pulling down
             # set throttle_scale to + or - 1 as needed.
             self.throttle = (self.throttle_scale * throttle * self.max_throttle)
 
             if self.show_commands:
-                print('throttle', self.throttle, "angle", self.angle)
+                print('RC controller: throttle', self.throttle, "angle", self.angle)
 
             self.on_throttle_changes()
 

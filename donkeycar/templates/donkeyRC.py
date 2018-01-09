@@ -64,13 +64,29 @@ def drive(cfg, model_path=None, use_joystick=False, use_rcControl=False):
 
         V.add(rc,
               inputs=['cam/image_array'],
-              outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+              # outputs angle and throttle, but mode1 and recording1 go into the void.
+              # the RC part has to be set to 'recording' in order for record_on_throttle
+              # to work.
+              outputs=['user/angle', 'user/throttle', 'user/mode1', 'recording'],
               threaded=True)
 
+        '''
+        TODO: I'm pretty sure this is not the correct way to gain access to the web interface
+        but its what I managed to do to get it sort of working. Seems like two or more parts
+        can't output the same set of outputs. Since I was only using it for the video image it seemed
+        to work for my purposes.
+        
+        What I want to accomplish is have the web interface up to view the video and be able to take
+        keyboard input for many of the things that a 2-channel RC controller doesn't allow for while at
+        the same time using the RC Transmitter/Receiver to provide the throttle & angle input.
+        '''
         ctr = LocalWebController()
         V.add(ctr,
               inputs=['cam/image_array'],
-              outputs=['user/angle1', 'user/throttle1', 'user/mode1', 'recording1'],
+              # the output for angle and throttle go into the void, but
+              # recording has to be set to 'recording1' so that it doesn't override
+              # the RC controller.
+              outputs=['user/angle1', 'user/throttle1', 'user/mode', 'recording1'],
               threaded=True)
 
     else:

@@ -654,7 +654,7 @@ class TubGroup(Tub):
             record_count += len(t.df)
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
-        print('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
+        print('TubGroup: joining the tubs {} records together. This could take {} minutes.'.format(record_count,
                                                                                          int(record_count / 300000)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
@@ -662,5 +662,4 @@ class TubGroup(Tub):
 
 
         self.df = pd.concat([t.df for t in tubs], axis=0, join='inner')
-
-
+        print('TubGroup: df size:',len(self.df))

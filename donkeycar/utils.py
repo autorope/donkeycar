@@ -12,6 +12,7 @@ import zipfile
 import sys
 import itertools
 import subprocess
+import math
 
 from PIL import Image
 import numpy as np
@@ -149,6 +150,24 @@ functions to help converte between floating point numbers and categories.
 '''
 
 def linear_bin(a):
+    '''
+    Create a one-hot vector from the floating steering angle into 15 categories ranging from
+    -1 to +1. This will cluster all steering angles within certain ranges into a distinct number
+    and is helpful due the limited amount of training data. With a large amount of training data it
+    would be more possible to train real numbered floating output
+    :param a:   float
+    :return: one-hot vector size 15
+    '''
+
+    #assert (a <=1 and a >=-1), "Number passed to linear_bin should be between -1 and +1"
+
+    # constrain training data to be between -1 and +1
+    sign = math.copysign(1,a)
+    try:
+        (a <= 1 and a >= -1)
+    except:
+        a = 1 * sign
+
     a = a + 1
     b = round(a / (2/14))
     arr = np.zeros(15)
@@ -157,8 +176,13 @@ def linear_bin(a):
 
 
 def linear_unbin(arr):
+    '''
+    Convert the one-hot steering vector back to a real valued float between -1 and +1
+    :param arr: one-hot vector with 15-columns. idx 0 = -1, 7 = 0  14 = +1
+    :return: float
+    '''
     b = np.argmax(arr)
-    a = b *(2/14) - 1
+    a = b *(2/14.) - 1
     return a
 
 
