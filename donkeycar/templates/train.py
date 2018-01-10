@@ -286,17 +286,19 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     opts['categorical'] = False
 
+    input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+
     if model_type is None:
         model_type = "categorical"
 
     if model_type == "imu":
-        kl = KerasIMU()
+        kl = KerasIMU(input_shape=input_shape)
     elif model_type == "behavior":
-        kl = KerasBehavioral()
+        kl = KerasBehavioral(input_shape=input_shape)
     elif model_type == "linear":
-        kl = KerasLinear(num_outputs=2)
+        kl = KerasLinear(num_outputs=2, input_shape=input_shape)
     elif model_type == "categorical":
-        kl = KerasCategorical()
+        kl = KerasCategorical(input_shape=input_shape)
         opts['categorical'] = True
     else:
         raise Exception("unknown model type: %s" % model_type)
@@ -386,7 +388,10 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     for record in batch_data:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            img_arr = np.array(Image.open(record['image_path']))
+                            img = Image.open(record['image_path'])
+                            if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
+                                img = img.resize((cfg.IMAGE_H, cfg.IMAGE_W))
+                            img_arr = np.array(img)
                             if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
                                 img_arr = dk.utils.rgb2gray(img_arr)
                             record['img_data'] = img_arr

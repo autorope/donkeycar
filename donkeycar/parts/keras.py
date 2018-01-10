@@ -69,12 +69,12 @@ class KerasPilot():
 
 
 class KerasCategorical(KerasPilot):
-    def __init__(self, model=None, *args, **kwargs):
+    def __init__(self, model=None, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
         if model:
             self.model = model
         else:
-            self.model = default_categorical()
+            self.model = default_categorical(input_shape)
         
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
@@ -87,14 +87,15 @@ class KerasCategorical(KerasPilot):
     
     
 class KerasLinear(KerasPilot):
-    def __init__(self, model=None, num_outputs=None, *args, **kwargs):
+    def __init__(self, model=None, num_outputs=None, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
         if model:
             self.model = model
         elif num_outputs is not None:
-            self.model = default_n_linear(num_outputs)
+            self.model = default_n_linear(num_outputs, input_shape)
         else:
-            self.model = default_linear()
+            self.model = default_linear(input_shape)
+
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
@@ -129,10 +130,10 @@ class KerasIMU(KerasPilot):
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
 
     '''
-    def __init__(self, model=None, num_outputs=2, num_imu_inputs=6 , *args, **kwargs):
+    def __init__(self, model=None, num_outputs=2, num_imu_inputs=6, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasIMU, self).__init__(*args, **kwargs)
         self.num_imu_inputs = num_imu_inputs
-        self.model = default_imu(num_outputs = num_outputs, num_imu_inputs = num_imu_inputs)
+        self.model = default_imu(num_outputs = num_outputs, num_imu_inputs = num_imu_inputs, input_shape=input_shape)
         
     def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z):
         #TODO: would be nice to take a vector input array.
@@ -161,18 +162,24 @@ class KerasBehavioral(KerasPilot):
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
 
-def default_categorical():
+def default_categorical(input_shape=(120, 160, 3)):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense
     
-    img_in = Input(shape=(120, 160, 3), name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
+    img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
-    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
+    if input_shape[0] > 32 :
+        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
+    else:
+        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
+    if input_shape[0] > 64 :
+        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
+    elif input_shape[0] > 32 :
+        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
 
     # Possibly add MaxPooling (will make it less sensitive to position in image).  Camera angle fixed, so may not to be needed
@@ -193,18 +200,18 @@ def default_categorical():
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'mean_absolute_error'},
                   loss_weights={'angle_out': 0.9, 'throttle_out': .001})
-
+    print(model.summary())
     return model
 
 
 
-def default_linear():
+def default_linear(input_shape):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense
     
-    img_in = Input(shape=(120,160,3), name='img_in')
+    img_in = Input(shape=input_shape, name='img_in')
     x = img_in
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
@@ -235,13 +242,13 @@ def default_linear():
 
 
 
-def default_n_linear(num_outputs):
+def default_n_linear(num_outputs, input_shape):
     from keras.layers import Input, Dense, merge
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     
-    img_in = Input(shape=(120,160,3), name='img_in')
+    img_in = Input(shape=input_shape, name='img_in')
     x = img_in
     x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
@@ -272,7 +279,7 @@ def default_n_linear(num_outputs):
 
 
 
-def default_imu(num_outputs, num_imu_inputs):
+def default_imu(num_outputs, num_imu_inputs, input_shape):
     '''
     Notes: this model depends on concatenate which failed on keras < 2.0.8
     '''
@@ -283,7 +290,7 @@ def default_imu(num_outputs, num_imu_inputs):
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     from keras.layers.merge import concatenate
     
-    img_in = Input(shape=(120,160,3), name='img_in')
+    img_in = Input(shape=input_shape, name='img_in')
     imu_in = Input(shape=(num_imu_inputs,), name="imu_in")
     
     x = img_in
@@ -322,7 +329,7 @@ def default_imu(num_outputs, num_imu_inputs):
     return model
 
 
-def default_bhv(num_outputs, num_bvh_inputs):
+def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     '''
     Notes: this model depends on concatenate which failed on keras < 2.0.8
     '''
@@ -333,7 +340,7 @@ def default_bhv(num_outputs, num_bvh_inputs):
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     from keras.layers.merge import concatenate
     
-    img_in = Input(shape=(120,160,3), name='img_in')
+    img_in = Input(shape=input_shape, name='img_in')
     bvh_in = Input(shape=(num_bvh_inputs,), name="behavior_in")
     
     x = img_in
