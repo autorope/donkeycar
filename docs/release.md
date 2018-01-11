@@ -9,7 +9,7 @@ Notes on how to release donkey.
 3. Pull the lastest donkeycar code. 
 4. Make your changes.  
 5. Move the disk back to your computer.
-6. Remove your wi-fi password and change the host name to d2.
+6. Remove your wi-fi password and change the host name to d2. Delete `.gitconfig`.
 7. Create the disk image from the SD card
 
     Run `sudo gparted` to see the size of the disk partitions. Resize the partitions
