@@ -49,7 +49,7 @@ V.start(max_loop_count=100)
 
 ### Installation
 
-For linux/OS users clone the master branch to get the lastest version.
+For linux/OS users clone the master branch to get the latest version.
 ```bash
 git clone https://github.com/wroscoe/donkey donkeycar
 pip install -e donkeycar
@@ -63,5 +63,5 @@ pip install -e donkeycar
 
 The ultimate goal of this project is to build something useful. Donkey's were
 one of the first domesticated pack animals, they're notoriously stubborn, and 
-they are kid safe. Until the car can nagigate from one side of a city to the 
+they are kid safe. Until the car can navigate from one side of a city to the 
 other, we'll hold off naming it after some celestial being.
