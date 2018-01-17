@@ -31,12 +31,23 @@ from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
      KerasRNN_LSTM
+from donkeycar.utils import *
 
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from PIL import Image
 
+'''
+matplotlib can be a pain to setup. So handle the case where it is absent. When present,
+use it to generate a plot of training results.
+'''
+try:
+    import matplotlib.pyplot as plt
+    do_plot = True
+except:
+    do_plot = False
+    
 deterministic = False
 use_early_stop = True
 early_stop_patience = 5
@@ -86,59 +97,6 @@ if deterministic:
 '''
 Tub management
 '''
-def expand_path_masks(paths):
-    '''
-    take a list of paths and expand any wildcards
-    returns a new list of paths fully expanded
-    '''
-    import glob
-    expanded_paths = []
-    for path in paths:
-        if '*' in path or '?' in path:
-            mask_paths = glob.glob(path)
-            expanded_paths += mask_paths
-        else:
-            expanded_paths.append(path)
-
-    return expanded_paths
-
-
-def gather_tub_paths(cfg, tub_names=None):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub paths
-    '''
-    if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        return expand_path_masks(tub_paths)
-    else:
-        paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-        dir_paths = []
-        for p in paths:
-            if os.path.isdir(p):
-                dir_paths.append(p)
-        return dir_paths
-
-
-def gather_tubs(cfg, tub_names):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub objects initialized to each path
-    '''    
-    tub_paths = gather_tub_paths(cfg, tub_names)
-    tubs = [Tub(p) for p in tub_paths]
-
-    return tubs
-
-def get_image_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[0])
-
-
-def get_record_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[1].split('.')[0])
-
 def make_key(sample):
     tub_path = sample['tub_path']
     index = sample['index']
@@ -148,19 +106,6 @@ def make_next_key(sample, index_offset):
     tub_path = sample['tub_path']
     index = sample['index'] + index_offset
     return tub_path + str(index)
-
-def gather_records(cfg, tub_names, opts):
-
-    tubs = gather_tubs(cfg, tub_names)
-
-    records = []
-
-    for tub in tubs:
-        record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
-        record_paths.sort(key=get_record_index)
-        records += record_paths
-
-    return records
 
 
 def collate_records(records, gen_records, opts):
@@ -191,6 +136,7 @@ def collate_records(records, gen_records, opts):
 
         if opts['categorical']:
             angle = dk.utils.linear_bin(angle)
+            throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=0.5)
 
         sample['angle'] = angle
         sample['throttle'] = throttle
@@ -275,8 +221,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     verbose = True
 
     #when transfering models, should we freeze all but the last N layers?
-    freeze_weights = True
-    N_layers_to_train = 7
+    #freeze_weights = True
+    #N_layers_to_train = 7
 
     if continuous:
         print("continuous training")
@@ -309,12 +255,14 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
+        '''
         if freeze_weights:
             num_to_freeze = len(kl.model.layers) - N_layers_to_train 
             print('freezing %d layers' % num_to_freeze)           
             for i in range(num_to_freeze):
                 kl.model.layers[i].trainable = False
             kl.model.compile(optimizer='rmsprop', loss='mse')
+        '''
 
         print(kl.model.summary())       
 
@@ -477,13 +425,12 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     workers_count = 1
     use_multiprocessing = False
 
-
     callbacks_list = [save_best]
 
     if use_early_stop:
         callbacks_list.append(early_stop)
     
-    hist = kl.model.fit_generator(
+    history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
                     epochs=epochs, 
@@ -494,6 +441,23 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     workers=workers_count,
                     use_multiprocessing=use_multiprocessing)
 
+    print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
+
+    try:
+        if do_plot:
+            # summarize history for loss
+            plt.plot(history.history['loss'])
+            plt.plot(history.history['val_loss'])
+            plt.title('model loss : %f' % save_best.best)
+            plt.ylabel('loss')
+            plt.xlabel('epoch')
+            plt.legend(['train', 'test'], loc='upper left')
+            plt.savefig(model_path + '_loss_%f.png' % save_best.best)
+            plt.show()
+        else:
+            print("not saving loss graph because matplotlib not set up.")
+    except:
+        print("problems with loss graph")
 
 
 def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
