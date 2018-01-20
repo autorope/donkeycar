@@ -7,6 +7,7 @@ import argparse
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
+from donkeycar.utils import *
 from .tub import TubManager
 
 
@@ -325,7 +326,7 @@ class ShowHistogram(BaseCommand):
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubhist', usage='%(prog)s [options]')
-        parser.add_argument('tubs', nargs='+', help='paths to tubs')
+        parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--record', default=None, help='name of record to create histogram')
         parsed_args = parser.parse_args(args)
         return parsed_args
@@ -342,17 +343,19 @@ class ShowHistogram(BaseCommand):
             tg.df[record_name].hist(bins=50)
         else:
             tg.df.hist(bins=50)
+
+        plt.savefig(os.path.basename(model_path) + '_hist_%s.png' % record_name)
         plt.show()
 
     def run(self, args):
         args = self.parse_args(args)
-        args.tubs = ','.join(args.tubs)
-        self.show_histogram(args.tubs, args.record)
+        args.tub = ','.join(args.tub)
+        self.show_histogram(args.tub, args.record)
 
 
 class ShowPredictionPlots(BaseCommand):
 
-    def plot_predictions(cfg, tub_paths, model_path):
+    def plot_predictions(cfg, tub_paths, model_path, limit):
         '''
         Plot model predictions for angle and throttle against data from tubs.
 
@@ -362,23 +365,26 @@ class ShowPredictionPlots(BaseCommand):
         from donkeycar.parts.datastore import TubGroup
         from donkeycar.parts.keras import KerasCategorical
 
-        tg = TubGroup(tub_paths)
-
         model_path = os.path.expanduser(model_path)
         model = KerasCategorical()
         model.load(model_path)
 
-        gen = tg.get_batch_gen(batch_size=len(tg.df),shuffle=False)
-        arr = next(gen)
+        tubs = gather_tubs(cfg, tub_paths)
+        user_angles = []
+        user_throttles = []
+        pilot_angles = []
+        pilot_throttles = []       
 
-        """
-        THIS WILL SHOW the output of a predicted model.
-        
-        
         for tub in tubs:
             num_records = tub.get_num_records()
+            if limit < num_records:
+                num_records = limit
+            print('processing %d records:' % num_records)
+
             for iRec in tub.get_index(shuffled=False):
                 record = tub.get_record(iRec)
+                if iRec % 100 == 0:
+                    print('.', end="")
 
                 img = record["cam/image_array"]
                 user_angle = float(record["user/angle"])
@@ -390,12 +396,17 @@ class ShowPredictionPlots(BaseCommand):
                 pilot_angles.append(pilot_angle)
                 pilot_throttles.append(pilot_throttle)
 
+                if len(pilot_throttles) >= limit:
+                    break
+
+        print('done.')
+
         angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
         throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
 
         fig = plt.figure()
 
-        title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
+        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " + model_path
         fig.suptitle(title)
 
         ax1 = fig.add_subplot(211)
@@ -407,8 +418,22 @@ class ShowPredictionPlots(BaseCommand):
         ax1.legend(loc=4)
         ax2.legend(loc=4)
 
+        plt.savefig(model_path + '_pred.png')
         plt.show()
-        """
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+', help='paths to tubs')
+        parser.add_argument('--model', default=None, help='name of record to create histogram')
+        parser.add_argument('--limit', default=1000, help='how many records to process')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        args.tub = ','.join(args.tub)
+        self.plot_predictions(args.tub, args.model, args.limit)
+        
 
 def execute_from_command_line():
     """
