@@ -62,3 +62,8 @@ HAVE_IMU = False
 TRAIN_BEHAVIORS = False
 BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS =[ (0, 10, 0), (10, 0, 0) ] #RGB tuples 0-100 per chanel
+
+#train parameters
+LEARNING_RATE=0.001
+LEARNING_RATE_DECAY=0.0
+MAX_EPOCHS=100
