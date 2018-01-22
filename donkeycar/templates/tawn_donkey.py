@@ -17,7 +17,6 @@ from docopt import docopt
 import donkeycar as dk
 
 #import parts
-from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.keras import KerasIMU, KerasCategorical, KerasBehavioral, KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
@@ -82,7 +81,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     '''
-    from donkeycar.parts.led_status import RGB_LED
 
     if model_type is None:
         model_type = "categorical"
@@ -122,7 +120,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             outputs=['cam/image_array'])
 
     else:
-        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+        
+        print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
+        if cfg.CAMERA_TYPE == "PICAM":
+            from donkeycar.parts.camera import PiCamera
+            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+        elif cfg.CAMERA_TYPE == "WEBCAM":
+            from donkeycar.parts.camera import Webcam
+            cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+            
         V.add(cam, outputs=['cam/image_array'], threaded=True)
         
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
@@ -183,10 +189,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     led_cond_part = Lambda(led_cond)
     V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state'], outputs=['led/blink_rate'])
 
-    #led = LED(8)
-    led = RGB_LED(12, 10, 16)
-    led.set_rgb(0, 0, 1)
-    V.add(led, inputs=['led/blink_rate'])
+    if cfg.HAVE_RGB_LED:
+        from donkeycar.parts.led_status import RGB_LED
+        led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
+        led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+        V.add(led, inputs=['led/blink_rate'])
 
     #IMU
     if cfg.HAVE_IMU:
@@ -253,12 +260,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           outputs=['angle', 'throttle'])
     
     
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL)
+    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
     steering = PWMSteering(controller=steering_controller,
                                     left_pulse=cfg.STEERING_LEFT_PWM, 
                                     right_pulse=cfg.STEERING_RIGHT_PWM)
     
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
+    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
     throttle = PWMThrottle(controller=throttle_controller,
                                     max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                     zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
