@@ -25,9 +25,10 @@ DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
 
 #CAMERA
-CAMERA_TYPE = "PICAM" # PICAM or WEBCAM
-IMAGE_W = 160 #(120, 160) #(height, width)
+CAMERA_TYPE = "PICAM"   # PICAM or WEBCAM
+IMAGE_W = 160
 IMAGE_H = 120
+IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 
 #9865, over rides only if needed, ie. TX2..
@@ -54,10 +55,10 @@ VEBOSE_TRAIN = True
 USE_EARLY_STOP = True
 EARLY_STOP_PATIENCE = 5
 MIN_DELTA = .0005
-PRINT_MODEL_SUMMARY = True
-OPTIMIZER = None #adam, sgd, rmsprop, etc.. None accepts default
-LEARNING_RATE = 0.001
-LEARNING_RATE_DECAY = 0.0
+PRINT_MODEL_SUMMARY = True      #print layers and weights to stdout
+OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
+LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
+LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 
 #model transfer options
 FREEZE_LAYERS = False
@@ -71,14 +72,13 @@ AUTO_RECORD_ON_THROTTLE = True
 
 #RNN or 3D
 SEQUENCE_LENGTH = 3
-IMAGE_DEPTH = 3
 
 #IMU
 HAVE_IMU = False
 
 #LED
 HAVE_RGB_LED = False
-LED_INVERT = False #COMMON ANNODE?
+LED_INVERT = False              #COMMON ANNODE?
 
 #board pin number for pwm outputs
 LED_PIN_R = 12
