@@ -49,9 +49,6 @@ except:
     do_plot = False
     
 deterministic = False
-use_early_stop = True
-early_stop_patience = 5
-min_delta = .0005
 
 if deterministic:
     import tensorflow as tf
@@ -218,12 +215,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     saves the output trained model as model_name
     ''' 
 
-    verbose = True
+    verbose = cfg.VEBOSE_TRAIN
 
-    #when transfering models, should we freeze all but the last N layers?
-    #freeze_weights = True
-    #N_layers_to_train = 7
-
+    
     if continuous:
         print("continuous training")
     
@@ -232,40 +226,31 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     opts['categorical'] = False
 
-    input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+    kl = get_model_by_type(model_type, cfg=cfg)
 
-    if model_type is None:
-        model_type = "categorical"
+    opts['categorical'] = type(kl) is KerasCategorical
 
-    if model_type == "imu":
-        kl = KerasIMU(input_shape=input_shape)
-    elif model_type == "behavior":
-        kl = KerasBehavioral(input_shape=input_shape)
-    elif model_type == "linear":
-        kl = KerasLinear(num_outputs=2, input_shape=input_shape)
-    elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape)
-        opts['categorical'] = True
-    else:
-        raise Exception("unknown model type: %s" % model_type)
-
-    print('training with model type', model_type)
+    print('training with model type', type(kl))
 
     if transfer_model:
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
-        '''
-        if freeze_weights:
-            num_to_freeze = len(kl.model.layers) - N_layers_to_train 
+        #when transfering models, should we freeze all but the last N layers?
+        if cfg.FREEZE_LAYERS:
+            num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN 
             print('freezing %d layers' % num_to_freeze)           
             for i in range(num_to_freeze):
-                kl.model.layers[i].trainable = False
-            kl.model.compile(optimizer='rmsprop', loss='mse')
-        '''
+                kl.model.layers[i].trainable = False        
 
-        print(kl.model.summary())       
+    if cfg.OPTIMIZER:
+        kl.set_optimizer(cfg.OPTIMIZER, cfg.LEARNING_RATE, cfg.LEARNING_RATE_DECAY)
 
+    kl.compile()
+
+    if cfg.PRINT_MODEL_SUMMARY:
+        print(kl.model.summary())
+    
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
@@ -381,8 +366,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     #stop training if the validation error stops improving.
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                min_delta=min_delta, 
-                                                patience=early_stop_patience, 
+                                                min_delta=cfg.MIN_DELTA, 
+                                                patience=cfg.EARLY_STOP_PATIENCE, 
                                                 verbose=verbose, 
                                                 mode='auto')
 
@@ -415,21 +400,21 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     if continuous:
         epochs = 100000
     else:
-        epochs = 200
+        epochs = cfg.MAX_EPOCHS
 
     workers_count = 1
     use_multiprocessing = False
 
     callbacks_list = [save_best]
 
-    if use_early_stop:
+    if cfg.USE_EARLY_STOP:
         callbacks_list.append(early_stop)
     
     history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
                     epochs=epochs, 
-                    verbose=1, 
+                    verbose=cfg.VEBOSE_TRAIN, 
                     validation_data=val_gen,
                     callbacks=callbacks_list, 
                     validation_steps=val_steps,
@@ -438,21 +423,22 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
 
-    try:
-        if do_plot:
-            # summarize history for loss
-            plt.plot(history.history['loss'])
-            plt.plot(history.history['val_loss'])
-            plt.title('model loss : %f' % save_best.best)
-            plt.ylabel('loss')
-            plt.xlabel('epoch')
-            plt.legend(['train', 'test'], loc='upper left')
-            plt.savefig(model_path + '_loss_%f.png' % save_best.best)
-            plt.show()
-        else:
-            print("not saving loss graph because matplotlib not set up.")
-    except:
-        print("problems with loss graph")
+    if cfg.SHOW_PLOT:
+        try:
+            if do_plot:
+                # summarize history for loss
+                plt.plot(history.history['loss'])
+                plt.plot(history.history['val_loss'])
+                plt.title('model loss : %f' % save_best.best)
+                plt.ylabel('loss')
+                plt.xlabel('epoch')
+                plt.legend(['train', 'test'], loc='upper left')
+                plt.savefig(model_path + '_loss_%f.png' % save_best.best)
+                plt.show()
+            else:
+                print("not saving loss graph because matplotlib not set up.")
+        except:
+            print("problems with loss graph")
 
 
 def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
@@ -610,7 +596,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
         saved_model_path=model_path,
         steps=steps_per_epoch,
         train_split=cfg.TRAIN_TEST_SPLIT,
-        use_early_stop = False)
+        use_early_stop = cfg.USE_EARLY_STOP)
 
 
 

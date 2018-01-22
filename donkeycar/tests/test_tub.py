@@ -19,7 +19,7 @@ def test_tub_load(tub, tub_path):
 def test_tub_update_df(tub):
     """ Tub updats its dataframe """
     tub.update_df()
-    assert len(tub.df) == 10
+    assert len(tub.df) == 128
 
 
 def test_tub_add_record(tub):
@@ -28,7 +28,7 @@ def test_tub_add_record(tub):
     img_arr = np.zeros((120,160))
     x=123
     y=90
-    rec_in  = {'cam/image_array': img_arr, 'angle': x, 'throttle':y}
+    rec_in  = {'cam/image_array': img_arr, 'user/angle': x, 'user/throttle':y}
     rec_index = tub.put_record(rec_in)
     rec_out = tub.get_record(rec_index)
     assert rec_in.keys() == rec_out.keys()

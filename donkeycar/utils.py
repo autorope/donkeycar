@@ -365,6 +365,9 @@ def gather_records(cfg, tub_names, opts=None):
 def get_model_by_type(model_type, cfg):
     from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN
  
+    if model_type is None:
+        model_type = "categorical"
+
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
 
     if model_type == "behavior":
@@ -377,7 +380,25 @@ def get_model_by_type(model_type, cfg):
         kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "rnn":
         kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH, input_shape=input_shape)
-    else:
+    elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape)
+    else:
+        raise Exception("unknown model type: %s" % model_type)
 
     return kl
+
+def get_test_img(model):
+    '''
+    query the input to see what it likes
+    make an image capable of using with that test model
+    '''
+    try:
+        count, h, w, ch = model.inputs[0].get_shape()
+        seq_len = 0
+    except:
+        count, seq_len, h, w, ch = model.inputs[0].get_shape()
+
+    #generate random array in the right shape
+    img = np.random.rand(int(h), int(w), int(ch))
+
+    return img
