@@ -25,9 +25,14 @@ DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
 
 #CAMERA
+CAMERA_TYPE = "PICAM" # PICAM or WEBCAM
 IMAGE_W = 160 #(120, 160) #(height, width)
 IMAGE_H = 120
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
+
+#9865, over rides only if needed, ie. TX2..
+PCA9685_I2C_ADDR = None
+PCA9685_I2C_BUSNUM = None
 
 #STEERING
 STEERING_CHANNEL = 1
@@ -57,6 +62,20 @@ IMAGE_DEPTH = 3
 
 #IMU
 HAVE_IMU = False
+
+#LED
+HAVE_RGB_LED = False
+
+#board pin number for pwm outputs
+LED_PIN_R = 12
+LED_PIN_G = 10
+LED_PIN_B = 16
+
+#LED status color, 0-100
+LED_R = 0
+LED_G = 0
+LED_B = 1
+
 
 #BEHAVIORS
 TRAIN_BEHAVIORS = False
