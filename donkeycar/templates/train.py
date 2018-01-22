@@ -336,12 +336,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     for record in batch_data:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            img = Image.open(record['image_path'])
-                            if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
-                                img = img.resize((cfg.IMAGE_H, cfg.IMAGE_W))
-                            img_arr = np.array(img)
-                            if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-                                img_arr = dk.utils.rgb2gray(img_arr)
+                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
                             record['img_data'] = img_arr
                             
                         if has_imu:
@@ -580,10 +575,8 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                     for record in seq:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            img_arr = np.array(Image.open(record['image_path']))
-                            if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-                                img_arr = dk.utils.rgb2gray(img_arr)
-                            record['img_data'] = img_arr
+                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            record['img_data'] = img_arr                            
                             
                         inputs_img.append(record['img_data'])
                     labels.append(seq[-1]['target_output'])
