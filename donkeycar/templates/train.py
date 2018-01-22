@@ -49,9 +49,6 @@ except:
     do_plot = False
     
 deterministic = False
-use_early_stop = True
-early_stop_patience = 5
-min_delta = .0005
 
 if deterministic:
     import tensorflow as tf
@@ -220,10 +217,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     verbose = cfg.VEBOSE_TRAIN
 
-    #when transfering models, should we freeze all but the last N layers?
-    freeze_weights = cfg.FREEZE_LAYERS
-    N_layers_to_train = cfg.NUM_LAST_LAYERS_TO_TRAIN
-
+    
     if continuous:
         print("continuous training")
     
@@ -233,7 +227,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     opts['categorical'] = False
 
     kl = get_model_by_type(model_type, cfg=cfg)
-    
+
     opts['categorical'] = type(kl) is KerasCategorical
 
     print('training with model type', type(kl))
@@ -242,15 +236,21 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
-        if freeze_weights:
-            num_to_freeze = len(kl.model.layers) - N_layers_to_train 
+        #when transfering models, should we freeze all but the last N layers?
+        if cfg.FREEZE_LAYERS:
+            num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN 
             print('freezing %d layers' % num_to_freeze)           
             for i in range(num_to_freeze):
-                kl.model.layers[i].trainable = False
-            kl.compile()
+                kl.model.layers[i].trainable = False        
 
-        print(kl.model.summary())       
+    if cfg.OPTIMIZER:
+        kl.set_optimizer(cfg.OPTIMIZER, cfg.LEARNING_RATE, cfg.LEARNING_RATE_DECAY)
 
+    kl.compile()
+
+    if cfg.PRINT_MODEL_SUMMARY:
+        print(kl.model.summary())
+    
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
@@ -366,8 +366,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     #stop training if the validation error stops improving.
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                min_delta=min_delta, 
-                                                patience=early_stop_patience, 
+                                                min_delta=cfg.MIN_DELTA, 
+                                                patience=cfg.EARLY_STOP_PATIENCE, 
                                                 verbose=verbose, 
                                                 mode='auto')
 
@@ -407,7 +407,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     callbacks_list = [save_best]
 
-    if use_early_stop:
+    if cfg.USE_EARLY_STOP:
         callbacks_list.append(early_stop)
     
     history = kl.model.fit_generator(
@@ -596,7 +596,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
         saved_model_path=model_path,
         steps=steps_per_epoch,
         train_split=cfg.TRAIN_TEST_SPLIT,
-        use_early_stop = False)
+        use_early_stop = cfg.USE_EARLY_STOP)
 
 
 

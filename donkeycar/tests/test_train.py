@@ -22,6 +22,7 @@ def test_train_cat(tub, tub_path):
     cfg.BATCH_SIZE = 10
     cfg.SHOW_PLOT = False
     cfg.VEBOSE_TRAIN = False
+    cfg.OPTIMIZER = "adam"
 
     tub = tub_path
     model = model_path

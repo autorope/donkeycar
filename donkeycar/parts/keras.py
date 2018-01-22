@@ -19,7 +19,10 @@ import keras
 import donkeycar as dk
 
 
-class KerasPilot():
+class KerasPilot(object):
+    def __init__(self):
+        self.model = None
+        self.optimizer = "adam"
  
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
@@ -28,7 +31,17 @@ class KerasPilot():
         pass
 
     def compile(self):
-        pass    
+        pass
+
+    def set_optimizer(self, optimizer_type, rate, decay):
+        if optimizer_type == "adam":
+            self.model.optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
+        elif optimizer_type == "sgd":
+            self.model.optimizer = keras.optimizers.SGD(lr=rate, decay=decay)
+        elif optimizer_type == "rmsprop":
+            self.model.optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
+        else:
+            raise Exception("unknown optimizer type: %s" % optimizer_type)
     
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=100, train_split=0.8,
@@ -76,7 +89,7 @@ class KerasCategorical(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer="adam",
+        self.model.compile(optimizer=self.optimizer,
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'categorical_crossentropy'},
                   loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
@@ -104,7 +117,7 @@ class KerasLinear(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer='adam',
+        self.model.compile(optimizer=self.optimizer,
                 loss='mse')
 
     def run(self, img_arr):
@@ -147,7 +160,7 @@ class KerasIMU(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer='adam',
+        self.model.compile(optimizer=self.optimizer,
                   loss='mse')
         
     def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z):
@@ -171,7 +184,7 @@ class KerasBehavioral(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(optimizer='adam',
+        self.model.compile(optimizer=self.optimizer,
                   loss='mse')
         
     def run(self, img_arr, state_array):        
@@ -372,9 +385,10 @@ class KerasRNN_LSTM(KerasPilot):
         self.image_h = image_h
         self.img_seq = []
         self.compile()
+        self.optimizer = "rmsprop"
 
     def compile(self):
-        self.model.compile(optimizer='rmsprop',
+        self.model.compile(optimizer=self.optimizer,
                   loss='mse')
 
     def run(self, img_arr):
@@ -443,7 +457,7 @@ class Keras3D_CNN(KerasPilot):
         self.compile()
 
     def compile(self):
-        self.model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+        self.model.compile(loss='mean_squared_error', optimizer=self.optimizer, metrics=['accuracy'])
 
     def run(self, img_arr):
 
