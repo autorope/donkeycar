@@ -44,11 +44,13 @@ class RGB_LED:
     Toggle a GPIO pin on at max_duty pwm if condition is true, off if condition is false.
     Good for LED pwm modulated
     '''
-    def __init__(self, pin_r, pin_g, pin_b):
+    def __init__(self, pin_r, pin_g, pin_b, invert_flag=False):
         self.pin_r = pin_r
         self.pin_g = pin_g
         self.pin_b = pin_b
+        self.invert = invert_flag
         print('setting up gpio in board mode')
+        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pin_r, GPIO.OUT)
         GPIO.setup(self.pin_g, GPIO.OUT)
@@ -60,8 +62,11 @@ class RGB_LED:
         self.pwm_r.start(0)
         self.pwm_g.start(0)
         self.pwm_b.start(0)
+        self.zero = 0
+        if( self.invert ):
+            self.zero = 100
 
-        self.rgb = (50, 0, 0)
+        self.rgb = (50, self.zero, self.zero)
 
         self.blink_changed = 0
         self.on = False
@@ -72,7 +77,7 @@ class RGB_LED:
             self.set_rgb_duty(r, g, b)
             self.on = True
         else:
-            self.set_rgb_duty(0, 0, 0)
+            self.set_rgb_duty(self.zero, self.zero, self.zero)
             self.on = False
 
     def blink(self, rate):
@@ -89,6 +94,9 @@ class RGB_LED:
             self.toggle(True)
 
     def set_rgb(self, r, g, b):
+        r = r if not self.invert else 100-r
+        g = g if not self.invert else 100-g
+        b = b if not self.invert else 100-b
         self.rgb = (r, g, b)
         self.set_rgb_duty(r, g, b)
 
@@ -134,5 +142,4 @@ if __name__ == "__main__":
         iter += 1
 
     p.shutdown()
-
 
