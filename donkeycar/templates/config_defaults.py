@@ -32,7 +32,7 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 
 #9865, over rides only if needed, ie. TX2..
-PCA9685_I2C_ADDR = None
+PCA9685_I2C_ADDR = 0x40
 PCA9685_I2C_BUSNUM = None
 
 #STEERING
