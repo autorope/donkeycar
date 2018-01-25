@@ -1,3 +1,4 @@
+import time
 import cv2
 import numpy as np
 
@@ -96,13 +97,14 @@ class Pipeline():
             val = f(val, *args, **kwargs)
         return val
     
-    class CvCam(object):
-        def __init__(self, resolution=(160,120), iCam=0):
+class CvCam(object):
+    def __init__(self, image_w=160, image_h=120, iCam=0):
+
         self.frame = None
         self.cap = cv2.VideoCapture(iCam)
         self.running = True
-        self.cap.set(3, resolution[0])
-        self.cap.set(4, resolution[1])
+        self.cap.set(3, image_w)
+        self.cap.set(4, image_h)
 
     def poll(self):
         if self.cap.isOpened():
@@ -131,6 +133,8 @@ class Pipeline():
 class CvImageView(object):
 
     def run(self, image):
+        if image is None:
+            return
         cv2.imshow('frame', image)
         cv2.waitKey(1)
 
