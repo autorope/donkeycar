@@ -11,7 +11,7 @@ You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior)] [--continuous]
+    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
 
 Options:
     -h --help     Show this screen.    
@@ -28,16 +28,27 @@ import keras
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
-from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasCategorical, KerasBehavioral
+from donkeycar.parts.keras import KerasLinear, KerasIMU,\
+     KerasCategorical, KerasBehavioral, Keras3D_CNN,\
+     KerasRNN_LSTM
+from donkeycar.utils import *
+
 import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from PIL import Image
 
+'''
+matplotlib can be a pain to setup. So handle the case where it is absent. When present,
+use it to generate a plot of training results.
+'''
+try:
+    import matplotlib.pyplot as plt
+    do_plot = True
+except:
+    do_plot = False
+    
 deterministic = False
-use_early_stop = True
-early_stop_patience = 5
-min_delta = .0005
 
 if deterministic:
     import tensorflow as tf
@@ -83,59 +94,6 @@ if deterministic:
 '''
 Tub management
 '''
-def expand_path_masks(paths):
-    '''
-    take a list of paths and expand any wildcards
-    returns a new list of paths fully expanded
-    '''
-    import glob
-    expanded_paths = []
-    for path in paths:
-        if '*' in path or '?' in path:
-            mask_paths = glob.glob(path)
-            expanded_paths += mask_paths
-        else:
-            expanded_paths.append(path)
-
-    return expanded_paths
-
-
-def gather_tub_paths(cfg, tub_names=None):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub paths
-    '''
-    if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        return expand_path_masks(tub_paths)
-    else:
-        paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-        dir_paths = []
-        for p in paths:
-            if os.path.isdir(p):
-                dir_paths.append(p)
-        return dir_paths
-
-
-def gather_tubs(cfg, tub_names):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub objects initialized to each path
-    '''    
-    tub_paths = gather_tub_paths(cfg, tub_names)
-    tubs = [Tub(p) for p in tub_paths]
-
-    return tubs
-
-def get_image_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[0])
-
-
-def get_record_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[1].split('.')[0])
-
 def make_key(sample):
     tub_path = sample['tub_path']
     index = sample['index']
@@ -145,19 +103,6 @@ def make_next_key(sample, index_offset):
     tub_path = sample['tub_path']
     index = sample['index'] + index_offset
     return tub_path + str(index)
-
-def gather_records(cfg, tub_names, opts):
-
-    tubs = gather_tubs(cfg, tub_names)
-
-    records = []
-
-    for tub in tubs:
-        record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
-        record_paths.sort(key=get_record_index)
-        records += record_paths
-
-    return records
 
 
 def collate_records(records, gen_records, opts):
@@ -188,6 +133,7 @@ def collate_records(records, gen_records, opts):
 
         if opts['categorical']:
             angle = dk.utils.linear_bin(angle)
+            throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=0.5)
 
         sample['angle'] = angle
         sample['throttle'] = throttle
@@ -269,12 +215,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     saves the output trained model as model_name
     ''' 
 
-    verbose = True
+    verbose = cfg.VEBOSE_TRAIN
 
-    #when transfering models, should we freeze all but the last N layers?
-    freeze_weights = True
-    N_layers_to_train = 7
-
+    
     if continuous:
         print("continuous training")
     
@@ -283,42 +226,31 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     opts['categorical'] = False
 
-    if cfg.TRAIN_BEHAVIORS:
-        model_type = "behavior"
+    kl = get_model_by_type(model_type, cfg=cfg)
 
-    if model_type is None:
-        model_type = "categorical"
+    opts['categorical'] = type(kl) is KerasCategorical
 
-    if model_type == "imu":
-        kl = KerasIMU()
-    elif model_type == "behavior":
-        kl = KerasBehavioral()
-    elif model_type == "rnn":
-        raise Exception("Not yet")
-        #kl = KerasRNN_LSTM()
-    elif model_type == "linear":
-        kl = KerasLinear(num_outputs=2)
-    elif model_type == "categorical":
-        kl = KerasCategorical()
-        opts['categorical'] = True
-    else:
-        raise Exception("unknown model type: %s" % model_type)
-
-    print('training with model type', model_type)
+    print('training with model type', type(kl))
 
     if transfer_model:
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
-        if freeze_weights:
-            num_to_freeze = len(kl.model.layers) - N_layers_to_train 
+        #when transfering models, should we freeze all but the last N layers?
+        if cfg.FREEZE_LAYERS:
+            num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN 
             print('freezing %d layers' % num_to_freeze)           
             for i in range(num_to_freeze):
-                kl.model.layers[i].trainable = False
-            kl.model.compile(optimizer='rmsprop', loss='mse')
+                kl.model.layers[i].trainable = False        
 
-        print(kl.model.summary())       
+    if cfg.OPTIMIZER:
+        kl.set_optimizer(cfg.OPTIMIZER, cfg.LEARNING_RATE, cfg.LEARNING_RATE_DECAY)
 
+    kl.compile()
+
+    if cfg.PRINT_MODEL_SUMMARY:
+        print(kl.model.summary())
+    
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
@@ -389,7 +321,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     for record in batch_data:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            record['img_data'] = np.array(Image.open(record['image_path']))
+                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            record['img_data'] = img_arr
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
@@ -401,12 +334,15 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                         angles.append(record['angle'])
                         throttles.append(record['throttle'])
 
+                    img_arr = np.array(inputs_img).reshape(batch_size,\
+                        cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+
                     if has_imu:
-                        X = [np.array(inputs_img), np.array(inputs_imu)]
+                        X = [img_arr, np.array(inputs_imu)]
                     elif has_bvh:
-                        X = [np.array(inputs_img), np.array(inputs_bvh)]
+                        X = [img_arr, np.array(inputs_bvh)]
                     else:
-                        X = [np.array(inputs_img)]
+                        X = [img_arr]
 
                     if model_out_shape[1] == 2:
                         y = [np.array([angles, throttles])]
@@ -430,8 +366,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     #stop training if the validation error stops improving.
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                min_delta=min_delta, 
-                                                patience=early_stop_patience, 
+                                                min_delta=cfg.MIN_DELTA, 
+                                                patience=cfg.EARLY_STOP_PATIENCE, 
                                                 verbose=verbose, 
                                                 mode='auto')
 
@@ -464,29 +400,216 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     if continuous:
         epochs = 100000
     else:
-        epochs = 200
+        epochs = cfg.MAX_EPOCHS
 
     workers_count = 1
     use_multiprocessing = False
 
-
     callbacks_list = [save_best]
 
-    if use_early_stop:
+    if cfg.USE_EARLY_STOP:
         callbacks_list.append(early_stop)
     
-    hist = kl.model.fit_generator(
+    history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
                     epochs=epochs, 
-                    verbose=1, 
+                    verbose=cfg.VEBOSE_TRAIN, 
                     validation_data=val_gen,
                     callbacks=callbacks_list, 
                     validation_steps=val_steps,
                     workers=workers_count,
                     use_multiprocessing=use_multiprocessing)
 
+    print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
 
+    if cfg.SHOW_PLOT:
+        try:
+            if do_plot:
+                # summarize history for loss
+                plt.plot(history.history['loss'])
+                plt.plot(history.history['val_loss'])
+                plt.title('model loss : %f' % save_best.best)
+                plt.ylabel('loss')
+                plt.xlabel('epoch')
+                plt.legend(['train', 'test'], loc='upper left')
+                plt.savefig(model_path + '_loss_%f.png' % save_best.best)
+                plt.show()
+            else:
+                print("not saving loss graph because matplotlib not set up.")
+        except:
+            print("problems with loss graph")
+
+
+def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
+    '''
+    use the specified data in tub_names to train an artifical neural network
+    saves the output trained model as model_name
+    trains models which take sequence of images
+    '''
+    import sklearn
+    from sklearn.model_selection import train_test_split
+    from sklearn.utils import shuffle
+    from PIL import Image
+    import json
+
+    assert(not continuous)
+
+    print("sequence of images training")
+
+    if model_type == "rnn":
+        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W,
+            image_h=cfg.IMAGE_H,
+            image_d=cfg.IMAGE_DEPTH,
+            seq_length=cfg.SEQUENCE_LENGTH, num_outputs=2)
+
+    elif model_type == "3d":
+        kl = Keras3D_CNN(image_w=cfg.IMAGE_W,
+            image_h=cfg.IMAGE_H,
+            image_d=cfg.IMAGE_DEPTH,
+            seq_length=cfg.SEQUENCE_LENGTH,
+            num_outputs=2)
+    else:
+        raise Exception("unknown model type: %s" % model_type)
+
+    tubs = gather_tubs(cfg, tub_names)
+
+    records = []
+
+    for tub in tubs:
+        record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
+        print("Tub:", tub.path, "has", len(record_paths), 'records')
+
+        record_paths.sort(key=get_record_index)
+        records += record_paths
+
+
+    print('collating records')
+    gen_records = {}
+
+    for record_path in records:
+
+        with open(record_path, 'r') as fp:
+            json_data = json.load(fp)
+
+        basepath = os.path.dirname(record_path)
+        image_filename = json_data["cam/image_array"]
+        image_path = os.path.join(basepath, image_filename)
+        sample = { 'record_path' : record_path, "image_path" : image_path, "json_data" : json_data }
+
+        sample["tub_path"] = basepath
+        sample["index"] = get_image_index(image_filename)
+
+        angle = float(json_data['user/angle'])
+        throttle = float(json_data["user/throttle"])
+
+        sample['target_output'] = np.array([angle, throttle])
+
+        sample['img_data'] = None
+
+        key = make_key(sample)
+
+        gen_records[key] = sample
+
+
+
+    print('collating sequences')
+
+    sequences = []
+
+    for k, sample in gen_records.items():
+
+        seq = []
+
+        for i in range(cfg.SEQUENCE_LENGTH):
+            key = make_next_key(sample, i)
+            if key in gen_records:
+                seq.append(gen_records[key])
+            else:
+                continue
+
+        if len(seq) != cfg.SEQUENCE_LENGTH:
+            continue
+
+        sequences.append(seq)
+
+
+
+    #shuffle and split the data
+    train_data, val_data  = train_test_split(sequences, shuffle=True, test_size=(1 - cfg.TRAIN_TEST_SPLIT))
+
+
+    def generator(data, batch_size=cfg.BATCH_SIZE):
+        num_records = len(data)
+
+        while True:
+            #shuffle again for good measure
+            shuffle(data)
+
+            for offset in range(0, num_records, batch_size):
+                batch_data = data[offset:offset+batch_size]
+
+                if len(batch_data) != batch_size:
+                    break
+
+                b_inputs_img = []
+                b_labels = []
+
+                for seq in batch_data:
+                    inputs_img = []
+                    labels = []
+                    for record in seq:
+                        #get image data if we don't already have it
+                        if record['img_data'] is None:
+                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            record['img_data'] = img_arr                            
+                            
+                        inputs_img.append(record['img_data'])
+                    labels.append(seq[-1]['target_output'])
+
+                    b_inputs_img.append(inputs_img)
+                    b_labels.append(labels)
+
+                X = [np.array(b_inputs_img).reshape(batch_size,\
+                    cfg.SEQUENCE_LENGTH, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)]
+
+                y = np.array(b_labels).reshape(batch_size, 2)
+
+                yield X, y
+
+    train_gen = generator(train_data)
+    val_gen = generator(val_data)
+    
+
+    model_path = os.path.expanduser(model_name)
+
+    total_records = len(sequences)
+    total_train = len(train_data)
+    total_val = len(val_data)
+
+    print('train: %d, validation: %d' %(total_train, total_val))
+    steps_per_epoch = total_train // cfg.BATCH_SIZE
+    print('steps_per_epoch', steps_per_epoch)
+
+    kl.train(train_gen, 
+        val_gen, 
+        saved_model_path=model_path,
+        steps=steps_per_epoch,
+        train_split=cfg.TRAIN_TEST_SPLIT,
+        use_early_stop = cfg.USE_EARLY_STOP)
+
+
+
+def multi_train(cfg, tub, model, transfer, model_type, continuous):
+    '''
+    choose the right regime for the given model type
+    '''
+    train_fn = train
+    if model_type == "rnn" or model_type == '3d':
+        train_fn = sequence_train
+
+    train_fn(cfg, tub, model, transfer, model_type, continuous)
+    
 if __name__ == "__main__":
     args = docopt(__doc__)
     cfg = dk.load_config()
@@ -495,5 +618,5 @@ if __name__ == "__main__":
     transfer = args['--transfer']
     model_type = args['--type']
     continuous = args['--continuous']
-    train(cfg, tub, model, transfer, model_type, continuous)
+    multi_train(cfg, tub, model, transfer, model_type, continuous)
     

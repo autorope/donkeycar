@@ -8,9 +8,9 @@ from threading import Thread
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 
-class Joystick():
+class Joystick(object):
     '''
-    An interface to a physical joystick available at /dev/input
+    An interface to a physical joystick
     '''
     def __init__(self, dev_fn='/dev/input/js0'):
         self.axis_states = {}
@@ -19,90 +19,12 @@ class Joystick():
         self.button_map = []
         self.jsdev = None
         self.dev_fn = dev_fn
-        
-        # These constants were borrowed from linux/input.h
-        self.axis_names = {
-            0x00 : 'x',
-            0x01 : 'y',
-            0x02 : 'z',
-            0x03 : 'rx',
-            0x04 : 'ry',
-            0x05 : 'rz',
-            0x06 : 'throttle',
-            0x07 : 'rudder',
-            0x08 : 'wheel',
-            0x09 : 'gas',
-            0x0a : 'brake',
-            0x10 : 'hat0x',
-            0x11 : 'hat0y',
-            0x12 : 'hat1x',
-            0x13 : 'hat1y',
-            0x14 : 'hat2x',
-            0x15 : 'hat2y',
-            0x16 : 'hat3x',
-            0x17 : 'hat3y',
-            0x18 : 'pressure',
-            0x19 : 'distance',
-            0x1a : 'tilt_x',
-            0x1b : 'tilt_y',
-            0x1c : 'tool_width',
-            0x20 : 'volume',
-            0x28 : 'misc',
-        }
-
-        self.button_names = {
-            0x120 : 'select',
-            0x121 : 'thumb',
-            0x122 : 'thumb2',
-            0x123 : 'start',
-            0x124 : 'top2',
-            0x125 : 'pinkie',
-            0x126 : 'base',
-            0x127 : 'base2',
-            0x128 : 'L2',
-            0x129 : 'R2',
-            0x12a : 'L1',
-            0x12b : 'R1',
-	   
-            #PS3 sixaxis specific
-            0x12c : "triangle", 
-            0x12d : "circle",
-            0x12e : "cross",
-            0x12f : 'square',
-
-            0x130 : 'a',
-            0x131 : 'b',
-            0x132 : 'c',
-            0x133 : 'x',
-            0x134 : 'y',
-            0x135 : 'z',
-            0x136 : 'tl',
-            0x137 : 'tr',
-            0x138 : 'tl2',
-            0x139 : 'tr2',
-            0x13a : 'select',
-            0x13b : 'start',
-            0x13c : 'mode',
-            0x13d : 'thumbl',
-            0x13e : 'thumbr',
-
-            0x124 : 'dpad_up',
-            0x126 : 'dpad_down',
-            0x127 : 'dpad_left',
-            0x125 : 'dpad_right',
-
-            # XBox 360 controller uses these codes.
-            0x2c0 : 'dpad_left',
-            0x2c1 : 'dpad_right',
-            0x2c2 : 'dpad_up',
-            0x2c3 : 'dpad_down',
-        }
 
 
     def init(self):
         from fcntl import ioctl
         '''
-        call once to setup connection to dev/input/js0 and map buttons
+        call once to setup connection to device and map buttons
         '''
         # Open the joystick device.
         print('Opening %s...' % self.dev_fn)
@@ -190,6 +112,114 @@ class Joystick():
         return button, button_state, axis, axis_val
 
 
+
+class PS3Joystick(Joystick):
+    '''
+    An interface to a physical PS3 joystick available at /dev/input/js0
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3Joystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x05 : 'right_stick_vert',
+
+            0x1a : 'tilt_x',
+            0x1b : 'tilt_y',
+            0x3d : 'tilt_a',
+            0x3c : 'tilt_b',
+
+            0x32 : 'L1_pressure',
+            0x33 : 'R1_pressure',
+            0x31 : 'R2_pressure',
+            0x30 : 'L2_pressure',
+
+            0x36 : 'cross_pressure',
+            0x35 : 'circle_pressure',
+            0x37 : 'square_pressure',
+            0x34 : 'triangle_pressure',
+
+            0x2d : 'dpad_r_pressure',
+            0x2e : 'dpad_d_pressure',
+            0x2c : 'dpad_u_pressure',
+        }
+        
+
+        self.button_names = {
+            0x120 : 'select',
+            0x123 : 'start',
+            0x2c0 : 'PS',
+
+            0x12a : 'L1',
+            0x12b : 'R1',
+            0x128 : 'L2',
+            0x129 : 'R2',
+            0x121 : 'L3',
+            0x122 : 'R3',
+	   
+            0x12c : "triangle", 
+            0x12d : "circle",
+            0x12e : "cross",
+            0x12f : 'square',
+
+            0x124 : 'dpad_up',
+            0x126 : 'dpad_down',
+            0x127 : 'dpad_left',
+            0x125 : 'dpad_right',
+        }
+
+
+class PS4Joystick(Joystick):
+    '''
+    An interface to a physical PS4 joystick available at /dev/input/js0
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS4Joystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x05 : 'right_stick_vert',
+            
+            0x03 : 'left_trigger_axis',
+            0x04 : 'right_trigger_axis',
+            
+            0x10 : 'dpad_leftright',
+            0x11 : 'dpad_updown',
+
+            0x19 : 'tilt_a',
+            0x1a : 'tilt_b',
+            0x1b : 'tilt_c',
+            
+            0x06 : 'motion_a',
+            0x07 : 'motion_b',
+            0x08 : 'motion_c',
+        }
+
+        self.button_names = {
+
+            0x130 : 'square',
+            0x131 : 'cross',
+            0x132 : 'circle',
+            0x133 : 'triangle',
+
+            0x134 : 'L1',
+            0x135 : 'R1',
+            0x136 : 'L2',
+            0x137 : 'R2',
+            0x13a : 'L3',
+            0x13b : 'R3',
+
+            0x13d : 'pad',
+            0x138 : 'share',
+            0x139 : 'options',
+            0x13c : 'PS',
+        }
+
+
 class JoystickController(object):
     '''
     Joystick client using access to local physical input
@@ -206,7 +236,8 @@ class JoystickController(object):
                  steering_scale=1.0,
                  throttle_dir=-1.0,
                  dev_fn='/dev/input/js0',
-                 auto_record_on_throttle=True):
+                 auto_record_on_throttle=True,
+                 controller_type='ps3'): #(ps3|ps4)
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -224,28 +255,37 @@ class JoystickController(object):
         self.tub = None
         self.num_records_to_erase = 100
         self.estop_state = self.ES_IDLE
+        self.controller_type = controller_type
         
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
         self.axis_trigger_map = {}
 
-        self.init_trigger_maps()
+        if controller_type == 'ps3':
+            self.init_ps3_trigger_maps()
+        elif controller_type == 'ps4':
+            self.init_ps4_trigger_maps()
+        else:
+            raise(Exception("unknown controller type:" + controller_type))
 
     def init_js(self):
         '''
         attempt to init joystick
         '''
         try:
-            self.js = Joystick(self.dev_fn)
+            if self.controller_type == 'ps3':
+                self.js = PS3Joystick(self.dev_fn)
+            elif self.controller_type == 'ps4':
+                self.js = PS4Joystick(self.dev_fn)
             self.js.init()
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
         return self.js is not None
 
-    def init_trigger_maps(self):
+    def init_ps3_trigger_maps(self):
         '''
-        init default set of mapping from buttons to function calls
+        init set of mapping from buttons to function calls
         '''
 
         self.button_down_trigger_map = {
@@ -259,8 +299,28 @@ class JoystickController(object):
         }
 
         self.axis_trigger_map = {
-            'x' : self.set_steering,
-            'rz' : self.set_throttle,
+            'left_stick_horz' : self.set_steering,
+            'right_stick_vert' : self.set_throttle,
+        }
+
+    def init_ps4_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls for ps4
+        '''
+
+        self.button_down_trigger_map = {
+            'share' : self.toggle_mode,
+            'circle' : self.toggle_manual_recording,
+            'triangle' : self.erase_last_N_records,
+            'cross' : self.emergency_stop,
+            'L1' : self.increase_max_throttle,
+            'R1' : self.decrease_max_throttle,
+            'options' : self.toggle_constant_throttle,
+        }
+
+        self.axis_trigger_map = {
+            'left_stick_horz' : self.set_steering,
+            'right_stick_vert' : self.set_throttle,
         }
 
     def print_controls(self):
@@ -455,9 +515,16 @@ class JoystickController(object):
 
     def run(self, img_arr=None):
         raise Exception("We expect for this part to be run with the threaded=True argument.")
-        return False
+        return None, None, None, None
 
     def shutdown(self):
+        #set flag to exit polling thread, then wait a sec for it to leave
         self.running = False
         time.sleep(0.5)
 
+if __name__ == "__main__":
+    js = PS3Joystick()
+    js.init()
+    while True:
+        returns = js.poll()
+        print(returns)

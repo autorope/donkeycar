@@ -3,8 +3,8 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior)] [--continuous]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--camera=(single|stereo)]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
 
 
 Options:
@@ -17,7 +17,6 @@ from docopt import docopt
 import donkeycar as dk
 
 #import parts
-from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.keras import KerasIMU, KerasCategorical, KerasBehavioral, KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
@@ -72,7 +71,7 @@ class BehaviorPart(object):
     def shutdown(self):
         pass
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single'):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -82,16 +81,56 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     '''
-    from donkeycar.parts.led_status import RGB_LED
 
     if model_type is None:
         model_type = "categorical"
+
+    stereo_cam = camera_type == "stereo"
     
     #Initialize car
     V = dk.vehicle.Vehicle()
-    cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
-    V.add(cam, outputs=['cam/image_array'], threaded=True)
-    
+
+    if stereo_cam:
+        from donkeycar.parts.camera import Webcam
+
+        camA = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, iCam = 0)
+        V.add(camA, outputs=['cam/image_array_a'], threaded=True)
+
+        camB = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, iCam = 1)
+        V.add(camB, outputs=['cam/image_array_b'], threaded=True)
+
+        def stereo_pair(image_a, image_b):
+            if image_a is not None and image_b is not None:
+                width, height, _ = image_a.shape
+                grey_a = dk.utils.rgb2gray(image_a)
+                grey_b = dk.utils.rgb2gray(image_b)
+                grey_c = grey_a - grey_b
+                
+                stereo_image = np.zeros([width, height, 3], dtype=np.dtype('B'))
+                stereo_image[...,0] = np.reshape(grey_a, (width, height))
+                stereo_image[...,1] = np.reshape(grey_b, (width, height))
+                stereo_image[...,2] = np.reshape(grey_c, (width, height))
+            else:
+                stereo_image = []
+
+            return np.array(stereo_image)
+
+        image_sterero_pair_part = Lambda(stereo_pair)
+        V.add(image_sterero_pair_part, inputs=['cam/image_array_a', 'cam/image_array_b'], 
+            outputs=['cam/image_array'])
+
+    else:
+        
+        print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
+        if cfg.CAMERA_TYPE == "PICAM":
+            from donkeycar.parts.camera import PiCamera
+            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+        elif cfg.CAMERA_TYPE == "WEBCAM":
+            from donkeycar.parts.camera import Webcam
+            cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+            
+        V.add(cam, outputs=['cam/image_array'], threaded=True)
+        
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -150,13 +189,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     led_cond_part = Lambda(led_cond)
     V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state'], outputs=['led/blink_rate'])
 
-    #led = LED(8)
-    led = RGB_LED(12, 10, 16)
-    led.set_rgb(0, 0, 1)
-    V.add(led, inputs=['led/blink_rate'])
+    if cfg.HAVE_RGB_LED:
+        from donkeycar.parts.led_status import RGB_LED
+        led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
+        led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+        V.add(led, inputs=['led/blink_rate'])
+
+    #IMU
+    if cfg.HAVE_IMU:
+        imu = Mpu6050()
+        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
     #Behavioral state
-    if cfg.TRAIN_BEHAVIORS and model_type == "behavior":
+    if model_type == "behavior":
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
         try:
@@ -167,11 +213,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]  
     #IMU
-    elif cfg.HAVE_IMU and model_type == "imu":
-        imu = Mpu6050()
-        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
-    
+    elif model_type == "imu":
+        assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
         kl = KerasIMU(num_outputs=2, num_imu_inputs=6)
         inputs=['cam/image_array',
@@ -180,8 +223,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
     else:
         if model_type == "linear":
             kl = KerasLinear()
+        elif model_type == "3d":
+            kl = Keras3D_CNN(seq_length=cfg.SEQUENCE_LENGTH)
+        elif model_type == "rnn":
+            kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH)
         else:
             kl = KerasCategorical()
+
         inputs=['cam/image_array']
 
     if model_path:
@@ -212,12 +260,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
           outputs=['angle', 'throttle'])
     
     
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL)
+    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
     steering = PWMSteering(controller=steering_controller,
                                     left_pulse=cfg.STEERING_LEFT_PWM, 
                                     right_pulse=cfg.STEERING_RIGHT_PWM)
     
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
+    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
     throttle = PWMThrottle(controller=throttle_controller,
                                     max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                     zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
@@ -236,11 +284,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None):
            'float', 'float',  
            'str']
 
-    if cfg.TRAIN_BEHAVIORS and model_type == "behavior":
+    if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
-
-    elif cfg.HAVE_IMU and model_type == "imu":
+    
+    if cfg.HAVE_IMU:
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
@@ -269,17 +317,18 @@ if __name__ == '__main__':
     
     if args['drive']:
         model_type = args['--type']
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type)
+        camera_type = args['--camera']
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type)
     
     if args['train']:
-        from train import train
+        from train import multi_train
         
         tub = args['--tub']
         model = args['--model']
         transfer = args['--transfer']
         model_type = args['--type']
-        continuous = args['--continuous']
-        train(cfg, tub, model, transfer, model_type, continuous)
+        continuous = args['--continuous']        
+        multi_train(cfg, tub, model, transfer, model_type, continuous)
 
 
 

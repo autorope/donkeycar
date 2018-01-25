@@ -96,13 +96,25 @@ def create_video(img_dir_path, output_video_path):
     response = envoy.run(command)
 
 
+def rgb2gray(rgb):
+    '''
+    take a numpy rgb image return a new single channel image converted to greyscale
+    '''
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
 
 
-
-
-
-
-
+def load_scaled_image_arr(filename, cfg):
+    '''
+    load an image from the filename, and use the cfg to resize if needed
+    '''
+    import donkeycar as dk
+    img = Image.open(filename)
+    if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
+        img = img.resize((cfg.IMAGE_H, cfg.IMAGE_W))
+    img_arr = np.array(img)
+    if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+        img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+    return img_arr
 
 
 '''
@@ -148,32 +160,50 @@ BINNING
 functions to help converte between floating point numbers and categories.
 '''
 
-def linear_bin(a):
-    a = a + 1
-    b = round(a / (2/14))
-    arr = np.zeros(15)
+def clamp(n, min, max):
+    if n < min:
+        return min
+    if n > max:
+        return max
+    return n
+
+def linear_bin(a, N=15, offset=1, R=2.0):
+    '''
+    create a bin of length N
+    map val A to range R
+    offset one hot bin by offset, commonly R/2
+    '''
+    a = a + offset
+    b = round(a / (R/(N-offset)))
+    arr = np.zeros(N)
+    b = clamp(b, 0, N - 1)
     arr[int(b)] = 1
     return arr
 
 
-def linear_unbin(arr):
+def linear_unbin(arr, N=15, offset=-1, R=2.0):
+    '''
+    preform inverse linear_bin, taking
+    one hot encoded arr, and get max value
+    rescale given R range and offset
+    '''
     b = np.argmax(arr)
-    a = b *(2/14) - 1
+    a = b *(R/(N + offset)) + offset
     return a
 
 
-def bin_Y(Y):
+def bin_Y(Y, N=15):
     d = []
     for y in Y:
-        arr = np.zeros(15)
-        arr[linear_bin(y)] = 1
+        arr = np.zeros(N)
+        arr[linear_bin(y, N=N)] = 1
         d.append(arr)
-    return np.array(d) 
+    return np.array(d)
         
-def unbin_Y(Y):
+def unbin_Y(Y, N=15):
     d=[]
     for y in Y:
-        v = linear_unbin(y)
+        v = linear_unbin(y, N=N)
         d.append(v)
     return np.array(d)
 
@@ -261,8 +291,7 @@ def eprint(*args, **kwargs):
 
 """
 Tub management
-
-
+"""
 
 def expand_path_masks(paths):
     '''
@@ -281,13 +310,95 @@ def expand_path_masks(paths):
     return expanded_paths
 
 
-def gather_tub_paths(tub_names):
+def gather_tub_paths(cfg, tub_names=None):
     '''
     takes as input the configuration, and the comma seperated list of tub paths
     returns a list of Tub paths
     '''
+    if tub_names:
+        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        return expand_path_masks(tub_paths)
+    else:
+        paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
+        dir_paths = []
+        for p in paths:
+            if os.path.isdir(p):
+                dir_paths.append(p)
+        return dir_paths
 
-    tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-    return expand_path_masks(tub_paths)
 
-"""
+def gather_tubs(cfg, tub_names):    
+    '''
+    takes as input the configuration, and the comma seperated list of tub paths
+    returns a list of Tub objects initialized to each path
+    '''
+    from donkeycar.parts.datastore import Tub
+    
+    tub_paths = gather_tub_paths(cfg, tub_names)
+    tubs = [Tub(p) for p in tub_paths]
+
+    return tubs
+
+def get_image_index(fnm):
+    sl = os.path.basename(fnm).split('_')
+    return int(sl[0])
+
+
+def get_record_index(fnm):
+    sl = os.path.basename(fnm).split('_')
+    return int(sl[1].split('.')[0])
+
+def gather_records(cfg, tub_names, opts=None):
+
+    tubs = gather_tubs(cfg, tub_names)
+
+    records = []
+
+    for tub in tubs:
+        print(tub.path)
+        record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
+        record_paths.sort(key=get_record_index)
+        records += record_paths
+
+    return records
+
+def get_model_by_type(model_type, cfg):
+    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN
+ 
+    if model_type is None:
+        model_type = "categorical"
+
+    input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+
+    if model_type == "behavior":
+        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
+    elif model_type == "imu":
+        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
+    elif model_type == "linear":
+        kl = KerasLinear(input_shape=input_shape)
+    elif model_type == "3d":
+        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
+    elif model_type == "rnn":
+        kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH, input_shape=input_shape)
+    elif model_type == "categorical":
+        kl = KerasCategorical(input_shape=input_shape)
+    else:
+        raise Exception("unknown model type: %s" % model_type)
+
+    return kl
+
+def get_test_img(model):
+    '''
+    query the input to see what it likes
+    make an image capable of using with that test model
+    '''
+    try:
+        count, h, w, ch = model.inputs[0].get_shape()
+        seq_len = 0
+    except:
+        count, seq_len, h, w, ch = model.inputs[0].get_shape()
+
+    #generate random array in the right shape
+    img = np.random.rand(int(h), int(w), int(ch))
+
+    return img

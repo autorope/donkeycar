@@ -10,11 +10,11 @@ class BaseCamera:
         return self.frame
 
 class PiCamera(BaseCamera):
-    def __init__(self, resolution=(120, 160), framerate=20):
+    def __init__(self, image_w=160, image_h=120, framerate=20):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
         
-        resolution = (resolution[0], resolution[1])
+        resolution = (image_w, image_h)
         # initialize the camera and stream
         self.camera = PiCamera() #PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
@@ -60,16 +60,17 @@ class PiCamera(BaseCamera):
         self.camera.close()
 
 class Webcam(BaseCamera):
-    def __init__(self, resolution = (160, 120), framerate = 20):
+    def __init__(self, image_w=160, image_h=120, framerate = 20, iCam = 0):
         import pygame
         import pygame.camera
 
         super().__init__()
-
+        resolution = (image_w, image_h)
         pygame.init()
         pygame.camera.init()
         l = pygame.camera.list_cameras()
-        self.cam = pygame.camera.Camera(l[0], resolution, "RGB")
+        print('cameras', l)
+        self.cam = pygame.camera.Camera(l[iCam], resolution, "RGB")
         self.resolution = resolution
         self.cam.start()
         self.framerate = framerate

@@ -36,10 +36,20 @@ def profile(model_path):
     model = keras.models.load_model(model_path)
 
     #query the input to see what it likes
-    count, w, h, ch = model.inputs[0].get_shape()
+    try:
+        count, h, w, ch = model.inputs[0].get_shape()
+        seq_len = 0
+    except:
+        count, seq_len, h, w, ch = model.inputs[0].get_shape()
 
     #generate random array in the right shape
-    img = np.random.rand(int(w), int(h), int(ch))
+    img = np.random.rand(int(h), int(w), int(ch))
+
+    if seq_len:
+        img_arr = []
+        for i in range(seq_len):
+            img_arr.append(img)
+        img_arr = np.array(img_arr)
 
     #make a timer obj
     timer = FPSTimer()
@@ -50,7 +60,10 @@ def profile(model_path):
             '''
             run forward pass on model
             '''
-            model.predict(img[None, :, :, :])
+            if seq_len:
+                model.predict(img_arr[None, :, :, :, :])
+            else:
+                model.predict(img[None, :, :, :])
 
             '''
             keep track of iterations and give feed back on iter/sec
