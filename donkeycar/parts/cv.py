@@ -96,3 +96,43 @@ class Pipeline():
             val = f(val, *args, **kwargs)
         return val
     
+    class CvCam(object):
+        def __init__(self, resolution=(160,120), iCam=0):
+        self.frame = None
+        self.cap = cv2.VideoCapture(iCam)
+        self.running = True
+        self.cap.set(3, resolution[0])
+        self.cap.set(4, resolution[1])
+
+    def poll(self):
+        if self.cap.isOpened():
+            ret, self.frame = self.cap.read()
+
+    def update(self):
+        '''
+        poll the camera for a frame
+        '''
+        while(self.running):
+            self.poll()
+
+    def run_threaded(self):
+        return self.frame
+
+    def run(self):
+        self.poll()
+        return self.frame
+
+    def shutdown(self):
+        self.running = False
+        time.sleep(0.2)
+        self.cap.release()
+
+
+class CvImageView(object):
+
+    def run(self, image):
+        cv2.imshow('frame', image)
+        cv2.waitKey(1)
+
+    def shutdown(self):
+        cv2.destroyAllWindows()
