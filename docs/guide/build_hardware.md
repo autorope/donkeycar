@@ -39,13 +39,15 @@ These same instructions can be found in this [Make Magazine article](https://mak
 | Wide Angle Raspberry Pi Camera                                                      | [amazon.com/gp/product/B00N1YJKFS](https://www.amazon.com/gp/product/B00N1YJKFS?tag=donkeycar-20)                                         | $25              |
 | Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 *             |
 | Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 **           |
-| 3D Printed roll cage and top plate.                                                 | CAD Files: [a360.co/2pf3Dam](http://a360.co/2pf3Dam) STL Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | ~                |
+| 3D Printed roll cage and top plate.                                                 | Purchase: [Adam's Store](https://squareup.com/store/donkeycar) Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | $45 ***                |
 
 
 
 *These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.  
 
-**This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping. 
+**This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
+
+***If you have a printer or have access to one, print the part.  If you are in the US 48 states, You can buy one from Adam  (one of the original donkey creators) and he will print and ship to you at a fraction of the cost of Shapeways.
 
 &nbsp;
 
@@ -67,7 +69,7 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 ## Hardware
 ### Step 1: Print Parts
-If you do not have a 3D Printer, you can order parts from [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.  
+If you do not have a 3D Printer, you can order parts from [Adam's Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   
 
 &nbsp;
 ### Step 2: Clean up parts
