@@ -4,7 +4,7 @@ Scripts to drive a donkey 2 car
 
 Usage:
     manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--camera=(single|stereo)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous] [--aug]
 
 
 Options:
@@ -327,8 +327,9 @@ if __name__ == '__main__':
         model = args['--model']
         transfer = args['--transfer']
         model_type = args['--type']
-        continuous = args['--continuous']        
-        multi_train(cfg, tub, model, transfer, model_type, continuous)
+        continuous = args['--continuous']
+        aug = args['--aug']     
+        multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
 
 
 

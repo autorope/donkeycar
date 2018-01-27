@@ -11,7 +11,7 @@ You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
+    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous] [--aug]
 
 Options:
     -h --help     Show this screen.    
@@ -31,6 +31,7 @@ from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
      KerasRNN_LSTM
+from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
 import sklearn
@@ -209,7 +210,7 @@ def send_model_to_pi(model_filename):
     #print("result:", res)
     pass
 
-def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
+def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
     '''
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
@@ -321,7 +322,13 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     for record in batch_data:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            filename = record['image_path']
+                            
+                            img_arr = load_scaled_image_arr(filename, cfg)
+                            
+                            if aug:
+                                img_arr = augment_image(img_arr)
+
                             record['img_data'] = img_arr
                             
                         if has_imu:
@@ -600,7 +607,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
 
 
 
-def multi_train(cfg, tub, model, transfer, model_type, continuous):
+def multi_train(cfg, tub, model, transfer, model_type, continuous, aug):
     '''
     choose the right regime for the given model type
     '''
@@ -608,7 +615,7 @@ def multi_train(cfg, tub, model, transfer, model_type, continuous):
     if model_type == "rnn" or model_type == '3d':
         train_fn = sequence_train
 
-    train_fn(cfg, tub, model, transfer, model_type, continuous)
+    train_fn(cfg, tub, model, transfer, model_type, continuous, aug)
     
 if __name__ == "__main__":
     args = docopt(__doc__)
@@ -618,5 +625,6 @@ if __name__ == "__main__":
     transfer = args['--transfer']
     model_type = args['--type']
     continuous = args['--continuous']
-    multi_train(cfg, tub, model, transfer, model_type, continuous)
+    aug = args['--aug']
+    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
     
