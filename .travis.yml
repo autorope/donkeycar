@@ -6,7 +6,6 @@ python:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y python3-numpy
   - sudo apt-get install -y python3-dev 
 
 # command to install dependencies
