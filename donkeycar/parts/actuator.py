@@ -350,7 +350,7 @@ class L298N_HBridge_DC_Motor(object):
         
         self.speed = speed
         max_duty = 90 #I've read 90 is a good max
-        self.throttle = int(utils.map_range(speed, -1, 1, -max_duty, max_duty))
+        self.throttle = int(dk.utils.map_range(speed, -1, 1, -max_duty, max_duty))
         
         if self.throttle > 0:
             self.pwm.ChangeDutyCycle(self.throttle)
