@@ -28,7 +28,7 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
-| Magnet Car                                                                          | [Blue](https://www.amazon.com/gp/product/9269808912?tag=donkeycar-20), [Red](https://www.amazon.com/gp/product/9269808920/ref=as_li_tl?tag=donkeycar-20)                                         | $92              |
+| Magnet Car                                                                          | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](https://www.amazon.com/gp/product/9269808920/ref=as_li_tl?tag=donkeycar-20)                                         | $92              |
 | M2x6 screws (4)                                                                     | [mcmaster.com/#91292a831/=177k4rp](https://www.mcmaster.com/#91292a831/=177k4rp)                                          | $6.38 *          |
 | M2.5x12 screws (8)                                                                  | [mcmaster.com/#91292a016/=177k574](https://www.mcmaster.com/#91292a016/=177k574)                                          | $4.80 *          |
 | M2.5 nuts (8)                                                                       | [mcmaster.com/#91828a113/=177k7ex](https://www.mcmaster.com/#91828a113/=177k7ex)                                          | $5.64 *          |
