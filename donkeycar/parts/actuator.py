@@ -515,6 +515,9 @@ class Mini_HBridge_DC_Motor_PWM(object):
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
         '''
+        if speed is None:
+            return
+        
         if speed > 1 or speed < -1:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         

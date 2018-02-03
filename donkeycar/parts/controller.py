@@ -277,12 +277,14 @@ class PS3JoystickPC(Joystick):
         }
 
 class JoyStickPub(object):
-    def __init__(self):
+    '''
+    Use Zero Message Queue (zmq) to publish the control messages from a local joystick
+    '''
+    def __init__(self, port = 5556, dev_fn='/dev/input/js1'):
         import zmq
-        self.dev_fn='/dev/input/js1'
+        self.dev_fn = dev_fn
         self.js = PS3JoystickPC(self.dev_fn)
         self.js.init()
-        port = 5556
         context = zmq.Context()
         self.socket = context.socket(zmq.PUB)
         self.socket.bind("tcp://*:%d" % port)
@@ -297,25 +299,34 @@ class JoyStickPub(object):
                 if axis is None:
                     axis = "0"
                     axis_val = 0
-                #if "stick" in axis:
-                #    continue
                 message_data = (button, button_state, axis, axis_val)
                 self.socket.send_string( "%s %d %s %f" % message_data)
                 print("SENT", message_data)
 
 class JoyStickSub(object):
-    def __init__(self, ip):
+    '''
+    Use Zero Message Queue (zmq) to subscribe to control messages from a remote joystick
+    '''
+    def __init__(self, ip, port = 5556):
         import zmq
-        port = 5556
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB)
         self.socket.connect("tcp://%s:%d" % (ip, port))
         self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
+        self.button = None
+        self.button_state = 0
+        self.axis = None
+        self.axis_val = 0.0
+        self.running = True
+
+    def shutdown(self):
+        self.running = False
+        time.sleep(0.1)
 
     def update(self):
-        while True:
+        while self.running:
             payload = self.socket.recv().decode("utf-8")
-            print("got", payload)
+            #print("got", payload)
             button, button_state, axis, axis_val = payload.split(' ')
             self.button = button
             self.button_state = (int)(button_state)
@@ -330,7 +341,10 @@ class JoyStickSub(object):
         pass
 
     def poll(self):
-        return self.button, self.button_state, self.axis, self.axis_val 
+        ret = (self.button, self.button_state, self.axis, self.axis_val)
+        self.button = None
+        self.axis = None
+        return ret
 
 class JoystickController(object):
     '''
@@ -500,7 +514,7 @@ class JoystickController(object):
         '''
 
         #wait for joystick to be online
-        while self.running and not self.init_js():
+        while self.running and self.js is None and not self.init_js():
             time.sleep(5)
 
         while self.running:
@@ -528,12 +542,12 @@ class JoystickController(object):
 
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
-        print("angle", self.angle)
+        #print("angle", self.angle)
 
     def set_throttle(self, axis_val):
         #this value is often reversed, with positive value when pulling down
         self.throttle = (self.throttle_dir * axis_val * self.throttle_scale)
-        print("throttle", self.throttle)
+        #print("throttle", self.throttle)
         self.on_throttle_changes()
 
     def toggle_manual_recording(self):
