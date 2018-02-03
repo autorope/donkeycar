@@ -112,7 +112,6 @@ class Joystick(object):
         return button, button_state, axis, axis_val
 
 
-
 class PS3Joystick(Joystick):
     '''
     An interface to a physical PS3 joystick available at /dev/input/js0
@@ -219,6 +218,49 @@ class PS4Joystick(Joystick):
             0x13c : 'PS',
         }
 
+class JoyStickPub(object):
+    def __init__(self):
+        import zmq
+        self.dev_fn='/dev/input/js0'
+        self.js = PS3Joystick(self.dev_fn)
+        self.js.init()
+        port = 5556
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUB)
+        self.socket.bind("tcp://*:%d" % port)
+    
+    def run(self):
+        while True:
+            button, button_state, axis, axis_val = self.js.poll()
+            if axis is not None or button is not None:
+                topic = 1
+                message_data = [button, button_state, axis, axis_val]
+                self.socket.send( "%d %d %d %d" % message_data)
+                print("SENT", message_data)
+
+class JoyStickSub(object):
+    def __init__(self, ip):
+        import zmq
+        port = 5556
+        context = zmq.Context()
+        self.socket = context.socket(zmq.SUB)
+        self.socket.connect("tcp://%s:%d" % (ip, port))
+    
+    def update(self):
+        while True:
+            payload = self.socket.recv()
+            print("got", payload)
+            button, button_state, axis, axis_val = payload.split(' ')
+            self.button = (int)(button)
+            self.button_state = (int)(button_state)
+            self.axis = (int)(axis)
+            self.axis_val = (int)(axis_val)
+
+    def run_threaded(self):
+        pass
+
+    def poll(self):
+        return self.button, self.button_state, self.axis, self.axis_val 
 
 class JoystickController(object):
     '''
