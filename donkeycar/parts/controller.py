@@ -218,11 +218,69 @@ class PS4Joystick(Joystick):
             0x13c : 'PS',
         }
 
+class PS3JoystickPC(Joystick):
+    '''
+    An interface to a physical PS3 joystick available at /dev/input/js1
+    Seems to exhibit slightly different codes because driver is different?
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3JoystickPC, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x03 : 'right_stick_horz',
+            0x04 : 'right_stick_vert',
+
+            0x1a : 'tilt_x',
+            0x1b : 'tilt_y',
+            0x3d : 'tilt_a',
+            0x3c : 'tilt_b',
+
+            0x32 : 'L1_pressure',
+            0x33 : 'R1_pressure',
+            0x05 : 'R2_pressure',
+            0x02 : 'L2_pressure',
+
+            0x36 : 'cross_pressure',
+            0x35 : 'circle_pressure',
+            0x37 : 'square_pressure',
+            0x34 : 'triangle_pressure',
+
+            0x2d : 'dpad_r_pressure',
+            0x2e : 'dpad_d_pressure',
+            0x2c : 'dpad_u_pressure',
+        }
+        
+
+        self.button_names = {
+            0x13a : 'select',
+            0x13b : 'start',
+            0x13c : 'PS',
+
+            0x136 : 'L1',
+            0x137 : 'R1',
+            0x138 : 'L2',
+            0x139 : 'R2',
+            0x13d : 'L3',
+            0x13e : 'R3',
+	   
+            0x133 : "triangle", 
+            0x131 : "circle",
+            0x130 : "cross",
+            0x134 : 'square',
+
+            0x220 : 'dpad_up',
+            0x221 : 'dpad_down',
+            0x222 : 'dpad_left',
+            0x223 : 'dpad_right',
+        }
+
 class JoyStickPub(object):
     def __init__(self):
         import zmq
-        self.dev_fn='/dev/input/js0'
-        self.js = PS3Joystick(self.dev_fn)
+        self.dev_fn='/dev/input/js1'
+        self.js = PS3JoystickPC(self.dev_fn)
         self.js.init()
         port = 5556
         context = zmq.Context()
@@ -233,9 +291,16 @@ class JoyStickPub(object):
         while True:
             button, button_state, axis, axis_val = self.js.poll()
             if axis is not None or button is not None:
-                topic = 1
-                message_data = [button, button_state, axis, axis_val]
-                self.socket.send( "%d %d %d %d" % message_data)
+                if button is None:
+                    button  = "0"
+                    button_state = 0
+                if axis is None:
+                    axis = "0"
+                    axis_val = 0
+                #if "stick" in axis:
+                #    continue
+                message_data = (button, button_state, axis, axis_val)
+                self.socket.send_string( "%s %d %s %f" % message_data)
                 print("SENT", message_data)
 
 class JoyStickSub(object):
@@ -245,16 +310,21 @@ class JoyStickSub(object):
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB)
         self.socket.connect("tcp://%s:%d" % (ip, port))
-    
+        self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
+
     def update(self):
         while True:
-            payload = self.socket.recv()
+            payload = self.socket.recv().decode("utf-8")
             print("got", payload)
             button, button_state, axis, axis_val = payload.split(' ')
-            self.button = (int)(button)
+            self.button = button
             self.button_state = (int)(button_state)
-            self.axis = (int)(axis)
-            self.axis_val = (int)(axis_val)
+            self.axis = axis
+            self.axis_val = (float)(axis_val)
+            if self.button == "0":
+                self.button = None
+            if self.axis == "0":
+                self.axis = None
 
     def run_threaded(self):
         pass
@@ -565,8 +635,8 @@ class JoystickController(object):
         time.sleep(0.5)
 
 if __name__ == "__main__":
-    js = PS3Joystick()
-    js.init()
-    while True:
-        returns = js.poll()
-        print(returns)
+    '''
+    publish ps3 controller
+    '''
+    p = JoyStickPub()
+    p.run()
