@@ -95,6 +95,10 @@ class KerasCategorical(KerasPilot):
                   loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
         
     def run(self, img_arr):
+        if img_arr is None:
+            print('no image')
+            return 0.0, 0.0
+
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
         #in order to support older models with linear throttle,

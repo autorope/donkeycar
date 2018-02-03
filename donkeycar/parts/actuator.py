@@ -445,7 +445,7 @@ class L298N_HBridge_DC_Motor(object):
         
         self.speed = speed
         max_duty = 90 #I've read 90 is a good max
-        self.throttle = int(utils.map_range(speed, -1, 1, -max_duty, max_duty))
+        self.throttle = int(dk.utils.map_range(speed, -1, 1, -max_duty, max_duty))
         
         if self.throttle > 0:
             self.pwm.ChangeDutyCycle(self.throttle)
@@ -490,3 +490,51 @@ class TwoWheelSteeringThrottle(object):
         pass
 
 
+class Mini_HBridge_DC_Motor_PWM(object):
+    '''
+    Motor controlled with an mini hbridge from the gpio pins on Rpi
+    '''
+    def __init__(self, pin_forward, pin_backward):
+        import RPi.GPIO as GPIO
+        self.pin_forward = pin_forward
+        self.pin_backward = pin_backward
+        
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin_forward, GPIO.OUT)
+        GPIO.setup(self.pin_backward, GPIO.OUT)
+        
+        freq = 50 #HZ
+        self.pwm_f = GPIO.PWM(self.pin_forward, freq)
+        self.pwm_f.start(0)
+        self.pwm_b = GPIO.PWM(self.pin_backward, freq)
+        self.pwm_b.start(0)
+
+    def run(self, speed):
+        import RPi.GPIO as GPIO
+        '''
+        Update the speed of the motor where 1 is full forward and
+        -1 is full backwards.
+        '''
+        if speed > 1 or speed < -1:
+            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
+        
+        self.speed = speed
+        max_duty = 90 #I've read 90 is a good max
+        self.throttle = int(dk.utils.map_range(speed, -1, 1, -max_duty, max_duty))
+        
+        if self.throttle > 0:
+            self.pwm_f.ChangeDutyCycle(self.throttle)
+            self.pwm_b.ChangeDutyCycle(0)
+        elif self.throttle < 0:
+            self.pwm_f.ChangeDutyCycle(0)
+            self.pwm_b.ChangeDutyCycle(-self.throttle)
+        else:
+            self.pwm_f.ChangeDutyCycle(0)
+            self.pwm_b.ChangeDutyCycle(0)
+
+
+    def shutdown(self):
+        import RPi.GPIO as GPIO
+        self.pwm_f.stop()
+        self.pwm_b.stop()
+        GPIO.cleanup()
