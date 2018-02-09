@@ -419,7 +419,7 @@ class L298N_HBridge_DC_Motor(object):
     '''
     Motor controlled with an L298N hbridge from the gpio pins on Rpi
     '''
-    def __init__(self, pin_forward, pin_backward, pwm_pin):
+    def __init__(self, pin_forward, pin_backward, pwm_pin, freq = 50 #HZ):
         import RPi.GPIO as GPIO
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
@@ -429,8 +429,7 @@ class L298N_HBridge_DC_Motor(object):
         GPIO.setup(self.pin_forward, GPIO.OUT)
         GPIO.setup(self.pin_backward, GPIO.OUT)
         GPIO.setup(self.pwm_pin, GPIO.OUT)
-
-        freq = 50 #HZ
+        
         self.pwm = GPIO.PWM(self.pwm_pin, freq)
         self.pwm.start(0)
 
@@ -493,8 +492,12 @@ class TwoWheelSteeringThrottle(object):
 class Mini_HBridge_DC_Motor_PWM(object):
     '''
     Motor controlled with an mini hbridge from the gpio pins on Rpi
+    This can be using the L298N as above, but wired differently with only
+    two inputs and no enable line.
+    https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dtoys-and-games&field-keywords=Mini+Dual+DC+Motor+H-Bridge+Driver
+    https://www.aliexpress.com/item/5-pc-2-DC-Motor-Drive-Module-Reversing-PWM-Speed-Dual-H-Bridge-Stepper-Motor-Mini
     '''
-    def __init__(self, pin_forward, pin_backward):
+    def __init__(self, pin_forward, pin_backward, freq = 50 #HZ):
         import RPi.GPIO as GPIO
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
@@ -503,7 +506,6 @@ class Mini_HBridge_DC_Motor_PWM(object):
         GPIO.setup(self.pin_forward, GPIO.OUT)
         GPIO.setup(self.pin_backward, GPIO.OUT)
         
-        freq = 50 #HZ
         self.pwm_f = GPIO.PWM(self.pin_forward, freq)
         self.pwm_f.start(0)
         self.pwm_b = GPIO.PWM(self.pin_backward, freq)

@@ -18,7 +18,6 @@ import donkeycar as dk
 
 #import parts
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubHandler, TubGroup
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.imu import Mpu6050
@@ -176,10 +175,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     def led_cond(mode, recording, num_records, behavior_state):
-        '''
-        returns a blink rate. 0 for off. -1 for on. positive for rate.
-        '''
-
+        #returns a blink rate. 0 for off. -1 for on. positive for rate.
+        
         if num_records is not None and num_records % 10 == 0:
             print("recorded", num_records, "records")
 
@@ -260,20 +257,50 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
     
+    #Drive train setup
     
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-    steering = PWMSteering(controller=steering_controller,
-                                    left_pulse=cfg.STEERING_LEFT_PWM, 
-                                    right_pulse=cfg.STEERING_RIGHT_PWM)
+    if cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
+        from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
+
+        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        steering = PWMSteering(controller=steering_controller,
+                                        left_pulse=cfg.STEERING_LEFT_PWM, 
+                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+        
+        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        throttle = PWMThrottle(controller=throttle_controller,
+                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
+
+        V.add(steering, inputs=['angle'])
+        V.add(throttle, inputs=['throttle'])
     
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-    throttle = PWMThrottle(controller=throttle_controller,
-                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
+
+    elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
+        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
+        
+        steering = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT, cfg.HBRIDGE_PIN_RIGHT)
+        throttle = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
+
+        V.add(steering, inputs=['angle'])
+        V.add(throttle, inputs=['throttle'])
     
-    V.add(steering, inputs=['angle'])
-    V.add(throttle, inputs=['throttle'])
+
+    elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
+        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, Mini_HBridge_DC_Motor_PWM
+
+        left_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT_FWD, cfg.HBRIDGE_PIN_LEFT_BWD)
+        right_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_RIGHT_FWD, cfg.HBRIDGE_PIN_RIGHT_BWD)
+        two_wheel_control = TwoWheelSteeringThrottle()
+
+        V.add(two_wheel_control, 
+                inputs=['throttle', 'angle'],
+                outputs=['left_motor_speed', 'right_motor_speed'])
+
+        V.add(left_motor, inputs=['left_motor_speed'])
+        V.add(right_motor, inputs=['right_motor_speed'])
+    
     
     #add tub to save data
 
