@@ -276,75 +276,6 @@ class PS3JoystickPC(Joystick):
             0x223 : 'dpad_right',
         }
 
-class JoyStickPub(object):
-    '''
-    Use Zero Message Queue (zmq) to publish the control messages from a local joystick
-    '''
-    def __init__(self, port = 5556, dev_fn='/dev/input/js1'):
-        import zmq
-        self.dev_fn = dev_fn
-        self.js = PS3JoystickPC(self.dev_fn)
-        self.js.init()
-        context = zmq.Context()
-        self.socket = context.socket(zmq.PUB)
-        self.socket.bind("tcp://*:%d" % port)
-    
-    def run(self):
-        while True:
-            button, button_state, axis, axis_val = self.js.poll()
-            if axis is not None or button is not None:
-                if button is None:
-                    button  = "0"
-                    button_state = 0
-                if axis is None:
-                    axis = "0"
-                    axis_val = 0
-                message_data = (button, button_state, axis, axis_val)
-                self.socket.send_string( "%s %d %s %f" % message_data)
-                print("SENT", message_data)
-
-class JoyStickSub(object):
-    '''
-    Use Zero Message Queue (zmq) to subscribe to control messages from a remote joystick
-    '''
-    def __init__(self, ip, port = 5556):
-        import zmq
-        context = zmq.Context()
-        self.socket = context.socket(zmq.SUB)
-        self.socket.connect("tcp://%s:%d" % (ip, port))
-        self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
-        self.button = None
-        self.button_state = 0
-        self.axis = None
-        self.axis_val = 0.0
-        self.running = True
-
-    def shutdown(self):
-        self.running = False
-        time.sleep(0.1)
-
-    def update(self):
-        while self.running:
-            payload = self.socket.recv().decode("utf-8")
-            #print("got", payload)
-            button, button_state, axis, axis_val = payload.split(' ')
-            self.button = button
-            self.button_state = (int)(button_state)
-            self.axis = axis
-            self.axis_val = (float)(axis_val)
-            if self.button == "0":
-                self.button = None
-            if self.axis == "0":
-                self.axis = None
-
-    def run_threaded(self):
-        pass
-
-    def poll(self):
-        ret = (self.button, self.button_state, self.axis, self.axis_val)
-        self.button = None
-        self.axis = None
-        return ret
 
 class JoystickController(object):
     '''
@@ -647,6 +578,81 @@ class JoystickController(object):
         #set flag to exit polling thread, then wait a sec for it to leave
         self.running = False
         time.sleep(0.5)
+
+
+
+class JoyStickPub(object):
+    '''
+    Use Zero Message Queue (zmq) to publish the control messages from a local joystick
+    '''
+    def __init__(self, port = 5556, dev_fn='/dev/input/js1'):
+        import zmq
+        self.dev_fn = dev_fn
+        self.js = PS3JoystickPC(self.dev_fn)
+        self.js.init()
+        context = zmq.Context()
+        self.socket = context.socket(zmq.PUB)
+        self.socket.bind("tcp://*:%d" % port)
+    
+    def run(self):
+        while True:
+            button, button_state, axis, axis_val = self.js.poll()
+            if axis is not None or button is not None:
+                if button is None:
+                    button  = "0"
+                    button_state = 0
+                if axis is None:
+                    axis = "0"
+                    axis_val = 0
+                message_data = (button, button_state, axis, axis_val)
+                self.socket.send_string( "%s %d %s %f" % message_data)
+                print("SENT", message_data)
+
+
+
+class JoyStickSub(object):
+    '''
+    Use Zero Message Queue (zmq) to subscribe to control messages from a remote joystick
+    '''
+    def __init__(self, ip, port = 5556):
+        import zmq
+        context = zmq.Context()
+        self.socket = context.socket(zmq.SUB)
+        self.socket.connect("tcp://%s:%d" % (ip, port))
+        self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
+        self.button = None
+        self.button_state = 0
+        self.axis = None
+        self.axis_val = 0.0
+        self.running = True
+
+    def shutdown(self):
+        self.running = False
+        time.sleep(0.1)
+
+    def update(self):
+        while self.running:
+            payload = self.socket.recv().decode("utf-8")
+            #print("got", payload)
+            button, button_state, axis, axis_val = payload.split(' ')
+            self.button = button
+            self.button_state = (int)(button_state)
+            self.axis = axis
+            self.axis_val = (float)(axis_val)
+            if self.button == "0":
+                self.button = None
+            if self.axis == "0":
+                self.axis = None
+
+    def run_threaded(self):
+        pass
+
+    def poll(self):
+        ret = (self.button, self.button_state, self.axis, self.axis_val)
+        self.button = None
+        self.axis = None
+        return ret
+
 
 if __name__ == "__main__":
     '''
