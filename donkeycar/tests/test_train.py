@@ -3,7 +3,7 @@ import pytest
 import tempfile
 import os
 
-from donkeycar.templates.train import *
+from donkeycar.templates.train import multi_train
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 
@@ -29,4 +29,5 @@ def test_train_cat(tub, tub_path):
     transfer = None
     model_type = "categorical"
     continuous = False
-    multi_train(cfg, tub, model, transfer, model_type, continuous)
+    aug = False
+    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)

@@ -542,7 +542,4 @@ class Mini_HBridge_DC_Motor_PWM(object):
         import RPi.GPIO as GPIO
         self.pwm_f.stop()
         self.pwm_b.stop()
-        try:
-            GPIO.cleanup()
-        except:
-            pass
+        GPIO.cleanup()
