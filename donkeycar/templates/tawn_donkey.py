@@ -18,7 +18,6 @@ import donkeycar as dk
 
 #import parts
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.keras import KerasIMU, KerasCategorical, KerasBehavioral, KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubHandler, TubGroup
 from donkeycar.parts.controller import LocalWebController, JoystickController
@@ -84,13 +83,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     if model_type is None:
         model_type = "categorical"
-
-    stereo_cam = camera_type == "stereo"
     
     #Initialize car
     V = dk.vehicle.Vehicle()
 
-    if stereo_cam:
+    if camera_type == "stereo":
         from donkeycar.parts.camera import Webcam
 
         camA = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, iCam = 0)
@@ -100,6 +97,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(camB, outputs=['cam/image_array_b'], threaded=True)
 
         def stereo_pair(image_a, image_b):
+            '''
+            This will take the two images and combine them into a single image
+            One in red, the other in green, and diff in blue channel.
+            '''
             if image_a is not None and image_b is not None:
                 width, height, _ = image_a.shape
                 grey_a = dk.utils.rgb2gray(image_a)
@@ -128,6 +129,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam
             cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
+        elif cfg.CAMERA_TYPE == "CVCAM":
+            from donkeycar.parts.cv import CvCam
+            cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H)
             
         V.add(cam, outputs=['cam/image_array'], threaded=True)
         
@@ -136,7 +140,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #modify steering_scale lower than 1.0 to have less responsive steering
         ctr = JoystickController(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE,
+                                 controller_type=cfg.CONTROLLER_TYPE)
+
+        if cfg.USE_NETWORKED_JS:
+            from donkeycar.parts.controller import JoyStickSub
+            netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
+            V.add(netwkJs, threaded=True)
+            ctr.js = netwkJs
+
     else:        
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
@@ -210,35 +222,24 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         except:
             pass
 
-        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]  
     #IMU
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6)
         inputs=['cam/image_array',
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
     else:
-        if model_type == "linear":
-            kl = KerasLinear()
-        elif model_type == "3d":
-            kl = Keras3D_CNN(seq_length=cfg.SEQUENCE_LENGTH)
-        elif model_type == "rnn":
-            kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH)
-        else:
-            kl = KerasCategorical()
-
         inputs=['cam/image_array']
 
     if model_path:
+        kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path)
     
-    V.add(kl, inputs=inputs, 
-          outputs=['pilot/angle', 'pilot/throttle'],
-          run_condition='run_pilot')
-          
+        V.add(kl, inputs=inputs, 
+            outputs=['pilot/angle', 'pilot/throttle'],
+            run_condition='run_pilot')            
     
     #Choose what inputs should change the car.
     def drive_mode(mode, 
