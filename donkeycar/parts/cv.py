@@ -25,8 +25,8 @@ class ImgCanny():
 
 class ImgGaussianBlur():
 
-    def __init__(self, kernal_size=5):
-        self.kernal_size = kernal_size
+    def __init__(self, kernel_size=5):
+        self.kernel_size = kernel_size
         
     def run(self, img_arr):
         return cv2.GaussianBlur(img_arr, 
