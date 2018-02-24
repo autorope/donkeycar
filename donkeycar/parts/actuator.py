@@ -60,6 +60,7 @@ class JHat:
         self.set_pwm(self.channel, 0, pulse) 
 
     def set_pwm(self, channel, on, off):
+        #print("pulse", off)
         """Sets a single PWM channel."""
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
         
@@ -89,7 +90,10 @@ class JHatReader:
         h1 = self.pwm._device.readU8(self.register)
         #first byte of header must be 100, otherwize we might be reading
         #in the wrong byte offset
-        assert(h1 == 100)
+        while h1 != 100:
+            print("skipping to start of header")
+            h1 = self.pwm._device.readU8(self.register)
+        
         h2 = self.pwm._device.readU8(self.register)
         #h2 ignored now
 
@@ -100,8 +104,12 @@ class JHatReader:
         val_c = self.pwm._device.readU8(self.register)
         val_d = self.pwm._device.readU8(self.register)
         self.throttle = (val_d << 8) + val_c
+
+        #scale the values from -1 to 1
+        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
+        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
         
-        print(self.steering, self.throttle)
+        #print(self.steering, self.throttle)
 
     def update(self):
         while(self.running):
