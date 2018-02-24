@@ -548,7 +548,7 @@ class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
     '''
-    def __init__(self, pin, freq = 50, min=6.0, max=9.0):
+    def __init__(self, pin, freq = 50, min=5.0, max=7.8):
         import RPi.GPIO as GPIO
         self.pin = pin
         GPIO.setmode(GPIO.BOARD)
@@ -567,7 +567,7 @@ class RPi_GPIO_Servo(object):
         Y_range = Y_max - Y_min
         XY_ratio = X_range/Y_range
 
-        y = ((x-X_min) / XY_ratio + Y_min) // 1
+        y = ((x-X_min) / XY_ratio + Y_min)
 
         return y
 
@@ -578,8 +578,8 @@ class RPi_GPIO_Servo(object):
         -1 is full backwards.
         '''
         #I've read 90 is a good max
-        self.throttle = self.map_range(pulse, -1, 1, self.min, self.max)
-        print(self.throttle)
+        self.throttle = self.map_range(pulse, -1.0, 1.0, self.min, self.max)
+        #print(pulse, self.throttle)
         self.pwm.ChangeDutyCycle(self.throttle)
 
 
