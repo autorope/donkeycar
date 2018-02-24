@@ -543,3 +543,48 @@ class Mini_HBridge_DC_Motor_PWM(object):
         self.pwm_f.stop()
         self.pwm_b.stop()
         GPIO.cleanup()
+
+class RPi_GPIO_Servo(object):
+    '''
+    Servo controlled from the gpio pins on Rpi
+    '''
+    def __init__(self, pin, freq = 50, min=6.0, max=9.0):
+        import RPi.GPIO as GPIO
+        self.pin = pin
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin, GPIO.OUT)
+        
+        self.pwm = GPIO.PWM(self.pin, freq)
+        self.pwm.start(0)
+        self.min = min
+        self.max = max
+
+    def map_range(self, x, X_min, X_max, Y_min, Y_max):
+        ''' 
+        Linear mapping between two ranges of values 
+        '''
+        X_range = X_max - X_min
+        Y_range = Y_max - Y_min
+        XY_ratio = X_range/Y_range
+
+        y = ((x-X_min) / XY_ratio + Y_min) // 1
+
+        return y
+
+    def run(self, pulse):
+        import RPi.GPIO as GPIO
+        '''
+        Update the speed of the motor where 1 is full forward and
+        -1 is full backwards.
+        '''
+        #I've read 90 is a good max
+        self.throttle = self.map_range(pulse, -1, 1, self.min, self.max)
+        print(self.throttle)
+        self.pwm.ChangeDutyCycle(self.throttle)
+
+
+    def shutdown(self):
+        import RPi.GPIO as GPIO
+        self.pwm.stop()
+        GPIO.cleanup()
+
