@@ -18,7 +18,9 @@
 
 ## Overview
 
-These same instructions can be found in this [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/). The software has been updated since the article was published.  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.  Be sure to follow those instructions after you've built your car.
+These same instructions can be found in this [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/). The software has been updated since the article was published.  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
+
+There are alternate cars to the Magnet car below, find them here: [alternate cars](supported_cars.md)
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
@@ -45,7 +47,7 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 *These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.  
 
-**This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping. 
+**This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
 
 ***This is a maker project and it is always best to print the part, but if you don't have access to a printer, Try the DonkeyCar store where one of the original donkey team members will print one for you at a fraction of the cost of Shapeways.
 
@@ -53,7 +55,7 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 
 ### Optional Upgrades
-* **LiPo Battery and Accessories:** LiPo batteries have significantly better energy density and have a better dropoff curve.  See below (courtesy of Traxxas). 
+* **LiPo Battery and Accessories:** LiPo batteries have significantly better energy density and have a better dropoff curve.  See below (courtesy of Traxxas).
 
 ![donkey](../assets/build_hardware/traxxas.PNG)
 
@@ -69,7 +71,9 @@ These same instructions can be found in this [Make Magazine article](https://mak
 
 ## Hardware
 ### Step 1: Print Parts
-If you do not have a 3D Printer, you can order parts from Adam's [DonkeyCar Store](https://squareup.com/store/donkeycar) [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.  
+If you do not have a 3D Printer, you can order parts from Adam's [DonkeyCar Store](https://squareup.com/store/donkeycar) [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  One thing to note, if you buy from the Donkeycar store, all hardware is included which saves about $20.
+
+I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.  
 
 &nbsp;
 ### Step 2: Clean up parts
@@ -84,9 +88,9 @@ In particular, clean up the slots in the side of the roll bar, as shown in the p
 
 &nbsp;
 ### Step 3: Assemble Top plate and Roll Cage
-Slide the nut into the slot in the side of the roll cage.  This is not particularly easy.  You may need to clean out the hole again and use a small screwdriver to push the screw in such that it lines up with the hole in the bottom of the roll cage. 
+Slide the nut into the slot in the side of the roll cage.  This is not particularly easy.  You may need to clean out the hole again and use a small screwdriver to push the screw in such that it lines up with the hole in the bottom of the roll cage.
 
-![donkey](../assets/build_hardware/3a.PNG) 
+![donkey](../assets/build_hardware/3a.PNG)
 
 
 Once you have slid the nut in, you can attach the bottom plate.  Once again, this may be tricky.  I use the small screwdriver to push against the nut to keep it from spinning in the slot.  Good news: you should never have to do this again.
@@ -98,7 +102,7 @@ Once you have slid the nut in, you can attach the bottom plate.  Once again, thi
 You could do this after attaching the Raspberry Pi to the bottom plate, I just think it is easier to see the parts when they are laying on the workbench.  Connect the parts as you see below:
 
 ![donkey](../assets/build_hardware/4a.PNG)
-  
+
 For reference, below is the Raspberry Pi Pinout for reference.  You will notice we connect to 3.3v, the two I2C pins (SDA and SCL) and ground:
 
 ![donkey](../assets/build_hardware/4b.PNG)
@@ -130,7 +134,7 @@ The final steps are straightforward.  First attach the roll bar assembly to the 
 
 ![donkey](../assets/build_hardware/7a.PNG)
 
-Second run the servo cables up to the car.  The throttle cable runs to channel 0 on the servo controller and steering is channel 1. 
+Second run the servo cables up to the car.  The throttle cable runs to channel 0 on the servo controller and steering is channel 1.
 
 ![donkey](../assets/build_hardware/7b.PNG)
 
