@@ -140,16 +140,18 @@ class CalibrateCar(BaseCommand):
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
-        parser.add_argument('--channel', help='The channel youd like to calibrate [0-15]')
+        parser.add_argument('--pin1', help='Pin 1 [0-40]')
+        parser.add_argument('--pin2', help='Pin 2 [0-40]')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
     def run(self, args):
-        from donkeycar.parts.actuator import PCA9685
+        from donkeycar.parts.actuator import L239D
     
         args = self.parse_args(args)
-        channel = int(args.channel)
-        c = PCA9685(channel)
+        pin1 = int(args.pin1)
+        pin2 = int(args.pin2)
+        c = L239D(in1=pin1, in2=pin2)
         
         for i in range(10):
             pmw = int(input('Enter a PWM setting to test(0-1500)'))

@@ -26,7 +26,67 @@ class PCA9685:
 
     def run(self, pulse):
         self.set_pulse(pulse)
-        
+
+class L239D:
+    '''
+    PWM motor controler using L239D chip.
+    This is used for most RC Cars
+    '''
+    def __init__(self, in1=7, in2=11, frequency=20):
+        import RPi.GPIO as io
+        io.setmode(io.BOARD)
+        self.pin1 = in1
+        self.pin2 = in2
+        io.setup(self.pin1, io.OUT)
+        io.setup(self.pin2, io.OUT)
+        self.pwm1 = io.PWM(self.pin1, True)
+        self.pwm2 = io.PWM(self.pin2, True)
+        self.pwm1.ChangeFrequency(frequency)
+        self.pwm2.ChangeFrequency(frequency)
+        self.pwm1.start(0)
+        self.pwm2.start(0)
+
+    def set_pulse(self, pulse):
+        #set duty cycle of each pwm
+        dc1 = 0
+        dc2 = 0
+        if pulse < 750:
+            dc1 = ((750 - pulse) * 100) / float(750)
+        if pulse > 750:
+            dc2 = ((pulse - 750) * 100) / float(750)
+        self.pwm1.ChangeDutyCycle(dc1)
+        self.pwm2.ChangeDutyCycle(dc2)
+
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+class SAISteering:
+    """
+    Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
+    """
+    LEFT_ANGLE = -1
+    RIGHT_ANGLE = 1
+
+    def __init__(self, controller=None,
+                       left_pulse=290,
+                       right_pulse=490):
+
+        self.controller = controller
+        self.left_pulse = left_pulse
+        self.right_pulse = right_pulse
+
+
+    def run(self, angle):
+        #map absolute angle to angle that vehicle can implement.
+        pulse = dk.utils.map_range(angle,
+                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                self.left_pulse, self.right_pulse)
+
+        self.controller.set_pulse(pulse)
+
+    def shutdown(self):
+        self.run(0) #set steering straight
+
 class PWMSteering:
     """
     Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
@@ -319,3 +379,4 @@ class MockController(object):
 
     def shutdown(self):
         pass
+
