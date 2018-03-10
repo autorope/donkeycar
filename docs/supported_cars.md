@@ -1,5 +1,19 @@
 # Supported cars
 
+## If You Want to Roll Your Own
+It's totally possible to diverge from the main Donkey build, and still have a car that 
+drives well and is fun to work with. We've seen a large variety of cars in the various 
+Donkey competitions around the world.
+
+However, when you want to diverge, there are several things you need to know, or you 
+will not be successful. There are many cost and quality trade-offs where the lower 
+cost options simply won't work. We've already worked hard to find the cheapest 
+available options that will work, so you should not expect to choose other options to 
+save money. Rolling your own is more about learning, experimentation, and going to new 
+and uncharged places.
+
+To find out more about what you need, see [roll_your_own](roll_your_own.md).
+
 ## Magnet
 The magnet chassis is the standard Donkey build.  However in many cases it may not be available.  
 ![donkey](./assets/build_hardware/donkey2.PNG)
