@@ -26,6 +26,7 @@ pages:
         - 'donkey': utility/donkey.md
 
     - Supported Cars: supported_cars.md
+    - Roll Your Own: roll_your_own.md
     - Contribute : contribute.md
     - Tests : tests.md
     - Releases : release.md
