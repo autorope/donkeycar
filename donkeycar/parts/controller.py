@@ -112,6 +112,23 @@ class Joystick(object):
         return button, button_state, axis, axis_val
 
 
+class JoystickCreator(Joystick):
+    '''
+    A Helper class to create a new joystick mapping
+    '''
+    def __init__(self, *args, **kwargs):
+        super(JoystickCreator, self).__init__(*args, **kwargs)
+
+        self.axis_names = {}
+        self.button_names = {}
+
+    def poll(self):
+
+        button, button_state, axis, axis_val = super(JoystickCreator, self).poll()
+
+        return button, button_state, axis, axis_val
+
+
 class PS3Joystick(Joystick):
     '''
     An interface to a physical PS3 joystick available at /dev/input/js0
@@ -279,7 +296,12 @@ class PS3JoystickPC(Joystick):
 
 class JoystickController(object):
     '''
-    Joystick client using access to local physical input
+    JoystickController is a base class. You will not use this class directly,
+    but instantiate a flavor based on your joystick type. See classes following this.
+
+    Joystick client using access to local physical input. Maps button
+    presses into actions and takes action. Interacts with the Donkey part
+    framework.
     '''
 
     ES_IDLE = -1
@@ -293,8 +315,7 @@ class JoystickController(object):
                  steering_scale=1.0,
                  throttle_dir=-1.0,
                  dev_fn='/dev/input/js0',
-                 auto_record_on_throttle=True,
-                 controller_type='ps3'): #(ps3|ps4)
+                 auto_record_on_throttle=True):
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -312,73 +333,25 @@ class JoystickController(object):
         self.tub = None
         self.num_records_to_erase = 100
         self.estop_state = self.ES_IDLE
-        self.controller_type = controller_type
         
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
         self.axis_trigger_map = {}
-
-        if controller_type == 'ps3':
-            self.init_ps3_trigger_maps()
-        elif controller_type == 'ps4':
-            self.init_ps4_trigger_maps()
-        else:
-            raise(Exception("unknown controller type:" + controller_type))
+        self.init_trigger_maps()
 
     def init_js(self):
         '''
-        attempt to init joystick
+        Attempt to init joystick. Should be definied by derived class
+        Should return true on successfully created joystick object
         '''
-        try:
-            if self.controller_type == 'ps3':
-                self.js = PS3Joystick(self.dev_fn)
-            elif self.controller_type == 'ps4':
-                self.js = PS4Joystick(self.dev_fn)
-            self.js.init()
-        except FileNotFoundError:
-            print(self.dev_fn, "not found.")
-            self.js = None
-        return self.js is not None
+        raise(Exception("Subclass needs to define init_js"))
 
-    def init_ps3_trigger_maps(self):
+    def init_trigger_maps(self):
         '''
-        init set of mapping from buttons to function calls
+        Creating mapping of buttons to functions.
+        Should be definied by derived class
         '''
-
-        self.button_down_trigger_map = {
-            'select' : self.toggle_mode,
-            'circle' : self.toggle_manual_recording,
-            'triangle' : self.erase_last_N_records,
-            'cross' : self.emergency_stop,
-            'dpad_up' : self.increase_max_throttle,
-            'dpad_down' : self.decrease_max_throttle,
-            'start' : self.toggle_constant_throttle,
-        }
-
-        self.axis_trigger_map = {
-            'left_stick_horz' : self.set_steering,
-            'right_stick_vert' : self.set_throttle,
-        }
-
-    def init_ps4_trigger_maps(self):
-        '''
-        init set of mapping from buttons to function calls for ps4
-        '''
-
-        self.button_down_trigger_map = {
-            'share' : self.toggle_mode,
-            'circle' : self.toggle_manual_recording,
-            'triangle' : self.erase_last_N_records,
-            'cross' : self.emergency_stop,
-            'L1' : self.increase_max_throttle,
-            'R1' : self.decrease_max_throttle,
-            'options' : self.toggle_constant_throttle,
-        }
-
-        self.axis_trigger_map = {
-            'left_stick_horz' : self.set_steering,
-            'right_stick_vert' : self.set_throttle,
-        }
+        raise(Exception("init_trigger_maps"))
 
     def print_controls(self):
         '''
@@ -579,6 +552,117 @@ class JoystickController(object):
         self.running = False
         time.sleep(0.5)
 
+
+class JoystickCreatorController(JoystickController):
+    '''
+    A Controller object helps create a new controller object and mapping
+    '''
+    def __init__(self, *args, **kwargs):
+        super(JoystickCreatorController, self).__init__(*args, **kwargs)
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = JoystickCreator(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+        pass
+
+
+class PS3JoystickController(JoystickController):
+    '''
+    A Controller object that maps inputs to actions
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3JoystickController, self).__init__(*args, **kwargs)
+
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = PS3Joystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+
+        self.button_down_trigger_map = {
+            'select' : self.toggle_mode,
+            'circle' : self.toggle_manual_recording,
+            'triangle' : self.erase_last_N_records,
+            'cross' : self.emergency_stop,
+            'dpad_up' : self.increase_max_throttle,
+            'dpad_down' : self.decrease_max_throttle,
+            'start' : self.toggle_constant_throttle,
+        }
+
+        self.axis_trigger_map = {
+            'left_stick_horz' : self.set_steering,
+            'right_stick_vert' : self.set_throttle,
+        }
+
+
+
+class PS4JoystickController(JoystickController):
+    '''
+    A Controller object that maps inputs to actions
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS4JoystickController, self).__init__(*args, **kwargs)
+
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = PS4Joystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls for ps4
+        '''
+
+        self.button_down_trigger_map = {
+            'share' : self.toggle_mode,
+            'circle' : self.toggle_manual_recording,
+            'triangle' : self.erase_last_N_records,
+            'cross' : self.emergency_stop,
+            'L1' : self.increase_max_throttle,
+            'R1' : self.decrease_max_throttle,
+            'options' : self.toggle_constant_throttle,
+        }
+
+        self.axis_trigger_map = {
+            'left_stick_horz' : self.set_steering,
+            'right_stick_vert' : self.set_throttle,
+        }
 
 
 class JoyStickPub(object):
