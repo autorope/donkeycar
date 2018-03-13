@@ -1,0 +1,12 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: continuumio/miniconda3:latest
+    working_directory: ~/donkey
+    steps:
+      - checkout
+      - run: conda create -n donkey
+      - run: source activate donkey
+      - run: pip install -e .[dev]
+      - run: pytest

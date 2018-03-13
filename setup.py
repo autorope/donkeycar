@@ -43,13 +43,15 @@ setup(name='donkeycar',
                       'eventlet',
                       'moviepy',
                       'pandas',
+                      'tensorflow>=1.1'
                      ],
 
     extras_require={
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
-                        ]
+                        ],
+                    'dev': ['pytest']
                     },
     package_data={
         'donkeycar': extra_files, 
