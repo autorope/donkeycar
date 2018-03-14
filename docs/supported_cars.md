@@ -12,7 +12,7 @@ available options that will work, so you should not expect to choose other optio
 save money. Rolling your own is more about learning, experimentation, and going to new 
 and uncharged places.
 
-To find out more about what you need, see [roll_your_own](roll_your_own.md).
+To find out more about what you need, see [Roll Your Own](/roll_your_own.md).
 
 ## Magnet
 The magnet chassis is the standard Donkey build.  However in many cases it may not be available.  
