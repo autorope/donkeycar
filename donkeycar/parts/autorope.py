@@ -4,8 +4,7 @@ import requests
 from six.moves.urllib import parse
 import calendar
 import datetime
-import json
-import socket
+from donkeycar import utils
 def _api_encode(data):
     for key, value in data.items():
         if value is None:
@@ -33,23 +32,42 @@ def _encode_datetime(dttime):
     return int(utc_timestamp)
 
 
-class Autorope_Connection():
+class AutoropeSession():
 
-    api_base = 'http://rope.donkeycar.com/api/'
+    #api_base = 'https://rope.donkeycar.com/api/'
+    api_base = 'http://localhost:8000/api/'
 
-    def __init__(self, token, car_id):
+    def __init__(self, token, car_id, controller_url=None):
         self.auth_token=token
         self.car_id = car_id
         self.connected = False
 
-        car_ip = ([l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0])
+
+        try:
+            self.session_id = self.start_new_session(controller_url=controller_url)
+            print('started new autorope session {}'.format(self.session_id))
+        except Exception as e:
+            print('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
+            print(e)
+
+
+
+
+    def start_new_session(self, controller_url=None):
 
         resp = self.post_request('sessions/',
-                                          {'bot': self.car_id, 'controller_url': 'http://{}:8887'.format(car_ip)})
-
-        resp_js = resp.json()
-        self.session_id = resp_js.get('id')
-
+                                 {
+                                     'bot_name': self.car_id,
+                                     'controller_url': controller_url
+                                 }
+                                 )
+        if resp.status_code == 200:
+            resp_js = resp.json()
+            self.session_id = resp_js.get('id')
+            return self.session_id
+        else:
+            print(resp.text)
+            return None
 
 
     def update(self):

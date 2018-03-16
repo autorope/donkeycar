@@ -12,6 +12,8 @@ class Joystick():
     '''
     An interface to a physical joystick available at /dev/input
     '''
+    access_url = None #required to be consistent with web controller
+
     def __init__(self, dev_fn='/dev/input/js0'):
         self.axis_states = {}
         self.button_states = {}

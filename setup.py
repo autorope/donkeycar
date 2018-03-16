@@ -43,7 +43,7 @@ setup(name='donkeycar',
                       'eventlet',
                       'moviepy',
                       'pandas',
-                      'tensorflow>=1.1'
+                      'tensorflow==1.1'
                      ],
 
     extras_require={
