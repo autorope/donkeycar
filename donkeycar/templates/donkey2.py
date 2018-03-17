@@ -308,7 +308,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
-    elif type(ctr) is JoystickController:
+    elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
         ctr.set_tub(tub)

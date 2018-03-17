@@ -106,7 +106,7 @@ class KerasCategorical(KerasPilot):
         #binned version.
         N = len(throttle[0])
         if N > 0:
-            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=1.0)
         else:
             throttle = throttle[0][0]
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
