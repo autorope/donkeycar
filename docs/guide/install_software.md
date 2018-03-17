@@ -224,6 +224,12 @@ donkey createcar --path ~/d2
 
 * Start Terminal
 
+* If Xcode or gcc not installed - run the following command to install Command Line Tools for Xcode.
+
+```
+xcode-select --install
+```
+
 * Change to a dir you would like to use as the head of your projects.
 
 ```

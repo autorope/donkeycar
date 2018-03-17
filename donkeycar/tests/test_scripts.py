@@ -24,7 +24,6 @@ def test_createcar(cardir):
     out, err, proc_id = utils.run_shell_command(cmd)
     assert is_error(err) is False
 
-
 def test_drivesim(cardir):
     cmd = ['donkey', 'createcar', '--path', cardir ,'--template', 'square']
     out, err, proc_id = utils.run_shell_command(cmd, timeout=10)

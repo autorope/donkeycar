@@ -2,7 +2,7 @@
 ---------
 
 ### What types of RC cars work with the donkey platform?
-Yes. Most hobby grade RC cars will work fine with the electronics but you'll need to make your own baseplate and camera
+Most hobby grade RC cars will work fine with the electronics but you'll need to make your own baseplate and camera
 holder. To make sure the car will work with Donkey check theses things. 
 
 * it has a separate ESC and reciever. Some of the cheaper cars have these combined so it would require soldering to
@@ -10,11 +10,14 @@ connect the Donkey motor controller to the ESC.
 * The ESC uses three-wire connectors. This will make it easy to just plug into the Donkey hardware.
 * Brushed motors are easier because they can go slower but brushless motors can work as well. 
 
+For more information, see [Roll Your Own](/roll_your_own.md).
+
 ### What car can I use if I'm not in the USA?
 The easiest thing to do would be to take your parts down to your local RC / hobby shop and check that the car you want
 works with the parts. Here are some parts people have said work in other countries. 
 
-* Austrailia: [KAOS](https://www.hobbywarehouse.com.au/hsp-94186-18694k-kaos-blue-rc-truck.html) (functionally equivallent to the Exceed Magnet)
+* Austrailia: [KAOS](https://www.hobbywarehouse.com.au/hsp-94186-18694k-kaos-blue-rc-truck.html) (functionally equivalent to the Exceed Magnet)
+* China: [HSP 94186](https://item.taobao.com/item.htm?spm=a1z02.1.2016030118.d2016038.314a2de7XhDszO&id=27037536775&scm=1007.10157.81291.100200300000000&pvid=dd956496-2837-41c8-be44-ecbcf48f1eac) (functionally equivalent to the Exceed Magnet)
 * Add your country to this list (click edit this in top left corner)
 
 
