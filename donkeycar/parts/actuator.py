@@ -505,10 +505,14 @@ class Mini_HBridge_DC_Motor_PWM(object):
     https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dtoys-and-games&field-keywords=Mini+Dual+DC+Motor+H-Bridge+Driver
     https://www.aliexpress.com/item/5-pc-2-DC-Motor-Drive-Module-Reversing-PWM-Speed-Dual-H-Bridge-Stepper-Motor-Mini
     '''
-    def __init__(self, pin_forward, pin_backward, freq = 50):
+    def __init__(self, pin_forward, pin_backward, freq = 50, max_duty = 90):
+        '''
+        max_duy is from 0 to 100. I've read 90 is a good max.
+        '''
         import RPi.GPIO as GPIO
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
+        self.max_duty = max_duty
         
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pin_forward, GPIO.OUT)
@@ -532,8 +536,7 @@ class Mini_HBridge_DC_Motor_PWM(object):
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         
         self.speed = speed
-        max_duty = 90 #I've read 90 is a good max
-        self.throttle = int(dk.utils.map_range(speed, -1, 1, -max_duty, max_duty))
+        self.throttle = int(dk.utils.map_range(speed, -1, 1, -self.max_duty, self.max_duty))
         
         if self.throttle > 0:
             self.pwm_f.ChangeDutyCycle(self.throttle)
@@ -552,6 +555,18 @@ class Mini_HBridge_DC_Motor_PWM(object):
         self.pwm_b.stop()
         GPIO.cleanup()
 
+def map_frange(self, x, X_min, X_max, Y_min, Y_max):
+    ''' 
+    Linear mapping between two ranges of values 
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    return y
+    
 class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
@@ -567,18 +582,6 @@ class RPi_GPIO_Servo(object):
         self.min = min
         self.max = max
 
-    def map_range(self, x, X_min, X_max, Y_min, Y_max):
-        ''' 
-        Linear mapping between two ranges of values 
-        '''
-        X_range = X_max - X_min
-        Y_range = Y_max - Y_min
-        XY_ratio = X_range/Y_range
-
-        y = ((x-X_min) / XY_ratio + Y_min)
-
-        return y
-
     def run(self, pulse):
         import RPi.GPIO as GPIO
         '''
@@ -586,7 +589,7 @@ class RPi_GPIO_Servo(object):
         -1 is full backwards.
         '''
         #I've read 90 is a good max
-        self.throttle = self.map_range(pulse, -1.0, 1.0, self.min, self.max)
+        self.throttle = map_frange(pulse, -1.0, 1.0, self.min, self.max)
         #print(pulse, self.throttle)
         self.pwm.ChangeDutyCycle(self.throttle)
 
@@ -595,4 +598,42 @@ class RPi_GPIO_Servo(object):
         import RPi.GPIO as GPIO
         self.pwm.stop()
         GPIO.cleanup()
+
+
+class ServoBlaster(object):
+    '''
+    Servo controlled from the gpio pins on Rpi
+    This uses a user space service to generate more efficient PWM via DMA control blocks.
+    Check readme and install here:
+    https://github.com/richardghirst/PiBits/tree/master/ServoBlaster
+    cd PiBits/ServoBlaster/user
+    make
+    sudo ./servod
+    will start the daemon and create the needed device file:
+    /dev/servoblaster
+
+    to test this from the command line:
+    echo P1-16=120 > /dev/servoblaster
+
+    will send 1200us PWM pulse to physical pin 16 on the pi.
+
+    If you want it to start on boot:
+    sudo make install
+    '''
+    def __init__(self, pin):
+        self.pin = pin
+        self.servoblaster = open('/dev/servoblaster', 'w')
+        self.min = min
+        self.max = max
+
+    def set_pulse(self, pulse):
+        s = 'P1-%d=%d\n' % (self.pin, pulse)
+        self.servoblaster.write(s)
+        self.servoblaster.flush()
+
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+    def shutdown(self):
+        self.servoblaster.close()
 
