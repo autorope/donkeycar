@@ -34,8 +34,8 @@ def _encode_datetime(dttime):
 
 class AutoropeSession():
 
-    #api_base = 'https://rope.donkeycar.com/api/'
-    api_base = 'http://localhost:8000/api/'
+    api_base = 'https://rope.donkeycar.com/api/'
+    #api_base = 'http://localhost:8000/api/'
 
     def __init__(self, token, car_id, controller_url=None):
         self.auth_token=token
