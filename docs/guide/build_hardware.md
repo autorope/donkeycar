@@ -18,9 +18,10 @@
 
 ## Overview
 
-These same instructions can be found in this [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/). The software has been updated since the article was published.  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
+These are updated instructions from the 2017 article  [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
 
-There are alternate cars to the Magnet car below, find them here: [alternate cars](supported_cars.md)
+## Choosing a Car
+While the simplest path is to use the Magnet chassis which is best documented, however, the Magnet is often out of stock or may be undesirable for other reasons.  The second best car is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handles rough driving surfaces well and is inexpensive.  For more detail and other options, follow the link to: [supported cars](supported_cars.md)  
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
@@ -28,31 +29,30 @@ There are alternate cars to the Magnet car below, find them here: [alternate car
 
 ## Parts Needed:
 
+Below is list of the parts needed to make a Donkey based on the Magnet.  If you want to build the Exceed Desert Monster, details are provided at [supported cars](supported_cars.md).  Some of these parts are only sold in large quantities or are hard to get, so we have offered them in the [Donkey Store](https://squareup.com/store/donkeycar) for less money and more conveniently.
+
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
-| Magnet Car                                                                          | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)                                         | $92              |
-| M2x6 screws (4)                                                                     | [mcmaster.com/#91292a831/=177k4rp](https://www.mcmaster.com/#91292a831/=177k4rp)                                          | $6.38 *          |
-| M2.5x12 screws (8)                                                                  | [mcmaster.com/#91292a016/=177k574](https://www.mcmaster.com/#91292a016/=177k574)                                          | $4.80 *          |
-| M2.5 nuts (8)                                                                       | [mcmaster.com/#91828a113/=177k7ex](https://www.mcmaster.com/#91828a113/=177k7ex)                                          | $5.64 *          |
-| M2.5 washers (8)                                                                    | [mcmaster.com/#93475a196/=177k7x6](https://www.mcmaster.com/#93475a196/=177k7x6)                                          | $1.58 *          |
-| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [amazon.com/gp/product/B00P7N0320](http://amzn.to/2tvVZvg)                                          | $17              |
+| Magnet Car or alternative                                                                        | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)                                         | $92              |
+| M2x6 screws (4)                                                                     | [mcmaster.com/#91292a831/=177k4rp](https://www.mcmaster.com/#91292a831/=177k4rp)                                          | $6.38 &ast;          |
+| M2.5x12 screws (8)                                                                  | [mcmaster.com/#91292a016/=177k574](https://www.mcmaster.com/#91292a016/=177k574)                                          | $4.80 &ast;          |
+| M2.5 nuts (8)                                                                       | [mcmaster.com/#91828a113/=177k7ex](https://www.mcmaster.com/#91828a113/=177k7ex)                                          | $5.64 &ast;          |
+| M2.5 washers (8)                                                                    | [mcmaster.com/#93475a196/=177k7x6](https://www.mcmaster.com/#93475a196/=177k7x6)                                          | $1.58 &ast;          |
+| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
 | Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
 | MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
 | Wide Angle Raspberry Pi Camera                                                      | [amazon.com/gp/product/B00N1YJKFS](https://www.amazon.com/gp/product/B00N1YJKFS?tag=donkeycar-20)                                         | $25              |
-| Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 *             |
-| Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 **           |
-| 3D Printed roll cage and top plate.                                                 | Purchase: [Adam's Store](https://squareup.com/store/donkeycar) Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | $45 ***                |
+| Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 &ast;             |
+| Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 &ast;&ast;           |
+| 3D Printed roll cage and top plate.                                                 | Purchase: [Donkey Store](https://squareup.com/store/donkeycar) Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | $45 &ast;&ast;&ast;                |
 
 
 
+&ast; These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.  
 
-*These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.  
+&ast;&ast; This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
 
-**This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
-<<<<<<< HEAD
-=======
-***If you have a printer or have access to one, print the part.  If you are in the US 48 states, You can buy one from Adam  (one of the original donkey creators) and he will print and ship to you at a fraction of the cost of Shapeways.
->>>>>>> upstream/master
+&ast;&ast;&ast; If you have a printer or have access to one, print the part.  If you are in the US, You can buy one from Adam  (one of the original donkey creators) and he will print and ship to you at a fraction of the cost of Shapeways.
 
 
 &nbsp;
@@ -75,17 +75,11 @@ There are alternate cars to the Magnet car below, find them here: [alternate car
 
 ## Hardware
 ### Step 1: Print Parts
-<<<<<<< HEAD
-If you do not have a 3D Printer, you can order parts from Adam's [DonkeyCar Store](https://squareup.com/store/donkeycar) [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  One thing to note, if you buy from the Donkeycar store, all hardware is included which saves about $20.
-
-I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.  
-=======
 
 If you do not have a 3D Printer, you can order parts from [Adam's Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   
 
 I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.  
 
->>>>>>> upstream/master
 
 &nbsp;
 ### Step 2: Clean up parts
