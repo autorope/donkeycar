@@ -335,7 +335,23 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         V.add(left_motor, inputs=['left_motor_speed'])
         V.add(right_motor, inputs=['right_motor_speed'])
-    
+
+    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
+        from donkeycar.parts.actuator import ServoBlaster, PWMSteering
+        steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
+        #PWM pulse values should be in the range of 100 to 200
+        assert(cfg.STEERING_LEFT_PWM <= 200)
+        assert(cfg.STEERING_RIGHT_PWM <= 200)
+        steering = PWMSteering(controller=steering_controller,
+                                        left_pulse=cfg.STEERING_LEFT_PWM, 
+                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+       
+
+        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
+        motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
+
+        V.add(steering, inputs=['angle'])
+        V.add(motor, inputs=["throttle"])
     
     #add tub to save data
 
