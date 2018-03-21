@@ -15,6 +15,12 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
+#pi information
+PI_USERNAME = "pi"
+PI_PASSWD = "raspberry"
+PI_HOSTNAME = "raspberrypi.local"
+PI_DONKEY_ROOT = "/home/pi/d2"
+
 #PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
@@ -74,6 +80,7 @@ PRINT_MODEL_SUMMARY = True      #print layers and weights to stdout
 OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
 LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
+SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
 
 #model transfer options
 FREEZE_LAYERS = False

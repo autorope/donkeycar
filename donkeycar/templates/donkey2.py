@@ -12,6 +12,7 @@ Options:
     --js          Use physical joystick.
 """
 import os
+import time
 from docopt import docopt
 
 import donkeycar as dk
@@ -209,9 +210,64 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     else:
         inputs=['cam/image_array']
 
-    if model_path:
-        kl = dk.utils.get_model_by_type(model_type, cfg)
+    def load_model(kl, model_path):
+        start = time.time()
+        print('loading model', model_path)
         kl.load(model_path)
+        print('finished loading in %s sec.' % (str(time.time() - start)) )
+
+    def load_weights(kl, weights_path):
+        start = time.time()
+        print('loading model weights', weights_path)
+        kl.model.load_weights(weights_path)
+        print('finished loading in %s sec.' % (str(time.time() - start)) )
+
+    def load_model_json(kl, json_fnm):
+        start = time.time()
+        print('loading model json', json_fnm)
+        import keras
+        with open(json_fnm, 'r') as handle:
+            contents = handle.read()
+            kl.model = keras.models.model_from_json(contents)
+        print('finished loading json in %s sec.' % (str(time.time() - start)) )
+
+    if model_path:
+        #When we have a model, first create an appropriate Keras part
+        kl = dk.utils.get_model_by_type(model_type, cfg)
+
+        if '.h5' in model_path:
+            #when we have a .h5 extension
+            #load everything from the model file
+            load_model(kl, model_path)
+
+            def reload_model(filename):
+                print(filename, "was changed!")
+                load_model(kl, filename)
+
+            from file_watcher import FileWatcher
+            fw_part = FileWatcher(model_path, reload_model, wait_for_write_stop=10.0)
+            V.add(fw_part)
+
+        elif '.json' in model_path:
+            #when we have a .json extension
+            #load the model from their and look for a matching
+            #.wts file with just weights
+            load_model_json(kl, model_path)
+            weights_path = model_path.replace('.json', '.weights')
+            load_weights(kl, weights_path)
+
+            def reload_weights(filename):
+                print(filename, "was changed!")
+                weights_path = filename.replace('.json', '.weights')
+                load_weights(kl, weights_path)
+
+            from donkeycar.parts.file_watcher import FileWatcher
+            fw_part = FileWatcher(model_path, reload_weights, wait_for_write_stop=1.0)
+            V.add(fw_part)
+
+        else:
+            #previous default behavior
+            load_model(kl, model_path)
     
         V.add(kl, inputs=inputs, 
             outputs=['pilot/angle', 'pilot/throttle'],

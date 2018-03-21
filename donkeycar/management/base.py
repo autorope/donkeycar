@@ -318,10 +318,11 @@ class TubCheck(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
         parser.add_argument('--fix', action='store_true', help='remove problem records')
+        parser.add_argument('--delete_empty', action='store_true', help='delete tub dir with no records')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
-    def check(self, tub_paths, fix=False):
+    def check(self, tub_paths, fix=False, delete_empty=False):
         '''
         Check for any problems. Looks at tubs and find problems in any records or images that won't open.
         If fix is True, then delete images and records that cause problems.
@@ -330,10 +331,14 @@ class TubCheck(BaseCommand):
 
         for tub in tubs:
             tub.check(fix=fix)
+            if delete_empty and tub.get_num_records() == 0:
+                import shutil
+                print("removing empty tub", tub.path)
+                shutil.rmtree(tub.path)
 
     def run(self, args):
         args = self.parse_args(args)
-        self.check(args.tubs, args.fix)
+        self.check(args.tubs, args.fix, args.delete_empty)
 
 
 class ShowHistogram(BaseCommand):
