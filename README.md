@@ -1,6 +1,6 @@
 # donkeycar: a python self driving library 
 
-Tests: [![CircleCI](https://circleci.com/gh/wroscoe/donkey.svg?style=svg)](https://circleci.com/gh/wroscoe/donkey)
+[![CircleCI](https://circleci.com/gh/wroscoe/donkey.svg?style=svg)](https://circleci.com/gh/wroscoe/donkey)
 
 Donkeycar is minimalist and modular self driving library for Python. It is 
 developed for hobbiests and students with a focus on allowing fast experimentation and easy 
@@ -20,7 +20,8 @@ community contributions.
 * Log sensor data. (images, user inputs, sensor readings) 
 * Drive your car via a web or game controler.
 * Leverage community contributed driving data.
-* Use existing hardware CAD designs for upgrades.
+* Use existing harsupport
+supportdware CAD designs for upgrades.
 
 ### Getting driving. 
 After building a Donkey2 you can turn on your car and go to http://localhost:8887 to drive.
