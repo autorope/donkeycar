@@ -21,7 +21,8 @@
 These are updated instructions from the 2017 article  [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
 
 ## Choosing a Car
-While the simplest path is to use the Magnet chassis which is best documented, however, the Magnet is often out of stock or may be undesirable for other reasons.  The second best car is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handles rough driving surfaces well and is inexpensive.  For more detail and other options, follow the link to: [supported cars](supported_cars.md)  
+While the simplest path is to use the Magnet chassis which is best documented, however, the Magnet is often out of stock or may be undesirable for other reasons.  The second best car is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handles rough driving surfaces well and is inexpensive.
+For more detail and other options, follow the link to: [supported cars](/supported_cars.md)
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
@@ -29,7 +30,8 @@ While the simplest path is to use the Magnet chassis which is best documented, h
 
 ## Parts Needed:
 
-Below is list of the parts needed to make a Donkey based on the Magnet.  If you want to build the Exceed Desert Monster, details are provided at [supported cars](supported_cars.md).  Some of these parts are only sold in large quantities or are hard to get, so we have offered them in the [Donkey Store](https://squareup.com/store/donkeycar) for less money and more conveniently.
+Below is list of the parts needed to make a Donkey based on the Magnet.  If you want to build the Exceed Desert Monster,
+details are provided at [supported cars](/supported_cars.md).  Some of these parts are only sold in large quantities or are hard to get, so we have offered them in the [Donkey Store](https://squareup.com/store/donkeycar) for less money and more conveniently.
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
