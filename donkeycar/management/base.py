@@ -380,6 +380,7 @@ class ConSync(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='consync', usage='%(prog)s [options]')
         parser.add_argument('--dir', default='./cont_data/', help='paths to tubs')
+        parser.add_argument('--delete', default='y', help='remove files locally that were deleted remotely y=yes n=no')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -387,24 +388,27 @@ class ConSync(BaseCommand):
         args = self.parse_args(args)
         cfg = load_config('config.py')
         dest_dir = args.dir
+        del_arg = ""
 
-        reply = input('WARNING:this rsync operation will delete data in the target dir: %s. ok to proceeed? [y/N]: ' % dest_dir)
+        if args.delete == 'y':
+            reply = input('WARNING:this rsync operation will delete data in the target dir: %s. ok to proceeed? [y/N]: ' % dest_dir)
 
-        if reply != 'y' and reply != "Y":
-            return
+            if reply != 'y' and reply != "Y":
+                return
+            del_arg = "--delete"
 
         if not dest_dir[-1] == '/' and not dest_dir[-1] == '\\':
             print("Desination dir should end with a /")
             return
 
         try:
-            os.mkdir('cont_data')
+            os.mkdir(dest_dir)
         except:
             pass
 
         while True:
-            command = "rsync -aW --progress %s@%s:%s/data/ %s --delete" %\
-                (cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT, dest_dir)
+            command = "rsync -aW --progress %s@%s:%s/data/ %s %s" %\
+                (cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT, dest_dir, del_arg)
 
             os.system(command)
             time.sleep(5)
