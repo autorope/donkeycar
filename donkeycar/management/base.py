@@ -372,6 +372,70 @@ class ShowHistogram(BaseCommand):
         self.show_histogram(args.tub, args.record)
 
 
+class ConSync(BaseCommand):
+    '''
+    continuously rsync data
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='consync', usage='%(prog)s [options]')
+        parser.add_argument('--dir', default='./cont_data/', help='paths to tubs')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        cfg = load_config('config.py')
+        dest_dir = args.dir
+
+        reply = input('WARNING:this rsync operation will delete data in the target dir: %s. ok to proceeed? [y/N]: ' % dest_dir)
+
+        if reply != 'y' and reply != "Y":
+            return
+
+        if not dest_dir[-1] == '/' and not dest_dir[-1] == '\\':
+            print("Desination dir should end with a /")
+            return
+
+        try:
+            os.mkdir('cont_data')
+        except:
+            pass
+
+        while True:
+            command = "rsync -aW --progress %s@%s:%s/data/ %s --delete" %\
+                (cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT, dest_dir)
+
+            os.system(command)
+            time.sleep(5)
+
+class ConTrain(BaseCommand):
+    '''
+    continuously train data
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='contrain', usage='%(prog)s [options]')
+        parser.add_argument('--tub', default='./cont_data/*', help='paths to tubs')
+        parser.add_argument('--send_best', action="store_true", help='send best model to pi')
+        parser.add_argument('--model', default='./models/drive.h5', help='path to model')
+        parser.add_argument('--transfer', default=None, help='path to transfer model')
+        parser.add_argument('--type', default='categorical', help='type of model (linear|categorical|rnn|imu|behavior|3d)')
+        parser.add_argument('--aug', action="store_true", help='perform image augmentation')        
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        cfg = load_config('config.py')
+        cfg.SEND_BEST_MODEL_TO_PI = args.send_best is True
+        import sys
+        sys.path.append('.')
+        from train import multi_train
+        continuous = True
+        multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
+
+
 class ShowPredictionPlots(BaseCommand):
 
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
@@ -737,13 +801,14 @@ def execute_from_command_line():
             'makemovie': MakeMovie,
             'sim': Sim,
             'createjs': CreateJoystick,
+            'consync': ConSync,
+            'contrain': ConTrain,
                 }
     
     args = sys.argv[:]
-    command_text = args[1]
-    
-    if command_text in commands.keys():
-        command = commands[command_text]
+
+    if len(args) > 1 and args[1] in commands.keys():
+        command = commands[args[1]]
         c = command()
         c.run(args[2:])
     else:
