@@ -36,14 +36,13 @@ setup(name='donkeycar',
                       'docopt',
                       'tornado==4.5.3',
                       'requests',
-                      'keras==2.0.8',
                       'h5py',
                       'python-socketio',
                       'flask',
                       'eventlet',
                       'moviepy',
                       'pandas',
-                      'tensorflow>=1.1'
+                      'tensorflow>=1.5'
                      ],
 
     extras_require={
