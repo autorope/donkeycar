@@ -79,3 +79,5 @@ sudo apt-get purge lib*-dev
 sudo apt-get install libatlas-base-dev libtiff5 libopenjp2-7-dev
 
 
+#install redis-server (1 min)
+sudo apt install redis-server
