@@ -3,6 +3,7 @@
 import array
 import time
 import struct
+import random
 from threading import Thread
 
 #import for syntactical ease
@@ -22,7 +23,14 @@ class Joystick(object):
 
 
     def init(self):
-        from fcntl import ioctl
+        try:
+            from fcntl import ioctl
+        except ModuleNotFoundError:
+            self.num_axes = 0
+            self.num_buttons = 0
+            print("no support for fnctl module. joystick not enabled.")
+            return            
+            
         '''
         call once to setup connection to device and map buttons
         '''
@@ -85,6 +93,9 @@ class Joystick(object):
         button_state = None
         axis = None
         axis_val = None
+
+        if self.jsdev is None:
+            return button, button_state, axis, axis_val
 
         # Main event loop
         evbuf = self.jsdev.read(8)
@@ -336,6 +347,7 @@ class JoystickController(object):
         self.tub = None
         self.num_records_to_erase = 100
         self.estop_state = self.ES_IDLE
+        self.chaos_monkey_steering = None
         
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
@@ -521,6 +533,15 @@ class JoystickController(object):
             self.mode = 'user'
         print('new mode:', self.mode)
 
+    def chaos_monkey_on_left(self):
+        self.chaos_monkey_steering = random.uniform(-1.0, -0.1)
+
+    def chaos_monkey_on_right(self):
+        self.chaos_monkey_steering = random.uniform(1.0, 0.1)
+
+    def chaos_monkey_off(self):
+        self.chaos_monkey_steering = None
+
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
 
@@ -543,6 +564,9 @@ class JoystickController(object):
                 if self.throttle >= 0.0:
                     self.estop_state = self.ES_IDLE
                 return 0.0, self.throttle, self.mode, False
+
+        if self.chaos_monkey_steering is not None:
+            return self.chaos_monkey_steering, self.throttle, self.mode, False
 
         return self.angle, self.throttle, self.mode, self.recording
 
@@ -617,6 +641,13 @@ class PS3JoystickController(JoystickController):
             'dpad_up' : self.increase_max_throttle,
             'dpad_down' : self.decrease_max_throttle,
             'start' : self.toggle_constant_throttle,
+            "R1" : self.chaos_monkey_on_right,
+            "L1" : self.chaos_monkey_on_left,
+        }
+
+        self.button_up_trigger_map = {
+            "R1" : self.chaos_monkey_off,
+            "L1" : self.chaos_monkey_off,
         }
 
         self.axis_trigger_map = {
