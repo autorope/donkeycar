@@ -4,7 +4,7 @@ Scripts to train a keras model using tensorflow.
 Uses the data written by the donkey v2.2 tub writer,
 but faster training with proper sampling of distribution over tubs. 
 Has settings for continuous training that will look for new files as it trains. 
-Modify send_model_to_pi is you wish continuous training to update your pi as it builds.
+Modify on_best_model if you wish continuous training to update your pi as it builds.
 You can drop this in your ~/d2 dir.
 Basic usage should feel familiar: python train.py --model models/mypilot
 You might need to do a: pip install scikit-learn
@@ -166,16 +166,38 @@ def collate_records(records, gen_records, opts):
         gen_records[key] = sample
 
 
+def save_json_and_weights(model, filename):
+    '''
+    given a keras model and a .h5 filename, save the model file
+    in the json format and the weights file in the h5 format
+    '''
+    if not '.h5' == filename[-3:]:
+        raise Exception("Model filename should end with .h5")
+
+    arch = model.to_json()
+    json_fnm = filename[:-2] + "json"
+    weights_fnm = filename[:-2] + "weights"
+
+    with open(json_fnm, "w") as outfile:
+        parsed = json.loads(arch)
+        arch_pretty = json.dumps(parsed, indent=4, sort_keys=True)
+        outfile.write(arch_pretty)
+
+    model.save_weights(weights_fnm)
+    return json_fnm, weights_fnm
+
+
 class MyCPCallback(keras.callbacks.ModelCheckpoint):
     '''
     custom callback to interact with best val loss during continuous training
     '''
 
-    def __init__(self, send_model_cb=None, *args, **kwargs):
+    def __init__(self, send_model_cb=None, cfg=None, *args, **kwargs):
         super(MyCPCallback, self).__init__(*args, **kwargs)
         self.reset_best_end_of_epoch = False
         self.send_model_cb = send_model_cb
         self.last_modified_time = None
+        self.cfg = cfg
 
     def reset_best(self):
         self.reset_best_end_of_epoch = True
@@ -192,7 +214,7 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
                 last_modified_time = os.path.getmtime(filepath)
                 if self.last_modified_time is None or self.last_modified_time < last_modified_time:
                     self.last_modified_time = last_modified_time
-                    self.send_model_cb(filepath)
+                    self.send_model_cb(self.cfg, self.model, filepath)
 
         '''
         when reset best is set, we want to make sure to run an entire epoch
@@ -203,12 +225,74 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
             self.best = np.Inf
         
 
-def send_model_to_pi(model_filename):
-    #print('sending model to the pi')
-    #command = 'scp %s tkramer@pi.local:~/d2/models/contin_train.h5' % model_filename
-    #res = os.system(command)
-    #print("result:", res)
-    pass
+def on_best_model(cfg, model, model_filename):
+    #Save json and weights file too
+    json_fnm, weights_fnm = save_json_and_weights(model, model_filename)
+
+    if not cfg.SEND_BEST_MODEL_TO_PI:
+        return
+
+    on_windows = os.name == 'nt'
+
+    #If we wish, send the best model to the pi.
+    #On mac or linux we have scp:
+    if not on_windows:
+        print('sending model to the pi')
+        
+        command = 'scp %s %s@%s:~/%s/models/;' % (weights_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+        command += 'scp %s %s@%s:~/%s/models/;' % (json_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+        command += 'scp %s %s@%s:~/%s/models/;' % (model_filename, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+    
+        print("sending", command)
+        res = os.system(command)
+        print(res)
+
+    else: #yes, we are on windows machine
+
+    #On windoz no scp. In oder to use this you must first setup
+    #an ftp daemon on the pi. ie. sudo apt-get install vsftpd
+    #and then make sure you enable write permissions in the conf
+        try:
+            import paramiko
+        except:
+            raise Exception("first install paramiko: pip install paramiko")
+
+        host = cfg.PI_HOSTNAME
+        username = cfg.PI_USERNAME
+        password = cfg.PI_PASSWD
+        server = host
+        files = []
+
+        localpath = weights_fnm
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, weights_fnm.replace('\\', '/'))
+        files.append((localpath, remotepath))
+
+        localpath = json_fnm
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, json_fnm.replace('\\', '/'))
+        files.append((localpath, remotepath))
+
+        localpath = model_filename
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, model_filename.replace('\\', '/'))
+        files.append((localpath, remotepath))
+
+        print("sending", files)
+
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
+            ssh.connect(server, username=username, password=password)
+            sftp = ssh.open_sftp()
+        
+            for localpath, remotepath in files:
+                sftp.put(localpath, remotepath)
+
+            sftp.close()
+            ssh.close()
+            print("send succeded")
+        except:
+            print("send failed")
+    
 
 def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
     '''
@@ -364,12 +448,13 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     model_path = os.path.expanduser(model_name)
 
     #checkpoint to save model after each epoch and send best to the pi.
-    save_best = MyCPCallback(send_model_cb=send_model_to_pi,
+    save_best = MyCPCallback(send_model_cb=on_best_model,
                                     filepath=model_path,
                                     monitor='val_loss', 
                                     verbose=verbose, 
                                     save_best_only=True, 
-                                    mode='min')
+                                    mode='min',
+                                    cfg=cfg)
 
     #stop training if the validation error stops improving.
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
@@ -414,7 +499,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
     callbacks_list = [save_best]
 
-    if cfg.USE_EARLY_STOP:
+    if cfg.USE_EARLY_STOP and not continuous:
         callbacks_list.append(early_stop)
     
     history = kl.model.fit_generator(

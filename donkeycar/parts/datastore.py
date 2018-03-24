@@ -160,9 +160,16 @@ class Tub(object):
         if exists:
             #load log and meta
             #print("Tub exists: {}".format(self.path))
-            with open(self.meta_path, 'r') as f:
-                self.meta = json.load(f)
-            self.current_ix = self.get_last_ix() + 1
+            try:
+                with open(self.meta_path, 'r') as f:
+                    self.meta = json.load(f)
+            except FileNotFoundError:
+                self.meta = {'inputs': [], 'types': []}
+
+            try:
+                self.current_ix = self.get_last_ix() + 1
+            except ValueError:
+                self.current_ix = 0
 
         elif not exists and inputs:
             print('Tub does NOT exist. Creating new tub...')
@@ -183,7 +190,7 @@ class Tub(object):
 
 
     def get_last_ix(self):
-        index = self.get_index()
+        index = self.get_index()           
         return max(index)
 
     def update_df(self):

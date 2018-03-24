@@ -318,10 +318,11 @@ class TubCheck(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
         parser.add_argument('--fix', action='store_true', help='remove problem records')
+        parser.add_argument('--delete_empty', action='store_true', help='delete tub dir with no records')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
-    def check(self, tub_paths, fix=False):
+    def check(self, tub_paths, fix=False, delete_empty=False):
         '''
         Check for any problems. Looks at tubs and find problems in any records or images that won't open.
         If fix is True, then delete images and records that cause problems.
@@ -330,10 +331,14 @@ class TubCheck(BaseCommand):
 
         for tub in tubs:
             tub.check(fix=fix)
+            if delete_empty and tub.get_num_records() == 0:
+                import shutil
+                print("removing empty tub", tub.path)
+                shutil.rmtree(tub.path)
 
     def run(self, args):
         args = self.parse_args(args)
-        self.check(args.tubs, args.fix)
+        self.check(args.tubs, args.fix, args.delete_empty)
 
 
 class ShowHistogram(BaseCommand):
@@ -365,6 +370,74 @@ class ShowHistogram(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         self.show_histogram(args.tub, args.record)
+
+
+class ConSync(BaseCommand):
+    '''
+    continuously rsync data
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='consync', usage='%(prog)s [options]')
+        parser.add_argument('--dir', default='./cont_data/', help='paths to tubs')
+        parser.add_argument('--delete', default='y', help='remove files locally that were deleted remotely y=yes n=no')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        cfg = load_config('config.py')
+        dest_dir = args.dir
+        del_arg = ""
+
+        if args.delete == 'y':
+            reply = input('WARNING:this rsync operation will delete data in the target dir: %s. ok to proceeed? [y/N]: ' % dest_dir)
+
+            if reply != 'y' and reply != "Y":
+                return
+            del_arg = "--delete"
+
+        if not dest_dir[-1] == '/' and not dest_dir[-1] == '\\':
+            print("Desination dir should end with a /")
+            return
+
+        try:
+            os.mkdir(dest_dir)
+        except:
+            pass
+
+        while True:
+            command = "rsync -aW --progress %s@%s:%s/data/ %s %s" %\
+                (cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT, dest_dir, del_arg)
+
+            os.system(command)
+            time.sleep(5)
+
+class ConTrain(BaseCommand):
+    '''
+    continuously train data
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='contrain', usage='%(prog)s [options]')
+        parser.add_argument('--tub', default='./cont_data/*', help='paths to tubs')
+        parser.add_argument('--send_best', action="store_true", help='send best model to pi')
+        parser.add_argument('--model', default='./models/drive.h5', help='path to model')
+        parser.add_argument('--transfer', default=None, help='path to transfer model')
+        parser.add_argument('--type', default='categorical', help='type of model (linear|categorical|rnn|imu|behavior|3d)')
+        parser.add_argument('--aug', action="store_true", help='perform image augmentation')        
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        cfg = load_config('config.py')
+        cfg.SEND_BEST_MODEL_TO_PI = args.send_best is True
+        import sys
+        sys.path.append('.')
+        from train import multi_train
+        continuous = True
+        multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
 
 
 class ShowPredictionPlots(BaseCommand):
@@ -732,13 +805,14 @@ def execute_from_command_line():
             'makemovie': MakeMovie,
             'sim': Sim,
             'createjs': CreateJoystick,
+            'consync': ConSync,
+            'contrain': ConTrain,
                 }
     
     args = sys.argv[:]
-    command_text = args[1]
-    
-    if command_text in commands.keys():
-        command = commands[command_text]
+
+    if len(args) > 1 and args[1] in commands.keys():
+        command = commands[args[1]]
         c = command()
         c.run(args[2:])
     else:
