@@ -24,8 +24,12 @@ from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
 
+from donkeycar.parts.autorope import AutoropeSession
 
 def drive(cfg, model_path=None):
+
+
+
     V = dk.vehicle.Vehicle()
     #initialize values
     V.mem.put(['square/angle', 'square/throttle'], (100,100))  
@@ -107,7 +111,9 @@ def drive(cfg, model_path=None):
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
-    
+
+    rope_session = AutoropeSession(cfg.ROPE_TOKEN, cfg.ROPE_BOT_NAME, controller_url=ctr.access_url)
+
     #run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)
     
