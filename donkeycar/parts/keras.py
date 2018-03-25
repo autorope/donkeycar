@@ -14,7 +14,11 @@ models to help direct the vehicles motion.
 
 import os
 import numpy as np
-from tensorflow import keras
+
+from tensorflow.python.keras.layers import Input, Dense, concatenate
+from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D, Lambda
 
 import donkeycar as dk
 
@@ -146,10 +150,6 @@ class KerasIMU(KerasPilot):
 
 
 def default_categorical():
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
     
     img_in = Input(shape=(120, 160, 3), name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
@@ -183,10 +183,6 @@ def default_categorical():
 
 
 def default_linear():
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
     
     img_in = Input(shape=(120,160,3), name='img_in')
     x = img_in
@@ -220,10 +216,6 @@ def default_linear():
 
 
 def default_n_linear(num_outputs):
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     
     img_in = Input(shape=(120,160,3), name='img_in')
     x = img_in
@@ -261,12 +253,6 @@ def default_imu(num_outputs, num_imu_inputs):
     Notes: this model depends on concatenate which failed on keras < 2.0.8
     '''
 
-    from keras.layers import Input, Dense
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
-    from keras.layers.merge import concatenate
-    
     img_in = Input(shape=(120,160,3), name='img_in')
     imu_in = Input(shape=(num_imu_inputs,), name="imu_in")
     
