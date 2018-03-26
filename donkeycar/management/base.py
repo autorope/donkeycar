@@ -421,7 +421,6 @@ class ConTrain(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='contrain', usage='%(prog)s [options]')
         parser.add_argument('--tub', default='./cont_data/*', help='paths to tubs')
-        parser.add_argument('--send_best', action="store_true", help='send best model to pi')
         parser.add_argument('--model', default='./models/drive.h5', help='path to model')
         parser.add_argument('--transfer', default=None, help='path to transfer model')
         parser.add_argument('--type', default='categorical', help='type of model (linear|categorical|rnn|imu|behavior|3d)')
@@ -432,7 +431,6 @@ class ConTrain(BaseCommand):
     def run(self, args):
         args = self.parse_args(args)
         cfg = load_config('config.py')
-        cfg.SEND_BEST_MODEL_TO_PI = args.send_best is True
         import sys
         sys.path.append('.')
         from train import multi_train
