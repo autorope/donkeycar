@@ -1,5 +1,5 @@
 # Manually make sure the camera and I2C are enabled.
-sudo rasp-config
+sudo raspi-config
 
 
 #standard updates (5 min)
