@@ -17,6 +17,9 @@ other calibrated Donkey2. This way you'll be able to share pilots and
 datasets between each car. 
 
 
+>You will need to ssh into your Pi to do the calibration.
+
+
 ## Steering Calibration
 
 > Make sure your car is off the ground to prevent a runaway situation.
