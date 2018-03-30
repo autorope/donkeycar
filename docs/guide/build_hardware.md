@@ -20,7 +20,7 @@
 
 These are updated instructions from the 2017 article  [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
 
-## Choosing a Supported Car
+## Choosing a Car
 To get up and going with close to zero trial and error, use one of the supported cars.  The most common car is the Magnet, however, the Magnet is often out of stock.  The second choice is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.  For more detail and other options, check out the [supported cars](supported_cars.md) page
 
 ![donkey](../assets/build_hardware/donkey.PNG)
@@ -32,7 +32,7 @@ Alternatively If you know RC or need something the standard Donkey does not supp
 ## Parts Needed:
 
 ### Option 1: Simple path using the Donkey Store (US shipments only)
-The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  Also it is worth noting The design of the parts out of the Donkey store is slightly different than the standard build as it uses better parts that are only available in quantities or are harder to get.  The Donkey Store builds are open source like all others.  The Donkey Store is run by the original founders of donkey car and all profits are used to fund development of the donkey cars.  
+The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  Also it is worth noting The design of the parts out of the Donkey store is slightly improved over the standard build as it uses better parts that are only available in quantities or are harder to get.  The Donkey Store builds are open source like all others.  The Donkey Store is run by the original founders of donkey car and all profits are used to fund development of the donkey cars.  
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
@@ -154,6 +154,7 @@ It is easy to put the camera cable in the wrong way so look at these photos and 
 
 &nbsp;
 ### Step 7: Put it all together
+*** Note if you have a Desert Monster Chassis see 7B section below ***
 The final steps are straightforward.  First attach the roll bar assembly to the car.  This is done using the same pins that came with the vehicle.  
 
 ![donkey](../assets/build_hardware/7a.PNG)
@@ -162,10 +163,15 @@ Second run the servo cables up to the car.  The throttle cable runs to channel 0
 
 ![donkey](../assets/build_hardware/7b.PNG)
 
-
 Now you are done with the hardware!!
 
+### Step 7b: Attach Adapters (Desert Monster only)
 
+The Desert monster does not have the same set up for holding the body on the car and needs two adapters mentioned above.  To attach the adapters you must first remove the existing adapter from the chassis and screw on the custom adapter with the same screws as is shown in this photo:
+
+![adapter](../assets/build_hardware/Desert_Monster_adapter.PNG)
+
+Once this is done, go back to step 7
 
 &nbsp;
 ## Software
