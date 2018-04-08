@@ -126,7 +126,11 @@ Attach the USB battery to the underside of the printed bottom plate using cable 
 
 &nbsp;
 ### Step 6: Attach Camera
-Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on.  It is only necessary to put two screws in.  Before using the car, remove the plastic film from the camera lens.
+Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on. It is only necessary to put two screws in. 
+
+>Sometimes using the two top screw holes can result in a short. Put screws in the bottom two holes.
+
+Before using the car, remove the plastic film from the camera lens.
 
 ![donkey](../assets/build_hardware/6a.PNG)
 
