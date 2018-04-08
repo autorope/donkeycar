@@ -23,6 +23,7 @@ from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.time import Timestamp
 
 from donkeycar.parts.autorope import AutoropeSession
 
@@ -31,9 +32,8 @@ def drive(cfg, model_path=None):
 
 
     V = dk.vehicle.Vehicle()
-    #initialize values
-    V.mem.put(['square/angle', 'square/throttle'], (100,100))  
-    
+    V.mem.put(['square/angle', 'square/throttle'], (100, 100))
+
     #display square box given by cooridantes.
     cam = SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, 
@@ -88,24 +88,28 @@ def drive(cfg, model_path=None):
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
     
+    clock = Timestamp()
+    V.add(clock, outputs=['timestamp'])
+
     
-    
-    #transform angle and throttle values to coordinate values
+    # transform angle and throttle values to coordinate values
     f = lambda x : int(x * 100 + 100)
     l = Lambda(f)
     V.add(l, inputs=['user/angle'], outputs=['square/angle'])
     V.add(l, inputs=['user/throttle'], outputs=['square/throttle'])
     
-    #add tub to save data
+    # add tub to save data
     inputs=['cam/image_array',
             'user/angle', 'user/throttle', 
             'pilot/angle', 'pilot/throttle', 
             'square/angle', 'square/throttle',
-            'user/mode']
+            'user/mode',
+            'timestamp']
     types=['image_array',
            'float', 'float',  
            'float', 'float', 
            'float', 'float',
+           'str',
            'str']
     
     th = TubHandler(path=cfg.DATA_PATH)
@@ -114,7 +118,7 @@ def drive(cfg, model_path=None):
 
     rope_session = AutoropeSession(cfg.ROPE_TOKEN, cfg.ROPE_BOT_NAME, controller_url=ctr.access_url)
 
-    #run the vehicle for 20 seconds
+    # run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)
     
     

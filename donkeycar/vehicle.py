@@ -21,7 +21,6 @@ class Vehicle():
         self.on = True
         self.threads = []
 
-
     def add(self, part, inputs=[], outputs=[], 
             threaded=False, run_condition=None):
         """
@@ -31,7 +30,7 @@ class Vehicle():
         ----------
             inputs : list
                 Channel names to get from memory.
-            ouputs : list
+            outputs : list
                 Channel names to save to memory.
             threaded : boolean
                 If a part should be run in a separate thread.
@@ -39,7 +38,7 @@ class Vehicle():
 
         p = part
         print('Adding part {}.'.format(p.__class__.__name__))
-        entry={}
+        entry = dict()
         entry['part'] = p
         entry['inputs'] = inputs
         entry['outputs'] = outputs
@@ -49,9 +48,7 @@ class Vehicle():
             t = Thread(target=part.update, args=())
             t.daemon = True
             entry['thread'] = t
-
         self.parts.append(entry)
-
 
     def start(self, rate_hz=10, max_loop_count=None):
         """
@@ -78,10 +75,10 @@ class Vehicle():
 
             for entry in self.parts:
                 if entry.get('thread'):
-                    #start the update thread
+                    # start the update thread
                     entry.get('thread').start()
 
-            #wait until the parts warm up.
+            # wait until the parts warm up.
             print('Starting vehicle...')
             time.sleep(1)
 
@@ -92,7 +89,7 @@ class Vehicle():
 
                 self.update_parts()
 
-                #stop drive loop if loop_count exceeds max_loopcount
+                # stop drive loop if loop_count exceeds max_loopcount
                 if max_loop_count and loop_count > max_loop_count:
                     self.on = False
 
@@ -105,35 +102,32 @@ class Vehicle():
         finally:
             self.stop()
 
-
     def update_parts(self):
-        '''
+        """
         loop over all parts
-        '''
+        """
         for entry in self.parts:
-            #don't run if there is a run condition that is False
+            # don't run if there is a run condition that is False
             run = True
             if entry.get('run_condition'):
                 run_condition = entry.get('run_condition')
                 run = self.mem.get([run_condition])[0]
-                #print('run_condition', entry['part'], entry.get('run_condition'), run)
+                # print('run_condition', entry['part'], entry.get('run_condition'), run)
             
             if run:
                 p = entry['part']
-                #get inputs from memory
+                # get inputs from memory
                 inputs = self.mem.get(entry['inputs'])
 
-                #run the part
+                # run the part
                 if entry.get('thread'):
                     outputs = p.run_threaded(*inputs)
                 else:
                     outputs = p.run(*inputs)
 
-                #save the output to memory
+                # save the output to memory
                 if outputs is not None:
                     self.mem.put(entry['outputs'], outputs)
-
-                    
 
     def stop(self):
         print('Shutting down vehicle and its parts...')
