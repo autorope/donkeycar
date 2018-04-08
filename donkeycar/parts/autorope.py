@@ -34,27 +34,27 @@ def _encode_datetime(dttime):
 
 class AutoropeSession():
 
-    api_base = 'https://rope.donkeycar.com/api/'
-    #api_base = 'http://localhost:8000/api/'
+    def __init__(self,
+                 token,
+                 car_id,
+                 controller_url=None,
+                 api_base='https://rope.donkeycar.com/api/'):
 
-    def __init__(self, token, car_id, controller_url=None):
-        self.auth_token=token
+        self.auth_token = token
         self.car_id = car_id
         self.connected = False
+        self.api_base = api_base
 
-
+    """
         try:
             self.session_id = self.start_new_session(controller_url=controller_url)
             print('started new autorope session {}'.format(self.session_id))
         except Exception as e:
             print('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
             print(e)
-
-
-
-
+    """
+    
     def start_new_session(self, controller_url=None):
-
         resp = self.post_request('sessions/',
                                  {
                                      'bot_name': self.car_id,
@@ -69,7 +69,6 @@ class AutoropeSession():
             print(resp.text)
             return None
 
-
     def update(self):
         self.measurements = self.lidar.iter_measurments(500)
         for new_scan, quality, angle, distance in self.measurements:
@@ -81,17 +80,14 @@ class AutoropeSession():
     def run_threaded(self):
         return self.frame
 
-
     def _build_headers(self, headers={}):
 
         auth_header = {'Authorization': 'Token {}'.format(self.auth_token)}
         headers.update(auth_header)
         return headers
 
-
     def get_request(self, url, params={}, supplied_headers={}, format='json'):
-
-        #combine default params and given params
+        # combine default params and given params
         params_all = {}
         params_all.update(params)
 
@@ -99,7 +95,7 @@ class AutoropeSession():
         encoded_params = parse.urlencode(list(_api_encode(params_all)))
         abs_url = _build_api_url(abs_url, encoded_params)
 
-        #print('abs_url: {}'.format(abs_url))
+        # print('abs_url: {}'.format(abs_url))
         headers = self._build_headers(supplied_headers)
 
         print(headers)
