@@ -45,15 +45,14 @@ class AutoropeSession():
         self.connected = False
         self.api_base = api_base
 
-    """
         try:
             self.session_id = self.start_new_session(controller_url=controller_url)
             print('started new autorope session {}'.format(self.session_id))
         except Exception as e:
             print('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
             print(e)
-    """
-    
+
+
     def start_new_session(self, controller_url=None):
         resp = self.post_request('sessions/',
                                  {
