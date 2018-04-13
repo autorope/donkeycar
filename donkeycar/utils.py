@@ -370,7 +370,7 @@ def get_model_by_type(model_type, cfg):
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
 
-    if model_type == "behavior":
+    if model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
     elif model_type == "imu":
         kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        

@@ -105,6 +105,7 @@ class KerasCategorical(KerasPilot):
         #we will test for shape of throttle to see if it's the newer
         #binned version.
         N = len(throttle[0])
+        
         if N > 0:
             throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
         else:
@@ -182,9 +183,9 @@ class KerasBehavioral(KerasPilot):
     A Keras part that take an image and Behavior vector as input,
     outputs steering and throttle
     '''
-    def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2 , *args, **kwargs):
+    def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasBehavioral, self).__init__(*args, **kwargs)
-        self.model = default_bhv(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs)
+        self.model = default_bhv(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs, input_shape=input_shape)
         self.compile()
 
     def compile(self):
@@ -194,10 +195,18 @@ class KerasBehavioral(KerasPilot):
     def run(self, img_arr, state_array):        
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1,len(state_array))
-        outputs = self.model.predict([img_arr, bhv_arr])
-        steering = outputs[0]
-        throttle = outputs[1]
-        return steering[0][0], throttle[0][0]
+        angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
+        #in order to support older models with linear throttle,
+        #we will test for shape of throttle to see if it's the newer
+        #binned version.
+        N = len(throttle[0])
+        
+        if N > 0:
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
+        else:
+            throttle = throttle[0][0]
+        angle_unbinned = dk.utils.linear_unbin(angle_binned)
+        return angle_unbinned, throttle
 
 
 def default_categorical(input_shape=(120, 160, 3)):
@@ -362,17 +371,18 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     y = Dense(num_bvh_inputs * 2, activation='relu')(y)
     
     z = concatenate([x, y])
-    z = Dense(50, activation='relu')(z)
+    z = Dense(100, activation='relu')(z)
     z = Dropout(.1)(z)
     z = Dense(50, activation='relu')(z)
     z = Dropout(.1)(z)
-
-    outputs = [] 
     
-    for i in range(num_outputs):
-        outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
+  #categorical output of the angle
+    angle_out = Dense(15, activation='softmax', name='angle_out')(z)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
+    
+    #continous output of throttle
+    throttle_out = Dense(20, activation='softmax', name='throttle_out')(z)      # Reduce to 1 number, Positive number only
         
-    model = Model(inputs=[img_in, bvh_in], outputs=outputs)
+    model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out])
     
     return model
 
