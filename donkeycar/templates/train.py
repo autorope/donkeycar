@@ -489,6 +489,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     val_steps = 10
     print('steps_per_epoch', steps_per_epoch)
 
+    if steps_per_epoch < 2:
+        raise Exception("Too little data to train. Please record more records.")
+
     if continuous:
         epochs = 100000
     else:
@@ -682,6 +685,9 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     print('train: %d, validation: %d' %(total_train, total_val))
     steps_per_epoch = total_train // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
+
+    if steps_per_epoch < 2:
+        raise Exception("Too little data to train. Please record more records.")
 
     kl.train(train_gen, 
         val_gen, 
