@@ -6,6 +6,7 @@ Created on Sun Jun 25 11:07:48 2017
 @author: wroscoe
 """
 
+
 class Memory:
     """
     A convenience class to save key/value pairs.
@@ -43,8 +44,6 @@ class Memory:
         else:
             self.d[keys[0]] = inputs
 
-            
-            
     def get(self, keys):
         result = [self.d.get(k) for k in keys]
         return result

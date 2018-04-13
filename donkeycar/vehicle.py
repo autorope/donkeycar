@@ -9,6 +9,9 @@ Created on Sun Jun 25 10:44:24 2017
 import time
 from threading import Thread
 from .memory import Memory
+from .logs import get_logger
+
+logger = get_logger(__name__)
 
 
 class Vehicle():
@@ -34,10 +37,12 @@ class Vehicle():
                 Channel names to save to memory.
             threaded : boolean
                 If a part should be run in a separate thread.
+            run_condition: boolean
+                If a part should be run at all.
         """
 
         p = part
-        print('Adding part {}.'.format(p.__class__.__name__))
+        logger.info('Adding part {}.'.format(p.__class__.__name__))
         entry = dict()
         entry['part'] = p
         entry['inputs'] = inputs
@@ -70,7 +75,6 @@ class Vehicle():
         """
 
         try:
-
             self.on = True
 
             for entry in self.parts:
@@ -79,7 +83,7 @@ class Vehicle():
                     entry.get('thread').start()
 
             # wait until the parts warm up.
-            print('Starting vehicle...')
+            logger.info('Starting vehicle...')
             time.sleep(1)
 
             loop_count = 0
@@ -130,10 +134,9 @@ class Vehicle():
                     self.mem.put(entry['outputs'], outputs)
 
     def stop(self):
-        print('Shutting down vehicle and its parts...')
+        logger.info('Shutting down vehicle and its parts...')
         for entry in self.parts:
             try:
                 entry['part'].shutdown()
             except Exception as e:
-                print(e)
-        print(self.mem.d)
+                logger.debug(e)

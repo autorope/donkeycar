@@ -11,12 +11,15 @@ import time
 import json
 import datetime
 import random
-import glob
+
 import numpy as np
 import pandas as pd
-
 from PIL import Image
+
 from donkeycar import utils
+from ..log import get_logger
+
+logger = get_logger(__name__)
 
 
 
@@ -39,7 +42,7 @@ class Tub(object):
     def __init__(self, path, inputs=None, types=None):
 
         self.path = os.path.expanduser(path)
-        print('path_in_tub:', self.path)
+        logger.info('path_in_tub: {}'.format(self.path))
         self.meta_path = os.path.join(self.path, 'meta.json')
         self.df = None
 
@@ -47,20 +50,20 @@ class Tub(object):
 
         if exists:
             # load log and meta
-            print("Tub exists: {}".format(self.path))
+            self.info("Tub exists: {}".format(self.path))
             with open(self.meta_path, 'r') as f:
                 self.meta = json.load(f)
             self.current_ix = self.get_last_ix() + 1
 
         elif not exists and inputs:
-            print('Tub does NOT exist. Creating new tub...')
+            logger.info('Tub does NOT exist. Creating new tub...')
             # create log and save meta
             os.makedirs(self.path)
             self.meta = {'inputs': inputs, 'types': types}
             with open(self.meta_path, 'w') as f:
                 json.dump(self.meta, f)
             self.current_ix = 0
-            print('New tub created at: {}'.format(self.path))
+            logger.info('New tub created at: {}'.format(self.path))
         else:
             msg = "The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types)" + \
                   "to create a new tub. Please check your tub path or provide meta info to create a new tub."
@@ -84,7 +87,7 @@ class Tub(object):
 
     def get_index(self, shuffled=True):
         files = next(os.walk(self.path))[2]
-        record_files = [f for f in files if f[:6]=='record']
+        record_files = [f for f in files if f[:6] == 'record']
         
         def get_file_ix(file_name):
             try:
@@ -122,11 +125,11 @@ class Tub(object):
             with open(path, 'w') as fp:
                 json.dump(json_data, fp)
         except TypeError:
-            print('troubles with record:', json_data)
+            logger.warn('troubles with record:', json_data)
         except FileNotFoundError:
             raise
         except:
-            print("Unexpected error:", sys.exc_info()[0])
+            logger.error("Unexpected error:", sys.exc_info()[0])
             raise
 
     def get_num_records(self):
@@ -149,8 +152,8 @@ class Tub(object):
         Iterate over all records and make sure we can load them.
         Optionally remove records that cause a problem.
         """
-        print('Checking tub:%s.' % self.path)
-        print('Found: %d records.' % self.get_num_records())
+        logger.info('Checking tub:%s.' % self.path)
+        logger.info('Found: %d records.' % self.get_num_records())
         problems = False
         for ix in self.get_index(shuffled=False):
             try:
@@ -158,12 +161,12 @@ class Tub(object):
             except:
                 problems = True
                 if fix == False:
-                    print('problems with record:', self.path, ix)
+                    logger.warning('problems with record:', self.path, ix)
                 else:
-                    print('problems with record, removing:', self.path, ix)
+                    logger.warning('problems with record, removing:', self.path, ix)
                     self.remove_record(ix)
         if not problems:
-            print("No problems found.")
+            logger.info("No problems found.")
 
     def remove_record(self, ix):
         """
@@ -218,7 +221,7 @@ class Tub(object):
         except FileNotFoundError:
             raise
         except:
-            print("Unexpected error:", sys.exc_info()[0])
+            logger.error("Unexpected error:", sys.exc_info()[0])
             raise
 
         record_dict = self.make_record_paths_absolute(json_data)
@@ -520,7 +523,7 @@ class TubTimeStacker(TubImageStacker):
 class TubGroup(Tub):
     def __init__(self, tub_paths_arg):
         tub_paths = utils.expand_path_arg(tub_paths_arg)
-        print('TubGroup:tubpaths:', tub_paths)
+        logger.info('TubGroup:tubpaths:', tub_paths)
         tubs = [Tub(path) for path in tub_paths]
         self.input_types = {}
 
@@ -530,7 +533,7 @@ class TubGroup(Tub):
             record_count += len(t.df)
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
-        print('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
+        logger.info('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
                                                                                          int(record_count / 300000)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
@@ -542,14 +545,12 @@ class TubGroup(Tub):
 import sqlite3
 
 
-class SQLiteTub():
+class SQLiteTub:
     def __init__(self, path, channel_schema, serializer):
-
         self.channel_schema = channel_schema
         self.channels = [c['name'] for c in channel_schema]
         self.types = [c['type'] for c in channel_schema]
         self.serializer = serializer
-
         self.record_cols = ['id', 'timestamp', 'active'] + self.channels
 
         self.db = sqlite3.connect(path, detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES)
@@ -679,7 +680,7 @@ class SQLiteTub():
 import pickle
 
 
-class TypeRegistry():
+class TypeRegistry:
     def __init__(self):
         self.reg = {}
         self._load_defaults()

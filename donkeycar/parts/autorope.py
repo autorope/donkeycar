@@ -4,7 +4,12 @@ import requests
 from six.moves.urllib import parse
 import calendar
 import datetime
-from donkeycar import utils
+
+from ..log import get_logger
+
+logger = get_logger(__name__)
+
+
 def _api_encode(data):
     for key, value in data.items():
         if value is None:
@@ -47,11 +52,10 @@ class AutoropeSession():
 
         try:
             self.session_id = self.start_new_session(controller_url=controller_url)
-            print('started new autorope session {}'.format(self.session_id))
+            logger.info('started new autorope session {}'.format(self.session_id))
         except Exception as e:
-            print('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
-            print(e)
-
+            logger.info('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
+            logger.info(e)
 
     def start_new_session(self, controller_url=None):
         resp = self.post_request('sessions/',
@@ -65,7 +69,7 @@ class AutoropeSession():
             self.session_id = resp_js.get('id')
             return self.session_id
         else:
-            print(resp.text)
+            logger.info(resp.text)
             return None
 
     def update(self):
@@ -94,11 +98,11 @@ class AutoropeSession():
         encoded_params = parse.urlencode(list(_api_encode(params_all)))
         abs_url = _build_api_url(abs_url, encoded_params)
 
-        # print('abs_url: {}'.format(abs_url))
+        # logger.info('abs_url: {}'.format(abs_url))
         headers = self._build_headers(supplied_headers)
 
-        print(headers)
-        print(abs_url)
+        logger.info(headers)
+        logger.info(abs_url)
         resp = requests.get(abs_url, headers=headers)
         if format == 'json':
             return resp
@@ -121,6 +125,6 @@ class AutoropeSession():
         encoded_params = parse.urlencode(list(_api_encode(params or {})))
         abs_url = _build_api_url(abs_url, encoded_params)
         headers = self._build_headers(supplied_headers)
-        print(abs_url)
+        logger.info(abs_url)
         resp = requests.post(abs_url, json=data, headers=headers, files=files)
         return resp
