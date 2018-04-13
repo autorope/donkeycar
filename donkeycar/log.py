@@ -2,9 +2,10 @@ import os
 import logging.config
 
 
-def setup_logging():
+def setup(log_file_path=None):
 
-    log_file_path = os.path.expanduser('~/donkey.log')
+    if log_file_path is None:
+        log_file_path = os.path.expanduser('~/donkey.log')
 
     config_default = {
         "version": 1,
@@ -23,7 +24,7 @@ def setup_logging():
             },
             "error_file_handler": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "level": "ERROR",
+                "level": "INFO",
                 "formatter": "simple",
                 "filename": log_file_path,
                 "maxBytes": 10485760,
@@ -47,9 +48,6 @@ def get_logger(name):
     logger = logging.getLogger(name)
     return logger
 
-
-# set logging defaults
-setup_logging()
 
 # get a logger specific to this file
 logger = get_logger(__name__)

@@ -9,14 +9,13 @@ Created on Sun Jun 25 10:44:24 2017
 import time
 from threading import Thread
 from .memory import Memory
-from .logs import get_logger
+from .log import get_logger
 
 logger = get_logger(__name__)
 
 
-class Vehicle():
+class Vehicle:
     def __init__(self, mem=None):
-
         if not mem:
             mem = Memory()
         self.mem = mem
