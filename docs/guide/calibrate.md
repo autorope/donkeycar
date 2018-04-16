@@ -74,7 +74,7 @@ the throttle_controller part.
 
 ![fine calibration](../assets/fine_calibration.gif)
 
-Now that you have your care roughly calibrated you can try driving it to 
+Now that you have your car roughly calibrated you can try driving it to 
 verify that it drives as expected. Here's how to fine tune your car's calibration. 
 
 1. Start your car by running `python manage.py drive`.
