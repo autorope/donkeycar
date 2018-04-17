@@ -387,16 +387,22 @@ class Tub(object):
         pass
 
 
-    def get_record_gen(self, record_transform=None, shuffle=True, df=None):
+    def get_record_gen(self, record_transform=None, shuffle=False, df=None):
 
         if df is None:
             df = self.get_df()
 
-
         while True:
-            for row in self.df.iterrows():
+            for row in df.iterrows():
+                # NOTE: If shuffle enabled, random sample will be returned,
+                # this does not guarantee that all samples will be used
+                # during training. Please also note that shuffling already
+                # happening once for whole dataset in get_train_val_gen
+                # function.
                 if shuffle:
                     record_dict = df.sample(n=1).to_dict(orient='record')[0]
+                else:
+                    record_dict = row[1].to_dict()
 
                 if record_transform:
                     record_dict = record_transform(record_dict)
@@ -406,7 +412,7 @@ class Tub(object):
                 yield record_dict
 
 
-    def get_batch_gen(self, keys, record_transform=None, batch_size=128, shuffle=True, df=None):
+    def get_batch_gen(self, keys, record_transform=None, batch_size=128, shuffle=False, df=None):
 
         record_gen = self.get_record_gen(record_transform, shuffle=shuffle, df=df)
 
