@@ -654,8 +654,8 @@ class TubGroup(Tub):
             record_count += len(t.df)
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
-        print('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
-                                                                                         round(float(record_count / 300000),1)))
+        print('joining the tubs {} records together. This could take {} minutes.'
+                .format(record_count,round(float(record_count / 300000),1)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
                      'types': list(self.input_types.values())}
