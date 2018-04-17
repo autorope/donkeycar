@@ -200,7 +200,7 @@ class Tub(object):
     def get_index(self, shuffled=True):
         files = next(os.walk(self.path))[2]
         record_files = [f for f in files if f[:6]=='record']
-        
+
         def get_file_ix(file_name):
             try:
                 name = file_name.split('.')[0]
@@ -210,13 +210,13 @@ class Tub(object):
             return num
 
         nums = [get_file_ix(f) for f in record_files]
-        
+
         if shuffled:
             random.shuffle(nums)
         else:
             nums = sorted(nums)
-            
-        return nums 
+
+        return nums
 
 
     @property
@@ -303,7 +303,7 @@ class Tub(object):
         """
         json_data = {}
         self.current_ix += 1
-        
+
         for key, val in data.items():
             typ = self.get_input_type(key)
 
@@ -528,13 +528,13 @@ class TubHandler():
 
 class TubImageStacker(Tub):
     '''
-    A Tub for training a NN with images that are the last three records stacked 
+    A Tub for training a NN with images that are the last three records stacked
     togther as 3 channels of a single image. The idea is to give a simple feedforward
     NN some chance of building a model based on motion.
     If you drive with the ImageFIFO part, then you don't need this.
     Just make sure your inference pass uses the ImageFIFO that the NN will now expect.
     '''
-    
+
     def rgb2gray(self, rgb):
         '''
         take a numpy rgb image return a new single channel image converted to greyscale
@@ -551,7 +551,7 @@ class TubImageStacker(Tub):
         gray_a = self.rgb2gray(img_a)
         gray_b = self.rgb2gray(img_b)
         gray_c = self.rgb2gray(img_c)
-        
+
         img_arr = np.zeros([width, height, 3], dtype=np.dtype('B'))
 
         img_arr[...,0] = np.reshape(gray_a, (width, height))
@@ -589,7 +589,7 @@ class TubImageStacker(Tub):
 
 class TubTimeStacker(TubImageStacker):
     '''
-    A Tub for training N with records stacked through time. 
+    A Tub for training N with records stacked through time.
     The idea here is to force the network to learn to look ahead in time.
     Init with an array of time offsets from the current time.
     '''
@@ -603,7 +603,7 @@ class TubTimeStacker(TubImageStacker):
         '''
         super(TubTimeStacker, self).__init__(*args, **kwargs)
         self.frame_list = frame_list
-  
+
     def get_record(self, ix):
         '''
         stack the N records into a single record.
@@ -613,7 +613,7 @@ class TubTimeStacker(TubImageStacker):
         data = {}
         for i, iOffset in enumerate(self.frame_list):
             iRec = ix + iOffset
-            
+
             try:
                 json_data = self.get_json_record(iRec)
             except FileNotFoundError:
@@ -627,7 +627,7 @@ class TubTimeStacker(TubImageStacker):
                 #load only the first image saved as separate files
                 if typ == 'image' and i == 0:
                     val = Image.open(os.path.join(self.path, val))
-                    data[key] = val                    
+                    data[key] = val
                 elif typ == 'image_array' and i == 0:
                     d = super(TubTimeStacker, self).get_record(ix)
                     data[key] = d[key]
@@ -655,12 +655,10 @@ class TubGroup(Tub):
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
         print('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
-                                                                                         int(record_count / 300000)))
+                                                                                         round(float(record_count / 300000),1)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
                      'types': list(self.input_types.values())}
 
 
         self.df = pd.concat([t.df for t in tubs], axis=0, join='inner')
-
-
