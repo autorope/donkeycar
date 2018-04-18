@@ -133,6 +133,7 @@ def train(cfg, tub_names, model_name):
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
 
+
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
