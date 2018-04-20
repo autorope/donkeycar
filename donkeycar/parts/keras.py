@@ -16,9 +16,10 @@ import os
 import numpy as np
 
 from tensorflow.python.keras.layers import Input, Dense, concatenate
-from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.models import Model, load_model
 from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
 from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D, Lambda
+from tensorflow.python.keras.callbacks import ModelCheckpoint, EarlyStopping
 
 import donkeycar as dk
 
@@ -26,7 +27,7 @@ import donkeycar as dk
 class KerasPilot():
  
     def load(self, model_path):
-        self.model = keras.models.load_model(model_path)
+        self.model = load_model(model_path)
 
     
     def shutdown(self):
@@ -43,14 +44,14 @@ class KerasPilot():
         """
 
         #checkpoint to save model after each epoch
-        save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
+        save_best = ModelCheckpoint(saved_model_path,
                                                     monitor='val_loss', 
                                                     verbose=verbose, 
                                                     save_best_only=True, 
                                                     mode='min')
         
         #stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+        early_stop = EarlyStopping(monitor='val_loss',
                                                    min_delta=min_delta, 
                                                    patience=patience, 
                                                    verbose=verbose, 
