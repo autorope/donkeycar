@@ -11,7 +11,7 @@ sudo rpi-update -y
 sudo apt install build-essential python3-dev python3-distlib python3-setuptools  python3-pip python3-wheel -y
 sudo apt install libzmq-dev -y
 sudo apt install xsel xclip -y
-
+sudo apt install python3-h5py
 
 #remove python2 (1 min)
 sudo apt-get remove python2.7
@@ -25,7 +25,6 @@ echo '#start env' >> ~/.bashrc
 echo 'source ~/env/bin/activate' >> ~/.bashrc
 source ~/.bashrc
 
-
 #install numpy and pandas (3 min)
 sudo apt install libxml2-dev python3-lxml -y
 sudo apt install libxslt-dev
@@ -38,7 +37,6 @@ sudo apt-get install build-essential git cmake pkg-config
 sudo apt-get install libjpeg-dev libtiff5-dev libjasper-dev libpng12-dev
 sudo apt-get install libavcodec-dev libavformat-dev libswscale-dev libv4l-dev
 sudo apt-get install libxvidcore-dev libx264-dev
-#sudo apt-get install libgtk2.0-dev #not used no interface needed
 sudo apt-get install libatlas-base-dev gfortran
 
 git clone https://github.com/opencv/opencv.git
@@ -58,11 +56,11 @@ sudo make install
 sudo ldconfig
 
 
-
 #install tensorflow (5 min)
-wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v1.5.0/tensorflow-1.5.0-cp35-none-linux_armv7l.whl
-pip install tensorflow-1.5.0-cp35-none-linux_armv7l.whl
-rm tensorflow-1.5.0-cp35-none-linux_armv7l.whl
+tf_file=tensorflow-1.7.0-cp35-none-linux_armv7l.whl
+wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v1.7.0/${tf_file}
+pip install ${tf_file}
+rm ${tf_file}
 
 
 #install donkey (1 min)
@@ -72,7 +70,7 @@ git clone https://github.com/wroscoe/donkey.git
 pip install -e donkey/[pi]
 
 
-#remove dev libraries...
+#remove dev libraries...  Is there a better way to do this?
 sudo apt-get purge lib*-dev
 
 #reinstal only needed libs
