@@ -17,6 +17,9 @@ other calibrated Donkey2. This way you'll be able to share pilots and
 datasets between each car. 
 
 
+>You will need to ssh into your Pi to do the calibration.
+
+
 ## Steering Calibration
 
 > Make sure your car is off the ground to prevent a runaway situation.
@@ -71,7 +74,7 @@ the throttle_controller part.
 
 ![fine calibration](../assets/fine_calibration.gif)
 
-Now that you have your care roughly calibrated you can try driving it to 
+Now that you have your car roughly calibrated you can try driving it to 
 verify that it drives as expected. Here's how to fine tune your car's calibration. 
 
 1. Start your car by running `python manage.py drive`.
