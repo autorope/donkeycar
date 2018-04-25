@@ -23,11 +23,13 @@ from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubHandler, TubGroup
 from donkeycar.parts.controller import LocalWebController, JoystickController
+from donkeycar.parts.time import Timestamp
 
+from donkeycar.parts.autorope import AutoropeSession
 
 
 def drive(cfg, model_path=None, use_joystick=False):
-    '''
+    """
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
     it's run or run_threaded method depending on the constructor flag `threaded`.
@@ -35,32 +37,32 @@ def drive(cfg, model_path=None, use_joystick=False):
     cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
-    '''
+    """
 
-    #Initialize car
     V = dk.vehicle.Vehicle()
+
+    clock = Timestamp()
+    V.add(clock, outputs='timestamp')
+
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
     
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
-        #modify max_throttle closer to 1.0 to have more power
-        #modify steering_scale lower than 1.0 to have less responsive steering
         ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
                                  auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
     else:        
-        #This web controller will create a web server that is capable
-        #of managing steering, throttle, and modes, and more.
+        # This web controller will create a web server that is capable
+        # of managing steering, throttle, and modes, and more.
         ctr = LocalWebController()
 
-    
     V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
     
-    #See if we should even run the pilot module. 
-    #This is only needed because the part run_condition only accepts boolean
+    # See if we should even run the pilot module. 
+    # This is only needed because the part run_condition only accepts boolean
     def pilot_condition(mode):
         if mode == 'user':
             return False
@@ -70,7 +72,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    #Run the pilot if the mode is not user.
+    # Run the pilot if the mode is not user.
     kl = KerasCategorical()
     if model_path:
         kl.load(model_path)
@@ -79,8 +81,7 @@ def drive(cfg, model_path=None, use_joystick=False):
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
     
-    
-    #Choose what inputs should change the car.
+    # Choose what inputs should change the car.
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
@@ -99,41 +100,42 @@ def drive(cfg, model_path=None, use_joystick=False):
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
     
-    
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
-                                    left_pulse=cfg.STEERING_LEFT_PWM, 
-                                    right_pulse=cfg.STEERING_RIGHT_PWM)
+                           left_pulse=cfg.STEERING_LEFT_PWM, 
+                           right_pulse=cfg.STEERING_RIGHT_PWM)
     
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,
-                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
+                           max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                           zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                           min_pulse=cfg.THROTTLE_REVERSE_PWM)
     
     V.add(steering, inputs=['angle'])
     V.add(throttle, inputs=['throttle'])
     
-    #add tub to save data
-    inputs=['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
-    types=['image_array', 'float', 'float',  'str']
+    # add tub to save data
+    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
+    types = ['image_array', 'float', 'float',  'str', 'str']
     
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
-    
-    #run the vehicle
+
+    print("You can now go to <your pi ip address>:8887 to drive your car.")
+
+    # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
             max_loop_count=cfg.MAX_LOOPS)
     
-    print("You can now go to <your pi ip address>:8887 to drive your car.")
+
 
 
 def train(cfg, tub_names, model_name):
-    '''
+    """
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
-    '''
+    """
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
 

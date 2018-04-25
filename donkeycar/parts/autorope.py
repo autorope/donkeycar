@@ -4,7 +4,12 @@ import requests
 from six.moves.urllib import parse
 import calendar
 import datetime
-from donkeycar import utils
+
+from ..log import get_logger
+
+logger = get_logger(__name__)
+
+
 def _api_encode(data):
     for key, value in data.items():
         if value is None:
@@ -32,29 +37,27 @@ def _encode_datetime(dttime):
     return int(utc_timestamp)
 
 
-class AutoropeSession():
+class AutoropeSession:
 
-    api_base = 'https://rope.donkeycar.com/api/'
-    #api_base = 'http://localhost:8000/api/'
+    def __init__(self,
+                 token,
+                 car_id,
+                 controller_url=None,
+                 api_base='https://rope.donkeycar.com/api/'):
 
-    def __init__(self, token, car_id, controller_url=None):
-        self.auth_token=token
+        self.auth_token = token
         self.car_id = car_id
         self.connected = False
-
+        self.api_base = api_base
 
         try:
             self.session_id = self.start_new_session(controller_url=controller_url)
-            print('started new autorope session {}'.format(self.session_id))
+            logger.info('started new autorope session {}'.format(self.session_id))
         except Exception as e:
-            print('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
-            print(e)
-
-
-
+            logger.info('Autorope part was unable to load. Goto rope.donkeycar.com for instructions')
+            logger.info(e)
 
     def start_new_session(self, controller_url=None):
-
         resp = self.post_request('sessions/',
                                  {
                                      'bot_name': self.car_id,
@@ -66,9 +69,8 @@ class AutoropeSession():
             self.session_id = resp_js.get('id')
             return self.session_id
         else:
-            print(resp.text)
+            logger.info(resp.text)
             return None
-
 
     def update(self):
         self.measurements = self.lidar.iter_measurments(500)
@@ -81,17 +83,14 @@ class AutoropeSession():
     def run_threaded(self):
         return self.frame
 
-
     def _build_headers(self, headers={}):
 
         auth_header = {'Authorization': 'Token {}'.format(self.auth_token)}
         headers.update(auth_header)
         return headers
 
-
     def get_request(self, url, params={}, supplied_headers={}, format='json'):
-
-        #combine default params and given params
+        # combine default params and given params
         params_all = {}
         params_all.update(params)
 
@@ -99,11 +98,11 @@ class AutoropeSession():
         encoded_params = parse.urlencode(list(_api_encode(params_all)))
         abs_url = _build_api_url(abs_url, encoded_params)
 
-        #print('abs_url: {}'.format(abs_url))
+        # logger.info('abs_url: {}'.format(abs_url))
         headers = self._build_headers(supplied_headers)
 
-        print(headers)
-        print(abs_url)
+        logger.info(headers)
+        logger.info(abs_url)
         resp = requests.get(abs_url, headers=headers)
         if format == 'json':
             return resp
@@ -126,6 +125,6 @@ class AutoropeSession():
         encoded_params = parse.urlencode(list(_api_encode(params or {})))
         abs_url = _build_api_url(abs_url, encoded_params)
         headers = self._build_headers(supplied_headers)
-        print(abs_url)
+        logger.info(abs_url)
         resp = requests.post(abs_url, json=data, headers=headers, files=files)
         return resp

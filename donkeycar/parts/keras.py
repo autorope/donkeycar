@@ -14,7 +14,12 @@ models to help direct the vehicles motion.
 
 import os
 import numpy as np
-import keras
+
+from tensorflow.python.keras.layers import Input, Dense, concatenate
+from tensorflow.python.keras.models import Model, load_model
+from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D, Lambda
+from tensorflow.python.keras.callbacks import ModelCheckpoint, EarlyStopping
 
 import donkeycar as dk
 
@@ -22,7 +27,7 @@ import donkeycar as dk
 class KerasPilot():
  
     def load(self, model_path):
-        self.model = keras.models.load_model(model_path)
+        self.model = load_model(model_path)
 
     
     def shutdown(self):
@@ -39,14 +44,14 @@ class KerasPilot():
         """
 
         #checkpoint to save model after each epoch
-        save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
+        save_best = ModelCheckpoint(saved_model_path,
                                                     monitor='val_loss', 
                                                     verbose=verbose, 
                                                     save_best_only=True, 
                                                     mode='min')
         
         #stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+        early_stop = EarlyStopping(monitor='val_loss',
                                                    min_delta=min_delta, 
                                                    patience=patience, 
                                                    verbose=verbose, 
@@ -146,10 +151,6 @@ class KerasIMU(KerasPilot):
 
 
 def default_categorical():
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
     
     img_in = Input(shape=(120, 160, 3), name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
@@ -183,10 +184,6 @@ def default_categorical():
 
 
 def default_linear():
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
     
     img_in = Input(shape=(120,160,3), name='img_in')
     x = img_in
@@ -220,10 +217,6 @@ def default_linear():
 
 
 def default_n_linear(num_outputs):
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     
     img_in = Input(shape=(120,160,3), name='img_in')
     x = img_in
@@ -261,12 +254,6 @@ def default_imu(num_outputs, num_imu_inputs):
     Notes: this model depends on concatenate which failed on keras < 2.0.8
     '''
 
-    from keras.layers import Input, Dense
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
-    from keras.layers.merge import concatenate
-    
     img_in = Input(shape=(120,160,3), name='img_in')
     imu_in = Input(shape=(num_imu_inputs,), name="imu_in")
     

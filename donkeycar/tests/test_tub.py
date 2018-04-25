@@ -26,9 +26,9 @@ def test_tub_add_record(tub):
     """Tub can save a record and then retrieve it."""
     import numpy as np
     img_arr = np.zeros((120,160))
-    x=123
-    y=90
-    rec_in  = {'cam/image_array': img_arr, 'angle': x, 'throttle':y}
+    x = 123
+    y = 90
+    rec_in = {'cam/image_array': img_arr, 'angle': x, 'throttle':y}
     rec_index = tub.put_record(rec_in)
     rec_out = tub.get_record(rec_index)
     assert rec_in.keys() == rec_out.keys()
@@ -48,6 +48,7 @@ class TestTubWriter(unittest.TestCase):
 
     def test_tub_path(self):
         tub = TubWriter(self.path, inputs=self.inputs, types=self.types)
+        print(tub.types, tub.inputs)
         tub.run('will', 323, 'asdfasdf')
 
     def test_make_paths_absolute(self):

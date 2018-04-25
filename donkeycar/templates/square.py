@@ -23,24 +23,29 @@ from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.time import Timestamp
 
 from donkeycar.parts.autorope import AutoropeSession
 
+
+log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sq.log')
+dk.log.setup(log_path)
+logger = dk.log.get_logger(__name__)
+logger.info('Loading manage.py')
+
+
 def drive(cfg, model_path=None):
 
-
-
     V = dk.vehicle.Vehicle()
-    #initialize values
-    V.mem.put(['square/angle', 'square/throttle'], (100,100))  
-    
-    #display square box given by cooridantes.
+    V.mem.put(['square/angle', 'square/throttle'], (100, 100))
+
+    # display square box given by cooridantes.
     cam = SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, 
           inputs=['square/angle', 'square/throttle'],
           outputs=['cam/image_array'])
     
-    #display the image and read user values from a local web controller
+    # display the image and read user values from a local web controller
     ctr = LocalWebController()
     V.add(ctr, 
           inputs=['cam/image_array'],
@@ -48,8 +53,8 @@ def drive(cfg, model_path=None):
                    'user/mode', 'recording'],
           threaded=True)
     
-    #See if we should even run the pilot module. 
-    #This is only needed because the part run_contion only accepts boolean
+    # See if we should even run the pilot module.
+    # This is only needed because the part run_contion only accepts boolean
     def pilot_condition(mode):
         if mode == 'user':
             return False
@@ -59,7 +64,7 @@ def drive(cfg, model_path=None):
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    #Run the pilot if the mode is not user.
+    # Run the pilot if the mode is not user.
     kl = KerasCategorical()
     if model_path:
         kl.load(model_path)
@@ -67,9 +72,8 @@ def drive(cfg, model_path=None):
     V.add(kl, inputs=['cam/image_array'],
           outputs=['pilot/angle', 'pilot/throttle'],
           run_condition='run_pilot')
-    
-    
-    #See if we should even run the pilot module. 
+
+    # See if we should even run the pilot module.
     def drive_mode(mode, 
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
@@ -88,42 +92,44 @@ def drive(cfg, model_path=None):
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
     
-    
-    
-    #transform angle and throttle values to coordinate values
-    f = lambda x : int(x * 100 + 100)
+    clock = Timestamp()
+    V.add(clock, outputs=['timestamp'])
+
+    # transform angle and throttle values to coordinate values
+    def f(x):
+        return int(x * 100 + 100)
     l = Lambda(f)
     V.add(l, inputs=['user/angle'], outputs=['square/angle'])
     V.add(l, inputs=['user/throttle'], outputs=['square/throttle'])
     
-    #add tub to save data
+    # add tub to save data
     inputs=['cam/image_array',
             'user/angle', 'user/throttle', 
             'pilot/angle', 'pilot/throttle', 
             'square/angle', 'square/throttle',
-            'user/mode']
+            'user/mode',
+            'timestamp']
     types=['image_array',
            'float', 'float',  
            'float', 'float', 
            'float', 'float',
+           'str',
            'str']
     
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
-    rope_session = AutoropeSession(cfg.ROPE_TOKEN, cfg.ROPE_BOT_NAME, controller_url=ctr.access_url)
-
-    #run the vehicle for 20 seconds
+    # run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)
     
-    
-    
+
 def train(cfg, tub_names, model_name):
     
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
-    
+
+
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
@@ -136,7 +142,7 @@ def train(cfg, tub_names, model_name):
         return combined_gen
     
     kl = KerasCategorical()
-    print('tub_names', tub_names)
+    logger.info('tub_names', tub_names)
     if not tub_names:
         tub_names = os.path.join(cfg.DATA_PATH, '*')
     tubgroup = TubGroup(tub_names)
@@ -149,9 +155,9 @@ def train(cfg, tub_names, model_name):
     total_records = len(tubgroup.df)
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
     total_val = total_records - total_train
-    print('train: %d, validation: %d' % (total_train, total_val))
+    logger.info('train: %d, validation: %d' % (total_train, total_val))
     steps_per_epoch = total_train // cfg.BATCH_SIZE
-    print('steps_per_epoch', steps_per_epoch)
+    logger.ino('steps_per_epoch', steps_per_epoch)
 
     kl.train(train_gen,
              val_gen,

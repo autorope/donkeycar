@@ -19,7 +19,7 @@ print('extra_files', extra_files)
 
 
 setup(name='donkeycar',
-    version='2.2.1',
+    version='2.3.0',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
     download_url='https://github.com/wroscoe/donkey/archive/2.1.5.tar.gz',
@@ -36,14 +36,13 @@ setup(name='donkeycar',
                       'docopt',
                       'tornado==4.5.3',
                       'requests',
-                      'keras==2.0.8',
                       'h5py',
                       'python-socketio',
                       'flask',
                       'eventlet',
                       'moviepy',
                       'pandas',
-                      'tensorflow==1.1'
+                      'tensorflow==1.7'
                      ],
 
     extras_require={
