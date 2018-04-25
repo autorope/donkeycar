@@ -71,10 +71,8 @@ rm ${tf_file}
 
 
 #install donkey (1 min)
-mkdir code
-cd code
-git clone https://github.com/wroscoe/donkey.git
-pip install -e donkey/[pi]
+git clone https://github.com/wroscoe/donkey.git donkeycar
+pip install -e donkeycar/[pi]
 
 
 #remove dev libraries...  Is there a better way to do this?
