@@ -37,7 +37,7 @@ def _encode_datetime(dttime):
     return int(utc_timestamp)
 
 
-class AutoropeSession():
+class AutoropeSession:
 
     def __init__(self,
                  token,

@@ -120,10 +120,6 @@ def drive(cfg, model_path=None):
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
-    rope_session = AutoropeSession(cfg.ROPE_TOKEN, cfg.ROPE_BOT_NAME, controller_url=ctr.access_url)
-    rope_session.start_backround_uploader(tub.path)
-    rope_session.start_pilot_downloader(os.path.dirname(model_path))
-
     # run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)
     

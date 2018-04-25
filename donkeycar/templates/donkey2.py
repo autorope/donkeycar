@@ -122,8 +122,6 @@ def drive(cfg, model_path=None, use_joystick=False):
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
-    rope_session = AutoropeSession(cfg.ROPE_TOKEN, cfg.ROPE_BOT_NAME, controller_url=ctr.access_url)
-
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
             max_loop_count=cfg.MAX_LOOPS)
