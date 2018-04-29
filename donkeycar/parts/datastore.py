@@ -50,7 +50,7 @@ class Tub(object):
 
         if exists:
             # load log and meta
-            self.info("Tub exists: {}".format(self.path))
+            logger.info("Tub exists: {}".format(self.path))
             with open(self.meta_path, 'r') as f:
                 self.meta = json.load(f)
             self.current_ix = self.get_last_ix() + 1
@@ -544,6 +544,8 @@ class TubGroup(Tub):
 
 
 import sqlite3
+import shutil
+import pickle
 
 
 class SQLiteTub:
@@ -558,22 +560,21 @@ class SQLiteTub:
         self.create_channel_table()
         self.create_records_table(channel_schema)
 
+    def create_sessions_table(self):
+        sql = """CREATE TABLE IF NOT EXISTS session (id integer PRIMARY KEY, name text NOT NULL, description text);"""
+        self._insert(sql)
+
     def create_channel_table(self):
-        sql = '''
-          CREATE TABLE IF NOT EXISTS channel(
-          id integer PRIMARY KEY,
-          name text NOT NULL,
-          type text 
-          );
-          '''
+        sql = """CREATE TABLE IF NOT EXISTS channel (id integer PRIMARY KEY, name text NOT NULL, type text);"""
         self._insert(sql)
 
     def create_records_table(self, channel_schema):
-        sql = "CREATE TABLE IF NOT EXISTS records( "
+        sql = "CREATE TABLE IF NOT EXISTS record ( "
         col_lines = [
             'id INTEGER PRIMARY KEY AUTOINCREMENT',
             "timestamp TIMESTAMP DEFAULT(STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW'))",
             'active INTEGER DEFAULT 1',
+            'FOREIGN KEY(session) ON DELETE CASCADE',
         ]
         for channel in channel_schema:
             line = "{} {}".format(
@@ -586,24 +587,16 @@ class SQLiteTub:
 
     def put_record(self, *values):
         serialized_values = self.serializer.write_many(self.types, values)
-        sql = '''
-        INSERT INTO records{} values({}); 
-        '''.format(
-            tuple(self.channels),
-            ','.join(['?'] * len(values))
-        )
+        sql = """INSERT INTO record {} values({});"""
+        sql = sql.format( tuple(self.channels), ','.join(['?'] * len(values)))
         self._insert(sql, serialized_values)
 
     def _select_records(self, cols='*', limit=10):
-
         if cols is not '*':
             cols = ','.join(cols)
 
-        sql = '''
-        SELECT {} FROM records 
-        ORDER BY ID DESC
-        LIMIT {};
-        '''.format(cols, limit)
+        sql = """SELECT {} FROM record ORDER BY ID DESC LIMIT {};"""
+        sql = sql.format(cols, limit)
 
         recs = self._select(sql)
 
@@ -616,7 +609,7 @@ class SQLiteTub:
         """
         Return the deserialized record as a dictionary.
         """
-        sql = 'SELECT * FROM records WHERE id = {};'.format(ix)
+        sql = "SELECT * FROM record WHERE id = {};".format(ix)
         record = self._select_one(sql)
         values = self.deserialize_record(record)
         record_dict = dict(zip(self.record_cols, values))
@@ -624,18 +617,15 @@ class SQLiteTub:
 
     def deserialize_record(self, record):
         new_record = list(record[:3])
-        new_record += self.serializer.read_many(stub.types, record[3:])
+        new_record += self.serializer.read_many(self.types, record[3:])
         return new_record
 
     def mark_previous_records_inactive(self, count=100):
         last_record = self.last_record_id()
         min_record = max(1, last_record - count)
 
-        sql = '''
-        UPDATE records
-        SET active = 0
-        WHERE ID <= {} AND ID > {};
-        '''.format(last_record, min_record)
+        sql = """UPDATE records SET active = 0 WHERE ID <= {} AND ID > {};"""
+        sql = sql.format(last_record, min_record)
         self._insert(sql)
 
     def last_record_id(self):
@@ -673,12 +663,8 @@ class SQLiteTub:
     def delete(self):
         """ Delete the db. """
         self.shutdown()
-
-        import shutil
         shutil.rmtree(self.path)
 
-
-import pickle
 
 
 class TypeRegistry:
