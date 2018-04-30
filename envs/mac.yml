@@ -21,7 +21,6 @@ dependencies:
   - h5py==2.7.1
   - html5lib==0.9999999
   - idna==2.6
-  - keras==2.0.6
   - markdown==2.6.9
   - olefile==0.44
   - pillow==4.2.1

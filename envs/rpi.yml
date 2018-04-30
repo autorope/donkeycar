@@ -32,7 +32,6 @@ dependencies:
   - cheroot==5.8.3
   - docopt==0.6.2
   - envoy==0.0.3
-  - keras==2.0.6
   - picamera==1.13
   - portend==2.1.2
   - protobuf==3.3.0
