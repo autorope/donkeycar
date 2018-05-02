@@ -11,7 +11,9 @@ The HSP 94186 is the same as the Magnet and will work.  If you speak mandarin it
 https://item.taobao.com/item.htm?spm=a230r.1.14.1.478a6da8CUjrQQ&id=6004880592&ns=1&abbucket=12#detail
 
 ## Exceed Desert Monster
-The Desert Monster is made by the same manufacturer as the Magnet and has the same motor and ESC.  The chassis and tires are slightly different however.  Also it requires an adapter and some extra hardware to work with the standard donkey platform.  However the Desert Monster also has some nice characteristics including narrower more road friendly tires.  
+The Desert Monster is made by the same manufacturer as the Magnet and has the same motor and ESC.  The chassis is slightly different so it requires an adapter and some extra hardware to work with the standard donkey platform.  With the adapters the camera placement will be identical to the Magnet and should be able to share models.
+
+It is worth noting that the Desert Monster also has some nice characteristics including narrower, more road friendly tires.  
 
 ![Desert Monster](./assets/build_hardware/Desert_Monster.png)
 
@@ -19,21 +21,21 @@ To assemble a Exceed you will need some additional parts than the standard build
 
 | Part Description   | Link  | Approximate Cost |
 |---|----|---|
-|Desert Monster RC Car |  [Blue](http://amzn.to/2HLXJmc) [Red](http://amzn.to/2pnIitV)| $90|
-|3D printed Adapters | Purchase: [Donkey Store](https://squareup.com/store/donkeycar) Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575)| $10 |
+|Desert Monster RC Car |  [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)| $90|
+|3D printed Adapters | Purchase: [Donkey Store](https://squareup.com/store/donkeycar), Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575)| $10 |
 |Chassis Clips |[Donkey Store](https://squareup.com/store/donkeycar) [Amazon](http://amzn.to/2FNSCFI) | $5|
 
 To assemble first remove the plastic cover and roll cage then unscrew the posts that hold up the cover and replace with the adapters.  
 
 Visual instructions to follow.
-## Tamaya TT-01
+## Tamaya TT-01 (Advanced Build)
 
 ![donkey](./assets/build_hardware/TT01.PNG)
 
-The TT-01 is a new build that is a higher end version of the Donkey.  This is an advanced build and requires existing RC skills or the desire to learn them - this is not for the faint of heart.  For first time builders we recommend the Magnet.  That said, it has some pros and cons that people should be aware of:
+The TT-01 is a new build that is a higher end version of the Donkey.  This is an advanced build and requires existing RC skills or the desire to learn them - along with some willingness to trial and error.  For first time builders we recommend the Magnet.  That said, it has some pros and cons that people should be aware of:
 Pros:
 
-* Better kinematics and traction on smooth surfaces - basically this means it will handle Better
+* Better kinematics and traction on smooth surfaces - basically this means it will corner better
 * Larger build area for adding other sensors.  
 * Globally available with several clones.
 
