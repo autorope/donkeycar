@@ -31,7 +31,7 @@ setup(name='donkeycar',
             'donkey=donkeycar.management.base:execute_from_command_line',
         ],
     },
-    install_requires=['numpy', 
+    install_requires=['numpy',
                       'pillow',
                       'docopt',
                       'tornado==4.5.3',
@@ -41,19 +41,20 @@ setup(name='donkeycar',
                       'flask',
                       'eventlet',
                       'moviepy',
-                      'pandas',
-                      'tensorflow==1.7'
+                      'pandas'
                      ],
 
     extras_require={
+                    'tf': ['tensorflow>=1.7.0'],
+                    'tf_gpu': ['tensorflow-gpu>=1.7.0'],
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
                         ],
                     'dev': ['pytest']
-                    },
+                   },
     package_data={
-        'donkeycar': extra_files, 
+        'donkeycar': extra_files,
         },
 
     include_package_data=True,
