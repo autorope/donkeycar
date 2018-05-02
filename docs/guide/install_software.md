@@ -10,25 +10,25 @@ This guide will help you to setup the software to run Donkey on your Raspberry P
 ----
 ### Get the Raspberry Pi working.
 
-Before we can do anything we have to get our car's computer connected to the 
-internet. The fastest way is to use the disk image created for donkey cars. 
+Before we can do anything we have to get our car's computer connected to the
+internet. The fastest way is to use the disk image created for donkey cars.
 
 The method for using a disk image to create a bootable SD card varies between
-operating systems. These instructions are for Ubuntu but you can see more 
+operating systems. These instructions are for Ubuntu but you can see more
 instructions [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 
-1. Download prebuilt [zipped disk image](https://www.dropbox.com/s/wiudnm2dcsvoquu/donkey_v22.img.zip?dl=0) (1.1GB). 
+1. Download prebuilt [zipped disk image](https://www.dropbox.com/s/wiudnm2dcsvoquu/donkey_v22.img.zip?dl=0) (1.1GB).
 2. Unzip the disk image.
 3. Plug your SD card into your computer.
 4. Open the "Startup Disk Creator" application.
 5. Select your source disk image as the one you unzipped earlier.
-6. Select your SD card as the disk to use. 
+6. Select your SD card as the disk to use.
 7. Click "Make startup disk".
 
 
 ### Setup the Pi's WiFi for first boot
 
-We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it. 
+We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it.
 
 On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formated with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on it's first boot.
 
@@ -47,43 +47,43 @@ network={
 ```
 
 Replace `<your network name>` with the ID of your network. Leave the quotes. I've seen problems when the network name contained an apostrophe, like "Joe's iPhone".
-Replace `<your password>` with your password, leaving it surrounded by quotes. 
+Replace `<your password>` with your password, leaving it surrounded by quotes.
 If it bothers you to leave your password unencrypted, you may change the [contents later](https://unix.stackexchange.com/questions/278946/hiding-passwords-in-wpa-supplicant-conf-with-wpa-eap-and-mschap-v2) once you've gotten the pi to boot and log-in.
 
 * Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later.
 
 ##### Setup Pi's Hostname
-We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
+We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with
 
 ```
 ping d2.local
 ```
 
-once it's booted. If there are many other Pi's on the network, then this will have problems. If you are on a Linux machine, or are able to edit the UUID partition, then you can edit the `/etc/hostname` and `/etc/hosts` files now to make finding your pi on the network easier after boot. Edit those to replace `raspberrypi` with a name of your choosing. Use all lower case, no special characters, no hyphens, no underscores `_`. 
+once it's booted. If there are many other Pi's on the network, then this will have problems. If you are on a Linux machine, or are able to edit the UUID partition, then you can edit the `/etc/hostname` and `/etc/hosts` files now to make finding your pi on the network easier after boot. Edit those to replace `raspberrypi` with a name of your choosing. Use all lower case, no special characters, no hyphens, no underscores `_`.
 
 ```
 sudo vi /media/userID/UUID/etc/hostname
 sudo vi /media/userID/UUID/etc/hosts
 ```
 
-Now you're SD card is ready. Eject it from your computer, put it in the Pi 
+Now you're SD card is ready. Eject it from your computer, put it in the Pi
 and plug in the Pi.
 
 
 ### Connecting to the Pi
 
-If you followed the above instructions to add wifi access you're Pi should
-now be connected to your wifi network. Now you need to find it's IP address
-so you can connect to it via SSH. 
+If you followed the above instructions to add wifi access your Pi should
+now be connected to your wifi network. Now you need to find its IP address
+so you can connect to it via SSH.
 
-The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping raspberrypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full IP address (unless using cygwin). 
+The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping raspberrypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full IP address (unless using cygwin).
 
 If you are having troubles locating your Pi on the network, you will want to plug in an HDMI monitor and USB keyboard into the Pi. Boot it. Login with:
 
 * Username: __pi__
 * Password: __asdfasdf__
   * The older disk images use the password `raspberry`
- 
+
 Then try the command:
 
 ```
@@ -124,7 +124,7 @@ or via Putty:
 * Hostname:`<your pi IP address>`
 
 
-If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a d2 and donkey directory. 
+If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a d2 and donkey directory.
 
 > Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
 >
@@ -145,9 +145,7 @@ pip install -e .
 ```
 
 ----
-Now let's setup the same donkey library on your laptop or server so you can test and train autopilots. Install varies 
-depending on platform.
-
+Now let's setup the same donkey library on your laptop or server so you can test and train autopilots. Install varies depending on platform.
 
 ## Install donkeycar on Linux
 
@@ -277,7 +275,7 @@ donkey createcar --path ~/d2
 
 Occasionally you may want to run with changes from a separate fork of donkey. You may uninstall one and install another. That's fastest, but leaves you with only the forked version installed:
 
-``` 
+```
 pip uninstall donkeycar
 git clone --depth=1 https://github.com/<username>/donkey donkey_<username>
 cd donkey_<username>
@@ -292,3 +290,31 @@ git clone --depth=1 https://github.com/wroscoe/donkey donkey
 cd donkey
 pip install -e .
 ```
+
+### Install donkeycar with TensorFlow dependencies
+
+Donkey requires the TensorFlow library to work. It comes in 2 flavors; *tensorflow* (CPU) and *tensorflow-gpu* (GPU).
+
+This poses a problem, because if donkey specifies either of them as a dependency, `pip` will uninstall any pre-installed version of the **other** flavor of the library. And since they are mutually exclusive, both cannot be listed as dependencies.
+
+To solve this, donkey does not specify *tensorflow* nor *tensorflow-gpu* as dependencies. Instead, they are listed as `extras_require`, which means you have to explicitly tell `pip` what flavor you want to use. If no flavor is specified (default), it is assumed one version of *TensorFlow* is already installed.
+
+Install donkeycar assuming a compatible tensorflow library (either *tensorflow* or *tensorflow-gpu*) already installed:
+```bash
+# Assuming CWD is the cloned donkey git
+pip install -e .
+```
+
+Install donkeycar and use *tensorflow* dependency:
+```bash
+# Assuming CWD is the cloned donkey git
+pip install -e .[tf]
+```
+
+Install donkeycar and use *tensorflow-gpu* dependency:
+```bash
+# Assuming CWD is the cloned donkey git
+pip install -e .[tf_gpu]
+```
+
+See [https://github.com/tensorflow/tensorflow/issues/7166](https://github.com/tensorflow/tensorflow/issues/7166) for more information.
