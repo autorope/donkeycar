@@ -21,7 +21,9 @@
 These are updated instructions from the 2017 article  [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
 
 ## Choosing a Car
-To get up and going with close to zero trial and error, use one of the supported cars.  The most common car is the Magnet, however, the Magnet is often out of stock.  The second choice is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.  For more detail and other options, check out the [supported cars](supported_cars.md) page
+While the simplest path is to use the Magnet chassis which is best documented, however, the Magnet is often out of stock or may be undesirable for other reasons.  The second best car is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handles rough driving surfaces well and is inexpensive.
+For more detail and other options, follow the link to: [supported cars](/supported_cars.md)
+
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
@@ -30,6 +32,7 @@ To get up and going with close to zero trial and error, use one of the supported
 Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own.md)
 
 ## Parts Needed:
+
 
 ### Option 1: Simple path using the Donkey Store (US shipments only)
 The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  Also it is worth noting The design of the parts out of the Donkey store is slightly improved over the standard build as it uses better parts that are only available in quantities or are harder to get.  The Donkey Store builds are open source like all others.  The Donkey Store is run by the original founders of donkey car and all profits are used to fund development of the donkey cars.  
@@ -47,6 +50,7 @@ The intention of the Donkey Store is to make it easier and less expensive to bui
 &ast; If you buy the desert monster you also need adapters which can be purchased [here](https://squareup.com/store/donkeycar/item/adapters-for-desert-monster)
 
 &ast;&ast; If you want to print your own Donkey you can buy the PT screw set at this [link](https://squareup.com/store/donkeycar/item/plastic-thread-forming-screw-pack)
+
 
 ### Option 2:Bottoms Up Build
 If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.  
@@ -72,7 +76,6 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 &ast;&ast; This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
 
-
 &nbsp;
 
 
@@ -83,7 +86,7 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
-| LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html) | $8.94            |
+| LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html) or [amazon.com/gp/product/B0072AERBE/](https://www.amazon.com/gp/product/B0072AERBE/) | $8.94 to $~17           |
 | Lipo Charger (takes 1hr to charge the above battery)  | [amazon.com/gp/product/B00XU4ZR06](https://www.amazon.com/gp/product/B00XU4ZR06?tag=donkeycar-20)                                               | $13              |
 | Lipo Battery Case (to prevent damage if they explode) | [amazon.com/gp/product/B00T01LLP8](https://www.amazon.com/gp/product/B00T01LLP8?tag=donkeycar-20)                                               | $8               |
 
@@ -142,7 +145,11 @@ Attach the USB battery to the underside of the printed bottom plate using cable 
 
 &nbsp;
 ### Step 6: Attach Camera
-Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on.  It is only necessary to put two screws in.  Before using the car, remove the plastic film from the camera lens.
+Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on. It is only necessary to put two screws in.
+
+>Sometimes using the two top screw holes can result in a short. Put screws in the bottom two holes.
+
+Before using the car, remove the plastic film from the camera lens.
 
 ![donkey](../assets/build_hardware/6a.PNG)
 

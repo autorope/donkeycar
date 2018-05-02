@@ -59,3 +59,17 @@ In addition to the standard donkey parts, Raspberry Pi etc, you will need to buy
 |TT01 Plastics | Thingiverse: https://www.thingiverse.com/thing:2805287 or Donkeystore: https://squareup.com/store/donkeycar | $50|
 
 Note: purchasing from Hobbyking is tricky.  They can ship from multiple warehouses and it can be expensive and time consuming if shipping from one overseas.  You may need to buy an alternate component if one of the items above are not available in your local warehouse.
+
+## If You Want to Roll Your Own
+It's totally possible to diverge from the main Donkey build, and still have a car that
+drives well and is fun to work with. We've seen a large variety of cars in the various
+Donkey competitions around the world.
+
+However, when you want to diverge, there are several things you need to know, or you
+will not be successful. There are many cost and quality trade-offs where the lower
+cost options simply won't work. We've already worked hard to find the cheapest
+available options that will work, so you should not expect to choose other options to
+save money. Rolling your own is more about learning, experimentation, and going to new
+and uncharged places.
+
+To find out more about what you need, see [Roll Your Own](/roll_your_own.md).
