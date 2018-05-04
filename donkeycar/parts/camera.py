@@ -3,6 +3,7 @@ import time
 import numpy as np
 from PIL import Image
 import glob
+from donkeycar.utils import rgb2gray
 
 class BaseCamera:
 
@@ -10,7 +11,7 @@ class BaseCamera:
         return self.frame
 
 class PiCamera(BaseCamera):
-    def __init__(self, image_w=160, image_h=120, framerate=20):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
         
@@ -27,6 +28,7 @@ class PiCamera(BaseCamera):
         # if the thread should be stopped
         self.frame = None
         self.on = True
+        self.image_d = image_d
 
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
@@ -36,6 +38,8 @@ class PiCamera(BaseCamera):
         f = next(self.stream)
         frame = f.array
         self.rawCapture.truncate(0)
+        if self.image_d == 1:
+            frame = rgb2gray(frame)
         return frame
 
     def update(self):
@@ -45,6 +49,9 @@ class PiCamera(BaseCamera):
             # preparation for the next frame
             self.frame = f.array
             self.rawCapture.truncate(0)
+
+            if self.image_d == 1:
+                self.frame = rgb2gray(self.frame)
 
             # if the thread indicator variable is set, stop the thread
             if not self.on:
@@ -60,7 +67,7 @@ class PiCamera(BaseCamera):
         self.camera.close()
 
 class Webcam(BaseCamera):
-    def __init__(self, image_w=160, image_h=120, framerate = 20, iCam = 0):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, iCam = 0):
         import pygame
         import pygame.camera
 
@@ -79,6 +86,7 @@ class Webcam(BaseCamera):
         # if the thread should be stopped
         self.frame = None
         self.on = True
+        self.image_d = image_d
 
         print('WebcamVideoStream loaded.. .warming camera')
 
@@ -96,6 +104,8 @@ class Webcam(BaseCamera):
                 snapshot = self.cam.get_image()
                 snapshot1 = pygame.transform.scale(snapshot, self.resolution)
                 self.frame = pygame.surfarray.pixels3d(pygame.transform.rotate(pygame.transform.flip(snapshot1, True, False), 90))
+                if self.image_d == 1:
+                    self.frame = rgb2gray(self.frame)
 
             stop = datetime.now()
             s = 1 / self.framerate - (stop - start).total_seconds()
