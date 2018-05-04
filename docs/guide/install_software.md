@@ -133,6 +133,7 @@ If you are using the prebuilt image specified above, then your Pi is ready to go
 >
 > The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
 
+> Note: If you are using the prebuilt image specified above, your Pi is not using the full capacity of the SD card. To make the full capacity accessible, SSH into the Pi and run `sudo raspi-config` to go into the configuration tool. Select `7 Advanced Options` and `A1 Expand Filesystem`. And then select `<Finish>` to exit the configuration tool and reboot. The Pi can access the full capacity of the SD card now.
 
 ### Update Donkeycar Python code and install
 

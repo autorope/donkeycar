@@ -24,18 +24,40 @@ These are updated instructions from the 2017 article  [Make Magazine article](ht
 While the simplest path is to use the Magnet chassis which is best documented, however, the Magnet is often out of stock or may be undesirable for other reasons.  The second best car is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handles rough driving surfaces well and is inexpensive.
 For more detail and other options, follow the link to: [supported cars](/supported_cars.md)
 
+
 ![donkey](../assets/build_hardware/donkey.PNG)
 
 &nbsp;
+## Roll Your Own Car
+Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own.md)
 
 ## Parts Needed:
 
-Below is list of the parts needed to make a Donkey based on the Magnet.  If you want to build the Exceed Desert Monster,
-details are provided at [supported cars](/supported_cars.md).  Some of these parts are only sold in large quantities or are hard to get, so we have offered them in the [Donkey Store](https://squareup.com/store/donkeycar) for less money and more conveniently.
+
+### Option 1: Simple path using the Donkey Store (US shipments only)
+The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  Also it is worth noting The design of the parts out of the Donkey store is slightly improved over the standard build as it uses better parts that are only available in quantities or are harder to get.  The Donkey Store builds are open source like all others.  The Donkey Store is run by the original founders of donkey car and all profits are used to fund development of the donkey cars.  
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
-| Magnet Car or alternative                                                                        | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF), [Sava](https://www.nitrorcx.com/51c853-savablue-24-ghz.html)                                         | $92              |
+| Magnet Car or Exceed Desert Monster                                                                       | Magnet: [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF) Desert Monster&ast;: [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)                                       | $92              |
+| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
+| Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
+| MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
+| Wide Angle Raspberry Pi Camera                                                      | [Donkey Store ](https://squareup.com/store/donkeycar/item/wide-angle-raspberry-pi-camera-for-donkey)                                         | $25              |
+| Servo Driver PCA 9685 (includes Jumpers)                                                              | [Donkey Store](https://squareup.com/store/donkeycar/item/servo-driver-pca-with-jumper-cables)                                          | $10           |
+| 3D Printed roll cage and top plate (Includes Screws)                                                 | [Donkey Store](https://squareup.com/store/donkeycar)  | $45 &ast;&ast;                |
+
+&ast; If you buy the desert monster you also need adapters which can be purchased [here](https://squareup.com/store/donkeycar/item/adapters-for-desert-monster)
+
+&ast;&ast; If you want to print your own Donkey you can buy the PT screw set at this [link](https://squareup.com/store/donkeycar/item/plastic-thread-forming-screw-pack)
+
+
+### Option 2:Bottoms Up Build
+If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.  
+
+| Part Description                                                                    | Link                                                                                  | Approximate Cost |
+|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
+| Magnet Car or alternative                                                                        | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)                                         | $92              |
 | M2x6 screws (4)                                                                     | [mcmaster.com/#91292a831/=177k4rp](https://www.mcmaster.com/#91292a831/=177k4rp)                                          | $6.38 &ast;          |
 | M2.5x12 screws (8)                                                                  | [mcmaster.com/#91292a016/=177k574](https://www.mcmaster.com/#91292a016/=177k574)                                          | $4.80 &ast;          |
 | M2.5 nuts (8)                                                                       | [mcmaster.com/#91828a113/=177k7ex](https://www.mcmaster.com/#91828a113/=177k7ex)                                          | $5.64 &ast;          |
@@ -46,16 +68,13 @@ details are provided at [supported cars](/supported_cars.md).  Some of these par
 | Wide Angle Raspberry Pi Camera                                                      | [amazon.com/gp/product/B00N1YJKFS](https://www.amazon.com/gp/product/B00N1YJKFS?tag=donkeycar-20)                                         | $25              |
 | Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 &ast;             |
 | Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 &ast;&ast;           |
-| 3D Printed roll cage and top plate.                                                 | Purchase: [Donkey Store](https://squareup.com/store/donkeycar) Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | $45 &ast;&ast;&ast;                |
+| 3D Printed roll cage and top plate.                                                 | Purchase: [Donkey Store](https://squareup.com/store/donkeycar) Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575) | $45                 |
 
 
 
 &ast; These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.  
 
 &ast;&ast; This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
-
-&ast;&ast;&ast; If you have a printer or have access to one, print the part.  If you are in the US, You can buy one from Adam  (one of the original donkey creators) and he will print and ship to you at a fraction of the cost of Shapeways.
-
 
 &nbsp;
 
@@ -78,7 +97,7 @@ details are provided at [supported cars](/supported_cars.md).  Some of these par
 ## Hardware
 ### Step 1: Print Parts
 
-If you do not have a 3D Printer, you can order parts from [Adam's Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   
+If you do not have a 3D Printer, you can order parts from [Donkey Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   
 
 I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.  
 
@@ -126,7 +145,7 @@ Attach the USB battery to the underside of the printed bottom plate using cable 
 
 &nbsp;
 ### Step 6: Attach Camera
-Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on. It is only necessary to put two screws in. 
+Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on. It is only necessary to put two screws in.
 
 >Sometimes using the two top screw holes can result in a short. Put screws in the bottom two holes.
 
@@ -142,6 +161,7 @@ It is easy to put the camera cable in the wrong way so look at these photos and 
 
 &nbsp;
 ### Step 7: Put it all together
+*** Note if you have a Desert Monster Chassis see 7B section below ***
 The final steps are straightforward.  First attach the roll bar assembly to the car.  This is done using the same pins that came with the vehicle.  
 
 ![donkey](../assets/build_hardware/7a.PNG)
@@ -150,10 +170,15 @@ Second run the servo cables up to the car.  The throttle cable runs to channel 0
 
 ![donkey](../assets/build_hardware/7b.PNG)
 
-
 Now you are done with the hardware!!
 
+### Step 7b: Attach Adapters (Desert Monster only)
 
+The Desert monster does not have the same set up for holding the body on the car and needs two adapters mentioned above.  To attach the adapters you must first remove the existing adapter from the chassis and screw on the custom adapter with the same screws as is shown in this photo:
+
+![adapter](../assets/build_hardware/Desert_Monster_adapter.PNG)
+
+Once this is done, go back to step 7
 
 &nbsp;
 ## Software
