@@ -141,6 +141,8 @@ def train(cfg, tub_names, model_name):
 
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        print('adding_rectangles! {}'.format(record['cam/image_array']))
+        record['cam/image_array'] = dk.utils.add_rectangles(3, record['cam/image_array'])
         return record
 
     kl = KerasCategorical()

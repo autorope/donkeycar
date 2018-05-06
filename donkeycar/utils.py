@@ -102,10 +102,33 @@ def create_video(img_dir_path, output_video_path):
     response = envoy.run(command)
 
 
+import random
+import cv2
+# TODO: put this in its own image_utils file.
+
+def gen_random_rectangle_coords(top, bottom, left, right, min_width, max_width):
+    width = int(random.randint(min_width, max_width) / 2)
+    height = random.randint(30, 60)
+    x_center = random.randint(left, right)
+    y_center = random.randint(top, bottom)
+
+    tl = (x_center - width, y_center + height)
+    br = (x_center + width, y_center - height)
+    return tl, br
 
 
+def add_rectangle(arr, top=10, bottom=30, left=10, right=150, min_width=20, max_width=20):
+    tl, br = gen_random_rectangle_coords(top, bottom, left, right, min_width, max_width)
+    color = tuple(random.choice(range(0, 100)) for i in range(3))
+    arr = cv2.rectangle(arr, tl, br, color, -1)
+    return arr
 
 
+def add_rectangles(arr, n=2):
+    for _ in range(n):
+        arr = add_rectangle(arr, )
+
+    return arr
 
 
 

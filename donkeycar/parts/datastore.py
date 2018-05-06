@@ -209,7 +209,8 @@ class Tub(object):
         return self.current_ix
 
     def get_json_record_path(self, ix):
-        return os.path.join(self.path, 'record_'+str(ix).zfill(6)+'.json')
+        #return os.path.join(self.path, 'record_'+str(ix).zfill(6)+'.json')  #fill zeros
+        return os.path.join(self.path, 'record_' + str(ix) + '.json')  #don't fill zeros
 
     def get_json_record(self, ix):
         path = self.get_json_record_path(ix)
@@ -247,7 +248,8 @@ class Tub(object):
         return data
 
     def make_file_name(self, key, ext='.png'):
-        name = '_'.join([str(self.current_ix).zfill(6), key, ext])
+        #name = '_'.join([str(self.current_ix).zfill(6), key, ext])
+        name = '_'.join([str(self.current_ix), key, ext])  # don't fill zeros
         name = name = name.replace('/', '-')
         return name
 
@@ -269,10 +271,10 @@ class Tub(object):
                 if shuffle:
                     record_dict = df.sample(n=1).to_dict(orient='record')[0]
 
+                record_dict = self.read_record(record_dict)
+
                 if record_transform:
                     record_dict = record_transform(record_dict)
-
-                record_dict = self.read_record(record_dict)
 
                 yield record_dict
 
