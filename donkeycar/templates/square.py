@@ -18,12 +18,13 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 
-from donkeycar.parts.datastore import TubGroup, TubHandler
+from donkeycar.parts.datastore import TubGroup, TubHandler, TubWriter
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.time import Timestamp
+
 
 from donkeycar.parts.autorope import AutoropeSession
 
@@ -116,9 +117,14 @@ def drive(cfg, model_path=None):
            'str',
            'str']
     
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types)
+    #multiple tubs
+    #th = TubHandler(path=cfg.DATA_PATH)
+    #tub = th.new_tub_writer(inputs=inputs, types=types)
+
+    # single tub
+    tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
+
 
     # run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)

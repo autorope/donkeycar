@@ -21,7 +21,7 @@ from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubHandler, TubGroup
+from donkeycar.parts.datastore import TubHandler, TubGroup, TubWriter
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.time import Timestamp
 
@@ -117,9 +117,13 @@ def drive(cfg, model_path=None, use_joystick=False):
     # add tub to save data
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
     types = ['image_array', 'float', 'float',  'str', 'str']
-    
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types)
+
+    #multiple tubs
+    #th = TubHandler(path=cfg.DATA_PATH)
+    #tub = th.new_tub_writer(inputs=inputs, types=types)
+
+    # single tub
+    tw = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
     print("You can now go to <your pi ip address>:8887 to drive your car.")

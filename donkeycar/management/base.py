@@ -50,7 +50,8 @@ class CreateCar(BaseCommand):
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='createcar', usage='%(prog)s [options]')
-        parser.add_argument('--path', default=None, help='path where to create car folder')
+        parser.add_argument('path')
+        #parser.add_argument('--path', default=None, help='path where to create car folder')
         parser.add_argument('--template', default=None, help='name of car template to use')
         parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
         

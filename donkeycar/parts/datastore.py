@@ -74,7 +74,9 @@ class Tub(object):
 
     def get_last_ix(self):
         index = self.get_index()
-        return max(index)
+        if len(index) > 1:
+            return max(index)
+        return 0
 
     def update_df(self):
         df = pd.DataFrame([self.get_json_record(i) for i in self.get_index(shuffled=False)])
