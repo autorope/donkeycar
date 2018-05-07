@@ -21,7 +21,8 @@ from ..log import get_logger
 
 logger = get_logger(__name__)
 
-
+import requests
+import ropeclient as rc
 
 class Tub(object):
     """
@@ -76,7 +77,7 @@ class Tub(object):
         index = self.get_index()
         if len(index) > 1:
             return max(index)
-        return 0
+        return -1
 
     def update_df(self):
         df = pd.DataFrame([self.get_json_record(i) for i in self.get_index(shuffled=False)])
@@ -184,7 +185,6 @@ class Tub(object):
         be saved in a csv.
         """
         json_data = {}
-        self.current_ix += 1
         
         for key, val in data.items():
             typ = self.get_input_type(key)
@@ -208,6 +208,7 @@ class Tub(object):
                 raise TypeError(msg)
 
         self.write_json_record(json_data)
+        self.current_ix += 1
         return self.current_ix
 
     def get_json_record_path(self, ix):
@@ -269,7 +270,7 @@ class Tub(object):
             df = self.get_df()
 
         while True:
-            for row in self.df.iterrows():
+            for _ in self.df.iterrows():
                 if shuffle:
                     record_dict = df.sample(n=1).to_dict(orient='record')[0]
 
@@ -729,3 +730,48 @@ class TypeRegistry:
 
     def read_many(self, type_names, serialized_values):
         return tuple([self.read(t, v) for v, t in zip(serialized_values, type_names)])
+
+
+class TubUploader(Tub):
+    def __init__(self, bot_id, path, delete_when_uploaded=False):
+        self.delete_when_uploaded = delete_when_uploaded
+        self.bot_id = bot_id
+        self.last_id = 0
+        self.last_time = 0
+        super(TubUploader, self).__init__(path)
+
+    def upload_record(self, ix, delete_when_uploaded=False):
+        data = self.get_json_record(ix)
+        img_path = data['cam/image_array']
+
+        with open(img_path, 'rb') as img_bytes:
+            files = {'jpg': img_bytes.read()}
+            data = {'bot': self.bot_id,
+                    'time': self.last_time + 5,
+                    'user_throttle': data['user/throttle'],
+                    'user_steering': data['user/angle']
+                    }
+            resp = rc.Record.create(data=data, files=files)
+            print('uploaded')
+            if delete_when_uploaded:
+                os.remove(self.get_json_record_path(ix))
+                os.remove(img_path)
+                print('deleted record and images')
+
+    def upload(self):
+        while True:
+            if utils.time_since_last_file_edited(self.path) > 3:
+
+                try:
+                    self.upload_record(self.last_id, delete_when_uploaded=self.delete_when_uploaded)
+                    self.last_id += 1
+
+                except FileNotFoundError as e:
+                    print('could not find {}'.format(e))
+                    time.sleep(3)
+                except requests.exceptions.ConnectionError as e:
+                    print('could not connect {}'.format(e))
+                    time.sleep(3)
+            else:
+                print('recent file was added, waiting to download')
+                time.sleep(1)

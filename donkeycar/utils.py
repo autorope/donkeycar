@@ -12,6 +12,7 @@ import zipfile
 import sys
 import itertools
 import subprocess
+import time
 
 from PIL import Image
 import numpy as np
@@ -195,7 +196,13 @@ def zip_dir(dir_path, zip_path):
     zf.close()
     return zip_path
 
-
+def time_since_last_file_edited(path):
+    """return seconds since last file was updated"""
+    list_of_files = glob.glob(os.path.join(path, '*'))
+    if len(list_of_files) > 0:
+        latest_file = max(list_of_files, key=os.path.getctime)
+        return int(time.time() - os.path.getctime(latest_file))
+    return 0
 
 
 '''
@@ -213,7 +220,7 @@ def linear_bin(a):
 
 def linear_unbin(arr):
     b = np.argmax(arr)
-    a = b *(2/14) - 1
+    a = b * (2/14) - 1
     return a
 
 
