@@ -313,15 +313,16 @@ class Tub(object):
             Y = [batch[k] for k in Y_keys]
             yield X, Y
 
-    def get_train_val_gen(self, X_keys, Y_keys, batch_size=128, record_transform=None, train_frac=.8):
+    def get_train_val_gen(self, X_keys, Y_keys, batch_size=128, train_frac=.8,
+                          train_record_transform=None, val_record_transform=None):
         train_df = self.df.sample(frac=train_frac, random_state=200)
         val_df = self.df.drop(train_df.index)
 
         train_gen = self.get_train_gen(X_keys=X_keys, Y_keys=Y_keys, batch_size=batch_size,
-                                       record_transform=record_transform, df=train_df)
+                                       record_transform=train_record_transform, df=train_df)
 
         val_gen = self.get_train_gen(X_keys=X_keys, Y_keys=Y_keys, batch_size=batch_size,
-                                     record_transform=record_transform, df=val_df)
+                                     record_transform=val_record_transform, df=val_df)
 
         return train_gen, val_gen
 

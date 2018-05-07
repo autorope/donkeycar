@@ -143,10 +143,15 @@ def train(cfg, tub_names, model_name):
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
 
-    def rt(record):
+    def train_record_transform(record):
+        """ convert categorical steering to linear and apply image augmentations """
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
-        print('adding_rectangles! {}'.format(record['cam/image_array']))
-        record['cam/image_array'] = dk.utils.add_rectangles(3, record['cam/image_array'])
+        record['cam/image_array'] = dk.utils.augment_images(record['cam/image_array'])
+        return record
+
+    def val_record_transform(record):
+        """ convert categorical steering to linear """
+        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
         return record
 
     kl = KerasCategorical()
@@ -154,7 +159,9 @@ def train(cfg, tub_names, model_name):
     if not tub_names:
         tub_names = os.path.join(cfg.DATA_PATH, '*')
     tubgroup = TubGroup(tub_names)
-    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
+    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys,
+                                                    train_record_transform=train_record_transform,
+                                                    val_record_transform=val_record_transform,
                                                     batch_size=cfg.BATCH_SIZE,
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
 
