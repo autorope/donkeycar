@@ -30,6 +30,7 @@ integrated car.
 Here is an example of an integrated RX and ESC - typically these should be avoided:
 ![RX ESC example](./assets/ESC_RX.png)
 
+
 You also need to know some things about electronics, such as the difference
 between power rails and control signals, what the duration of a microsecond is,
 and how Volts, Amperes, Watts, Hours, Ohms, and other measurement units relate.

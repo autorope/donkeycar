@@ -21,9 +21,17 @@
 These are updated instructions from the 2017 article  [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
 
 ## Choosing a Car
-While the simplest path is to use the Magnet chassis which is best documented, however, the Magnet is often out of stock or may be undesirable for other reasons.  The second best car is the Exceed Desert Monster.  It is almost identical to the Magnet, however it requires some adapters for the donkey plastics to work.  The Magnet and Exceed Desert Monster are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handles rough driving surfaces well and is inexpensive.
+There are 4 fully supported chassis all made under the "Exceed" Brand:
+
+*  Exceed Magnet [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)
+*  Exceed Desert Monster [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)
+*  Exceed Short Course Truck  [Blue](https://amzn.to/2KsYF1e),  [Red](https://amzn.to/2rdtQ8z)
+*  Exceed Blaze [Hyper Blue](https://amzn.to/2rf4MgS), [Yellow](https://amzn.to/2jlf3EA)
+
+These cars are electrically identical but have different tires, mounting and other details.  It is worth noting that the Desert Monster, Short Course Truck and Blaze all require adapters which can be easily printed or purchased from the donkey store.  These are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.
 For more detail and other options, follow the link to: [supported cars](/supported_cars.md)
 
+Here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars and how to assemble them.
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
@@ -39,17 +47,11 @@ The intention of the Donkey Store is to make it easier and less expensive to bui
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
-| Magnet Car or Exceed Desert Monster                                                                       | Magnet: [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF) Desert Monster&ast;: [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)                                       | $92              |
+| Exceed Magnet, Desert Monster, Blaze, or Short Course Truck                                                                       | See links above                                     | ~$90              |
 | USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
 | Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
 | MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
-| Wide Angle Raspberry Pi Camera                                                      | [Donkey Store ](https://squareup.com/store/donkeycar/item/wide-angle-raspberry-pi-camera-for-donkey)                                         | $25              |
-| Servo Driver PCA 9685 (includes Jumpers)                                                              | [Donkey Store](https://squareup.com/store/donkeycar/item/servo-driver-pca-with-jumper-cables)                                          | $10           |
-| 3D Printed roll cage and top plate (Includes Screws)                                                 | [Donkey Store](https://squareup.com/store/donkeycar)  | $45 &ast;&ast;                |
-
-&ast; If you buy the desert monster you also need adapters which can be purchased [here](https://squareup.com/store/donkeycar/item/adapters-for-desert-monster)
-
-&ast;&ast; If you want to print your own Donkey you can buy the PT screw set at this [link](https://squareup.com/store/donkeycar/item/plastic-thread-forming-screw-pack)
+| Donkey Partial Kit                                                      | [Magnet] ](https://squareup.com/store/donkeycar/item/magnet-partial-kit) or [Desert Monster, SCT, Blaze](https://squareup.com/store/donkeycar/item/desert-monster-short-course-truck-or-blaze-partial-kit)                                         | $85 or $92              |
 
 
 ### Option 2:Bottoms Up Build
@@ -95,9 +97,10 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 &nbsp;
 
 ## Hardware
+If you purchased parts from the Donkey Car Store, skip to step 3.
 ### Step 1: Print Parts
 
-If you do not have a 3D Printer, you can order parts from [Donkey Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   
+If you do not have a 3D Printer, you can order parts from [Donkey Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   Remember that you need to print the adapters unless you have a "Magnet"
 
 I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.  
 
@@ -115,6 +118,8 @@ In particular, clean up the slots in the side of the roll bar, as shown in the p
 
 &nbsp;
 ### Step 3: Assemble Top plate and Roll Cage
+If you have an Exceed Short Course Truck, Blaze or Desert Monster watch this [video](https://youtu.be/UucnCmCAGTI)
+
 Slide the nut into the slot in the side of the roll cage.  This is not particularly easy.  You may need to clean out the hole again and use a small screwdriver to push the screw in such that it lines up with the hole in the bottom of the roll cage.
 
 ![donkey](../assets/build_hardware/3a.PNG)
