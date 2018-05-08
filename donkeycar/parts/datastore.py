@@ -752,11 +752,13 @@ class TubUploader(Tub):
                     'user_steering': data['user/angle']
                     }
             resp = rc.Record.create(data=data, files=files)
-            print('uploaded')
+            print(resp)
             if delete_when_uploaded:
                 os.remove(self.get_json_record_path(ix))
                 os.remove(img_path)
                 print('deleted record and images')
+            else:
+                print(resp)
 
     def upload(self):
         while True:
@@ -775,3 +777,16 @@ class TubUploader(Tub):
             else:
                 print('recent file was added, waiting to download')
                 time.sleep(1)
+
+    def upload_all(self):
+        index = self.get_index(shuffled=False)
+        for ix in index:
+            try:
+                self.upload_record(ix)
+                self.last_id += 1
+            except FileNotFoundError as e:
+                print('could not find {}'.format(e))
+
+            except requests.exceptions.ConnectionError as e:
+                print('could not connect {}. sleeping for 3 seconds'.format(e))
+                time.sleep(3)
