@@ -4,9 +4,9 @@ import argparse
 import json
 import time
 
-import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
+from donkeycar.parts.controller import JoystickCreatorController
 
 class CreateJoystick(object):
 
@@ -65,7 +65,6 @@ class CreateJoystick(object):
         return most_movement
 
     def create_joystick(self, args):
-        from donkeycar.parts.controller import JoystickCreatorController
 
         print("Welcome to Joystick Creator Wizard.")
         print("This will walk you through the steps to create a python class to use your controller.")
