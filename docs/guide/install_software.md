@@ -6,6 +6,7 @@ This guide will help you to setup the software to run Donkey on your Raspberry P
 * Setup [Linux Host PC](#install-donkeycar-on-linux)
 * Setup [Windows Host PC](#install-donkeycar-on-windows)
 * Setup [Mac Host PC](#install-donkeycar-on-mac)
+* Setup [AWS SageMaker](#install-donkeycar-on-aws-sagemaker)
 
 ----
 ### Get the Raspberry Pi working.
@@ -268,6 +269,47 @@ donkey createcar --path ~/d2
 > Note: After closing the Terminal, when you open it again, you will need to 
 > type ```source activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
+
+----
+
+## Install donkeycar on AWS Sagemaker
+
+### Introduction
+
+The following instructions will show you how to install donkeycar on an [AWS SageMaker](https://aws.amazon.com/sagemaker/) *Notebook instance*.
+
+The *Notebook instance* is typically used for experimenting and preparing your data and model for training. The convention is then to distribute the training on a separate cluster of *training instances*. This, however, requires you to adapt your training script (and model) to work in a distributed manner, preferably using the [SageMaker Python SDK](https://github.com/aws/sagemaker-python-sdk), which is not currently available in Donkey.
+
+That said, it is still possible to install and train your model on the *Notebook instance*. It will allow you to train your [Keras model](../../donkeycar/parts/keras.py) using a beefy instance type with a large GPU, and, perhaps most importantly, shut it down when finished so that you only pay for what you use.
+
+### Create a Notebook instance
+
+If you havn't already, log in to your [AWS Console](https://console.aws.amazon.com/console/home) and create a new [AWS SageMaker](https://aws.amazon.com/sagemaker/) Notebook instance:
+
+- https://docs.aws.amazon.com/sagemaker/latest/dg/how-it-works-notebooks-instances.html#howitworks-create-ws
+
+Suggest using a `ml.p2.xlarge` instance type. You can find a list of available types here:
+
+- https://aws.amazon.com/sagemaker/pricing/instance-types/
+
+### Clone the donkey git in SageMaker
+
+When you've created your new instance, open it up and create a new [Jupyter Notebook](http://jupyter.org/) (click *New*, *conda_tensorflow_p36*).
+
+* In the first cell, type:
+```python
+!git clone https://github.com/wroscoe/donkey ~/SageMaker/donkey
+```
+
+* Close the Jupyter Notebook (not the instance!). You can delete it if you want.
+
+### Install donkey on SageMaker
+
+After cloning the git, you'll find the donkey folder in the SageMaker Notebook root:
+
+![donkey dir](../assets/sm-tree-donkey.gif)
+
+* Open *donkey/docs/guide/sm-install-donkey.ipynb* and follow the instructions.
 
 -------
 

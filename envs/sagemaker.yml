@@ -1,0 +1,12 @@
+name: donkey
+dependencies:
+
+- numpy
+- pandas
+- pillow
+- h5py
+
+- pip:
+  - tensorflow-gpu
+  - docopt
+  - moviepy
