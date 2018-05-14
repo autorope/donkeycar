@@ -2,13 +2,13 @@
 	#joystick-column {
 		/* This causes joystick to be offscreen on iPhone 5s, 6, iPad 2
 		position: fixed;
-		bottom:100; 
+		bottom:100;
 		right:0;*/
-		width:100%; 
+		width:100%;
 		height:40%;
-		 
+
 	}
-	
+
 	#joystick-padding {
 		height:220px;
 	}

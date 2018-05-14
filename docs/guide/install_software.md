@@ -208,8 +208,8 @@ donkey createcar --path ~/d2
 
 
 
-> Note: After closing the Anaconda Prompt, when you open it again, you will need to 
-> type ```activate donkey``` to re-enable the mappings to donkey specific 
+> Note: After closing the Anaconda Prompt, when you open it again, you will need to
+> type ```activate donkey``` to re-enable the mappings to donkey specific
 > Python libraries
 
 [Next: Calibrate your car.](./calibrate.md)
@@ -267,8 +267,8 @@ donkey createcar --path ~/d2
 
 [Next: Calibrate your car.](./calibrate.md)
 
-> Note: After closing the Terminal, when you open it again, you will need to 
-> type ```source activate donkey``` to re-enable the mappings to donkey specific 
+> Note: After closing the Terminal, when you open it again, you will need to
+> type ```source activate donkey``` to re-enable the mappings to donkey specific
 > Python libraries
 
 ----

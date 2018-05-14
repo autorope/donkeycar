@@ -11,10 +11,10 @@ class Lambda:
         Accepts the function to use.
         """
         self.f = f
-        
+
     def run(self, *args, **kwargs):
         return self.f(*args, **kwargs)
-    
+
     def shutdown(self):
         return
 

@@ -12,7 +12,7 @@ from donkeycar.parts.simulation import SteeringServer, FPSTimer
 from donkeycar.parts.keras import KerasCategorical
 
 class TestSimServer(unittest.TestCase):
-    
+
     def test_create_sim_server(self):
         import socketio
         kc = KerasCategorical()
@@ -30,5 +30,5 @@ class TestSimServer(unittest.TestCase):
         assert tm.iter == 2
         tm.iter = 100
         tm.on_frame()
-        
+
 

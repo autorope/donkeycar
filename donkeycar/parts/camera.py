@@ -133,7 +133,7 @@ class ImageListCamera(BaseCamera):
     '''
     def __init__(self, path_mask='~/d2/data/**/*.jpg'):
         self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
-    
+
         def get_image_index(fnm):
             sl = os.path.basename(fnm).split('_')
             return int(sl[0])
@@ -156,10 +156,10 @@ class ImageListCamera(BaseCamera):
     def update(self):
         pass
 
-    def run_threaded(self):        
+    def run_threaded(self):
         if self.num_images > 0:
             self.i_frame = (self.i_frame + 1) % self.num_images
-            self.frame = Image.open(self.image_filenames[self.i_frame]) 
+            self.frame = Image.open(self.image_filenames[self.i_frame])
 
         return np.asarray(self.frame)
 

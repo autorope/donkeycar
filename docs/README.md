@@ -1,6 +1,6 @@
 ## Donkey Docs
 
-The source of the documenation gets built in the folder `../site` and is 
+The source of the documenation gets built in the folder `../site` and is
 published to (http://wroscoe.github.io/donkey). Our docs use extended markdown
 as implemented by MkDocs.
 

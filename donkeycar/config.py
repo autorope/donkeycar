@@ -13,7 +13,7 @@ class Config:
 
     def __init__(self):
         pass
-    
+
     def from_pyfile(self, filename, silent=False):
         """
         Read config class from a file.
@@ -28,7 +28,7 @@ class Config:
             raise
         self.from_object(d)
         return True
-    
+
     def from_object(self, obj):
         """
         Read config class from another object.
@@ -36,7 +36,7 @@ class Config:
         for key in dir(obj):
             if key.isupper():
                 setattr(self, key, getattr(obj, key))
-                
+
     def __str__(self):
         """
         Get a string representation of the config class.
@@ -56,7 +56,7 @@ def load_config(config_path=None):
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
         config_path = os.path.join(main_path, 'config.py')
-    
+
     print('loading config file: {}'.format(config_path))
     cfg = Config()
     cfg.from_pyfile(config_path)

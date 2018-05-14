@@ -20,7 +20,7 @@ class Joystick():
         self.button_map = []
         self.jsdev = None
         self.dev_fn = dev_fn
-        
+
         # These constants were borrowed from linux/input.h
         self.axis_names = {
             0x00 : 'x',
@@ -64,9 +64,9 @@ class Joystick():
             0x129 : 'base4',
             0x12a : 'base5',
             0x12b : 'base6',
-	   
+
             #PS3 sixaxis specific
-            0x12c : "triangle", 
+            0x12c : "triangle",
             0x12d : "circle",
             0x12e : "cross",
             0x12f : 'square',
@@ -108,7 +108,7 @@ class Joystick():
         # Open the joystick device.
         print('Opening %s...' % self.dev_fn)
         self.jsdev = open(self.dev_fn, 'rb')
-    
+
         # Get the device name.
         buf = array.array('B', [0] * 64)
         ioctl(self.jsdev, 0x80006a13 + (0x10000 * len(buf)), buf) # JSIOCGNAME(len)
@@ -156,8 +156,8 @@ class Joystick():
     def poll(self):
         '''
         query the state of the joystick, returns button which was pressed, if any,
-        and axis which was moved, if any. button_state will be None, 1, or 0 if no changes, 
-        pressed, or released. axis_val will be a float from -1 to +1. button and axis will 
+        and axis which was moved, if any. button_state will be None, 1, or 0 if no changes,
+        pressed, or released. axis_val will be a float from -1 to +1. button and axis will
         be the string label determined by the axis map in init.
         '''
         button = None
@@ -252,13 +252,13 @@ class JoystickController(object):
         button map name => PS3 button => function
         * top2 = PS3 dpad up => increase throttle scale
         * base = PS3 dpad down => decrease throttle scale
-        * base2 = PS3 dpad left => increase steering scale 
+        * base2 = PS3 dpad left => increase steering scale
         * pinkie = PS3 dpad right => decrease steering scale
         * trigger = PS3 select => switch modes
         * top = PS3 start => toggle constant throttle
-        * base5 = PS3 left trigger 1 
+        * base5 = PS3 left trigger 1
         * base3 = PS3 left trigger 2
-        * base6 = PS3 right trigger 1 
+        * base6 = PS3 right trigger 1
         * base4 = PS3 right trigger 2
         * thumb2 = PS3 right thumb
         * thumb = PS3 left thumb
@@ -273,7 +273,7 @@ class JoystickController(object):
 
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
-        
+
             if axis == self.steering_axis:
                 self.angle = self.steering_scale * axis_val
                 print("angle", self.angle)
@@ -283,7 +283,7 @@ class JoystickController(object):
                 self.throttle = (self.throttle_scale * axis_val * self.max_throttle)
                 print("throttle", self.throttle)
                 self.on_throttle_changes()
-            
+
             if button == 'trigger' and button_state == 1:
                 '''
                 switch modes from:
@@ -331,7 +331,7 @@ class JoystickController(object):
                 if self.constant_throttle:
                     self.throttle = self.max_throttle
                     self.on_throttle_changes()
-                    
+
                 print('max_throttle:', self.max_throttle)
 
             if button == 'base' and button_state == 1:
@@ -374,7 +374,7 @@ class JoystickController(object):
                     self.constant_throttle = True
                     self.throttle = self.max_throttle
                     self.on_throttle_changes()
-                print('constant_throttle:', self.constant_throttle)           
+                print('constant_throttle:', self.constant_throttle)
 
             time.sleep(self.poll_delay)
 

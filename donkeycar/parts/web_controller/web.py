@@ -7,7 +7,7 @@ Created on Sat Jun 24 20:10:44 2017
 
 remotes.py
 
-The client and web server needed to control a car remotely. 
+The client and web server needed to control a car remotely.
 """
 
 import os
@@ -24,8 +24,8 @@ from donkeycar import util
 class LocalWebController(tornado.web.Application):
     port = 8887
     def __init__(self):
-        ''' 
-        Create and publish variables needed on many of 
+        '''
+        Create and publish variables needed on many of
         the web handlers.
         '''
 
@@ -85,7 +85,7 @@ class DriveAPI(tornado.web.RequestHandler):
 
 class VideoAPI(tornado.web.RequestHandler):
     '''
-    Serves a MJPEG of the images posted from the vehicle. 
+    Serves a MJPEG of the images posted from the vehicle.
     '''
 
     @tornado.web.asynchronous
