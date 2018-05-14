@@ -1,14 +1,16 @@
 language: python
 python:
-- 3.4
+- 3.5
+
+cache: pip
 
 before_install:
 - sudo apt-get update -qq
 - sudo apt-get install -y python3-numpy python3-scipy
 
 install:
-- pip3 install pytest nose
-- pip3 install -e .
+- pip3 install pytest nose opencv-python
+- pip3 install -e .[dev]
 
 script:
 - pytest
