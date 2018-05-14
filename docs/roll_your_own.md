@@ -1,5 +1,7 @@
 # Roll Your Own Car
 
+![Crunch](./assets/build_hardware/Crunch.png)
+
 ## The Quick and Dirty
 
 * Your car needs to be easy to control from a Raspberry Pi
@@ -13,7 +15,7 @@ This generally means:
 * Your car needs to have a speed controller for the motor (ESC) that takes a standard RC 3-pin control signal (RC PWM style)
 * Your car needs to have a steering servo that takes a standard RC 3-pin control signal (RC PWM style)
 * Your car needs to have a radio receiver that contains standard 100-mil (2.54 mm) pin headers for each of the ESC and the steering servo.
-* Your car needs to be between 1/16th scale (smallest end) and 1/8th scale (largest end)
+* Your car needs to be between 1/18th scale (smallest end) and 1/8th scale (largest end) if you want to race in the DIYRobocars race.
 * Your car needs to either use a brushed motor, or a sensored brushless motor. Sensorless brushless motors are too rough at low speeds.  If you buy a car with a brushless motor included it is invariably a sensorless brushless motor and will need to be replaced along with the ESC.
 
 Other options are perhaps possible, see the end of this document.
@@ -24,6 +26,10 @@ integrate many parts of electronics and mechanics into a single package, which
 means that we can't intersect the appropriate signals to control the car with a
 Raspberry Pi. In fact, the expected signals may not even exist at all in an
 integrated car.
+
+Here is an example of an integrated RX and ESC - typically these should be avoided:
+![RX ESC example](./assets/ESC_RX.png)
+
 
 You also need to know some things about electronics, such as the difference
 between power rails and control signals, what the duration of a microsecond is,
