@@ -13,7 +13,7 @@ donkey createcar --path <dir> [--overwrite] [--template <donkey2>]
 
 * This command may be run from any dir
 * Run on the host computer or the robot
-* It uses the `--path` as the destination dir to create. If `.py` files exist there, it will not overwrite them, unless the optional `--overwrite` is used. 
+* It uses the `--path` as the destination dir to create. If `.py` files exist there, it will not overwrite them, unless the optional `--overwrite` is used.
 * The optional `--template` will specify the template file to start from. For a list of templates, see the `donkeycar/templates` dir
 
 ## Find Car

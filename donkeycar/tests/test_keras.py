@@ -17,7 +17,7 @@ def test_pilot_types(pilot):
 def test_categorical():
     kc = KerasCategorical()
     assert kc.model is not None
-    
+
 def test_categorical_with_model():
     kc = KerasCategorical(default_categorical())
     assert kc.model is not None
@@ -25,4 +25,4 @@ def test_categorical_with_model():
 def test_def_n_linear_model():
     model = default_n_linear(10)
     assert model is not None
-    
+

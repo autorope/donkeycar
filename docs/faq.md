@@ -1,20 +1,20 @@
-# FAQ 
+# FAQ
 ---------
 
 ### What types of RC cars work with the donkey platform?
 Most hobby grade RC cars will work fine with the electronics but you'll need to make your own baseplate and camera
-holder. To make sure the car will work with Donkey check theses things. 
+holder. To make sure the car will work with Donkey check theses things.
 
 * it has a separate ESC and reciever. Some of the cheaper cars have these combined so it would require soldering to
 connect the Donkey motor controller to the ESC.
 * The ESC uses three-wire connectors. This will make it easy to just plug into the Donkey hardware.
-* Brushed motors are easier because they can go slower but brushless motors can work as well. 
+* Brushed motors are easier because they can go slower but brushless motors can work as well.
 
 For more information, see [Roll Your Own](/roll_your_own.md).
 
 ### What car can I use if I'm not in the USA?
 The easiest thing to do would be to take your parts down to your local RC / hobby shop and check that the car you want
-works with the parts. Here are some parts people have said work in other countries. 
+works with the parts. Here are some parts people have said work in other countries.
 
 * Austrailia: [KAOS](https://www.hobbywarehouse.com.au/hsp-94186-18694k-kaos-blue-rc-truck.html) (functionally equivalent to the Exceed Magnet)
 * China: [HSP 94186](https://item.taobao.com/item.htm?spm=a1z02.1.2016030118.d2016038.314a2de7XhDszO&id=27037536775&scm=1007.10157.81291.100200300000000&pvid=dd956496-2837-41c8-be44-ecbcf48f1eac) (functionally equivalent to the Exceed Magnet)
@@ -27,7 +27,7 @@ yellow center line. The Oakland track is about 70 feet around the center line. K
 * straightaways.
 * left and right turns
 * hairpin turn
-* start/finish line. 
+* start/finish line.
 
 
 ### Will Donkey Work on different hardware?
@@ -40,7 +40,7 @@ Here are a couple systems that people have tried or talked about.
 
 
 ### How do I create my own Raspberry Pi Disk?
-This requires an extra 4 hours when command. 
+This requires an extra 4 hours when command.
 
 ##### This uses minimal space on your memory card, is easy to upgrade and make changes to source
 
@@ -48,7 +48,7 @@ This requires an extra 4 hours when command.
 * On Windows, [download disk imager](https://sourceforge.net/projects/win32diskimager/files/latest/download)
 * On Mac or Linux, [download Etcher](https://etcher.io)
 * Follow instructions to burn image to memory card.:
-      * Win32DiskImager [video](https://www.youtube.com/watch?v=SdWr-aolCSA) 
+      * Win32DiskImager [video](https://www.youtube.com/watch?v=SdWr-aolCSA)
       * Win32DiskImager [writeup](https://codeyarns.com/2013/06/21/how-to-write-a-disk-image-using-win32-disk-imager/)
       * Etcher [video](https://www.youtube.com/watch?v=I6F2HoTeiFc)
       * Etcher [writeup](https://www.raspberrypi.org/magpi/pi-sd-etcher/)
@@ -63,7 +63,7 @@ This requires an extra 4 hours when command.
     `sudo raspi-config`
     * change hostname
     * change password
-    * interface options: 
+    * interface options:
         * enable camera
         * enable SSH
         * enable I2C

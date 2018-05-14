@@ -27,7 +27,7 @@ class Mpu6050:
         while self.on:
             self.poll()
             time.sleep(self.poll_delay)
-                
+
     def poll(self):
         self.accel, self.gyro, self.temp = self.sensor.get_all_data()
 
@@ -50,4 +50,4 @@ if __name__ == "__main__":
         print(data)
         time.sleep(0.1)
         iter += 1
-     
+

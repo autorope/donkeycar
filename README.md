@@ -1,10 +1,10 @@
-# donkeycar: a python self driving library 
+# donkeycar: a python self driving library
 
 [![CircleCI](https://circleci.com/gh/wroscoe/donkey.svg?style=svg)](https://circleci.com/gh/wroscoe/donkey)
 
-Donkeycar is minimalist and modular self driving library for Python. It is 
-developed for hobbiests and students with a focus on allowing fast experimentation and easy 
-community contributions.  
+Donkeycar is minimalist and modular self driving library for Python. It is
+developed for hobbiests and students with a focus on allowing fast experimentation and easy
+community contributions.
 
 #### Quick Links
 * [Donkeycar Updates & Examples](http://donkeycar.com)
@@ -17,16 +17,16 @@ community contributions.
 * Make an RC car drive its self.
 * Compete in self driving races like [DIY Robocars](http://diyrobocars.com)
 * Experiment with autopilots, mapping computer vision and neural networks.
-* Log sensor data. (images, user inputs, sensor readings) 
+* Log sensor data. (images, user inputs, sensor readings)
 * Drive your car via a web or game controler.
 * Leverage community contributed driving data.
 * Use existing harsupport
 supportdware CAD designs for upgrades.
 
-### Getting driving. 
+### Getting driving.
 After building a Donkey2 you can turn on your car and go to http://localhost:8887 to drive.
 
-### Modify your cars behavior. 
+### Modify your cars behavior.
 The donkey car is controlled by running a sequence of events
 
 ```python
@@ -44,8 +44,8 @@ cam = PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #add tub part to record images
-tub = Tub(path='~/d2/gettings_started', 
-          inputs=['image'], 
+tub = Tub(path='~/d2/gettings_started',
+          inputs=['image'],
           types=['image_array'])
 V.add(tub, inputs=['image'])
 
@@ -53,5 +53,5 @@ V.add(tub, inputs=['image'])
 V.start(rate_hz=10)
 ```
 
-See [home page](http://donkeycar.com), [docs](http://docs.donkeycar.com) 
+See [home page](http://donkeycar.com), [docs](http://docs.donkeycar.com)
 or join the [Slack channel](http://www.donkeycar.com/community.html) to learn more.

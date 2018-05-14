@@ -22,8 +22,8 @@ class RPLidar():
         for new_scan, quality, angle, distance in self.measurements:
             angle = int(angle)
             self.frame[angle] = 2*distance/3 + self.frame[angle]/3
-            if not self.on: 
+            if not self.on:
                 break
-            
+
     def run_threaded(self):
         return self.frame

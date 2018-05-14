@@ -1,10 +1,10 @@
 # Supported cars
 
 ## Magnet and HSP 94186
-The magnet chassis was the first standard Donkey build.  However in many cases it may not be available.  
+The magnet chassis was the first standard Donkey build.  However in many cases it may not be available.
 ![donkey](./assets/build_hardware/donkey2.PNG)
 
-Try searching for both the Magnet and HSP 94186 on ebay, banggood, ali express etc.  
+Try searching for both the Magnet and HSP 94186 on ebay, banggood, ali express etc.
 
 The HSP 94186 is the same as the Magnet and will work.  If you speak mandarin it is always available on Taobao.
 
@@ -13,7 +13,7 @@ https://item.taobao.com/item.htm?spm=a230r.1.14.1.478a6da8CUjrQQ&id=6004880592&n
 ## Exceed Desert Monster, Short Course Truck, and Blaze
 The Desert Monster, SCT and Blaze are made by the same manufacturer as the Magnet and has the same motor and ESC.  The chassis is slightly different so it requires an adapter and some extra hardware to work with the standard donkey platform.  With the adapters the camera placement will be identical to the Magnet and should be able to share models.
 
-It is worth noting that the Desert Monster and SCT also has some nice characteristics including narrower, more road friendly tires and the Blaze has a slightly narrower stance which makes it less likely to hit things.  
+It is worth noting that the Desert Monster and SCT also has some nice characteristics including narrower, more road friendly tires and the Blaze has a slightly narrower stance which makes it less likely to hit things.
 
 ![Desert Monster](./assets/build_hardware/Desert_Monster.png)
 Tu purchase one of these cars follow the following links:
@@ -29,7 +29,7 @@ To assemble one of these you will need some additional parts than the standard b
 |3D printed Adapters | Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575)| $10 |
 |Chassis Clips | [Amazon](http://amzn.to/2FNSCFI) | $5|
 
-To assemble first remove the plastic cover and roll cage then unscrew the posts that hold up the cover and replace with the adapters.  
+To assemble first remove the plastic cover and roll cage then unscrew the posts that hold up the cover and replace with the adapters.
 
 Visual instructions to follow.
 
@@ -41,13 +41,13 @@ The TT-01 is a new build that is a higher end version of the Donkey.  This is an
 Pros:
 
 * Better kinematics and traction on smooth surfaces - basically this means it will corner better
-* Larger build area for adding other sensors.  
+* Larger build area for adding other sensors.
 * Globally available with several clones.
 
 Cons:
 
 * Assembly required! - you will need to supply your own ESC, battery, servo, pinion gear and motor.
-* Needs to run on a smooth surface like a driveway or parking lot.   
+* Needs to run on a smooth surface like a driveway or parking lot.
 * Larger size requires a larger 3D printer to print chassis, otherwise purchase at the Donkeystore.
 * More expensive
 

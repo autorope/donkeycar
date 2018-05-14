@@ -16,7 +16,7 @@ Usage:
 
 import os
 from docopt import docopt
-import donkeycar as dk 
+import donkeycar as dk
 
 from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.transform import Lambda
@@ -38,18 +38,18 @@ def drive(cfg, model_path=None):
 
     # display square box given by cooridantes.
     cam = SquareBoxCamera(resolution=cfg.CAMERA_RESOLUTION)
-    V.add(cam, 
+    V.add(cam,
           inputs=['square/angle', 'square/throttle'],
           outputs=['cam/image_array'])
-    
+
     # display the image and read user values from a local web controller
     ctr = LocalWebController()
-    V.add(ctr, 
+    V.add(ctr,
           inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 
+          outputs=['user/angle', 'user/throttle',
                    'user/mode', 'recording'],
           threaded=True)
-    
+
     # See if we should even run the pilot module.
     # This is only needed because the part run_contion only accepts boolean
     def pilot_condition(mode):
@@ -57,10 +57,10 @@ def drive(cfg, model_path=None):
             return False
         else:
             return True
-        
+
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
-    
+
     # Run the pilot if the mode is not user.
     kl = KerasCategorical()
     if model_path:
@@ -71,24 +71,24 @@ def drive(cfg, model_path=None):
           run_condition='run_pilot')
 
     # See if we should even run the pilot module.
-    def drive_mode(mode, 
+    def drive_mode(mode,
                    user_angle, user_throttle,
                    pilot_angle, pilot_throttle):
         if mode == 'user':
             return user_angle, user_throttle
-        
+
         elif mode == 'pilot_angle':
             return pilot_angle, user_throttle
-        
-        else: 
+
+        else:
             return pilot_angle, pilot_throttle
-        
+
     drive_mode_part = Lambda(drive_mode)
-    V.add(drive_mode_part, 
+    V.add(drive_mode_part,
           inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'], 
+                  'pilot/angle', 'pilot/throttle'],
           outputs=['angle', 'throttle'])
-    
+
     clock = Timestamp()
     V.add(clock, outputs=['timestamp'])
 
@@ -98,21 +98,21 @@ def drive(cfg, model_path=None):
     l = Lambda(f)
     V.add(l, inputs=['user/angle'], outputs=['square/angle'])
     V.add(l, inputs=['user/throttle'], outputs=['square/throttle'])
-    
+
     # add tub to save data
     inputs=['cam/image_array',
-            'user/angle', 'user/throttle', 
-            'pilot/angle', 'pilot/throttle', 
+            'user/angle', 'user/throttle',
+            'pilot/angle', 'pilot/throttle',
             'square/angle', 'square/throttle',
             'user/mode',
             'timestamp']
     types=['image_array',
-           'float', 'float',  
-           'float', 'float', 
+           'float', 'float',
+           'float', 'float',
            'float', 'float',
            'str',
            'str']
-    
+
     #multiple tubs
     #th = TubHandler(path=cfg.DATA_PATH)
     #tub = th.new_tub_writer(inputs=inputs, types=types)
@@ -124,10 +124,10 @@ def drive(cfg, model_path=None):
 
     # run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)
-    
+
 
 def train(cfg, tub_names, model_name):
-    
+
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
 
@@ -142,7 +142,7 @@ def train(cfg, tub_names, model_name):
         for gen in gens:
             combined_gen = itertools.chain(combined_gen, gen)
         return combined_gen
-    
+
     kl = KerasCategorical()
     logger.info('tub_names', tub_names)
     if not tub_names:
@@ -168,14 +168,14 @@ def train(cfg, tub_names, model_name):
              train_split=cfg.TRAIN_TEST_SPLIT)
 
 
-    
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
-    
+
     if args['drive']:
         drive(cfg, args['--model'])
-        
+
     elif args['train']:
         tub = args['--tub']
         model = args['--model']

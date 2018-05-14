@@ -1,5 +1,5 @@
 var driveHandler = new function() {
-    //functions used to drive the vehicle. 
+    //functions used to drive the vehicle.
 
     var state = {'tele': {
                           "user": {
@@ -48,7 +48,7 @@ var driveHandler = new function() {
 
       var manager = nipplejs.create(joystick_options);
       bindNipple(manager)
-      
+
       if(!!navigator.getGamepads){
         console.log("Device has gamepad support.")
         hasGamepad = true;
@@ -424,7 +424,7 @@ var driveHandler = new function() {
     var toggleBrake = function(){
       state.brakeOn = !state.brakeOn;
       initialGamma = null;
-      
+
 
       if (state.brakeOn) {
         brake();

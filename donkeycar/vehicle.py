@@ -23,7 +23,7 @@ class Vehicle:
         self.on = True
         self.threads = []
 
-    def add(self, part, inputs=[], outputs=[], 
+    def add(self, part, inputs=[], outputs=[],
             threaded=False, run_condition=None):
         """
         Method to add a part to the vehicle drive loop.
@@ -116,7 +116,7 @@ class Vehicle:
                 run_condition = entry.get('run_condition')
                 run = self.mem.get([run_condition])[0]
                 # print('run_condition', entry['part'], entry.get('run_condition'), run)
-            
+
             if run:
                 p = entry['part']
                 # get inputs from memory
