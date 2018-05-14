@@ -1,11 +1,13 @@
-'''
-BINNING
-functions to help converte between floating point numbers and categories.
-'''
+"""
+Assorted functions for manipulating data.
+"""
 import numpy as np
 
 
 def linear_bin(a):
+    """
+    Convert a linear value to a categorical array of length 15.
+    """
     a = a + 1
     b = round(a / (2 / 14))
     arr = np.zeros(15)
