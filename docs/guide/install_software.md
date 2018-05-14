@@ -157,7 +157,6 @@ Install dependencies, setup virtualenv
 sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
 virtualenv env -p python3
 source env/bin/activate
-pip install keras==2.0.6
 pip install tensorflow==1.3.0
 ```
 
