@@ -18,16 +18,12 @@ import os
 from docopt import docopt
 import donkeycar as dk 
 
-from donkeycar.parts.datastore import TubGroup, TubHandler, TubWriter
+from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
+from donkeycar.parts.simulation import SquareBoxCamera
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.time import Timestamp
-
-
-from donkeycar.parts.autorope import AutoropeSession
-
 
 log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sq.log')
 dk.log.setup(log_path)
@@ -137,7 +133,7 @@ def train(cfg, tub_names, model_name):
 
 
     def rt(record):
-        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        record['user/angle'] = donkeycar.utils.utils.linear_bin(record['user/angle'])
         return record
 
     def combined_gen(gens):

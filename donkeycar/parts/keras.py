@@ -9,19 +9,11 @@ models to help direct the vehicles motion.
 
 '''
 
-
-
-
-import os
-import numpy as np
-
-from tensorflow.python.keras.layers import Input, Dense, concatenate
+from tensorflow.python.keras.layers import Input
 from tensorflow.python.keras.models import Model, load_model
-from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D, Lambda
+from tensorflow.python.keras.layers import Convolution2D
+from tensorflow.python.keras.layers import Dropout, Flatten, Dense, Cropping2D, Lambda
 from tensorflow.python.keras.callbacks import ModelCheckpoint, EarlyStopping
-
-import donkeycar as dk
 
 
 class KerasPilot():
@@ -86,7 +78,7 @@ class KerasCategorical(KerasPilot):
         angle_binned, throttle = self.model.predict(img_arr)
         #print('throttle', throttle)
         #angle_certainty = max(angle_binned[0])
-        angle_unbinned = dk.utils.linear_unbin(angle_binned)
+        angle_unbinned = donkeycar.util.data.linear_unbin(angle_binned)
         return angle_unbinned, throttle[0][0]
     
     
@@ -146,7 +138,6 @@ def default_categorical():
     return model
 
 
-import tensorflow as tf
 from tensorflow.python.keras import backend as K
 def linear_unbin_layer(tnsr):
     bin = K.constant((2/14), dtype='float32')

@@ -21,11 +21,9 @@ from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubHandler, TubGroup, TubWriter
+from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.time import Timestamp
-
-from donkeycar.parts.autorope import AutoropeSession
 
 
 def drive(cfg, model_path=None, use_joystick=False):
@@ -145,13 +143,13 @@ def train(cfg, tub_names, model_name):
 
     def train_record_transform(record):
         """ convert categorical steering to linear and apply image augmentations """
-        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
-        record['cam/image_array'] = dk.utils.augment_images(record['cam/image_array'])
+        record['user/angle'] = donkeycar.utils.utils.linear_bin(record['user/angle'])
+        record['cam/image_array'] = donkeycar.utils.utils.augment_images(record['cam/image_array'])
         return record
 
     def val_record_transform(record):
         """ convert categorical steering to linear """
-        record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        record['user/angle'] = donkeycar.utils.utils.linear_bin(record['user/angle'])
         return record
 
     kl = KerasCategorical()

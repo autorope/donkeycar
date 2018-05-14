@@ -349,8 +349,6 @@ class ShowPredictionPlots(BaseCommand):
         Plot model predictions for angle and throttle against data from tubs.
 
         '''
-        import matplotlib.pyplot as plt
-        import pandas as pd
         from donkeycar.parts.datastore import TubGroup
         from donkeycar.parts.keras import KerasCategorical
 
@@ -426,8 +424,8 @@ def execute_from_command_line():
         c = command()
         c.run(args[2:])
     else:
-        dk.utils.eprint('Usage: The availible commands are:')
-        dk.utils.eprint(list(commands.keys()))
+        donkeycar.utils.utils.eprint('Usage: The availible commands are:')
+        donkeycar.utils.utils.eprint(list(commands.keys()))
         
     
     

@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 
-from donkeycar import utils
+from donkeycar import util
 from ..log import get_logger
 
 logger = get_logger(__name__)
@@ -528,7 +528,7 @@ class TubTimeStacker(TubImageStacker):
 
 class TubGroup(Tub):
     def __init__(self, tub_paths_arg):
-        tub_paths = utils.expand_path_arg(tub_paths_arg)
+        tub_paths = util.files.expand_path_arg(tub_paths_arg)
         logger.info('TubGroup:tubpaths:', tub_paths)
         tubs = [Tub(path) for path in tub_paths]
         self.input_types = {}

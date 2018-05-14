@@ -18,7 +18,7 @@ import tornado.ioloop
 import tornado.web
 import tornado.gen
 
-from donkeycar import utils
+from donkeycar import util
 
 
 class LocalWebController(tornado.web.Application):
@@ -38,7 +38,7 @@ class LocalWebController(tornado.web.Application):
         self.throttle = 0.0
         self.mode = 'user'
         self.recording = False
-        self.ip_address = utils.get_ip_address()
+        self.ip_address = util.web.get_ip_address()
         self.access_url = 'http://{}:{}'.format(self.ip_address, self.port)
 
         handlers = [

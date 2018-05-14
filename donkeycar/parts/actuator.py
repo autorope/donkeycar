@@ -6,9 +6,7 @@ are wrapped in a mixer class before being used in the drive loop.
 
 import time
 
-import donkeycar as dk
 
-        
 class PCA9685:
     ''' 
     PWM motor controler using PCA9685 boards. 
@@ -45,9 +43,9 @@ class PWMSteering:
 
     def run(self, angle):
         #map absolute angle to angle that vehicle can implement.
-        pulse = dk.utils.map_range(angle,
-                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
-                                self.left_pulse, self.right_pulse)
+        pulse = donkeycar.utils.utils.map_range(angle,
+                                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                                self.left_pulse, self.right_pulse)
 
         self.controller.set_pulse(pulse)
 
@@ -81,13 +79,13 @@ class PWMThrottle:
 
     def run(self, throttle):
         if throttle > 0:
-            pulse = dk.utils.map_range(throttle,
-                                    0, self.MAX_THROTTLE, 
-                                    self.zero_pulse, self.max_pulse)
+            pulse = donkeycar.utils.utils.map_range(throttle,
+                                                    0, self.MAX_THROTTLE,
+                                                    self.zero_pulse, self.max_pulse)
         else:
-            pulse = dk.utils.map_range(throttle,
-                                    self.MIN_THROTTLE, 0, 
-                                    self.min_pulse, self.zero_pulse)
+            pulse = donkeycar.utils.utils.map_range(throttle,
+                                                    self.MIN_THROTTLE, 0,
+                                                    self.min_pulse, self.zero_pulse)
 
         self.controller.set_pulse(pulse)
         
@@ -102,7 +100,7 @@ class Adafruit_DCMotor_Hat:
     Used for each motor on a differential drive car.
     '''
     def __init__(self, motor_num):
-        from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
+        from Adafruit_MotorHAT import Adafruit_MotorHAT
         import atexit
         
         self.FORWARD = Adafruit_MotorHAT.FORWARD
@@ -126,7 +124,7 @@ class Adafruit_DCMotor_Hat:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         
         self.speed = speed
-        self.throttle = int(dk.utils.map_range(abs(speed), -1, 1, -255, 255))
+        self.throttle = int(donkeycar.utils.utils.map_range(abs(speed), -1, 1, -255, 255))
         
         if speed > 0:            
             self.motor.run(self.FORWARD)

@@ -11,6 +11,6 @@ if sys.version_info.major < 3:
 from . import parts
 from .vehicle import Vehicle
 from .memory import Memory
-from . import utils
+from donkeycar import util
 from . import config
 from .config import load_config

@@ -5,11 +5,8 @@ Created on Sun Jun 25 14:17:59 2017
 
 @author: wroscoe
 """
-import os
 import unittest
-import tempfile
-import shutil
-from donkeycar.utils import map_range
+from donkeycar.util.data import map_range
 
 class TestMapping(unittest.TestCase):
     def test_positive(self):

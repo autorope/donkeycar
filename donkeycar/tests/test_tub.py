@@ -30,7 +30,7 @@ def test_tub_add_record(tub):
     y = 90
     rec_in = {'cam/image_array': img_arr, 'angle': x, 'throttle':y}
     rec_index = tub.put_record(rec_in)
-    rec_out = tub.get_record(rec_index)
+    rec_out = tub.get_record(rec_index-1)
     assert rec_in.keys() == rec_out.keys()
 
 
