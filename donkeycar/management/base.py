@@ -344,7 +344,26 @@ class ShowHistogram(BaseCommand):
 
 class ShowPredictionPlots(BaseCommand):
 
-    def plot_predictions(cfg, tub_paths, model_path):
+    def parse_args(self, args):
+        '''
+        Parse tubplot arguments
+        '''	
+        parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
+        parser.add_argument('tubs', nargs='+', help='paths to tubs')
+        parser.add_argument('--model', help='the model to use for predictions')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+		
+    def run(self, args):
+        '''
+        executes the plotting function
+        '''
+        args = self.parse_args(args)
+        args.tubs = ','.join(args.tubs)
+        self.plot_predictions(args.config, args.tubs, args.model)
+
+    def plot_predictions(self, cfg, tub_paths, model_path):
         '''
         Plot model predictions for angle and throttle against data from tubs.
 
@@ -357,15 +376,16 @@ class ShowPredictionPlots(BaseCommand):
         model_path = os.path.expanduser(model_path)
         model = KerasCategorical()
         model.load(model_path)
-
-        gen = tg.get_batch_gen(batch_size=len(tg.df),shuffle=False)
+ 
+        gen = tg.get_batch_gen(None, None, batch_size=len(tg.df),shuffle=False, df=tg.df)
         arr = next(gen)
-
-        """
-        THIS WILL SHOW the output of a predicted model.
         
-        
-        for tub in tubs:
+        user_angles = []
+        user_throttles = []
+        pilot_angles = []
+        pilot_throttles = []
+		
+        for tub in tg.tubs:
             num_records = tub.get_num_records()
             for iRec in tub.get_index(shuffled=False):
                 record = tub.get_record(iRec)
@@ -385,7 +405,7 @@ class ShowPredictionPlots(BaseCommand):
 
         fig = plt.figure()
 
-        title = "Model Predictions\nTubs: " + tub_names + "\nModel: " + model_name
+        title = "Model Predictions\nTubs: {}\nModel: {}".format(tub_paths, model_path)
         fig.suptitle(title)
 
         ax1 = fig.add_subplot(211)
@@ -397,8 +417,7 @@ class ShowPredictionPlots(BaseCommand):
         ax1.legend(loc=4)
         ax2.legend(loc=4)
 
-        plt.show()
-        """
+        plt.show()        
 
 def execute_from_command_line():
     """
