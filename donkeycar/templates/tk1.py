@@ -44,5 +44,3 @@ V.add(tub, inputs = inputs)
 
 #run the vehicle for 20 seconds
 V.start(rate_hz = 20) # , max_loop_count = 1000)
-
-#you can now go to localhost:8887 to move a square around the image
