@@ -3,13 +3,14 @@
 Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js]
+    manage.py (drive) [--model=<model>] [--js] [--chaos]
     manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--base_model=<base_model>] [--no_cache]
 
 Options:
     -h --help        Show this screen.
     --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
     --js             Use physical joystick.
+    --chaos          Add periodic random steering when manually driving
 """
 import os
 from docopt import docopt
@@ -122,7 +123,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     #tub = th.new_tub_writer(inputs=inputs, types=types)
 
     # single tub
-    tw = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
+    tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
     print("You can now go to <your pi ip address>:8887 to drive your car.")
@@ -188,7 +189,7 @@ if __name__ == '__main__':
     cfg = dk.load_config()
 
     if args['drive']:
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'])
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
 
     elif args['train']:
         tub = args['--tub']

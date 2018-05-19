@@ -5,7 +5,7 @@ are wrapped in a mixer class before being used in the drive loop.
 """
 
 import time
-
+import donkeycar as dk
 
 class PCA9685:
     '''
@@ -43,9 +43,9 @@ class PWMSteering:
 
     def run(self, angle):
         #map absolute angle to angle that vehicle can implement.
-        pulse = donkeycar.utils.utils.map_range(angle,
-                                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
-                                                self.left_pulse, self.right_pulse)
+        pulse = dk.util.data.map_range(angle,
+                                        self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
 
         self.controller.set_pulse(pulse)
 
@@ -79,11 +79,11 @@ class PWMThrottle:
 
     def run(self, throttle):
         if throttle > 0:
-            pulse = donkeycar.utils.utils.map_range(throttle,
+            pulse = dk.util.data.map_range(throttle,
                                                     0, self.MAX_THROTTLE,
                                                     self.zero_pulse, self.max_pulse)
         else:
-            pulse = donkeycar.utils.utils.map_range(throttle,
+            pulse = dk.util.data.map_range(throttle,
                                                     self.MIN_THROTTLE, 0,
                                                     self.min_pulse, self.zero_pulse)
 
@@ -124,7 +124,7 @@ class Adafruit_DCMotor_Hat:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
 
         self.speed = speed
-        self.throttle = int(donkeycar.utils.utils.map_range(abs(speed), -1, 1, -255, 255))
+        self.throttle = int(dk.util.data.map_range(abs(speed), -1, 1, -255, 255))
 
         if speed > 0:
             self.motor.run(self.FORWARD)
