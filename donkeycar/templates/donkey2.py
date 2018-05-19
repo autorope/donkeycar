@@ -4,7 +4,7 @@ Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
     manage.py (drive) [--model=<model>] [--js]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--no_cache]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--base_model=<base_model>] [--no_cache]
 
 Options:
     -h --help        Show this screen.
@@ -134,7 +134,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
 
 
 
-def train(cfg, tub_names, model_name):
+def train(cfg, tub_names, new_model_path, base_model_path=None ):
     """
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
@@ -152,7 +152,13 @@ def train(cfg, tub_names, model_name):
         record['user/angle'] = dk.util.data.linear_bin(record['user/angle'])
         return record
 
+    new_model_path = os.path.expanduser(new_model_path)
+
     kl = KerasCategorical()
+    if base_model_path is not None:
+        base_model_path = os.path.expanduser(base_model_path)
+        kl.load(base_model_path)
+
     print('tub_names', tub_names)
     if not tub_names:
         tub_names = os.path.join(cfg.DATA_PATH, '*')
@@ -162,7 +168,6 @@ def train(cfg, tub_names, model_name):
                                                     val_record_transform=val_record_transform,
                                                     batch_size=cfg.BATCH_SIZE,
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
-    model_path = os.path.expanduser(model_name)
 
     total_records = len(tubgroup.df)
     total_train = int(total_records * cfg.TRAIN_TEST_SPLIT)
@@ -173,12 +178,9 @@ def train(cfg, tub_names, model_name):
 
     kl.train(train_gen,
              val_gen,
-             saved_model_path=model_path,
+             saved_model_path=new_model_path,
              steps=steps_per_epoch,
              train_split=cfg.TRAIN_TEST_SPLIT)
-
-
-
 
 
 if __name__ == '__main__':
@@ -190,9 +192,10 @@ if __name__ == '__main__':
 
     elif args['train']:
         tub = args['--tub']
-        model = args['--model']
+        new_model_path = args['--model']
+        base_model_path = args['--base_model']
         cache = not args['--no_cache']
-        train(cfg, tub, model)
+        train(cfg, tub, new_model_path, base_model_path)
 
 
 
