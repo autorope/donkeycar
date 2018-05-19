@@ -141,16 +141,15 @@ def train(cfg, tub_names, model_name):
     """
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
-
     def train_record_transform(record):
         """ convert categorical steering to linear and apply image augmentations """
-        record['user/angle'] = donkeycar.utils.utils.linear_bin(record['user/angle'])
-        record['cam/image_array'] = donkeycar.utils.utils.augment_images(record['cam/image_array'])
+        record['user/angle'] = dk.util.data.linear_bin(record['user/angle'])
+        record['cam/image_array'] = dk.util.img.augment_images(record['cam/image_array'])
         return record
 
     def val_record_transform(record):
         """ convert categorical steering to linear """
-        record['user/angle'] = donkeycar.utils.utils.linear_bin(record['user/angle'])
+        record['user/angle'] = dk.util.data.linear_bin(record['user/angle'])
         return record
 
     kl = KerasCategorical()
@@ -163,7 +162,6 @@ def train(cfg, tub_names, model_name):
                                                     val_record_transform=val_record_transform,
                                                     batch_size=cfg.BATCH_SIZE,
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
-
     model_path = os.path.expanduser(model_name)
 
     total_records = len(tubgroup.df)
