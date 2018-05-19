@@ -26,7 +26,7 @@ from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.time import Timestamp
 
 
-def drive(cfg, model_path=None, use_joystick=False):
+def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     """
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -52,7 +52,7 @@ def drive(cfg, model_path=None, use_joystick=False):
     else:
         # This web controller will create a web server that is capable
         # of managing steering, throttle, and modes, and more.
-        ctr = LocalWebController()
+        ctr = LocalWebController(use_chaos=use_chaos)
 
     V.add(ctr,
           inputs=['cam/image_array'],
@@ -68,7 +68,8 @@ def drive(cfg, model_path=None, use_joystick=False):
             return True
 
     pilot_condition_part = Lambda(pilot_condition)
-    V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
+    V.add(pilot_condition_part, inputs=['user/mode'],
+                                outputs=['run_pilot'])
 
     # Run the pilot if the mode is not user.
     kl = KerasCategorical()
@@ -76,8 +77,8 @@ def drive(cfg, model_path=None, use_joystick=False):
         kl.load(model_path)
 
     V.add(kl, inputs=['cam/image_array'],
-          outputs=['pilot/angle', 'pilot/throttle'],
-          run_condition='run_pilot')
+              outputs=['pilot/angle', 'pilot/throttle'],
+              run_condition='run_pilot')
 
     # Choose what inputs should change the car.
     def drive_mode(mode,
