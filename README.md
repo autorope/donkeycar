@@ -1,6 +1,10 @@
 # donkeycar: a python self driving library
 
-[![Build Status](https://travis-ci.org/wroscoe/donkey.svg?branch=master)](https://travis-ci.org/wroscoe/donkey)
+[![Build Status](https://travis-ci.org/joekickass/donkey.svg?branch=ti)](https://travis-ci.org/joekickass/donkey)
+[![CodeCov](https://codecov.io/gh/joekickass/donkey/branch/ti/graph/badge.svg)](https://codecov.io/gh/joekickass/donkey/branch/ti)
+[![Requirements Status](https://requires.io/github/joekickass/donkey/requirements.svg?branch=ti)](https://requires.io/github/joekickass/donkey/requirements/?branch=ti)
+[![PyPI version](https://badge.fury.io/py/donkeycar.svg)](https://badge.fury.io/py/donkeycar)
+[![Py versions](https://img.shields.io/pypi/pyversions/donkeycar.svg)](https://img.shields.io/pypi/pyversions/donkeycar.svg)
 
 Donkeycar is minimalist and modular self driving library for Python. It is
 developed for hobbiests and students with a focus on allowing fast experimentation and easy

@@ -1,15 +1,31 @@
 language: python
 python:
 - 3.5
-cache: pip
+
+os:
+  - linux
+
 before_install:
 - sudo apt-get update -qq
-- sudo apt-get install -y python3-numpy python3-scipy
+
 install:
-- pip3 install pytest nose opencv-python tensorflow
-- pip3 install .
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- pip install -e .[tf]
+- pip install -e .[dev]
+- pip install -e .[ci]
+
 script:
-- pytest
+- py.test --cov=donkeycar donkeycar/tests
+
+after_success:
+- codecov
+
 deploy:
   provider: pypi
   user: wroscoe
