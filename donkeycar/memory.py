@@ -16,7 +16,6 @@ class Memory:
 
     def __setitem__(self, key, value):
         if type(key) is not tuple:
-            print('tuples')
             key = (key,)
             value=(value,)
 
@@ -40,7 +39,6 @@ class Memory:
                 except IndexError as e:
                     error = str(e) + ' issue with keys: ' + str(key)
                     raise IndexError(error)
-
         else:
             self.d[keys[0]] = inputs
 
@@ -54,5 +52,5 @@ class Memory:
     def values(self):
         return self.d.values()
 
-    def iteritems(self):
-        return self.d.iteritems()
+    def items(self):
+        return self.d.items()
