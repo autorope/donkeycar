@@ -25,6 +25,7 @@ from donkeycar.parts.imu import Mpu6050
 import numpy as np
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
+from donkeycar.parts.file_watcher import FileWatcher
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single'):
     '''
@@ -244,7 +245,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 print(filename, "was changed!")
                 load_model(kl, filename)
 
-            from file_watcher import FileWatcher
             fw_part = FileWatcher(model_path, reload_model, wait_for_write_stop=10.0)
             V.add(fw_part)
 
@@ -260,8 +260,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 print(filename, "was changed!")
                 weights_path = filename.replace('.json', '.weights')
                 load_weights(kl, weights_path)
-
-            from donkeycar.parts.file_watcher import FileWatcher
+            
             fw_part = FileWatcher(model_path, reload_weights, wait_for_write_stop=1.0)
             V.add(fw_part)
 
