@@ -65,7 +65,11 @@ class CreateJoystick(object):
         return most_movement
 
     def create_joystick(self, args):
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> master
         print("Welcome to Joystick Creator Wizard.")
         print("This will walk you through the steps to create a python class to use your controller.")
         print("The first steps will create a label for each of the buttons and axis controls.")
@@ -100,6 +104,8 @@ class CreateJoystick(object):
         self.shutdown()
 
     def init_js_device(self):
+        from donkeycar.parts.controller import JoystickCreatorController
+
         js_cr = None
 
         #Get device file and create js creator helper class
@@ -319,6 +325,8 @@ class CreateJoystick(object):
 
 
     def map_button_controls(self):
+        '''
+        WIP
         unmapped_controls = [\
             ('toggle_mode','changes the drive mode between user, local, and local_angle'),
             ('toggle_manual_recording','toggles recording records on and off'),
@@ -335,7 +343,8 @@ class CreateJoystick(object):
         while not done:
             for iContrl, control, help in enumerate(unmapped_controls):
                 print(iContrl, control, '\t', help)
-
+        '''
+        pass
         
     def get_axis_action(self, prompt):
         done = False        
