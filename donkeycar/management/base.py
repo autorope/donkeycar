@@ -11,7 +11,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
 from .tub import TubManager
-from joystick_creator import CreateJoystick
+from .joystick_creator import CreateJoystick
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
