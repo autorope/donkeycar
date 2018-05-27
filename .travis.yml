@@ -1,0 +1,25 @@
+language: python
+python:
+- 3.5
+
+cache: pip
+
+before_install:
+- sudo apt-get update -qq
+- sudo apt-get install -y python3-numpy python3-scipy
+
+install:
+- pip3 install pytest nose opencv-python tensorflow
+- pip3 install .
+
+script:
+- pytest
+
+deploy:
+  provider: pypi
+  user: "Your username"
+  password:
+    secure: "Your encrypted password"
+  on:
+    tags: true
+    branch: master
