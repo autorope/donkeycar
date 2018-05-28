@@ -1,0 +1,3 @@
+include donkeycar/templates/*
+include donkeycar/parts/web_controller/templates/*
+include donkeycar/parts/web_controller/templates/static/*

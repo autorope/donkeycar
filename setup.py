@@ -11,12 +11,6 @@ def package_files(directory, strip_leading):
             paths.append(package_file[len(strip_leading):])
     return paths
 
-car_templates=['templates/*']
-web_controller_html = package_files('donkeycar/parts/web_controller/templates', 'donkeycar/')
-
-extra_files = car_templates + web_controller_html
-print('extra_files', extra_files)
-
 
 setup(name='donkeycar',
     version='2.2.1',
@@ -53,9 +47,6 @@ setup(name='donkeycar',
                         ],
                     'dev': ['pytest']
                     },
-    package_data={
-        'donkeycar': extra_files, 
-        },
 
     include_package_data=True,
 
