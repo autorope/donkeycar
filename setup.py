@@ -11,15 +11,9 @@ def package_files(directory, strip_leading):
             paths.append(package_file[len(strip_leading):])
     return paths
 
-car_templates=['templates/*']
-web_controller_html = package_files('donkeycar/parts/web_controller/templates', 'donkeycar/')
-
-extra_files = car_templates + web_controller_html
-print('extra_files', extra_files)
-
 
 setup(name='donkeycar',
-    version='2.3.0',
+    version='2.2.2',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
     download_url='https://github.com/wroscoe/donkey/archive/2.1.5.tar.gz',
@@ -31,31 +25,28 @@ setup(name='donkeycar',
             'donkey=donkeycar.management.base:execute_from_command_line',
         ],
     },
-    install_requires=['numpy',
+    install_requires=['numpy', 
                       'pillow',
                       'docopt',
                       'tornado==4.5.3',
                       'requests',
+                      'keras==2.0.8',
                       'h5py',
                       'python-socketio',
                       'flask',
                       'eventlet',
                       'moviepy',
-                      'pandas'
+                      'pandas',
+                      'tensorflow>=1.1'
                      ],
 
     extras_require={
-                    'tf': ['tensorflow>=1.7.0'],
-                    'tf_gpu': ['tensorflow-gpu>=1.7.0'],
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
                         ],
                     'dev': ['pytest']
-                   },
-    package_data={
-        'donkeycar': extra_files,
-        },
+                    },
 
     include_package_data=True,
 

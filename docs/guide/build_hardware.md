@@ -42,8 +42,10 @@ Alternatively If you know RC or need something the standard Donkey does not supp
 ## Parts Needed:
 
 
-### Option 1: Simple path using the Donkey Store (US shipments only)
-The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  Also it is worth noting The design of the parts out of the Donkey store is slightly improved over the standard build as it uses better parts that are only available in quantities or are harder to get.  The Donkey Store builds are open source like all others.  The Donkey Store is run by the original founders of donkey car and all profits are used to fund development of the donkey cars.
+### Option 1: Simple path using the Donkey Store
+If you are in the US, you can use the Donkeystore.  The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  The Donkey Store is run by the original founders of donkey car and all profits are used to fund development of the donkey cars.  Also it is worth noting the design of the parts out of the Donkey store is slightly improved over the standard build as it uses better parts that are only available in large quantities or are harder to get.  The Donkey Store builds are open source like all others.   
+
+If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits at [Robocar Store](https://www.robocarstore.com/products/donkey-car-starter-kit).  They pay Royalties to support the R&D efforts of this project.  
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
@@ -55,7 +57,7 @@ The intention of the Donkey Store is to make it easier and less expensive to bui
 
 
 ### Option 2:Bottoms Up Build
-If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.
+If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.  
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
@@ -74,7 +76,7 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 
 
-&ast; These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.
+&ast; These components come in minimum quantities much higher than is necessary for a vehicle.  If you get with friends to build several the total cost of the car will be $20 cheaper.  
 
 &ast;&ast; This component can be purchased from Ali Express for ~2 if you can wait the 15-45 days for shipping.
 
@@ -102,7 +104,7 @@ If you purchased parts from the Donkey Car Store, skip to step 3.
 
 If you do not have a 3D Printer, you can order parts from [Donkey Store](https://squareup.com/store/donkeycar), [Shapeways](https://www.shapeways.com/) or [3dHubs](https://www.3dhubs.com/).  I printed parts in black PLA, with 2mm layer height and no supports.  The top roll bar is designed to be printed upside down.   Remember that you need to print the adapters unless you have a "Magnet"
 
-I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.
+I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no supports.  The top roll bar is designed to be printed upside down.  
 
 
 &nbsp;
@@ -140,7 +142,7 @@ For reference, below is the Raspberry Pi Pinout for reference.  You will notice 
 ![donkey](../assets/build_hardware/4b.PNG)
 
 &nbsp;
-### Step 5: Attach Raspberry Pi to 3D Printed bottom plate.
+### Step 5: Attach Raspberry Pi to 3D Printed bottom plate.  
 Before you start, now is a good time to insert the already flashed SD card and bench test the electronics.  Once that is done, attaching the Raspberry Pi and Servo is as simple as running screws through the board into the screw bosses on the top plate.  The M2.5x12mm screws should be the perfect length to go through the board, the plastic and still have room for a washer.  The “cap” part of the screw should be facing up and the nut should be on the bottom of the top plate.  The ethernet and USB ports should face forward.  This is important as it gives you access to the SD card and makes the camera ribbon cable line up properly.
 
 Attach the USB battery to the underside of the printed bottom plate using cable ties or velcro.
@@ -167,7 +169,7 @@ It is easy to put the camera cable in the wrong way so look at these photos and 
 &nbsp;
 ### Step 7: Put it all together
 *** Note if you have a Desert Monster Chassis see 7B section below ***
-The final steps are straightforward.  First attach the roll bar assembly to the car.  This is done using the same pins that came with the vehicle.
+The final steps are straightforward.  First attach the roll bar assembly to the car.  This is done using the same pins that came with the vehicle.  
 
 ![donkey](../assets/build_hardware/7a.PNG)
 
