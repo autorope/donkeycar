@@ -21,6 +21,7 @@ from ..log import get_logger
 
 logger = get_logger(__name__)
 
+
 class Tub(object):
     """
     A datastore to store sensor data in a key, value format.
