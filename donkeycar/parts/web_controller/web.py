@@ -31,7 +31,6 @@ class LocalWebController(tornado.web.Application):
         Create and publish variables needed on many of
         the web handlers.
         '''
-
         print('Starting Donkey Server...')
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -80,11 +79,19 @@ class LocalWebController(tornado.web.Application):
         else:
             return self.angle, self.throttle, self.mode, self.recording
 
+    def say_hello(self):
+        """
+        Print friendly message to user
+        """
+        print("You can now go to {} to drive your car.".format(self.access_url))
+
     def update(self):
         """ Start the tornado web server. """
         self.port = int(self.port)
         self.listen(self.port)
-        tornado.ioloop.IOLoop.instance().start()
+        instance = tornado.ioloop.IOLoop.instance()
+        instance.add_callback(self.say_hello)
+        instance.start()
 
     def _run_threaded(self, img_arr=None):
         self.img_arr = img_arr

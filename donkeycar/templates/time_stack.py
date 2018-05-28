@@ -135,10 +135,6 @@ def drive(cfg, model_path=None, use_joystick=False):
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
             max_loop_count=cfg.MAX_LOOPS)
 
-    print("You can now go to <your pi ip address>:8887 to drive your car.")
-
-
-
 
 def train(cfg, tub_names, model_name):
     '''

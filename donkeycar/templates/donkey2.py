@@ -126,8 +126,6 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
-    print("You can now go to <your pi ip address>:8887 to drive your car.")
-
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
             max_loop_count=cfg.MAX_LOOPS)
