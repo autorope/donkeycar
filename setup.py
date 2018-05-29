@@ -13,7 +13,7 @@ def package_files(directory, strip_leading):
 
 
 setup(name='donkeycar',
-    version='2.2.2',
+    version='2.2.3',
     description='Self driving library for python.',
     url='https://github.com/wroscoe/donkey',
     download_url='https://github.com/wroscoe/donkey/archive/2.1.5.tar.gz',
