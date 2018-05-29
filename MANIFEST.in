@@ -1,2 +1,2 @@
 include donkeycar/templates/*
-recursive-include donkeycar/parts/web_controller/templates/ *.html *.js *.css
+recursive-include donkeycar/parts/web_controller/templates/ *
