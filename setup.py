@@ -7,16 +7,6 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
-# include the non python files
-def package_files(directory, strip_leading):
-    paths = []
-    for (path, directories, filenames) in os.walk(directory):
-        for filename in filenames:
-            package_file = os.path.join(path, filename)
-            paths.append(package_file[len(strip_leading):])
-    return paths
-
-
 setup(name='donkeycar',
       version='2.2.4',
       description='Self driving library for python.',
