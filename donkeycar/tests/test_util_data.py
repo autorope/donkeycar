@@ -155,9 +155,11 @@ class TestParamGen(unittest.TestCase):
 
     def test_param_gen(self):
         g = param_gen({ 'a' : [ 'opt1', 'opt2' ], 'b' : [ 'opt3', 'opt4' ] })
-        assert [ x for x in g ] == [
-            {'a': 'opt1', 'b': 'opt3'},
-            {'a': 'opt1', 'b': 'opt4'},
-            {'a': 'opt2', 'b': 'opt3'},
-            {'a': 'opt2', 'b': 'opt4'}
-        ]
+        l = [ x for x in g ]
+        expected = [
+                {'a': 'opt1', 'b': 'opt3'},
+                {'a': 'opt1', 'b': 'opt4'},
+                {'a': 'opt2', 'b': 'opt3'},
+                {'a': 'opt2', 'b': 'opt4'}
+            ]
+        self.assertCountEqual(expected, l)
