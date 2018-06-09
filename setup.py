@@ -33,16 +33,23 @@ setup(name='donkeycar',
                         'eventlet',
                         'moviepy',
                         'pandas',
-                        'tensorflow>=1.1'
+                        'opencv-python'
                         ],
 
       extras_require={
-          'pi': [
-              'picamera',
-              'Adafruit_PCA9685',
-          ],
-          'dev': ['pytest']
-      },
+                      'tf': ['tensorflow>=1.7.0'],
+                      'tf_gpu': ['tensorflow-gpu>=1.7.0'],
+                      'pi': [
+                          'picamera',
+                          'Adafruit_PCA9685',
+                          ],
+                      'dev': [
+                          'pytest',
+                          'pytest-cov',
+                          'responses'
+                          ],
+                      'ci': ['codecov']
+                  },
 
       include_package_data=True,
 
