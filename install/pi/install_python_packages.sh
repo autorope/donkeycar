@@ -1,5 +1,5 @@
 #make sure the virtual environment is active
-source ~/.bashrc
+source ~/env/bin/activate
 
 # install pandas and numpy
 pip install pandas #also installs numpy

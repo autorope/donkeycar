@@ -7,8 +7,8 @@ sudo apt-get install libxvidcore-dev libx264-dev -y
 sudo apt-get install libatlas-base-dev gfortran -y
 
 # NOTE: this gets the dev version. Use tags to get specific version
-git clone https://github.com/opencv/opencv.git --depth 1
-git clone https://github.com/opencv/opencv_contrib.git --depth 1
+git clone --branch 3.4.1 --depth 1  https://github.com/opencv/opencv.git
+git clone --branch 3.4.1 --depth 1 https://github.com/opencv/opencv_contrib.git
 
 cd ~/opencv
 mkdir build
