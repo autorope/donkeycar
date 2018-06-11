@@ -15,7 +15,7 @@ Notes on how to release donkey.
     Run `sudo gparted` to see the size of the disk partitions. Resize the partitions
     to be as small as possible. Right click the partition to see the last sector of the partition.
 
-    Run `sudo dd if=/dev/sda of=~/donkey_2-2-1.img bs=512 count=<last_sector>`
+    Run `sudo dd if=/dev/mmcblk0 of=~/donkey_2.5.0_pi3.img bs=512 count=<last sector> status=progress`
 
 8. Zip the .img file and upload to Dropbox.
 9. Update the link in the instructions.
