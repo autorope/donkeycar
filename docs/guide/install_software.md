@@ -18,7 +18,7 @@ The method for using a disk image to create a bootable SD card varies between
 operating systems. These instructions are for Ubuntu but you can see more
 instructions [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 
-1. Download prebuilt [zipped disk image](https://www.dropbox.com/s/wiudnm2dcsvoquu/donkey_v22.img.zip?dl=0) (1.1GB).
+1. Download prebuilt zipped disk image for [RPi 3B and 3B+](https://drive.google.com/open?id=1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ) (1.1GB).
 2. Unzip the disk image.
 3. Plug your SD card into your computer.
 4. Open the "Startup Disk Creator" application.
@@ -57,7 +57,7 @@ If it bothers you to leave your password unencrypted, you may change the [conten
 We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with
 
 ```
-ping d2.local
+ping donkeypi.local
 ```
 
 once it's booted. If there are many other Pi's on the network, then this will have problems. If you are on a Linux machine, or are able to edit the UUID partition, then you can edit the `/etc/hostname` and `/etc/hosts` files now to make finding your pi on the network easier after boot. Edit those to replace `raspberrypi` with a name of your choosing. Use all lower case, no special characters, no hyphens, no underscores `_`.
@@ -77,13 +77,12 @@ If you followed the above instructions to add wifi access your Pi should
 now be connected to your wifi network. Now you need to find its IP address
 so you can connect to it via SSH.
 
-The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping raspberrypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full IP address (unless using cygwin).
+The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping donkeypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full IP address (unless using cygwin).
 
 If you are having troubles locating your Pi on the network, you will want to plug in an HDMI monitor and USB keyboard into the Pi. Boot it. Login with:
 
 * Username: __pi__
-* Password: __asdfasdf__
-  * The older disk images use the password `raspberry`
+* Password: __raspberry__
 
 Then try the command:
 
@@ -100,7 +99,7 @@ sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
 If you don't have a HDMI monitor and keyboard, you can plug-in the Pi with a CAT5 cable to a router with DHCP. If that router is on the same network as your PC, you can try:
 
 ```
-ping d2.local
+ping donkeypi.local
 ```
 
 Hopefully, one of those methods worked and you are now ready to SSH into your Pi. On Mac and Linux, you can open Terminal. On Windows you can install [Putty](http://www.putty.org/) or [one of the alternatives](https://www.htpcbeginner.com/best-ssh-clients-windows-putty-alternatives/2/).
@@ -108,7 +107,7 @@ Hopefully, one of those methods worked and you are now ready to SSH into your Pi
 If you have a command prompt, you can try:
 
 ```
-ssh pi@d2.local
+ssh pi@donkeypi.local
 ```
 
 or
@@ -119,9 +118,7 @@ ssh pi@<your pi ip address>
 
 or via Putty:
 * Username: __pi__
-* Password: __asdfasdf__
-  * __asdfasdf__ on the current v22 prebuilt image linked above.
-  * __raspberry__ on older images/manual installs
+* Password: __raspberry__
 * Hostname:`<your pi IP address>`
 
 
@@ -136,14 +133,21 @@ If you are using the prebuilt image specified above, then your Pi is ready to go
 
 > Note: If you are using the prebuilt image specified above, your Pi is not using the full capacity of the SD card. To make the full capacity accessible, SSH into the Pi and run `sudo raspi-config` to go into the configuration tool. Select `7 Advanced Options` and `A1 Expand Filesystem`. And then select `<Finish>` to exit the configuration tool and reboot. The Pi can access the full capacity of the SD card now.
 
-### Update Donkeycar Python code and install
+### Install Donkeycar
 
-The donkeycar Python code on the memory card image is likely older than the that on the Github repo, so update things once you have the Pi running.
+The disk image only has the libraries(tensorflow..) installed, not donkeycar.
 
 ```bash
-cd ~/donkeycar
-git pull
-pip install -e .
+pip install donkeycar[pi]
+```
+
+
+### Create your car app.
+
+Now generate the drive script, config and folder structure for your car.
+
+```bash
+donkey createcar ~/mycar
 ```
 
 ----
@@ -156,14 +160,13 @@ Install dependencies, setup virtualenv
 sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
 virtualenv env -p python3
 source env/bin/activate
-pip install keras==2.0.6
-pip install tensorflow==1.3.0
+pip install tensorflow==1.8.0
 ```
 
 * Install donkey source and create your local working dir:
 ```bash
 git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e donkeycar
+pip install -e .
 ```
 
 [Next: Calibrate your car.](./calibrate.md)
@@ -203,7 +206,7 @@ activate donkey
 
 ```
 pip install -e .
-donkey createcar --path ~/d2
+donkey createcar ~/d2
 ```
 
 
@@ -329,9 +332,7 @@ To get back to the stock donkey install:
 
 ```
 pip uninstall donkeycar
-git clone --depth=1 https://github.com/wroscoe/donkey donkey
-cd donkey
-pip install -e .
+pip install donkeycar
 ```
 
 ### Install donkeycar with TensorFlow dependencies
@@ -345,19 +346,17 @@ To solve this, donkey does not specify *tensorflow* nor *tensorflow-gpu* as depe
 Install donkeycar assuming a compatible tensorflow library (either *tensorflow* or *tensorflow-gpu*) already installed:
 ```bash
 # Assuming CWD is the cloned donkey git
-pip install -e .
+pip install donkeycar
 ```
 
 Install donkeycar and use *tensorflow* dependency:
 ```bash
-# Assuming CWD is the cloned donkey git
-pip install -e .[tf]
+pip install donkeycar[tf]
 ```
 
 Install donkeycar and use *tensorflow-gpu* dependency:
 ```bash
-# Assuming CWD is the cloned donkey git
-pip install -e .[tf_gpu]
+pip install donkeycar[tf_gpu]
 ```
 
 See [https://github.com/tensorflow/tensorflow/issues/7166](https://github.com/tensorflow/tensorflow/issues/7166) for more information.
