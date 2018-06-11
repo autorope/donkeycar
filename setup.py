@@ -33,7 +33,6 @@ setup(name='donkeycar',
                         'eventlet',
                         'moviepy',
                         'pandas',
-                        'opencv-python'
                         ],
 
       extras_require={
