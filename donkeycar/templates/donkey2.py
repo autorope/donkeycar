@@ -139,6 +139,7 @@ def train(cfg, tub_names, model_name):
 
     def rt(record):
         record['user/angle'] = dk.utils.linear_bin(record['user/angle'])
+        record['user/throttle'] = dk.utils.linear_bin(record['user/throttle'], N=20, offset=0, R=0.5)
         return record
 
     kl = KerasCategorical()

@@ -148,17 +148,28 @@ BINNING
 functions to help converte between floating point numbers and categories.
 '''
 
-def linear_bin(a):
-    a = a + 1
-    b = round(a / (2/14))
-    arr = np.zeros(15)
+def linear_bin(a, N=15, offset=1, R=2.0):
+    '''
+    create a bin of length N
+    map val A to range R
+    offset one hot bin by offset, commonly R/2
+    '''
+    a = a + offset
+    b = round(a / (R/(N-offset)))
+    arr = np.zeros(N)
+    b = clamp(b, 0, N - 1)
     arr[int(b)] = 1
     return arr
 
 
-def linear_unbin(arr):
+def linear_unbin(arr, N=15, offset=-1, R=2.0):
+    '''
+    preform inverse linear_bin, taking
+    one hot encoded arr, and get max value
+    rescale given R range and offset
+    '''
     b = np.argmax(arr)
-    a = b *(2/14) - 1
+    a = b *(R/(N + offset)) + offset
     return a
 
 
