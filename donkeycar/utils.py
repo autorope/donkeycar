@@ -148,6 +148,13 @@ BINNING
 functions to help converte between floating point numbers and categories.
 '''
 
+def clamp(n, min, max):
+    if n < min:
+        return min
+    if n > max:
+        return max
+    return n
+
 def linear_bin(a, N=15, offset=1, R=2.0):
     '''
     create a bin of length N
