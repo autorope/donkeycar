@@ -43,7 +43,7 @@ Alternatively If you know RC or need something the standard Donkey does not supp
 
 
 ### Option 1: Buying through an official Donkey Store
-There are two official stores: 
+There are two official stores:
 
 If you are in the US, you can use the Donkeystore.  The intention of the Donkey Store is to make it easier and less expensive to build the Donkey Car.  The Donkey Store is run by the original founders of donkey car and profits are used to fund development of the donkey cars.  Also it is worth noting the design of the parts out of the Donkey store is slightly improved over the standard build as it uses better parts that are only available in large quantities or are harder to get.  The Donkey Store builds are open source like all others.   
 
@@ -154,6 +154,17 @@ Attach the USB battery to the underside of the printed bottom plate using cable 
 
 &nbsp;
 ### Step 6: Attach Camera
+There are two versions of the donkey chassis, the newer one does not have screws, the older one does. This includes instructions for both:
+
+**Screwless Design**
+The newer design is pretty simple, just slip the camera into the slot, cable end first.  However, be careful not to push on the camera lens and instead press the board.
+![donkey](../assets/build_hardware/assemble camera.jpg)
+
+If you need to remove the camera the temptation is to push on the lens, instead push on the connector as is shown in these pictures.  
+![donkey](../assets/build_hardware/Remove--good.jpg) ![donkey](../assets/build_hardware/Remove--bad.jpg)
+
+**Design with Screws**
+
 Attaching the camera is a little tricky, the M2 screws can be screwed into the plastic but it is a little hard.  I recommend drilling the holes out with a 1.5mm bit (1/16th bit in Imperial land) then pre threading them with the screws before putting the camera on. It is only necessary to put two screws in.
 
 >Sometimes using the two top screw holes can result in a short. Put screws in the bottom two holes.
