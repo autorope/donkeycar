@@ -4,9 +4,9 @@ import argparse
 import json
 import time
 
-import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
+from donkeycar.parts.controller import JoystickCreatorController
 
 class CreateJoystick(object):
 
