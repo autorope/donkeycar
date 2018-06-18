@@ -65,11 +65,7 @@ class CreateJoystick(object):
         return most_movement
 
     def create_joystick(self, args):
-<<<<<<< HEAD
-
-=======
         
->>>>>>> master
         print("Welcome to Joystick Creator Wizard.")
         print("This will walk you through the steps to create a python class to use your controller.")
         print("The first steps will create a label for each of the buttons and axis controls.")

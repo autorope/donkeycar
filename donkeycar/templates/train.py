@@ -367,7 +367,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
             keys = list(data.keys())
 
-            shuffle(keys)
+            keys = shuffle(keys)
 
             kl = opts['keras_pilot']
 
@@ -542,12 +542,6 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     saves the output trained model as model_name
     trains models which take sequence of images
     '''
-    import sklearn
-    from sklearn.model_selection import train_test_split
-    from sklearn.utils import shuffle
-    from PIL import Image
-    import json
-
     assert(not continuous)
 
     print("sequence of images training")
@@ -639,7 +633,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
 
         while True:
             #shuffle again for good measure
-            shuffle(data)
+            data = shuffle(data)
 
             for offset in range(0, num_records, batch_size):
                 batch_data = data[offset:offset+batch_size]
