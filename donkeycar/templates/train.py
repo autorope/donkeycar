@@ -309,11 +309,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     gen_records = {}
     opts = {}
 
-    opts['categorical'] = False
-
     kl = get_model_by_type(model_type, cfg=cfg)
 
-    opts['categorical'] = type(kl) is KerasCategorical
+    opts['categorical'] = type(kl) in [KerasCategorical, KerasBehavioral]
 
     print('training with model type', type(kl))
 
