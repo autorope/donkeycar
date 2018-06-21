@@ -18,7 +18,7 @@ The method for using a disk image to create a bootable SD card varies between
 operating systems. These instructions are for Ubuntu but you can see more
 instructions [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 
-1. Download prebuilt zipped disk image for [RPi 3B and 3B+](https://drive.google.com/open?id=1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ) (1.1GB).
+1. Download prebuilt zipped disk image for [RPi 3B and 3B+](https://drive.google.com/open?id=1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ) for [RPi Zero](https://drive.google.com/open?id=1otqNRBs1kqNJYocCp4kbMjcRKWE2zW7A) (1.1GB).
 2. Unzip the disk image.
 3. Plug your SD card into your computer.
 4. Open the "Startup Disk Creator" application.
@@ -139,6 +139,8 @@ The disk image only has the libraries(tensorflow..) installed, not donkeycar.
 
 ```bash
 pip install donkeycar[pi]
+#test that you are using the most recent version (found in __init__ file)
+python -c "import donkeycar as dk; print(dk.__version__)"
 ```
 
 

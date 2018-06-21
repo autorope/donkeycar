@@ -394,7 +394,7 @@ class Tub(object):
         get_train_gen
         get_record_gen
         """
-        if not self.df:
+        if self.df is None:
             self.update_df()
 
         train_df = self.df.sample(frac=train_frac, random_state=200)
