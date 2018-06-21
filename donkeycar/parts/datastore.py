@@ -509,25 +509,25 @@ class TubHandler():
 
 
 class TubImageStacker(Tub):
-    '''
+    """
     A Tub for training a NN with images that are the last three records stacked
     togther as 3 channels of a single image. The idea is to give a simple feedforward
     NN some chance of building a model based on motion.
     If you drive with the ImageFIFO part, then you don't need this.
     Just make sure your inference pass uses the ImageFIFO that the NN will now expect.
-    '''
+    """
 
     def rgb2gray(self, rgb):
-        '''
+        """
         take a numpy rgb image return a new single channel image converted to greyscale
-        '''
+        """
         return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
 
     def stack3Images(self, img_a, img_b, img_c):
-        '''
+        """
         convert 3 rgb images into grayscale and put them into the 3 channels of
         a single output image
-        '''
+        """
         width, height, _ = img_a.shape
 
         gray_a = self.rgb2gray(img_a)
@@ -543,10 +543,10 @@ class TubImageStacker(Tub):
         return img_arr
 
     def get_record(self, ix):
-        '''
+        """
         get the current record and two previous.
         stack the 3 images into a single image.
-        '''
+        """
         data = super(TubImageStacker, self).get_record(ix)
 
         if ix > 1:
@@ -570,28 +570,28 @@ class TubImageStacker(Tub):
 
 
 class TubTimeStacker(TubImageStacker):
-    '''
+    """
     A Tub for training N with records stacked through time.
     The idea here is to force the network to learn to look ahead in time.
     Init with an array of time offsets from the current time.
-    '''
+    """
 
     def __init__(self, frame_list, *args, **kwargs):
-        '''
+        """
         frame_list of [0, 10] would stack the current and 10 frames from now records togther in a single record
         with just the current image returned.
         [5, 90, 200] would return 3 frames of records, ofset 5, 90, and 200 frames in the future.
 
-        '''
+        """
         super(TubTimeStacker, self).__init__(*args, **kwargs)
         self.frame_list = frame_list
 
     def get_record(self, ix):
-        '''
+        """
         stack the N records into a single record.
         Each key value has the record index with a suffix of _N where N is
         the frame offset into the data.
-        '''
+        """
         data = {}
         for i, iOffset in enumerate(self.frame_list):
             iRec = ix + iOffset
@@ -614,10 +614,10 @@ class TubTimeStacker(TubImageStacker):
                     d = super(TubTimeStacker, self).get_record(ix)
                     data[key] = d[key]
                 else:
-                    '''
+                    """
                     we append a _offset to the key
                     so user/angle out now be user/angle_0
-                    '''
+                    """
                     new_key = key + "_" + str(iOffset)
                     data[new_key] = val
         return data

@@ -122,9 +122,9 @@ or via Putty:
 * Hostname:`<your pi IP address>`
 
 
-If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a d2 and donkey directory.
+If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a mycar and donkey directory.
 
-> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
+> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/mycar/config.py``` and make sure that you see the lines:
 >
 > * STEERING_CHANNEL = 1
 > * THROTTLE_CHANNEL = 0
@@ -147,7 +147,7 @@ pip install donkeycar[pi]
 Now generate the drive script, config and folder structure for your car.
 
 ```bash
-donkey createcar ~/mycar
+donkey createcar ~/
 ```
 
 ----
@@ -206,7 +206,7 @@ activate donkey
 
 ```
 pip install -e .
-donkey createcar ~/d2
+donkey createcar ~/mycar
 ```
 
 
@@ -265,7 +265,7 @@ pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-p
 
 ```
 pip install -e .
-donkey createcar --path ~/d2
+donkey createcar --path ~/mycar
 ```
 
 [Next: Calibrate your car.](./calibrate.md)

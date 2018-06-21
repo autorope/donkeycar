@@ -40,13 +40,13 @@ class FPSTimer(object):
 
 
 class SteeringServer(object):
-    '''
+    """
     A SocketIO based Websocket server designed to integrate with
     the Donkey Sim Unity project. Check the donkey branch of
     https://github.com/tawnkramer/sdsandbox for source of simulator.
     Prebuilt simulators available:
     Windows: https://drive.google.com/file/d/0BxSsaxmEV-5YRC1ZWHZ4Y1dZTkE/view?usp=sharing
-    '''
+    """
     def __init__(self, _sio, kpart, top_speed=4.0, image_part=None, steering_scale=1.0):
         self.model = None
         self.timer = FPSTimer()
@@ -59,21 +59,21 @@ class SteeringServer(object):
         self.top_speed = top_speed
 
     def throttle_control(self, last_steering, last_throttle, speed, nn_throttle):
-        '''
+        """
         super basic throttle control, derive from this Server and override as needed
-        '''
+        """
         if speed < self.top_speed:
             return 0.3
 
         return 0.0
 
     def telemetry(self, sid, data):
-        '''
+        """
         Callback when we get new data from Unity simulator.
         We use it to process the image, do a forward inference,
         then send controls back to client.
         Takes sid (?) and data, a dictionary of json elements.
-        '''
+        """
         if data:
             # The current steering angle of the car
             last_steering = float(data["steering_angle"])

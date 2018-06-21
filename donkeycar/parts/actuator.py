@@ -8,10 +8,10 @@ import time
 import donkeycar as dk
 
 class PCA9685:
-    '''
+    """
     PWM motor controler using PCA9685 boards.
     This is used for most RC Cars
-    '''
+    """
     def __init__(self, channel, frequency=60):
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
@@ -95,10 +95,10 @@ class PWMThrottle:
 
 
 class Adafruit_DCMotor_Hat:
-    '''
+    """
     Adafruit DC Motor Controller
     Used for each motor on a differential drive car.
-    '''
+    """
     def __init__(self, motor_num):
         from Adafruit_MotorHAT import Adafruit_MotorHAT
         import atexit
@@ -116,10 +116,10 @@ class Adafruit_DCMotor_Hat:
 
 
     def run(self, speed):
-        '''
+        """
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
-        '''
+        """
         if speed > 1 or speed < -1:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
 
@@ -138,10 +138,10 @@ class Adafruit_DCMotor_Hat:
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
 
 class Maestro:
-    '''
+    """
     Pololu Maestro Servo controller
     Use the MaestroControlCenter to set the speed & acceleration values to 0!
-    '''
+    """
     import threading
 
     maestro_device = None
@@ -220,9 +220,9 @@ class Maestro:
         return ret
 
 class Teensy:
-    '''
+    """
     Teensy Servo controller
-    '''
+    """
     import threading
 
     teensy_device = None

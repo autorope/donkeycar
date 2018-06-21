@@ -24,7 +24,7 @@ from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.controller import LocalWebController, JoystickController
-from donkeycar.parts.time import Timestamp
+from donkeycar.parts.clock import Timestamp
 
 
 def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):

@@ -23,7 +23,7 @@ from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
-from donkeycar.parts.time import Timestamp
+from donkeycar.parts.clock import Timestamp
 
 log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sq.log')
 dk.log.setup(log_path)

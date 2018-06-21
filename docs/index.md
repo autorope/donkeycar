@@ -37,7 +37,7 @@ cam = dk.parts.PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #add tub part to record images
-tub = dk.parts.Tub(path='~/d2/gettings_started',
+tub = dk.parts.Tub(path='~/mycar/gettings_started',
                    inputs=['image'],
                    types=['image_array'])
 V.add(tub, inputs=inputs)

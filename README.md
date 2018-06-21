@@ -2,7 +2,6 @@
 
 [![Build Status](https://travis-ci.org/wroscoe/donkey.svg?branch=dev)](https://travis-ci.org/wroscoe/donkey)
 [![CodeCov](https://codecov.io/gh/wroscoe/donkey/branch/dev/graph/badge.svg)](https://codecov.io/gh/wroscoe/donkey/branch/dev)
-[![Requirements Status](https://requires.io/github/wroscoe/donkey/requirements.svg?branch=dev)](https://requires.io/github/wroscoe/donkey/requirements/?branch=dev)
 [![PyPI version](https://badge.fury.io/py/donkeycar.svg)](https://badge.fury.io/py/donkeycar)
 [![Py versions](https://img.shields.io/pypi/pyversions/donkeycar.svg)](https://img.shields.io/pypi/pyversions/donkeycar.svg)
 
@@ -48,7 +47,7 @@ cam = PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #add tub part to record images
-tub = Tub(path='~/d2/gettings_started',
+tub = Tub(path='~/mycar/get_started',
           inputs=['image'],
           types=['image_array'])
 V.add(tub, inputs=['image'])

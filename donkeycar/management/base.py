@@ -23,9 +23,9 @@ def make_dir(path):
 
 def load_config(config_path):
 
-    '''
+    """
     load a config from the given path
-    '''
+    """
     conf = os.path.expanduser(config_path)
 
     if not os.path.exists(conf):
@@ -70,7 +70,7 @@ class CreateCar(BaseCommand):
         """
 
         #these are neeeded incase None is passed as path
-        path = path or '~/d2'
+        path = path or '~/mycar'
         template = template or 'donkey2'
 
 
@@ -168,10 +168,10 @@ class MakeMovie(BaseCommand):
         return parsed_args, parser
 
     def run(self, args):
-        '''
+        """
         Load the images from a tub and create a movie from them.
         Movie
-        '''
+        """
         import moviepy.editor as mpy
 
 
@@ -205,12 +205,12 @@ class MakeMovie(BaseCommand):
         print('done')
 
     def make_frame(self, t):
-        '''
+        """
         Callback to return an image from from our tub records.
         This is called from the VideoClip as it references a time.
         We don't use t to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
-        '''
+        """
         self.iRec = self.iRec + 1
 
         if self.iRec >= self.num_rec - 1:
@@ -226,9 +226,9 @@ class MakeMovie(BaseCommand):
 
 
 class Sim(BaseCommand):
-    '''
+    """
     Start a websocket SocketIO server to talk to a donkey simulator
-    '''
+    """
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='sim')
@@ -240,9 +240,9 @@ class Sim(BaseCommand):
         return parsed_args, parser
 
     def run(self, args):
-        '''
+        """
         Start a websocket SocketIO server to talk to a donkey simulator
-        '''
+        """
         import socketio
         from donkeycar.parts.simulation import SteeringServer
         from donkeycar.parts.keras import KerasCategorical, KerasLinear
@@ -300,10 +300,10 @@ class TubCheck(BaseCommand):
         return parsed_args
 
     def check(self, tub_paths, fix=False):
-        '''
+        """
         Check for any problems. Looks at tubs and find problems in any records or images that won't open.
         If fix is True, then delete images and records that cause problems.
-        '''
+        """
         tubs = [Tub(path) for path in tub_paths]
 
         for tub in tubs:
@@ -324,9 +324,9 @@ class ShowHistogram(BaseCommand):
         return parsed_args
 
     def show_histogram(self, tub_paths, record_name):
-        '''
+        """
         Produce a histogram of record type frequency in the given tub
-        '''
+        """
         from matplotlib import pyplot as plt
         from donkeycar.parts.datastore import TubGroup
 
@@ -346,9 +346,9 @@ class ShowHistogram(BaseCommand):
 class ShowPredictionPlots(BaseCommand):
 
     def parse_args(self, args):
-        '''
+        """
         Parse tubplot arguments
-        '''
+        """
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
         parser.add_argument('--model', help='the model to use for predictions')
@@ -357,18 +357,18 @@ class ShowPredictionPlots(BaseCommand):
         return parsed_args
 
     def run(self, args):
-        '''
+        """
         executes the plotting function
-        '''
+        """
         args = self.parse_args(args)
         args.tubs = ','.join(args.tubs)
         self.plot_predictions(args.config, args.tubs, args.model)
 
     def plot_predictions(self, cfg, tub_paths, model_path):
-        '''
+        """
         Plot model predictions for angle and throttle against data from tubs.
 
-        '''
+        """
         from donkeycar.parts.datastore import TubGroup
         from donkeycar.parts.keras import KerasCategorical
 

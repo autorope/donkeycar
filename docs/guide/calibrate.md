@@ -6,10 +6,10 @@ other vehicles. These instructions
 ## How to adjust your car's settings.
 
 All of the car's settings are in the `config.py` script generated when
-you ran the `donkey createcar --path ~/d2` command. You can edit
+you ran the `donkey createcar --path ~/mycar` command. You can edit
 this file on your car by running:
 ```bash
-nano ~/d2/config.py
+nano ~/mycar/config.py
 ```
 
 Our goal is to edit these settings so your car will drive like every

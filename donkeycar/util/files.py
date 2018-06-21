@@ -7,9 +7,9 @@ import zipfile
 import os
 
 def most_recent_file(dir_path, ext=''):
-    '''
+    """
     return the most recent file given a directory path and extension
-    '''
+    """
     query = dir_path + '/*' + ext
     newest = min(glob.iglob(query), key=os.path.getctime)
     return newest

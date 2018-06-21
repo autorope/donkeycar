@@ -97,7 +97,7 @@ ____
 * Wait 10-15 minutes until you have recorded 10K+ frames of data.
 * Hit the `Stop` button
 * Hit the `Exit` button
-* Move the `log` dir to the `~/d2/data/` dir where you normally put tub data. This will create a `~/d2/data/log` path.
+* Move the `log` dir to the `~/mycar/data/` dir where you normally put tub data. This will create a `~/mycar/data/log` path.
 * Train as usual.
 
 > Note: I had problems w default categorical model. Linear model worked better for me.

@@ -15,7 +15,7 @@ On Windows:
 
 * start a new Anaconda Prompt from Windows start menu
 * Activate mappings to donkey Python setup with: ```activate donkey```
-* Change to your local dir for managing donkey: ```cd ~/d2```
+* Change to your local dir for managing donkey: ```cd ~/mycar```
 * Find your pi
 
 
@@ -40,7 +40,7 @@ The default user name is 'pi' and the password is 'raspberry'.  If you are using
 
 ### Make sure you've created your car application.
 ```
-donkey createcar --template donkey2 --path ~/d2
+donkey createcar --template donkey2 --path ~/mycar
 ```
 
 See also [more information.](/utility/donkey/#create-car)
@@ -48,7 +48,7 @@ See also [more information.](/utility/donkey/#create-car)
 #### Start your car.
 Open your car's folder and start your car.
 ```
-cd ~/d2
+cd ~/mycar
 python manage.py drive
 ```
 
@@ -89,7 +89,7 @@ Check the [Controllers](/parts/controllers/#physical-joystick-controller) sectio
 
 ### Start car
 ```
-cd ~/d2
+cd ~/mycar
 python manage.py drive --js
 ```
 
@@ -120,7 +120,7 @@ nano config.py
 
 ### Start car for self-driving
 ```
-cd ~/d2
+cd ~/mycar
 python manage.py drive --model <path/to/model> --js
 ```
 

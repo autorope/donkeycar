@@ -15,7 +15,7 @@ def is_error(err):
 
 @pytest.fixture
 def cardir(tmpdir):
-    path = str(tmpdir.mkdir("d2"))
+    path = str(tmpdir.mkdir("mycar"))
     return path
 
 

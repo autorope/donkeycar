@@ -7,7 +7,7 @@ performance.
 EXMAPLE
 -----------
 import dk
-cfg = dk.load_config(config_path='~/d2/config.py')
+cfg = dk.load_config(config_path='~/mycar/config.py')
 print(cfg.CAMERA_RESOLUTION)
 
 """

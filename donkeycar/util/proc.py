@@ -23,13 +23,13 @@ def run_shell_command(cmd, cwd=None, timeout=15):
         err.append(line)
     return out, err, proc.pid
 
-'''
+"""
 def kill(proc_pid):
     process = psutil.Process(proc_pid)
     for proc in process.children(recursive=True):
         proc.kill()
     process.kill()
-'''
+"""
 import signal
 
 def kill(proc_id):

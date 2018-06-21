@@ -1,7 +1,7 @@
 import time
 
 class Mpu6050:
-    '''
+    """
     Installation:
     sudo apt install python3-smbus
     or
@@ -12,7 +12,7 @@ class Mpu6050:
     sudo python setup.py install
 
     pip install mpu6050-raspberrypi
-    '''
+    """
 
     def __init__(self, addr=0x68, poll_delay=0.0166):
         from mpu6050 import mpu6050

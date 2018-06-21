@@ -116,7 +116,7 @@ Usage:
 donkey tubplot <tub_path> [--model=<model_path>]
 ```
 
-* This command may be run from `~/d2` dir
+* This command may be run from `~/mycar` dir
 * Run on the host computer
 * Will show a pop-up window showing the plot of steering values in a given tub compared to NN predictions from the trained model
 * When the `--tub` is omitted, it will check all tubs in the default data dir
@@ -131,7 +131,7 @@ Usage:
 donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<speed>] [--config=<config.py>]
 ```
 
-* This command may be run from `~/d2` dir
+* This command may be run from `~/mycar` dir
 * Run on the host computer
 * Uses the model to make predictions based on images and telemetry from the simulator
 * `--type` can specify whether the model needs angle output to be treated as categorical

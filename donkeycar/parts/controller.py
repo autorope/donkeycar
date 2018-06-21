@@ -8,9 +8,9 @@ import struct
 from donkeycar.parts.web_controller.web import LocalWebController
 
 class Joystick():
-    '''
+    """
     An interface to a physical joystick available at /dev/input
-    '''
+    """
     access_url = None #required to be consistent with web controller
 
     def __init__(self, dev_fn='/dev/input/js0'):
@@ -102,9 +102,9 @@ class Joystick():
 
     def init(self):
         from fcntl import ioctl
-        '''
+        """
         call once to setup connection to dev/input/js0 and map buttons
-        '''
+        """
         # Open the joystick device.
         print('Opening %s...' % self.dev_fn)
         self.jsdev = open(self.dev_fn, 'rb')
@@ -146,20 +146,20 @@ class Joystick():
 
 
     def show_map(self):
-        '''
+        """
         list the buttons and axis found on this joystick
-        '''
+        """
         print ('%d axes found: %s' % (self.num_axes, ', '.join(self.axis_map)))
         print ('%d buttons found: %s' % (self.num_buttons, ', '.join(self.button_map)))
 
 
     def poll(self):
-        '''
+        """
         query the state of the joystick, returns button which was pressed, if any,
         and axis which was moved, if any. button_state will be None, 1, or 0 if no changes,
         pressed, or released. axis_val will be a float from -1 to +1. button and axis will
         be the string label determined by the axis map in init.
-        '''
+        """
         button = None
         button_state = None
         axis = None
@@ -192,9 +192,9 @@ class Joystick():
 
 
 class JoystickController(object):
-    '''
+    """
     Joystick client using access to local physical input
-    '''
+    """
 
     def __init__(self, poll_delay=0.0,
                  max_throttle=1.0,
@@ -226,16 +226,16 @@ class JoystickController(object):
         #two threads to be polling for js events.
 
     def on_throttle_changes(self):
-        '''
+        """
         turn on recording when non zero throttle in the user mode.
-        '''
+        """
         if self.auto_record_on_throttle:
             self.recording = (self.throttle != 0.0 and self.mode == 'user')
 
     def init_js(self):
-        '''
+        """
         attempt to init joystick
-        '''
+        """
         try:
             self.js = Joystick(self.dev_fn)
             self.js.init()
@@ -246,7 +246,7 @@ class JoystickController(object):
 
 
     def update(self):
-        '''
+        """
         poll a joystick for input events
 
         button map name => PS3 button => function
@@ -265,7 +265,7 @@ class JoystickController(object):
         * circle = PS3 circrle => toggle recording
         * triangle = PS3 triangle => increase max throttle
         * cross = PS3 cross => decrease max throttle
-        '''
+        """
 
         #wait for joystick to be online
         while self.running and not self.init_js():
@@ -285,12 +285,12 @@ class JoystickController(object):
                 self.on_throttle_changes()
 
             if button == 'trigger' and button_state == 1:
-                '''
+                """
                 switch modes from:
                 user: human controlled steer and throttle
                 local_angle: ai steering, human throttle
                 local: ai steering, ai throttle
-                '''
+                """
                 if self.mode == 'user':
                     self.mode = 'local_angle'
                 elif self.mode == 'local_angle':
@@ -300,9 +300,9 @@ class JoystickController(object):
                 print('new mode:', self.mode)
 
             if button == 'circle' and button_state == 1:
-                '''
+                """
                 toggle recording on/off
-                '''
+                """
                 if self.auto_record_on_throttle:
                     print('auto record on throttle is enabled.')
                 elif self.recording:
@@ -313,9 +313,9 @@ class JoystickController(object):
                 print('recording:', self.recording)
 
             if button == 'triangle' and button_state == 1:
-                '''
+                """
                 increase max throttle setting
-                '''
+                """
                 self.max_throttle = round(min(1.0, self.max_throttle + 0.01), 2)
                 if self.constant_throttle:
                     self.throttle = self.max_throttle
@@ -324,9 +324,9 @@ class JoystickController(object):
                 print('max_throttle:', self.max_throttle)
 
             if button == 'cross' and button_state == 1:
-                '''
+                """
                 decrease max throttle setting
-                '''
+                """
                 self.max_throttle = round(max(0.0, self.max_throttle - 0.01), 2)
                 if self.constant_throttle:
                     self.throttle = self.max_throttle
@@ -335,37 +335,37 @@ class JoystickController(object):
                 print('max_throttle:', self.max_throttle)
 
             if button == 'base' and button_state == 1:
-                '''
+                """
                 increase throttle scale
-                '''
+                """
                 self.throttle_scale = round(min(0.0, self.throttle_scale + 0.05), 2)
                 print('throttle_scale:', self.throttle_scale)
 
             if button == 'top2' and button_state == 1:
-                '''
+                """
                 decrease throttle scale
-                '''
+                """
                 self.throttle_scale = round(max(-1.0, self.throttle_scale - 0.05), 2)
                 print('throttle_scale:', self.throttle_scale)
 
             if button == 'base2' and button_state == 1:
-                '''
+                """
                 increase steering scale
-                '''
+                """
                 self.steering_scale = round(min(1.0, self.steering_scale + 0.05), 2)
                 print('steering_scale:', self.steering_scale)
 
             if button == 'pinkie' and button_state == 1:
-                '''
+                """
                 decrease steering scale
-                '''
+                """
                 self.steering_scale = round(max(0.0, self.steering_scale - 0.05), 2)
                 print('steering_scale:', self.steering_scale)
 
             if button == 'top' and button_state == 1:
-                '''
+                """
                 toggle constant throttle
-                '''
+                """
                 if self.constant_throttle:
                     self.constant_throttle = False
                     self.throttle = 0

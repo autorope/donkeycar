@@ -27,10 +27,10 @@ from donkeycar import util
 class LocalWebController(tornado.web.Application):
     port = 8887
     def __init__(self, use_chaos=False):
-        '''
+        """
         Create and publish variables needed on many of
         the web handlers.
-        '''
+        """
         print('Starting Donkey Server...')
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -119,9 +119,9 @@ class DriveAPI(tornado.web.RequestHandler):
 
 
 class VideoAPI(tornado.web.RequestHandler):
-    '''
+    """
     Serves a MJPEG of the images posted from the vehicle.
-    '''
+    """
 
     @tornado.web.asynchronous
     @tornado.gen.coroutine
