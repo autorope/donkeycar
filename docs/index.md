@@ -8,6 +8,7 @@ developed with a focus on enabling fast experimentation and easy contribution.
 ### Build your own Donkey2
 
 Donkey2 is the standard car that most people build first. The parts cost about $250 to $300
+
 and take 2 hours to assemble. Here are the main steps to build your own car:
 
 1. [Assemble hardware.](guide/build_hardware.md)
@@ -37,7 +38,7 @@ cam = dk.parts.PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #add tub part to record images
-tub = dk.parts.Tub(path='~/d2/gettings_started',
+tub = dk.parts.Tub(path='~/mycar/gettings_started',
                    inputs=['image'],
                    types=['image_array'])
 V.add(tub, inputs=inputs)

@@ -40,13 +40,13 @@ class FPSTimer(object):
 
 
 class SteeringServer(object):
-    '''
+    """
     A SocketIO based Websocket server designed to integrate with
     the Donkey Sim Unity project. Check the donkey branch of
     https://github.com/tawnkramer/sdsandbox for source of simulator.
     Prebuilt simulators available:
     Windows: https://drive.google.com/file/d/0BxSsaxmEV-5YRC1ZWHZ4Y1dZTkE/view?usp=sharing
-    '''
+    """
     def __init__(self, _sio, kpart, top_speed=4.0, image_part=None, steering_scale=1.0):
         self.model = None
         self.timer = FPSTimer()
@@ -59,21 +59,21 @@ class SteeringServer(object):
         self.top_speed = top_speed
 
     def throttle_control(self, last_steering, last_throttle, speed, nn_throttle):
-        '''
+        """
         super basic throttle control, derive from this Server and override as needed
-        '''
+        """
         if speed < self.top_speed:
             return 0.3
 
         return 0.0
 
     def telemetry(self, sid, data):
-        '''
+        """
         Callback when we get new data from Unity simulator.
         We use it to process the image, do a forward inference,
         then send controls back to client.
         Takes sid (?) and data, a dictionary of json elements.
-        '''
+        """
         if data:
             # The current steering angle of the car
             last_steering = float(data["steering_angle"])
@@ -148,47 +148,47 @@ class MovingSquareTelemetry:
     """
     Generator of cordinates of a bouncing moving square for simulations.
     """
-    def __init__(self, max_velocity=29, 
-                 x_min = 10, x_max=150, 
+    def __init__(self, max_velocity=29,
+                 x_min = 10, x_max=150,
                  y_min = 10, y_max=110):
-        
+
         self.velocity = random.random() * max_velocity
-        
+
         self.x_min, self.x_max = x_min, x_max
         self.y_min, self.y_max = y_min, y_max
-               
+
         self.x_direction = random.random() * 2 - 1
         self.y_direction = random.random() * 2 - 1
-        
+
         self.x = random.random() * x_max
-        self.y = random.random() * y_max 
-        
+        self.y = random.random() * y_max
+
         self.tel = self.x, self.y
-        
+
     def run(self):
         #move
         self.x += self.x_direction * self.velocity
         self.y += self.y_direction * self.velocity
-        
+
         #make square bounce off walls
-        if self.y < self.y_min or self.y > self.y_max: 
+        if self.y < self.y_min or self.y > self.y_max:
             self.y_direction *= -1
-        if self.x < self.x_min or self.x > self.x_max: 
+        if self.x < self.x_min or self.x > self.x_max:
             self.x_direction *= -1
-        
+
         return int(self.x), int(self.y)
-    
+
     def update(self):
         self.tel = self.run()
-    
+
     def run_threaded(self):
         return self.tel
-        
+
 
 class SquareBoxCamera:
     """
     Fake camera that returns an image with a square box.
-    
+
     This can be used to test if a learning algorithm can learn.
     """
 
@@ -196,14 +196,14 @@ class SquareBoxCamera:
         self.resolution = resolution
         self.box_size = box_size
         self.color = color
-        
-        
+
+
     def run(self, x,y, box_size=None, color=None):
         """
         Create an image of a square box at a given coordinates.
         """
         radius = int((box_size or self.box_size)/2)
-        color = color or self.color      
+        color = color or self.color
         frame = np.zeros(shape=self.resolution + (3,))
         frame[y - radius: y + radius,
               x - radius: x + radius,  :] = color

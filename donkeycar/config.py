@@ -7,11 +7,17 @@ Created on Wed Sep 13 21:27:44 2017
 """
 import os
 import types
-    
+
+
 class Config:
-    
+
+    def __init__(self):
+        pass
+
     def from_pyfile(self, filename, silent=False):
-        #filename = os.path.join(self.root_path, filename)
+        """
+        Read config class from a file.
+        """
         d = types.ModuleType('config')
         d.__file__ = filename
         try:
@@ -22,14 +28,19 @@ class Config:
             raise
         self.from_object(d)
         return True
-    
+
     def from_object(self, obj):
+        """
+        Read config class from another object.
+        """
         for key in dir(obj):
             if key.isupper():
-                #self[key] = getattr(obj, key)
                 setattr(self, key, getattr(obj, key))
-                
+
     def __str__(self):
+        """
+        Get a string representation of the config class.
+        """
         result = []
         for key in dir(self):
             if key.isupper():
@@ -37,14 +48,15 @@ class Config:
         return str(result)
 
 
-
 def load_config(config_path=None):
-    
+    """
+    Load the config from a file and return the config class.
+    """
     if config_path is None:
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
         config_path = os.path.join(main_path, 'config.py')
-    
+
     print('loading config file: {}'.format(config_path))
     cfg = Config()
     cfg.from_pyfile(config_path)

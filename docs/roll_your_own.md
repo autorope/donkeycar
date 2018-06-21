@@ -162,9 +162,9 @@ Finding good mounting points, and making your own "base plate" with measurements
 from the car you have, is likely to be necessary. You can build this base plate
 using 3D printing, laser cutting, CNC milling, or even just drilling into a thin
 piece of plywood, but getting a good fit to your chassis is important, so don't
-rush it or try to cut corners.  
+rush it or try to cut corners.
 
-Doug LaRue also built a [configurator](https://www.thingiverse.com/thing:2781404) in Thingiverse that enables people to easily make custom 3d printed plates.  
+Doug LaRue also built a [configurator](https://www.thingiverse.com/thing:2781404) in Thingiverse that enables people to easily make custom 3d printed plates.
 
 ## Other Options
 

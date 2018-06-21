@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  
+
   <div class="container">
-    <div class="row"> 
+    <div class="row">
       <div class="col-md-12">
-        <div class="page-header">
-        </div>
         <div class="form-inline">
           <div class="form-group">
             <label class="group-label">
@@ -62,20 +60,20 @@
               <div id="angle-bar-backward" class="progress-bar progress-bar-warning pull-right" role="progressbar" style="width: 0%;">
               </div>
             </div>
-            
+
             <div class="progress positive">
               <div id="angle-bar-forward" class="progress-bar progress-bar-info" role="progressbar" style="width: 0%;">
               </div>
             </div>
           </div>
-          
+
           <div>
             <span class="glyphicon glyphicon-resize-vertical pull-left"></span>
             <div class="progress negative">
               <div id="throttle-bar-backward" class="progress-bar progress-bar-danger pull-right" role="progressbar" style="width: 0%;">
               </div>
             </div>
-            
+
             <div class="progress positive">
               <div id="throttle-bar-forward" class="progress-bar progress-bar-success" role="progressbar" style="width: 0%;">
               </div>
@@ -100,14 +98,14 @@
           </div>
         </form>
       </div>
-      
+
       <div class="col-xs-8 col-sm-5 col-md-5"><!-- center column -->
         <div class="thumbnail">
           <img id='mpeg-image', class='img-responsive' src="/video"/> </img>
         </div>
       </div><!-- end center column -->
 
-      <div id="joystick-column" class="col-xs-10 col-sm-5 col-md-5"> 
+      <div id="joystick-column" class="col-xs-10 col-sm-5 col-md-5">
         <div class="thumbnail">
           <div id="joystick_container">
             <p>Click/touch to use joystic.</p>
@@ -116,7 +114,7 @@
       </div><!-- end right col -->
     </div>
     <div id="joystick-padding"></div>
-    
+
   </div> <!-- END Container -->
   <footer class="footer" id="vehicle_footer">
     <div class="container">
@@ -151,8 +149,8 @@
           </p>
           <p>
             <strong>Device tilt</strong> control is enabled for devices with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Detecting_device_orientation">device orientation sensors</a>, and should work with most modern smartphones. Hold your device in landscape mode, tilt  forward/backward for throttle and left/right for steering.
-          </p> 
-          
+          </p>
+
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>

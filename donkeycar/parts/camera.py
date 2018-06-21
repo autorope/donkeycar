@@ -112,9 +112,9 @@ class Webcam(BaseCamera):
         time.sleep(.5)
 
 class MockCamera(BaseCamera):
-    '''
+    """
     Fake camera. Returns only a single static frame
-    '''
+    """
     def __init__(self, resolution=(160, 120), image=None):
         if image is not None:
             self.frame = image
@@ -128,22 +128,22 @@ class MockCamera(BaseCamera):
         pass
 
 class ImageListCamera(BaseCamera):
-    '''
+    """
     Use the images from a tub as a fake camera output
-    '''
-    def __init__(self, path_mask='~/d2/data/**/*.jpg'):
+    """
+    def __init__(self, path_mask='~/mycar/data/**/*.jpg'):
         self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
-    
+
         def get_image_index(fnm):
             sl = os.path.basename(fnm).split('_')
             return int(sl[0])
 
-        '''
+        """
         I feel like sorting by modified time is almost always
         what you want. but if you tared and moved your data around,
         sometimes it doesn't preserve a nice modified time.
         so, sorting by image index works better, but only with one path.
-        '''
+        """
         self.image_filenames.sort(key=get_image_index)
         #self.image_filenames.sort(key=os.path.getmtime)
         self.num_images = len(self.image_filenames)
@@ -156,10 +156,10 @@ class ImageListCamera(BaseCamera):
     def update(self):
         pass
 
-    def run_threaded(self):        
+    def run_threaded(self):
         if self.num_images > 0:
             self.i_frame = (self.i_frame + 1) % self.num_images
-            self.frame = Image.open(self.image_filenames[self.i_frame]) 
+            self.frame = Image.open(self.image_filenames[self.i_frame])
 
         return np.asarray(self.frame)
 

@@ -1,13 +1,13 @@
-""" 
-CAR CONFIG 
+"""
+CAR CONFIG
 
 This file is read by your car application's manage.py script to change the car
-performance. 
+performance.
 
 EXMAPLE
 -----------
 import dk
-cfg = dk.load_config(config_path='~/d2/config.py')
+cfg = dk.load_config(config_path='~/mycar/config.py')
 print(cfg.CAMERA_RESOLUTION)
 
 """
@@ -49,3 +49,9 @@ USE_JOYSTICK_AS_DEFAULT = False
 JOYSTICK_MAX_THROTTLE = 0.25
 JOYSTICK_STEERING_SCALE = 1.0
 AUTO_RECORD_ON_THROTTLE = True
+
+
+TUB_PATH = os.path.join(CAR_PATH, 'tub') # if using a single tub
+
+#ROPE.DONKEYCAR.COM
+ROPE_TOKEN="GET A TOKEN AT ROPE.DONKEYCAR.COM"

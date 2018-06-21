@@ -97,8 +97,8 @@ ____
 * Wait 10-15 minutes until you have recorded 10K+ frames of data.
 * Hit the `Stop` button
 * Hit the `Exit` button
-* Move the `log` dir to the `~/d2/data/` dir where you normally put tub data. This will create a `~/d2/data/log` path.
-* Train as usual. 
+* Move the `log` dir to the `~/mycar/data/` dir where you normally put tub data. This will create a `~/mycar/data/log` path.
+* Train as usual.
 
 > Note: I had problems w default categorical model. Linear model worked better for me.
 
@@ -106,7 +106,7 @@ ____
 python manage.py train --tub=data/log --model=models/mypilot
 ```
 
-* Start the simulator server. 
+* Start the simulator server.
 
 ``` bash
 donkey sim --model=models/mypilot
@@ -122,7 +122,7 @@ ______
 
 ## Joystick Setup
 
-Keyboard input provides a poor learning signal. I recommend using the joystick to provide manual driving data. 
+Keyboard input provides a poor learning signal. I recommend using the joystick to provide manual driving data.
 
 ##### Linux Joystick Setup
 
