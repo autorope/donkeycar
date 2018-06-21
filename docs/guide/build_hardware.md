@@ -196,7 +196,7 @@ Now you are done with the hardware!!
 
 The Desert monster does not have the same set up for holding the body on the car and needs two adapters mentioned above.  To attach the adapters you must first remove the existing adapter from the chassis and screw on the custom adapter with the same screws as is shown in this photo:
 
-![adapter](../assets/build_hardware/Desert_Monster_adapter.PNG)
+![adapter](../assets/build_hardware/Desert_Monster_adapter.png)
 
 Once this is done, go back to step 7
 
