@@ -143,7 +143,7 @@ def train(cfg, tub_names, new_model_path, base_model_path=None ):
     def train_record_transform(record):
         """ convert categorical steering to linear and apply image augmentations """
         record['user/angle'] = dk.util.data.linear_bin(record['user/angle'])
-        record['cam/image_array'] = dk.util.img.augment_images(record['cam/image_array'])
+        # TODO add augmentation that doesn't use opencv
         return record
 
     def val_record_transform(record):
