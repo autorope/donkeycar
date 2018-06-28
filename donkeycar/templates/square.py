@@ -21,7 +21,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera
-from donkeycar.parts.controller import LocalWebController
+from controller import LocalWebController
 from donkeycar.parts.keras import KerasCategorical
 from donkeycar.parts.clock import Timestamp
 
