@@ -1,0 +1,16 @@
+git clone https://github.com/luetzel/bluez
+cd bluez/
+sudo apt-get install glib2.0-dev libdbus-1-dev libusb-dev libudev-dev libical-dev libreadline-dev
+./configure --prefix=/usr --mandir=/usr/share/man --sysconfdir=/etc                          --localstatedir=/var --enable-sixaxis
+sudo make install
+sudo systemctl daemon-reload
+sudo systemctl restart bluetooth
+sudo systemctl enable bluetooth
+cd ..
+gcc -o sixpair sixpair.c -lusb
+sudo halt& exit
+sudo ./sixpair 
+sudo hciconfig hci0 up piscan
+service bluetoot status
+sudo reboot
+ls /dev/input/

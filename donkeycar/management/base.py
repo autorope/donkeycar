@@ -4,12 +4,14 @@ import os
 import socket
 import shutil
 import argparse
+import json
+import time
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
 from .tub import TubManager
-
+from .joystick_creator import CreateJoystick
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -43,7 +45,7 @@ def load_config(config_path):
     return cfg
 
 
-class BaseCommand():
+class BaseCommand(object):
     pass
 
 
@@ -304,10 +306,11 @@ class TubCheck(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
         parser.add_argument('--fix', action='store_true', help='remove problem records')
+        parser.add_argument('--delete_empty', action='store_true', help='delete tub dir with no records')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
-    def check(self, tub_paths, fix=False):
+    def check(self, tub_paths, fix=False, delete_empty=False):
         '''
         Check for any problems. Looks at tubs and find problems in any records or images that won't open.
         If fix is True, then delete images and records that cause problems.
@@ -316,10 +319,14 @@ class TubCheck(BaseCommand):
 
         for tub in tubs:
             tub.check(fix=fix)
+            if delete_empty and tub.get_num_records() == 0:
+                import shutil
+                print("removing empty tub", tub.path)
+                shutil.rmtree(tub.path)
 
     def run(self, args):
         args = self.parse_args(args)
-        self.check(args.tubs, args.fix)
+        self.check(args.tubs, args.fix, args.delete_empty)
 
 
 class ShowHistogram(BaseCommand):
@@ -353,53 +360,109 @@ class ShowHistogram(BaseCommand):
         self.show_histogram(args.tub, args.record)
 
 
+class ConSync(BaseCommand):
+    '''
+    continuously rsync data
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='consync', usage='%(prog)s [options]')
+        parser.add_argument('--dir', default='./cont_data/', help='paths to tubs')
+        parser.add_argument('--delete', default='y', help='remove files locally that were deleted remotely y=yes n=no')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        cfg = load_config('config.py')
+        dest_dir = args.dir
+        del_arg = ""
+
+        if args.delete == 'y':
+            reply = input('WARNING:this rsync operation will delete data in the target dir: %s. ok to proceeed? [y/N]: ' % dest_dir)
+
+            if reply != 'y' and reply != "Y":
+                return
+            del_arg = "--delete"
+
+        if not dest_dir[-1] == '/' and not dest_dir[-1] == '\\':
+            print("Desination dir should end with a /")
+            return
+
+        try:
+            os.mkdir(dest_dir)
+        except:
+            pass
+
+        while True:
+            command = "rsync -aW --progress %s@%s:%s/data/ %s %s" %\
+                (cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT, dest_dir, del_arg)
+
+            os.system(command)
+            time.sleep(5)
+
+class ConTrain(BaseCommand):
+    '''
+    continuously train data
+    '''
+    
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='contrain', usage='%(prog)s [options]')
+        parser.add_argument('--tub', default='./cont_data/*', help='paths to tubs')
+        parser.add_argument('--model', default='./models/drive.h5', help='path to model')
+        parser.add_argument('--transfer', default=None, help='path to transfer model')
+        parser.add_argument('--type', default='categorical', help='type of model (linear|categorical|rnn|imu|behavior|3d)')
+        parser.add_argument('--aug', action="store_true", help='perform image augmentation')        
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        cfg = load_config('config.py')
+        import sys
+        sys.path.append('.')
+        from train import multi_train
+        continuous = True
+        multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
+
+
 class ShowPredictionPlots(BaseCommand):
 
-    def plot_predictions(cfg, tub_paths, model_path, limit):
+    def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
         '''
         Plot model predictions for angle and throttle against data from tubs.
 
         '''
         import matplotlib.pyplot as plt
         import pandas as pd
-        from donkeycar.parts.datastore import TubGroup
-        from donkeycar.parts.keras import KerasCategorical
 
         model_path = os.path.expanduser(model_path)
-        model = KerasCategorical()
+        model = dk.utils.get_model_by_type(model_type, cfg)
         model.load(model_path)
 
-        tubs = gather_tubs(cfg, tub_paths)
+        records = gather_records(cfg, tub_paths)
         user_angles = []
         user_throttles = []
         pilot_angles = []
         pilot_throttles = []       
 
-        for tub in tubs:
-            num_records = tub.get_num_records()
-            if limit < num_records:
-                num_records = limit
-            print('processing %d records:' % num_records)
+        records = records[:limit]
+        num_records = len(records)
+        print('processing %d records:' % num_records)
 
-            for iRec in tub.get_index(shuffled=False):
-                record = tub.get_record(iRec)
-                if iRec % 100 == 0:
-                    print('.', end="")
+        for record_path in records:
+            with open(record_path, 'r') as fp:
+                record = json.load(fp)
+            img_filename = os.path.join(tub_paths, record['cam/image_array'])
+            img = load_scaled_image_arr(img_filename, cfg)
+            user_angle = float(record["user/angle"])
+            user_throttle = float(record["user/throttle"])
+            pilot_angle, pilot_throttle = model.run(img)
 
-                img = record["cam/image_array"]
-                user_angle = float(record["user/angle"])
-                user_throttle = float(record["user/throttle"])
-                pilot_angle, pilot_throttle = model.run(img)
-
-                user_angles.append(user_angle)
-                user_throttles.append(user_throttle)
-                pilot_angles.append(pilot_angle)
-                pilot_throttles.append(pilot_throttle)
-
-                if len(pilot_throttles) >= limit:
-                    break
-
-        print('done.')
+            user_angles.append(user_angle)
+            user_throttles.append(user_throttle)
+            pilot_angles.append(pilot_angle)
+            pilot_throttles.append(pilot_throttle)
 
         angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
         throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
@@ -426,13 +489,16 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--model', default=None, help='name of record to create histogram')
         parser.add_argument('--limit', default=1000, help='how many records to process')
+        parser.add_argument('--type', default='categorical', help='how many records to process')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
     def run(self, args):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
-        self.plot_predictions(args.tub, args.model, args.limit)
+        cfg = load_config(args.config)
+        self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
         
 
 def execute_from_command_line():
@@ -449,13 +515,15 @@ def execute_from_command_line():
             'tubcheck': TubCheck,
             'makemovie': MakeMovie,
             'sim': Sim,
+            'createjs': CreateJoystick,
+            'consync': ConSync,
+            'contrain': ConTrain,
                 }
     
     args = sys.argv[:]
-    command_text = args[1]
-    
-    if command_text in commands.keys():
-        command = commands[command_text]
+
+    if len(args) > 1 and args[1] in commands.keys():
+        command = commands[args[1]]
         c = command()
         c.run(args[2:])
     else:

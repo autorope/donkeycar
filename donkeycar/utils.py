@@ -103,10 +103,18 @@ def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
 
 
-
-
-
-
+def load_scaled_image_arr(filename, cfg):
+    '''
+    load an image from the filename, and use the cfg to resize if needed
+    '''
+    import donkeycar as dk
+    img = Image.open(filename)
+    if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
+        img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
+    img_arr = np.array(img)
+    if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+        img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+    return img_arr
 
 
 '''
@@ -347,8 +355,50 @@ def gather_records(cfg, tub_names, opts=None):
     records = []
 
     for tub in tubs:
+        print(tub.path)
         record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
         record_paths.sort(key=get_record_index)
         records += record_paths
 
     return records
+
+def get_model_by_type(model_type, cfg):
+    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN
+ 
+    if model_type is None:
+        model_type = "categorical"
+
+    input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+
+    if model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
+        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
+    elif model_type == "imu":
+        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
+    elif model_type == "linear":
+        kl = KerasLinear(input_shape=input_shape)
+    elif model_type == "3d":
+        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
+    elif model_type == "rnn":
+        kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH, input_shape=input_shape)
+    elif model_type == "categorical":
+        kl = KerasCategorical(input_shape=input_shape)
+    else:
+        raise Exception("unknown model type: %s" % model_type)
+
+    return kl
+
+def get_test_img(model):
+    '''
+    query the input to see what it likes
+    make an image capable of using with that test model
+    '''
+    try:
+        count, h, w, ch = model.inputs[0].get_shape()
+        seq_len = 0
+    except:
+        count, seq_len, h, w, ch = model.inputs[0].get_shape()
+
+    #generate random array in the right shape
+    img = np.random.rand(int(h), int(w), int(ch))
+
+    return img

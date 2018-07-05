@@ -19,15 +19,29 @@ import keras
 import donkeycar as dk
 
 
-class KerasPilot():
+class KerasPilot(object):
+    def __init__(self):
+        self.model = None
+        self.optimizer = "adam"
  
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
 
-    
     def shutdown(self):
         pass
-    
+
+    def compile(self):
+        pass
+
+    def set_optimizer(self, optimizer_type, rate, decay):
+        if optimizer_type == "adam":
+            self.model.optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
+        elif optimizer_type == "sgd":
+            self.model.optimizer = keras.optimizers.SGD(lr=rate, decay=decay)
+        elif optimizer_type == "rmsprop":
+            self.model.optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
+        else:
+            raise Exception("unknown optimizer type: %s" % optimizer_type)
     
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=100, train_split=0.8,
@@ -69,20 +83,29 @@ class KerasPilot():
 
 
 class KerasCategorical(KerasPilot):
-    def __init__(self, model=None, input_shape=(120, 160, 3), *args, **kwargs):
+    def __init__(self, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
-        if model:
-            self.model = model
-        else:
-            self.model = default_categorical(input_shape)
+        self.model = default_categorical(input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer,
+                  loss={'angle_out': 'categorical_crossentropy', 
+                        'throttle_out': 'categorical_crossentropy'},
+                  loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
         
     def run(self, img_arr):
+        if img_arr is None:
+            print('no image')
+            return 0.0, 0.0
+
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
         #in order to support older models with linear throttle,
         #we will test for shape of throttle to see if it's the newer
         #binned version.
         N = len(throttle[0])
+        
         if N > 0:
             throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
         else:
@@ -93,19 +116,18 @@ class KerasCategorical(KerasPilot):
     
     
 class KerasLinear(KerasPilot):
-    def __init__(self, model=None, num_outputs=None, input_shape=(120, 160, 3), *args, **kwargs):
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
-        if model:
-            self.model = model
-        elif num_outputs is not None:
-            self.model = default_n_linear(num_outputs, input_shape)
-        else:
-            self.model = default_linear(input_shape)
+        self.model = default_n_linear(num_outputs, input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer,
+                loss='mse')
 
     def run(self, img_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
-        #print(len(outputs), outputs)
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
@@ -140,6 +162,11 @@ class KerasIMU(KerasPilot):
         super(KerasIMU, self).__init__(*args, **kwargs)
         self.num_imu_inputs = num_imu_inputs
         self.model = default_imu(num_outputs = num_outputs, num_imu_inputs = num_imu_inputs, input_shape=input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer,
+                  loss='mse')
         
     def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z):
         #TODO: would be nice to take a vector input array.
@@ -156,17 +183,30 @@ class KerasBehavioral(KerasPilot):
     A Keras part that take an image and Behavior vector as input,
     outputs steering and throttle
     '''
-    def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2 , *args, **kwargs):
+    def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasBehavioral, self).__init__(*args, **kwargs)
-        self.model = default_bhv(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs)
+        self.model = default_bhv(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs, input_shape=input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer,
+                  loss='mse')
         
     def run(self, img_arr, state_array):        
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1,len(state_array))
-        outputs = self.model.predict([img_arr, bhv_arr])
-        steering = outputs[0]
-        throttle = outputs[1]
-        return steering[0][0], throttle[0][0]
+        angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
+        #in order to support older models with linear throttle,
+        #we will test for shape of throttle to see if it's the newer
+        #binned version.
+        N = len(throttle[0])
+        
+        if N > 0:
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
+        else:
+            throttle = throttle[0][0]
+        angle_unbinned = dk.utils.linear_unbin(angle_binned)
+        return angle_unbinned, throttle
 
 
 def default_categorical(input_shape=(120, 160, 3)):
@@ -174,10 +214,10 @@ def default_categorical(input_shape=(120, 160, 3)):
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense    
-    #opt = keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=None, decay=0.0)
-    opt = keras.optimizers.Adam(lr=0.001)
-
+    
+    opt = keras.optimizers.Adam()
     drop = 0.1
+
     img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
@@ -209,49 +249,7 @@ def default_categorical(input_shape=(120, 160, 3)):
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)      # Reduce to 1 number, Positive number only
     
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-    model.compile(optimizer=opt,
-                  loss={'angle_out': 'categorical_crossentropy', 
-                        'throttle_out': 'categorical_crossentropy'},
-                  loss_weights={'angle_out': 1.0, 'throttle_out': 1.0})
-    print(model.summary())
     return model
-
-
-def default_linear(input_shape):
-    from keras.layers import Input, Dense, merge
-    from keras.models import Model
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense
-    
-    img_in = Input(shape=input_shape, name='img_in')
-    x = img_in
-    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
-    
-    x = Flatten(name='flattened')(x)
-    x = Dense(100, activation='linear')(x)
-    x = Dropout(.1)(x)
-    x = Dense(50, activation='linear')(x)
-    x = Dropout(.1)(x)
-    #categorical output of the angle
-    angle_out = Dense(1, activation='linear', name='angle_out')(x)
-    
-    #continous output of throttle
-    throttle_out = Dense(1, activation='linear', name='throttle_out')(x)
-    
-    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
-    
-    
-    model.compile(optimizer='adam',
-                  loss={'angle_out': 'mean_squared_error', 
-                        'throttle_out': 'mean_squared_error'},
-                  loss_weights={'angle_out': 0.5, 'throttle_out': .5})
-
-    return model
-
 
 
 def default_n_linear(num_outputs, input_shape):
@@ -259,34 +257,37 @@ def default_n_linear(num_outputs, input_shape):
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
+
+    drop = 0.1
     
     img_in = Input(shape=input_shape, name='img_in')
     x = img_in
-    x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
+    x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = Dropout(drop)(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (5,5), strides=(1,1), activation='relu')(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+    x = Dropout(drop)(x)
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Dropout(drop)(x)
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Dropout(drop)(x)
     
     x = Flatten(name='flattened')(x)
     x = Dense(100, activation='relu')(x)
-    x = Dropout(.1)(x)
+    x = Dropout(drop)(x)
     x = Dense(50, activation='relu')(x)
-    x = Dropout(.1)(x)
+    x = Dropout(drop)(x)
 
-    outputs = [] 
+    outputs = []
     
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
         
     model = Model(inputs=[img_in], outputs=outputs)
     
-    
-    model.compile(optimizer='adam',
-                  loss='mse')
-
     return model
 
 
@@ -335,9 +336,6 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
         
     model = Model(inputs=[img_in, imu_in], outputs=outputs)
     
-    model.compile(optimizer='adam',
-                  loss='mse')
-    
     return model
 
 
@@ -373,20 +371,18 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     y = Dense(num_bvh_inputs * 2, activation='relu')(y)
     
     z = concatenate([x, y])
-    z = Dense(50, activation='relu')(z)
+    z = Dense(100, activation='relu')(z)
     z = Dropout(.1)(z)
     z = Dense(50, activation='relu')(z)
     z = Dropout(.1)(z)
-
-    outputs = [] 
     
-    for i in range(num_outputs):
-        outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
+  #categorical output of the angle
+    angle_out = Dense(15, activation='softmax', name='angle_out')(z)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
+    
+    #continous output of throttle
+    throttle_out = Dense(20, activation='softmax', name='throttle_out')(z)      # Reduce to 1 number, Positive number only
         
-    model = Model(inputs=[img_in, bvh_in], outputs=outputs)
-    
-    model.compile(optimizer='adam',
-                  loss='mse')
+    model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out])
     
     return model
 
@@ -402,6 +398,12 @@ class KerasRNN_LSTM(KerasPilot):
         self.image_w = image_w
         self.image_h = image_h
         self.img_seq = []
+        self.compile()
+        self.optimizer = "rmsprop"
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer,
+                  loss='mse')
 
     def run(self, img_arr):
         if img_arr.shape[2] == 3 and self.image_d == 1:
@@ -454,10 +456,6 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
     x.add(Dense(10, activation='relu'))
     x.add(Dense(num_outputs, activation='linear', name='model_outputs'))
     
-    x.compile(optimizer='rmsprop', loss='mse')
-    
-    print(x.summary())
-
     return x
 
 
@@ -470,9 +468,13 @@ class Keras3D_CNN(KerasPilot):
         self.image_w = image_w
         self.image_h = image_h
         self.img_seq = []
+        self.compile()
+
+    def compile(self):
+        self.model.compile(loss='mean_squared_error', optimizer=self.optimizer, metrics=['accuracy'])
 
     def run(self, img_arr):
-        
+
         if img_arr.shape[2] == 3 and self.image_d == 1:
             img_arr = dk.utils.rgb2gray(img_arr)
 
@@ -560,8 +562,4 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     model.add(Dense(num_outputs))
     #model.add(Activation('tanh'))
 
-    model.compile(
-        loss='mean_squared_error', optimizer='adam', metrics=['accuracy']
-    )
-    print(model.summary())
     return model

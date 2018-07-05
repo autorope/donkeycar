@@ -32,7 +32,98 @@ class PCA9685:
 
     def run(self, pulse):
         self.set_pulse(pulse)
+
+class JHat:
+    ''' 
+    PWM motor controler using Teensy emulating PCA9685. 
+    '''
+    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
+        print("Firing up the Hat")
+        import Adafruit_PCA9685
+        LED0_OFF_L         = 0x08
+        # Initialise the PCA9685 using the default address (0x40).
+        if busnum is not None:
+            from Adafruit_GPIO import I2C
+            #replace the get_bus function with our own
+            def get_bus():
+                return busnum
+            I2C.get_default_bus = get_bus
+        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
+        self.pwm.set_pwm_freq(frequency)
+        self.channel = channel
+        self.register = LED0_OFF_L+4*channel
+
+        #we install our own write that is more efficient use of interrupts
+        self.pwm.set_pwm = self.set_pwm
         
+    def set_pulse(self, pulse):
+        self.set_pwm(self.channel, 0, pulse) 
+
+    def set_pwm(self, channel, on, off):
+        #print("pulse", off)
+        """Sets a single PWM channel."""
+        self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
+        
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+class JHatReader:
+    ''' 
+    Read RC controls from teensy 
+    '''
+    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
+        import Adafruit_PCA9685
+        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
+        self.pwm.set_pwm_freq(frequency)
+        self.register = 0 #i2c read doesn't take an address
+        self.steering = 0
+        self.throttle = 0
+        self.running = True
+        #send a reset
+        self.pwm._device.writeRaw8(0x06)
+
+    def read_pwm(self):
+        '''
+        send read requests via i2c bus to Teensy to get
+        pwm control values from last RC input  
+        '''
+        h1 = self.pwm._device.readU8(self.register)
+        #first byte of header must be 100, otherwize we might be reading
+        #in the wrong byte offset
+        while h1 != 100:
+            print("skipping to start of header")
+            h1 = self.pwm._device.readU8(self.register)
+        
+        h2 = self.pwm._device.readU8(self.register)
+        #h2 ignored now
+
+        val_a = self.pwm._device.readU8(self.register)
+        val_b = self.pwm._device.readU8(self.register)
+        self.steering = (val_b << 8) + val_a
+        
+        val_c = self.pwm._device.readU8(self.register)
+        val_d = self.pwm._device.readU8(self.register)
+        self.throttle = (val_d << 8) + val_c
+
+        #scale the values from -1 to 1
+        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
+        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
+        
+        #print(self.steering, self.throttle)
+
+    def update(self):
+        while(self.running):
+            self.read_pwm()
+            time.sleep(0.015)
+        
+    def run_threaded(self):
+        return self.steering, self.throttle
+
+    def shutdown(self):
+        self.running = False
+        time.sleep(0.1)
+
+
 class PWMSteering:
     """
     Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
@@ -330,3 +421,219 @@ class MockController(object):
 
     def shutdown(self):
         pass
+
+
+class L298N_HBridge_DC_Motor(object):
+    '''
+    Motor controlled with an L298N hbridge from the gpio pins on Rpi
+    '''
+    def __init__(self, pin_forward, pin_backward, pwm_pin, freq = 50):
+        import RPi.GPIO as GPIO
+        self.pin_forward = pin_forward
+        self.pin_backward = pin_backward
+        self.pwm_pin = pwm_pin
+
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin_forward, GPIO.OUT)
+        GPIO.setup(self.pin_backward, GPIO.OUT)
+        GPIO.setup(self.pwm_pin, GPIO.OUT)
+        
+        self.pwm = GPIO.PWM(self.pwm_pin, freq)
+        self.pwm.start(0)
+
+    def run(self, speed):
+        import RPi.GPIO as GPIO
+        '''
+        Update the speed of the motor where 1 is full forward and
+        -1 is full backwards.
+        '''
+        if speed > 1 or speed < -1:
+            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
+        
+        self.speed = speed
+        max_duty = 90 #I've read 90 is a good max
+        self.throttle = int(dk.utils.map_range(speed, -1, 1, -max_duty, max_duty))
+        
+        if self.throttle > 0:
+            self.pwm.ChangeDutyCycle(self.throttle)
+            GPIO.output(self.pin_forward, GPIO.HIGH)
+            GPIO.output(self.pin_backward, GPIO.LOW)
+        elif self.throttle < 0:
+            self.pwm.ChangeDutyCycle(-self.throttle)
+            GPIO.output(self.pin_forward, GPIO.LOW)
+            GPIO.output(self.pin_backward, GPIO.HIGH)
+        else:
+            self.pwm.ChangeDutyCycle(self.throttle)
+            GPIO.output(self.pin_forward, GPIO.LOW)
+            GPIO.output(self.pin_backward, GPIO.LOW)
+
+
+    def shutdown(self):
+        import RPi.GPIO as GPIO
+        self.pwm.stop()
+        GPIO.cleanup()
+
+
+class TwoWheelSteeringThrottle(object):
+
+    def run(self, throttle, steering):
+        if throttle > 1 or throttle < -1:
+            raise ValueError( "throttle must be between 1(forward) and -1(reverse)")
+ 
+        if steering > 1 or steering < -1:
+            raise ValueError( "steering must be between 1(right) and -1(left)")
+
+        left_motor_speed = throttle
+        right_motor_speed = throttle
+ 
+        if steering < 0:
+            left_motor_speed *= (1.0 - (-steering))
+        elif steering > 0:
+            right_motor_speed *= (1.0 - steering)
+
+        return left_motor_speed, right_motor_speed
+
+    def shutdown(self):
+        pass
+
+
+class Mini_HBridge_DC_Motor_PWM(object):
+    '''
+    Motor controlled with an mini hbridge from the gpio pins on Rpi
+    This can be using the L298N as above, but wired differently with only
+    two inputs and no enable line.
+    https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dtoys-and-games&field-keywords=Mini+Dual+DC+Motor+H-Bridge+Driver
+    https://www.aliexpress.com/item/5-pc-2-DC-Motor-Drive-Module-Reversing-PWM-Speed-Dual-H-Bridge-Stepper-Motor-Mini
+    '''
+    def __init__(self, pin_forward, pin_backward, freq = 50, max_duty = 90):
+        '''
+        max_duy is from 0 to 100. I've read 90 is a good max.
+        '''
+        import RPi.GPIO as GPIO
+        self.pin_forward = pin_forward
+        self.pin_backward = pin_backward
+        self.max_duty = max_duty
+        
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin_forward, GPIO.OUT)
+        GPIO.setup(self.pin_backward, GPIO.OUT)
+        
+        self.pwm_f = GPIO.PWM(self.pin_forward, freq)
+        self.pwm_f.start(0)
+        self.pwm_b = GPIO.PWM(self.pin_backward, freq)
+        self.pwm_b.start(0)
+
+    def run(self, speed):
+        import RPi.GPIO as GPIO
+        '''
+        Update the speed of the motor where 1 is full forward and
+        -1 is full backwards.
+        '''
+        if speed is None:
+            return
+        
+        if speed > 1 or speed < -1:
+            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
+        
+        self.speed = speed
+        self.throttle = int(dk.utils.map_range(speed, -1, 1, -self.max_duty, self.max_duty))
+        
+        if self.throttle > 0:
+            self.pwm_f.ChangeDutyCycle(self.throttle)
+            self.pwm_b.ChangeDutyCycle(0)
+        elif self.throttle < 0:
+            self.pwm_f.ChangeDutyCycle(0)
+            self.pwm_b.ChangeDutyCycle(-self.throttle)
+        else:
+            self.pwm_f.ChangeDutyCycle(0)
+            self.pwm_b.ChangeDutyCycle(0)
+
+
+    def shutdown(self):
+        import RPi.GPIO as GPIO
+        self.pwm_f.stop()
+        self.pwm_b.stop()
+        GPIO.cleanup()
+
+def map_frange(self, x, X_min, X_max, Y_min, Y_max):
+    ''' 
+    Linear mapping between two ranges of values 
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    return y
+    
+class RPi_GPIO_Servo(object):
+    '''
+    Servo controlled from the gpio pins on Rpi
+    '''
+    def __init__(self, pin, freq = 50, min=5.0, max=7.8):
+        import RPi.GPIO as GPIO
+        self.pin = pin
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.pin, GPIO.OUT)
+        
+        self.pwm = GPIO.PWM(self.pin, freq)
+        self.pwm.start(0)
+        self.min = min
+        self.max = max
+
+    def run(self, pulse):
+        import RPi.GPIO as GPIO
+        '''
+        Update the speed of the motor where 1 is full forward and
+        -1 is full backwards.
+        '''
+        #I've read 90 is a good max
+        self.throttle = map_frange(pulse, -1.0, 1.0, self.min, self.max)
+        #print(pulse, self.throttle)
+        self.pwm.ChangeDutyCycle(self.throttle)
+
+
+    def shutdown(self):
+        import RPi.GPIO as GPIO
+        self.pwm.stop()
+        GPIO.cleanup()
+
+
+class ServoBlaster(object):
+    '''
+    Servo controlled from the gpio pins on Rpi
+    This uses a user space service to generate more efficient PWM via DMA control blocks.
+    Check readme and install here:
+    https://github.com/richardghirst/PiBits/tree/master/ServoBlaster
+    cd PiBits/ServoBlaster/user
+    make
+    sudo ./servod
+    will start the daemon and create the needed device file:
+    /dev/servoblaster
+
+    to test this from the command line:
+    echo P1-16=120 > /dev/servoblaster
+
+    will send 1200us PWM pulse to physical pin 16 on the pi.
+
+    If you want it to start on boot:
+    sudo make install
+    '''
+    def __init__(self, pin):
+        self.pin = pin
+        self.servoblaster = open('/dev/servoblaster', 'w')
+        self.min = min
+        self.max = max
+
+    def set_pulse(self, pulse):
+        s = 'P1-%d=%d\n' % (self.pin, pulse)
+        self.servoblaster.write(s)
+        self.servoblaster.flush()
+
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+    def shutdown(self):
+        self.servoblaster.close()
+

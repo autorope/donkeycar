@@ -4,14 +4,14 @@ Scripts to train a keras model using tensorflow.
 Uses the data written by the donkey v2.2 tub writer,
 but faster training with proper sampling of distribution over tubs. 
 Has settings for continuous training that will look for new files as it trains. 
-Modify send_model_to_pi is you wish continuous training to update your pi as it builds.
+Modify on_best_model if you wish continuous training to update your pi as it builds.
 You can drop this in your ~/d2 dir.
 Basic usage should feel familiar: python train.py --model models/mypilot
 You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous]
+    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous] [--aug]
 
 Options:
     -h --help     Show this screen.    
@@ -31,6 +31,7 @@ from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
      KerasRNN_LSTM
+from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
 import sklearn
@@ -49,9 +50,6 @@ except:
     do_plot = False
     
 deterministic = False
-use_early_stop = True
-early_stop_patience = 5
-min_delta = .0005
 
 if deterministic:
     import tensorflow as tf
@@ -168,16 +166,38 @@ def collate_records(records, gen_records, opts):
         gen_records[key] = sample
 
 
+def save_json_and_weights(model, filename):
+    '''
+    given a keras model and a .h5 filename, save the model file
+    in the json format and the weights file in the h5 format
+    '''
+    if not '.h5' == filename[-3:]:
+        raise Exception("Model filename should end with .h5")
+
+    arch = model.to_json()
+    json_fnm = filename[:-2] + "json"
+    weights_fnm = filename[:-2] + "weights"
+
+    with open(json_fnm, "w") as outfile:
+        parsed = json.loads(arch)
+        arch_pretty = json.dumps(parsed, indent=4, sort_keys=True)
+        outfile.write(arch_pretty)
+
+    model.save_weights(weights_fnm)
+    return json_fnm, weights_fnm
+
+
 class MyCPCallback(keras.callbacks.ModelCheckpoint):
     '''
     custom callback to interact with best val loss during continuous training
     '''
 
-    def __init__(self, send_model_cb=None, *args, **kwargs):
+    def __init__(self, send_model_cb=None, cfg=None, *args, **kwargs):
         super(MyCPCallback, self).__init__(*args, **kwargs)
         self.reset_best_end_of_epoch = False
         self.send_model_cb = send_model_cb
         self.last_modified_time = None
+        self.cfg = cfg
 
     def reset_best(self):
         self.reset_best_end_of_epoch = True
@@ -194,7 +214,7 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
                 last_modified_time = os.path.getmtime(filepath)
                 if self.last_modified_time is None or self.last_modified_time < last_modified_time:
                     self.last_modified_time = last_modified_time
-                    self.send_model_cb(filepath)
+                    self.send_model_cb(self.cfg, self.model, filepath)
 
         '''
         when reset best is set, we want to make sure to run an entire epoch
@@ -205,67 +225,115 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
             self.best = np.Inf
         
 
-def send_model_to_pi(model_filename):
-    #print('sending model to the pi')
-    #command = 'scp %s tkramer@pi.local:~/d2/models/contin_train.h5' % model_filename
-    #res = os.system(command)
-    #print("result:", res)
-    pass
+def on_best_model(cfg, model, model_filename):
+    #Save json and weights file too
+    json_fnm, weights_fnm = save_json_and_weights(model, model_filename)
 
-def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
+    if not cfg.SEND_BEST_MODEL_TO_PI:
+        return
+
+    on_windows = os.name == 'nt'
+
+    #If we wish, send the best model to the pi.
+    #On mac or linux we have scp:
+    if not on_windows:
+        print('sending model to the pi')
+        
+        command = 'scp %s %s@%s:~/%s/models/;' % (weights_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+        command += 'scp %s %s@%s:~/%s/models/;' % (json_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+        command += 'scp %s %s@%s:~/%s/models/;' % (model_filename, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+    
+        print("sending", command)
+        res = os.system(command)
+        print(res)
+
+    else: #yes, we are on windows machine
+
+    #On windoz no scp. In oder to use this you must first setup
+    #an ftp daemon on the pi. ie. sudo apt-get install vsftpd
+    #and then make sure you enable write permissions in the conf
+        try:
+            import paramiko
+        except:
+            raise Exception("first install paramiko: pip install paramiko")
+
+        host = cfg.PI_HOSTNAME
+        username = cfg.PI_USERNAME
+        password = cfg.PI_PASSWD
+        server = host
+        files = []
+
+        localpath = weights_fnm
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, weights_fnm.replace('\\', '/'))
+        files.append((localpath, remotepath))
+
+        localpath = json_fnm
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, json_fnm.replace('\\', '/'))
+        files.append((localpath, remotepath))
+
+        localpath = model_filename
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, model_filename.replace('\\', '/'))
+        files.append((localpath, remotepath))
+
+        print("sending", files)
+
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.load_host_keys(os.path.expanduser(os.path.join("~", ".ssh", "known_hosts")))
+            ssh.connect(server, username=username, password=password)
+            sftp = ssh.open_sftp()
+        
+            for localpath, remotepath in files:
+                sftp.put(localpath, remotepath)
+
+            sftp.close()
+            ssh.close()
+            print("send succeded")
+        except:
+            print("send failed")
+    
+
+def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
     '''
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
     ''' 
 
-    verbose = True
+    verbose = cfg.VEBOSE_TRAIN
 
-    #when transfering models, should we freeze all but the last N layers?
-    #freeze_weights = True
-    #N_layers_to_train = 7
-
+    
     if continuous:
         print("continuous training")
     
     gen_records = {}
     opts = {}
 
-    opts['categorical'] = False
+    kl = get_model_by_type(model_type, cfg=cfg)
 
-    input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+    opts['categorical'] = type(kl) in [KerasCategorical, KerasBehavioral]
 
-    if model_type is None:
-        model_type = "categorical"
-
-    if model_type == "imu":
-        kl = KerasIMU(input_shape=input_shape)
-    elif model_type == "behavior":
-        kl = KerasBehavioral(input_shape=input_shape)
-    elif model_type == "linear":
-        kl = KerasLinear(num_outputs=2, input_shape=input_shape)
-    elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape)
-        opts['categorical'] = True
-    else:
-        raise Exception("unknown model type: %s" % model_type)
-
-    print('training with model type', model_type)
+    print('training with model type', type(kl))
 
     if transfer_model:
         print('loading weights from model', transfer_model)
         kl.load(transfer_model)
 
-        '''
-        if freeze_weights:
-            num_to_freeze = len(kl.model.layers) - N_layers_to_train 
+        #when transfering models, should we freeze all but the last N layers?
+        if cfg.FREEZE_LAYERS:
+            num_to_freeze = len(kl.model.layers) - cfg.NUM_LAST_LAYERS_TO_TRAIN 
             print('freezing %d layers' % num_to_freeze)           
             for i in range(num_to_freeze):
-                kl.model.layers[i].trainable = False
-            kl.model.compile(optimizer='rmsprop', loss='mse')
-        '''
+                kl.model.layers[i].trainable = False        
 
-        print(kl.model.summary())       
+    if cfg.OPTIMIZER:
+        kl.set_optimizer(cfg.OPTIMIZER, cfg.LEARNING_RATE, cfg.LEARNING_RATE_DECAY)
 
+    kl.compile()
+
+    if cfg.PRINT_MODEL_SUMMARY:
+        print(kl.model.summary())
+    
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
@@ -297,7 +365,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
             keys = list(data.keys())
 
-            shuffle(keys)
+            keys = shuffle(keys)
 
             kl = opts['keras_pilot']
 
@@ -336,12 +404,13 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
                     for record in batch_data:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            img = Image.open(record['image_path'])
-                            if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
-                                img = img.resize((cfg.IMAGE_H, cfg.IMAGE_W))
-                            img_arr = np.array(img)
-                            if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-                                img_arr = dk.utils.rgb2gray(img_arr)
+                            filename = record['image_path']
+                            
+                            img_arr = load_scaled_image_arr(filename, cfg)
+                            
+                            if aug:
+                                img_arr = augment_image(img_arr)
+
                             record['img_data'] = img_arr
                             
                         if has_imu:
@@ -377,17 +446,18 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     model_path = os.path.expanduser(model_name)
 
     #checkpoint to save model after each epoch and send best to the pi.
-    save_best = MyCPCallback(send_model_cb=send_model_to_pi,
+    save_best = MyCPCallback(send_model_cb=on_best_model,
                                     filepath=model_path,
                                     monitor='val_loss', 
                                     verbose=verbose, 
                                     save_best_only=True, 
-                                    mode='min')
+                                    mode='min',
+                                    cfg=cfg)
 
     #stop training if the validation error stops improving.
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                min_delta=min_delta, 
-                                                patience=early_stop_patience, 
+                                                min_delta=cfg.MIN_DELTA, 
+                                                patience=cfg.EARLY_STOP_PATIENCE, 
                                                 verbose=verbose, 
                                                 mode='auto')
 
@@ -417,24 +487,27 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     val_steps = 10
     print('steps_per_epoch', steps_per_epoch)
 
+    if steps_per_epoch < 2:
+        raise Exception("Too little data to train. Please record more records.")
+
     if continuous:
         epochs = 100000
     else:
-        epochs = 200
+        epochs = cfg.MAX_EPOCHS
 
     workers_count = 1
     use_multiprocessing = False
 
     callbacks_list = [save_best]
 
-    if use_early_stop:
+    if cfg.USE_EARLY_STOP and not continuous:
         callbacks_list.append(early_stop)
     
     history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
                     epochs=epochs, 
-                    verbose=1, 
+                    verbose=cfg.VEBOSE_TRAIN, 
                     validation_data=val_gen,
                     callbacks=callbacks_list, 
                     validation_steps=val_steps,
@@ -443,21 +516,22 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
 
     print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
 
-    try:
-        if do_plot:
-            # summarize history for loss
-            plt.plot(history.history['loss'])
-            plt.plot(history.history['val_loss'])
-            plt.title('model loss : %f' % save_best.best)
-            plt.ylabel('loss')
-            plt.xlabel('epoch')
-            plt.legend(['train', 'test'], loc='upper left')
-            plt.savefig(model_path + '_loss_%f.png' % save_best.best)
-            plt.show()
-        else:
-            print("not saving loss graph because matplotlib not set up.")
-    except:
-        print("problems with loss graph")
+    if cfg.SHOW_PLOT:
+        try:
+            if do_plot:
+                # summarize history for loss
+                plt.plot(history.history['loss'])
+                plt.plot(history.history['val_loss'])
+                plt.title('model loss : %f' % save_best.best)
+                plt.ylabel('loss')
+                plt.xlabel('epoch')
+                plt.legend(['train', 'test'], loc='upper left')
+                plt.savefig(model_path + '_loss_%f.png' % save_best.best)
+                plt.show()
+            else:
+                print("not saving loss graph because matplotlib not set up.")
+        except:
+            print("problems with loss graph")
 
 
 def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
@@ -466,12 +540,6 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     saves the output trained model as model_name
     trains models which take sequence of images
     '''
-    import sklearn
-    from sklearn.model_selection import train_test_split
-    from sklearn.utils import shuffle
-    from PIL import Image
-    import json
-
     assert(not continuous)
 
     print("sequence of images training")
@@ -563,7 +631,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
 
         while True:
             #shuffle again for good measure
-            shuffle(data)
+            data = shuffle(data)
 
             for offset in range(0, num_records, batch_size):
                 batch_data = data[offset:offset+batch_size]
@@ -580,10 +648,8 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                     for record in seq:
                         #get image data if we don't already have it
                         if record['img_data'] is None:
-                            img_arr = np.array(Image.open(record['image_path']))
-                            if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-                                img_arr = dk.utils.rgb2gray(img_arr)
-                            record['img_data'] = img_arr
+                            img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            record['img_data'] = img_arr                            
                             
                         inputs_img.append(record['img_data'])
                     labels.append(seq[-1]['target_output'])
@@ -612,16 +678,19 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     steps_per_epoch = total_train // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
 
+    if steps_per_epoch < 2:
+        raise Exception("Too little data to train. Please record more records.")
+
     kl.train(train_gen, 
         val_gen, 
         saved_model_path=model_path,
         steps=steps_per_epoch,
         train_split=cfg.TRAIN_TEST_SPLIT,
-        use_early_stop = False)
+        use_early_stop = cfg.USE_EARLY_STOP)
 
 
 
-def multi_train(cfg, tub, model, transfer, model_type, continuous):
+def multi_train(cfg, tub, model, transfer, model_type, continuous, aug):
     '''
     choose the right regime for the given model type
     '''
@@ -629,7 +698,7 @@ def multi_train(cfg, tub, model, transfer, model_type, continuous):
     if model_type == "rnn" or model_type == '3d':
         train_fn = sequence_train
 
-    train_fn(cfg, tub, model, transfer, model_type, continuous)
+    train_fn(cfg, tub, model, transfer, model_type, continuous, aug)
     
 if __name__ == "__main__":
     args = docopt(__doc__)
@@ -639,5 +708,6 @@ if __name__ == "__main__":
     transfer = args['--transfer']
     model_type = args['--type']
     continuous = args['--continuous']
-    multi_train(cfg, tub, model, transfer, model_type, continuous)
+    aug = args['--aug']
+    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
     

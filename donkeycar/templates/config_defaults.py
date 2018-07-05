@@ -15,6 +15,12 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
+#pi information
+PI_USERNAME = "pi"
+PI_PASSWD = "raspberry"
+PI_HOSTNAME = "raspberrypi.local"
+PI_DONKEY_ROOT = "/home/pi/d2"
+
 #PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
@@ -25,9 +31,18 @@ DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
 
 #CAMERA
-IMAGE_W = 160 #(120, 160) #(height, width)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM)
+IMAGE_W = 160
 IMAGE_H = 120
+IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
+
+#9865, over rides only if needed, ie. TX2..
+PCA9685_I2C_ADDR = 0x40
+PCA9685_I2C_BUSNUM = None
+
+#drivetrain
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM
 
 #STEERING
 STEERING_CHANNEL = 1
@@ -40,30 +55,68 @@ THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
+#DC_STEER_THROTTLE with one motor as steering, one as drive
+HBRIDGE_PIN_LEFT = 18
+HBRIDGE_PIN_RIGHT = 16
+HBRIDGE_PIN_FWD = 15
+HBRIDGE_PIN_BWD = 13
+
+#DC_TWO_WHEEL - with two wheels as drive, left and right.
+HBRIDGE_PIN_LEFT_FWD = 18
+HBRIDGE_PIN_LEFT_BWD = 16
+HBRIDGE_PIN_RIGHT_FWD = 15
+HBRIDGE_PIN_RIGHT_BWD = 13
+
 #TRAINING
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
+MAX_EPOCHS = 100
+SHOW_PLOT = True
+VEBOSE_TRAIN = True
+USE_EARLY_STOP = True
+EARLY_STOP_PATIENCE = 5
+MIN_DELTA = .0005
+PRINT_MODEL_SUMMARY = True      #print layers and weights to stdout
+OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
+LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
+LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
+SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
 
+#model transfer options
+FREEZE_LAYERS = False
+NUM_LAST_LAYERS_TO_TRAIN = 7
 
 #JOYSTICK
-USE_JOYSTICK_AS_DEFAULT = False
+USE_JOYSTICK_AS_DEFAULT = True
 JOYSTICK_MAX_THROTTLE = 0.3
 JOYSTICK_STEERING_SCALE = 1.0
 AUTO_RECORD_ON_THROTTLE = True
+CONTROLLER_TYPE='ps3' #(ps3|ps4)
+USE_NETWORKED_JS = False
+NETWORK_JS_SERVER_IP = "192.168.0.1"
 
 #RNN or 3D
 SEQUENCE_LENGTH = 3
-IMAGE_DEPTH = 3
 
 #IMU
 HAVE_IMU = False
+
+#LED
+HAVE_RGB_LED = False
+LED_INVERT = False              #COMMON ANNODE?
+
+#board pin number for pwm outputs
+LED_PIN_R = 12
+LED_PIN_G = 10
+LED_PIN_B = 16
+
+#LED status color, 0-100
+LED_R = 0
+LED_G = 0
+LED_B = 1
 
 #BEHAVIORS
 TRAIN_BEHAVIORS = False
 BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS =[ (0, 10, 0), (10, 0, 0) ] #RGB tuples 0-100 per chanel
 
-#train parameters
-LEARNING_RATE=0.001
-LEARNING_RATE_DECAY=0.0
-MAX_EPOCHS=100
