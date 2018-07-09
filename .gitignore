@@ -9,6 +9,5 @@ dist/*
 lag_log.csv
 .spyproject
 .cache
-site/*
 build
 .idea

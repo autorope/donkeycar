@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+  <title>Donkey Simulator. - Donkey Car</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link href="../../extra.css" rel="stylesheet">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Donkey Simulator.";
+    var mkdocs_page_input_path = "guide/simulator.md";
+    var mkdocs_page_url = "/guide/simulator/";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js"></script>
+  <script src="../../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../../js/highlight.pack.js"></script> 
+  
+  <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-99215530-2', 'github.io/donkey');
+      ga('send', 'pageview');
+  </script>
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Donkey Car</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">User Guide</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../build_hardware/">Build a car.</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../install_software/">Install the software.</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../get_driving/">Get driving.</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../calibrate/">Calibrate steering and throttle.</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../train_autopilot/">Train an autopilot.</a>
+                </li>
+                <li class=" current">
+                    
+    <a class="current" href="./">Donkey Simulator.</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l3"><a href="#donkey-simulator">Donkey Simulator</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l4" href="#download-the-simulator">Download the Simulator</a></li>
+        
+            <li><a class="toctree-l4" href="#recorded-data">Recorded Data</a></li>
+        
+            <li><a class="toctree-l4" href="#generated-road-scene">Generated Road Scene</a></li>
+        
+            <li><a class="toctree-l4" href="#warehouse-scene">Warehouse Scene</a></li>
+        
+            <li><a class="toctree-l4" href="#pid-controls">PID Controls</a></li>
+        
+            <li><a class="toctree-l4" href="#typical-use">Typical Use</a></li>
+        
+            <li><a class="toctree-l4" href="#joystick-setup">Joystick Setup</a></li>
+        
+        </ul>
+    
+
+    </ul>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Parts</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../parts/about/">About</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../parts/actuators/">Actuators</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../parts/controllers/">Controllers</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../parts/stores/">Stores</a>
+                </li>
+                <li class="">
+                    
+    <a class="" href="../../parts/imu/">IMU</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <span class="caption-text">Utilities</span>
+    <ul class="subnav">
+                <li class="">
+                    
+    <a class="" href="../../utility/donkey/">donkey</a>
+                </li>
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../contribute/">Contribute</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../tests/">Tests</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../release/">Releases</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../../faq/">FAQ</a>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Donkey Car</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>User Guide &raquo;</li>
+        
+      
+    
+    <li>Donkey Simulator.</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        <a href="https://github.com/wroscoe/donkey/edit/master/docs/guide/simulator.md"
+          class="icon icon-github"> Edit on GitHub</a>
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="donkey-simulator">Donkey Simulator</h1>
+<p>Experiment with training a donkey car to drive in simulation. This simulator is built on the the Unity game platform, uses their internal physics and graphics, and connects to a donkey Python process to use our trained model to control the simulated Donkey.</p>
+<h3 id="download-the-simulator">Download the Simulator</h3>
+<p>You will need a specific build per platform:</p>
+<ul>
+<li>Ubuntu 16.04 <a href="https://drive.google.com/open?id=0BxSsaxmEV-5Yc3VVdVQ4UUZOc0k">download</a></li>
+<li>Mac 10.10.5+ <a href="https://drive.google.com/open?id=0BxSsaxmEV-5YRnFEZmpRaks5NXM">download</a></li>
+<li>Windows 7+ <a href="https://drive.google.com/open?id=0BxSsaxmEV-5YRC1ZWHZ4Y1dZTkE">download</a></li>
+</ul>
+<p>Extract this compressed file. It will create a folder containing an executable. Double click that executable to launch the simulator.</p>
+<h4 id="extra-mac-steps">Extra Mac Steps</h4>
+<p>If logs are not being generated you are probably running a version of OS X that sandboxes untrusted applications. This prevents the simulator writing to disk. To resolve this, move the executable within the Applications folder.</p>
+<h3 id="recorded-data">Recorded Data</h3>
+<p>This simulator can create log data in the donkey tub format. This is stored in the <code>log</code> dir at the root of the folder next to the executable. On the mac you will need to browse the package contents to see this folder. If this folder is missing, no data will be recorded.</p>
+<p>You can choose two different scenes.</p>
+<h2 id="generated-road-scene">Generated Road Scene</h2>
+<p>The purpose of this is to create a randomly generated road so that you can have miles of curves on different road surfaces. You can train on one road and test on something similar, or a totally different surface.</p>
+<h2 id="warehouse-scene">Warehouse Scene</h2>
+<p>The purpose of this is to create a specific track that is somewhat similar to an actual course in use as the primary track for the Oakland DIYRobocars Meetup.</p>
+<hr />
+<h3 id="menu-options">Menu Options:</h3>
+<h5 id="joystickkeyboard-no-rec">Joystick/Keyboard No Rec</h5>
+<p>Drive the donkey with a joystick or keyboard. I used a PS2 Joystick and a PS3 Joystick. Keyboard controls use arrow keys to steer. In this mode, no data is recorded.</p>
+<blockquote>
+<p>Note: Keyboard data produces steering information that is stepped (ie. -1, 0, +1) and may be difficult to train with. See below for joystick setup.</p>
+</blockquote>
+<h5 id="joystickkeyboard-w-rec">Joystick/Keyboard w Rec</h5>
+<p>Drive the donkey with a joystick or keyboard. In this mode, data is stored in the tub donkey format.</p>
+<h5 id="auto-drive-no-rec">Auto Drive No Rec</h5>
+<p>This uses path information to guide the donkey down the track. It uses a PID controller to steer, so there is some oscillation. In this mode, no data is stored.</p>
+<h5 id="auto-drive-w-rec">Auto Drive w Rec</h5>
+<p>This uses path information to guide the donkey down the track. It uses a PID controller to steer, so there is some oscillation. In this mode, data is stored in the tub donkey format.</p>
+<h5 id="next-track">Next Track</h5>
+<p>In the generated road scene, this will switch out the road surface and track width.</p>
+<h5 id="regen-track">Regen Track</h5>
+<p>Use the current surface type, but generate a new random path and road.</p>
+<hr />
+<h2 id="pid-controls">PID Controls</h2>
+<h5 id="max-speed">Max Speed</h5>
+<p>This setting determines the target speed during the PID auto drive. It will also affect the speed when driving by keyboard controls (not recommended).</p>
+<h5 id="prop">Prop</h5>
+<p>This is short for proportional. This is the P part of PID that attempts to adjust steering back to the path in proportion to the deviation.</p>
+<h5 id="diff">Diff</h5>
+<p>This is the D part of PID that attempts to limit steering back to the path as derivative to the trend of deviation, designed to limit overshoot.</p>
+<h5 id="max-steering">Max Steering</h5>
+<blockquote>
+<p>Note - Max Steering is an important adjustment. This affects categorical training quite strongly. As the steering data is normalized when written, and multiplies after coming from Python, this angle should remain constant over training and simulation. Take care when changing this value. And separate data and models by max steering setting.</p>
+</blockquote>
+<p>Max steering can only be adjusted when using <code>Auto Drive No Rec</code>. It will also affect joystick and keyboard steering range, and should be saved and reloaded for you.</p>
+<p>The default categorical model has 16 bins, or classes. And so, with a max steering of +-16, each bin will represent 2 degrees. It is helpful to graph the model training vs the example data to get and intuition about how it fits the data.</p>
+<hr />
+<h2 id="typical-use">Typical Use</h2>
+<ul>
+<li>Start simulator</li>
+<li>Double check that <code>log</code> dir exists and is empty</li>
+<li>Start scene of your choice</li>
+<li>Hit <code>Auto Drive w Rec</code> button</li>
+<li>Vary the Max Speed, Prop, and Diff sliders to obtain a variety of driving styles</li>
+<li>Wait 10-15 minutes until you have recorded 10K+ frames of data.</li>
+<li>Hit the <code>Stop</code> button</li>
+<li>Hit the <code>Exit</code> button</li>
+<li>Move the <code>log</code> dir to the <code>~/d2/data/</code> dir where you normally put tub data. This will create a <code>~/d2/data/log</code> path.</li>
+<li>Train as usual. </li>
+</ul>
+<blockquote>
+<p>Note: I had problems w default categorical model. Linear model worked better for me.</p>
+</blockquote>
+<pre><code class="bash">python manage.py train --tub=data/log --model=models/mypilot
+</code></pre>
+
+<ul>
+<li>Start the simulator server. </li>
+</ul>
+<pre><code class="bash">donkey sim --model=models/mypilot
+</code></pre>
+
+<p>Wait to see <code>wsgi starting up on http://0.0.0.0:9090</code></p>
+<ul>
+<li>Enter the scene of your choice in the simulator</li>
+<li>Hit the button <code>NN Steering w Websockets</code></li>
+<li>Your donkey should begin to move. You should see in the upper left two values for incoming steering and throttle.</li>
+</ul>
+<hr />
+<h2 id="joystick-setup">Joystick Setup</h2>
+<p>Keyboard input provides a poor learning signal. I recommend using the joystick to provide manual driving data. </p>
+<h5 id="linux-joystick-setup">Linux Joystick Setup</h5>
+<p>Unity on Linux uses the SDL library to see your joystick. And in particular the GamePad API. This is not setup by default. I needed to do these steps:</p>
+<pre><code class="bash">git clone https://github.com/Grumbel/sdl-jstest
+
+sudo apt-get install cmake
+sudo apt-get install libsdl1.2-dev
+sudo apt-get install libsdl2-dev
+sudo apt-get install libncurses5-dev
+cd sdl-jstest
+mkdir build
+cd build
+cmake ..
+make install
+
+
+./sdl2-jstest -l
+</code></pre>
+
+<p>Look for:
+Joystick GUID: 030000004f04000008b1000000010000</p>
+<p>The GUID will be different depending on your device.</p>
+<p>Then open:
+https://github.com/gabomdq/SDL_GameControllerDB/blob/master/gamecontrollerdb.txt</p>
+<p>and look for your GUID in Linux section. One line is for one device type. Now modify your environment to specify information for your device:</p>
+<pre><code class="bash">sudo -H gedit /etc/environment
+</code></pre>
+
+<p>add the line SDL_GAMECONTROLLERCONFIG=, make sure to add the quotes at begin and end. ie.</p>
+<p>SDL_GAMECONTROLLERCONFIG="030000004f04000008b1000000010000, ... and the rest of the long line copied from gamecontrollerdb"</p>
+<ul>
+<li>reboot</li>
+<li>start sim</li>
+<li>choose drive w joystick</li>
+<li>move sticks</li>
+<li>do happy dance</li>
+</ul>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../parts/about/" class="btn btn-neutral float-right" title="About">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../train_autopilot/" class="btn btn-neutral" title="Train an autopilot."><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+    
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/wroscoe/donkey" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../train_autopilot/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../../parts/about/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script src="../../js/theme.js"></script>
+
+</body>
+</html>
