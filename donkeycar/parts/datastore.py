@@ -108,7 +108,6 @@ class Tub(object):
 
         return nums
 
-
     @property
     def inputs(self):
         return list(self.meta['inputs'])
@@ -142,7 +141,7 @@ class Tub(object):
     def make_record_paths_absolute(self, record_dict):
         d = {}
         for k, v in record_dict.items():
-            if type(v) == str: #filename
+            if type(v) == str:  # filename
                 if '.' in v:
                     v = os.path.join(self.path, v)
             d[k] = v
@@ -162,7 +161,7 @@ class Tub(object):
                 self.get_record(ix)
             except:
                 problems = True
-                if fix == False:
+                if fix is False:
                     logger.warning('problems with record {} : {}'.format(ix, self.path))
                 else:
                     logger.warning('problems with record {}, removing: {}'.format(ix, self.path))
@@ -194,13 +193,13 @@ class Tub(object):
             elif typ is 'image':
                 name = self.make_file_name(key, ext='.jpg')
                 val.save(os.path.join(self.path, name))
-                json_data[key]=name
+                json_data[key] = name
 
             elif typ == 'image_array':
                 img = Image.fromarray(np.uint8(val))
                 name = self.make_file_name(key, ext='.jpg')
                 img.save(os.path.join(self.path, name))
-                json_data[key]=name
+                json_data[key] = name
 
             else:
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
@@ -211,8 +210,10 @@ class Tub(object):
         return self.current_ix
 
     def get_json_record_path(self, ix):
-        #return os.path.join(self.path, 'record_'+str(ix).zfill(6)+'.json')  #fill zeros
-        return os.path.join(self.path, 'record_' + str(ix) + '.json')  #don't fill zeros
+        # fill zeros
+        # return os.path.join(self.path, 'record_'+str(ix).zfill(6)+'.json')
+        # don't fill zeros
+        return os.path.join(self.path, 'record_' + str(ix) + '.json')
 
     def get_json_record(self, ix):
         path = self.get_json_record_path(ix)
@@ -236,7 +237,7 @@ class Tub(object):
         return data
 
     def read_record(self, record_dict):
-        data={}
+        data = {}
         for key, val in record_dict.items():
             typ = self.get_input_type(key)
 
@@ -249,7 +250,7 @@ class Tub(object):
         return data
 
     def make_file_name(self, key, ext='.png'):
-        #name = '_'.join([str(self.current_ix).zfill(6), key, ext])
+        # name = '_'.join([str(self.current_ix).zfill(6), key, ext])
         name = '_'.join([str(self.current_ix), key, ext])  # don't fill zeros
         name = name = name.replace('/', '-')
         return name
@@ -338,7 +339,10 @@ class Tub(object):
                 batch_arrays[k] = arr
             yield batch_arrays
 
-    def get_train_gen(self, X_keys, Y_keys, batch_size=128, record_transform=None, df=None):
+    def get_train_gen(self, X_keys, Y_keys,
+                      batch_size=128,
+                      record_transform=None,
+                      df=None):
         """
         Returns a training/validation set.
 

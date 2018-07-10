@@ -4,10 +4,12 @@ import numpy as np
 from PIL import Image
 import glob
 
+
 class BaseCamera:
 
     def run_threaded(self):
         return self.frame
+
 
 class PiCamera(BaseCamera):
     def __init__(self, resolution=(120, 160), framerate=20):
@@ -15,12 +17,13 @@ class PiCamera(BaseCamera):
         from picamera import PiCamera
         resolution = (resolution[1], resolution[0])
         # initialize the camera and stream
-        self.camera = PiCamera() #PiCamera gets resolution (height, width)
+        self.camera = PiCamera()  # PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
         self.camera.framerate = framerate
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
-            format="rgb", use_video_port=True)
+                                                     format="rgb",
+                                                     use_video_port=True)
 
         # initialize the frame and the variable used to indicate
         # if the thread should be stopped
@@ -29,7 +32,6 @@ class PiCamera(BaseCamera):
 
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
-
 
     def run(self):
         f = next(self.stream)
@@ -57,5 +59,3 @@ class PiCamera(BaseCamera):
         self.stream.close()
         self.rawCapture.close()
         self.camera.close()
-
-

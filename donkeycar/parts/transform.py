@@ -2,6 +2,7 @@
 
 import time
 
+
 class Lambda:
     """
     Wraps a function into a donkey part.
@@ -19,11 +20,10 @@ class Lambda:
         return
 
 
-
-
 class PIDController:
     """ Performs a PID computation and returns a control value.
-        This is based on the elapsed time (dt) and the current value of the process variable
+        This is based on the elapsed time (dt) and the current value
+        of the process variable
         (i.e. the thing we're measuring and trying to change).
         https://github.com/chrisspen/pid_controller/blob/master/pid_controller/pid.py
     """
