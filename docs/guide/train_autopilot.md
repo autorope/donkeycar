@@ -27,6 +27,18 @@ folder from the raspberry pi.
 rsync -r pi@<your_pi_ip_address>:~/mycar/data/  ~/mycar/data/
 ```
 
+## Data augmentation
+
+Data augmentation is an optional step, but can be beneficial to prevent [overfitting](https://en.wikipedia.org/wiki/Overfitting). One of the straightforward approaches is to horizontally flop the image and set steering angle to the opposite value.
+
+Script below requires `Pillow` python module. Easiest way to install it is `pip install Pillow`.
+
+To do that execute:
+```bash
+./donkeycar/templates/flop_tub.py <path to the tub folder>
+```
+
+This command will create new tub with suffix `_flopped`. It also will make sure to change the steering angle value to the opposite.
 
 ## Train a model
 * In the same terminal you can now run the training script on the latest tub by passing the path to that tub as an argument. You can optionally pass path masks, such as `./data/*` or `./data/tub_?_17-08-28` to gather multiple tubs. For example:
