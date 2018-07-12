@@ -70,6 +70,7 @@ class Joystick(object):
             btn_name = self.button_names.get(btn, 'unknown(0x%03x)' % btn)
             self.button_map.append(btn_name)
             self.button_states[btn_name] = 0
+            #print('btn', '0x%03x' % btn, 'name', btn_name)
 
         return True
 
@@ -109,6 +110,7 @@ class Joystick(object):
 
             if typev & 0x01:
                 button = self.button_map[number]
+                #print(tval, value, typev, number, button, 'pressed')
                 if button:
                     self.button_states[button] = value
                     button_state = value
