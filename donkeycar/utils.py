@@ -12,6 +12,7 @@ import zipfile
 import sys
 import itertools
 import subprocess
+import math
 
 from PIL import Image
 import numpy as np
@@ -219,6 +220,21 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
 
     return int(y)
 
+'''
+ANGLES
+'''
+def norm_deg(theta):
+    while theta > 360:
+        theta -= 360
+    while theta < 0:
+        theta += 360
+    return theta
+
+'''
+VECTORS
+'''
+def dist(x1, y1, x2, y2):
+    return math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
 
 
 '''
