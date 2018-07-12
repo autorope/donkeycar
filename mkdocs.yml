@@ -1,9 +1,8 @@
 site_name: Donkey Car
 theme: readthedocs
 
-repo_url: https://github.com/wroscoe/donkey
+repo_url: https://github.com/tawnkramer/donkey
 edit_uri: edit/master/docs
-google_analytics: ['UA-99215530-2', 'github.io/donkey']
 extra_css: 
     - extra.css
 

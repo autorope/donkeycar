@@ -88,14 +88,17 @@ class CreateJoystick(object):
         self.name_axes()
 
         print()
-        self.write_python_class_file()
-
-        print()
         print('------------------------------------------')
         print('Now we will create a mapping of labels to actions.')
 
         self.map_steering_throttle()
         self.map_button_controls()
+
+        print()
+
+        self.write_python_class_file()
+
+        print("Check your new python file to see the controller implementation. Import this in manage.py and use for control.")
 
         self.shutdown()
 
@@ -248,9 +251,10 @@ class CreateJoystick(object):
         outfile = None
         while pyth_filename is None:
             print("Now we will write these values to a new python file.")
-            pyth_filename = input("What is the name of python file to create joystick code? [default: joystick.py]")
+            pyth_filename = input("What is the name of python file to create joystick code? [default: my_joystick.py]")
             if len(pyth_filename) == 0:
-                pyth_filename = 'joystick.py'
+                pyth_filename = 'my_joystick.py'
+            print('using filename:', pyth_filename)
             print()
             try:
                 outfile = open(pyth_filename, "wt")
@@ -262,32 +266,67 @@ class CreateJoystick(object):
             print()
             
         if outfile is not None:
-            classname = ("What is the name of joystick class? [default: MyJoystick] ")
+            classname = input("What is the name of joystick class? [default: MyJoystick] ")
             if len(classname) == 0:
                 classname = "MyJoystick"
             file_header = \
             '''
-            from donkeycar.parts.controller import Joystick, JoystickController
+from donkeycar.parts.controller import Joystick, JoystickController
 
 
-            class %s(Joystick):
-                #An interface to a physical joystick available at /dev/input/js0
-                def __init__(self, *args, **kwargs):
-                    super(%s, self).__init__(*args, **kwargs)
+class %s(Joystick):
+    #An interface to a physical joystick available at /dev/input/js0
+    def __init__(self, *args, **kwargs):
+        super(%s, self).__init__(*args, **kwargs)
 
-            ''' % (classname, classname )
+            \n''' % (classname, classname )
 
             outfile.write(file_header)
 
             outfile.write('        self.button_names = {\n')
             for key, value in self.js.button_names.items():
-                outfile.write("            %s : '%s',\n" % (str(key), str(value)))
+                outfile.write("            %s : '%s',\n" % (str(hex(key)), str(value)))
             outfile.write('        }\n\n\n')
             
             outfile.write('        self.axis_names = {\n')
 
             for key, value in self.js.axis_names.items():
-                outfile.write("            %s : '%s',\n" % (str(key), str(value)))
+                outfile.write("            %s : '%s',\n" % (str(hex(key)), str(value)))
+            outfile.write('        }\n\n\n')
+
+            js_controller = \
+            '''
+class %sController(JoystickController):
+    #A Controller object that maps inputs to actions
+    def __init__(self, *args, **kwargs):
+        super(%sController, self).__init__(*args, **kwargs)
+
+
+    def init_js(self):
+        #attempt to init joystick
+        try:
+            self.js = %s(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+
+    def init_trigger_maps(self):
+        #init set of mapping from buttons to function calls
+            \n''' % (classname, classname, classname)
+
+            outfile.write(js_controller)
+
+            outfile.write('        self.button_down_trigger_map = {\n')
+            for button, control in self.mapped_controls:
+                outfile.write("            '%s' : self.%s,\n" % (str(button), str(control)))
+            outfile.write('        }\n\n\n')
+            
+            outfile.write('        self.axis_trigger_map = {\n')
+            for axis, control in self.axis_map:
+                outfile.write("            '%s' : %s,\n" % (str(axis), str(control)))
             outfile.write('        }\n\n\n')
 
             outfile.close()
@@ -321,8 +360,6 @@ class CreateJoystick(object):
 
 
     def map_button_controls(self):
-        '''
-        WIP
         unmapped_controls = [\
             ('toggle_mode','changes the drive mode between user, local, and local_angle'),
             ('toggle_manual_recording','toggles recording records on and off'),
@@ -333,14 +370,30 @@ class CreateJoystick(object):
             ('toggle_constant_throttle', 'toggle the mode of supplying constant throttle')
         ]
 
-        self.mappped_controls = []
+        self.mapped_controls = []
 
-        done = False
-        while not done:
-            for iContrl, control, help in enumerate(unmapped_controls):
-                print(iContrl, control, '\t', help)
-        '''
-        pass
+        while len(unmapped_controls) > 0:
+            #print("Here are the unmapped controls")
+            #for control, help in unmapped_controls:
+            #    print(control, '\t', help)
+            print()
+            print('Press the button to map to control:', unmapped_controls[0][0])
+            print('This', unmapped_controls[0][1], '.')
+            self.get_button_press()
+
+            if self.last_button is None:
+                print("No button was pressed in last 10 seconds.")
+                ret = input("Keep mapping commands? [Y, n]")
+                if ret == 'n':
+                    break
+            else:
+                self.mapped_controls.append((self.last_button, unmapped_controls[0][0]))
+                unmapped_controls.pop(0)
+        print()
+        print('Ok, here are the mapped controls:')
+        for button, control in self.mapped_controls:
+            print(button, control)
+        print()
         
     def get_axis_action(self, prompt):
         done = False        
@@ -359,6 +412,8 @@ class CreateJoystick(object):
                     return None
                 else:
                     continue
+            else:
+                return most_movement
 
 
     def shutdown(self):
