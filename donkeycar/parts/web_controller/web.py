@@ -97,6 +97,9 @@ class RemoteWebServer():
         recording = bool(data['recording'])
         
         return angle, throttle, drive_mode, recording
+
+    def shutdown(self):
+        pass
     
     
 class LocalWebController(tornado.web.Application):
@@ -143,6 +146,9 @@ class LocalWebController(tornado.web.Application):
     def run(self, img_arr=None):
         self.img_arr = img_arr
         return self.angle, self.throttle, self.mode, self.recording
+
+    def shutdown(self):
+        pass
 
 
 class DriveAPI(tornado.web.RequestHandler):
