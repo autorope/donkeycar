@@ -152,6 +152,8 @@ class CalibrateCar(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
         parser.add_argument('--channel', help='The channel youd like to calibrate [0-15]')
+        parser.add_argument('--address', default='0x40', help='The i2c address youd like to calibrate [default 0x40]')
+        parser.add_argument('--bus', default=None, help='The i2c bus youd like to calibrate [default autodetect]')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -160,7 +162,12 @@ class CalibrateCar(BaseCommand):
     
         args = self.parse_args(args)
         channel = int(args.channel)
-        c = PCA9685(channel, 0x46, busnum=0)
+        busnum = None
+        if args.bus:
+            busnum = int(args.bus)
+        address = int(args.address, 16)
+        print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
+        c = PCA9685(channel, address=address, busnum=busnum)
         
         for i in range(10):
             pmw = int(input('Enter a PWM setting to test(0-1500)'))
