@@ -252,7 +252,7 @@ cd donkey
 * Create the Python anaconda environment
 
 ```
-conda env create -f envs/mac.yml
+conda env create -f install/envs/mac.yml
 source activate donkey
 ```
 
@@ -267,7 +267,7 @@ pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-p
 
 ```
 pip install -e .
-donkey createcar --path ~/mycar
+donkey createcar ~/mycar
 ```
 
 [Next: Calibrate your car.](./calibrate.md)
