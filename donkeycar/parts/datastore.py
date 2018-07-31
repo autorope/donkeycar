@@ -474,7 +474,7 @@ class TubReader(Tub):
 
         record_dict = self.get_record(self.read_ix)
         self.read_ix += 1
-        record = [record_dict[key] for key in args ]
+        record = [record_dict[key] for key in args]
         return record
 
 
@@ -525,7 +525,7 @@ class TubImageStacker(Tub):
         """
         take a numpy rgb image return a new single channel image converted to greyscale
         """
-        return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+        return np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
 
     def stack3Images(self, img_a, img_b, img_c):
         """
@@ -540,9 +540,9 @@ class TubImageStacker(Tub):
 
         img_arr = np.zeros([width, height, 3], dtype=np.dtype('B'))
 
-        img_arr[...,0] = np.reshape(gray_a, (width, height))
-        img_arr[...,1] = np.reshape(gray_b, (width, height))
-        img_arr[...,2] = np.reshape(gray_c, (width, height))
+        img_arr[..., 0] = np.reshape(gray_a, (width, height))
+        img_arr[..., 1] = np.reshape(gray_b, (width, height))
+        img_arr[..., 2] = np.reshape(gray_c, (width, height))
 
         return img_arr
 
@@ -561,7 +561,7 @@ class TubImageStacker(Tub):
             for key, val in json_data.items():
                 typ = self.get_input_type(key)
 
-                #load objects that were saved as separate files
+                # load objects that were saved as separate files
                 if typ == 'image':
                     val = self.stack3Images(data_ch0[key], data_ch1[key], data[key])
                     data[key] = val
@@ -570,7 +570,6 @@ class TubImageStacker(Tub):
                     val = np.array(img)
 
         return data
-
 
 
 class TubTimeStacker(TubImageStacker):
@@ -641,7 +640,7 @@ class TubGroup(Tub):
             self.input_types.update(dict(zip(t.inputs, t.types)))
 
         logger.info('joining the tubs {} records together. This could take {} minutes.'.format(record_count,
-                                                                                         int(record_count / 300000)))
+                                                                                               int(record_count / 300000)))
 
         self.meta = {'inputs': list(self.input_types.keys()),
                      'types': list(self.input_types.values())}

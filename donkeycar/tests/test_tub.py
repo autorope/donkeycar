@@ -25,8 +25,8 @@ def test_get_last_ix_after_adding_new_record(tub):
 
 
 def test_get_last_ix_for_empty_tub(tub_path):
-    inputs=['cam/image_array', 'angle', 'throttle']
-    types=['image_array', 'float', 'float']
+    inputs = ['cam/image_array', 'angle', 'throttle']
+    types = ['image_array', 'float', 'float']
     t = Tub(tub_path, inputs=inputs, types=types)
     assert t.get_last_ix() == -1
 

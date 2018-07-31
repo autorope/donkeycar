@@ -44,7 +44,7 @@ class Config:
         result = []
         for key in dir(self):
             if key.isupper():
-                result.append((key, getattr(self,key)))
+                result.append((key, getattr(self, key)))
         return str(result)
 
 

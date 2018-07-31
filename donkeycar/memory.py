@@ -17,7 +17,7 @@ class Memory:
     def __setitem__(self, key, value):
         if type(key) is not tuple:
             key = (key,)
-            value=(value,)
+            value = (value,)
 
         for i, k in enumerate(key):
             self.d[k] = value[i]

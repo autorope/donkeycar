@@ -173,7 +173,9 @@ if __name__ == '__main__':
     cfg = dk.load_config()
 
     if args['drive']:
-        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
+        drive(cfg, model_path=args['--model'],
+              use_joystick=args['--js'],
+              use_chaos=args['--chaos'])
 
     elif args['train']:
         tub = args['--tub']
@@ -181,8 +183,3 @@ if __name__ == '__main__':
         base_model_path = args['--base_model']
         cache = not args['--no_cache']
         train(cfg, tub, new_model_path, base_model_path)
-
-
-
-
-
