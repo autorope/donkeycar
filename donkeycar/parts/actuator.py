@@ -7,6 +7,7 @@ are wrapped in a mixer class before being used in the drive loop.
 import time
 import donkeycar as dk
 
+
 class PCA9685:
     """
     PWM motor controler using PCA9685 boards.
@@ -24,6 +25,7 @@ class PCA9685:
 
     def run(self, pulse):
         self.set_pulse(pulse)
+
 
 class PWMSteering:
     """
@@ -64,12 +66,13 @@ class PWMThrottle:
     values to PWM pulses.
     """
     MIN_THROTTLE = -1
-    MAX_THROTTLE =  1
+    MAX_THROTTLE = 1
 
-    def __init__(self, controller=None,
-                       max_pulse=300,
-                       min_pulse=490,
-                       zero_pulse=350):
+    def __init__(self,
+                 controller=None,
+                 max_pulse=300,
+                 min_pulse=490,
+                 zero_pulse=350):
 
         self.controller = controller
         self.max_pulse = max_pulse
@@ -83,18 +86,17 @@ class PWMThrottle:
     def run(self, throttle):
         if throttle > 0:
             pulse = dk.util.data.map_range(throttle,
-                                                    0, self.MAX_THROTTLE,
-                                                    self.zero_pulse, self.max_pulse)
+                                           0, self.MAX_THROTTLE,
+                                           self.zero_pulse, self.max_pulse)
         else:
             pulse = dk.util.data.map_range(throttle,
-                                                    self.MIN_THROTTLE, 0,
-                                                    self.min_pulse, self.zero_pulse)
+                                           self.MIN_THROTTLE, 0,
+                                           self.min_pulse, self.zero_pulse)
 
         self.controller.set_pulse(pulse)
 
     def shutdown(self):
-        self.run(0) #stop vehicle
-
+        self.run(0)  # stop vehicle
 
 
 class Adafruit_DCMotor_Hat:
@@ -117,14 +119,13 @@ class Adafruit_DCMotor_Hat:
         self.speed = 0
         self.throttle = 0
 
-
     def run(self, speed):
         """
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
         """
         if speed > 1 or speed < -1:
-            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
+            raise ValueError("Speed must be between 1(forward) and -1(reverse)")
 
         self.speed = speed
         self.throttle = int(dk.util.data.map_range(abs(speed), -1, 1, -255, 255))
@@ -135,7 +136,6 @@ class Adafruit_DCMotor_Hat:
             self.motor.run(self.BACKWARD)
 
         self.motor.setSpeed(self.throttle)
-
 
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
