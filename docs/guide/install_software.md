@@ -252,7 +252,7 @@ cd donkey
 * Create the Python anaconda environment
 
 ```
-conda env create -f envs/mac.yml
+conda env create -f install/envs/mac.yml
 source activate donkey
 ```
 
