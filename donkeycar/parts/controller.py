@@ -536,10 +536,10 @@ class JoystickController(object):
         print('new mode:', self.mode)
 
     def chaos_monkey_on_left(self):
-        self.chaos_monkey_steering = random.uniform(-1.0, -0.1)
+        self.chaos_monkey_steering = -0.2
 
     def chaos_monkey_on_right(self):
-        self.chaos_monkey_steering = random.uniform(1.0, 0.1)
+        self.chaos_monkey_steering = 0.2
 
     def chaos_monkey_off(self):
         self.chaos_monkey_steering = None
