@@ -84,3 +84,69 @@ class PIDController:
             print('PID output:', round(curr_alpha, 4))
 
         return curr_alpha
+
+def twiddle(evaluator, tol=0.001, params=3, error_cmp=None, initial_guess=None):
+    """
+    A coordinate descent parameter tuning algorithm.
+    https://github.com/chrisspen/pid_controller/blob/master/pid_controller/pid.py
+    
+    https://en.wikipedia.org/wiki/Coordinate_descent
+    
+    Params:
+    
+        evaluator := callable that will be passed a series of number parameters, which will return
+            an error measure
+            
+        tol := tolerance threshold, the smaller the value, the greater the tuning
+        
+        params := the number of parameters to tune
+        
+        error_cmp := a callable that takes two error measures (the current and last best)
+            and returns true if the first is less than the second
+            
+        initial_guess := parameters to begin tuning with
+    """
+
+    def _error_cmp(a, b):
+        # Returns true if a is closer to zero than b.
+        return abs(a) < abs(b)
+        
+    if error_cmp is None:
+        error_cmp = _error_cmp
+
+    if initial_guess is None:
+        p = [0]*params
+    else:
+        p = list(initial_guess)
+    dp = [1]*params
+    best_err = evaluator(*p)
+    steps = 0
+    while sum(dp) > tol:
+        steps += 1
+        print('steps:', steps, 'tol:', tol, 'best error:', best_err)
+        for i, _ in enumerate(p):
+            
+            # first try to increase param
+            p[i] += dp[i]
+            err = evaluator(*p)
+            
+            if error_cmp(err, best_err):
+                # Increasing param reduced error, so record and continue to increase dp range.
+                best_err = err
+                dp[i] *= 1.1
+            else:
+                # Otherwise, increased error, so undo and try decreasing dp
+                p[i] -= 2.*dp[i]
+                err = evaluator(*p)
+                
+                if error_cmp(err, best_err):
+                    # Decreasing param reduced error, so record and continue to increase dp range.
+                    best_err = err
+                    dp[i] *= 1.1
+                    
+                else:
+                    # Otherwise, reset param and reduce dp range.
+                    p[i] += dp[i]
+                    dp[i] *= 0.9
+                
+    return p
