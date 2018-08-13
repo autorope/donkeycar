@@ -39,7 +39,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     '''
 
     if model_type is None:
-        model_type = "categorical"
+        if cfg.TRAIN_BEHAVIORS:
+            model_type = "behavior"
+        else:
+            model_type = "categorical"
     
     #Initialize car
     V = dk.vehicle.Vehicle()
@@ -192,7 +195,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
     #Behavioral state
-    if model_type == "behavior":
+    if cfg.TRAIN_BEHAVIORS:
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
         try:

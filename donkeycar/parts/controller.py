@@ -536,10 +536,10 @@ class JoystickController(object):
         print('new mode:', self.mode)
 
     def chaos_monkey_on_left(self):
-        self.chaos_monkey_steering = random.uniform(-1.0, -0.1)
+        self.chaos_monkey_steering = -0.2
 
     def chaos_monkey_on_right(self):
-        self.chaos_monkey_steering = random.uniform(1.0, 0.1)
+        self.chaos_monkey_steering = 0.2
 
     def chaos_monkey_off(self):
         self.chaos_monkey_steering = None
@@ -553,17 +553,18 @@ class JoystickController(object):
         if self.estop_state > self.ES_IDLE:
             if self.estop_state == self.ES_START:
                 self.estop_state = self.ES_THROTTLE_NEG_ONE
-                return 0.0, -1.0, self.mode, False
+                return 0.0, -1.0 * self.throttle_scale, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_NEG_ONE:
                 self.estop_state = self.ES_THROTTLE_POS_ONE
                 return 0.0, 0.01, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_POS_ONE:
                 self.estop_state = self.ES_THROTTLE_NEG_TWO
-                self.throttle = -1.0
+                self.throttle = -1.0 * self.throttle_scale
                 return 0.0, self.throttle, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_NEG_TWO:
                 self.throttle += 0.05
                 if self.throttle >= 0.0:
+                    self.throttle = 0.0
                     self.estop_state = self.ES_IDLE
                 return 0.0, self.throttle, self.mode, False
 

@@ -230,6 +230,11 @@ def norm_deg(theta):
         theta += 360
     return theta
 
+DEG_TO_RAD = math.pi / 180.0
+
+def deg2rad(theta):
+    return theta * DEG_TO_RAD
+
 '''
 VECTORS
 '''
