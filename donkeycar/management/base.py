@@ -208,7 +208,7 @@ class MakeMovie(BaseCommand):
         """
         Callback to return an image from from our tub records.
         This is called from the VideoClip as it references a time.
-        We don't use t to reference the frame, but instead increment
+        We don't use it to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
         """
         self.iRec = self.iRec + 1
