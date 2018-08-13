@@ -29,7 +29,7 @@ class PCA9685:
 
 class PWMSteering:
     """
-    Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
+    Wrapper over a PWM motor controller to convert angles to PWM pulses.
     """
     LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
