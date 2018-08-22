@@ -67,13 +67,15 @@ This command allows you to create a movie file from the images in a Tub.
 
 Usage:
 ```bash
-donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>]
+donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>] [--model=<model path>] [--model_type=(linear|categorical|rnn|imu|behavior|3d)]
 ```
 
 * Run on the host computer or the robot
 * Uses the image records from `--tub` dir path given
 * Creates a movie given by `--out`. Codec is inferred from file extension. Default: `tub_movie.mp4`
 * Optional argument to specify a different `config.py` other than default: `config.py`
+* Optional model argument will load the keras model and display prediction as lines on the movie
+* model_type may optionally give a hint about what model type we are loading. Categorical is default.
 
 
 
