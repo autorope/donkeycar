@@ -7,21 +7,44 @@ are wrapped in a mixer class before being used in the drive loop.
 import time
 import donkeycar as dk
 
+# This is only a temporary solution. Just to check whether our controler-less setup works. I will clean this up later
+
+# class PCA9685:
+#     """
+#     PWM motor controler using PCA9685 boards.
+#     This is used for most RC Cars
+#     """
+#     def __init__(self, channel, frequency=60):
+#         import Adafruit_PCA9685
+#         # Initialise the PCA9685 using the default address (0x40).
+#         self.pwm = Adafruit_PCA9685.PCA9685()
+#         self.pwm.set_pwm_freq(frequency)
+#         self.channel = channel
+#
+#     def set_pulse(self, pulse):
+#         self.pwm.set_pwm(self.channel, 0, pulse)
+#
+#     def run(self, pulse):
+#         self.set_pulse(pulse)
+
 
 class PCA9685:
-    """
-    PWM motor controler using PCA9685 boards.
-    This is used for most RC Cars
-    """
+    """Replacement for default controller class. Utilizes hardware PWM of Raspberry Pi instead of additional board"""
+    # TODO Clean this up
+
     def __init__(self, channel, frequency=60):
-        import Adafruit_PCA9685
-        # Initialise the PCA9685 using the default address (0x40).
-        self.pwm = Adafruit_PCA9685.PCA9685()
-        self.pwm.set_pwm_freq(frequency)
+        """
+        :param channel: represents RPi pin. Has to have hardware PWM (pins 18 and 13)
+        :param frequency: Don't know if we need it, don't know if possible to implement it. Ignored for the moment
+        """
+        import pigpio
+        self.pi = pigpio.pi()
         self.channel = channel
+        # even if this will work, it will only use some approximate of given frequency
+        # self.pi.set_PWM_frequency(4, frequency)
 
     def set_pulse(self, pulse):
-        self.pwm.set_pwm(self.channel, 0, pulse)
+        self.pi.set_servo_pulsewidth(self.channel, pulse)
 
     def run(self, pulse):
         self.set_pulse(pulse)
