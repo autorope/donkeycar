@@ -70,3 +70,18 @@ You can always charge from the Raspberry Pi, though.  Just plug the joystick int
 ### New Battery for PS3 Sixaxis Joystick
 
 Sometimes these controllers can be quite old. Here's a link to a [new battery](http://a.co/5k1lbns). Be careful when taking off the cover. Remove 5 screws. There's a tab on the top half between the hand grips. You'll want to split/open it from the front and try pulling the bottom forward as you do, or you'll break the tab off as I did.
+
+### Sony PS4 Dualshock 4 Joystick Experimental
+
+Make sure remote is fully charged and then hold the share and PS button the light will strobe white and its ready to pair.  Follow the same instructions for ps3 as ps4 
+
+Use bluetoothctl to pair
+```bash
+bluetoothctl
+agent on
+devices
+trust <MAC ADDRESS>
+default-agent
+quit
+```
+donkeycar/parts/controller.py is the file that controlls the inputs of the controller and where they are mapped.  
