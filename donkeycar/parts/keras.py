@@ -210,7 +210,7 @@ class KerasBehavioral(KerasPilot):
 
 
 def default_categorical(input_shape=(120, 160, 3)):
-    from keras.layers import Input, Dense, merge
+    from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Dense    
@@ -253,7 +253,7 @@ def default_categorical(input_shape=(120, 160, 3)):
 
 
 def default_n_linear(num_outputs, input_shape):
-    from keras.layers import Input, Dense, merge
+    from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
@@ -426,7 +426,7 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 
     from keras.layers import Input, Dense
     from keras.models import Sequential
-    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization, Merge
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     from keras.layers.merge import concatenate
     from keras.layers import LSTM
@@ -494,7 +494,7 @@ class Keras3D_CNN(KerasPilot):
 def build_3d_cnn(w, h, d, s, num_outputs):
     from keras.layers import Input, Dense
     from keras.models import Sequential
-    from keras.layers import Conv3D, MaxPooling3D, Reshape, BatchNormalization, Merge
+    from keras.layers import Conv3D, MaxPooling3D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Cropping3D
 
     #Credit: https://github.com/jessecha/DNRacing/blob/master/3D_CNN_Model/model.py
