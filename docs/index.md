@@ -24,7 +24,7 @@ and take 2 hours to assemble. Here are the main steps to build your own car:
 
 ### Hello World.
 
-Donkeycar is designed to make adding new parts to your car easy. Here's and
+Donkeycar is designed to make adding new parts to your car easy. Here's an
 example car application that captures images from the camera and saves them.
 
 ```python
