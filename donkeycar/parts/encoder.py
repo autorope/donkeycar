@@ -12,7 +12,7 @@ class AStarSpeed:
         self.speed = 0
         self.linaccel = None
 
-        self.sensor = TeensyRCin(0);
+        self.sensor = TeensyRCin(0)
 
         self.on = True
 
