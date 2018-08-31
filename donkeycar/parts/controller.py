@@ -142,12 +142,12 @@ class JoystickCreator(Joystick):
         return button, button_state, axis, axis_val
 
 
-class PS3Joystick(Joystick):
+class PS3JoystickOld(Joystick):
     '''
     An interface to a physical PS3 joystick available at /dev/input/js0
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3Joystick, self).__init__(*args, **kwargs)
+        super(PS3JoystickOld, self).__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -198,6 +198,62 @@ class PS3Joystick(Joystick):
             0x127 : 'dpad_left',
             0x125 : 'dpad_right',
         }
+
+class PS3Joystick(Joystick):
+    '''
+    An interface to a physical PS3 joystick available at /dev/input/js0
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3Joystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x05 : 'right_stick_vert',
+
+            0x1a : 'tilt_x',
+            0x1b : 'tilt_y',
+            0x3d : 'tilt_a',
+            0x3c : 'tilt_b',
+
+            0x32 : 'L1_pressure',
+            0x33 : 'R1_pressure',
+            0x31 : 'R2_pressure',
+            0x30 : 'L2_pressure',
+
+            0x36 : 'cross_pressure',
+            0x35 : 'circle_pressure',
+            0x37 : 'square_pressure',
+            0x34 : 'triangle_pressure',
+
+            0x2d : 'dpad_r_pressure',
+            0x2e : 'dpad_d_pressure',
+            0x2c : 'dpad_u_pressure',
+        }
+
+        self.button_names = {
+           0x13a : 'select', #8 314
+           0x13b : 'start', #9 315
+           0x13c : 'PS', #a  316
+
+           0x136 : 'L1', #4 310
+           0x137 : 'R1', #5 311
+           0x138 : 'L2', #6 312
+           0x139 : 'R2', #7 313
+           0x13d : 'L3', #b 317
+           0x13e : 'R3', #c 318
+
+           0x133 : "triangle",  #2 307
+           0x131 : "circle",    #1 305
+           0x130 : "cross",    #0 304
+           0x134 : 'square',    #3 308
+
+           0x220 : 'dpad_up', #d 544
+           0x221 : 'dpad_down', #e 545
+           0x222 : 'dpad_left', #f 546
+           0x223 : 'dpad_right', #10 547
+       }
 
 
 class PS4Joystick(Joystick):
