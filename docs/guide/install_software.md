@@ -185,6 +185,8 @@ pip install -e .
 
 * Change to a dir you would like to use as the head of your projects.
 
+* Right click can be used to paste into prompt.
+
 ```
 mkdir projects
 cd projects
@@ -197,10 +199,16 @@ git clone https://github.com/wroscoe/donkey
 cd donkey
 ```
 
+* Navigate to git master branch
+
+```
+git chekout master
+```
+
 * Create the Python Anaconda environment
 
 ```
-conda env create -f envs\windows.yml
+conda env create -f install\envs\windows.yml
 activate donkey
 ```
 
