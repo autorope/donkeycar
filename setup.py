@@ -44,6 +44,7 @@ setup(name='donkeycar',
                       'eventlet',
                       'moviepy',
                       'pandas',
+                      'PrettyTable',
                      ],
 
     extras_require={

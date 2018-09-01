@@ -142,12 +142,12 @@ class JoystickCreator(Joystick):
         return button, button_state, axis, axis_val
 
 
-class PS3JoystickOld(Joystick):
+class PS3Joystick(Joystick):
     '''
     An interface to a physical PS3 joystick available at /dev/input/js0
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3JoystickOld, self).__init__(*args, **kwargs)
+        super(PS3Joystick, self).__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -199,12 +199,12 @@ class PS3JoystickOld(Joystick):
             0x125 : 'dpad_right',
         }
 
-class PS3Joystick(Joystick):
+class PS3JoystickNew(Joystick):
     '''
     An interface to a physical PS3 joystick available at /dev/input/js0
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3Joystick, self).__init__(*args, **kwargs)
+        super(PS3JoystickNew, self).__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -835,7 +835,7 @@ if __name__ == "__main__":
     '''
     publish ps3 controller
     when running from ubuntu 16.04, it will interfere w mouse until:
-    set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
+    xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
     '''
     p = JoyStickPub()
     p.run()
