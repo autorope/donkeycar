@@ -200,7 +200,7 @@ cd donkey
 * Create the Python Anaconda environment
 
 ```
-conda env create -f envs\windows.yml
+conda env create -f install\envs\windows.yml
 activate donkey
 ```
 
