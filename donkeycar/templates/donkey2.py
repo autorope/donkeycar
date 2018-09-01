@@ -16,14 +16,12 @@ import os
 from docopt import docopt
 
 import donkeycar as dk
-
-#import parts
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubGroup, TubWriter
-from donkeycar.parts.controller import LocalWebController, JoystickController
+from controller import LocalWebController, JoystickController
 from donkeycar.parts.clock import Timestamp
 
 
@@ -41,7 +39,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     V = dk.vehicle.Vehicle()
 
     clock = Timestamp()
-    V.add(clock, outputs='timestamp')
+    V.add(clock, outputs=['timestamp'])
 
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
@@ -69,17 +67,19 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
             return True
 
     pilot_condition_part = Lambda(pilot_condition)
-    V.add(pilot_condition_part, inputs=['user/mode'],
-                                outputs=['run_pilot'])
+    V.add(pilot_condition_part,
+          inputs=['user/mode'],
+          outputs=['run_pilot'])
 
     # Run the pilot if the mode is not user.
-    kl = KerasCategorical()
+    kl = KerasLinear()
     if model_path:
         kl.load(model_path)
 
-    V.add(kl, inputs=['cam/image_array'],
-              outputs=['pilot/angle', 'pilot/throttle'],
-              run_condition='run_pilot')
+    V.add(kl,
+          inputs=['cam/image_array'],
+          outputs=['pilot/angle', 'pilot/throttle'],
+          run_condition='run_pilot')
 
     # Choose what inputs should change the car.
     def drive_mode(mode,
@@ -118,9 +118,9 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
     types = ['image_array', 'float', 'float',  'str', 'str']
 
-    #multiple tubs
-    #th = TubHandler(path=cfg.DATA_PATH)
-    #tub = th.new_tub_writer(inputs=inputs, types=types)
+    # multiple tubs
+    # th = TubHandler(path=cfg.DATA_PATH)
+    # tub = th.new_tub_writer(inputs=inputs, types=types)
 
     # single tub
     tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
@@ -131,29 +131,17 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
             max_loop_count=cfg.MAX_LOOPS)
 
 
-
-
-def train(cfg, tub_names, new_model_path, base_model_path=None ):
+def train(cfg, tub_names, new_model_path, base_model_path=None):
     """
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
     """
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
-    def train_record_transform(record):
-        """ convert categorical steering to linear and apply image augmentations """
-        record['user/angle'] = dk.util.data.linear_bin(record['user/angle'])
-        # TODO add augmentation that doesn't use opencv
-        return record
-
-    def val_record_transform(record):
-        """ convert categorical steering to linear """
-        record['user/angle'] = dk.util.data.linear_bin(record['user/angle'])
-        return record
 
     new_model_path = os.path.expanduser(new_model_path)
 
-    kl = KerasCategorical()
+    kl = KerasLinear()
     if base_model_path is not None:
         base_model_path = os.path.expanduser(base_model_path)
         kl.load(base_model_path)
@@ -163,8 +151,6 @@ def train(cfg, tub_names, new_model_path, base_model_path=None ):
         tub_names = os.path.join(cfg.DATA_PATH, '*')
     tubgroup = TubGroup(tub_names)
     train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys,
-                                                    train_record_transform=train_record_transform,
-                                                    val_record_transform=val_record_transform,
                                                     batch_size=cfg.BATCH_SIZE,
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
 
@@ -187,7 +173,7 @@ if __name__ == '__main__':
     cfg = dk.load_config()
 
     if args['drive']:
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
 
     elif args['train']:
         tub = args['--tub']

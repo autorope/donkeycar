@@ -149,7 +149,7 @@ python -c "import donkeycar as dk; print(dk.__version__)"
 Now generate the drive script, config and folder structure for your car.
 
 ```bash
-donkey createcar ~/
+donkey createcar ~/mycar
 ```
 
 ----
@@ -200,7 +200,7 @@ cd donkey
 * Create the Python Anaconda environment
 
 ```
-conda env create -f envs\windows.yml
+conda env create -f install\envs\windows.yml
 activate donkey
 ```
 
