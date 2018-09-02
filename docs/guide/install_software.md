@@ -168,6 +168,7 @@ pip install tensorflow==1.8.0
 * Install donkey source and create your local working dir:
 ```bash
 git clone https://github.com/wroscoe/donkey donkeycar
+git checkout master
 pip install -e .
 ```
 
@@ -194,6 +195,7 @@ cd projects
 
 ```
 git clone https://github.com/wroscoe/donkey
+git checkout master
 cd donkey
 ```
 
@@ -246,6 +248,7 @@ cd projects
 
 ```
 git clone https://github.com/wroscoe/donkey
+git checkout master
 cd donkey
 ```
 
