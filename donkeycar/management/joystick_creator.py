@@ -3,6 +3,7 @@ import os
 import argparse
 import json
 import time
+import math
 
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
@@ -18,26 +19,27 @@ class CreateJoystick(object):
     def __init__(self):
         self.last_button = None
         self.last_axis = None
+        self.axis_val = 0
         self.running = False
         self.thread = None
-        self.motion_axis = []
+        self.gyro_axis = []
         self.axis_map = []
         self.ignore_axis = False
-        self.ignore_buttons = False
         self.mapped_controls = []
 
     def poll(self):
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
 
-            if button is not None and not self.ignore_buttons:
-                print(button)
+            if button is not None:
                 self.last_button = button
                 self.last_axis = None
+                self.axis_val = 0.0
             elif axis is not None and not self.ignore_axis:
-                if not axis in self.motion_axis:
+                if not axis in self.gyro_axis:
                     self.last_axis = axis
                     self.last_button = None
+                    self.axis_val = axis_val
 
     def get_button_press(self, duration=10.0):
         self.last_button = None
@@ -59,21 +61,21 @@ class CreateJoystick(object):
             if self.last_axis:
                 if self.last_axis in axis_samples:
                     try:
-                        axis_samples[self.last_axis] = axis_samples[self.last_axis] + 1
+                        axis_samples[self.last_axis] = axis_samples[self.last_axis] + math.fabs(self.axis_val)
                     except:
                         try:
-                            axis_samples[self.last_axis] = 1
+                            axis_samples[self.last_axis] = math.fabs(self.axis_val)
                         except:
                             pass
                 else:
-                    axis_samples[self.last_axis] = 1
+                    axis_samples[self.last_axis] = math.fabs(self.axis_val)
             
         most_movement = None
-        most_iter = 0
+        most_val = 0
         for key, value in axis_samples.items():
-            if value > most_iter:
+            if value > most_val:
                 most_movement = key
-                most_iter = value
+                most_val = value
 
         return most_movement
 
@@ -86,12 +88,19 @@ class CreateJoystick(object):
         print("##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##")
         print("## Welcome to Joystick Creator Wizard. ##")
         print("##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~##")
-        print("This will walk you through the steps to create a python class to use your controller.")
-        print("The first steps will create a label for each of the buttons and axis controls.")
-        print("Then we will create a mapping of labels to actions.")
-        print("Please plug-in your controller via USB or bluetooth.")
-        input('Enter to continue ')
+        print("This will generate code to use your joystick with a Donkey car.")
         print()
+        print("Overview:")
+        print()
+        print("First we name each button, then each axis control.")
+        print("Next we map names to actions.")
+        print("Finally we output a python file you can use in your project.")
+        print()
+        input('Hit Enter to continue')
+        self.clear_scr()
+        print("Please plug-in your controller via USB or bluetooth. Make sure status lights are on and device is mapped.")
+        input('Enter to continue ')
+        self.clear_scr()
         
         self.init_js_device()
         print()
@@ -102,18 +111,22 @@ class CreateJoystick(object):
         self.find_gyro()
         self.clear_scr()
 
+        self.explain_config()
+        self.clear_scr()
+
         self.name_buttons()
         self.clear_scr()
 
         self.name_axes()
         self.clear_scr()
 
-        print('Now we will create a mapping of controls to actions.\n')
-
         self.map_steering_throttle()
         self.clear_scr()
 
         self.map_button_controls()
+        self.clear_scr()
+
+        self.revisit_topic()
         self.clear_scr()
 
         self.write_python_class_file()
@@ -129,7 +142,7 @@ class CreateJoystick(object):
 
         #Get device file and create js creator helper class
         while js_cr is None:
-            print("Which device file would you like to use?")
+            print("Where can we find the device file for your joystick?")
             dev_fn = input("Hit Enter for default: /dev/input/js0 or type alternate path: ")
             if len(dev_fn) is 0:
                 dev_fn = '/dev/input/js0'
@@ -140,7 +153,7 @@ class CreateJoystick(object):
                 js_cr = JoystickCreatorController(dev_fn=dev_fn)
                 res = js_cr.init_js()
                 if res:
-                    print("Found and accessed input device file.")
+                    print("Found and accessed input device.")
                 else:
                     js_cr = None
             except Exception as e:
@@ -153,6 +166,7 @@ class CreateJoystick(object):
                     exit(0)
 
         self.js = js_cr.js
+        input("Hit Enter to continue")
 
     def init_polling_js(self):
         self.running = True
@@ -163,37 +177,50 @@ class CreateJoystick(object):
 
     def find_gyro(self):
         print("Next we are going to look for gyroscope data.")
-        input("For 5 seconds, move controller and rotate on each axis. Enter to start moving: ")
+        input("For 5 seconds, move controller and rotate on each axis. Hit Enter then start moving: ")
         start = time.time()
         while time.time() - start < 5.0:
-            if self.last_axis is not None and not self.last_axis in self.motion_axis:
-                self.motion_axis.append(self.last_axis)
+            if self.last_axis is not None and not self.last_axis in self.gyro_axis:
+                self.gyro_axis.append(self.last_axis)
 
         print()
-        if len(self.motion_axis) > 0:
-            print("Ok, we found %d axes that stream gyroscope data." % len(self.motion_axis))
+        if len(self.gyro_axis) > 0:
+            print("Ok, we found %d axes that stream gyroscope data. We will ignore those during labelling and mapping." % len(self.gyro_axis))
         else:
             print("Ok, we didn't see any events. So perhaps your controller doesn't emit gyroscope data. No problem.")
+        
+        input("Hit Enter to continue ")
 
     def get_code_from_button(self, button):
         code = button
         if 'unknown' in button:
-            code_str = button.split('(')[1][:-1]
             try:
+                code_str = button.split('(')[1][:-1]
                 code = int(code_str, 16)
             except Exception as e:
                 code = None
                 print("failed to parse code", str(e))
         return code
 
+    def explain_config(self):
+        print("We will display the current progress in this set of tables:")
+        print()
+        self.print_config()
+        print("\nAs you name buttons and map them to controls this table will be updated.")
+        input("Hit enter to continue")
+
 
     def name_buttons(self):
-        print('Next we are going to name all the buttons you would like to use.')
         done = False
         self.ignore_axis = True
 
+        self.print_config()
+
+        print('Next we will give every button a name. Not analog yet. We will do that next.')
+
         while not done:
-            print('Tap a button on the controller. Any previously mapped button when done.')
+
+            print('Tap a button to name it.')
             
             self.get_button_press()
 
@@ -207,25 +234,23 @@ class CreateJoystick(object):
 
                 if code is not None:
                     if code in self.js.button_names:
-                        done = True
-                        break
-                    label = input("what name to give to this button: (D when done) ")
+                        ret = input("This button has a name: %s. Are you done naming? (y/N) " % self.js.button_names[code])
+                        if ret.upper() == "Y":
+                            done = True
+                            break
+                    label = input("What name to give to this button:")
                     if len(label) == 0:
-                        print("no name given. skipping.")
-                    elif label.upper() == 'D':
-                        done = True
+                        print("No name given. skipping.")
                     else:
                         self.clear_scr()
                         self.js.button_names[code] = label
+                        self.print_config()
             else:
                 print('got press: ', self.last_button)
 
-            print()
+            self.clear_scr()
             self.print_config()
-
-        
-        print("Created button map:")
-        print(self.js.button_names)
+            
 
     def print_config(self):
         pt = PrettyTable()
@@ -243,7 +268,7 @@ class CreateJoystick(object):
         print(pt)
 
         pt = PrettyTable()
-        pt.field_names = ["input", "control"]
+        pt.field_names = ["control", "action"]
         for button, control in self.mapped_controls:
             pt.add_row([button, control])
         for axis, control in self.axis_map:
@@ -252,6 +277,8 @@ class CreateJoystick(object):
         print(pt)
 
     def name_axes(self):
+        self.print_config()
+        print()
         print('Next we are going to name all the axis you would like to use.')
 
         done = False
@@ -413,10 +440,18 @@ class %sController(JoystickController):
 
     def map_steering_throttle(self):
 
+        self.axis_map = []
+
+        self.print_config()
+        print()
+        print('Now we will create a mapping of controls to actions.\n')
+
         print("First steering.")
         self.map_control_axis("steering", "set_steering")
 
         self.clear_scr()
+        self.print_config()
+        print()
         print("Next throttle.")
         self.map_control_axis("throttle", "set_throttle")
 
@@ -424,20 +459,24 @@ class %sController(JoystickController):
     def map_button_controls(self):
         unmapped_controls = [\
             ('toggle_mode','changes the drive mode between user, local, and local_angle'),
-            ('toggle_manual_recording','toggles recording records on and off'),
             ('erase_last_N_records','erases the last 100 records while driving'),
             ('emergency_stop','executes a full back throttle to bring car to a quick stop'),
             ('increase_max_throttle','increases the max throttle, also used for constant throttle val'),
             ('decrease_max_throttle','decreases the max throttle, also used for constant throttle val'),
-            ('toggle_constant_throttle', 'toggle the mode of supplying constant throttle')
+            ('toggle_constant_throttle', 'toggle the mode of supplying constant throttle'),
+            ('toggle_manual_recording','toggles recording records on and off')
         ]
-
+        
+        self.mapped_controls = []
         self.print_config()
+        print()
+        print("Next we are going to assign button presses to controls.")
         print()
 
         while len(unmapped_controls) > 0:
 
             pt = PrettyTable()
+            pt.field_names = ['Num', 'Control', 'Help']
             print("Unmapped Controls:")
             for i, td in enumerate(unmapped_controls):
                 control, help = td
@@ -447,8 +486,8 @@ class %sController(JoystickController):
             print()
             try:
                 ret = " "
-                while (not ret.isdigit() and ret.upper() != 'D') or (ret.isdigit() and (int(ret) < 1 or int(ret) >= len(unmapped_controls))):
-                    ret = input("Press the number of control to map(1-%d). D when done." % len(unmapped_controls))
+                while (not ret.isdigit() and ret.upper() != 'D') or (ret.isdigit() and (int(ret) < 1 or int(ret) > len(unmapped_controls))):
+                    ret = input("Press the number of control to map (1-%d). D when done. " % len(unmapped_controls))
 
                 if ret.upper() == 'D':
                     break
@@ -480,7 +519,32 @@ class %sController(JoystickController):
 
         print('done mapping controls')
         print()
-        
+
+    def revisit_topic(self):
+        done = False
+        while not done:
+            self.clear_scr()
+            self.print_config()
+            print("Now we are nearly done! Are you happy with this config or would you like to revisit a topic?")
+            print("H)appy, please continue to write out python file.")
+            print("B)uttons need renaming.")
+            print("A)xes need renaming.")
+            print("T)hrottle and steering need remap.")
+            print("R)emap buttons to controls.")
+            
+            ret = input("Select option ").upper()
+            if ret == 'H':
+                done = True
+            elif ret == 'B':
+                self.name_buttons()
+            elif ret == 'A':
+                self.name_axes()
+            elif ret == 'T':
+                self.map_steering_throttle()
+            elif ret == 'R':
+                self.map_button_controls()          
+
+
     def get_axis_action(self, prompt):
         done = False        
         while not done:
