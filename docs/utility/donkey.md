@@ -186,3 +186,20 @@ cat ~/.ssh/id_rsa.pub | ssh pi@<your pi ip> 'cat >> .ssh/authorized_keys'
 ```bash
 python manage.py drive --model models/drive.json
 ```
+
+## Joystick Wizard
+
+This command line wizard will walk you through the steps to use your joystick. 
+
+Usage:
+```bash
+donkey createjs
+```
+
+* This command may be run from `~/d2` dir
+* Run on the pi
+* First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
+* Debian commonly creates the joystick device file at /dev/input/js0. If not, find out where.
+* Run the command `donkey createjs` and it will create a file, by default my_joystick.py. Drop that next to your manage.py
+* Modify manage.py to add: `from my_joystick import MyJoystickController`
+* Modify manage.py to replace `cont_class = PS3JoystickController` with `cont_class = MyJoystickController`
