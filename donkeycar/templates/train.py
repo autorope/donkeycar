@@ -535,7 +535,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
             print("problems with loss graph")
 
 
-def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
+def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
     '''
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
@@ -650,6 +650,8 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                         #get image data if we don't already have it
                         if record['img_data'] is None:
                             img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            if aug:
+                                img_arr = augment_image(img_arr)
                             record['img_data'] = img_arr                            
                             
                         inputs_img.append(record['img_data'])

@@ -152,6 +152,8 @@ class CalibrateCar(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
         parser.add_argument('--channel', help='The channel youd like to calibrate [0-15]')
+        parser.add_argument('--address', default='0x40', help='The i2c address youd like to calibrate [default 0x40]')
+        parser.add_argument('--bus', default=None, help='The i2c bus youd like to calibrate [default autodetect]')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -160,7 +162,12 @@ class CalibrateCar(BaseCommand):
     
         args = self.parse_args(args)
         channel = int(args.channel)
-        c = PCA9685(channel, 0x46, busnum=0)
+        busnum = None
+        if args.bus:
+            busnum = int(args.bus)
+        address = int(args.address, 16)
+        print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
+        c = PCA9685(channel, address=address, busnum=busnum)
         
         for i in range(10):
             pmw = int(input('Enter a PWM setting to test(0-1500)'))
@@ -174,6 +181,8 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--model', default='None', help='the model to use to show control outputs')
+        parser.add_argument('--model_type', default='categorical', help='the model type to load')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
@@ -207,12 +216,45 @@ class MakeMovie(BaseCommand):
         self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
         self.iRec = 0
+        self.keras_part = None
+        if not args.model == "None":
+            self.keras_part = get_model_by_type(args.model_type, cfg=cfg)
+            self.keras_part.load(args.model)
+            self.keras_part.compile()
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
         clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
         clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
 
         print('done')
+
+    def draw_model_prediction(self, record, img):
+        '''
+        query the model for it's prediction, draw the user input and the predictions
+        as green and blue lines on the image
+        '''
+        if self.keras_part is None:
+            return
+
+        import cv2
+         
+        user_angle = float(record["user/angle"])
+        user_throttle = float(record["user/throttle"])
+        pilot_angle, pilot_throttle = self.keras_part.run(img)
+
+        a1 = user_angle * 45.0
+        l1 = user_throttle * 3.0 * 80.0
+        a2 = pilot_angle * 45.0
+        l2 = pilot_throttle * 3.0 * 80.0
+
+        p1 = tuple((74, 119))
+        p2 = tuple((84, 119))
+        p11 = tuple(( int(p1[0] + l1 * math.cos((a1 + 270.0) * math.pi / 180.0)), int(p1[1] + l1 * math.sin((a1 + 270.0) * math.pi / 180.0))))
+        p22 = tuple(( int(p2[0] + l2 * math.cos((a2 + 270.0) * math.pi / 180.0)), int(p2[1] + l2 * math.sin((a2 + 270.0) * math.pi / 180.0))))
+
+        cv2.line(img, p1, p11, (0, 255, 0), 2)
+        cv2.line(img, p2, p22, (0, 0, 255), 2)
+
 
     def make_frame(self, t):
         '''
@@ -228,6 +270,8 @@ class MakeMovie(BaseCommand):
 
         rec = self.tub.get_record(self.iRec)
         image = rec['cam/image_array']
+
+        self.draw_model_prediction(rec, image)
         
         return image # returns a 8-bit RGB array
 
@@ -513,7 +557,7 @@ def execute_from_command_line():
             'tubhist': ShowHistogram,
             'tubplot': ShowPredictionPlots,
             'tubcheck': TubCheck,
-            'makemovie': MakeMovie,
+            'makemovie': MakeMovie,            
             'sim': Sim,
             'createjs': CreateJoystick,
             'consync': ConSync,

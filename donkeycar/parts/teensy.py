@@ -8,7 +8,7 @@ class TeensyRCin:
         self.inSteering = 0.0
         self.inThrottle = 0.0
 
-        self.sensor = dk.parts.Teensy(0);
+        self.sensor = dk.parts.actuator.Teensy(0)
 
         TeensyRCin.LEFT_ANGLE = -1.0
         TeensyRCin.RIGHT_ANGLE = 1.0

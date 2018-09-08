@@ -199,6 +199,62 @@ class PS3Joystick(Joystick):
             0x125 : 'dpad_right',
         }
 
+class PS3JoystickNew(Joystick):
+    '''
+    An interface to a physical PS3 joystick available at /dev/input/js0
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3JoystickNew, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x05 : 'right_stick_vert',
+
+            0x1a : 'tilt_x',
+            0x1b : 'tilt_y',
+            0x3d : 'tilt_a',
+            0x3c : 'tilt_b',
+
+            0x32 : 'L1_pressure',
+            0x33 : 'R1_pressure',
+            0x31 : 'R2_pressure',
+            0x30 : 'L2_pressure',
+
+            0x36 : 'cross_pressure',
+            0x35 : 'circle_pressure',
+            0x37 : 'square_pressure',
+            0x34 : 'triangle_pressure',
+
+            0x2d : 'dpad_r_pressure',
+            0x2e : 'dpad_d_pressure',
+            0x2c : 'dpad_u_pressure',
+        }
+
+        self.button_names = {
+           0x13a : 'select', #8 314
+           0x13b : 'start', #9 315
+           0x13c : 'PS', #a  316
+
+           0x136 : 'L1', #4 310
+           0x137 : 'R1', #5 311
+           0x138 : 'L2', #6 312
+           0x139 : 'R2', #7 313
+           0x13d : 'L3', #b 317
+           0x13e : 'R3', #c 318
+
+           0x133 : "triangle",  #2 307
+           0x131 : "circle",    #1 305
+           0x130 : "cross",    #0 304
+           0x134 : 'square',    #3 308
+
+           0x220 : 'dpad_up', #d 544
+           0x221 : 'dpad_down', #e 545
+           0x222 : 'dpad_left', #f 546
+           0x223 : 'dpad_right', #10 547
+       }
+
 
 class PS4Joystick(Joystick):
     '''
@@ -536,10 +592,10 @@ class JoystickController(object):
         print('new mode:', self.mode)
 
     def chaos_monkey_on_left(self):
-        self.chaos_monkey_steering = random.uniform(-1.0, -0.1)
+        self.chaos_monkey_steering = -0.2
 
     def chaos_monkey_on_right(self):
-        self.chaos_monkey_steering = random.uniform(1.0, 0.1)
+        self.chaos_monkey_steering = 0.2
 
     def chaos_monkey_off(self):
         self.chaos_monkey_steering = None
@@ -553,17 +609,18 @@ class JoystickController(object):
         if self.estop_state > self.ES_IDLE:
             if self.estop_state == self.ES_START:
                 self.estop_state = self.ES_THROTTLE_NEG_ONE
-                return 0.0, -1.0, self.mode, False
+                return 0.0, -1.0 * self.throttle_scale, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_NEG_ONE:
                 self.estop_state = self.ES_THROTTLE_POS_ONE
                 return 0.0, 0.01, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_POS_ONE:
                 self.estop_state = self.ES_THROTTLE_NEG_TWO
-                self.throttle = -1.0
+                self.throttle = -1.0 * self.throttle_scale
                 return 0.0, self.throttle, self.mode, False
             elif self.estop_state == self.ES_THROTTLE_NEG_TWO:
                 self.throttle += 0.05
                 if self.throttle >= 0.0:
+                    self.throttle = 0.0
                     self.estop_state = self.ES_IDLE
                 return 0.0, self.throttle, self.mode, False
 
@@ -778,7 +835,7 @@ if __name__ == "__main__":
     '''
     publish ps3 controller
     when running from ubuntu 16.04, it will interfere w mouse until:
-    set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
+    xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
     '''
     p = JoyStickPub()
     p.run()

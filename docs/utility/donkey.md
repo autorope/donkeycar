@@ -67,13 +67,15 @@ This command allows you to create a movie file from the images in a Tub.
 
 Usage:
 ```bash
-donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>]
+donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>] [--model=<model path>] [--model_type=(linear|categorical|rnn|imu|behavior|3d)]
 ```
 
 * Run on the host computer or the robot
 * Uses the image records from `--tub` dir path given
 * Creates a movie given by `--out`. Codec is inferred from file extension. Default: `tub_movie.mp4`
 * Optional argument to specify a different `config.py` other than default: `config.py`
+* Optional model argument will load the keras model and display prediction as lines on the movie
+* model_type may optionally give a hint about what model type we are loading. Categorical is default.
 
 
 
@@ -142,3 +144,62 @@ donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<spee
 * `--type` can specify whether the model needs angle output to be treated as categorical
 * Top speed can be modified to ascertain stability at different goal speeds
 
+## Continuous Rsync
+
+This command uses rsync to copy files from your pi to your host. It does so in a loop, continuously copying files. By default, it will also delete any files
+on the host that are deleted on the pi. This allows your PS3 Triangle edits to affect the files on both machines.
+
+Usage:
+```bash
+donkey consync [--dir = <data_path>] [--delete=<y|n>]
+```
+
+* Run on the host computer
+* First copy your public key to the pi so you don't need a password for each rsync:
+```bash
+cat ~/.ssh/id_rsa.pub | ssh pi@<your pi ip> 'cat >> .ssh/authorized_keys' 
+```
+* If you don't have a id_rsa.pub then google how to make one
+* Edit your config.py and make sure the fields PI_USERNAME, PI_HOSTNAME, PI_DONKEY_ROOT are setup. Only on windows, you need to set PI_PASSWD.
+* This command may be run from `~/d2` dir
+
+## Continuous Train
+
+This command fires off the keras training in a mode where it will continuously look for new data at the end of every epoch. 
+
+Usage:
+```bash
+donkey contrain [--tub=<data_path>] [--model=<path to model>] [--transfer=<path to model>] [--type=<linear|categorical|rnn|imu|behavior|3d>] [--aug]
+```
+
+* This command may be run from `~/d2` dir
+* Run on the host computer
+* First copy your public key to the pi so you don't need a password for each rsync:
+```bash
+cat ~/.ssh/id_rsa.pub | ssh pi@<your pi ip> 'cat >> .ssh/authorized_keys' 
+```
+* If you don't have a id_rsa.pub then google how to make one
+* Edit your config.py and make sure the fields PI_USERNAME, PI_HOSTNAME, PI_DONKEY_ROOT are setup. Only on windows, you need to set PI_PASSWD.
+* Optionally it can send the model file to your pi when it achieves a best loss. In config.py set SEND_BEST_MODEL_TO_PI = True.
+* Your pi drive loop will autoload the weights file when it changes. This works best if car started with .json weights like:
+
+```bash
+python manage.py drive --model models/drive.json
+```
+
+## Joystick Wizard
+
+This command line wizard will walk you through the steps to use your joystick. 
+
+Usage:
+```bash
+donkey createjs
+```
+
+* This command may be run from `~/d2` dir
+* Run on the pi
+* First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
+* Debian commonly creates the joystick device file at /dev/input/js0. If not, find out where.
+* Run the command `donkey createjs` and it will create a file, by default my_joystick.py. Drop that next to your manage.py
+* Modify manage.py to add: `from my_joystick import MyJoystickController`
+* Modify manage.py to replace `cont_class = PS3JoystickController` with `cont_class = MyJoystickController`

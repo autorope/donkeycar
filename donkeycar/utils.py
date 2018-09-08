@@ -230,6 +230,11 @@ def norm_deg(theta):
         theta += 360
     return theta
 
+DEG_TO_RAD = math.pi / 180.0
+
+def deg2rad(theta):
+    return theta * DEG_TO_RAD
+
 '''
 VECTORS
 '''
@@ -395,7 +400,7 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "3d":
         kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "rnn":
-        kl = KerasRNN_LSTM(seq_length=cfg.SEQUENCE_LENGTH, input_shape=input_shape)
+        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape)
     else:
