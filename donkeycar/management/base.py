@@ -64,7 +64,7 @@ class CreateCar(BaseCommand):
 
     def create_car(self, path, template='donkey2', overwrite=False):
         """
-        This script sets up the folder struction for donkey to work.
+        This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
         docker can build the folder structure for docker to mount to.
         """
