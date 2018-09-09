@@ -369,14 +369,15 @@ def get_record_index(fnm):
     sl = os.path.basename(fnm).split('_')
     return int(sl[1].split('.')[0])
 
-def gather_records(cfg, tub_names, opts=None):
+def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     tubs = gather_tubs(cfg, tub_names)
 
     records = []
 
     for tub in tubs:
-        print(tub.path)
+        if verbose:
+            print(tub.path)
         record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
         record_paths.sort(key=get_record_index)
         records += record_paths
