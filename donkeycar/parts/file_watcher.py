@@ -27,13 +27,13 @@ class FileWatcher(object):
 
             if self.delay <= 0.0:
                 self.callback_fn(self.filename)
-                self.file_changed = 100
 
         if m_time != self.m_time:
             self.m_time = m_time
-
+            
             if self.delay <= 0.0:
                 self.delay = self.wait_for_write_stop
+                self.file_changed = 100
         
         if self.file_changed > 0:
             self.file_changed -= 1
