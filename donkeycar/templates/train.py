@@ -21,6 +21,7 @@ import glob
 import random
 import json
 from threading import Lock
+import time
 
 from docopt import docopt
 import numpy as np
@@ -119,8 +120,11 @@ def collate_records(records, gen_records, opts):
         if key in gen_records:
             continue
 
-        with open(record_path, 'r') as fp:
-            json_data = json.load(fp)
+        try:
+            with open(record_path, 'r') as fp:
+                json_data = json.load(fp)
+        except:
+            continue
 
         image_filename = json_data["cam/image_array"]
         image_path = os.path.join(basepath, image_filename)
@@ -337,11 +341,11 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
-    records = gather_records(cfg, tub_names, opts)
+    records = gather_records(cfg, tub_names, opts, verbose=True)
     print('collating %d records ...' % (len(records)))
     collate_records(records, gen_records, opts)
 
-    def generator(save_best, opts, data, batch_size, isTrainSet=True):
+    def generator(save_best, opts, data, batch_size, isTrainSet=True, min_records_to_train=1000):
         
         num_records = len(data)
 
@@ -360,6 +364,10 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         print('picked up', new_num_rec - num_records, 'new records!')
                         num_records = new_num_rec 
                         save_best.reset_best()
+                if num_records < min_records_to_train:
+                    print("not enough records to train. need %d, have %d. waiting..." % (min_records_to_train, num_records))
+                    time.sleep(10)
+                    continue
 
             batch_data = []
 
@@ -391,6 +399,13 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
                 if _record['train'] != isTrainSet:
                     continue
+
+                if continuous:
+                    #in continuous mode we need to handle files getting deleted
+                    filename = _record['image_path']
+                    if not os.path.exists(filename):
+                        data.pop(key, None)
+                        continue
 
                 batch_data.append(_record)
 
@@ -481,11 +496,10 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     
     if not continuous:
         steps_per_epoch = num_train // cfg.BATCH_SIZE
-        val_steps = num_val // cfg.BATCH_SIZE
     else:
         steps_per_epoch = 100
-        val_steps = 10
     
+    val_steps = 10
     print('steps_per_epoch', steps_per_epoch)
 
     if steps_per_epoch < 2:
@@ -535,7 +549,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
             print("problems with loss graph")
 
 
-def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
+def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous):
     '''
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
@@ -650,8 +664,6 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                         #get image data if we don't already have it
                         if record['img_data'] is None:
                             img_arr = load_scaled_image_arr(record['image_path'], cfg)
-                            if aug:
-                                img_arr = augment_image(img_arr)
                             record['img_data'] = img_arr                            
                             
                         inputs_img.append(record['img_data'])

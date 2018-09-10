@@ -154,9 +154,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     
-    def led_cond(mode, recording, num_records, behavior_state):
+    def led_cond(mode, recording, num_records, behavior_state, reloaded_model):
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
+        if reloaded_model:
+            led.set_rgb(100, 0, 0)
+            return 0.1
+        else:
+            led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+
         if num_records is not None and num_records % 10 == 0:
             if led_cond.last_num_rec_print != num_records:
                 print("recorded", num_records, "records")
@@ -180,7 +186,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     led_cond.last_num_rec_print = 0
 
     led_cond_part = Lambda(led_cond)
-    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state'], outputs=['led/blink_rate'])
+    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state', 'reloaded/model'], outputs=['led/blink_rate'])
 
     if cfg.HAVE_RGB_LED:
         from donkeycar.parts.led_status import RGB_LED
@@ -216,15 +222,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     def load_model(kl, model_path):
         start = time.time()
-        print('loading model', model_path)
-        kl.load(model_path)
-        print('finished loading in %s sec.' % (str(time.time() - start)) )
+        try:
+            print('loading model', model_path)
+            kl.load(model_path)
+            print('finished loading in %s sec.' % (str(time.time() - start)) )
+        except:
+            print('problems loading model', model_path)
 
     def load_weights(kl, weights_path):
         start = time.time()
-        print('loading model weights', weights_path)
-        kl.model.load_weights(weights_path)
-        print('finished loading in %s sec.' % (str(time.time() - start)) )
+        try:
+            print('loading model weights', weights_path)
+            kl.model.load_weights(weights_path)
+            print('finished loading in %s sec.' % (str(time.time() - start)) )
+        except:
+            print('problems loading weights', weights_path)
 
     def load_model_json(kl, json_fnm):
         start = time.time()
@@ -249,7 +261,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 load_model(kl, filename)
 
             fw_part = FileWatcher(model_path, reload_model, wait_for_write_stop=10.0)
-            V.add(fw_part)
+            V.add(fw_part, outputs=['reloaded/model'])
 
         elif '.json' in model_path:
             #when we have a .json extension
@@ -265,7 +277,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 load_weights(kl, weights_path)
             
             fw_part = FileWatcher(model_path, reload_weights, wait_for_write_stop=1.0)
-            V.add(fw_part)
+            V.add(fw_part, outputs=['reloaded/model'])
 
         else:
             #previous default behavior

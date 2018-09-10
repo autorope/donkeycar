@@ -12,6 +12,7 @@ from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
 from .tub import TubManager
 from .joystick_creator import CreateJoystick
+import numpy as np
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -183,6 +184,8 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
         parser.add_argument('--model_type', default='categorical', help='the model type to load')
+        parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
+        parser.add_argument('--limit', type=int, default=-1, help='max number frames to process')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
@@ -193,12 +196,19 @@ class MakeMovie(BaseCommand):
         '''
         import moviepy.editor as mpy
 
-
         args, parser = self.parse_args(args)
 
         if args.tub is None:
             parser.print_help()
-            return            
+            return
+
+        if args.salient:
+            #imported like this, we make TF conditional on use of --salient
+            #and we keep the context maintained throughout our callbacks to 
+            #compute the salient mask
+            from keras import backend as K
+            import tensorflow as tf
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  
 
         conf = os.path.expanduser(args.config)
 
@@ -215,12 +225,47 @@ class MakeMovie(BaseCommand):
 
         self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
+        if args.limit > 0:
+            self.num_rec = args.limit
         self.iRec = 0
         self.keras_part = None
+        self.convolution_part = None
         if not args.model == "None":
             self.keras_part = get_model_by_type(args.model_type, cfg=cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
+            if args.salient:
+                self.init_salient(self.keras_part.model)
+
+                #This method nested in this way to take the conditional import of TF
+                #in a manner that extends to this callback. Done this way, we avoid
+                #importing in the below method, which triggers a new cuda device allocation
+                #each call.
+                def compute_visualisation_mask(img):
+                    #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+                    
+                    activations = self.functor([np.array([img])])
+                    activations = [np.reshape(img, (1, img.shape[0], img.shape[1], img.shape[2]))] + activations
+                    upscaled_activation = np.ones((3, 6))
+                    for layer in [5, 4, 3, 2, 1]:
+                        averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
+                        output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
+                        x = tf.constant(
+                            np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
+                            tf.float32
+                        )
+                        conv = tf.nn.conv2d_transpose(
+                            x, self.layers_kernels[layer],
+                            output_shape=(1,output_shape[0],output_shape[1], 1), 
+                            strides=self.layers_strides[layer], 
+                            padding='VALID'
+                        )
+                        with tf.Session() as session:
+                            result = session.run(conv)
+                        upscaled_activation = np.reshape(result, output_shape)
+                    final_visualisation_mask = upscaled_activation
+                    return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
+                self.compute_visualisation_mask = compute_visualisation_mask
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
         clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
@@ -255,6 +300,66 @@ class MakeMovie(BaseCommand):
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
+    def init_salient(self, model):
+        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        from keras.layers import Input, Dense, merge
+        from keras.models import Model
+        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+        from keras.layers import Activation, Dropout, Flatten, Dense
+
+
+        img_in = Input(shape=(120, 160, 3), name='img_in')
+        x = img_in
+        x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name='conv1')(x)
+        x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name='conv2')(x)
+        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu', name='conv3')(x)
+        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name='conv4')(x)
+        conv_5 = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name='conv5')(x)
+        self.convolution_part = Model(inputs=[img_in], outputs=[conv_5])
+
+        for layer_num in ('1', '2', '3', '4', '5'):
+            self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
+
+        from keras import backend as K
+        import tensorflow as tf
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+        
+        self.inp = self.convolution_part.input                                           # input placeholder
+        self.outputs = [layer.output for layer in self.convolution_part.layers[1:]]          # all layer outputs
+        self.functor = K.function([self.inp], self.outputs)
+
+        kernel_3x3 = tf.constant(np.array([
+        [[[1]], [[1]], [[1]]], 
+        [[[1]], [[1]], [[1]]], 
+        [[[1]], [[1]], [[1]]]
+        ]), tf.float32)
+
+        kernel_5x5 = tf.constant(np.array([
+                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
+                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
+                [[[1]], [[1]], [[1]], [[1]], [[1]]],
+                [[[1]], [[1]], [[1]], [[1]], [[1]]],
+                [[[1]], [[1]], [[1]], [[1]], [[1]]]
+        ]), tf.float32)
+
+        self.layers_kernels = {5: kernel_3x3, 4: kernel_3x3, 3: kernel_5x5, 2: kernel_5x5, 1: kernel_5x5}
+
+        self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
+
+        
+
+    def draw_salient(self, img):
+        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        import cv2
+        alpha = 0.004
+        beta = 1.0 - alpha
+
+        salient_mask = self.compute_visualisation_mask(img)
+        salient_mask_stacked = np.dstack((salient_mask,salient_mask))
+        salient_mask_stacked = np.dstack((salient_mask_stacked,salient_mask))
+        blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
+        return blend
+        
 
     def make_frame(self, t):
         '''
@@ -272,6 +377,9 @@ class MakeMovie(BaseCommand):
         image = rec['cam/image_array']
 
         self.draw_model_prediction(rec, image)
+
+        if self.convolution_part:
+            image = self.draw_salient(image)
         
         return image # returns a 8-bit RGB array
 

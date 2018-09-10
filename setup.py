@@ -51,6 +51,10 @@ setup(name='donkeycar',
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
+                        ],
+                    'pc': [
+                        'matplotlib',
+                        'scikit-learn',
                         ]
                     },
     package_data={
