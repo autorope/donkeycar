@@ -196,12 +196,19 @@ class MakeMovie(BaseCommand):
         '''
         import moviepy.editor as mpy
 
-
         args, parser = self.parse_args(args)
 
         if args.tub is None:
             parser.print_help()
-            return            
+            return
+
+        if args.salient:
+            #imported like this, we make TF conditional on use of --salient
+            #and we keep the context maintained throughout our callbacks to 
+            #compute the salient mask
+            from keras import backend as K
+            import tensorflow as tf
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  
 
         conf = os.path.expanduser(args.config)
 
@@ -229,6 +236,36 @@ class MakeMovie(BaseCommand):
             self.keras_part.compile()
             if args.salient:
                 self.init_salient(self.keras_part.model)
+
+                #This method nested in this way to take the conditional import of TF
+                #in a manner that extends to this callback. Done this way, we avoid
+                #importing in the below method, which triggers a new cuda device allocation
+                #each call.
+                def compute_visualisation_mask(img):
+                    #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+                    
+                    activations = self.functor([np.array([img])])
+                    activations = [np.reshape(img, (1, img.shape[0], img.shape[1], img.shape[2]))] + activations
+                    upscaled_activation = np.ones((3, 6))
+                    for layer in [5, 4, 3, 2, 1]:
+                        averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
+                        output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
+                        x = tf.constant(
+                            np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
+                            tf.float32
+                        )
+                        conv = tf.nn.conv2d_transpose(
+                            x, self.layers_kernels[layer],
+                            output_shape=(1,output_shape[0],output_shape[1], 1), 
+                            strides=self.layers_strides[layer], 
+                            padding='VALID'
+                        )
+                        with tf.Session() as session:
+                            result = session.run(conv)
+                        upscaled_activation = np.reshape(result, output_shape)
+                    final_visualisation_mask = upscaled_activation
+                    return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
+                self.compute_visualisation_mask = compute_visualisation_mask
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
         clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
@@ -309,35 +346,7 @@ class MakeMovie(BaseCommand):
 
         self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
 
-
-    def compute_visualisation_mask(self, img):
-        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
-
-        import tensorflow as tf
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
         
-        activations = self.functor([np.array([img])])
-        activations = [np.reshape(img, (1, img.shape[0], img.shape[1], img.shape[2]))] + activations
-        upscaled_activation = np.ones((3, 6))
-        for layer in [5, 4, 3, 2, 1]:
-            averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
-            output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
-            x = tf.constant(
-                np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
-                tf.float32
-            )
-            conv = tf.nn.conv2d_transpose(
-                x, self.layers_kernels[layer],
-                output_shape=(1,output_shape[0],output_shape[1], 1), 
-                strides=self.layers_strides[layer], 
-                padding='VALID'
-            )
-            with tf.Session() as session:
-                result = session.run(conv)
-            upscaled_activation = np.reshape(result, output_shape)
-        final_visualisation_mask = upscaled_activation
-        return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
-
 
     def draw_salient(self, img):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
