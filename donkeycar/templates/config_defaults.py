@@ -123,6 +123,11 @@ REC_COUNT_ALERT = 1000  #how many records before blinking alert
 REC_COUNT_ALERT_CYC = 15 #how many cycles of 1/20 of a second to blink per REC_COUNT_ALERT records
 REC_COUNT_ALERT_BLINK_RATE = 0.4 #how fast to blink the led in seconds on/off
 
+#LED status color, 0-100, for model reloaded alert
+MODEL_RELOADED_LED_R = 100
+MODEL_RELOADED_LED_G = 0
+MODEL_RELOADED_LED_B = 0
+
 
 #BEHAVIORS
 TRAIN_BEHAVIORS = False

@@ -158,7 +158,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
         if reloaded_model:
-            led.set_rgb(100, 0, 0)
+            led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
             return 0.1
         else:
             led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
