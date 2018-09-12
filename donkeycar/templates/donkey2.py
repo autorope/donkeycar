@@ -153,7 +153,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    
     def led_cond(mode, recording, recording_alert, behavior_state, reloaded_model):
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
@@ -164,7 +163,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
 
         if recording_alert:
-            led.set_rgb(cfg.REC_COUNT_LED_R, cfg.REC_COUNT_LED_G, cfg.REC_COUNT_LED_B)
+            led.set_rgb(*recording_alert)
             return cfg.REC_COUNT_ALERT_BLINK_RATE
         else:
             led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
@@ -196,6 +195,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(led, inputs=['led/blink_rate'])
         
 
+    def get_record_alert_color(num_records):
+        col = (0, 0, 0)
+        for count, color in cfg.RECORD_ALERT_COLOR_ARR:
+            if num_records >= count:
+                col = color
+        return col    
+
     def record_tracker(num_records):
         
         if num_records is not None and num_records % 10 == 0:
@@ -209,7 +215,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         if record_tracker.dur_alert > 0:
             record_tracker.dur_alert -= 1
 
-        return record_tracker.dur_alert != 0
+        if record_tracker.dur_alert != 0:
+            return get_record_alert_color(num_records)
+
+        return 0   
 
     record_tracker.last_num_rec_print = 0
     record_tracker.dur_alert = 0
