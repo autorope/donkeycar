@@ -154,7 +154,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
     
-    def led_cond(mode, recording, num_records, behavior_state, reloaded_model):
+    def led_cond(mode, recording, recording_alert, behavior_state, reloaded_model):
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
         if reloaded_model:
@@ -163,11 +163,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
 
-        if num_records is not None and num_records % 10 == 0:
-            if led_cond.last_num_rec_print != num_records:
-                print("recorded", num_records, "records")
-                led_cond.last_num_rec_print = num_records
-
+        if recording_alert:
+            led.set_rgb(cfg.REC_COUNT_LED_R, cfg.REC_COUNT_LED_G, cfg.REC_COUNT_LED_B)
+            return cfg.REC_COUNT_ALERT_BLINK_RATE
+        else:
+            led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+    
         if behavior_state is not None and model_type == 'behavior':
             r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
             led.set_rgb(r, g, b)
@@ -187,13 +188,33 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         from donkeycar.parts.led_status import RGB_LED
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
-        V.add(led, inputs=['led/blink_rate'])
-
-        led_cond.last_num_rec_print = 0
-
+        
         led_cond_part = Lambda(led_cond)
-        V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state', 'reloaded/model'],
+        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'reloaded/model'],
               outputs=['led/blink_rate'])
+
+        V.add(led, inputs=['led/blink_rate'])
+        
+
+    def record_tracker(num_records):
+        
+        if num_records is not None and num_records % 10 == 0:
+            if record_tracker.last_num_rec_print != num_records:
+                print("recorded", num_records, "records")
+                record_tracker.last_num_rec_print = num_records
+                
+        if num_records is not None and num_records % cfg.REC_COUNT_ALERT == 0:
+            record_tracker.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
+        
+        if record_tracker.dur_alert > 0:
+            record_tracker.dur_alert -= 1
+
+        return record_tracker.dur_alert != 0
+
+    record_tracker.last_num_rec_print = 0
+    record_tracker.dur_alert = 0
+    rec_tracker_part = Lambda(record_tracker)
+    V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
 
     #IMU
     if cfg.HAVE_IMU:
