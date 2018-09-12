@@ -181,18 +181,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             return 0.5
         elif mode == 'local':
             return 0.1
-        return 0 
-
-    led_cond.last_num_rec_print = 0
-
-    led_cond_part = Lambda(led_cond)
-    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state', 'reloaded/model'], outputs=['led/blink_rate'])
+        return 0
 
     if cfg.HAVE_RGB_LED:
         from donkeycar.parts.led_status import RGB_LED
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
         V.add(led, inputs=['led/blink_rate'])
+
+        led_cond.last_num_rec_print = 0
+
+        led_cond_part = Lambda(led_cond)
+        V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state', 'reloaded/model'],
+              outputs=['led/blink_rate'])
 
     #IMU
     if cfg.HAVE_IMU:
