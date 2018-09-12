@@ -203,15 +203,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         return col    
 
     def record_tracker(num_records):
+
+        if num_records is None:
+            return 0
         
-        if num_records is not None and num_records % 10 == 0:
-            if record_tracker.last_num_rec_print != num_records:
+        if record_tracker.last_num_rec_print != num_records or record_tracker.force_alert:
+            record_tracker.last_num_rec_print = num_records
+
+            if num_records % 10 == 0:
                 print("recorded", num_records, "records")
-                record_tracker.last_num_rec_print = num_records
+                    
+            if num_records % cfg.REC_COUNT_ALERT == 0 or record_tracker.force_alert:
+                record_tracker.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
+                record_tracker.force_alert = 0
                 
-        if num_records is not None and num_records % cfg.REC_COUNT_ALERT == 0:
-            record_tracker.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
-        
         if record_tracker.dur_alert > 0:
             record_tracker.dur_alert -= 1
 
@@ -222,8 +227,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     record_tracker.last_num_rec_print = 0
     record_tracker.dur_alert = 0
+    record_tracker.force_alert = 0
     rec_tracker_part = Lambda(record_tracker)
     V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
+
+    if cfg.AUTO_RECORD_ON_THROTTLE and isinstance(ctr, JoystickController):
+        #then we are not using the circle button. hijack that to force a record count indication
+        def show_record_acount_status():
+            record_tracker.last_num_rec_print = 0
+            record_tracker.force_alert = 1
+        ctr.set_button_down_trigger('circle', show_record_acount_status)
 
     #IMU
     if cfg.HAVE_IMU:

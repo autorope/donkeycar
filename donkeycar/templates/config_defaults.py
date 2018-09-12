@@ -129,6 +129,7 @@ RECORD_ALERT_COLOR_ARR = [ (0, (1, 1, 1)),
             (15000, (0, 5, 5)),
             (20000, (0, 0, 5)), ]
 
+
 #LED status color, 0-100, for model reloaded alert
 MODEL_RELOADED_LED_R = 100
 MODEL_RELOADED_LED_G = 0
