@@ -6,10 +6,13 @@ Created on Sun Jun 25 10:44:24 2017
 @author: wroscoe
 """
 
-import time
+from builtins import bool
 from threading import Thread
-from .memory import Memory
+import time
+
 from .log import get_logger
+from .memory import Memory
+
 
 logger = get_logger(__name__)
 
@@ -39,6 +42,9 @@ class Vehicle:
             run_condition: boolean
                 If a part should be run at all.
         """
+        assert type(inputs) is list, "inputs is not a list: %r" % inputs
+        assert type(outputs) is list, "outputs is not a list: %r" % outputs
+        assert type(threaded) is bool, "threaded is not a boolean: %r" % threaded
 
         p = part
         logger.info('Adding part {}.'.format(p.__class__.__name__))

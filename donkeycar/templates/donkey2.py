@@ -13,20 +13,19 @@ Options:
     --chaos          Add periodic random steering when manually driving
 """
 import os
-from docopt import docopt
 
+from docopt import docopt
 import donkeycar as dk
+from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
+from donkeycar.parts.camera import PiCamera
+from donkeycar.parts.clock import Timestamp
+from donkeycar.parts.controller import LocalWebController, JoystickController
+from donkeycar.parts.datastore import TubGroup, TubWriter
+from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.transform import Lambda
+
 
 #import parts
-from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.transform import Lambda
-from donkeycar.parts.keras import KerasCategorical
-from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubGroup, TubWriter
-from donkeycar.parts.controller import LocalWebController, JoystickController
-from donkeycar.parts.clock import Timestamp
-
-
 def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     """
     Construct a working robotic vehicle from many parts.
@@ -41,7 +40,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     V = dk.vehicle.Vehicle()
 
     clock = Timestamp()
-    V.add(clock, outputs='timestamp')
+    V.add(clock, outputs=['timestamp'])
 
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
