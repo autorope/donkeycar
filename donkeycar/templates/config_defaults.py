@@ -119,7 +119,7 @@ LED_B = 1
 REC_COUNT_LED_R = 5
 REC_COUNT_LED_G = 5
 REC_COUNT_LED_B = 5
-REC_COUNT_ALERT = 100  #how many records before blinking alert
+REC_COUNT_ALERT = 1000  #how many records before blinking alert
 REC_COUNT_ALERT_CYC = 15 #how many cycles of 1/20 of a second to blink per REC_COUNT_ALERT records
 REC_COUNT_ALERT_BLINK_RATE = 0.4 #how fast to blink the led in seconds on/off
 
