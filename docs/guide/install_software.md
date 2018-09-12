@@ -135,12 +135,11 @@ If you are using the prebuilt image specified above, then your Pi is ready to go
 
 ### Update Donkeycar Python code and install
 
-The donkeycar Python code on the memory card image is likely older than the that on the Github repo, so update things once you have the Pi running.
+The donkeycar Python code on the memory card image is likely older than the that on the Github repo, so update things once you have the Pi running. This will pull the latest from Tawn's fork:
 
 ```bash
-cd ~/donkeycar
-git pull
-pip install -e .
+git clone https://github.com/tawnkramer/donkey donkeycar_tkramer
+pip install -e donkeycar_tkramer
 ```
 
 ----
