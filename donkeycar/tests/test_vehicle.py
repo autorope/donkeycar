@@ -2,13 +2,16 @@ import pytest
 import donkeycar as dk
 from donkeycar.parts.transform import Lambda
 
+
 @pytest.fixture()
 def vehicle():
     v = dk.Vehicle()
+
     def f(): return 1
     l = Lambda(f)
     v.add(l, outputs=['test_out'])
     return v
+
 
 def test_create_vehicle():
     v = dk.Vehicle()
@@ -17,6 +20,7 @@ def test_create_vehicle():
 
 def test_add_part():
     v = dk.Vehicle()
+
     def f():
         return 1
     l = Lambda(f)

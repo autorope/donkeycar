@@ -25,8 +25,8 @@ def test_next_tub_number(tubs):
 def test_new_tub_writer(tubs):
     root_dir = tubs[0]
     th = TubHandler(root_dir)
-    inputs=['cam/image_array', 'angle', 'throttle']
-    types=['image_array', 'float', 'float']
+    inputs = ['cam/image_array', 'angle', 'throttle']
+    types = ['image_array', 'float', 'float']
     tw = th.new_tub_writer(inputs, types)
     assert len(th.get_tub_list()) == 6
     print(tw.path)

@@ -100,27 +100,26 @@ def drive(cfg, model_path=None):
     V.add(l, inputs=['user/throttle'], outputs=['square/throttle'])
 
     # add tub to save data
-    inputs=['cam/image_array',
-            'user/angle', 'user/throttle',
-            'pilot/angle', 'pilot/throttle',
-            'square/angle', 'square/throttle',
-            'user/mode',
-            'timestamp']
-    types=['image_array',
-           'float', 'float',
-           'float', 'float',
-           'float', 'float',
-           'str',
-           'str']
+    inputs = ['cam/image_array',
+              'user/angle', 'user/throttle',
+              'pilot/angle', 'pilot/throttle',
+              'square/angle', 'square/throttle',
+              'user/mode',
+              'timestamp']
+    types = ['image_array',
+             'float', 'float',
+             'float', 'float',
+             'float', 'float',
+             'str',
+             'str']
 
-    #multiple tubs
-    #th = TubHandler(path=cfg.DATA_PATH)
-    #tub = th.new_tub_writer(inputs=inputs, types=types)
+    # multiple tubs
+    # th = TubHandler(path=cfg.DATA_PATH)
+    # tub = th.new_tub_writer(inputs=inputs, types=types)
 
     # single tub
     tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
-
 
     # run the vehicle for 20 seconds
     V.start(rate_hz=50, max_loop_count=10000)
@@ -130,7 +129,6 @@ def train(cfg, tub_names, model_name):
 
     X_keys = ['cam/image_array']
     y_keys = ['user/angle', 'user/throttle']
-
 
     def rt(record):
         record['user/angle'] = donkeycar.utils.utils.linear_bin(record['user/angle'])
@@ -148,7 +146,8 @@ def train(cfg, tub_names, model_name):
     if not tub_names:
         tub_names = os.path.join(cfg.DATA_PATH, '*')
     tubgroup = TubGroup(tub_names)
-    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys, record_transform=rt,
+    train_gen, val_gen = tubgroup.get_train_val_gen(X_keys, y_keys,
+                                                    record_transform=rt,
                                                     batch_size=cfg.BATCH_SIZE,
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
 
@@ -166,7 +165,6 @@ def train(cfg, tub_names, model_name):
              saved_model_path=model_path,
              steps=steps_per_epoch,
              train_split=cfg.TRAIN_TEST_SPLIT)
-
 
 
 if __name__ == '__main__':

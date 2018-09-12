@@ -57,4 +57,3 @@ logger.info('Logging configured and loaded.')
 if __name__ == '__main__':
     print('run')
     logger.error('test')
-

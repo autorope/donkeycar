@@ -12,4 +12,3 @@ def test_linear():
 def test_linear_with_model():
     kc = KerasLinear(default_linear())
     assert kc.model is not None
-

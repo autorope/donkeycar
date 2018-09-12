@@ -4,7 +4,9 @@ tub.py
 Manage tubs
 """
 
-import os, sys, time
+import os
+import sys
+import time
 import json
 import tornado.web
 from stat import S_ISREG, ST_MTIME, ST_MODE, ST_CTIME, ST_ATIME
@@ -24,8 +26,6 @@ class WebServer(tornado.web.Application):
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         static_file_path = os.path.join(this_dir, 'tub_web', 'static')
-
-
 
         handlers = [
             (r"/", tornado.web.RedirectHandler, dict(url="/tubs")),
@@ -79,7 +79,7 @@ class TubApi(tornado.web.RequestHandler):
         return os.path.join(tub_path, "record_" + frame_id + ".json")
 
     def clips_of_tub(self, tub_path):
-        seqs = [ int(f.split("_")[0]) for f in os.listdir(tub_path) if f.endswith('.jpg') ]
+        seqs = [int(f.split("_")[0]) for f in os.listdir(tub_path) if f.endswith('.jpg')]
         seqs.sort()
 
         entries = ((os.stat(self.image_path(tub_path, seq))[ST_ATIME], seq) for seq in seqs)
@@ -87,7 +87,7 @@ class TubApi(tornado.web.RequestHandler):
         (last_ts, seq) = next(entries)
         clips = [[seq]]
         for next_ts, next_seq in entries:
-            if next_ts - last_ts > 100:  #greater than 1s apart
+            if next_ts - last_ts > 100:  # greater than 1s apart
                 clips.append([next_seq])
             else:
                 clips[-1].append(next_seq)

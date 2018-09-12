@@ -70,18 +70,18 @@ class TestLinearUnbin(unittest.TestCase):
         assert res == -1.0
 
     def test_empty_list(self):
-        res = linear_unbin( [0] * 15 )
+        res = linear_unbin([0] * 15)
         assert res == -1.0
 
     def test_illegal_list(self):
         with pytest.raises(ValueError):
-            linear_unbin( [0] * 10 )
+            linear_unbin([0] * 10)
 
 
 class TestBinY(unittest.TestCase):
 
     def test_normal_list(self):
-        l = [ -1, 0, 1 ]
+        l = [-1, 0, 1]
         res = bin_Y(l)
 
         # negative
@@ -97,10 +97,11 @@ class TestBinY(unittest.TestCase):
         assert res[2][14] == 1
         assert sum(res[2][:14]) == 0
 
+
 class TestUnbinY(unittest.TestCase):
 
     def test_normal_list(self):
-        l = [ create_lbin(0), create_lbin(7), create_lbin(14) ]
+        l = [create_lbin(0), create_lbin(7), create_lbin(14)]
         res = unbin_Y(l)
 
         # negative
@@ -145,17 +146,18 @@ class TestMapping(unittest.TestCase):
 class TestMergeDicts(unittest.TestCase):
 
     def test_merge_two_dicts(self):
-        d1 = { 'a' : 1, 'b' : 2, 'c' : 3 }
-        d2 = { 10 : 'hi', 'bob' : 20 }
+        d1 = {'a': 1, 'b': 2, 'c': 3}
+        d2 = {10: 'hi', 'bob': 20}
         res = merge_two_dicts(d1, d2)
 
-        assert res == { 'a' : 1, 'b' : 2, 'c' : 3, 10 : 'hi', 'bob' : 20 }
+        assert res == {'a': 1, 'b': 2, 'c': 3, 10: 'hi', 'bob': 20}
+
 
 class TestParamGen(unittest.TestCase):
 
     def test_param_gen(self):
-        g = param_gen({ 'a' : [ 'opt1', 'opt2' ], 'b' : [ 'opt3', 'opt4' ] })
-        l = [ x for x in g ]
+        g = param_gen({'a': ['opt1', 'opt2'], 'b': ['opt3', 'opt4']})
+        l = [x for x in g]
         expected = [
                 {'a': 'opt1', 'b': 'opt3'},
                 {'a': 'opt1', 'b': 'opt4'},
