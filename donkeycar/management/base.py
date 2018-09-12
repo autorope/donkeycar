@@ -4,11 +4,15 @@ import os
 import socket
 import shutil
 import argparse
-
+import glob
+import pickle
+from threading import Thread
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
+from donkeycar.parts.camera import PiCamera
+from donkeycar.parts.web_controller.web import LocalWebController
 from .tub import TubManager
-
+from donkeycar.util.ui import query
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -22,7 +26,6 @@ def make_dir(path):
 
 
 def load_config(config_path):
-
     """
     load a config from the given path
     """
@@ -138,23 +141,133 @@ class FindCar(BaseCommand):
 
 
 class CalibrateCar(BaseCommand):
-
+    """
+    Helper function for calibrating the PWM sent to the steering
+    and throttle motors [--channel {0, 1}]
+    Also calibrated the camera by capturing images of a black and
+    white chessboard [--camera <camera_name>] (Use the camera name
+    defined in config.py to start with)
+    """
     def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
-        parser.add_argument('--channel', help='The channel youd like to calibrate [0-15]')
+        parser = argparse.ArgumentParser(prog='calibrate')
+        parser.add_argument('--channel', help='The PWM channel you\'d like to calibrate [0-15]')
+        parser.add_argument('--camera', help='The name of the camera you\'d like to calibrate')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
     def run(self, args):
-        from donkeycar.parts.actuator import PCA9685
-
         args = self.parse_args(args)
-        channel = int(args.channel)
-        c = PCA9685(channel)
+        if (args.channel):
+            from donkeycar.parts.actuator import PCA9685
+            args = self.parse_args(args)
+            channel = int(args.channel)
+            c = PCA9685(channel)
 
-        for i in range(10):
-            pmw = int(input('Enter a PWM setting to test(0-1500)'))
-            c.run(pmw)
+            for i in range(10):
+                pmw = int(input('Enter a PWM setting to test(0-1500)'))
+                c.run(pmw)
+
+        elif (args.camera):
+            if not os.path.exists("calibration"):
+                os.makedirs("calibration")
+            camera_path = os.path.join("calibration", args.camera)
+            if not os.path.exists(camera_path):
+                os.makedirs(camera_path)
+            # Get images if they have already been taken
+            images = glob.glob(camera_path+'/*.jpg')
+            if (len(images) < 10) or not query("Use previous ?"):
+                self.capture_images(camera_path)
+            self.calibrate_camera(camera_path)
+            print("Camera {} calibrated.".format(args.camera))
+
+    def capture_images(self, camera_path):
+        import cv2
+        import matplotlib.image as mpimg
+        print("Images will be saved here : ", camera_path)
+
+        # Creation of a Vehicle with a Camera and a Web server for
+        # visualising the camera feed.
+        V = dk.vehicle.Vehicle()
+        cam = PiCamera(resolution=(976, 1296))
+        print("Camera resolution {}".format(cam.camera.resolution))
+        V.add(cam, outputs=['cam/image_array'], threaded=True)
+        ctr = LocalWebController()
+        V.add(ctr, inputs=['cam/image_array'],outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'], threaded=True)
+        t = Thread(target=V.start, args=())
+        t.start()
+        sleep(0.5)
+
+        number_captures = 15
+        for i in range(number_captures):
+            input("Press return to save image")
+            frame = cam.frame
+            mpimg.imsave( os.path.join(camera_path, "calibration" + str(i) + ".jpg"), frame)
+
+        V.stop()
+        print("Images captured.")
+        self.calibrate_camera(camera_path)
+
+    def calibrate_camera(self, path, nx=9, ny=6):
+        """
+        Computes the camera matrix and distance coefficients for a particular camera using
+        images featuring a nx by ny chess board somewhere on the image (entirely visible)
+        """
+        import cv2
+        import numpy as np
+        import matplotlib.image as mpimg
+
+        if path is None:
+            print("ERROR: Calibration was unsuccessful. A path must be specified. Check calibration.py")
+            sys.exit()
+
+        print("Camera calibration ...")
+        # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+        objp = np.zeros((nx*ny,3), np.float32)
+        objp[:,:2] = np.mgrid[0:nx, 0:ny].T.reshape(-1,2)
+
+        # Arrays to store object points and image points from all the images.
+        objpoints = [] # 3d points in real world space
+        imgpoints = [] # 2d points in image plane.
+        imgs = [] # store images to undistort them afterwards
+
+        # Make a list of calibration images
+        images = glob.glob(path+'/*.jpg')
+        if len(images) < 10:
+            print("ERROR: Calibration was unsuccessful. Not enough images. Check calibration.py")
+            print("Images path : ", images)
+            sys.exit()
+
+        # Step through the list and search for chessboard corners
+        for idx, fname in enumerate(images):
+            img = mpimg.imread(fname)
+            gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+            imgs.append(img)
+            # Find the chessboard corners
+            ret, corners = cv2.findChessboardCorners(gray, (nx,ny), None)
+            # If found, add object points, image points
+            if ret == True:
+                objpoints.append(objp)
+                imgpoints.append(corners)
+            else:
+                print("Problem with images nb: " + str(idx))
+
+        # Do camera calibration given object points and image points
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img.shape[::-1][1:3], None, None)
+        # Save the camera calibration result for later use (we won't worry about rvecs / tvecs)
+        dist_pickle = {}
+        dist_pickle["mtx"] = mtx
+        dist_pickle["dist"] = dist
+        pickle.dump( dist_pickle, open(os.path.join(path,"calibration_pickle.p"), "wb" ) )
+
+        # Undistortion
+        save_path = os.path.join(path, "undistorted")
+        path = make_dir(save_path)
+        for idx in range(len(images)):
+            dst = cv2.undistort(imgs[idx], mtx, dist, None, mtx)
+            img_path = os.path.join(save_path, str(idx) + "-undistorted.jpg")
+            print(img_path)
+            cv2.imwrite(img_path,dst)
+        print("Undistorted images saved here: " + path)
 
 
 class MakeMovie(BaseCommand):

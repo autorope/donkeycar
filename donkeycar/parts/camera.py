@@ -3,14 +3,24 @@ import time
 import numpy as np
 from PIL import Image
 import glob
+import sys
+import pickle
 
 class BaseCamera:
+    def __init__(self):
+        """
+        initialize the frame and the variable used to indicate
+        if the thread should be stopped
+        """
+        self.frame = None
+        self.on = True
 
     def run_threaded(self):
         return self.frame
 
 class PiCamera(BaseCamera):
     def __init__(self, resolution=(120, 160), framerate=20):
+        super(PiCamera, self).__init__()
         from picamera.array import PiRGBArray
         from picamera import PiCamera
         resolution = (resolution[1], resolution[0])
@@ -18,18 +28,13 @@ class PiCamera(BaseCamera):
         self.camera = PiCamera() #PiCamera gets resolution (height, width)
         self.camera.resolution = resolution
         self.camera.framerate = framerate
+        print("Camera resolution : ({}, {})".format(resolution[0], resolution[1]))
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
             format="rgb", use_video_port=True)
 
-        # initialize the frame and the variable used to indicate
-        # if the thread should be stopped
-        self.frame = None
-        self.on = True
-
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
-
 
     def run(self):
         f = next(self.stream)
@@ -57,6 +62,69 @@ class PiCamera(BaseCamera):
         self.stream.close()
         self.rawCapture.close()
         self.camera.close()
+
+
+class CalibratedPiCamera(PiCamera):
+    def __init__(self, name, resolution=(976,1296), framerate=20):
+        """
+        name : Name used to identify the camera uniquely to allow
+            keeping calibration data for multiple cameras
+        """
+        import cv2
+        super(CalibratedPiCamera, self).__init__(resolution, framerate)
+        self.name = name
+        self.undistort = self.get_undistort(self.name)
+        self.output_resolution = (160, 120)
+
+    def get_undistort(self, name):
+        mtx, dist = self.load(name)
+        #Create undistort function with the right transform variables
+        def undistort(img):
+            undistorted_img = cv2.undistort(img, mtx, dist, None, mtx)
+            return undistorted_img
+        #Return the preloaded undistort function.
+        return undistort
+
+    def load(self, camera):
+        """
+        Load the previously computed calibration coefficients
+        By default the path to the calibration images and saved data is
+        ./calibration/<camera_name>/
+
+        Args:
+            camera: unique name identifying a camera
+
+        Returns:
+            Camera matrix: 3x3 array
+            Distance coefficients: Array of 5 elements
+        """
+        images_path = os.path.join("calibration", camera)
+        calibration_path = os.path.join(images_path, "calibration_pickle.p")
+        if os.path.isfile(calibration_path):
+            dist_pickle = pickle.load(open(calibration_path, "rb"))
+            print("Camera calibration data loaded.")
+        else:
+            print("ERROR: Camera not calibrated.")
+            sys.exit()
+        return dist_pickle["mtx"], dist_pickle["dist"]
+
+    def run(self):
+        frame = super(CalibratedPiCamera, self).run()
+        if frame is not None:
+            frame = cv2.resize(frame, self.output_resolution)
+            frame = self.undistort(frame)
+        return frame
+
+    def run_threaded(self):
+        """
+        Undistort the image only when required, resizes it and returns it
+        """
+        if self.frame is not None:
+            undistorted = self.undistort(self.frame)
+            return cv2.resize(undistorted, self.output_resolution)
+        else:
+            return None
+
 
 class Webcam(BaseCamera):
     def __init__(self, resolution = (160, 120), framerate = 20):
