@@ -12,6 +12,7 @@ You will need a specific build per platform:
 
 Extract this compressed file. It will create a folder containing an executable. Double click that executable to launch the simulator.
 
+[Note]: The official version to linux is the ubuntu release, but this version work on most debian & arch linux distributions, it's a binary.
 
 #### Extra Mac Steps
 
