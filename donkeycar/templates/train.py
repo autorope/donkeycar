@@ -422,6 +422,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                             filename = record['image_path']
                             
                             img_arr = load_scaled_image_arr(filename, cfg)
+
+                            if img_arr is None:
+                                break
                             
                             if aug:
                                 img_arr = augment_image(img_arr)
@@ -437,6 +440,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         inputs_img.append(record['img_data'])
                         angles.append(record['angle'])
                         throttles.append(record['throttle'])
+
+                    if img_arr is None:
+                        continue
 
                     img_arr = np.array(inputs_img).reshape(batch_size,\
                         cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
@@ -664,9 +670,15 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                         #get image data if we don't already have it
                         if record['img_data'] is None:
                             img_arr = load_scaled_image_arr(record['image_path'], cfg)
+                            if img_arr is None:
+                                break
                             record['img_data'] = img_arr                            
                             
                         inputs_img.append(record['img_data'])
+                    
+                    if img_arr is None:
+                        continue
+
                     labels.append(seq[-1]['target_output'])
 
                     b_inputs_img.append(inputs_img)

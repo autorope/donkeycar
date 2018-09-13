@@ -109,12 +109,16 @@ def load_scaled_image_arr(filename, cfg):
     load an image from the filename, and use the cfg to resize if needed
     '''
     import donkeycar as dk
-    img = Image.open(filename)
-    if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
-        img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
-    img_arr = np.array(img)
-    if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-        img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+    try:
+        img = Image.open(filename)
+        if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
+            img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
+        img_arr = np.array(img)
+        if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+            img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+    except:
+        print('failed to load image:', filename)
+        img_arr = None
     return img_arr
 
 
