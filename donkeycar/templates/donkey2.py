@@ -153,21 +153,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    
-    def led_cond(mode, recording, num_records, behavior_state, reloaded_model):
+    def led_cond(mode, recording, recording_alert, behavior_state, reloaded_model):
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
         if reloaded_model:
-            led.set_rgb(100, 0, 0)
+            led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
             return 0.1
         else:
             led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
 
-        if num_records is not None and num_records % 10 == 0:
-            if led_cond.last_num_rec_print != num_records:
-                print("recorded", num_records, "records")
-                led_cond.last_num_rec_print = num_records
-
+        if recording_alert:
+            led.set_rgb(*recording_alert)
+            return cfg.REC_COUNT_ALERT_BLINK_RATE
+        else:
+            led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+    
         if behavior_state is not None and model_type == 'behavior':
             r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
             led.set_rgb(r, g, b)
@@ -181,18 +181,62 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             return 0.5
         elif mode == 'local':
             return 0.1
-        return 0 
-
-    led_cond.last_num_rec_print = 0
-
-    led_cond_part = Lambda(led_cond)
-    V.add(led_cond_part, inputs=['user/mode', 'recording', "tub/num_records", 'behavior/state', 'reloaded/model'], outputs=['led/blink_rate'])
+        return 0
 
     if cfg.HAVE_RGB_LED:
         from donkeycar.parts.led_status import RGB_LED
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+        
+        led_cond_part = Lambda(led_cond)
+        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'reloaded/model'],
+              outputs=['led/blink_rate'])
+
         V.add(led, inputs=['led/blink_rate'])
+        
+
+    def get_record_alert_color(num_records):
+        col = (0, 0, 0)
+        for count, color in cfg.RECORD_ALERT_COLOR_ARR:
+            if num_records >= count:
+                col = color
+        return col    
+
+    def record_tracker(num_records):
+
+        if num_records is None:
+            return 0
+        
+        if record_tracker.last_num_rec_print != num_records or record_tracker.force_alert:
+            record_tracker.last_num_rec_print = num_records
+
+            if num_records % 10 == 0:
+                print("recorded", num_records, "records")
+                    
+            if num_records % cfg.REC_COUNT_ALERT == 0 or record_tracker.force_alert:
+                record_tracker.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
+                record_tracker.force_alert = 0
+                
+        if record_tracker.dur_alert > 0:
+            record_tracker.dur_alert -= 1
+
+        if record_tracker.dur_alert != 0:
+            return get_record_alert_color(num_records)
+
+        return 0   
+
+    record_tracker.last_num_rec_print = 0
+    record_tracker.dur_alert = 0
+    record_tracker.force_alert = 0
+    rec_tracker_part = Lambda(record_tracker)
+    V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
+
+    if cfg.AUTO_RECORD_ON_THROTTLE and isinstance(ctr, JoystickController):
+        #then we are not using the circle button. hijack that to force a record count indication
+        def show_record_acount_status():
+            record_tracker.last_num_rec_print = 0
+            record_tracker.force_alert = 1
+        ctr.set_button_down_trigger('circle', show_record_acount_status)
 
     #IMU
     if cfg.HAVE_IMU:
