@@ -429,7 +429,10 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                             if aug:
                                 img_arr = augment_image(img_arr)
 
-                            record['img_data'] = img_arr
+                            if cfg.CACHE_IMAGES:
+                                record['img_data'] = img_arr
+                        else:
+                            img_arr = record['img_data']
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
@@ -437,7 +440,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         if has_bvh:
                             inputs_bvh.append(record['behavior_arr'])
 
-                        inputs_img.append(record['img_data'])
+                        inputs_img.append(img_arr)
                         angles.append(record['angle'])
                         throttles.append(record['throttle'])
 
@@ -674,9 +677,12 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                                 break
                             if aug:
                                 img_arr = augment_image(img_arr)
-                            record['img_data'] = img_arr                            
+                            if cfg.CACHE_IMAGES:
+                                record['img_data'] = img_arr
+                        else:
+                            img_arr = record['img_data']                            
                             
-                        inputs_img.append(record['img_data'])
+                        inputs_img.append(img_arr)
                     
                     if img_arr is None:
                         continue
