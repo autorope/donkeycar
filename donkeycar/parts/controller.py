@@ -1,5 +1,5 @@
 
-
+import os
 import array
 import time
 import struct
@@ -31,6 +31,10 @@ class Joystick(object):
             print("no support for fnctl module. joystick not enabled.")
             return            
             
+        if not os.path.exists(self.dev_fn):
+            print(self.dev_fn, "is missing")
+            return
+
         '''
         call once to setup connection to device and map buttons
         '''
