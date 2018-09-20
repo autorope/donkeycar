@@ -503,7 +503,12 @@ class ShowHistogram(BaseCommand):
         else:
             tg.df.hist(bins=50)
 
-        plt.savefig(os.path.basename(model_path) + '_hist_%s.png' % record_name)
+        try:
+            filename = os.path.basename(tub_paths) + '_hist_%s.png' % record_name.replace('/', '_')
+            plt.savefig(filename)
+            print('saving image to:', filename)
+        except:
+            pass
         plt.show()
 
     def run(self, args):
