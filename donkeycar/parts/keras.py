@@ -219,27 +219,30 @@ class KerasLocalizer(KerasPilot):
     '''
     def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2, num_locations=8, input_shape=(120, 160, 3), *args, **kwargs):
         super(KerasLocalizer, self).__init__(*args, **kwargs)
-        self.model = default_loc(num_outputs = num_outputs, num_bvh_inputs = num_behavior_inputs, num_locations=num_locations, input_shape=input_shape)
+        self.model = default_loc(num_outputs = num_outputs, num_locations=num_locations, input_shape=input_shape)
         self.compile()
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
                   loss='mse')
         
-    def run(self, img_arr, state_array):        
+    def run(self, img_arr):        
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        bhv_arr = np.array(state_array).reshape(1,len(state_array))
-        angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
+        angle_binned, throttle, track_loc, lane = self.model.predict([img_arr])
         #in order to support older models with linear throttle,
         #we will test for shape of throttle to see if it's the newer
         #binned version.
         N = len(throttle[0])
+        print("track_loc", np.argmax(track_loc[0]), track_loc, track_loc.shape)
+        print("lane", np.argmax(lane[0]), lane, lane.shape)
         
         if N > 0:
             throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
         else:
             throttle = throttle[0][0]
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
+        print("angle_unbinned", angle_unbinned, "throttle", throttle)
+        
         return angle_unbinned, throttle
 
 def default_categorical(input_shape=(120, 160, 3)):
@@ -420,7 +423,7 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     return model
 
 
-def default_loc(num_outputs, num_bvh_inputs, num_locations, input_shape):
+def default_loc(num_outputs, num_locations, input_shape):
     '''
     Notes: this model depends on concatenate which failed on keras < 2.0.8
     '''
@@ -434,7 +437,6 @@ def default_loc(num_outputs, num_bvh_inputs, num_locations, input_shape):
     drop = 0.5
 
     img_in = Input(shape=input_shape, name='img_in')
-    bvh_in = Input(shape=(num_bvh_inputs,), name="behavior_in")
     
     x = img_in
     #x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
@@ -453,16 +455,9 @@ def default_loc(num_outputs, num_bvh_inputs, num_locations, input_shape):
     x = Dense(100, activation='relu')(x)
     x = Dropout(drop)(x)
     
-    y = bvh_in
-    y = Dense(num_bvh_inputs * 2, activation='relu')(y)
-    y = Dense(num_bvh_inputs * 2, activation='relu')(y)
-    y = Dense(num_bvh_inputs * 2, activation='relu')(y)
+    z = Dense(50, activation='relu')(x)
+    z = Dropout(.1)(z)
     
-    z = concatenate([x, y])
-    z = Dense(100, activation='relu')(z)
-    z = Dropout(.1)(z)
-    z = Dense(50, activation='relu')(z)
-    z = Dropout(.1)(z)
     
     #categorical output of the angle
     angle_out = Dense(15, activation='softmax', name='angle')(z)
@@ -476,7 +471,7 @@ def default_loc(num_outputs, num_bvh_inputs, num_locations, input_shape):
     #categorical output of lane
     lane_out = Dense(2, activation='softmax', name='lane')(z)
 
-    model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out, loc_out, lane_out])
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out, lane_out])
     
     return model
 
