@@ -259,7 +259,7 @@ source activate donkey
 * Install Tensorflow
 
 ```
-pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-py3-none-any.whl
+pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.10.1-py3-none-any.whl
 ```
 
 
