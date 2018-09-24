@@ -299,7 +299,7 @@ class PS3JoystickPC(Joystick):
     An interface to a physical PS3 joystick available at /dev/input/js1
     Seems to exhibit slightly different codes because driver is different?
     when running from ubuntu 16.04, it will interfere w mouse until:
-    set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
+    xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
     It also wants /dev/input/js1 device filename, not js0
     '''
     def __init__(self, *args, **kwargs):
@@ -827,5 +827,7 @@ if __name__ == "__main__":
     when running from ubuntu 16.04, it will interfere w mouse until:
     xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
     '''
+    print("You may need:")
+    print('xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0')
     p = JoyStickPub()
     p.run()
