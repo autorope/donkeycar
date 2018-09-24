@@ -11,9 +11,11 @@ The default controller to drive the car with your phone or browser. This has a w
 
 ## Physical Joystick Controller
 
-The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the OS device /dev/input/js0 by default. In theory, any joystick device that the OS mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the Bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.amazon.com/Dualshock-Wireless-Controller-Charcoal-playstation-3). Other controllers may work, but will require alternative Bluetooth installs, and tweaks to the software for correct axis and buttons.
+The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the OS device /dev/input/js0 by default. In theory, any joystick device that the OS mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the Bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.ebay.com/sch/i.html?_nkw=Sony+Playstation+Dualshock+PS3+controller+OEM). Other controllers may work, but will require alternative Bluetooth installs, and tweaks to the software for correct axis and buttons.
 
-These can be used plugged in with a USB cable - but the default code and os driver has a bug polling this configuration. It's been much more stable, and convenient, to setup Bluetooth for a wireless, responsive control.
+These can be used plugged in with a USB cable. It's been much more convenient to setup Bluetooth for a wireless control.
+
+If you have a non PS3 controller, or having troubles getting your controller buttons to work, checkout this (guide)[https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey.md#joystick-wizard] to making python code that matches your device.
 
 ### Change to config.py or run with --js
 
@@ -70,3 +72,11 @@ After charging, you will need to plug-in the controller again to the Pi, hit the
 ### New Battery for PS3 Sixaxis Joystick
 
 Sometimes these controllers can be quite old. Here's a link to a [new battery](http://a.co/5k1lbns). Be careful when taking off the cover. Remove 5 screws. There's a tab on the top half between the hand grips. You'll want to split/open it from the front and try pulling the bottom forward as you do, or you'll break the tab off as I did.
+
+### PS3 Mouse problems on Linux
+
+Sometimes when you plug-in the PS3 joystick it starts taking over your mouse. If you want to prevent that, you can run this:
+```
+xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
+```
+
