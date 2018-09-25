@@ -120,7 +120,7 @@ or via Putty.
 
 ```bash
 sudo apt-get update
-sudo apt-get install build-essential python3 python3-dev python3-virtualenv i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libopenblas-dev libhdf5-serial-dev
+sudo apt-get install build-essential python3 python3-dev python3-virtualenv i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev
 ```
 
 ### Setup virtual env
@@ -167,7 +167,7 @@ Now let's setup things on your PC. Install varies depending on platform.
 
 * Install dependencies, setup virtualenv
 ```bash
-sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
+sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev libatlas-base-dev
 virtualenv env -p python3
 source env/bin/activate
 pip install keras==2.2.2
