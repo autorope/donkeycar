@@ -20,10 +20,9 @@ print('extra_files', extra_files)
 
 
 setup(name='donkeycar',
-    version='2.2.0',
+    version='2.5.0.t',
     description='Self driving library for python.',
     url='https://github.com/tawnkramer/donkey',
-    download_url='https://github.com/wroscoe/donkey/archive/2.1.5.tar.gz',
     author='Will Roscoe',
     author_email='wroscoe@gmail.com',
     license='MIT',
@@ -51,6 +50,7 @@ setup(name='donkeycar',
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
+                        'RPi.GPIO'
                         ],
                     'pc': [
                         'matplotlib',

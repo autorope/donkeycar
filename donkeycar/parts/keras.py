@@ -606,7 +606,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Second layer
     model.add(Conv3D(
         filters=16, kernel_size=(3,3,3), strides=(1,3,3),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -615,7 +615,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Third layer
     model.add(Conv3D(
         filters=32, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -624,7 +624,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Fourth layer
     model.add(Conv3D(
         filters=64, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -633,7 +633,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Fifth layer
     model.add(Conv3D(
         filters=128, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
