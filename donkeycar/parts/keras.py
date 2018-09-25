@@ -228,13 +228,13 @@ class KerasLocalizer(KerasPilot):
         
     def run(self, img_arr):        
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned, throttle, track_loc, lane = self.model.predict([img_arr])
+        angle_binned, throttle, track_loc = self.model.predict([img_arr])
         #in order to support older models with linear throttle,
         #we will test for shape of throttle to see if it's the newer
         #binned version.
         N = len(throttle[0])
         print("track_loc", np.argmax(track_loc[0]), track_loc, track_loc.shape)
-        print("lane", np.argmax(lane[0]), lane, lane.shape)
+        #print("lane", np.argmax(lane[0]), lane, lane.shape)
         
         if N > 0:
             throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
@@ -433,6 +433,7 @@ def default_loc(num_outputs, num_locations, input_shape):
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
     from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
     from keras.layers.merge import concatenate
+    from donkeycar.contrib.coordconv.coord import CoordinateChannel2D
     
     drop = 0.5
 
@@ -440,7 +441,8 @@ def default_loc(num_outputs, num_locations, input_shape):
     
     x = img_in
     #x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
-    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = CoordinateChannel2D()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
@@ -471,7 +473,8 @@ def default_loc(num_outputs, num_locations, input_shape):
     #categorical output of lane
     lane_out = Dense(2, activation='softmax', name='lane')(z)
 
-    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out, lane_out])
+    #model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out, lane_out])
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out])
     
     return model
 

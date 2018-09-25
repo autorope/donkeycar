@@ -1,0 +1,3 @@
+[submodule "donkeycar/contrib/coordconv"]
+	path = donkeycar/contrib/coordconv
+	url = https://github.com/titu1994/keras-coordconv.git
