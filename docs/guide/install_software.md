@@ -135,6 +135,7 @@ sudo raspi-config
 * change hostname
 * change default password for pi
 
+> Note: reboot after changing these settings
 
 ### Install dependencies
 
