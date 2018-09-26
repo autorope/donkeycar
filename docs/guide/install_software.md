@@ -116,11 +116,31 @@ or via Putty.
 * Password: __raspberry__
 * Hostname:`<your pi IP address>`
 
+### Update and upgrade
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+```
+
+### Raspi-config
+
+```bash
+sudo raspi-config
+```
+
+* enable I2c
+* enable camera
+* exapand filesystem
+* change hostname
+* change default password for pi
+
+
 ### Install dependencies
 
 ```bash
 sudo apt-get update
-sudo apt-get install build-essential python3 python3-dev python3-virtualenv i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev
+sudo apt-get install build-essential python3 python3-dev python3-virtualenv python3-numpy python3-picamera python3-rpi.gpio i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev git
 ```
 
 ### Setup virtual env
