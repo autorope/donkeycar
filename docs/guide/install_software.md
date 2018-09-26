@@ -184,14 +184,19 @@ See also [more information.](https://github.com/tawnkramer/donkey/blob/master/do
 
 ### Calibrate and then Get Driving!
 
-You need to [calibrate] your pwm outputs to steering and throttle.(https://github.com/tawnkramer/donkey/blob/master/docs/guide/calibrate.md)
+You need to [calibrate](https://github.com/tawnkramer/donkey/blob/master/docs/guide/calibrate.md) your pwm outputs to steering and throttle.
 
 And then [get driving!](https://github.com/tawnkramer/donkey/blob/master/docs/guide/get_driving.md)
 
 
 ----
-Now let's setup things on your PC. Install varies depending on platform.
+## Now let's setup things on your PC. Install varies depending on platform.
 
+* Setup [Linux Host PC](#install-donkeycar-on-linux)
+* Setup [Windows Host PC](#install-donkeycar-on-windows)
+* Setup [Mac Host PC](#install-donkeycar-on-mac)
+
+----
 ## Install donkeycar on Linux
 
 * Install dependencies, setup virtualenv
