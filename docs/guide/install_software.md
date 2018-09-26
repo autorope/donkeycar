@@ -154,7 +154,7 @@ source ~/.bashrc
 
 ### Install Tensorflow
 
-You can check (this)[https://github.com/lhelontra/tensorflow-on-arm/releases/] page to find the one you like. Or install this one:
+You can check [this](https://github.com/lhelontra/tensorflow-on-arm/releases/) page to find the one you like. Or install this one:
 ```bash
 wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v1.10.0/tensorflow-1.10.0-cp35-none-linux_armv7l.whl
 pip install tensorflow-1.10.0-cp35-none-linux_armv7l.whl
@@ -171,18 +171,26 @@ pip install -e donkey[pi]
 
 ### Joystick setup
 
-If you plan to use a joystick, jump over to (here)[https://github.com/tawnkramer/donkey/blob/master/docs/parts/controllers.md#physical-joystick-controller].
+If you plan to use a joystick, jump over to [here](https://github.com/tawnkramer/donkey/blob/master/docs/parts/controllers.md#physical-joystick-controller).
+
+
+### Create your car application.
+
+```
+donkey createcar --path ~/d2
+```
+
+See also [more information.](https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey/#create-car)
+
+### Calibrate and then Get Driving!
+
+You need to [calibrate] your pwm outputs to steering and throttle.(https://github.com/tawnkramer/donkey/blob/master/docs/guide/calibrate.md)
+
+And then [get driving!](https://github.com/tawnkramer/donkey/blob/master/docs/guide/get_driving.md)
+
 
 ----
 Now let's setup things on your PC. Install varies depending on platform.
-
-> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
->
-> * STEERING_CHANNEL = 1
-> * THROTTLE_CHANNEL = 0
->
-> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
-
 
 ## Install donkeycar on Linux
 
