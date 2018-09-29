@@ -233,8 +233,9 @@ class KerasLocalizer(KerasPilot):
         #we will test for shape of throttle to see if it's the newer
         #binned version.
         N = len(throttle[0])
-        print("track_loc", np.argmax(track_loc[0]), track_loc, track_loc.shape)
+        #print("track_loc", np.argmax(track_loc[0]), track_loc, track_loc.shape)
         #print("lane", np.argmax(lane[0]), lane, lane.shape)
+        loc = np.argmax(track_loc[0])
         
         if N > 0:
             throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
@@ -243,7 +244,7 @@ class KerasLocalizer(KerasPilot):
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
         print("angle_unbinned", angle_unbinned, "throttle", throttle)
         
-        return angle_unbinned, throttle
+        return angle_unbinned, throttle, loc
 
 def default_categorical(input_shape=(120, 160, 3)):
     from keras.layers import Input, Dense
