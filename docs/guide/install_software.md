@@ -168,6 +168,7 @@ pip install tensorflow==1.8.0
 * Install donkey source and create your local working dir:
 ```bash
 git clone https://github.com/wroscoe/donkey donkeycar
+cd donkeycar
 pip install -e .
 ```
 
