@@ -539,18 +539,33 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     use_multiprocessing=use_multiprocessing)
 
     print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
+    
+    # list all data in history
+    #print("\n\n----------History Keys--------------")
+    #print(history.history.keys())
 
     if cfg.SHOW_PLOT:
         try:
             if do_plot:
+                plt.figure(1)
                 # summarize history for loss
+                plt.subplot(121)
                 plt.plot(history.history['loss'])
                 plt.plot(history.history['val_loss'])
-                plt.title('model loss : %f' % save_best.best)
+                plt.title('model loss')
                 plt.ylabel('loss')
                 plt.xlabel('epoch')
-                plt.legend(['train', 'test'], loc='upper left')
-                plt.savefig(model_path + '_loss_%f.png' % save_best.best)
+                plt.legend(['train', 'validate'], loc='upper right')
+                
+                # summarize history for acc
+                plt.subplot(122)
+                plt.plot(history.history['angle_out_acc'])
+                plt.plot(history.history['val_angle_out_acc'])
+                plt.title('model angle accuracy')
+                plt.ylabel('acc')
+                plt.xlabel('epoch')
+                #plt.legend(['train', 'validate'], loc='upper left')
+                plt.savefig(model_path + '_loss_acc_%f.png' % save_best.best)
                 plt.show()
             else:
                 print("not saving loss graph because matplotlib not set up.")
