@@ -19,7 +19,6 @@ On Windows:
 * Find your pi
 
 
-
 This will show your IP address, prompt for your password, and then search 
 for your cars IP address. 
 
@@ -37,14 +36,6 @@ ssh pi@<your_pi_ip_address>
 
 The default user name is 'pi' and the password is 'raspberry'.  If you are using the pre-built Donkey image, the password is 'asdfasdf'.
 
-
-### Create your car application.
-
-```
-donkey createcar --template donkey2 --path ~/d2
-```
-
-See also [more information.](/utility/donkey/#create-car)
 
 #### Start your car.
 Open your car's folder and start your car. 
