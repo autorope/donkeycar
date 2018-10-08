@@ -143,3 +143,9 @@ BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS =[ (0, 10, 0), (10, 0, 0) ] #RGB tuples 0-100 per chanel
 
 TRAIN_LOCALIZER = False
+BUTTON_PRESS_NEW_TUB = False #should we make a new tub on each X button press?
+
+#in donkey gym env?
+DONKEY_GYM = False
+DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
+DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"

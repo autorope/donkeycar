@@ -3,8 +3,8 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--camera=(single|stereo)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d)] [--continuous] [--aug]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--camera=(single|stereo)]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
 
 
 Options:
@@ -39,7 +39,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     '''
 
     if model_type is None:
-        if cfg.TRAIN_BEHAVIORS:
+        if cfg.TRAIN_LOCALIZER:
+            model_type = "localizer"
+        elif cfg.TRAIN_BEHAVIORS:
             model_type = "behavior"
         else:
             model_type = "categorical"
@@ -91,9 +93,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             outputs=['cam/image_array'])
 
     else:
-        
+
+        inputs = []
+        threaded = True
         print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
-        if cfg.CAMERA_TYPE == "PICAM":
+        if cfg.DONKEY_GYM:
+            from donkeycar.parts.dgym import DonkeyGymEnv 
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, env_name=cfg.DONKEY_GYM_ENV_NAME)
+            threaded = True
+            inputs = ['angle', 'throttle']
+        elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
             cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         elif cfg.CAMERA_TYPE == "WEBCAM":
@@ -105,7 +114,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
-        V.add(cam, outputs=['cam/image_array'], threaded=True)
+        V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
         
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -153,9 +162,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    def led_cond(mode, recording, recording_alert, behavior_state, reloaded_model):
+    def led_cond(mode, recording, recording_alert, behavior_state, reloaded_model, track_loc):
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
+        if track_loc is not None:
+            led.set_rgb(*cfg.LOC_COLORS[track_loc])
+            return -1
+
         if reloaded_model:
             led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
             return 0.1
@@ -183,13 +196,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             return 0.1
         return 0
 
-    if cfg.HAVE_RGB_LED:
+    if cfg.HAVE_RGB_LED and not cfg.DONKEY_GYM:
         from donkeycar.parts.led_status import RGB_LED
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
         
         led_cond_part = Lambda(led_cond)
-        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'reloaded/model'],
+        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'reloaded/model', "pilot/loc"],
               outputs=['led/blink_rate'])
 
         V.add(led, inputs=['led/blink_rate'])
@@ -270,8 +283,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             print('loading model', model_path)
             kl.load(model_path)
             print('finished loading in %s sec.' % (str(time.time() - start)) )
-        except:
-            print('problems loading model', model_path)
+        except Exception as e:
+            print(e)
+            print('ERR>> problems loading model', model_path)
 
     def load_weights(kl, weights_path):
         start = time.time()
@@ -279,8 +293,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             print('loading model weights', weights_path)
             kl.model.load_weights(weights_path)
             print('finished loading in %s sec.' % (str(time.time() - start)) )
-        except:
-            print('problems loading weights', weights_path)
+        except Exception as e:
+            print(e)
+            print('ERR>> problems loading weights', weights_path)
 
     def load_model_json(kl, json_fnm):
         start = time.time()
@@ -311,7 +326,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             #when we have a .json extension
             #load the model from their and look for a matching
             #.wts file with just weights
-            load_model_json(kl, model_path)
+            #load_model_json(kl, model_path)
             weights_path = model_path.replace('.json', '.weights')
             load_weights(kl, weights_path)
 
@@ -326,9 +341,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             #previous default behavior
             load_model(kl, model_path)
+
+        outputs=['pilot/angle', 'pilot/throttle']
+
+        if cfg.TRAIN_LOCALIZER:
+            outputs.append("pilot/loc")
     
         V.add(kl, inputs=inputs, 
-            outputs=['pilot/angle', 'pilot/throttle'],
+            outputs=outputs,
             run_condition='run_pilot')            
     
     #Choose what inputs should change the car.
@@ -351,8 +371,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           outputs=['angle', 'throttle'])
     
     #Drive train setup
-    
-    if cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
+    if cfg.DONKEY_GYM:
+        pass
+
+    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
         from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
         steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
@@ -442,6 +464,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
         ctr.set_tub(tub)
+        if cfg.BUTTON_PRESS_NEW_TUB:
+    
+            def new_tub_dir():
+                V.parts.pop()
+                tub = th.new_tub_writer(inputs=inputs, types=types)
+                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+                ctr.set_tub(tub)
+    
+            ctr.set_button_down_trigger('cross', new_tub_dir)
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
