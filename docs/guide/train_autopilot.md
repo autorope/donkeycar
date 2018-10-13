@@ -49,6 +49,31 @@ rsync -r ~/mycar/models/ pi@<your_ip_address>:~/mycar/models/
 python manage.py drive --model ~/mycar/models/mypilot
 ```
 
+## Data Augmentation
+
+You might have noticed that the dataset you first collected is not evenly balanced. You probably have more `0`
+steering than the rest. You might also have more `-1` and `1` since we tend to steer all the way more than we should or only positive steering values if you only drove to the right.
+If the dataset the unbalanced the result of the neural network will be biased towards the most represented values (prior probability distribution).
+
+To correct for that you have a couple function you can use in `donkeycar/parts/augment.py`. To use them, place them in
+the `train_record_transform()` function so that you records get augmented before the neural network sees them.
+
+```py
+from donkeycar.parts.augment import Augmentor
+
+...
+
+augmentor = Augmentor()
+
+def train_record_transform(record):
+	""" convert categorical steering to linear and apply image augmentations """
+	record = augmentor.flip_left_right(record)
+	record = augmentor.random_horizontal_shift(record)
+	return record
+
+...
+```
+
 ## Training Tips:
 
 
