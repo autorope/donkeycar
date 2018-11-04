@@ -52,8 +52,8 @@ V.start(max_loop_count=100)
 
 For linux/OS users clone the master branch to get the latest version.
 ```bash
-git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e donkeycar
+git clone https://github.com/autorope/donkeycar
+pip install -e ./donkeycar
 ```
 
 [How to install on Windows](guide/install_software.md)
