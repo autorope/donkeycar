@@ -21,7 +21,10 @@ class PCA9685:
         self.channel = channel
 
     def set_pulse(self, pulse):
-        self.pwm.set_pwm(self.channel, 0, pulse)
+        try:
+            self.pwm.set_pwm(self.channel, 0, pulse)
+        except OSError as err:
+            print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
 
     def run(self, pulse):
         self.set_pulse(pulse)
