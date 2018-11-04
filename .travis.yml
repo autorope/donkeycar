@@ -2,9 +2,9 @@ language: python
 
 # This list should match the versions listed in setup.py
 python:
-- 3.4
 - 3.5
 - 3.6
+- 3.7
 
 os:
   - linux
