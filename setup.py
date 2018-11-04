@@ -2,13 +2,19 @@ from setuptools import setup, find_packages
 
 import os
 
+# Print version being used.
+package_path = os.path.dirname(__file__)
+version_path = os.path.join(package_path, 'VERSION')
+with open(version_path, 'r') as f:
+    version = f.read()
+
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
 setup(name='donkeycar',
-      version='2.5.1',
+      version=version,
       description='Self driving library for python.',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -36,8 +42,8 @@ setup(name='donkeycar',
                         ],
 
       extras_require={
-                      'tf': ['tensorflow>=1.7.0'],
-                      'tf_gpu': ['tensorflow-gpu>=1.7.0'],
+                      'tf': ['tensorflow>=1.9.0'],
+                      'tf_gpu': ['tensorflow-gpu>=1.9.0'],
                       'pi': [
                           'picamera',
                           'Adafruit_PCA9685',
