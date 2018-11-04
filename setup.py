@@ -2,19 +2,12 @@ from setuptools import setup, find_packages
 
 import os
 
-# Print version being used.
-package_path = os.path.dirname(__file__)
-version_path = os.path.join(package_path, 'VERSION')
-with open(version_path, 'r') as f:
-    version = f.read()
-
-
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
 setup(name='donkeycar',
-      version=version,
+      version='2.5.2',
       description='Self driving library for python.',
       long_description=long_description,
       long_description_content_type="text/markdown",

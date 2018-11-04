@@ -1,14 +1,13 @@
 import os
 
-# Print version being used.
-package_path = os.path.dirname(os.path.dirname(__file__))
-version_path = os.path.join(package_path, 'VERSION')
-with open(version_path, 'r') as f:
-    version = f.read()
-print('using donkey version: {} ...'.format(version))
-
-
+import pkg_resources  # part of setuptools
 import sys
+
+__version__ = pkg_resources.require("donkeycar")[0].version
+print('using donkey version: {} ...'.format(__version__))
+
+
+
 current_module = sys.modules[__name__]
 
 
