@@ -7,9 +7,7 @@ developed with a focus on enabling fast experimentation and easy contribution.
 
 ### Build your own Donkey2
 
-Donkey2 is the standard car that most people build first. The parts cost about $250 to $300
-
-and take 2 hours to assemble. Here are the main steps to build your own car:
+Donkey2 is the standard car that most people build first. The parts cost about $250 to $300 and take 2 hours to assemble. Here are the main steps to build your own car:
 
 1. [Assemble hardware.](guide/build_hardware.md)
 2. [Install software.](guide/install_software.md)
