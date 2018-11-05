@@ -28,10 +28,6 @@ install:
 script:
 - pytest -v --cov=donkeycar donkeycar/tests
 
-stages:
-    - name: deploy
-      if: branch = master
-
 jobs:
   include:
     - stage: deploy
