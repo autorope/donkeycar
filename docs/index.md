@@ -22,7 +22,7 @@ Donkey2 is the standard car that most people build first. The parts cost about $
 
 ### Hello World.
 
-Donkeycar is designed to make adding new parts to your car easy. Here's and
+Donkeycar is designed to make adding new parts to your car easy. Here's an
 example car application that captures images from the camera and saves them.
 
 ```python
@@ -50,8 +50,8 @@ V.start(max_loop_count=100)
 
 For linux/OS users clone the master branch to get the latest version.
 ```bash
-git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e donkeycar
+git clone https://github.com/autorope/donkeycar
+pip install -e ./donkeycar
 ```
 
 [How to install on Windows](guide/install_software.md)

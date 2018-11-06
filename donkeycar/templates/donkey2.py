@@ -21,7 +21,7 @@ from donkeycar.parts.transform import Lambda
 from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubGroup, TubWriter
-from controller import LocalWebController, JoystickController
+from donkeycar.parts.web_controller import LocalWebController
 from donkeycar.parts.clock import Timestamp
 
 
@@ -103,7 +103,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
                            left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM)
+                           right_pulse=cfg.STEERING_RIGHT_PWM) 
 
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,
