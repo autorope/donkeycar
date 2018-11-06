@@ -29,9 +29,18 @@ There are 4 fully supported chassis all made under the "Exceed" Brand:
 *  Exceed Blaze [Hyper Blue](https://amzn.to/2rf4MgS), [Yellow](https://amzn.to/2jlf3EA)
 
 These cars are electrically identical but have different tires, mounting and other details.  It is worth noting that the Desert Monster, Short Course Truck and Blaze all require adapters which can be easily printed or purchased from the donkey store.  These are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.
+
+here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars and how to assemble them.
+
+In addition there are 3 more cars supported under the "Donkey Pro" name.  These are 1/10 scale cars which means that they are bigger, perform a little better and are slightly more expensive.  They can be found here:
+*  HobbyKing Trooper (not pro version) [found here](https://hobbyking.com/en_us/turnigy-trooper-sct-4x4-1-10-brushless-short-course-truck-arr.html?___store=en_us)
+*  HobbyKing Mission-D [found here](https://hobbyking.com/en_us/1-10-hobbykingr-mission-d-4wd-gtr-drift-car-arr.html)
+*  Tamaya TT01 or Clone - found worldwide but usually has to be built as a kits.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
+
+Here is a [video](https://youtu.be/K-REL9aqPE0) that goes over the different models.  The Donkey Pro models are not yet very well documented, just a word of warning.  
+
 For more detail and other options, follow the link to: [supported cars](/supported_cars.md)
 
-Here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars and how to assemble them.
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
