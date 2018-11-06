@@ -155,18 +155,19 @@ class CalibrateCar(BaseCommand):
         channel = int(args.channel)
         c = PCA9685(channel)
 
-        for i in range(10):
-            try:
-                pwm = int(input('Enter a PWM setting to test({}-{}): '.format(self.pwm_min, self.pwm_max)))
-            except ValueError:
-                print("Not an integer value! Try again.")
-                continue
-            else:
-                if pwm < self.pwm_min or pwm > self.pwm_max:
-                    print("PWM value not in allowed range! Try again.")
-                else:
-                    c.run(pwm)
 
+        while True:
+            try:
+                val = input("""Enter a PWM setting to test ('q' for quit) (0-1500): """)
+                if val == 'q' or val == 'Q':
+                    break
+                pmw = int(val)
+                c.run(pmw)
+            except KeyboardInterrupt:
+                print("\nKeyboardInterrupt received, exit.")
+                break
+            except Exception as ex:
+                print("Oops, {}".format(ex))
 
 class MakeMovie(BaseCommand):
 
