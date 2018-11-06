@@ -138,6 +138,9 @@ class FindCar(BaseCommand):
 
 
 class CalibrateCar(BaseCommand):
+    def __init__(self):
+        self.pwm_min = 0
+        self.pwm_max = 1500
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
@@ -151,6 +154,7 @@ class CalibrateCar(BaseCommand):
         args = self.parse_args(args)
         channel = int(args.channel)
         c = PCA9685(channel)
+
 
         while True:
             try:
