@@ -147,7 +147,7 @@ python -c "import donkeycar as dk; print(dk.__version__)"
 Now generate the drive script, config and folder structure for your car.
 
 ```bash
-donkey createcar ~/
+donkey createcar ~/mycar
 ```
 
 ----
@@ -165,8 +165,8 @@ pip install tensorflow==1.8.0
 
 * Install donkey source and create your local working dir:
 ```bash
-git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e .
+git clone https://github.com/autorope/donkeycar
+pip install -e ./donkeycar
 ```
 
 [Next: Calibrate your car.](./calibrate.md)
@@ -191,8 +191,8 @@ cd projects
 * Get the latest donkey from Github.
 
 ```
-git clone https://github.com/wroscoe/donkey
-cd donkey
+git clone https://github.com/autorope/donkeycar
+cd donkeycar
 ```
 
 * Create the Python Anaconda environment
@@ -243,8 +243,8 @@ cd projects
 * Get the latest donkey from Github.
 
 ```
-git clone https://github.com/wroscoe/donkey
-cd donkey
+git clone https://github.com/autorope/donkeycar
+cd donkeycar
 ```
 
 * Create the Python anaconda environment
@@ -302,7 +302,7 @@ When you've created your new instance, open it up and create a new [Jupyter Note
 
 * In the first cell, type:
 ```python
-!git clone https://github.com/wroscoe/donkey ~/SageMaker/donkey
+!git clone https://github.com/autorope/donkeycar ~/SageMaker/donkey
 ```
 
 * Close the Jupyter Notebook (not the instance!). You can delete it if you want.

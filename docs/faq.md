@@ -87,8 +87,8 @@ sudo apt-get install build-essential gfortran libhdf5-dev
 * Get latest donkey code:
 
 ``` bash
-git clone https://github.com/wroscoe/donkey
-cd donkey
+git clone https://github.com/autorope/donkeycar
+cd donkeycar
 ```
 
 * Install anaconda:
@@ -141,7 +141,7 @@ pip install -e .
 ## How to get latest Donkey source
 1. When donkey has changed you can get the latest source. You've installed it directly from the github repo, so getting latest is easy:
      ```
-    cd donkey
+    cd donkeycar
     git pull origin master
     ```
 
