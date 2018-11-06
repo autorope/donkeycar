@@ -167,8 +167,8 @@ pip install tensorflow==1.8.0
 
 * Install donkey source and create your local working dir:
 ```bash
-git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e .
+git clone https://github.com/autorope/donkeycar
+pip install -e ./donkeycar
 ```
 
 [Next: Calibrate your car.](./calibrate.md)
@@ -185,6 +185,8 @@ pip install -e .
 
 * Change to a dir you would like to use as the head of your projects.
 
+* Right click can be used to paste into prompt.
+
 ```
 mkdir projects
 cd projects
@@ -193,14 +195,20 @@ cd projects
 * Get the latest donkey from Github.
 
 ```
-git clone https://github.com/wroscoe/donkey
-cd donkey
+git clone https://github.com/autorope/donkeycar
+cd donkeycar
+```
+
+* Navigate to git master branch
+
+```
+git chekout master
 ```
 
 * Create the Python Anaconda environment
 
 ```
-conda env create -f envs\windows.yml
+conda env create -f install\envs\windows.yml
 activate donkey
 ```
 
@@ -245,8 +253,8 @@ cd projects
 * Get the latest donkey from Github.
 
 ```
-git clone https://github.com/wroscoe/donkey
-cd donkey
+git clone https://github.com/autorope/donkeycar
+cd donkeycar
 ```
 
 * Create the Python anaconda environment
@@ -304,7 +312,7 @@ When you've created your new instance, open it up and create a new [Jupyter Note
 
 * In the first cell, type:
 ```python
-!git clone https://github.com/wroscoe/donkey ~/SageMaker/donkey
+!git clone https://github.com/autorope/donkeycar ~/SageMaker/donkey
 ```
 
 * Close the Jupyter Notebook (not the instance!). You can delete it if you want.

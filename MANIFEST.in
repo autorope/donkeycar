@@ -1,2 +1,3 @@
 include donkeycar/templates/*
+include VERSION
 recursive-include donkeycar/parts/web_controller/templates/ *

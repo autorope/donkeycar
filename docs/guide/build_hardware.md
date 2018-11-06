@@ -64,7 +64,7 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 | USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
 | Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
 | MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
-| Donkey Partial Kit                                                      | [Magnet] ](https://squareup.com/store/donkeycar/item/magnet-partial-kit) or [Desert Monster, SCT, Blaze](https://squareup.com/store/donkeycar/item/desert-monster-short-course-truck-or-blaze-partial-kit)                                         | $85 or $92              |
+| Donkey Partial Kit                                                      | [Magnet](https://squareup.com/store/donkeycar/item/magnet-partial-kit) or [Desert Monster, SCT, Blaze](https://squareup.com/store/donkeycar/item/desert-monster-short-course-truck-or-blaze-partial-kit)                                         | $85 or $92              |
 
 
 ### Option 2:Bottoms Up Build

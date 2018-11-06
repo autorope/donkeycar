@@ -21,7 +21,7 @@ from donkeycar.parts.transform import Lambda
 from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubGroup, TubWriter
-from controller import LocalWebController, JoystickController
+from donkeycar.parts.web_controller import LocalWebController
 from donkeycar.parts.clock import Timestamp
 
 
@@ -47,6 +47,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                 throttle_axis=cfg.JOYSTICK_THROTTLE_AXIS,
                                  auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
     else:
         # This web controller will create a web server that is capable
@@ -103,7 +104,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
                            left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM)
+                           right_pulse=cfg.STEERING_RIGHT_PWM) 
 
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,

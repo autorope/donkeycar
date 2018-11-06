@@ -37,11 +37,6 @@ class PWMSteering:
     LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
-    class Settings:
-        inputs = ['angle']
-        left_pulse = 290
-        right_pulse = 490
-
     def __init__(self, controller=None,
                  left_pulse=290, right_pulse=490):
 

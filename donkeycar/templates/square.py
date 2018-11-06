@@ -21,8 +21,8 @@ import donkeycar as dk
 from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.simulation import SquareBoxCamera
-from controller import LocalWebController
-from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.web_controller import LocalWebController
+from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.clock import Timestamp
 
 log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'sq.log')
@@ -62,7 +62,7 @@ def drive(cfg, model_path=None):
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
 
     # Run the pilot if the mode is not user.
-    kl = KerasCategorical()
+    kl = KerasLinear()
     if model_path:
         kl.load(model_path)
 
