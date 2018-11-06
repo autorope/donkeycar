@@ -28,7 +28,7 @@ datasets between each car.
 2. Find the servo cable on your car and see what channel it's plugged into the
 PCA board. It should be 1 or 0.
 3. Run `donkey calibrate --channel <your_steering_channel>`
-4. Enter `360' and you should see the wheels on your car move slightly. If not
+4. Enter `360` and you should see the wheels on your car move slightly. If not
 enter `400` or `300`.
 5. Next enter values +/- 10 from your starting value to find the PWM setting
 that makes your car turn all the way left and all the way right. Remember
@@ -62,7 +62,8 @@ Remember this reverse PWM value.
 
 
 Now open your `config.py` script and enter the PWM values for your car into
-the throttle_controller part.
+the throttle_controller part:
+
 * `THROTTLE_FORWARD_PWM` = PWM value for full throttle forward
 * `THROTTLE_STOPPED_PWM` = PWM value for zero throttle
 * `THROTTLE_REVERSE_PWM` = PWM value at full reverse throttle

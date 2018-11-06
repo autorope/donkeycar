@@ -138,6 +138,9 @@ class FindCar(BaseCommand):
 
 
 class CalibrateCar(BaseCommand):
+    def __init__(self):
+        self.pwm_min = 0
+        self.pwm_max = 1500
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
@@ -152,10 +155,19 @@ class CalibrateCar(BaseCommand):
         channel = int(args.channel)
         c = PCA9685(channel)
 
-        for i in range(10):
-            pmw = int(input('Enter a PWM setting to test(0-1500)'))
-            c.run(pmw)
 
+        while True:
+            try:
+                val = input("""Enter a PWM setting to test ('q' for quit) (0-1500): """)
+                if val == 'q' or val == 'Q':
+                    break
+                pmw = int(val)
+                c.run(pmw)
+            except KeyboardInterrupt:
+                print("\nKeyboardInterrupt received, exit.")
+                break
+            except Exception as ex:
+                print("Oops, {}".format(ex))
 
 class MakeMovie(BaseCommand):
 
