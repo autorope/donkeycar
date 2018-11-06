@@ -185,6 +185,8 @@ pip install -e ./donkeycar
 
 * Change to a dir you would like to use as the head of your projects.
 
+* Right click can be used to paste into prompt.
+
 ```
 mkdir projects
 cd projects
@@ -195,6 +197,12 @@ cd projects
 ```
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
+```
+
+* Navigate to git master branch
+
+```
+git chekout master
 ```
 
 * Create the Python Anaconda environment
