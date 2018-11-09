@@ -160,14 +160,25 @@ Install dependencies, setup virtualenv
 sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
 virtualenv env -p python3
 source env/bin/activate
-pip install tensorflow==1.8.0
 ```
 
 * Install donkey source and create your local working dir:
 ```bash
 git clone https://github.com/autorope/donkeycar
-pip install -e ./donkeycar
 ```
+* Install the donkeycar package in pip
+
+If you have an NVIDIA GPU - Install donkeycar and use *tensorflow-gpu* dependency:
+```bash
+pip install donkeycar[tf_gpu]
+```
+
+Otherwise, install donkeycar and use *tensorflow* dependency:
+```bash
+pip install donkeycar[tf]
+```
+
+See [https://github.com/tensorflow/tensorflow/issues/7166](https://github.com/tensorflow/tensorflow/issues/7166) for more information.
 
 [Next: Calibrate your car.](./calibrate.md)
 
@@ -342,29 +353,3 @@ To get back to the stock donkey install:
 pip uninstall donkeycar
 pip install donkeycar
 ```
-
-### Install donkeycar with TensorFlow dependencies
-
-Donkey requires the TensorFlow library to work. It comes in 2 flavors; *tensorflow* (CPU) and *tensorflow-gpu* (GPU).
-
-This poses a problem, because if donkey specifies either of them as a dependency, `pip` will uninstall any pre-installed version of the **other** flavor of the library. And since they are mutually exclusive, both cannot be listed as dependencies.
-
-To solve this, donkey does not specify *tensorflow* nor *tensorflow-gpu* as dependencies. Instead, they are listed as `extras_require`, which means you have to explicitly tell `pip` what flavor you want to use. If no flavor is specified (default), it is assumed one version of *TensorFlow* is already installed.
-
-Install donkeycar assuming a compatible tensorflow library (either *tensorflow* or *tensorflow-gpu*) already installed:
-```bash
-# Assuming CWD is the cloned donkey git
-pip install donkeycar
-```
-
-Install donkeycar and use *tensorflow* dependency:
-```bash
-pip install donkeycar[tf]
-```
-
-Install donkeycar and use *tensorflow-gpu* dependency:
-```bash
-pip install donkeycar[tf_gpu]
-```
-
-See [https://github.com/tensorflow/tensorflow/issues/7166](https://github.com/tensorflow/tensorflow/issues/7166) for more information.
