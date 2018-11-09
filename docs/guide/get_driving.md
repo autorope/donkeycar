@@ -40,7 +40,7 @@ The default user name is 'pi' and the password is 'raspberry'.  If you are using
 
 ### Make sure you've created your car application.
 ```
-donkey createcar --template donkey2 --path ~/mycar
+donkey createcar --template donkey2 ~/mycar
 ```
 
 See also [more information.](/utility/donkey/#create-car)
