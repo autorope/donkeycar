@@ -9,7 +9,6 @@ Usage:
 Options:
     -h --help        Show this screen.
     --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
-    --js             Use physical joystick.
     --chaos          Add periodic random steering when manually driving
 """
 import os
@@ -25,7 +24,7 @@ from donkeycar.parts.web_controller import LocalWebController
 from donkeycar.parts.clock import Timestamp
 
 
-def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
+def drive(cfg, model_path=None, use_chaos=False):
     """
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -44,16 +43,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
-        ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
-                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                 throttle_axis=cfg.JOYSTICK_THROTTLE_AXIS,
-                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-    else:
-        # This web controller will create a web server that is capable
-        # of managing steering, throttle, and modes, and more.
-        ctr = LocalWebController(use_chaos=use_chaos)
-
+    ctr = LocalWebController(use_chaos=use_chaos)
     V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
@@ -174,7 +164,7 @@ if __name__ == '__main__':
     cfg = dk.load_config()
 
     if args['drive']:
-        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
+        drive(cfg, model_path=args['--model'], use_chaos=args['--chaos'])
 
     elif args['train']:
         tub = args['--tub']
