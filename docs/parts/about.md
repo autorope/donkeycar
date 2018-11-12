@@ -46,7 +46,7 @@ V = dk.Vehicle()
 V.mem['const'] = 4
 
 #add the part to read and write to the same channel.
-V.add(RandPercent, inputs=['const'], outputs=['cost'])
+V.add(RandPercent, inputs=['const'], outputs=['const'])
 
 V.start(max_loops=5)
 ```
