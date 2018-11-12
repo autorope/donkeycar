@@ -138,6 +138,9 @@ class FindCar(BaseCommand):
 
 
 class CalibrateCar(BaseCommand):
+    def __init__(self):
+        self.pwm_min = 0
+        self.pwm_max = 1500
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
@@ -152,18 +155,18 @@ class CalibrateCar(BaseCommand):
         channel = int(args.channel)
         c = PCA9685(channel)
 
-        while True:
+        for i in range(10):
             try:
-                val = input("""Enter a PWM setting to test ('q' for quit) (0-1500): """)
-                if val == 'q' or val == 'Q':
-                    break
-                pmw = int(val)
-                c.run(pmw)
-            except KeyboardInterrupt:
-                print("\nKeyboardInterrupt received, exit.")
-                break
-            except Exception as ex:
-                print("Oops, {}".format(ex))
+                pwm = int(input('Enter a PWM setting to test({}-{}): '.format(self.pwm_min, self.pwm_max)))
+            except ValueError:
+                print("Not an integer value! Try again.")
+                continue
+            else:
+                if pwm < self.pwm_min or pwm > self.pwm_max:
+                    print("PWM value not in allowed range! Try again.")
+                else:
+                    c.run(pwm)
+
 
 class MakeMovie(BaseCommand):
 
@@ -454,6 +457,3 @@ def execute_from_command_line():
     else:
         dk.util.proc.eprint('Usage: The availible commands are:')
         dk.util.proc.eprint(list(commands.keys()))
-
-
-
