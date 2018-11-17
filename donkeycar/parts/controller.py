@@ -29,11 +29,11 @@ class Joystick(object):
             self.num_axes = 0
             self.num_buttons = 0
             print("no support for fnctl module. joystick not enabled.")
-            return            
+            return False
             
         if not os.path.exists(self.dev_fn):
             print(self.dev_fn, "is missing")
-            return
+            return False
 
         '''
         call once to setup connection to device and map buttons
@@ -489,7 +489,7 @@ class JoystickController(object):
 
         #wait for joystick to be online
         while self.running and self.js is None and not self.init_js():
-            time.sleep(5)
+            time.sleep(3)
 
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
@@ -649,7 +649,8 @@ class JoystickCreatorController(JoystickController):
         '''
         try:
             self.js = JoystickCreator(self.dev_fn)
-            self.js.init()
+            if not self.js.init():
+                self.js = None
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
@@ -677,7 +678,8 @@ class PS3JoystickController(JoystickController):
         '''
         try:
             self.js = PS3Joystick(self.dev_fn)
-            self.js.init()
+            if not self.js.init():
+                self.js = None
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
@@ -727,7 +729,8 @@ class PS4JoystickController(JoystickController):
         '''
         try:
             self.js = PS4Joystick(self.dev_fn)
-            self.js.init()
+            if not self.js.init():
+                self.js = None
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
