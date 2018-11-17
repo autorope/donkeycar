@@ -129,6 +129,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         ctr = cont_class(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,
                                  auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+        
+        ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
 
         if cfg.USE_NETWORKED_JS:
             from donkeycar.parts.controller import JoyStickSub
