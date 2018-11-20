@@ -1,0 +1,45 @@
+vehicle:
+  name: donkey2
+  parts:
+
+    loop_timestamp:
+      class: donkeycar.parts.clock.Timestamp
+
+    pi_camera:
+      class: donkeycar.parts.cameras.PiCamera
+
+    web_controller:
+      class: donkeycar.parts.web_controller.LocalWebController
+
+
+
+    keras_linear:
+      source: <url>
+      class: donkeycar.parts.keras.KerasLinear
+      init:
+        args:
+          model_path: str
+      run_if:
+        user/drive_mode:
+          in: ['local', 'local_angle']
+
+    drive_mode_action_router:
+      inputs:
+
+      channel: mode
+        value: 'user'
+
+
+    steering_actuator:
+      class: donkeycar.parts.actuators.PWMSteering
+      kwargs:
+
+    throttle:
+      class: donkeycar.parts.actuators.PWMSteering
+      kwargs:
+
+
+
+
+    tub:
+      inputs: '*'
