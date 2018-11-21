@@ -4,10 +4,8 @@ import os
 import socket
 import shutil
 import argparse
-
+from distutils.dir_util import copy_tree
 import donkeycar as dk
-from donkeycar.parts.datastore import Tub
-from .tub import TubManager
 
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -52,7 +50,7 @@ class CreateCar(BaseCommand):
         parser = argparse.ArgumentParser(prog='createcar', usage='%(prog)s [options]')
         parser.add_argument('path')
         #parser.add_argument('--path', default=None, help='path where to create car folder')
-        parser.add_argument('--template', default=None, help='name of car template to use')
+        parser.add_argument('--template', default=None, help='name or path of car template to use')
         parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
 
         parsed_args = parser.parse_args(args)
@@ -73,37 +71,44 @@ class CreateCar(BaseCommand):
         path = path or '~/mycar'
         template = template or 'donkey2'
 
-
-        print("Creating car folder: {}".format(path))
-        path = make_dir(path)
-
-        print("Creating data & model folders.")
-        folders = ['models', 'data', 'logs']
-        folder_paths = [os.path.join(path, f) for f in folders]
-        for fp in folder_paths:
-            make_dir(fp)
-
-        #add car application and config files if they don't exist
-        app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
-        config_template_path = os.path.join(TEMPLATES_PATH, 'config_defaults.py')
-        car_app_path = os.path.join(path, 'manage.py')
-        car_config_path = os.path.join(path, 'config.py')
-
-        if os.path.exists(car_app_path) and not overwrite:
+        if os.path.exists(path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
         else:
             print("Copying car application template: {}".format(template))
-            shutil.copyfile(app_template_path, car_app_path)
 
-        if os.path.exists(car_config_path) and not overwrite:
-            print('Car config already exists. Delete it and rerun createcar to replace.')
-        else:
-            print("Copying car config defaults. Adjust these before starting your car.")
-            shutil.copyfile(config_template_path, car_config_path)
+            print("Creating car folder: {}".format(path))
+            path = make_dir(path)
+
+            print("Creating data & model folders.")
+            folders = ['models', 'data', 'logs']
+            folder_paths = [os.path.join(path, f) for f in folders]
+            for fp in folder_paths:
+                make_dir(fp)
+
+            # add car application and config files if they don't exist
+            template_path = self.find_template_path(template)
+
+            print(f'template path: {template_path}')
+            copy_tree(template_path, path)
 
         print("Donkey setup complete.")
 
 
+    def find_template_path(self, template_name_or_path):
+        """
+        First try to find the named template. If it doesn't exist try to find the template if
+        it were a path.
+        :param template_name_or_path:
+        :return: abs path of template or raise Value error if none found.
+        """
+
+        named_template_path = os.path.join(TEMPLATES_PATH, template_name_or_path)
+        if os.path.exists(named_template_path):
+            return named_template_path
+        elif os.path.exists(template_name_or_path):
+            return template_name_or_path
+        else:
+            raise ValueError('Could not find template. Looked in the following locations {}, {}.'.format(named_template_path, template_name_or_path))
 
 class UploadData(BaseCommand):
 
@@ -440,7 +445,6 @@ def execute_from_command_line():
             'createcar': CreateCar,
             'findcar': FindCar,
             'calibrate': CalibrateCar,
-            'tubclean': TubManager,
             'tubhist': ShowHistogram,
             'tubplot': ShowPredictionPlots,
             'tubcheck': TubCheck,
