@@ -1,0 +1,4 @@
+donkeycar>=2.5.8
+-e git://github.com/autorope/donkeypart_moving_square_sim#egg=donkeypart_moving_square_sim
+-e git://github.com/autorope/donkeypart_web_controller#egg=donkeypart_web_controller
+-e git://github.com/autorope/donkeypart_tub#egg=donkeypart_tub

@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-      version='2.5.7',
+      version='2.5.9',
       description='Self driving library for python.',
       long_description=long_description,
       long_description_content_type="text/markdown",

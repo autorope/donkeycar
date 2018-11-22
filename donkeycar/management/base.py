@@ -88,7 +88,7 @@ class CreateCar(BaseCommand):
             # add car application and config files if they don't exist
             template_path = self.find_template_path(template)
 
-            print(f'template path: {template_path}')
+            print('template path: {}'.format(template_path))
             copy_tree(template_path, path)
 
         print("Donkey setup complete.")
