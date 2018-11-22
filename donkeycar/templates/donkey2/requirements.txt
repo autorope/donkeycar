@@ -1,0 +1,1 @@
+-e git://github.com/autorope/donkeypart_PCA9685_actuators#egg=donkeypart_PCA9685_actuators
