@@ -15,24 +15,16 @@ import os
 from docopt import docopt
 
 import donkeycar as dk
-from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.transform import Lambda
-from donkeycar.parts.keras import KerasLinear
-from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubGroup, TubWriter
-from donkeycar.parts.web_controller import LocalWebController
-from donkeycar.parts.clock import Timestamp
+from donkeypart_picamera import PiCamera
+from donkeypart_keras_behavior_cloning import KerasLinear
+from donkeypart_PCA9685_actuators import PCA9685, PWMSteering, PWMThrottle
+from donkeypart_tub import TubGroup, TubWriter
+from donkeypart_web_controller import LocalWebController
+from donkeypart_common import Timestamp
 
 
 def drive(cfg, model_path=None, use_chaos=False):
     """
-    Construct a working robotic vehicle from many parts.
-    Each part runs as a job in the Vehicle loop, calling either
-    it's run or run_threaded method depending on the constructor flag `threaded`.
-    All parts are updated one after another at the framerate given in
-    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
-    Parts may have named outputs and inputs. The framework handles passing named outputs
-    to parts requesting the same named input.
     """
 
     V = dk.vehicle.Vehicle()
@@ -49,18 +41,12 @@ def drive(cfg, model_path=None, use_chaos=False):
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
 
-    # See if we should even run the pilot module.
-    # This is only needed because the part run_condition only accepts boolean
-    def pilot_condition(mode):
-        if mode == 'user':
-            return False
-        else:
-            return True
-
-    pilot_condition_part = Lambda(pilot_condition)
-    V.add(pilot_condition_part,
-          inputs=['user/mode'],
-          outputs=['run_pilot'])
+    state_controller = StateController()
+    V.add(state_controller,
+          inputs=['user/mode',
+                  'user/angle', 'user/throttle',
+                  'pilot/angle', 'pilot/throttle'],
+          outputs=['angle', 'throttle', 'run_pilot_condition'])
 
     # Run the pilot if the mode is not user.
     kl = KerasLinear()
@@ -70,26 +56,7 @@ def drive(cfg, model_path=None, use_chaos=False):
     V.add(kl,
           inputs=['cam/image_array'],
           outputs=['pilot/angle', 'pilot/throttle'],
-          run_condition='run_pilot')
-
-    # Choose what inputs should change the car.
-    def drive_mode(mode,
-                   user_angle, user_throttle,
-                   pilot_angle, pilot_throttle):
-        if mode == 'user':
-            return user_angle, user_throttle
-
-        elif mode == 'local_angle':
-            return pilot_angle, user_throttle
-
-        else:
-            return pilot_angle, pilot_throttle
-
-    drive_mode_part = Lambda(drive_mode)
-    V.add(drive_mode_part,
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
+          run_condition='run_pilot_condition')
 
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
@@ -108,10 +75,6 @@ def drive(cfg, model_path=None, use_chaos=False):
     # add tub to save data
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
     types = ['image_array', 'float', 'float',  'str', 'str']
-
-    # multiple tubs
-    # th = TubHandler(path=cfg.DATA_PATH)
-    # tub = th.new_tub_writer(inputs=inputs, types=types)
 
     # single tub
     tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
@@ -157,6 +120,36 @@ def train(cfg, tub_names, new_model_path, base_model_path=None):
              saved_model_path=new_model_path,
              steps=steps_per_epoch,
              train_split=cfg.TRAIN_TEST_SPLIT)
+
+
+class StateController:
+    """
+    Wraps a function into a donkey part.
+    """
+
+    def __init__(self):
+        pass
+
+    def run(self, mode,
+            user_angle, user_throttle,
+            pilot_angle, pilot_throttle):
+
+        """
+
+        Returns the angle, throttle and boolean if autopilot should be run.
+        The angle and throttles returned are the ones given to the steering and
+        throttle actuators.
+
+        """
+
+        if mode == 'user':
+            return user_angle, user_throttle, False
+
+        elif mode == 'local_angle':
+            return pilot_angle, user_throttle, True
+
+        else:
+            return pilot_angle, pilot_throttle, True
 
 
 if __name__ == '__main__':

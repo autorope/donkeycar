@@ -1,1 +1,4 @@
 -e git://github.com/autorope/donkeypart_PCA9685_actuators#egg=donkeypart_PCA9685_actuators
+-e git://github.com/autorope/donkeypart_keras_behavior_cloning#egg=donkeypart_keras_behavior_cloning
+-e git://github.com/autorope/donkeypart_picamera#egg=donkeypart_picamera
+-e git://github.com/autorope/donkeypart_web_controller#egg=donkeypart_web_controller
