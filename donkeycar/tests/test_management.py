@@ -5,5 +5,5 @@ from tempfile import tempdir
 def get_test_tub_path():
     tempdir()
 
-def test_tubcheck():
-    tc = base.TubCheck()
+def test_findcar():
+    fc = base.FindCar()
