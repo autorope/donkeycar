@@ -26,6 +26,7 @@ from donkeycar import util
 
 class LocalWebController(tornado.web.Application):
     port = 8887
+
     def __init__(self, use_chaos=False):
         """
         Create and publish variables needed on many of
@@ -45,7 +46,7 @@ class LocalWebController(tornado.web.Application):
 
         self.chaos_on = False
         self.chaos_counter = 0
-        self.chaos_frequency = 1000 #frames
+        self.chaos_frequency = 1000  # frames
         self.chaos_duration = 10
 
         if use_chaos:

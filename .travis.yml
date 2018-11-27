@@ -2,7 +2,6 @@ language: python
 
 # This list should match the versions listed in setup.py
 python:
-- 3.4
 - 3.5
 - 3.6
 
@@ -29,14 +28,22 @@ install:
 script:
 - pytest -v --cov=donkeycar donkeycar/tests
 
+stages:
+    - name: deploy
+      if: branch = master
+
+jobs:
+  include:
+    - stage: deploy
+      python: 3.6
+      script: skip
+      deploy:
+        provider: pypi
+        user: wroscoe
+        password:
+          secure: Y64NS2etlOIjKMTLQex+5H/QrKdBzwGjhZ9VVp1NXyx76oqg0ygn5lOPcMAvQbuJbGzT0E/5q/EDhJAh6YjyjVYAS2UgBUehpY5Nu0oYFTfWCTC9fbQRn0XRLXPeZR3BKZ1cAxDCMm4a6iZ4M8CqatN73IexcORCYgkIXZfGRVGcAdLonWzkXPqIwe287e7TiQAx6wM6e7k4DRRUFcrw56lLWTG6FEkauQDNXJFlySwesIgFni+K59tHcxP1U00NTV5utTaNzkkFwro4bp6EsVHEYr8Hgz2Sv0mxAggWmXaMGwILahTSVoRznFsik4r3DiOwVEAc+aeTHg9NJin5/ic4ShODMPKkBQInUNxgmE8cZy5EpZ+a9Xbp1dNt/+x56Bmz+bKoQq/e0ydIBNXCeaT41VFyJTjz9db01HwUPZHfp0NCyIo5QcknH98G0oLmaqv43qGJzmaQi0h4BkkmgI5HpkE12MSDC8QFsDKmOXlj/I4WEWXuPslhuKTgYNadFGdTkfbhnbMjRDkuNfL8YSXwnNDTcB5qT3hIYWGVKN2qAAljWniWHdQMMosMv7CwfoM7IO6apgBuvoMJOMunHEgyGDX5Hb1Y5YYa+OC/0eCfcIEScoPM0JHtMmznYlIv5vwx8B3yK0qk0W8nIv65bZvP5eYBF1zLgeE2FLsuc1o=
+        on:
+          tags: true
+
 after_success:
 - codecov
-
-deploy:
-  provider: pypi
-  user: wroscoe
-  password:
-    secure: Y64NS2etlOIjKMTLQex+5H/QrKdBzwGjhZ9VVp1NXyx76oqg0ygn5lOPcMAvQbuJbGzT0E/5q/EDhJAh6YjyjVYAS2UgBUehpY5Nu0oYFTfWCTC9fbQRn0XRLXPeZR3BKZ1cAxDCMm4a6iZ4M8CqatN73IexcORCYgkIXZfGRVGcAdLonWzkXPqIwe287e7TiQAx6wM6e7k4DRRUFcrw56lLWTG6FEkauQDNXJFlySwesIgFni+K59tHcxP1U00NTV5utTaNzkkFwro4bp6EsVHEYr8Hgz2Sv0mxAggWmXaMGwILahTSVoRznFsik4r3DiOwVEAc+aeTHg9NJin5/ic4ShODMPKkBQInUNxgmE8cZy5EpZ+a9Xbp1dNt/+x56Bmz+bKoQq/e0ydIBNXCeaT41VFyJTjz9db01HwUPZHfp0NCyIo5QcknH98G0oLmaqv43qGJzmaQi0h4BkkmgI5HpkE12MSDC8QFsDKmOXlj/I4WEWXuPslhuKTgYNadFGdTkfbhnbMjRDkuNfL8YSXwnNDTcB5qT3hIYWGVKN2qAAljWniWHdQMMosMv7CwfoM7IO6apgBuvoMJOMunHEgyGDX5Hb1Y5YYa+OC/0eCfcIEScoPM0JHtMmznYlIv5vwx8B3yK0qk0W8nIv65bZvP5eYBF1zLgeE2FLsuc1o=
-  on:
-    tags: true
-    branch: master
