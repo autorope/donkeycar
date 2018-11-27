@@ -202,7 +202,7 @@ cd donkeycar
 * Navigate to git master branch
 
 ```
-git chekout master
+git checkout master
 ```
 
 * Create the Python Anaconda environment
