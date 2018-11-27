@@ -67,9 +67,7 @@ sudo vi /media/userID/UUID/etc/hostname
 sudo vi /media/userID/UUID/etc/hosts
 ```
 
-Now you're SD card is ready. Eject it from your computer, put it in the Pi
-and plug in the Pi.
-
+Now your SD card is ready. Eject it from your computer, put it in the Pi, and plug in the Pi.
 
 ### Connecting to the Pi
 
