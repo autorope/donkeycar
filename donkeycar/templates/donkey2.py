@@ -24,7 +24,7 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.web_controller import LocalWebController
 from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.datastore import TubGroup, TubWriter
-from donkeycar.parts.keras import KerasCategorical
+from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.transform import Lambda
 
 
