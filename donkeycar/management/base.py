@@ -10,8 +10,8 @@ import time
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
-from .tub import TubManager
-from .joystick_creator import CreateJoystick
+from donkeycar.management.tub import TubManager
+from donkeycar.management.joystick_creator import CreateJoystick
 import numpy as np
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -185,7 +185,8 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
         parser.add_argument('--model_type', default='categorical', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
-        parser.add_argument('--limit', type=int, default=-1, help='max number frames to process')
+        parser.add_argument('--limit', type=int, default=100, help='max number frames to process')
+        parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
@@ -228,6 +229,7 @@ class MakeMovie(BaseCommand):
         if args.limit > 0:
             self.num_rec = args.limit
         self.iRec = 0
+        self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
         if not args.model == "None":
@@ -376,14 +378,20 @@ class MakeMovie(BaseCommand):
         rec = self.tub.get_record(self.iRec)
         image = rec['cam/image_array']
 
-        self.draw_model_prediction(rec, image)
-
         if self.convolution_part:
             image = self.draw_salient(image)
+            image = image * 255
+            image = image.astype('uint8')
+        
+        self.draw_model_prediction(rec, image)
+
+        if self.scale != 1:
+            import cv2
+            h, w, d = image.shape
+            dsize = (w * self.scale, h * self.scale)
+            image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
         
         return image # returns a 8-bit RGB array
-
-
 
 
 
@@ -688,4 +696,6 @@ def execute_from_command_line():
         dk.utils.eprint(list(commands.keys()))
         
     
+if __name__ == "__main__":
+    execute_from_command_line()
     
