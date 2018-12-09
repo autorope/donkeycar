@@ -156,7 +156,7 @@ For reference, below is the Raspberry Pi Pinout for reference.  You will notice 
 ### Step 5: Attach Raspberry Pi to 3D Printed bottom plate.  
 Before you start, now is a good time to insert the already flashed SD card and bench test the electronics.  Once that is done, attaching the Raspberry Pi and Servo is as simple as running screws through the board into the screw bosses on the top plate.  The M2.5x12mm screws should be the perfect length to go through the board, the plastic and still have room for a washer.  The “cap” part of the screw should be facing up and the nut should be on the bottom of the top plate.  The ethernet and USB ports should face forward.  This is important as it gives you access to the SD card and makes the camera ribbon cable line up properly.
 
-Attach the USB battery to the underside of the printed bottom plate using cable ties or velcro.
+Attach the USB battery to the back of the roll cage using cable ties or velcro.
 
 ![donkey](../assets/build_hardware/5ab.PNG)
 
