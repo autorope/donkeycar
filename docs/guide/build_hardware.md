@@ -142,6 +142,8 @@ Once you have slid the nut in, you can attach the bottom plate.  Once again, thi
 
 ![donkey](../assets/build_hardware/3b.PNG)
 
+When attaching the roll cage to the top plate, ensure that the nubs on the top plate face the roll-cage. This will ensure the equipment you mount to the top plate fits easily.
+
 &nbsp;
 ### Step 4: Connect Servo Shield to Raspberry Pi.
 You could do this after attaching the Raspberry Pi to the bottom plate, I just think it is easier to see the parts when they are laying on the workbench.  Connect the parts as you see below:
