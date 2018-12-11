@@ -185,7 +185,8 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
         parser.add_argument('--model_type', default='categorical', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
-        parser.add_argument('--limit', type=int, default=100, help='max number frames to process')
+        parser.add_argument('--start', type=int, default=0, help='first frame to process')
+        parser.add_argument('--end', type=int, default=-1, help='last frame to process')
         parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
@@ -226,9 +227,20 @@ class MakeMovie(BaseCommand):
 
         self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
-        if args.limit > 0:
-            self.num_rec = args.limit
-        self.iRec = 0
+        
+        if args.start == 0:
+            self.start = self.tub.get_index(shuffled=False)[0]
+        else:
+            self.start = args.start
+        
+        if args.end != -1:
+            self.end = args.end    
+        else:
+            self.end = self.num_rec - self.start
+
+        self.num_rec = self.end - self.start
+        
+        self.iRec = args.start
         self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
@@ -370,12 +382,18 @@ class MakeMovie(BaseCommand):
         We don't use t to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
         '''
-        self.iRec = self.iRec + 1
         
-        if self.iRec >= self.num_rec - 1:
+        if self.iRec >= self.end:
             return None
 
-        rec = self.tub.get_record(self.iRec)
+        try:
+            rec = self.tub.get_record(self.iRec)
+        except Exception as e:
+            print(e)
+            print("Failed to get image for frame", self.iRec)
+            self.iRec = self.iRec + 1
+            return None
+
         image = rec['cam/image_array']
 
         if self.convolution_part:
@@ -390,6 +408,8 @@ class MakeMovie(BaseCommand):
             h, w, d = image.shape
             dsize = (w * self.scale, h * self.scale)
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
+        
+        self.iRec = self.iRec + 1
         
         return image # returns a 8-bit RGB array
 
