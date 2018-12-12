@@ -185,7 +185,7 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
         parser.add_argument('--model_type', default='categorical', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
-        parser.add_argument('--start', type=int, default=0, help='first frame to process')
+        parser.add_argument('--start', type=int, default=1, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
         parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
         parsed_args = parser.parse_args(args)
@@ -228,7 +228,7 @@ class MakeMovie(BaseCommand):
         self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
         
-        if args.start == 0:
+        if args.start == 1:
             self.start = self.tub.get_index(shuffled=False)[0]
         else:
             self.start = args.start
@@ -386,13 +386,16 @@ class MakeMovie(BaseCommand):
         if self.iRec >= self.end:
             return None
 
-        try:
-            rec = self.tub.get_record(self.iRec)
-        except Exception as e:
-            print(e)
-            print("Failed to get image for frame", self.iRec)
-            self.iRec = self.iRec + 1
-            return None
+        rec = None
+
+        while rec is None and self.iRec < self.end:
+            try:
+                rec = self.tub.get_record(self.iRec)
+            except Exception as e:
+                print(e)
+                print("Failed to get image for frame", self.iRec)
+                self.iRec = self.iRec + 1
+                rec = None
 
         image = rec['cam/image_array']
 
