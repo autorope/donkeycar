@@ -105,6 +105,9 @@ class Vehicle():
                 sleep_time = 1.0 / rate_hz - (time.time() - start_time)
                 if sleep_time > 0.0:
                     time.sleep(sleep_time)
+                else:
+                    # print a message when could not maintain loop rate.
+                    print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time))
 
         except KeyboardInterrupt:
             pass
