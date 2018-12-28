@@ -33,9 +33,10 @@ These cars are electrically identical but have different tires, mounting and oth
 here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars and how to assemble them.
 
 In addition there are 3 more cars supported under the "Donkey Pro" name.  These are 1/10 scale cars which means that they are bigger, perform a little better and are slightly more expensive.  They can be found here:
+
 *  HobbyKing Trooper (not pro version) [found here](https://hobbyking.com/en_us/turnigy-trooper-sct-4x4-1-10-brushless-short-course-truck-arr.html?___store=en_us)
 *  HobbyKing Mission-D [found here](https://hobbyking.com/en_us/1-10-hobbykingr-mission-d-4wd-gtr-drift-car-arr.html)
-*  Tamaya TT01 or Clone - found worldwide but usually has to be built as a kits.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
+*  Tamiya TT01 or Clone - found worldwide but usually has to be built as a kit.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
 
 Here is a [video](https://youtu.be/K-REL9aqPE0) that goes over the different models.  The Donkey Pro models are not yet very well documented, just a word of warning.  
 
