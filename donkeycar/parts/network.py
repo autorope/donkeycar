@@ -18,6 +18,10 @@ class ValuePub(object):
         z = zlib.compress(p)
         self.socket.send(z)
 
+    def shutdown(self):
+        self.socket.close()
+        context = zmq.Context()
+        context.destroy()
 
 class ValueSub(object):
     '''
@@ -29,7 +33,6 @@ class ValueSub(object):
         self.socket.connect("tcp://%s:%d" % (ip, port))
         self.socket.setsockopt_string(zmq.SUBSCRIBE, '')
         self.name = name
-        self.values = None
 
     def run(self):
         '''
@@ -43,7 +46,16 @@ class ValueSub(object):
 
         p = zlib.decompress(z)        
         obj = pickle.loads(p)
-        return obj
+
+        if self.name == obj['name']:
+            return obj['val']
+
+        return None
+
+    def shutdown(self):
+        self.socket.close()
+        context = zmq.Context()
+        context.destroy()
 
 
 if __name__ == "__main__":
@@ -66,10 +78,15 @@ if __name__ == "__main__":
     if ip is None:
         print("publishing test..")
         p = ValuePub('test')
+        import math
+        theta = 0.0
+        s = time.time()
 
         while True:
-            p.run("hi there")
-            time.sleep(1)
+            v = (time.time() - s, math.sin(theta), math.cos(theta), math.tan(theta))
+            theta += 0.1
+            p.run(v)
+            time.sleep(0.1)
 
     else:
         print("subscribing test..", ip)
