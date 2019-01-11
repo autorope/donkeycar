@@ -8,7 +8,48 @@ class ImgGreyscale():
         img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
         return img_arr
 
+    def shutdown(self):
+        pass
 
+class ImgWriter():
+
+    def __init__(self, filename):
+        self.filename = filename
+
+    def run(self, img_arr):
+        cv2.imwrite(self.filename, img_arr)
+
+    def shutdown(self):
+        pass
+
+class ImgBGR2RGB():
+
+    def run(self, img_arr):
+        img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
+        return img_arr
+
+    def shutdown(self):
+        pass
+
+class ImgRGB2BGR():
+
+    def run(self, img_arr):
+        img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
+        return img_arr
+
+    def shutdown(self):
+        pass
+
+class ImageScale():
+
+    def __init__(self, scale):
+        self.scale = scale
+
+    def run(self, img_arr):
+        return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale)
+
+    def shutdown(self):
+        pass
 
 class ImgCanny():
 
@@ -22,6 +63,8 @@ class ImgCanny():
                          self.low_threshold, 
                          self.high_threshold)
 
+    def shutdown(self):
+        pass
     
 
 class ImgGaussianBlur():
@@ -33,6 +76,8 @@ class ImgGaussianBlur():
         return cv2.GaussianBlur(img_arr, 
                                 (self.kernel_size, self.kernel_size), 0)
 
+    def shutdown(self):
+        pass
 
 
 class ImgCrop:
@@ -50,6 +95,9 @@ class ImgCrop:
         img_arr = img_arr[self.top:height-self.bottom, 
                           self.left: width-self.right]
         return img_arr
+
+    def shutdown(self):
+        pass
         
 
 
@@ -81,6 +129,9 @@ class ImgStack:
         self.img_arr[...,self.num_channels - 1:] = np.reshape(gray, (width, height, 1))
 
         return self.img_arr
+
+    def shutdown(self):
+        pass
 
         
         

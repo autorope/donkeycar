@@ -460,6 +460,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
+    if cfg.PUB_CAMERA_IMAGES:
+        from dk.parts.network import ValuePub
+        pub = ValuePub("camera")
+        V.add(pub, inputs=['cam/image_array'])
+
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")
     elif isinstance(ctr, JoystickController):

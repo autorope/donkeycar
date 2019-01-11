@@ -150,3 +150,6 @@ BUTTON_PRESS_NEW_TUB = False #should we make a new tub on each X button press?
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # "donkey-generated-track-v0" "donkey-generated-roads-v0" "donkey-warehouse-v0" "donkey-avc-sparkfun-v0"
+
+#publish camera over network
+PUB_CAMERA_IMAGES = False
