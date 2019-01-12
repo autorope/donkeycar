@@ -31,13 +31,13 @@ def scale(im, size=128):
     return im
 
 
-def img_to_binary(img):
+def img_to_binary(img, format='jpeg'):
     '''
     accepts: PIL image
     returns: binary stream (used to save to database)
     '''
     f = BytesIO()
-    img.save(f, format='jpeg')
+    img.save(f, format=format)
     return f.getvalue()
 
 

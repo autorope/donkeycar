@@ -93,30 +93,38 @@ class UDPValueSub(object):
     '''
     Use UDP to listen for broadcase packets
     '''
-    def __init__(self, name, port = 37021, return_last=True):
+    def __init__(self, name, port = 37021):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.client.bind(("", port))
         self.name = name
-        self.return_last = return_last
         self.last = None
+        self.running = True
 
     def run(self):
+        self.poll()
+        return self.last
+
+    def run_threaded(self):
+        return self.last
+
+    def update(self):
+        while self.running:
+            self.poll()
+
+    def poll(self):
         data, addr = self.client.recvfrom(1024 * 65)
-        #print("got", len(data), "bytes")
+        print("got", len(data), "bytes")
         if len(data) > 0:
             p = zlib.decompress(data)
             obj = pickle.loads(p)
 
             if self.name == obj['name']:
-                self.last = obj['val'] 
-                return obj['val']
+                self.last = obj['val']
 
-        if self.return_last:
-            return self.last
-        return None
 
     def shutdown(self):
+        self.running = False
         self.client.close()
 
 
@@ -151,7 +159,7 @@ class MQTTValueSub(object):
     Use MQTT to recv values on network
     pip install paho-mqtt
     '''
-      def __init__(self, name, broker="iot.eclipse.org"):
+    def __init__(self, name, broker="iot.eclipse.org"):
         from paho.mqtt.client import Client
 
         self.name = name
@@ -208,25 +216,29 @@ def test_udp_broadcast(ip):
     
     if ip is None:
         print("udp broadcast test..")
-        p = UDPValuePub('test')
-        import math
-        theta = 0.0
-        s = time.time()
-
+        p = UDPValuePub('camera')
+        import numpy as np
+        print("creating test imgage to send..")
+        from donkeycar.parts.camera import PiCamera
+        from donkeycar.parts.image import ImgArrToJpg
+        cam = PiCamera(160, 120, 3, framerate=4)
+        img_conv = ImgArrToJpg()
+        time.sleep(1)
+        
         while True:
-            v = (time.time() - s, math.sin(theta), math.cos(theta), math.tan(theta))
-            theta += 0.1
-            p.run(v)
-            time.sleep(0.1)
+            cam_img = cam.run()
+            jpg = img_conv.run(cam_img)
+            print("sending", len(jpg), "bytes")
+            p.run(jpg)
+            time.sleep(0.5)
 
     else:
         print("udp listen test..", ip)
-        s = UDPValueSub('test')
+        s = UDPValueSub('camera')
 
         while True:
             res = s.run()
-            print("got:", res)
-            time.sleep(1)
+            time.sleep(0.1)
 
 if __name__ == "__main__":
     import time

@@ -25,6 +25,8 @@ class ImgWriter():
 class ImgBGR2RGB():
 
     def run(self, img_arr):
+        if img_arr is None:
+            return None
         img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
         return img_arr
 
@@ -34,6 +36,8 @@ class ImgBGR2RGB():
 class ImgRGB2BGR():
 
     def run(self, img_arr):
+        if img_arr is None:
+            return None
         img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
         return img_arr
 
@@ -46,6 +50,8 @@ class ImageScale():
         self.scale = scale
 
     def run(self, img_arr):
+        if img_arr is None:
+            return None
         return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale)
 
     def shutdown(self):

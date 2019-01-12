@@ -461,9 +461,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
-        from dk.parts.network import ZMQValuePub
-        pub = ZMQValuePub("camera")
-        V.add(pub, inputs=['cam/image_array'])
+        from donkeycar.parts.network import ZMQValuePub, UDPValuePub
+        from donkeycar.parts.image import ImgArrToJpg
+        pub = UDPValuePub("camera")
+        #pub = ZMQValuePub("camera")
+        V.add(ImgArrToJpg(), inputs=['cam/image_array'], outputs=['jpg/bin'])
+        V.add(pub, inputs=['jpg/bin'])
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")

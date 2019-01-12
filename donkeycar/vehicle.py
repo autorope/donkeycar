@@ -149,6 +149,8 @@ class Vehicle():
         for entry in self.parts:
             try:
                 entry['part'].shutdown()
+            except AttributeError:
+                #usually from missing shutdown method, which should be optional
+                pass
             except Exception as e:
                 print(e)
-        #print(self.mem.d)
