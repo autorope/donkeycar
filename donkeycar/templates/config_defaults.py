@@ -97,6 +97,11 @@ USE_NETWORKED_JS = False
 NETWORK_JS_SERVER_IP = "192.168.0.1"
 JOYSTICK_DEADZONE = 0.0         # when non zero, this is the smallest throttle before recording triggered.
 
+#For the categorical model, this limits the upper bound of the learned throttle
+#it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
+#and ideally wouldn't change once set.
+MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.5
+
 #RNN or 3D
 SEQUENCE_LENGTH = 3
 

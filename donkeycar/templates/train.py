@@ -138,7 +138,7 @@ def collate_records(records, gen_records, opts):
 
         if opts['categorical']:
             angle = dk.utils.linear_bin(angle)
-            throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=0.5)
+            throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=opts['cfg'].MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
 
         sample['angle'] = angle
         sample['throttle'] = throttle
@@ -311,7 +311,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
         print("continuous training")
     
     gen_records = {}
-    opts = {}
+    opts = {'cfg' : cfg}
 
     kl = get_model_by_type(model_type, cfg=cfg)
 

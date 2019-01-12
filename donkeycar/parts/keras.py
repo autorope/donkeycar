@@ -86,10 +86,11 @@ class KerasPilot(object):
 
 
 class KerasCategorical(KerasPilot):
-    def __init__(self, input_shape=(120, 160, 3), *args, **kwargs):
+    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5, *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
         self.model = default_categorical(input_shape)
         self.compile()
+        self.throttle_range = throttle_range
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
@@ -110,7 +111,7 @@ class KerasCategorical(KerasPilot):
         N = len(throttle[0])
         
         if N > 0:
-            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=self.throttle_range)
         else:
             throttle = throttle[0][0]
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
