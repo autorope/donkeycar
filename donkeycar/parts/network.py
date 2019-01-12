@@ -2,7 +2,7 @@ import socket
 import zlib, pickle
 import zmq
 
-class ValuePub(object):
+class ZMQValuePub(object):
     '''
     Use Zero Message Queue (zmq) to publish values
     '''
@@ -25,7 +25,7 @@ class ValuePub(object):
         context = zmq.Context()
         context.destroy()
 
-class ValueSub(object):
+class ZMQValueSub(object):
     '''
     Use Zero Message Queue (zmq) to subscribe to value messages from a remote publisher
     '''
@@ -68,8 +68,7 @@ class ValueSub(object):
         context = zmq.Context()
         context.destroy()
 
-
-class UDPBroadcast(object):
+class UDPValuePub(object):
     '''
     Use udp to broadcast values on local network
     '''
@@ -85,15 +84,14 @@ class UDPBroadcast(object):
         packet = { "name": self.name, "val" : values }
         p = pickle.dumps(packet)
         z = zlib.compress(p)
-        z = z[:128]
         self.server.sendto(z, ('<broadcast>', self.port))
 
     def shutdown(self):
         self.server.close()
 
-class UDPListenBroadcast(object):
+class UDPValueSub(object):
     '''
-    Use Zero Message Queue (zmq) to subscribe to value messages from a remote publisher
+    Use UDP to listen for broadcase packets
     '''
     def __init__(self, name, port = 37021, return_last=True):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
@@ -105,7 +103,7 @@ class UDPListenBroadcast(object):
 
     def run(self):
         data, addr = self.client.recvfrom(1024 * 65)
-        print("got", len(data), "bytes")
+        #print("got", len(data), "bytes")
         if len(data) > 0:
             p = zlib.decompress(data)
             obj = pickle.loads(p)
@@ -122,11 +120,71 @@ class UDPListenBroadcast(object):
         self.client.close()
 
 
+
+class MQTTValuePub(object):
+    '''
+    Use MQTT to send values on network
+    pip install paho-mqtt
+    '''
+    def __init__(self, name, broker="iot.eclipse.org"):
+        from paho.mqtt.client import Client
+
+        self.name = name
+        self.message = None
+        self.client = Client()
+        self.client.connect(broker)
+        self.client.loop_start()
+
+    def run(self, values):
+        packet = { "name": self.name, "val" : values }
+        p = pickle.dumps(packet)
+        z = zlib.compress(p)
+        self.client.publish(self.name, z)
+
+    def shutdown(self):
+        self.client.disconnect()
+        self.client.loop_stop()
+
+
+class MQTTValueSub(object):
+    '''
+    Use MQTT to recv values on network
+    pip install paho-mqtt
+    '''
+      def __init__(self, name, broker="iot.eclipse.org"):
+        from paho.mqtt.client import Client
+
+        self.name = name
+        self.data = None
+        self.client = Client()
+        self.client.on_message = self.on_message
+        self.client.connect(broker)
+        self.client.loop_start()
+        self.client.subscribe(self.name)
+
+    def on_message(self, client, userdata, message):
+        self.data = message.payload
+
+    def run(self):
+        if self.data is None:
+            return None
+        p = zlib.decompress(self.data)
+        obj = pickle.loads(p)
+
+        if self.name == obj['name']:
+            self.last = obj['val'] 
+            return obj['val']
+
+    def shutdown(self):
+        self.client.disconnect()
+        self.client.loop_stop()
+
+
 def test_pub_sub(ip):
     
     if ip is None:
         print("publishing test..")
-        p = ValuePub('test')
+        p = ZMQValuePub('test')
         import math
         theta = 0.0
         s = time.time()
@@ -139,7 +197,7 @@ def test_pub_sub(ip):
 
     else:
         print("subscribing test..", ip)
-        s = ValueSub('test', ip=ip)
+        s = ZMQValueSub('test', ip=ip)
 
         while True:
             res = s.run()
@@ -150,7 +208,7 @@ def test_udp_broadcast(ip):
     
     if ip is None:
         print("udp broadcast test..")
-        p = UDPBroadcast('test')
+        p = UDPValuePub('test')
         import math
         theta = 0.0
         s = time.time()
@@ -163,7 +221,7 @@ def test_udp_broadcast(ip):
 
     else:
         print("udp listen test..", ip)
-        s = UDPListenBroadcast('test')
+        s = UDPValueSub('test')
 
         while True:
             res = s.run()

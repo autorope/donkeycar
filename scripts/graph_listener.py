@@ -7,7 +7,7 @@ import donkeycar as dk
 
 from donkeycar.parts.cv import CvImageView
 from donkeycar.parts.graph import Graph
-from donkeycar.parts.network import ValueSub
+from donkeycar.parts.network import ZMQValueSub
 from donkeycar.parts.transform import Lambda
 
 V = dk.vehicle.Vehicle()
@@ -48,7 +48,7 @@ def condition_values(obj):
 
 l = Lambda(condition_values)
 
-V.add(ValueSub(name="test", ip=ip), outputs=["obj"])
+V.add(ZMQValueSub(name="test", ip=ip), outputs=["obj"])
 V.add(l, inputs=["obj"], outputs=["values"])
 V.add(Graph(res=(h, w, d)), inputs=["values"], outputs=["graph/img"])
 V.add(CvImageView(), inputs=["graph/img"])

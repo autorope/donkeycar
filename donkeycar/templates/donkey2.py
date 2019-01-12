@@ -461,8 +461,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
-        from dk.parts.network import ValuePub
-        pub = ValuePub("camera")
+        from dk.parts.network import ZMQValuePub
+        pub = ZMQValuePub("camera")
         V.add(pub, inputs=['cam/image_array'])
 
     if type(ctr) is LocalWebController:

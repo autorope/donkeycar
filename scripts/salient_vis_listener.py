@@ -16,7 +16,7 @@ import donkeycar as dk
 
 from donkeycar.parts.cv import CvImageView, ImgBGR2RGB, ImgRGB2BGR, ImageScale, ImgWriter
 from donkeycar.parts.salient import SalientVis
-from donkeycar.parts.network import ValueSub, UDPListenBroadcast
+from donkeycar.parts.network import ZMQValueSub, UDPListenBroadcast
 from donkeycar.parts.transform import Lambda
 
 V = dk.vehicle.Vehicle()
@@ -33,7 +33,7 @@ if model_type is None:
 model = dk.utils.get_model_by_type(model_type, cfg)
 model.load(model_path)
 
-V.add(ValueSub(name="camera", ip=ip, hwm=1), outputs=["img"])
+V.add(ZMQValueSub(name="camera", ip=ip, hwm=1), outputs=["img"])
 #V.add(UDPListenBroadcast(name="camera"), outputs=["img"])
 V.add(ImgBGR2RGB(), inputs=["img"], outputs=["img"])
 V.add(SalientVis(model), inputs=["img"], outputs=["img"])
