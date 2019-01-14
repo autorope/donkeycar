@@ -75,19 +75,19 @@ class UDPValuePub(object):
     def __init__(self, name, port = 37021):
         self.name = name
         self.port = port
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)    
-        self.server.settimeout(0.2)
-        self.server.bind(("", 44444))
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)    
+        self.sock.settimeout(0.2)
+        self.sock.bind(("", 44444))
 
     def run(self, values):
         packet = { "name": self.name, "val" : values }
         p = pickle.dumps(packet)
         z = zlib.compress(p)
-        self.server.sendto(z, ('<broadcast>', self.port))
+        self.sock.sendto(z, ('<broadcast>', self.port))
 
     def shutdown(self):
-        self.server.close()
+        self.sock.close()
 
 class UDPValueSub(object):
     '''
@@ -127,7 +127,129 @@ class UDPValueSub(object):
         self.running = False
         self.client.close()
 
+import select
 
+class TCPServeValue(object):
+    '''
+    Use tcp to serve values on local network
+    '''
+    def __init__(self, name, port = 32332):
+        self.name = name
+        self.port = port
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setblocking(False)
+        self.sock.bind(("0.0.0.0", port))
+        self.sock.listen(3)
+        print("serving value:", name, "on port:", port)
+        self.clients = []
+
+    def send(self, sock, msg):
+        totalsent = 0
+        while totalsent < len(msg):
+            sent = sock.send(msg[totalsent:])
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            totalsent = totalsent + sent
+        #print("sent", totalsent, "bytes")
+
+    def run(self, values):
+        timeout = 0.05
+        ready_to_read, ready_to_write, in_error = \
+               select.select(
+                  [self.sock],
+                  self.clients,
+                  [],
+                  timeout)
+            
+        if len(ready_to_write) > 0:
+            packet = { "name": self.name, "val" : values }
+            p = pickle.dumps(packet)
+            z = zlib.compress(p)
+            for client in ready_to_write:
+                try:
+                    self.send(client, z)
+                except BrokenPipeError or ConnectionResetError:
+                    print("client dropped connection")
+                    self.clients.remove(client)
+        
+        if self.sock in ready_to_read:
+            client, addr = self.sock.accept()
+            print("got connection from", addr)
+            self.clients.append(client)
+
+        if len(in_error) > 0:
+            print("clients gone")
+            for sock in in_error:
+                self.clients.remove(sock)
+
+    def shutdown(self):
+        self.sock.close()
+
+
+class TCPClientValue(object):
+    '''
+    Use tcp to get values on local network
+    '''
+    def __init__(self, name, host, port = 32332):
+        self.name = name
+        self.port = port
+        self.addr = (host, port)
+        self.connect()
+
+    def connect(self):
+        print("attempting connect to", self.addr)
+        try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect(self.addr)
+        except ConnectionRefusedError:
+            print('server down')
+            time.sleep(3.0)
+            self.sock = None
+            return False
+        print("connected!")
+        self.sock.setblocking(False)
+        return True
+ 
+    def run(self):
+
+        if self.sock is None:
+            if not self.connect():
+                return None
+
+        timeout = 0.05
+        ready_to_read, ready_to_write, in_error = \
+               select.select(
+                  [self.sock],
+                  [],
+                  [],
+                  timeout)
+            
+        if len(ready_to_read) == 1:
+            try:
+                data = self.sock.recv(64 * 1024)
+                #print("got", len(data), "bytes")
+                p = zlib.decompress(data)
+                obj = pickle.loads(p)
+            except Exception as e:
+                print("error: server may have died")
+                self.sock.close()
+                self.sock = None
+                return None
+
+            if self.name == obj['name']:
+                self.last = obj['val'] 
+                return obj['val']        
+        
+        if len(in_error) > 0:
+            print("connection closed")
+            self.sock.close()
+            self.sock = None
+
+        return None
+
+    def shutdown(self):
+        self.sock.close()
 
 class MQTTValuePub(object):
     '''
@@ -217,8 +339,6 @@ def test_udp_broadcast(ip):
     if ip is None:
         print("udp broadcast test..")
         p = UDPValuePub('camera')
-        import numpy as np
-        print("creating test imgage to send..")
         from donkeycar.parts.camera import PiCamera
         from donkeycar.parts.image import ImgArrToJpg
         cam = PiCamera(160, 120, 3, framerate=4)
@@ -240,6 +360,21 @@ def test_udp_broadcast(ip):
             res = s.run()
             time.sleep(0.1)
 
+def test_tcp_client_server(ip):
+
+    if ip is None:
+        p = TCPServeValue("test")
+        import numpy as np
+        img = np.zeros((120, 160, 3))
+        while True:
+            p.run(img)
+            time.sleep(0.1)
+    else:
+        c = TCPClientValue("test", ip)
+        while True:
+            c.run()
+            time.sleep(0.1)
+
 if __name__ == "__main__":
     import time
     import sys
@@ -258,4 +393,6 @@ if __name__ == "__main__":
             ip = arg[3:]
 
     #test_pub_sub(ip)
-    test_udp_broadcast(ip)
+    #test_udp_broadcast(ip)
+    test_tcp_client_server(ip)
+
