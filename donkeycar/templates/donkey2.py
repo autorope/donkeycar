@@ -461,10 +461,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
-        from donkeycar.parts.network import ZMQValuePub, UDPValuePub
+        from donkeycar.parts.network import TCPServeValue
         from donkeycar.parts.image import ImgArrToJpg
-        pub = UDPValuePub("camera")
-        #pub = ZMQValuePub("camera")
+        pub = TCPServeValue("camera")
         V.add(ImgArrToJpg(), inputs=['cam/image_array'], outputs=['jpg/bin'])
         V.add(pub, inputs=['jpg/bin'])
 

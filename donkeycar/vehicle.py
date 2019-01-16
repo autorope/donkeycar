@@ -59,7 +59,7 @@ class Vehicle():
         self.parts.remove(part)
 
 
-    def start(self, rate_hz=10, max_loop_count=None):
+    def start(self, rate_hz=10, max_loop_count=None, verbose=False):
         """
         Start vehicle's main drive loop.
 
@@ -107,7 +107,8 @@ class Vehicle():
                     time.sleep(sleep_time)
                 else:
                     # print a message when could not maintain loop rate.
-                    print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time))
+                    if verbose:
+                        print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time))
 
         except KeyboardInterrupt:
             pass

@@ -9,9 +9,12 @@ class ImgArrToJpg():
     def run(self, img_arr):
         if img_arr is None:
             return None
-        image = arr_to_img(img_arr)
-        jpg = img_to_binary(image)
-        return jpg
+        try:
+            image = arr_to_img(img_arr)
+            jpg = img_to_binary(image)
+            return jpg
+        except:
+            return None
 
 class JpgToImgArr():
 

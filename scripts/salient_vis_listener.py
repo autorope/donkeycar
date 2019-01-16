@@ -16,7 +16,7 @@ import donkeycar as dk
 
 from donkeycar.parts.cv import CvImageView, ImgBGR2RGB, ImgRGB2BGR, ImageScale, ImgWriter
 from donkeycar.parts.salient import SalientVis
-from donkeycar.parts.network import ZMQValueSub, UDPValueSub
+from donkeycar.parts.network import ZMQValueSub, UDPValueSub, TCPClientValue
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.image import JpgToImgArr
 
@@ -34,14 +34,12 @@ if model_type is None:
 model = dk.utils.get_model_by_type(model_type, cfg)
 model.load(model_path)
 
-#V.add(ZMQValueSub(name="camera", ip=ip, hwm=1), outputs=["img"])
-V.add(UDPValueSub(name="camera"), outputs=["img"], threaded=True)
-V.add(JpgToImgArr(), inputs=["img"], outputs=["img"]) 
+V.add(TCPClientValue(name="camera", host=ip), outputs=["packet"])
+V.add(JpgToImgArr(), inputs=["packet"], outputs=["img"]) 
 V.add(ImgBGR2RGB(), inputs=["img"], outputs=["img"])
 V.add(SalientVis(model), inputs=["img"], outputs=["img"])
-V.add(ImageScale(4.0), inputs=["img"], outputs=["img"])
-V.add(CvImageView(), inputs=["img"])
-#V.add(ImgWriter("test.jpg"), inputs=["img"])
+V.add(ImageScale(4.0), inputs=["img"], outputs=["lg_img"])
+V.add(CvImageView(), inputs=["lg_img"])
 
 V.start(rate_hz=1)
 

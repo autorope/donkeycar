@@ -37,7 +37,10 @@ def img_to_binary(img, format='jpeg'):
     returns: binary stream (used to save to database)
     '''
     f = BytesIO()
-    img.save(f, format=format)
+    try:
+        img.save(f, format=format)
+    except Exception as e:
+        raise e
     return f.getvalue()
 
 
@@ -72,8 +75,15 @@ def binary_to_img(binary):
     accepts: binary file object from BytesIO
     returns: PIL image
     '''
+    if binary is None or len(binary) == 0:
+        return None
+
     img = BytesIO(binary)
-    return Image.open(img)
+    try:
+        img = Image.open(img)
+        return img
+    except:
+        return None
 
 
 def norm_img(img):

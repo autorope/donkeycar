@@ -27,8 +27,11 @@ class ImgBGR2RGB():
     def run(self, img_arr):
         if img_arr is None:
             return None
-        img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
-        return img_arr
+        try:
+            img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
+            return img_arr
+        except:
+            return None
 
     def shutdown(self):
         pass
@@ -52,7 +55,10 @@ class ImageScale():
     def run(self, img_arr):
         if img_arr is None:
             return None
-        return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale)
+        try:
+            return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale)
+        except:
+            return None
 
     def shutdown(self):
         pass
@@ -192,8 +198,11 @@ class CvImageView(object):
     def run(self, image):
         if image is None:
             return
-        cv2.imshow('frame', image)
-        cv2.waitKey(1)
+        try:
+            cv2.imshow('frame', image)
+            cv2.waitKey(1)
+        except:
+            pass
 
     def shutdown(self):
         cv2.destroyAllWindows()

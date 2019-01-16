@@ -1,6 +1,7 @@
 import socket
 import zlib, pickle
 import zmq
+import time
 
 class ZMQValuePub(object):
     '''
@@ -133,11 +134,12 @@ class TCPServeValue(object):
     '''
     Use tcp to serve values on local network
     '''
-    def __init__(self, name, port = 32332):
+    def __init__(self, name, port = 3233):
         self.name = name
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         self.sock.setblocking(False)
         self.sock.bind(("0.0.0.0", port))
         self.sock.listen(3)
@@ -145,13 +147,13 @@ class TCPServeValue(object):
         self.clients = []
 
     def send(self, sock, msg):
-        totalsent = 0
-        while totalsent < len(msg):
-            sent = sock.send(msg[totalsent:])
-            if sent == 0:
-                raise RuntimeError("socket connection broken")
-            totalsent = totalsent + sent
-        #print("sent", totalsent, "bytes")
+        try:
+            sock.sendall(msg)
+        except ConnectionResetError:
+            print("client dropped connection")
+            self.clients.remove(sock)
+
+        #print("sent", len(msg), "bytes")
 
     def run(self, values):
         timeout = 0.05
@@ -191,11 +193,13 @@ class TCPClientValue(object):
     '''
     Use tcp to get values on local network
     '''
-    def __init__(self, name, host, port = 32332):
+    def __init__(self, name, host, port=3233):
         self.name = name
         self.port = port
         self.addr = (host, port)
         self.connect()
+        self.timeout = 0.05
+        self.lastread = time.time()
 
     def connect(self):
         print("attempting connect to", self.addr)
@@ -210,41 +214,82 @@ class TCPClientValue(object):
         print("connected!")
         self.sock.setblocking(False)
         return True
+
+    def read(self, sock):
+        data = self.sock.recv(64 * 1024)
+
+        ready_to_read, ready_to_write, in_error = \
+        select.select(
+            [self.sock],
+            [],
+            [],
+            self.timeout)
+
+        while len(ready_to_read) == 1:
+            more_data = self.sock.recv(64 * 1024)
+            if len(more_data) == 0:
+                break
+            data = data + more_data
+
+            ready_to_read, ready_to_write, in_error = \
+            select.select(
+                [self.sock],
+                [],
+                [],
+                self.timeout)
+
+        return data
+
+    def reset(self):
+        self.sock.close()
+        self.sock = None
+        self.lastread = time.time()
+            
  
     def run(self):
 
+        time_since_last_read = abs(time.time() - self.lastread)
+        
         if self.sock is None:
             if not self.connect():
                 return None
+        elif time_since_last_read > 5.0: 
+            print("error: no data from server. may have died")
+            self.reset()
+            return None
 
-        timeout = 0.05
         ready_to_read, ready_to_write, in_error = \
                select.select(
                   [self.sock],
+                  [self.sock],
                   [],
-                  [],
-                  timeout)
-            
+                  self.timeout)
+
+        if len(in_error) > 0:
+            print("error: server may have died")
+            self.reset()
+            return None
+
         if len(ready_to_read) == 1:
             try:
-                data = self.sock.recv(64 * 1024)
+                data = self.read(self.sock)
                 #print("got", len(data), "bytes")
+                self.lastread = time.time()
                 p = zlib.decompress(data)
                 obj = pickle.loads(p)
             except Exception as e:
+                print(e)
                 print("error: server may have died")
-                self.sock.close()
-                self.sock = None
+                self.reset()
                 return None
 
             if self.name == obj['name']:
                 self.last = obj['val'] 
-                return obj['val']        
-        
+                return obj['val']
+
         if len(in_error) > 0:
             print("connection closed")
-            self.sock.close()
-            self.sock = None
+            self.reset()
 
         return None
 
@@ -363,17 +408,21 @@ def test_udp_broadcast(ip):
 def test_tcp_client_server(ip):
 
     if ip is None:
-        p = TCPServeValue("test")
-        import numpy as np
-        img = np.zeros((120, 160, 3))
+        p = TCPServeValue("camera")
+        from donkeycar.parts.camera import PiCamera
+        from donkeycar.parts.image import ImgArrToJpg
+        cam = PiCamera(160, 120, 3, framerate=4)
+        img_conv = ImgArrToJpg()
         while True:
-            p.run(img)
+            cam_img = cam.run()
+            jpg = img_conv.run(cam_img)
+            p.run(jpg)
             time.sleep(0.1)
     else:
-        c = TCPClientValue("test", ip)
+        c = TCPClientValue("camera", ip)
         while True:
             c.run()
-            time.sleep(0.1)
+            time.sleep(0.01)
 
 if __name__ == "__main__":
     import time
