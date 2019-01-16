@@ -424,6 +424,30 @@ def test_tcp_client_server(ip):
             c.run()
             time.sleep(0.01)
 
+def test_mqtt_pub_sub(ip):
+    
+    if ip is None:
+        print("publishing test..")
+        p = MQTTValuePub('test')
+        import math
+        theta = 0.0
+        s = time.time()
+
+        while True:
+            v = (time.time() - s, math.sin(theta), math.cos(theta), math.tan(theta))
+            theta += 0.1
+            p.run(v)
+            time.sleep(0.1)
+
+    else:
+        print("subscribing test..")
+        s = MQTTValueSub('test')
+
+        while True:
+            res = s.run()
+            print("got:", res)
+            time.sleep(0.1)
+
 if __name__ == "__main__":
     import time
     import sys
@@ -443,5 +467,7 @@ if __name__ == "__main__":
 
     #test_pub_sub(ip)
     #test_udp_broadcast(ip)
+    #test_mqtt_pub_sub(ip)
     test_tcp_client_server(ip)
+    
 
