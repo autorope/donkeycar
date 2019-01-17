@@ -167,7 +167,7 @@ There are two versions of the donkey chassis, the newer one does not have screws
 
 **Screwless Design**
 The newer design is pretty simple, just slip the camera into the slot, cable end first.  However, be careful not to push on the camera lens and instead press the board.
-![donkey](../assets/build_hardware/assemble camera.jpg)
+![donkey](../assets/build_hardware/assemble%20camera.jpg)
 
 If you need to remove the camera the temptation is to push on the lens, instead push on the connector as is shown in these pictures.  
 ![donkey](../assets/build_hardware/Remove--good.jpg) ![donkey](../assets/build_hardware/Remove--bad.jpg)
