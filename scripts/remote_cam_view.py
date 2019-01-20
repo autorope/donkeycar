@@ -16,7 +16,7 @@ import donkeycar as dk
 
 from donkeycar.parts.cv import CvImageView, ImgBGR2RGB, ImgRGB2BGR, ImageScale, ImgWriter
 from donkeycar.parts.salient import SalientVis
-from donkeycar.parts.network import ZMQValueSub, UDPValueSub, TCPClientValue
+from donkeycar.parts.network import ZMQValueSub, UDPValueSub, TCPClientValue, MQTTValueSub
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.image import JpgToImgArr
 
@@ -27,6 +27,7 @@ cfg = dk.load_config("./config.py")
 ip = args['--ip']
 
 V.add(TCPClientValue(name="camera", host=ip), outputs=["jpg"])
+#V.add(MQTTValueSub(name="donkey/camera"), outputs=["jpg"])
 V.add(JpgToImgArr(), inputs=["jpg"], outputs=["img_arr"]) 
 V.add(ImgBGR2RGB(), inputs=["img_arr"], outputs=["rgb"])
 V.add(ImageScale(4.0), inputs=["rgb"], outputs=["lg_img"])

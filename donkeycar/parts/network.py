@@ -428,20 +428,20 @@ def test_mqtt_pub_sub(ip):
     
     if ip is None:
         print("publishing test..")
-        p = MQTTValuePub('test')
-        import math
-        theta = 0.0
-        s = time.time()
-
+        p = MQTTValuePub('donkey/camera')
+        from donkeycar.parts.camera import PiCamera
+        from donkeycar.parts.image import ImgArrToJpg
+        cam = PiCamera(160, 120, 3, framerate=4)
+        img_conv = ImgArrToJpg()
         while True:
-            v = (time.time() - s, math.sin(theta), math.cos(theta), math.tan(theta))
-            theta += 0.1
-            p.run(v)
+            cam_img = cam.run()
+            jpg = img_conv.run(cam_img)
+            p.run(jpg)
             time.sleep(0.1)
 
     else:
         print("subscribing test..")
-        s = MQTTValueSub('test')
+        s = MQTTValueSub('donkey/camera')
 
         while True:
             res = s.run()
