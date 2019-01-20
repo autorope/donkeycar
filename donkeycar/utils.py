@@ -419,7 +419,7 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "rnn":
         kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape)
+        kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
     else:
         raise Exception("unknown model type: %s" % model_type)
 
