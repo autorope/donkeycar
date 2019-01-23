@@ -528,17 +528,23 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 
     img_seq_shape = (seq_length,) + image_shape   
     img_in = Input(batch_shape = img_seq_shape, name='img_in')
-    
+    drop_out = 0.2
+
     x = Sequential()
-    x.add(TD(Cropping2D(cropping=((60,0), (0,0))), input_shape=img_seq_shape )) #trim 60 pixels off top
+    x.add(TD(Cropping2D(cropping=((40,0), (0,0))), input_shape=img_seq_shape )) #trim 60 pixels off top
+    x.add(TD(BatchNormalization()))
     x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (5,5), strides=(2,2), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (3,3), strides=(2,2), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (3,3), strides=(1,1), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(MaxPooling2D(pool_size=(2, 2))))
     x.add(TD(Flatten(name='flattened')))
     x.add(TD(Dense(100, activation='relu')))
-    x.add(TD(Dropout(.1)))
+    x.add(TD(Dropout(drop_out)))
       
     x.add(LSTM(128, return_sequences=True, name="LSTM_seq"))
     x.add(Dropout(.1))
@@ -656,4 +662,76 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     model.add(Dense(num_outputs))
     #model.add(Activation('tanh'))
 
+    return model
+
+class KerasLatent(KerasPilot):
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = default_latent(num_outputs, input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, loss={
+            "img_out" : "mse", "n_outputs0" : "mse", "n_outputs1" : "mse"
+        }, loss_weights={
+            "img_out" : 100.0, "n_outputs0" : 2.0, "n_outputs1" : 1.0
+        })
+
+    def run(self, img_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        outputs = self.model.predict(img_arr)
+        steering = outputs[1]
+        throttle = outputs[2]
+        return steering[0][0], throttle[0][0]
+
+
+def default_latent(num_outputs, input_shape):
+    from keras.layers import Input, Dense
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda, Conv2DTranspose
+
+    drop = 0.2
+    
+    img_in = Input(shape=input_shape, name='img_in')
+    x = img_in
+    x = Lambda(lambda x: x/255.)(x) # normalize
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_6")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_7")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(10, (1,1), strides=(2,2), activation='relu', name="latent")(x)
+    
+    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_1")(x)
+    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_2")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_3")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_4")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_5")(y)
+    y = Conv2DTranspose(filters=1, kernel_size=(3,3), strides=2, name="img_out")(y)
+    
+    x = Flatten(name='flattened')(x)
+    x = Dense(256, activation='relu')(x)
+    x = Dropout(drop)(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu')(x)
+    x = Dropout(drop)(x)
+
+    outputs = [y]
+    
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+        
+    model = Model(inputs=[img_in], outputs=outputs)
+    
     return model
