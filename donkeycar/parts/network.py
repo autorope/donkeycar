@@ -94,12 +94,12 @@ class UDPValueSub(object):
     '''
     Use UDP to listen for broadcase packets
     '''
-    def __init__(self, name, port = 37021):
+    def __init__(self, name, port = 37021, def_value=None):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.client.bind(("", port))
         self.name = name
-        self.last = None
+        self.last = def_value
         self.running = True
 
     def run(self):
@@ -115,7 +115,7 @@ class UDPValueSub(object):
 
     def poll(self):
         data, addr = self.client.recvfrom(1024 * 65)
-        print("got", len(data), "bytes")
+        #print("got", len(data), "bytes")
         if len(data) > 0:
             p = zlib.decompress(data)
             obj = pickle.loads(p)
@@ -197,6 +197,7 @@ class TCPClientValue(object):
         self.name = name
         self.port = port
         self.addr = (host, port)
+        self.sock = None
         self.connect()
         self.timeout = 0.05
         self.lastread = time.time()
@@ -214,6 +215,9 @@ class TCPClientValue(object):
         print("connected!")
         self.sock.setblocking(False)
         return True
+
+    def is_connected(self):
+        return self.sock is not None
 
     def read(self, sock):
         data = self.sock.recv(64 * 1024)
