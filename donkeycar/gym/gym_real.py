@@ -11,7 +11,7 @@ import gym
 import numpy as np
 from gym import error, spaces, utils
 
-from remote_controller import DonkeyRemoteContoller
+from .remote_controller import DonkeyRemoteContoller
 
 
 class DonkeyRealEnv(gym.Env):
@@ -30,24 +30,24 @@ class DonkeyRealEnv(gym.Env):
     THROTTLE_MAX = 5.0
     VAL_PER_PIXEL = 255
 
-    def __init__(self, level, time_step=0.05, frame_skip=2):
+    def __init__(self, time_step=0.05, frame_skip=2):
 
         print("starting DonkeyGym env")
         
         try:
-            port = int(os.environ['DONKEY_REMOTE_PORT'])
+            donkey_name = str(os.environ['DONKEY_NAME'])
         except:
-            port = 3233
-            print("Missing DONKEY_REMOTE_PORT environment var. Using default:", port)
+            donkey_name = 'my_robot1234'
+            print("No DONKEY_NAME environment var. Using default:", donkey_name)
 
         try:
-            host = int(os.environ['DONKEY_REMOTE_HOST'])
+            mqtt_broker = str(os.environ['DONKEY_MQTT_BROKER'])
         except:
-            host = 'raspberrypi.local'
-            print("Missing DONKEY_REMOTE_HOST environment var. Using default:", host)
+            mqtt_broker = "iot.eclipse.org"
+            print("No DONKEY_MQTT_BROKER environment var. Using default:", mqtt_broker)
             
         # start controller
-        self.controller = DonkeyRemoteContoller(host=host, sensors_port=port, controls_port=(port + 1))
+        self.controller = DonkeyRemoteContoller(donkey_name=donkey_name, mqtt_broker=mqtt_broker)
         
         # steering and throttle
         self.action_space = spaces.Box(low=np.array([self.STEER_LIMIT_LEFT, self.THROTTLE_MIN]),
@@ -61,7 +61,7 @@ class DonkeyRealEnv(gym.Env):
 
         # wait until loaded
         self.controller.wait_until_connected()
-
+        
 
     def close(self):
         self.controller.quit()        

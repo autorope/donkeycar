@@ -7,21 +7,22 @@ desc: Control a remote donkey robot over network
 
 import time
 
-from donkeycar.parts.network import TCPClientValue, UDPValuePub
+from donkeycar.parts.network import MQTTValueSub, MQTTValuePub
 from donkeycar.parts.image import JpgToImgArr
 
 class DonkeyRemoteContoller:
-    def __init__(self, host, sensors_port, controls_port):
-        self.camera_sub = TCPClientValue("donkey/camera", host=host, port=sensors_port)
-        self.controller_pub = UDPValuePub("donkey/controls", port=controls_port)
+    def __init__(self, donkey_name, mqtt_broker):
+        self.camera_sub = MQTTValueSub("donkey/%s/camera" % donkey_name, broker=mqtt_broker)
+        self.controller_pub = MQTTValuePub("donkey/%s/controls" % donkey_name, broker=mqtt_broker)
         self.jpgToImg = JpgToImgArr()
 
     def get_sensor_size(self):
         return (120, 160, 3)
 
     def wait_until_connected(self):
-        while not self.camera_sub.is_connected():
-            self.camera_sub.connect()
+        while self.camera_sub.run() is None:
+            print("waiting until we get camera data...")
+            time.sleep(3.0)
 
     def take_action(self, action):
         self.controller_pub.run(action)

@@ -85,6 +85,7 @@ class UDPValuePub(object):
         packet = { "name": self.name, "val" : values }
         p = pickle.dumps(packet)
         z = zlib.compress(p)
+        #print("broadcast", len(z), "bytes to port", self.port)
         self.sock.sendto(z, ('<broadcast>', self.port))
 
     def shutdown(self):
@@ -98,6 +99,7 @@ class UDPValueSub(object):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # UDP
         self.client.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.client.bind(("", port))
+        print("listening for UDP broadcasts on port", port)
         self.name = name
         self.last = def_value
         self.running = True
@@ -330,7 +332,7 @@ class MQTTValueSub(object):
     Use MQTT to recv values on network
     pip install paho-mqtt
     '''
-    def __init__(self, name, broker="iot.eclipse.org"):
+    def __init__(self, name, broker="iot.eclipse.org", def_value=None):
         from paho.mqtt.client import Client
 
         self.name = name
@@ -340,19 +342,22 @@ class MQTTValueSub(object):
         self.client.connect(broker)
         self.client.loop_start()
         self.client.subscribe(self.name)
+        self.def_value = def_value
 
     def on_message(self, client, userdata, message):
         self.data = message.payload
 
     def run(self):
         if self.data is None:
-            return None
+            return self.def_value
         p = zlib.decompress(self.data)
         obj = pickle.loads(p)
 
         if self.name == obj['name']:
             self.last = obj['val'] 
             return obj['val']
+            
+        return self.def_value
 
     def shutdown(self):
         self.client.disconnect()

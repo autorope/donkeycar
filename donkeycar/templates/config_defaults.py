@@ -15,6 +15,9 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
+#donkey name. This should be unique across the shared mqtt broker
+DONKEY_UNIQUE_NAME = 'my_robot1234'
+
 #pi information
 PI_USERNAME = "pi"
 PI_PASSWD = "raspberry"
