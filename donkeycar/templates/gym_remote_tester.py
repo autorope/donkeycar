@@ -1,3 +1,12 @@
+'''
+file: gym_remote_tester.py
+author: Tawn Kramer
+date: 2019-01-25
+desc: Control a remote donkey robot over network
+
+args - pass the donkey name to connect to. ie.
+python gym_remote_tester.py my_robot1234
+'''
 import os
 import sys
 import time
@@ -6,8 +15,8 @@ import math
 from donkeycar.gym.gym_real import DonkeyRealEnv
 from donkeycar.parts.cv import CvImageView, ImageScale
 
-print("connecting to host", sys.argv[1])
-os.environ['DONKEY_REMOTE_HOST'] = sys.argv[1]
+print("connecting to robot:", sys.argv[1])
+os.environ['DONKEY_NAME'] = sys.argv[1]
 
 env = DonkeyRealEnv()
 action = (0., 0.)

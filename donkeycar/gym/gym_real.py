@@ -1,7 +1,7 @@
 '''
 file: gym_real.py
 author: Tawn Kramer
-date: 2018-08-31
+date: 2019-01-24
 desc: Control a real donkey robot via the gym interface
 '''
 import os
