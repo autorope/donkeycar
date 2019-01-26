@@ -20,9 +20,7 @@ class DonkeyRemoteContoller:
         return (120, 160, 3)
 
     def wait_until_connected(self):
-        while self.camera_sub.run() is None:
-            print("waiting until we get camera data...")
-            time.sleep(3.0)
+        pass
 
     def take_action(self, action):
         self.controller_pub.run(action)
@@ -31,10 +29,13 @@ class DonkeyRemoteContoller:
         self.camera_sub.shutdown()
         self.controller_pub.shutdown()
 
+    def get_original_image(self):
+        return self.img
+
     def observe(self):
-        img = self.camera_sub.run()
-        observation = self.jpgToImg.run(img)
-        return observation
-    
+        jpg = self.camera_sub.run()
+        self.img = self.jpgToImg.run(jpg)
+        return self.img
+
 
     

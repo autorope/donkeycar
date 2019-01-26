@@ -44,6 +44,7 @@ setup(name='donkeycar',
                       'moviepy',
                       'pandas',
                       'PrettyTable',
+                      'paho-mqtt'
                      ],
 
     extras_require={
