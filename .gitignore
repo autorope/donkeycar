@@ -12,3 +12,4 @@ lag_log.csv
 site/*
 build
 .idea
+.vscode

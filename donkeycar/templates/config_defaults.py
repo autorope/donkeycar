@@ -82,6 +82,10 @@ LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
 CACHE_IMAGES = True             #keep images in memory. will speed succesive epochs, but crater if not enough mem.
+PRUNE_CNN = True
+PRUNE_PERCENT_TARGET = 95
+PRUNE_PERCENT_PER_ITERATION = 20
+PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.01
 
 #model transfer options
 FREEZE_LAYERS = False
