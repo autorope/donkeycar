@@ -63,6 +63,45 @@ class ImageScale():
     def shutdown(self):
         pass
 
+class ImageRotateBound():
+    '''
+    credit:
+    https://www.pyimagesearch.com/2017/01/02/rotate-images-correctly-with-opencv-and-python/
+    '''
+
+    def __init__(self, rot_deg):
+        self.rot_deg = rot_deg
+
+    def run(self, image):
+        if image is None:
+            return None
+
+        # grab the dimensions of the image and then determine the
+        # center
+        (h, w) = image.shape[:2]
+        (cX, cY) = (w // 2, h // 2)
+    
+        # grab the rotation matrix (applying the negative of the
+        # angle to rotate clockwise), then grab the sine and cosine
+        # (i.e., the rotation components of the matrix)
+        M = cv2.getRotationMatrix2D((cX, cY), -self.rot_deg, 1.0)
+        cos = np.abs(M[0, 0])
+        sin = np.abs(M[0, 1])
+    
+        # compute the new bounding dimensions of the image
+        nW = int((h * sin) + (w * cos))
+        nH = int((h * cos) + (w * sin))
+    
+        # adjust the rotation matrix to take into account translation
+        M[0, 2] += (nW / 2) - cX
+        M[1, 2] += (nH / 2) - cY
+    
+        # perform the actual rotation and return the image
+        return cv2.warpAffine(image, M, (nW, nH))
+
+    def shutdown(self):
+        pass
+
 class ImgCanny():
 
     def __init__(self, low_threshold=60, high_threshold=110):
@@ -103,6 +142,8 @@ class ImgCrop:
         self.right = right
         
     def run(self, img_arr):
+        if img_arr is None:
+            return None
         width, height, _ = img_arr.shape
         img_arr = img_arr[self.top:height-self.bottom, 
                           self.left: width-self.right]
@@ -145,6 +186,27 @@ class ImgStack:
     def shutdown(self):
         pass
 
+class ArrowKeyboardControls:
+    '''
+    kind of sucky control, only one press active at a time. 
+    good enough for a little testing.
+    requires that you have an CvImageView open and it has focus.
+    '''
+    def __init__(self):
+        self.left = 2424832
+        self.right = 2555904
+        self.up = 2490368
+        self.down = 2621440
+        self.codes = [self.left, self.right, self.down, self.up]
+        self.vec = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    def run(self):
+        code = cv2.waitKeyEx(delay=100)
+        for iCode, keyCode in enumerate(self.codes):
+            if keyCode == code:
+                return self.vec[iCode]
+        return (0., 0.)
+        
         
         
 class Pipeline():
