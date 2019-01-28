@@ -313,8 +313,10 @@ class MQTTValuePub(object):
         self.name = name
         self.message = None
         self.client = Client()
+        print("connecting to broker", broker)
         self.client.connect(broker)
         self.client.loop_start()
+        print("connected.")
 
     def run(self, values):
         packet = { "name": self.name, "val" : values }
@@ -337,24 +339,28 @@ class MQTTValueSub(object):
 
         self.name = name
         self.data = None
-        self.client = Client()
+        self.client = Client(clean_session=True)
         self.client.on_message = self.on_message
+        print("(clean_session) connecting to broker", broker)
         self.client.connect(broker)
         self.client.loop_start()
         self.client.subscribe(self.name)
         self.def_value = def_value
+        print("connected.")
 
     def on_message(self, client, userdata, message):
         self.data = message.payload
-
+        
     def run(self):
         if self.data is None:
             return self.def_value
+
         p = zlib.decompress(self.data)
         obj = pickle.loads(p)
 
         if self.name == obj['name']:
-            self.last = obj['val'] 
+            self.last = obj['val']
+            #print("steering, throttle", obj['val'])
             return obj['val']
             
         return self.def_value

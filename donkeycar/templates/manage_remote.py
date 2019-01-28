@@ -20,19 +20,15 @@ print("starting up", cfg.DONKEY_UNIQUE_NAME, "for remote management.")
 cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
 V.add(cam, outputs=["camera/arr"], threaded=True)
 
-#warm up camera
-while cam.run_threaded() is None:
-    V.update_parts()
-    time.sleep(1)
 
 img_to_jpg = ImgArrToJpg()
 V.add(img_to_jpg, inputs=["camera/arr"], outputs=["camera/jpg"])
 
-pub_cam = MQTTValuePub("donkey/%s/camera" % cfg.DONKEY_UNIQUE_NAME)
+pub_cam = MQTTValuePub("donkey/%s/camera" % cfg.DONKEY_UNIQUE_NAME, broker=cfg.MQTT_BROKER)
 V.add(pub_cam, inputs=["camera/jpg"])
 
-sub_controls = MQTTValueSub("donkey/%s/controls" % cfg.DONKEY_UNIQUE_NAME, def_value=(0., 0.))
-V.add(sub_controls, outputs=["angle", "throttle"], threaded=True)
+sub_controls = MQTTValueSub("donkey/%s/controls" % cfg.DONKEY_UNIQUE_NAME, def_value=(0., 0.), broker=cfg.MQTT_BROKER)
+V.add(sub_controls, outputs=["angle", "throttle"])
 
 steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
 steering = PWMSteering(controller=steering_controller,
