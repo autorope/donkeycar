@@ -86,6 +86,10 @@ LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
 CACHE_IMAGES = True             #keep images in memory. will speed succesive epochs, but crater if not enough mem.
 
+# Region of interst cropping
+ROI_CROP_TOP = 0
+ROI_CROP_BOTTOM = 0
+
 #model transfer options
 FREEZE_LAYERS = False
 NUM_LAST_LAYERS_TO_TRAIN = 7
