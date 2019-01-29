@@ -59,7 +59,7 @@ class Vehicle():
         self.parts.remove(part)
 
 
-    def start(self, rate_hz=10, max_loop_count=None):
+    def start(self, rate_hz=10, max_loop_count=None, verbose=False):
         """
         Start vehicle's main drive loop.
 
@@ -105,6 +105,10 @@ class Vehicle():
                 sleep_time = 1.0 / rate_hz - (time.time() - start_time)
                 if sleep_time > 0.0:
                     time.sleep(sleep_time)
+                else:
+                    # print a message when could not maintain loop rate.
+                    if verbose:
+                        print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time))
 
         except KeyboardInterrupt:
             pass
@@ -146,6 +150,8 @@ class Vehicle():
         for entry in self.parts:
             try:
                 entry['part'].shutdown()
+            except AttributeError:
+                #usually from missing shutdown method, which should be optional
+                pass
             except Exception as e:
                 print(e)
-        #print(self.mem.d)

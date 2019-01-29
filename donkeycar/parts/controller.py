@@ -29,11 +29,11 @@ class Joystick(object):
             self.num_axes = 0
             self.num_buttons = 0
             print("no support for fnctl module. joystick not enabled.")
-            return            
+            return False
             
         if not os.path.exists(self.dev_fn):
             print(self.dev_fn, "is missing")
-            return
+            return False
 
         '''
         call once to setup connection to device and map buttons
@@ -396,6 +396,7 @@ class JoystickController(object):
         self.num_records_to_erase = 100
         self.estop_state = self.ES_IDLE
         self.chaos_monkey_steering = None
+        self.dead_zone = 0.0
         
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
@@ -415,6 +416,12 @@ class JoystickController(object):
         Should be definied by derived class
         '''
         raise(Exception("init_trigger_maps"))
+
+    def set_deadzone(self, val):
+        '''
+        sets the minimim throttle for recording
+        '''
+        self.dead_zone = val
 
     def print_controls(self):
         '''
@@ -462,7 +469,7 @@ class JoystickController(object):
         turn on recording when non zero throttle in the user mode.
         '''
         if self.auto_record_on_throttle:
-            self.recording = (self.throttle != 0.0 and self.mode == 'user')
+            self.recording = (abs(self.throttle) > self.dead_zone and self.mode == 'user')
 
     def emergency_stop(self):
         '''
@@ -482,7 +489,7 @@ class JoystickController(object):
 
         #wait for joystick to be online
         while self.running and self.js is None and not self.init_js():
-            time.sleep(5)
+            time.sleep(3)
 
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
@@ -642,7 +649,8 @@ class JoystickCreatorController(JoystickController):
         '''
         try:
             self.js = JoystickCreator(self.dev_fn)
-            self.js.init()
+            if not self.js.init():
+                self.js = None
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
@@ -670,7 +678,8 @@ class PS3JoystickController(JoystickController):
         '''
         try:
             self.js = PS3Joystick(self.dev_fn)
-            self.js.init()
+            if not self.js.init():
+                self.js = None
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
@@ -720,7 +729,8 @@ class PS4JoystickController(JoystickController):
         '''
         try:
             self.js = PS4Joystick(self.dev_fn)
-            self.js.init()
+            if not self.js.init():
+                self.js = None
         except FileNotFoundError:
             print(self.dev_fn, "not found.")
             self.js = None
