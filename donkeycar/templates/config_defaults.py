@@ -15,6 +15,9 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
+#donkey name. This should be unique across the shared mqtt broker
+DONKEY_UNIQUE_NAME = 'my_robot1234'
+
 #pi information
 PI_USERNAME = "pi"
 PI_PASSWD = "raspberry"
@@ -87,6 +90,11 @@ PRUNE_PERCENT_TARGET = 75
 PRUNE_PERCENT_PER_ITERATION = 20
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.01
 
+# Region of interst cropping
+# only supported in Categorical and Linear models.
+ROI_CROP_TOP = 0
+ROI_CROP_BOTTOM = 0
+
 #model transfer options
 FREEZE_LAYERS = False
 NUM_LAST_LAYERS_TO_TRAIN = 7
@@ -100,6 +108,11 @@ CONTROLLER_TYPE='ps3'           #(ps3|ps4)
 USE_NETWORKED_JS = False
 NETWORK_JS_SERVER_IP = "192.168.0.1"
 JOYSTICK_DEADZONE = 0.0         # when non zero, this is the smallest throttle before recording triggered.
+
+#For the categorical model, this limits the upper bound of the learned throttle
+#it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
+#and ideally wouldn't change once set.
+MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.5
 
 #RNN or 3D
 SEQUENCE_LENGTH = 3
@@ -154,3 +167,6 @@ BUTTON_PRESS_NEW_TUB = False #should we make a new tub on each X button press?
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # "donkey-generated-track-v0" "donkey-generated-roads-v0" "donkey-warehouse-v0" "donkey-avc-sparkfun-v0"
+
+#publish camera over network
+PUB_CAMERA_IMAGES = False

@@ -3,7 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--camera=(single|stereo)]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
 
 
@@ -459,6 +459,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+
+    if cfg.PUB_CAMERA_IMAGES:
+        from donkeycar.parts.network import TCPServeValue
+        from donkeycar.parts.image import ImgArrToJpg
+        pub = TCPServeValue("camera")
+        V.add(ImgArrToJpg(), inputs=['cam/image_array'], outputs=['jpg/bin'])
+        V.add(pub, inputs=['jpg/bin'])
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pi ip address>:8887 to drive your car.")

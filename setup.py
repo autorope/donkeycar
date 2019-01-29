@@ -34,7 +34,7 @@ setup(name='donkeycar',
     install_requires=['numpy', 
                       'pillow',
                       'docopt',
-                      'tornado',
+                      'tornado==4.5.2',
                       'requests',
                       'keras',
                       'h5py',
@@ -44,6 +44,7 @@ setup(name='donkeycar',
                       'moviepy',
                       'pandas',
                       'PrettyTable',
+                      'paho-mqtt'
                      ],
 
     extras_require={

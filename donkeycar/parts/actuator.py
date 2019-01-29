@@ -551,6 +551,8 @@ class Mini_HBridge_DC_Motor_PWM(object):
 
     def shutdown(self):
         import RPi.GPIO as GPIO
+        self.pwm_f.ChangeDutyCycle(0)
+        self.pwm_b.ChangeDutyCycle(0)
         self.pwm_f.stop()
         self.pwm_b.stop()
         GPIO.cleanup()
@@ -635,5 +637,6 @@ class ServoBlaster(object):
         self.set_pulse(pulse)
 
     def shutdown(self):
+        self.run((self.max + self.min) / 2)
         self.servoblaster.close()
 
