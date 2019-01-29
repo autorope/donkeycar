@@ -86,9 +86,9 @@ class KerasPilot(object):
 
 
 class KerasCategorical(KerasPilot):
-    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5, *args, **kwargs):
+    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5, roi_crop=(0, 0), *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
-        self.model = default_categorical(input_shape)
+        self.model = default_categorical(input_shape, roi_crop)
         self.compile()
         self.throttle_range = throttle_range
 
@@ -120,9 +120,9 @@ class KerasCategorical(KerasPilot):
     
     
 class KerasLinear(KerasPilot):
-    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
-        self.model = default_n_linear(num_outputs, input_shape)
+        self.model = default_n_linear(num_outputs, input_shape, roi_crop)
         self.compile()
 
     def compile(self):
@@ -246,17 +246,18 @@ class KerasLocalizer(KerasPilot):
         
         return angle_unbinned, throttle
 
-def default_categorical(input_shape=(120, 160, 3)):
+def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense    
+    from keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D 
     
     opt = keras.optimizers.Adam()
     drop = 0.2
 
     img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
+    x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim configured pixels off top and bottom
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
@@ -289,7 +290,7 @@ def default_categorical(input_shape=(120, 160, 3)):
     return model
 
 
-def default_n_linear(num_outputs, input_shape):
+def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
     from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
@@ -299,7 +300,7 @@ def default_n_linear(num_outputs, input_shape):
     
     img_in = Input(shape=input_shape, name='img_in')
     x = img_in
-    x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
+    x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim pixels off top and bottom
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)

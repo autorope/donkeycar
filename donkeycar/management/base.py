@@ -614,6 +614,76 @@ class ConTrain(BaseCommand):
         multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
 
 
+class ShowCnnActivations(BaseCommand):
+
+    def __init__(self):
+        import matplotlib.pyplot as plt
+        self.plt = plt
+
+    def get_activations(self, image_path, model_path):
+        '''
+        Extracts features from an image
+
+        returns activations/features
+        '''
+        from keras.models import load_model, Model
+
+        model_path = os.path.expanduser(model_path)
+        image_path = os.path.expanduser(image_path)
+
+        model = load_model(model_path)
+        image = self.plt.imread(image_path)[None, ...]
+
+        conv_layer_names = self.get_conv_layers(model)
+        input_layer = model.get_layer(name='img_in').input
+        activations = []      
+        for conv_layer_name in conv_layer_names:
+            output_layer = model.get_layer(name=conv_layer_name).output
+
+            layer_model = Model(inputs=[input_layer], outputs=[output_layer])
+            activations.append(layer_model.predict(image)[0])
+        return activations
+
+    def create_figure(self, activations):
+        import math
+        cols = 6
+
+        for i, layer in enumerate(activations):
+            fig = self.plt.figure()
+            fig.suptitle('Layer {}'.format(i+1))
+
+            print('layer {} shape: {}'.format(i+1, layer.shape))
+            feature_maps = layer.shape[2]
+            rows = math.ceil(feature_maps / cols)
+
+            for j in range(feature_maps):
+                self.plt.subplot(rows, cols, j + 1)
+
+                self.plt.imshow(layer[:, :, j])
+        
+        self.plt.show()
+
+    def get_conv_layers(self, model):
+        conv_layers = []
+        for layer in model.layers:
+            if layer.__class__.__name__ == 'Conv2D':
+                conv_layers.append(layer.name)
+        return conv_layers
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='cnnactivations', usage='%(prog)s [options]')
+        parser.add_argument('--image', help='path to image')
+        parser.add_argument('--model', default=None, help='path to model')
+        
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        activations = self.get_activations(args.image, args.model)
+        self.create_figure(activations)
+
+
 class ShowPredictionPlots(BaseCommand):
 
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
@@ -706,6 +776,7 @@ def execute_from_command_line():
             'createjs': CreateJoystick,
             'consync': ConSync,
             'contrain': ConTrain,
+            'cnnactivations': ShowCnnActivations,
                 }
     
     args = sys.argv[:]
