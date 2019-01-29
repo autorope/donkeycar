@@ -87,6 +87,7 @@ SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model
 CACHE_IMAGES = True             #keep images in memory. will speed succesive epochs, but crater if not enough mem.
 
 # Region of interst cropping
+# only supported in Categorical and Linear models.
 ROI_CROP_TOP = 0
 ROI_CROP_BOTTOM = 0
 
