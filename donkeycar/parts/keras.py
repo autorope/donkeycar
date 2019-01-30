@@ -250,14 +250,17 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D 
+    from keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D, Lambda
     
+
     opt = keras.optimizers.Adam()
-    drop = 0.2
+    drop = 0.4
 
     img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
     x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim configured pixels off top and bottom
+    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
@@ -302,6 +305,7 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
     x = img_in
     x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim pixels off top and bottom
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
@@ -347,6 +351,7 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     x = img_in
     x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
@@ -394,6 +399,7 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     x = img_in
     x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
@@ -443,7 +449,8 @@ def default_loc(num_outputs, num_locations, input_shape):
     
     x = img_in
     #x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
-    x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = CoordinateChannel2D()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
@@ -529,7 +536,7 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 
     img_seq_shape = (seq_length,) + image_shape   
     img_in = Input(batch_shape = img_seq_shape, name='img_in')
-    drop_out = 0.2
+    drop_out = 0.3
 
     x = Sequential()
     x.add(TD(Cropping2D(cropping=((40,0), (0,0))), input_shape=img_seq_shape )) #trim 60 pixels off top
