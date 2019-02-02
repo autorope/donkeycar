@@ -367,10 +367,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             return pilot_angle, pilot_throttle
         
     drive_mode_part = Lambda(drive_mode)
+
     V.add(drive_mode_part, 
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
+
+
+    #Ai Recording
+    def ai_recording(mode, recording):
+        if mode == 'user':
+            return recording
+        return True
+
+    if cfg.RECORD_DURING_AI:
+        V.add(Lambda(ai_recording), inputs=['user/mode', 'recording'], outputs=['recording'])
     
     #Drive train setup
     if cfg.DONKEY_GYM:
@@ -455,6 +466,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
+
+    if cfg.RECORD_DURING_AI:
+        inputs += ['pilot/angle', 'pilot/throttle']
+        types += ['float', 'float']
     
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types)
