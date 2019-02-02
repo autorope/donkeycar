@@ -40,8 +40,6 @@ import sklearn
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 from PIL import Image
-import tensorflow as tf
-import keras.backend as K
 
 '''
 matplotlib can be a pain to setup. So handle the case where it is absent. When present,
@@ -644,7 +642,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
 
 class SequencePredictionGenerator(keras.utils.Sequence):
     """
-    Provides a thread safe data generator for the Keras predict_generator. 
+    Provides a thread safe data generator for the Keras predict_generator for use with kerasergeon. 
     """
     def __init__(self, data, cfg):
         data = list(data.values())
