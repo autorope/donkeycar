@@ -612,15 +612,24 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
             kl.compile()
             kl.model.summary()
 
+            #stop training if the validation error stops improving.
+            early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                                        min_delta=cfg.MIN_DELTA, 
+                                                        patience=cfg.EARLY_STOP_PATIENCE, 
+                                                        verbose=verbose, 
+                                                        mode='auto')
+
             history = kl.model.fit_generator(
                         train_gen,
                         steps_per_epoch=steps_per_epoch, 
-                        epochs=3, 
-                        verbose=cfg.VEBOSE_TRAIN, 
+                        epochs=epochs, 
+                        verbose=cfg.VEBOSE_TRAIN,
                         validation_data=val_gen,
                         validation_steps=val_steps,
                         workers=workers_count,
+                        callbacks=[early_stop],
                         use_multiprocessing=use_multiprocessing)
+
             prune_loss = min(history.history['val_loss'])
             print('prune val_loss this iteration: {}'.format(prune_loss))
 
@@ -638,7 +647,9 @@ class SequencePredictionGenerator(keras.utils.Sequence):
     Provides a thread safe data generator for the Keras predict_generator. 
     """
     def __init__(self, data, cfg):
-        self.data = list(data.values())
+        data = list(data.values())
+        self.n = int(len(data) * cfg.PRUNE_EVAL_PERCENT_OF_DATASET)
+        self.data = data[:self.n]
         self.batch_size = cfg.BATCH_SIZE
         self.cfg = cfg
 
@@ -871,7 +882,7 @@ def prune(model, validation_generator, val_steps, cfg):
     total_channels = get_total_channels(model)
     n_channels_delete = int(math.floor(percent_pruning / 100 * total_channels))
 
-    apoz_df = get_model_apoz(model, validation_generator, val_steps)
+    apoz_df = get_model_apoz(model, validation_generator)
 
     model = prune_model(model, apoz_df, n_channels_delete)
 
@@ -912,7 +923,7 @@ def get_total_channels(model):
     return channels
 
 
-def get_model_apoz(model, generator, val_steps):
+def get_model_apoz(model, generator):
     from kerassurgeon.identify import get_apoz
     import pandas as pd
 
@@ -924,7 +935,7 @@ def get_model_apoz(model, generator, val_steps):
         if layer.__class__.__name__ == 'Conv2D':
             print(layer.name)
             apoz.extend([(layer.name, i, value) for (i, value)
-                         in enumerate(get_apoz(model, layer, generator, val_steps))])
+                         in enumerate(get_apoz(model, layer, generator))])
 
     layer_name, index, apoz_value = zip(*apoz)
     apoz_df = pd.DataFrame({'layer': layer_name, 'index': index,
