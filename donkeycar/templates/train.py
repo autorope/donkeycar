@@ -22,6 +22,7 @@ import random
 import json
 from threading import Lock
 import time
+from os.path import basename, join, splitext
 
 from docopt import docopt
 import numpy as np
@@ -304,7 +305,6 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
     ''' 
-
     verbose = cfg.VEBOSE_TRAIN
 
     
@@ -568,7 +568,10 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     validation_steps=val_steps,
                     workers=workers_count,
                     use_multiprocessing=use_multiprocessing)
-
+                    
+    full_model_val_loss = min(history.history['val_loss'])
+    max_val_loss = full_model_val_loss + cfg.PRUNE_VAL_LOSS_DEGRADATION_LIMIT
+    
     print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
 
     if cfg.SHOW_PLOT:
@@ -588,6 +591,79 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
         except:
             print("problems with loss graph")
 
+    if cfg.PRUNE_CNN:
+        base_model_path = splitext(model_name)[0]
+        cnn_channels = get_total_channels(kl.model)
+        print('original model with {} channels'.format(cnn_channels))
+        prune_gen = SequencePredictionGenerator(gen_records, cfg)
+        target_channels = int(cnn_channels * (1 - (cfg.PRUNE_PERCENT_TARGET / 100)))
+
+        print('Target channels of {0} remaining with {1:.00%} percent removal per iteration'.format(target_channels, cfg.PRUNE_PERCENT_PER_ITERATION / 100))
+        
+        from keras.models import load_model
+        prune_loss = 0
+        while cnn_channels > target_channels:
+            save_best.reset_best()
+            model, channels_deleted = prune(kl.model, prune_gen, 1, cfg)
+            cnn_channels -= channels_deleted
+            kl.model = model
+            kl.compile()
+            kl.model.summary()
+
+            #stop training if the validation error stops improving.
+            early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
+                                                        min_delta=cfg.MIN_DELTA, 
+                                                        patience=cfg.EARLY_STOP_PATIENCE, 
+                                                        verbose=verbose, 
+                                                        mode='auto')
+
+            history = kl.model.fit_generator(
+                        train_gen,
+                        steps_per_epoch=steps_per_epoch, 
+                        epochs=epochs, 
+                        verbose=cfg.VEBOSE_TRAIN,
+                        validation_data=val_gen,
+                        validation_steps=val_steps,
+                        workers=workers_count,
+                        callbacks=[early_stop],
+                        use_multiprocessing=use_multiprocessing)
+
+            prune_loss = min(history.history['val_loss'])
+            print('prune val_loss this iteration: {}'.format(prune_loss))
+
+            # If loss breaks the threshhold 
+            if prune_loss < max_val_loss:
+                model.save('{}_prune_{}_filters.h5'.format(base_model_path, cnn_channels))
+            else:
+                break
+
+        print('pruning stopped at {} with a target of {}'.format(cnn_channels, target_channels))
+
+
+class SequencePredictionGenerator(keras.utils.Sequence):
+    """
+    Provides a thread safe data generator for the Keras predict_generator for use with kerasergeon. 
+    """
+    def __init__(self, data, cfg):
+        data = list(data.values())
+        self.n = int(len(data) * cfg.PRUNE_EVAL_PERCENT_OF_DATASET)
+        self.data = data[:self.n]
+        self.batch_size = cfg.BATCH_SIZE
+        self.cfg = cfg
+
+    def __len__(self):
+        return int(np.ceil(len(self.data) / float(self.batch_size)))
+
+    def __getitem__(self, idx):
+        batch_data = self.data[idx * self.batch_size:(idx + 1) * self.batch_size]
+
+        images = []
+        for data in batch_data:
+            path = data['image_path']
+            img_arr = load_scaled_image_arr(path, self.cfg)
+            images.append(img_arr)
+
+        return np.array(images), np.array([])
 
 def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, continuous, aug):
     '''
@@ -788,7 +864,6 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     '''
 
 
-
 def multi_train(cfg, tub, model, transfer, model_type, continuous, aug):
     '''
     choose the right regime for the given model type
@@ -798,6 +873,74 @@ def multi_train(cfg, tub, model, transfer, model_type, continuous, aug):
         train_fn = sequence_train
 
     train_fn(cfg, tub, model, transfer, model_type, continuous, aug)
+
+
+def prune(model, validation_generator, val_steps, cfg):
+    percent_pruning = cfg.PRUNE_PERCENT_PER_ITERATION
+    total_channels = get_total_channels(model)
+    n_channels_delete = int(math.floor(percent_pruning / 100 * total_channels))
+
+    apoz_df = get_model_apoz(model, validation_generator)
+
+    model = prune_model(model, apoz_df, n_channels_delete)
+
+    name = '{}/model_pruned_{}_percent.h5'.format(cfg.MODELS_PATH, percent_pruning)
+
+    model.save(name)
+
+    return model, n_channels_delete
+
+
+def prune_model(model, apoz_df, n_channels_delete):
+    from kerassurgeon import Surgeon
+    import pandas as pd
+
+    # Identify 5% of channels with the highest APoZ in model
+    sorted_apoz_df = apoz_df.sort_values('apoz', ascending=False)
+    high_apoz_index = sorted_apoz_df.iloc[0:n_channels_delete, :]
+
+    # Create the Surgeon and add a 'delete_channels' job for each layer
+    # whose channels are to be deleted.
+    surgeon = Surgeon(model, copy=True)
+    for name in high_apoz_index.index.unique().values:
+        channels = list(pd.Series(high_apoz_index.loc[name, 'index'],
+                                  dtype=np.int64).values)
+        surgeon.add_job('delete_channels', model.get_layer(name),
+                        channels=channels)
+    # Delete channels
+    return surgeon.operate()
+
+
+def get_total_channels(model):
+    start = None
+    end = None
+    channels = 0
+    for layer in model.layers[start:end]:
+        if layer.__class__.__name__ == 'Conv2D':
+            channels += layer.filters
+    return channels
+
+
+def get_model_apoz(model, generator):
+    from kerassurgeon.identify import get_apoz
+    import pandas as pd
+
+    # Get APoZ
+    start = None
+    end = None
+    apoz = []
+    for layer in model.layers[start:end]:
+        if layer.__class__.__name__ == 'Conv2D':
+            print(layer.name)
+            apoz.extend([(layer.name, i, value) for (i, value)
+                         in enumerate(get_apoz(model, layer, generator))])
+
+    layer_name, index, apoz_value = zip(*apoz)
+    apoz_df = pd.DataFrame({'layer': layer_name, 'index': index,
+                            'apoz': apoz_value})
+    apoz_df = apoz_df.set_index('layer')
+    return apoz_df
+
     
 if __name__ == "__main__":
     args = docopt(__doc__)

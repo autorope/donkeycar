@@ -85,6 +85,11 @@ LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
 CACHE_IMAGES = True             #keep images in memory. will speed succesive epochs, but crater if not enough mem.
+PRUNE_CNN = False
+PRUNE_PERCENT_TARGET = 75 # The desired percentage of pruning.
+PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per iteration.
+PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
+PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
 # Region of interst cropping
 # only supported in Categorical and Linear models.
