@@ -11,13 +11,14 @@ from donkeycar.parts.network import MQTTValueSub, MQTTValuePub
 from donkeycar.parts.image import JpgToImgArr
 
 class DonkeyRemoteContoller:
-    def __init__(self, donkey_name, mqtt_broker):
+    def __init__(self, donkey_name, mqtt_broker, sensor_size=(120, 160, 3)):
         self.camera_sub = MQTTValueSub("donkey/%s/camera" % donkey_name, broker=mqtt_broker)
         self.controller_pub = MQTTValuePub("donkey/%s/controls" % donkey_name, broker=mqtt_broker)
         self.jpgToImg = JpgToImgArr()
+        self.sensor_size = sensor_size
 
     def get_sensor_size(self):
-        return (120, 160, 3)
+        return self.sensor_size
 
     def wait_until_connected(self):
         pass

@@ -164,14 +164,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     pilot_condition_part = Lambda(pilot_condition)
     V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
     
-    def led_cond(mode, recording, recording_alert, behavior_state, reloaded_model, track_loc):
+    def led_cond(mode, recording, recording_alert, behavior_state, model_file_changed, track_loc):
         #returns a blink rate. 0 for off. -1 for on. positive for rate.
         
         if track_loc is not None:
             led.set_rgb(*cfg.LOC_COLORS[track_loc])
             return -1
 
-        if reloaded_model:
+        if model_file_changed:
             led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
             return 0.1
         else:
@@ -204,7 +204,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
         
         led_cond_part = Lambda(led_cond)
-        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'reloaded/model', "pilot/loc"],
+        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'modelfile/modified', "pilot/loc"],
               outputs=['led/blink_rate'])
 
         V.add(led, inputs=['led/blink_rate'])
@@ -308,9 +308,36 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             kl.model = keras.models.model_from_json(contents)
         print('finished loading json in %s sec.' % (str(time.time() - start)) )
 
+    class ModelReloader:
+        def __init__(self, filename, reload_cb):
+            self.filename = filename
+            self.reload_cb = reload_cb
+
+        def run(self, do_reload):
+            if do_reload:
+                self.reload_cb(self.filename)
+
+    class DelayedTrigger:
+        def __init__(self, delay):
+            self.ticks = 0
+            self.delay = delay
+
+        def run(self, trigger):
+            if self.ticks > 0:
+                self.ticks -= 1
+                if self.ticks == 0:
+                    return True
+
+            if trigger:
+                self.ticks = self.delay
+
+            return False
+
     if model_path:
         #When we have a model, first create an appropriate Keras part
         kl = dk.utils.get_model_by_type(model_type, cfg)
+
+        model_reload_cb = None
 
         if '.h5' in model_path:
             #when we have a .h5 extension
@@ -318,31 +345,32 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             load_model(kl, model_path)
 
             def reload_model(filename):
-                print(filename, "was changed!")
                 load_model(kl, filename)
 
-            fw_part = FileWatcher(model_path, reload_model, wait_for_write_stop=10.0)
-            V.add(fw_part, outputs=['reloaded/model'])
+            model_reload_cb = reload_model
 
         elif '.json' in model_path:
             #when we have a .json extension
             #load the model from their and look for a matching
             #.wts file with just weights
-            #load_model_json(kl, model_path)
+            load_model_json(kl, model_path)
             weights_path = model_path.replace('.json', '.weights')
             load_weights(kl, weights_path)
 
             def reload_weights(filename):
-                print(filename, "was changed!")
                 weights_path = filename.replace('.json', '.weights')
                 load_weights(kl, weights_path)
             
-            fw_part = FileWatcher(model_path, reload_weights, wait_for_write_stop=1.0)
-            V.add(fw_part, outputs=['reloaded/model'])
+            model_reload_cb = reload_weights
 
-        else:
-            #previous default behavior
-            load_model(kl, model_path)
+
+        #this part will signal visual led, if connected
+        V.add(FileWatcher(model_path), outputs=['modelfile/modified'])
+
+        #these parts will reload the model file, but only when ai is running so we don't interrupt user driving
+        V.add(FileWatcher(model_path), outputs=['modelfile/dirty'], run_condition="ai_running")
+        V.add(DelayedTrigger(100), inputs=['modelfile/dirty'], outputs=['modelfile/reload'], run_condition="ai_running")
+        V.add(ModelReloader(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
 
         outputs=['pilot/angle', 'pilot/throttle']
 
@@ -373,6 +401,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
 
+    def ai_running(mode):
+        if mode == "user":
+            return False
+        return True
+
+    V.add(Lambda(ai_running), inputs=['user/mode'], outputs=['ai_running'])
 
     #Ai Recording
     def ai_recording(mode, recording):
