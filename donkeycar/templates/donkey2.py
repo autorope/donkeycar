@@ -68,28 +68,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(camA, outputs=['cam/image_array_a'], threaded=True)
         V.add(camB, outputs=['cam/image_array_b'], threaded=True)
 
-        def stereo_pair(image_a, image_b):
-            '''
-            This will take the two images and combine them into a single image
-            One in red, the other in green, and diff in blue channel.
-            '''
-            if image_a is not None and image_b is not None:
-                width, height, _ = image_a.shape
-                grey_a = dk.utils.rgb2gray(image_a)
-                grey_b = dk.utils.rgb2gray(image_b)
-                grey_c = grey_a - grey_b
-                
-                stereo_image = np.zeros([width, height, 3], dtype=np.dtype('B'))
-                stereo_image[...,0] = np.reshape(grey_a, (width, height))
-                stereo_image[...,1] = np.reshape(grey_b, (width, height))
-                stereo_image[...,2] = np.reshape(grey_c, (width, height))
-            else:
-                stereo_image = []
+        from donkeycar.parts.image import StereoPair
 
-            return np.array(stereo_image)
-
-        image_sterero_pair_part = Lambda(stereo_pair)
-        V.add(image_sterero_pair_part, inputs=['cam/image_array_a', 'cam/image_array_b'], 
+        V.add(StereoPair(), inputs=['cam/image_array_a', 'cam/image_array_b'], 
             outputs=['cam/image_array'])
 
     else:
@@ -155,56 +136,56 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     
     #See if we should even run the pilot module. 
     #This is only needed because the part run_condition only accepts boolean
-    def pilot_condition(mode):
-        if mode == 'user':
-            return False
-        else:
-            return True
-        
-    pilot_condition_part = Lambda(pilot_condition)
-    V.add(pilot_condition_part, inputs=['user/mode'], outputs=['run_pilot'])
+    class PilotCondition:
+        def run(self, mode):
+            if mode == 'user':
+                return False
+            else:
+                return True       
+
+    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
     
-    def led_cond(mode, recording, recording_alert, behavior_state, model_file_changed, track_loc):
-        #returns a blink rate. 0 for off. -1 for on. positive for rate.
+    class LedConditionLogic:
+        def run(self, mode, recording, recording_alert, behavior_state, model_file_changed, track_loc):
+            #returns a blink rate. 0 for off. -1 for on. positive for rate.
+            
+            if track_loc is not None:
+                led.set_rgb(*cfg.LOC_COLORS[track_loc])
+                return -1
+
+            if model_file_changed:
+                led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
+                return 0.1
+            else:
+                led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+
+            if recording_alert:
+                led.set_rgb(*recording_alert)
+                return cfg.REC_COUNT_ALERT_BLINK_RATE
+            else:
+                led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
         
-        if track_loc is not None:
-            led.set_rgb(*cfg.LOC_COLORS[track_loc])
-            return -1
+            if behavior_state is not None and model_type == 'behavior':
+                r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
+                led.set_rgb(r, g, b)
+                return -1 #solid on
 
-        if model_file_changed:
-            led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
-            return 0.1
-        else:
-            led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
-
-        if recording_alert:
-            led.set_rgb(*recording_alert)
-            return cfg.REC_COUNT_ALERT_BLINK_RATE
-        else:
-            led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
-    
-        if behavior_state is not None and model_type == 'behavior':
-            r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
-            led.set_rgb(r, g, b)
-            return -1 #solid on
-
-        if recording:
-            return -1 #solid on
-        elif mode == 'user':
-            return 1
-        elif mode == 'local_angle':
-            return 0.5
-        elif mode == 'local':
-            return 0.1
-        return 0
+            if recording:
+                return -1 #solid on
+            elif mode == 'user':
+                return 1
+            elif mode == 'local_angle':
+                return 0.5
+            elif mode == 'local':
+                return 0.1
+            return 0
 
     if cfg.HAVE_RGB_LED and not cfg.DONKEY_GYM:
         from donkeycar.parts.led_status import RGB_LED
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
-        led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+        led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)        
         
-        led_cond_part = Lambda(led_cond)
-        V.add(led_cond_part, inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'modelfile/modified', "pilot/loc"],
+        V.add(LedConditionLogic(), inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'modelfile/modified', "pilot/loc"],
               outputs=['led/blink_rate'])
 
         V.add(led, inputs=['led/blink_rate'])
@@ -217,40 +198,42 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 col = color
         return col    
 
-    def record_tracker(num_records):
+    class RecordTracker:
+        def __init__(self):
+            self.last_num_rec_print = 0
+            self.dur_alert = 0
+            self.force_alert = 0
 
-        if num_records is None:
-            return 0
-        
-        if record_tracker.last_num_rec_print != num_records or record_tracker.force_alert:
-            record_tracker.last_num_rec_print = num_records
+        def run(self, num_records):
+            if num_records is None:
+                return 0
+            
+            if self.last_num_rec_print != num_records or self.force_alert:
+                self.last_num_rec_print = num_records
 
-            if num_records % 10 == 0:
-                print("recorded", num_records, "records")
+                if num_records % 10 == 0:
+                    print("recorded", num_records, "records")
+                        
+                if num_records % cfg.REC_COUNT_ALERT == 0 or self.force_alert:
+                    self.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
+                    self.force_alert = 0
                     
-            if num_records % cfg.REC_COUNT_ALERT == 0 or record_tracker.force_alert:
-                record_tracker.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
-                record_tracker.force_alert = 0
-                
-        if record_tracker.dur_alert > 0:
-            record_tracker.dur_alert -= 1
+            if self.dur_alert > 0:
+                self.dur_alert -= 1
 
-        if record_tracker.dur_alert != 0:
-            return get_record_alert_color(num_records)
+            if self.dur_alert != 0:
+                return get_record_alert_color(num_records)
 
-        return 0   
+            return 0
 
-    record_tracker.last_num_rec_print = 0
-    record_tracker.dur_alert = 0
-    record_tracker.force_alert = 0
-    rec_tracker_part = Lambda(record_tracker)
+    rec_tracker_part = RecordTracker()
     V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
 
     if cfg.AUTO_RECORD_ON_THROTTLE and isinstance(ctr, JoystickController):
         #then we are not using the circle button. hijack that to force a record count indication
         def show_record_acount_status():
-            record_tracker.last_num_rec_print = 0
-            record_tracker.force_alert = 1
+            rec_tracker_part.last_num_rec_print = 0
+            rec_tracker_part.force_alert = 1
         ctr.set_button_down_trigger('circle', show_record_acount_status)
 
     #IMU
@@ -359,40 +342,44 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             run_condition='run_pilot')            
     
     #Choose what inputs should change the car.
-    def drive_mode(mode, 
-                   user_angle, user_throttle,
-                   pilot_angle, pilot_throttle):
-        if mode == 'user': 
-            return user_angle, user_throttle
+    class DriveMode:
+        def run(self, mode, 
+                    user_angle, user_throttle,
+                    pilot_angle, pilot_throttle):
+            if mode == 'user': 
+                return user_angle, user_throttle
+            
+            elif mode == 'local_angle':
+                return pilot_angle, user_throttle
+            
+            else: 
+                return pilot_angle, pilot_throttle
         
-        elif mode == 'local_angle':
-            return pilot_angle, user_throttle
-        
-        else: 
-            return pilot_angle, pilot_throttle
-        
-    drive_mode_part = Lambda(drive_mode)
-
-    V.add(drive_mode_part, 
+    V.add(DriveMode(), 
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
 
-    def ai_running(mode):
-        if mode == "user":
-            return False
-        return True
+    class AiRunCondition:
+        def run(self, mode):
+            if mode == "user":
+                return False
+            return True
 
-    V.add(Lambda(ai_running), inputs=['user/mode'], outputs=['ai_running'])
+    V.add(AiRunCondition(), inputs=['user/mode'], outputs=['ai_running'])
 
     #Ai Recording
-    def ai_recording(mode, recording):
-        if mode == 'user':
-            return recording
-        return True
+    class AiRecordingCondition:
+        '''
+        return True when ai mode, otherwize respect user mode recording flag
+        '''
+        def run(self, mode, recording):
+            if mode == 'user':
+                return recording
+            return True
 
     if cfg.RECORD_DURING_AI:
-        V.add(Lambda(ai_recording), inputs=['user/mode', 'recording'], outputs=['recording'])
+        V.add(AiRecordingCondition(), inputs=['user/mode', 'recording'], outputs=['recording'])
     
     #Drive train setup
     if cfg.DONKEY_GYM:
