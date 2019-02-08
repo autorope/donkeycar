@@ -146,27 +146,30 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
     
     class LedConditionLogic:
+        def __init__(self, cfg):
+            self.cfg = cfg
+
         def run(self, mode, recording, recording_alert, behavior_state, model_file_changed, track_loc):
             #returns a blink rate. 0 for off. -1 for on. positive for rate.
             
             if track_loc is not None:
-                led.set_rgb(*cfg.LOC_COLORS[track_loc])
+                led.set_rgb(*self.cfg.LOC_COLORS[track_loc])
                 return -1
 
             if model_file_changed:
-                led.set_rgb(cfg.MODEL_RELOADED_LED_R, cfg.MODEL_RELOADED_LED_G, cfg.MODEL_RELOADED_LED_B)
+                led.set_rgb(self.cfg.MODEL_RELOADED_LED_R, self.cfg.MODEL_RELOADED_LED_G, self.cfg.MODEL_RELOADED_LED_B)
                 return 0.1
             else:
-                led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+                led.set_rgb(self.cfg.LED_R, self.cfg.LED_G, self.cfg.LED_B)
 
             if recording_alert:
                 led.set_rgb(*recording_alert)
-                return cfg.REC_COUNT_ALERT_BLINK_RATE
+                return self.cfg.REC_COUNT_ALERT_BLINK_RATE
             else:
-                led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+                led.set_rgb(self.cfg.LED_R, self.cfg.LED_G, self.cfg.LED_B)
         
             if behavior_state is not None and model_type == 'behavior':
-                r, g, b = cfg.BEHAVIOR_LED_COLORS[behavior_state]
+                r, g, b = self.cfg.BEHAVIOR_LED_COLORS[behavior_state]
                 led.set_rgb(r, g, b)
                 return -1 #solid on
 
@@ -185,7 +188,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)        
         
-        V.add(LedConditionLogic(), inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'modelfile/modified', "pilot/loc"],
+        V.add(LedConditionLogic(cfg), inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'modelfile/modified', "pilot/loc"],
               outputs=['led/blink_rate'])
 
         V.add(led, inputs=['led/blink_rate'])
