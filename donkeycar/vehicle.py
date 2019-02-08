@@ -9,7 +9,36 @@ Created on Sun Jun 25 10:44:24 2017
 import time
 from threading import Thread
 from .memory import Memory
+from prettytable import PrettyTable
 
+class PartProfiler:
+    def __init__(self):
+        self.records = {}
+
+    def profile_part(self, p):
+        self.records[p] = { "times" : [] }
+
+    def on_part_start(self, p):
+        self.records[p]['times'].append(time.time())
+
+    def on_part_finished(self, p):
+        now = time.time()
+        prev = self.records[p]['times'][-1]
+        self.records[p]['times'][-1] = now - prev
+
+    def report(self):
+        print("Part Profile Summary: (times in ms)")
+        pt = PrettyTable()
+        pt.field_names =["part", "max", "min", "avg"]
+        for p, val in self.records.items():
+            arr = val['times']
+            if len(arr) == 0:
+                continue
+            pt.add_row( [p.__class__.__name__ ,
+                "%.2f" % (max(arr) * 1000),
+                "%.2f" % (min(arr) * 1000),
+                "%.2f" % (sum(arr) / len(arr) * 1000) ])
+        print(pt)
 
 class Vehicle():
     def __init__(self, mem=None):
@@ -20,6 +49,7 @@ class Vehicle():
         self.parts = []
         self.on = True
         self.threads = []
+        self.profiler = PartProfiler()
 
 
     def add(self, part, inputs=[], outputs=[], 
@@ -51,6 +81,7 @@ class Vehicle():
             entry['thread'] = t
 
         self.parts.append(entry)
+        self.profiler.profile_part(part)
 
     def remove(self, part):
         """
@@ -110,6 +141,9 @@ class Vehicle():
                     if verbose:
                         print('WARN::Vehicle: jitter violation in vehicle loop with value:', abs(sleep_time))
 
+                if verbose and loop_count % 200 == 0:
+                    self.profiler.report()
+
         except KeyboardInterrupt:
             pass
         finally:
@@ -121,15 +155,21 @@ class Vehicle():
         loop over all parts
         '''
         for entry in self.parts:
-            #don't run if there is a run condition that is False
+
             run = True
+
+            #check run condition, if it exists
             if entry.get('run_condition'):
                 run_condition = entry.get('run_condition')
                 run = self.mem.get([run_condition])[0]
-                #print('run_condition', entry['part'], entry.get('run_condition'), run)
             
             if run:
+                #get part
                 p = entry['part']
+
+                #start timing part run
+                self.profiler.on_part_start(p)
+
                 #get inputs from memory
                 inputs = self.mem.get(entry['inputs'])
 
@@ -143,9 +183,11 @@ class Vehicle():
                 if outputs is not None:
                     self.mem.put(entry['outputs'], outputs)
 
-                    
+                #finish timing part run
+                self.profiler.on_part_finished(p)
+ 
 
-    def stop(self):
+    def stop(self):        
         print('Shutting down vehicle and its parts...')
         for entry in self.parts:
             try:
@@ -155,3 +197,5 @@ class Vehicle():
                 pass
             except Exception as e:
                 print(e)
+
+        self.profiler.report()

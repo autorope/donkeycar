@@ -22,7 +22,4 @@ class FileWatcher(object):
             
         return False
 
-    def shutdown(self):
-        pass
-
 

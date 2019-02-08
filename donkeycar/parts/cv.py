@@ -223,7 +223,7 @@ class Pipeline():
         return val
     
 class CvCam(object):
-    def __init__(self, image_w=160, image_h=120, iCam=0):
+    def __init__(self, image_w=160, image_h=120, image_d=3, iCam=0):
 
         self.frame = None
         self.cap = cv2.VideoCapture(iCam)

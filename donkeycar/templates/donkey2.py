@@ -18,7 +18,7 @@ from docopt import docopt
 import donkeycar as dk
 
 #import parts
-from donkeycar.parts.transform import Lambda
+from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
 from donkeycar.parts.datastore import TubHandler, TubGroup
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.imu import Mpu6050
@@ -308,30 +308,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             kl.model = keras.models.model_from_json(contents)
         print('finished loading json in %s sec.' % (str(time.time() - start)) )
 
-    class ModelReloader:
-        def __init__(self, filename, reload_cb):
-            self.filename = filename
-            self.reload_cb = reload_cb
 
-        def run(self, do_reload):
-            if do_reload:
-                self.reload_cb(self.filename)
-
-    class DelayedTrigger:
-        def __init__(self, delay):
-            self.ticks = 0
-            self.delay = delay
-
-        def run(self, trigger):
-            if self.ticks > 0:
-                self.ticks -= 1
-                if self.ticks == 0:
-                    return True
-
-            if trigger:
-                self.ticks = self.delay
-
-            return False
 
     if model_path:
         #When we have a model, first create an appropriate Keras part
@@ -364,13 +341,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             model_reload_cb = reload_weights
 
 
-        #this part will signal visual led, if connected
+        #this part will signal visual LED, if connected
         V.add(FileWatcher(model_path), outputs=['modelfile/modified'])
 
         #these parts will reload the model file, but only when ai is running so we don't interrupt user driving
         V.add(FileWatcher(model_path), outputs=['modelfile/dirty'], run_condition="ai_running")
         V.add(DelayedTrigger(100), inputs=['modelfile/dirty'], outputs=['modelfile/reload'], run_condition="ai_running")
-        V.add(ModelReloader(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
+        V.add(TriggeredCallback(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
 
         outputs=['pilot/angle', 'pilot/throttle']
 

@@ -18,7 +18,36 @@ class Lambda:
     def shutdown(self):
         return
 
+class TriggeredCallback:
+    def __init__(self, args, func_cb):
+        self.args = args
+        self.func_cb = func_cb
 
+    def run(self, trigger):
+        if trigger:
+            self.func_cb(self.args)
+
+    def shutdown(self):
+        return
+
+class DelayedTrigger:
+    def __init__(self, delay):
+        self.ticks = 0
+        self.delay = delay
+
+    def run(self, trigger):
+        if self.ticks > 0:
+            self.ticks -= 1
+            if self.ticks == 0:
+                return True
+
+        if trigger:
+            self.ticks = self.delay
+
+        return False
+
+    def shutdown(self):
+        return
 
 
 class PIDController:
