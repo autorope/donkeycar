@@ -48,5 +48,16 @@ def load_config(config_path=None):
     print('loading config file: {}'.format(config_path))
     cfg = Config()
     cfg.from_pyfile(config_path)
+
+    #look for the optional myconfig.py in the same path.
+    personal_cfg_path = config_path.replace("config.py", "myconfig.py")
+    if os.path.exists(personal_cfg_path):
+        print("loading personal config over-rides")
+        personal_cfg = Config()
+        personal_cfg.from_pyfile(personal_cfg_path)
+        cfg.from_object(personal_cfg)
+        
+    print()
+
     print('config loaded')
     return cfg
