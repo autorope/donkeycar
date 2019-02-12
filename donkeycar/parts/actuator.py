@@ -19,6 +19,7 @@ class PCA9685:
         self.pwm = Adafruit_PCA9685.PCA9685()
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
+        time.sleep(0.1) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_pulse(self, pulse):
         try:
