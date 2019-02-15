@@ -493,6 +493,8 @@ class LogitechJoystick(Joystick):
     '''
     An interface to a physical Logitech joystick available at /dev/input/js0
     Contains mapping that work for Raspian Stretch drivers
+    Tested with Logitech Gamepad F710
+    https://www.amazon.com/Logitech-940-000117-Gamepad-F710/dp/B0041RR0TW
     credit:
     https://github.com/kevkruemp/donkeypart_logitech_controller/blob/master/donkeypart_logitech_controller/part.py
     '''
