@@ -460,6 +460,9 @@ class XboxOneJoystick(Joystick):
       - after reboot you can vertify that disable_ertm is set to true entering this
         command oin a terminal: cat /sys/module/bluetooth/parameters/disable_ertm
       - the result should print 'Y'.  If not, make sure the above steps have been done corretly.
+    
+    credit:
+    https://github.com/Ezward/donkeypart_ps3_controller/blob/master/donkeypart_ps3_controller/part.py
     '''
 
     def __init__(self, *args, **kwargs):
@@ -486,6 +489,47 @@ class XboxOneJoystick(Joystick):
             0x13b: 'options',
         }
 
+class LogitechJoystick(Joystick):
+    '''
+    An interface to a physical Logitech joystick available at /dev/input/js0
+    Contains mapping that work for Raspian Stretch drivers
+    credit:
+    https://github.com/kevkruemp/donkeypart_logitech_controller/blob/master/donkeypart_logitech_controller/part.py
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super(LogitechJoystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00: 'left_stick_horz',
+            0x01: 'left_stick_vert',
+            0x03: 'right_stick_horz',
+            0x04: 'right_stick_vert',
+
+            0x02: 'L2_pressure',
+            0x05: 'R2_pressure',
+
+            0x10: 'dpad_leftright', # 1 is right, -1 is left
+            0x11: 'dpad_up_down', # 1 is down, -1 is up
+
+        }
+
+        self.button_names = {
+            0x13a: 'back',  # 8 314
+            0x13b: 'start',  # 9 315
+            0x13c: 'Logitech',  # a  316
+
+            0x130: 'A',
+            0x131: 'B',
+            0x133: 'X',
+            0x134: 'Y',
+
+            0x136: 'LB',
+            0x137: 'RB',
+
+            0x13d: 'Left_stick_press',
+            0x13e: 'right_stick_press',
+        }
 
 class JoystickController(object):
     '''
@@ -891,6 +935,8 @@ class PS4JoystickController(JoystickController):
 class XboxOneJoystickController(JoystickController):
     '''
     A Controller object that maps inputs to actions
+    credit:
+    https://github.com/Ezward/donkeypart_ps3_controller/blob/master/donkeypart_ps3_controller/part.py
     '''
 
     def __init__(self, *args, **kwargs):
@@ -921,6 +967,53 @@ class XboxOneJoystickController(JoystickController):
             'right_shoulder': self.increase_max_throttle,
             'left_shoulder': self.decrease_max_throttle,
             'options': self.toggle_constant_throttle,
+        }
+
+        self.axis_trigger_map = {
+            'left_stick_horz': self.set_steering,
+            'right_stick_vert': self.set_throttle,
+        }
+
+
+class LogitechJoystickController(JoystickController):
+    '''
+    A Controller object that maps inputs to actions
+    credit:
+    https://github.com/kevkruemp/donkeypart_logitech_controller/blob/master/donkeypart_logitech_controller/part.py
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super(LogitechJoystickController, self).__init__(*args, **kwargs)
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = LogitechJoystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+
+        self.button_down_trigger_map = {
+            'start': self.toggle_mode,
+            'RB': self.toggle_manual_recording,
+            'B': self.erase_last_N_records,
+            'Logitech': self.emergency_stop,
+            'Y': self.increase_max_throttle,
+            'X': self.decrease_max_throttle,
+            'LB': self.toggle_constant_throttle,
+        }
+
+        self.button_up_trigger_map = {
+
         }
 
         self.axis_trigger_map = {
