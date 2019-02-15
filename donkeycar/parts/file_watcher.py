@@ -5,9 +5,10 @@ class FileWatcher(object):
     Watch a specific file and give a signal when it's modified
     '''
 
-    def __init__(self, filename):
+    def __init__(self, filename, verbose=False):
         self.modified_time = os.path.getmtime(filename)
         self.filename = filename
+        self.verbose = verbose
 
     def run(self):
         '''
@@ -18,6 +19,8 @@ class FileWatcher(object):
 
         if m_time != self.modified_time:
             self.modified_time = m_time
+            if self.verbose:
+                print(self.filename, "changed.")
             return True
             
         return False

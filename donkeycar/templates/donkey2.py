@@ -289,12 +289,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         start = time.time()
         print('loading model json', json_fnm)
         import keras
-        with open(json_fnm, 'r') as handle:
-            contents = handle.read()
-            kl.model = keras.models.model_from_json(contents)
-        print('finished loading json in %s sec.' % (str(time.time() - start)) )
-
-
+        try:
+            with open(json_fnm, 'r') as handle:
+                contents = handle.read()
+                kl.model = keras.models.model_from_json(contents)
+            print('finished loading json in %s sec.' % (str(time.time() - start)) )
+        except Exception as e:
+            print(e)
+            print("ERR>> problems loading model json", json_fnm)
 
     if model_path:
         #When we have a model, first create an appropriate Keras part
@@ -328,7 +330,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
 
         #this part will signal visual LED, if connected
-        V.add(FileWatcher(model_path), outputs=['modelfile/modified'])
+        V.add(FileWatcher(model_path, verbose=True), outputs=['modelfile/modified'])
 
         #these parts will reload the model file, but only when ai is running so we don't interrupt user driving
         V.add(FileWatcher(model_path), outputs=['modelfile/dirty'], run_condition="ai_running")
@@ -364,6 +366,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           outputs=['angle', 'throttle'])
 
     class AiRunCondition:
+        '''
+        A bool part to let us know when ai is running.
+        '''
         def run(self, mode):
             if mode == "user":
                 return False
