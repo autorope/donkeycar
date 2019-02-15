@@ -128,6 +128,60 @@ class Joystick(object):
 
         return button, button_state, axis, axis_val
 
+class PyGameJoystick(object):
+    def __init__(self, which_js=0):
+        import pygame
+        
+        # Initialize the joysticks
+        pygame.joystick.init()
+
+        self.joystick = pygame.joystick.Joystick(which_js)
+        self.joystick.init()
+        name = self.joystick.get_name()
+        print("detected joystick device:", name)
+
+        self.axis_states = [ 0.0 for i in range(self.joystick.get_numaxes())]
+        self.button_states = [ 0 for i in range(self.joystick.get_numbuttons() + self.joystick.get_numhats() * 4)]
+        self.axis_names = {}
+        self.button_names = {}
+
+
+    def poll(self):
+        button = None
+        button_state = None
+        axis = None
+        axis_val = None
+
+        self.joystick.init()
+
+        for i in range( self.joystick.get_numaxes() ):
+            val = self.joystick.get_axis( i )
+            if self.axis_states[i] != val:
+                axis = self.axis_names[i]
+                axis_val = val
+                self.axis_states[i] = val
+        
+        for i in range( self.joystick.get_numbuttons() ):
+            state = self.joystick.get_button( i )
+            if self.button_states[i] != state:
+                button = self.button_names[i]
+                button_state = state
+                self.button_states[i] = state
+
+        for i in range( self.joystick.get_numhats() ):
+            hat = self.joystick.get_hat( i )
+            horz, vert = hat
+            iBtn = self.joystick.get_numbuttons() + (i * 4)
+            states = (horz == -1, horz == 1, vert == -1, vert == 1)
+            for state in states:
+                state = int(state)
+                if self.button_states[iBtn] != state:
+                    button = self.button_names[iBtn]
+                    button_state = state
+                    self.button_states[iBtn] = state
+                iBtn += 1
+
+        return button, button_state, axis, axis_val
 
 class JoystickCreator(Joystick):
     '''
@@ -353,6 +407,42 @@ class PS3JoystickPC(Joystick):
             0x221 : 'dpad_down',
             0x222 : 'dpad_left',
             0x223 : 'dpad_right',
+        }
+
+class PyGamePS3Joystick(PyGameJoystick):
+    '''
+    An interface to a physical PS3 joystick available via pygame
+    Windows setup: https://github.com/nefarius/ScpToolkit/releases/tag/v1.6.238.16010
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PyGamePS3Joystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'analog_trigger',
+            0x03 : 'right_stick_vert',
+            0x04 : 'right_stick_horz',
+        }
+
+        self.button_names = {
+            0 : "cross",
+            1 : "circle",
+            2 : 'square',
+            3 : "triangle", 
+
+            6 : 'select',
+            7 : 'start',
+
+            4 : 'L1',
+            5 : 'R1',
+            8 : 'L3',
+            9 : 'R3',
+
+            10 : 'dpad_left',
+            11 : 'dpad_right',
+            12 : 'dpad_down',
+            13 : 'dpad_up',
         }
 
 
