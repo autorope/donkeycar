@@ -20,7 +20,7 @@ print('extra_files', extra_files)
 
 
 setup(name='donkeycar',
-    version='2.5.0.t',
+    version='2.6.0.t',
     description='Self driving library for python.',
     url='https://github.com/tawnkramer/donkey',
     author='Will Roscoe',
