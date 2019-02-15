@@ -445,6 +445,47 @@ class PyGamePS3Joystick(PyGameJoystick):
             13 : 'dpad_up',
         }
 
+class XboxOneJoystick(Joystick):
+    '''
+    An interface to a physical joystick 'Xbox Wireless Controller' controller.
+    This will generally show up on /dev/input/js0.
+    - Note that this code presumes the built-in linux driver for 'Xbox Wireless Controller'.
+      There is another user land driver called xboxdrv; this code has not been tested
+      with that driver.
+    - Note that this controller requires that the bluetooth disable_ertm parameter
+      be set to true; to do this:
+      - edit /etc/modprobe.d/xbox_bt.conf
+      - add the line: options bluetooth disable_ertm=1
+      - reboot to tha this take affect.
+      - after reboot you can vertify that disable_ertm is set to true entering this
+        command oin a terminal: cat /sys/module/bluetooth/parameters/disable_ertm
+      - the result should print 'Y'.  If not, make sure the above steps have been done corretly.
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super(XboxOneJoystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00: 'left_stick_horz',
+            0x01: 'left_stick_vert',
+            0x02: 'right_stick_horz',
+            0x05: 'right_stick_vert',
+            0x09: 'right_trigger',
+            0x0a: 'left_trigger',
+            0x10: 'dpad_horz',
+            0x11: 'dpad_vert',
+        }
+
+        self.button_names = {
+            0x130: 'a_button',
+            0x131: 'b_button',
+            0x133: 'x_button',
+            0x134: 'y_button',
+            0x136: 'left_shoulder',
+            0x137: 'right_shoulder',
+            0x13b: 'options',
+        }
+
 
 class JoystickController(object):
     '''
@@ -847,6 +888,45 @@ class PS4JoystickController(JoystickController):
             'right_stick_vert' : self.set_throttle,
         }
 
+class XboxOneJoystickController(JoystickController):
+    '''
+    A Controller object that maps inputs to actions
+    '''
+
+    def __init__(self, *args, **kwargs):
+        super(XboxOneJoystickController, self).__init__(*args, **kwargs)
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = XboxOneJoystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+
+        self.button_down_trigger_map = {
+            'a_button': self.toggle_mode,
+            'b_button': self.toggle_manual_recording,
+            'x_button': self.erase_last_N_records,
+            'y_button': self.emergency_stop,
+            'right_shoulder': self.increase_max_throttle,
+            'left_shoulder': self.decrease_max_throttle,
+            'options': self.toggle_constant_throttle,
+        }
+
+        self.axis_trigger_map = {
+            'left_stick_horz': self.set_steering,
+            'right_stick_vert': self.set_throttle,
+        }
 
 class JoyStickPub(object):
     '''
