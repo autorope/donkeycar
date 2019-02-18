@@ -171,11 +171,18 @@ class Tub(object):
             except ValueError:
                 self.current_ix = 0
 
+            if 'start' in self.meta:
+                self.start_time = self.meta['start']
+            else:
+                self.start_time = time.time()
+                self.meta['start'] = self.start_time
+
         elif not exists and inputs:
             print('Tub does NOT exist. Creating new tub...')
+            self.start_time = time.time()
             #create log and save meta
             os.makedirs(self.path)
-            self.meta = {'inputs': inputs, 'types': types}
+            self.meta = {'inputs': inputs, 'types': types, 'start': self.start_time}
             with open(self.meta_path, 'w') as f:
                 json.dump(self.meta, f)
             self.current_ix = 0
@@ -185,8 +192,6 @@ class Tub(object):
                   "to create a new tub. Please check your tub path or provide meta info to create a new tub."
 
             raise AttributeError(msg)
-
-        self.start_time = time.time()
 
 
     def get_last_ix(self):
@@ -330,6 +335,8 @@ class Tub(object):
             else:
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
                 raise TypeError(msg)
+
+        json_data['milliseconds'] = int((time.time() - self.start_time) * 1000)
 
         self.write_json_record(json_data)
         return self.current_ix

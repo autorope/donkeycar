@@ -31,6 +31,9 @@ def test_tub_add_record(tub):
     rec_in  = {'cam/image_array': img_arr, 'user/angle': x, 'user/throttle':y}
     rec_index = tub.put_record(rec_in)
     rec_out = tub.get_record(rec_index)
+    # Ignore the milliseconds key, which is added when the record is written
+    if 'milliseconds' in rec_out:
+        rec_out.pop('milliseconds')
     assert rec_in.keys() == rec_out.keys()
 
 
