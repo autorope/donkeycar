@@ -320,6 +320,36 @@ class MakeMovie(BaseCommand):
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
+    def draw_steering_distribution(self, record, img):
+        '''
+        query the model for it's prediction, draw the distribution of steering choices
+        '''
+        from donkeycar.parts.keras import KerasCategorical
+
+        if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
+            return
+
+        import cv2
+         
+        orig_shape = img.shape
+        pred_img = img.reshape((1,) + img.shape)
+        angle_binned, throttle = self.keras_part.model.predict(pred_img)
+        #img.reshape(orig_shape)
+
+        x = 4
+        dx = 4
+        y = 120 - 4
+        iArgMax = np.argmax(angle_binned)
+        for i in range(15):
+            p1 = (x, y)
+            p2 = (x, y - int(angle_binned[0][i] * 100.0))
+            if i == iArgMax:
+                cv2.line(img, p1, p2, (255, 0, 0), 2)
+            else:
+                cv2.line(img, p1, p2, (200, 200, 200), 2)
+            x += dx
+        
+
     def init_salient(self, model):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
         from keras.layers import Input, Dense, merge
@@ -411,6 +441,7 @@ class MakeMovie(BaseCommand):
             image = image.astype('uint8')
         
         self.draw_model_prediction(rec, image)
+        self.draw_steering_distribution(rec, image)
 
         if self.scale != 1:
             import cv2
