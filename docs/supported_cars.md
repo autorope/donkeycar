@@ -33,6 +33,27 @@ To assemble first remove the plastic cover and roll cage then unscrew the posts 
 
 Visual instructions to follow.
 
+## LaTrax Prerunner
+The LaTrax prerunner is a supported car and follows the same build instructions as the Desert Monster.  However the adapters get screwed in as is shown in the photo below.  
+
+![donkey](./assets/Latrax.jpg)
+
+
+## Donkey Pro
+To build a donkey pro the following parts are Needed
+
+| Part Description   | Link  | Approximate Cost |
+|---|----|---|
+|Donkey Pro Plastics and base | Thingiverse: https://www.thingiverse.com/thing:2805287 or Donkeystore: https://squareup.com/store/donkeycar | $50|
+|(8) M2.5 standoff| | |
+|(8) M2.5 Nylock nuts| | |
+|(8) M2.5x6mm socket head cap screws | | |
+|(4) M3x10 plastic self threading screw | | |
+
+To assemble the Raspberry pi to the chassis this assembly picture should clarify how it fits together.
+
+![assy](./assets/screw_assy.png)
+
 ## Tamaya TT-01 (Advanced Build)
 
 ![donkey](./assets/build_hardware/TT01.PNG)
