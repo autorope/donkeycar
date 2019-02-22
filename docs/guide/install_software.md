@@ -67,9 +67,7 @@ sudo vi /media/userID/UUID/etc/hostname
 sudo vi /media/userID/UUID/etc/hosts
 ```
 
-Now you're SD card is ready. Eject it from your computer, put it in the Pi
-and plug in the Pi.
-
+Now your SD card is ready. Eject it from your computer, put it in the Pi, and plug in the Pi.
 
 ### Connecting to the Pi
 
@@ -202,7 +200,7 @@ cd donkeycar
 * Navigate to git master branch
 
 ```
-git chekout master
+git checkout master
 ```
 
 * Create the Python Anaconda environment
@@ -267,7 +265,7 @@ source activate donkey
 * Install Tensorflow
 
 ```
-pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-py3-none-any.whl
+pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.10.1-py3-none-any.whl
 ```
 
 

@@ -40,7 +40,7 @@ The default user name is 'pi' and the password is 'raspberry'.  If you are using
 
 ### Make sure you've created your car application.
 ```
-donkey createcar --template donkey2 --path ~/mycar
+donkey createcar ~/mycar --template donkey2
 ```
 
 See also [more information.](/utility/donkey/#create-car)
@@ -85,9 +85,3 @@ races if you have a pilot that will steer but doesn't control throttle.
 You may find that it helps to use a physical joystick device to control your vehicle.
 
 Check the [Controllers](/parts/controllers/#physical-joystick-controller) section to read about setting up the bluetooth connection.
-
-
-
-
-
-
