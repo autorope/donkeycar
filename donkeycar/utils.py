@@ -443,3 +443,18 @@ def get_test_img(model):
     img = np.random.rand(int(h), int(w), int(ch))
 
     return img
+
+class Sombrero:
+
+    def __init__(self):
+        import RPi.GPIO as GPIO
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(26, GPIO.OUT)
+        GPIO.output(26, GPIO.LOW)
+        print("sombrero enabled")
+
+    def __del__(self):
+        import RPi.GPIO as GPIO
+        GPIO.cleanup()
+        print("sombrero disabled")

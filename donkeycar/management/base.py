@@ -166,7 +166,10 @@ class CalibrateCar(BaseCommand):
 
     def run(self, args):
         from donkeycar.parts.actuator import PCA9685
-    
+        from donkeycar.utils import Sombrero
+
+        s = Sombrero()
+
         args = self.parse_args(args)
         channel = int(args.channel)
         busnum = None
