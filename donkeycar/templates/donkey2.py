@@ -4,12 +4,13 @@ Scripts to drive a donkey 2 car
 
 Usage:
     manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
 
 
 Options:
-    -h --help     Show this screen.
-    --js          Use physical joystick.
+    -h --help        Show this screen.
+    --js             Use physical joystick.
+    -f --file=<file> A text file containing paths to tub files, one per line. Option may be used more than once.
 """
 import os
 import time
@@ -519,7 +520,7 @@ if __name__ == '__main__':
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type)
     
     if args['train']:
-        from train import multi_train
+        from train import multi_train, preprocessFileList
         
         tub = args['--tub']
         model = args['--model']
@@ -527,7 +528,13 @@ if __name__ == '__main__':
         model_type = args['--type']
         continuous = args['--continuous']
         aug = args['--aug']     
-        multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
+
+        dirs = preprocessFileList( args['--file'] )
+        if tub is not None:
+            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
+            dirs.extend( tub_paths )
+
+        multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
 
 
 
