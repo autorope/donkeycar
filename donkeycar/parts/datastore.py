@@ -148,9 +148,11 @@ class Tub(object):
 
     """
 
-    def __init__(self, path, inputs=None, types=None):
+    def __init__(self, path, inputs=None, types=None, location=None, task=None):
 
         self.path = os.path.expanduser(path)
+        self.location = location
+        self.task = task
         #print('path_in_tub:', self.path)
         self.meta_path = os.path.join(self.path, 'meta.json')
         self.df = None
@@ -176,6 +178,10 @@ class Tub(object):
             else:
                 self.start_time = time.time()
                 self.meta['start'] = self.start_time
+            if 'location' in self.meta:
+                self.location = self.meta['location']
+            if 'task' in self.meta:
+                self.task = self.meta['task']
 
         elif not exists and inputs:
             print('Tub does NOT exist. Creating new tub...')
@@ -183,6 +189,10 @@ class Tub(object):
             #create log and save meta
             os.makedirs(self.path)
             self.meta = {'inputs': inputs, 'types': types, 'start': self.start_time}
+            if self.location:
+                self.meta['location'] = self.location
+            if self.task:
+                self.meta['task'] = self.task
             with open(self.meta_path, 'w') as f:
                 json.dump(self.meta, f)
             self.current_ix = 0
@@ -554,9 +564,9 @@ class TubHandler():
         tub_path = os.path.join(self.path, name)
         return tub_path
 
-    def new_tub_writer(self, inputs, types):
+    def new_tub_writer(self, inputs, types, location=None, task=None):
         tub_path = self.create_tub_path()
-        tw = TubWriter(path=tub_path, inputs=inputs, types=types)
+        tw = TubWriter(path=tub_path, inputs=inputs, types=types, location=location, task=task)
         return tw
 
 
