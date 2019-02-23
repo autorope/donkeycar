@@ -491,8 +491,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         def run(self):
             return self.nominal_reward
 
-    rewardSig = RewardSignal()
-    V.add(rewardSig, inputs=[], outputs=["reward/value"])
+    if cfg.USE_REWARDS:
+        rewardSig = RewardSignal()
+        V.add(rewardSig, inputs=[], outputs=["reward/value"])
     
     #add tub to save data
 
@@ -536,10 +537,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
         ctr.set_tub(tub)
-        rewardSig.set_tub(tub)
         
         #replace the delete button with neg reward
-        ctr.set_button_down_trigger('triangle', rewardSig.apply_neg_reward)
+        if cfg.USE_REWARDS:
+            rewardSig.set_tub(tub)
+            ctr.set_button_down_trigger('triangle', rewardSig.apply_neg_reward)
 
         if cfg.BUTTON_PRESS_NEW_TUB:
     
