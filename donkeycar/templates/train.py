@@ -11,10 +11,11 @@ You might need to do a: pip install scikit-learn
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|latent|categorical|rnn|imu|behavior|3d|look_ahead)] [--continuous] [--aug]
+    train.py [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|latent|categorical|rnn|imu|behavior|3d|look_ahead)] [--continuous] [--aug]
 
 Options:
-    -h --help     Show this screen.    
+    -h --help        Show this screen.
+    -f --file=<file> A text file containing paths to tub files, one per line. Option may be used more than once.
 """
 import os
 import glob
@@ -942,6 +943,24 @@ def get_model_apoz(model, generator):
     return apoz_df
 
     
+def removeComments( dir_list ):
+    for i in reversed(range(len(dir_list))):
+        if dir_list[i].startswith("#"):
+            del dir_list[i]
+        elif len(dir_list[i]) == 0:
+            del dir_list[i]
+
+def preprocessFileList( filelist ):
+    dirs = []
+    if filelist is not None:
+        for afile in filelist:
+            with open(afile, "r") as f:
+                tmp_dirs = f.read().split('\n')
+                dirs.extend(tmp_dirs)
+
+    removeComments( dirs )
+    return dirs
+
 if __name__ == "__main__":
     args = docopt(__doc__)
     cfg = dk.load_config()
@@ -951,5 +970,10 @@ if __name__ == "__main__":
     model_type = args['--type']
     continuous = args['--continuous']
     aug = args['--aug']
-    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
     
+    dirs = preprocessFileList( args['--file'] )
+    if tub is not None:
+        tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
+        dirs.extend( tub_paths )
+
+    multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
