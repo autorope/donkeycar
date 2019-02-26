@@ -3,16 +3,15 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--location=<loc>] [--task=<task>]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...]
     manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
 
 
 Options:
-    -h --help        Show this screen.
-    --js             Use physical joystick.
-    -f --file=<file> A text file containing paths to tub files, one per line. Option may be used more than once.
-    --location=<loc> String describing location where data was recorded.
-    --task=<task>    String describing task for which data was recorded.
+    -h --help          Show this screen.
+    --js               Use physical joystick.
+    -f --file=<file>   A text file containing paths to tub files, one per line. Option may be used more than once.
+    --meta=<key:value> Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
 """
 import os
 import time
@@ -30,7 +29,7 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', location=None, task=None):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -480,12 +479,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
     
-    if location is None and cfg.DRIVE_LOCATION:
-        location = cfg.DRIVE_LOCATION
-    if task is None and cfg.DRIVE_TASK:
-        task = cfg.DRIVE_TASK
     th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types, location=location, task=task)
+    tub = th.new_tub_writer(inputs=inputs, types=types, meta=meta)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
@@ -505,7 +500,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     
             def new_tub_dir():
                 V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types, location=location, task=task)
+                tub = th.new_tub_writer(inputs=inputs, types=types, meta=meta)
                 V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
                 ctr.set_tub(tub)
     
@@ -524,7 +519,7 @@ if __name__ == '__main__':
         model_type = args['--type']
         camera_type = args['--camera']
         drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
-            location=args['--location'], task=args['--task'])
+            meta=args['--meta'])
     
     if args['train']:
         from train import multi_train, preprocessFileList
