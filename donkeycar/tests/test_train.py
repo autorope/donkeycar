@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*- #
 import pytest
-import tempfile
 import os
 
 from donkeycar.templates.train import multi_train
