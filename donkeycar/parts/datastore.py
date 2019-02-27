@@ -359,14 +359,16 @@ class Tub(object):
         for i in range(first_erase, last_erase):
             if i < 0:
                 continue
-            json_path = self.get_json_record_path(i)
-            if os.path.exists(json_path):
-                os.unlink(json_path)
-            img_filename = '%d_cam-image_array_.jpg' % (i)
-            img_path = os.path.join(self.path, img_filename)
-            if os.path.exists(img_path):
-                os.unlink(img_path)
+            self.erase_record(i)
 
+    def erase_record(self, i):
+        json_path = self.get_json_record_path(i)
+        if os.path.exists(json_path):
+            os.unlink(json_path)
+        img_filename = '%d_cam-image_array_.jpg' % (i)
+        img_path = os.path.join(self.path, img_filename)
+        if os.path.exists(img_path):
+            os.unlink(img_path)
 
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')
