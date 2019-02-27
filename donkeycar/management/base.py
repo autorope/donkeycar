@@ -192,7 +192,7 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
-        parser.add_argument('--model_type', default='categorical', help='the model type to load')
+        parser.add_argument('--type', default='categorical', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
         parser.add_argument('--start', type=int, default=1, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
@@ -254,7 +254,7 @@ class MakeMovie(BaseCommand):
         self.keras_part = None
         self.convolution_part = None
         if not args.model == "None":
-            self.keras_part = get_model_by_type(args.model_type, cfg=cfg)
+            self.keras_part = get_model_by_type(args.type, cfg=cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
             if args.salient:
@@ -322,6 +322,36 @@ class MakeMovie(BaseCommand):
 
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
+
+    def draw_steering_distribution(self, record, img):
+        '''
+        query the model for it's prediction, draw the distribution of steering choices
+        '''
+        from donkeycar.parts.keras import KerasCategorical
+
+        if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
+            return
+
+        import cv2
+         
+        orig_shape = img.shape
+        pred_img = img.reshape((1,) + img.shape)
+        angle_binned, throttle = self.keras_part.model.predict(pred_img)
+        #img.reshape(orig_shape)
+
+        x = 4
+        dx = 4
+        y = 120 - 4
+        iArgMax = np.argmax(angle_binned)
+        for i in range(15):
+            p1 = (x, y)
+            p2 = (x, y - int(angle_binned[0][i] * 100.0))
+            if i == iArgMax:
+                cv2.line(img, p1, p2, (255, 0, 0), 2)
+            else:
+                cv2.line(img, p1, p2, (200, 200, 200), 2)
+            x += dx
+        
 
     def init_salient(self, model):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
@@ -414,6 +444,7 @@ class MakeMovie(BaseCommand):
             image = image.astype('uint8')
         
         self.draw_model_prediction(rec, image)
+        self.draw_steering_distribution(rec, image)
 
         if self.scale != 1:
             import cv2

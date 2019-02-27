@@ -351,7 +351,10 @@ def gather_tub_paths(cfg, tub_names=None):
     returns a list of Tub paths
     '''
     if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        if type(tub_names) == list:
+            tub_paths = [os.path.expanduser(n) for n in tub_names]
+        else:
+            tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
         return expand_path_masks(tub_paths)
     else:
         paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
