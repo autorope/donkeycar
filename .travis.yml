@@ -13,7 +13,7 @@ before_install:
 install: 
   - "pip install tensorflow"
   - "pip install -U pytest"
-  - "pip install -e ."
+  - "pip install -e .[pc]"
 
 # command to run tests
 script: pytest
