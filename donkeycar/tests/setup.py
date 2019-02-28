@@ -39,12 +39,10 @@ def create_sample_tub(path, records=128):
 
     return t
 
-@pytest.fixture
 def d2_path(temp_path):
     path = os.path.join(temp_path, 'd2')
     return str(path)
 
-@pytest.fixture
 def default_template(d2_path):
     c = CreateCar()
     c.create_car(d2_path)
