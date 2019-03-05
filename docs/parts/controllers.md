@@ -25,7 +25,8 @@ python manage.py drive --js
 
 Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify config.py to make USE_JOYSTICK_AS_DEFAULT = True, then you do not need to run with the --js.
 
-#### PS3 Controller
+## PS3 Controller
+
 ### Bluetooth Setup
 
 Follow [this guide](https://pythonhosted.org/triangula/sixaxis.html). You can ignore steps past the 'Accessing the SixAxis from Python' section. I will include steps here in case the link becomes stale.
@@ -64,7 +65,24 @@ To test that the Bluetooth PS3 remote is working, verify that /dev/input/js0 exi
 ls /dev/input/js0
 ```
 
-#### PS4 Controller
+### Charging PS3 Sixaxis Joystick
+
+For some reason, they don't like to charge in a powered USB port that doesn't have an active Bluetooth control and OS driver. This means a phone type USB charger will not work. Try a powered Linux or mac laptop USB port. You should see the lights blink after plugging in and hitting center PS logo.
+
+After charging, you will need to plug-in the controller again to the Pi, hit the PS logo, then unplug to pair again.
+
+### New Battery for PS3 Sixaxis Joystick
+
+Sometimes these controllers can be quite old. Here's a link to a [new battery](http://a.co/5k1lbns). Be careful when taking off the cover. Remove 5 screws. There's a tab on the top half between the hand grips. You'll want to split/open it from the front and try pulling the bottom forward as you do, or you'll break the tab off as I did.
+
+### PS3 Mouse problems on Linux
+
+Sometimes when you plug-in the PS3 joystick it starts taking over your mouse. If you want to prevent that, you can run this:
+```
+xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
+```
+
+## PS4 Controller
 
 The following instructions are based on [RetroPie](https://github.com/RetroPie/RetroPie-Setup/wiki/PS4-Controller#installation) and [ds4drv](https://github.com/chrippa/ds4drv).
 
@@ -94,7 +112,9 @@ Press and hold **Share** button, then press and hold **PS** button until the lig
 
 To disconnect, kill the process `ds4drv` and hold **PS** for 10 seconds to power off the controller.
 
-#### XBox One Controller bluetooth pairing
+## XBox One Controller
+
+### bluetooth pairing
 
 This code presumes the built-in linux driver for 'Xbox Wireless Controller'; this is pre-installed on Raspbian, so there is no need to install any other drivers.  This will generally show up on /dev/input/js0.  There is another userland driver called xboxdrv; this code has not been tested with that driver.
 
@@ -144,20 +164,5 @@ quit
 
 Now that your controller is trusted, it should automatically connect with your Raspberry Pi when they are both turned on.  If your controller fails to connect, run the bluetoothctl steps again to reconnect.
 
-### Charging PS3 Sixaxis Joystick
 
-For some reason, they don't like to charge in a powered USB port that doesn't have an active Bluetooth control and OS driver. This means a phone type USB charger will not work. Try a powered Linux or mac laptop USB port. You should see the lights blink after plugging in and hitting center PS logo.
-
-After charging, you will need to plug-in the controller again to the Pi, hit the PS logo, then unplug to pair again.
-
-### New Battery for PS3 Sixaxis Joystick
-
-Sometimes these controllers can be quite old. Here's a link to a [new battery](http://a.co/5k1lbns). Be careful when taking off the cover. Remove 5 screws. There's a tab on the top half between the hand grips. You'll want to split/open it from the front and try pulling the bottom forward as you do, or you'll break the tab off as I did.
-
-### PS3 Mouse problems on Linux
-
-Sometimes when you plug-in the PS3 joystick it starts taking over your mouse. If you want to prevent that, you can run this:
-```
-xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
-```
 
