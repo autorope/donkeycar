@@ -3,18 +3,19 @@ Usage:
     tflite_convert.py --model="mymodel.h5" --out="mymodel.tflite"
 
 Note:
-    my require tf-nightly if on tensorflow < 1.13
+    may require tensorflow > 1.11 or
     pip install tf-nightly
 '''
 import os
-import sys
 
 from docopt import docopt
 import tensorflow as tf
 
 args = docopt(__doc__)
 
-converter = tf.lite.TFLiteConverter.from_keras_model_file(args['--model'])
+in_model = os.path.expanduser(args['--model'])
+out_model = os.path.expanduser(args['--out']) 
+converter = tf.lite.TFLiteConverter.from_keras_model_file(in_model)
 tflite_model = converter.convert()
-open(args['--out'], "wb").write(tflite_model)
+open(out_model, "wb").write(tflite_model)
 
