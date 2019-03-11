@@ -189,7 +189,7 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
-        parser.add_argument('--model_type', default='categorical', help='the model type to load')
+        parser.add_argument('--type', default='categorical', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
         parser.add_argument('--start', type=int, default=1, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
@@ -251,7 +251,7 @@ class MakeMovie(BaseCommand):
         self.keras_part = None
         self.convolution_part = None
         if not args.model == "None":
-            self.keras_part = get_model_by_type(args.model_type, cfg=cfg)
+            self.keras_part = get_model_by_type(args.type, cfg=cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
             if args.salient:
