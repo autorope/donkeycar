@@ -94,6 +94,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.CAMERA_TYPE == "CVCAM":
             from donkeycar.parts.cv import CvCam
             cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "MOCK":
+            from donkeycar.parts.camera import MockCamera
+            cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
@@ -480,7 +483,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         types += ['float', 'float']
     
     th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types, meta=meta)
+    tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
@@ -500,7 +503,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     
             def new_tub_dir():
                 V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types, meta=meta)
+                tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
                 V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
                 ctr.set_tub(tub)
     

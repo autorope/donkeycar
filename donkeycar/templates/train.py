@@ -441,10 +441,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         else:
                             img_arr = record['img_data']
                             
-                        if img_out:
-                            #filename = record['image_path']
-                            #mask_filename = filename.replace(".jpg", "_lines.jpg")
-                            #mask_img = cv2.imread(mask_filename)
+                        if img_out:                            
                             rz_img_arr = cv2.resize(img_arr, (127, 127)) / 255.0
                             out_img.append(rz_img_arr[:,:,0].reshape((127, 127, 1)))
                             
