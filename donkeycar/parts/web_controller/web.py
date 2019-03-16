@@ -127,23 +127,21 @@ class VideoAPI(tornado.web.RequestHandler):
     @tornado.web.asynchronous
     @tornado.gen.coroutine
     def get(self):
-
         ioloop = tornado.ioloop.IOLoop.current()
         self.set_header("Content-type", "multipart/x-mixed-replace;boundary=--boundarydonotcross")
 
         self.served_image_timestamp = time.time()
-        my_boundary = "--boundarydonotcross"
+        my_boundary = "--boundarydonotcross\n"
         while True:
-
             interval = .1
             if self.served_image_timestamp + interval < time.time():
-
                 img = util.img.arr_to_binary(self.application.img_arr)
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
                 self.write("Content-length: %s\r\n\r\n" % len(img))
                 self.write(img)
+
                 self.served_image_timestamp = time.time()
                 yield tornado.gen.Task(self.flush)
             else:
