@@ -18,7 +18,7 @@ def test_tub_load(tub, tub_path):
 
 
 def test_tub_update_df(tub):
-    """ Tub updats its dataframe """
+    """ Tub updates its dataframe """
     tub.update_df()
     assert len(tub.df) == 128
 
@@ -48,6 +48,21 @@ def test_tub_write_numpy(tub):
     rec_out = tub.get_record(rec_index)
     assert type(rec_out['user/throttle']) == float
 
+
+def test_tub_exclude(tub):
+    """ Make sure the Tub will exclude records in the exclude set """
+    ri = lambda fnm : int( os.path.basename(fnm).split('_')[1].split('.')[0] )
+
+    before = tub.gather_records()
+    assert len(before) == tub.get_num_records() # Make sure we gathered records correctly
+    tub.exclude.add(1)
+    after = tub.gather_records()
+    assert len(after) == (tub.get_num_records() - 1) # Make sure we excluded the correct number of records
+    before = set([ri(f) for f in before])
+    after = set([ri(f) for f in after])
+    diff = before - after
+    assert len(diff) == 1
+    assert 1 in diff # Make sure we exclude the correct index
 
 class TestTubWriter(unittest.TestCase):
     def setUp(self):
