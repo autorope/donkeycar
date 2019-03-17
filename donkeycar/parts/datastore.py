@@ -323,7 +323,11 @@ class Tub(object):
         for key, val in data.items():
             typ = self.get_input_type(key)
 
-            if typ in ['str', 'float', 'int', 'boolean', 'vector']:
+            if (val is not None) and (typ == 'float'):
+                # in case val is a numpy.float32, which json doesn't like
+                json_data[key] = float(val)
+
+            elif typ in ['str', 'float', 'int', 'boolean', 'vector']:
                 json_data[key] = val
 
             elif typ is 'image':

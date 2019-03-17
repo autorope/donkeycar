@@ -37,6 +37,18 @@ def test_tub_add_record(tub):
         rec_out.pop('milliseconds')
     assert rec_in.keys() == rec_out.keys()
 
+
+def test_tub_write_numpy(tub):
+    """Tub can save a record that contains a numpy float, and retrieve it as a python float."""
+    import numpy as np
+    x=123
+    z=np.float32(11.1)
+    rec_in  = {'user/angle': x, 'user/throttle':z}
+    rec_index = tub.put_record(rec_in)
+    rec_out = tub.get_record(rec_index)
+    assert type(rec_out['user/throttle']) == float
+
+
 class TestTubWriter(unittest.TestCase):
     def setUp(self):
         self.tempfolder = tempfile.TemporaryDirectory().name
