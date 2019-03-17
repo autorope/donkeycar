@@ -127,11 +127,11 @@ class MockCamera(BaseCamera):
     '''
     Fake camera. Returns only a single static frame
     '''
-    def __init__(self, resolution=(160, 120), image=None):
+    def __init__(self, image_w=160, image_h=120, image_d=3, image=None):
         if image is not None:
             self.frame = image
         else:
-            self.frame = Image.new('RGB', resolution)
+            self.frame = Image.new('RGB', (image_w, image_h))
 
     def update(self):
         pass

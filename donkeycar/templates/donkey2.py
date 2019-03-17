@@ -3,13 +3,15 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
 
 
 Options:
-    -h --help     Show this screen.
-    --js          Use physical joystick.
+    -h --help          Show this screen.
+    --js               Use physical joystick.
+    -f --file=<file>   A text file containing paths to tub files, one per line. Option may be used more than once.
+    --meta=<key:value> Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
 """
 import os
 import time
@@ -27,7 +29,7 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single'):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -92,6 +94,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.CAMERA_TYPE == "CVCAM":
             from donkeycar.parts.cv import CvCam
             cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "MOCK":
+            from donkeycar.parts.camera import MockCamera
+            cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
             
@@ -478,7 +483,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         types += ['float', 'float']
     
     th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types)
+    tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
@@ -498,7 +503,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     
             def new_tub_dir():
                 V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types)
+                tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
                 V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
                 ctr.set_tub(tub)
     
@@ -516,10 +521,11 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type)
+        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
+            meta=args['--meta'])
     
     if args['train']:
-        from train import multi_train
+        from train import multi_train, preprocessFileList
         
         tub = args['--tub']
         model = args['--model']
@@ -527,7 +533,11 @@ if __name__ == '__main__':
         model_type = args['--type']
         continuous = args['--continuous']
         aug = args['--aug']     
-        multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
 
+        dirs = preprocessFileList( args['--file'] )
+        if tub is not None:
+            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
+            dirs.extend( tub_paths )
 
+        multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
 

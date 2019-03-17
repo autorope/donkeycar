@@ -2,6 +2,7 @@
 import tempfile
 import unittest
 from donkeycar.parts.datastore import TubWriter, Tub
+from donkeycar.parts.datastore import TubHandler
 import os
 
 import pytest
@@ -31,6 +32,9 @@ def test_tub_add_record(tub):
     rec_in  = {'cam/image_array': img_arr, 'user/angle': x, 'user/throttle':y}
     rec_index = tub.put_record(rec_in)
     rec_out = tub.get_record(rec_index)
+    # Ignore the milliseconds key, which is added when the record is written
+    if 'milliseconds' in rec_out:
+        rec_out.pop('milliseconds')
     assert rec_in.keys() == rec_out.keys()
 
 
@@ -45,12 +49,10 @@ def test_tub_write_numpy(tub):
     assert type(rec_out['user/throttle']) == float
 
 
-
-
 class TestTubWriter(unittest.TestCase):
     def setUp(self):
-        tempfolder = tempfile.TemporaryDirectory()
-        self.path = os.path.join(tempfolder.name, 'new')
+        self.tempfolder = tempfile.TemporaryDirectory().name
+        self.path = os.path.join(self.tempfolder, 'new')
         self.inputs = ['name', 'age', 'pic']
         self.types = ['str', 'float', 'str']
 
@@ -68,4 +70,26 @@ class TestTubWriter(unittest.TestCase):
         abs_record_dict = tub.make_record_paths_absolute(record_dict)
 
         assert abs_record_dict['file_path'] == os.path.join(self.path, rel_file_name)
+
+    def test_tub_meta(self):
+        meta = ["location:Here", "task:sometask"]
+        tub = Tub(self.path, inputs=['file_path'], types=['image'], user_meta=meta)
+        t2 = Tub(self.path)
+        assert "location" in tub.meta
+        assert "location" in t2.meta
+        assert "sometask" == t2.meta["task"]
+
+    def test_tub_like_driver(self):
+        """ The manage.py/donkey2.py drive command creates a tub using TubHandler,
+            so test that way.
+        """
+        os.makedirs(self.tempfolder)
+        meta = ["location:Here2", "task:sometask2"]
+        th = TubHandler(self.tempfolder)
+        tub = th.new_tub_writer(inputs=self.inputs, types=self.types, user_meta=meta)
+        t2 = Tub(tub.path)
+        assert tub.meta == t2.meta
+        assert tub.meta['location'] == "Here2"
+        assert t2.meta['inputs'] == self.inputs
+        assert t2.meta['location'] == "Here2"
 

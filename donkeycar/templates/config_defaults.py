@@ -34,7 +34,7 @@ DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
 
 #CAMERA
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|MOCK)
 IMAGE_W = 160
 IMAGE_H = 120
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
@@ -174,3 +174,7 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # "donkey-generated-track-v0" 
 
 #publish camera over network
 PUB_CAMERA_IMAGES = False
+
+#meta data. Strings describing location and/or task
+DRIVE_LOCATION = None
+DRIVE_TASK = None

@@ -148,7 +148,7 @@ class Tub(object):
 
     """
 
-    def __init__(self, path, inputs=None, types=None):
+    def __init__(self, path, inputs=None, types=None, user_meta=[]):
 
         self.path = os.path.expanduser(path)
         #print('path_in_tub:', self.path)
@@ -171,11 +171,23 @@ class Tub(object):
             except ValueError:
                 self.current_ix = 0
 
+            if 'start' in self.meta:
+                self.start_time = self.meta['start']
+            else:
+                self.start_time = time.time()
+                self.meta['start'] = self.start_time
+
         elif not exists and inputs:
             print('Tub does NOT exist. Creating new tub...')
+            self.start_time = time.time()
             #create log and save meta
             os.makedirs(self.path)
-            self.meta = {'inputs': inputs, 'types': types}
+            self.meta = {'inputs': inputs, 'types': types, 'start': self.start_time}
+            for kv in user_meta:
+                kvs = kv.split(":")
+                if len(kvs) == 2:
+                    self.meta[kvs[0]] = kvs[1]
+                # else exception? print message?
             with open(self.meta_path, 'w') as f:
                 json.dump(self.meta, f)
             self.current_ix = 0
@@ -185,8 +197,6 @@ class Tub(object):
                   "to create a new tub. Please check your tub path or provide meta info to create a new tub."
 
             raise AttributeError(msg)
-
-        self.start_time = time.time()
 
 
     def get_last_ix(self):
@@ -335,6 +345,8 @@ class Tub(object):
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
                 raise TypeError(msg)
 
+        json_data['milliseconds'] = int((time.time() - self.start_time) * 1000)
+
         self.write_json_record(json_data)
         return self.current_ix
 
@@ -351,14 +363,16 @@ class Tub(object):
         for i in range(first_erase, last_erase):
             if i < 0:
                 continue
-            json_path = self.get_json_record_path(i)
-            if os.path.exists(json_path):
-                os.unlink(json_path)
-            img_filename = '%d_cam-image_array_.jpg' % (i)
-            img_path = os.path.join(self.path, img_filename)
-            if os.path.exists(img_path):
-                os.unlink(img_path)
+            self.erase_record(i)
 
+    def erase_record(self, i):
+        json_path = self.get_json_record_path(i)
+        if os.path.exists(json_path):
+            os.unlink(json_path)
+        img_filename = '%d_cam-image_array_.jpg' % (i)
+        img_path = os.path.join(self.path, img_filename)
+        if os.path.exists(img_path):
+            os.unlink(img_path)
 
     def get_json_record_path(self, ix):
         return os.path.join(self.path, 'record_'+str(ix)+'.json')
@@ -551,9 +565,9 @@ class TubHandler():
         tub_path = os.path.join(self.path, name)
         return tub_path
 
-    def new_tub_writer(self, inputs, types):
+    def new_tub_writer(self, inputs, types, user_meta=[]):
         tub_path = self.create_tub_path()
-        tw = TubWriter(path=tub_path, inputs=inputs, types=types)
+        tw = TubWriter(path=tub_path, inputs=inputs, types=types, user_meta=user_meta)
         return tw
 
 

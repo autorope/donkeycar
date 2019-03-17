@@ -24,7 +24,11 @@ class PartProfiler:
     def on_part_finished(self, p):
         now = time.time()
         prev = self.records[p]['times'][-1]
-        self.records[p]['times'][-1] = now - prev
+        delta = now - prev
+        thresh = 0.000001
+        if delta < thresh or delta > 100000.0:
+            delta = thresh
+        self.records[p]['times'][-1] = delta
 
     def report(self):
         print("Part Profile Summary: (times in ms)")
