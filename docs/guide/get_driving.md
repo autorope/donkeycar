@@ -85,9 +85,3 @@ races if you have a pilot that will steer but doesn't control throttle.
 You may find that it helps to use a physical joystick device to control your vehicle.
 
 Check the [Controllers](/parts/controllers/#physical-joystick-controller) section to read about setting up the bluetooth connection.
-
-
-
-
-
-
