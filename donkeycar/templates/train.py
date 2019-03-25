@@ -894,8 +894,16 @@ def prune(model, validation_generator, val_steps, cfg):
 
 
 def extract_data_from_pickles(cfg, tubs):
-    tub_paths = gather_tub_paths(cfg, tubs)
-    for tub_path in tub_paths:
+    """
+    Extracts record_{id}.json and image from a pickle with the same id if exists in the tub.
+    Then writes extracted json/jpg along side the source pickle that tub.
+    This assumes the format {id}.pickle in the tub directory.
+    :param cfg: config with data location configuration. Generally the global config object.
+    :param tubs: The list of tubs involved in training.
+    :return: implicit None.
+    """
+    t_paths = gather_tub_paths(cfg, tubs)
+    for tub_path in t_paths:
         file_paths = glob.glob(join(tub_path, '*.pickle'))
         print('found {} pickles writing json records and images in tub {}'.format(len(file_paths), tub_path))
         for file_path in file_paths:
