@@ -23,11 +23,13 @@ import random
 import json
 from threading import Lock
 import time
-from os.path import basename, join, splitext
+import zlib
+from os.path import basename, join, splitext, dirname
 
 from docopt import docopt
 import numpy as np
 import keras
+import pickle
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
@@ -342,6 +344,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
+
+    extract_data_from_pickles(cfg, tub_names)
 
     records = gather_records(cfg, tub_names, opts, verbose=True)
     print('collating %d records ...' % (len(records)))
@@ -887,6 +891,37 @@ def prune(model, validation_generator, val_steps, cfg):
     model.save(name)
 
     return model, n_channels_delete
+
+
+def extract_data_from_pickles(cfg, tubs):
+    """
+    Extracts record_{id}.json and image from a pickle with the same id if exists in the tub.
+    Then writes extracted json/jpg along side the source pickle that tub.
+    This assumes the format {id}.pickle in the tub directory.
+    :param cfg: config with data location configuration. Generally the global config object.
+    :param tubs: The list of tubs involved in training.
+    :return: implicit None.
+    """
+    t_paths = gather_tub_paths(cfg, tubs)
+    for tub_path in t_paths:
+        file_paths = glob.glob(join(tub_path, '*.pickle'))
+        print('found {} pickles writing json records and images in tub {}'.format(len(file_paths), tub_path))
+        for file_path in file_paths:
+            # print('loading data from {}'.format(file_paths))
+            with open(file_path, 'rb') as f:
+                p = zlib.decompress(f.read())
+            data = pickle.loads(p)
+           
+            base_path = dirname(file_path)
+            filename = splitext(basename(file_path))[0]
+            image_path = join(base_path, filename + '.jpg')
+            img = Image.fromarray(np.uint8(data['val']['cam/image_array']))
+            img.save(image_path)
+            
+            data['val']['cam/image_array'] = filename + '.jpg'
+
+            with open(join(base_path, 'record_{}.json'.format(filename)), 'w') as f:
+                json.dump(data['val'], f)
 
 
 def prune_model(model, apoz_df, n_channels_delete):
