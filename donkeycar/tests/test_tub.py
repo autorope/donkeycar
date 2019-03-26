@@ -6,6 +6,7 @@ import tarfile
 from PIL import Image
 from donkeycar.parts.datastore import Tub
 from .setup import tub, tub_path, create_sample_record
+import numpy as np
 
 
 def test_tub_load(tub, tub_path):
@@ -113,7 +114,17 @@ def test_delete_tub(tub):
 def test_get_record_gen(tub):
     """ Create a records generator and pull 20 records from it """
     records = tub.get_record_gen()
-    assert len([ next(records) for x in range(20) ]) == 20
+    assert len([next(records) for _ in range(20)]) == 20
+
+
+def test_get_record_gen_without_shuffle(tub):
+    """ Create a records generator and pull 20 records from it
+    without shuffling"""
+    records = tub.get_record_gen(shuffle=False)
+    result = [next(records) for _ in range(20)]
+
+    assert len(result) == 20
+    np.testing.assert_equal(result[0:10], result[10:20])
 
 
 def test_get_batch_gen(tub):
