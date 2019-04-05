@@ -67,9 +67,9 @@ class AStarSpeed:
 
 
 class RotaryEncoder():
-    def __init__(self, mm_per_tick=0.306096, pin=27, poll_delay=0.0166, debug=False):
+    def __init__(self, mm_per_tick=0.306096, pin=13, poll_delay=0.0166, debug=False):
         import RPi.GPIO as GPIO
-        GPIO.setmode(GPIO.BCM)
+        GPIO.setmode(GPIO.BOARD)
         GPIO.setup(pin, GPIO.IN)
         GPIO.add_event_detect(pin, GPIO.RISING, callback=self.isr)
 
@@ -130,4 +130,4 @@ class RotaryEncoder():
         time.sleep(.5)
         
         import RPi.GPIO as GPIO
-        GPIO.cleanup() 
+        GPIO.cleanup()
