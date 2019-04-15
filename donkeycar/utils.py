@@ -395,8 +395,7 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
     for tub in tubs:
         if verbose:
             print(tub.path)
-        record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
-        record_paths.sort(key=get_record_index)
+        record_paths = tub.gather_records()
         records += record_paths
 
     return records

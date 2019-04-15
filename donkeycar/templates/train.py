@@ -23,11 +23,13 @@ import random
 import json
 from threading import Lock
 import time
-from os.path import basename, join, splitext
+import zlib
+from os.path import basename, join, splitext, dirname
 
 from docopt import docopt
 import numpy as np
 import keras
+import pickle
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
@@ -343,6 +345,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
 
+    extract_data_from_pickles(cfg, tub_names)
+
     records = gather_records(cfg, tub_names, opts, verbose=True)
     print('collating %d records ...' % (len(records)))
     collate_records(records, gen_records, opts)
@@ -441,10 +445,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         else:
                             img_arr = record['img_data']
                             
-                        if img_out:
-                            #filename = record['image_path']
-                            #mask_filename = filename.replace(".jpg", "_lines.jpg")
-                            #mask_img = cv2.imread(mask_filename)
+                        if img_out:                            
                             rz_img_arr = cv2.resize(img_arr, (127, 127)) / 255.0
                             out_img.append(rz_img_arr[:,:,0].reshape((127, 127, 1)))
                             
@@ -578,14 +579,25 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
     if cfg.SHOW_PLOT:
         try:
             if do_plot:
+                plt.figure(1)
                 # summarize history for loss
+                plt.subplot(121)
                 plt.plot(history.history['loss'])
                 plt.plot(history.history['val_loss'])
-                plt.title('model loss : %f' % save_best.best)
+                plt.title('model loss')
                 plt.ylabel('loss')
                 plt.xlabel('epoch')
-                plt.legend(['train', 'test'], loc='upper left')
-                plt.savefig(model_path + '_loss_%f.png' % save_best.best)
+                plt.legend(['train', 'validate'], loc='upper right')
+                
+                # summarize history for acc
+                plt.subplot(122)
+                plt.plot(history.history['angle_out_acc'])
+                plt.plot(history.history['val_angle_out_acc'])
+                plt.title('model angle accuracy')
+                plt.ylabel('acc')
+                plt.xlabel('epoch')
+                #plt.legend(['train', 'validate'], loc='upper left')
+                plt.savefig(model_path + '_loss_acc_%f.png' % save_best.best)
                 plt.show()
             else:
                 print("not saving loss graph because matplotlib not set up.")
@@ -890,6 +902,37 @@ def prune(model, validation_generator, val_steps, cfg):
     model.save(name)
 
     return model, n_channels_delete
+
+
+def extract_data_from_pickles(cfg, tubs):
+    """
+    Extracts record_{id}.json and image from a pickle with the same id if exists in the tub.
+    Then writes extracted json/jpg along side the source pickle that tub.
+    This assumes the format {id}.pickle in the tub directory.
+    :param cfg: config with data location configuration. Generally the global config object.
+    :param tubs: The list of tubs involved in training.
+    :return: implicit None.
+    """
+    t_paths = gather_tub_paths(cfg, tubs)
+    for tub_path in t_paths:
+        file_paths = glob.glob(join(tub_path, '*.pickle'))
+        print('found {} pickles writing json records and images in tub {}'.format(len(file_paths), tub_path))
+        for file_path in file_paths:
+            # print('loading data from {}'.format(file_paths))
+            with open(file_path, 'rb') as f:
+                p = zlib.decompress(f.read())
+            data = pickle.loads(p)
+           
+            base_path = dirname(file_path)
+            filename = splitext(basename(file_path))[0]
+            image_path = join(base_path, filename + '.jpg')
+            img = Image.fromarray(np.uint8(data['val']['cam/image_array']))
+            img.save(image_path)
+            
+            data['val']['cam/image_array'] = filename + '.jpg'
+
+            with open(join(base_path, 'record_{}.json'.format(filename)), 'w') as f:
+                json.dump(data['val'], f)
 
 
 def prune_model(model, apoz_df, n_channels_delete):

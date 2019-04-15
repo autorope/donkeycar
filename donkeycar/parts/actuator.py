@@ -33,6 +33,39 @@ class PCA9685:
     def run(self, pulse):
         self.set_pulse(pulse)
 
+
+class PiGPIO_PWM():
+    '''
+    # Use the pigpio python module and daemon to get hardware pwm controls from
+    # a raspberrypi gpio pins and no additional hardware. Can serve as a replacement
+    # for PCA9685.
+    #
+    # Install and setup:
+    # sudo update && sudo apt install pigpio python3-pigpio
+    # sudo systemctl start pigpiod
+    #
+    # Note: the range of pulses will differ from those required for PCA9685
+    # and can range from 12K to 170K
+    '''
+
+    def __init__(self, pin, pgio=None, freq=75):
+        import pigpio
+
+        self.pin = pin
+        self.pgio = pgio or pigpio.pi()
+        self.freq = freq
+        self.pgio.set_mode(self.pin, pigpio.OUTPUT)
+
+    def __del__(self):
+        self.pgio.stop()
+
+    def set_pulse(self, pulse):
+        self.pgio.hardware_PWM(self.pin, self.freq, pulse)
+
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+
 class JHat:
     ''' 
     PWM motor controler using Teensy emulating PCA9685. 

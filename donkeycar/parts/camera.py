@@ -131,8 +131,7 @@ class MockCamera(BaseCamera):
         if image is not None:
             self.frame = image
         else:
-            resolution=(image_w, image_h)
-            self.frame = Image.new('RGB', resolution)
+            self.frame = Image.new('RGB', (image_w, image_h))
 
     def update(self):
         pass

@@ -153,6 +153,7 @@ class Tub(object):
         self.path = os.path.expanduser(path)
         #print('path_in_tub:', self.path)
         self.meta_path = os.path.join(self.path, 'meta.json')
+        self.exclude_path = os.path.join(self.path, "exclude.json")
         self.df = None
 
         exists = os.path.exists(self.path)
@@ -165,6 +166,13 @@ class Tub(object):
                     self.meta = json.load(f)
             except FileNotFoundError:
                 self.meta = {'inputs': [], 'types': []}
+
+            try:
+                with open(self.exclude_path,'r') as f:
+                    excl = json.load(f) # stored as a list
+                    self.exclude = set(excl)
+            except FileNotFoundError:
+                self.exclude = set()
 
             try:
                 self.current_ix = self.get_last_ix() + 1
@@ -191,6 +199,7 @@ class Tub(object):
             with open(self.meta_path, 'w') as f:
                 json.dump(self.meta, f)
             self.current_ix = 0
+            self.exclude = set()
             print('New tub created at: {}'.format(self.path))
         else:
             msg = "The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types)" + \
@@ -323,7 +332,11 @@ class Tub(object):
         for key, val in data.items():
             typ = self.get_input_type(key)
 
-            if typ in ['str', 'float', 'int', 'boolean', 'vector']:
+            if (val is not None) and (typ == 'float'):
+                # in case val is a numpy.float32, which json doesn't like
+                json_data[key] = float(val)
+
+            elif typ in ['str', 'float', 'int', 'boolean', 'vector']:
                 json_data[key] = val
 
             elif typ is 'image':
@@ -414,6 +427,15 @@ class Tub(object):
         return data
 
 
+    def gather_records(self):
+        ri = lambda fnm : int( os.path.basename(fnm).split('_')[1].split('.')[0] )
+
+        record_paths = glob.glob(os.path.join(self.path, 'record_*.json'))
+        if len(self.exclude) > 0:
+            record_paths = [f for f in record_paths if ri(f) not in self.exclude]
+        record_paths.sort(key=ri)
+        return record_paths
+
     def make_file_name(self, key, ext='.png'):
         name = '_'.join([str(self.current_ix), key, ext])
         name = name = name.replace('/', '-')
@@ -427,6 +449,27 @@ class Tub(object):
     def shutdown(self):
         pass
 
+
+    def excluded(self, index):
+        return index in self.exclude
+
+    def exclude_index(self, index):
+        self.exclude.add(index)
+
+    def include_index(self, index):
+        try:
+            self.exclude.remove(index)
+        except:
+            pass
+
+    def write_exclude(self):
+        if 0 == len(self.exclude):
+            # If the exclude set is empty don't leave an empty file around.
+            if os.path.exists(self.exclude_path):
+                os.unlink(self.exclude_path)
+        else:
+            with open(self.exclude_path,'w') as f:
+                json.dump( list(self.exclude), f )
 
     def get_record_gen(self, record_transform=None, shuffle=True, df=None):
 
