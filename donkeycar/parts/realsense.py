@@ -5,6 +5,8 @@ Date: April 14 2019
 Notes: Parts to input data from Intel Realsense cameras
 '''
 import time
+import logging
+
 import pyrealsense2 as rs
 
 class RS_T265(object):
@@ -40,6 +42,7 @@ class RS_T265(object):
             self.pos = data.translation
             self.vel = data.velocity
             self.acc = data.acceleration
+            logging.debug('realsense pos(%f, %f, %f)' % (self.pos.x, self.pos.y, self.pos.z))
 
     def update(self):
         while self.running:
@@ -56,6 +59,8 @@ class RS_T265(object):
         self.running = False
         time.sleep(0.1)
         self.pipe.stop()
+
+
 
 if __name__ == "__main__":
     c = RS_T265()

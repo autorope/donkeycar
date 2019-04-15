@@ -180,33 +180,6 @@ class MapToImage(object):
         pass
 
 
-class Path(object):
-    def __init__(self, min_dist_rec_mm = 100.):
-        self.path = []
-        self.min_dist = min_dist_rec_mm
-        self.x = 0.
-        self.y = 0.
-
-    def run(self, x, y):
-        d = dist(x, y, self.x, self.y)
-        if d > self.min_dist:
-            self.path.append((x, y))
-            self.x = x
-            self.y = y
-        return self.path
-
-    def save(self, filename):
-        outfile = open(filename, 'wb')
-        pickle.dump(self.path, outfile)
-    
-    def load(self, filename):
-        infile = open(filename, 'rb')
-        self.path = pickle.load(infile)
-
-    def shutdown(self):
-        pass
-
-
 class CarRelPathPlotter(object):
     '''
     draw a path onto an image relative to car position.

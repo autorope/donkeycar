@@ -44,6 +44,10 @@ def load_config(config_path=None):
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
         config_path = os.path.join(main_path, 'config.py')
+        if not os.path.exists(config_path):
+            local_config = os.path.join(os.path.curdir, 'config.py')
+            if os.path.exists(local_config):
+                config_path = local_config
     
     print('loading config file: {}'.format(config_path))
     cfg = Config()
