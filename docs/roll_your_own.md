@@ -34,6 +34,20 @@ Here is an example of an integrated RX and ESC - typically these should be avoid
 You also need to know some things about electronics, such as the difference
 between power rails and control signals, what the duration of a microsecond is,
 and how Volts, Amperes, Watts, Hours, Ohms, and other measurement units relate.
+## Chassis build
+
+While there are lots of designs out there besides the Donkeycar but two stand out and are worth mentioning specifically.
+
+### Chilicorn rail
+This is a flexible mounting system developed by Markku.ai.  More details at markku.ai.
+
+### sCAD Files
+Doug LaRue, a long time community member has extensive designs for making your own chassis in sCAD.  If you want to roll your own but are not comfortable with CAD this is a good place to start.  
+
+*  [Basic Donkeycar](https://www.thingiverse.com/thing:2781404)
+*  [1/28 scale car](https://www.thingiverse.com/thing:3428003)
+*  [inverted donkey car](https://www.thingiverse.com/thing:2774944)
+
 
 ## Servo Specifics
 
