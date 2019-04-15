@@ -27,6 +27,9 @@ class KerasPilot(object):
     def load(self, model_path):
         self.model = keras.models.load_model(model_path)
 
+    def load_weights(self, model_path, by_name=True):
+        self.model.load_weights(model_path, by_name=by_name)
+
     def shutdown(self):
         pass
 
@@ -83,13 +86,14 @@ class KerasPilot(object):
 
 
 class KerasCategorical(KerasPilot):
-    def __init__(self, input_shape=(120, 160, 3), *args, **kwargs):
+    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5, roi_crop=(0, 0), *args, **kwargs):
         super(KerasCategorical, self).__init__(*args, **kwargs)
-        self.model = default_categorical(input_shape)
+        self.model = default_categorical(input_shape, roi_crop)
         self.compile()
+        self.throttle_range = throttle_range
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer,
+        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
                   loss={'angle_out': 'categorical_crossentropy', 
                         'throttle_out': 'categorical_crossentropy'},
                   loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
@@ -107,7 +111,7 @@ class KerasCategorical(KerasPilot):
         N = len(throttle[0])
         
         if N > 0:
-            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=self.throttle_range)
         else:
             throttle = throttle[0][0]
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
@@ -116,9 +120,9 @@ class KerasCategorical(KerasPilot):
     
     
 class KerasLinear(KerasPilot):
-    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
         super(KerasLinear, self).__init__(*args, **kwargs)
-        self.model = default_n_linear(num_outputs, input_shape)
+        self.model = default_n_linear(num_outputs, input_shape, roi_crop)
         self.compile()
 
     def compile(self):
@@ -209,38 +213,75 @@ class KerasBehavioral(KerasPilot):
         return angle_unbinned, throttle
 
 
-def default_categorical(input_shape=(120, 160, 3)):
+class KerasLocalizer(KerasPilot):
+    '''
+    A Keras part that take an image and Behavior vector as input,
+    outputs steering and throttle, and localisation category
+    '''
+    def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2, num_locations=8, input_shape=(120, 160, 3), *args, **kwargs):
+        super(KerasLocalizer, self).__init__(*args, **kwargs)
+        self.model = default_loc(num_outputs = num_outputs, num_locations=num_locations, input_shape=input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
+                  loss='mse')
+        
+    def run(self, img_arr):        
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        angle_binned, throttle, track_loc = self.model.predict([img_arr])
+        #in order to support older models with linear throttle,
+        #we will test for shape of throttle to see if it's the newer
+        #binned version.
+        N = len(throttle[0])
+        print("track_loc", np.argmax(track_loc[0]), track_loc, track_loc.shape)
+        #print("lane", np.argmax(lane[0]), lane, lane.shape)
+        
+        if N > 0:
+            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
+        else:
+            throttle = throttle[0][0]
+        angle_unbinned = dk.utils.linear_unbin(angle_binned)
+        print("angle_unbinned", angle_unbinned, "throttle", throttle)
+        
+        return angle_unbinned, throttle
+
+def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-    from keras.layers import Activation, Dropout, Flatten, Dense    
+    from keras.layers import Activation, Dropout, Flatten, Dense, Cropping2D, Lambda
     
+
     opt = keras.optimizers.Adam()
-    drop = 0.1
+    drop = 0.4
 
     img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
-    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
+    x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim configured pixels off top and bottom
+    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
     if input_shape[0] > 32 :
-        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
+        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
     else:
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
+        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_3")(x)       # 64 features, 5px5p kernal window, 2wx2h stride, relu
     if input_shape[0] > 64 :
-        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
+        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_4")(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
     elif input_shape[0] > 32 :
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
+        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)       # 64 features, 3px3p kernal window, 2wx2h stride, relu
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
-    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)       # 64 features, 3px3p kernal window, 1wx1h stride, relu
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
     # Possibly add MaxPooling (will make it less sensitive to position in image).  Camera angle fixed, so may not to be needed
 
     x = Flatten(name='flattened')(x)                                        # Flatten to 1D (Fully connected)
-    x = Dense(100, activation='relu')(x)                                    # Classify the data into 100 features, make all negatives 0
+    x = Dense(100, activation='relu', name="fc_1")(x)                                    # Classify the data into 100 features, make all negatives 0
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
-    x = Dense(50, activation='relu')(x)                                     # Classify the data into 50 features, make all negatives 0
+    x = Dense(50, activation='relu', name="fc_2")(x)                                     # Classify the data into 50 features, make all negatives 0
     x = Dropout(drop)(x)                                                      # Randomly drop out 10% of the neurons (Prevent overfitting)
     #categorical output of the angle
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
@@ -252,7 +293,7 @@ def default_categorical(input_shape=(120, 160, 3)):
     return model
 
 
-def default_n_linear(num_outputs, input_shape):
+def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
     from keras.layers import Input, Dense
     from keras.models import Model
     from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
@@ -262,17 +303,18 @@ def default_n_linear(num_outputs, input_shape):
     
     img_in = Input(shape=input_shape, name='img_in')
     x = img_in
-    x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
+    x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim pixels off top and bottom
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
-    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
+    x = BatchNormalization()(x)
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
     x = Dropout(drop)(x)
     
     x = Flatten(name='flattened')(x)
@@ -309,6 +351,7 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     x = img_in
     x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
@@ -356,9 +399,10 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     x = img_in
     x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
     #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(1,1), activation='relu')(x)
     x = Flatten(name='flattened')(x)
@@ -385,6 +429,64 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out])
     
     return model
+
+
+def default_loc(num_outputs, num_locations, input_shape):
+    '''
+    Notes: this model depends on concatenate which failed on keras < 2.0.8
+    '''
+
+    from keras.layers import Input, Dense
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
+    from keras.layers.merge import concatenate
+    from donkeycar.contrib.coordconv.coord import CoordinateChannel2D
+    
+    drop = 0.5
+
+    img_in = Input(shape=input_shape, name='img_in')
+    
+    x = img_in
+    #x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
+    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
+    x = BatchNormalization()(x)
+    x = CoordinateChannel2D()(x)
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_4")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
+    x = Dropout(drop)(x)
+    x = Flatten(name='flattened')(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(drop)(x)
+    
+    z = Dense(50, activation='relu')(x)
+    z = Dropout(.1)(z)
+    
+    
+    #categorical output of the angle
+    angle_out = Dense(15, activation='softmax', name='angle')(z)
+    
+    #categorical output of throttle
+    throttle_out = Dense(20, activation='softmax', name='throttle')(z)
+
+    #categorical output of location
+    loc_out = Dense(num_locations, activation='softmax', name='loc')(z)
+
+    #categorical output of lane
+    lane_out = Dense(2, activation='softmax', name='lane')(z)
+
+    #model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out, lane_out])
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out])
+    
+    return model
+
 
 class KerasRNN_LSTM(KerasPilot):
     def __init__(self, image_w =160, image_h=120, image_d=3, seq_length=3, num_outputs=2, *args, **kwargs):
@@ -434,17 +536,23 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 
     img_seq_shape = (seq_length,) + image_shape   
     img_in = Input(batch_shape = img_seq_shape, name='img_in')
-    
+    drop_out = 0.3
+
     x = Sequential()
-    x.add(TD(Cropping2D(cropping=((60,0), (0,0))), input_shape=img_seq_shape )) #trim 60 pixels off top
+    x.add(TD(Cropping2D(cropping=((40,0), (0,0))), input_shape=img_seq_shape )) #trim 60 pixels off top
+    x.add(TD(BatchNormalization()))
     x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (5,5), strides=(2,2), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (3,3), strides=(2,2), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (3,3), strides=(1,1), activation='relu')))
+    x.add(TD(Dropout(drop_out)))
     x.add(TD(MaxPooling2D(pool_size=(2, 2))))
     x.add(TD(Flatten(name='flattened')))
     x.add(TD(Dense(100, activation='relu')))
-    x.add(TD(Dropout(.1)))
+    x.add(TD(Dropout(drop_out)))
       
     x.add(LSTM(128, return_sequences=True, name="LSTM_seq"))
     x.add(Dropout(.1))
@@ -513,7 +621,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Second layer
     model.add(Conv3D(
         filters=16, kernel_size=(3,3,3), strides=(1,3,3),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -522,7 +630,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Third layer
     model.add(Conv3D(
         filters=32, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -531,7 +639,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Fourth layer
     model.add(Conv3D(
         filters=64, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -540,7 +648,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Fifth layer
     model.add(Conv3D(
         filters=128, kernel_size=(3,3,3), strides=(1,1,1),
-        data_format='channels_last', border_mode='same')
+        data_format='channels_last', padding='same')
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
@@ -562,4 +670,76 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     model.add(Dense(num_outputs))
     #model.add(Activation('tanh'))
 
+    return model
+
+class KerasLatent(KerasPilot):
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3), *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = default_latent(num_outputs, input_shape)
+        self.compile()
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, loss={
+            "img_out" : "mse", "n_outputs0" : "mse", "n_outputs1" : "mse"
+        }, loss_weights={
+            "img_out" : 100.0, "n_outputs0" : 2.0, "n_outputs1" : 1.0
+        })
+
+    def run(self, img_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        outputs = self.model.predict(img_arr)
+        steering = outputs[1]
+        throttle = outputs[2]
+        return steering[0][0], throttle[0][0]
+
+
+def default_latent(num_outputs, input_shape):
+    from keras.layers import Input, Dense
+    from keras.models import Model
+    from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+    from keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda, Conv2DTranspose
+
+    drop = 0.2
+    
+    img_in = Input(shape=input_shape, name='img_in')
+    x = img_in
+    x = Lambda(lambda x: x/255.)(x) # normalize
+    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_6")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_7")(x)
+    x = Dropout(drop)(x)
+    x = Convolution2D(10, (1,1), strides=(2,2), activation='relu', name="latent")(x)
+    
+    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_1")(x)
+    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_2")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_3")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_4")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_5")(y)
+    y = Conv2DTranspose(filters=1, kernel_size=(3,3), strides=2, name="img_out")(y)
+    
+    x = Flatten(name='flattened')(x)
+    x = Dense(256, activation='relu')(x)
+    x = Dropout(drop)(x)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu')(x)
+    x = Dropout(drop)(x)
+
+    outputs = [y]
+    
+    for i in range(num_outputs):
+        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+        
+    model = Model(inputs=[img_in], outputs=outputs)
+    
     return model

@@ -55,7 +55,7 @@ class LidarPlot(object):
     PLOT_TYPE_LINE = 0
     PLOT_TYPE_CIRC = 1
     def __init__(self, resolution=(500,500),
-        max_dist=5000, #mm
+        max_dist=1000, #mm
         radius_plot=3,
         plot_type=PLOT_TYPE_CIRC):
         self.frame = Image.new('RGB', resolution)

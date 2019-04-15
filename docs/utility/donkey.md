@@ -67,7 +67,7 @@ This command allows you to create a movie file from the images in a Tub.
 
 Usage:
 ```bash
-donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>] [--model=<model path>] [--model_type=(linear|categorical|rnn|imu|behavior|3d)]
+donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>] [--model=<model path>] [--model_type=(linear|categorical|rnn|imu|behavior|3d)] [--start=0] [--end=-1] [--scale=2] [--salient]
 ```
 
 * Run on the host computer or the robot
@@ -76,6 +76,9 @@ donkey makemovie <tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>] [--mo
 * Optional argument to specify a different `config.py` other than default: `config.py`
 * Optional model argument will load the keras model and display prediction as lines on the movie
 * model_type may optionally give a hint about what model type we are loading. Categorical is default.
+* optional --salient will overlay a visualization of which pixels excited the NN the most
+* optional --start and/or --end can specify a range of frame numbers to use.
+* scale will cause ouput image to be scaled by this amount
 
 
 
@@ -203,3 +206,20 @@ donkey createjs
 * Run the command `donkey createjs` and it will create a file, by default my_joystick.py. Drop that next to your manage.py
 * Modify manage.py to add: `from my_joystick import MyJoystickController`
 * Modify manage.py to replace `cont_class = PS3JoystickController` with `cont_class = MyJoystickController`
+
+
+## Visualize CNN filter activations
+
+Shows feature maps of the provided image for each filter in each of the convolutional layers in the model provided. Debugging tool to visualize how well feature extraction is performing. 
+
+Usage:
+```bash
+donkey cnnactivations [--tub=<data_path>] [--model=<path to model>]
+```
+This will open a figure for each `Conv2d` layer in the model.
+
+Example:
+
+```bash
+donkey cnnactivations --model models/model.h5 --image data/tub/1_cam-image_array_.jpg
+```

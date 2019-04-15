@@ -10,21 +10,11 @@ This guide will help you to setup the software to run Donkey on your Raspberry P
 ----
 ### Get the Raspberry Pi working.
 
-Before we can do anything we have to get our car's computer connected to the 
-internet. The fastest way is to use the disk image created for donkey cars. 
+You need to flash a micro SD image with an operating system.
 
-The method for using a disk image to create a bootable SD card varies between
-operating systems. These instructions are for Ubuntu but you can see more 
-instructions [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
-
-1. Download [zipped disk image](https://drive.google.com/open?id=0B6e_QEifuKzMQjdlZTdDTXV3UkU) (1.1GB). 
-2. Unzip the disk image.
-3. Plug your SD card into your computer.
-4. Open the "Startup Disk Creator" application.
-5. Select your source disk image as the one you unzipped earlier.
-6. Select your SD card as the disk to use. 
-7. Click "Make startup disk".
-
+1. Download [Raspian Lite](https://downloads.raspberrypi.org/raspbian_lite_latest) (300MB). 
+2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
+3. Leave micro SD card in your machine and edit/create some files as below:
 
 ### Setup the Pi's WiFi for first boot
 
@@ -50,7 +40,7 @@ Replace `<your network name>` with the ID of your network. Leave the quotes. I'v
 Replace `<your password>` with your password, leaving it surrounded by quotes. 
 If it bothers you to leave your password unencrypted, you may change the [contents later](https://unix.stackexchange.com/questions/278946/hiding-passwords-in-wpa-supplicant-conf-with-wpa-eap-and-mschap-v2) once you've gotten the pi to boot and log-in.
 
-* Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later.
+* Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later. If you are using Notepad on Windows, make sure it doesn't have a .txt at the end.
 
 ##### Setup Pi's Hostname
 We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
@@ -65,6 +55,11 @@ once it's booted. If there are many other Pi's on the network, then this will ha
 sudo vi /media/userID/UUID/etc/hostname
 sudo vi /media/userID/UUID/etc/hosts
 ```
+
+##### Enable SSH on boot
+
+Put a file named __ssh__ in the root of your __boot__ partition.
+
 
 Now you're SD card is ready. Eject it from your computer, put it in the Pi 
 and plug in the Pi.
@@ -82,7 +77,6 @@ If you are having troubles locating your Pi on the network, you will want to plu
 
 * Username: __pi__
 * Password: __raspberry__
-  * The new disk image has the password `asdfasdf`
  
 Then try the command:
 
@@ -116,52 +110,122 @@ or
 ssh pi@<your pi ip address>
 ```
 
-or via Putty:
+or via Putty.
+
 * Username: __pi__
 * Password: __raspberry__
-  * __asdfasdf__ on the prebuilt image
 * Hostname:`<your pi IP address>`
 
-
-If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a d2 and donkey directory. 
-
-> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
->
-> * STEERING_CHANNEL = 1
-> * THROTTLE_CHANNEL = 0
->
-> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
-
-
-### Update Donkeycar Python code and install
-
-The donkeycar Python code on the memory card image is likely older than the that on the Github repo, so update things once you have the Pi running.
+### Update and upgrade
 
 ```bash
-cd ~/donkeycar
-git pull
-pip install -e .
+sudo apt-get update
+sudo apt-get upgrade
 ```
+
+### Raspi-config
+
+```bash
+sudo raspi-config
+```
+
+* enable I2c
+* enable camera
+* exapand filesystem
+* change hostname
+* change default password for pi
+
+> Note: reboot after changing these settings
+
+### Install dependencies
+
+```bash
+sudo apt-get update
+sudo apt-get install build-essential python3 python3-dev python3-virtualenv python3-numpy python3-picamera python3-rpi.gpio i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev git
+```
+
+### Install optional OpenCV dependencies
+```bash
+sudo apt-get install libilmbase-dev libopenexr-dev libgstreamer1.0-dev libjasper-dev libwebp-dev libatlas-base-dev libavcodec-dev libavformat-dev libswscale-dev libqtgui4 libqt4-test
+```
+
+### Setup virtual env
+
+```bash
+python3 -m virtualenv -p python3 env
+echo "source env/bin/activate" >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Install Tensorflow
+
+You can check [this](https://github.com/lhelontra/tensorflow-on-arm/releases/) page to find the one you like. Or install this one:
+```bash
+wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v1.10.0/tensorflow-1.10.0-cp35-none-linux_armv7l.whl
+pip install tensorflow-1.10.0-cp35-none-linux_armv7l.whl
+```
+
+### Install Donkeycar Python code and install
+
+This will pull the latest from Tawn's fork:
+
+```bash
+git clone https://github.com/tawnkramer/donkey
+pip install -e donkey[pi]
+```
+
+### Joystick setup
+
+If you plan to use a joystick, jump over to [here](https://github.com/tawnkramer/donkey/blob/master/docs/parts/controllers.md#physical-joystick-controller).
+
+
+### Create your car application.
+
+```
+donkey createcar --path ~/d2
+```
+
+See also [more information.](https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey/#create-car)
+
+### Calibrate and then Get Driving!
+
+You need to [calibrate](https://github.com/tawnkramer/donkey/blob/master/docs/guide/calibrate.md) your pwm outputs to steering and throttle.
+
+And then [get driving!](https://github.com/tawnkramer/donkey/blob/master/docs/guide/get_driving.md)
+
 
 ----
-Now let's setup things on your PC. Install varies depending on platform.
+## Now let's setup things on your PC. Install varies depending on platform.
 
+* Setup [Linux Host PC](#install-donkeycar-on-linux)
+* Setup [Windows Host PC](#install-donkeycar-on-windows)
+* Setup [Mac Host PC](#install-donkeycar-on-mac)
 
+----
 ## Install donkeycar on Linux
 
-Install dependencies, setup virtualenv
+* Install dependencies, setup virtualenv
 ```bash
-sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev
+sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev libatlas-base-dev
 virtualenv env -p python3
 source env/bin/activate
-pip install keras==2.0.6
-pip install tensorflow==1.3.0
+pip install keras==2.2.2
 ```
 
-Install donkeycar
+* Install tensorflow. If you have a gpu with nvidia cuda drivers:
+```
+pip install tensorflow-gpu==1.10.0
+```
+otherwise:
+```
+pip install tensorflow==1.10.0
+```
+
+
+* Install donkeycar
 ```bash
-git clone https://github.com/tawnkramer/donkey donkeycar
-pip install -e donkeycar
+git clone https://github.com/tawnkramer/donkey
+pip install -e donkey[pc]
 ```
 
 ----
@@ -198,8 +262,17 @@ activate donkey
 * Install donkey source and create your local working dir:
 
 ```
-pip install -e .
+pip install -e .[pc]
 donkey createcar --path ~/d2
+```
+
+* Install tensorflow. If you have a gpu with nvidia cuda drivers:
+```
+pip install tensorflow-gpu==1.10.0
+```
+otherwise:
+```
+pip install tensorflow==1.10.0
 ```
 
 > Note: After closing the Anaconda Prompt, when you open it again, you will need to 
@@ -240,14 +313,14 @@ source activate donkey
 * Install Tensorflow
 
 ```
-pip install https://storage.googleapis.com/tensorflow/mac/cpu/tensorflow-1.3.0-py3-none-any.whl
+pip install tensorflow
 ```
 
 
 * Install donkey source and create your local working dir:
 
 ```
-pip install -e .
+pip install -e .[pc]
 donkey createcar --path ~/d2
 ```
 
@@ -265,7 +338,7 @@ Occasionally you may want to run with changes from a separate fork of donkey. Yo
 pip uninstall donkeycar
 git clone --depth=1 https://github.com/<username>/donkey donkey_<username>
 cd donkey_<username>
-pip install -e .
+pip install -e .<[pi] or [pc]>
 ```
 
 To get back to the stock donkey install:

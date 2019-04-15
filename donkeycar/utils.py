@@ -31,13 +31,16 @@ def scale(im, size=128):
     return im
 
 
-def img_to_binary(img):
+def img_to_binary(img, format='jpeg'):
     '''
     accepts: PIL image
     returns: binary stream (used to save to database)
     '''
     f = BytesIO()
-    img.save(f, format='jpeg')
+    try:
+        img.save(f, format=format)
+    except Exception as e:
+        raise e
     return f.getvalue()
 
 
@@ -72,8 +75,15 @@ def binary_to_img(binary):
     accepts: binary file object from BytesIO
     returns: PIL image
     '''
+    if binary is None or len(binary) == 0:
+        return None
+
     img = BytesIO(binary)
-    return Image.open(img)
+    try:
+        img = Image.open(img)
+        return img
+    except:
+        return None
 
 
 def norm_img(img):
@@ -109,12 +119,16 @@ def load_scaled_image_arr(filename, cfg):
     load an image from the filename, and use the cfg to resize if needed
     '''
     import donkeycar as dk
-    img = Image.open(filename)
-    if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
-        img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
-    img_arr = np.array(img)
-    if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-        img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+    try:
+        img = Image.open(filename)
+        if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
+            img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
+        img_arr = np.array(img)
+        if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+            img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+    except:
+        print('failed to load image:', filename)
+        img_arr = None
     return img_arr
 
 
@@ -337,7 +351,10 @@ def gather_tub_paths(cfg, tub_names=None):
     returns a list of Tub paths
     '''
     if tub_names:
-        tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
+        if type(tub_names) == list:
+            tub_paths = [os.path.expanduser(n) for n in tub_names]
+        else:
+            tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
         return expand_path_masks(tub_paths)
     else:
         paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
@@ -369,14 +386,15 @@ def get_record_index(fnm):
     sl = os.path.basename(fnm).split('_')
     return int(sl[1].split('.')[0])
 
-def gather_records(cfg, tub_names, opts=None):
+def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     tubs = gather_tubs(cfg, tub_names)
 
     records = []
 
     for tub in tubs:
-        print(tub.path)
+        if verbose:
+            print(tub.path)
         record_paths = glob.glob(os.path.join(tub.path, 'record_*.json'))
         record_paths.sort(key=get_record_index)
         records += record_paths
@@ -384,25 +402,30 @@ def gather_records(cfg, tub_names, opts=None):
     return records
 
 def get_model_by_type(model_type, cfg):
-    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN
+    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer, KerasLatent
  
     if model_type is None:
         model_type = "categorical"
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+    roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
 
-    if model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
+    if model_type == "localizer" or cfg.TRAIN_LOCALIZER:
+        kl = KerasLocalizer(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
+    elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
     elif model_type == "imu":
         kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
     elif model_type == "linear":
-        kl = KerasLinear(input_shape=input_shape)
+        kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "3d":
         kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "rnn":
         kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape)
+        kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
+    elif model_type == "latent":
+        kl = KerasLatent(input_shape=input_shape)
     else:
         raise Exception("unknown model type: %s" % model_type)
 
@@ -423,3 +446,18 @@ def get_test_img(model):
     img = np.random.rand(int(h), int(w), int(ch))
 
     return img
+
+class Sombrero:
+
+    def __init__(self):
+        import RPi.GPIO as GPIO
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(26, GPIO.OUT)
+        GPIO.output(26, GPIO.LOW)
+        print("sombrero enabled")
+
+    def __del__(self):
+        import RPi.GPIO as GPIO
+        GPIO.cleanup()
+        print("sombrero disabled")

@@ -10,8 +10,9 @@ import time
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
-from .tub import TubManager
-from .joystick_creator import CreateJoystick
+from donkeycar.management.tub import TubManager
+from donkeycar.management.joystick_creator import CreateJoystick
+import numpy as np
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -88,9 +89,11 @@ class CreateCar(BaseCommand):
         #add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
         config_template_path = os.path.join(TEMPLATES_PATH, 'config_defaults.py')
+        myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
+        mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
         
         if os.path.exists(car_app_path) and not overwrite:
@@ -110,6 +113,10 @@ class CreateCar(BaseCommand):
         else:
             print("Copying train script. Adjust these before starting your car.")
             shutil.copyfile(train_template_path, train_app_path)
+
+        if not os.path.exists(mycar_config_path):
+            print("Copying my car config overrides")
+            shutil.copyfile(myconfig_template_path, mycar_config_path)
  
         print("Donkey setup complete.")
 
@@ -159,7 +166,10 @@ class CalibrateCar(BaseCommand):
 
     def run(self, args):
         from donkeycar.parts.actuator import PCA9685
-    
+        from donkeycar.utils import Sombrero
+
+        s = Sombrero()
+
         args = self.parse_args(args)
         channel = int(args.channel)
         busnum = None
@@ -182,7 +192,11 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
-        parser.add_argument('--model_type', default='categorical', help='the model type to load')
+        parser.add_argument('--type', default='categorical', help='the model type to load')
+        parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
+        parser.add_argument('--start', type=int, default=1, help='first frame to process')
+        parser.add_argument('--end', type=int, default=-1, help='last frame to process')
+        parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
@@ -193,12 +207,19 @@ class MakeMovie(BaseCommand):
         '''
         import moviepy.editor as mpy
 
-
         args, parser = self.parse_args(args)
 
         if args.tub is None:
             parser.print_help()
-            return            
+            return
+
+        if args.salient:
+            #imported like this, we make TF conditional on use of --salient
+            #and we keep the context maintained throughout our callbacks to 
+            #compute the salient mask
+            from keras import backend as K
+            import tensorflow as tf
+            os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  
 
         conf = os.path.expanduser(args.config)
 
@@ -215,12 +236,59 @@ class MakeMovie(BaseCommand):
 
         self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
-        self.iRec = 0
+        
+        if args.start == 1:
+            self.start = self.tub.get_index(shuffled=False)[0]
+        else:
+            self.start = args.start
+        
+        if args.end != -1:
+            self.end = args.end    
+        else:
+            self.end = self.num_rec - self.start
+
+        self.num_rec = self.end - self.start
+        
+        self.iRec = args.start
+        self.scale = args.scale
         self.keras_part = None
+        self.convolution_part = None
         if not args.model == "None":
-            self.keras_part = get_model_by_type(args.model_type, cfg=cfg)
+            self.keras_part = get_model_by_type(args.type, cfg=cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
+            if args.salient:
+                self.init_salient(self.keras_part.model)
+
+                #This method nested in this way to take the conditional import of TF
+                #in a manner that extends to this callback. Done this way, we avoid
+                #importing in the below method, which triggers a new cuda device allocation
+                #each call.
+                def compute_visualisation_mask(img):
+                    #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+                    
+                    activations = self.functor([np.array([img])])
+                    activations = [np.reshape(img, (1, img.shape[0], img.shape[1], img.shape[2]))] + activations
+                    upscaled_activation = np.ones((3, 6))
+                    for layer in [5, 4, 3, 2, 1]:
+                        averaged_activation = np.mean(activations[layer], axis=3).squeeze(axis=0) * upscaled_activation
+                        output_shape = (activations[layer - 1].shape[1], activations[layer - 1].shape[2])
+                        x = tf.constant(
+                            np.reshape(averaged_activation, (1,averaged_activation.shape[0],averaged_activation.shape[1],1)),
+                            tf.float32
+                        )
+                        conv = tf.nn.conv2d_transpose(
+                            x, self.layers_kernels[layer],
+                            output_shape=(1,output_shape[0],output_shape[1], 1), 
+                            strides=self.layers_strides[layer], 
+                            padding='VALID'
+                        )
+                        with tf.Session() as session:
+                            result = session.run(conv)
+                        upscaled_activation = np.reshape(result, output_shape)
+                    final_visualisation_mask = upscaled_activation
+                    return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
+                self.compute_visualisation_mask = compute_visualisation_mask
 
         print('making movie', args.out, 'from', self.num_rec, 'images')
         clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
@@ -255,6 +323,96 @@ class MakeMovie(BaseCommand):
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
+    def draw_steering_distribution(self, record, img):
+        '''
+        query the model for it's prediction, draw the distribution of steering choices
+        '''
+        from donkeycar.parts.keras import KerasCategorical
+
+        if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
+            return
+
+        import cv2
+         
+        orig_shape = img.shape
+        pred_img = img.reshape((1,) + img.shape)
+        angle_binned, throttle = self.keras_part.model.predict(pred_img)
+        #img.reshape(orig_shape)
+
+        x = 4
+        dx = 4
+        y = 120 - 4
+        iArgMax = np.argmax(angle_binned)
+        for i in range(15):
+            p1 = (x, y)
+            p2 = (x, y - int(angle_binned[0][i] * 100.0))
+            if i == iArgMax:
+                cv2.line(img, p1, p2, (255, 0, 0), 2)
+            else:
+                cv2.line(img, p1, p2, (200, 200, 200), 2)
+            x += dx
+        
+
+    def init_salient(self, model):
+        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        from keras.layers import Input, Dense, merge
+        from keras.models import Model
+        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+        from keras.layers import Activation, Dropout, Flatten, Dense
+
+
+        img_in = Input(shape=(120, 160, 3), name='img_in')
+        x = img_in
+        x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name='conv1')(x)
+        x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name='conv2')(x)
+        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu', name='conv3')(x)
+        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name='conv4')(x)
+        conv_5 = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name='conv5')(x)
+        self.convolution_part = Model(inputs=[img_in], outputs=[conv_5])
+
+        for layer_num in ('1', '2', '3', '4', '5'):
+            self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
+
+        from keras import backend as K
+        import tensorflow as tf
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+        
+        self.inp = self.convolution_part.input                                           # input placeholder
+        self.outputs = [layer.output for layer in self.convolution_part.layers[1:]]          # all layer outputs
+        self.functor = K.function([self.inp], self.outputs)
+
+        kernel_3x3 = tf.constant(np.array([
+        [[[1]], [[1]], [[1]]], 
+        [[[1]], [[1]], [[1]]], 
+        [[[1]], [[1]], [[1]]]
+        ]), tf.float32)
+
+        kernel_5x5 = tf.constant(np.array([
+                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
+                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
+                [[[1]], [[1]], [[1]], [[1]], [[1]]],
+                [[[1]], [[1]], [[1]], [[1]], [[1]]],
+                [[[1]], [[1]], [[1]], [[1]], [[1]]]
+        ]), tf.float32)
+
+        self.layers_kernels = {5: kernel_3x3, 4: kernel_3x3, 3: kernel_5x5, 2: kernel_5x5, 1: kernel_5x5}
+
+        self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
+
+        
+
+    def draw_salient(self, img):
+        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        import cv2
+        alpha = 0.004
+        beta = 1.0 - alpha
+
+        salient_mask = self.compute_visualisation_mask(img)
+        salient_mask_stacked = np.dstack((salient_mask,salient_mask))
+        salient_mask_stacked = np.dstack((salient_mask_stacked,salient_mask))
+        blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
+        return blend
+        
 
     def make_frame(self, t):
         '''
@@ -263,19 +421,40 @@ class MakeMovie(BaseCommand):
         We don't use t to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
         '''
-        self.iRec = self.iRec + 1
         
-        if self.iRec >= self.num_rec - 1:
+        if self.iRec >= self.end:
             return None
 
-        rec = self.tub.get_record(self.iRec)
+        rec = None
+
+        while rec is None and self.iRec < self.end:
+            try:
+                rec = self.tub.get_record(self.iRec)
+            except Exception as e:
+                print(e)
+                print("Failed to get image for frame", self.iRec)
+                self.iRec = self.iRec + 1
+                rec = None
+
         image = rec['cam/image_array']
 
+        if self.convolution_part:
+            image = self.draw_salient(image)
+            image = image * 255
+            image = image.astype('uint8')
+        
         self.draw_model_prediction(rec, image)
+        self.draw_steering_distribution(rec, image)
+
+        if self.scale != 1:
+            import cv2
+            h, w, d = image.shape
+            dsize = (w * self.scale, h * self.scale)
+            image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
+        
+        self.iRec = self.iRec + 1
         
         return image # returns a 8-bit RGB array
-
-
 
 
 
@@ -395,7 +574,12 @@ class ShowHistogram(BaseCommand):
         else:
             tg.df.hist(bins=50)
 
-        plt.savefig(os.path.basename(model_path) + '_hist_%s.png' % record_name)
+        try:
+            filename = os.path.basename(tub_paths) + '_hist_%s.png' % record_name.replace('/', '_')
+            plt.savefig(filename)
+            print('saving image to:', filename)
+        except:
+            pass
         plt.show()
 
     def run(self, args):
@@ -468,6 +652,76 @@ class ConTrain(BaseCommand):
         from train import multi_train
         continuous = True
         multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
+
+
+class ShowCnnActivations(BaseCommand):
+
+    def __init__(self):
+        import matplotlib.pyplot as plt
+        self.plt = plt
+
+    def get_activations(self, image_path, model_path):
+        '''
+        Extracts features from an image
+
+        returns activations/features
+        '''
+        from keras.models import load_model, Model
+
+        model_path = os.path.expanduser(model_path)
+        image_path = os.path.expanduser(image_path)
+
+        model = load_model(model_path)
+        image = self.plt.imread(image_path)[None, ...]
+
+        conv_layer_names = self.get_conv_layers(model)
+        input_layer = model.get_layer(name='img_in').input
+        activations = []      
+        for conv_layer_name in conv_layer_names:
+            output_layer = model.get_layer(name=conv_layer_name).output
+
+            layer_model = Model(inputs=[input_layer], outputs=[output_layer])
+            activations.append(layer_model.predict(image)[0])
+        return activations
+
+    def create_figure(self, activations):
+        import math
+        cols = 6
+
+        for i, layer in enumerate(activations):
+            fig = self.plt.figure()
+            fig.suptitle('Layer {}'.format(i+1))
+
+            print('layer {} shape: {}'.format(i+1, layer.shape))
+            feature_maps = layer.shape[2]
+            rows = math.ceil(feature_maps / cols)
+
+            for j in range(feature_maps):
+                self.plt.subplot(rows, cols, j + 1)
+
+                self.plt.imshow(layer[:, :, j])
+        
+        self.plt.show()
+
+    def get_conv_layers(self, model):
+        conv_layers = []
+        for layer in model.layers:
+            if layer.__class__.__name__ == 'Conv2D':
+                conv_layers.append(layer.name)
+        return conv_layers
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='cnnactivations', usage='%(prog)s [options]')
+        parser.add_argument('--image', help='path to image')
+        parser.add_argument('--model', default=None, help='path to model')
+        
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        activations = self.get_activations(args.image, args.model)
+        self.create_figure(activations)
 
 
 class ShowPredictionPlots(BaseCommand):
@@ -562,6 +816,7 @@ def execute_from_command_line():
             'createjs': CreateJoystick,
             'consync': ConSync,
             'contrain': ConTrain,
+            'cnnactivations': ShowCnnActivations,
                 }
     
     args = sys.argv[:]
@@ -575,4 +830,6 @@ def execute_from_command_line():
         dk.utils.eprint(list(commands.keys()))
         
     
+if __name__ == "__main__":
+    execute_from_command_line()
     
