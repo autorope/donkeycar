@@ -125,6 +125,7 @@ class Joystick(object):
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
                     axis_val = fvalue
+                    #print("axis", axis, 'val:', fvalue)
 
         return button, button_state, axis, axis_val
 
@@ -532,6 +533,34 @@ class LogitechJoystick(Joystick):
             0x13d: 'Left_stick_press',
             0x13e: 'right_stick_press',
         }
+
+class Nimbus(Joystick):
+    #An interface to a physical joystick available at /dev/input/js0
+    #contains mappings that work for the SteelNimbus joystick
+    #on Jetson TX2, JetPack 4.2, Ubuntu 18.04
+    def __init__(self, *args, **kwargs):
+        super(Nimbus, self).__init__(*args, **kwargs)
+
+        self.button_names = {
+            0x130 : 'a',
+            0x131 : 'b',
+            0x132 : 'x',
+            0x133 : 'y',
+            0x135 : 'R1',
+            0x137 : 'R2',
+            0x134 : 'L1',
+            0x136 : 'L2',
+        }
+
+        self.axis_names = {
+            0x0 : 'lx',
+            0x1 : 'ly',
+            0x2 : 'rx',
+            0x5 : 'ry',
+            0x11 : 'hmm',
+            0x10 : 'what',
+        }
+
 
 class JoystickController(object):
     '''
@@ -1022,6 +1051,37 @@ class LogitechJoystickController(JoystickController):
             'left_stick_horz': self.set_steering,
             'right_stick_vert': self.set_throttle,
         }
+
+
+class NimbusController(JoystickController):
+    #A Controller object that maps inputs to actions
+    def __init__(self, *args, **kwargs):
+        super(NimbusController, self).__init__(*args, **kwargs)
+
+    def init_js(self):
+        #attempt to init joystick
+        try:
+            self.js = Nimbus(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        #init set of mapping from buttons to function calls
+
+        self.button_down_trigger_map = {
+            'y' : self.erase_last_N_records,
+            'b' : self.toggle_mode,
+            'a' : self.emergency_stop,
+        }
+
+        self.axis_trigger_map = {
+            'lx' : self.set_steering,
+            'ry' : self.set_throttle,
+        }
+        
 
 class JoyStickPub(object):
     '''

@@ -39,7 +39,7 @@ class RS_T265(object):
             data = pose.get_pose_data()
             self.pos = data.translation
             self.vel = data.velocity
-            self.acc = data.accleration
+            self.acc = data.acceleration
 
     def update(self):
         while self.running:
@@ -56,3 +56,11 @@ class RS_T265(object):
         self.running = False
         time.sleep(0.1)
         self.pipe.stop()
+
+if __name__ == "__main__":
+    c = RS_T265()
+    while True:
+        pos, vel, acc = c.run()
+        print(pos)
+        time.sleep(0.1)
+    c.shutdown()

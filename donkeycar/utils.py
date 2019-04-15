@@ -450,14 +450,20 @@ def get_test_img(model):
 class Sombrero:
 
     def __init__(self):
-        import RPi.GPIO as GPIO
+        try:
+            import RPi.GPIO as GPIO
 
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(26, GPIO.OUT)
-        GPIO.output(26, GPIO.LOW)
-        print("sombrero enabled")
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setup(26, GPIO.OUT)
+            GPIO.output(26, GPIO.LOW)
+            print("sombrero enabled")
+        except:
+            pass
 
     def __del__(self):
-        import RPi.GPIO as GPIO
-        GPIO.cleanup()
-        print("sombrero disabled")
+        try:
+            import RPi.GPIO as GPIO
+            GPIO.cleanup()
+            print("sombrero disabled")
+        except:
+            pass
