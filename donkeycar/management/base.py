@@ -10,8 +10,8 @@ import time
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
-from .tub import TubManager
-from .joystick_creator import CreateJoystick
+from donkeycar.management.tub import TubManager
+from donkeycar.management.joystick_creator import CreateJoystick
 import numpy as np
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -89,9 +89,11 @@ class CreateCar(BaseCommand):
         #add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
         config_template_path = os.path.join(TEMPLATES_PATH, 'config_defaults.py')
+        myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
+        mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
         
         if os.path.exists(car_app_path) and not overwrite:
@@ -111,6 +113,10 @@ class CreateCar(BaseCommand):
         else:
             print("Copying train script. Adjust these before starting your car.")
             shutil.copyfile(train_template_path, train_app_path)
+
+        if not os.path.exists(mycar_config_path):
+            print("Copying my car config overrides")
+            shutil.copyfile(myconfig_template_path, mycar_config_path)
  
         print("Donkey setup complete.")
 
@@ -160,7 +166,10 @@ class CalibrateCar(BaseCommand):
 
     def run(self, args):
         from donkeycar.parts.actuator import PCA9685
-    
+        from donkeycar.utils import Sombrero
+
+        s = Sombrero()
+
         args = self.parse_args(args)
         channel = int(args.channel)
         busnum = None
@@ -183,9 +192,11 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default='None', help='the model to use to show control outputs')
-        parser.add_argument('--model_type', default='categorical', help='the model type to load')
+        parser.add_argument('--type', default='categorical', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
-        parser.add_argument('--limit', type=int, default=-1, help='max number frames to process')
+        parser.add_argument('--start', type=int, default=1, help='first frame to process')
+        parser.add_argument('--end', type=int, default=-1, help='last frame to process')
+        parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
@@ -225,13 +236,25 @@ class MakeMovie(BaseCommand):
 
         self.tub = Tub(args.tub)
         self.num_rec = self.tub.get_num_records()
-        if args.limit > 0:
-            self.num_rec = args.limit
-        self.iRec = 0
+        
+        if args.start == 1:
+            self.start = self.tub.get_index(shuffled=False)[0]
+        else:
+            self.start = args.start
+        
+        if args.end != -1:
+            self.end = args.end    
+        else:
+            self.end = self.num_rec - self.start
+
+        self.num_rec = self.end - self.start
+        
+        self.iRec = args.start
+        self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
         if not args.model == "None":
-            self.keras_part = get_model_by_type(args.model_type, cfg=cfg)
+            self.keras_part = get_model_by_type(args.type, cfg=cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
             if args.salient:
@@ -299,6 +322,36 @@ class MakeMovie(BaseCommand):
 
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
+
+    def draw_steering_distribution(self, record, img):
+        '''
+        query the model for it's prediction, draw the distribution of steering choices
+        '''
+        from donkeycar.parts.keras import KerasCategorical
+
+        if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
+            return
+
+        import cv2
+         
+        orig_shape = img.shape
+        pred_img = img.reshape((1,) + img.shape)
+        angle_binned, throttle = self.keras_part.model.predict(pred_img)
+        #img.reshape(orig_shape)
+
+        x = 4
+        dx = 4
+        y = 120 - 4
+        iArgMax = np.argmax(angle_binned)
+        for i in range(15):
+            p1 = (x, y)
+            p2 = (x, y - int(angle_binned[0][i] * 100.0))
+            if i == iArgMax:
+                cv2.line(img, p1, p2, (255, 0, 0), 2)
+            else:
+                cv2.line(img, p1, p2, (200, 200, 200), 2)
+            x += dx
+        
 
     def init_salient(self, model):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
@@ -368,22 +421,40 @@ class MakeMovie(BaseCommand):
         We don't use t to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
         '''
-        self.iRec = self.iRec + 1
         
-        if self.iRec >= self.num_rec - 1:
+        if self.iRec >= self.end:
             return None
 
-        rec = self.tub.get_record(self.iRec)
-        image = rec['cam/image_array']
+        rec = None
 
-        self.draw_model_prediction(rec, image)
+        while rec is None and self.iRec < self.end:
+            try:
+                rec = self.tub.get_record(self.iRec)
+            except Exception as e:
+                print(e)
+                print("Failed to get image for frame", self.iRec)
+                self.iRec = self.iRec + 1
+                rec = None
+
+        image = rec['cam/image_array']
 
         if self.convolution_part:
             image = self.draw_salient(image)
+            image = image * 255
+            image = image.astype('uint8')
+        
+        self.draw_model_prediction(rec, image)
+        self.draw_steering_distribution(rec, image)
+
+        if self.scale != 1:
+            import cv2
+            h, w, d = image.shape
+            dsize = (w * self.scale, h * self.scale)
+            image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
+        
+        self.iRec = self.iRec + 1
         
         return image # returns a 8-bit RGB array
-
-
 
 
 
@@ -583,6 +654,76 @@ class ConTrain(BaseCommand):
         multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
 
 
+class ShowCnnActivations(BaseCommand):
+
+    def __init__(self):
+        import matplotlib.pyplot as plt
+        self.plt = plt
+
+    def get_activations(self, image_path, model_path):
+        '''
+        Extracts features from an image
+
+        returns activations/features
+        '''
+        from keras.models import load_model, Model
+
+        model_path = os.path.expanduser(model_path)
+        image_path = os.path.expanduser(image_path)
+
+        model = load_model(model_path)
+        image = self.plt.imread(image_path)[None, ...]
+
+        conv_layer_names = self.get_conv_layers(model)
+        input_layer = model.get_layer(name='img_in').input
+        activations = []      
+        for conv_layer_name in conv_layer_names:
+            output_layer = model.get_layer(name=conv_layer_name).output
+
+            layer_model = Model(inputs=[input_layer], outputs=[output_layer])
+            activations.append(layer_model.predict(image)[0])
+        return activations
+
+    def create_figure(self, activations):
+        import math
+        cols = 6
+
+        for i, layer in enumerate(activations):
+            fig = self.plt.figure()
+            fig.suptitle('Layer {}'.format(i+1))
+
+            print('layer {} shape: {}'.format(i+1, layer.shape))
+            feature_maps = layer.shape[2]
+            rows = math.ceil(feature_maps / cols)
+
+            for j in range(feature_maps):
+                self.plt.subplot(rows, cols, j + 1)
+
+                self.plt.imshow(layer[:, :, j])
+        
+        self.plt.show()
+
+    def get_conv_layers(self, model):
+        conv_layers = []
+        for layer in model.layers:
+            if layer.__class__.__name__ == 'Conv2D':
+                conv_layers.append(layer.name)
+        return conv_layers
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='cnnactivations', usage='%(prog)s [options]')
+        parser.add_argument('--image', help='path to image')
+        parser.add_argument('--model', default=None, help='path to model')
+        
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        activations = self.get_activations(args.image, args.model)
+        self.create_figure(activations)
+
+
 class ShowPredictionPlots(BaseCommand):
 
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
@@ -675,6 +816,7 @@ def execute_from_command_line():
             'createjs': CreateJoystick,
             'consync': ConSync,
             'contrain': ConTrain,
+            'cnnactivations': ShowCnnActivations,
                 }
     
     args = sys.argv[:]
@@ -688,4 +830,6 @@ def execute_from_command_line():
         dk.utils.eprint(list(commands.keys()))
         
     
+if __name__ == "__main__":
+    execute_from_command_line()
     

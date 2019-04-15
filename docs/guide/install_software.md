@@ -116,11 +116,37 @@ or via Putty.
 * Password: __raspberry__
 * Hostname:`<your pi IP address>`
 
+### Update and upgrade
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+```
+
+### Raspi-config
+
+```bash
+sudo raspi-config
+```
+
+* enable I2c
+* enable camera
+* exapand filesystem
+* change hostname
+* change default password for pi
+
+> Note: reboot after changing these settings
+
 ### Install dependencies
 
 ```bash
 sudo apt-get update
-sudo apt-get install build-essential python3 python3-dev python3-virtualenv i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev
+sudo apt-get install build-essential python3 python3-dev python3-virtualenv python3-numpy python3-picamera python3-rpi.gpio i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev git
+```
+
+### Install optional OpenCV dependencies
+```bash
+sudo apt-get install libilmbase-dev libopenexr-dev libgstreamer1.0-dev libjasper-dev libwebp-dev libatlas-base-dev libavcodec-dev libavformat-dev libswscale-dev libqtgui4 libqt4-test
 ```
 
 ### Setup virtual env
@@ -133,7 +159,7 @@ source ~/.bashrc
 
 ### Install Tensorflow
 
-You can check (this)[https://github.com/lhelontra/tensorflow-on-arm/releases/] page to find the one you like. Or install this one:
+You can check [this](https://github.com/lhelontra/tensorflow-on-arm/releases/) page to find the one you like. Or install this one:
 ```bash
 wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v1.10.0/tensorflow-1.10.0-cp35-none-linux_armv7l.whl
 pip install tensorflow-1.10.0-cp35-none-linux_armv7l.whl
@@ -150,19 +176,32 @@ pip install -e donkey[pi]
 
 ### Joystick setup
 
-If you plan to use a joystick, jump over to (here)[https://github.com/tawnkramer/donkey/blob/master/docs/parts/controllers.md#physical-joystick-controller].
+If you plan to use a joystick, jump over to [here](https://github.com/tawnkramer/donkey/blob/master/docs/parts/controllers.md#physical-joystick-controller).
+
+
+### Create your car application.
+
+```
+donkey createcar --path ~/d2
+```
+
+See also [more information.](https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey/#create-car)
+
+### Calibrate and then Get Driving!
+
+You need to [calibrate](https://github.com/tawnkramer/donkey/blob/master/docs/guide/calibrate.md) your pwm outputs to steering and throttle.
+
+And then [get driving!](https://github.com/tawnkramer/donkey/blob/master/docs/guide/get_driving.md)
+
 
 ----
-Now let's setup things on your PC. Install varies depending on platform.
+## Now let's setup things on your PC. Install varies depending on platform.
 
-> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/d2/config.py``` and make sure that you see the lines:
->
-> * STEERING_CHANNEL = 1
-> * THROTTLE_CHANNEL = 0
->
-> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
+* Setup [Linux Host PC](#install-donkeycar-on-linux)
+* Setup [Windows Host PC](#install-donkeycar-on-windows)
+* Setup [Mac Host PC](#install-donkeycar-on-mac)
 
-
+----
 ## Install donkeycar on Linux
 
 * Install dependencies, setup virtualenv

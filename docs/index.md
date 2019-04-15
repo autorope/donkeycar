@@ -16,7 +16,7 @@ and take 2 hours to assemble. Here are the main steps to build your own car:
 4. [Start driving.](guide/get_driving.md) 
 5. [Train an autopilot.](guide/train_autopilot.md) 
 6. [Experiment with simulator.](guide/simulator.md) 
-
+7. [Write your own donkey parts.](guide/create_parts.md)
 ---------------
 
 
@@ -51,8 +51,8 @@ V.start(max_loop_count=100)
 
 For linux/OS users clone the master branch to get the lastest version.
 ```bash
-git clone https://github.com/wroscoe/donkey donkeycar
-pip install -e donkeycar
+git clone https://github.com/tawnkramer/donkey
+pip install -e donkey
 ```
 
 [How to install on Windows](guide/install_software.md)
@@ -63,5 +63,5 @@ pip install -e donkeycar
 
 The ultimate goal of this project is to build something useful. Donkey's were
 one of the first domesticated pack animals, they're notoriously stubborn, and 
-they are kid safe. Until the car can nagigate from one side of a city to the 
+they are kid safe. Until the car can navigate from one side of a city to the 
 other, we'll hold off naming it after some celestial being.
