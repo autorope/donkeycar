@@ -5,6 +5,7 @@ import time
 import struct
 import random
 from threading import Thread
+import logging
 
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
@@ -118,6 +119,7 @@ class Joystick(object):
                 if button:
                     self.button_states[button] = value
                     button_state = value
+                    logging.info("button: %s state: %d" % (button, value))
 
             if typev & 0x02:
                 axis = self.axis_map[number]
@@ -125,7 +127,7 @@ class Joystick(object):
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
                     axis_val = fvalue
-                    #print("axis", axis, 'val:', fvalue)
+                    logging.debug("axis: %s val: %f" % (axis, fvalue))
 
         return button, button_state, axis, axis_val
 
@@ -161,6 +163,8 @@ class PyGameJoystick(object):
                 axis = self.axis_names[i]
                 axis_val = val
                 self.axis_states[i] = val
+                logging.debug("axis: %s val: %f" % (axis, val))
+
         
         for i in range( self.joystick.get_numbuttons() ):
             state = self.joystick.get_button( i )
@@ -168,6 +172,7 @@ class PyGameJoystick(object):
                 button = self.button_names[i]
                 button_state = state
                 self.button_states[i] = state
+                logging.info("button: %s state: %d" % (button, state))
 
         for i in range( self.joystick.get_numhats() ):
             hat = self.joystick.get_hat( i )
@@ -706,7 +711,7 @@ class JoystickController(object):
                 '''
                 self.axis_trigger_map[axis](axis_val)
 
-            if button and button_state == 1 and button in self.button_down_trigger_map:
+            if button and button_state >= 1 and button in self.button_down_trigger_map:
                 '''
                 then invoke the function attached to that button
                 '''

@@ -69,8 +69,9 @@ class PIDController:
 
         # initialize delta t variables
         self.prev_tm = time.time()
-        self.prev_feedback = 0
+        self.prev_err = 0
         self.error = None
+        self.totalError = 0
 
         # initialize the output
         self.alpha = 0
@@ -78,11 +79,10 @@ class PIDController:
         # debug flag (set to True for console output)
         self.debug = debug
 
-    def run(self, target_value, feedback):
+    def run(self, err):
         curr_tm = time.time()
 
-        self.target = target_value
-        error = self.error = self.target - feedback
+        self.difError = err - self.prev_err
 
         # Calculate time differential.
         dt = curr_tm - self.prev_tm
@@ -91,28 +91,29 @@ class PIDController:
         curr_alpha = 0
 
         # Add proportional component.
-        curr_alpha += self.Kp * error
+        curr_alpha += -self.Kp * err
 
         # Add integral component.
-        curr_alpha += self.Ki * (error * dt)
+        curr_alpha += -self.Ki * (self.totalError * dt)
 
         # Add differential component (avoiding divide-by-zero).
         if dt > 0:
-            curr_alpha += self.Kd * ((feedback - self.prev_feedback) / float(dt))
+            curr_alpha += -self.Kd * ((self.difError) / float(dt))
 
         # Maintain memory for next loop.
         self.prev_tm = curr_tm
-        self.prev_feedback = feedback
+        self.prev_err = err
+        self.totalError += err
 
         # Update the output
         self.alpha = curr_alpha
 
         if (self.debug):
-            print('PID target value:', round(target_value, 4))
-            print('PID feedback value:', round(feedback, 4))
+            print('PID err value:', round(err, 4))
             print('PID output:', round(curr_alpha, 4))
 
         return curr_alpha
+
 
 def twiddle(evaluator, tol=0.001, params=3, error_cmp=None, initial_guess=None):
     """

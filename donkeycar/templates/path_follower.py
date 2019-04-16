@@ -3,7 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--log=INFO]
+    path_follower.py (drive) [--log=INFO]
  
 
 Options:
@@ -24,7 +24,8 @@ from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController, NimbusController, XboxOneJoystickController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.realsense import RS_T265
-from donkeycar.parts.path import Path, PathPlot
+from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot
+from donkeycar.parts.transform import PIDController
 
 
 def drive(cfg):
@@ -67,20 +68,15 @@ def drive(cfg):
 
     V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
-    path = Path(min_dist=0.1)
-    V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'])
+    class UserCondition:
+        def run(self, mode):
+            if mode == 'user':
+                return True
+            else:
+                return False
 
-    plot = PathPlot(scale=100., offset=(250, 250))
-    V.add(plot, inputs=['path'], outputs=['map/image'])
+    V.add(UserCondition(), inputs=['user/mode'], outputs=['run_user'])
 
-    #This web controller will create a web server
-    web_ctr = LocalWebController()
-    V.add(web_ctr,
-          inputs=['map/image'],
-          outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
-          threaded=True)
-    
-    
     #See if we should even run the pilot module. 
     #This is only needed because the part run_condition only accepts boolean
     class PilotCondition:
@@ -88,9 +84,45 @@ def drive(cfg):
             if mode == 'user':
                 return False
             else:
-                return True       
+                return True
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
+
+
+
+
+    path = Path(min_dist=0.1)
+    V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
+
+    if os.path.exists(cfg.PATH_FILENAME):
+        path.load(cfg.PATH_FILENAME)
+        print("loaded path:", cfg.PATH_FILENAME)
+
+    def save_path():
+        path.save(cfg.PATH_FILENAME)
+        print("saved path:", cfg.PATH_FILENAME)
+
+    ctr.set_button_down_trigger('x', save_path)
+
+    plot = PathPlot(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
+    V.add(plot, inputs=['path'], outputs=['map/image'])
+
+    cte = CTE()
+    V.add(cte, inputs=['path', 'pos/x', 'pos/y'], outputs=['cte/error'], run_condition='run_pilot')
+
+    pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
+    pilot = PID_Pilot(pid, cfg.PID_THROTTLE)
+    V.add(pilot, inputs=['cte/error'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
+
+
+    #This web controller will create a web server
+    web_ctr = LocalWebController()
+    V.add(web_ctr,
+          inputs=['map/image'],
+          outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
+          threaded=True)    
+    
+
 
     #Choose what inputs should change the car.
     class DriveMode:

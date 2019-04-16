@@ -139,7 +139,13 @@ class Vec3(object):
         m = self.mag()
         self.scale(1.0 / m)
         return self
-        
+
+    def normalized(self):
+        m = self.mag()
+        v = Vec3(self.x, self.y, self.z)
+        v.scale(1.0 / m)
+        return v
+
     def subtract(self, v):
         r = Vec3()
         r.x = self.x - v.x
@@ -603,3 +609,14 @@ class Mat44(object):
         return(inv)
 
 
+class Line3D(object):
+
+    def __init__(self, a, b):
+        self.origin = a
+        self.dir = a - b
+        self.dir.normalize()
+
+    def vector_to(self, p):
+        delta = self.origin - p
+        dot = delta.dot(self.dir)
+        return self.dir.scaled(dot) - delta
