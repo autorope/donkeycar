@@ -28,8 +28,6 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.transform import Lambda
 
-from donkeypart_logitech_controller import LogitechJoystickController
-
 def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     """
     Construct a working robotic vehicle from many parts.
