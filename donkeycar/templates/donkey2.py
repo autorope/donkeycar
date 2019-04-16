@@ -28,6 +28,7 @@ import numpy as np
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
+from donkeycar.parts.launch import AiLaunch
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
     '''
@@ -39,6 +40,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     '''
+
+    if cfg.DONKEY_GYM:
+        #the simulator will use cuda and then we usually run out of resources
+        #if we also try to use cuda. so disable for donkey_gym.
+        os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
 
     if model_type is None:
         if cfg.TRAIN_LOCALIZER:
@@ -369,6 +375,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
           inputs=['user/mode', 'user/angle', 'user/throttle',
                   'pilot/angle', 'pilot/throttle'], 
           outputs=['angle', 'throttle'])
+
+    
+    #to give the car a boost when starting ai mode in a race.
+    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE)
+    
+    V.add(aiLauncher,
+        inputs=['user/mode', 'throttle'],
+        outputs=['throttle'])
+
+    if isinstance(ctr, JoystickController):
+        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.do_enable)
+
 
     class AiRunCondition:
         '''
