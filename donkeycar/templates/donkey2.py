@@ -30,7 +30,7 @@ from donkeycar.parts.transform import Lambda
 
 from donkeypart_logitech_controller import LogitechJoystickController
 
-def drive(cfg, model_path=None, use_chaos=False):
+def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     """
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
