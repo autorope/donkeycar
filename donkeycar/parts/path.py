@@ -33,15 +33,49 @@ class Path(object):
         self.path = pickle.load(infile)
         self.recording = False
 
+class PImage(object):
+    def __init__(self, resolution=(500, 500), color="white", clear_each_frame=False):
+        self.resolution = resolution
+        self.color = color
+        self.img = Image.new('RGB', resolution, color=color)
+        self.clear_each_frame = clear_each_frame
+
+    def run(self):
+        if self.clear_each_frame:
+            self.img = Image.new('RGB', self.resolution, color=self.color)
+
+        return self.img
+
+
+class OriginOffset(object):
+    '''
+    Use this to set the car back to the origin without restarting it.
+    '''
+
+    def __init__(self):
+        self.ox = 0.0
+        self.oy = 0.0
+        self.last_x = 0.
+        self.last_y = 0.
+
+    def run(self, x, y):
+        self.last_x = x
+        self.last_y = y
+
+        return x + self.ox, y + self.oy
+
+    def init_to_last(self):
+        self.ox = -self.last_x
+        self.oy = -self.last_y
+
 
 class PathPlot(object):
     '''
     draw a path plot to an image
     '''
-    def __init__(self, resolution=(500, 500), scale=1.0, offset=(0., 0.0)):
+    def __init__(self, scale=1.0, offset=(0., 0.0)):
         self.scale = scale
         self.offset = offset
-        self.img = Image.new('RGB', resolution, color="white")
 
     def plot_line(self, sx, sy, ex, ey, draw, color):
         '''
@@ -50,8 +84,8 @@ class PathPlot(object):
         '''
         draw.line((sx,sy, ex, ey), fill=color, width=1)
 
-    def run(self, path):
-        draw = ImageDraw.Draw(self.img)
+    def run(self, img, path):
+        draw = ImageDraw.Draw(img)
         color = (255, 0, 0)
         for iP in range(0, len(path) - 1):
             ax, ay = path[iP]
@@ -63,7 +97,41 @@ class PathPlot(object):
                         draw, 
                         color)
 
-        return self.img
+        return img
+
+
+class PlotCircle(object):
+    '''
+    draw a circle plot to an image
+    '''
+    def __init__(self,  scale=1.0, offset=(0., 0.0), radius=4, color = (0, 255, 0)):
+        self.scale = scale
+        self.offset = offset
+        self.radius = radius
+        self.color = color
+
+    def plot_circle(self, x, y, rad, draw, color, width=1):
+        '''
+        scale dist so that max_dist is edge of img (mm)
+        and img is PIL Image, draw the circle using the draw ImageDraw object
+        '''
+        sx = x - rad
+        sy = y - rad
+        ex = x + rad
+        ey = y + rad
+
+        draw.ellipse([(sx, sy), (ex, ey)], fill=color)
+
+
+    def run(self, img, x, y):
+        draw = ImageDraw.Draw(img)
+        self.plot_circle(x * self.scale + self.offset[0],
+                        y * self.scale + self.offset[1], 
+                        self.radius,
+                        draw, 
+                        self.color)
+
+        return img
 
 from donkeycar.la import Line3D, Vec3
 

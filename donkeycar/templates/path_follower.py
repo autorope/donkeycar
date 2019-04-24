@@ -23,7 +23,7 @@ import donkeycar as dk
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController, NimbusController, XboxOneJoystickController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot
+from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 
 
@@ -82,6 +82,11 @@ def drive(cfg):
 
     V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
+    origin_reset = OriginOffset()
+    V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
+
+    ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, origin_reset.init_to_last)
+
     class UserCondition:
         def run(self, mode):
             if mode == 'user':
@@ -118,8 +123,11 @@ def drive(cfg):
 
     ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
 
+    img = PImage(clear_each_frame=True)
+    V.add(img, outputs=['map/image'])
+
     plot = PathPlot(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
-    V.add(plot, inputs=['path'], outputs=['map/image'])
+    V.add(plot, inputs=['map/image', 'path'], outputs=['map/image'])
 
     cte = CTE()
     V.add(cte, inputs=['path', 'pos/x', 'pos/y'], outputs=['cte/error'], run_condition='run_pilot')
@@ -127,6 +135,9 @@ def drive(cfg):
     pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE)
     V.add(pilot, inputs=['cte/error'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
+
+    loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
+    V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
 
     #This web controller will create a web server
@@ -180,9 +191,10 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
 
-    numeric_level = getattr(logging, args['--log'].upper(), None)
+    log_level = args['--log'] or "INFO"
+    numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % args['--log'])
+        raise ValueError('Invalid log level: %s' % log_level)
     logging.basicConfig(level=numeric_level)
 
     
