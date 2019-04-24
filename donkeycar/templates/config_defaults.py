@@ -183,6 +183,11 @@ PUB_CAMERA_IMAGES = False
 DRIVE_LOCATION = None
 DRIVE_TASK = None
 
+#to give the ai a boost, configure these values to
+AI_LAUNCH_DURATION = 0.0
+AI_LAUNCH_THROTTLE = 0.0
+AI_LAUNCH_ENABLE_BUTTON = 'R2'
+
 
 #path following
 PATH_FILENAME = "donkey_path.pkl"

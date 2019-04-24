@@ -559,7 +559,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
 
     if cfg.USE_EARLY_STOP and not continuous:
         callbacks_list.append(early_stop)
-    
+
     history = kl.model.fit_generator(
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
@@ -580,8 +580,12 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
         try:
             if do_plot:
                 plt.figure(1)
+
+                # Only do accuracy if we have that data (e.g. categorical outputs)
+                if 'angle_out_acc' in history.history:
+                    plt.subplot(121)
+
                 # summarize history for loss
-                plt.subplot(121)
                 plt.plot(history.history['loss'])
                 plt.plot(history.history['val_loss'])
                 plt.title('model loss')
@@ -590,19 +594,21 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                 plt.legend(['train', 'validate'], loc='upper right')
                 
                 # summarize history for acc
-                plt.subplot(122)
-                plt.plot(history.history['angle_out_acc'])
-                plt.plot(history.history['val_angle_out_acc'])
-                plt.title('model angle accuracy')
-                plt.ylabel('acc')
-                plt.xlabel('epoch')
-                #plt.legend(['train', 'validate'], loc='upper left')
+                if 'angle_out_acc' in history.history:
+                    plt.subplot(122)
+                    plt.plot(history.history['angle_out_acc'])
+                    plt.plot(history.history['val_angle_out_acc'])
+                    plt.title('model angle accuracy')
+                    plt.ylabel('acc')
+                    plt.xlabel('epoch')
+                    #plt.legend(['train', 'validate'], loc='upper left')
+
                 plt.savefig(model_path + '_loss_acc_%f.png' % save_best.best)
                 plt.show()
             else:
                 print("not saving loss graph because matplotlib not set up.")
-        except:
-            print("problems with loss graph")
+        except Exception as ex:
+            print("problems with loss graph: {}".format( ex ) )
 
     if cfg.PRUNE_CNN:
         base_model_path = splitext(model_name)[0]
