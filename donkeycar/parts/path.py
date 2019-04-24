@@ -78,9 +78,10 @@ class CTE(object):
             d = dist(p[0], p[1], x, y)
             distances.append((d, iP, p))
         distances.sort(key=lambda elem : elem[0])
-        a = distances[0][2]
+        iA = (distances[0][1] - 1) % len(path)
+        a = path[iA]
         #iB is the next element in the path, wrapping around..
-        iB = (distances[0][1] + 1) % len(path)
+        iB = (iA + 2) % len(path)
         b = path[iB]
         
         return a, b
@@ -92,9 +93,9 @@ class CTE(object):
         
         if a and b:
             #logging.info("nearest: (%f, %f) to (%f, %f)" % ( a[0], a[1], x, y))
-            a_v = Vec3(a[0], a[1], 0.)
-            b_v = Vec3(b[0], b[1], 0.)
-            p_v = Vec3(x, y, 0.)
+            a_v = Vec3(a[0], 0., a[1])
+            b_v = Vec3(b[0], 0., b[1])
+            p_v = Vec3(x, 0., y)
             line = Line3D(a_v, b_v)
             err = line.vector_to(p_v)
             sign = 1.0

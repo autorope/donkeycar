@@ -15,17 +15,18 @@ class DonkeyGymEnv(object):
         self.frame = self.env.reset()
         self.action = [0.0, 0.0]
         self.running = True
+        self.info = { 'pos' : (0., 0., 0.)}
 
     def update(self):
         while self.running:
-            self.frame, reward, done, info = self.env.step(self.action)
+            self.frame, _, _, self.info = self.env.step(self.action)
 
     def run_threaded(self, steering, throttle):
         if steering is None or throttle is None:
             steering = 0.0
             throttle = 0.0
         self.action = [steering, throttle]
-        return self.frame
+        return self.frame, self.info['pos']
 
     def shutdown(self):
         self.running = False

@@ -23,7 +23,6 @@ import donkeycar as dk
 from donkeycar.parts.controller import LocalWebController, JoystickController
 from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController, NimbusController, XboxOneJoystickController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.realsense import RS_T265
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot
 from donkeycar.parts.transform import PIDController
 
@@ -58,13 +57,28 @@ def drive(cfg):
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
 
-    rs = RS_T265()
-    V.add(rs, outputs=['rs/pos', 'rs/vel', 'rs/acc'], threaded=True)
+    if cfg.DONKEY_GYM:
+        from donkeycar.parts.dgym import DonkeyGymEnv 
+        gym_env = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, env_name=cfg.DONKEY_GYM_ENV_NAME)
+        threaded = True
+        inputs = ['angle', 'throttle']
+        V.add(gym_env, inputs=inputs, outputs=['cam/image_array', 'rs/pos'], threaded=threaded)
 
-    class PosStream:
-        def run(self, pos):
-            #y is up, x is right, z is backwards/forwards
-            return pos.x, pos.z
+        class PosStream:
+            def run(self, pos):
+                #y is up, x is right, z is backwards/forwards
+                logging.debug("pos %s" % str(pos))
+                return pos[0], pos[2]
+
+    else:
+        from donkeycar.parts.realsense import RS_T265
+        rs = RS_T265()
+        V.add(rs, outputs=['rs/pos', 'rs/vel', 'rs/acc'], threaded=True)
+
+        class PosStream:
+            def run(self, pos):
+                #y is up, x is right, z is backwards/forwards
+                return pos.x, pos.z
 
     V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
@@ -91,7 +105,7 @@ def drive(cfg):
 
 
 
-    path = Path(min_dist=0.1)
+    path = Path(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
 
     if os.path.exists(cfg.PATH_FILENAME):
@@ -102,7 +116,7 @@ def drive(cfg):
         path.save(cfg.PATH_FILENAME)
         print("saved path:", cfg.PATH_FILENAME)
 
-    ctr.set_button_down_trigger('x', save_path)
+    ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
 
     plot = PathPlot(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
     V.add(plot, inputs=['path'], outputs=['map/image'])
@@ -122,7 +136,6 @@ def drive(cfg):
           outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
           threaded=True)    
     
-
 
     #Choose what inputs should change the car.
     class DriveMode:
@@ -144,19 +157,20 @@ def drive(cfg):
           outputs=['angle', 'throttle'])
     
 
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-    steering = PWMSteering(controller=steering_controller,
-                                    left_pulse=cfg.STEERING_LEFT_PWM, 
-                                    right_pulse=cfg.STEERING_RIGHT_PWM)
-    
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-    throttle = PWMThrottle(controller=throttle_controller,
-                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
+    if not cfg.DONKEY_GYM:
+        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        steering = PWMSteering(controller=steering_controller,
+                                        left_pulse=cfg.STEERING_LEFT_PWM, 
+                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+        
+        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        throttle = PWMThrottle(controller=throttle_controller,
+                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-    V.add(steering, inputs=['angle'])
-    V.add(throttle, inputs=['throttle'])
+        V.add(steering, inputs=['angle'])
+        V.add(throttle, inputs=['throttle'])
 
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
         max_loop_count=cfg.MAX_LOOPS)

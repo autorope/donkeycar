@@ -182,3 +182,15 @@ PUB_CAMERA_IMAGES = False
 #meta data. Strings describing location and/or task
 DRIVE_LOCATION = None
 DRIVE_TASK = None
+
+
+#path following
+PATH_FILENAME = "donkey_path.pkl"
+PATH_SCALE = 5.0
+PATH_OFFSET = (0, 0)
+PATH_MIN_DIST = 0.3
+PID_P = 1.0
+PID_I = 0.000
+PID_D = 0.3
+PID_THROTTLE = 0.2
+SAVE_PATH_BTN = "cross"
