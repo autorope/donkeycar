@@ -72,8 +72,8 @@ def drive(cfg):
 
     else:
         from donkeycar.parts.realsense import RS_T265
-        rs = RS_T265()
-        V.add(rs, outputs=['rs/pos', 'rs/vel', 'rs/acc'], threaded=True)
+        rs = RS_T265(image_output=False)
+        V.add(rs, outputs=['rs/pos', 'rs/vel', 'rs/acc' , 'rs/camera/left/img_array'], threaded=True)
 
         class PosStream:
             def run(self, pos):
@@ -108,8 +108,6 @@ def drive(cfg):
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
 
 
-
-
     path = Path(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
 
@@ -126,6 +124,7 @@ def drive(cfg):
     img = PImage(clear_each_frame=True)
     V.add(img, outputs=['map/image'])
 
+
     plot = PathPlot(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
     V.add(plot, inputs=['map/image', 'path'], outputs=['map/image'])
 
@@ -136,6 +135,18 @@ def drive(cfg):
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE)
     V.add(pilot, inputs=['cte/error'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
 
+    def dec_pid_d():
+        pid.Kd -= 0.5
+        logging.info("pid: d- %f" % pid.Kd)
+
+    def inc_pid_d():
+        pid.Kd += 0.5
+        logging.info("pid: d+ %f" % pid.Kd)
+
+    ctr.set_button_down_trigger("L2", dec_pid_d)
+    ctr.set_button_down_trigger("R2", inc_pid_d)
+
+
     loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
     V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
@@ -145,7 +156,7 @@ def drive(cfg):
     V.add(web_ctr,
           inputs=['map/image'],
           outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
-          threaded=True)    
+          threaded=True)
     
 
     #Choose what inputs should change the car.

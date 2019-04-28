@@ -2,6 +2,7 @@ import pickle
 import math
 import logging
 
+import numpy
 from PIL import Image, ImageDraw
 
 from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img
@@ -85,6 +86,11 @@ class PathPlot(object):
         draw.line((sx,sy, ex, ey), fill=color, width=1)
 
     def run(self, img, path):
+        
+        if type(img) is numpy.ndarray:
+            stacked_img = numpy.stack((img,)*3, axis=-1)
+            img = arr_to_img(stacked_img)
+
         draw = ImageDraw.Draw(img)
         color = (255, 0, 0)
         for iP in range(0, len(path) - 1):

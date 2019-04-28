@@ -7,6 +7,7 @@ Notes: Parts to input data from Intel Realsense cameras
 import time
 import logging
 
+import numpy as np
 import pyrealsense2 as rs
 
 class RS_T265(object):
@@ -16,11 +17,20 @@ class RS_T265(object):
     is remarkably consistent.
     '''
 
-    def __init__(self):
+    def __init__(self, image_output=False):
+        #Using the image_output will grab two image streams from the fisheye cameras but return only one.
+        #This can be a bit much for USB2, but you can try it. Docs recommend USB3 connection for this.
+        self.image_output = image_output
+
         # Declare RealSense pipeline, encapsulating the actual device and sensors
         self.pipe = rs.pipeline()
         cfg = rs.config()
         cfg.enable_stream(rs.stream.pose)
+
+        if self.image_output:
+            #right now it's required for both streams to be enabled
+            cfg.enable_stream(rs.stream.fisheye, 1) # Left camera
+            cfg.enable_stream(rs.stream.fisheye, 2) # Right camera
 
         # Start streaming with requested config
         self.pipe.start(cfg)
@@ -30,9 +40,21 @@ class RS_T265(object):
         self.pos = zero_vec
         self.vel = zero_vec
         self.acc = zero_vec
+        self.img = None
 
     def poll(self):
-        frames = self.pipe.wait_for_frames()
+        try:
+            frames = self.pipe.wait_for_frames()
+        except Exception as e:
+            logging.error(e)
+            return
+
+        if self.image_output:
+            #We will just get one image for now.
+            # Left fisheye camera frame
+            left = frames.get_fisheye_frame(1)
+            self.img = np.asanyarray(left.get_data())
+
 
         # Fetch pose frame
         pose = frames.get_pose_frame()
@@ -49,7 +71,7 @@ class RS_T265(object):
             self.poll()
 
     def run_threaded(self):
-        return self.pos, self.vel, self.acc
+        return self.pos, self.vel, self.acc, self.img
 
     def run(self):
         self.poll()
