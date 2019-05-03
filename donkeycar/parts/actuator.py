@@ -35,10 +35,10 @@ class RoboHATMM1:
     This is developed by Robotics Masters
     """
     def __init__(self, channel, frequency=60):
-        from arm_robohat import robohat
+        from rm_robohat import robohat
         # Initialise the Robo HAT using default address (0x49)
         self.pwm = robohat.seesaw
-        self.pin = self.pwm.get_channel(channel)
+        self.pin = robohat.get_channel(channel)
         self.pwm.set_pwm_freq(self.pin, frequency)
 
     def set_pulse(self, pulse):
