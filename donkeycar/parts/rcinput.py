@@ -28,7 +28,7 @@ class RoboHATJoystick(Joystick):
     Contains mapping that works with seesaw driver
     '''
 
-   def __init__(self, *args, * 
+    pass
 
 class JoystickController(object):
     '''
