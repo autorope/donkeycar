@@ -45,6 +45,6 @@ def d2_path(temp_path):
 
 def default_template(d2_path):
     c = CreateCar()
-    c.create_car(d2_path)
+    c.create_car(d2_path, overwrite=True)
     return d2_path
 
