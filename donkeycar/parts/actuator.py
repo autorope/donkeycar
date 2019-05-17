@@ -50,6 +50,28 @@ class RoboHATMM1:
     def run(self, pulse):
         self.set_pulse(pulse)
 
+class SerialDevice:
+    """
+    PWM motor controller using Robo HAT MM1 boards.
+    This is developed by Robotics Masters
+    """
+    def __init__(self, channel):
+        import serial
+        # Initialise the Robo HAT using default address (0x49)
+        self.pwm = serial.Serial('dev/ttyAMA0', 115200, timeout=1)
+        self.channel = channel
+
+    def set_pulse(self, pulse):
+        try:
+            packet = "{0},{1} \r".format(str(self.channel.zfill(4)), str(pulse*16).zfill(4))
+            self.pwm.send(packet)
+        except OSError as err:
+            print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
+
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+
 class PWMSteering:
     """
     Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
