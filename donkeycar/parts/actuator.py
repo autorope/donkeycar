@@ -55,15 +55,32 @@ class SerialDevice:
     PWM motor controller using Robo HAT MM1 boards.
     This is developed by Robotics Masters
     """
-    def __init__(self, channel):
+    def __init__(self):
         import serial
         # Initialise the Robo HAT using default address (0x49)
         self.pwm = serial.Serial('dev/ttyAMA0', 115200, timeout=1)
-        self.channel = channel
 
-    def set_pulse(self, pulse):
+    def set_pulse(self, throttle, steering):
         try:
-            packet = "{0},{1} \r".format(str(self.channel.zfill(4)), str(pulse*16).zfill(4))
+            if throttle > 0:
+                output_throttle = dk.util.data.map_range(throttle,
+                                           0, 1.0,
+                                           1500, 2000)
+            else:
+                output_throttle = dk.util.data.map_range(throttle,
+                                           -1, 0,
+                                           1000, 1500)
+            
+            if steering > 0:
+                output_steering = dk.util.data.map_range(steering,
+                                           0, 1.0,
+                                           1500, 2000)
+            else:
+                output_steering = dk.util.data.map_range(steering,
+                                           -1, 0,
+                                           1000, 1500)
+            
+            packet = "{0},{1} \r".format(str(output_throttle).zfill(4)), str(output_steering).zfill(4))
             self.pwm.send(packet)
         except OSError as err:
             print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
