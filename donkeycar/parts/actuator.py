@@ -85,8 +85,8 @@ class SerialDevice:
         except OSError as err:
             print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
 
-    def run(self, pulse):
-        self.set_pulse(pulse)
+    def run(self, throttle, steering):
+        self.set_pulse(throttle, steering)
 
 
 class PWMSteering:
