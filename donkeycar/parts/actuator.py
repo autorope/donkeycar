@@ -58,7 +58,7 @@ class SerialDevice:
     def __init__(self):
         import serial
         # Initialise the Robo HAT using default address (0x49)
-        self.pwm = serial.Serial('dev/ttyAMA0', 115200, timeout=1)
+        self.pwm = serial.Serial('/dev/ttyS0', 115200, timeout=1)
 
     def set_pulse(self, throttle, steering):
         try:
@@ -80,8 +80,8 @@ class SerialDevice:
                                            -1, 0,
                                            1000, 1500)
             
-            packet = "{0},{1} \r".format(str(output_throttle).zfill(4)), str(output_steering).zfill(4))
-            self.pwm.send(packet)
+            packet = "{0}, {1} \r".format(str(output_throttle).zfill(4), str(output_steering).zfill(4))
+            self.pwm.write(packet.encode('utf-8'))
         except OSError as err:
             print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
 

@@ -21,7 +21,7 @@ class SerialController:
 
     def update(self):
         while True:
-            line = str(self.serial.readline()).trim()
+            line = self.serial.readline().decode('utf-8').strip('\n').strip('\r')
             output = line.split(", ")
             if len(output) == 2:
                 if output[0].isnumeric() and output[1].isnumeric():
@@ -34,9 +34,9 @@ class SerialController:
                         self.recording = False
                     time.sleep(0.01)
 
-    def run(self):
+    def run(self, img_arr=None):
         return self.run_threaded()
 
-    def run_threaded(self):
+    def run_threaded(self, img_arr=None):
         #print("Signal:", self.angle, self.throttle)
         return self.angle, self.throttle, self.mode, self.recording
