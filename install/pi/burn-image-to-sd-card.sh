@@ -48,7 +48,7 @@ while (( "$#" )); do
         shift 1
         ;;
     -t|--docker-registry-url)
-        if [[ ! -e ${2} ]]; then
+        if [[ "${2}" == "" ]]; then
             err "missing docker registry url"
             exit 1
         fi
@@ -56,7 +56,7 @@ while (( "$#" )); do
         shift 2
         ;;
     -e|--docker-user)
-        if [[ ! -e ${2} ]]; then
+        if [[ "${2}" == "" ]]; then
             err "missing docker user for private registry"
             exit 1
         fi
@@ -64,7 +64,7 @@ while (( "$#" )); do
         shift 2
         ;;
     -w|--docker-password)
-        if [[ ! -e ${2} ]]; then
+        if [[ "${2}" == "" ]]; then
             err "missing docker password for private registry"
             exit 1
         fi

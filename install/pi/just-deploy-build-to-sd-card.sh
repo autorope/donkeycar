@@ -23,7 +23,7 @@ while (( "$#" )); do
         shift 1
         ;;
     -t|--docker-registry-url)
-        if [[ ! -e ${2} ]]; then
+        if [[ "${2}" == "" ]]; then
             err "missing docker private registry url"
             exit 1
         fi
@@ -31,7 +31,7 @@ while (( "$#" )); do
         shift 2
         ;;
     -e|--docker-user)
-        if [[ ! -e ${2} ]]; then
+        if [[ "${2}" == "" ]]; then
             err "missing docker user for private registry"
             exit 1
         fi
@@ -39,7 +39,7 @@ while (( "$#" )); do
         shift 2
         ;;
     -w|--docker-password)
-        if [[ ! -e ${2} ]]; then
+        if [[ "${2}" == "" ]]; then
             err "missing docker password for private registry"
             exit 1
         fi
@@ -92,14 +92,14 @@ done
 eval set -- "$PARAMS"
 
 anmt "starting redeploy"
-anmt "${DCPATH}/burn-image-to-sd-card.sh -i ${args}"
+anmt "${DCPATH}/burn-image-to-sd-card.sh ${args} -i"
 ${DCPATH}/burn-image-to-sd-card.sh -i ${args}
 if [[ "$?" != "0" ]]; then
-    err "failed to redeploy with: ${DCPATH}/burn-image-to-sd-card.sh -i ${args}"
+    err "failed to redeploy with: ${DCPATH}/burn-image-to-sd-card.sh ${args} -i"
     exit 1
 fi
 
 date +"%Y-%m-%d %H:%M:%S"
-good "donkey car - image redploy completed"
+good "donkey car image - redeploy complete"
 
 exit 0
