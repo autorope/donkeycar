@@ -34,17 +34,17 @@ Workflow ordering and specific files in case you want to make custom modificatio
 
 [./burn-image-to-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/burn-image-to-sd-card.sh) calls:
 
-    a) [./download-google-drive-dc-img.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/download-google-drive-dc-img.sh)
+3a) [./download-google-drive-dc-img.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/download-google-drive-dc-img.sh)
 
-    b) [./root-resize-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/root-resize-sd-card.sh)
+3b) [./root-resize-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/root-resize-sd-card.sh)
 
-    c) [./extend-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/extend-sd-card.sh)
+3c) [./extend-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/extend-sd-card.sh)
 
-    d) [./mount-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/mount-sd-card.sh)
+3d) [./mount-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/mount-sd-card.sh)
 
-    e) [./deploy.sh or custom script set before starting with: export DCDEPLOY=PATH_TO_YOUR_DEPLOY_TOOL](https://github.com/autorope/donkeycar/blob/dev/install/pi/deploy.sh)
+3e) [./deploy.sh or custom script set before starting with: export DCDEPLOY=PATH_TO_YOUR_DEPLOY_TOOL](https://github.com/autorope/donkeycar/blob/dev/install/pi/deploy.sh)
 
-    f) [./unmount-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/unmount-sd-card.sh)
+3f) [./unmount-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/unmount-sd-card.sh)
 
 ### Cutomize Startup Actions with an rc.local
 
