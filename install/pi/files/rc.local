@@ -28,7 +28,7 @@ if [ -e /opt/first_time_install.sh ]; then
 fi
 
 # allow dropping a file hook:
-# /opt/update_packages_on_startup.sh
+# /opt/run_updater.sh
 # to trigger package updates
 if [ -e /opt/run_updater.sh ]; then
     echo "blocking run updater: /opt/run_updater.sh"
