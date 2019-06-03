@@ -290,9 +290,11 @@ class Tub(object):
             df = self.get_df()
 
         while True:
-            for _ in self.df.iterrows():
+            for _, row in self.df.iterrows():
                 if shuffle:
                     record_dict = df.sample(n=1).to_dict(orient='record')[0]
+                else:
+                    record_dict = row
 
                 record_dict = self.read_record(record_dict)
 
@@ -322,6 +324,7 @@ class Tub(object):
         --------
         get_record_gen
         """
+        print('Batch size is %d' % batch_size)
         record_gen = self.get_record_gen(record_transform=record_transform, shuffle=shuffle, df=df)
 
         if df is None:
