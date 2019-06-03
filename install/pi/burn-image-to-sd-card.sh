@@ -169,18 +169,18 @@ if [[ "${burn_enabled}" == "1" ]]; then
     inf ""
     parted ${DEVICE} print free
     inf ""
+
+    anmt "resizing sd card ${DEVICE} to maximize storage space on the device: ${DCPATH}/root-resize-sd-card.sh"
+    ${DCPATH}/root-resize-sd-card.sh
+    if [[ "$?" != "0" ]]; then
+        err "failed to resize image on sd card: ${DEVICE}"
+        inf "${DCPATH}/root-resize-sd-card.sh"
+        exit 1
+    fi
+    good "done resizing sd card: ${DEVICE}"
 else
     good " - skipping burn to sd card step"
 fi
-
-anmt "resizing sd card ${DEVICE} to maximize storage space on the device: ${DCPATH}/root-resize-sd-card.sh"
-${DCPATH}/root-resize-sd-card.sh
-if [[ "$?" != "0" ]]; then
-    err "failed to resize image on sd card: ${DEVICE}"
-    inf "${DCPATH}/root-resize-sd-card.sh"
-    exit 1
-fi
-good "done resizing sd card: ${DEVICE}"
 
 anmt "checking partitions:"
 parted ${DEVICE} print free
