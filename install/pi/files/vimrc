@@ -1,0 +1,188 @@
+"2016-11-10 v1 - start"
+" set tabstop=4
+" set shiftwidth=4
+" set smartindent
+" set pastetoggle=<F10>
+"2016-11-10 v1 - end"
+
+"2016-11-10 v2 - start"
+set pastetoggle=<F10>
+set autoindent " always set autoindenting on"
+set smartindent " use smart indent if there is no indent file"
+set tabstop=4 " <tab> inserts 4 spaces"
+set softtabstop=4 " <BS> over an autoindent deletes 4 spaces."
+set smarttab " Handle tabs more intelligently"
+set expandtab " Use spaces, not tabs, for autoindent/tab key."
+set shiftwidth=4 " an indent level is 4 spaces wide."
+set shiftround " rounds indent to a multiple of shiftwidth"
+set showmode
+set hlsearch
+
+augroup auto_comment
+    au!
+    au FileType * setlocal formatoptions-=c formatoptions-=r formatoptions-=o
+augroup END
+"2016-11-10 v2 - end"
+
+
+"2018-01-02 start"
+"
+" Taken from:
+" https://realpython.com/blog/python/vim-and-python-a-match-made-in-heaven/
+"
+set encoding=utf-8
+set nocompatible              " required
+filetype off                  " required
+
+" set the runtime path to include Vundle and initialize
+" set rtp+=~/.vim/bundle/Vundle.vim
+" call vundle#begin()
+
+" alternatively, pass a path where Vundle should install plugins
+"call vundle#begin('~/some/path/here')
+
+" let Vundle manage Vundle, required
+" Plugin 'gmarik/Vundle.vim'
+
+" Add all your plugins here (note older versions of Vundle used Bundle instead of Plugin)
+
+
+" All of your Plugins must be added before the following line
+" call vundle#end()            " required
+filetype plugin indent on    " required
+
+"split navigations
+nnoremap <C-J> <C-W><C-J>
+nnoremap <C-K> <C-W><C-K>
+nnoremap <C-L> <C-W><C-L>
+nnoremap <C-H> <C-W><C-H>
+
+" Enable folding
+set foldmethod=indent
+set foldlevel=99
+
+" Enable folding with the spacebar
+nnoremap <space> za
+
+" Plugin 'tmhedberg/SimpylFold'
+let g:SimpylFold_docstring_preview=1
+
+au BufNewFile,BufRead "*.py" set tabstop=4 set softtabstop=4 set shiftwidth=4 set textwidth=79 set expandtab set autoindent set fileformat=unix
+au BufNewFile,BufRead "*.js, *.html, *.css" set tabstop=2 set softtabstop=2 set shiftwidth=2
+
+" Plugin 'vim-scripts/indentpython.vim'
+
+au BufRead,BufNewFile "*.py,*.pyw,*.c,*.h" match BadWhitespace /\s\+$/
+
+" Bundle 'Valloric/YouCompleteMe'
+"python with virtualenv support
+"py << EOF
+"import os
+"import sys
+"if 'VENV_DIR' in os.environ:
+"  project_base_dir = os.environ['VENV_DIR']
+"  activate_this = os.path.join(project_base_dir, 'bin/activate_this.py')
+"  execfile(activate_this, dict(__file__=activate_this))
+"EOF
+
+let g:ycm_autoclose_preview_window_after_completion=1
+" On a method/class/function if you use:
+" g + g    it will go-to that code... super helpful navigate
+" map gg  :YcmCompleter GoToDefinitionElseDeclaration<CR>
+
+" Plugin 'vim-syntastic/syntastic'
+" Plugin 'nvie/vim-flake8'
+
+" Plugin 'jnurmine/Zenburn'
+" Plugin 'altercation/vim-colors-solarized'
+
+" https://github.com/bcicen/vim-jfmt
+" Plugin 'bcicen/vim-jfmt'
+let g:jfmt_autofmt  = 1
+
+if has('gui_running')
+  set background=dark
+  colorscheme solarized
+  call togglebg#map("<F5>")
+" else
+"   colorscheme zenburn
+endif
+
+
+" Plugin 'scrooloose/nerdtree'
+" Plugin 'jistr/vim-nerdtree-tabs'
+let NERDTreeIgnore=['\.pyc$', '\~$'] "ignore files in NERDTree
+
+" Plugin 'kien/ctrlp.vim'
+
+" Plugin 'tpope/vim-fugitive'
+
+" Plugin 'Lokaltog/powerline', {'rtp': 'powerline/bindings/vim/'}
+
+" Plugin 'davidhalter/jedi-vim'
+
+let python_highlight_all=1
+syntax on
+
+" Plugin 'flazz/vim-colorschemes'
+" Plugin 'heavenshell/vim-pydocstring'
+map ga :call pydocstring#insert()<CR>
+
+autocmd FileType python setlocal tabstop=4 shiftwidth=4 softtabstop=4 expandtab
+
+autocmd BufWritePost *.py call Flake8()
+
+" Yaml file handling
+autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
+filetype plugin indent on
+autocmd FileType yaml setl indentkeys-=<:>
+
+" Copy paste with ctr+c, ctr+v, etc
+:behave mswin
+:set clipboard=unnamedplus
+:smap <Del> <C-g>"_d
+:smap <C-c> <C-g>y
+:smap <C-x> <C-g>x
+:imap <C-v> <Esc>pi
+:smap <C-v> <C-g>p
+:smap <Tab> <C-g>1>
+:smap <S-Tab> <C-g>1<
+
+"2018-01-02 end"
+
+"Make sure to run at least once in a vim session:"
+" :PluginInstall
+
+" Go vimrc
+" echo "downloading go version: ${go_version}"
+" curl -O https://storage.googleapis.com/golang/go${go_version}.linux-amd64.tar.gz --output /tmp/golang.tgz
+" tar xvf /tmp/golang.tgz
+"
+" echo "adding vim plugins"
+" curl -fLo ~/.vim/autoload/plug.vim --create-dirs
+" https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim
+" git clone https://github.com/fatih/vim-go.git ~/.vim/plugged/vim-go
+"
+autocmd BufNewFile,BufRead *.go setlocal noexpandtab tabstop=4 shiftwidth=4 
+let g:go_list_type = "quickfix"
+
+" call plug#begin()
+" Plug 'fatih/vim-go', { 'do': ':GoInstallBinaries' }
+" call plug#end()
+
+" map gb :GoBuild<CR>
+" map gt :GoTest<CR>
+" map gr :GoRun<CR>
+" map gs :GoCoverageToggle<CR>
+" map gc :GoTestCompile<CR>
+" map gf :GoTestFunc<CR>
+" map cn :cnext<CR>
+" map cm :cprevious<CR>
+nnoremap <leader>a :cclose<CR>
+set autowrite
+
+inoremap jj <ESC>
+
+"Make sure to run at least once in a vim session:"
+" :GoInstallBinaries
+" :PluginInstall

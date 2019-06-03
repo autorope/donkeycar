@@ -1,0 +1,39 @@
+[http]
+    sslVerify = on
+[core]
+    editor = vim
+[alias]
+    co = checkout
+    ci = commit
+    st = status
+    last = log -1 HEAD
+    unstage = reset HEAD --
+    difflast = diff HEAD^
+    lg = log -- color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --
+    br = branch
+[color]
+    diff = auto
+    status = auto
+    branch = auto
+    ui = auto
+    interactive = auto
+[color "branch"]
+    current = green bold
+    local = green 
+    remote = red bold
+[color "diff"]
+    meta = yellow reverse
+    frag = magenta bold
+    old = red bold
+    new = green bold
+[color "status"]
+    added = green reverse
+    changed = green bold
+    untracked = red bold
+# [push]
+#     default = tracking
+[branch]
+    autosetuprebase = always
+    autosetupmerge = true
+[help]
+    autocorrect = 5

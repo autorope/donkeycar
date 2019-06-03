@@ -21,3 +21,15 @@ build
 .pytest_cache
 
 .coverage
+
+.vscode
+*.swo
+*.swp
+
+# files used during creation and burning of the donkey car image
+cookie
+*.img
+*.zip
+dcdisk
+id_rsa
+id_rsa.pub

@@ -1,0 +1,15 @@
+#!/usr/bin/bash
+
+export DCPATH=/opt/dc
+if [[ -e ${DCPATH}/files/bash_colors.sh ]]; then
+    source ${DCPATH}/files/bash_colors.sh
+fi
+
+anmt "Starting Hour Cron"
+date +"%Y-%m-%d %H:%M:%S"
+
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+    /usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+fi
+exit $EXITVALUE
