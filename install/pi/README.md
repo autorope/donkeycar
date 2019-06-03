@@ -2,7 +2,7 @@
 
 This guide is for [Donkey Car owners](https://www.donkeycar.com/) looking to automate their sd card installs with controls for automating the initial boot up. It has only been tested on Ubuntu.
 
-[![Automation for Customizing Your Donkey Car OS Install](https://asciinema.org/a/249687.svg)](https://asciinema.org/a/249687?autoplay=1)
+[![Automation for Customizing Your Donkey Car OS Install](https://asciinema.org/a/249781.svg)](https://asciinema.org/a/249781?autoplay=1)
 
 1. Set User and sd card device name
 

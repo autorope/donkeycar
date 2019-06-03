@@ -71,7 +71,7 @@ if [[ -e ${custom_rc_local} ]]; then
 fi
 
 if [[ ! -e "${DCMOUNTPATH}/opt/dc" ]]; then
-    anmt "cloning donkey car repo ${dcrepo} to: ${DCMOUNTPATH}/opt/dc"
+    anmt "cloning donkey car repo ${dcrepo} on ${dcbranch} branch to: ${DCMOUNTPATH}/opt/dc"
     git clone ${dcrepo} ${DCMOUNTPATH}/opt/dc
     if [[ ! -e "${DCMOUNTPATH}/opt/dc" ]]; then
         err "failed to clone repo: ${dcrepo}"
