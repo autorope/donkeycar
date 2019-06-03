@@ -20,7 +20,7 @@ fi
 # allow dropping a file hook:
 # /opt/first_time_install.sh
 # to trigger package updates
-if [[ -e /opt/first_time_install.sh ]]; then
+if [ -e /opt/first_time_install.sh ]; then
     echo "blocking package installer: /opt/first_time_install.sh"
     chmod 777 /opt/first_time_install.sh
     /opt/first_time_install.sh 2>&1 /tmp/first_time_install.log
@@ -30,14 +30,14 @@ fi
 # allow dropping a file hook:
 # /opt/update_packages_on_startup.sh
 # to trigger package updates
-if [[ -e /opt/run_updater.sh ]]; then
+if [ -e /opt/run_updater.sh ]; then
     echo "blocking run updater: /opt/run_updater.sh"
     chmod 777 /opt/run_updater.sh
     /opt/run_updater.sh 2>&1 /tmp/run_updater.log
     rm -f /opt/run_updater.sh
 fi
 
-if [[ -e /opt/login_to_docker.sh ]]; then
+if [ -e /opt/login_to_docker.sh ]; then
     anmt "sleeping before trying to login to the docker registry"
     date +"%Y-%m-%d %H:%M:%S"
     sleep 10
