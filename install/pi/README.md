@@ -30,7 +30,7 @@ This will download, burn, resize to maximize storage, mount, deploy the latest c
 ./burn-image-to-sd-card.sh
 ```
 
-Workflow ordering and specific files in case you want to make custom modifications for your donker car os on your own:
+Workflow ordering and specific files in case you want to make custom modifications for your donkey car os on your own:
 
 [./burn-image-to-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/burn-image-to-sd-card.sh) calls:
 

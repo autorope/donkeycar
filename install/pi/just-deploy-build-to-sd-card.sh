@@ -100,6 +100,6 @@ if [[ "$?" != "0" ]]; then
 fi
 
 date +"%Y-%m-%d %H:%M:%S"
-good "donker car image redploy complete"
+good "donkey car - image redploy completed"
 
 exit 0
