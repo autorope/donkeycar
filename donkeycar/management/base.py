@@ -257,7 +257,7 @@ class Sim(BaseCommand):
         """
         import socketio
         from donkeycar.parts.simulation import SteeringServer
-        from donkeycar.parts.keras import KerasCategorical, KerasLinear
+        from donkeycar.parts.keras import KerasLinear
 
         args, parser = self.parse_args(args)
 
@@ -266,14 +266,7 @@ class Sim(BaseCommand):
         if cfg is None:
             return
 
-        #TODO: this logic should be in a pilot or modle handler part.
-        if args.type == "categorical":
-            kl = KerasCategorical()
-        elif args.type == "linear":
-            kl = KerasLinear(num_outputs=2)
-        else:
-            print("didn't recognice type:", args.type)
-            return
+        kl = KerasLinear(num_outputs=2)
 
         #can provide an optional image filter part
         img_stack = None
@@ -382,15 +375,16 @@ class ShowPredictionPlots(BaseCommand):
 
         """
         from donkeycar.parts.datastore import TubGroup
-        from donkeycar.parts.keras import KerasCategorical
+        from donkeycar.parts.keras import KerasLinear
+        import pandas as pd
 
         tg = TubGroup(tub_paths)
 
         model_path = os.path.expanduser(model_path)
-        model = KerasCategorical()
+        model = KerasLinear()
         model.load(model_path)
 
-        gen = tg.get_batch_gen(None, None, batch_size=len(tg.df),shuffle=False, df=tg.df)
+        gen = tg.get_batch_gen(batch_size=len(tg.df), shuffle=False, df=tg.df)
         arr = next(gen)
 
         user_angles = []
@@ -416,6 +410,7 @@ class ShowPredictionPlots(BaseCommand):
         angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
         throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
 
+        from matplotlib import pyplot as plt
         fig = plt.figure()
 
         title = "Model Predictions\nTubs: {}\nModel: {}".format(tub_paths, model_path)
