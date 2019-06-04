@@ -192,7 +192,7 @@ if [[ "${test_splunk}" == "1" ]]; then
 fi
 
 # trigger first time installs of packages and upgrades
-echo "${initial_packages_to_install}" >> ${DCMOUNTPATH}/opt/install-packages
+echo "${initial_packages_to_install}" > ${DCMOUNTPATH}/opt/install-packages
 chmod 666 ${DCMOUNTPATH}/opt/install-packages
 chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/install-packages
 touch ${DCMOUNTPATH}/opt/upgrade-packages
