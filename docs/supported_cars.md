@@ -36,7 +36,7 @@ Visual instructions to follow.
 ## LaTrax Prerunner
 The LaTrax prerunner is a supported car and follows the same build instructions as the Desert Monster.  However the adapters get screwed in as is shown in the photo below.  
 
-![donkey](./assets/Latrax.jpg)
+![donkey](./assets/Latrax.JPG)
 
 
 ## Donkey Pro
