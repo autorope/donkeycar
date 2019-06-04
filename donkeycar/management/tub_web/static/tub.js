@@ -146,6 +146,14 @@ $(document).ready(function(){
         updateStreamImg();
     };
 
+    var fforwardBtnClicked = function(event) {
+        currentFrameIdx += 100; // 10 frames per second
+        if (currentFrameIdx >= selectedClip().frames.length) {
+            currentFrameIdx = selectedClip().frames.length-1;
+        }
+        updateStreamImg();
+    };
+
     var splitBtnClicked = function(event) {
         if (currentFrameIdx === 0 || currentFrameIdx >= selectedClip().frames.length-1) {
             return;
@@ -200,6 +208,7 @@ $(document).ready(function(){
     $('button#play-stream').click(playBtnClicked);
     $('button#split-stream').click(splitBtnClicked);
     $('button#rewind-stream').click(rewindBtnClicked);
+    $('button#fforward-stream').click(fforwardBtnClicked);
     $('button#submit').click(submitBtnClicked);
     $(document).keydown(function(e) {
         switch(e.which) {
@@ -209,6 +218,10 @@ $(document).ready(function(){
 
             case 66: // 'b'
                 rewindBtnClicked();
+                break;
+
+            case 70: // 'f'
+                fforwardBtnClicked();
                 break;
 
             case 67: // 'c'
