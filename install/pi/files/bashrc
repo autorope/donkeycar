@@ -163,9 +163,9 @@ function dc_login() {
     echo "REPLACE_DC_DOCKER_PASSWORD" | docker login --username REPLACE_DC_DOCKER_USER --password-stdin REPLACE_DC_DOCKER_REGISTRY
 }
 
-alias dev="source ${HOME}/env/bin/activate && cd /opt/dc"
-alias ipip="source ${HOME}/env/bin/activate && cd /opt/dc && pip install -e ."
+alias dev="source /opt/venv/bin/activate && cd /opt/dc"
+alias ipip="source /opt/venv/bin/activate && cd /opt/dc && pip install -e ."
 
-if [[ -e ${HOME}/env/bin/activate ]]; then
-    source ${HOME}/env/bin/activate
+if [[ -e /opt/venv/bin/activate ]]; then
+    source /opt/venv/bin/activate
 fi

@@ -1,0 +1,26 @@
+version: '2'
+
+services:
+  fluentd:
+
+    hostname: fluentd
+    container_name: "fluentd"
+    image: fluent/fluentd:latest
+    entrypoint: "/bin/sh -c '/bin/echo \"starting entrypoint\" 
+        && echo \"<source>\" > /fluentd/etc/fluent.conf \
+        && echo \"    @type forward\" >> /fluentd/etc/fluent.conf \
+        && echo \"    port 24224\" >> /fluentd/etc/fluent.conf \
+        && echo \"    bind 0.0.0.0\" >> /fluentd/etc/fluent.conf \
+        && echo \"</source>\" >> /fluentd/etc/fluent.conf \
+        && echo \"<match *>\" >> /fluentd/etc/fluent.conf \
+        && echo \"    @type splunk\" >> /fluentd/etc/fluent.conf \
+        && echo \"    name splunk\" >> /fluentd/etc/fluent.conf \
+        && echo \"    host 192.168.0.100\" >> /fluentd/etc/fluent.conf \
+        && echo \"    port 1514\" >> /fluentd/etc/fluent.conf \
+        && echo \"</match>\" >> /fluentd/etc/fluent.conf \
+        && echo \"nameserver 8.8.8.8\" >> /etc/resolv.conf \
+        && echo \"nameserver 8.8.4.4\" >> /etc/resolv.conf \
+        && /usr/bin/fluentd -c /fluentd/etc/fluent.conf -p /fluentd/plugins \
+        && tail -f /fluentd/etc/fluent.conf'"
+    ports:
+      - "24224:24224"

@@ -121,9 +121,24 @@ parted ${DEVICE} print free
 parted ${DEVICE} rn 2
 ```
 
+### SSH into the Donkey Car OS
+
+::
+
+    # ssh -i ./files/id_rsa pi@d1.example.com
+    ssh -i ./files/id_rsa pi@DONKEY_CAR_IP
+
+Or with the ssh login tool:
+
+::
+
+    ./ssh-into-dc.sh d1.example.com
+
 ### Install Docker After the Logging into the Donkey Car
 
-SSH into the donkey car host and install docker with the command:
+SSH into the donkey car host and install docker
+
+#### Run the Docker Installer
 
 [/opt/dc/files/docker-install.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/docker-install.sh)
 
@@ -136,3 +151,11 @@ By default, the **rc.local** will run the following scripts if they are found on
 1. If [/opt/first_time_install.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/first_time_install.sh) is found it will install packages
 
 2. If [/opt/run_updater.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/run_updater.sh) is found it will run any updates
+
+### Logging with Splunk
+
+::
+
+    python -c "from donkeycar.log import get_log;log = get_log('testing', config='/opt/dc/donkeycar/splunk/log_config.json');log.info('sent using fluentd - DONE');"
+
+

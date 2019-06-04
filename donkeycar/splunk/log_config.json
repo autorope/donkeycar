@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "disable_existing_loggers": false,
+  "formatters": {
+    "colors": {
+      "()": "colorlog.ColoredFormatter",
+      "format": "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s%(reset)s"
+    },
+    "no_date_colors": {
+      "()": "colorlog.ColoredFormatter",
+      "format": "%(log_color)s%(name)s - %(levelname)s - %(message)s%(reset)s"
+    },
+    "simple": {
+      "()": "colorlog.ColoredFormatter",
+      "format": "%(log_color)s%(message)s%(reset)s"
+    },
+    "splunk": {
+      "()": "donkeycar.splunk.splunk_formatter.SplunkFormatter",
+      "format": "%(name)s - %(levelname)s - %(message)s [%(filename)s:%(lineno)s]"
+    }
+  },
+  "handlers": {
+    "console": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "colors",
+      "stream": "ext://sys.stdout"
+    },
+    "no_date_colors": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "no_date_colors",
+      "stream": "ext://sys.stdout"
+    },
+    "simple": {
+      "class": "logging.StreamHandler",
+      "level": "INFO",
+      "formatter": "simple",
+      "stream": "ext://sys.stdout"
+    },
+    "splunk": {
+      "class": "donkeycar.splunk.tcp_splunk_publisher.TCPSplunkPublisher",
+      "address": "0.0.0.0:24224",
+      "token": null,
+      "index": "dc",
+      "formatter": "splunk",
+      "sourcetype": "usejson",
+      "hostname": "dc1",
+      "custom_dict": {
+        "version": 1
+      },
+      "debug": false
+    }
+  },
+  "loggers": {
+    "": {
+      "level": "INFO",
+      "propagate": true
+    }
+  },
+  "root": {
+    "level": "INFO",
+    "propagate": true,
+    "handlers": [
+        "console",
+        "splunk"
+    ]
+  }
+}

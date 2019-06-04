@@ -1,0 +1,14 @@
+# https://docs.fluentbit.io/manual/input/forward
+[INPUT]
+    Name              forward
+    Listen            0.0.0.0
+    Port              24224
+    Buffer_Chunk_Size 32KB
+    Buffer_Max_Size   64KB
+
+# https://docs.fluentbit.io/manual/output/forward
+[OUTPUT]
+    Name          forward
+    Match         *
+    Host          192.168.0.100
+    Port          1514

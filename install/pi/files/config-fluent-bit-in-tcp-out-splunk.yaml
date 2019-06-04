@@ -1,0 +1,19 @@
+# https://docs.fluentbit.io/manual/input/forward
+[INPUT]
+    Name              tcp
+    Listen            0.0.0.0
+    Port              24224
+    Buffer_Chunk_Size 32KB
+    Buffer_Max_Size   64KB
+    Format            json
+
+# https://docs.fluentbit.io/manual/output/splunk
+# please ensure the HEC collector is working
+[OUTPUT]
+    Name            splunk
+    Match           *
+    Host            REPLACE_SPLUNK_HOST
+    Port            8088
+    Splunk_Token    REPLACE_SPLUNK_TOKEN
+    TLS             On
+    TLS.Verify      Off

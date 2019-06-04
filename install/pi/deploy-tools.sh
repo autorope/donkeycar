@@ -24,6 +24,23 @@ dcbranch="dev"
 if [[ "${DCBRANCH}" != "" ]]; then
     dcbranch="${DCBRANCH}"
 fi
+splunk_user="pi"
+if [[ "${DCSPLUNKUSER}" != "" ]]; then
+    splunk_user="${DCSPLUNKUSER}"
+fi
+splunk_password="123321"
+if [[ "${DCSPLUNKPASSWORD}" != "" ]]; then
+    splunk_password="${DCSPLUNKPASSWORD}"
+fi
+splunk_host="logs.example.com"
+if [[ "${DCSPLUNKHOST}" != "" ]]; then
+    splunk_host="${DCSPLUNKHOST}"
+fi
+# default packages to install
+initial_packages_to_install="apt-transport-https ca-certificates curl git libffi-dev libssl-dev netcat net-tools software-properties-common vim"
+if [[ "${DCINSTALLPACKAGES}" != "" ]]; then
+    initial_packages_to_install="${DCINSTALLPACKAGES}"
+fi
 
 if [[ ! -e ${mountpath} ]]; then
     err "cannot deploy as mount path not found: ${mount_path}"
@@ -104,6 +121,9 @@ if [[ -e "${DCMOUNTPATH}/opt/dc" ]]; then
     chown -R ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/dc
 fi
 
+anmt "setting /opt as useable"
+chmod 777 ${DCMOUNTPATH}/opt
+
 custom_docker_daemon=${DCPATH}/files/docker-daemon.json
 if [[ "${DCDOCKERDAEMON}" != "" ]]; then
     custom_docker_daemon="${DCDOCKERDAEMON}"
@@ -138,6 +158,74 @@ anmt "installing initial package installer for first time-boot installs: /opt/fi
 anmt "cp ${DCPATH}/files/first_time_install.sh ${DCMOUNTPATH}/opt/first_time_install.sh"
 cp ${DCPATH}/files/first_time_install.sh ${DCMOUNTPATH}/opt/first_time_install.sh
 chmod 777 ${DCMOUNTPATH}/opt/first_time_install.sh
+
+echo "created on $(date +"%Y-%m-%d %H:%M:%S")" > ${DCMOUNTPATH}/var/log/sdinstall.log
+echo "created on $(date +"%Y-%m-%d %H:%M:%S")" > ${DCMOUNTPATH}/var/log/sdrepo.log
+echo "created on $(date +"%Y-%m-%d %H:%M:%S")" > ${DCMOUNTPATH}/var/log/sdupdate.log
+chmod 666 ${DCMOUNTPATH}/var/log/sdinstall.log
+chmod 666 ${DCMOUNTPATH}/var/log/sdrepo.log
+chmod 666 ${DCMOUNTPATH}/var/log/sdupdate.log
+
+splunk_token="NOTFOUND"
+test_splunk=$(docker ps | grep splunk | wc -l)
+if [[ "${test_splunk}" == "1" ]]; then
+    anmt "getting splunk token from splunk container"
+    splunk_token=$(docker exec -it splunk /bin/bash -c "ps auwwx ; /opt/splunk/bin/splunk http-event-collector list -uri "https://${splunk_user}:${splunk_password}@localhost:8089"" | grep 'token='  | sed -e 's/=/ /g' | awk '{print $NF}' | sed "s/\n//g" | sed "s/\r//g" | head -1)
+    anmt "installing splunk token: ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+    if [[ ! -e ${DCMOUNTPATH}/opt/fluent-bit-includes ]]; then
+        mkdir -p -m 777 ${DCMOUNTPATH}/opt/fluent-bit-includes
+    fi
+    if [[ ! -e ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml ]]; then
+        cp ${DCPATH}/files/config-fluent-bit-in-*.yaml ${DCMOUNTPATH}/opt/fluent-bit-includes/
+        chmod 775 ${DCMOUNTPATH}/opt/fluent-bit-includes/*
+        chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/fluent-bit-includes/*
+    fi
+    sed -i "s|REPLACE_SPLUNK_TOKEN|${splunk_token}|g" ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml
+    if [[ "$?" != "0" ]]; then
+        err "failed to install splunk token: ${splunk_token} into file: ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+        echo "sed -i \"s|REPLACE_SPLUNK_TOKEN|${splunk_token}|g\" ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+    fi
+    sed -i "s|REPLACE_SPLUNK_HOST|${splunk_host}|g" ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml
+    if [[ "$?" != "0" ]]; then
+        err "failed to install splunk HEC host: ${splunk_host} into file: ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+    fi
+fi
+
+# trigger first time installs of packages and upgrades
+echo "${initial_packages_to_install}" >> ${DCMOUNTPATH}/opt/install-packages
+chmod 666 ${DCMOUNTPATH}/opt/install-packages
+chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/install-packages
+touch ${DCMOUNTPATH}/opt/upgrade-packages
+chmod 666 ${DCMOUNTPATH}/opt/upgrade-packages
+chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/upgrade-packages
+
+if [[ ! -e ${DCMOUNTPATH}/opt/downloads ]]; then
+    mkdir -p -m 777 ${DCMOUNTPATH}/opt/downloads
+    chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/downloads
+fi
+
+if [[ ! -e ${DCMOUNTPATH}/opt/downloads/pip ]]; then
+    mkdir -p -m 777 ${DCMOUNTPATH}/opt/downloads/pip
+    chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/downloads/pip
+fi
+
+scipy_version="scipy-1.2.1-cp35-cp35m-linux_armv7l.whl"
+scipy_url="https://www.piwheels.org/simple/scipy/${scipy_version}#sha256=270be300233af556e6ee3f55a0ae237df0cb65ac85d47559010d7a9071f2e878"
+scipy_download_file="${DCMOUNTPATH}/opt/downloads/pip/${scipy_version}"
+
+if [[ ! -e ${scipy_download_file} ]]; then
+    anmt "downloading newer scipy wheel file for install on the donkey car first time boot"
+    wget ${scipy_url} -O ${scipy_download_file}
+    chmod 666 ${scipy_download_file}
+    chown ${DCUSER}:${DCUSER} ${scipy_download_file}
+fi
+
+if [[ ! -e ${scipy_download_file} ]]; then
+    err "failed to download ${scipy_version} from url: ${scipy_url}"
+    echo "wget ${scipy_url} -O ${scipy_download_file}"
+else
+    anmt "scipy ready for install on device at path: /opt/downloads/pip/${scipy_version}"
+fi
 
 anmt "done installing tools"
 

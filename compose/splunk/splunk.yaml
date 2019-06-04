@@ -1,0 +1,106 @@
+version: '2'
+
+services:
+  splunkenterprise:
+
+    hostname: splunkenterprise
+    container_name: "splunk"
+    image: splunk/splunk:7.0.3
+    environment:
+      SPLUNK_START_ARGS: --accept-license --answer-yes
+      SPLUNK_ENABLE_LISTEN: 9997
+    entrypoint: "/bin/sh -c '/bin/echo \"starting entrypoint\" 
+                 && cd /opt/splunk 
+                 && chown -R splunk:splunk /opt/splunk
+                 && /bin/date -u +\"%Y-%m-%d %H:%M:%S\" > /opt/splunk/service.log 
+                 && /bin/date -u +\"%Y-%m-%d %H:%M:%S\"
+                 && touch ./etc/.ui_login 
+                 && /bin/echo \"building splunk starter\" >> /opt/splunk/service.log
+                 && /bin/echo \"#!/bin/bash\" >> /opt/start-all.sh
+                 && /bin/echo \"/usr/bin/nohup /bin/bash /sbin/entrypoint.sh start-service >> /opt/splunk/service.log \" >> /opt/start-all.sh
+                 && /bin/chmod 777 /opt/start-all.sh
+                 && /bin/cat /opt/start-all.sh >> /opt/splunk/service.log
+                 && /bin/echo \"running splunk starter\" >> /opt/splunk/service.log
+                 && /usr/bin/nohup /opt/start-all.sh & >> /opt/splunk/service.log
+                 && /bin/echo \"sleeping for startup\" >> /opt/splunk/service.log
+                 && sleep 20
+                 && /bin/echo \"\" >> /opt/splunk/service.log
+                 && /bin/echo \"loading remote login\" 
+                 && /bin/date -u +\"%Y-%m-%d %H:%M:%S\"
+                 && /bin/date -u +\"%Y-%m-%d %H:%M:%S\" >> /opt/splunk/service.log
+                 && /bin/echo \"installing remote login support\" >> /opt/splunk/service.log
+                 && sed -i \"/\\[general\\]/aallowRemoteLogin = always\"
+                    /opt/splunk/etc/system/local/server.conf
+                 && /bin/echo \"\" >> /opt/splunk/service.log
+                 && cat /opt/splunk/etc/system/local/server.conf >> /opt/splunk/service.log
+                 && /bin/echo \"\" >> /opt/splunk/service.log
+                 && /bin/echo \"\"
+                 && /bin/date -u +\"%Y-%m-%d %H:%M:%S\" >> /opt/splunk/service.log
+                 && /bin/echo \"creating user\" >> /opt/splunk/service.log
+                 && /bin/echo \"creating user\"
+                 && ./bin/splunk add user pi -password 123321 -role admin -auth admin:changeme
+                 && /bin/echo \"\"
+                 && /bin/echo \"creating index dc\" >> /opt/splunk/service.log
+                 && ./bin/splunk add index dc -auth \"pi:123321\" >> /opt/splunk/service.log
+                 && /bin/echo \"\"
+                 && /bin/echo \"enabling HEC in Global Settings\" >> /opt/splunk/service.log
+                 && ./bin/splunk http-event-collector enable -uri https://localhost:8089 -auth \"pi:123321\" >> /opt/splunk/service.log
+                 && /bin/echo \"\"
+                 && /bin/echo \"creating token\" >> /opt/splunk/service.log
+                 && ./bin/splunk 
+                    http-event-collector create 
+                    dc-token \"dc-token\" 
+                    -index dc 
+                    -sourcetype json
+                    -uri \"https://localhost:8089\" 
+                    -auth \"pi:123321\" 
+                 && /bin/echo \"\"
+                 && /bin/echo \"enabling Token for HEC access\" >> /opt/splunk/service.log
+                 && ./bin/splunk 
+                    http-event-collector enable 
+                    -uri https://localhost:8089 
+                    -name dc-token
+                    -auth \"pi:123321\" >> /opt/splunk/service.log
+                 && /bin/echo \"\"
+                 && /bin/echo \"creating tcp interface port 1514\"
+                 && /bin/echo \"\" >> /opt/splunk/etc/system/default/props.conf
+                 && /bin/echo \"[usejson]\" >> /opt/splunk/etc/system/default/props.conf
+                 && /bin/echo \"SHOULD_LINEMERGE = false\" >> /opt/splunk/etc/system/default/props.conf
+                 && /bin/echo \"KV_MODE = json\" >> /opt/splunk/etc/system/default/props.conf
+                 && /bin/echo \"TIME_FORMAT = %Y-%m-%dT%H:%M:%S.%6N%:z\" >> /opt/splunk/etc/system/default/props.conf
+                 && /bin/echo \"\"
+                 && /bin/echo \"creating tcp interface port 1514\"
+                 && ./bin/splunk
+                    add
+                    tcp 1514
+                    -sourcetype usejson
+                    -index dc
+                    -auth \"pi:123321\" >> /opt/splunk/service.log
+                 && /bin/echo \"\"
+                 && /bin/echo \"restarting splunk\" >> /opt/splunk/service.log
+                 && /bin/echo \"restarting splunk\" >> /opt/splunk/service.log
+                 && ./bin/splunk restart >> /opt/splunk/service.log
+                 && /bin/echo \"done restarting splunk\" >> /opt/splunk/service.log
+                 && /bin/echo \"\" >> /opt/splunk/service.log
+                 && /bin/echo \"Boot completed.\"
+                 && /bin/echo \"Boot completed.\" >> /opt/splunk/service.log
+                 && /bin/date -u +\"%Y-%m-%d %H:%M:%S\" 
+                 && /bin/echo \"\"
+                 && /bin/echo \"Debugging tools:\"
+                 && /bin/echo \"\"
+                 && /bin/echo \"Tail the service log:\"
+                 && /bin/echo \"docker exec -it splunk /usr/bin/tail -f /opt/splunk/service.log\"
+                 && /bin/echo \"\"
+                 && /bin/echo \"Pull the startup log:\"
+                 && /bin/echo \"./logs.sh s\"
+                 && /bin/echo \"Pull the docker log:\"
+                 && /bin/echo \"./logs.sh d\"
+                 && /bin/echo \"Tail the docker log:\"
+                 && /bin/echo \"./logs.sh\"
+                 && tail -f /opt/splunk/service.log'"
+    ports:
+      - "8000:8000"
+      - "9997:9997"
+      - "8089:8089"
+      - "8088:8088"
+      - "1514:1514"

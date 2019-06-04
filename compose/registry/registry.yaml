@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+
+  # login to the donkey car registry with:
+  # docker login <HOST_IP>:5000
+  dcregistry:
+    container_name: "dcregistry"
+    hostname: "dcregistry"
+    restart: always
+    image: registry:2
+    ports:
+      - 5000:5000
+    volumes:
+      # Please ensure this is set for sharing on
+      # your host (Mac OS X needs /opt/registry as a supported
+      # directory for volume mounting)
+      - /opt/dockerdata/registry/data:/var/lib/registry
+      - /opt/dockerdata/registry/auth:/auth
+      # - /path/certs:/certs
+      # - /path/auth:/auth
+    environment:
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: Registry Realm
+   #   REGISTRY_HTTP_TLS_CERTIFICATE: /certs/domain.crt
+   #   REGISTRY_HTTP_TLS_KEY: /certs/domain.key
