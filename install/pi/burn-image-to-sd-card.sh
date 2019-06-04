@@ -211,7 +211,6 @@ else
 fi
 if [[ "${last_status}" != "0" ]]; then
     err "failed to deploy custom sd card to: ${DCMOUNTPATH}"
-
     exit 1
 fi
 

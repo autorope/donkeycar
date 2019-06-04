@@ -123,16 +123,17 @@ parted ${DEVICE} rn 2
 
 ### SSH into the Donkey Car OS
 
-::
 
-    # ssh -i ./files/id_rsa pi@d1.example.com
-    ssh -i ./files/id_rsa pi@DONKEY_CAR_IP
+```
+# ssh -i ./files/id_rsa pi@d1.example.com
+ssh -i ./files/id_rsa pi@DONKEY_CAR_IP
+```
 
 Or with the ssh login tool:
 
-::
-
-    ./ssh-into-dc.sh d1.example.com
+```
+./ssh-into-dc.sh d1.example.com
+```
 
 ### Install Docker After the Logging into the Donkey Car
 
@@ -144,7 +145,7 @@ SSH into the donkey car host and install docker
 
 ## Install Packages and Update Your Donkey Car on Startup
 
-On startup the donkey car OS uses the file: [/etc/rc.local](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/rc.local) to run custom actions on boot. You can customize any of these files to install and update your donkey car after burning the sd card.
+On startup the donkey car os uses the file: [/etc/rc.local](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/rc.local) to run custom actions on boot. You can customize any of these files to install and update your donkey car after burning the sd card.
 
 By default, the **rc.local** will run the following scripts if they are found on the filesystem:
 
@@ -152,10 +153,81 @@ By default, the **rc.local** will run the following scripts if they are found on
 
 2. If [/opt/run_updater.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/run_updater.sh) is found it will run any updates
 
-### Logging with Splunk
+### Set up Automatic Donkey Car Log Publishing to Splunk
 
-::
+By following this guide's installer your donkey car os is ready for log and system metric aggregation using [Fluent Bit listening on TCP 24224](https://docs.fluentbit.io/manual/v/1.1/input/tcp) that automatically [forwards to a remote-hosted Splunk HEC Rest API](https://docs.fluentbit.io/manual/v/1.1/output/splunk).
 
-    python -c "from donkeycar.log import get_log;log = get_log('testing', config='/opt/dc/donkeycar/splunk/log_config.json');log.info('sent using fluentd - DONE');"
+![IoT log and metric pipeline using Fluent Bit and Splunk - you can start your log search with: index=dc](https://i.imgur.com/SsVhZQ9.png "IoT log and metric pipeline using Fluent Bit and Splunk")
 
+#### Where do I get splunk?
 
+There is an included, dockerized splunk container that runs from the base of the repository. Please note, it requires having docker-compose to use:
+
+```
+./compose/start.sh -s ./compose/splunk/splunk.yaml
+```
+
+Use these default splunk login credentials with the login url below:
+
+- user **pi**
+- password **123321**
+
+http://logs.example.com:8000/en-US/app/search/search?q=search%20index%3Ddc
+
+1. Login to Splunk
+
+2. Publish Logs to Splunk from a Donkey Car
+
+Please run this from a donkey car that has the Fluent Bit agent running with a valid HEC Splunk Token:
+
+```
+/opt/dc/install/pi/files/test_fluent_bit.py
+```
+
+3. Search for Logs
+
+By default, logs from any donkey car app are searchable from the index:
+
+```
+index=dc
+```
+
+#### Get the HEC Token from a Browser
+
+The burn tool automatically installs the Splunk HEC Token named **dc-token** into an sd card. You can also view the HEC token from within Splunk here:
+
+http://logs.example.com:8000/en-US/manager/search/http-eventcollector
+
+#### View the HEC Token from the included Splunk container
+
+```
+# run from the base of the repo:
+./donkeycar/splunk/get_token.sh
+```
+
+##### HEC Token Updates
+
+If you need to roll the cars to a new HEC token, then please update the splunk token manually in all donkey car sd cards at this file location:
+
+```
+/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml
+...
+[OUTPUT]
+    ...
+    Name            splunk
+    ...
+    Splunk_Token    NEW_SPLUNK_TOKEN
+```
+
+### Debugging Splunk Token Issues
+
+Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/config-fluent-bit-in-tcp-out-splunk.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
+
+```
+source /opt/venv/bin/activate
+python -c "from donkeycar.log import get_log; import datetime; \
+    log = get_log('testing', config='/opt/dc/donkeycar/splunk/log_config.json'); \
+    log.info(
+        'hello from dc1 sent at: {}'.format(
+            datetime.datetime.utcnow()))"
+```
