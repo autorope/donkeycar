@@ -1,0 +1,31 @@
+version: '3'
+
+# This was only tested on a donkey car OS running on a raspberry pi 3b+ (armv7l) with support for:
+#
+# docker
+# docker-compose
+# fluent-bit - running as a service on the host
+
+services:
+
+  # login to your own private donkey car docker registry with:
+  # echo "${DOCKER_PASSWORD}" | docker login --username ${DOCKER_USER} --password-stdin ${DOCKER_REGISTRY}
+  #
+  dcregistry:
+    container_name: "test_fluent_bit"
+    hostname: "test_fluent_bit"
+    image: jayjohnson/test-donkeycar-rpi3bplus:latest
+    network_mode: "host"
+    environment:
+      # set your own tracking breadcrumb label for
+      # finding components in splunk with:
+      # index=dc AND host_id="HOST_ID"
+      # like:
+      # index=dc AND host_id="dc1.testing-donkey-car-docker-logs-to-splunk"
+      - HOST_ID=dc1.testing-donkey-car-docker-logs-to-splunk
+      # you can also customize the config file your loggers use
+      # by setting this env var:
+      - DCLOGCONFIG=/opt/dc/donkeycar/splunk/log_config.json
+    entrypoint: "/bin/sh -c 'cd /opt/dc &&
+                 . /opt/venv/bin/activate &&
+                 /opt/dc/install/pi/files/test_fluent_bit.py'"

@@ -17,6 +17,11 @@ if [ "$_IP" ]; then
   printf "My IP address is %s\n" "$_IP"
 fi
 
+if [ -e /opt/reboot-scheduled ]; then
+    echo "detected previous reboot-scheduled file - removing it to prevent reboot-loop issues"
+    rm -f /opt/reboot-scheduled
+fi
+
 # allow dropping a file hook:
 # /opt/first_time_install.sh
 # to trigger package updates
@@ -25,6 +30,12 @@ if [ -e /opt/first_time_install.sh ]; then
     chmod 777 /opt/first_time_install.sh
     /opt/first_time_install.sh >> /var/log/sdinstall.log 2>&1
     rm -f /opt/first_time_install.sh
+    if [ -e /opt/reboot-scheduled ]; then
+        echo "detected reboot for first time installer in /etc/rc.local - removing file and rebooting" >> /var/log/sdinstall.log 2>&1
+        rm -f /opt/reboot-scheduled
+        sleep 1
+        reboot
+    fi
 fi
 
 # allow dropping a file hook:
@@ -35,6 +46,12 @@ if [ -e /opt/run_updater.sh ]; then
     chmod 777 /opt/run_updater.sh
     /opt/run_updater.sh >> /var/log/sdupdate.log 2>&1
     rm -f /opt/run_updater.sh
+    if [ -e /opt/reboot-scheduled ]; then
+        echo "detected reboot for updater in /etc/rc.local - removing file and rebooting" >> /var/log/sdupdate.log 2>&1
+        rm -f /opt/reboot-scheduled
+        sleep 1
+        reboot
+    fi
 fi
 
 if [ -e /opt/login_to_docker.sh ]; then

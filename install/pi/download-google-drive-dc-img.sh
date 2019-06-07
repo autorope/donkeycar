@@ -8,12 +8,15 @@ if [[ -e ${DCPATH}/files/bash_colors.sh ]]; then
 fi
 
 # latest donkey car image id:
-latest_image="donkey_2.5.0_pi3.img"
+dc_extracted_image="donkey_2.5.0_pi3.img"
 fileid="1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ"
 if [[ "${DCGID}" != "" ]]; then
     fileid="${DCGID}"
 fi
-dc_base_image="$(dirname ${DCIMAGE})/${latest_image}"
+if [[ "${DCIMAGENAME}" != "" ]]; then
+    dc_extracted_image="${DCIMAGENAME}"
+fi
+dc_base_image="$(dirname ${DCIMAGENAME})/${dc_extracted_image}"
 
 if [[ ! -e ${DCIMAGE} ]]; then
     anmt "getting cookies from:"

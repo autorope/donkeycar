@@ -108,6 +108,10 @@ while (( "$#" )); do
             fi
             shift 2
             ;;
+        -T|--run-tests-on-donkey-car)
+            compose_files="${compose_files} /opt/dc/compose/dc/test_fluent_bit/test_fluent_bit.yaml"
+            shift 1
+            ;;
         -e|--docker-user)
             if [[ "${2}" == "" ]]; then
                 err "missing docker user for private registry"

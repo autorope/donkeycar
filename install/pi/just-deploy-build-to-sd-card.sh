@@ -22,6 +22,26 @@ while (( "$#" )); do
         export DCDEBUG="1"
         shift 1
         ;;
+    # download from a custom image zip from google drive by this file id
+    -f|--google-fileid)
+        if [[ "${2}" == "" ]]; then
+            err "missing google file id"
+            exit 1
+        fi
+        export DCGID="${2}"
+        shift 2
+        ;;
+    # during image backup, you can name the zipped up image,
+    # please use it again to ensure
+    # the unzipped file image is correct
+    -x|--extracted-image-name)
+        if [[ "${2}" == "" ]]; then
+            err "missing extracted image name"
+            exit 1
+        fi
+        export DCIMAGENAME="${2}"
+        shift 2
+        ;;
     -t|--docker-registry-url)
         if [[ "${2}" == "" ]]; then
             err "missing docker private registry url"
@@ -46,6 +66,14 @@ while (( "$#" )); do
         export DCDOCKERPASSWORD="${2}"
         shift 2
         ;;
+    -S|--splunk-host)
+        if [[ "${2}" == "" ]]; then
+            err "missing splunk host"
+            exit 1
+        fi
+        export DCSPLUNKHOST="${2}"
+        shift 2
+        ;;
     -r|--rclocal-path)
         if [[ ! -e ${2} ]]; then
             err "unable to find rc.local path to -r <file>: ${2}"
@@ -56,7 +84,7 @@ while (( "$#" )); do
         ;;
     -g|--gitrepo)
         if [[ ${2} == "" ]]; then
-            err "missing github repo arg: -g https://github.com/autorope/donkeycar.git"
+            err "missing github repo arg: -g https://github.com/jay-johnson/donkeycar.git"
             exit 1
         fi
         export DCREPO="${2}"

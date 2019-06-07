@@ -1,7 +1,7 @@
 # https://docs.fluentbit.io/manual/input/forward
 [INPUT]
     Name              tcp
-    Listen            0.0.0.0
+    Listen            127.0.0.1
     Port              24224
     Buffer_Chunk_Size 32KB
     Buffer_Max_Size   64KB

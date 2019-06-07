@@ -3,6 +3,7 @@ Splunk Formatter
 """
 
 import datetime
+import os
 from pythonjsonlogger import jsonlogger
 
 
@@ -12,6 +13,9 @@ class SplunkFormatter(
 
     fields_to_add = {}
     org_fields = {}
+    host_id = os.getenv(
+        'HOST_ID',
+        'dc1')
 
     def set_fields(
             self,
@@ -81,18 +85,16 @@ class SplunkFormatter(
 
         :param record: message object to format
         """
-        utc_now = datetime.datetime.utcnow()
-
         message = {
             'time': record.created,
-            'timestamp': utc_now.strftime(
-                '%Y-%m-%dT%H:%M:%S.%fZ'),
             'path': record.pathname,
             'message': record.getMessage(),
             'exc': None,
+            'host_id': self.host_id,
             'logger_name': record.name
         }
 
+        # try adding in any exception/stacktraces
         if record.exc_info and not message.get('exc'):
             message['exc'] = self.formatException(
                 record.exc_info)

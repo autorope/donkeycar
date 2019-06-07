@@ -69,6 +69,10 @@ while (( "$#" )); do
             fi
             shift 2
             ;;
+        -T|--run-tests-on-donkey-car)
+            compose_files="${compose_files} /opt/dc/compose/dc/test_fluent_bit/test_fluent_bit.yaml"
+            shift 1
+            ;;
         --) # end argument parsing
             shift
             break
@@ -100,8 +104,8 @@ date +"%Y-%m-%d %H:%M:%S"
 
 for c in ${compose_files}; do
     anmt "stopping: ${c}"
-    echo "docker-compose -f ${c} stop"
-    docker-compose -f ${c} stop
+    echo "docker-compose -f ${c} down"
+    docker-compose -f ${c} down
     echo ""
 done
 anmt "done - stopping compose files: ${compose_files}"

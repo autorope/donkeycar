@@ -21,6 +21,29 @@ export WIFINAME="WIFI_SSID_NAME"
 export WIFIPASSWORD="WIFI_PASSWORD"
 ```
 
+#### Optional Environment Variables to Set
+
+##### GitHub Repository and Branch to Clone and Use
+
+```
+export DCREPO=GITHUB_URL
+export DCBRANCH=GITHUB_BRANCH
+```
+
+##### Docker Credentials for a Private Docker Registry
+
+```
+export DCDOCKERUSER=DOCKER_USER
+export DCDOCKERPASSWORD=DOCKER_PASSWORD
+export DCDOCKERREGISTRY=DOCKER_REGISTRY_ADDRESS_WITH_PORT
+```
+
+##### Splunk Host for Publishing from a Donkey Car
+
+```
+export DCSPLUNKHOST="192.168.0.100"
+```
+
 3. Burn the Image as Root
 
 This will download, burn, resize to maximize storage, mount, deploy the latest custom artifacts (including support for installing docker and an rc.local file), and then unmount the latest donkey car release image as the root user with the sd card inserted in to the **DEVICE** sd reader. The newly-burned filesystem will be mounted at **./dcdisk** and then the **deploy.sh** script will run to install all additional, custom files to the sd card's new OS before unmounting the sd card for use on a donkey car or just in a rasberry pi 3b+.
@@ -76,7 +99,8 @@ Please note, these optional command arguments also work with the full **burn-ima
     -b CUSTOM_GITHUB_BRANCH \
     -e DOCKER_REGISTRY_USER \
     -w DOCKER_REGISTRY_PASSWORD \
-    -t DOCKER_REGISTRY_ADDRESS
+    -t DOCKER_REGISTRY_ADDRESS \
+    -S SPLUNK_HOST
 ```
 
 ### Use Your Own Deploy Script to Prepare the Donkey Car OS
@@ -123,16 +147,17 @@ parted ${DEVICE} rn 2
 
 ### SSH into the Donkey Car OS
 
-::
 
-    # ssh -i ./files/id_rsa pi@d1.example.com
-    ssh -i ./files/id_rsa pi@DONKEY_CAR_IP
+```
+# ssh -i ./files/id_rsa pi@d1.example.com
+ssh -i ./files/id_rsa pi@DONKEY_CAR_IP
+```
 
 Or with the ssh login tool:
 
-::
-
-    ./ssh-into-dc.sh d1.example.com
+```
+./ssh-into-dc.sh d1.example.com
+```
 
 ### Install Docker After the Logging into the Donkey Car
 
@@ -144,7 +169,7 @@ SSH into the donkey car host and install docker
 
 ## Install Packages and Update Your Donkey Car on Startup
 
-On startup the donkey car OS uses the file: [/etc/rc.local](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/rc.local) to run custom actions on boot. You can customize any of these files to install and update your donkey car after burning the sd card.
+On startup the donkey car os uses the file: [/etc/rc.local](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/rc.local) to run custom actions on boot. You can customize any of these files to install and update your donkey car after burning the sd card.
 
 By default, the **rc.local** will run the following scripts if they are found on the filesystem:
 
@@ -152,7 +177,13 @@ By default, the **rc.local** will run the following scripts if they are found on
 
 2. If [/opt/run_updater.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/run_updater.sh) is found it will run any updates
 
-### Setting up Splunk Logging
+### Donkey Car Docker Images
+
+Please note the donkey car images take a long time to build and >2 GB HDD space so please plan accordingly when using these images and they use python 3.7 as the default runtime.
+
+Please follow the [Running Donkey Car on a Raspberry Pi within Docker Images Readme](https://github.com/jay-johnson/donkeycar/tree/d1/install/pi/docker#running-donkey-car-on-a-raspberry-pi-within-docker-images) for more details on how to customize your own docker images.
+
+### Set up Automatic Donkey Car Log Publishing to Splunk
 
 By following this guide's installer your donkey car os is ready for log and system metric aggregation using [Fluent Bit listening on TCP 24224](https://docs.fluentbit.io/manual/v/1.1/input/tcp) that automatically [forwards to a remote-hosted Splunk HEC Rest API](https://docs.fluentbit.io/manual/v/1.1/output/splunk).
 
@@ -191,13 +222,13 @@ By default, logs from any donkey car app are searchable from the index:
 index=dc
 ```
 
-#### Get HEC Token
+#### Get the HEC Token from a Browser
 
 The burn tool automatically installs the Splunk HEC Token named **dc-token** into an sd card. You can also view the HEC token from within Splunk here:
 
 http://logs.example.com:8000/en-US/manager/search/http-eventcollector
 
-You can also run this command if you are on the host running the included splunk container:
+#### View the HEC Token from the included Splunk container
 
 ```
 # run from the base of the repo:
@@ -216,12 +247,11 @@ If you need to roll the cars to a new HEC token, then please update the splunk t
     Name            splunk
     ...
     Splunk_Token    NEW_SPLUNK_TOKEN
-    ...
 ```
 
 ### Debugging Splunk Token Issues
 
-Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/config-fluent-bit-in-tcp-out-splunk.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
+Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml](https://github.com/autorope/donkeycar/blob/d1/install/pi/files/config-fluent-bit-in-tcp-out-splunk.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
 
 ```
 source /opt/venv/bin/activate
@@ -231,3 +261,4 @@ python -c "from donkeycar.log import get_log; import datetime; \
         'hello from dc1 sent at: {}'.format(
             datetime.datetime.utcnow()))"
 ```
+

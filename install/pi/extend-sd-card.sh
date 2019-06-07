@@ -27,6 +27,7 @@ fi
 DEVICE=$1
 PARTNR=$2
 APPLY=$3
+NUM_GB_TO_ADD=$4
 
 fdisk -l $DEVICE$PARTNR >> /dev/null 2>&1 || (echo "could not find device $DEVICE$PARTNR - please check the name" && exit 1)
 
@@ -36,15 +37,27 @@ CURRENTSIZE=`expr $CURRENTSIZEB / 1024 / 1024`
 # then use the 3rd column of the output (disk size) cut -d' ' -f3 (divided by space)
 # and finally cut off the unit 'MB' with blanc using tr -d MB
 MAXSIZEMB=`printf %s\\n 'unit MB print list' | parted | grep "Disk ${DEVICE}" | cut -d' ' -f3 | tr -d MB`
+USESIZEMB=${MAXSIZEMB}
 
-echo "[ok] would/will resize to from ${CURRENTSIZE}MB to ${MAXSIZEMB}MB "
+# if no size is set... max the device's storage capacity
+if [[ "${NUM_GB_TO_ADD}" == "" ]] || [[ "${NUM_GB_TO_ADD}" == "max" ]] || [[ "${NUM_GB_TO_ADD}" == "Max" ]]; then
+    # setting this to empty will activate the original mode which is to
+    # max out the storage capacity for the 2nd partition
+    # this however makes backing up your new base image into a huge img file on disk...
+    # so this new capacity flag was added
+    anmt "will resize from ${CURRENTSIZE}MB to a max capacity of ${USESIZEMB}MB "
+else
+    let USESIZEMB="(${CURRENTSIZEB} + ($NUM_GB_TO_ADD * 1073741824)) / 1024 / 1024"
+    anmt "adding ${NUM_GB_TO_ADD}G to ${DEVICE}2 from ${CURRENTSIZE}MB to ${USESIZEMB}MB of ${MAXSIZEMB}MB available"
+fi
 
 if [[ "$APPLY" == "apply" ]] ; then
-    anmt "ok applying resize operation.."
-    anmt "parted -s ${DEVICE} resizepart ${PARTNR} ${MAXSIZEMB}"
-    parted -s ${DEVICE} resizepart ${PARTNR} ${MAXSIZEMB}
+    anmt "starting resize operation:"
+    anmt "parted -s ${DEVICE} resizepart ${PARTNR} ${USESIZEMB}"
+    parted -s ${DEVICE} resizepart ${PARTNR} ${USESIZEMB}
     if [[ "$?" != "0" ]]; then
-        err "failed to resize partition with: parted -s ${DEVICE} resizepart ${PARTNR} ${MAXSIZEMB}"
+        err "failed to resize partition with: parted -s ${DEVICE} resizepart ${PARTNR} ${USESIZEMB}"
+        err "max MB available: ${MAXSIZEMB}"
         exit 1
     else
         anmt "done - parted"

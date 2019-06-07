@@ -25,17 +25,25 @@ if [[ "${DEVICE}" == "" ]]; then
     fi
 fi
 export DCGID="1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ"
+export DCIMAGENAME="donkey_2.5.0_pi3.img"
 export DCGDOWNLOADPATH="${DCPATH}/files/dc.zip"
 export DCIMAGE="${DCPATH}/files/dc.img"
 export DCMOUNTPATH="${DCPATH}/dcdisk"
+export DCGBTOADD="max"
 if [[ "${DCUSER}" == "" ]]; then
     export DCUSER="jay"
 fi
 
 burn_enabled="1"
 download_enabled="1"
-dcrepo="https://github.com/autorope/donkeycar.git"
-dcbranch="dev"
+dcrepo="https://github.com/jay-johnson/donkeycar.git"
+dcbranch="d1"
+if [[ "${DCGID}" != "" ]]; then
+    fileid="${DCGID}"
+fi
+if [[ "${DCIMAGE}" != "" ]]; then
+    dcimage="${DCIMAGE}"
+fi
 
 # argument parsing code from:
 # https://medium.com/@Drew_Stokes/bash-argument-parsing-54f3b81a6a8f
@@ -45,6 +53,30 @@ while (( "$#" )); do
     -i|--install)
         burn_enabled="0"
         download_enabled="0"
+        shift 1
+        ;;
+    # download from a custom image zip from google drive by this file id
+    -f|--google-fileid)
+        if [[ "${2}" == "" ]]; then
+            err "missing google file id"
+            exit 1
+        fi
+        export DCGID="${2}"
+        shift 2
+        ;;
+    # during image backup, you can name the zipped up image,
+    # please use it again to ensure
+    # the unzipped file image is correct
+    -x|--extracted-image-name)
+        if [[ "${2}" == "" ]]; then
+            err "missing extracted image name"
+            exit 1
+        fi
+        export DCIMAGENAME="${2}"
+        shift 2
+        ;;
+    -B|--build-base)
+        export DCGBTOADD="10"
         shift 1
         ;;
     -t|--docker-registry-url)
@@ -71,6 +103,14 @@ while (( "$#" )); do
         export DCDOCKERPASSWORD="${2}"
         shift 2
         ;;
+    -S|--splunk-host)
+        if [[ "${2}" == "" ]]; then
+            err "missing splunk host"
+            exit 1
+        fi
+        export DCSPLUNKHOST="${2}"
+        shift 2
+        ;;
     -r|--rclocal-path)
         if [[ ! -e ${2} ]]; then
             err "unable to find rc.local path to -r <file>: ${2}"
@@ -81,7 +121,7 @@ while (( "$#" )); do
         ;;
     -g|--gitrepo)
         if [[ ${2} == "" ]]; then
-            err "missing github repo arg: -g https://github.com/autorope/donkeycar.git"
+            err "missing github repo arg: -g https://github.com/jay-johnson/donkeycar.git"
             exit 1
         fi
         dcrepo="${2}"
@@ -170,8 +210,8 @@ if [[ "${burn_enabled}" == "1" ]]; then
     parted ${DEVICE} print free
     inf ""
 
-    anmt "resizing sd card ${DEVICE} to maximize storage space on the device: ${DCPATH}/root-resize-sd-card.sh"
-    ${DCPATH}/root-resize-sd-card.sh
+    anmt "resizing sd card ${DEVICE} with capacity: ${DCGBTOADD} GB more on the device: ${DCPATH}/root-resize-sd-card.sh"
+    ${DCPATH}/root-resize-sd-card.sh ${DEVICE} ${DCGBTOADD}
     if [[ "$?" != "0" ]]; then
         err "failed to resize image on sd card: ${DEVICE}"
         inf "${DCPATH}/root-resize-sd-card.sh"

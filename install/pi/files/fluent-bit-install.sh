@@ -35,6 +35,9 @@ if [[ "${test_exists}" == "0" ]]; then
     fi
 fi
 
+anmt "making the td-agent readable/writeable"
+sudo chmod 666 /etc/td-agent-bit/td-agent-bit.conf
+
 anmt "checking if splunk is enabled"
 test_token=$(cat /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml | grep REPLACE_SPLUNK_TOKEN | wc -l)
 if [[ "${test_token}" == "0" ]]; then
@@ -42,12 +45,14 @@ if [[ "${test_token}" == "0" ]]; then
     test_exists=$(cat /etc/td-agent-bit/td-agent-bit.conf | grep config-fluent-bit-in-tcp-out-splunk | wc -l)
     if [[ "${test_exists}" == "0" ]]; then
         anmt "installing splunk HEC forwarder with token: echo \"@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml >> /etc/td-agent-bit/td-agent-bit.conf"
-        sudo chmod 666 /etc/td-agent-bit/td-agent-bit.conf
         echo "" >> /etc/td-agent-bit/td-agent-bit.conf
         echo "# Adding Splunk HEC Forwarder" >> /etc/td-agent-bit/td-agent-bit.conf
         echo "@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml" >> /etc/td-agent-bit/td-agent-bit.conf
     fi
 fi
+
+anmt "converting CPU Metrics to once a day"
+sudo sed -i 's/Interval_Sec 1/Interval_Sec 86400/g' /etc/td-agent-bit/td-agent-bit.conf
 
 anmt "reloading daemon"
 sudo systemctl daemon-reload

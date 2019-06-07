@@ -28,11 +28,19 @@ sudo sh get-docker.sh
 anmt "adding pi user to docker group"
 sudo usermod -aG docker pi
 
-anmt "adding docker apt-registry"
-sudo add-apt-repository \
-   "deb [arch=armhf] https://download.docker.com/linux/debian \
-   $(lsb_release -cs) \
-   stable"
+anmt "adding docker apt repo"
+if [[ ! -e /etc/apt/sources.list.d/docker.list ]]; then
+    sudo touch /etc/apt/sources.list.d/docker.list
+    sudo chmod 666 /etc/apt/sources.list.d/docker.list
+fi
+
+test_exists=$(cat /etc/apt/sources.list.d/docker.list | grep download.docker.com | grep raspbian | wc -l)
+if [[ "${test_exists}" == "0" ]]; then
+    echo "deb [arch=armhf] https://download.docker.com/linux/raspbian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+fi
+
+anmt "checking docker repo file: /etc/apt/sources.list.d/docker.list"
+cat /etc/apt/sources.list.d/docker.list
 
 anmt "getting updates"
 sudo apt-get update -y
@@ -41,23 +49,9 @@ anmt "reloading daemon"
 sudo systemctl daemon-reload
 anmt "enabling docker on reboot"
 sudo systemctl enable docker.service
-anmt "starting docker"
-sudo systemctl start docker.service
-# this can hang automation:
-# anmt "checking docker status"
-# sudo systemctl status docker.service
 
-EXITVALUE=0
-if [[ "REPLACE_DOCKER_ENABLED" == "1" ]]; then
-    if [[ -e /opt/login_to_docker.sh ]]; then
-        anmt "sleeping before trying to login to the docker registry"
-        date +"%Y-%m-%d %H:%M:%S"
-        sleep 60
-        anmt "done sleeping - trying to login to the registry"
-        date +"%Y-%m-%d %H:%M:%S"
-        /opt/login_to_docker.sh
-        EXITVALUE=$?
-    fi
-fi
+anmt "docker-install scheduling a reboot for the donkey car due to github issue: https://github.com/moby/moby/issues/21831"
+sudo touch /opt/reboot-scheduled
+sudo chmod 666 /opt/reboot-scheduled
 
-exit $EXITVALUE
+exit 0
