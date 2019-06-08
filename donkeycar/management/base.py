@@ -64,7 +64,7 @@ class CreateCar(BaseCommand):
 
     def create_car(self, path, template='donkey2', overwrite=False):
         """
-        This script sets up the folder struction for donkey to work.
+        This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
         docker can build the folder structure for docker to mount to.
         """
@@ -234,9 +234,6 @@ class MakeMovie(BaseCommand):
         return image # returns a 8-bit RGB array
 
 
-
-
-
 class Sim(BaseCommand):
     """
     Start a websocket SocketIO server to talk to a donkey simulator
@@ -268,21 +265,21 @@ class Sim(BaseCommand):
 
         kl = KerasLinear(num_outputs=2)
 
-        #can provide an optional image filter part
+        # can provide an optional image filter part
         img_stack = None
 
-        #load keras model
+        # load keras model
         kl.load(args.model)
 
-        #start socket server framework
+        # start socket server framework
         sio = socketio.Server()
 
         top_speed = float(args.top_speed)
 
-        #start sim server handler
+        # start sim server handler
         ss = SteeringServer(sio, kpart=kl, top_speed=top_speed, image_part=img_stack)
 
-        #register events and pass to server handlers
+        # register events and pass to server handlers
 
         @sio.on('telemetry')
         def telemetry(sid, data):
@@ -429,7 +426,7 @@ class ShowPredictionPlots(BaseCommand):
 
 def execute_from_command_line():
     """
-    This is the fuction linked to the "donkey" terminal command.
+    This is the function linked to the "donkey" terminal command.
     """
     commands = {
             'createcar': CreateCar,
@@ -451,8 +448,5 @@ def execute_from_command_line():
         c = command()
         c.run(args[2:])
     else:
-        dk.util.proc.eprint('Usage: The availible commands are:')
+        dk.util.proc.eprint('Usage: The available commands are:')
         dk.util.proc.eprint(list(commands.keys()))
-
-
-

@@ -34,7 +34,7 @@ def img_to_binary(img):
 
 def arr_to_binary(arr):
     """
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     """
     img = arr_to_img(arr)
@@ -43,7 +43,7 @@ def arr_to_binary(arr):
 
 def arr_to_img(arr):
     """
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     """
     arr = np.uint8(arr)
@@ -52,7 +52,7 @@ def arr_to_img(arr):
 
 def img_to_arr(img):
     """
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     """
     return np.array(img)
