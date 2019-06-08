@@ -33,8 +33,8 @@ fi
 
 echo "" >> ${log_file}
 echo "backgrounding with command:" >> ${log_file}
-echo "nohup ./build.sh >> ${log_file} & 2>&1" >> ${log_file}
-nohup ./build.sh push >> ${log_file} & 2>&1
+echo "nohup ./build.sh >> ${log_file} 2>&1 &" >> ${log_file}
+nohup ./build.sh push >> ${log_file} 2>&1 &
 echo "" >> ${log_file}
 
 echo "---------------------------"

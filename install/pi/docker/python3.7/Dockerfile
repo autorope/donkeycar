@@ -43,7 +43,7 @@ RUN echo "" \
   && echo "upgrading setuptools and pip" \
   && . /opt/venv/bin/activate && pip install --upgrade setuptools pip \
   && echo "python runtime details: . /opt/venv/bin/activate" \
-  && . /opt/venv/bin/activate && pip list --format=columns && which python && python --version && ls -l $(ls -l $(which python) | awk '{print $NF}')
+  && . /opt/venv/bin/activate && pip list --format=columns && which python && python --version && which python
 
 ENV VENV="/opt/venv"
 

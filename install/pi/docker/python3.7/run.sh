@@ -44,6 +44,6 @@ echo "" \
   && echo "upgrading setuptools and pip" \
   && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip install --upgrade setuptools pip" \
   && echo "python runtime details: . /opt/venv/bin/activate" \
-  && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip list --format=columns && which python && python --version && ls -l $(ls -l $(which python) | awk '{print $NF}')"
+  && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip list --format=columns && which python && python --version && which python"
 
 exit 0

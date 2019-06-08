@@ -171,7 +171,7 @@ test_splunk=$(docker ps | grep splunk | wc -l)
 if [[ "${test_splunk}" == "1" ]]; then
     anmt "getting splunk token from splunk container"
     splunk_token=$(docker exec -it splunk /bin/bash -c "ps auwwx ; /opt/splunk/bin/splunk http-event-collector list -uri "https://${splunk_user}:${splunk_password}@localhost:8089"" | grep 'token='  | sed -e 's/=/ /g' | awk '{print $NF}' | sed "s/\n//g" | sed "s/\r//g" | head -1)
-    anmt "installing splunk token: ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+    anmt "installing splunk token: ${DCMOUNTPATH}/opt/fluent-bit-includes/*.yaml"
     if [[ ! -e ${DCMOUNTPATH}/opt/fluent-bit-includes ]]; then
         mkdir -p -m 777 ${DCMOUNTPATH}/opt/fluent-bit-includes
     fi
@@ -180,14 +180,14 @@ if [[ "${test_splunk}" == "1" ]]; then
         chmod 775 ${DCMOUNTPATH}/opt/fluent-bit-includes/*
         chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/fluent-bit-includes/*
     fi
-    sed -i "s|REPLACE_SPLUNK_TOKEN|${splunk_token}|g" ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml
+    sed -i "s|REPLACE_SPLUNK_TOKEN|${splunk_token}|g" ${DCMOUNTPATH}/opt/fluent-bit-includes/*.yaml
     if [[ "$?" != "0" ]]; then
-        err "failed to install splunk token: ${splunk_token} into file: ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
-        echo "sed -i \"s|REPLACE_SPLUNK_TOKEN|${splunk_token}|g\" ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+        err "failed to install splunk token: ${splunk_token} into file: ${DCMOUNTPATH}/opt/fluent-bit-includes/*.yaml"
+        echo "sed -i \"s|REPLACE_SPLUNK_TOKEN|${splunk_token}|g\" ${DCMOUNTPATH}/opt/fluent-bit-includes/*.yaml"
     fi
-    sed -i "s|REPLACE_SPLUNK_HOST|${splunk_host}|g" ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml
+    sed -i "s|REPLACE_SPLUNK_HOST|${splunk_host}|g" ${DCMOUNTPATH}/opt/fluent-bit-includes/*.yaml
     if [[ "$?" != "0" ]]; then
-        err "failed to install splunk HEC host: ${splunk_host} into file: ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
+        err "failed to install splunk HEC host: ${splunk_host} into file: ${DCMOUNTPATH}/opt/fluent-bit-includes/*.yaml"
     fi
 fi
 

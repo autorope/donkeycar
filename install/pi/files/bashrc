@@ -166,6 +166,11 @@ function dc_login() {
 alias dev="source /opt/venv/bin/activate && cd /opt/dc"
 alias ipip="source /opt/venv/bin/activate && cd /opt/dc && pip install -e ."
 
+# start a docker build
+alias bd="source /opt/venv/bin/activate && cd /opt/dc/install/pi/docker && ./start-build.sh && tail -f /tmp/docker.log"
+# tail the docker build
+alias tb="tail -f /tmp/docker.log"
+
 if [[ -e /opt/venv/bin/activate ]]; then
     source /opt/venv/bin/activate
 fi

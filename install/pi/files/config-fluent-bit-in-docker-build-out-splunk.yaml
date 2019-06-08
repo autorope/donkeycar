@@ -1,0 +1,17 @@
+# https://fluentbit.io/documentation/0.13/input/tail.html
+[INPUT]
+    Name            tail
+    Path            /tmp/docker.log
+    # docker build "bd" becomes part of the search query in splunk
+    Key             bd
+
+# https://docs.fluentbit.io/manual/output/splunk
+# please ensure the HEC collector is working
+[OUTPUT]
+    Name            splunk
+    Match           *
+    Host            REPLACE_SPLUNK_HOST
+    Port            8088
+    Splunk_Token    REPLACE_SPLUNK_TOKEN
+    TLS             On
+    TLS.Verify      Off

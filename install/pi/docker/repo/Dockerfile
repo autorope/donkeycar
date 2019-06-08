@@ -20,9 +20,9 @@ RUN echo "installing initial pips that take a long time: numpy and scipy and pan
   && cd /opt/dc \
   && . /opt/venv/bin/activate \
   && echo "installing numpy" \
-  && pip install numpy -v \
+  && pip install numpy \
   && echo "installing scipy" \
-  && pip install scipy -v \
+  && pip install scipy \
   && echo "installing pandas" \
   && pip install pandas
 
