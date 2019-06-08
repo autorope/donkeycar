@@ -11,10 +11,10 @@ RUN echo "installing source" \
   && if [ "${pyver}" = "0" ]; then echo "\nBase image failed setting up virtual env:\nmissing Python 3.7 in virtual env:\n$(which python)\npython version: $(python --version)\n"; exit 1; fi \
   && cd /opt \
   && echo "cloning" \
-  && git clone https://github.com/autorope/donkeycar.git /opt/dc \
+  && git clone https://github.com/jay-johnson/donkeycar.git /opt/dc \
   && cd /opt/dc \
-  && echo "using branch: dev" \
-  && git checkout dev
+  && echo "using branch: d1" \
+  && git checkout d1
 
 RUN echo "installing initial pips that take a long time: numpy and scipy and pandas" \
   && cd /opt/dc \
@@ -22,9 +22,9 @@ RUN echo "installing initial pips that take a long time: numpy and scipy and pan
   && echo "installing numpy" \
   && pip install numpy -v \
   && echo "installing scipy" \
-  && pip install scipy -v
+  && pip install scipy -v \
   && echo "installing pandas" \
-  && pip install pandas \
+  && pip install pandas
 
 RUN echo "building repo" \
   && cd /opt/dc \

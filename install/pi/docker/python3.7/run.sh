@@ -38,15 +38,12 @@ echo "" \
   && rm -f /opt/Python-${python_build}.tar.xz
 
 echo "" \
-  && echo "preparing virtualenv" \
   && python_version="3.7" \
-  && python_build="${python_version}.3" \
-  && pip install --upgrade virtualenvwrapper pip \
-  && echo "creating virtualenv using: ${python_version}: " \
-  && virtualenv -p /usr/local/bin/python${python_verison} /opt/venv \
-  && chmod 777 /opt/venv \
-  && echo "setting up virtualenv" \
-  && . /opt/venv/bin/activate \
-  && pip install --upgrade setuptools pip
+  && echo "creating virtualenv using: ${python_version}: /opt/venv using python runtime: /usr/local/bin/python${python_verison}" \
+  && sudo -u pi /bin/sh -c "virtualenv -p /usr/local/bin/python3.7 /opt/venv" \
+  && echo "upgrading setuptools and pip" \
+  && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip install --upgrade setuptools pip" \
+  && echo "python runtime details: . /opt/venv/bin/activate" \
+  && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip list --format=columns && which python && python --version && ls -l $(ls -l $(which python) | awk '{print $NF}')"
 
 exit 0
