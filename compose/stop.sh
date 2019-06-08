@@ -57,6 +57,24 @@ while (( "$#" )); do
             fi
             shift 2
             ;;
+        -m|--minio)
+            if [[ "${2}" == "" ]]; then
+                err "missing docker compose file for: minio at: ${2}"
+                exit 1
+            fi
+            if [[ "${compose_files}" == "" ]]; then
+                compose_files="${2}"
+            else
+                compose_files="${compose_files} ${2}"
+            fi
+            if [[ "${MINIO_ACCESS_KEY}" == "" ]]; then
+                export MINIO_ACCESS_KEY=dcpi
+            fi
+            if [[ "${MINIO_SECRET_KEY}" == "" ]]; then
+                export MINIO_SECRET_KEY=raspberry
+            fi
+            shift 2
+            ;;
         -c|--camera-rec)
             if [[ ! -e ${2} ]]; then
                 err "missing docker compose file for: camera recorder at: ${2}"

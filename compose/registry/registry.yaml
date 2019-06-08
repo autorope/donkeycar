@@ -15,8 +15,8 @@ services:
       # Please ensure this is set for sharing on
       # your host (Mac OS X needs /opt/registry as a supported
       # directory for volume mounting)
-      - /opt/dockerdata/registry/data:/var/lib/registry
-      - /opt/dockerdata/registry/auth:/auth
+      - /data/dc/registry/data:/var/lib/registry
+      - /data/dc/registry/auth:/auth
       # - /path/certs:/certs
       # - /path/auth:/auth
     environment:

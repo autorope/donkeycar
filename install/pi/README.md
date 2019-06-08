@@ -189,6 +189,21 @@ By following this guide's installer your donkey car os is ready for log and syst
 
 ![IoT log and metric pipeline using Fluent Bit and Splunk - you can start your log search with: index=dc](https://i.imgur.com/SsVhZQ9.png "IoT log and metric pipeline using Fluent Bit and Splunk")
 
+#### Customize Fluent Bit Forwarding on a Donkey Car
+
+You can customize the log and file forwarding your Donkey car uses by editing the [/opt/fluent-bit-includes/fluent-bit-log.yaml file on your donkey car filesystem](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/fluent-bit-log.yaml) and then restarting the fluent-bit agent with:
+
+```
+sudo systemctl restart td-agent-bit
+```
+
+For more information on Fluent Bit:
+
+- [Supported Fluent Bit inputs (sources)](https://fluentbit.io/documentation/0.13/input/)
+- [Supported Fluent Bit outputs (sinks)](https://fluentbit.io/documentation/0.13/output/)
+
+Please note the [MQTT server](https://fluentbit.io/documentation/0.13/input/mqtt.html) is being explored as a way to push messages to a specific donkey car from a remote client (say for pushing out an "update the car's donkey car build and restart the components").
+
 #### Where do I get splunk?
 
 There is an included, dockerized splunk container that runs from the base of the repository. Please note, it requires having docker-compose to use:

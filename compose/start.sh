@@ -38,16 +38,16 @@ while (( "$#" )); do
             else
                 compose_files="${compose_files} ${2}"
             fi
-            if [[ ! -e /opt/docker_data/splunk ]]; then
-                mkdir -p -m 777 /opt/docker_data/splunk
+            if [[ ! -e /data/dc/splunk ]]; then
+                mkdir -p -m 777 /data/dc/splunk
                 if [[ "$?" != "0" ]]; then
-                    err "failed to create /opt/docker_data/splunk directory - please confirm permissions are correct:"
+                    err "failed to create /data/dc/splunk directory - please confirm permissions are correct:"
                     echo ""
-                    echo "ls -l /opt | grep docker_data"
-                    ls -l /opt | grep docker_data
+                    echo "ls -l /data/dc | grep splunk"
+                    ls -l /data/dc | grep splunk
                     echo ""
-                    echo "ls -l /opt/docker_data"
-                    ls -l /opt/docker_data
+                    echo "ls -l /data/dc"
+                    ls -l /data/dc
                     echo ""
                     exit 1
                 fi
@@ -64,22 +64,22 @@ while (( "$#" )); do
             else
                 compose_files="${compose_files} ${2}"
             fi
-            if [[ ! -e /opt/docker_data/registry ]]; then
-                mkdir -p -m 777 /opt/docker_data/registry
+            if [[ ! -e /data/dc/registry ]]; then
+                mkdir -p -m 777 /data/dc/registry
                 if [[ "$?" != "0" ]]; then
-                    err "failed to create /opt/docker_data/registry directory - please confirm permissions are correct:"
+                    err "failed to create /data/dc/registry directory - please confirm permissions are correct:"
                     echo ""
-                    echo "ls -l /opt | grep docker_data"
-                    ls -l /opt | grep docker_data
+                    echo "ls -l /data/dc | grep registry"
+                    ls -l /data/dc | grep registry
                     echo ""
-                    echo "ls -l /opt/docker_data"
-                    ls -l /opt/docker_data
+                    echo "ls -l /data/dc"
+                    ls -l /data/dc
                     echo ""
                     exit 1
                 fi
             fi
-            anmt "adding registry credentials for ${DCDOCKERUSER} user: /opt/docker_data/registry/auth/htpasswd"
-            docker run --entrypoint htpasswd registry:2 -Bbn ${DCDOCKERUSER} ${DCDOCKERPASSWORD} > /opt/docker_data/registry/auth/htpasswd
+            anmt "adding registry credentials for ${DCDOCKERUSER} user: /data/dc/registry/auth/htpasswd"
+            docker run --entrypoint htpasswd registry:2 -Bbn ${DCDOCKERUSER} ${DCDOCKERPASSWORD} > /data/dc/registry/auth/htpasswd
             anmt "please login to the registry with:"
             anmt "echo \"DOCKER_PASSWORD\" | docker login --username ${DCDOCKERUSER} --password-stdin 0.0.0.0:5000"
             shift 2
@@ -93,6 +93,38 @@ while (( "$#" )); do
                 compose_files="${2}"
             else
                 compose_files="${compose_files} ${2}"
+            fi
+            shift 2
+            ;;
+        -m|--minio)
+            if [[ "${2}" == "" ]]; then
+                err "missing docker compose file for: minio at: ${2}"
+                exit 1
+            fi
+            if [[ "${compose_files}" == "" ]]; then
+                compose_files="${2}"
+            else
+                compose_files="${compose_files} ${2}"
+            fi
+            if [[ "${MINIO_ACCESS_KEY}" == "" ]]; then
+                export MINIO_ACCESS_KEY=dcpi
+            fi
+            if [[ "${MINIO_SECRET_KEY}" == "" ]]; then
+                export MINIO_SECRET_KEY=raspberry
+            fi
+            # minio saves s3 object files to this
+            # directory on the host:
+            minio_dir="/data/dc/minio"
+            if [[ ! -e ${minio_dir} ]]; then
+                mkdir -p -m 777 ${minio_dir}
+                if [[ "$?" != "0" ]]; then
+                    sudo mkdir -p -m 777 ${minio_dir}
+                    if [[ "$?" != "0" ]]; then
+                        err "failed creating minio persistent volume directory: ${minio_dir} for minio - please create it manually with the command below and retry starting minio again:"
+                        err "sudo mkdir -p -m 777 ${minio_dir} && df -h ${minio_dir}"
+                        exit 1
+                    fi
+                fi
             fi
             shift 2
             ;;

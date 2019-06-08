@@ -21,8 +21,8 @@ services:
       # finding components in splunk with:
       # index=dc AND host_id="HOST_ID"
       # like:
-      # index=dc AND host_id="dc1.testing-donkey-car-docker-logs-to-splunk"
-      - HOST_ID=dc1.testing-donkey-car-docker-logs-to-splunk
+      # index=dc AND host_id="testing-donkey-car-docker-logs-to-splunk"
+      - HOST_ID=testing-donkey-car-docker-logs-to-splunk
       # you can also customize the config file your loggers use
       # by setting this env var:
       - DCLOGCONFIG=/opt/dc/donkeycar/splunk/log_config.json
