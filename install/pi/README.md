@@ -204,9 +204,9 @@ Use these default splunk login credentials with the login url below:
 
 http://logs.example.com:8000/en-US/app/search/search?q=search%20index%3Ddc
 
-1. Login to Splunk
+##### Login to Splunk
 
-2. Publish Logs to Splunk from a Donkey Car
+##### Publish Logs to Splunk from a Donkey Car
 
 Please run this from a donkey car that has the Fluent Bit agent running with a valid HEC Splunk Token:
 
@@ -214,12 +214,44 @@ Please run this from a donkey car that has the Fluent Bit agent running with a v
 /opt/dc/install/pi/files/test_fluent_bit.py
 ```
 
-3. Search for Logs
+## Search for Logs in Splunk
 
-By default, logs from any donkey car app are searchable from the index:
+By default, the install, updater, repository builder, docker container builder, and any apps using the donkey car logger are forwarded to Splunk and searchable from the index:
 
 ```
 index=dc
+```
+
+#### Search for Install Logs
+
+Search for the sd card's first time installer logs with:
+
+```
+index=dc AND sd.install
+```
+
+#### Search for Update Logs
+
+Search for the sd card's updater logs with:
+
+```
+index=dc AND sd.update
+```
+
+#### Search for Repository Build and Install Logs
+
+Search for the sd card's repository builder logs with:
+
+```
+index=dc AND sd.repo
+```
+
+#### Search for Docker Container Build Logs
+
+Search for the sd card's docker container build logs with:
+
+```
+index=dc AND docker.build
 ```
 
 #### Get the HEC Token from a Browser
@@ -240,7 +272,7 @@ http://logs.example.com:8000/en-US/manager/search/http-eventcollector
 If you need to roll the cars to a new HEC token, then please update the splunk token manually in all donkey car sd cards at this file location:
 
 ```
-/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml
+/opt/fluent-bit-includes/fluent-bit-log.yaml
 ...
 [OUTPUT]
     ...
@@ -251,7 +283,7 @@ If you need to roll the cars to a new HEC token, then please update the splunk t
 
 ### Debugging Splunk Token Issues
 
-Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml](https://github.com/autorope/donkeycar/blob/d1/install/pi/files/config-fluent-bit-in-tcp-out-splunk.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
+Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/fluent-bit-log.yaml](https://github.com/autorope/donkeycar/blob/d1/install/pi/files/fluent-bit-log.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
 
 ```
 source /opt/venv/bin/activate

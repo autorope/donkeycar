@@ -175,8 +175,8 @@ if [[ "${test_splunk}" == "1" ]]; then
     if [[ ! -e ${DCMOUNTPATH}/opt/fluent-bit-includes ]]; then
         mkdir -p -m 777 ${DCMOUNTPATH}/opt/fluent-bit-includes
     fi
-    if [[ ! -e ${DCMOUNTPATH}/opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml ]]; then
-        cp ${DCPATH}/files/config-fluent-bit-in-*.yaml ${DCMOUNTPATH}/opt/fluent-bit-includes/
+    if [[ ! -e ${DCMOUNTPATH}/opt/fluent-bit-includes/fluent-bit-log.yaml ]]; then
+        cp ${DCPATH}/files/fluent-bit-log.yaml ${DCMOUNTPATH}/opt/fluent-bit-includes/
         chmod 775 ${DCMOUNTPATH}/opt/fluent-bit-includes/*
         chown ${DCUSER}:${DCUSER} ${DCMOUNTPATH}/opt/fluent-bit-includes/*
     fi

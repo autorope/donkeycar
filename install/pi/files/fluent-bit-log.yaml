@@ -1,0 +1,48 @@
+# https://fluentbit.io/documentation/0.13/input/tail.html
+[INPUT]
+    Name tail
+    # if you're using splunk, you can search:
+    # index=dc AND sd.install
+    Key  sd.install
+    Path /var/log/sdinstall.log
+
+[INPUT]
+    Name tail
+    # if you're using splunk, you can search:
+    # index=dc AND sd.update
+    Key  sd.update
+    Path /var/log/sdupdate.log
+
+[INPUT]
+    Name tail
+    # if you're using splunk, you can search:
+    # index=dc AND sd.repo
+    Key  sd.repo
+    Path /var/log/sdrepo.log
+
+[INPUT]
+    Name tail
+    # if you're using splunk, you can search:
+    # index=dc AND docker.build
+    Key  docker.build
+    Path /tmp/docker.log
+
+# https://docs.fluentbit.io/manual/input/forward
+[INPUT]
+    Name              tcp
+    Listen            127.0.0.1
+    Port              24224
+    Buffer_Chunk_Size 32KB
+    Buffer_Max_Size   64KB
+    Format            json
+
+# https://docs.fluentbit.io/manual/output/splunk
+# please ensure the HEC collector is working
+[OUTPUT]
+    Name            splunk
+    Match           *
+    Host            REPLACE_SPLUNK_HOST
+    Port            8088
+    Splunk_Token    REPLACE_SPLUNK_TOKEN
+    TLS             On
+    TLS.Verify      Off

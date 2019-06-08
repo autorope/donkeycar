@@ -39,27 +39,15 @@ anmt "making the td-agent readable/writeable"
 sudo chmod 666 /etc/td-agent-bit/td-agent-bit.conf
 
 anmt "checking if splunk is enabled"
-test_token=$(cat /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml | grep REPLACE_SPLUNK_TOKEN | wc -l)
+test_token=$(cat /opt/fluent-bit-includes/fluent-bit-log.yaml | grep REPLACE_SPLUNK_TOKEN | wc -l)
 if [[ "${test_token}" == "0" ]]; then
-    anmt "including splunk fluent bit file: /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml"
-    test_exists=$(cat /etc/td-agent-bit/td-agent-bit.conf | grep config-fluent-bit-in-tcp-out-splunk | wc -l)
+    anmt "including splunk fluent bit file: /opt/fluent-bit-includes/fluent-bit-log.yaml"
+    test_exists=$(cat /etc/td-agent-bit/td-agent-bit.conf | grep fluent-bit-log.yaml -l)
     if [[ "${test_exists}" == "0" ]]; then
-        anmt "installing splunk HEC forwarder - server with token: echo \"@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml >> /etc/td-agent-bit/td-agent-bit.conf\""
+        anmt "installing splunk HEC forwarder - server with token: echo \"@INCLUDE /opt/fluent-bit-includes/fluent-bit-log.yaml >> /etc/td-agent-bit/td-agent-bit.conf\""
         echo "" >> /etc/td-agent-bit/td-agent-bit.conf
-        echo "# Splunk HEC Forwarder" >> /etc/td-agent-bit/td-agent-bit.conf
-        echo "@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-tcp-out-splunk.yaml" >> /etc/td-agent-bit/td-agent-bit.conf
-    fi
-    test_exists=$(cat /etc/td-agent-bit/td-agent-bit.conf | grep config-fluent-bit-in-docker-build-out-splunk.yaml | wc -l)
-    if [[ "${test_exists}" == "0" ]]; then
-        anmt "installing splunk HEC forwarder - docker build with token: echo \"@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-docker-build-out-splunk.yaml >> /etc/td-agent-bit/td-agent-bit.conf\""
-        echo "# Docker Build Log Splunk HEC Forwarder" >> /etc/td-agent-bit/td-agent-bit.conf
-        echo "@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-docker-build-out-splunk.yaml" >> /etc/td-agent-bit/td-agent-bit.conf
-    fi
-    test_exists=$(cat /etc/td-agent-bit/td-agent-bit.conf | grep config-fluent-bit-in-install-out-splunk.yaml | wc -l)
-    if [[ "${test_exists}" == "0" ]]; then
-        anmt "installing splunk HEC forwarder - sd files with token: echo \"@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-install-out-splunk.yaml >> /etc/td-agent-bit/td-agent-bit.conf\""
-        echo "# SD Log Splunk HEC Forwarder" >> /etc/td-agent-bit/td-agent-bit.conf
-        echo "@INCLUDE /opt/fluent-bit-includes/config-fluent-bit-in-install-out-splunk.yaml" >> /etc/td-agent-bit/td-agent-bit.conf
+        echo "# Custom Donkey Car Log Forwarding Sources and Sinks" >> /etc/td-agent-bit/td-agent-bit.conf
+        echo "@INCLUDE /opt/fluent-bit-includes/fluent-bit-log.yaml" >> /etc/td-agent-bit/td-agent-bit.conf
     fi
 fi
 
