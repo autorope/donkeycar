@@ -26,6 +26,12 @@ fi
 # /opt/first_time_install.sh
 # to trigger package updates
 if [ -e /opt/first_time_install.sh ]; then
+    if [[ -e /var/log/sdinstall.log ]]; then
+        echo "" >> /var/log/sdinstall.log
+        echo "" >> /var/log/sdinstall.log
+        echo "--------------------------" >> /var/log/sdinstall.log
+        echo "starting up $(date +"%Y-%m-%d %H:%M:%S")" >> /var/log/sdinstall.log
+    fi
     echo "blocking package installer: /opt/first_time_install.sh"
     chmod 777 /opt/first_time_install.sh
     /opt/first_time_install.sh >> /var/log/sdinstall.log 2>&1
@@ -42,6 +48,12 @@ fi
 # /opt/run_updater.sh
 # to trigger package updates
 if [ -e /opt/run_updater.sh ]; then
+    if [[ -e /var/log/sdupdate.log ]]; then
+        echo "" >> /var/log/sdupdate.log
+        echo "" >> /var/log/sdupdate.log
+        echo "--------------------------" >> /var/log/sdupdate.log
+        echo "starting up $(date +"%Y-%m-%d %H:%M:%S")" >> /var/log/sdupdate.log
+    fi
     echo "blocking run updater: /opt/run_updater.sh"
     chmod 777 /opt/run_updater.sh
     /opt/run_updater.sh >> /var/log/sdupdate.log 2>&1

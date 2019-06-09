@@ -11,6 +11,14 @@ venvpath="/opt/venv"
 if [[ "${DCVENVDIR}" != "" ]]; then
     venvpath="${DCVENVDIR}"
 fi
+repo="https://github.com/jay-johnson/donkeycar.git"
+if [[ "${DCREPO}" != "" ]]; then
+    repo="${DCREPO}"
+fi
+branch="d1"
+if [[ "${DCBRANCH}" != "" ]]; then
+    branch="${DCBRANCH}"
+fi
 
 if [[ ! -e ${venvpath}/bin/activate ]]; then
     anmt "creating venv: ${venvpath} python runtime: $(ls -l /usr/local/bin/python3 | awk '{print $NF}')"
@@ -23,18 +31,51 @@ if [[ ! -e ${venvpath}/bin/activate ]]; then
 fi
 
 if [[ -e ${venvpath}/bin/activate ]]; then
-    anmt "activating venv: ${venvpath}"
+    anmt "$(whoami) is activating venv: ${venvpath}"
     source ${venvpath}/bin/activate
 
     anmt "upgrading pip and setuptools:"
     pip install --upgrade pip setuptools
 
+    if [[ ! -e ${repo_dir} ]]; then
+        anmt "cloning ${repo}"
+        git clone ${repo} ${repo_dir}
+        if [[ "$?" != "0" ]]; then
+            err "failed to clone repo: ${repo} ${repo_dir}"
+            exit 1
+        fi
+        cd ${repo_dir}
+        echo "${repo} in ${repo_dir} checking out branch: ${branch}"
+        git checkout ${branch}
+        if [[ "$?" != "0" ]]; then
+            err "failed to checkout ${repo} branch: ${branch} in ${repo_dir}"
+            ls -l ${repo_dir}/*
+            exit 1
+        fi
+    fi
+
+    if [[ ! -e ${repo_dir} ]]; then
+        err "failed to find ${repo_dir} after clone attempt"
+        err "git clone ${repo} ${repo_dir}"
+        if [[ -e ~/.ssh/id_rsa.pub ]]; then
+            echo ""
+            echo "please confirm this ssh key has access to pull this repo: ${repo}"
+            cat ~/.ssh/id_rsa.pub
+            echo ""
+        else
+            echo ""
+            echo "did not find a public ssh key ~/.ssh/id_rsa.pub - please confirm this user has a private ssh key that can clone the repo: ${repo}"
+            echo ""
+        fi
+        exit 1
+    fi
+
     if [[ -e ${repo_dir} ]]; then
         pushd ${repo_dir} >> /dev/null 2>&1
         anmt "checking repo status: ${repo_dir}"
-        git status 
+        git status
         anmt "pulling the latest from $(cat ${repo_dir}/.git/config | grep url | awk '{print $NF}')"
-        git pull 
+        git pull
         anmt "installing pips: pip install --upgrade -e ."
         pip install --upgrade -e .
         popd >> /dev/null 2>&1

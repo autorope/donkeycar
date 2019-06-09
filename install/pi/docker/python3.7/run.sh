@@ -32,18 +32,11 @@ echo "" \
   && echo "setting python ${python_build}" \
   && echo "update-alternatives --install /usr/bin/python python /usr/local/bin/python${python_version} 50" \
   && update-alternatives --install /usr/bin/python python /usr/local/bin/python${python_version} 50 \
+  && echo "changing to /opt before deleting dir" \
+  && cd /opt \
   && echo "removing /opt/Python-${python_build}" \
   && rm -rf /opt/Python-${python_build} \
   && echo "removing /opt/Python-${python_build}.tar.xz" \
   && rm -f /opt/Python-${python_build}.tar.xz
-
-echo "" \
-  && python_version="3.7" \
-  && echo "creating virtualenv using: ${python_version}: /opt/venv using python runtime: /usr/local/bin/python${python_verison}" \
-  && sudo -u pi /bin/sh -c "virtualenv -p /usr/local/bin/python3.7 /opt/venv" \
-  && echo "upgrading setuptools and pip" \
-  && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip install --upgrade setuptools pip" \
-  && echo "python runtime details: . /opt/venv/bin/activate" \
-  && sudo -u pi /bin/sh -c ". /opt/venv/bin/activate && pip list --format=columns && which python && python --version && which python"
 
 exit 0

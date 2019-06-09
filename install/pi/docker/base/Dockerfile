@@ -51,7 +51,5 @@ RUN apt-get update -y -o "Dpkg::Options::=--force-confdef" -o "Dpkg::Options::=-
     xz-utils \
     zlib1g-dev
 
-WORKDIR /opt/dc
-
-ENTRYPOINT . /opt/venv/bin/activate \
-  && ls -l /opt/dc
+ENTRYPOINT echo "starting container" \
+  && ls -l /opt
