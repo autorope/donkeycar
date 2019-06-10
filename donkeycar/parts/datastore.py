@@ -518,7 +518,7 @@ class TubHandler():
 class TubImageStacker(Tub):
     """
     A Tub for training a NN with images that are the last three records stacked
-    togther as 3 channels of a single image. The idea is to give a simple feedforward
+    together as 3 channels of a single image. The idea is to give a simple feedforward
     NN some chance of building a model based on motion.
     If you drive with the ImageFIFO part, then you don't need this.
     Just make sure your inference pass uses the ImageFIFO that the NN will now expect.
@@ -585,9 +585,9 @@ class TubTimeStacker(TubImageStacker):
 
     def __init__(self, frame_list, *args, **kwargs):
         """
-        frame_list of [0, 10] would stack the current and 10 frames from now records togther in a single record
+        frame_list of [0, 10] would stack the current and 10 frames from now records together in a single record
         with just the current image returned.
-        [5, 90, 200] would return 3 frames of records, ofset 5, 90, and 200 frames in the future.
+        [5, 90, 200] would return 3 frames of records, offset 5, 90, and 200 frames in the future.
 
         """
         super(TubTimeStacker, self).__init__(*args, **kwargs)
