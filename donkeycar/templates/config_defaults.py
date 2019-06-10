@@ -4,7 +4,7 @@ CAR CONFIG
 This file is read by your car application's manage.py script to change the car
 performance.
 
-EXMAPLE
+EXAMPLE
 -----------
 import dk
 cfg = dk.load_config(config_path='~/mycar/config.py')
