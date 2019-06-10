@@ -1,6 +1,32 @@
 #!/bin/bash
 
-export DCPATH=/opt/dc
+export DCREPO="https://github.com/jay-johnson/donkeycar.git"
+export DCBRANCH="d1"
+export DCPATH="/opt/dc"
+export DCVENVDIR="/opt/venv"
+export DCPYTHONVERSION="3.7"
+
+lg() {
+    echo "$@"
+}
+inf() {
+    lg "$@"
+}
+anmt() {
+    lg "$@"
+}
+good() {
+    lg "$@"
+}
+err() {
+    lg "$@"
+}
+critical() {
+    lg "$@"
+}
+warn() {
+    lg "$@"
+}
 if [[ -e ${DCPATH}/install/pi/files/bash_colors.sh ]]; then
     source ${DCPATH}/install/pi/files/bash_colors.sh
 fi
@@ -9,7 +35,7 @@ anmt "letting services start"
 date +"%Y-%m-%d %H:%M:%S"
 sleep 30
 
-python_version="3.7"
+python_version="${DCPYTHONVERSION}"
 
 anmt "getting updates"
 date +"%Y-%m-%d %H:%M:%S"
@@ -96,6 +122,59 @@ if [[ ! -e /usr/local/bin/python${python_version} ]] || [[ ! -e /usr/local/bin/p
 fi
 
 if [[ ! -e /opt/dc ]]; then
+    echo "running remote github build tool"
+    if [[ -e /tmp/rebuild_pip.sh ]]; then
+        rm -f /tmp/rebuild_pip.sh
+    fi
+    not_done="1"
+    num_attempts=0
+    if [[ -e /opt/allow_no_repo ]]; then
+        not_done="0"
+    fi
+    if [[ "${not_done}" == "1" ]]; then
+        if [[ -e /var/log/sdrepo.log ]]; then
+            echo "" >> /var/log/sdrepo.log
+            echo "" >> /var/log/sdrepo.log
+            echo "--------------------------" >> /var/log/sdrepo.log
+            echo "installing repo from GitHub Backup - $(date +"%Y-%m-%d %H:%M:%S")" >> /var/log/sdupdate.log
+        fi
+    fi
+    while [[ "${not_done}" == "1" ]]; do
+        if [[ ! -e /tmp/rebuild_pip.sh ]]; then
+            curl https://raw.githubusercontent.com/jay-johnson/donkeycar/d1/install/pi/files/rebuild_pip.sh -o /tmp/rebuild_pip.sh
+        fi
+        if [[ -e /tmp/rebuild_pip.sh ]]; then
+            if [[ -e /tmp/rebuild_pip.sh ]]; then
+                chmod 777 /tmp/rebuild_pip.sh
+                if [[ "$(whoami)" != "pi" ]]; then
+                    echo "curl - rebuilding as sudo -u pi user"
+                    sudo -u pi /bin/sh -c "/tmp/rebuild_pip.sh >> /var/log/sdrepo.log 2>&1"
+                else
+                    echo "curl - rebuilding as $(whoami) user"
+                    /tmp/rebuild_pip.sh >> /var/log/sdrepo.log 2>&1
+                fi
+
+                if [[ -e ${DCVENVDIR} ]] && [[ -e ${DCPATH} ]]; then
+                    echo "curl - repo ${DCREPO} cloned at: ${DCPATH} with virtual env: ${DCVENVDIR}"
+                    not_done="0"
+                fi
+            fi
+        fi
+        if [[ "${not_done}" == "1" ]]; then
+            num_attempts=$((num_attempts++))
+            if [[ ${num_attempts} -gt 180 ]]; then
+                echo "stopping retry attempts to rebuild the repository after 180 attempts"
+                not_done="0"
+            else
+                echo "retrying to rebuild the repository in 10 seconds - ${num_attempts}/180 - $(date +'%Y-%m-%d %H:%M:%S')"
+                sleep 10
+            fi
+        fi
+    done
+    if [[ -e /tmp/rebuild_pip.sh ]]; then
+        rm -f /tmp/rebuild_pip.sh
+    fi
+else
     if [[ -e /var/log/sdrepo.log ]]; then
         echo "" >> /var/log/sdrepo.log
         echo "" >> /var/log/sdrepo.log
@@ -115,26 +194,6 @@ fi
 if [[ ! -e /opt/dc ]]; then
     err "failed to clone repository to /opt/dc"
     exit 1
-fi
-
-if [[ -e ${DCPATH}/install/pi/files/rebuild_pip.sh ]]; then
-    if [[ -e /var/log/sdrepo.log ]]; then
-        echo "" >> /var/log/sdrepo.log
-        echo "" >> /var/log/sdrepo.log
-        echo "--------------------------" >> /var/log/sdrepo.log
-        echo "rebuilding pip ${DCPATH}/install/pi/files/rebuild_pip.sh - $(date +"%Y-%m-%d %H:%M:%S")" >> /var/log/sdupdate.log
-    fi
-    anmt "rebuilding pip in ${DCPATH} with: ${DCPATH}/install/pi/files/rebuild_pip.sh"
-    chmod 777 ${DCPATH}/install/pi/files/rebuild_pip.sh
-    echo "sudo -u pi /bin/sh -c \"${DCPATH}/install/pi/files/rebuild_pip.sh >> /var/log/sdrepo.log 2>&1\""
-    sudo -u pi /bin/sh -c "${DCPATH}/install/pi/files/rebuild_pip.sh >> /var/log/sdrepo.log 2>&1"
-    if [[ "$?" != "0" ]]; then
-        err "failed to rebuild pips on the donkey car os: ${DCPATH}/install/pi/files/rebuild_pip.sh" >> /var/log/sdinstall.log 2>&1
-        exit 1
-    fi
-    good "done - installing repo" >> /var/log/sdinstall.log 2>&1
-else
-    anmt "skipping pip rebuild"
 fi
 
 # https://docs.fluentbit.io/manual/getting_started
