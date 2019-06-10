@@ -99,7 +99,7 @@ def drive(cfg, model_path=None, use_chaos=False):
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
                            left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM) 
+                           right_pulse=cfg.STEERING_RIGHT_PWM)
 
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,
@@ -112,7 +112,7 @@ def drive(cfg, model_path=None, use_chaos=False):
 
     # add tub to save data
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
-    types = ['image_array', 'float', 'float',  'str', 'str']
+    types = ['image_array', 'float', 'float', 'str', 'str']
 
     # multiple tubs
     # th = TubHandler(path=cfg.DATA_PATH)
@@ -129,7 +129,7 @@ def drive(cfg, model_path=None, use_chaos=False):
 
 def train(cfg, tub_names, new_model_path, base_model_path=None):
     """
-    use the specified data in tub_names to train an artifical neural network
+    use the specified data in tub_names to train an artificial neural network
     saves the output trained model as model_name
     """
     X_keys = ['cam/image_array']
