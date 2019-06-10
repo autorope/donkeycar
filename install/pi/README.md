@@ -159,6 +159,14 @@ Or with the ssh login tool:
 ./ssh-into-dc.sh d1.example.com
 ```
 
+### Curl Install
+
+This will install the tools in this guide on an already-working sd card. Please note, running the command below will upgrade your donkey car os with the necessary packages to work (which may be risky packages to update like kernel drivers). Please be careful to backup stuff you do not want to lose before proceeding, and please connect to a decent network as it will upgrade + install the packages to host a remotely-controllable build and deployment server (with integrated logging + mqtt pub/sub) all on your rc car (with an sd card that has >16 GB hdd space).
+
+```
+curl https://raw.githubusercontent.com/jay-johnson/donkeycar/d1/install/pi/files/first_time_install.sh | bash
+```
+
 ### Install Docker After the Logging into the Donkey Car
 
 SSH into the donkey car host and install docker
