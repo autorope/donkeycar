@@ -74,7 +74,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
         # This web controller will create a web server that is capable
         # of managing steering, throttle, and modes, and more.
         ctr = LocalWebController(use_chaos=use_chaos)
-		
+        
     V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
