@@ -28,7 +28,7 @@ from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.transform import Lambda
 
 
-def drive(cfg, model_path=None, use_chaos=False):
+def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
 
     """
     Construct a working robotic vehicle from many parts.
@@ -48,7 +48,30 @@ def drive(cfg, model_path=None, use_chaos=False):
     cam = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
-    ctr = LocalWebController(use_chaos=use_chaos)
+    ctr=None
+    if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
+        if cfg.JOYSTICK_TYPE == "PS3":
+            # Import the PS3 Joystick
+            from donkeypart_ps3_controller import PS3JoystickController
+            ctr = PS3JoystickController(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                                        steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                        auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+        elif cfg.JOYSTICK_TYPE == "PS4":
+            # Import the PS4 Joystick
+            from donkeypart_ps3_controller import PS4JoystickController
+            ctr = PS3JoystickController(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                                        steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                        auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+        elif cfg.JOYSTICK_TYPE == "WIIU":
+            # Import the WiiU Controller
+            from donkeypart_bluetooth_game_controller import BluetoothGameController
+            ctl = BluetoothGameController()
+
+    if ctr==None:
+        # This web controller will create a web server that is capable
+        # of managing steering, throttle, and modes, and more.
+        ctr = LocalWebController(use_chaos=use_chaos)
+		
     V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
@@ -114,12 +137,19 @@ def drive(cfg, model_path=None, use_chaos=False):
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
     types = ['image_array', 'float', 'float', 'str', 'str']
 
-    # multiple tubs
-    # th = TubHandler(path=cfg.DATA_PATH)
-    # tub = th.new_tub_writer(inputs=inputs, types=types)
+    if cfg.USE_MULTI_TUBS:
+        # multiple tubs
+        th = TubHandler(path=cfg.DATA_PATH)
+        tub = th.new_tub_writer(inputs=inputs, types=types)
 
-    # single tub
-    tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
+        print()
+        print("Data will be output to \"/data/\" in the tub with creation DateTime: ",clock.run())
+        print()
+
+    else:
+        # single tub
+        tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
+
     V.add(tub, inputs=inputs, run_condition='recording')
 
     # run the vehicle
@@ -169,7 +199,7 @@ if __name__ == '__main__':
     cfg = dk.load_config()
 
     if args['drive']:
-        drive(cfg, model_path=args['--model'], use_chaos=args['--chaos'])
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
 
     elif args['train']:
         tub = args['--tub']
