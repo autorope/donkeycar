@@ -364,7 +364,12 @@ class ShowPredictionPlots(BaseCommand):
         """
         args = self.parse_args(args)
         args.tubs = ','.join(args.tubs)
-        self.plot_predictions(args.config, args.tubs, args.model)
+
+        cfg = load_config(args.config)
+        if cfg is None:
+            return
+
+        self.plot_predictions(cfg, args.tubs, args.model)
 
     def plot_predictions(self, cfg, tub_paths, model_path):
         """

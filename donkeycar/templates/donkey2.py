@@ -3,13 +3,16 @@
 Scripts to drive a donkey 2 car and train a model for it.
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--chaos]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--base_model=<base_model>] [--no_cache]
+    manage.py (drive) [--model=<model>] [--js] [--chaos] [--config=<config_path>]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>]  (--model=<model>) [--base_model=<base_model>] [--no_cache] [--config=<config_path>]
 
 Options:
     -h --help        Show this screen.
     --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
+    --js             Use joystick (as defined in the config file)
     --chaos          Add periodic random steering when manually driving
+    --config CONFIGPATH Config file to use, if not specified default './config.py' is used
+    
 """
 import os
 
@@ -196,7 +199,7 @@ def train(cfg, tub_names, new_model_path, base_model_path=None):
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    cfg = dk.load_config()
+    cfg = dk.load_config(config_path=args['--config'])
 
     if args['drive']:
         drive(cfg, model_path=args['--model'], use_joystick=args['--js'], use_chaos=args['--chaos'])
@@ -207,8 +210,4 @@ if __name__ == '__main__':
         base_model_path = args['--base_model']
         cache = not args['--no_cache']
         train(cfg, tub, new_model_path, base_model_path)
-
-
-
-
-
+        
