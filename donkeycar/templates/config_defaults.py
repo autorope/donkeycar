@@ -71,6 +71,7 @@ HBRIDGE_PIN_RIGHT_FWD = 15
 HBRIDGE_PIN_RIGHT_BWD = 13
 
 #TRAINING
+DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
 MAX_EPOCHS = 100
@@ -126,7 +127,6 @@ HAVE_SOMBRERO = False
 
 #RECORD OPTIONS
 RECORD_DURING_AI = False
-USE_REWARDS = False
 
 #LED
 HAVE_RGB_LED = False

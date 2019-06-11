@@ -401,10 +401,14 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
     return records
 
 def get_model_by_type(model_type, cfg):
+    '''
+    given the string model_type and the configuration settings in cfg
+    create a Keras model and return it.
+    '''
     from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer, KerasLatent
  
     if model_type is None:
-        model_type = "categorical"
+        model_type = cfg.DEFAULT_MODEL_TYPE
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
@@ -446,23 +450,4 @@ def get_test_img(model):
 
     return img
 
-class Sombrero:
 
-    def __init__(self):
-        try:
-            import RPi.GPIO as GPIO
-
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(26, GPIO.OUT)
-            GPIO.output(26, GPIO.LOW)
-            print("sombrero enabled")
-        except:
-            pass
-
-    def __del__(self):
-        try:
-            import RPi.GPIO as GPIO
-            GPIO.cleanup()
-            print("sombrero disabled")
-        except:
-            pass

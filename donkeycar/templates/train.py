@@ -21,15 +21,17 @@ import os
 import glob
 import random
 import json
-from threading import Lock
 import time
 import zlib
 from os.path import basename, join, splitext, dirname
+import pickle
 
+from tensorflow.python import keras
 from docopt import docopt
 import numpy as np
-import keras
-import pickle
+from sklearn.model_selection import train_test_split
+from sklearn.utils import shuffle
+from PIL import Image
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
@@ -39,13 +41,9 @@ from donkeycar.parts.keras import KerasLinear, KerasIMU,\
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
-import sklearn
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
-from PIL import Image
 
 '''
-matplotlib can be a pain to setup. So handle the case where it is absent. When present,
+matplotlib can be a pain to setup on a Mac. So handle the case where it is absent. When present,
 use it to generate a plot of training results.
 '''
 try:
@@ -113,6 +111,12 @@ def make_next_key(sample, index_offset):
 
 
 def collate_records(records, gen_records, opts):
+    '''
+    open all the .json records from records list passed in,
+    read their contents,
+    add them to a list of gen_records, passed in.
+    use the opts dict to specify config choices
+    '''
 
     for record_path in records:
 

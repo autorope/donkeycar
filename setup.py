@@ -2,12 +2,29 @@ from setuptools import setup, find_packages
 
 import os
 
+#include the non python files
+def package_files(directory, strip_leading):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            package_file = os.path.join(path, filename)
+            paths.append(package_file[len(strip_leading):])
+    return paths
+
+car_templates=['templates/*']
+web_controller_html = package_files('donkeycar/parts/controllers/templates', 'donkeycar/')
+
+
+extra_files = car_templates + web_controller_html
+print('extra_files', extra_files)
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
 setup(name='donkeycar',
     version='3.0.0',
+    long_description = long_description,
     description='Self driving library for python.',
     url='https://github.com/autorope/donkeycar',
     author='Will Roscoe, Adam Conway, Tawn Kramer',
@@ -23,11 +40,7 @@ setup(name='donkeycar',
                       'docopt',
                       'tornado==4.5.2',
                       'requests',
-                      'keras',
                       'h5py',
-                      'python-socketio',
-                      'flask',
-                      'eventlet',
                       'moviepy',
                       'pandas',
                       'PrettyTable',
@@ -47,7 +60,7 @@ setup(name='donkeycar',
                         'pytest-cov',
                         'responses',
                         ],
-                    'ci': ['codecov']
+                    'ci': ['codecov'],
                     'tf': ['tensorflow>=1.9.0'],
                     'tf_gpu': ['tensorflow-gpu>=1.9.0'],
                     },

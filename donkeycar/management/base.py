@@ -166,7 +166,7 @@ class CalibrateCar(BaseCommand):
 
     def run(self, args):
         from donkeycar.parts.actuator import PCA9685
-        from donkeycar.utils import Sombrero
+        from donkeycar.parts.sombrero import Sombrero
 
         s = Sombrero()
 

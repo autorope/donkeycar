@@ -52,7 +52,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.TRAIN_BEHAVIORS:
             model_type = "behavior"
         else:
-            model_type = "categorical"
+            model_type = cfg.DEFAULT_MODEL_TYPE
     
     #Initialize car
     V = dk.vehicle.Vehicle()
@@ -256,7 +256,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     #Sombrero
     if cfg.HAVE_SOMBRERO:
-        from donkeycar.utils import Sombrero
+        from donkeycar.parts.sombrero import Sombrero
         s = Sombrero()
 
     #IMU
@@ -484,53 +484,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(steering, inputs=['angle'])
         V.add(motor, inputs=["throttle"])
 
-    class RewardSignal:
-        def __init__(self, nominal_reward=1.0, max_neg=-10.0, neg_time_ramp_steps=60):
-            self.nominal_reward = nominal_reward
-            self.max_neg = max_neg
-            self.tub = None
-            self.neg_time_ramp_steps = neg_time_ramp_steps
-
-        def set_tub(self, tub):
-            self.tub = tub
-
-        def apply_neg_reward(self):
-            import json
-            if self.tub is None:
-                return
-            iRecord = self.tub.current_ix
-            iStop = iRecord - self.neg_time_ramp_steps
-            reward = self.max_neg
-            dr = -1.0 * self.max_neg / self.neg_time_ramp_steps
-            while iRecord > iStop and iRecord > -1:
-                path = self.tub.get_json_record_path(iRecord)
-                iRecord = iRecord - 1
-                with open(path, 'r') as fp:
-                    json_data = json.load(fp)
-
-                json_data['reward/value'] = reward
-                print("writing reward", reward)
-                with open(path, 'w') as fp:
-                    json.dump(json_data, fp)
-
-                reward += dr
-        
-        def run(self):
-            return self.nominal_reward
-
-    if cfg.USE_REWARDS:
-        rewardSig = RewardSignal()
-        V.add(rewardSig, inputs=[], outputs=["reward/value"])
     
     #add tub to save data
 
     inputs=['cam/image_array',
             'user/angle', 'user/throttle', 
-            'user/mode', 'reward/value']
+            'user/mode']
 
     types=['image_array',
            'float', 'float',
-           'str', "float"]
+           'str']
 
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
@@ -565,11 +528,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #tell the controller about the tub        
         ctr.set_tub(tub)
         
-        #replace the delete button with neg reward
-        if cfg.USE_REWARDS:
-            rewardSig.set_tub(tub)
-            ctr.set_button_down_trigger('triangle', rewardSig.apply_neg_reward)
-
         if cfg.BUTTON_PRESS_NEW_TUB:
     
             def new_tub_dir():
