@@ -132,21 +132,6 @@ donkey tubplot <tub_path> [--model=<model_path>]
 * When the `--tub` is omitted, it will check all tubs in the default data dir
 
 
-## Simulation Server
-
-This command allows you serve steering and throttle controls to a simulated vehicle using the [Donkey Simulator](/guide/simulator.md).
-
-Usage:
-```bash
-donkey sim --model=<model_path> [--type=<linear|categorical>] [--top_speed=<speed>] [--config=<config.py>]
-```
-
-* This command may be run from `~/d2` dir
-* Run on the host computer
-* Uses the model to make predictions based on images and telemetry from the simulator
-* `--type` can specify whether the model needs angle output to be treated as categorical
-* Top speed can be modified to ascertain stability at different goal speeds
-
 ## Continuous Rsync
 
 This command uses rsync to copy files from your pi to your host. It does so in a loop, continuously copying files. By default, it will also delete any files
