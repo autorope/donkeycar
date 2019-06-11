@@ -57,11 +57,21 @@ if [[ "${device_to_use}" != "/dev/sda" ]] && [[ "${device_to_use}" != "" ]]; the
         anmt "extending ${device_to_use} to max capacity with: ./extend-sd-card.sh ${device_to_use} 2 apply"
         ./extend-sd-card.sh ${device_to_use} 2 apply
         last_status="$?"
+        if [[ "${last_status}" != "0" ]]; then
+            anmt "retrying - extending ${device_to_use} with: ./extend-sd-card.sh ${device_to_use} 2 apply"
+            ./extend-sd-card.sh ${device_to_use} 2 apply
+            last_status="$?"
+        fi
     else
         anmt "starting resize device: ${device_to_use} with requested additional GB capacity: ${gb_to_add}"
         anmt "extending ${device_to_use} with: ./extend-sd-card.sh ${device_to_use} 2 apply ${gb_to_add}"
         ./extend-sd-card.sh ${device_to_use} 2 apply ${gb_to_add}
         last_status="$?"
+        if [[ "${last_status}" != "0" ]]; then
+            anmt "retrying - extending ${device_to_use} with: ./extend-sd-card.sh ${device_to_use} 2 apply ${gb_to_add}"
+            ./extend-sd-card.sh ${device_to_use} 2 apply ${gb_to_add}
+            last_status="$?"
+        fi
     fi
     if [[ "${last_status}" != "0" ]]; then
         err "failed to extend ${device_to_use} storage"

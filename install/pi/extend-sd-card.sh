@@ -72,6 +72,8 @@ if [[ "$APPLY" == "apply" ]] ; then
         anmt "done - e2fsck"
     fi
     # this should resize the partition to max out the storage space
+    anmt "sleeping to let the disk changes finish"
+    sleep 5
     anmt "resize2fs ${DEVICE}2"
     resize2fs ${DEVICE}2
     if [[ "$?" != "0" ]]; then

@@ -53,29 +53,53 @@ This will download, burn, resize to maximize storage, mount, deploy the latest c
 ./burn-image-to-sd-card.sh
 ```
 
-Workflow ordering and specific files in case you want to make custom modifications for your donkey car os on your own:
+### Burn Custom Images In Google Drive
 
-[./burn-image-to-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/burn-image-to-sd-card.sh) calls:
+The burning tools work with any publicly-shared google drive file. Here is the shared url from a google drive file. This zip file contains one image file that was installed, burned and allowed to update the OS using the [jay-johnson fork on the d1 branch](https://github.com/jay-johnson/donkeycar). By default this new OS image already has python 3.7 with a virtual environment in **/opt/venv** installed with the pip ready to go. Here is the google drive file url after sharing it:
 
-3a) [./download-google-drive-dc-img.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/download-google-drive-dc-img.sh)
+https://drive.google.com/open?id=1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ
 
-3b) [./root-resize-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/root-resize-sd-card.sh)
+From the url above, the google file id is the **id** argument's value: **1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ**
 
-3c) [./extend-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/extend-sd-card.sh)
+If you want to download the new ~4 GB image from google drive, extract it locally (another ~14 GB) and then burn the extracted custom image from the shared google drive location (a zip file), then please use the **-f** argument during the burn step:
 
-3d) [./mount-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/mount-sd-card.sh)
+```
+# please run as root:
+./burn-image-to-sd-card.sh -f 1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ
+```
 
-3e) [./deploy.sh or custom script set before starting with: export DCDEPLOY=PATH_TO_YOUR_DEPLOY_TOOL](https://github.com/autorope/donkeycar/blob/dev/install/pi/deploy.sh)
+By default the burn tools use the original donkey car image with [google file id 1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ](https://drive.google.com/file/d/1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ/view) running python 3.5 from the [donkey car dev branch](https://github.com/autorope/donkeycar)
 
-3f) [./unmount-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/unmount-sd-card.sh)
+```
+# please run as root:
+./burn-image-to-sd-card.sh -f 1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ
+```
+
+### SD Card Workflow
+
+Here are the steps for burning an sd card. Each major step in the process has a specific file handling the process in case you want to make custom modifications for your donkey car OS:
+
+[./burn-image-to-sd-card.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/burn-image-to-sd-card.sh) calls:
+
+3a) [./download-google-drive-dc-img.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/download-google-drive-dc-img.sh)
+
+3b) [./root-resize-sd-card.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/root-resize-sd-card.sh)
+
+3c) [./extend-sd-card.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/extend-sd-card.sh)
+
+3d) [./mount-sd-card.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/mount-sd-card.sh)
+
+3e) [./deploy.sh or custom script set before starting with: export DCDEPLOY=PATH_TO_YOUR_DEPLOY_TOOL](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/deploy.sh)
+
+3f) [./unmount-sd-card.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/unmount-sd-card.sh)
 
 ### Cutomize Startup Actions with an rc.local
 
-Edit the [./files/rc.local](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/rc.local) and redeploy with [./just-deploy-build-to-sd-card.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/just-deploy-build-to-sd-card.sh)
+Edit the [./files/rc.local](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/rc.local) and redeploy with [./just-deploy-build-to-sd-card.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/just-deploy-build-to-sd-card.sh)
 
 ### Setup your Donkey Car with a Private Docker Registry
 
-Edit the [./files/docker-daemon.json](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/docker-daemon.json) if you want to add a custom, private docker registry for pulling images.
+Edit the [./files/docker-daemon.json](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/docker-daemon.json) if you want to add a custom, private docker registry for pulling images.
 
 ### Redeploy Files to an Existing SD Card without Downloading, Reformatting or Burning the SD Card
 
@@ -161,7 +185,7 @@ Or with the ssh login tool:
 
 ### Curl Install
 
-This will install the tools in this guide on an already-working sd card. Please note, running the command below will upgrade your donkey car os with the necessary packages to work (which may be risky packages to update like kernel drivers). Please be careful to backup stuff you do not want to lose before proceeding, and please connect to a decent network as it will upgrade + install the packages to host a remotely-controllable build and deployment server (with integrated logging + mqtt pub/sub) all on your rc car (with an sd card that has >16 GB hdd space).
+This will install the tools in this guide on an already-working sd card. Please note, running the command below will upgrade your donkey car OS with the necessary packages to work (which may be risky packages to update like kernel drivers). Please be careful to backup stuff you do not want to lose before proceeding, and please connect to a decent network as it will upgrade + install the packages to host a remotely-controllable build and deployment server (with integrated logging + mqtt pub/sub) all on your rc car (with an sd card that has >16 GB hdd space).
 
 ```
 curl https://raw.githubusercontent.com/jay-johnson/donkeycar/d1/install/pi/files/first_time_install.sh | bash
@@ -173,17 +197,17 @@ SSH into the donkey car host and install docker
 
 #### Run the Docker Installer
 
-[/opt/dc/files/docker-install.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/docker-install.sh)
+[/opt/dc/files/docker-install.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/docker-install.sh)
 
 ## Install Packages and Update Your Donkey Car on Startup
 
-On startup the donkey car os uses the file: [/etc/rc.local](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/rc.local) to run custom actions on boot. You can customize any of these files to install and update your donkey car after burning the sd card.
+On startup the donkey car OS uses the file: [/etc/rc.local](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/rc.local) to run custom actions on boot. You can customize any of these files to install and update your donkey car after burning the sd card.
 
 By default, the **rc.local** will run the following scripts if they are found on the filesystem:
 
-1. If [/opt/first_time_install.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/first_time_install.sh) is found it will install packages
+1. If [/opt/first_time_install.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/first_time_install.sh) is found it will install packages
 
-2. If [/opt/run_updater.sh](https://github.com/autorope/donkeycar/blob/dev/install/pi/files/run_updater.sh) is found it will run any updates
+2. If [/opt/run_updater.sh](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/run_updater.sh) is found it will run any updates
 
 ### Donkey Car Docker Images
 
@@ -193,7 +217,7 @@ Please follow the [Running Donkey Car on a Raspberry Pi within Docker Images Rea
 
 ### Set up Automatic Donkey Car Log Publishing to Splunk
 
-By following this guide's installer your donkey car os is ready for log and system metric aggregation using [Fluent Bit listening on TCP 24224](https://docs.fluentbit.io/manual/v/1.1/input/tcp) that automatically [forwards to a remote-hosted Splunk HEC Rest API](https://docs.fluentbit.io/manual/v/1.1/output/splunk).
+By following this guide's installer your donkey car OS is ready for log and system metric aggregation using [Fluent Bit listening on TCP 24224](https://docs.fluentbit.io/manual/v/1.1/input/tcp) that automatically [forwards to a remote-hosted Splunk HEC Rest API](https://docs.fluentbit.io/manual/v/1.1/output/splunk).
 
 ![IoT log and metric pipeline using Fluent Bit and Splunk - you can start your log search with: index=dc](https://i.imgur.com/SsVhZQ9.png "IoT log and metric pipeline using Fluent Bit and Splunk")
 
@@ -306,7 +330,7 @@ If you need to roll the cars to a new HEC token, then please update the splunk t
 
 ### Debugging Splunk Token Issues
 
-Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/fluent-bit-log.yaml](https://github.com/autorope/donkeycar/blob/d1/install/pi/files/fluent-bit-log.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
+Here is a python command for quickly testing the Fluent Bit's Splunk config file ([installed at /opt/fluent-bit-includes/fluent-bit-log.yaml](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/files/fluent-bit-log.yaml)) works with your Splunk HEC Token. Please run this from a donkey car ssh session:
 
 ```
 source /opt/venv/bin/activate

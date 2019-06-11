@@ -11,6 +11,8 @@
 #
 # By default this script does nothing.
 
+echo "$(date +"%Y-%m-%d %H:%M:%S") - running /etc/rc.local"
+
 # Print the IP address
 _IP=$(hostname -I) || true
 if [ "$_IP" ]; then
@@ -26,7 +28,7 @@ fi
 # /opt/first_time_install.sh
 # to trigger package updates
 if [ -e /opt/first_time_install.sh ]; then
-    if [[ -e /var/log/sdinstall.log ]]; then
+    if [ -e /var/log/sdinstall.log ]; then
         echo "" >> /var/log/sdinstall.log
         echo "" >> /var/log/sdinstall.log
         echo "--------------------------" >> /var/log/sdinstall.log
@@ -48,7 +50,7 @@ fi
 # /opt/run_updater.sh
 # to trigger package updates
 if [ -e /opt/run_updater.sh ]; then
-    if [[ -e /var/log/sdupdate.log ]]; then
+    if [ -e /var/log/sdupdate.log ]; then
         echo "" >> /var/log/sdupdate.log
         echo "" >> /var/log/sdupdate.log
         echo "--------------------------" >> /var/log/sdupdate.log
@@ -75,5 +77,7 @@ if [ -e /opt/login_to_docker.sh ]; then
     /opt/login_to_docker.sh
     EXITVALUE=$?
 fi
+
+echo "$(date +"%Y-%m-%d %H:%M:%S") - done running /etc/rc.local"
 
 exit 0
