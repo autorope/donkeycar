@@ -15,16 +15,16 @@ Options:
 """
 import os
 import time
+
 from docopt import docopt
+import numpy as np
 
 import donkeycar as dk
 
 #import parts
 from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
-from donkeycar.parts.datastore import TubHandler, TubGroup
+from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, JoystickController
-from donkeycar.parts.imu import Mpu6050
-import numpy as np
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -266,6 +266,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     #IMU
     if cfg.HAVE_IMU:
+        from donkeycar.parts.imu import Mpu6050
         imu = Mpu6050()
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)

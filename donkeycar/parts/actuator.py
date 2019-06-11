@@ -14,7 +14,7 @@ class PCA9685:
     PWM motor controler using PCA9685 boards. 
     This is used for most RC Cars
     '''
-    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
+    def __init__(self, channel, address=0x40, frequency=60, busnum=None, init_delay=0.1):
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
@@ -26,6 +26,7 @@ class PCA9685:
         self.pwm = Adafruit_PCA9685.PCA9685(address=address)
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
+        time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_pulse(self, pulse):
         self.pwm.set_pwm(self.channel, 0, pulse) 

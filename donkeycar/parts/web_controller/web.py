@@ -182,7 +182,7 @@ class VideoAPI(tornado.web.RequestHandler):
         self.set_header("Content-type", "multipart/x-mixed-replace;boundary=--boundarydonotcross")
 
         self.served_image_timestamp = time.time()
-        my_boundary = "--boundarydonotcross"
+        my_boundary = "--boundarydonotcross\n"
         while True:
             
             interval = .1
