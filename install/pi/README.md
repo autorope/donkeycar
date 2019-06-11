@@ -55,20 +55,20 @@ This will download, burn, resize to maximize storage, mount, deploy the latest c
 
 ### Burn Custom Images In Google Drive
 
-The burning tools work with any publicly-shared google drive file. Here is the shared url from a google drive file. This zip file contains one image file that was installed, burned and allowed to update the OS using the [jay-johnson fork on the d1 branch](https://github.com/jay-johnson/donkeycar). By default this new OS image already has python 3.7 with a virtual environment in **/opt/venv** installed with the pip ready to go. Here is the google drive file url after sharing it:
+The burning tools work with any publicly-shared google drive file. The shared file on google drive must be a zip file containing an OS image file that was saved using **dd** or the [included ./install/pi/create-backup-from-sd-card.sh tool](https://github.com/jay-johnson/donkeycar/blob/d1/install/pi/create-backup-from-sd-card.sh). As an example here is how to deploy a custom OS created from the [jay-johnson fork on the d1 branch](https://github.com/jay-johnson/donkeycar) that has python 3.7 with a virtual environment in **/opt/venv** already installed with the pip ready to go. For reference, here is the publicly shared google drive file url:
 
 https://drive.google.com/open?id=1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ
 
-From the url above, the google file id is the **id** argument's value: **1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ**
+From the url above, note the google file id is the **id** argument's value: **1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ**
 
-If you want to download the new ~4 GB image from google drive, extract it locally (another ~14 GB) and then burn the extracted custom image from the shared google drive location (a zip file), then please use the **-f** argument during the burn step:
+If you want to download this new ~4 GB image from google drive, and extract it locally (another ~14 GB), the tool will then burn this custom OS image to your sd card with the **-f** argument during the burn step:
 
 ```
 # please run as root:
 ./burn-image-to-sd-card.sh -f 1OBcPjdZG-vug5Qyq2tYF6zjtVBQffbsQ
 ```
 
-By default the burn tools use the original donkey car image with [google file id 1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ](https://drive.google.com/file/d/1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ/view) running python 3.5 from the [donkey car dev branch](https://github.com/autorope/donkeycar)
+By default the burn tools use the [original donkey car image with google file id 1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ](https://drive.google.com/file/d/1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ/view) running python 3.5 from the [donkey car dev branch](https://github.com/autorope/donkeycar). You can use this image file with the **-f** argument as well during the burning phase:
 
 ```
 # please run as root:
