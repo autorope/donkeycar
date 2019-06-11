@@ -95,7 +95,7 @@
 # JOYSTICK_MAX_THROTTLE = 0.3
 # JOYSTICK_STEERING_SCALE = 1.0
 # AUTO_RECORD_ON_THROTTLE = True
-# CONTROLLER_TYPE='ps3'           #(ps3|ps4|xbox|nimbus)
+# CONTROLLER_TYPE='ps3'           #(ps3|ps4|xbox|nimbus|wiiu)
 # USE_NETWORKED_JS = False
 # NETWORK_JS_SERVER_IP = "192.168.0.1"
 # JOYSTICK_DEADZONE = 0.0         # when non zero, this is the smallest throttle before recording triggered.

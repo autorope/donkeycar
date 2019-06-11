@@ -111,16 +111,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController, NimbusController, XboxOneJoystickController
+        from donkeycar.parts.controller import PS3JoystickController, PS4JoystickController, NimbusController, XboxOneJoystickController, WiiUController
         
-        cont_class = PS3JoystickController
-
-        if cfg.CONTROLLER_TYPE == "ps4":
+        cont_class = None
+        if cfg.CONTROLLER_TYPE == "ps3":
+            cont_class = PS3JoystickController
+        elif cfg.CONTROLLER_TYPE == "ps4":
             cont_class = PS4JoystickController
         elif cfg.CONTROLLER_TYPE == "nimbus":
             cont_class = NimbusController
         elif cfg.CONTROLLER_TYPE == "xbox":
             cont_class = XboxOneJoystickController
+        elif cfg.CONTROLLER_TYPE == "wiiu":
+            cont_class = WiiUController
+        else:
+            raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
         
         ctr = cont_class(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                  steering_scale=cfg.JOYSTICK_STEERING_SCALE,

@@ -566,6 +566,41 @@ class Nimbus(Joystick):
             0x10 : 'what',
         }
 
+class WiiU(Joystick):
+    #An interface to a physical joystick available at /dev/input/js0
+    #contains mappings may work for the WiiUPro joystick
+    #This was taken from 
+    #https://github.com/autorope/donkeypart_bluetooth_game_controller/blob/master/donkeypart_bluetooth_game_controller/wiiu_config.yml
+    #and need testing!
+    def __init__(self, *args, **kwargs):
+        super(WiiU, self).__init__(*args, **kwargs)
+
+        self.button_names = {
+            305: 'A',
+            304: 'B',
+            307: 'X',
+            308: 'Y',
+            312: 'LEFT_BOTTOM_TRIGGER',
+            310: 'LEFT_TOP_TRIGGER',
+            313: 'RIGHT_BOTTOM_TRIGGER',
+            311: 'RIGHT_TOP_TRIGGER',
+            317: 'LEFT_STICK_PRESS',
+            318: 'RIGHT_STICK_PRESS',
+            314: 'SELECT',
+            315: 'START',
+            547: 'PAD_RIGHT',
+            546: 'PAD_LEFT',
+            544: 'PAD_UP',
+            548: 'PAD_DOWN,'
+        }
+
+        self.axis_names = {
+            0: 'LEFT_STICK_X',
+            1: 'LEFT_STICK_Y',
+            3: 'RIGHT_STICK_X',
+            4: 'RIGHT_STICK_Y',
+        }
+
 
 class JoystickController(object):
     '''
@@ -1086,7 +1121,37 @@ class NimbusController(JoystickController):
             'lx' : self.set_steering,
             'ry' : self.set_throttle,
         }
-        
+
+
+class WiiUController(JoystickController):
+    #A Controller object that maps inputs to actions
+    def __init__(self, *args, **kwargs):
+        super(WiiUController, self).__init__(*args, **kwargs)
+
+    def init_js(self):
+        #attempt to init joystick
+        try:
+            self.js = WiiU(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        #init set of mapping from buttons to function calls
+
+        self.button_down_trigger_map = {
+            'Y' : self.erase_last_N_records,
+            'B' : self.toggle_mode,
+            'A' : self.emergency_stop,
+        }
+
+        self.axis_trigger_map = {
+            'LEFT_STICK_X' : self.set_steering,
+            'RIGHT_STICK_Y' : self.set_throttle,
+        }
+
 
 class JoyStickPub(object):
     '''
