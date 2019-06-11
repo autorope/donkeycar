@@ -16,7 +16,20 @@ The default web controller may be replaced with a one line change to use a physi
 
 These can be used plugged in with a USB cable. It's been much more convenient to setup Bluetooth for a wireless control.
 
-If you have a non PS3 controller, or having troubles getting your controller buttons to work, checkout this (guide)[https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey.md#joystick-wizard] to making python code that matches your device.
+If you have a non PS3 controller, or having troubles getting your controller buttons to work, checkout this [guide](https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey.md#joystick-wizard) to making python code that matches your device.
+
+These joysticks are known to work:
+
+* [Sony PS3 Sixaxis OEM](https://www.ebay.com/sch/i.html?&_nkw=Sony+PS3+Sixaxis+OEM)
+* [Logitech Gamepad F710](https://www.amazon.com/Logitech-940-000117-Gamepad-F710/dp/B0041RR0TW)
+* [Sony PS4 Dualshock OEM](https://www.ebay.com/sch/i.html?&_nkw=Sony+PS4+Dualshock+OEM)
+* [SteelSeries Nimbus](https://www.amazon.com/gp/product/B01AZC3III) (works only on TX2 jetpack 4.2+, may work on the Nano)
+* [WiiU Pro](https://www.amazon.com/Nintendo-Wii-U-Pro-Controller-Black/dp/B00MUY0OFU)
+* [XBox Controller](https://www.amazon.com/Xbox-Wireless-Controller-Blue-one/dp/B01M0F0OIY)
+
+These can be enabled by finding the CONTROLLER_TYPE in your myconfig.py and setting it to the correct string identifier ( after disabling the comment ).
+
+There are controller specific setup details below.
 
 ### Change to config.py or run with --js
 

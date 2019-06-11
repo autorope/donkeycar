@@ -14,23 +14,18 @@ Options:
 """
 import os
 import time
+
 from docopt import docopt
+import numpy as np
 
 import donkeycar as dk
-
-#import parts
-from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
-from donkeycar.parts.datastore import TubHandler, TubGroup
-from donkeycar.parts.controller import LocalWebController, JoystickController
-from donkeycar.parts.imu import Mpu6050
-import numpy as np
-from donkeycar.parts.throttle_filter import ThrottleFilter
-from donkeycar.parts.behavior import BehaviorPart
-from donkeycar.parts.file_watcher import FileWatcher
-from donkeycar.parts.launch import AiLaunch
+from donkeycar.parts.datastore import TubHandler
+from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.camera import PiCamera
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
+
+
+def drive(cfg, model_path=None, model_type=None, camera_type='single', meta=[] ):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -112,17 +107,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #When we have a model, first create an appropriate Keras part
         kl = dk.utils.get_model_by_type(model_type, cfg)
 
-        model_reload_cb = None
-
         if '.h5' in model_path:
             #when we have a .h5 extension
             #load everything from the model file
             load_model(kl, model_path)
-
-            def reload_model(filename):
-                load_model(kl, filename)
-
-            model_reload_cb = reload_model
 
         elif '.json' in model_path:
             #when we have a .json extension
@@ -131,12 +119,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             load_model_json(kl, model_path)
             weights_path = model_path.replace('.json', '.weights')
             load_weights(kl, weights_path)
-
-            def reload_weights(filename):
-                weights_path = filename.replace('.json', '.weights')
-                load_weights(kl, weights_path)
-            
-            model_reload_cb = reload_weights
 
         outputs=['pilot/angle', 'pilot/throttle']
    
@@ -209,7 +191,7 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
+        drive(cfg, model_path = args['--model'], model_type=model_type, camera_type=camera_type,
             meta=args['--meta'])
     
     if args['train']:
