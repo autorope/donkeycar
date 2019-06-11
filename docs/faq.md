@@ -78,53 +78,7 @@ sudo apt-get upgrade
 
 * Install packages:
 
-``` bash
-sudo apt-get install git
-sudo apt-get install python3 python3-pip python3-virtualenv python3-dev virtualenv
-sudo apt-get install build-essential gfortran libhdf5-dev
-```
-
-* Get latest donkey code:
-
-``` bash
-git clone https://github.com/autorope/donkeycar
-cd donkeycar
-```
-
-* Install anaconda:
-
-``` bash
-wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-armv7l.sh
-bash Miniconda3-latest-Linux-armv7l.sh
-source ~/.bashrc
-```
-
-* Setup python environment
-
-``` bash
-conda env create -f envs/rpi.yml
-source activate donkey
-```
-
-
-* Upgrade numpy. This can take a long time as it involves compiling the latest.
-
-``` bash
-pip install --upgrade numpy
-```
-
-* Setup tensorflow:
-
-``` bash
-wget https://github.com/samjabrahams/tensorflow-on-raspberry-pi/releases/download/v1.1.0/tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
-pip install tensorflow-1.1.0-cp34-cp34m-linux_armv7l.whl
-```
-
-* Setup donkey
-
-``` bash
-pip install -e .
-```
+TODO... specify how to use install/pi/install.sh
 
 * Setup initial files and dir for data. Refer to [Get Driving](guide/get_driving.md) for options.
 

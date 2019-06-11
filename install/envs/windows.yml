@@ -1,4 +1,4 @@
-name: donkey
+name: autorope
 channels:
 - defaults
 dependencies:
