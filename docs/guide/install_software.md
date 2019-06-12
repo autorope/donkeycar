@@ -174,12 +174,12 @@ cd projects
 
 * Get the latest donkeycar from Github.
 
-```
-git clone https://github.com/autorope/donkeycar
-```
-
 ```bash
-pip install -e donkeycar[pi,tf]
+git clone https://github.com/autorope/donkeycar
+cd donkeycar
+git checkout master
+pip install -e .[pi]
+pip install tensorflow
 ```
 
 ### Joystick setup
@@ -232,6 +232,7 @@ cd projects
 
 ```
 git clone https://github.com/autorope/donkeycar
+git checkout master
 cd donkeycar
 ```
 
@@ -301,6 +302,7 @@ cd projects
 ```
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
+git checkout master
 ```
 
 * If this is not your first install, update Conda and remove old donkey
@@ -362,6 +364,7 @@ cd projects
 ```
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
+git checkout master
 ```
 
 * If this is not your first install, update Conda and remove old donkey
