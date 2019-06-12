@@ -458,6 +458,3 @@ def execute_from_command_line():
     else:
         dk.util.proc.eprint('Usage: The availible commands are:')
         dk.util.proc.eprint(list(commands.keys()))
-
-
-
