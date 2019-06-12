@@ -144,6 +144,8 @@ If you have an Exceed Short Course Truck, Blaze or Desert Monster watch this [vi
 
 This is a relatively simple assembly step.   Just use the 3mm self tapping screws to scew the plate to the roll cage.  
 
+When attaching the roll cage to the top plate, ensure that the nubs on the top plate face the roll-cage. This will ensure the equipment you mount to the top plate fits easily.
+
 &nbsp;
 ### Step 4: Connect Servo Shield to Raspberry Pi.
 
