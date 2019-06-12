@@ -159,24 +159,30 @@ source ~/.bashrc
 
 ### Install Tensorflow
 
-You can check [this](https://github.com/lhelontra/tensorflow-on-arm/releases/) page to find the one you like. Or install this one:
+* Install the donkeycar package in pip
+
+ If you have an NVIDIA GPU - Install donkeycar and use *tensorflow-gpu* dependency:
 ```bash
-wget https://github.com/lhelontra/tensorflow-on-arm/releases/download/v1.10.0/tensorflow-1.10.0-cp35-none-linux_armv7l.whl
-pip install tensorflow-1.10.0-cp35-none-linux_armv7l.whl
+pip install donkeycar[tf_gpu]
 ```
 
-### Install Donkeycar Python code and install
+ Otherwise, install donkeycar and use *tensorflow* dependency:
+```bash
+pip install donkeycar[tf]
+```
 
-This will pull the latest from Tawn's fork:
+ See [https://github.com/tensorflow/tensorflow/issues/7166](https://github.com/tensorflow/tensorflow/issues/7166) for more information.
+
+
+### Install Donkeycar Python code
 
 ```bash
-git clone https://github.com/tawnkramer/donkey
-pip install -e donkey[pi]
+pip install donkeycar[pi]
 ```
 
 ### Joystick setup
 
-If you plan to use a joystick, jump over to [here](https://github.com/tawnkramer/donkey/blob/master/docs/parts/controllers.md#physical-joystick-controller).
+If you plan to use a joystick, jump over to [here](https://github.com/autorope/donkeycar/blob/master/docs/parts/controllers.md#physical-joystick-controller).
 
 
 ### Create your car application.
@@ -185,13 +191,13 @@ If you plan to use a joystick, jump over to [here](https://github.com/tawnkramer
 donkey createcar --path ~/d2
 ```
 
-See also [more information.](https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey/#create-car)
+See also [more information.](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey/#create-car)
 
 ### Calibrate and then Get Driving!
 
-You need to [calibrate](https://github.com/tawnkramer/donkey/blob/master/docs/guide/calibrate.md) your pwm outputs to steering and throttle.
+You need to [calibrate](https://github.com/autorope/donkeycar/blob/master/docs/guide/calibrate.md) your pwm outputs to steering and throttle.
 
-And then [get driving!](https://github.com/tawnkramer/donkey/blob/master/docs/guide/get_driving.md)
+And then [get driving!](https://github.com/autorope/donkeycar/blob/master/docs/guide/get_driving.md)
 
 
 ----
@@ -224,7 +230,7 @@ pip install tensorflow==1.10.0
 
 * Install donkeycar
 ```bash
-git clone https://github.com/tawnkramer/donkey
+git clone https://github.com/autorope/donkeycar
 pip install -e donkey[pc]
 ```
 
@@ -248,7 +254,7 @@ cd projects
 * Get the latest donkey from Github.
 
 ```
-git clone https://github.com/tawnkramer/donkey
+git clone https://github.com/autorope/donkeycar
 cd donkey
 ```
 
@@ -299,7 +305,7 @@ cd projects
 * Get the latest donkey from Github.
 
 ```
-git clone https://github.com/tawnkramer/donkey
+git clone https://github.com/autorope/donkeycar
 cd donkey
 ```
 

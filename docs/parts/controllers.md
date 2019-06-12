@@ -16,7 +16,7 @@ The default web controller may be replaced with a one line change to use a physi
 
 These can be used plugged in with a USB cable. It's been much more convenient to setup Bluetooth for a wireless control.
 
-If you have a non PS3 controller, or having troubles getting your controller buttons to work, checkout this [guide](https://github.com/tawnkramer/donkey/blob/master/docs/utility/donkey.md#joystick-wizard) to making python code that matches your device.
+If you have a non PS3 controller, or having troubles getting your controller buttons to work, checkout this [guide](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey.md#joystick-wizard) to making python code that matches your device.
 
 These joysticks are known to work:
 
