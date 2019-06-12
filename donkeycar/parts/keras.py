@@ -17,7 +17,7 @@ import numpy as np
 
 from tensorflow.python import keras
 from tensorflow.python.keras.layers import Input, Dense
-from tensorflow.python.keras.models import Model
+from tensorflow.python.keras.models import Model, Sequential
 from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
 from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Cropping2D, Lambda
 from tensorflow.python.keras.layers.merge import concatenate
@@ -129,6 +129,7 @@ class KerasCategorical(KerasPilot):
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle_binned, throttle = self.model.predict(img_arr)
+        N = len(throttle[0])
         throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=self.throttle_range)
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
         return angle_unbinned, throttle
