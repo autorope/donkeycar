@@ -207,21 +207,6 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
     return a
 
 
-def bin_Y(Y, N=15):
-    d = []
-    for y in Y:
-        arr = np.zeros(N)
-        arr[linear_bin(y, N=N)] = 1
-        d.append(arr)
-    return np.array(d)
-        
-def unbin_Y(Y, N=15):
-    d=[]
-    for y in Y:
-        v = linear_unbin(y, N=N)
-        d.append(v)
-    return np.array(d)
-
 def map_range(x, X_min, X_max, Y_min, Y_max):
     ''' 
     Linear mapping between two ranges of values 

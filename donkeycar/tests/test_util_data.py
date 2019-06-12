@@ -37,10 +37,6 @@ class TestLinearBin(unittest.TestCase):
         assert res[0] == 1
         assert sum(res[1:]) == 0
 
-    def test_illegal_pos(self):
-        with pytest.raises(IndexError):
-            linear_bin(2)
-
     def test_illegal_type(self):
         with pytest.raises(TypeError):
             linear_bin('0')
@@ -66,45 +62,6 @@ class TestLinearUnbin(unittest.TestCase):
     def test_empty_list(self):
         res = linear_unbin( [0] * 15 )
         assert res == -1.0
-
-    def test_illegal_list(self):
-        with pytest.raises(ValueError):
-            linear_unbin( [0] * 10 )
-
-
-class TestBinY(unittest.TestCase):
-
-    def test_normal_list(self):
-        l = [ -1, 0, 1 ]
-        res = bin_Y(l)
-
-        # negative
-        assert res[0][0] == 1
-        assert sum(res[0][1:]) == 0
-
-        # zero
-        assert res[1][7] == 1
-        assert sum(res[1][:7]) == 0
-        assert sum(res[1][8:]) == 0
-
-        # positive
-        assert res[2][14] == 1
-        assert sum(res[2][:14]) == 0
-
-class TestUnbinY(unittest.TestCase):
-
-    def test_normal_list(self):
-        l = [ create_lbin(0), create_lbin(7), create_lbin(14) ]
-        res = unbin_Y(l)
-
-        # negative
-        assert res[0] == -1.0
-
-        # zero
-        assert res[1] == 0.0
-
-        # positive
-        assert res[2] == 1.0
 
 
 class TestMapping(unittest.TestCase):

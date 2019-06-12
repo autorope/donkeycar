@@ -55,6 +55,6 @@ class Memory:
     def values(self):
         return self.d.values()
     
-    def iteritems(self):
-        return self.d.iteritems()
+    def items(self):
+        return self.d.items()
         
