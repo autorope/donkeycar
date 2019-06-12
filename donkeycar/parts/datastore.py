@@ -296,7 +296,7 @@ class Tub(object):
                 else:
                     record_dict = row
 
-                record_dict = self.read_record(record_dict)
+                record_dict = self.read_record(row.to_dict())
 
                 if record_transform:
                     record_dict = record_transform(record_dict)
