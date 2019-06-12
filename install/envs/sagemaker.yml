@@ -1,12 +1,16 @@
 name: donkey
 dependencies:
 
-- numpy
-- pandas
-- pillow
 - h5py
+- pillow
+- tensorflow-gpu
+- opencv
+- matplotlib
+- tornado=4.5.3
+- docopt
+- pandas
 
 - pip:
-  - tensorflow-gpu
-  - docopt
   - moviepy
+  - paho-mqtt
+  - PrettyTable

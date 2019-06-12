@@ -210,29 +210,43 @@ And then [get driving!](https://github.com/autorope/donkeycar/blob/master/docs/g
 ----
 ## Install donkeycar on Linux
 
-* Install dependencies, setup virtualenv
-```bash
-sudo apt-get install virtualenv build-essential python3-dev gfortran libhdf5-dev libatlas-base-dev
-virtualenv env -p python3
-source env/bin/activate
-pip install keras==2.2.2
+* Change to a dir you would like to use as the head of your projects.
+
+```
+mkdir projects
+cd projects
 ```
 
-* Install tensorflow. If you have a gpu with nvidia cuda drivers:
-```
-pip install tensorflow-gpu==1.10.0
-```
-otherwise:
-```
-pip install tensorflow==1.10.0
-```
+* Get the latest donkeycar from Github.
 
-
-* Install donkeycar
-```bash
+```
 git clone https://github.com/autorope/donkeycar
-pip install -e donkey[pc]
+cd donkeycar
 ```
+
+* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html). 
+
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash ./Miniconda3-latest-Linux-x86_64.sh
+```
+
+* Create the Python anaconda environment
+
+```
+conda update -n base -c defaults conda
+conda env remove -n donkey
+conda env create -f install/envs/ubuntu.yml
+conda activate donkey
+pip install -e .[pc]
+```
+
+* Optionall Install Tensorflow GPU
+
+```
+conda install tensorflow-gpu
+```
+
 
 ----
 
@@ -255,30 +269,23 @@ cd projects
 
 ```
 git clone https://github.com/autorope/donkeycar
-cd donkey
+cd donkeycar
 ```
 
-* Create the Python Anaconda environment
+* Create the Python anaconda environment
 
 ```
-conda env create -f envs\windows.yml
-activate donkey
-```
-
-* Install donkey source and create your local working dir:
-
-```
+conda update -n base -c defaults conda
+conda env remove -n donkey
+conda env create -f install/envs/windows.yml
+conda activate donkey
 pip install -e .[pc]
-donkey createcar --path ~/d2
 ```
 
-* Install tensorflow. If you have a gpu with nvidia cuda drivers:
+* Optionall Install Tensorflow GPU
+
 ```
-pip install tensorflow-gpu==1.10.0
-```
-otherwise:
-```
-pip install tensorflow==1.10.0
+conda install tensorflow-gpu
 ```
 
 > Note: After closing the Anaconda Prompt, when you open it again, you will need to 
@@ -302,24 +309,27 @@ mkdir projects
 cd projects
 ```
 
-* Get the latest donkey from Github.
+* Get the latest donkeycar from Github.
 
 ```
 git clone https://github.com/autorope/donkeycar
-cd donkey
+cd donkeycar
 ```
 
 * Create the Python anaconda environment
 
 ```
-conda env create -f envs/mac.yml
-source activate donkey
+conda update -n base -c defaults conda
+conda env remove -n donkey
+conda env create -f install/envs/mac.yml
+conda activate donkey
+pip install -e .[pc]
 ```
 
-* Install Tensorflow
+* Optionall Install Tensorflow GPU
 
 ```
-pip install tensorflow
+conda install tensorflow-gpu
 ```
 
 
@@ -327,11 +337,11 @@ pip install tensorflow
 
 ```
 pip install -e .[pc]
-donkey createcar --path ~/d2
+donkey createcar --path ~/mycar
 ```
 
 > Note: After closing the Terminal, when you open it again, you will need to 
-> type ```source activate donkey``` to re-enable the mappings to donkey specific 
+> type ```conda activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
 
 -------
