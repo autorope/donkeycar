@@ -36,7 +36,7 @@ cam = dk.parts.PiCamera()
 V.add(cam, outputs=['image'], threaded=True)
 
 #add tub part to record images
-tub = dk.parts.Tub(path='~/mycar/gettings_started',
+tub = dk.parts.Tub(path='~/mycar/data',
                    inputs=['image'],
                    types=['image_array'])
 V.add(tub, inputs=inputs)
@@ -48,13 +48,7 @@ V.start(max_loop_count=100)
 
 ### Installation
 
-For linux/OS users clone the master branch to get the latest version.
-```bash
-git clone https://github.com/autorope/donkeycar
-pip install -e ./donkeycar
-```
-
-[How to install on Windows](guide/install_software.md)
+[How to install](guide/install_software.md)
 
 -----------------------
 

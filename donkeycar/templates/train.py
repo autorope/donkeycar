@@ -239,6 +239,11 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
         
 
 def on_best_model(cfg, model, model_filename):
+
+    model.save(model_filename)
+    #TODO figure out why keras in tensorflow has a problem with saving to json/weights
+    return
+
     #Save json and weights file too
     json_fnm, weights_fnm = save_json_and_weights(model, model_filename)
 

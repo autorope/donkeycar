@@ -101,7 +101,7 @@ TODO... specify how to use install/pi/install.sh
 
 2. Occasionally also the template files have changed with fixes that affect manage.py. You can create a new user directory to test. Use the same options you used to create it [from setup instructions](guide/install_software.md) but a new path. For instance:
     ```
-    donkey createcar --path ~/d2_new
+    donkey createcar --path ~/mycar_new
     ```
 
 ---

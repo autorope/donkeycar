@@ -188,7 +188,7 @@ If you plan to use a joystick, jump over to [here](https://github.com/autorope/d
 ### Create your car application.
 
 ```
-donkey createcar --path ~/d2
+donkey createcar --path ~/mycar
 ```
 
 See also [more information.](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey/#create-car)
@@ -231,11 +231,15 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash ./Miniconda3-latest-Linux-x86_64.sh
 ```
 
-* Create the Python anaconda environment
-
+* If this is not your first install, update Conda and remove old donkey
 ```
 conda update -n base -c defaults conda
 conda env remove -n donkey
+```
+
+* Create the Python anaconda environment
+
+```
 conda env create -f install/envs/ubuntu.yml
 conda activate donkey
 pip install -e .[pc]
@@ -247,16 +251,19 @@ pip install -e .[pc]
 conda install tensorflow-gpu
 ```
 
+> Note: After closing the Anaconda Prompt, when you open it again, you will need to 
+> type ```conda activate donkey``` to re-enable the mappings to donkey specific 
+> Python libraries
 
 ----
 
 ## Install donkeycar on Windows
 
-* Install [miniconda Python 3.6 64 bit](https://conda.io/miniconda.html). Be sure to check the box to allow it to modify your system path variable to add conda.
+* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html). Be sure to check the box to allow it to modify your system path variable to add conda.
+* Open the Anaconda prompt window via Start Menu | Anaconda 64bit | Anaconda Prompt
 
-* Install [git 64 bit](https://git-scm.com/download/win)
+* type `git`. If the command is not found, then install [git 64 bit](https://git-scm.com/download/win)
 
-* From the start menu start the Anaconda Prompt.
 
 * Change to a dir you would like to use as the head of your projects.
 
@@ -272,31 +279,37 @@ git clone https://github.com/autorope/donkeycar
 cd donkeycar
 ```
 
-* Create the Python anaconda environment
-
+* If this is not your first install, update Conda and remove old donkey
 ```
 conda update -n base -c defaults conda
 conda env remove -n donkey
-conda env create -f install/envs/windows.yml
+```
+
+* Create the Python anaconda environment
+
+```
+conda env create -f install\envs\windows.yml
 conda activate donkey
 pip install -e .[pc]
 ```
 
-* Optionall Install Tensorflow GPU
+* Optionally Install Tensorflow GPU
+
+If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
 
 ```
 conda install tensorflow-gpu
 ```
 
 > Note: After closing the Anaconda Prompt, when you open it again, you will need to 
-> type ```activate donkey``` to re-enable the mappings to donkey specific 
+> type ```conda activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
 
 ----
 
 ## Install donkeycar on Mac
 
-* Install [miniconda Python 3.6 64 bit](https://conda.io/miniconda.html)
+* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html)
 
 * Install [git 64 bit](https://www.atlassian.com/git/tutorials/install-git)
 
@@ -316,11 +329,15 @@ git clone https://github.com/autorope/donkeycar
 cd donkeycar
 ```
 
-* Create the Python anaconda environment
-
+* If this is not your first install, update Conda and remove old donkey
 ```
 conda update -n base -c defaults conda
 conda env remove -n donkey
+```
+
+* Create the Python anaconda environment
+
+```
 conda env create -f install/envs/mac.yml
 conda activate donkey
 pip install -e .[pc]
@@ -344,24 +361,3 @@ donkey createcar --path ~/mycar
 > type ```conda activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
 
--------
-
-### Install another fork of donkeycar
-
-Occasionally you may want to run with changes from a separate fork of donkey. You may uninstall one and install another. That's fastest, but leaves you with only the forked version installed:
-
-``` 
-pip uninstall donkeycar
-git clone --depth=1 https://github.com/<username>/donkey donkey_<username>
-cd donkey_<username>
-pip install -e .<[pi] or [pc]>
-```
-
-To get back to the stock donkey install:
-
-```
-pip uninstall donkeycar
-git clone --depth=1 https://github.com/wroscoe/donkey donkey
-cd donkey
-pip install -e .
-```
