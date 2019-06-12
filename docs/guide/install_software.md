@@ -120,14 +120,6 @@ or via Putty:
 * Hostname:`<your pi IP address>`
 
 
-If you are using the prebuilt image specified above, then your Pi is ready to go. You should see a mycar and donkey directory.
-
-> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/mycar/config.py``` and make sure that you see the lines:
->
-> * STEERING_CHANNEL = 1
-> * THROTTLE_CHANNEL = 0
->
-> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
 
 > Note: If you are using the prebuilt image specified above, your Pi is not using the full capacity of the SD card. To make the full capacity accessible, SSH into the Pi and run `sudo raspi-config` to go into the configuration tool. Select `7 Advanced Options` and `A1 Expand Filesystem`. And then select `<Finish>` to exit the configuration tool and reboot. The Pi can access the full capacity of the SD card now.
 
@@ -149,6 +141,14 @@ Now generate the drive script, config and folder structure for your car.
 ```bash
 donkey createcar ~/mycar
 ```
+
+> Note: Check config.py to make sure it uses the correct settings for the PWM channel for steering and throttle. Open config.py ```nano ~/mycar/config.py``` and make sure that you see the lines:
+>
+> * STEERING_CHANNEL = 1
+> * THROTTLE_CHANNEL = 0
+>
+> The 1 and 0 for the parts arguments should match whichever channel you used to plug your servo/ESC leads in to your 9685 board. Usually this ranges from 0-15 and it numbered on the board.
+
 
 ----
 Now let's setup the same donkey library on your laptop or server so you can test and train autopilots. Install varies depending on platform.
