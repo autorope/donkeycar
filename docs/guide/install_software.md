@@ -3,12 +3,18 @@
 This guide will help you to setup the software to run Donkey on your Raspberry Pi, as well as the host PC operating system of your choice.
 
 * Setup [RaspberryPi](#get-the-raspberry-pi-working)
+![donkey](../assets/logos/rpi_logo.png)
 * Setup [Linux Host PC](#install-donkeycar-on-linux)
+![donkey](../assets/logos/linux_logo.png)
 * Setup [Windows Host PC](#install-donkeycar-on-windows)
+![donkey](../assets/logos/windows_logo.png)
 * Setup [Mac Host PC](#install-donkeycar-on-mac)
+![donkey](../assets/logos/apple_logo.jpg)
 
 ----
-### Get the Raspberry Pi working.
+## Get the Raspberry Pi working.
+
+![donkey](../assets/logos/rpi_logo.png)
 
 You need to flash a micro SD image with an operating system.
 
@@ -157,27 +163,23 @@ echo "source env/bin/activate" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Install Tensorflow
-
-* Install the donkeycar package in pip
-
- If you have an NVIDIA GPU - Install donkeycar and use *tensorflow-gpu* dependency:
-```bash
-pip install donkeycar[tf_gpu]
-```
-
- Otherwise, install donkeycar and use *tensorflow* dependency:
-```bash
-pip install donkeycar[tf]
-```
-
- See [https://github.com/tensorflow/tensorflow/issues/7166](https://github.com/tensorflow/tensorflow/issues/7166) for more information.
-
-
 ### Install Donkeycar Python code
 
+* Change to a dir you would like to use as the head of your projects.
+
+```
+mkdir projects
+cd projects
+```
+
+* Get the latest donkeycar from Github.
+
+```
+git clone https://github.com/autorope/donkeycar
+```
+
 ```bash
-pip install donkeycar[pi]
+pip install -e donkeycar[pi,tf]
 ```
 
 ### Joystick setup
@@ -195,20 +197,29 @@ See also [more information.](https://github.com/autorope/donkeycar/blob/master/d
 
 ### Calibrate and then Get Driving!
 
-You need to [calibrate](https://github.com/autorope/donkeycar/blob/master/docs/guide/calibrate.md) your pwm outputs to steering and throttle.
+You need to [calibrate](calibrate.md) your pwm outputs to steering and throttle.
 
-And then [get driving!](https://github.com/autorope/donkeycar/blob/master/docs/guide/get_driving.md)
-
+And then [get driving!](get_driving.md)
 
 ----
+
+----
+
 ## Now let's setup things on your PC. Install varies depending on platform.
 
 * Setup [Linux Host PC](#install-donkeycar-on-linux)
+![donkey](../assets/logos/linux_logo.png)
 * Setup [Windows Host PC](#install-donkeycar-on-windows)
+![donkey](../assets/logos/windows_logo.png)
 * Setup [Mac Host PC](#install-donkeycar-on-mac)
+![donkey](../assets/logos/apple_logo.jpg)
 
 ----
-## Install donkeycar on Linux
+
+----
+## Install Donkeycar on Linux
+
+![donkey](../assets/logos/linux_logo.png)
 
 * Change to a dir you would like to use as the head of your projects.
 
@@ -251,15 +262,28 @@ pip install -e .[pc]
 conda install tensorflow-gpu
 ```
 
+* Create your local working dir:
+
+```
+donkey createcar --path ~/mycar
+```
+
 > Note: After closing the Anaconda Prompt, when you open it again, you will need to 
 > type ```conda activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
 
+
 ----
 
-## Install donkeycar on Windows
 
-* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html). Be sure to check the box to allow it to modify your system path variable to add conda.
+----
+
+## Install Donkeycar on Windows
+
+![donkey](../assets/logos/windows_logo.png)
+
+* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html).
+
 * Open the Anaconda prompt window via Start Menu | Anaconda 64bit | Anaconda Prompt
 
 * type `git`. If the command is not found, then install [git 64 bit](https://git-scm.com/download/win)
@@ -301,13 +325,24 @@ If you have an NVidia card, you should update to the lastest drivers and [instal
 conda install tensorflow-gpu
 ```
 
+* Create your local working dir:
+
+```
+donkey createcar --path ~/mycar
+```
+
 > Note: After closing the Anaconda Prompt, when you open it again, you will need to 
 > type ```conda activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
 
+
 ----
 
-## Install donkeycar on Mac
+----
+
+## Install Donkeycar on Mac
+
+![donkey](../assets/logos/apple_logo.jpg)
 
 * Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html)
 
@@ -343,17 +378,13 @@ conda activate donkey
 pip install -e .[pc]
 ```
 
-* Optionall Install Tensorflow GPU
+* Tensorflow GPU
+
+Currently there is no gpu support for [tensorflow on mac](https://www.tensorflow.org/install#install-tensorflow).
+
+* Create your local working dir:
 
 ```
-conda install tensorflow-gpu
-```
-
-
-* Install donkey source and create your local working dir:
-
-```
-pip install -e .[pc]
 donkey createcar --path ~/mycar
 ```
 

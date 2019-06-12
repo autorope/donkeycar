@@ -5,7 +5,7 @@ Uses the data written by the donkey v2.2 tub writer,
 but faster training with proper sampling of distribution over tubs. 
 Has settings for continuous training that will look for new files as it trains. 
 Modify on_best_model if you wish continuous training to update your pi as it builds.
-You can drop this in your ~/d2 dir.
+You can drop this in your ~/mycar dir.
 Basic usage should feel familiar: python train.py --model models/mypilot
 You might need to do a: pip install scikit-learn
 

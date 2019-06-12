@@ -143,7 +143,7 @@ class ImageListCamera(BaseCamera):
     '''
     Use the images from a tub as a fake camera output
     '''
-    def __init__(self, path_mask='~/d2/data/**/*.jpg'):
+    def __init__(self, path_mask='~/mycar/data/**/*.jpg'):
         self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
     
         def get_image_index(fnm):

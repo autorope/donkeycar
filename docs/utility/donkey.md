@@ -126,7 +126,7 @@ Usage:
 donkey tubplot <tub_path> [--model=<model_path>]
 ```
 
-* This command may be run from `~/d2` dir
+* This command may be run from `~/mycar` dir
 * Run on the host computer
 * Will show a pop-up window showing the plot of steering values in a given tub compared to NN predictions from the trained model
 * When the `--tub` is omitted, it will check all tubs in the default data dir
@@ -149,7 +149,7 @@ cat ~/.ssh/id_rsa.pub | ssh pi@<your pi ip> 'cat >> .ssh/authorized_keys'
 ```
 * If you don't have a id_rsa.pub then google how to make one
 * Edit your config.py and make sure the fields PI_USERNAME, PI_HOSTNAME, PI_DONKEY_ROOT are setup. Only on windows, you need to set PI_PASSWD.
-* This command may be run from `~/d2` dir
+* This command may be run from `~/mycar` dir
 
 ## Continuous Train
 
@@ -160,7 +160,7 @@ Usage:
 donkey contrain [--tub=<data_path>] [--model=<path to model>] [--transfer=<path to model>] [--type=<linear|categorical|rnn|imu|behavior|3d>] [--aug]
 ```
 
-* This command may be run from `~/d2` dir
+* This command may be run from `~/mycar` dir
 * Run on the host computer
 * First copy your public key to the pi so you don't need a password for each rsync:
 ```bash
@@ -184,7 +184,7 @@ Usage:
 donkey createjs
 ```
 
-* This command may be run from `~/d2` dir
+* This command may be run from `~/mycar` dir
 * Run on the pi
 * First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
 * Debian commonly creates the joystick device file at /dev/input/js0. If not, find out where.

@@ -9,17 +9,25 @@ is the step were the car can take off.
 
 ---
 # Normal usage
-In future runs, when you start a new session, you will want to:
 
-On Windows:
+* On Windows: start a new Anaconda Prompt from Windows start menu, On Mac or Linux open a terminal.
 
-* start a new Anaconda Prompt from Windows start menu
-* Activate mappings to donkey Python setup with: ```activate donkey```
-* Change to your local dir for managing donkey: ```cd ~/d2```
+* Activate mappings to donkey Python setup with: 
+```
+conda activate donkey
+```
+
+* Change to your local dir for managing donkey:
+```
+cd ~/mycar
+```
+
 * Find your pi
+```
+donkey findcar
+```
 
-
-This will show your IP address, prompt for your password, and then search 
+This will show your IP address, perhaps prompt for your root password, and then search 
 for your cars IP address. 
 
 > If your car's IP address is not shown:
@@ -40,7 +48,7 @@ The default user name is 'pi' and the password is 'raspberry'.  If you are using
 #### Start your car.
 Open your car's folder and start your car. 
 ```
-cd ~/d2
+cd ~/mycar
 python manage.py drive
 ```
 
@@ -81,13 +89,13 @@ Check the [Controllers](/parts/controllers/#physical-joystick-controller) sectio
 
 ### Start car
 ```
-cd ~/d2
+cd ~/mycar
 python manage.py drive --js
 ```
 
 Optionally, if you want joystick use to be sticky and don't want to add the --js each time, modify your config.py so that USE_JOYSTICK_AS_DEFAULT = True
 ```
-nano config.py
+nano myconfig.py
 ```
 
 
@@ -112,7 +120,7 @@ nano config.py
 
 ### Start car for self-driving
 ```
-cd ~/d2
+cd ~/mycar
 python manage.py drive --model <path/to/model> --js
 ```
 

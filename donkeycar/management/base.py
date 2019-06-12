@@ -73,7 +73,7 @@ class CreateCar(BaseCommand):
         """
 
         #these are neeeded incase None is passed as path
-        path = path or '~/d2'
+        path = path or '~/mycar'
         template = template or 'donkey2'
 
 
