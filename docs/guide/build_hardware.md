@@ -1,4 +1,4 @@
-# How to Build a Donkey&reg; V2
+# How to Build a Donkey&reg;
 
 &nbsp;
 

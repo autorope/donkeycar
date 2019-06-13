@@ -1,6 +1,6 @@
 # Drive your car.
 
-After you've calibrated your car you can start driving it. 
+After you've [calibrated](/guide/calibrate) your car you can start driving it. 
 
 ### Start your car.
  
@@ -78,9 +78,13 @@ races if you have a pilot that will steer but doesn't control throttle.
 * `j` : turn left 
 * `l` : turn right 
 
+-----
+
+### Next let's [train an autopilot](guide/train_autopilot.md).
+
 ----
 
-## Driving with Physical Joystick Controller
+# Driving with Physical Joystick Controller
 
 You may find that it helps to use a physical joystick device to control your vehicle.
 
@@ -118,19 +122,6 @@ nano myconfig.py
 * Start - Toggle constant throttle. Sets to max throttle (modified by X and Triangle).
 
 
-### Start car for self-driving
-```
-cd ~/mycar
-python manage.py drive --model <path/to/model> --js
-```
+-----
 
-Hit the Select button to toggle between three modes - User, Local Angle, and Local Throttle & Angle.
-
-* User - User controls both steering and throttle with joystick
-* Local Angle - Ai controls steering, user controls throttle
-* Local Throttle & Angle - Ai controls both steering and throttle
-
-When the car is in Local Angle mode, the NN will steer. You must provide throttle.
-
-
-
+### Next let's [train an autopilot](guide/train_autopilot.md).

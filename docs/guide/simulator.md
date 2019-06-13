@@ -4,3 +4,5 @@ Experiment with training a donkey car to drive in simulation. This simulator is 
 
 Go to [Donkey Gym](https://github.com/tawnkramer/donkey_gym/README.md) as well as 
 [Donkey Gym Supervised Learning](https://github.com/tawnkramer/donkey_gym/tree/master/examples/supervised_learning/README.md)
+
+More details to come...

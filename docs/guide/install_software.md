@@ -1,398 +1,45 @@
-# Install Software
+#Install Software
 
-This guide will help you to setup the software to run Donkey on your Raspberry Pi, as well as the host PC operating system of your choice.
+* [Overview](#Overview)
+* Software:
+    * [Step 1: Install Software on Host PC](install_software.md#step-1-Install-Software-on-Host-PC)
+    * [Step 2: Install Software on Donkeycar](install_software.md#step-2-Install-Software-on-Donkeycar)
+* [Create Donkeycar Application](/guide/create_application/)
 
-* Setup [RaspberryPi](#get-the-raspberry-pi-working)
-![donkey](../assets/logos/rpi_logo.png)
-* Setup [Linux Host PC](#install-donkeycar-on-linux)
-![donkey](../assets/logos/linux_logo.png)
-* Setup [Windows Host PC](#install-donkeycar-on-windows)
-![donkey](../assets/logos/windows_logo.png)
-* Setup [Mac Host PC](#install-donkeycar-on-mac)
-![donkey](../assets/logos/apple_logo.jpg)
+## Overview
 
-----
-## Get the Raspberry Pi working.
+Donkeycar has components to install on a host PC. This can be a laptop, or desktop machine. The machine doesn't have to be powerful, but it will benefit from faster cpu, more ram, and an NVidia GPU. An SSD hard drive will greatly impact your training times.
 
-![donkey](../assets/logos/rpi_logo.png)
+Donkeycar software components need to be installed on the robot platform of your choice. Raspberry Pi and Jetson Nano have setup docs. But it has been known to work on Jetson TX2, Friendly Arm SBC, or almost any Debian based SBC ( single board computer ).
 
-You need to flash a micro SD image with an operating system.
+After install, you will create the Donkeycar application from a template. This contains code that is designed for you to customize for your particular case. Don't worry, we will get you started with some useful defaults. 
 
-1. Download [Raspian Lite](https://downloads.raspberrypi.org/raspbian_lite_latest) (300MB). 
-2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
-3. Leave micro SD card in your machine and edit/create some files as below:
+Next we will train the Donkeycar to drive on it's own based on your driving style! This uses a supervised learning technique often referred to as behavioral cloning.
 
-### Setup the Pi's WiFi for first boot
+This is not the only method for getting your Donkeycar to drive itself. But it requires the least amount of hardware and least technical knowledge. Then you can explore other techniques in this Ai mobile labratory called Donkeycar!
 
-We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it. 
+## Step 1: Install Software on Host PC
 
-On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formated with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on it's first boot.
+When controlling your Donkey via behavioral cloning, you will need to setup a host pc to train your machine learning model from the data collected on the robot. Choose a setup that matches your computer OS.
 
-* Start a text editor: `gedit` on Linux. Notepad on Windows. TextEdit on a Mac.
-* Paste and edit this contents to match your wifi:
-```
-country=US
-ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-update_config=1
 
-network={
-    ssid="<your network name>"
-    psk="<your password>"
-}
+* Setup [Linux Host PC](host_pc/setup_ubuntu.md)
+![donkey](/assets/logos/linux_logo.png)
+* Setup [Windows Host PC](host_pc/setup_windows.md)
+![donkey](/assets/logos/windows_logo.png)
+* Setup [Mac Host PC](host_pc/setup_mac.md)
+![donkey](/assets/logos/apple_logo.jpg)
 
-```
 
-Replace `<your network name>` with the ID of your network. Leave the quotes. I've seen problems when the network name contained an apostrophe, like "Joe's iPhone".
-Replace `<your password>` with your password, leaving it surrounded by quotes. 
-If it bothers you to leave your password unencrypted, you may change the [contents later](https://unix.stackexchange.com/questions/278946/hiding-passwords-in-wpa-supplicant-conf-with-wpa-eap-and-mschap-v2) once you've gotten the pi to boot and log-in.
+# Step 2: Install Software On Donkeycar
 
-* Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later. If you are using Notepad on Windows, make sure it doesn't have a .txt at the end.
+This guide will help you to setup the software to run Donkeycar on your Raspberry Pi or Jetson Nano. Choose a setup that matches your SBC type. (SBC = single board computer)
 
-##### Setup Pi's Hostname
-We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
+* Setup [RaspberryPi](robot_sbc/setup_raspberry_pi.md)
+![donkey](/assets/logos/rpi_logo.png)
 
-```
-ping raspberrypi.local
-```
+* Setup [Jetson Nano](robot_sbc/setup_jetson_nano.md)
+![donkey](/assets/logos/nvidia_logo.png)
 
-once it's booted. If there are many other Pi's on the network, then this will have problems. If you are on a Linux machine, or are able to edit the UUID partition, then you can edit the `/etc/hostname` and `/etc/hosts` files now to make finding your pi on the network easier after boot. Edit those to replace `raspberrypi` with a name of your choosing. Use all lower case, no special characters, no hyphens, yes underscores `_`. 
 
-```
-sudo vi /media/userID/UUID/etc/hostname
-sudo vi /media/userID/UUID/etc/hosts
-```
-
-##### Enable SSH on boot
-
-Put a file named __ssh__ in the root of your __boot__ partition.
-
-
-Now you're SD card is ready. Eject it from your computer, put it in the Pi 
-and plug in the Pi.
-
-
-### Connecting to the Pi
-
-If you followed the above instructions to add wifi access you're Pi should
-now be connected to your wifi network. Now you need to find it's IP address
-so you can connect to it via SSH. 
-
-The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping raspberrypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full IP address (unless using cygwin). 
-
-If you are having troubles locating your Pi on the network, you will want to plug in an HDMI monitor and USB keyboard into the Pi. Boot it. Login with:
-
-* Username: __pi__
-* Password: __raspberry__
- 
-Then try the command:
-
-```
-ifconfig wlan0
-```
-
-If this has a valid IPv4 address, 4 groups of numbers separated by dots, then you can try that with your SSH command. If you don't see anything like that, then your wifi config might have a mistake. You can try to fix with
-
-```
-sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
-```
-
-If you don't have a HDMI monitor and keyboard, you can plug-in the Pi with a CAT5 cable to a router with DHCP. If that router is on the same network as your PC, you can try:
-
-```
-ping raspberrypi.local
-```
-
-Hopefully, one of those methods worked and you are now ready to SSH into your Pi. On Mac and Linux, you can open Terminal. On Windows you can install [Putty](http://www.putty.org/) or [one of the alternatives](https://www.htpcbeginner.com/best-ssh-clients-windows-putty-alternatives/2/).
-
-If you have a command prompt, you can try:
-
-```
-ssh pi@raspberrypi.local
-```
-
-or
-
-```
-ssh pi@<your pi ip address>
-```
-
-or via Putty.
-
-* Username: __pi__
-* Password: __raspberry__
-* Hostname:`<your pi IP address>`
-
-### Update and upgrade
-
-```bash
-sudo apt-get update
-sudo apt-get upgrade
-```
-
-### Raspi-config
-
-```bash
-sudo raspi-config
-```
-
-* enable I2c
-* enable camera
-* exapand filesystem
-* change hostname
-* change default password for pi
-
-> Note: reboot after changing these settings
-
-### Install dependencies
-
-```bash
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install build-essential python3 python3-dev python3-virtualenv python3-numpy python3-picamera python3-pandas python3-rpi.gpio i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev git
-```
-
-### Install optional OpenCV dependencies
-```bash
-sudo apt-get install libilmbase-dev libopenexr-dev libgstreamer1.0-dev libjasper-dev libwebp-dev libatlas-base-dev libavcodec-dev libavformat-dev libswscale-dev libqtgui4 libqt4-test
-```
-
-### Setup virtual env
-
-```bash
-python3 -m virtualenv -p python3 env --system-site-packages
-echo "source env/bin/activate" >> ~/.bashrc
-source ~/.bashrc
-```
-
-### Install Donkeycar Python code
-
-* Change to a dir you would like to use as the head of your projects.
-
-```
-mkdir projects
-cd projects
-```
-
-* Get the latest donkeycar from Github.
-
-```bash
-git clone https://github.com/autorope/donkeycar
-cd donkeycar
-git checkout master
-pip install -e .[pi]
-pip install tensorflow
-```
-
-### Joystick setup
-
-If you plan to use a joystick, jump over to [here](https://github.com/autorope/donkeycar/blob/master/docs/parts/controllers.md#physical-joystick-controller).
-
-
-### Create your car application.
-
-```
-donkey createcar --path ~/mycar
-```
-
-See also [more information.](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey/#create-car)
-
-### Calibrate and then Get Driving!
-
-You need to [calibrate](calibrate.md) your pwm outputs to steering and throttle.
-
-And then [get driving!](get_driving.md)
-
-----
-
-----
-
-## Now let's setup things on your PC. Install varies depending on platform.
-
-* Setup [Linux Host PC](#install-donkeycar-on-linux)
-![donkey](../assets/logos/linux_logo.png)
-* Setup [Windows Host PC](#install-donkeycar-on-windows)
-![donkey](../assets/logos/windows_logo.png)
-* Setup [Mac Host PC](#install-donkeycar-on-mac)
-![donkey](../assets/logos/apple_logo.jpg)
-
-----
-
-----
-## Install Donkeycar on Linux
-
-![donkey](../assets/logos/linux_logo.png)
-
-* Change to a dir you would like to use as the head of your projects.
-
-```
-mkdir projects
-cd projects
-```
-
-* Get the latest donkeycar from Github.
-
-```
-git clone https://github.com/autorope/donkeycar
-git checkout master
-cd donkeycar
-```
-
-* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html). 
-
-```
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash ./Miniconda3-latest-Linux-x86_64.sh
-```
-
-* If this is not your first install, update Conda and remove old donkey
-```
-conda update -n base -c defaults conda
-conda env remove -n donkey
-```
-
-* Create the Python anaconda environment
-
-```
-conda env create -f install/envs/ubuntu.yml
-conda activate donkey
-pip install -e .[pc]
-```
-
-* Optionall Install Tensorflow GPU
-
-```
-conda install tensorflow-gpu
-```
-
-* Create your local working dir:
-
-```
-donkey createcar --path ~/mycar
-```
-
-> Note: After closing the Anaconda Prompt, when you open it again, you will need to 
-> type ```conda activate donkey``` to re-enable the mappings to donkey specific 
-> Python libraries
-
-
-----
-
-
-----
-
-## Install Donkeycar on Windows
-
-![donkey](../assets/logos/windows_logo.png)
-
-* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html).
-
-* Open the Anaconda prompt window via Start Menu | Anaconda 64bit | Anaconda Prompt
-
-* type `git`. If the command is not found, then install [git 64 bit](https://git-scm.com/download/win)
-
-
-* Change to a dir you would like to use as the head of your projects.
-
-```
-mkdir projects
-cd projects
-```
-
-* Get the latest donkey from Github.
-
-```
-git clone https://github.com/autorope/donkeycar
-cd donkeycar
-git checkout master
-```
-
-* If this is not your first install, update Conda and remove old donkey
-```
-conda update -n base -c defaults conda
-conda env remove -n donkey
-```
-
-* Create the Python anaconda environment
-
-```
-conda env create -f install\envs\windows.yml
-conda activate donkey
-pip install -e .[pc]
-```
-
-* Optionally Install Tensorflow GPU
-
-If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
-
-```
-conda install tensorflow-gpu
-```
-
-* Create your local working dir:
-
-```
-donkey createcar --path ~/mycar
-```
-
-> Note: After closing the Anaconda Prompt, when you open it again, you will need to 
-> type ```conda activate donkey``` to re-enable the mappings to donkey specific 
-> Python libraries
-
-
-----
-
-----
-
-## Install Donkeycar on Mac
-
-![donkey](../assets/logos/apple_logo.jpg)
-
-* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html)
-
-* Install [git 64 bit](https://www.atlassian.com/git/tutorials/install-git)
-
-* Start Terminal
-
-* Change to a dir you would like to use as the head of your projects.
-
-```
-mkdir projects
-cd projects
-```
-
-* Get the latest donkeycar from Github.
-
-```
-git clone https://github.com/autorope/donkeycar
-cd donkeycar
-git checkout master
-```
-
-* If this is not your first install, update Conda and remove old donkey
-```
-conda update -n base -c defaults conda
-conda env remove -n donkey
-```
-
-* Create the Python anaconda environment
-
-```
-conda env create -f install/envs/mac.yml
-conda activate donkey
-pip install -e .[pc]
-```
-
-* Tensorflow GPU
-
-Currently there is no gpu support for [tensorflow on mac](https://www.tensorflow.org/install#install-tensorflow).
-
-* Create your local working dir:
-
-```
-donkey createcar --path ~/mycar
-```
-
-> Note: After closing the Terminal, when you open it again, you will need to 
-> type ```conda activate donkey``` to re-enable the mappings to donkey specific 
-> Python libraries
-
+## Next: [Create Your Donkeycar Application](/guide/create_application/).

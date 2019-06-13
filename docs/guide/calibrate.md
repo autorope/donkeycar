@@ -99,3 +99,5 @@ After you've fine tuned your car the steering chart should look something like
 this.
 
 ![calibration graph](../assets/calibration_graph.png)
+
+### Next let's [get driving!](/guide/get_driving/)

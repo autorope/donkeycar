@@ -1,15 +1,16 @@
 # Controller Parts
 
-## Local Web Controller
+## Web Controller
 
 The default controller to drive the car with your phone or browser. This has a web live preview of camera. Control options include:
 
 1. A virtual joystick
 2. The tilt, when using a mobile device with supported accelerometer
 3. A physical joystick using the web adapter. Support varies per browser, OS, and joystick combination.
+4. Keyboard input via the 'wasd' keys.
 
 
-## Bluetooth Joystics
+## Joystic Controller
 Many people find it easier to control the car using a game controller. There are several parts that provide this option.
 
 The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the OS device /dev/input/js0 by default. In theory, any joystick device that the OS mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the Bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.ebay.com/sch/i.html?_nkw=Sony+Playstation+Dualshock+PS3+controller+OEM). Other controllers may work, but will require alternative Bluetooth installs, and tweaks to the software for correct axis and buttons.
@@ -77,6 +78,31 @@ To test that the Bluetooth PS3 remote is working, verify that /dev/input/js0 exi
 
 ```bash
 ls /dev/input/js0
+```
+
+##### Troubleshooting
+
+In case the BT connection on the Raspberry Pi does not work, you see might something like this in `bluetoothctl`:
+```
+[NEW] Controller 00:11:22:33:44:55 super-donkey [default]
+[NEW] Device AA:BB:CC:DD:EE:FF PLAYSTATION(R)3 Controller
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: yes
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: no
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: yes
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: no
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: yes
+...
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: yes
+[CHG] Device AA:BB:CC:DD:EE:FF Connected: no
+[bluetooth]#
+```
+Try updating the Linux kernel and firmware by running:
+```
+sudo rpi-update
+```
+And then reboot:
+```
+sudo reboot
 ```
 
 ### Charging PS3 Sixaxis Joystick
