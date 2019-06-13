@@ -12,7 +12,7 @@ pages:
     - User Guide:
         - 'Build a car.': guide/build_hardware.md
         - 'Install the software.': guide/install_software.md
-        - 'Create donkeycar app.': guide/create_application.md
+        - 'Create Donkeycar App.': guide/create_application.md
         - 'Calibrate steering and throttle.': guide/calibrate.md
         - 'Get driving.': guide/get_driving.md
         - 'Train an autopilot.': guide/train_autopilot.md

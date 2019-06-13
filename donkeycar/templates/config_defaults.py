@@ -22,7 +22,7 @@ DONKEY_UNIQUE_NAME = 'my_robot1234'
 PI_USERNAME = "pi"
 PI_PASSWD = "raspberry"
 PI_HOSTNAME = "raspberrypi.local"
-PI_DONKEY_ROOT = "/home/pi/d2"
+PI_DONKEY_ROOT = "/home/pi/mycar"
 
 #PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -102,11 +102,11 @@ FREEZE_LAYERS = False
 NUM_LAST_LAYERS_TO_TRAIN = 7
 
 #JOYSTICK
-USE_JOYSTICK_AS_DEFAULT = True
+USE_JOYSTICK_AS_DEFAULT = False
 JOYSTICK_MAX_THROTTLE = 0.3
 JOYSTICK_STEERING_SCALE = 1.0
 AUTO_RECORD_ON_THROTTLE = True
-CONTROLLER_TYPE='ps3'           #(ps3|ps4|xbox|nimbus|wiiu)
+CONTROLLER_TYPE='ps3'           #(ps3|ps4|xbox|nimbus|wiiu|F710)
 USE_NETWORKED_JS = False
 NETWORK_JS_SERVER_IP = "192.168.0.1"
 JOYSTICK_DEADZONE = 0.0         # when non zero, this is the smallest throttle before recording triggered.

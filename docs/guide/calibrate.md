@@ -1,7 +1,6 @@
 # Calibrate your Car
 
-The point of calibrating your car is to make it drive consitently with
-other vehicles. These instructions
+The point of calibrating your car is to make it drive consitently.
 
 ## How to adjust your car's settings.
 
@@ -11,13 +10,6 @@ this file on your car by running:
 ```bash
 nano ~/mycar/myconfig.py
 ```
-
-The `config.py` provides the developer provided defaults. This is updated by ```donkey createcar --overwrite```. Make edits to `myconfig.py` and they will be preserved automatically through updates.
-
-Our goal is to edit these settings so your car will drive like every
-other calibrated Donkey2. This way you'll be able to share pilots and
-datasets between each car.
-
 
 >You will need to ssh into your Pi to do the calibration.
 

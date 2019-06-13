@@ -7,7 +7,7 @@ The default controller to drive the car with your phone or browser. This has a w
 1. A virtual joystick
 2. The tilt, when using a mobile device with supported accelerometer
 3. A physical joystick using the web adapter. Support varies per browser, OS, and joystick combination.
-4. Keyboard input via the 'wasd' keys.
+4. Keyboard input via the 'ikjl' keys.
 
 
 ## Joystic Controller
@@ -21,12 +21,12 @@ If you have a non PS3 controller, or having troubles getting your controller but
 
 These joysticks are known to work:
 
-* [Sony PS3 Sixaxis OEM](https://www.ebay.com/sch/i.html?&_nkw=Sony+PS3+Sixaxis+OEM)
 * [Logitech Gamepad F710](https://www.amazon.com/Logitech-940-000117-Gamepad-F710/dp/B0041RR0TW)
+* [Sony PS3 Sixaxis OEM](https://www.ebay.com/sch/i.html?&_nkw=Sony+PS3+Sixaxis+OEM)
 * [Sony PS4 Dualshock OEM](https://www.ebay.com/sch/i.html?&_nkw=Sony+PS4+Dualshock+OEM)
-* [SteelSeries Nimbus](https://www.amazon.com/gp/product/B01AZC3III) (works only on TX2 jetpack 4.2+, may work on the Nano)
 * [WiiU Pro](https://www.amazon.com/Nintendo-Wii-U-Pro-Controller-Black/dp/B00MUY0OFU)
 * [XBox Controller](https://www.amazon.com/Xbox-Wireless-Controller-Blue-one/dp/B01M0F0OIY)
+* [SteelSeries Nimbus](https://www.amazon.com/gp/product/B01AZC3III) (works only on TX2 jetpack 4.2+, may work on the Nano)
 
 These can be enabled by finding the CONTROLLER_TYPE in your myconfig.py and setting it to the correct string identifier ( after disabling the comment ).
 

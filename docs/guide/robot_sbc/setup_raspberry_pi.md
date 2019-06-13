@@ -1,6 +1,21 @@
-# Get the Raspberry Pi working.
+# Get Your Raspberry Pi Working.
 
 ![donkey](/assets/logos/rpi_logo.png)
+
+* [Step 1: Flash Operating System](#step-1-flash-operating-system)
+* [Step 2: Setup the WiFi for First Boot](#step-2-setup-the-wifi-for-first-boot)
+* [Step 3: Setup Pi's Hostname](#step-3-setup-pis-hostname)
+* [Step 4: Enable SSH on Boot](#step-4-enable-ssh-on-boot)
+* [Step 5: Connecting to the Pi](#step-5-connecting-to-the-pi)
+* [Step 6: Update and Upgrade](#step-6-update-and-upgrade)
+* [Step 7: Raspi-config](#step-7-raspi-config)
+* [Step 8: Install Dependencies](#step-8-install-dependencies)
+* [Step 9: Install Optional OpenCV Dependencies](#step-9-install-optional-opencv-dependencies)
+* [Step 10: Setup Virtual Env](#step-10-setup-virtual-env)
+* [Step 11: Install Donkeycar Python Code](#step-11-install-donkeycar-python-code)
+* Then [Create your Donkeycar Application](/guide/create_application/)
+
+## Step 1: Flash Operating System
 
 You need to flash a micro SD image with an operating system.
 
@@ -8,7 +23,7 @@ You need to flash a micro SD image with an operating system.
 2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 3. Leave micro SD card in your machine and edit/create some files as below:
 
-## Setup the Pi's WiFi for first boot
+## Step 2: Setup the WiFi for first boot
 
 We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it. 
 
@@ -34,7 +49,7 @@ If it bothers you to leave your password unencrypted, you may change the [conten
 
 * Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later. If you are using Notepad on Windows, make sure it doesn't have a .txt at the end.
 
-#### Setup Pi's Hostname
+## Step 3: Setup Pi's Hostname
 We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
 
 ```
@@ -48,7 +63,7 @@ sudo vi /media/userID/UUID/etc/hostname
 sudo vi /media/userID/UUID/etc/hosts
 ```
 
-#### Enable SSH on boot
+## Step 4: Enable SSH on Boot
 
 Put a file named __ssh__ in the root of your __boot__ partition.
 
@@ -57,7 +72,7 @@ Now you're SD card is ready. Eject it from your computer, put it in the Pi
 and plug in the Pi.
 
 
-## Connecting to the Pi
+## Step 5: Connecting to the Pi
 
 If you followed the above instructions to add wifi access you're Pi should
 now be connected to your wifi network. Now you need to find it's IP address
@@ -108,14 +123,14 @@ or via Putty.
 * Password: __raspberry__
 * Hostname:`<your pi IP address>`
 
-## Update and upgrade
+## Step 6: Update and Upgrade
 
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
 ```
 
-## Raspi-config
+## Step 7: Raspi-config
 
 ```bash
 sudo raspi-config
@@ -129,7 +144,7 @@ sudo raspi-config
 
 > Note: reboot after changing these settings
 
-## Install dependencies
+## Step 8: Install Dependencies
 
 ```bash
 sudo apt-get update
@@ -137,12 +152,12 @@ sudo apt-get upgrade
 sudo apt-get install build-essential python3 python3-dev python3-virtualenv python3-numpy python3-picamera python3-pandas python3-rpi.gpio i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev git
 ```
 
-## Install optional OpenCV dependencies
+## Step 9: Install Optional OpenCV Dependencies
 ```bash
 sudo apt-get install libilmbase-dev libopenexr-dev libgstreamer1.0-dev libjasper-dev libwebp-dev libatlas-base-dev libavcodec-dev libavformat-dev libswscale-dev libqtgui4 libqt4-test
 ```
 
-## Setup virtual env
+##  Step 10: Setup Virtual Env
 
 ```bash
 python3 -m virtualenv -p python3 env --system-site-packages
@@ -150,7 +165,7 @@ echo "source env/bin/activate" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-## Install Donkeycar Python code
+##  Step 11: Install Donkeycar Python Code
 
 * Change to a dir you would like to use as the head of your projects.
 

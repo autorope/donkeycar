@@ -1225,6 +1225,29 @@ class JoyStickSub(object):
         self.axis = None
         return ret
 
+def get_js_controller(cfg):
+    cont_class = None
+    if cfg.CONTROLLER_TYPE == "ps3":
+        cont_class = PS3JoystickController
+    elif cfg.CONTROLLER_TYPE == "ps4":
+        cont_class = PS4JoystickController
+    elif cfg.CONTROLLER_TYPE == "nimbus":
+        cont_class = NimbusController
+    elif cfg.CONTROLLER_TYPE == "xbox":
+        cont_class = XboxOneJoystickController
+    elif cfg.CONTROLLER_TYPE == "wiiu":
+        cont_class = WiiUController
+    elif cfg.CONTROLLER_TYPE == "F710":
+        cont_class = LogitechJoystickController
+    else:
+        raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
+    
+    ctr = cont_class(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+    
+    ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+    return ctr
 
 if __name__ == "__main__":
     '''

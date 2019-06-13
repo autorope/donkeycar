@@ -19,8 +19,8 @@ import numpy as np
 
 import donkeycar as dk
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.camera import PiCamera
+from donkeycar.parts.controller import get_js_controller
 
 
 
@@ -44,8 +44,10 @@ def drive(cfg, model_path=None, model_type=None):
     cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
     V.add(cam, outputs=['cam/image_array'], threaded=True)
         
+        
+    ctr = get_js_controller(cfg)
    
-    V.add(LocalWebController(), 
+    V.add(ctr, 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)

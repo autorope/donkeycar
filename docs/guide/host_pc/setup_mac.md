@@ -54,5 +54,4 @@ donkey createcar --path ~/mycar
 
 ----
 
-
-### Next let's [install software on Donkeycar](/guide/install_software/)
+### Next let's [install software on Donkeycar](/guide/install_software/#step-2-install-software-on-donkeycar)
