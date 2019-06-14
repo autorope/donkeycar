@@ -14,7 +14,7 @@ def test_train_cat(tub, tub_path):
     t = Tub(tub_path)
     assert t is not None
 
-    import donkeycar.templates.config_defaults as cfg
+    import donkeycar.templates.cfg_complete as cfg
     tempfolder = tub_path[:-3]
     model_path = os.path.join(tempfolder, 'test.h5')
     cfg.MAX_EPOCHS = 1
@@ -36,7 +36,7 @@ def test_train_linear(tub, tub_path):
     t = Tub(tub_path)
     assert t is not None
 
-    import donkeycar.templates.config_defaults as cfg
+    import donkeycar.templates.cfg_complete as cfg
     tempfolder = tub_path[:-3]
     model_path = os.path.join(tempfolder, 'test.h5')
     cfg.MAX_EPOCHS = 1
@@ -63,7 +63,7 @@ def test_train_latent(tub, tub_path):
     t = Tub(tub_path)
     assert t is not None
 
-    import donkeycar.templates.config_defaults as cfg
+    import donkeycar.templates.cfg_complete as cfg
     tempfolder = tub_path[:-3]
     model_path = os.path.join(tempfolder, 'test.h5')
     cfg.MAX_EPOCHS = 1
@@ -86,7 +86,7 @@ def test_train_seq(tub, tub_path):
     t = Tub(tub_path)
     assert t is not None
 
-    import donkeycar.templates.config_defaults as cfg
+    import donkeycar.templates.cfg_complete as cfg
     tempfolder = tub_path[:-3]
     model_path = os.path.join(tempfolder, 'test.h5')
     cfg.MAX_EPOCHS = 1
