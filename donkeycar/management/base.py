@@ -65,7 +65,7 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
     
-    def create_car(self, path, template='donkey2', overwrite=False):
+    def create_car(self, path, template='complete', overwrite=False):
         """
         This script sets up the folder struction for donkey to work. 
         It must run without donkey installed so that people installing with
@@ -74,7 +74,7 @@ class CreateCar(BaseCommand):
 
         #these are neeeded incase None is passed as path
         path = path or '~/mycar'
-        template = template or 'donkey2'
+        template = template or 'complete'
 
 
         print("Creating car folder: {}".format(path))
@@ -88,7 +88,7 @@ class CreateCar(BaseCommand):
             
         #add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
-        config_template_path = os.path.join(TEMPLATES_PATH, 'config_defaults.py')
+        config_template_path = os.path.join(TEMPLATES_PATH, 'cfg_' + template + '.py')
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         car_app_path = os.path.join(path, 'manage.py')
@@ -117,6 +117,18 @@ class CreateCar(BaseCommand):
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")
             shutil.copyfile(myconfig_template_path, mycar_config_path)
+            #now copy file contents from config to myconfig, with all lines commented out.
+            cfg = open(car_config_path, "rt")
+            mcfg = open(mycar_config_path, "at")
+            copy = False
+            for line in cfg:
+                if "import os" in line:
+                    copy = True
+                if copy: 
+                    mcfg.write("# " + line)
+            cfg.close()
+            mcfg.close()
+
  
         print("Donkey setup complete.")
 

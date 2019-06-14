@@ -64,10 +64,9 @@ If you are using a PCA9685 card, make sure you can see it on I2C.
 Jetson Nano:
 
 ```bash
-sudo usermod -aG i2c <username>
+sudo usermod -aG i2c username
 sudo i2cdetect -r -y 1
 ```
-Replace `<username>` with you login username.
 
 Raspberry Pi:
 
@@ -94,10 +93,25 @@ In this case, the 40 shows up as the address of our PCA9685 board. If this does 
 
 If you have assigned a non-standard address to your board, then adjust the address in the myconfig.py `PCA9685_I2C_ADDR`. If your board is on another bus, then you can specify that with the `PCA9685_I2C_BUSNUM`.
 
+> Jetson Nano: set __PCA9685_I2C_BUSNUM = 1__ in your __myconfig.py__
+
 
 ## Joystick setup
 
 If you plan to use a joystick, take a side track over to [here](/parts/controllers/#joystick-controller).
+
+## Camera Setup
+
+If you are on a raspberry pi and using the recommended pi camera, then no changes are needed to your __myconfg.py__. If you are using a Jetson Nano with a Sony IMX219 based camera, then you will want edit your __myconfg.py__ to have:
+___CAMERA_TYPE = "CSIC"__
+
+CVCAM is a camera type that has worked for USB cameras when OpenCV is setup. This requires additional setup for [OpenCV](https://pypi.org/project/opencv-python/).
+
+WEBCAM is a camera type that uses the pygame library, also typically for USB cameras. That requires additional setup for [pygame](https://www.pygame.org/wiki/GettingStarted).
+
+## Troubleshooting
+
+If you are having troubles with your camera, check out our [Discourse FAQ for hardware troubleshooting](https://donkey.discourse.group/t/faq-troubleshooting/33). Check this forum for more help.
 
 -------
 

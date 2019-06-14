@@ -4,14 +4,14 @@ from tempfile import gettempdir
 import unittest
 from donkeycar.parts.datastore import TubWriter, Tub
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.templates import donkey2
+from donkeycar.templates import complete
 import donkeycar as dk
 import os
 
 import pytest
 
 #fixtures
-from .setup import tub, tub_path, on_pi, default_template, d2_path
+from .setup import tub, tub_path, on_pi, default_template, d2_path, custom_template
 
 def test_config():
     path = default_template(d2_path(gettempdir()))
@@ -26,5 +26,14 @@ def test_drive():
     myconfig.close()
     cfg = dk.load_config(os.path.join(path, 'config.py'))
     cfg.MAX_LOOPS = 10
-    donkey2.drive(cfg=cfg)
+    complete.drive(cfg=cfg)
 
+
+def test_custom_templates():
+    template_names = ["complete", "just_drive",  "basic_js", "basic_web", "manage_remote", "path_follower", "square", "gym_remote_tester"]
+    for template in template_names:
+        path = custom_template(d2_path(gettempdir()), template=template)
+        cfg = dk.load_config(os.path.join(path, 'config.py'))
+        assert(cfg != None)
+        mcfg = dk.load_config(os.path.join(path, 'myconfig.py'))
+        assert(mcfg != None)

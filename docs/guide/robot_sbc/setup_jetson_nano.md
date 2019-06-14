@@ -14,11 +14,16 @@ Visit the official [Nvidia Jetson Nano Getting Started Guide](https://developer.
 
 ## Step 2: Install Dependencies
 
+ssh into your vehicle. Use the the terminal for Ubuntu or Mac. [Putty](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) for windows.
+
+
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential python3 python3-dev libhdf5-serial-dev hdf5-tools 
+sudo apt-get install build-essential python3 python3-dev python3-pip libhdf5-serial-dev hdf5-tools 
 ```
+
+Optionally, you can install RPi.GPIO clone for Jetson Nano from [here](https://github.com/NVIDIA/jetson-gpio). This is not required for default setup, but can be useful if using LED or other GPIO driven devices.
 
 ##  Step 3: Setup Virtual Env
 
@@ -43,7 +48,7 @@ cd projects
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
 git checkout master
-pip install -e .[pi]
+pip install -e .[nano]
 pip3 install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v42 tensorflow-gpu==1.13.1+nv19.3
 ```
 

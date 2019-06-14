@@ -53,6 +53,9 @@ setup(name='donkeycar',
                         'Adafruit_PCA9685',
                         'RPi.GPIO'
                         ],
+                    'nano': [
+                        'Adafruit_PCA9685',                        
+                        ],
                     'pc': [
                         'matplotlib',
                         'scikit-learn',

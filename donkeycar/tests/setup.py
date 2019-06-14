@@ -55,6 +55,11 @@ def default_template(d2_path):
     c.create_car(d2_path, overwrite=True)
     return d2_path
 
+def custom_template(d2_path, template):
+    c = CreateCar()
+    c.create_car(d2_path, template=template, overwrite=True)
+    return d2_path
+
 
 def create_sample_record():
     cam = SquareBoxCamera()

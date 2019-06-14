@@ -123,6 +123,50 @@ class Webcam(BaseCamera):
         print('stoping Webcam')
         time.sleep(.5)
 
+
+class CSICamera(BaseCamera):
+    '''
+    Camera for Jetson Nano IMX219 based camera
+    Credit: https://github.com/feicccccccc/donkeycar/blob/dev/donkeycar/parts/camera.py
+    '''
+    def gstreamer_pipeline(self,capture_width=120, capture_height=160, display_width=120, display_height=160, framerate=20, flip_method=0) :   
+        return ('nvarguscamerasrc ! ' 
+        'video/x-raw(memory:NVMM), '
+        'width=(int)%d, height=(int)%d, '
+        'format=(string)NV12, framerate=(fraction)%d/1 ! '
+        'nvvidconv flip-method=%d ! '
+        'video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! '
+        'videoconvert ! '
+        'video/x-raw, format=(string)BGR ! appsink'  % (capture_width,capture_height,framerate,flip_method,display_width,display_height))
+    
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=60):
+        import cv2
+
+        # initialize the camera and stream
+        self.camera = cv2.VideoCapture(\
+            self.gstreamer_pipeline(\
+                display_width=image_w,\
+                    display_height=image_h,
+                    flip_method=0),
+                    cv2.CAP_GSTREAMER)
+
+        self.poll_camera()
+        print('CSICamera loaded.. .warming camera')
+        time.sleep(2)
+
+    def poll_camera(self):
+        self.ret , self.frame = self.camera.read()
+
+    def run(self):
+        self.poll_camera()
+        return self.frame
+    
+    def shutdown(self):
+        print('stoping CSICamera')
+        time.sleep(.5)
+        del(self.camera)
+
+
 class MockCamera(BaseCamera):
     '''
     Fake camera. Returns only a single static frame
