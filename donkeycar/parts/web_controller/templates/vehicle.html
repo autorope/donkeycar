@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <div class="container">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="form-inline">
+          <div class="form-group">
+            <label class="group-label">
+              Control Mode
+              <a data-toggle="modal" class="btn btn-primary btn-xs" data-target="#aboutControlModes">
+                <span class="glyphicon glyphicon-info-sign"></span>
+              </a>
+            </label>
+            <br/>
+            <div class="btn-group" data-toggle="buttons">
+              <label class="btn btn-primary" id="joystick-toggle">
+                <input type="radio" name="controlMode" id="joystick" autocomplete="off" value="joystick"> Joystick
+              </label>
+              <label class="btn btn-primary" id="gamepad-toggle">
+                <input type="radio" name="controlMode" id="gamepad" autocomplete="off" value="gamepad"> Gamepad
+              </label>
+              <label class="btn btn-primary" id="tilt-toggle">
+                <input type="radio" name="controlMode" id="tilt" autocomplete="off" value="tilt">Device Tilt
+              </label>
+            </div>
+          </div>
+          <div class="form-group" style="max-width:30%;">
+            <label class="group-label">Max Throttle</label><br/>
+            <div class="form-group">
+              <select id="max_throttle_select" class="form-control">
+                <option disabled selected> Select Max Throttle </option>
+                {% for t in [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 100] %}
+                  <option value="{{ t / 100.0 }}">{{ t }}%</option>
+                {% end %}
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="max-width:30%;">
+            <label class="group-label">Throttle Mode</label><br/>
+            <div class="form-group">
+              <select id="throttle_mode_select" class="form-control">
+                <option value="user" selected>User</option>
+                <option value="constant">Constant (Selected Max)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-xs-4 col-sm-2 col-md-2">
+        <div id="control-bars">
+          <label class="group-label">Angle &amp; Throttle</label>
+          <div>
+            <span class="glyphicon glyphicon-resize-horizontal pull-left"></span>
+            <div class="progress negative">
+              <div id="angle-bar-backward" class="progress-bar progress-bar-warning pull-right" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+
+            <div class="progress positive">
+              <div id="angle-bar-forward" class="progress-bar progress-bar-info" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <span class="glyphicon glyphicon-resize-vertical pull-left"></span>
+            <div class="progress negative">
+              <div id="throttle-bar-backward" class="progress-bar progress-bar-danger pull-right" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+
+            <div class="progress positive">
+              <div id="throttle-bar-forward" class="progress-bar progress-bar-success" role="progressbar" style="width: 0%;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form>
+          <label>Mode &amp; Pilot</label>
+          <div class="form-group">
+            <select id="mode_select" class="form-control">
+              <option disabled selected> Select Mode </option>
+              <option value="user">User (d)</option>
+              <option value="local">Local Pilot (d)</option>
+              <option value="local_angle">Local Angle (d)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <button type="button" id="record_button" class="btn btn-info btn-block">
+              Start Recording (r)
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="col-xs-8 col-sm-5 col-md-5"><!-- center column -->
+        <div class="thumbnail">
+          <img id='mpeg-image', class='img-responsive' src="/video"/> </img>
+        </div>
+      </div><!-- end center column -->
+
+      <div id="joystick-column" class="col-xs-10 col-sm-5 col-md-5">
+        <div class="thumbnail">
+          <div id="joystick_container">
+            <p>Click/touch to use joystic.</p>
+          </div>
+        </div><!-- end right col -->
+      </div><!-- end right col -->
+    </div>
+    <div id="joystick-padding"></div>
+
+  </div> <!-- END Container -->
+  <footer class="footer" id="vehicle_footer">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <button type="button" id="brake_button" class="btn btn-lg btn-success btn-block">Start Vehicle (space)</button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal -->
+  <div class="modal fade" id="aboutControlModes" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel">About Control Modes</h4>
+        </div>
+        <div class="modal-body">
+          <p>
+            <strong>Joystick</strong> control is provided via the blue touch/click area on screen. Click or touch and drag to control throttle and steering. In joystick mode, you can also use the following keyboard keys:
+            <ul>
+              <li>Forward: <code>I</code></li>
+              <li>Reverse: <code>K</code></li>
+              <li>Left: <code>J</code> </li>
+              <li>Right: <code>L</code></li>
+            </ul>
+          </p>
+          <p>
+            <strong>Gamepad</strong> control is enabled by the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Gamepad_API/Using_the_Gamepad_API">HTML5 gamepad API</a>, currently supported by Chrome and Firefox. Playstation 3 controllers have been confirmed to work.
+          </p>
+          <p>
+            <strong>Device tilt</strong> control is enabled for devices with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Detecting_device_orientation">device orientation sensors</a>, and should work with most modern smartphones. Hold your device in landscape mode, tilt  forward/backward for throttle and left/right for steering.
+          </p>
+
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="text/javascript">
+  $( document ).ready(function() {
+    console.log( "document ready!" );
+    driveHandler.load()
+  });
+</script>
+
+{% end %}

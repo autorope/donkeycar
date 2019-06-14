@@ -1,0 +1,120 @@
+@media (max-width: 768px) {
+	#joystick-column {
+		/* This causes joystick to be offscreen on iPhone 5s, 6, iPad 2
+		position: fixed;
+		bottom:100;
+		right:0;*/
+		width:100%;
+		height:40%;
+
+	}
+
+	#joystick-padding {
+		height:220px;
+	}
+}
+
+#controls-column {
+	margin-top:10px;
+}
+#control-bars {
+	margin-top:10px;
+}
+.group-label {
+	width:100%;
+}
+
+/* this setting is too large on iPhone5s */
+#control-bars .progress {
+	width: 40%;
+}
+
+#control-bars .glyphicon {
+	margin-right: 3px;
+}
+
+#control-bars .progress.negative {
+	float: left;
+	border-top-right-radius: 0px;
+	border-bottom-right-radius: 0px;
+}
+
+#control-bars .progress.positive {
+	border-top-left-radius: 0px;
+	border-bottom-left-radius: 0px;
+}
+
+#vehicle_controls input {
+	width: 100%;
+}
+
+#mpeg-image {
+	width:100%;
+}
+
+#joystick_container {
+	text-align: center;
+	height: 335px;
+	padding-top: 155px;
+	border-color: #bce8f1;
+	background-color: #d9edf7;
+}
+
+#vehicle_footer {
+	height:auto;
+}
+
+#brake_button {
+	margin-top:5px;
+	margin-bottom: 5px;
+}
+
+div.session-thumbnails .ui-selecting {
+	background-color: #fcf8e3;
+	border-color: #faebcc;
+}
+
+div.session-thumbnails .ui-selected {
+	background-color: #f2dede;
+	border-color: #ebccd1;
+}
+
+div.session-thumbnails img {
+	width: 160px;
+	height: auto;
+}
+
+div.session-thumbnails .desc {
+	margin-bottom:0px;
+}
+
+div.session-thumbnails li.thumbnail {
+	width:170px;
+	float: left;
+	margin-right:5px;
+}
+
+div.session-thumbnails .caption {
+	padding:5px 5px 0px 5px;
+}
+
+div.session-thumbnails label {
+	padding-left: 0px;
+}
+
+div.img-controls {
+	margin: 20px 0;
+}
+
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: 60px;
+}
+.footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 60px;
+  background-color: #f5f5f5;
+}
