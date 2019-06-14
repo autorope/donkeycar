@@ -56,6 +56,8 @@ setup(name='donkeycar',
                     'pc': [
                         'matplotlib',
                         'scikit-learn',
+                        ],
+                    'dev' : [
                         'pytest',
                         'pytest-cov',
                         'responses',
