@@ -123,7 +123,7 @@ class LocalWebController(tornado.web.Application):
         handlers = [
             (r"/", tornado.web.RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
-            #(r"/video",VideoAPI),
+            (r"/video",VideoAPI),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
             ]
 
