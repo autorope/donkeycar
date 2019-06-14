@@ -22,11 +22,12 @@ install:
 - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
 - source activate test-environment
 - pip install -e .[tf]
+- pip install -e .[pc]
 - pip install -e .[dev]
 - pip install -e .[ci]
 
 script:
-- pytest -v --cov=donkeycar donkeycar/tests
+- pytest -v donkeycar/tests
 
 stages:
     - name: deploy
