@@ -14,9 +14,9 @@ The client and web server needed to control a car remotely.
 import os
 import json
 import time
+import asyncio
 
 import requests
-
 import tornado.ioloop
 import tornado.web
 import tornado.gen
@@ -123,7 +123,7 @@ class LocalWebController(tornado.web.Application):
         handlers = [
             (r"/", tornado.web.RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
-            (r"/video",VideoAPI),
+            #(r"/video",VideoAPI),
             (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
             ]
 
@@ -133,10 +133,10 @@ class LocalWebController(tornado.web.Application):
 
     def update(self, port=8887):
         ''' Start the tornado webserver. '''
+        asyncio.set_event_loop(asyncio.new_event_loop())
         print(port)
         self.port = int(port)
         self.listen(self.port)
-        tornado.ioloop.IOLoop.instance().start()
 
 
     def run_threaded(self, img_arr=None):
@@ -174,11 +174,8 @@ class VideoAPI(tornado.web.RequestHandler):
     '''
     Serves a MJPEG of the images posted from the vehicle. 
     '''
-    @tornado.web.asynchronous
-    @tornado.gen.coroutine
-    def get(self):
+    async def get(self):
 
-        ioloop = tornado.ioloop.IOLoop.current()
         self.set_header("Content-type", "multipart/x-mixed-replace;boundary=--boundarydonotcross")
 
         self.served_image_timestamp = time.time()
@@ -196,6 +193,6 @@ class VideoAPI(tornado.web.RequestHandler):
                 self.write("Content-length: %s\r\n\r\n" % len(img)) 
                 self.write(img)
                 self.served_image_timestamp = time.time()
-                yield tornado.gen.Task(self.flush)
+                await self.flush()
             else:
-                yield tornado.gen.Task(ioloop.add_timeout, ioloop.time() + interval)
+                await tornado.gen.sleep(interval)
