@@ -6,7 +6,7 @@ dependencies:
 - tensorflow
 - opencv
 - matplotlib
-- tornado=4.5.3
+- tornado
 - docopt
 - pandas
 - pylint
