@@ -2,6 +2,18 @@
 
 ![donkey](/assets/logos/linux_logo.png)
 
+> Note : tested on Ubuntu 18.04 LTS
+
+* Open the Terminal application.
+
+
+* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html). 
+
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash ./Miniconda3-latest-Linux-x86_64.sh
+```
+
 * Change to a dir you would like to use as the head of your projects.
 
 ```
@@ -17,12 +29,6 @@ git checkout master
 cd donkeycar
 ```
 
-* Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html). 
-
-```
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-bash ./Miniconda3-latest-Linux-x86_64.sh
-```
 
 * If this is not your first install, update Conda and remove old donkey
 ```
@@ -39,6 +45,8 @@ pip install -e .[pc]
 ```
 
 * Optionall Install Tensorflow GPU
+
+You should have an NVidia GPU with the latest drivers. Conda will handle installing the correct cuda and cuddn libraries for the version of tensorflow you are using.
 
 ```
 conda install tensorflow-gpu

@@ -1,11 +1,17 @@
 # Create your car application.
 
-If you are not already, please ssh into your vehicle SBC.
+If you are not already, please [ssh into your vehicle](/guide/robot_sbc/setup_raspberry_pi/#step-5-connecting-to-the-pi).
 
 
 ## Choose a Template
 
-Different templates give you a choice to select a car setup that reflects your asthetic and goals. If you wish to start with a minimal, web based car setup try:
+Different templates give you a choice to select a car setup that reflects your asthetic and goals. The default template will be very full featured. It will contain many configuration options, and is designed for people who wish to interact mainly through changing config, rather then writing code. It is however, more of challenge to read and modify the __manage.py__ that it creates.
+
+```
+donkey createcar --path ~/mycar
+```
+
+If you wish to start with a minimal, web based car setup try:
 ```
 donkey createcar --path ~/mycar --template basic_web
 ```
@@ -20,11 +26,6 @@ If these are not minimal enough, try:
 donkey createcar --path ~/mycar --template just_drive
 ```
 
-The default template will be very full featured. It will contain many configuration options, and is designed for people who wish to interact mainly through changing config, rather then writing code. It is however, more of challenge to read and modify the __manage.py__ that it creates.
-
-```
-donkey createcar --path ~/mycar
-```
 
 See also more information on [createcar.](/utility/donkey/#create-car)
 

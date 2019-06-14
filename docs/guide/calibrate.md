@@ -67,6 +67,8 @@ the throttle_controller part:
 
 ## Fine tuning your calibration.
 
+> Note : optional
+
 ![fine calibration](../assets/fine_calibration.gif)
 
 Now that you have your car roughly calibrated you can try driving it to

@@ -2,50 +2,13 @@
 
 After you've [calibrated](/guide/calibrate) your car you can start driving it. 
 
+If you are not already, please [ssh into your vehicle](/guide/robot_sbc/setup_raspberry_pi/#step-5-connecting-to-the-pi).
+
 ### Start your car.
  
-> *** Put your car in a safe place where the wheels are off the ground *** This
+> *** Put your car in a safe place where the wheels are off the ground ***. This
 is the step were the car can take off. 
 
----
-# Normal usage
-
-* On Windows: start a new Anaconda Prompt from Windows start menu, On Mac or Linux open a terminal.
-
-* Activate mappings to donkey Python setup with: 
-```
-conda activate donkey
-```
-
-* Change to your local dir for managing donkey:
-```
-cd ~/mycar
-```
-
-* Find your pi
-```
-donkey findcar
-```
-
-This will show your IP address, perhaps prompt for your root password, and then search 
-for your cars IP address. 
-
-> If your car's IP address is not shown:
->
-> 1. Find another way to scan your local network for your raspberry pi 
-> 2. Connect a monitor/keyboard and ensure your pi is connected to the the same wifi network as your computer. 
-
-
-Assuming that you did find your pi on the network, you can now connect to it via SSH. 
-
-```
-ssh pi@<your_pi_ip_address>
-```
-
-The default user name is 'pi' and the password is 'raspberry'.  If you are using the pre-built Donkey image, the password is 'asdfasdf'.
-
-
-#### Start your car.
 Open your car's folder and start your car. 
 ```
 cd ~/mycar
@@ -80,7 +43,7 @@ races if you have a pilot that will steer but doesn't control throttle.
 
 -----
 
-### Next let's [train an autopilot](guide/train_autopilot.md).
+### Next let's [train an autopilot](/guide/train_autopilot/).
 
 ----
 
@@ -97,7 +60,7 @@ cd ~/mycar
 python manage.py drive --js
 ```
 
-Optionally, if you want joystick use to be sticky and don't want to add the --js each time, modify your config.py so that USE_JOYSTICK_AS_DEFAULT = True
+Optionally, if you want joystick use to be sticky and don't want to add the --js each time, modify your __myconfig.py__ so that __USE_JOYSTICK_AS_DEFAULT = True__
 ```
 nano myconfig.py
 ```
@@ -124,4 +87,4 @@ nano myconfig.py
 
 -----
 
-### Next let's [train an autopilot](guide/train_autopilot.md).
+### Next let's [train an autopilot](/guide/train_autopilot/).
