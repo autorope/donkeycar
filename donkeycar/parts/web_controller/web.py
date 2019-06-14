@@ -137,7 +137,7 @@ class LocalWebController(tornado.web.Application):
         print(port)
         self.port = int(port)
         self.listen(self.port)
-
+        tornado.ioloop.IOLoop.instance().start()
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
