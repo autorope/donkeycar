@@ -193,6 +193,9 @@ class VideoAPI(tornado.web.RequestHandler):
                 self.write("Content-length: %s\r\n\r\n" % len(img)) 
                 self.write(img)
                 self.served_image_timestamp = time.time()
-                await self.flush()
+                try:
+                    await self.flush()
+                except tornado.iostream.StreamClosedError:
+                    pass
             else:
                 await tornado.gen.sleep(interval)
