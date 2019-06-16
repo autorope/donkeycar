@@ -164,10 +164,10 @@ The XBox One controller requires that the bluetooth disable_ertm parameter be se
 - add the line: `options bluetooth disable_ertm=1`
 - reboot so that this takes affect.
 - after reboot you can verify that disable_ertm is set to true entering this
-  command oin a terminal: `cat /sys/module/bluetooth/parameters/disable_ertm`
+  command in a terminal: `cat /sys/module/bluetooth/parameters/disable_ertm`
 - the result should print 'Y'.  If not, make sure the above steps have been done correctly.
 
-Once that is done, you can pair your controller to your Raspberry Pi using the blue tooth tool.  Enter the following command into a bash shell prompt:  
+Once that is done, you can pair your controller to your Raspberry Pi using the bluetooth tool.  Enter the following command into a bash shell prompt:  
 
 ```bash
 sudo bluetoothctl
