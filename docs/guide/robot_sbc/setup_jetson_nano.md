@@ -20,7 +20,7 @@ ssh into your vehicle. Use the the terminal for Ubuntu or Mac. [Putty](https://w
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential python3 python3-dev python3-pip libhdf5-serial-dev hdf5-tools 
+sudo apt-get install build-essential python3 python3-dev python3-pip libhdf5-serial-dev hdf5-tools nano
 ```
 
 Optionally, you can install RPi.GPIO clone for Jetson Nano from [here](https://github.com/NVIDIA/jetson-gpio). This is not required for default setup, but can be useful if using LED or other GPIO driven devices.
@@ -28,6 +28,7 @@ Optionally, you can install RPi.GPIO clone for Jetson Nano from [here](https://g
 ##  Step 3: Setup Virtual Env
 
 ```bash
+pip3 install virtualenv
 python3 -m virtualenv -p python3 env --system-site-packages
 echo "source env/bin/activate" >> ~/.bashrc
 source ~/.bashrc
@@ -48,11 +49,10 @@ cd projects
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
 git checkout master
-pip install -e .[nano]
+pip3 install -e .[nano]
 pip3 install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v42 tensorflow-gpu==1.13.1+nv19.3
 ```
 
 ----
 
 ### Next, [create your Donkeycar application](/guide/create_application/).
-

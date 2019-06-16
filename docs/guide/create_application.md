@@ -3,29 +3,13 @@
 If you are not already, please [ssh into your vehicle](/guide/robot_sbc/setup_raspberry_pi/#step-5-connecting-to-the-pi).
 
 
-## Choose a Template
+## Create Donkeycar from Template
 
-Different templates give you a choice to select a car setup that reflects your asthetic and goals. The default template will be very full featured. It will contain many configuration options, and is designed for people who wish to interact mainly through changing config, rather then writing code. It is however, more of challenge to read and modify the __manage.py__ that it creates.
+Create a set of files to control your Donkey with this command:
 
 ```
 donkey createcar --path ~/mycar
 ```
-
-If you wish to start with a minimal, web based car setup try:
-```
-donkey createcar --path ~/mycar --template basic_web
-```
-
-If you would like a minimal driving car with just joystick control try:
-```
-donkey createcar --path ~/mycar --template basic_js
-```
-
-If these are not minimal enough, try:
-```
-donkey createcar --path ~/mycar --template just_drive
-```
-
 
 See also more information on [createcar.](/utility/donkey/#create-car)
 
@@ -59,12 +43,12 @@ becomes
 when edited. You will adjust these later in the [calibrate](/guide/calibrate/) section.
 
 ### Configure I2C PCA9685
-If you are using a PCA9685 card, make sure you can see it on I2C.
+If you are using a PCA9685 card, make sure you can see it on I2C.  Replace <username> with your Linux username.
 
 Jetson Nano:
 
 ```bash
-sudo usermod -aG i2c username
+sudo usermod -aG i2c <username>
 sudo i2cdetect -r -y 1
 ```
 
@@ -102,8 +86,8 @@ If you plan to use a joystick, take a side track over to [here](/parts/controlle
 
 ## Camera Setup
 
-If you are on a raspberry pi and using the recommended pi camera, then no changes are needed to your __myconfg.py__. If you are using a Jetson Nano with a Sony IMX219 based camera, then you will want edit your __myconfg.py__ to have:
-___CAMERA_TYPE = "CSIC"__
+If you are on a raspberry pi and using the recommended pi camera, then no changes are needed to your __myconfg.py__. If you are using a Jetson Nano with a Sony IMX219 based camera, and you are using the default car template, then you will want edit your __myconfg.py__ to have:
+`CAMERA_TYPE = "CSIC"`. 
 
 CVCAM is a camera type that has worked for USB cameras when OpenCV is setup. This requires additional setup for [OpenCV](https://pypi.org/project/opencv-python/).
 
