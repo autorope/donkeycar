@@ -1,8 +1,8 @@
-""" 
-CAR CONFIG 
+"""
+CAR CONFIG
 
 This file is read by your car application's manage.py script to change the car
-performance. 
+performance.
 
 EXMAPLE
 -----------
@@ -110,6 +110,7 @@ CONTROLLER_TYPE='ps3'           #(ps3|ps4|xbox|nimbus|wiiu|F710)
 USE_NETWORKED_JS = False
 NETWORK_JS_SERVER_IP = "192.168.0.1"
 JOYSTICK_DEADZONE = 0.0         # when non zero, this is the smallest throttle before recording triggered.
+JOYSTICK_THROTTLE_DIR = -1.0    # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
 
 #For the categorical model, this limits the upper bound of the learned throttle
 #it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
