@@ -43,12 +43,12 @@ becomes
 when edited. You will adjust these later in the [calibrate](/guide/calibrate/) section.
 
 ### Configure I2C PCA9685
-If you are using a PCA9685 card, make sure you can see it on I2C.
+If you are using a PCA9685 card, make sure you can see it on I2C.  Replace <username> with your Linux username.
 
 Jetson Nano:
 
 ```bash
-sudo usermod -aG i2c username
+sudo usermod -aG i2c <username?
 sudo i2cdetect -r -y 1
 ```
 

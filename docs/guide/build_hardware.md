@@ -47,16 +47,19 @@ For more detail and other options, follow the link to: [supported cars](/support
 
 ![donkey](../assets/build_hardware/donkey.PNG)
 
-## Classic Donkey Car.  
-We had an old design before which is no longer maintained... it can be found [here](/legacy.md)
-
 
 &nbsp;
 ## Roll Your Own Car
 Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own.md)
 
-## Parts Needed:
+## Video Overview of Hardware Assembly
 
+This [video](https://www.youtube.com/watch?v=OaVqWiR2rS0&t=48s) covers how to assemble a standard Donkey Car, it also covers the Sombrero, the Raspberry Pi and the nVidia Jetson Nano.  
+
+[![IMAGE ALT TEXT HERE](../assets/HW_Video.png)](https://www.youtube.com/watch?v=OaVqWiR2rS0&t=48s)
+
+
+## Parts Needed:
 
 ### Option 1: Buying through an official Donkey Store
 There are two official stores:
@@ -70,7 +73,7 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 | Exceed Magnet, Desert Monster, Blaze, or Short Course Truck                                                                       | See links above                                     | ~$90              |
 | USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
 | Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
-| MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
+| MicroSD Card (many will work, we strongly recommend this one)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
 | Donkey Partial Kit                                                      | [KIT](https://store.donkeycar.com/collections/frontpage)                                        | $82 to $125              |
 
 
