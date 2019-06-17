@@ -4,15 +4,14 @@ The point of calibrating your car is to make it drive consitently.
 
 ## How to adjust your car's settings.
 
+>You will need to ssh into your Pi to do the calibration.
+
 All of the car's settings are in the `config.py` and `myconfig.py` scripts generated when
 you ran the `donkey createcar --path ~/mycar` command. You can edit
 this file on your car by running:
 ```bash
 nano ~/mycar/myconfig.py
 ```
-
->You will need to ssh into your Pi to do the calibration.
-
 
 ## Steering Calibration
 
@@ -21,7 +20,7 @@ nano ~/mycar/myconfig.py
 1. Turn on your car.
 2. Find the servo cable on your car and see what channel it's plugged into the
 PCA board. It should be 1 or 0.
-3. Run `donkey calibrate --channel <your_steering_channel>`
+3. Run `donkey calibrate --channel <your_steering_channel> --bus=1`
 4. Enter `360` and you should see the wheels on your car move slightly. If not
 enter `400` or `300`.
 5. Next enter values +/- 10 from your starting value to find the PWM setting
@@ -35,7 +34,7 @@ these values.
 
 1. Find the cable coming from your ESC and see what channel it goes into the
 PCA board. This is your throttle channel.
-2. run `donkey calibrate --channel <your_throttle_channel>`
+2. run `donkey calibrate --channel <your_throttle_channel> --bus=1`
 3. Enter `370` when prompted for a PWM value.
 4. You should hear your ESC beep indicating that it's calibrated.
 5. Enter `400` and you should see your cars wheels start to go forward. If not,
@@ -61,7 +60,6 @@ the throttle_controller part:
 * `THROTTLE_FORWARD_PWM` = PWM value for full throttle forward
 * `THROTTLE_STOPPED_PWM` = PWM value for zero throttle
 * `THROTTLE_REVERSE_PWM` = PWM value at full reverse throttle
-
 
 
 

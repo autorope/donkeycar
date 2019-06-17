@@ -16,7 +16,7 @@ See also more information on [createcar.](/utility/donkey/#create-car)
 
 ## Updating
 
-Make all config changes to __myconfig.py__ and they will be preserved through an update. Later on, when changes occur that you would like to get, you can pull latest code, then issue a:
+Make all config changes to __myconfig.py__ and they will be preserved through an update. If you are a long time user, you might be used to editing config.py. You should switch to editing myconfig.py instead. Later on, when changes occur that you would like to get, you can pull latest code, then issue a:
 
 ```
 donkey createcar --path ~/mycar --overwrite
@@ -49,6 +49,11 @@ Jetson Nano:
 
 ```bash
 sudo usermod -aG i2c <username>
+sudo reboot
+```
+
+After a reboot, then try:
+```
 sudo i2cdetect -r -y 1
 ```
 
@@ -77,7 +82,7 @@ In this case, the 40 shows up as the address of our PCA9685 board. If this does 
 
 If you have assigned a non-standard address to your board, then adjust the address in the myconfig.py `PCA9685_I2C_ADDR`. If your board is on another bus, then you can specify that with the `PCA9685_I2C_BUSNUM`.
 
-> Jetson Nano: set __PCA9685_I2C_BUSNUM = 1__ in your __myconfig.py__
+> Jetson Nano: set ```PCA9685_I2C_BUSNUM = 1``` in your __myconfig.py__ . For the pi, this will be auto detected by the Adafruit library. But not on the Jetson Nano.
 
 
 ## Joystick setup
@@ -86,10 +91,12 @@ If you plan to use a joystick, take a side track over to [here](/parts/controlle
 
 ## Camera Setup
 
-If you are on a raspberry pi and using the recommended pi camera, then no changes are needed to your __myconfg.py__. If you are using a Jetson Nano with a Sony IMX219 based camera, and you are using the default car template, then you will want edit your __myconfg.py__ to have:
+If you are on a raspberry pi and using the recommended pi camera, then no changes are needed to your __myconfg.py__. 
+
+> Jetson Nano: when using a Sony IMX219 based camera, and you are using the default car template, then you will want edit your __myconfg.py__ to have:
 `CAMERA_TYPE = "CSIC"`. 
 
-CVCAM is a camera type that has worked for USB cameras when OpenCV is setup. This requires additional setup for [OpenCV](https://pypi.org/project/opencv-python/).
+CVCAM is a camera type that has worked for USB cameras when OpenCV is setup. This requires additional setup for [OpenCV for Nano](/guide/robot_sbc/setup_jetson_nano/#step-4-install-opencv) or [OpenCV for Raspberry Pi](https://www.learnopencv.com/install-opencv-4-on-raspberry-pi/).
 
 WEBCAM is a camera type that uses the pygame library, also typically for USB cameras. That requires additional setup for [pygame](https://www.pygame.org/wiki/GettingStarted).
 
