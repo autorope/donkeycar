@@ -48,7 +48,7 @@ If you are using a PCA9685 card, make sure you can see it on I2C.  Replace <user
 Jetson Nano:
 
 ```bash
-sudo usermod -aG i2c <username?
+sudo usermod -aG i2c <username>
 sudo i2cdetect -r -y 1
 ```
 

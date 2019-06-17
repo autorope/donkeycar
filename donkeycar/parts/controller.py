@@ -1242,7 +1242,8 @@ def get_js_controller(cfg):
     else:
         raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
     
-    ctr = cont_class(throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+    ctr = cont_class(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
+                                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
     
