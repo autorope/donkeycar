@@ -5,7 +5,7 @@
 * [Step 1: Flash Operating System](#step-1-flash-operating-system)
 * [Step 2: Install Dependencies](#step-2-install-dependencies)
 * [Step 3: Setup Virtual Env](#step-3-setup-virtual-env)
-* [Step 4: Compile OpenCV](#step-4-setup-opencv)
+* [Step 4: Install OpenCV](#step-4-install-opencv)
 * [Step 5: Install Donkeycar Python Code](#step-5-install-donkeycar-python-code)
 * Then [Create your Donkeycar Application](/guide/create_application/)
 
@@ -36,7 +36,20 @@ source ~/.bashrc
 ```
 
 ## Step 4: Install OpenCV
+
 To install Open CV on the Jetson Nano, you need to build it from source. Building OpenCV from source is going to take some time, so buckle up. If you get stuck, [here](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) is another great resource which will help you compile OpenCV. 
+
+> Note: In some cases Python OpenCV may already be installed in your disc image. If the file exists, you can optionally copy it to your environment rather than build from source. Nvidia has said they will drop support for this, so longer term we will probably be building it. If this works:
+> 
+> ```
+> mkdir ~/mycar
+> cp /usr/lib/python3.6/dist-packages/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/ 
+> cd ~/mycar
+> python -c "import cv2"
+> ```
+>
+> Then you have a working version and can skip this portion of the guide.
+> However, following the swapfile portion of this guide has made performance more predictable and solves memory thrashing.
 
 The first step in building OpenCV is to define swap space on the Jetson Nano. The Jetson Nano has `4GB` of RAM. This is not sufficient to build OpenCV from source. Therefore we need to define swap space on the Nano to prevent memory thrashing.
 
