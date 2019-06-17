@@ -30,7 +30,7 @@ def test_drive():
 
 
 def test_custom_templates():
-    template_names = ["complete", "just_drive",  "basic_js", "basic_web", "manage_remote", "path_follower", "square", "gym_remote_tester"]
+    template_names = ["complete", "basic_web", "square"]
     for template in template_names:
         path = custom_template(d2_path(gettempdir()), template=template)
         cfg = dk.load_config(os.path.join(path, 'config.py'))
