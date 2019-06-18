@@ -13,6 +13,7 @@
 * [Step 9: Install Optional OpenCV Dependencies](#step-9-install-optional-opencv-dependencies)
 * [Step 10: Setup Virtual Env](#step-10-setup-virtual-env)
 * [Step 11: Install Donkeycar Python Code](#step-11-install-donkeycar-python-code)
+* [Step 12: Install Optional OpenCV](#step-12-install-optional-opencv)
 * Then [Create your Donkeycar Application](/guide/create_application/)
 
 ## Step 1: Flash Operating System
@@ -27,9 +28,11 @@ You need to flash a micro SD image with an operating system.
 
 We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it. 
 
-On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formated with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on it's first boot.
+On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formated with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on it's first boot. 
 
-* Start a text editor: `gedit` on Linux. Notepad on Windows. TextEdit on a Mac.
+> Note: If __boot__ is not visible right away, try unplugging and re-insterting the memory card reader.
+
+* Start a text editor: `gedit` on Linux. Notepad++ on Windows. TextEdit on a Mac.
 * Paste and edit this contents to match your wifi:
 ```
 country=US
@@ -50,6 +53,8 @@ If it bothers you to leave your password unencrypted, you may change the [conten
 * Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later. If you are using Notepad on Windows, make sure it doesn't have a .txt at the end.
 
 ## Step 3: Setup Pi's Hostname
+> Note: This step only possible on a linux host pc. Otherwise you can set it up later in raspi-config after logging in to your pi.
+
 We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
 
 ```
@@ -136,23 +141,26 @@ sudo apt-get upgrade
 sudo raspi-config
 ```
 
-* enable I2c
-* enable camera
-* exapand filesystem
-* change hostname
 * change default password for pi
+* change hostname
+* enable Interfacing Options | I2C
+* enable Interfacing Options | Camera
+* Advanced Options | Exapand Filesystem
 
-> Note: reboot after changing these settings
+Choose <Finish> and hit enter.
+
+> Note: Reboot after changing these settings. Should happen if you say yes.
 
 ## Step 8: Install Dependencies
 
 ```bash
-sudo apt-get update
-sudo apt-get upgrade
 sudo apt-get install build-essential python3 python3-dev python3-virtualenv python3-numpy python3-picamera python3-pandas python3-rpi.gpio i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev git
 ```
 
 ## Step 9: Install Optional OpenCV Dependencies
+
+If you are going for a minimal install, you can get by without these. But it can be handy to have OpenCV.
+
 ```bash
 sudo apt-get install libilmbase-dev libopenexr-dev libgstreamer1.0-dev libjasper-dev libwebp-dev libatlas-base-dev libavcodec-dev libavformat-dev libswscale-dev libqtgui4 libqt4-test
 ```
@@ -164,6 +172,7 @@ python3 -m virtualenv -p python3 env --system-site-packages
 echo "source env/bin/activate" >> ~/.bashrc
 source ~/.bashrc
 ```
+Modifying your .bashrc in this way will automatically enable this environment each time you login. To return to the system python you can type `deactivate`.
 
 ##  Step 11: Install Donkeycar Python Code
 
@@ -183,6 +192,31 @@ git checkout master
 pip install -e .[pi]
 pip install tensorflow
 ```
+
+You can validate your tensorflow install with
+
+```bash
+python -c "import tensorflow"
+```
+
+Warnings like this are normal:
+```
+/home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: compiletime version 3.4 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.5
+  return f(*args, **kwds)
+/home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: builtins.type size changed, may indicate binary incompatibility. Expected 432, got 412
+  return f(*args, **kwds)
+```
+
+##  Step 12: Install Optional OpenCV
+
+If you've opted to install the OpenCV dependencies earlier, you can install Python OpenCV bindings now with
+
+```bash
+pip install opencv-python
+python -c "import cv2"
+```
+
+And if no errors, you have OpenCV installed!
 
 ----
 
