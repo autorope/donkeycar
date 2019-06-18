@@ -13,6 +13,7 @@
 * [Step 9: Install Optional OpenCV Dependencies](#step-9-install-optional-opencv-dependencies)
 * [Step 10: Setup Virtual Env](#step-10-setup-virtual-env)
 * [Step 11: Install Donkeycar Python Code](#step-11-install-donkeycar-python-code)
+* [Step 12: Install Optional OpenCV](#step-12-install-optional-opencv)
 * Then [Create your Donkeycar Application](/guide/create_application/)
 
 ## Step 1: Flash Operating System
@@ -52,7 +53,7 @@ If it bothers you to leave your password unencrypted, you may change the [conten
 * Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later. If you are using Notepad on Windows, make sure it doesn't have a .txt at the end.
 
 ## Step 3: Setup Pi's Hostname
-> Note: This step only possible on a linux host pc. Otherwise you can set it up later.
+> Note: This step only possible on a linux host pc. Otherwise you can set it up later in raspi-config after logging in to your pi.
 
 We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
 
@@ -191,6 +192,31 @@ git checkout master
 pip install -e .[pi]
 pip install tensorflow
 ```
+
+You can validate your tensorflow install with
+
+```bash
+python -c "import tensorflow"
+```
+
+Warnings like this are normal:
+```
+/home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: compiletime version 3.4 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.5
+  return f(*args, **kwds)
+/home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: builtins.type size changed, may indicate binary incompatibility. Expected 432, got 412
+  return f(*args, **kwds)
+```
+
+##  Step 12: Install Optional OpenCV
+
+If you've opted to install the OpenCV dependencies earlier, you can install Python OpenCV bindings now with
+
+```bash
+pip install opencv-python
+python -c "import cv2"
+```
+
+And if no errors, you have OpenCV installed!
 
 ----
 
