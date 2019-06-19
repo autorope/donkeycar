@@ -60,6 +60,7 @@ This [video](https://www.youtube.com/watch?v=OaVqWiR2rS0&t=48s) covers how to as
 
 
 ## Parts Needed:
+The following instructions are for the Raspbeery Pi, below in Optional Upgrades section, you can find the NVIDIA Jetson Nano instructions.  
 
 ### Option 1: Buying through an official Donkey Store
 There are two official stores:
@@ -116,7 +117,17 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 | LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html) or [amazon.com/gp/product/B0072AERBE/](https://www.amazon.com/gp/product/B0072AERBE/) | $8.94 to $~17           |
 | Lipo Charger (takes 1hr to charge the above battery)  | [amazon.com/gp/product/B00XU4ZR06](https://www.amazon.com/gp/product/B00XU4ZR06?tag=donkeycar-20)                                               | $13              |
 | Lipo Battery Case (to prevent damage if they explode) | [amazon.com/gp/product/B00T01LLP8](https://www.amazon.com/gp/product/B00T01LLP8?tag=donkeycar-20)                                               | $8               |
+* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Anennas and camera documented [here](https://github.com/NVIDIA-AI-IOT/jetbot).  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) if you want to print it yourself it is on the Thingiverse page for the project.
 
+![adapter](../assets/Jetson_Adapter.jpg)
+
+Plug in the Servo driver the same as the Raspberry Pi, just keep in mind that the Jetson pinout is reversed.
+
+![Jetson Servo](../assets/Servo_Wiring.png)
+
+Finally this is the Donkey Assembled.  
+
+![Jetson Assembled](../assets/Jetbot_Assembled.png)
 
 
 &nbsp;
