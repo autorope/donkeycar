@@ -1,0 +1,106 @@
+@media (min-width: 1600px) {
+	.container {
+	    width: 1570px;
+	}
+}
+
+.train-img {
+    width: 320px;
+	height: 240px;
+}
+
+#cur-frame {
+    margin-bottom: 20px;
+    padding: 5px;
+}
+
+img.clip-thumbnail {
+    width: 6.25%;
+}
+
+tr.active td:first-child,
+tr.active td:last-child  {
+    background-color: #5bc0de !important;
+}
+
+tbody#clips td {
+    vertical-align: middle;
+}
+.affix {
+  top: 0;
+  width: 100%;
+}
+
+/* https://stackoverflow.com/questions/20652581/bootstrap-affix-nav-causes-div-below-to-jump-up */
+.affix-wrapper {
+    min-height: 272px;
+}
+
+.affix + #clips-container {
+  padding-top: 272;
+}
+
+.preview {
+	width: 100%;
+}
+
+.preview-centered {
+  width: 460px;
+  margin: 0 auto;
+  padding-bottom: 12px;
+}
+
+.preview-wrapper {
+    display: flex;
+}
+
+.preview-img {
+    flex: 0 0 65%;
+}
+
+.preview-toolbar {
+    flex: 1;
+    background-color: white;
+}
+
+.preview-toolbar button {
+    margin: 5px;
+    width: 140px;
+}
+
+.preview-toolbar select {
+    margin: 5px;
+    width: 140px;
+}
+
+tbody#clips .progress {
+    height: 3px;
+    margin-bottom: 10px;
+}
+
+.progress .progress-bar {
+    -webkit-transition: none;
+    -moz-transition: none;
+    -ms-transition: none;
+    -o-transition: none;
+    transition: none;
+}
+
+.steering-bar .progress {
+    width: 48%;
+    margin-bottom: 0px;
+    border-radius: 0px;
+    float: left;
+}
+
+.steering-bar .progress.negative {
+    border-right-style: solid;
+    border-right-width: thin;
+    border-right-color: red;
+}
+
+.steering-bar .progress.positive {
+    border-left-style: solid;
+    border-left-width: thin;
+    border-left-color: red;
+}
