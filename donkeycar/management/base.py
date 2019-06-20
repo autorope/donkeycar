@@ -67,7 +67,7 @@ class CreateCar(BaseCommand):
     
     def create_car(self, path, template='complete', overwrite=False):
         """
-        This script sets up the folder struction for donkey to work. 
+        This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
         docker can build the folder structure for docker to mount to.
         """
@@ -229,7 +229,7 @@ class MakeMovie(BaseCommand):
             #imported like this, we make TF conditional on use of --salient
             #and we keep the context maintained throughout our callbacks to 
             #compute the salient mask
-            from keras import backend as K
+            from tensorflow.python.keras import backend as K
             import tensorflow as tf
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  
 
@@ -367,10 +367,10 @@ class MakeMovie(BaseCommand):
 
     def init_salient(self, model):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
-        from keras.layers import Input, Dense, merge
-        from keras.models import Model
-        from keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
-        from keras.layers import Activation, Dropout, Flatten, Dense
+        from tensorflow.python.keras.layers import Input, Dense, merge
+        from tensorflow.python.keras.models import Model
+        from tensorflow.python.keras.layers import Convolution2D, MaxPooling2D, Reshape, BatchNormalization
+        from tensorflow.python.keras.layers import Activation, Dropout, Flatten, Dense
 
 
         img_in = Input(shape=(120, 160, 3), name='img_in')
@@ -385,7 +385,7 @@ class MakeMovie(BaseCommand):
         for layer_num in ('1', '2', '3', '4', '5'):
             self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
 
-        from keras import backend as K
+        from tensorflow.python.keras import backend as K
         import tensorflow as tf
         os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
         
@@ -678,7 +678,7 @@ class ShowCnnActivations(BaseCommand):
 
         returns activations/features
         '''
-        from keras.models import load_model, Model
+        from tensorflow.python.keras.models import load_model, Model
 
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)
@@ -813,7 +813,7 @@ class ShowPredictionPlots(BaseCommand):
 
 def execute_from_command_line():
     """
-    This is the fuction linked to the "donkey" terminal command.
+    This is the function linked to the "donkey" terminal command.
     """
     commands = {
             'createcar': CreateCar,
