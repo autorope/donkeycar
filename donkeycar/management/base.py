@@ -799,7 +799,7 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--model', default=None, help='name of record to create histogram')
         parser.add_argument('--limit', default=1000, help='how many records to process')
-        parser.add_argument('--type', default='categorical', help='how many records to process')
+        parser.add_argument('--type', default='categorical', help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
         return parsed_args
