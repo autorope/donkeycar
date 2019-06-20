@@ -1,0 +1,66 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+    <div class="affix-wrapper">
+	<div data-spy="affix" data-offset-top="72">
+		<div class="preview">
+        	<div class="preview-centered">
+                <div class="preview-wrapper">
+                    <div class="preview-img">
+    		            <div class="steering-bar">
+    		              <div class="progress negative">
+    		                <div id="angle-bar-backward" class="progress-bar progress-bar-warning pull-right" role="progressbar" style="width: 0%;">
+    		                </div>
+    		              </div>
+    		              <div class="progress positive">
+    		                <div id="angle-bar-forward" class="progress-bar progress-bar-info" role="progressbar" style="width: 0%;">
+    		                </div>
+    		              </div>
+    		            </div>
+        	            <img id="img-preview" class="train-img" src="" />
+                    </div>
+					<div class="preview-toolbar">
+            	        <h3 id="cur-frame">0</h3>
+		  				<select id="preview-speed" class="form-control">
+          				  <option value='7'>0.5x playback</option>
+          				  <option value='15' selected>1x playback</option>
+          				  <option value='30'>2x playback</option>
+          				  <option value='60'>4x playback</option>
+          				</select>
+                        <button type="button" id="play-stream" class="btn btn-primary">
+            	            <i class="glyphicon glyphicon-play"></i>&nbsp;Play (&#9866;)
+            	        </button>
+                        <button type="button" id="rewind-stream" class="btn btn-primary">
+            	            <i class="glyphicon glyphicon-backward"></i>&nbsp;Rewind 1s (b)
+            	        </button>
+                        <button type="button" id="fforward-stream" class="btn btn-primary">
+            	            <i class="glyphicon glyphicon-forward"></i>&nbsp;Fast-forward 10s (f)
+            	        </button>
+                        <button type="button" id="split-stream" class="btn btn-primary">
+            	            <i class="glyphicon glyphicon-scissors"></i>&nbsp;Split (c)
+            	        </button>
+                    </div>
+                </div>
+        	</div>
+        </div>
+    </div>
+    </div>
+	<div id="clips-container" class="container">
+        <div class="row">
+		    <table class="table">
+		      <tbody id="clips">
+		      </tbody>
+		    </table>
+	    </div>
+        <div class="row">
+            <div class="pull-right">
+                <button id="submit" type="button" class="btn btn-danger">
+                    Save and Delete Checked Training Data!
+                </button>
+            </div>
+        </div>
+	</div>
+
+    <script type="text/javascript" src="/static/tub.js"></script>
+{% end %}
