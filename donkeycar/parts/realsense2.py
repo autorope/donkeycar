@@ -1,8 +1,8 @@
 '''
 Author: Tawn Kramer
-File: realsense.py
+File: realsense2.py
 Date: April 14 2019
-Notes: Parts to input data from Intel Realsense cameras
+Notes: Parts to input data from Intel Realsense 2 cameras
 '''
 import time
 import logging
