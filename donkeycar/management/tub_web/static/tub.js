@@ -22,7 +22,8 @@ $(document).ready(function(){
         if (playing === null) {
             playing = setInterval(function(){
                 currentFrameIdx ++;
-                if (currentFrameIdx >= selectedClip().frames.length) {
+                clip = selectedClip();
+                if (clip && currentFrameIdx >= clip.frames.length) {
                     currentFrameIdx = 0;
                     clearInterval(playing);
                     playing = null;
