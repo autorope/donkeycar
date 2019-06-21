@@ -26,7 +26,7 @@ class DonkeyGymEnv(object):
             steering = 0.0
             throttle = 0.0
         self.action = [steering, throttle]
-        return self.frame, self.info['pos']
+        return self.frame
 
     def shutdown(self):
         self.running = False
