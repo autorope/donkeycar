@@ -82,6 +82,7 @@ $(document).ready(function(){
             $('tbody#clips').append('<tr class="' + clz + '"><td>' + playBtnOfClip(i) + '</td><td>' + thumnailsOfClip(i) + '</td><td>' + checkboxOfClip(i) + '</td></tr>');
             $('#mark-to-delete-' + i).click(function() {toggleMarkToDelete(i);});
             $('#play-clip-' + i).click(function() {playClipBtnClicked(i);});
+            $('img#clipThumbnail').click(function() {clipThumbnailClicked(this);});
         });
     };
 
@@ -98,30 +99,30 @@ $(document).ready(function(){
         }
     };
 
-	var thumnailsOfClip = function(clipIdx) {
+    var thumnailsOfClip = function(clipIdx) {
         var frames = clips[clipIdx].frames;
         var html = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(function(i) {
             return Math.round(frames.length/16*i);
         })
         .map(function(frameIdx) {
-            return '<img class="clip-thumbnail" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" />';
+            return '<img class="clip-thumbnail" id="clipThumbnail" data-clip="' + clipIdx + '" data-frame="' + frameIdx + '" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" "/>';
         })
         .join('');
 
         if (clipIdx === selectedClipIdx) {
             html += previewProgress();
         }
-
+        
         return html;
     };
 
     var previewProgress = function() {
-		return '\
-			<div class="progress">\
-			  <div id="preview-progress" class="progress-bar" role="progressbar" aria-valuenow="0"\
-			  aria-valuemin="0" aria-valuemax="100" style="width:0%">\
-			  </div>\
-			</div>';
+        return '\
+            <div class="progress">\
+              <div id="preview-progress" class="progress-bar" role="progressbar" aria-valuenow="0"\
+              aria-valuemin="0" aria-valuemax="100" style="width:0%">\
+              </div>\
+            </div>';
     };
 
     var updatePreviewProgress = function() {
@@ -192,18 +193,48 @@ $(document).ready(function(){
             return clip.frames;
         });
 
-		$.ajax({
-		    type: 'POST',
-		    url: '/api/tubs/' + tubId,
-		    data: JSON.stringify({clips: clipsToKeep}),
-		    contentType: "application/json",
-		    dataType: 'json',
+        $.ajax({
+            type: 'POST',
+            url: '/api/tubs/' + tubId,
+            data: JSON.stringify({clips: clipsToKeep}),
+            contentType: "application/json",
+            dataType: 'json',
             complete: function() {
                 location.reload();
             }
-		});
+        });
     }
 
+    var clipThumbnailClicked = function(el) {
+        var targetClip = parseInt(el.getAttribute("data-clip"), 10);
+        var targetFrame = parseInt(el.getAttribute("data-frame"), 10);
+        //console.log("C: " + targetClip + " F: " + targetFrame);
+        var wasPlaying = false;
+        if(playing) {
+            wasPlaying = true;
+            pause();
+        }
+        selectedClipIdx = targetClip;
+        currentFrameIdx = targetFrame;
+
+        updateClipTable();
+        updatePreviewProgress();
+        updateStreamImg();
+
+        if (wasPlaying) {
+            play();
+        }
+
+    };
+    
+    var previewSpeedChanged = function() {
+        // If playing then update the play speed.
+        if (playing) {
+            pause();
+            play();
+        }
+    };
+        
     getTub();
 
     $('button#play-stream').click(playBtnClicked);
@@ -211,6 +242,7 @@ $(document).ready(function(){
     $('button#rewind-stream').click(rewindBtnClicked);
     $('button#fforward-stream').click(fforwardBtnClicked);
     $('button#submit').click(submitBtnClicked);
+    $('select#preview-speed').change(previewSpeedChanged);
     $(document).keydown(function(e) {
         switch(e.which) {
             case 32: // space
