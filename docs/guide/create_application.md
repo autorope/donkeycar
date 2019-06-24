@@ -74,6 +74,9 @@ If you have assigned a non-standard address to your board, then adjust the addre
 
 > Jetson Nano: set ```PCA9685_I2C_BUSNUM = 1``` in your __myconfig.py__ . For the pi, this will be auto detected by the Adafruit library. But not on the Jetson Nano.
 
+## Sombrero Setup
+
+> Sombrero: set ```HAVE_SOMBRERO = True``` in your __myconfig.py__ if you have a sombrero board.
 
 ## Joystick setup
 
