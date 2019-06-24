@@ -14,16 +14,6 @@ donkey createcar --path ~/mycar
 See also more information on [createcar.](/utility/donkey/#create-car)
 
 
-## Updating
-
-Make all config changes to __myconfig.py__ and they will be preserved through an update. If you are a long time user, you might be used to editing config.py. You should switch to editing myconfig.py instead. Later on, when changes occur that you would like to get, you can pull latest code, then issue a:
-
-```
-donkey createcar --path ~/mycar --overwrite
-```
-
-Your ~/mycar/manage.py, ~/mycar/config.py and other files will change with this operation. But __myconfig.py__ will not be touched.
-
 ## Configure Options
 
 Look at __myconfig.py__
@@ -103,6 +93,20 @@ WEBCAM is a camera type that uses the pygame library, also typically for USB cam
 ## Troubleshooting
 
 If you are having troubles with your camera, check out our [Discourse FAQ for hardware troubleshooting](https://donkey.discourse.group/t/faq-troubleshooting/33). Check this forum for more help.
+
+## Keeping Things Up To Date
+
+Make all config changes to __myconfig.py__ and they will be preserved through an update. If you are a long time user, you might be used to editing config.py. You should switch to editing myconfig.py instead. Later on, when changes occur that you would like to get, you can pull latest code, then issue a:
+
+```bash
+cd projects/donkeycar
+git pull
+donkey createcar --path ~/mycar --overwrite
+```
+
+Your ~/mycar/manage.py, ~/mycar/config.py and other files will change with this operation. But __myconfig.py__ will not be touched. Your __data__ and __models__ dirs will not be touched.
+
+> Note: If you are updating from Donkey<3.0 to 3.0+ it is very likely you will need to start over with a new virtual environment. We've had a few users hit this snag.
 
 -------
 

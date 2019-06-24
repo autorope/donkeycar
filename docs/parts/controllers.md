@@ -15,11 +15,7 @@ Many people find it easier to control the car using a game controller. There are
 
 The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the OS device /dev/input/js0 by default. In theory, any joystick device that the OS mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the Bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.ebay.com/sch/i.html?_nkw=Sony+Playstation+Dualshock+PS3+controller+OEM). Other controllers may work, but will require alternative Bluetooth installs, and tweaks to the software for correct axis and buttons.
 
-These can be used plugged in with a USB cable. It's been much more convenient to setup Bluetooth for a wireless control.
-
-If you have a non PS3 controller, or having troubles getting your controller buttons to work, checkout this [guide](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey.md#joystick-wizard) to making python code that matches your device.
-
-These joysticks are known to work:
+### These joysticks are known to work:
 
 * [Logitech Gamepad F710](https://www.amazon.com/Logitech-940-000117-Gamepad-F710/dp/B0041RR0TW)
 * [Sony PS3 Sixaxis OEM](https://www.ebay.com/sch/i.html?&_nkw=Sony+PS3+Sixaxis+OEM)
@@ -30,7 +26,13 @@ These joysticks are known to work:
 
 These can be enabled by finding the CONTROLLER_TYPE in your myconfig.py and setting it to the correct string identifier ( after disabling the comment ).
 
+These can be used plugged in with a USB cable. It's been much more convenient to setup Bluetooth for a wireless control.
+
 There are controller specific setup details below.
+
+### Customizing or Adding a New Controller Type
+> Note: If are having troubles getting your controller to work, try this [Joystick Wizard](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey.md#joystick-wizard). This can help customize your buttons and axis inputs as well.
+
 
 ### Change to config.py or run with --js
 
@@ -39,6 +41,11 @@ python manage.py drive --js
 ```
 
 Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify config.py to make USE_JOYSTICK_AS_DEFAULT = True, then you do not need to run with the --js.
+
+----
+
+----
+
 
 ## PS3 Controller
 
@@ -122,6 +129,12 @@ Sometimes when you plug-in the PS3 joystick it starts taking over your mouse. If
 xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
 ```
 
+
+----
+
+----
+
+
 ## PS4 Controller
 
 The following instructions are based on [RetroPie](https://github.com/RetroPie/RetroPie-Setup/wiki/PS4-Controller#installation) and [ds4drv](https://github.com/chrippa/ds4drv).
@@ -151,6 +164,11 @@ Press and hold **Share** button, then press and hold **PS** button until the lig
 
 
 To disconnect, kill the process `ds4drv` and hold **PS** for 10 seconds to power off the controller.
+
+----
+
+----
+
 
 ## XBox One Controller
 
