@@ -223,5 +223,25 @@ quit
 
 Now that your controller is trusted, it should automatically connect with your Raspberry Pi when they are both turned on.  If your controller fails to connect, run the bluetoothctl steps again to reconnect.
 
+## Discovering / Modifying Button and Axis Mappings for Game Controllers
 
+To discover and modify your default button mappings (for your controllers) you can use the `Joystick` class defined in `donkeycar.parts.controller`.
 
+After setting up `Donkey` and activating your `virtualenv` you can do the following.
+First launch a `python` shell session.
+
+```python
+from donkeycar.parts.controller import Joystick
+
+joystick = Joystick() # uses the connected joystick at /dev/input/js0
+
+joystick.init() # Initialize
+
+joystick.show_map() # Will give you a list of axes and buttons detected.
+
+# Now you can use the controller and check for the outputs. This will
+# tell you which buttons and axes are active when you are using the
+# controller.
+while True:
+    joystick.poll()
+```

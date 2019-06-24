@@ -17,6 +17,8 @@ class Joystick(object):
     def __init__(self, dev_fn='/dev/input/js0'):
         self.axis_states = {}
         self.button_states = {}
+        self.axis_names = {}
+        self.button_names = {}
         self.axis_map = []
         self.button_map = []
         self.jsdev = None
@@ -1043,6 +1045,8 @@ class XboxOneJoystickController(JoystickController):
         self.axis_trigger_map = {
             'left_stick_horz': self.set_steering,
             'right_stick_vert': self.set_throttle,
+            # Forza Mode
+            'right_trigger': self.set_throttle,
         }
 
 
