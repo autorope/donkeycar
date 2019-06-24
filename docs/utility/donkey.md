@@ -189,7 +189,6 @@ donkey createjs
 * First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
 * Debian commonly creates the joystick device file at /dev/input/js0. If not, find out where.
 * Run the command `donkey createjs` and it will create a file, by default my_joystick.py. Drop that next to your manage.py
-* Modify manage.py to add: `from my_joystick import MyJoystickController`
 * Modify manage.py to replace:
 ```
     from donkeycar.parts.controller import get_js_controller
