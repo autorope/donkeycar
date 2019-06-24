@@ -9,8 +9,9 @@ The default controller to drive the car with your phone or browser. This has a w
 3. A physical joystick using the web adapter. Support varies per browser, OS, and joystick combination.
 4. Keyboard input via the 'ikjl' keys.
 
+> Note: Recently iOS has [disabled default Safari](https://www.macrumors.com/2019/02/04/ios-12-2-safari-motion-orientation-access-toggle/) access to motion control. 
 
-## Joystic Controller
+## Joystick Controller
 Many people find it easier to control the car using a game controller. There are several parts that provide this option.
 
 The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the OS device /dev/input/js0 by default. In theory, any joystick device that the OS mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the Bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.ebay.com/sch/i.html?_nkw=Sony+Playstation+Dualshock+PS3+controller+OEM). Other controllers may work, but will require alternative Bluetooth installs, and tweaks to the software for correct axis and buttons.
