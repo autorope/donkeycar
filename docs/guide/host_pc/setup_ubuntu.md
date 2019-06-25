@@ -25,8 +25,8 @@ cd projects
 
 ```
 git clone https://github.com/autorope/donkeycar
-git checkout master
 cd donkeycar
+git checkout master
 ```
 
 

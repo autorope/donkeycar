@@ -189,8 +189,26 @@ donkey createjs
 * First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
 * Debian commonly creates the joystick device file at /dev/input/js0. If not, find out where.
 * Run the command `donkey createjs` and it will create a file, by default my_joystick.py. Drop that next to your manage.py
-* Modify manage.py to add: `from my_joystick import MyJoystickController`
-* Modify manage.py to replace `cont_class = PS3JoystickController` with `cont_class = MyJoystickController`
+* Modify manage.py to replace:
+```
+    from donkeycar.parts.controller import get_js_controller
+        
+    ctr = get_js_controller(cfg)
+``` 
+
+with 
+
+
+```
+    from my_joystick import MyJoystickController
+
+    ctr = MyJoystickController(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
+                                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+    
+    ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+```
 
 
 ## Visualize CNN filter activations
