@@ -1026,6 +1026,21 @@ class XboxOneJoystickController(JoystickController):
             print(self.dev_fn, "not found.")
             self.js = None
         return self.js is not None
+    
+    def magnitude(self, reversed = False):
+        def set_magnitude(axis_val):
+            '''
+            Maps raw axis values to magnitude.
+            '''
+            # Axis values range from -1. to 1.
+            minimum = -1.
+            maximum = 1.
+            # Magnitude is now normalized in the range of 0 - 1.
+            magnitude = (axis_val - minimum) / (maximum - minimum)
+            if reversed:
+                magnitude *= -1
+            self.set_throttle(magnitude)
+        return set_magnitude
 
     def init_trigger_maps(self):
         '''
@@ -1046,7 +1061,8 @@ class XboxOneJoystickController(JoystickController):
             'left_stick_horz': self.set_steering,
             'right_stick_vert': self.set_throttle,
             # Forza Mode
-            'right_trigger': self.set_throttle,
+            'right_trigger': self.magnitude(),
+            'left_trigger': self.magnitude(reversed = True),
         }
 
 
