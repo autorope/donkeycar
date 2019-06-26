@@ -118,6 +118,8 @@ def collate_records(records, gen_records, opts):
     use the opts dict to specify config choices
     '''
 
+    new_records = {}
+    
     for record_path in records:
 
         basepath = os.path.dirname(record_path)        
@@ -173,11 +175,27 @@ def collate_records(records, gen_records, opts):
 
         sample['img_data'] = None
 
-        #now assign test or val
-        sample['train'] = (random.uniform(0., 1.0) > 0.2)
-
-        gen_records[key] = sample
-
+        # Initialise 'train' to False
+        sample['train'] = False
+        
+        # We need to maintain the correct train - validate ratio across the dataset, even if continous training
+        # so don't add this sample to the main records list (gen_records) yet.
+        new_records[key] = sample
+        
+    # new_records now contains all our NEW samples
+    # - set a random selection to be the training samples based on the ratio in CFG file
+    shufKeys = list(new_records.keys())
+    random.shuffle(shufKeys)
+    trainCount = 0
+    #  Ratio of samples to use as training data, the remaining are used for evaluation
+    targetTrainCount = int(opts['cfg'].TRAIN_TEST_SPLIT * len(shufKeys))
+    for key in shufKeys:
+        new_records[key]['train'] = True
+        trainCount += 1
+        if trainCount >= targetTrainCount:
+            break
+    # Finally add all the new records to the existing list
+    gen_records.update(new_records)
 
 def save_json_and_weights(model, filename):
     '''
