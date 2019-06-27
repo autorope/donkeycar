@@ -394,6 +394,7 @@ def get_model_by_type(model_type, cfg):
  
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
+    print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
