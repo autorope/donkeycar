@@ -330,7 +330,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         elif '.json' in model_path:
             #when we have a .json extension
-            #load the model from their and look for a matching
+            #load the model from there and look for a matching
             #.wts file with just weights
             load_model_json(kl, model_path)
             weights_path = model_path.replace('.json', '.weights')
@@ -342,6 +342,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             
             model_reload_cb = reload_weights
 
+        else:
+            print("ERR>> Unknown extension type on model file!!")
+            return
 
         #this part will signal visual LED, if connected
         V.add(FileWatcher(model_path, verbose=True), outputs=['modelfile/modified'])
