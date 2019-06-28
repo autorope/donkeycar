@@ -1,7 +1,6 @@
 import os
 import time
 import numpy as np
-import cv2
 from PIL import Image
 import glob
 from donkeycar.utils import rgb2gray
@@ -167,6 +166,7 @@ class CSICamera(BaseCamera):
             self.poll_camera()
 
     def poll_camera(self):
+        import cv2
         self.ret , frame = self.camera.read()
         self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
