@@ -384,7 +384,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     
     #to give the car a boost when starting ai mode in a race.
-    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE)
+    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED)
     
     V.add(aiLauncher,
         inputs=['user/mode', 'throttle'],
