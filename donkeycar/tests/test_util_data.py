@@ -114,3 +114,11 @@ class TestParamGen(unittest.TestCase):
                 {'a': 'opt2', 'b': 'opt4'}
             ]
         self.assertCountEqual(expected, l)
+
+def test_train_test_split():
+    data_set = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
+    train_set, val_set = train_test_split(data_set, test_size=0.2)
+    print(train_set)
+    print(val_set)
+    assert(len(train_set)==8)
+    assert(len(val_set)==2)
