@@ -9,7 +9,7 @@ Options:
 """
 import os
 from docopt import docopt
-import keras
+from tensorflow.python import keras
 import numpy as np
 import time
 

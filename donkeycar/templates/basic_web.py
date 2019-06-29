@@ -92,7 +92,7 @@ def drive(cfg, model_path=None, model_type=None):
     def load_model_json(kl, json_fnm):
         start = time.time()
         print('loading model json', json_fnm)
-        import keras
+        from tensorflow.python import keras
         try:
             with open(json_fnm, 'r') as handle:
                 contents = handle.read()
