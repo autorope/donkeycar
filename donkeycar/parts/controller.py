@@ -7,6 +7,8 @@ import random
 from threading import Thread
 import logging
 
+from prettytable import PrettyTable
+
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 
@@ -673,13 +675,22 @@ class JoystickController(object):
         '''
         print the mapping of buttons and axis to functions
         '''
+        pt = PrettyTable()
+        pt.field_names = ["control", "action"]
+        for button, control in self.button_down_trigger_map.items():
+            pt.add_row([button, control.__name__])
+        for axis, control in self.axis_trigger_map.items():
+            pt.add_row([axis, control.__name__])
         print("Joystick Controls:")
-        print("On Button Down:")
-        print(self.button_down_trigger_map)
-        print("On Button Up:")
-        print(self.button_up_trigger_map)
-        print("On Axis Move:")
-        print(self.axis_trigger_map)
+        print(pt)
+
+        # print("Joystick Controls:")
+        # print("On Button Down:")
+        # print(self.button_down_trigger_map)
+        # print("On Button Up:")
+        # print(self.button_up_trigger_map)
+        # print("On Axis Move:")
+        # print(self.axis_trigger_map)
 
     def set_button_down_trigger(self, button, func):
         '''

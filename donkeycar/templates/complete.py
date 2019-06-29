@@ -534,6 +534,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 ctr.set_tub(tub)
     
             ctr.set_button_down_trigger('cross', new_tub_dir)
+        ctr.print_controls()
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
