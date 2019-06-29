@@ -37,7 +37,6 @@ class AiLaunch():
                 if duration > self.timer_duration:
                     self.active = False
                     self.enabled = False
-                    print("duration exceeded.")
         else:
             self.active = False
 
