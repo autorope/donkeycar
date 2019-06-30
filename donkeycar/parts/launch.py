@@ -16,7 +16,7 @@ class AiLaunch():
         self.prev_mode = None
         self.trigger_on_switch = trigger_on_switch
         
-    def do_enable(self):
+    def enable_ai_launch(self):
         self.enabled = True
         print('AiLauncher is enabled.')
 

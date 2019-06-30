@@ -534,8 +534,8 @@ class LogitechJoystick(Joystick):
             0x133: 'X',
             0x134: 'Y',
 
-            0x136: 'LB',
-            0x137: 'RB',
+            0x136: 'L1',
+            0x137: 'R1',
 
             0x13d: 'Left_stick_press',
             0x13e: 'right_stick_press',
@@ -1086,12 +1086,10 @@ class LogitechJoystickController(JoystickController):
 
         self.button_down_trigger_map = {
             'start': self.toggle_mode,
-            'RB': self.toggle_manual_recording,
-            'B': self.erase_last_N_records,
-            'Logitech': self.emergency_stop,
-            'Y': self.increase_max_throttle,
-            'X': self.decrease_max_throttle,
-            'LB': self.toggle_constant_throttle,
+            'B': self.toggle_manual_recording,
+            'Y': self.erase_last_N_records,
+            'A': self.emergency_stop,
+            'back': self.toggle_constant_throttle,
         }
 
         self.button_up_trigger_map = {

@@ -391,7 +391,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         outputs=['throttle'])
 
     if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.do_enable)
+        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
 
     class AiRunCondition:
