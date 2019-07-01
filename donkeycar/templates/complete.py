@@ -314,11 +314,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     if model_path:
         #When we have a model, first create an appropriate Keras part
-        kl = dk.utils.get_model_by_type(model_type, cfg)
+        use_tflite = '.tflite' in model_path
+        kl = dk.utils.get_model_by_type(model_type, cfg, tflite=use_tflite)
 
         model_reload_cb = None
 
-        if '.h5' in model_path:
+        if use_tflite:
+            kl.load(model_path)
+
+        elif '.h5' in model_path:
             #when we have a .h5 extension
             #load everything from the model file
             load_model(kl, model_path)

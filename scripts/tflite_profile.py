@@ -12,7 +12,7 @@ from docopt import docopt
 import tensorflow as tf
 import numpy as np
 
-from donkeycar.parts.simulation import FPSTimer
+from donkeycar.utils import FPSTimer
 
 args = docopt(__doc__)
 

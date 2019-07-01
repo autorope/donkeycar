@@ -14,6 +14,7 @@ import itertools
 import subprocess
 import math
 import random
+import time
 
 from PIL import Image
 import numpy as np
@@ -363,6 +364,10 @@ def gather_tubs(cfg, tub_names):
 
     return tubs
 
+"""
+Training helpers
+"""
+
 def get_image_index(fnm):
     sl = os.path.basename(fnm).split('_')
     return int(sl[0])
@@ -386,12 +391,13 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     return records
 
-def get_model_by_type(model_type, cfg):
+def get_model_by_type(model_type, cfg, tflite=False):
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
     from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer, KerasLatent
+    from donkeycar.parts.tflite import TFLitePilot
  
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -400,7 +406,9 @@ def get_model_by_type(model_type, cfg):
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
 
-    if model_type == "localizer" or cfg.TRAIN_LOCALIZER:
+    if tflite:
+        kl = TFLitePilot()
+    elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
         kl = KerasLocalizer(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
     elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
@@ -463,4 +471,25 @@ def train_test_split(data_list, shuffle=True, test_size=0.2):
 
     return train_data, val_data
     
-    
+
+
+"""
+Timers
+"""
+
+class FPSTimer(object):
+    def __init__(self):
+        self.t = time.time()
+        self.iter = 0
+
+    def reset(self):
+        self.t = time.time()
+        self.iter = 0
+
+    def on_frame(self):
+        self.iter += 1
+        if self.iter == 100:
+            e = time.time()
+            print('fps', 100.0 / (e - self.t))
+            self.t = time.time()
+            self.iter = 0

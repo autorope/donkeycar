@@ -221,8 +221,8 @@ class MakeMovie(BaseCommand):
             parser.print_help()
             return
 
-        if args.type is None:
-            print("ERR>> --type argument missing.")
+        if args.type is None and args.model is not None:
+            print("ERR>> --type argument missing. Required when providing a model.")
             parser.print_help()
             return
 

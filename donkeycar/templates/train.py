@@ -108,7 +108,7 @@ def collate_records(records, gen_records, opts):
             throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=opts['cfg'].MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
 
         sample['angle'] = angle
-        sample['throttle'] = throttle
+        sample['throttle'] = throttle * 0.1
 
         try:
             accl_x = float(json_data['imu/acl_x'])
@@ -215,11 +215,13 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
 def on_best_model(cfg, model, model_filename):
 
     model.save(model_filename)
-    #TODO figure out why keras in tensorflow has a problem with saving to json/weights
-    return
-
-    #Save json and weights file too
-    json_fnm, weights_fnm = save_json_and_weights(model, model_filename)
+    return #TODO can we save a tfilte on the fly?
+    
+    #Save tflite file too
+    tflite_fnm = model_filename.replace(".h5", ".tflite")
+    assert(".tflite" in tflite_fnm)
+    from donkeycar.parts.tflite import keras_session_to_tflite
+    keras_session_to_tflite(model, tflite_fnm)
 
     if not cfg.SEND_BEST_MODEL_TO_PI:
         return
@@ -231,8 +233,7 @@ def on_best_model(cfg, model, model_filename):
     if not on_windows:
         print('sending model to the pi')
         
-        command = 'scp %s %s@%s:~/%s/models/;' % (weights_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
-        command += 'scp %s %s@%s:~/%s/models/;' % (json_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+        command = 'scp %s %s@%s:~/%s/models/;' % (tflite_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
         command += 'scp %s %s@%s:~/%s/models/;' % (model_filename, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
     
         print("sending", command)
@@ -255,14 +256,10 @@ def on_best_model(cfg, model, model_filename):
         server = host
         files = []
 
-        localpath = weights_fnm
-        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, weights_fnm.replace('\\', '/'))
+        localpath = tflite_fnm
+        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, tflite_fnm.replace('\\', '/'))
         files.append((localpath, remotepath))
-
-        localpath = json_fnm
-        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, json_fnm.replace('\\', '/'))
-        files.append((localpath, remotepath))
-
+        
         localpath = model_filename
         remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, model_filename.replace('\\', '/'))
         files.append((localpath, remotepath))
@@ -599,6 +596,14 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                 print("not saving loss graph because matplotlib not set up.")
         except Exception as ex:
             print("problems with loss graph: {}".format( ex ) )
+
+    #Save tflite file too
+    print("\n\n--------- Saving TFLite Model ---------")
+    tflite_fnm = model_path.replace(".h5", ".tflite")
+    assert(".tflite" in tflite_fnm)
+    from donkeycar.parts.tflite import keras_model_to_tflite
+    keras_model_to_tflite(model_path, tflite_fnm)
+    print("Saved TFLite model:", tflite_fnm)
 
     if cfg.PRUNE_CNN:
         base_model_path = splitext(model_name)[0]
