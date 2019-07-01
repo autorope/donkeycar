@@ -43,7 +43,7 @@ pip install -e .[pc]
 If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
 
 ```
-conda install tensorflow-gpu
+conda install tensorflow-gpu==1.13.1
 ```
 
 * Create your local working dir:

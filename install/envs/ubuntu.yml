@@ -3,7 +3,7 @@ dependencies:
 
 - h5py
 - pillow
-- tensorflow
+- tensorflow==1.13.1
 - opencv
 - matplotlib
 - tornado
@@ -11,6 +11,7 @@ dependencies:
 - pandas
 - pylint
 - pytest
+- pip
 
 - pip:
   - moviepy
