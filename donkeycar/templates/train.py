@@ -108,7 +108,7 @@ def collate_records(records, gen_records, opts):
             throttle = dk.utils.linear_bin(throttle, N=20, offset=0, R=opts['cfg'].MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
 
         sample['angle'] = angle
-        sample['throttle'] = throttle * 0.1
+        sample['throttle'] = throttle
 
         try:
             accl_x = float(json_data['imu/acl_x'])
