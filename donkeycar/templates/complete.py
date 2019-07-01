@@ -302,7 +302,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     def load_model_json(kl, json_fnm):
         start = time.time()
         print('loading model json', json_fnm)
-        import keras
+        from tensorflow.python import keras
         try:
             with open(json_fnm, 'r') as handle:
                 contents = handle.read()
@@ -391,7 +391,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         outputs=['throttle'])
 
     if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.do_enable)
+        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
 
     class AiRunCondition:
@@ -534,6 +534,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 ctr.set_tub(tub)
     
             ctr.set_button_down_trigger('cross', new_tub_dir)
+        ctr.print_controls()
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 

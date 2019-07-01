@@ -190,7 +190,7 @@ git clone https://github.com/autorope/donkeycar
 cd donkeycar
 git checkout master
 pip install -e .[pi]
-pip install tensorflow
+pip install tensorflow==1.13.1
 ```
 
 You can validate your tensorflow install with

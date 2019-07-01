@@ -49,7 +49,7 @@ pip install -e .[pc]
 You should have an NVidia GPU with the latest drivers. Conda will handle installing the correct cuda and cuddn libraries for the version of tensorflow you are using.
 
 ```
-conda install tensorflow-gpu
+conda install tensorflow-gpu==1.13.1
 ```
 
 * Create your local working dir:

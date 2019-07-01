@@ -27,7 +27,7 @@ def test_ai_launch():
 
     assert(new_throttle == 0.0)
 
-    ai_launch.do_enable()
+    ai_launch.enable_ai_launch()
     mode = "local"
 
     new_throttle = ai_launch.run(mode, ai_throttle)

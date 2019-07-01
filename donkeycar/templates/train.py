@@ -293,6 +293,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     ''' 
     verbose = cfg.VEBOSE_TRAIN
 
+    if model_name and not '.h5' == model_name[-3:]:
+        raise Exception("Model filename should end with .h5")
     
     if continuous:
         print("continuous training")

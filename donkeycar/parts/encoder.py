@@ -82,6 +82,7 @@ class RotaryEncoder():
         self.counter = 0
         self.on = True
         self.debug = debug
+        self.top_speed = 0
     
     def isr(self, channel):
         self.counter += 1
@@ -107,6 +108,8 @@ class RotaryEncoder():
             #update the odometer values
             self.meters += distance
             self.meters_per_second = velocity
+            if(self.meters_per_second > self.top_speed):
+                self.top_speed = self.meters_per_second
 
             #console output for debugging
             if(self.debug):
@@ -125,8 +128,9 @@ class RotaryEncoder():
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('stopping Rotary Encoder')
-        print('top speed (m/s):', self.top_speed)
+        print('Stopping Rotary Encoder')
+        print("\tDistance Travelled: {} meters".format(round(self.meters, 4)))
+        print("\tTop Speed: {} meters/second".format(round(self.top_speed, 4)))
         time.sleep(.5)
         
         import RPi.GPIO as GPIO

@@ -7,6 +7,8 @@ import random
 from threading import Thread
 import logging
 
+from prettytable import PrettyTable
+
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 
@@ -17,6 +19,8 @@ class Joystick(object):
     def __init__(self, dev_fn='/dev/input/js0'):
         self.axis_states = {}
         self.button_states = {}
+        self.axis_names = {}
+        self.button_names = {}
         self.axis_map = []
         self.button_map = []
         self.jsdev = None
@@ -532,8 +536,8 @@ class LogitechJoystick(Joystick):
             0x133: 'X',
             0x134: 'Y',
 
-            0x136: 'LB',
-            0x137: 'RB',
+            0x136: 'L1',
+            0x137: 'R1',
 
             0x13d: 'Left_stick_press',
             0x13e: 'right_stick_press',
@@ -673,13 +677,22 @@ class JoystickController(object):
         '''
         print the mapping of buttons and axis to functions
         '''
+        pt = PrettyTable()
+        pt.field_names = ["control", "action"]
+        for button, control in self.button_down_trigger_map.items():
+            pt.add_row([button, control.__name__])
+        for axis, control in self.axis_trigger_map.items():
+            pt.add_row([axis, control.__name__])
         print("Joystick Controls:")
-        print("On Button Down:")
-        print(self.button_down_trigger_map)
-        print("On Button Up:")
-        print(self.button_up_trigger_map)
-        print("On Axis Move:")
-        print(self.axis_trigger_map)
+        print(pt)
+
+        # print("Joystick Controls:")
+        # print("On Button Down:")
+        # print(self.button_down_trigger_map)
+        # print("On Button Up:")
+        # print(self.button_up_trigger_map)
+        # print("On Axis Move:")
+        # print(self.axis_trigger_map)
 
     def set_button_down_trigger(self, button, func):
         '''
@@ -1024,6 +1037,21 @@ class XboxOneJoystickController(JoystickController):
             print(self.dev_fn, "not found.")
             self.js = None
         return self.js is not None
+    
+    def magnitude(self, reversed = False):
+        def set_magnitude(axis_val):
+            '''
+            Maps raw axis values to magnitude.
+            '''
+            # Axis values range from -1. to 1.
+            minimum = -1.
+            maximum = 1.
+            # Magnitude is now normalized in the range of 0 - 1.
+            magnitude = (axis_val - minimum) / (maximum - minimum)
+            if reversed:
+                magnitude *= -1
+            self.set_throttle(magnitude)
+        return set_magnitude
 
     def init_trigger_maps(self):
         '''
@@ -1043,6 +1071,9 @@ class XboxOneJoystickController(JoystickController):
         self.axis_trigger_map = {
             'left_stick_horz': self.set_steering,
             'right_stick_vert': self.set_throttle,
+            # Forza Mode
+            'right_trigger': self.magnitude(),
+            'left_trigger': self.magnitude(reversed = True),
         }
 
 
@@ -1075,16 +1106,17 @@ class LogitechJoystickController(JoystickController):
 
         self.button_down_trigger_map = {
             'start': self.toggle_mode,
-            'RB': self.toggle_manual_recording,
-            'B': self.erase_last_N_records,
-            'Logitech': self.emergency_stop,
-            'Y': self.increase_max_throttle,
-            'X': self.decrease_max_throttle,
-            'LB': self.toggle_constant_throttle,
+            'B': self.toggle_manual_recording,
+            'Y': self.erase_last_N_records,
+            'A': self.emergency_stop,
+            'back': self.toggle_constant_throttle,
+            "R1" : self.chaos_monkey_on_right,
+            "L1" : self.chaos_monkey_on_left,
         }
 
         self.button_up_trigger_map = {
-
+            "R1" : self.chaos_monkey_off,
+            "L1" : self.chaos_monkey_off,
         }
 
         self.axis_trigger_map = {
