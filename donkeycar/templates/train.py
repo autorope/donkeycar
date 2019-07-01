@@ -24,6 +24,7 @@ import time
 import zlib
 from os.path import basename, join, splitext, dirname
 import pickle
+import datetime
 
 from tensorflow.python import keras
 from docopt import docopt
@@ -507,6 +508,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     
 def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epoch, val_steps, continuous, verbose, save_best=None):
 
+    start = time.time()
+
     model_path = os.path.expanduser(model_name)
 
     #checkpoint to save model after each epoch and send best to the pi.
@@ -555,7 +558,10 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     
     full_model_val_loss = min(history.history['val_loss'])
     max_val_loss = full_model_val_loss + cfg.PRUNE_VAL_LOSS_DEGRADATION_LIMIT
-    
+
+    duration_train = time.time() - start
+    print("Training completed in %s." % str(datetime.timedelta(seconds=round(duration_train))) )
+
     print("\n\n----------- Best Eval Loss :%f ---------" % save_best.best)
 
     if cfg.SHOW_PLOT:
