@@ -115,7 +115,7 @@ Now let's setup `CMake` correctly so it generates the correct OpenCV bindings fo
 
 ```bash
 # Create a build directory
-cd projects/cv2
+cd projects/cv2/opencv
 mkdir build
 cd build
 
