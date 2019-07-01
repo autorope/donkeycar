@@ -7,14 +7,14 @@ class AiLaunch():
     up to speed.
     '''
 
-    def __init__(self, launch_duration=1.0, launch_throttle=1.0, trigger_on_switch=False):
+    def __init__(self, launch_duration=1.0, launch_throttle=1.0, keep_enabled=False):
         self.active = False
         self.enabled = False
         self.timer_start = None
         self.timer_duration = launch_duration
         self.launch_throttle = launch_throttle
         self.prev_mode = None
-        self.trigger_on_switch = trigger_on_switch
+        self.trigger_on_switch = keep_enabled
         
     def enable_ai_launch(self):
         self.enabled = True
