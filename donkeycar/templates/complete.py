@@ -302,7 +302,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     def load_model_json(kl, json_fnm):
         start = time.time()
         print('loading model json', json_fnm)
-        import keras
+        from tensorflow.python import keras
         try:
             with open(json_fnm, 'r') as handle:
                 contents = handle.read()
@@ -330,7 +330,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         elif '.json' in model_path:
             #when we have a .json extension
-            #load the model from their and look for a matching
+            #load the model from there and look for a matching
             #.wts file with just weights
             load_model_json(kl, model_path)
             weights_path = model_path.replace('.json', '.weights')
@@ -342,6 +342,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             
             model_reload_cb = reload_weights
 
+        else:
+            print("ERR>> Unknown extension type on model file!!")
+            return
 
         #this part will signal visual LED, if connected
         V.add(FileWatcher(model_path, verbose=True), outputs=['modelfile/modified'])
@@ -381,14 +384,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     
     #to give the car a boost when starting ai mode in a race.
-    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE)
+    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED)
     
     V.add(aiLauncher,
         inputs=['user/mode', 'throttle'],
         outputs=['throttle'])
 
     if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.do_enable)
+        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
 
     class AiRunCondition:
@@ -531,6 +534,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 ctr.set_tub(tub)
     
             ctr.set_button_down_trigger('cross', new_tub_dir)
+        ctr.print_controls()
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
@@ -544,7 +548,7 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path = args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
             meta=args['--meta'])
     
     if args['train']:

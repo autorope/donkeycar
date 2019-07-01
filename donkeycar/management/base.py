@@ -157,9 +157,9 @@ class CalibrateCar(BaseCommand):
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
-        parser.add_argument('--channel', help='The channel youd like to calibrate [0-15]')
-        parser.add_argument('--address', default='0x40', help='The i2c address youd like to calibrate [default 0x40]')
-        parser.add_argument('--bus', default=None, help='The i2c bus youd like to calibrate [default autodetect]')
+        parser.add_argument('--channel', help="The channel you'd like to calibrate [0-15]")
+        parser.add_argument('--address', default='0x40', help="The i2c address you'd like to calibrate [default 0x40]")
+        parser.add_argument('--bus', default=None, help="The i2c bus you'd like to calibrate [default autodetect]")
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -178,10 +178,18 @@ class CalibrateCar(BaseCommand):
         print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
         c = PCA9685(channel, address=address, busnum=busnum)
         
-        for i in range(10):
-            pmw = int(input('Enter a PWM setting to test(0-1500)'))
-            c.run(pmw)
-
+        while True:
+            try:
+                val = input("""Enter a PWM setting to test ('q' for quit) (0-1500): """)
+                if val == 'q' or val == 'Q':
+                    break
+                pmw = int(val)
+                c.run(pmw)
+            except KeyboardInterrupt:
+                print("\nKeyboardInterrupt received, exit.")
+                break
+            except Exception as ex:
+                print("Oops, {}".format(ex))
 
 class MakeMovie(BaseCommand):    
     
@@ -538,7 +546,8 @@ class Sim(BaseCommand):
         elif args.type == "linear":
             kl = KerasLinear(num_outputs=2)
         else:
-            print("didn't recognize type:", args.type)
+            print("ERR>> Didn't recognize type:", args.type)
+            parser.print_help()
             return
 
         #can provide an optional image filter part
@@ -781,6 +790,9 @@ class ShowPredictionPlots(BaseCommand):
 
         model_path = os.path.expanduser(model_path)
         model = dk.utils.get_model_by_type(model_type, cfg)
+        # This just gets us the text for the plot title:
+        if model_type is None:
+            model_type = cfg.DEFAULT_MODEL_TYPE
         model.load(model_path)
 
         records = gather_records(cfg, tub_paths)
@@ -812,7 +824,7 @@ class ShowPredictionPlots(BaseCommand):
 
         fig = plt.figure()
 
-        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " + model_path
+        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " + model_path + "\nType: " + model_type
         fig.suptitle(title)
 
         ax1 = fig.add_subplot(211)
@@ -832,7 +844,7 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--model', default=None, help='name of record to create histogram')
         parser.add_argument('--limit', default=1000, help='how many records to process')
-        parser.add_argument('--type', default='categorical', help='model type')
+        parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
         return parsed_args
@@ -871,7 +883,7 @@ def execute_from_command_line():
         c = command()
         c.run(args[2:])
     else:
-        dk.utils.eprint('Usage: The availible commands are:')
+        dk.utils.eprint('Usage: The available commands are:')
         dk.utils.eprint(list(commands.keys()))
         
     

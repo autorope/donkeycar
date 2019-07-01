@@ -36,6 +36,11 @@ class Config:
                 result.append((key, getattr(self,key)))
         return str(result)
 
+    def show(self):
+        for attr in dir(self):
+            if attr.isupper():
+                print(attr, ":", getattr(self, attr))
+
 
 
 def load_config(config_path=None):
@@ -59,7 +64,12 @@ def load_config(config_path=None):
         print("loading personal config over-rides")
         personal_cfg = Config()
         personal_cfg.from_pyfile(personal_cfg_path)
+        #personal_cfg.show()
+
         cfg.from_object(personal_cfg)
+
+        #print("final settings:")
+        #cfg.show()
         
     print()
 

@@ -7,7 +7,6 @@ Has settings for continuous training that will look for new files as it trains.
 Modify on_best_model if you wish continuous training to update your pi as it builds.
 You can drop this in your ~/mycar dir.
 Basic usage should feel familiar: python train.py --model models/mypilot
-You might need to do a: pip install scikit-learn
 
 
 Usage:
@@ -29,8 +28,6 @@ import pickle
 from tensorflow.python import keras
 from docopt import docopt
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.utils import shuffle
 from PIL import Image
 
 import donkeycar as dk
@@ -53,48 +50,6 @@ except:
     do_plot = False
     print("matplotlib not installed")
     
-deterministic = False
-
-if deterministic:
-    import tensorflow as tf
-    import random as rn
-
-    # The below is necessary in Python 3.2.3 onwards to
-    # have reproducible behavior for certain hash-based operations.
-    # See these references for further details:
-    # https://docs.python.org/3.4/using/cmdline.html#envvar-PYTHONHASHSEED
-    # https://github.com/fchollet/keras/issues/2280#issuecomment-306959926
-
-    os.environ['PYTHONHASHSEED'] = '0'
-
-    # The below is necessary for starting Numpy generated random numbers
-    # in a well-defined initial state.
-
-    np.random.seed(42)
-
-    # The below is necessary for starting core Python generated random numbers
-    # in a well-defined state.
-
-    rn.seed(12345)
-
-    # Force TensorFlow to use single thread.
-    # Multiple threads are a potential source of
-    # non-reproducible results.
-    # For further details, see: https://stackoverflow.com/questions/42022950/which-seeds-have-to-be-set-where-to-realize-100-reproducibility-of-training-res
-
-    session_conf = tf.ConfigProto(intra_op_parallelism_threads=1, inter_op_parallelism_threads=1)
-
-    from keras import backend as K
-
-    # The below tf.set_random_seed() will make random number generation
-    # in the TensorFlow backend have a well-defined initial state.
-    # For further details, see: https://www.tensorflow.org/api_docs/python/tf/set_random_seed
-
-    tf.set_random_seed(1234)
-
-    sess = tf.Session(graph=tf.get_default_graph(), config=session_conf)
-    K.set_session(sess)
-
 
 '''
 Tub management
@@ -118,6 +73,8 @@ def collate_records(records, gen_records, opts):
     use the opts dict to specify config choices
     '''
 
+    new_records = {}
+    
     for record_path in records:
 
         basepath = os.path.dirname(record_path)        
@@ -173,11 +130,27 @@ def collate_records(records, gen_records, opts):
 
         sample['img_data'] = None
 
-        #now assign test or val
-        sample['train'] = (random.uniform(0., 1.0) > 0.2)
-
-        gen_records[key] = sample
-
+        # Initialise 'train' to False
+        sample['train'] = False
+        
+        # We need to maintain the correct train - validate ratio across the dataset, even if continous training
+        # so don't add this sample to the main records list (gen_records) yet.
+        new_records[key] = sample
+        
+    # new_records now contains all our NEW samples
+    # - set a random selection to be the training samples based on the ratio in CFG file
+    shufKeys = list(new_records.keys())
+    random.shuffle(shufKeys)
+    trainCount = 0
+    #  Ratio of samples to use as training data, the remaining are used for evaluation
+    targetTrainCount = int(opts['cfg'].TRAIN_TEST_SPLIT * len(shufKeys))
+    for key in shufKeys:
+        new_records[key]['train'] = True
+        trainCount += 1
+        if trainCount >= targetTrainCount:
+            break
+    # Finally add all the new records to the existing list
+    gen_records.update(new_records)
 
 def save_json_and_weights(model, filename):
     '''
@@ -319,6 +292,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     ''' 
     verbose = cfg.VEBOSE_TRAIN
 
+    if model_name and not '.h5' == model_name[-3:]:
+        raise Exception("Model filename should end with .h5")
     
     if continuous:
         print("continuous training")
@@ -388,7 +363,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
             keys = list(data.keys())
 
-            keys = shuffle(keys)
+            random.shuffle(keys)
 
             kl = opts['keras_pilot']
 
@@ -780,7 +755,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     print("collated", len(sequences), "sequences of length", target_len)
 
     #shuffle and split the data
-    train_data, val_data  = train_test_split(sequences, shuffle=True, test_size=(1 - cfg.TRAIN_TEST_SPLIT))
+    train_data, val_data  = train_test_split(sequences, test_size=(1 - cfg.TRAIN_TEST_SPLIT))
 
 
     def generator(data, opt, batch_size=cfg.BATCH_SIZE):
@@ -788,7 +763,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
 
         while True:
             #shuffle again for good measure
-            data = shuffle(data)
+            random.shuffle(data)
 
             for offset in range(0, num_records, batch_size):
                 batch_data = data[offset:offset+batch_size]

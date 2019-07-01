@@ -13,6 +13,7 @@ import sys
 import itertools
 import subprocess
 import math
+import random
 
 from PIL import Image
 import numpy as np
@@ -394,6 +395,7 @@ def get_model_by_type(model_type, cfg):
  
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
+    print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
@@ -436,3 +438,29 @@ def get_test_img(model):
     return img
 
 
+def train_test_split(data_list, shuffle=True, test_size=0.2):
+    '''
+    take a list, split it into two sets while selecting a 
+    random element in order to shuffle the results.
+    use the test_size to choose the split percent.
+    shuffle is always True, left there to be backwards compatible
+    '''
+    assert(shuffle==True)
+    
+    train_data = []
+
+    target_train_size = len(data_list) * (1. - test_size)
+
+    i_sample = 0
+
+    while i_sample < target_train_size and len(data_list) > 1:
+        i_choice = random.randint(0, len(data_list) - 1)
+        train_data.append(data_list.pop(i_choice))
+        i_sample += 1
+
+    #remainder of the original list is the validation set
+    val_data = data_list
+
+    return train_data, val_data
+    
+    

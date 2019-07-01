@@ -7,6 +7,8 @@ import random
 from threading import Thread
 import logging
 
+from prettytable import PrettyTable
+
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 
@@ -534,8 +536,8 @@ class LogitechJoystick(Joystick):
             0x133: 'X',
             0x134: 'Y',
 
-            0x136: 'LB',
-            0x137: 'RB',
+            0x136: 'L1',
+            0x137: 'R1',
 
             0x13d: 'Left_stick_press',
             0x13e: 'right_stick_press',
@@ -675,13 +677,22 @@ class JoystickController(object):
         '''
         print the mapping of buttons and axis to functions
         '''
+        pt = PrettyTable()
+        pt.field_names = ["control", "action"]
+        for button, control in self.button_down_trigger_map.items():
+            pt.add_row([button, control.__name__])
+        for axis, control in self.axis_trigger_map.items():
+            pt.add_row([axis, control.__name__])
         print("Joystick Controls:")
-        print("On Button Down:")
-        print(self.button_down_trigger_map)
-        print("On Button Up:")
-        print(self.button_up_trigger_map)
-        print("On Axis Move:")
-        print(self.axis_trigger_map)
+        print(pt)
+
+        # print("Joystick Controls:")
+        # print("On Button Down:")
+        # print(self.button_down_trigger_map)
+        # print("On Button Up:")
+        # print(self.button_up_trigger_map)
+        # print("On Axis Move:")
+        # print(self.axis_trigger_map)
 
     def set_button_down_trigger(self, button, func):
         '''
@@ -1095,16 +1106,17 @@ class LogitechJoystickController(JoystickController):
 
         self.button_down_trigger_map = {
             'start': self.toggle_mode,
-            'RB': self.toggle_manual_recording,
-            'B': self.erase_last_N_records,
-            'Logitech': self.emergency_stop,
-            'Y': self.increase_max_throttle,
-            'X': self.decrease_max_throttle,
-            'LB': self.toggle_constant_throttle,
+            'B': self.toggle_manual_recording,
+            'Y': self.erase_last_N_records,
+            'A': self.emergency_stop,
+            'back': self.toggle_constant_throttle,
+            "R1" : self.chaos_monkey_on_right,
+            "L1" : self.chaos_monkey_on_left,
         }
 
         self.button_up_trigger_map = {
-
+            "R1" : self.chaos_monkey_off,
+            "L1" : self.chaos_monkey_off,
         }
 
         self.axis_trigger_map = {
