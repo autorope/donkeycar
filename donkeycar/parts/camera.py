@@ -139,11 +139,12 @@ class CSICamera(BaseCamera):
         'videoconvert ! '
         'video/x-raw, format=(string)BGR ! appsink'  % (capture_width,capture_height,framerate,flip_method,display_width,display_height))
     
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=60):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=60, gstreamer_flip=0):
         self.w = image_w
         self.h = image_h
         self.running = True
         self.frame = None
+        self.flip_method = gstreamer_flip
 
     def init_camera(self):
         import cv2
@@ -152,8 +153,8 @@ class CSICamera(BaseCamera):
         self.camera = cv2.VideoCapture(\
             self.gstreamer_pipeline(\
                 display_width=self.w,\
-                    display_height=self.h,
-                    flip_method=0),
+                    display_height=self.h,\
+                    flip_method=self.flip_method),
                     cv2.CAP_GSTREAMER)
 
         self.poll_camera()
