@@ -16,7 +16,7 @@ The Desert Monster, SCT and Blaze are made by the same manufacturer as the Magne
 It is worth noting that the Desert Monster and SCT also has some nice characteristics including narrower, more road friendly tires and the Blaze has a slightly narrower stance which makes it less likely to hit things.
 
 ![Desert Monster](./assets/build_hardware/Desert_Monster.png)
-Tu purchase one of these cars follow the following links:
+To purchase one of these cars follow the following links:
 
 *  Exceed Desert Monster [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)
 *  Exceed Short Course Truck  [Blue](https://amzn.to/2KsYF1e),  [Red](https://amzn.to/2rdtQ8z)
