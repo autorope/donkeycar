@@ -15,6 +15,7 @@ models to help direct the vehicles motion.
 import os
 import numpy as np
 
+from tensorflow import ConfigProto, Session
 from tensorflow.python import keras
 from tensorflow.python.keras.layers import Input, Dense
 from tensorflow.python.keras.models import Model, Sequential
@@ -27,7 +28,12 @@ from tensorflow.python.keras.layers import Conv3D, MaxPooling3D, Cropping3D, Con
 
 import donkeycar as dk
 
-
+# Override keras session to work around a bug in TF 1.13.1
+# Remove after we upgrade to TF 1.14 / TF 2.x.
+config = ConfigProto()
+config.gpu_options.allow_growth = True
+session = Session(config=config)
+keras.backend.set_session(session)
 
 class KerasPilot(object):
     '''
