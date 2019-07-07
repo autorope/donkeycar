@@ -318,7 +318,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         model_reload_cb = None
 
-        if '.h5' in model_path:
+        if '.h5' in model_path or '.uff' in model_path:
             #when we have a .h5 extension
             #load everything from the model file
             load_model(kl, model_path)

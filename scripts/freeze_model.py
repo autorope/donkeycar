@@ -9,11 +9,16 @@ Note:
 import os
 
 from docopt import docopt
+import json
+from pathlib import Path
 import tensorflow as tf
 
 args = docopt(__doc__)
 in_model = os.path.expanduser(args['--model'])
 output = os.path.expanduser(args['--output'])
+output_path = Path(output)
+output_meta = Path('%s/%s.metadata' % (output_path.parent.as_posix(), output_path.stem))
+
 
 # Reset session
 tf.keras.backend.clear_session()
@@ -24,6 +29,10 @@ session = tf.keras.backend.get_session()
 
 input_names = [layer.op.name for layer in model.inputs]
 output_names = [layer.op.name for layer in model.outputs]
+
+# Store additional information in metadata, useful for infrencing
+meta = {'input_names': input_names, 'output_names': output_names}
+
 graph = session.graph
 
 # Freeze Graph
@@ -32,9 +41,11 @@ with graph.as_default():
     graph_frozen = tf.compat.v1.graph_util.remove_training_nodes(graph.as_graph_def())
     # Convert variables to constants
     graph_frozen = tf.compat.v1.graph_util.convert_variables_to_constants(session, graph_frozen, output_names)
-    with open(output, 'wb') as output_file:
+    with open(output, 'wb') as output_file, open(output_meta.as_posix(), 'w') as meta_file:
         output_file.write(graph_frozen.SerializeToString())
+        meta_file.write(json.dumps(meta))
 
     print ('Inputs = [%s], Outputs = [%s]' % (input_names, output_names))
+    print ('Writing metadata to %s' % output_meta.as_posix())
     print ('To convert use: \n   `convert-to-uff %s`' % (output))
 
