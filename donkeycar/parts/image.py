@@ -48,3 +48,59 @@ class StereoPair:
             stereo_image = []
 
         return np.array(stereo_image)
+
+
+class ImgCrop:
+    """
+    Crop an image to an area of interest. 
+    """
+    def __init__(self, top=0, bottom=0, left=0, right=0):
+        self.top = top
+        self.bottom = bottom
+        self.left = left
+        self.right = right
+        
+    def run(self, img_arr):
+        if img_arr is None:
+            return None
+        width, height, _ = img_arr.shape
+        img_arr = img_arr[self.top:height-self.bottom, 
+                          self.left: width-self.right]
+        return img_arr
+
+    def shutdown(self):
+        pass
+        
+
+
+class ImgStack:
+    """
+    Stack N previous images into a single N channel image, after converting each to grayscale.
+    The most recent image is the last channel, and pushes previous images towards the front.
+    """
+    def __init__(self, num_channels=3):
+        self.img_arr = None
+        self.num_channels = num_channels
+
+    def rgb2gray(self, rgb):
+        '''
+        take a numpy rgb image return a new single channel image converted to greyscale
+        '''
+        return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+        
+    def run(self, img_arr):
+        width, height, _ = img_arr.shape        
+        gray = self.rgb2gray(img_arr)
+        
+        if self.img_arr is None:
+            self.img_arr = np.zeros([width, height, self.num_channels], dtype=np.dtype('B'))
+
+        for ch in range(self.num_channels - 1):
+            self.img_arr[...,ch] = self.img_arr[...,ch+1]
+
+        self.img_arr[...,self.num_channels - 1:] = np.reshape(gray, (width, height, 1))
+
+        return self.img_arr
+
+    def shutdown(self):
+        pass

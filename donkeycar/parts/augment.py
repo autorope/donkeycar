@@ -37,7 +37,9 @@ def rand_persp_transform(img):
     return img.transform((width, height), Image.PERSPECTIVE, coeffs, Image.BICUBIC)
 
 def augment_image(np_img, shadow_images=None, do_warp_persp=False):
-    img = Image.fromarray(np_img)
+    conv_img = np_img * 255.0
+    conv_img = conv_img.astype(np.uint8)
+    img = Image.fromarray(conv_img)
     #change the coloration, sharpness, and composite a shadow
     factor = random.uniform(0.5, 2.0)
     img = ImageEnhance.Brightness(img).enhance(factor)
@@ -67,7 +69,7 @@ def augment_image(np_img, shadow_images=None, do_warp_persp=False):
         '''
         img = rand_persp_transform(img)
 
-    return np.array(img)
+    return np.array(img).astype(np.float) / 255.0
 
 def load_shadow_images(path_mask):
     shadow_images = []

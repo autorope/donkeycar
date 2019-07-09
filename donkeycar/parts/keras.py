@@ -275,18 +275,22 @@ class KerasLocalizer(KerasPilot):
         
         return angle_unbinned, throttle, loc
 
+def adjust_input_shape(input_shape, roi_crop):
+    height = input_shape[0]
+    new_height = height - roi_crop[0] - roi_crop[1]
+    return (new_height, input_shape[1], input_shape[2])
 
 
 def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
     opt = keras.optimizers.Adam()
-    drop = 0.4
+    drop = 0.2
+
+    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    input_shape = adjust_input_shape(input_shape, roi_crop)
 
     img_in = Input(shape=input_shape, name='img_in')                      # First layer, input layer, Shape comes from camera.py resolution, RGB
     x = img_in
-    x = Cropping2D(cropping=(roi_crop, (0,0)))(x) #trim configured pixels off top and bottom
-    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
-    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)       # 24 features, 5 pixel x 5 pixel kernel (convolution, feauture) window, 2wx2h stride, relu activation
     x = Dropout(drop)(x)                                                      # Randomly drop out (turn off) 10% of the neurons (Prevent overfitting)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)       # 32 features, 5px5p kernel window, 2wx2h stride, relu activatiion
@@ -319,15 +323,16 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     return model
 
 
+
 def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
     drop = 0.1
+
+    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    input_shape = adjust_input_shape(input_shape, roi_crop)
     
     img_in = Input(shape=input_shape, name='img_in')
     x = img_in
-    # Remove Cropping2D here as TensorRT does not seem to support a strided_slice operation.
-    # TODO: Add this to the pre-processing step.
-    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
@@ -357,14 +362,14 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), roi_crop=(0, 0)):
 
 
 def default_imu(num_outputs, num_imu_inputs, input_shape):
-    
+
+    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    #input_shape = adjust_input_shape(input_shape, roi_crop)
+
     img_in = Input(shape=input_shape, name='img_in')
     imu_in = Input(shape=(num_imu_inputs,), name="imu_in")
     
     x = img_in
-    x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
-    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
-    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (3,3), strides=(2,2), activation='relu')(x)
@@ -404,9 +409,7 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     bvh_in = Input(shape=(num_bvh_inputs,), name="behavior_in")
     
     x = img_in
-    x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
-    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
-    x = BatchNormalization()(x)
+    #x = Cropping2D(cropping=((60,0), (0,0)))(x) #trim 60 pixels off top
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu')(x)
     x = Convolution2D(64, (5,5), strides=(2,2), activation='relu')(x)
@@ -427,7 +430,7 @@ def default_bhv(num_outputs, num_bvh_inputs, input_shape):
     z = Dense(50, activation='relu')(z)
     z = Dropout(.1)(z)
     
-  #categorical output of the angle
+    #categorical output of the angle
     angle_out = Dense(15, activation='softmax', name='angle_out')(z)        # Connect every input with every output and output 15 hidden units. Use Softmax to give percentage. 15 categories and find best one based off percentage 0.0-1.0
     
     #continous output of throttle
@@ -448,9 +451,6 @@ def default_loc(num_outputs, num_locations, input_shape):
     img_in = Input(shape=input_shape, name='img_in')
     
     x = img_in
-    #x = Cropping2D(cropping=((10,0), (0,0)))(x) #trim 10 pixels off top
-    #x = Lambda(lambda x: x/127.5 - 1.)(x) # normalize and re-center
-    x = BatchNormalization()(x)
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
@@ -525,15 +525,15 @@ class KerasRNN_LSTM(KerasPilot):
 
 def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
 
-    
+    #we now expect that cropping done elsewhere. we will adjust our expeected image size here:
+    #input_shape = adjust_input_shape(input_shape, roi_crop)
+
     img_seq_shape = (seq_length,) + image_shape   
     img_in = Input(batch_shape = img_seq_shape, name='img_in')
     drop_out = 0.3
 
     x = Sequential()
-    x.add(TD(Cropping2D(cropping=((40,0), (0,0))), input_shape=img_seq_shape )) #trim 60 pixels off top
-    x.add(TD(BatchNormalization()))
-    x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu')))
+    x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu'), input_shape=img_seq_shape))
     x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (5,5), strides=(2,2), activation='relu')))
     x.add(TD(Dropout(drop_out)))
@@ -603,12 +603,12 @@ def build_3d_cnn(w, h, d, s, num_outputs):
 
     model = Sequential()
     #First layer
-    model.add(Cropping3D(cropping=((0,0), (50,10), (0,0)), input_shape=input_shape) ) #trim pixels off top
+    #model.add(Cropping3D(cropping=((0,0), (50,10), (0,0)), input_shape=input_shape) ) #trim pixels off top
     
     # Second layer
     model.add(Conv3D(
         filters=16, kernel_size=(3,3,3), strides=(1,3,3),
-        data_format='channels_last', padding='same')
+        data_format='channels_last', padding='same', input_shape=input_shape)
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(
