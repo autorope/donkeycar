@@ -447,7 +447,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         continue
 
                     img_arr = np.array(inputs_img).reshape(batch_size,\
-                        cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+                        cfg.TARGET_H, cfg.TARGET_W, cfg.TARGET_D)
 
                     if has_imu:
                         X = [img_arr, np.array(inputs_imu)]
@@ -826,12 +826,12 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
                 
                 if look_ahead:
                     X = [np.array(b_inputs_img).reshape(batch_size,\
-                        cfg.IMAGE_H, cfg.IMAGE_W, cfg.SEQUENCE_LENGTH)]
+                        cfg.TARGET_H, cfg.TARGET_W, cfg.SEQUENCE_LENGTH)]
                     X.append(np.array(b_vec_in))
                     y = np.array(b_labels).reshape(batch_size, (cfg.SEQUENCE_LENGTH + 1) * 2)
                 else:
                     X = [np.array(b_inputs_img).reshape(batch_size,\
-                        cfg.SEQUENCE_LENGTH, cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)]
+                        cfg.SEQUENCE_LENGTH, cfg.TARGET_H, cfg.TARGET_W, cfg.TARGET_D)]
                     y = np.array(b_labels).reshape(batch_size, 2)
 
                 yield X, y

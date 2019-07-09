@@ -21,7 +21,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.camera import PiCamera
-
+from donkeycar.utils import *
 
 
 def drive(cfg, model_path=None, model_type=None):
@@ -67,7 +67,19 @@ def drive(cfg, model_path=None, model_type=None):
         from donkeycar.parts.sombrero import Sombrero
         s = Sombrero()
 
-    inputs=['cam/image_array']
+    class ImgPrecondition():
+        '''
+        precondition camera image for inference
+        '''
+        def __init__(self, cfg):
+            self.cfg = cfg
+
+        def run(self, img_arr):
+            return normalize_and_crop(img_arr, self.cfg)
+
+    V.add(ImgPrecondition(cfg), inputs=['cam/image_array'], outputs=['cam/normalized/cropped'])
+
+    inputs=['cam/normalized/cropped']
 
     def load_model(kl, model_path):
         start = time.time()

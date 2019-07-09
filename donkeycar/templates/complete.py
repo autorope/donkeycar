@@ -29,6 +29,7 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
+from donkeycar.utils import *
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
     '''
@@ -259,6 +260,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
+    class ImgPrecondition():
+        '''
+        precondition camera image for inference
+        '''
+        def __init__(self, cfg):
+            self.cfg = cfg
+
+        def run(self, img_arr):
+            return normalize_and_crop(img_arr, self.cfg)
+
+    V.add(ImgPrecondition(cfg), inputs=['cam/image_array'], outputs=['cam/normalized/cropped'])
+
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
@@ -268,16 +281,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         except:
             pass
 
-        inputs = ['cam/image_array', "behavior/one_hot_state_array"]  
+        inputs = ['cam/normalized/cropped', "behavior/one_hot_state_array"]  
     #IMU
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
-        inputs=['cam/image_array',
+        inputs=['cam/normalized/cropped',
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
     else:
-        inputs=['cam/image_array']
+        inputs=['cam/normalized/cropped']
 
     def load_model(kl, model_path):
         start = time.time()
