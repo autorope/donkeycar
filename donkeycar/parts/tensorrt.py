@@ -37,7 +37,7 @@ class TensorRTLinear(KerasPilot):
             input_names = metadata['input_names']
             output_names = metadata['output_names']
             for name in input_names:
-                parser.register_input(name, (cfg.TARGET_D, self.cfg.TARGET_W, self.cfg.TARGET_H))
+                parser.register_input(name, (self.cfg.TARGET_D, self.cfg.TARGET_W, self.cfg.TARGET_H))
 
             for name in output_names:
                 parser.register_output(name)
@@ -52,7 +52,11 @@ class TensorRTLinear(KerasPilot):
             print('Ready')
 
     def run(self, image):
-        image = image.reshape((1,) + image.shape)
+        # Image is a numpy array. Flatten it to a 1D array.
+        image = image.ravel()
+        # The first input is the image. Copy to host memory.
+        image_input = self.inputs[0] 
+        np.copyto(image_input.host_memory, image)
         with self.engine.create_execution_context() as context:
             [steering, throttle] = TensorRTLinear.infer(context=context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)
             return steering[0], throttle[0]
