@@ -533,7 +533,7 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
     drop_out = 0.3
 
     x = Sequential()
-    x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu')))
+    x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu'), input_shape=img_seq_shape))
     x.add(TD(Dropout(drop_out)))
     x.add(TD(Convolution2D(32, (5,5), strides=(2,2), activation='relu')))
     x.add(TD(Dropout(drop_out)))
@@ -608,7 +608,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     # Second layer
     model.add(Conv3D(
         filters=16, kernel_size=(3,3,3), strides=(1,3,3),
-        data_format='channels_last', padding='same')
+        data_format='channels_last', padding='same', input_shape=input_shape)
     )
     model.add(Activation('relu'))
     model.add(MaxPooling3D(

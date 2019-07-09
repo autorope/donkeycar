@@ -450,10 +450,11 @@ def get_test_img(model):
     query the input to see what it likes
     make an image capable of using with that test model
     '''
+    assert(len(model.inputs) > 0)
     try:
         count, h, w, ch = model.inputs[0].get_shape()
         seq_len = 0
-    except:
+    except Exception as e:
         count, seq_len, h, w, ch = model.inputs[0].get_shape()
 
     #generate random array in the right shape

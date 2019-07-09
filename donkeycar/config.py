@@ -73,9 +73,10 @@ def load_config(config_path=None):
         
     
     #derivative settings
-    cfg.TARGET_H = cfg.IMAGE_H - cfg.ROI_CROP_TOP - cfg.ROI_CROP_BOTTOM
-    cfg.TARGET_W = cfg.IMAGE_W
-    cfg.TARGET_D = cfg.IMAGE_DEPTH
+    if hasattr(cfg, 'IMAGE_H') and hasattr(cfg, 'IMAGE_W'): 
+        cfg.TARGET_H = cfg.IMAGE_H - cfg.ROI_CROP_TOP - cfg.ROI_CROP_BOTTOM
+        cfg.TARGET_W = cfg.IMAGE_W
+        cfg.TARGET_D = cfg.IMAGE_DEPTH
 
     print()
 
