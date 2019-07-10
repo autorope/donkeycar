@@ -52,6 +52,10 @@ class TensorRTLinear(KerasPilot):
             print('Ready')
 
     def run(self, image):
+        #channel first
+        image = np.moveaxis(image, -1, 0)
+        #print(image.shape)
+        image = 1.0 - image
         # Image is a numpy array. Flatten it to a 1D array.
         image = image.ravel()
         # The first input is the image. Copy to host memory.
