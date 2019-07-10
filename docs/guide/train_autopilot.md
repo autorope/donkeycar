@@ -48,6 +48,10 @@ rsync -r ~/mycar/models/ pi@<your_ip_address>:~/mycar/models/
 python manage.py drive --model ~/mycar/models/mypilot.h5
 ```
 
+## [Optional] Use TensorRT on the Jetson Nano
+
+Read [this](/guide/robot_sbc/tensorrt_jetson_nano.md) for more information.
+
 ## Training Tips:
 
 
