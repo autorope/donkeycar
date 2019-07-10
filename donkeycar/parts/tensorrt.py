@@ -52,17 +52,15 @@ class TensorRTLinear(KerasPilot):
             print('Ready')
 
     def run(self, image):
-        #channel first
-        image = np.moveaxis(image, -1, 0)
-        #print(image.shape)
-        image = 1.0 - image
-        # Image is a numpy array. Flatten it to a 1D array.
+        # Channel first image format
+        image = image.transpose((2,0,1))
+        # Flatten it to a 1D array.
         image = image.ravel()
         # The first input is the image. Copy to host memory.
         image_input = self.inputs[0] 
         np.copyto(image_input.host_memory, image)
         with self.engine.create_execution_context() as context:
-            [steering, throttle] = TensorRTLinear.infer(context=context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)
+            [throttle, steering] = TensorRTLinear.infer(context=context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)
             return steering[0], throttle[0]
 
     @classmethod
