@@ -27,8 +27,8 @@ tf.keras.backend.set_learning_phase(0)
 model = tf.keras.models.load_model(in_model, compile=False)
 session = tf.keras.backend.get_session()
 
-input_names = [layer.op.name for layer in model.inputs]
-output_names = [layer.op.name for layer in model.outputs]
+input_names = sorted([layer.op.name for layer in model.inputs])
+output_names = sorted([layer.op.name for layer in model.outputs])
 
 # Store additional information in metadata, useful for infrencing
 meta = {'input_names': input_names, 'output_names': output_names}
@@ -37,10 +37,10 @@ graph = session.graph
 
 # Freeze Graph
 with graph.as_default():
-    # Remote training nodes
-    graph_frozen = tf.compat.v1.graph_util.remove_training_nodes(graph.as_graph_def())
     # Convert variables to constants
-    graph_frozen = tf.compat.v1.graph_util.convert_variables_to_constants(session, graph_frozen, output_names)
+    graph_frozen = tf.compat.v1.graph_util.convert_variables_to_constants(session, graph.as_graph_def(), output_names)
+    # Remote training nodes
+    graph_frozen = tf.compat.v1.graph_util.remove_training_nodes(graph_frozen)
     with open(output, 'wb') as output_file, open(output_meta.as_posix(), 'w') as meta_file:
         output_file.write(graph_frozen.SerializeToString())
         meta_file.write(json.dumps(meta))
