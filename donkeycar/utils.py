@@ -391,7 +391,7 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     return records
 
-def get_model_by_type(model_type, cfg, tflite=False):
+def get_model_by_type(model_type, cfg):
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
@@ -406,7 +406,7 @@ def get_model_by_type(model_type, cfg, tflite=False):
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
 
-    if tflite:
+    if model_type == "tflite_linear":
         kl = TFLitePilot()
     elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
         kl = KerasLocalizer(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
