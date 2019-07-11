@@ -9,13 +9,11 @@ Note:
 import os
 
 from docopt import docopt
-import tensorflow as tf
+from donkeycar.parts.tflite import keras_model_to_tflite
 
 args = docopt(__doc__)
 
 in_model = os.path.expanduser(args['--model'])
 out_model = os.path.expanduser(args['--out']) 
-converter = tf.lite.TFLiteConverter.from_keras_model_file(in_model)
-tflite_model = converter.convert()
-open(out_model, "wb").write(tflite_model)
+keras_model_to_tflite(in_model, out_model)
 
