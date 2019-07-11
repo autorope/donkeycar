@@ -290,6 +290,21 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     ''' 
     verbose = cfg.VEBOSE_TRAIN
 
+    if "tflite" in model_type:
+        #even though we are passed the .tflite output file, we train with an intermediate .h5
+        #output and then convert to final .tflite at the end.
+        assert(".tflite" in model_name)
+        #we only support the linear model type right now for tflite
+        assert("linear" in model_type)
+        model_name = model_name.replace(".tflite", ".h5")
+    elif "tensorrt" in model_type:
+        #even though we are passed the .uff output file, we train with an intermediate .h5
+        #output and then convert to final .uff at the end.
+        assert(".uff" in model_name)
+        #we only support the linear model type right now for tensorrt
+        assert("linear" in model_type)
+        model_name = model_name.replace(".uff", ".h5")
+
     if model_name and not '.h5' == model_name[-3:]:
         raise Exception("Model filename should end with .h5")
     
@@ -299,7 +314,12 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     gen_records = {}
     opts = { 'cfg' : cfg}
 
-    kl = get_model_by_type(model_type, cfg=cfg)
+    if "linear" in model_type:
+        train_type = "linear"
+    else:
+        train_type = model_type
+
+    kl = get_model_by_type(train_type, cfg=cfg)
 
     opts['categorical'] = type(kl) in [KerasCategorical, KerasBehavioral]
 
@@ -326,6 +346,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     
     opts['keras_pilot'] = kl
     opts['continuous'] = continuous
+    opts['model_type'] = model_type
 
     extract_data_from_pickles(cfg, tub_names)
 
@@ -466,6 +487,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     batch_data = []
     
     model_path = os.path.expanduser(model_name)
+
     
     #checkpoint to save model after each epoch and send best to the pi.
     save_best = MyCPCallback(send_model_cb=on_best_model,
@@ -500,6 +522,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     
     val_steps = num_val // cfg.BATCH_SIZE
     print('steps_per_epoch', steps_per_epoch)
+
+    cfg.model_type = model_type
 
     go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epoch, val_steps, continuous, verbose, save_best)
 
@@ -597,13 +621,22 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
         except Exception as ex:
             print("problems with loss graph: {}".format( ex ) )
 
-    #Save tflite file too
-    print("\n\n--------- Saving TFLite Model ---------")
-    tflite_fnm = model_path.replace(".h5", ".tflite")
-    assert(".tflite" in tflite_fnm)
-    from donkeycar.parts.tflite import keras_model_to_tflite
-    keras_model_to_tflite(model_path, tflite_fnm)
-    print("Saved TFLite model:", tflite_fnm)
+    #Save tflite
+    if "tflite" in cfg.model_type:
+        print("\n\n--------- Saving TFLite Model ---------")
+        tflite_fnm = model_path.replace(".h5", ".tflite")
+        assert(".tflite" in tflite_fnm)
+        from donkeycar.parts.tflite import keras_model_to_tflite
+        keras_model_to_tflite(model_path, tflite_fnm)
+        print("Saved TFLite model:", tflite_fnm)
+
+    #Save tensorrt
+    if "tensorrt" in cfg.model_type:
+        print("\n\n--------- Saving TensorRT Model ---------")
+        # TODO RAHUL
+        # flatten model_path
+        # convert to uff
+        # print("Saved TensorRT model:", uff_filename)
 
     if cfg.PRUNE_CNN:
         base_model_path = splitext(model_name)[0]
@@ -866,6 +899,8 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     if steps_per_epoch < 2:
         raise Exception("Too little data to train. Please record more records.")
     
+    cfg.model_type = model_type
+
     go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epoch, val_steps, continuous, verbose)
     
     ''' 
