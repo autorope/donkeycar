@@ -37,7 +37,7 @@ class TensorRTLinear(KerasPilot):
             input_names = metadata['input_names']
             output_names = metadata['output_names']
             for name in input_names:
-                parser.register_input(name, (self.cfg.TARGET_D, self.cfg.TARGET_W, self.cfg.TARGET_H))
+                parser.register_input(name, (self.cfg.TARGET_D, self.cfg.TARGET_H, self.cfg.TARGET_W))
 
             for name in output_names:
                 parser.register_output(name)
