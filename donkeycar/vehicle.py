@@ -7,6 +7,7 @@ Created on Sun Jun 25 10:44:24 2017
 """
 
 import time
+from statistics import median
 from threading import Thread
 from .memory import Memory
 from prettytable import PrettyTable
@@ -33,18 +34,23 @@ class PartProfiler:
     def report(self):
         print("Part Profile Summary: (times in ms)")
         pt = PrettyTable()
-        pt.field_names =["part", "max", "min", "avg"]
+        pt.field_names = ["part", "max", "min", "avg", "median"]
         for p, val in self.records.items():
-            arr = val['times']
+            # remove first and last entry because you there could be one-off
+            # time spent in initialisations, and the latest diff could be
+            # incomplete because of user keyboard interrupt
+            arr = val['times'][1:-1]
             if len(arr) == 0:
                 continue
-            pt.add_row( [p.__class__.__name__ ,
-                "%.2f" % (max(arr) * 1000),
-                "%.2f" % (min(arr) * 1000),
-                "%.2f" % (sum(arr) / len(arr) * 1000) ])
+            pt.add_row([p.__class__.__name__,
+                        "%.2f" % (max(arr) * 1000),
+                        "%.2f" % (min(arr) * 1000),
+                        "%.2f" % (sum(arr) / len(arr) * 1000),
+                        "%.2f" % (median(arr) * 1000)])
         print(pt)
 
-class Vehicle():
+
+class Vehicle:
     def __init__(self, mem=None):
 
         if not mem:
