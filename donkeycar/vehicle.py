@@ -12,6 +12,7 @@ from threading import Thread
 from .memory import Memory
 from prettytable import PrettyTable
 
+
 class PartProfiler:
     def __init__(self):
         self.records = {}
