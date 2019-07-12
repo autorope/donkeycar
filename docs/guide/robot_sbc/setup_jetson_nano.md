@@ -126,7 +126,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	-D INSTALL_C_EXAMPLES=OFF \
 	-D OPENCV_ENABLE_NONFREE=ON \
 	# Contrib path
-	-D OPENCV_EXTRA_MODULES_PATH=~/projects/cv2/opencv-contrib/modules \
+	-D OPENCV_EXTRA_MODULES_PATH=~/projects/cv2/opencv_contrib/modules \
 	# Your virtual environment's Python executable
 	# You need to specify the result of echo $(which python)
 	-D PYTHON_EXECUTABLE=~/env/bin/python \
