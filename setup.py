@@ -2,52 +2,75 @@ from setuptools import setup, find_packages
 
 import os
 
+#include the non python files
+def package_files(directory, strip_leading):
+    paths = []
+    for (path, directories, filenames) in os.walk(directory):
+        for filename in filenames:
+            package_file = os.path.join(path, filename)
+            paths.append(package_file[len(strip_leading):])
+    return paths
+
+car_templates=['templates/*']
+web_controller_html = package_files('donkeycar/parts/controllers/templates', 'donkeycar/')
+
+
+extra_files = car_templates + web_controller_html
+print('extra_files', extra_files)
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 
 setup(name='donkeycar',
-      version='2.5.7',
-      description='Self driving library for python.',
-      long_description=long_description,
-      long_description_content_type="text/markdown",
-      url='https://github.com/autorope/donkeycar',
-      download_url='https://github.com/autorope/donkeycar/archive/2.1.5.tar.gz',
-      author='Will Roscoe',
-      author_email='wroscoe@gmail.com',
-      license='MIT',
-      entry_points={
-          'console_scripts': [
-              'donkey=donkeycar.management.base:execute_from_command_line',
-          ],
-      },
-      install_requires=['numpy',
-                        'pillow',
-                        'docopt',
-                        'tornado==4.5.3',
-                        'requests',
-                        'h5py',
-                        'python-socketio',
-                        'flask',
-                        'eventlet',
-                        'moviepy',
-                        'pandas',
-                        ],
+    version='3.0.2',
+    long_description = long_description,
+    description='Self driving library for python.',
+    url='https://github.com/autorope/donkeycar',
+    author='Will Roscoe, Adam Conway, Tawn Kramer',
+    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
+    license='MIT',
+    entry_points={
+        'console_scripts': [
+            'donkey=donkeycar.management.base:execute_from_command_line',
+        ],
+    },
+    install_requires=['numpy', 
+                      'pillow',
+                      'docopt',
+                      'tornado',
+                      'requests',
+                      'h5py',
+                      'moviepy',
+                      'pandas',
+                      'PrettyTable',
+                      'paho-mqtt'
+                     ],
 
-      extras_require={
-                      'tf': ['tensorflow>=1.9.0'],
-                      'tf_gpu': ['tensorflow-gpu>=1.9.0'],
-                      'pi': [
-                          'picamera',
-                          'Adafruit_PCA9685',
-                          ],
-                      'dev': [
-                          'pytest',
-                          'pytest-cov',
-                          'responses'
-                          ],
-                      'ci': ['codecov']
-                  },
+    extras_require={
+                    'pi': [
+                        'picamera',
+                        'Adafruit_PCA9685',
+                        'RPi.GPIO'
+                        ],
+                    'nano': [
+                        'Adafruit_PCA9685',                        
+                        ],
+                    'pc': [
+                        'matplotlib',
+                        ],
+                    'dev' : [
+                        'pytest',
+                        'pytest-cov',
+                        'responses',
+                        ],
+                    'ci': ['codecov'],
+                    'tf': ['tensorflow>=1.9.0'],
+                    'tf_gpu': ['tensorflow-gpu>=1.9.0'],
+                    },
+    package_data={
+        'donkeycar': extra_files, 
+        },
 
       include_package_data=True,
 

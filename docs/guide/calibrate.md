@@ -1,24 +1,17 @@
 # Calibrate your Car
 
-The point of calibrating your car is to make it drive consitently with
-other vehicles. These instructions
+The point of calibrating your car is to make it drive consitently.
 
 ## How to adjust your car's settings.
 
-All of the car's settings are in the `config.py` script generated when
+>You will need to ssh into your Pi to do the calibration.
+
+All of the car's settings are in the `config.py` and `myconfig.py` scripts generated when
 you ran the `donkey createcar --path ~/mycar` command. You can edit
 this file on your car by running:
 ```bash
-nano ~/mycar/config.py
+nano ~/mycar/myconfig.py
 ```
-
-Our goal is to edit these settings so your car will drive like every
-other calibrated Donkey2. This way you'll be able to share pilots and
-datasets between each car.
-
-
->You will need to ssh into your Pi to do the calibration.
-
 
 ## Steering Calibration
 
@@ -27,13 +20,13 @@ datasets between each car.
 1. Turn on your car.
 2. Find the servo cable on your car and see what channel it's plugged into the
 PCA board. It should be 1 or 0.
-3. Run `donkey calibrate --channel <your_steering_channel>`
+3. Run `donkey calibrate --channel <your_steering_channel> --bus=1`
 4. Enter `360` and you should see the wheels on your car move slightly. If not
 enter `400` or `300`.
 5. Next enter values +/- 10 from your starting value to find the PWM setting
 that makes your car turn all the way left and all the way right. Remember
 these values.
-6. Enter these values in `config.py` script as `STEERING_RIGHT_PWM` and
+6. Enter these values in `myconfig.py` script as `STEERING_RIGHT_PWM` and
 `STEERING_LEFT_PWM`.
 
 
@@ -41,7 +34,7 @@ these values.
 
 1. Find the cable coming from your ESC and see what channel it goes into the
 PCA board. This is your throttle channel.
-2. run `donkey calibrate --channel <your_throttle_channel>`
+2. run `donkey calibrate --channel <your_throttle_channel> --bus=1`
 3. Enter `370` when prompted for a PWM value.
 4. You should hear your ESC beep indicating that it's calibrated.
 5. Enter `400` and you should see your cars wheels start to go forward. If not,
@@ -61,7 +54,7 @@ value again.
 Remember this reverse PWM value.
 
 
-Now open your `config.py` script and enter the PWM values for your car into
+Now open your `myconfig.py` script and enter the PWM values for your car into
 the throttle_controller part:
 
 * `THROTTLE_FORWARD_PWM` = PWM value for full throttle forward
@@ -70,8 +63,9 @@ the throttle_controller part:
 
 
 
-
 ## Fine tuning your calibration.
+
+> Note : optional
 
 ![fine calibration](../assets/fine_calibration.gif)
 
@@ -97,3 +91,5 @@ After you've fine tuned your car the steering chart should look something like
 this.
 
 ![calibration graph](../assets/calibration_graph.png)
+
+### Next let's [get driving!](/guide/get_driving/)
