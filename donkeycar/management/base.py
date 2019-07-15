@@ -221,7 +221,7 @@ class MakeMovie(BaseCommand):
             parser.print_help()
             return
 
-        if args.type is None:
+        if args.type is None and args.model != 'None':
             print("ERR>> --type argument missing.")
             parser.print_help()
             return
@@ -314,18 +314,35 @@ class MakeMovie(BaseCommand):
 
         print('done')
 
+    def draw_user_input(self, record, img):
+        '''
+        Draw the user input as a green line on the image
+        '''
+
+        import cv2
+
+        user_angle = float(record["user/angle"])
+        user_throttle = float(record["user/throttle"])
+
+        a1 = user_angle * 45.0
+        l1 = user_throttle * 3.0 * 80.0
+
+        p1 = tuple((74, 119))
+        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * math.pi / 180.0)),
+                     int(p1[1] + l1 * math.sin((a1 + 270.0) * math.pi / 180.0))))
+
+        cv2.line(img, p1, p11, (0, 255, 0), 2)
+
     def draw_model_prediction(self, record, img):
         '''
-        query the model for it's prediction, draw the user input and the predictions
-        as green and blue lines on the image
+        query the model for it's prediction, draw the predictions
+        as a blue line on the image
         '''
         if self.keras_part is None:
             return
 
         import cv2
          
-        user_angle = float(record["user/angle"])
-        user_throttle = float(record["user/throttle"])
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
         pred_img = img
@@ -342,17 +359,12 @@ class MakeMovie(BaseCommand):
 
         pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
 
-        a1 = user_angle * 45.0
-        l1 = user_throttle * 3.0 * 80.0
         a2 = pilot_angle * 45.0
         l2 = pilot_throttle * 3.0 * 80.0
 
-        p1 = tuple((74, 119))
         p2 = tuple((84, 119))
-        p11 = tuple(( int(p1[0] + l1 * math.cos((a1 + 270.0) * math.pi / 180.0)), int(p1[1] + l1 * math.sin((a1 + 270.0) * math.pi / 180.0))))
         p22 = tuple(( int(p2[0] + l2 * math.cos((a2 + 270.0) * math.pi / 180.0)), int(p2[1] + l2 * math.sin((a2 + 270.0) * math.pi / 180.0))))
 
-        cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
     def draw_steering_distribution(self, record, img):
@@ -496,7 +508,10 @@ class MakeMovie(BaseCommand):
             image = image * 255
             image = image.astype('uint8')
         
-        self.draw_model_prediction(rec, image)
+        self.draw_user_input(rec, image)
+        if self.keras_part is not None:
+            self.draw_model_prediction(rec, image)
+
         self.draw_steering_distribution(rec, image)
 
         if self.scale != 1:
