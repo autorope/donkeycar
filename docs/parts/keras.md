@@ -1,6 +1,6 @@
 # Keras Parts
 
-These parts encapsulate models defined using the [Keras](https://keras.io/) high level api. They are intended to be used with the Tensorflow backend. The parts are designed to use the trained artificial neural network to reproduce the steering and throttle given the image the camera sees. They are created by use the [train command](/guide/train_autopilot/).
+These parts encapsulate models defined using the [Keras](https://keras.io/) high level api. They are intended to be used with the Tensorflow backend. The parts are designed to use the trained artificial neural network to reproduce the steering and throttle given the image the camera sees. They are created by using the [train command](/guide/train_autopilot/).
 
 
 ## Keras Categorical
@@ -71,7 +71,7 @@ Output: Two dense layers with one scalar output each with linear activation for 
 
 This model type is created with the --type=imu. 
 
-The KerasIMU pilot is very similar to the KerasLinear model, except that it take intertial measurment data in addition to images when learning to drive.
+The KerasIMU pilot is very similar to the KerasLinear model, except that it takes intertial measurment data in addition to images when learning to drive.
 This gives our stateless model some additional information about the motion of the vehicle.
 
 This can be a good starting point example of ingesting more data into your models.
@@ -91,7 +91,7 @@ This can be a good starting point example of ingesting more data into your model
 
 Input: Image, vector of linear and angular acceleration
 
-Network: 5 Convolution layers followed by two dense layers before output
+Network: 5 Convolution layers followed by two dense layers before output, Vector data is followed by 3 dense layers then concatenating before 2 dense control layers and after conv2d layers.
 
 Output: Two dense layers with one scalar output each with linear activation for steering and throttle.
 
@@ -176,7 +176,7 @@ Output: One dense layer with two scalar outputs for steering and throttle.
 
 This model type is created with the --type=behavior. 
 
-The KerasBehavioral pilot take and image and a vector as input. The vector is one hot activated vector of commands. This vector might be a length two and have two states, one for left lane driving and one for right lane driving. Then during training one element of the vector is activated while the desired behavior is demonstrated. This vector is defined in myconfig.py BEHAVIOR_LIST. BEHAVIOR_LED_COLORS must match the same length and can be useful when showing the current state. TRAIN_BEHAVIORS must be set to True.
+The KerasBehavioral pilot takes an image and a vector as input. The vector is one hot activated vector of commands. This vector might be of length two and have two states, one for left lane driving and one for right lane driving. Then during training one element of the vector is activated while the desired behavior is demonstrated. This vector is defined in myconfig.py BEHAVIOR_LIST. BEHAVIOR_LED_COLORS must match the same length and can be useful when showing the current state. TRAIN_BEHAVIORS must be set to True.
 
 #### Pros: 
 
