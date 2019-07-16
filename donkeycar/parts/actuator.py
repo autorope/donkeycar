@@ -15,6 +15,10 @@ class PCA9685:
     This is used for most RC Cars
     '''
     def __init__(self, channel, address=0x40, frequency=60, busnum=None, init_delay=0.1):
+
+        self.default_freq = 60
+        self.pwm_scale = frequency / self.default_freq
+
         import Adafruit_PCA9685
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
@@ -29,7 +33,7 @@ class PCA9685:
         time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_pulse(self, pulse):
-        self.pwm.set_pwm(self.channel, 0, pulse) 
+        self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
 
     def run(self, pulse):
         self.set_pulse(pulse)
