@@ -16,7 +16,7 @@ See also more information on [createcar.](/utility/donkey/#create-car)
 
 ## Configure Options
 
-Look at __myconfig.py__
+Look at __myconfig.py__ in your newly created directory, ~/mycar
 ```
 nano myconfig.py
 ```
