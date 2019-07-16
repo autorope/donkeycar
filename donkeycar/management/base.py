@@ -201,7 +201,7 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--model', default='None', help='the model to use to show control outputs')
+        parser.add_argument('--model', help='the model to use to show control outputs')
         parser.add_argument('--type', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
         parser.add_argument('--start', type=int, default=1, help='first frame to process')
@@ -224,13 +224,13 @@ class MakeMovie(BaseCommand):
             parser.print_help()
             return
 
-        if args.type is None:
+        if args.model is not None and args.type is None:
             print("ERR>> --type argument missing.")
             parser.print_help()
             return
 
         if args.salient:
-            if args.model is None or "None" in args.model:
+            if args.model is None in args.model:
                 print("ERR>> salient visualization requires a model. Pass with the --model arg.")
                 parser.print_help()
                 return
@@ -254,12 +254,14 @@ class MakeMovie(BaseCommand):
         self.index = self.tub.get_index(shuffled=False)
         start = args.start
         self.end = args.end if args.end != -1 else len(self.index)
+        if self.end >= len(self.index):
+            self.end = len(self.index) - 1
         num_frames = self.end - start
         self.iRec = start
         self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
-        if not args.model == "None":
+        if not args.model is None:
             self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
@@ -465,7 +467,7 @@ class MakeMovie(BaseCommand):
         a frame counter. This assumes sequential access.
         '''
 
-        if self.iRec >= self.end:
+        if self.iRec >= self.end or self.iRec >= len(self.index):
             return None
 
         rec_ix = self.index[self.iRec]
