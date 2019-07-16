@@ -204,9 +204,9 @@ class MakeMovie(BaseCommand):
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--model', help='the model to use to show control outputs')
-        parser.add_argument('--type', help='the model type to load')
-        parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
+        parser.add_argument('--model', default=None, help='the model to use to show control outputs')
+        parser.add_argument('--type', default=None, help='the model type to load')
+        parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing activations')
         parser.add_argument('--start', type=int, default=1, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
         parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
@@ -227,18 +227,13 @@ class MakeMovie(BaseCommand):
             parser.print_help()
             return
 
-<<<<<<< HEAD
         if args.type is None and args.model is not None:
             print("ERR>> --type argument missing. Required when providing a model.")
-=======
-        if args.model is not None and args.type is None:
-            print("ERR>> --type argument missing.")
->>>>>>> master
             parser.print_help()
             return
 
         if args.salient:
-            if args.model is None in args.model:
+            if args.model is None:
                 print("ERR>> salient visualization requires a model. Pass with the --model arg.")
                 parser.print_help()
                 return
@@ -269,7 +264,7 @@ class MakeMovie(BaseCommand):
         self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
-        if not args.model is None:
+        if args.model is not None:
             self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
@@ -311,18 +306,39 @@ class MakeMovie(BaseCommand):
                              duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
+    def draw_user_input(self, record, img):
+        '''
+        Draw the user input as a green line on the image
+        '''
+
+        import cv2
+
+        user_angle = float(record["user/angle"])
+        user_throttle = float(record["user/throttle"])
+
+        length = self.cfg.IMAGE_H
+        a1 = user_angle * 45.0
+        l1 = user_throttle * length
+
+        mid = self.cfg.IMAGE_W // 2 - 1
+
+        p1 = tuple((mid - 2, self.cfg.IMAGE_H - 1))
+        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
+                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
+
+        # user is green, pilot is blue
+        cv2.line(img, p1, p11, (0, 255, 0), 2)
+        
     def draw_model_prediction(self, record, img):
         '''
-        query the model for it's prediction, draw the user input and the predictions
-        as green and blue lines on the image
+        query the model for it's prediction, draw the predictions
+        as a blue line on the image
         '''
         if self.keras_part is None:
             return
 
         import cv2
          
-        user_angle = float(record["user/angle"])
-        user_throttle = float(record["user/throttle"])
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
         pred_img = img
@@ -340,22 +356,16 @@ class MakeMovie(BaseCommand):
         pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
 
         length = self.cfg.IMAGE_H
-        a1 = user_angle * 45.0
-        l1 = user_throttle * length
         a2 = pilot_angle * 45.0
         l2 = pilot_throttle * length
 
         mid = self.cfg.IMAGE_W // 2 - 1
 
-        p1 = tuple((mid - 2, self.cfg.IMAGE_H - 1))
         p2 = tuple((mid + 2, self.cfg.IMAGE_H - 1))
-        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
-                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
         p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
                      int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad))))
 
         # user is green, pilot is blue
-        cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
     def draw_steering_distribution(self, record, img):
@@ -486,9 +496,11 @@ class MakeMovie(BaseCommand):
             image = self.draw_salient(image)
             image = image * 255
             image = image.astype('uint8')
-
-        self.draw_model_prediction(rec, image)
-        self.draw_steering_distribution(rec, image)
+        
+        self.draw_user_input(rec, image)
+        if self.keras_part is not None:
+            self.draw_model_prediction(rec, image)
+            self.draw_steering_distribution(rec, image)
 
         if self.scale != 1:
             import cv2
