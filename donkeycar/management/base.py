@@ -160,6 +160,7 @@ class CalibrateCar(BaseCommand):
         parser.add_argument('--channel', help="The channel you'd like to calibrate [0-15]")
         parser.add_argument('--address', default='0x40', help="The i2c address you'd like to calibrate [default 0x40]")
         parser.add_argument('--bus', default=None, help="The i2c bus you'd like to calibrate [default autodetect]")
+        parser.add_argument('--pwmFreq', default=60, help="The frequency to use for the PWM")
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -176,8 +177,10 @@ class CalibrateCar(BaseCommand):
             busnum = int(args.bus)
         address = int(args.address, 16)
         print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
-        c = PCA9685(channel, address=address, busnum=busnum)
-        
+        freq = int(args.pwmFreq)
+        print("Using PWM freq: {}".format(freq))
+        c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
+        print()
         while True:
             try:
                 val = input("""Enter a PWM setting to test ('q' for quit) (0-1500): """)
