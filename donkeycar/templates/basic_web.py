@@ -77,7 +77,10 @@ def drive(cfg, model_path=None, model_type=None):
         def run(self, img_arr):
             return normalize_and_crop(img_arr, self.cfg)
 
-    V.add(ImgPrecondition(cfg), inputs=['cam/image_array'], outputs=['cam/normalized/cropped'])
+    V.add(ImgPrecondition(cfg),
+        inputs=['cam/image_array'],
+        outputs=['cam/normalized/cropped'],
+        run_condition='run_pilot')
 
     inputs=['cam/normalized/cropped']
 
