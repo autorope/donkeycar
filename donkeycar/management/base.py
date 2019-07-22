@@ -191,14 +191,17 @@ class CalibrateCar(BaseCommand):
             except Exception as ex:
                 print("Oops, {}".format(ex))
 
-class MakeMovie(BaseCommand):    
-    
+
+class MakeMovie(BaseCommand):
+    def __init__(self):
+        self.deg_to_rad = math.pi / 180.0
+
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='makemovie')
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--model', default='None', help='the model to use to show control outputs')
+        parser.add_argument('--model', help='the model to use to show control outputs')
         parser.add_argument('--type', help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing avtivations')
         parser.add_argument('--start', type=int, default=1, help='first frame to process')
@@ -221,20 +224,20 @@ class MakeMovie(BaseCommand):
             parser.print_help()
             return
 
-        if args.type is None:
+        if args.model is not None and args.type is None:
             print("ERR>> --type argument missing.")
             parser.print_help()
             return
 
         if args.salient:
-            if args.model is None or "None" in args.model:
+            if args.model is None in args.model:
                 print("ERR>> salient visualization requires a model. Pass with the --model arg.")
                 parser.print_help()
                 return
 
-            #imported like this, we make TF conditional on use of --salient
-            #and we keep the context maintained throughout our callbacks to 
-            #compute the salient mask
+            # imported like this, we make TF conditional on use of --salient
+            # and we keep the context maintained throughout our callbacks to
+            # compute the salient mask
             from tensorflow.python.keras import backend as K
             import tensorflow as tf
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  
@@ -246,33 +249,20 @@ class MakeMovie(BaseCommand):
                  location or run from dir containing config.py." % conf)
             return
 
-        try:
-            cfg = dk.load_config(conf)
-        except:
-            print("Exception while loading config from", conf)
-            return
-
+        self.cfg = dk.load_config(conf)
         self.tub = Tub(args.tub)
-        self.num_rec = self.tub.get_num_records()
-        
-        if args.start == 1:
-            self.start = self.tub.get_index(shuffled=False)[0]
-        else:
-            self.start = args.start
-        
-        if args.end != -1:
-            self.end = args.end    
-        else:
-            self.end = self.num_rec - self.start
-
-        self.num_rec = self.end - self.start
-        
-        self.iRec = args.start
+        self.index = self.tub.get_index(shuffled=False)
+        start = args.start
+        self.end = args.end if args.end != -1 else len(self.index)
+        if self.end >= len(self.index):
+            self.end = len(self.index) - 1
+        num_frames = self.end - start
+        self.iRec = start
         self.scale = args.scale
         self.keras_part = None
         self.convolution_part = None
-        if not args.model == "None":
-            self.keras_part = get_model_by_type(args.type, cfg=cfg)
+        if not args.model is None:
+            self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
             self.keras_part.compile()
             if args.salient:
@@ -284,7 +274,7 @@ class MakeMovie(BaseCommand):
                 #each call.
                 def compute_visualisation_mask(img):
                     #from https://github.com/ermolenkodev/keras-salient-object-visualisation
-                    
+
                     activations = self.functor([np.array([img])])
                     activations = [np.reshape(img, (1, img.shape[0], img.shape[1], img.shape[2]))] + activations
                     upscaled_activation = np.ones((3, 6))
@@ -297,8 +287,8 @@ class MakeMovie(BaseCommand):
                         )
                         conv = tf.nn.conv2d_transpose(
                             x, self.layers_kernels[layer],
-                            output_shape=(1,output_shape[0],output_shape[1], 1), 
-                            strides=self.layers_strides[layer], 
+                            output_shape=(1,output_shape[0],output_shape[1], 1),
+                            strides=self.layers_strides[layer],
                             padding='VALID'
                         )
                         with tf.Session() as session:
@@ -308,11 +298,10 @@ class MakeMovie(BaseCommand):
                     return (final_visualisation_mask - np.min(final_visualisation_mask))/(np.max(final_visualisation_mask) - np.min(final_visualisation_mask))
                 self.compute_visualisation_mask = compute_visualisation_mask
 
-        print('making movie', args.out, 'from', self.num_rec, 'images')
-        clip = mpy.VideoClip(self.make_frame, duration=(self.num_rec//cfg.DRIVE_LOOP_HZ) - 1)
-        clip.write_videofile(args.out,fps=cfg.DRIVE_LOOP_HZ)
-
-        print('done')
+        print('making movie', args.out, 'from', num_frames, 'images')
+        clip = mpy.VideoClip(self.make_frame,
+                             duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
+        clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
     def draw_model_prediction(self, record, img):
         '''
@@ -330,28 +319,34 @@ class MakeMovie(BaseCommand):
         actual = img.shape
         pred_img = img
 
-        #check input depth
+        # check input depth
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
             actual = pred_img.shape
 
-        if(expected != actual):
+        if expected != actual:
             print("expected input dim", expected, "didn't match actual dim", actual)
             return
 
         pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
 
+        length = self.cfg.IMAGE_H
         a1 = user_angle * 45.0
-        l1 = user_throttle * 3.0 * 80.0
+        l1 = user_throttle * length
         a2 = pilot_angle * 45.0
-        l2 = pilot_throttle * 3.0 * 80.0
+        l2 = pilot_throttle * length
 
-        p1 = tuple((74, 119))
-        p2 = tuple((84, 119))
-        p11 = tuple(( int(p1[0] + l1 * math.cos((a1 + 270.0) * math.pi / 180.0)), int(p1[1] + l1 * math.sin((a1 + 270.0) * math.pi / 180.0))))
-        p22 = tuple(( int(p2[0] + l2 * math.cos((a2 + 270.0) * math.pi / 180.0)), int(p2[1] + l2 * math.sin((a2 + 270.0) * math.pi / 180.0))))
+        mid = self.cfg.IMAGE_W // 2 - 1
 
+        p1 = tuple((mid - 2, self.cfg.IMAGE_H - 1))
+        p2 = tuple((mid + 2, self.cfg.IMAGE_H - 1))
+        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
+                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
+        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
+                     int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad))))
+
+        # user is green, pilot is blue
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
@@ -365,11 +360,9 @@ class MakeMovie(BaseCommand):
             return
 
         import cv2
-         
-        orig_shape = img.shape
+
         pred_img = img.reshape((1,) + img.shape)
         angle_binned, throttle = self.keras_part.model.predict(pred_img)
-        #img.reshape(orig_shape)
 
         x = 4
         dx = 4
@@ -383,7 +376,6 @@ class MakeMovie(BaseCommand):
             else:
                 cv2.line(img, p1, p2, (200, 200, 200), 2)
             x += dx
-        
 
     def init_salient(self, model):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
@@ -403,11 +395,6 @@ class MakeMovie(BaseCommand):
         conv_5 = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name='conv5')(x)
         self.convolution_part = Model(inputs=[img_in], outputs=[conv_5])
 
-        #print("input model summary:")
-        #print(model.summary())
-        #print("conv model summary:")
-        #print(self.convolution_part.summary())
-
         for layer_num in ('1', '2', '3', '4', '5'):
             try:
                 self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
@@ -425,27 +412,33 @@ class MakeMovie(BaseCommand):
         self.functor = K.function([self.inp], self.outputs)
 
         kernel_3x3 = tf.constant(np.array([
-        [[[1]], [[1]], [[1]]], 
-        [[[1]], [[1]], [[1]]], 
-        [[[1]], [[1]], [[1]]]
+            [[[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]]]
         ]), tf.float32)
 
         kernel_5x5 = tf.constant(np.array([
-                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
-                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
-                [[[1]], [[1]], [[1]], [[1]], [[1]]],
-                [[[1]], [[1]], [[1]], [[1]], [[1]]],
-                [[[1]], [[1]], [[1]], [[1]], [[1]]]
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]],
+            [[[1]], [[1]], [[1]], [[1]], [[1]]]
         ]), tf.float32)
 
-        self.layers_kernels = {5: kernel_3x3, 4: kernel_3x3, 3: kernel_5x5, 2: kernel_5x5, 1: kernel_5x5}
+        self.layers_kernels = {5: kernel_3x3,
+                               4: kernel_3x3,
+                               3: kernel_5x5,
+                               2: kernel_5x5,
+                               1: kernel_5x5}
 
-        self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
-
-        
+        self.layers_strides = {5: [1, 1, 1, 1],
+                               4: [1, 2, 2, 1],
+                               3: [1, 2, 2, 1],
+                               2: [1, 2, 2, 1],
+                               1: [1, 2, 2, 1]}
 
     def draw_salient(self, img):
-        #from https://github.com/ermolenkodev/keras-salient-object-visualisation
+        # from https://github.com/ermolenkodev/keras-salient-object-visualisation
         import cv2
         alpha = 0.004
         beta = 1.0 - alpha
@@ -454,18 +447,17 @@ class MakeMovie(BaseCommand):
         actual = img.shape
         pred_img = img
 
-        #check input depth
+        # check input depth
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
             actual = pred_img.shape
 
         salient_mask = self.compute_visualisation_mask(pred_img)
-        salient_mask_stacked = np.dstack((salient_mask,salient_mask))
-        salient_mask_stacked = np.dstack((salient_mask_stacked,salient_mask))
+        salient_mask_stacked = np.dstack((salient_mask, salient_mask))
+        salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
         return blend
-        
 
     def make_frame(self, t):
         '''
@@ -474,28 +466,19 @@ class MakeMovie(BaseCommand):
         We don't use t to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
         '''
-        
-        if self.iRec >= self.end:
+
+        if self.iRec >= self.end or self.iRec >= len(self.index):
             return None
 
-        rec = None
-
-        while rec is None and self.iRec < self.end:
-            try:
-                rec = self.tub.get_record(self.iRec)
-            except Exception as e:
-                print(e)
-                print("Failed to get image for frame", self.iRec)
-                self.iRec = self.iRec + 1
-                rec = None
-
+        rec_ix = self.index[self.iRec]
+        rec = self.tub.get_record(rec_ix)
         image = rec['cam/image_array']
 
         if self.convolution_part:
             image = self.draw_salient(image)
             image = image * 255
             image = image.astype('uint8')
-        
+
         self.draw_model_prediction(rec, image)
         self.draw_steering_distribution(rec, image)
 
@@ -504,11 +487,10 @@ class MakeMovie(BaseCommand):
             h, w, d = image.shape
             dsize = (w * self.scale, h * self.scale)
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
-        
-        self.iRec = self.iRec + 1
-        
-        return image # returns a 8-bit RGB array
 
+        self.iRec += 1
+        # returns a 8-bit RGB array
+        return image
 
 
 class Sim(BaseCommand):
