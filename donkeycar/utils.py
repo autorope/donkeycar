@@ -57,7 +57,7 @@ def arr_to_binary(arr):
 
 def arr_to_img(arr):
     '''
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     '''
     arr = np.uint8(arr)
@@ -66,7 +66,7 @@ def arr_to_img(arr):
 
 def img_to_arr(img):
     '''
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     '''
     return np.array(img)
@@ -122,12 +122,16 @@ def img_crop(img_arr, top, bottom):
         end = img_arr.shape[0]
     else:
         end = -bottom
-    return img_arr[top:end,: ,:]
+    return img_arr[top:end, ...]
 
 def normalize_and_crop(img_arr, cfg):
     img_arr = img_arr.astype(np.float32) / 255.0
     if cfg.ROI_CROP_TOP or cfg.ROI_CROP_BOTTOM:
         img_arr = img_crop(img_arr, cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
+        if len(img_arr.shape) == 2:
+            img_arrH = img_arr.shape[0]
+            img_arrW = img_arr.shape[1]
+            img_arr = img_arr.reshape(img_arrH, img_arrW, 1)
     return img_arr
 
 
@@ -143,8 +147,10 @@ def load_scaled_image_arr(filename, cfg):
             img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
         img_arr = np.array(img)
         img_arr = normalize_and_crop(img_arr, cfg)
+        croppedImgH = img_arr.shape[0]
+        croppedImgW = img_arr.shape[1]
         if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-            img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+            img_arr = dk.utils.rgb2gray(img_arr).reshape(croppedImgH, croppedImgW, 1)
     except Exception as e:
         print(e)
         print('failed to load image:', filename)
