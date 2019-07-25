@@ -109,7 +109,7 @@ class Vehicle:
         Start vehicle's main drive loop.
 
         This is the main thread of the vehicle. It starts all the new
-        threads for the threaded parts then starts an infinit loop
+        threads for the threaded parts then starts an infinite loop
         that runs each part and updates the memory.
 
         Parameters
@@ -119,8 +119,8 @@ class Vehicle:
             The max frequency that the drive loop should run. The actual
             frequency may be less than this if there are many blocking parts.
         max_loop_count : int
-            Maxiumum number of loops the drive loop should execute. This is
-            used for testing the all the parts of the vehicle work.
+            Maximum number of loops the drive loop should execute. This is
+            used for testing that all the parts of the vehicle work.
         """
 
         try:
