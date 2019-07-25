@@ -1,9 +1,9 @@
-site_name: Donkey Car
+site_name: Donkey Car (Robocar Store)
 theme: readthedocs
 
-repo_url: https://github.com/autorope/donkeycar/
+repo_url: https://github.com/robocarstore/donkeycar
 edit_uri: edit/master/docs
-google_analytics: ['UA-99215530-2', 'github.io/donkey']
+google_analytics: ['UA-118649236-2', 'docs.robocarstore.com']
 extra_css:
     - extra.css
 

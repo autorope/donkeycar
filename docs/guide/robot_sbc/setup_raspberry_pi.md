@@ -16,7 +16,18 @@
 * [Step 12: Install Optional OpenCV](#step-12-install-optional-opencv)
 * Then [Create your Donkeycar Application](/guide/create_application/)
 
-## Step 1: Flash Operating System
+## Step 1: Flash the SD Card
+
+### Robocar Store Pre-built image
+
+Robocar Store provide a pre-built image so you can just use software like Etcher to quickly get started. If you are using this image, you still need to perform step 2-5 below but you can skip step 6 - 10 as we have done that for you. You will probably save around 30 - 45 minutes if you use this image.
+
+* Donkey Car v3.0.2 on Stretch - [Download](https://www.dropbox.com/s/kibd2cplb216nr2/robocarstore_dk302_stretch.img.zip?dl=0)
+
+The uncompressed image will be around 16GB. Download [Etcher](https://www.balena.io/etcher/) and burn the image to the SD card. As we have shrinked the partition to improve the speed to burn the image, you need to expand the partition by running `sudo raspi-config`. If in doubt, check how to do this on google.
+
+
+### Ground up install 
 
 You need to flash a micro SD image with an operating system.
 
