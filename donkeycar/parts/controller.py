@@ -541,7 +541,7 @@ class LogitechJoystick(Joystick):
             0x136: 'L1',
             0x137: 'R1',
 
-            0x13d: 'Left_stick_press',
+            0x13d: 'left_stick_press',
             0x13e: 'right_stick_press',
         }
 
@@ -1163,7 +1163,33 @@ class LogitechJoystickController(JoystickController):
         self.axis_trigger_map = {
             'left_stick_horz': self.set_steering,
             'right_stick_vert': self.set_throttle,
+            'dpad_leftright' : self.on_axis_dpad_LR,
+            'dpad_up_down' : self.on_axis_dpad_UD,
         }
+
+    def on_axis_dpad_LR(self, val):
+        if val == -1.0:
+            self.on_dpad_left()
+        elif val == 1.0:
+            self.on_dpad_right()
+
+    def on_axis_dpad_UD(self, val):
+        if val == -1.0:
+            self.on_dpad_up()
+        elif val == 1.0:
+            self.on_dpad_down()
+
+    def on_dpad_up(self):
+        self.increase_max_throttle()
+
+    def on_dpad_down(self):
+        self.decrease_max_throttle()
+
+    def on_dpad_left(self):
+        print("dpad left un-mapped")
+
+    def on_dpad_right(self):
+        print("dpad right un-mapped")
 
 
 class NimbusController(JoystickController):
