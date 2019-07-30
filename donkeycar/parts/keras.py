@@ -654,7 +654,7 @@ def build_3d_cnn(w, h, d, s, num_outputs):
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
 
-    model.add(Dense(num_outputs), name="outputs")
+    model.add(Dense(num_outputs))
     #model.add(Activation('tanh'))
 
     return model
