@@ -214,15 +214,8 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
 
 def on_best_model(cfg, model, model_filename):
 
-    model.save(model_filename)
-    return #TODO can we save a tfilte on the fly?
-    
-    #Save tflite file too
-    tflite_fnm = model_filename.replace(".h5", ".tflite")
-    assert(".tflite" in tflite_fnm)
-    from donkeycar.parts.tflite import keras_session_to_tflite
-    keras_session_to_tflite(model, tflite_fnm)
-
+    model.save(model_filename, include_optimizer=False)
+        
     if not cfg.SEND_BEST_MODEL_TO_PI:
         return
 
@@ -233,8 +226,7 @@ def on_best_model(cfg, model, model_filename):
     if not on_windows:
         print('sending model to the pi')
         
-        command = 'scp %s %s@%s:~/%s/models/;' % (tflite_fnm, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
-        command += 'scp %s %s@%s:~/%s/models/;' % (model_filename, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
+        command = 'scp %s %s@%s:~/%s/models/;' % (model_filename, cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT)
     
         print("sending", command)
         res = os.system(command)
@@ -242,9 +234,9 @@ def on_best_model(cfg, model, model_filename):
 
     else: #yes, we are on windows machine
 
-    #On windoz no scp. In oder to use this you must first setup
-    #an ftp daemon on the pi. ie. sudo apt-get install vsftpd
-    #and then make sure you enable write permissions in the conf
+        #On windoz no scp. In order to use this you must first setup
+        #an ftp daemon on the pi. ie. sudo apt-get install vsftpd
+        #and then make sure you enable write permissions in the conf
         try:
             import paramiko
         except:
@@ -256,10 +248,6 @@ def on_best_model(cfg, model, model_filename):
         server = host
         files = []
 
-        localpath = tflite_fnm
-        remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, tflite_fnm.replace('\\', '/'))
-        files.append((localpath, remotepath))
-        
         localpath = model_filename
         remotepath = '/home/%s/%s/%s' %(username, cfg.PI_DONKEY_ROOT, model_filename.replace('\\', '/'))
         files.append((localpath, remotepath))
