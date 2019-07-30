@@ -290,6 +290,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     ''' 
     verbose = cfg.VEBOSE_TRAIN
 
+    if model_type is None:
+        model_type = cfg.DEFAULT_MODEL_TYPE
+
     if "tflite" in model_type:
         #even though we are passed the .tflite output file, we train with an intermediate .h5
         #output and then convert to final .tflite at the end.
