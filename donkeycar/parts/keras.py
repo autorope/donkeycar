@@ -548,7 +548,7 @@ def rnn_lstm(seq_length=3, num_outputs=2, image_shape=(120,160,3)):
       
     x.add(LSTM(128, return_sequences=True, name="LSTM_seq"))
     x.add(Dropout(.1))
-    x.add(LSTM(128, return_sequences=False, name="LSTM_out"))
+    x.add(LSTM(128, return_sequences=False, name="LSTM_fin"))
     x.add(Dropout(.1))
     x.add(Dense(128, activation='relu'))
     x.add(Dropout(.1))
