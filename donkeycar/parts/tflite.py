@@ -1,7 +1,21 @@
 import tensorflow as tf
 
-def keras_model_to_tflite(in_filename, out_filename):
+def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
     converter = tf.lite.TFLiteConverter.from_keras_model_file(in_filename)
+    if data_gen is not None:
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.representative_dataset = data_gen
+        try:
+            converter.target_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+        except:
+            pass
+        try:
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+        except:
+            pass
+        converter.inference_input_type = tf.uint8
+        converter.inference_output_type = tf.uint8
+        print("----- using data generator to create int optimized weights for Coral TPU -----")
     tflite_model = converter.convert()
     open(out_filename, "wb").write(tflite_model)
 
