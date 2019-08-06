@@ -3,6 +3,9 @@ import tensorflow as tf
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
     converter = tf.lite.TFLiteConverter.from_keras_model_file(in_filename)
     if data_gen is not None:
+        #when we have a data_gen that is the trigger to use it to 
+        #create integer weights and calibrate them. Warning: this model will
+        #no longer run with the standard tflite engine. That uses only float.
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         converter.representative_dataset = data_gen
         try:
