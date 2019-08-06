@@ -44,13 +44,17 @@ conda activate donkey
 pip install -e .[pc]
 ```
 
-* Optionall Install Tensorflow GPU
+* Optional Install Tensorflow GPU
 
 You should have an NVidia GPU with the latest drivers. Conda will handle installing the correct cuda and cuddn libraries for the version of tensorflow you are using.
 
 ```
 conda install tensorflow-gpu==1.13.1
 ```
+
+* Optional Install Coral edge tpu compiler
+
+If you have a Google Coral edge tpu, you may wish to compile models. You will need to install the edgetpu_compiler exectutable. Follow [their instructions](https://coral.withgoogle.com/docs/edgetpu/compiler/).
 
 * Create your local working dir:
 
