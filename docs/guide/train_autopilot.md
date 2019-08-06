@@ -37,6 +37,7 @@ Optionally you can pass no arguments for the tub, and then all tubs will be used
  python ~/mycar/manage.py train --model ~/mycar/models/mypilot.h5
 ```
 
+* You can create different model types with the --type argument during training. You may also choose to change the default model type in myconfig.py DEFAULT_MODEL_TYPE. When specifying a new model type, be sure to provide that type when running the model, or using the model in other tools like plotting or profiling. For more information on the different model types, look here for [Keras Parts](/parts/keras).
 
 * Now you can use rsync again to move your pilot back to your car.
 ```bash
