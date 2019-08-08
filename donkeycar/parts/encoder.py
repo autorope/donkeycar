@@ -83,6 +83,7 @@ class RotaryEncoder():
         self.on = True
         self.debug = debug
         self.top_speed = 0
+        self.prev_dist = 0.
     
     def isr(self, channel):
         self.counter += 1
@@ -123,7 +124,9 @@ class RotaryEncoder():
             time.sleep(self.poll_delay)
 
     def run_threaded(self):
-        return self.meters, self.meters_per_second
+        delta = self.meters - self.prev_dist
+        self.prev_dist = self.meters
+        return self.meters, self.meters_per_second, delta
 
     def shutdown(self):
         # indicate that the thread should be stopped

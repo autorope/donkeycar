@@ -300,13 +300,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     def load_model(kl, model_path):
         start = time.time()
-        try:
-            print('loading model', model_path)
-            kl.load(model_path)
-            print('finished loading in %s sec.' % (str(time.time() - start)) )
-        except Exception as e:
-            print(e)
-            print('ERR>> problems loading model', model_path)
+        print('loading model', model_path)
+        kl.load(model_path)
+        print('finished loading in %s sec.' % (str(time.time() - start)) )
 
     def load_weights(kl, weights_path):
         start = time.time()
@@ -337,7 +333,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         model_reload_cb = None
 
-        if '.h5' in model_path or '.uff' in model_path or 'tflite' in model_path:
+        if '.h5' in model_path or '.uff' in model_path or 'tflite' in model_path or '.pkl' in model_path:
             #when we have a .h5 extension
             #load everything from the model file
             load_model(kl, model_path)
