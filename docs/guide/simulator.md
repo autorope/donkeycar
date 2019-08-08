@@ -1,6 +1,6 @@
 # Donkey Simulator
 
-The [Donkey Gym](https://github.com/tawnkramer/donkey_gym) project is a OpenAI gym wrapper around the [Self Driving Sandbox](https://github.com/tawnkramer/sdsandbox/tree/donkey) donkey simulator. When building the sim from source, checkout the `donkey` branch of the sdsandbox project. 
+The [Donkey Gym](https://github.com/tawnkramer/gym-donkeycar) project is a OpenAI gym wrapper around the [Self Driving Sandbox](https://github.com/tawnkramer/sdsandbox/tree/donkey) donkey simulator. When building the sim from source, checkout the `donkey` branch of the sdsandbox project. 
 
 
 The simulator is built on the the Unity game platform, uses their internal physics and graphics, and connects to a donkey Python process to use our trained model to control the simulated Donkey.
@@ -13,15 +13,15 @@ There are many ways to use the simulator, depending on your goals. You can use t
 
 ### Install
 
-* Download and unzip the simulator for your host pc platform from [Donkey Gym Release](https://github.com/tawnkramer/donkey_gym/releases).
+* Download and unzip the simulator for your host pc platform from [Donkey Gym Release](https://github.com/tawnkramer/gym-donkeycar/releases).
 * Place the simulator where you like. For this example it will be ~/projects/DonkeySimLinux. Your dir will have a different name depending on platform. 
 * Complete all the steps to [install Donkey on your host pc](install_software.md#step-1-install-software-on-host-pc).
 * Setup DonkeyGym: 
 ```
 cd ~/projects
-git clone https://github.com/tawnkramer/donkey_gym
+git clone https://github.com/tawnkramer/gym-donkeycar
 conda activate donkey
-pip install -e donkey_gym
+pip install -e gym-donkeycar
 ```
 * You may use an existing ~/mycar donkey application, or begin a new one. Here we will start fresh: 
 ```

@@ -1,7 +1,7 @@
 import os
 import time
 import gym
-import donkey_gym
+import gym_donkeycar
 
 class DonkeyGymEnv(object):
 
