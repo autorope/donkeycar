@@ -42,7 +42,7 @@ In addition there are 3 more cars supported under the "Donkey Pro" name.  These 
 
 Here is a [video](https://youtu.be/K-REL9aqPE0) that goes over the different models.  The Donkey Pro models are not yet very well documented, just a word of warning.  
 
-For more detail and other options, follow the link to: [supported cars](/supported_cars.md)
+For more detail and other options, follow the link to: [supported cars](/supported_cars)
 
 
 ![donkey](../assets/build_hardware/donkey.PNG)

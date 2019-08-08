@@ -145,7 +145,7 @@ class KerasCategorical(KerasPilot):
 class KerasLinear(KerasPilot):
     '''
     The KerasLinear pilot uses one neuron to output a continous value via the 
-    Keras linear layer. One each for steering and throttle.
+    Keras Dense layer with linear activation. One each for steering and throttle.
     The output is not bounded.
     '''
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3), roi_crop=(0, 0), *args, **kwargs):
@@ -243,7 +243,7 @@ class KerasBehavioral(KerasPilot):
 
 class KerasLocalizer(KerasPilot):
     '''
-    A Keras part that take an image and Behavior vector as input,
+    A Keras part that take an image as input,
     outputs steering and throttle, and localisation category
     '''
     def __init__(self, model=None, num_outputs=2, num_behavior_inputs=2, num_locations=8, input_shape=(120, 160, 3), *args, **kwargs):

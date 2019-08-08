@@ -21,6 +21,7 @@ pages:
         - 'About': parts/about.md
         - 'Actuators': parts/actuators.md
         - 'Controllers': parts/controllers.md
+        - 'Keras': parts/keras.md
         - 'Stores': parts/stores.md
         - 'IMU': parts/imu.md
     - Utilities:
