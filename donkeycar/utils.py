@@ -457,6 +457,9 @@ def get_model_by_type(model_type, cfg):
         kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
     elif model_type == "latent":
         kl = KerasLatent(input_shape=input_shape)
+    elif model_type == "fastai":
+        from donkeycar.parts.fastai import FastAiPilot
+        kl = FastAiPilot()
     else:
         raise Exception("unknown model type: %s" % model_type)
 
