@@ -89,5 +89,5 @@ class CoralLinearPilot(object):
       self.engine = InferenceEngine(model_path)
 
   def run(self, image):
-      steering, throttle = self.engine.Inference(image)
+      steering, throttle = self.engine.Inference(image)[0]
       return steering, throttle

@@ -263,9 +263,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
-    class ImgPrecondition():
+    class ImgPreProcess():
         '''
-        precondition camera image for inference
+        preprocess camera image for inference.
+        normalize and crop if needed.
         '''
         def __init__(self, cfg):
             self.cfg = cfg
@@ -273,10 +274,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         def run(self, img_arr):
             return normalize_and_crop(img_arr, self.cfg)
 
-    V.add(ImgPrecondition(cfg),
-        inputs=['cam/image_array'],
-        outputs=['cam/normalized/cropped'],
-        run_condition='run_pilot')
+    if "coral" in model_type:
+        inf_input = 'cam/image_array'
+    else:
+        inf_input = 'cam/normalized/cropped'
+        V.add(ImgPreProcess(cfg),
+            inputs=['cam/image_array'],
+            outputs=[inf_input],
+            run_condition='run_pilot')
 
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
@@ -287,16 +292,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         except:
             pass
 
-        inputs = ['cam/normalized/cropped', "behavior/one_hot_state_array"]  
+        inputs = [inf_input, "behavior/one_hot_state_array"]  
     #IMU
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
-        inputs=['cam/normalized/cropped',
+        inputs=[inf_input,
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
     else:
-        inputs=['cam/normalized/cropped']
+        inputs=[inf_input]
 
     def load_model(kl, model_path):
         start = time.time()
