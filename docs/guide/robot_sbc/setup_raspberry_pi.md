@@ -207,6 +207,12 @@ Warnings like this are normal:
   return f(*args, **kwds)
 ```
 
+Note: If you would like to try tflite support, you will need a newer version of Tensorflow. You can download and install this version:
+```bash
+wget https://tawn-train.s3.amazonaws.com/tf/tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
+pip install tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
+```
+
 ##  Step 12: Install Optional OpenCV
 
 If you've opted to install the OpenCV dependencies earlier, you can install Python OpenCV bindings now with
