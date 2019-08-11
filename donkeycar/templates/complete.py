@@ -31,7 +31,7 @@ from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[], start_vehicle=True ):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -556,10 +556,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             ctr.set_button_down_trigger('cross', new_tub_dir)
         ctr.print_controls()
 
-    #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
-            max_loop_count=cfg.MAX_LOOPS)
+    if start_vehicle:
+        #run the vehicle for 20 seconds
+        V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
+                max_loop_count=cfg.MAX_LOOPS)
 
+    return V
 
 if __name__ == '__main__':
     args = docopt(__doc__)
