@@ -44,4 +44,9 @@ This guide will help you to setup the software to run Donkeycar on your Raspberr
 ![donkey](/assets/logos/nvidia_logo.png)
 
 
+## [Optional] Use TensorRT on the Jetson Nano
+
+Read [this](/guide/robot_sbc/tensorrt_jetson_nano) for more information.
+
+
 ## Next: [Create Your Donkeycar Application](/guide/create_application/).
