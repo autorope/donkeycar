@@ -73,8 +73,8 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
 | Exceed Magnet, Desert Monster, Blaze, or Short Course Truck                                                                       | See links above                                     | ~$90              |
 | USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
-| Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
-| MicroSD Card (many will work, we strongly recommend this one)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
+| Raspberry Pi 3b+                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/ELEMENT-Element14-Raspberry-Pi-Motherboard/dp/B07BDR5PDW?tag=donkeycar-20)                                          | $38              |
+| MicroSD Card (many will work, we strongly recommend this one)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/SanDisk-128GB-Extreme-microSD-Adapter/dp/B07FCMKK5X?tag=donkeycar-20)                            | $18.99           |
 | Donkey Partial Kit                                                      | [KIT](https://store.donkeycar.com/collections/frontpage)                                        | $82 to $125              |
 
 
@@ -84,11 +84,11 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
 | Magnet Car or alternative                                                                        | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)                                         | $92              |
-| M2x6 screws (4)                                                                     | [Zinc](https://www.amazon.com/uxcell-Stainless-Phillips-Tapping-Screws/dp/B01KXTSW6Q/ref=sr_1_30?keywords=m2.2+x+6mm&qid=1552971459&s=gateway&sr=8-30)                                          | $3.50 &ast;          |
-| M3x10 screws (8)                                                                  | [Black Oxide](https://www.amazon.com/Screws-Mushroom-Phillips-Self-Tapping-Electronic/dp/B07NQCG6JP/ref=sr_1_9?keywords=m3x10+self+tapping&qid=1552971659&s=gateway&sr=8-9)                                          | $7.89 &ast;          |
+| M2x6 screws (4)                                                                     | [Zinc](https://www.amazon.com/uxcell-Stainless-Phillips-Tapping-Screws/dp/B01KXTSW6Q?tag=donkeycar-20)                                          | $3.50 &ast;          |
+| M3x10 screws (8)                                                                  | [Black Oxide](https://www.amazon.com/Screws-Mushroom-Phillips-Self-Tapping-Electronic/dp/B07NQCG6JP?tag=donkeycar-20)                                          | $7.89 &ast;          |
 | USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
-| Raspberry Pi 3                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/gp/product/B01CD5VC92?tag=donkeycar-20)                                          | $38              |
-| MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/gp/product/B01HU3Q6F2?tag=donkeycar-20)                                         | $18.99           |
+| Raspberry Pi 3b+                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/ELEMENT-Element14-Raspberry-Pi-Motherboard/dp/B07BDR5PDW?tag=donkeycar-20)                                          | $38              |
+| MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/SanDisk-128GB-Extreme-microSD-Adapter/dp/B07FCMKK5X?tag=donkeycar-20)                                         | $18.99           |
 | Wide Angle Raspberry Pi Camera                                                      | [amazon.com/gp/product/B00N1YJKFS](https://www.amazon.com/gp/product/B00N1YJKFS?tag=donkeycar-20)                                         | $25              |
 | Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 &ast;             |
 | Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 &ast;&ast;           |
@@ -104,7 +104,30 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 
 ### Optional Upgrades
-*  **Sombrero Hat** The sombrero hat replaces the Servo driver and the USB battery and can be purchased at the Donkeycar store [here]() and video instructions can be found [here](https://store.donkeycar.com/collections/accessories/products/sombrero). Implementing the Sombrero hat requires a LiPo battery (see below).  Documentation is in [Github](https://github.com/autorope/Sombrero-hat).
+
+* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Antennas and camera.  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) if you want to print it yourself it is on the Thingiverse page for the project.
+
+![adapter](../assets/Jetson_Adapter.jpg)
+
+Plug in the Servo driver the same as the Raspberry Pi, just keep in mind that the Jetson pinout is reversed and that the Sombrero is not supported.
+
+![Jetson Servo](../assets/Servo_Wiring.png)
+
+Finally this is the Donkey Assembled.  
+
+![Jetson Assembled](../assets/Jetbot_Assembled.png)
+
+| Part Description                                      | Link                                                              | Approximate Cost |
+|-------------------------------------------------------|-------------------------------------------------------------------|------------------|
+| Nvidia Jetson Nano | [Jetson Nano](https://www.amazon.com/NVIDIA-Jetson-Nano-Developer-Kit/dp/B07PZHBDKT?tag=donkeycar-20)| $99 |
+| Jetson Nano Adapter | [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) | $7          |
+| Camera Module | [Camera](https://store.donkeycar.com/products/nvidia-jetson-camera-for-donkey)| $27 |
+| WiFi Card | [Card](https://www.amazon.com/Intel-Dual-Band-Wireless-Ac-8265/dp/B01MZA1AB2?tag=donkeycar-20) | $18|
+| Antennas | [Antennas](https://store.donkeycar.com/products/2x-molex-wifi-antennas-for-jetson-nano)|$7|
+
+For other options for part, feel free to look at the jetbot documentation [here](https://github.com/NVIDIA-AI-IOT/jetbot).
+
+*  **Sombrero Hat** The sombrero hat replaces the Servo driver and the USB battery and can be purchased at the Donkeycar store [here](https://store.donkeycar.com/collections/accessories/products/sombrero) and video instructions can be found [here](https://www.youtube.com/watch?v=vuAXdrtNjpk). Implementing the Sombrero hat requires a LiPo battery (see below).  Documentation is in [Github](https://github.com/autorope/Sombrero-hat).
 
 ![sombrero](../assets/Sombrero_assembled.jpg)
 
@@ -114,20 +137,10 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
-| LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html) or [amazon.com/gp/product/B0072AERBE/](https://www.amazon.com/gp/product/B0072AERBE/) | $8.94 to $~17           |
+| LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=1096095044) or [amazon.com/gp/product/B0072AERBE/](https://www.amazon.com/gp/product/B0072AERBE/) | $8.94 to $~17           |
 | Lipo Charger (takes 1hr to charge the above battery)  | [amazon.com/gp/product/B00XU4ZR06](https://www.amazon.com/gp/product/B00XU4ZR06?tag=donkeycar-20)                                               | $13              |
 | Lipo Battery Case (to prevent damage if they explode) | [amazon.com/gp/product/B00T01LLP8](https://www.amazon.com/gp/product/B00T01LLP8?tag=donkeycar-20)                                               | $8               |
-* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Anennas and camera documented [here](https://github.com/NVIDIA-AI-IOT/jetbot).  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) if you want to print it yourself it is on the Thingiverse page for the project.
 
-![adapter](../assets/Jetson_Adapter.jpg)
-
-Plug in the Servo driver the same as the Raspberry Pi, just keep in mind that the Jetson pinout is reversed.
-
-![Jetson Servo](../assets/Servo_Wiring.png)
-
-Finally this is the Donkey Assembled.  
-
-![Jetson Assembled](../assets/Jetbot_Assembled.png)
 
 
 &nbsp;
