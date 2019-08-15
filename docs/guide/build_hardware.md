@@ -79,7 +79,7 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 
 
 ### Option 2:Bottoms Up Build
-If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.  
+If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.  Keep in mind you will have to print the donkey car parts which can be found [here](https://www.thingiverse.com/thing:2566276)
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
