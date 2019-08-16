@@ -651,7 +651,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     end += stride
 
                     # Get sample input data as a numpy array in a method of your choosing.
-                    yield [ np.array(inputs).reshape(stride, cfg.TARGET_H, cfg.TARGET_W, cfg.TARGET_D) ]
+                    yield [ np.array(inputs, dtype=np.float32).reshape(stride, cfg.TARGET_H, cfg.TARGET_W, cfg.TARGET_D) ]
         else:
             representative_dataset_gen = None
 
