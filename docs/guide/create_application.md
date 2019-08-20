@@ -87,7 +87,7 @@ If you plan to use a joystick, take a side track over to [here](/parts/controlle
 If you are on a raspberry pi and using the recommended pi camera, then no changes are needed to your __myconfg.py__. 
 
 > Jetson Nano: when using a Sony IMX219 based camera, and you are using the default car template, then you will want edit your __myconfg.py__ to have:
-`CAMERA_TYPE = "CSIC"`. For flipping the image vertically set `CSIC_CAM_GSTREAMER_FLIP_PARM = 6`. This is helpful if you have to mount the camera in a rotated position.
+`CAMERA_TYPE = "CSIC"`. For flipping the image vertically set `CSIC_CAM_GSTREAMER_FLIP_PARM = 3`. This is helpful if you have to mount the camera in a rotated position. Set `IMAGE_W = 224` and also `IMAGE_H = 224`.
 
 CVCAM is a camera type that has worked for USB cameras when OpenCV is setup. This requires additional setup for [OpenCV for Nano](/guide/robot_sbc/setup_jetson_nano/#step-4-install-opencv) or [OpenCV for Raspberry Pi](https://www.learnopencv.com/install-opencv-4-on-raspberry-pi/).
 
