@@ -2,19 +2,22 @@
 
 ![donkey](/assets/logos/rpi_logo.png)
 
-* [Step 1: Flash Operating System](#step-1-flash-operating-system)
-* [Step 2: Setup the WiFi for First Boot](#step-2-setup-the-wifi-for-first-boot)
-* [Step 3: Setup Pi's Hostname](#step-3-setup-pis-hostname)
-* [Step 4: Enable SSH on Boot](#step-4-enable-ssh-on-boot)
-* [Step 5: Connecting to the Pi](#step-5-connecting-to-the-pi)
-* [Step 6: Update and Upgrade](#step-6-update-and-upgrade)
-* [Step 7: Raspi-config](#step-7-raspi-config)
-* [Step 8: Install Dependencies](#step-8-install-dependencies)
-* [Step 9: Install Optional OpenCV Dependencies](#step-9-install-optional-opencv-dependencies)
-* [Step 10: Setup Virtual Env](#step-10-setup-virtual-env)
-* [Step 11: Install Donkeycar Python Code](#step-11-install-donkeycar-python-code)
-* [Step 12: Install Optional OpenCV](#step-12-install-optional-opencv)
-* Then [Create your Donkeycar Application](/guide/create_application/)
+- [Get Your Raspberry Pi Working.](#Get-Your-Raspberry-Pi-Working)
+  - [Step 1: Flash the SD Card](#Step-1-Flash-the-SD-Card)
+    - [Robocar Store Pre-built image](#Robocar-Store-Pre-built-image)
+    - [Ground up install](#Ground-up-install)
+  - [Step 2: Setup the WiFi for first boot](#Step-2-Setup-the-WiFi-for-first-boot)
+  - [Step 3: Setup Pi's Hostname](#Step-3-Setup-Pis-Hostname)
+  - [Step 4: Enable SSH on Boot](#Step-4-Enable-SSH-on-Boot)
+  - [Step 5: Connecting to the Pi](#Step-5-Connecting-to-the-Pi)
+  - [Step 6: Update and Upgrade](#Step-6-Update-and-Upgrade)
+  - [Step 7: Raspi-config](#Step-7-Raspi-config)
+  - [Step 8: Install Dependencies](#Step-8-Install-Dependencies)
+  - [Step 9: Install Optional OpenCV Dependencies](#Step-9-Install-Optional-OpenCV-Dependencies)
+  - [Step 10: Setup Virtual Env](#Step-10-Setup-Virtual-Env)
+  - [Step 11: Install Donkeycar Python Code](#Step-11-Install-Donkeycar-Python-Code)
+  - [Step 12: Install Optional OpenCV](#Step-12-Install-Optional-OpenCV)
+    - [Next, create your Donkeycar application.](#Next-create-your-Donkeycar-application)
 
 ## Step 1: Flash the SD Card
 
@@ -22,7 +25,9 @@
 
 Robocar Store provide a pre-built image so you can just use software like Etcher to quickly get started. If you are using this image, you still need to perform step 2-5 below but you can skip step 6 - 10 as we have done that for you. You will probably save around 30 - 45 minutes if you use this image.
 
-* Donkey Car v3.0.2 on Stretch - [Download](https://www.dropbox.com/s/kibd2cplb216nr2/robocarstore_dk302_stretch.img.zip?dl=0)
+* Donkey Car v3.0.2 on Stretch - [Download](https://www.dropbox.com/s/27bt4ut6fufg1nb/robocarstore_dk302_stretch.zip?dl=0)
+* Donkey Car v3.1.0 on Buster (Pi 4) - [Download](https://www.dropbox.com/s/lzyjlnx5umwxp2k/donkey_310_buster.img.gz?dl=0)
+
 
 The uncompressed image will be around 16GB. Download [Etcher](https://www.balena.io/etcher/) and burn the image to the SD card. As we have shrinked the partition to improve the speed to burn the image, you need to expand the partition by running `sudo raspi-config`. If in doubt, check how to do this on google.
 
