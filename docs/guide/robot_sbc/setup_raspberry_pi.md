@@ -208,17 +208,32 @@ Warnings like this are normal:
 ```
 
 Note: If you would like to try tflite support, you will need a newer version of Tensorflow. You can download and install this version:
+
+For Pi3 Raspian Stretch:
 ```bash
 wget https://tawn-train.s3.amazonaws.com/tf/tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
 pip install tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
 ```
 
+For Raspian Buster Python 3.7:
+TF 2.0 Not yet available. Check donkeycar.slack.com for updates.
+
 ##  Step 12: Install Optional OpenCV
 
 If you've opted to install the OpenCV dependencies earlier, you can install Python OpenCV bindings now with
 
+
+```bash
+sudo apt install python3-opencv
+```
+
+If that failed, you can try pip:
 ```bash
 pip install opencv-python
+```
+
+Then test to see if import suceeds.
+``` bash
 python -c "import cv2"
 ```
 
