@@ -1,19 +1,20 @@
-import math
-
-import numpy as np
 import moviepy.editor as mpy
 from tensorflow.python.keras import activations
+from tensorflow.python.keras import backend as K
 
 try:
     from vis.visualization import visualize_saliency, overlay
     from vis.utils import utils
+    from vis.backprop_modifiers import get
+    from vis.losses import ActivationMaximization
+    from vis.optimizer import Optimizer
 except:
     raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
-from donkeycar.management.tub import TubManager
+
 
 class MakeMovie(object):
     def __init__(self):
@@ -41,7 +42,6 @@ class MakeMovie(object):
                 parser.print_help()
 
         conf = os.path.expanduser(args.config)
-
         if not os.path.exists(conf):
             print("No config file at location: %s. Add --config to specify\
                  location or run from dir containing config.py." % conf)
@@ -109,7 +109,7 @@ class MakeMovie(object):
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
 
-        #normalize image before prediction
+        # normalize image before prediction
         pred_img = img.astype(np.float32) / 255.0
 
         # check input depth
@@ -172,7 +172,7 @@ class MakeMovie(object):
         for i, layer in enumerate(model.layers):
             if first_output_name is None and "dropout" not in layer.name.lower() and "out" in layer.name.lower():
                 first_output_name = layer.name
-                self.layer_idx = i
+                layer_idx = i
 
         if first_output_name is None:
             print("Failed to find the model layer named with 'out'. Skipping salient.")
@@ -183,14 +183,24 @@ class MakeMovie(object):
         print("####################")
         
         # ensure we have linear activation
-        model.layers[self.layer_idx].activation = activations.linear
-        self.sal_model = utils.apply_modifications(model)
+        model.layers[layer_idx].activation = activations.linear
+        # build salient model and optimizer
+        sal_model = utils.apply_modifications(model)
+        modifier_fn = get('guided')
+        sal_model_mod = modifier_fn(sal_model)
+        losses = [
+            (ActivationMaximization(sal_model_mod.layers[layer_idx], None), -1)
+        ]
+        self.opt = Optimizer(sal_model_mod.input, losses, norm_grads=False)
         return True
 
     def compute_visualisation_mask(self, img):
-        grads = visualize_saliency(self.sal_model, self.layer_idx, filter_indices=None, 
-                                   seed_input=img, backprop_modifier='guided')
-        return grads
+        grad_modifier = 'absolute'
+        grads = self.opt.minimize(seed_input=img, max_iter=1, grad_modifier=grad_modifier, verbose=False)[1]
+        channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
+        grads = np.max(grads, axis=channel_idx)
+        res = utils.normalize(grads)[0]
+        return res
 
     def draw_salient(self, img):
         import cv2
@@ -205,7 +215,6 @@ class MakeMovie(object):
         if expected[2] == 1 and actual[2] == 3:
             pred_img = rgb2gray(pred_img)
             pred_img = pred_img.reshape(pred_img.shape + (1,))
-            actual = pred_img.shape
 
         salient_mask = self.compute_visualisation_mask(pred_img)
         z = np.zeros_like(salient_mask)
