@@ -73,7 +73,7 @@ Now that you have your car roughly calibrated you can try driving it to
 verify that it drives as expected. Here's how to fine tune your car's calibration.
 
 1. Start your car by running `python manage.py drive`.
-2. Go to `<your_cars_ip_address>:8887` in a browser.
+2. Go to `<your_cars_hostname.local>:8887` in a browser.
 3. Press `j` until the cars steering is all the way right.
 4. Press `i` a couple times to get the car to go forward.
 5. Measure the diameter of the turn and record it on a spreadsheet.
