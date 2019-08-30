@@ -195,7 +195,7 @@ def drive(cfg, model_path=None, model_type=None):
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
-    print("You can now go to <your pi ip address>:8887 to drive your car.")
+    print("You can now go to <your pis hostname.local>:8887 to drive your car.")
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
