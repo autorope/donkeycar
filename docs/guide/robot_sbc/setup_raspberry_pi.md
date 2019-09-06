@@ -28,9 +28,9 @@ You need to flash a micro SD image with an operating system.
 
 We can create a special file which will be used to login to wifi on first boot. More reading [here](https://raspberrypi.stackexchange.com/questions/10251/prepare-sd-card-for-wifi-on-headless-pi), but we will walk you through it. 
 
-On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formated with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on it's first boot. 
+On Windows, with your memory card image burned and memory disc still inserted, you should see two drives, which are actually two partitions on the mem disc. One is labeled __boot__. On Mac and Linux, you should also have access to the __boot__ partition of the mem disc. This is formatted with the common FAT type and is where we will edit some files to help it find and log-on to your wifi on its first boot. 
 
-> Note: If __boot__ is not visible right away, try unplugging and re-insterting the memory card reader.
+> Note: If __boot__ is not visible right away, try unplugging and re-inserting the memory card reader.
 
 * Start a text editor: `gedit` on Linux. Notepad++ on Windows. TextEdit on a Mac.
 * Paste and edit this contents to match your wifi:
@@ -73,14 +73,14 @@ sudo vi /media/userID/UUID/etc/hosts
 Put a file named __ssh__ in the root of your __boot__ partition.
 
 
-Now you're SD card is ready. Eject it from your computer, put it in the Pi 
+Now your SD card is ready. Eject it from your computer, put it in the Pi 
 and plug in the Pi.
 
 
 ## Step 5: Connecting to the Pi
 
-If you followed the above instructions to add wifi access you're Pi should
-now be connected to your wifi network. Now you need to find it's IP address
+If you followed the above instructions to add wifi access, your Pi should
+now be connected to your wifi network. Now you need to find its IP address
 so you can connect to it via SSH. 
 
 The easiest way (on Ubuntu) is to use the `findcar` donkey command. You can try `ping raspberrypi.local`. If you've modified the hostname, then you should try: `ping <your hostname>.local`. This will fail on a windows machine. Windows users will need the full IP address (unless using cygwin). 
