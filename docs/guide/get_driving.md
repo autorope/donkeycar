@@ -17,7 +17,7 @@ python manage.py drive
 
 This script will start the drive loop in your car which includes a part that 
 is a web server for you to control your car. You can now control your car
-from a web browser at the URL: `<your car's IP's address>:8887`
+from a web browser at the URL: `<your car's hostname.local>:8887`
 
 ![drive UI](../assets/drive_UI.png)
 
