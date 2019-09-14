@@ -171,7 +171,7 @@ Network: 4 3D Convolution layers each followed by max pooling, followed by 2 den
 Output: One dense layer with two scalar outputs for steering and throttle.
 
 
-## Keras Bahavior
+## Keras Behavior
 
 This model type is created with the --type=behavior. 
 
