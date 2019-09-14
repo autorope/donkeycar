@@ -71,3 +71,34 @@ Read [this](/guide/robot_sbc/tensorrt_jetson_nano) for more information.
 2. **Build a Simple Track** : This isn't very well-documented, but the car should (theoretically) be able to train against any kind of track. To start off with, it might not be necessary to build a two-lane track with a striped center-lane. Try with a single lane with no center-line, or just a single strip that makes a circuit! At the least, you'll be able to do an end-to-end testing and verify that the software pipeline is all properly functional. Of course, as the next-step, you'll want to create a more standard track, and compete at a [meetup](https://diyrobocars.com/) nearest to you!
 
 3. **Get help** : Try to get some helping hands from a friend or two. Again, this helps immensely with building the track, because it is harder than it looks to build a two-line track on your own! Also, you can save on resources (and tapes) by using a [ribbon](https://www.amazon.com/gp/product/B00L2MLCNO) instead of tapes. They'll still need a bit of tapes to hold them, but you can reuse them and they can be laid down with a lot less effort (Although the wind, if you're working outside, might make it difficult to lay them down initially).
+
+
+## Training Behavior Models
+
+
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/aLFuHGlU0CM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+### How to train a Behavior model:
+
+ * Make sure ```TRAIN_BEHAVIORS = True``` in myconfig.py when training and when running on the robot.
+
+* Setup an RGB led on robot to indicate which state is active. Enable in config.py. Verify when running robot that L1 PS3 button changes state led indicator. (that's the left upper shoulder button)
+
+* By default there are two states. If you like, adjust the number of states in bottom of config.py. Rename or change BEHAVIOR_LIST to an arbitrary number of labels. Make sure same number of rgb colors in BEHAVIOR_LED_COLORS. Make sure to reflect any changes to both PC and Robot.
+
+* Now for training: Activate any state with L1 shoulder button. Then drive as you wish the car to drive when in that state. Switch states and then transition to the new steady state behavior.
+
+* For the two lane case. Drive 33% in one lane, 33% in the other, and 33% transitioning between them. It's important to trigger the state transition before changing lanes.
+
+* Check the records in the tub. Open a .json. In addition to steering and throttle, you should also have some additional state information about your behavior vector and which was was activate on that frame. This is crucial to training correctly.
+
+* Move data to PC and train as normal, ensuring ```TRAIN_BEHAVIORS = True``` in myconfig.py on PC, otherwise extra state information will be ignored.
+
+* Move trained model back to robot. Now place the robot in the location of the initial state. Start the robot with the given model
+``` 
+python manage.py drive --model=models/my_beh.h5 --type=behavior```
+
+* Now press select to switch to desired ai mode. Constant throttle available as well as trained throttle.
+As it drives, you can now toggle states with L1 and see whether and how much it can replicate your steady state behaviors and transitions.
+be sure to include quite a lot of example of transitions from one state to another. At least 50, but more like 100. 
