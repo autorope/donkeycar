@@ -21,6 +21,7 @@ def cfg_defaults(cfg):
     cfg.TARGET_H = cfg.IMAGE_H - cfg.ROI_CROP_TOP - cfg.ROI_CROP_BOTTOM
     cfg.TARGET_W = cfg.IMAGE_W
     cfg.TARGET_D = cfg.IMAGE_DEPTH
+    cfg.NUM_LOCATIONS = 10
 
 
 @pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
@@ -41,6 +42,7 @@ def test_train_cat(tub, tub_path):
     aug = False
     multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
 
+
 @pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
 def test_train_linear(tub, tub_path):
     t = Tub(tub_path)
@@ -55,6 +57,25 @@ def test_train_linear(tub, tub_path):
     model = model_path
     transfer = None
     model_type = "linear"
+    continuous = False
+    aug = False
+    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
+
+
+@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
+def test_train_localizer(tub, tub_path):
+    t = Tub(tub_path)
+    assert t is not None
+
+    import donkeycar.templates.cfg_complete as cfg
+    tempfolder = tub_path[:-3]
+    model_path = os.path.join(tempfolder, 'test.h5')
+    cfg_defaults(cfg)
+
+    tub = tub_path
+    model = model_path
+    transfer = None
+    model_type = "localizer"
     continuous = False
     aug = False
     multi_train(cfg, tub, model, transfer, model_type, continuous, aug)

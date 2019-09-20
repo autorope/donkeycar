@@ -35,7 +35,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
-     KerasRNN_LSTM, KerasLatent
+     KerasRNN_LSTM, KerasLatent, KerasLocalizer
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
 
@@ -128,6 +128,13 @@ def collate_records(records, gen_records, opts):
             sample["behavior_arr"] = behavior_arr
         except:
             pass
+
+        try:
+            location_arr = np.array(json_data['location/one_hot_state_array'])
+            sample["location"] = location_arr
+        except:
+            pass
+
 
         sample['img_data'] = None
 
@@ -390,6 +397,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
             has_imu = type(kl) is KerasIMU
             has_bvh = type(kl) is KerasBehavioral
             img_out = type(kl) is KerasLatent
+            loc_out = type(kl) is KerasLocalizer
             
             if img_out:
                 import cv2
@@ -420,6 +428,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     angles = []
                     throttles = []
                     out_img = []
+                    out_loc = []
                     out = []
 
                     for record in batch_data:
@@ -443,6 +452,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         if img_out:                            
                             rz_img_arr = cv2.resize(img_arr, (127, 127)) / 255.0
                             out_img.append(rz_img_arr[:,:,0].reshape((127, 127, 1)))
+
+                        if loc_out:
+                            out_loc.append(record['location'])
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
@@ -470,6 +482,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
                     if img_out:
                         y = [out_img, np.array(angles), np.array(throttles)]
+                    elif out_loc:
+                        y = [ np.array(angles), np.array(throttles), np.array(out_loc)]
                     elif model_out_shape[1] == 2:
                         y = [np.array([out]).reshape(batch_size, 2) ]
                     else:
@@ -792,6 +806,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
         sample['target_output'] = np.array([angle, throttle])
         sample['angle'] = angle
         sample['throttle'] = throttle
+
 
         sample['img_data'] = None
 
