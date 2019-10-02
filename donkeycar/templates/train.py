@@ -15,7 +15,7 @@ Usage:
 Options:
     -h --help              Show this screen.
     -f --file=<file>       A text file containing paths to tub files, one per line. Option may be used more than once.
-    --figure_format='png'  The file format of the generated figure (see https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html), e.g. 'png', 'pdf', 'svg', ...
+    --figure_format=png    The file format of the generated figure (see https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html), e.g. 'png', 'pdf', 'svg', ...
 """
 import os
 import glob
