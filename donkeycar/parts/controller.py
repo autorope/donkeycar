@@ -1417,7 +1417,7 @@ def get_js_controller(cfg):
         cont_class = WiiUController
     elif cfg.CONTROLLER_TYPE == "F710":
         cont_class = LogitechJoystickController
-    elif cfg.CONTROLLER_TYPE == "rc3chan":
+    elif cfg.CONTROLLER_TYPE == "rc3":
         cont_class = RC3ChanJoystickController
     else:
         raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
