@@ -714,6 +714,11 @@ class JoystickController(object):
         # print("On Axis Move:")
         # print(self.axis_trigger_map)
 
+    def set_button_up_trigger(self, button, func):
+         set_button_trigger(self, button, func)
+
+    def set_button_down_trigger(self, button, func):
+         set_button_trigger(self, button, func)
 
     def set_button_trigger(self, button, func):
         '''
