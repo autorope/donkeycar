@@ -1026,7 +1026,6 @@ class PS3JoystickController(JoystickController):
         self.axis_trigger_map = {
             'left_stick_horz' : self.set_steering,
             'right_stick_vert' : self.set_throttle,
-            'R2_pressure' : self.set_throttle,
         }
 
 
