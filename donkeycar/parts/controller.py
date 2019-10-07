@@ -610,6 +610,24 @@ class WiiU(Joystick):
         }
 
 
+class RC3ChanJoystick(Joystick):
+    #An interface to a physical joystick available at /dev/input/js0
+    def __init__(self, *args, **kwargs):
+        super(RC3ChanJoystick, self).__init__(*args, **kwargs)
+
+
+        self.button_names = {
+            0x120 : 'Switch-up',
+            0x121 : 'Switch-down',
+        }
+
+
+        self.axis_names = {
+            0x1 : 'Throttle',
+            0x0 : 'Steering',
+        }
+
+
 class JoystickController(object):
     '''
     JoystickController is a base class. You will not use this class directly,
@@ -1256,6 +1274,57 @@ class WiiUController(JoystickController):
         }
 
 
+
+class RC3ChanJoystickController(JoystickController):
+    #A Controller object that maps inputs to actions
+    def __init__(self, *args, **kwargs):
+        super(RC3ChanJoystickController, self).__init__(*args, **kwargs)
+
+
+    def init_js(self):
+        #attempt to init joystick
+        try:
+            self.js = RC3ChanJoystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def on_steering(self, val, reverse = True):
+        if reversed:
+            val *= -1
+        self.set_steering(val)
+
+    def on_throttle(self, val, reverse = True):
+        if reversed:
+            val *= -1
+        self.set_throttle(val)
+
+    def on_switch_up(self):
+        if self.mode == 'user':
+            self.erase_last_N_records()
+        else:
+            self.emergency_stop()
+
+    def on_switch_down(self):
+        self.toggle_mode()
+
+    def init_trigger_maps(self):
+        #init set of mapping from buttons to function calls
+
+        self.button_down_trigger_map = {
+            'Switch-down' : self.on_switch_down,
+            'Switch-up' : self.on_switch_up,
+        }
+
+
+        self.axis_trigger_map = {
+            'Steering' : self.on_steering,
+            'Throttle' : self.on_throttle,
+        }
+
+
 class JoyStickPub(object):
     '''
     Use Zero Message Queue (zmq) to publish the control messages from a local joystick
@@ -1347,6 +1416,8 @@ def get_js_controller(cfg):
         cont_class = WiiUController
     elif cfg.CONTROLLER_TYPE == "F710":
         cont_class = LogitechJoystickController
+    elif cfg.CONTROLLER_TYPE == "rc3":
+        cont_class = RC3ChanJoystickController
     else:
         raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
 
@@ -1368,3 +1439,4 @@ if __name__ == "__main__":
     print('xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0')
     p = JoyStickPub()
     p.run()
+
