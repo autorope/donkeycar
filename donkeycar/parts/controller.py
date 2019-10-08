@@ -653,13 +653,16 @@ class JoystickController(object):
         self.estop_state = self.ES_IDLE
         self.chaos_monkey_steering = None
         self.dead_zone = 0.0
+
         self.button_down_trigger_map = {}
+        self.button_up_trigger_map = {}
         self.axis_trigger_map = {}
         self.init_trigger_maps()
+        self.shiftKeyHistory=[]
+        self.shiftModeHistory={}
         self.shiftkey=""
         self.mem=memobject
         if self.mem is None : print("Warning : to get all features from the Controller, the mamage.py file should be modified using line : ctr = get_js_controller(cfg,memobject=V.mem)")
-
 
 
     def init_js(self):
@@ -691,44 +694,43 @@ class JoystickController(object):
         '''
         pt = PrettyTable()
         pt.field_names = ["control", "action"]
-        for button, control in self.button_trigger_map.items():
-            if button[-2:] == "_1" :
-              if type(control) is str :
-                 pt.add_row([button[:-2], control])
-              else:
-                 pt.add_row([button[:-2], control.__name__])
+        for button, control in self.button_down_trigger_map.items():
+            if type(control) is str :
+                 pt.add_row([button, control])
+            else:
+                 pt.add_row([button, control.__name__])
 
         for axis, control in self.axis_trigger_map.items():
             if type(control) is str :
-
                   pt.add_row([axis, control])
             else:
                   pt.add_row([axis, control.__name__])
+
 
         print("Joystick Controls:")
         print(pt)
 
         # print("Joystick Controls:")
         # print("On Button Down:")
-        # print(self.button_trigger_map)
+        # print(self.button_down_trigger_map)
+        # print("On Button Up:")
+        # print(self.button_up_trigger_map)
         # print("On Axis Move:")
         # print(self.axis_trigger_map)
 
-    def set_button_up_trigger(self, button, func):
-         set_button_trigger(self, button, func)
 
     def set_button_down_trigger(self, button, func):
-         set_button_trigger(self, button, func)
-
-    def set_button_trigger(self, button, func):
         '''
         assign a string button descriptor to a given function call
         '''
-        if button[-2:] == "_1" or button[-2:] == "_0": 
-            self.button_trigger_map[button] = func
-        else:
-            ## if not defined, we consider that the function is assigned when button is pressed.
-            self.button_trigger_map[button+"_1"] = func
+        self.button_down_trigger_map[button] = func
+
+
+    def set_button_up_trigger(self, button, func):
+        '''
+        assign a string button descriptor to a given function call
+        '''
+        self.button_up_trigger_map[button] = func
 
 
     def set_axis_trigger(self, axis, func):
@@ -782,37 +784,70 @@ class JoystickController(object):
 
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
-               
             if axis is not None :
-                '''
-                then invoke the function attached to that axis
-                '''
                 axis=self.shiftkey+axis
                 if   axis is not None  and axis in self.axis_trigger_map:
-                
                    if type(self.axis_trigger_map[axis]) is str :
                        funcstr=self.axis_trigger_map[axis]
                        funcstr2=funcstr.replace("%val%",str(axis_val))
                        exec(funcstr2)
-                       #exec(self.axis_trigger_map[axis])
                    else:
                       self.axis_trigger_map[axis](axis_val)
 
-            if button :  
-                button=self.shiftkey+button+"_"+str(button_state)
- 
-                if button in self.button_trigger_map:
-                   '''
-                   then invoke the function attached to that button
-                   '''
-                   if type(self.button_trigger_map[button]) is str :
-                      funcstr=self.button_trigger_map[button]
+            if button and button_state >= 1 :
+                '''
+                then invoke the function attached to that button
+                '''
+                button=self.shiftkey+button
+                if button in self.button_down_trigger_map:
+                   if type(self.button_down_trigger_map[button]) is str :
+                      funcstr=self.button_down_trigger_map[button]
                       exec(funcstr)
                    else:
-                      self.button_trigger_map[button]
+                      self.button_down_trigger_map[button]
+
+
+            if button and button_state == 0:
+                '''
+                then invoke the function attached to that button
+                '''
+                if button in self.shiftModeHistory : 
+                  self.shift_out(button)
+                else:
+                  button=self.shiftkey+button
+                  if button in self.button_up_trigger_map:
+                     if type(self.button_up_trigger_map[button]) is str :
+                        funcstr=self.button_up_trigger_map[button]
+                        exec(funcstr)
+                     else:
+                        self.button_up_trigger_map[button]
+
             time.sleep(self.poll_delay)
 
+    def shift_in(self,btn,Mode):
+        self.shiftKeyHistory.append(btn)
+        self.shiftModeHistory[btn]=self.shiftkey
+        self.shiftkey=Mode+"+"
+         
+    def shift_out(self,btn):
+        i=self.shiftKeyHistory.index(btn)
+        l=len(self.shiftKeyHistory)
+        self.shiftkey=self.shiftModeHistory[btn]
+        for k in range(i,l): 
+          del self.shiftModeHistory[ self.shiftKeyHistory[k]] 
+        self.shiftKeyHistory=self.shiftKeyHistory[0:i]
 
+    def increment(self,varstring,increment,maxvalue) :
+           newval=self.mem.get ([varstring])[0]+increment
+           if newval>maxvalue:newval=maxvalue
+           self.mem.put ([varstring],newval)
+
+
+    def decrement(self,varstring,increment,minvalue) :
+           newval=self.mem.get ([varstring])[0]-increment
+           if newval<minvalue:newval=minvalue
+           self.mem.put ([varstring],newval)
+ 
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
         #print("angle", self.angle)
@@ -1009,20 +1044,21 @@ class PS3JoystickController(JoystickController):
         init set of mapping from buttons to function calls
         '''
 
-        self.button_trigger_map = {
-            'select_1' : self.toggle_mode,
-            'circle_1' : self.toggle_manual_recording,
-            'triangle_1' : self.erase_last_N_records,
-            'cross_1' : self.emergency_stop,
-            'dpad_up_1' : self.increase_max_throttle,
-            'dpad_down_1' : self.decrease_max_throttle,
-            'start_1' : self.toggle_constant_throttle,
-            "R1_1" : self.chaos_monkey_on_right,
-            "L1_1" : self.chaos_monkey_on_left,
-            "R1_0" : self.chaos_monkey_off,
-            "L1_0" : self.chaos_monkey_off,
-            "LEFT_TOP_TRIGGER_1" : 'self.shiftkey="CAMERA_MODE+"',
-            "CAMERA_MODE+LEFT_TOP_TRIGGER_0" : 'self.shiftkey=""',  
+        self.button_down_trigger_map = {
+            'select' : self.toggle_mode,
+            'circle' : self.toggle_manual_recording,
+            'triangle' : self.erase_last_N_records,
+            'cross' : self.emergency_stop,
+            'dpad_up' : self.increase_max_throttle,
+            'dpad_down' : self.decrease_max_throttle,
+            'start' : self.toggle_constant_throttle,
+            "R1" : self.chaos_monkey_on_right,
+            "L1" : self.chaos_monkey_on_left,
+        }
+
+        self.button_up_trigger_map = {
+            "R1" : self.chaos_monkey_off,
+            "L1" : self.chaos_monkey_off,
         }
 
         self.axis_trigger_map = {
@@ -1033,7 +1069,7 @@ class PS3JoystickController(JoystickController):
 
 class PS4JoystickController(JoystickController):
     '''
-    Controller object that maps inputs to actions
+    A Controller object that maps inputs to actions
     '''
     def __init__(self, *args, **kwargs):
         super(PS4JoystickController, self).__init__(*args, **kwargs)
@@ -1058,14 +1094,14 @@ class PS4JoystickController(JoystickController):
         init set of mapping from buttons to function calls for ps4
         '''
 
-        self.button_trigger_map = {
-            'share_1' : self.toggle_mode,
-            'circle_1' : self.toggle_manual_recording,
-            'triangle_1' : self.erase_last_N_records,
-            'cross_1' : self.emergency_stop,
-            'L1_1' : self.increase_max_throttle,
-            'R1_1' : self.decrease_max_throttle,
-            'options_1' : self.toggle_constant_throttle,
+        self.button_down_trigger_map = {
+            'share' : self.toggle_mode,
+            'circle' : self.toggle_manual_recording,
+            'triangle' : self.erase_last_N_records,
+            'cross' : self.emergency_stop,
+            'L1' : self.increase_max_throttle,
+            'R1' : self.decrease_max_throttle,
+            'options' : self.toggle_constant_throttle,
         }
 
         self.axis_trigger_map = {
@@ -1118,14 +1154,14 @@ class XboxOneJoystickController(JoystickController):
         init set of mapping from buttons to function calls
         '''
 
-        self.button_trigger_map = {
-            'a_button_1': self.toggle_mode,
-            'b_button_1': self.toggle_manual_recording,
-            'x_button_1': self.erase_last_N_records,
-            'y_button_1': self.emergency_stop,
-            'right_shoulder_1': self.increase_max_throttle,
-            'left_shoulder_1': self.decrease_max_throttle,
-            'options_1': self.toggle_constant_throttle,
+        self.button_down_trigger_map = {
+            'a_button': self.toggle_mode,
+            'b_button': self.toggle_manual_recording,
+            'x_button': self.erase_last_N_records,
+            'y_button': self.emergency_stop,
+            'right_shoulder': self.increase_max_throttle,
+            'left_shoulder': self.decrease_max_throttle,
+            'options': self.toggle_constant_throttle,
         }
 
         self.axis_trigger_map = {
@@ -1165,16 +1201,19 @@ class LogitechJoystickController(JoystickController):
         init set of mapping from buttons to function calls
         '''
 
-        self.button_trigger_map = {
-            'start_1': self.toggle_mode,
-            'B_1': self.toggle_manual_recording,
-            'Y_1': self.erase_last_N_records,
-            'A_1': self.emergency_stop,
-            'back_1': self.toggle_constant_throttle,
-            "R1_1" : self.chaos_monkey_on_right,
-            "L1_1" : self.chaos_monkey_on_left,
-            "R1_0" : self.chaos_monkey_off,
-            "L1_0" : self.chaos_monkey_off,
+        self.button_down_trigger_map = {
+            'start': self.toggle_mode,
+            'B': self.toggle_manual_recording,
+            'Y': self.erase_last_N_records,
+            'A': self.emergency_stop,
+            'back': self.toggle_constant_throttle,
+            "R1" : self.chaos_monkey_on_right,
+            "L1" : self.chaos_monkey_on_left,
+        }
+
+        self.button_up_trigger_map = {
+            "R1" : self.chaos_monkey_off,
+            "L1" : self.chaos_monkey_off,
         }
 
         self.axis_trigger_map = {
@@ -1229,10 +1268,10 @@ class NimbusController(JoystickController):
     def init_trigger_maps(self):
         #init set of mapping from buttons to function calls
 
-        self.button_trigger_map = {
-            'y_1' : self.erase_last_N_records,
-            'b_1' : self.toggle_mode,
-            'a_1' : self.emergency_stop,
+        self.button_down_trigger_map = {
+            'y' : self.erase_last_N_records,
+            'b' : self.toggle_mode,
+            'a' : self.emergency_stop,
         }
 
         self.axis_trigger_map = {
@@ -1261,27 +1300,15 @@ class WiiUController(JoystickController):
     def init_trigger_maps(self):
         #init set of mapping from buttons to function calls
 
-        self.button_trigger_map = {
-            'Y_1' : self.erase_last_N_records,
-            'B_1' : self.toggle_mode,
-            'A_1' : self.emergency_stop,
-            'LEFT_TOP_TRIGGER_1' : 'self.shiftkey="CAMERA_MODE+"',
-            'CAMERA_MODE+LEFT_TOP_TRIGGER_0' : 'self.shiftkey=""',
-            'CAMERA_MODE+A_1' : 'self.mem.put (["testval"],30)',
-            'CAMERA_MODE+Y_1' : 'self.mem.put (["testval"],0)',
-
-        
-
-
-
-
+        self.button_down_trigger_map = {
+            'Y' : self.erase_last_N_records,
+            'B' : self.toggle_mode,
+            'A' : self.emergency_stop,
         }
 
         self.axis_trigger_map = {
             'LEFT_STICK_X' : self.set_steering,
             'RIGHT_STICK_Y' : self.set_throttle,
-            'CAMERA_MODE+LEFT_STICK_X' : 'self.mem.put (["testval"],%val%)',
-
         }
 
 
