@@ -599,7 +599,7 @@ class WiiU(Joystick):
             547: 'PAD_RIGHT',
             546: 'PAD_LEFT',
             544: 'PAD_UP',
-            548: 'PAD_DOWN,',
+            545: 'PAD_DOWN',
         }
 
         self.axis_names = {
@@ -632,7 +632,7 @@ class JoystickController(object):
                  steering_scale=1.0,
                  throttle_dir=-1.0,
                  dev_fn='/dev/input/js0',
-                 auto_record_on_throttle=True,memobject=None):
+                 auto_record_on_throttle=True):
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -653,16 +653,15 @@ class JoystickController(object):
         self.estop_state = self.ES_IDLE
         self.chaos_monkey_steering = None
         self.dead_zone = 0.0
-
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
         self.axis_trigger_map = {}
         self.init_trigger_maps()
+
         self.shiftKeyHistory=[]
         self.shiftModeHistory={}
         self.shiftkey=""
-        self.mem=memobject
-        if self.mem is None : print("Warning : to get all features from the Controller, the mamage.py file should be modified using line : ctr = get_js_controller(cfg,memobject=V.mem)")
+        self.V=None
 
 
     def init_js(self):
@@ -695,18 +694,9 @@ class JoystickController(object):
         pt = PrettyTable()
         pt.field_names = ["control", "action"]
         for button, control in self.button_down_trigger_map.items():
-            if type(control) is str :
-                 pt.add_row([button, control])
-            else:
-                 pt.add_row([button, control.__name__])
-
+            pt.add_row([button, control.__name__])
         for axis, control in self.axis_trigger_map.items():
-            if type(control) is str :
-                  pt.add_row([axis, control])
-            else:
-                  pt.add_row([axis, control.__name__])
-
-
+            pt.add_row([axis, control.__name__])
         print("Joystick Controls:")
         print(pt)
 
@@ -718,6 +708,26 @@ class JoystickController(object):
         # print("On Axis Move:")
         # print(self.axis_trigger_map)
 
+    def print_controls_adv(self):
+        '''
+        print the mapping of buttons and axis to functions
+        '''
+        pt = PrettyTable()
+        pt.field_names = ["control", "action"]
+        for button, control in self.button_down_trigger_map.items():
+            if type(control) is str :
+                 pt.add_row([button, control])
+            else:
+                 pt.add_row([button, control.__name__])
+
+        for axis, control in self.axis_trigger_map.items():
+            if type(control) is str :
+                  pt.add_row([axis, control])
+            else:
+                  pt.add_row([axis, control.__name__])
+
+        print("Joystick Controls_adv:")
+        print(pt)
 
     def set_button_down_trigger(self, button, func):
         '''
@@ -777,6 +787,38 @@ class JoystickController(object):
         '''
         poll a joystick for input events
         '''
+
+        #wait for joystick to be online
+        while self.running and self.js is None and not self.init_js():
+            time.sleep(3)
+
+        while self.running:
+            button, button_state, axis, axis_val = self.js.poll()
+
+            if axis is not None and axis in self.axis_trigger_map:
+                '''
+                then invoke the function attached to that axis
+                '''
+                self.axis_trigger_map[axis](axis_val)
+
+            if button and button_state >= 1 and button in self.button_down_trigger_map:
+                '''
+                then invoke the function attached to that button
+                '''
+                self.button_down_trigger_map[button]()
+
+            if button and button_state == 0 and button in self.button_up_trigger_map:
+                '''
+                then invoke the function attached to that button
+                '''
+                self.button_up_trigger_map[button]()
+
+            time.sleep(self.poll_delay)
+
+    def update_adv(self):
+        '''
+        poll a joystick for input events
+        '''
         self.shiftkey=""
         #wait for joystick to be online
         while self.running and self.js is None and not self.init_js():
@@ -786,7 +828,7 @@ class JoystickController(object):
             button, button_state, axis, axis_val = self.js.poll()
             if axis is not None :
                 axis=self.shiftkey+axis
-                if   axis is not None  and axis in self.axis_trigger_map:
+                if  axis in self.axis_trigger_map:
                    if type(self.axis_trigger_map[axis]) is str :
                        funcstr=self.axis_trigger_map[axis]
                        funcstr2=funcstr.replace("%val%",str(axis_val))
@@ -811,7 +853,7 @@ class JoystickController(object):
                 '''
                 then invoke the function attached to that button
                 '''
-                if button in self.shiftModeHistory : 
+                if button in self.shiftModeHistory :
                   self.shift_out(button)
                 else:
                   button=self.shiftkey+button
@@ -828,25 +870,31 @@ class JoystickController(object):
         self.shiftKeyHistory.append(btn)
         self.shiftModeHistory[btn]=self.shiftkey
         self.shiftkey=Mode+"+"
-         
+
     def shift_out(self,btn):
         i=self.shiftKeyHistory.index(btn)
         l=len(self.shiftKeyHistory)
         self.shiftkey=self.shiftModeHistory[btn]
-        for k in range(i,l): 
-          del self.shiftModeHistory[ self.shiftKeyHistory[k]] 
+        for k in range(i,l):
+          del self.shiftModeHistory[ self.shiftKeyHistory[k]]
         self.shiftKeyHistory=self.shiftKeyHistory[0:i]
 
     def increment(self,varstring,increment,maxvalue) :
-           newval=self.mem.get ([varstring])[0]+increment
-           if newval>maxvalue:newval=maxvalue
-           self.mem.put ([varstring],newval)
-
+        newval=self.V.mem.get ([varstring])[0]+increment
+        if newval>maxvalue:newval=maxvalue
+        self.V.mem.put ([varstring],newval)
 
     def decrement(self,varstring,increment,minvalue) :
-           newval=self.mem.get ([varstring])[0]-increment
-           if newval<minvalue:newval=minvalue
-           self.mem.put ([varstring],newval)
+        newval=self.V.mem.get ([varstring])[0]-increment
+        if newval<minvalue:newval=minvalue
+        self.V.mem.put ([varstring],newval)
+
+    def get_part(self,ClassName):
+        for entry in self.V.parts:
+           p = entry['part']            
+           if (p.__class__.__name__ )== ClassName :
+              return p
+	
  
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
@@ -985,6 +1033,8 @@ class JoystickController(object):
         #set flag to exit polling thread, then wait a sec for it to leave
         self.running = False
         time.sleep(0.5)
+
+
 
 
 class JoystickCreatorController(JoystickController):
@@ -1280,6 +1330,7 @@ class NimbusController(JoystickController):
         }
 
 
+
 class WiiUController(JoystickController):
     #A Controller object that maps inputs to actions
     def __init__(self, *args, **kwargs):
@@ -1304,12 +1355,52 @@ class WiiUController(JoystickController):
             'Y' : self.erase_last_N_records,
             'B' : self.toggle_mode,
             'A' : self.emergency_stop,
+            'LEFT_TOP_TRIGGER' : 'self.shift_in("LEFT_TOP_TRIGGER","CAMERA_MODE")',
+            'RIGHT_TOP_TRIGGER' : 'self.shift_in("RIGHT_TOP_TRIGGER","TRAIN_MODE")',
+            'CAMERA_MODE+RIGHT_TOP_TRIGGER' : 'self.shift_in("RIGHT_TOP_TRIGGER","CALIBRATE_MODE")',
+            'TRAIN_MODE+LEFT_TOP_TRIGGER' : 'self.shift_in("LEFT_TOP_TRIGGER","SYSTEM_MODE")',
+            'TRAIN_MODE+L2' : 'self.recording=True',
+            'TRAIN_MODE+R2' : 'self.recording=False',
+            #'TRAIN_MODE+Y' : 'self.decrement("testval",0.1,-1)',
+            #'TRAIN_MODE+A' : 'self.increment("testval",0.1,1)',
+            #'TRAIN_MODE+X' : 'self.V.mem.put (["testval"],0)',
+
+            'CALIBRATE_MODE+Y' : 'self.shift_in("Y","CALIBRATE_PWMSTEERING_LEFT")',
+            'CALIBRATE_PWMSTEERING_LEFT+PAD_UP' : 'self.increase_part_var("PWMSteering","left_pulse",10,1500)',
+            'CALIBRATE_PWMSTEERING_LEFT+PAD_DOWN' : 'self.decrease_part_var("PWMSteering","left_pulse",10,120)',
+            'CALIBRATE_PWMSTEERING_LEFT+PAD_LEFT' : 'self.decrease_part_var("PWMSteering","left_pulse",1,120) ',
+            'CALIBRATE_PWMSTEERING_LEFT+PAD_RIGHT' : 'self.increase_part_var("PWMSteering","left_pulse",1,1500) ',
+
+            'CALIBRATE_MODE+A' : 'self.shift_in("A","CALIBRATE_PWMSTEERING_RIGHT")',
+            'CALIBRATE_PWMSTEERING_RIGHT+PAD_UP' : 'self.increase_part_var("PWMSteering","right_pulse",10,1500)',
+            'CALIBRATE_PWMSTEERING_RIGHT+PAD_DOWN' : 'self.decrease_part_var("PWMSteering","right_pulse",10,120)',
+            'CALIBRATE_PWMSTEERING_RIGHT+PAD_LEFT' : 'self.decrease_part_var("PWMSteering","right_pulse",1,120) ',
+            'CALIBRATE_PWMSTEERING_RIGHT+PAD_RIGHT' : 'self.increase_part_var("PWMSteering","right_pulse",1,1500) ',
+
+
+            'CAMERA_MODE+X' : 'print(self.recording)',
+            'CAMERA_MODE+B' : 'self.V.profiler.report()'+'\n'+'print("NewLine")',
+            'CAMERA_MODE+HOME' : 'print("PWMSTEERING_LEFT_PULSE="+str(self.get_part("PWMSteering").left_pulse))'+'\n'+'print("PWMSTEERING_RIGHT_PULSE="+str(self.get_part("PWMSteering").right_pulse))',
         }
 
         self.axis_trigger_map = {
             'LEFT_STICK_X' : self.set_steering,
             'RIGHT_STICK_Y' : self.set_throttle,
         }
+
+    def increase_part_var(self,partclass,varname,  step, vmax):
+                p=self.get_part(partclass)
+                v=getattr(p,varname)+step
+                if v>vmax : v=vmax
+                setattr(p,varname,v)
+                print(varname+"="+str(v))
+
+    def decrease_part_var(self,partclass,varname,  step, vmin):
+                p=self.get_part(partclass)
+                v=getattr(p,varname)-step
+                if v<vmin : v=vmin
+                setattr(p,varname,v)
+                print(varname+"="+str(v))
 
 
 class JoyStickPub(object):
@@ -1389,7 +1480,7 @@ class JoyStickSub(object):
         return ret
 
 
-def get_js_controller(cfg,memobject=None):
+def get_js_controller(cfg,Vobject=None):
     cont_class = None
     if cfg.CONTROLLER_TYPE == "ps3":
         cont_class = PS3JoystickController
@@ -1409,8 +1500,17 @@ def get_js_controller(cfg,memobject=None):
     ctr = cont_class(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
                                 throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE,memobject=memobject)
+                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
 
+    if hasattr(cfg, 'CONTROLLER_ADVANCED') 
+       if cfg.CONTROLLER_ADVANCED == True:
+           if Vobject is not None :
+               setattr(ctr, 'update', ctr.update_adv)
+               setattr(ctr, 'print_controls', ctr.print_controls_adv)
+               ctr.V=Vobject
+           else
+               print ("Warning, to use Advanced controller mode, you need to modify the manage.py file : 'get_js_controller(cfg,Vobject=V)'")
+ 
     ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
     return ctr
 
