@@ -10,11 +10,12 @@ Basic usage should feel familiar: python train.py --model models/mypilot
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|latent|categorical|rnn|imu|behavior|3d|look_ahead|tensorrt_linear|tflite_linear|coral_tflite_linear)] [--continuous] [--aug]
+    train.py [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|latent|categorical|rnn|imu|behavior|3d|look_ahead|tensorrt_linear|tflite_linear|coral_tflite_linear)] [--figure_format=<figure_format>] [--continuous] [--aug]
 
 Options:
-    -h --help        Show this screen.
-    -f --file=<file> A text file containing paths to tub files, one per line. Option may be used more than once.
+    -h --help              Show this screen.
+    -f --file=<file>       A text file containing paths to tub files, one per line. Option may be used more than once.
+    --figure_format=png    The file format of the generated figure (see https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html), e.g. 'png', 'pdf', 'svg', ...
 """
 import os
 import glob
@@ -38,6 +39,8 @@ from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasRNN_LSTM, KerasLatent, KerasLocalizer
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
+
+figure_format = 'png'
 
 
 '''
@@ -621,7 +624,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     plt.xlabel('epoch')
                     #plt.legend(['train', 'validate'], loc='upper left')
 
-                plt.savefig(model_path + '_loss_acc_%f.png' % save_best.best)
+                plt.savefig(model_path + '_loss_acc_%f.%s' % (save_best.best, figure_format))
                 plt.show()
             else:
                 print("not saving loss graph because matplotlib not set up.")
@@ -1094,6 +1097,8 @@ if __name__ == "__main__":
     model = args['--model']
     transfer = args['--transfer']
     model_type = args['--type']
+    if args['--figure_format']:
+        figure_format = args['--figure_format']
     continuous = args['--continuous']
     aug = args['--aug']
     
