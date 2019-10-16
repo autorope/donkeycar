@@ -1434,7 +1434,6 @@ class WiiUController(JoystickController):
         }
 
 
-
 class JoyStickPub(object):
     '''
     Use Zero Message Queue (zmq) to publish the control messages from a local joystick
@@ -1517,23 +1516,12 @@ class adv_class():
             'BUTTON_UP' : ctr.erase_last_N_records,
             'BUTTON_DOWN' : ctr.toggle_mode,
             'HOME' : ctr.emergency_stop,
-
-
-
-
-
-
-
-#            'L1' : 'self.shift_in("L1","CAMERA_MODE",descr="ENTER CAMERA_MODE")',
             'R1' : 'self.shift_in("R1","TRAIN_MODE",descr="ENTER TRAIN MODE")',
-#            'TRAIN_MODE+L1' : 'self.shift_in("L1","CALIBRATE_MODE",descr="ENTER CALIBRATE MODE")',
             'TRAIN_MODE+L2' : 'self.recording=True',
             'TRAIN_MODE+R2' : 'self.recording=False',
             'TRAIN_MODE+BUTTON_RIGHT' : ctr.chaos_monkey_on_right,
             'TRAIN_MODE+BUTTON_LEFT' : ctr.chaos_monkey_on_left,
             'TRAIN_MODE+BUTTON_UP' :  ctr.emergency_stop,
-
-
 # MENU DEFINITION : 
             'L1' : 'self.shift_in("L1","SYSTEM_MODE",descr="ENTER SYSTEM_MODE")',
             'SYSTEM_MODE+R1' : 'self.menu_in("CALIBRATE_MODE",descr="ENTER CALIBRATE MODE")',
@@ -1542,7 +1530,6 @@ class adv_class():
             'CAMERA_MODE+R1' : 'self.menu_in("JOYSTICK_MODE",descr="ENTER JOYSTICK MODE")',
             'JOYSTICK_MODE+R1' : 'self.menu_in("SIM_MODE",descr="ENTER SIM MODE")',
             'SIM_MODE+R1' : 'self.menu_in("SYSTEM_MODE",descr="ENTER SYSTEM MODE")',
-
 # MENU HELP : 
             'SYSTEM_MODE+HOME2' : 'self.print_controls(Mode="SYSTEM_MODE") # Display Help ',
             'CALIBRATE_MODE+HOME2' :'self.print_controls(Mode="CALIBRATE_MODE") # Display Help ',
@@ -1550,14 +1537,7 @@ class adv_class():
             'CAMERA_MODE+HOME2' : 'self.print_controls(Mode="CAMERA_MODE") # Display Help ',
             'JOYSTICK_MODE+HOME2' : 'self.print_controls(Mode="JOYSTICK_MODE") # Display Help ' ,
             'SIM_MODE+HOME2' : 'self.print_controls(Mode="SIM_MODE") # Display Help ' ,
-
-
-            #'TRAIN_MODE+Y' : 'self.decrement("testval",0.1,-1)',
-            #'TRAIN_MODE+A' : 'self.increment("testval",0.1,1)',
-            #'TRAIN_MODE+X' : 'self.V.mem.put (["testval"],0)',
-
 # CALIBRATE MENU :
-
             'CALIBRATE_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CALIBRATE_STEERING_LEFT_PWM",descr="EDIT STEERING_LEFT_PWM")',
             'CALIBRATE_PWMSTEERING_LEFT+dpad_up' : 'self.inc_cfg_val("STEERING_LEFT_PWM",10,1500)' + '\n' + 
                                                    'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
@@ -1567,7 +1547,6 @@ class adv_class():
                                                      'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
             'CALIBRATE_PWMSTEERING_LEFT+dpad_right' : 'self.inc_cfg_val("STEERING_LEFT_PWM",1,1500)'+ '\n' + 
                                                       'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
-
 
             'CALIBRATE_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CALIBRATE_PWMSTEERING_RIGHT",descr="EDIT STEERING_RIGHT_PWM")',
             'CALIBRATE_PWMSTEERING_RIGHT+dpad_up' : 'self.inc_cfg_val("STEERING_RIGHT_PWM",10,1500)' + '\n' +
@@ -1580,8 +1559,6 @@ class adv_class():
                                                        'self.copy_cfg_to_part("STEERING_RIGHT_PWM","right_pulse",ClassName="PWMSteering")',
 
             'CALIBRATE_MODE+HOME1' : 'self.print_cfg_vals("STEERING_LEFT_PWM,STEERING_RIGHT_PWM,THROTTLE_FORWARD_PWM,THROTTLE_STOPPED_PWM,THROTTLE_REVERSE_PWM") # Display cfg values ',
-
-
             'CALIBRATE_MODE+BUTTON_UP' : 'self.shift_in("BUTTON_UP","CALIBRATE_THROTTLE_FORWARD_PWM",descr="EDIT THROTTLE_FORWARD_PWM")',
             'CALIBRATE_THROTTLE_FORWARD_PWM+dpad_up' : 'self.inc_cfg_val("THROTTLE_FORWARD_PWM",10,1500)' + '\n' + 
                                                        'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
@@ -1591,7 +1568,6 @@ class adv_class():
                                                          'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
             'CALIBRATE_THROTTLE_FORWARD_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_FORWARD_PWM",1,1500)'+ '\n' + 
                                                           'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
-
 
             'CALIBRATE_MODE+BUTTON_DOWN' : 'self.shift_in("BUTTON_UP","CALIBRATE_THROTTLE_STOPPED_PWM",descr="EDIT THROTTLE_STOPPED_PWM")',
             'CALIBRATE_THROTTLE_STOPPED_PWM+dpad_up' : 'self.inc_cfg_val("THROTTLE_STOPPED_PWM",10,1500)' + '\n' +
@@ -1603,8 +1579,6 @@ class adv_class():
             'CALIBRATE_THROTTLE_STOPPED_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_STOPPED_PWM",1,1500)'+ '\n' +
                                                           'self.copy_cfg_to_part("THROTTLE_STOPPED_PWM","zero_pulse",ClassName="PWMThrottle")',
 
-
-
             'CALIBRATE_MODE+L2' : 'self.shift_in("BUTTON_UP","CALIBRATE_REVERSE_PWM",descr="EDIT THROTTLE_REVERSE_PWM")',
             'CALIBRATE_REVERSE_PWM+dpad_up' : 'self.inc_cfg_val("THROTTLE_REVERSE_PWM",10,1500)' + '\n' +
                                                        'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
@@ -1614,12 +1588,7 @@ class adv_class():
                                                          'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
             'CALIBRATE_REVERSE_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_REVERSE_PWM",1,1500)'+ '\n' +
                                                           'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
-
-
-
-
 # CAMERA MENU
-
             'CAMERA_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_CROP_TOP_EDIT",descr="EDIT OI_CROP_TOP")',
             'CAMERA_CROP_TOP_EDIT+dpad_up' : 'self.inc_cfg_val("ROI_CROP_TOP",10,self.cfg.IMAGE_H-self.cfg.ROI_CROP_BOTTOM)', 
             'CAMERA_CROP_TOP_EDIT+dpad_down' : 'self.dec_cfg_val("ROI_CROP_TOP",10,0)',
@@ -1632,7 +1601,6 @@ class adv_class():
             'CAMERA_CROP_BOTTOM_EDIT+dpad_left' : 'self.dec_cfg_val("ROI_CROP_BOTTOM",1,0)',
             'CAMERA_CROP_BOTTOM_EDIT+dpad_right' : 'self.inc_cfg_val("ROI_CROP_BOTTOM",1,self.cfg.IMAGE_H-self.cfg.ROI_CROP_TOP)',
 
-            'SYSTEM_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_AUGMENT_LEVEL_EDIT",descr="EDIT CAMERA_AUGMENT_LEVEL")',
             'CAMERA_AUGMENT_LEVEL_EDIT+dpad_up' : 'self.inc_input_val("IMG_AUGMENT_LEVEL",10,30)',
             'CAMERA_AUGMENT_LEVEL_EDIT+dpad_down' : 'self.dec_input_val("IMG_AUGMENT_LEVEL",10,0)',
             'CAMERA_AUGMENT_LEVEL_EDIT+dpad_left' : 'self.dec_input_val("IMG_AUGMENT_LEVEL",1,0)',
@@ -1682,13 +1650,11 @@ class adv_class():
             'CAMERA_MODE+HOME1' : 'self.print_cfg_vals("STEERING_LEFT_PWM,CAMERA_PAN_CENTER_PWM,CAMERA_TILT_PWM_UP") # Display cfg Camera Settings ',
             'CAMERA_MODE+B' : 'self.V.profiler.report()'+'\n'+'print("NewLine")',
 
-
-
+            'SYSTEM_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_AUGMENT_LEVEL_EDIT",descr="EDIT CAMERA_AUGMENT_LEVEL")',
         }
 
        self.button_up_trigger_map = {
-
-}
+       }
 
        self.axis_trigger_map = {
             'left_stick_horz' : ctr.set_steering,
@@ -1697,7 +1663,6 @@ class adv_class():
             'TRAIN_MODE+right_stick_vert' : ctr.set_throttle,
             'CAMERA_MODE+left_stick_vert' : 'self.set_input_val("user_camera_tilt",-%val%) # Move Camera Tilt ', 
             'CAMERA_MODE+right_stick_horz' : 'self.set_input_val("user_camera_pan",%val%)  # Move Camera Pan ',
-
         }
 
        self.key_translate_map={
@@ -1746,8 +1711,6 @@ class adv_class():
             'ly' : 'left_stick_vert',
             'rx' : 'right_stick_horz',
             'ry' : 'right_stick_vert',
-
-
         }
 
     def print_controls_adv(self,Mode=""):
@@ -1787,14 +1750,6 @@ class adv_class():
 
         print("Joystick Controls_adv:")
         print(pt)
-
-
-
-
-
-
-
-
 
 
 def get_js_controller(cfg,Vobject=None):
