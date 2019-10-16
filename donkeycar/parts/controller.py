@@ -819,7 +819,7 @@ class JoystickController(object):
                        funcstr2=funcstr.replace("%val%",str(axis_val))
                        exec(funcstr2)
                    else:
-                      self.axis_trigger_map[axis](axis_val)
+                      self.axis_trigger_map[shifted_axis](axis_val)
                 else:
                    if axis[:1]=="|":
                        k,dp1,dp2= axis.split("|")
