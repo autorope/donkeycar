@@ -223,6 +223,52 @@ quit
 
 Now that your controller is trusted, it should automatically connect with your Raspberry Pi when they are both turned on.  If your controller fails to connect, run the bluetoothctl steps again to reconnect.
 
+## Advanced Joystick Mode
+
+The Advanced Joystick mode uses button combinations to allow more control on the car.
+In order to use the Advanced Joystick mode, you must update the manage.py file and  replace the line get_controller_js() with get_controller_js(Vobject=V)
+You will also need to modify the config.py file to add the line "JOYSTICK_ADVANCED = True 
+Setting the JOYSTICK_ADVANCED = False will use the original Joystick mappings, without advanced feature.
+When activated , this mode will redefine the mappings of the joystick as per the below description :
+
+When using Advanced mode, pressing combinations of L1 and R1 button will switch the controller to one of the 5 different modes :  Default (), TRAIN (R1) , CAMERA(L1), CALIBRATE(R1+L1) and SYSTEM(L1+R1).
+Please note that not all features are working yet;the modes anticipate the creation of custom parts handling the actions.
+
+
+![Default Mode](./docs/assets/controller_default.PNG)
+![Training Mode ( R1)](./docs/assets/controller_training.PNG)
+
+the menu modes are available by keeping L1 pressed, then press R1 to change Menu : 
+![donkeycar](./docs/assets/controller_system.PNG)
+![donkeycar](./docs/assets/controller_camera.PNG)
+![donkeycar](./docs/assets/controller_calibrate.PNG)
+
+Button names are as follow : 
+![donkeycar](./docs/assets/controller_buttons.PNG)
+
+
+(*) : AUG_IMAGE_DRAW LEVEL : 
+AUG_IMAGE_DRAW LEVEL : the AUG_IMAGE_DRAW_LEVEL variable is added to the Vehicle list of available variables. A part could use this value as input and draw additional information on the captured images , depending on the value of this parameter. 
+This can facilitate debug  / calibration of the car, or be used to make tutorials videos.
+The below values are expected :
+	0 : No augmented drawing
+	1 : CROP regions visualisation
+	2 : Steering / Throttle visualisation
+	3 : Pilot_Behaviour and Pilot_localization
+	4 : User_Behaviour and User_Localization
+	5 : all drawings between 1 and 4
+	6 -9:  reserved for future usage
+	10 : all drawings between 6 and 9
+	11-14 : custom views 
+	15 : all drawings between 11 and 14.
+	16-19 : custom views 
+	20 : all drawings between 16 and 19.
+
+(**) A part can be configured to take the LogLevelFlag as input . 
+Depending on the value configured, the part can therefore be more or less verbose, or print specific informations to the console.
+Log level flags between 0 and 30 are reserved for the parts managed in the github autorope/donkeycar. Please use higher numbers for any custom part.
+
+
 ## Discovering / Modifying Button and Axis Mappings for Game Controllers
 
 To discover and modify your default button mappings (for your controllers) you can use the `Joystick` class defined in `donkeycar.parts.controller`.
