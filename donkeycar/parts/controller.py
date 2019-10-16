@@ -654,6 +654,7 @@ class JoystickController(object):
         self.estop_state = self.ES_IDLE
         self.chaos_monkey_steering = None
         self.dead_zone = 0.0
+
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
         self.axis_trigger_map = {}
@@ -708,6 +709,7 @@ class JoystickController(object):
         # print(self.button_up_trigger_map)
         # print("On Axis Move:")
         # print(self.axis_trigger_map)
+
 
     def set_button_down_trigger(self, button, func):
         '''
@@ -1107,8 +1109,6 @@ class JoystickController(object):
         time.sleep(0.5)
 
 
-
-
 class JoystickCreatorController(JoystickController):
     '''
     A Controller object helps create a new controller object and mapping
@@ -1400,7 +1400,6 @@ class NimbusController(JoystickController):
             'lx' : self.set_steering,
             'ry' : self.set_throttle,
         }
-
 
 
 class WiiUController(JoystickController):
@@ -1824,16 +1823,14 @@ def get_js_controller(cfg,Vobject=None):
        if cfg.CONTROLLER_ADVANCED == True:
            if Vobject is not None :
                ctr.cfg=cfg
-               adv=adv_class(ctr)
+               adv=adv_class(ctr) # replace some of the controller functions and data with the advanced version : 
                setattr(ctr, 'update', ctr.update_adv)
                setattr(ctr, 'print_controls', adv.print_controls_adv)
                setattr(ctr, 'button_down_trigger_map',adv.button_down_trigger_map)
                setattr(ctr, 'button_up_trigger_map',adv.button_up_trigger_map)
                setattr(ctr, 'axis_trigger_map',adv.axis_trigger_map)
                setattr(ctr, 'key_translate_map',adv.key_translate_map)
-
-               ctr.V=Vobject
-
+               ctr.V=Vobject 
            else:
                print ('\n'+"Warning: to use Advanced Controller mode, you need to modify the manage.py file : 'get_js_controller(cfg,Vobject=V)'"+'\n')
  
