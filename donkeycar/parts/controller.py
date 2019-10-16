@@ -814,8 +814,8 @@ class JoystickController(object):
                
                 shifted_axis=self.shiftkey+axis
                 if  shifted_axis in self.axis_trigger_map:
-                   if type(self.axis_trigger_map[axis]) is str :
-                       funcstr=self.axis_trigger_map[shiftedaxis]
+                   if type(self.axis_trigger_map[shifted_axis]) is str :
+                       funcstr=self.axis_trigger_map[shifted_axis]
                        funcstr2=funcstr.replace("%val%",str(axis_val))
                        exec(funcstr2)
                    else:
