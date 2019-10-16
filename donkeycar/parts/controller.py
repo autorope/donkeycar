@@ -600,7 +600,8 @@ class WiiU(Joystick):
             546: 'PAD_LEFT',
             544: 'PAD_UP',
             545: 'PAD_DOWN',
-        }
+            316: 'HOME',
+          }
 
         self.axis_names = {
             0: 'LEFT_STICK_X',
@@ -662,7 +663,7 @@ class JoystickController(object):
         self.shiftModeHistory={}
         self.shiftkey=""
         self.V=None
-
+        self.cfg=None
 
     def init_js(self):
         '''
@@ -707,27 +708,6 @@ class JoystickController(object):
         # print(self.button_up_trigger_map)
         # print("On Axis Move:")
         # print(self.axis_trigger_map)
-
-    def print_controls_adv(self):
-        '''
-        print the mapping of buttons and axis to functions
-        '''
-        pt = PrettyTable()
-        pt.field_names = ["control", "action"]
-        for button, control in self.button_down_trigger_map.items():
-            if type(control) is str :
-                 pt.add_row([button, control])
-            else:
-                 pt.add_row([button, control.__name__])
-
-        for axis, control in self.axis_trigger_map.items():
-            if type(control) is str :
-                  pt.add_row([axis, control])
-            else:
-                  pt.add_row([axis, control.__name__])
-
-        print("Joystick Controls_adv:")
-        print(pt)
 
     def set_button_down_trigger(self, button, func):
         '''
@@ -827,32 +807,46 @@ class JoystickController(object):
         while self.running:
             button, button_state, axis, axis_val = self.js.poll()
             if axis is not None :
-                axis=self.shiftkey+axis
-                if  axis in self.axis_trigger_map:
+                if axis in self.key_translate_map:      
+                   axis=self.key_translate_map[axis]  # This would not be needed if we standardized the axis names... 
+               
+                shifted_axis=self.shiftkey+axis
+                if  shifted_axis in self.axis_trigger_map:
                    if type(self.axis_trigger_map[axis]) is str :
-                       funcstr=self.axis_trigger_map[axis]
+                       funcstr=self.axis_trigger_map[shiftedaxis]
                        funcstr2=funcstr.replace("%val%",str(axis_val))
                        exec(funcstr2)
                    else:
                       self.axis_trigger_map[axis](axis_val)
+                else:
+                   if axis[:1]=="|":
+                       k,dp1,dp2= axis.split("|")
+                       button,button_state= self.buttonize(axis_val,dp1,dp2,dp1+"_"+dp2)
 
             if button and button_state >= 1 :
                 '''
                 then invoke the function attached to that button
                 '''
+                if button in self.key_translate_map:
+                   button=self.key_translate_map[button] # This would not be needed if we standardized the button names...
+
                 button=self.shiftkey+button
                 if button in self.button_down_trigger_map:
-                   if type(self.button_down_trigger_map[button]) is str :
-                      funcstr=self.button_down_trigger_map[button]
-                      exec(funcstr)
-                   else:
-                      self.button_down_trigger_map[button]
-
+                    if type(self.button_down_trigger_map[button]) is str :
+                        funcstr=self.button_down_trigger_map[button]
+                        exec(funcstr)
+                    else:
+                        self.button_down_trigger_map[button]
+ 
+                     
 
             if button and button_state == 0:
                 '''
                 then invoke the function attached to that button
                 '''
+                if button in self.key_translate_map:
+                   button=self.key_translate_map[button]
+
                 if button in self.shiftModeHistory :
                   self.shift_out(button)
                 else:
@@ -866,10 +860,31 @@ class JoystickController(object):
 
             time.sleep(self.poll_delay)
 
-    def shift_in(self,btn,Mode):
+    def buttonize(self,axis_val,keypad1,keypad2,keypadup):
+        if axis_val==1 : 
+           button=keypad2
+           button_state=1
+        elif axis_val==-1: 
+           button=keypad1
+           button_state=1
+        else :
+           button=keypadup
+           button_state=0
+        return button,button_state
+ 
+    def display(self,mystring):
+        print (mystring)
+        self.set_input_val("DisplayStr",mystring) # publish the display in case a part would want to display on a oled screen ...
+
+    def menu_in(self,Mode,descr=""):
+        self.shiftkey=Mode+"+"
+        if descr !="" :print(descr)
+
+    def shift_in(self,btn,Mode,descr=""):
         self.shiftKeyHistory.append(btn)
         self.shiftModeHistory[btn]=self.shiftkey
         self.shiftkey=Mode+"+"
+        if descr !="" :print(descr)
 
     def shift_out(self,btn):
         i=self.shiftKeyHistory.index(btn)
@@ -879,23 +894,80 @@ class JoystickController(object):
           del self.shiftModeHistory[ self.shiftKeyHistory[k]]
         self.shiftKeyHistory=self.shiftKeyHistory[0:i]
 
-    def increment(self,varstring,increment,maxvalue) :
+    def inc_input_val(self,varstring,increment,maxvalue) :
+        if self.V.mem.get ([varstring])[0] is None :  self.V.mem.put ([varstring],0)
         newval=self.V.mem.get ([varstring])[0]+increment
         if newval>maxvalue:newval=maxvalue
         self.V.mem.put ([varstring],newval)
+        self.display (varstring + "=" + str(newval))
 
-    def decrement(self,varstring,increment,minvalue) :
+    def dec_input_val(self,varstring,increment,minvalue) :
+        if self.V.mem.get ([varstring])[0] is None :  self.V.mem.put ([varstring],0)
         newval=self.V.mem.get ([varstring])[0]-increment
         if newval<minvalue:newval=minvalue
         self.V.mem.put ([varstring],newval)
+        self.display (varstring + "=" + str(newval))
 
-    def get_part(self,ClassName):
+    def set_input_val(self,varstring,newval):
+        self.V.mem.put ([varstring],newval)
+   
+    def inc_cfg_val(self,varstring,varstep,varmax):
+        if not hasattr(self.cfg,varstring): setattr(self.cfg,varstring,0)
+        newval=getattr(self.cfg,varstring)+varstep
+        if newval>varmax:newval=varmax
+        setattr(self.cfg,varstring,newval)
+        self.display(varstring + "=" + str(newval))
+
+    def dec_cfg_val(self,varstring,varstep,varmin):
+        if not hasattr(self.cfg,varstring):setattr(self.cfg,varstring,0)
+        newval=getattr(self.cfg,varstring)-varstep
+        if newval<varmin:newval=varmin
+        setattr(self.cfg,varstring,newval)
+        self.display(varstring + "=" + str(newval))
+
+    def set_cfg_val(self,varstring,newval) :
+        setattr(self.cfg,varstring,newval)
+
+    def get_part(self,ClassName="",PartName=""):
         for entry in self.V.parts:
            p = entry['part']            
-           if (p.__class__.__name__ )== ClassName :
-              return p
-	
- 
+           if ClassName!="":
+              if (p.__class__.__name__ )== ClassName :
+                 return p
+           if PartName!="":
+              if (hasattr(p,"PartName")):
+                 if p.PartName==PartName:
+                     return p
+  	
+    def inc_part_val(self,varname,  step, vmax,PartName=None,ClassName=None):
+        p=self.get_part(PartName=PartName,ClassName=ClassName)
+        v=getattr(p,varname)+step
+        if v>vmax : v=vmax
+        setattr(p,varname,v)
+        self.display(varname+"="+str(v))
+
+    def dec_part_val(self,varname,  step, vmin,PartName=None,ClassName=None):
+        p=self.get_part(PartName=PartName,ClassName=ClassName)
+        v=getattr(p,varname)-step
+        if v<vmin : v=vmin
+        setattr(p,varname,v)
+        self.display(varname+"="+str(v))
+
+    def set_part_val(self,varname,newval,PartName=None,ClassName=None):
+        p=self.get_part(PartName=PartName,ClassName=ClassName)
+        setattr(p,varname,newval)
+
+    def copy_cfg_to_part(self,cfg_varstring,part_varstring,PartName=None,ClassName=None ):
+        p=self.get_part(PartName=PartName,ClassName=ClassName)
+        setattr(p,part_varstring,getattr(self.cfg,cfg_varstring))
+
+    def print_cfg_vals(self,varstrings):
+        val_array= varstrings.split(",")
+        for valstr in val_array: 
+          if hasattr(self.cfg,valstr):      
+             self.display(valstr+"="+str(getattr(self.cfg,valstr)))
+
+
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
         #print("angle", self.angle)
@@ -1355,32 +1427,6 @@ class WiiUController(JoystickController):
             'Y' : self.erase_last_N_records,
             'B' : self.toggle_mode,
             'A' : self.emergency_stop,
-            'LEFT_TOP_TRIGGER' : 'self.shift_in("LEFT_TOP_TRIGGER","CAMERA_MODE")',
-            'RIGHT_TOP_TRIGGER' : 'self.shift_in("RIGHT_TOP_TRIGGER","TRAIN_MODE")',
-            'CAMERA_MODE+RIGHT_TOP_TRIGGER' : 'self.shift_in("RIGHT_TOP_TRIGGER","CALIBRATE_MODE")',
-            'TRAIN_MODE+LEFT_TOP_TRIGGER' : 'self.shift_in("LEFT_TOP_TRIGGER","SYSTEM_MODE")',
-            'TRAIN_MODE+L2' : 'self.recording=True',
-            'TRAIN_MODE+R2' : 'self.recording=False',
-            #'TRAIN_MODE+Y' : 'self.decrement("testval",0.1,-1)',
-            #'TRAIN_MODE+A' : 'self.increment("testval",0.1,1)',
-            #'TRAIN_MODE+X' : 'self.V.mem.put (["testval"],0)',
-
-            'CALIBRATE_MODE+Y' : 'self.shift_in("Y","CALIBRATE_PWMSTEERING_LEFT")',
-            'CALIBRATE_PWMSTEERING_LEFT+PAD_UP' : 'self.increase_part_var("PWMSteering","left_pulse",10,1500)',
-            'CALIBRATE_PWMSTEERING_LEFT+PAD_DOWN' : 'self.decrease_part_var("PWMSteering","left_pulse",10,120)',
-            'CALIBRATE_PWMSTEERING_LEFT+PAD_LEFT' : 'self.decrease_part_var("PWMSteering","left_pulse",1,120) ',
-            'CALIBRATE_PWMSTEERING_LEFT+PAD_RIGHT' : 'self.increase_part_var("PWMSteering","left_pulse",1,1500) ',
-
-            'CALIBRATE_MODE+A' : 'self.shift_in("A","CALIBRATE_PWMSTEERING_RIGHT")',
-            'CALIBRATE_PWMSTEERING_RIGHT+PAD_UP' : 'self.increase_part_var("PWMSteering","right_pulse",10,1500)',
-            'CALIBRATE_PWMSTEERING_RIGHT+PAD_DOWN' : 'self.decrease_part_var("PWMSteering","right_pulse",10,120)',
-            'CALIBRATE_PWMSTEERING_RIGHT+PAD_LEFT' : 'self.decrease_part_var("PWMSteering","right_pulse",1,120) ',
-            'CALIBRATE_PWMSTEERING_RIGHT+PAD_RIGHT' : 'self.increase_part_var("PWMSteering","right_pulse",1,1500) ',
-
-
-            'CAMERA_MODE+X' : 'print(self.recording)',
-            'CAMERA_MODE+B' : 'self.V.profiler.report()'+'\n'+'print("NewLine")',
-            'CAMERA_MODE+HOME' : 'print("PWMSTEERING_LEFT_PULSE="+str(self.get_part("PWMSteering").left_pulse))'+'\n'+'print("PWMSTEERING_RIGHT_PULSE="+str(self.get_part("PWMSteering").right_pulse))',
         }
 
         self.axis_trigger_map = {
@@ -1388,19 +1434,6 @@ class WiiUController(JoystickController):
             'RIGHT_STICK_Y' : self.set_throttle,
         }
 
-    def increase_part_var(self,partclass,varname,  step, vmax):
-                p=self.get_part(partclass)
-                v=getattr(p,varname)+step
-                if v>vmax : v=vmax
-                setattr(p,varname,v)
-                print(varname+"="+str(v))
-
-    def decrease_part_var(self,partclass,varname,  step, vmin):
-                p=self.get_part(partclass)
-                v=getattr(p,varname)-step
-                if v<vmin : v=vmin
-                setattr(p,varname,v)
-                print(varname+"="+str(v))
 
 
 class JoyStickPub(object):
@@ -1479,6 +1512,291 @@ class JoyStickSub(object):
         self.axis = None
         return ret
 
+class adv_class():
+    def __init__(self,ctr):
+       self.button_down_trigger_map = {
+            'BUTTON_UP' : ctr.erase_last_N_records,
+            'BUTTON_DOWN' : ctr.toggle_mode,
+            'HOME' : ctr.emergency_stop,
+
+
+
+
+
+
+
+#            'L1' : 'self.shift_in("L1","CAMERA_MODE",descr="ENTER CAMERA_MODE")',
+            'R1' : 'self.shift_in("R1","TRAIN_MODE",descr="ENTER TRAIN MODE")',
+#            'TRAIN_MODE+L1' : 'self.shift_in("L1","CALIBRATE_MODE",descr="ENTER CALIBRATE MODE")',
+            'TRAIN_MODE+L2' : 'self.recording=True',
+            'TRAIN_MODE+R2' : 'self.recording=False',
+            'TRAIN_MODE+BUTTON_RIGHT' : ctr.chaos_monkey_on_right,
+            'TRAIN_MODE+BUTTON_LEFT' : ctr.chaos_monkey_on_left,
+            'TRAIN_MODE+BUTTON_UP' :  ctr.emergency_stop,
+
+
+# MENU DEFINITION : 
+            'L1' : 'self.shift_in("L1","SYSTEM_MODE",descr="ENTER SYSTEM_MODE")',
+            'SYSTEM_MODE+R1' : 'self.menu_in("CALIBRATE_MODE",descr="ENTER CALIBRATE MODE")',
+            'CALIBRATE_MODE+R1' : 'self.menu_in("SOUND_MODE",descr="ENTER SOUND MODE")',
+            'SOUND_MODE+R1' :  'self.menu_in("CAMERA_MODE",descr="ENTER CAMERA MODE")',
+            'CAMERA_MODE+R1' : 'self.menu_in("JOYSTICK_MODE",descr="ENTER JOYSTICK MODE")',
+            'JOYSTICK_MODE+R1' : 'self.menu_in("SIM_MODE",descr="ENTER SIM MODE")',
+            'SIM_MODE+R1' : 'self.menu_in("SYSTEM_MODE",descr="ENTER SYSTEM MODE")',
+
+# MENU HELP : 
+            'SYSTEM_MODE+HOME2' : 'self.print_controls(Mode="SYSTEM_MODE") # Display Help ',
+            'CALIBRATE_MODE+HOME2' :'self.print_controls(Mode="CALIBRATE_MODE") # Display Help ',
+            'SOUND_MODE+HOME2' : 'self.print_controls(Mode="SOUND_MODE") # Display Help ' ,
+            'CAMERA_MODE+HOME2' : 'self.print_controls(Mode="CAMERA_MODE") # Display Help ',
+            'JOYSTICK_MODE+HOME2' : 'self.print_controls(Mode="JOYSTICK_MODE") # Display Help ' ,
+            'SIM_MODE+HOME2' : 'self.print_controls(Mode="SIM_MODE") # Display Help ' ,
+
+
+            #'TRAIN_MODE+Y' : 'self.decrement("testval",0.1,-1)',
+            #'TRAIN_MODE+A' : 'self.increment("testval",0.1,1)',
+            #'TRAIN_MODE+X' : 'self.V.mem.put (["testval"],0)',
+
+# CALIBRATE MENU :
+
+            'CALIBRATE_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CALIBRATE_STEERING_LEFT_PWM",descr="EDIT STEERING_LEFT_PWM")',
+            'CALIBRATE_PWMSTEERING_LEFT+dpad_up' : 'self.inc_cfg_val("STEERING_LEFT_PWM",10,1500)' + '\n' + 
+                                                   'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
+            'CALIBRATE_PWMSTEERING_LEFT+dpad_down' : 'self.dec_cfg_val("STEERING_LEFT_PWM",10,120)'+ '\n' + 
+                                                     'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
+            'CALIBRATE_PWMSTEERING_LEFT+dpad_left' : 'self.dec_cfg_val("STEERING_LEFT_PWM",1,120)'+ '\n' + 
+                                                     'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
+            'CALIBRATE_PWMSTEERING_LEFT+dpad_right' : 'self.inc_cfg_val("STEERING_LEFT_PWM",1,1500)'+ '\n' + 
+                                                      'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
+
+
+            'CALIBRATE_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CALIBRATE_PWMSTEERING_RIGHT",descr="EDIT STEERING_RIGHT_PWM")',
+            'CALIBRATE_PWMSTEERING_RIGHT+dpad_up' : 'self.inc_cfg_val("STEERING_RIGHT_PWM",10,1500)' + '\n' +
+                                                    'self.copy_cfg_to_part("STEERING_RIGHT_PWM","right_pulse",ClassName="PWMSteering")',
+            'CALIBRATE_PWMSTEERING_RIGHT+dpad_down' : 'self.dec_cfg_val("STEERING_RIGHT_PWM",10,120)'+ '\n' + 
+                                                      'self.copy_cfg_to_part("STEERING_RIGHT_PWM","right_pulse",ClassName="PWMSteering")',
+            'CALIBRATE_PWMSTEERING_RIGHT+dpad_left' : 'self.dec_cfg_val("STEERING_RIGHT_PWM",1,120)'+ '\n' + 
+                                                      'self.copy_cfg_to_part("STEERING_RIGHT_PWM","right_pulse",ClassName="PWMSteering")',
+            'CALIBRATE_PWMSTEERING_RIGHT+dpad_right' : 'self.inc_cfg_val("STEERING_RIGHT_PWM",1,1500)'+ '\n' + 
+                                                       'self.copy_cfg_to_part("STEERING_RIGHT_PWM","right_pulse",ClassName="PWMSteering")',
+
+            'CALIBRATE_MODE+HOME1' : 'self.print_cfg_vals("STEERING_LEFT_PWM,STEERING_RIGHT_PWM,THROTTLE_FORWARD_PWM,THROTTLE_STOPPED_PWM,THROTTLE_REVERSE_PWM") # Display cfg values ',
+
+
+            'CALIBRATE_MODE+BUTTON_UP' : 'self.shift_in("BUTTON_UP","CALIBRATE_THROTTLE_FORWARD_PWM",descr="EDIT THROTTLE_FORWARD_PWM")',
+            'CALIBRATE_THROTTLE_FORWARD_PWM+dpad_up' : 'self.inc_cfg_val("THROTTLE_FORWARD_PWM",10,1500)' + '\n' + 
+                                                       'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_THROTTLE_FORWARD_PWM+dpad_down' : 'self.dec_cfg_val("THROTTLE_FORWARD_PWM",10,120)'+ '\n' + 
+                                                         'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_THROTTLE_FORWARD_PWM+dpad_left' : 'self.dec_cfg_val("THROTTLE_FORWARD_PWM",1,120)'+ '\n' + 
+                                                         'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_THROTTLE_FORWARD_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_FORWARD_PWM",1,1500)'+ '\n' + 
+                                                          'self.copy_cfg_to_part("THROTTLE_FORWARD_PWM","max_pulse",ClassName="PWMThrottle")',
+
+
+            'CALIBRATE_MODE+BUTTON_DOWN' : 'self.shift_in("BUTTON_UP","CALIBRATE_THROTTLE_STOPPED_PWM",descr="EDIT THROTTLE_STOPPED_PWM")',
+            'CALIBRATE_THROTTLE_STOPPED_PWM+dpad_up' : 'self.inc_cfg_val("THROTTLE_STOPPED_PWM",10,1500)' + '\n' +
+                                                       'self.copy_cfg_to_part("THROTTLE_STOPPED_PWM","zero_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_THROTTLE_STOPPED_PWM+dpad_down' : 'self.dec_cfg_val("THROTTLE_STOPPED_PWM",10,120)'+ '\n' +
+                                                         'self.copy_cfg_to_part("THROTTLE_STOPPED_PWM","zero_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_THROTTLE_STOPPED_PWM+dpad_left' : 'self.dec_cfg_val("THROTTLE_STOPPED_PWM",1,120)'+ '\n' +
+                                                         'self.copy_cfg_to_part("THROTTLE_STOPPED_PWM","zero_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_THROTTLE_STOPPED_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_STOPPED_PWM",1,1500)'+ '\n' +
+                                                          'self.copy_cfg_to_part("THROTTLE_STOPPED_PWM","zero_pulse",ClassName="PWMThrottle")',
+
+
+
+            'CALIBRATE_MODE+L2' : 'self.shift_in("BUTTON_UP","CALIBRATE_REVERSE_PWM",descr="EDIT THROTTLE_REVERSE_PWM")',
+            'CALIBRATE_REVERSE_PWM+dpad_up' : 'self.inc_cfg_val("THROTTLE_REVERSE_PWM",10,1500)' + '\n' +
+                                                       'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_REVERSE_PWM+dpad_down' : 'self.dec_cfg_val("THROTTLE_REVERSE_PWM",10,120)'+ '\n' +
+                                                         'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_REVERSE_PWM+dpad_left' : 'self.dec_cfg_val("THROTTLE_REVERSE_PWM",1,120)'+ '\n' +
+                                                         'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
+            'CALIBRATE_REVERSE_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_REVERSE_PWM",1,1500)'+ '\n' +
+                                                          'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
+
+
+
+
+# CAMERA MENU
+
+            'CAMERA_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_CROP_TOP_EDIT",descr="EDIT OI_CROP_TOP")',
+            'CAMERA_CROP_TOP_EDIT+dpad_up' : 'self.inc_cfg_val("ROI_CROP_TOP",10,self.cfg.IMAGE_H-self.cfg.ROI_CROP_BOTTOM)', 
+            'CAMERA_CROP_TOP_EDIT+dpad_down' : 'self.dec_cfg_val("ROI_CROP_TOP",10,0)',
+            'CAMERA_CROP_TOP_EDIT+dpad_left' : 'self.dec_cfg_val("ROI_CROP_TOP",1,0)',
+            'CAMERA_CROP_TOP_EDIT+dpad_right' : 'self.inc_cfg_val("ROI_CROP_TOP",1,self.cfg.IMAGE_H-self.cfg.ROI_CROP_BOTTOM)',
+
+            'CAMERA_MODE+BUTTON_DOWN' : 'self.shift_in("BUTTON_DOWN","CAMERA_CROP_BOTTOM_EDIT",descr="EDIT OI_CROP_BOTTOM")',
+            'CAMERA_CROP_BOTTOM_EDIT+dpad_up' : 'self.inc_cfg_val("ROI_CROP_BOTTOM",10,self.cfg.IMAGE_H-self.cfg.ROI_CROP_TOP)',
+            'CAMERA_CROP_BOTTOM_EDIT+dpad_down' : 'self.dec_cfg_val("ROI_CROP_BOTTOM",10,0)',
+            'CAMERA_CROP_BOTTOM_EDIT+dpad_left' : 'self.dec_cfg_val("ROI_CROP_BOTTOM",1,0)',
+            'CAMERA_CROP_BOTTOM_EDIT+dpad_right' : 'self.inc_cfg_val("ROI_CROP_BOTTOM",1,self.cfg.IMAGE_H-self.cfg.ROI_CROP_TOP)',
+
+            'SYSTEM_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_AUGMENT_LEVEL_EDIT",descr="EDIT CAMERA_AUGMENT_LEVEL")',
+            'CAMERA_AUGMENT_LEVEL_EDIT+dpad_up' : 'self.inc_input_val("IMG_AUGMENT_LEVEL",10,30)',
+            'CAMERA_AUGMENT_LEVEL_EDIT+dpad_down' : 'self.dec_input_val("IMG_AUGMENT_LEVEL",10,0)',
+            'CAMERA_AUGMENT_LEVEL_EDIT+dpad_left' : 'self.dec_input_val("IMG_AUGMENT_LEVEL",1,0)',
+            'CAMERA_AUGMENT_LEVEL_EDIT+dpad_right' : 'self.inc_input_val("IMG_AUGMENT_LEVEL",1,30)',
+
+            'CAMERA_MODE+BUTTON_UP' : 'self.shift_in("BUTTON_UP","CAMERA_TILT_EDIT",descr="EDIT CAMERA_TILT ( +L2/+R2 : edit PWM_DOWN/PWM_UP)" )',
+            'CAMERA_TILT_EDIT+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_CENTER_PWM",10,1500)',
+            'CAMERA_TILT_EDIT+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_CENTER_PWM",10,0)',
+            'CAMERA_TILT_EDIT+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_CENTER_PWM",1,0)',
+            'CAMERA_TILT_EDIT+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_CENTER_PWM",1,1500)',
+
+            'CAMERA_TILT_EDIT+L2' : 'self.shift_in("L2","CAMERA_TILT_EDIT_PWM_DOWN",descr="EDIT CAMERA_TILT_PWM_DOWN")',
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_PWM_DOWN",10,1500)',
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_PWM_DOWN",10,0)',
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_PWM_DOWN",1,0)',
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_PWM_DOWN",1,1500)',
+
+            'CAMERA_TILT_EDIT+R2' : 'self.shift_in("R2","CAMERA_TILT_EDIT_PWM_UP",descr="EDIT CAMERA_TILT_PWM_UP")',
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_PWM_UP",10,1500)',
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_PWM_UP",10,0)',
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_PWM_UP",1,0)',
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_PWM_UP",1,1500)',
+
+            'CAMERA_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CAMERA_PAN_EDIT",descr="EDIT CAMERA_PAN_CENTER_PWM( +L2/+R2 : edit LEFT_PWM/RIGHT_PWM)")',
+            'CAMERA_PAN_EDIT+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_CENTER_PWM",10,1500) # Edit Camera Pan CENTER_PWM (+10) ',
+            'CAMERA_PAN_EDIT+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_CENTER_PWM",10,0) # Edit Camera Pan CENTER_PWM (-10)',
+            'CAMERA_PAN_EDIT+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_CENTER_PWM",1,0) # Edit Camera Pan CENTER_PWM (-1)',
+            'CAMERA_PAN_EDIT+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_CENTER_PWM",1,1500)# Edit Camera Pan CENTER_PWM (+1)',
+
+            'CAMERA_PAN_EDIT+L2' : 'self.shift_in("L2","CAMERA_PAN_EDIT_LEFT_PWM",descr="EDIT CAMERA_PAN_LEFT_PWM")',
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_LEFT_PWM",10,1500) # Edit Camera Pan LEFT_PWM (+10)',
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_LEFT_PWM",10,0) # Edit Camera Pan LEFT_PWM (-10)',
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_LEFT_PWM",1,0) # Edit Camera Pan LEFT_PWM (-1)',
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_LEFT_PWM",1,1500) # Edit Camera Pan LEFT_PWM (+1)',
+
+            'CAMERA_PAN_EDIT+R2' : 'self.shift_in("R2","CAMERA_PAN_EDIT_RIGHT_PWM",descr="EDIT CAMERA_PAN_RIGHT_PWM")',
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_RIGHT_PWM",10,1500) # Edit Camera Pan Right_PWM (+10)',
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_RIGHT_PWM",10,0) # Edit Camera Pan Right_PWM (-10)',
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_RIGHT_PWM",1,0) # Edit Camera Pan Right_PWM (-1)',
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_RIGHT_PWM",1,1500) # Edit Camera Pan Right_PWM (+1)',
+
+            'CAMERA_MODE+dpad_right' : 'self.inc_input_val("user_camera_pan",0.1,1) # Move Camera Pan (+0.1)',
+            'CAMERA_MODE+dpad_left' : 'self.dec_input_val("user_camera_pan",0.1,-1) # Move Camera Pan (-0.1)',
+            'CAMERA_MODE+dpad_up' : 'self.inc_input_val("user_camera_tilt",0.1,1) # Move Camera Tilt (+0.1)',
+            'CAMERA_MODE+dpad_down' : 'self.dec_input_val("user_camera_tilt",0.1,-1) # Move Camera Tilt (-0.1)',
+
+            'CAMERA_MODE+HOME1' : 'self.print_cfg_vals("STEERING_LEFT_PWM,CAMERA_PAN_CENTER_PWM,CAMERA_TILT_PWM_UP") # Display cfg Camera Settings ',
+            'CAMERA_MODE+B' : 'self.V.profiler.report()'+'\n'+'print("NewLine")',
+
+
+
+        }
+
+       self.button_up_trigger_map = {
+
+}
+
+       self.axis_trigger_map = {
+            'left_stick_horz' : ctr.set_steering,
+            'right_stick_vert' : ctr.set_throttle,
+            'TRAIN_MODE+left_stick_horz' : ctr.set_steering,
+            'TRAIN_MODE+right_stick_vert' : ctr.set_throttle,
+            'CAMERA_MODE+left_stick_vert' : 'self.set_input_val("user_camera_tilt",-%val%) # Move Camera Tilt ', 
+            'CAMERA_MODE+right_stick_horz' : 'self.set_input_val("user_camera_pan",%val%)  # Move Camera Pan ',
+
+        }
+
+       self.key_translate_map={
+            'Y' : 'BUTTON_LEFT',
+            'A' : 'BUTTON_RIGHT',
+            'X' : 'BUTTON_UP',
+            'B' : 'BUTTON_DOWN',
+            'a' : 'BUTTON_DOWN', 
+            'b' : 'BUTTON_RIGHT',
+            'a_button' : 'BUTTON_DOWN',
+            'b_button' : 'BUTTON_RIGHT',
+            'x_button' : 'BUTTON_LEFT',
+            'y_button' : 'BUTTON_RIGHT', 
+            'triangle' :'BUTTON_UP',
+            'circle' :'BUTTON_RIGHT',
+            'cross' :'BUTTON_DOWN',
+            'square' :'BUTTON_LEFT',
+            'PAD_RIGHT' : 'dpad_right',
+            'PAD_LEFT' : 'dpad_left',
+            'PAD_UP' : 'dpad_up',
+            'PAD_DOWN' : 'dpad_down',
+            'LEFT_BOTTOM_TRIGGER' :'L2' ,
+            'LEFT_TOP_TRIGGER' :'L1',
+            'RIGHT_BOTTOM_TRIGGER' : 'R2',
+            'RIGHT_TOP_TRIGGER' : 'R1',
+            'share' : 'HOME1',
+            'back' : 'HOME1',
+            'select' : 'HOME1',
+            'SELECT' : 'HOME1',
+            'START'  : 'HOME2',
+            'PS' : 'HOME', 
+            'Logitech' : 'HOME',
+            'start' : 'HOME2',
+            'options' : 'HOME2',
+            'dpad_horz' : '|dpad_left|dpad_right',
+            'dpad_leftright' :  '|dpad_left|dpad_right',
+            'dpad_up_down' : '|dpad_up|dpad_down',
+            'dpad_vert' : '|dpad_up|dpad_down',
+            'left_shoulder' : 'L1',
+            'right_shoulder' : 'R1',
+            'LEFT_STICK_X' : 'left_stick_horz',
+            'LEFT_STICK_Y' : 'left_stick_vert',
+            'RIGHT_STICK_X' : 'right_stick_horz',
+            'RIGHT_STICK_Y' : 'right_stick_vert',
+            'lx' : 'left_stick_horz',
+            'ly' : 'left_stick_vert',
+            'rx' : 'right_stick_horz',
+            'ry' : 'right_stick_vert',
+
+
+        }
+
+    def print_controls_adv(self,Mode=""):
+        '''
+        print the mapping of buttons and axis to functions
+        '''
+        pt = PrettyTable()
+        pt.field_names = ["control", "action"]
+        for button, control in self.button_down_trigger_map.items():
+          n=button.find("+")
+          #print (button[:n] +"="+Mode)
+ 
+          if (n>0 and button[:n]==Mode) or (Mode=="" and n<=0):
+
+            if type(control) is str :
+                 n=control.find("descr=")
+                 if n>0 : control=control[n+6:][:-1]
+                 n=control.find("#")
+                 if n>0 : control=control[n+1:]
+                 pt.add_row([button, control])
+            else:
+                 pt.add_row([button, control.__name__])
+
+        for axis, control in self.axis_trigger_map.items():
+          n=axis.find("+")
+          if (n>0 and axis[:n]==Mode) or (Mode=="" and n<=0):
+
+            if type(control) is str :
+                  n=control.find("descr=")
+                  if n>0 : control=control[n+6:][:-1]
+                  n=control.find("#")
+                  if n>0 : control=control[n+1:]
+
+                  pt.add_row([axis, control])
+            else:
+                  pt.add_row([axis, control.__name__])
+
+        print("Joystick Controls_adv:")
+        print(pt)
+
+
+
+
+
+
+
+
+
 
 def get_js_controller(cfg,Vobject=None):
     cont_class = None
@@ -1501,15 +1819,23 @@ def get_js_controller(cfg,Vobject=None):
                                 throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-
-    if hasattr(cfg, 'CONTROLLER_ADVANCED') 
+   
+    if hasattr(cfg, 'CONTROLLER_ADVANCED'): 
        if cfg.CONTROLLER_ADVANCED == True:
            if Vobject is not None :
+               ctr.cfg=cfg
+               adv=adv_class(ctr)
                setattr(ctr, 'update', ctr.update_adv)
-               setattr(ctr, 'print_controls', ctr.print_controls_adv)
+               setattr(ctr, 'print_controls', adv.print_controls_adv)
+               setattr(ctr, 'button_down_trigger_map',adv.button_down_trigger_map)
+               setattr(ctr, 'button_up_trigger_map',adv.button_up_trigger_map)
+               setattr(ctr, 'axis_trigger_map',adv.axis_trigger_map)
+               setattr(ctr, 'key_translate_map',adv.key_translate_map)
+
                ctr.V=Vobject
-           else
-               print ("Warning, to use Advanced controller mode, you need to modify the manage.py file : 'get_js_controller(cfg,Vobject=V)'")
+
+           else:
+               print ('\n'+"Warning: to use Advanced Controller mode, you need to modify the manage.py file : 'get_js_controller(cfg,Vobject=V)'"+'\n')
  
     ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
     return ctr
