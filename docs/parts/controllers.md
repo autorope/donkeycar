@@ -235,16 +235,16 @@ When using Advanced mode, pressing combinations of L1 and R1 button will switch 
 Please note that not all features are working yet;the modes anticipate the creation of custom parts handling the actions.
 
 
-![Default Mode](./assets/controller_default.PNG)
-![Training Mode ( R1)](./assets/controller_training.PNG)
+![Default Mode](./controller_default.PNG)
+![Training Mode ( R1)](./controller_training.PNG)
 
 the menu modes are available by keeping L1 pressed, then press R1 to change Menu : 
-![donkeycar](./assets/controller_system.PNG)
-![donkeycar](./assets/controller_camera.PNG)
-![donkeycar](./assets/controller_calibrate.PNG)
+![donkeycar](./controller_system.PNG)
+![donkeycar](./controller_camera.PNG)
+![donkeycar](./controller_calibrate.PNG)
 
 Button names are as follow : 
-![donkeycar](./assets/controller_buttons.PNG)
+![donkeycar](./controller_buttons.PNG)
 
 
 (*) : AUG_IMAGE_DRAW LEVEL : 
