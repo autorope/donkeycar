@@ -933,35 +933,34 @@ class JoystickController(object):
     def get_part(self,ClassName="",PartName=""):
         for entry in self.V.parts:
            p = entry['part']            
-           if ClassName!="":
-              if (p.__class__.__name__ )== ClassName :
-                 return p
-           if PartName!="":
-              if (hasattr(p,"PartName")):
+           if (p.__class__.__name__ )== ClassName :
+              if (hasattr(p,"PartName") ):
                  if p.PartName==PartName:
                      return p
-  	
+              else: 
+                 if PartName=="" or PartName is None : return p	
+
     def inc_part_val(self,varname,  step, vmax,PartName=None,ClassName=None):
         p=self.get_part(PartName=PartName,ClassName=ClassName)
-        v=getattr(p,varname)+step
+        if p is not None : v=getattr(p,varname)+step
         if v>vmax : v=vmax
         setattr(p,varname,v)
         self.display(varname+"="+str(v))
 
     def dec_part_val(self,varname,  step, vmin,PartName=None,ClassName=None):
         p=self.get_part(PartName=PartName,ClassName=ClassName)
-        v=getattr(p,varname)-step
+        if p is not None : v=getattr(p,varname)-step
         if v<vmin : v=vmin
         setattr(p,varname,v)
         self.display(varname+"="+str(v))
 
     def set_part_val(self,varname,newval,PartName=None,ClassName=None):
         p=self.get_part(PartName=PartName,ClassName=ClassName)
-        setattr(p,varname,newval)
+        if p is not None :setattr(p,varname,newval)
 
     def copy_cfg_to_part(self,cfg_varstring,part_varstring,PartName=None,ClassName=None ):
         p=self.get_part(PartName=PartName,ClassName=ClassName)
-        setattr(p,part_varstring,getattr(self.cfg,cfg_varstring))
+        if p is not None :setattr(p,part_varstring,getattr(self.cfg,cfg_varstring))
 
     def print_cfg_vals(self,varstrings):
         val_array= varstrings.split(",")
@@ -1538,7 +1537,7 @@ class adv_class():
             'JOYSTICK_MODE+HOME2' : 'self.print_controls(Mode="JOYSTICK_MODE") # Display Help ' ,
             'SIM_MODE+HOME2' : 'self.print_controls(Mode="SIM_MODE") # Display Help ' ,
 # CALIBRATE MENU :
-            'CALIBRATE_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CALIBRATE_STEERING_LEFT_PWM",descr="EDIT STEERING_LEFT_PWM")',
+            'CALIBRATE_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CALIBRATE_PWMSTEERING_LEFT",descr="EDIT STEERING_LEFT_PWM")',
             'CALIBRATE_PWMSTEERING_LEFT+dpad_up' : 'self.inc_cfg_val("STEERING_LEFT_PWM",10,1500)' + '\n' + 
                                                    'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
             'CALIBRATE_PWMSTEERING_LEFT+dpad_down' : 'self.dec_cfg_val("STEERING_LEFT_PWM",10,120)'+ '\n' + 
