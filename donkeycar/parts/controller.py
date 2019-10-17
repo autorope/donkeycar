@@ -662,6 +662,8 @@ class JoystickController(object):
 
         self.shiftKeyHistory=[]
         self.shiftModeHistory={}
+        self.menulist=[]
+        self.menudescr=[]
         self.shiftkey=""
         self.V=None
         self.cfg=None
@@ -882,6 +884,26 @@ class JoystickController(object):
         self.shiftkey=Mode+"+"
         if descr !="" :print(descr)
 
+    def menu_next(self,MenuString):
+        i=self.menulist.index(MenuString)
+        l=len(self.menulist)-1
+        if i>=l : 
+            nm=0
+        else : 
+            nm=i+1
+        self.menu_in(self.menulist[nm],self.menudescr[nm])
+        
+    def menu_register(self,MenuString,button_down_trigger_map,button_up_trigger_map,axis_trigger_map,descr=""):
+        self.menulist.append(MenuString)
+        self.menudescr.append(descr)
+        for t in button_up_trigger_map:
+            self.button_up_trigger_map[t]=button_up_trigger_map[t]
+        for t in button_down_trigger_map:
+            self.button_down_trigger_map[t]=button_down_trigger_map[t]
+        for t in axis_trigger_map:
+            self.axis_trigger_map[t]=axis_trigger_map[t] 
+
+
     def shift_in(self,btn,Mode,descr=""):
         self.shiftKeyHistory.append(btn)
         self.shiftModeHistory[btn]=self.shiftkey
@@ -930,36 +952,36 @@ class JoystickController(object):
     def set_cfg_val(self,varstring,newval) :
         setattr(self.cfg,varstring,newval)
 
-    def get_part(self,ClassName="",PartName=""):
+    def get_part(self,ClassName="",ObjName=""):
         for entry in self.V.parts:
            p = entry['part']            
            if (p.__class__.__name__ )== ClassName :
-              if (hasattr(p,"PartName") ):
-                 if p.PartName==PartName:
+              if (hasattr(p,"ObjName") ):
+                 if p.ObjName==ObjName:
                      return p
               else: 
-                 if PartName=="" or PartName is None : return p	
+                 if ObjName=="" or ObjName is None : return p	
 
-    def inc_part_val(self,varname,  step, vmax,PartName=None,ClassName=None):
-        p=self.get_part(PartName=PartName,ClassName=ClassName)
+    def inc_part_val(self,varname,  step, vmax,ObjName=None,ClassName=None):
+        p=self.get_part(ObjName=ObjName,ClassName=ClassName)
         if p is not None : v=getattr(p,varname)+step
         if v>vmax : v=vmax
         setattr(p,varname,v)
         self.display(varname+"="+str(v))
 
-    def dec_part_val(self,varname,  step, vmin,PartName=None,ClassName=None):
-        p=self.get_part(PartName=PartName,ClassName=ClassName)
+    def dec_part_val(self,varname,  step, vmin,ObjName=None,ClassName=None):
+        p=self.get_part(ObjName=ObjName,ClassName=ClassName)
         if p is not None : v=getattr(p,varname)-step
         if v<vmin : v=vmin
         setattr(p,varname,v)
         self.display(varname+"="+str(v))
 
-    def set_part_val(self,varname,newval,PartName=None,ClassName=None):
-        p=self.get_part(PartName=PartName,ClassName=ClassName)
+    def set_part_val(self,varname,newval,ObjName=None,ClassName=None):
+        p=self.get_part(ObjName=ObjName,ClassName=ClassName)
         if p is not None :setattr(p,varname,newval)
 
-    def copy_cfg_to_part(self,cfg_varstring,part_varstring,PartName=None,ClassName=None ):
-        p=self.get_part(PartName=PartName,ClassName=ClassName)
+    def copy_cfg_to_part(self,cfg_varstring,part_varstring,ObjName=None,ClassName=None ):
+        p=self.get_part(ObjName=ObjName,ClassName=ClassName)
         if p is not None :setattr(p,part_varstring,getattr(self.cfg,cfg_varstring))
 
     def print_cfg_vals(self,varstrings):
@@ -1521,22 +1543,24 @@ class adv_class():
             'TRAIN_MODE+BUTTON_RIGHT' : ctr.chaos_monkey_on_right,
             'TRAIN_MODE+BUTTON_LEFT' : ctr.chaos_monkey_on_left,
             'TRAIN_MODE+BUTTON_UP' :  ctr.emergency_stop,
-# MENU DEFINITION : 
+
             'L1' : 'self.shift_in("L1","SYSTEM_MODE",descr="ENTER SYSTEM_MODE")',
-            'SYSTEM_MODE+R1' : 'self.menu_in("CALIBRATE_MODE",descr="ENTER CALIBRATE MODE")',
-            'CALIBRATE_MODE+R1' : 'self.menu_in("SOUND_MODE",descr="ENTER SOUND MODE")',
-            'SOUND_MODE+R1' :  'self.menu_in("CAMERA_MODE",descr="ENTER CAMERA MODE")',
-            'CAMERA_MODE+R1' : 'self.menu_in("JOYSTICK_MODE",descr="ENTER JOYSTICK MODE")',
-            'JOYSTICK_MODE+R1' : 'self.menu_in("SIM_MODE",descr="ENTER SIM MODE")',
-            'SIM_MODE+R1' : 'self.menu_in("SYSTEM_MODE",descr="ENTER SYSTEM MODE")',
-# MENU HELP : 
-            'SYSTEM_MODE+HOME2' : 'self.print_controls(Mode="SYSTEM_MODE") # Display Help ',
+            }
+
+       self.button_up_trigger_map = {
+            }
+
+       self.axis_trigger_map = {
+            'left_stick_horz' : ctr.set_steering,
+            'right_stick_vert' : ctr.set_throttle,
+            'TRAIN_MODE+left_stick_horz' : ctr.set_steering,
+            'TRAIN_MODE+right_stick_vert' : ctr.set_throttle,
+        }
+
+       self.CALIBRATE_MODE_button_down_trigger_map = {
+            'CALIBRATE_MODE+R1' : 'self.menu_next("CALIBRATE_MODE")',
             'CALIBRATE_MODE+HOME2' :'self.print_controls(Mode="CALIBRATE_MODE") # Display Help ',
-            'SOUND_MODE+HOME2' : 'self.print_controls(Mode="SOUND_MODE") # Display Help ' ,
-            'CAMERA_MODE+HOME2' : 'self.print_controls(Mode="CAMERA_MODE") # Display Help ',
-            'JOYSTICK_MODE+HOME2' : 'self.print_controls(Mode="JOYSTICK_MODE") # Display Help ' ,
-            'SIM_MODE+HOME2' : 'self.print_controls(Mode="SIM_MODE") # Display Help ' ,
-# CALIBRATE MENU :
+
             'CALIBRATE_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CALIBRATE_PWMSTEERING_LEFT",descr="EDIT STEERING_LEFT_PWM")',
             'CALIBRATE_PWMSTEERING_LEFT+dpad_up' : 'self.inc_cfg_val("STEERING_LEFT_PWM",10,1500)' + '\n' + 
                                                    'self.copy_cfg_to_part("STEERING_LEFT_PWM","right_pulse",ClassName="PWMSteering")',
@@ -1587,7 +1611,19 @@ class adv_class():
                                                          'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
             'CALIBRATE_REVERSE_PWM+dpad_right' : 'self.inc_cfg_val("THROTTLE_REVERSE_PWM",1,1500)'+ '\n' +
                                                           'self.copy_cfg_to_part("THROTTLE_REVERSE_PWM","min_pulse",ClassName="PWMThrottle")',
-# CAMERA MENU
+
+             }
+
+       self.CALIBRATE_MODE_axis_trigger_map = {
+            }
+       self.CALIBRATE_MODE_button_up_trigger_map = {
+            }
+
+
+       self.CAMERA_MODE_button_down_trigger_map = {
+            'CAMERA_MODE+R1' : 'self.menu_next("CAMERA_MODE")',
+            'CAMERA_MODE+HOME2' : 'self.print_controls(Mode="CAMERA_MODE") # Display Help ',
+
             'CAMERA_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_CROP_TOP_EDIT",descr="EDIT OI_CROP_TOP")',
             'CAMERA_CROP_TOP_EDIT+dpad_up' : 'self.inc_cfg_val("ROI_CROP_TOP",10,self.cfg.IMAGE_H-self.cfg.ROI_CROP_BOTTOM)', 
             'CAMERA_CROP_TOP_EDIT+dpad_down' : 'self.dec_cfg_val("ROI_CROP_TOP",10,0)',
@@ -1612,34 +1648,82 @@ class adv_class():
             'CAMERA_TILT_EDIT+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_CENTER_PWM",1,1500)',
 
             'CAMERA_TILT_EDIT+L2' : 'self.shift_in("L2","CAMERA_TILT_EDIT_PWM_DOWN",descr="EDIT CAMERA_TILT_PWM_DOWN")',
-            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_PWM_DOWN",10,1500)',
-            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_PWM_DOWN",10,0)',
-            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_PWM_DOWN",1,0)',
-            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_PWM_DOWN",1,1500)',
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_PWM_DOWN",10,1500)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",-1)',
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_PWM_DOWN",10,0)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",-1)',
+
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_PWM_DOWN",1,0)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",-1)',
+
+            'CAMERA_TILT_EDIT_PWM_DOWN+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_PWM_DOWN",1,1500)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",-1)',
 
             'CAMERA_TILT_EDIT+R2' : 'self.shift_in("R2","CAMERA_TILT_EDIT_PWM_UP",descr="EDIT CAMERA_TILT_PWM_UP")',
-            'CAMERA_TILT_EDIT_PWM_UP+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_PWM_UP",10,1500)',
-            'CAMERA_TILT_EDIT_PWM_UP+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_PWM_UP",10,0)',
-            'CAMERA_TILT_EDIT_PWM_UP+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_PWM_UP",1,0)',
-            'CAMERA_TILT_EDIT_PWM_UP+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_PWM_UP",1,1500)',
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_up' : 'self.inc_cfg_val("CAMERA_TILT_PWM_UP",10,1500)'+'\n'+
+                                                'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                'self.set_input_val("user_camera_tilt",1)',
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_down' : 'self.dec_cfg_val("CAMERA_TILT_PWM_UP",10,0)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",1)',
+
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_left' : 'self.dec_cfg_val("CAMERA_TILT_PWM_UP",1,0)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",1)',
+
+            'CAMERA_TILT_EDIT_PWM_UP+dpad_right' : 'self.inc_cfg_val("CAMERA_TILT_PWM_UP",1,1500)'+'\n'+
+                                                  'self.copy_cfg_to_part("CAMERA_TILT_PWM_DOWN","left_pulse",ClassName="PWMSteering",ObjName="camera_tilt_servo")'+'\n'+
+                                                  'self.set_input_val("user_camera_tilt",1)',
+ 
 
             'CAMERA_MODE+BUTTON_LEFT' : 'self.shift_in("BUTTON_LEFT","CAMERA_PAN_EDIT",descr="EDIT CAMERA_PAN_CENTER_PWM( +L2/+R2 : edit LEFT_PWM/RIGHT_PWM)")',
-            'CAMERA_PAN_EDIT+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_CENTER_PWM",10,1500) # Edit Camera Pan CENTER_PWM (+10) ',
+            'CAMERA_PAN_EDIT+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_CENTER_PWM",10,1500) # Edit Camera Pan CENTER_PWM (+10)',
             'CAMERA_PAN_EDIT+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_CENTER_PWM",10,0) # Edit Camera Pan CENTER_PWM (-10)',
             'CAMERA_PAN_EDIT+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_CENTER_PWM",1,0) # Edit Camera Pan CENTER_PWM (-1)',
             'CAMERA_PAN_EDIT+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_CENTER_PWM",1,1500)# Edit Camera Pan CENTER_PWM (+1)',
 
+
             'CAMERA_PAN_EDIT+L2' : 'self.shift_in("L2","CAMERA_PAN_EDIT_LEFT_PWM",descr="EDIT CAMERA_PAN_LEFT_PWM")',
-            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_LEFT_PWM",10,1500) # Edit Camera Pan LEFT_PWM (+10)',
-            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_LEFT_PWM",10,0) # Edit Camera Pan LEFT_PWM (-10)',
-            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_LEFT_PWM",1,0) # Edit Camera Pan LEFT_PWM (-1)',
-            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_LEFT_PWM",1,1500) # Edit Camera Pan LEFT_PWM (+1)',
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_LEFT_PWM",10,1500) # Edit Camera Pan LEFT_PWM (+10)'+'\n'+
+                                                 'self.copy_cfg_to_part("CAMERA_PAN_LEFT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                                 'self.set_input_val("user_camera_pan",-1)',
+
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_LEFT_PWM",10,0) # Edit Camera Pan LEFT_PWM (-10)'+'\n'+
+                                                   'self.copy_cfg_to_part("CAMERA_PAN_LEFT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                                   'self.set_input_val("user_camera_pan",-1)',
+
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_LEFT_PWM",1,0) # Edit Camera Pan LEFT_PWM (-1)'+'\n'+
+                                           'self.copy_cfg_to_part("CAMERA_PAN_LEFT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                           'self.set_input_val("user_camera_pan",-1)',
+
+            'CAMERA_PAN_EDIT_LEFT_PWM+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_LEFT_PWM",1,1500) # Edit Camera Pan LEFT_PWM (+1)'+'\n'+
+                                           'self.copy_cfg_to_part("CAMERA_PAN_LEFT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                           'self.set_input_val("user_camera_pan",-1)',
+
 
             'CAMERA_PAN_EDIT+R2' : 'self.shift_in("R2","CAMERA_PAN_EDIT_RIGHT_PWM",descr="EDIT CAMERA_PAN_RIGHT_PWM")',
-            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_RIGHT_PWM",10,1500) # Edit Camera Pan Right_PWM (+10)',
-            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_RIGHT_PWM",10,0) # Edit Camera Pan Right_PWM (-10)',
-            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_RIGHT_PWM",1,0) # Edit Camera Pan Right_PWM (-1)',
-            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_RIGHT_PWM",1,1500) # Edit Camera Pan Right_PWM (+1)',
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_up' : 'self.inc_cfg_val("CAMERA_PAN_RIGHT_PWM",10,1500) # Edit Camera Pan Right_PWM (+10)'+'\n'+
+                                                 'self.copy_cfg_to_part("CAMERA_PAN_RIGHT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                                 'self.set_input_val("user_camera_pan",1)',
+
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_down' : 'self.dec_cfg_val("CAMERA_PAN_RIGHT_PWM",10,0) # Edit Camera Pan Right_PWM (-10)'+'\n'+
+                                                 'self.copy_cfg_to_part("CAMERA_PAN_RIGHT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                                 'self.set_input_val("user_camera_pan",1)',
+
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_left' : 'self.dec_cfg_val("CAMERA_PAN_RIGHT_PWM",1,0) # Edit Camera Pan Right_PWM (-1)'+'\n'+
+                                                 'self.copy_cfg_to_part("CAMERA_PAN_RIGHT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                                 'self.set_input_val("user_camera_pan",1)',
+
+            'CAMERA_PAN_EDIT_RIGHT_PWM+dpad_right' : 'self.inc_cfg_val("CAMERA_PAN_RIGHT_PWM",1,1500) # Edit Camera Pan Right_PWM (+1)'+'\n'+
+                                                 'self.copy_cfg_to_part("CAMERA_PAN_RIGHT_PWM","left_pulse",ClassName="PWMSteering",ObjName="camera_pan_servo")'+'\n'+
+                                                 'self.set_input_val("user_camera_pan",1)',
+
+
+
 
             'CAMERA_MODE+dpad_right' : 'self.inc_input_val("user_camera_pan",0.1,1) # Move Camera Pan (+0.1)',
             'CAMERA_MODE+dpad_left' : 'self.dec_input_val("user_camera_pan",0.1,-1) # Move Camera Pan (-0.1)',
@@ -1649,20 +1733,27 @@ class adv_class():
             'CAMERA_MODE+HOME1' : 'self.print_cfg_vals("STEERING_LEFT_PWM,CAMERA_PAN_CENTER_PWM,CAMERA_TILT_PWM_UP") # Display cfg Camera Settings ',
             'CAMERA_MODE+B' : 'self.V.profiler.report()'+'\n'+'print("NewLine")',
 
-            'SYSTEM_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_AUGMENT_LEVEL_EDIT",descr="EDIT CAMERA_AUGMENT_LEVEL")',
-        }
+            }
+       self.CAMERA_MODE_button_up_trigger_map = {
+            }
 
-       self.button_up_trigger_map = {
-       }
-
-       self.axis_trigger_map = {
-            'left_stick_horz' : ctr.set_steering,
-            'right_stick_vert' : ctr.set_throttle,
-            'TRAIN_MODE+left_stick_horz' : ctr.set_steering,
-            'TRAIN_MODE+right_stick_vert' : ctr.set_throttle,
-            'CAMERA_MODE+left_stick_vert' : 'self.set_input_val("user_camera_tilt",-%val%) # Move Camera Tilt ', 
+       self.CAMERA_MODE_axis_trigger_map = {
+            'CAMERA_MODE+left_stick_vert' : 'self.set_input_val("user_camera_tilt",-%val%) # Move Camera Tilt ',
             'CAMERA_MODE+right_stick_horz' : 'self.set_input_val("user_camera_pan",%val%)  # Move Camera Pan ',
-        }
+            }
+
+
+       self.SYSTEM_MODE_button_down_trigger_map = {
+            'SYSTEM_MODE+R1' : 'self.menu_next("SYSTEM_MODE")',
+            'SYSTEM_MODE+HOME2' : 'self.print_controls(Mode="SYSTEM_MODE") # Display Help ',
+            'SYSTEM_MODE+BUTTON_RIGHT' : 'self.shift_in("BUTTON_RIGHT","CAMERA_AUGMENT_LEVEL_EDIT",descr="EDIT CAMERA_AUGMENT_LEVEL")',
+            }
+
+       self.SYSTEM_MODE_button_up_trigger_map = {
+            }
+
+       self.SYSTEM_MODE_axis_trigger_map = {
+            }
 
        self.key_translate_map={
             'Y' : 'BUTTON_LEFT',
@@ -1747,7 +1838,7 @@ class adv_class():
             else:
                   pt.add_row([axis, control.__name__])
 
-        print("Joystick Controls_adv:")
+        print("Advanced Joystick Controls:")
         print(pt)
 
 
@@ -1784,7 +1875,13 @@ def get_js_controller(cfg,Vobject=None):
                setattr(ctr, 'button_up_trigger_map',adv.button_up_trigger_map)
                setattr(ctr, 'axis_trigger_map',adv.axis_trigger_map)
                setattr(ctr, 'key_translate_map',adv.key_translate_map)
-               ctr.V=Vobject 
+               ctr.V=Vobject
+ 
+               # Standard menus are registered here, but each part could register it's own menu...
+               ctr.menu_register("SYSTEM_MODE",adv.SYSTEM_MODE_button_down_trigger_map,{},{},descr="ENTER SYSTEM_MODE")
+               ctr.menu_register("CALIBRATE_MODE",adv.CALIBRATE_MODE_button_down_trigger_map,{},{},descr="ENTER CALIBRATION_MODE")
+               ctr.menu_register("CAMERA_MODE",adv.CAMERA_MODE_button_down_trigger_map,{},adv.CAMERA_MODE_axis_trigger_map,descr="ENTER CAMERA_MODE")
+ 
            else:
                print ('\n'+"Warning: to use Advanced Controller mode, you need to modify the manage.py file : 'get_js_controller(cfg,Vobject=V)'"+'\n')
  
