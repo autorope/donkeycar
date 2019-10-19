@@ -33,7 +33,10 @@ class PCA9685:
         time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_pulse(self, pulse):
-        self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
+        try:
+            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
+        except:
+            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
 
     def run(self, pulse):
         self.set_pulse(pulse)
