@@ -2,6 +2,7 @@
 
 A part Python class that wraps a functional component of a vehicle.
 These include:
+
 * Sensors - Cameras, Lidar, Odometers, GPS ...
 * Actuators - Motor Controllers
 * Pilots - Lane Detectors, Behavioral Cloning models, ...
@@ -51,15 +52,15 @@ V.add(RandPercent, inputs=['const'], outputs=['const'])
 V.start(max_loops=5)
 ```
 
+## Threaded Parts
 
-### Threaded Parts
 For a vehicle to perform well the drive loop must execute 10-30 times per
 second so slow parts should be threaded to avoid holding up the drive loop.
 
 A threaded part needs to define the function that runs in the separate thread
 and the function to call that will return the most recent values quickly.
 
-Here's an example how to make the RandPercent part threaded if the run
+Here's an example how to make the `RandPercent` part threaded if the run
 function too a second to complete.
 
 ```python
@@ -83,9 +84,6 @@ class RandPercent:
         return self.out
 
 ```
-
-
-
 
 * `part.run` : function used to run the part
 * `part.run_threaded` : drive loop function run if part is threaded.

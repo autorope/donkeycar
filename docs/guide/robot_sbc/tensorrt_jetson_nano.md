@@ -32,7 +32,7 @@ nvcc --version
 
 You should see something like:
 
-```
+```text
 nvcc: NVIDIA (R) Cuda compiler driver
 Copyright (c) 2005-2018 NVIDIA Corporation
 Built on ...
