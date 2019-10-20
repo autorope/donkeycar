@@ -5,11 +5,16 @@ don't break something unintended.
 
 ## Run all the tests
 
-Look into the `.travis.yml` for a more detailed commands used for tests.
+Look into the `.travis.yml` for a more detailed commands used for tests:
 
-```bash
-python -m unittest
-```
+* `install` section is used to install required packages and setting up environment.
+* `script` section is actually used to run test suite
+* `jobs` section may contain another tasks related to other  things like tests
+ or deployments.
+
+Notice: in `.travis.yml` env var named `TRAVIS_PYTHON_VERSION` is populated from `python` section, such as `TRAVIS_PYTHON_VERSION=3.6`.
+
+Please refer to the [travis documentation](https://docs.travis-ci.com/) for more details.
 
 ## Code Organization
 
