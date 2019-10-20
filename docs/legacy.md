@@ -1,4 +1,8 @@
-# Classic Design
+# Legacy
+
+This part of documentation it was left as reference to old original classic design, because it may still bring value for some Do-It-Yourself users.
+
+In the future this should be moved to another sections in the docs.
 
 ## Hardware
 
@@ -30,7 +34,6 @@ Slide the nut into the slot in the side of the roll cage.  This is not particula
 Once you have slid the nut in, you can attach the bottom plate.  Once again, this may be tricky.  I use the small screwdriver to push against the nut to keep it from spinning in the slot.  Good news: you should never have to do this again.
 
 ![donkey](../assets/build_hardware/3b.png)
-
 
 ### Step 4: Connect Servo Shield to Raspberry Pi
 
@@ -99,6 +102,6 @@ Once this is done, go back to step 7
 
 ## Software
 
-Congrats!  Now to get your get your car moving, see the [software instructions](install_software.md) section.
+Congrats!  Now to get your get your car moving, see the [software instructions](guide/install_software.md) section.
 
 ![donkey](../assets/build_hardware/donkey2.png)
