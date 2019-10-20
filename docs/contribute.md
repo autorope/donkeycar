@@ -33,7 +33,7 @@ clone the repo, make your fix, and submit your pull request.
 
 Helping close or triage the issues is a good way to help.
 
-## If Nou Need An Inspiration
+## If You Need An Inspiration
 
 Search the code or docs for `TODO` to find places where you might be able
 to find a better solution.
