@@ -223,28 +223,32 @@ quit
 
 Now that your controller is trusted, it should automatically connect with your Raspberry Pi when they are both turned on.  If your controller fails to connect, run the bluetoothctl steps again to reconnect.
 
+
 ## Advanced Joystick Mode
 
 The Advanced Joystick mode uses button combinations to allow more control on the car.
-In order to use the Advanced Joystick mode, you must update the manage.py file and  replace the line get_controller_js() with get_controller_js(Vobject=V)
-You will also need to modify the config.py file to add the line "JOYSTICK_ADVANCED = True 
+In order to use the Advanced Joystick mode, you must update the manage.py file and  replace the line `get_controller_js()` with `get_controller_js(Vobject=V)`
+You will also need to modify the config.py file to add the line `JOYSTICK_ADVANCED = True `
 Setting the JOYSTICK_ADVANCED = False will use the original Joystick mappings, without advanced feature.
 When activated , this mode will redefine the mappings of the joystick as per the below description :
 
-When using Advanced mode, pressing combinations of L1 and R1 button will switch the controller to one of the 5 different modes :  Default (), TRAIN (R1) , CAMERA(L1), CALIBRATE(R1+L1) and SYSTEM(L1+R1).
-Please note that not all features are working yet;the modes anticipate the creation of custom parts handling the actions.
+When using Advanced mode, pressing Home button will change the controller to the menu mode : 
+You can use the HOME2 button to change the displayed menu, and press HOME1 to get help on the menu item : 
+ CAMERA, CALIBRATE and SYSTEM.
+
+Each part can add its own menu to the menu list, allowing easy configuration of the part.
 
 
-![Default Mode](./controller_default.PNG)
-![Training Mode ( R1)](./controller_training.PNG)
+![Default Mode](./controller_default.png)
+![Training Mode ( R1)](./controller_training.png)
 
-the menu modes are available by keeping L1 pressed, then press R1 to change Menu : 
-![donkeycar](./controller_system.PNG)
-![donkeycar](./controller_camera.PNG)
-![donkeycar](./controller_calibrate.PNG)
+the menu modes are available by pressing HOME pressed, then press HOME2 to change Menu : 
+![donkeycar](./controller_system.png)
+![donkeycar](./controller_camera.png)
+![donkeycar](./controller_calibrate.png)
 
 Button names are as follow : 
-![donkeycar](./controller_buttons.PNG)
+![donkeycar](./controller_buttons.png)
 
 
 (*) : AUG_IMAGE_DRAW LEVEL : 
@@ -267,6 +271,7 @@ The below values are expected :
 (**) A part can be configured to take the LogLevelFlag as input . 
 Depending on the value configured, the part can therefore be more or less verbose, or print specific informations to the console.
 Log level flags between 0 and 30 are reserved for the parts managed in the github autorope/donkeycar. Please use higher numbers for any custom part.
+
 
 
 ## Discovering / Modifying Button and Axis Mappings for Game Controllers
