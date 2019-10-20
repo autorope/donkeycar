@@ -18,7 +18,7 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION
+  - conda create -q -n test-environment-$TRAVIS_PYTHON_VERSION python=$TRAVIS_PYTHON_VERSION
   - source activate test-environment-$TRAVIS_PYTHON_VERSION
   - pip install --upgrade pip
   - hash -r
@@ -45,6 +45,7 @@ jobs:
   allow_failures:
     - name: markdownlint
     - name: yamllint
+    - name: black
 
   include:
 
@@ -56,6 +57,19 @@ jobs:
         - pip install mkdocs
       script:
         - mkdocs build
+
+    # black - The uncompromising Python code formatter - https://github.com/psf/black
+    # it requires python 3.6
+    - stage: lint
+      name: black
+      language: python
+      python: 3.6
+      install:
+        - pip install --upgrade pip
+        - hash -r
+        - pip install black
+      script:
+        - "black --check ."
 
     # yamllint https://github.com/adrienverge/yamllint
     - stage: lint
