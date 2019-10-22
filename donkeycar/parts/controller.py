@@ -1580,10 +1580,10 @@ class adv_class():
             }
 
        self.axis_trigger_map = {
-            'left_stick_horz' : ctr.set_throttle,
-            'right_stick_vert' : ctr.set_steering,
-            'TRAIN_MODE+left_stick_horz' : ctr.set_throttle,
-            'TRAIN_MODE+right_stick_vert' : ctr.set_steering,
+            'left_stick_vert' : ctr.set_throttle,
+            'right_stick_horz' : ctr.set_steering,
+            'TRAIN_MODE+left_stick_vert' : ctr.set_throttle,
+            'TRAIN_MODE+right_stick_horz' : ctr.set_steering,
         }
 
        self.CALIBRATE_MODE_button_down_trigger_map = {
