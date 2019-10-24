@@ -10,28 +10,29 @@
 
 * Change to a dir you would like to use as the head of your projects.
 
-```
+```bash
 mkdir projects
 cd projects
 ```
 
 * Get the latest donkeycar from Github.
 
-```
+```bash
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
 git checkout master
 ```
 
 * If this is not your first install, update Conda and remove old donkey
-```
+
+```bash
 conda update -n base -c defaults conda
 conda env remove -n donkey
 ```
 
 * Create the Python anaconda environment
 
-```
+```bash
 conda env create -f install/envs/mac.yml
 conda activate donkey
 pip install -e .[pc]
@@ -43,14 +44,13 @@ Currently there is no gpu support for [tensorflow on mac](https://www.tensorflow
 
 * Create your local working dir:
 
-```
+```bash
 donkey createcar --path ~/mycar
 ```
 
 > Note: After closing the Terminal, when you open it again, you will need to 
 > type ```conda activate donkey``` to re-enable the mappings to donkey specific 
 > Python libraries
-
 
 ----
 
