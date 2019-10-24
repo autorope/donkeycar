@@ -17,7 +17,6 @@ Visit the official [Nvidia Jetson Nano Getting Started Guide](https://developer.
 
 ssh into your vehicle. Use the the terminal for Ubuntu or Mac. [Putty](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) for windows.
 
-
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
@@ -175,7 +174,7 @@ ls -al
 
 You should see something that looks like
 
-```
+```text
 total 48
 drwxr-xr-x 10 user user 4096 Jun 16 13:03 .
 drwxr-xr-x  5 user user 4096 Jun 16 07:46 ..
@@ -199,11 +198,12 @@ import cv2
 # Should print 4.1.0
 print(cv2.__version__)
 ```
+
 ##  Step 5: Install Donkeycar Python Code
 
 * Change to a dir you would like to use as the head of your projects.
 
-```
+```bash
 cd ~/projects
 ```
 

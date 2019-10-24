@@ -12,6 +12,7 @@ The default controller to drive the car with your phone or browser. This has a w
 > Note: Recently iOS has [disabled default Safari](https://www.macrumors.com/2019/02/04/ios-12-2-safari-motion-orientation-access-toggle/) access to motion control. 
 
 ## Joystick Controller
+
 Many people find it easier to control the car using a game controller. There are several parts that provide this option.
 
 The default web controller may be replaced with a one line change to use a physical joystick part for input. This uses the OS device /dev/input/js0 by default. In theory, any joystick device that the OS mounts like this can be used. In practice, the behavior will change depending on the model of joystick ( Sony, or knockoff ), or XBox controller and the Bluetooth driver used to support it. The default code has been written and tested with a [Sony brand PS3 Sixaxis controller](https://www.ebay.com/sch/i.html?_nkw=Sony+Playstation+Dualshock+PS3+controller+OEM). Other controllers may work, but will require alternative Bluetooth installs, and tweaks to the software for correct axis and buttons.
@@ -32,20 +33,16 @@ These can be used plugged in with a USB cable. It's been much more convenient to
 There are controller specific setup details below.
 
 ### Customizing or Adding a New Controller Type
-> Note: If are having troubles getting your controller to work, try this [Joystick Wizard](https://github.com/autorope/donkeycar/blob/master/docs/utility/donkey.md#joystick-wizard). This can help customize your buttons and axis inputs as well.
 
+> Note: If are having troubles getting your controller to work, try this [Joystick Wizard](/utility/donkey/#joystick-wizard). This can help customize your buttons and axis inputs as well.
 
 ### Change to config.py or run with --js
 
-```
+```bash
 python manage.py drive --js
 ```
 
-Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify config.py to make USE_JOYSTICK_AS_DEFAULT = True, then you do not need to run with the --js.
-
-----
-
-----
+Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify config.py to make `USE_JOYSTICK_AS_DEFAULT = True`, then you do not need to run with the `--js`.
 
 
 ## PS3 Controller
@@ -71,6 +68,7 @@ sudo ./sixpair
 ```
 
 Use bluetoothctl to pair
+
 ```bash
 bluetoothctl
 agent on
@@ -82,16 +80,17 @@ quit
 
 Unplug USB cable. Hit center PS logo button.
 
-To test that the Bluetooth PS3 remote is working, verify that /dev/input/js0 exists.
+To test that the Bluetooth PS3 remote is working, verify that `/dev/input/js0` exists:
 
 ```bash
 ls /dev/input/js0
 ```
 
-##### Troubleshooting
+#### Troubleshooting
 
 In case the BT connection on the Raspberry Pi does not work, you see might something like this in `bluetoothctl`:
-```
+
+```text
 [NEW] Controller 00:11:22:33:44:55 super-donkey [default]
 [NEW] Device AA:BB:CC:DD:EE:FF PLAYSTATION(R)3 Controller
 [CHG] Device AA:BB:CC:DD:EE:FF Connected: yes
@@ -104,12 +103,16 @@ In case the BT connection on the Raspberry Pi does not work, you see might somet
 [CHG] Device AA:BB:CC:DD:EE:FF Connected: no
 [bluetooth]#
 ```
+
 Try updating the Linux kernel and firmware by running:
-```
+
+```bash
 sudo rpi-update
 ```
+
 And then reboot:
-```
+
+```bash
 sudo reboot
 ```
 
@@ -126,50 +129,59 @@ Sometimes these controllers can be quite old. Here's a link to a [new battery](h
 ### PS3 Mouse problems on Linux
 
 Sometimes when you plug-in the PS3 joystick it starts taking over your mouse. If you want to prevent that, you can run this:
-```
+
+```bash
 xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
 ```
-
-
-----
-
-----
-
 
 ## PS4 Controller
 
 The following instructions are based on [RetroPie](https://github.com/RetroPie/RetroPie-Setup/wiki/PS4-Controller#installation) and [ds4drv](https://github.com/chrippa/ds4drv).
 
-#### Install `ds4drv`.
+#### Install `ds4drv`
 
-Running on your pi over ssh, you can directly `sudo /home/pi/env/bin/pip install ds4drv`
+Running on your pi over ssh, you can directly install it:
 
-#### Grant permission to `ds4drv`.
+```bash
+sudo /home/pi/env/bin/pip install ds4drv
+```
+
+#### Grant permission to `ds4drv`
 
 ```bash
 sudo wget https://raw.githubusercontent.com/chrippa/ds4drv/master/udev/50-ds4drv.rules -O /etc/udev/rules.d/50-ds4drv.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
-#### Run `ds4drv`.
 
-`ds4drv --hidraw --led 00ff00`. If you see `Failed to create input device: "/dev/uinput" cannot be opened for writing`, reboot and retry. Probably granting permission step doesn't take effect until rebooting. Some controllers don't work with `--hidraw`. If that's the case try the command without it. `--led 00ff00` changes the light bar color, it's optional.
+#### Run `ds4drv`
 
-#### Start controller in pairing mode.
+```bash 
+ds4drv --hidraw --led 00ff00
+```
+
+If you see `Failed to create input device: "/dev/uinput" cannot be opened for writing`, reboot and retry. Probably granting permission step doesn't take effect until rebooting.
+Some controllers don't work with `--hidraw`. If that's the case try the command without it. `--led 00ff00` changes the light bar color, it's optional.
+
+#### Start controller in pairing mode
 
 Press and hold **Share** button, then press and hold **PS** button until the light bar starts blinking. If it goes **green** after a few seconds, pairing is successful.
 
-#### Run `ds4drv` in background on startup once booted.
+#### Run `ds4drv` in background on startup once booted
 
-`sudo nano /etc/rc.local`. paste `/home/pi/env/bin/ds4drv --led 00ff00` into the file. Save and exit. Again, with or without `--hidraw`, depending on the particular controller you are using.
+```bash
+sudo nano /etc/rc.local
+```
 
+paste:
+
+```text
+/home/pi/env/bin/ds4drv --led 00ff00
+```
+
+Save and exit. Again, with or without `--hidraw`, depending on the particular controller you are using.
 
 To disconnect, kill the process `ds4drv` and hold **PS** for 10 seconds to power off the controller.
-
-----
-
-----
-
 
 ## XBox One Controller
 
@@ -179,44 +191,49 @@ This code presumes the built-in linux driver for 'Xbox Wireless Controller'; thi
 
 The XBox One controller requires that the bluetooth disable_ertm parameter be set to true; to do this:
 
-- edit the file `/etc/modprobe.d/xbox_bt.conf`  (that may create the file; it is commonly not there by default)
-- add the line: `options bluetooth disable_ertm=1`
-- reboot so that this takes affect.
-- after reboot you can verify that disable_ertm is set to true entering this
-  command in a terminal: `cat /sys/module/bluetooth/parameters/disable_ertm`
-- the result should print 'Y'.  If not, make sure the above steps have been done correctly.
+* edit the file `/etc/modprobe.d/xbox_bt.conf`  (that may create the file; it is commonly not there by default)
+* add the line: `options bluetooth disable_ertm=1`
+* reboot so that this takes affect.
+* after reboot you can verify that `disable_ertm` is set to true entering this
+  command in a terminal:
 
-Once that is done, you can pair your controller to your Raspberry Pi using the bluetooth tool.  Enter the following command into a bash shell prompt:  
+  ```bash
+  cat /sys/module/bluetooth/parameters/disable_ertm
+  ```
+
+* the result should print 'Y'. If not, make sure the above steps have been done correctly.
+
+Once that is done, you can pair your controller to your Raspberry Pi using the bluetooth tool. Enter the following command into a bash shell prompt:  
 
 ```bash
 sudo bluetoothctl
 ```
 
-That will start blue tooth pairing in interactive mode.  The remaining commands will be entered in that interactive session.  Enter the following commands:
+That will start blue tooth pairing in interactive mode. The remaining commands will be entered in that interactive session. Enter the following commands:
 
-```
+```text
 agent on
 default-agent
 scan on
 ```
 
-That last command will start the Raspberry Pi scanning for new bluetooth devices.  At this point, turn on your XBox One controller using the big round 'X' button on top, then start the pairing mode by pressing the 'sync' button on the front of the controller.  Within a few minutes, you should see the controller show up in the output something like this;
+That last command will start the Raspberry Pi scanning for new bluetooth devices. At this point, turn on your XBox One controller using the big round 'X' button on top, then start the pairing mode by pressing the 'sync' button on the front of the controller.  Within a few minutes, you should see the controller show up in the output something like this;
 
-```
+```text
 [NEW] Device B8:27:EB:A4:59:08 XBox One Wireless Controller
 ```
 
 Write down the MAC address, you will need it for the following steps.  Enter this command to pair with your controller:
 
-```
+```text
 connect YOUR_MAC_ADDRESS
 ```
 
-where YOUR_MAC_ADDRESS is the MAC address you copied previously.  If it does not connect on the first try, try again.  It can take a few tries.  If your controller connects, but then immediately disconnects, your disable_ertm setting might be wrong (see above).  
+where `YOUR_MAC_ADDRESS` is the MAC address you copied previously.  If it does not connect on the first try, try again.  It can take a few tries.  If your controller connects, but then immediately disconnects, your disable_ertm setting might be wrong (see above).  
 
 Once your controller is connected, the big round 'X' button on the top of your controller should be solid white.  Enter the following commands to finish:
 
-```
+```text
 trust YOUR_MAC_ADDRESS
 quit
 ```
@@ -228,7 +245,8 @@ Now that your controller is trusted, it should automatically connect with your R
 To discover and modify your default button mappings (for your controllers) you can use the `Joystick` class defined in `donkeycar.parts.controller`.
 
 After setting up `Donkey` and activating your `virtualenv` you can do the following.
-First launch a `python` shell session.
+
+First launch `python` shell session.
 
 ```python
 from donkeycar.parts.controller import Joystick

@@ -1,4 +1,4 @@
-# Get Your Raspberry Pi Working.
+# Get Your Raspberry Pi Working
 
 ![donkey](/assets/logos/rpi_logo.png)
 
@@ -33,8 +33,9 @@ On Windows, with your memory card image burned and memory disc still inserted, y
 > Note: If __boot__ is not visible right away, try unplugging and re-inserting the memory card reader.
 
 * Start a text editor: `gedit` on Linux. Notepad++ on Windows. TextEdit on a Mac.
-* Paste and edit this contents to match your wifi:
-```
+* Paste and edit this contents to match your wifi, adjust as needed:
+
+```text
 country=US
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
@@ -53,17 +54,18 @@ If it bothers you to leave your password unencrypted, you may change the [conten
 * Save this file to the root of __boot__ partition with the filename `wpa_supplicant.conf`. On first boot, this file will be moved to `/etc/wpa_supplicant/wpa_supplicant.conf` where it may be edited later. If you are using Notepad on Windows, make sure it doesn't have a .txt at the end.
 
 ## Step 3: Setup Pi's Hostname
+
 > Note: This step only possible on a linux host pc. Otherwise you can set it up later in raspi-config after logging in to your pi.
 
 We can also setup the hostname so that your Pi easier to find once on the network. If yours is the only Pi on the network, then you can find it with 
 
-```
+```bash
 ping raspberrypi.local
 ```
 
 once it's booted. If there are many other Pi's on the network, then this will have problems. If you are on a Linux machine, or are able to edit the UUID partition, then you can edit the `/etc/hostname` and `/etc/hosts` files now to make finding your pi on the network easier after boot. Edit those to replace `raspberrypi` with a name of your choosing. Use all lower case, no special characters, no hyphens, yes underscores `_`. 
 
-```
+```bash
 sudo vi /media/userID/UUID/etc/hostname
 sudo vi /media/userID/UUID/etc/hosts
 ```
@@ -72,10 +74,8 @@ sudo vi /media/userID/UUID/etc/hosts
 
 Put a file named __ssh__ in the root of your __boot__ partition.
 
-
 Now your SD card is ready. Eject it from your computer, put it in the Pi 
 and plug in the Pi.
-
 
 ## Step 5: Connecting to the Pi
 
@@ -92,19 +92,19 @@ If you are having troubles locating your Pi on the network, you will want to plu
  
 Then try the command:
 
-```
+```bash
 ifconfig wlan0
 ```
 
 If this has a valid IPv4 address, 4 groups of numbers separated by dots, then you can try that with your SSH command. If you don't see anything like that, then your wifi config might have a mistake. You can try to fix with
 
-```
+```bash
 sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
 ```
 
 If you don't have a HDMI monitor and keyboard, you can plug-in the Pi with a CAT5 cable to a router with DHCP. If that router is on the same network as your PC, you can try:
 
-```
+```bash
 ping raspberrypi.local
 ```
 
@@ -112,13 +112,13 @@ Hopefully, one of those methods worked and you are now ready to SSH into your Pi
 
 If you have a command prompt, you can try:
 
-```
+```bash
 ssh pi@raspberrypi.local
 ```
 
 or
 
-```
+```bash
 ssh pi@<your pi ip address>
 ```
 
@@ -147,7 +147,7 @@ sudo raspi-config
 * enable Interfacing Options | Camera
 * Advanced Options | Exapand Filesystem
 
-Choose <Finish> and hit enter.
+Choose `<Finish>` and hit enter.
 
 > Note: Reboot after changing these settings. Should happen if you say yes.
 
@@ -172,13 +172,14 @@ python3 -m virtualenv -p python3 env --system-site-packages
 echo "source env/bin/activate" >> ~/.bashrc
 source ~/.bashrc
 ```
-Modifying your .bashrc in this way will automatically enable this environment each time you login. To return to the system python you can type `deactivate`.
+
+Modifying your `.bashrc` in this way will automatically enable this environment each time you login. To return to the system python you can type `deactivate`.
 
 ##  Step 11: Install Donkeycar Python Code
 
 * Change to a dir you would like to use as the head of your projects.
 
-```
+```bash
 mkdir projects
 cd projects
 ```
@@ -200,7 +201,8 @@ python -c "import tensorflow"
 ```
 
 Warnings like this are normal:
-```
+
+```text
 /home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: compiletime version 3.4 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.5
   return f(*args, **kwds)
 /home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: builtins.type size changed, may indicate binary incompatibility. Expected 432, got 412
@@ -210,29 +212,31 @@ Warnings like this are normal:
 Note: If you would like to try tflite support, you will need a newer version of Tensorflow. You can download and install this version:
 
 For Pi3 Raspian Stretch:
+
 ```bash
 wget https://tawn-train.s3.amazonaws.com/tf/tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
 pip install tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
 ```
 
 For Raspian Buster Python 3.7:
-TF 2.0 Not yet available. Check donkeycar.slack.com for updates.
+TF 2.0 Not yet available. Check [slack](http://donkeycar.slack.com) for updates.
 
 ##  Step 12: Install Optional OpenCV
 
 If you've opted to install the OpenCV dependencies earlier, you can install Python OpenCV bindings now with
-
 
 ```bash
 sudo apt install python3-opencv
 ```
 
 If that failed, you can try pip:
+
 ```bash
 pip install opencv-python
 ```
 
-Then test to see if import suceeds.
+Then test to see if import succeeds.
+
 ``` bash
 python -c "import cv2"
 ```
