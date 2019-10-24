@@ -30,24 +30,25 @@ integrated car.
 Here is an example of an integrated RX and ESC - typically these should be avoided:
 ![RX ESC example](./assets/ESC_RX.png)
 
-
 You also need to know some things about electronics, such as the difference
 between power rails and control signals, what the duration of a microsecond is,
 and how Volts, Amperes, Watts, Hours, Ohms, and other measurement units relate.
+
 ## Chassis build
 
-While there are lots of designs out there besides the Donkeycar but two stand out and are worth mentioning specifically.
+While there are lots of designs out there besides the Donkeycar, but two stand out and are worth mentioning specifically.
 
 ### Chilicorn rail
-This is a flexible mounting system developed by Markku.ai.  More details at markku.ai.
+
+This is a flexible mounting system developed by Markku.ai.  More details at [markku.ai](markku.ai).
 
 ### sCAD Files
+
 Doug LaRue, a long time community member has extensive designs for making your own chassis in sCAD.  If you want to roll your own but are not comfortable with CAD this is a good place to start.  
 
-*  [Basic Donkeycar](https://www.thingiverse.com/thing:2781404)
-*  [1/28 scale car](https://www.thingiverse.com/thing:3428003)
-*  [inverted donkey car](https://www.thingiverse.com/thing:2774944)
-
+* [Basic Donkeycar](https://www.thingiverse.com/thing:2781404)
+* [1/28 scale car](https://www.thingiverse.com/thing:3428003)
+* [inverted donkey car](https://www.thingiverse.com/thing:2774944)
 
 ## Servo Specifics
 
@@ -105,14 +106,14 @@ or may control fancy attachments like horns, lights, and so forth.
 There is a modification to the Donkey car which uses the RC radio to drive the
 car when collecting training data; this will give better control of the car than
 you typically get with a PlayStation controller, or cell phone. However, it also
-requires replacing the PCA9685 board with an external microcontroller, and
+requires replacing the PCA9685 board with an external micro-controller, and
 changing the software of the Donkey to use it.
 
 Finally, some receivers can output, in addition to the PWM control signals, a
 serial data packet that contains the control signals. An example of such a receiver
 is the FS-i6B, which has 6 output channels for PWM signals, but can output 10
 channels of data at 115,200 bps as serial data, which you can read with an external
-microcontroller, or perhaps even with the Raspberry Pi (requries re-configuration
+micro-controller, or perhaps even with the Raspberry Pi (requires re-configuration
 of the Pi boot loader, and custom modifications to the donkey software.)
 
 ## Batteries
@@ -133,7 +134,7 @@ driving) as well as energy storage (number of Amp Hours the battery stores when
 fully charged) so it may also last longer.
 
 Note that the amount of charge a battery can hold (how long it runs) is measured
-in Ampere-hours, or milli-Ampere-hours, whereas the amount of current a battery
+in Ampere-hours (Ah), or milli-Ampere-hours (mAh), whereas the amount of current a battery
 can instantaneously deliver while driving is measured simply in Amperes. But to
 make things more confusing, Amperes are often re-calculated in terms of multiples
 of the energy content, divided by one hour; this ratio is often called "C." Thus,
@@ -178,7 +179,7 @@ using 3D printing, laser cutting, CNC milling, or even just drilling into a thin
 piece of plywood, but getting a good fit to your chassis is important, so don't
 rush it or try to cut corners.
 
-Doug LaRue also built a [configurator](https://www.thingiverse.com/thing:2781404) in Thingiverse that enables people to easily make custom 3d printed plates.
+Doug LaRue also built a [configurator](https://www.thingiverse.com/thing:2781404) in Thingiverse that enables people to easily make custom 3D printed plates.
 
 ## Other Options
 

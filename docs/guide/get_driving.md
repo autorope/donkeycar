@@ -1,13 +1,14 @@
-# Drive your car.
+# Drive your car
 
 After you've [calibrated](/guide/calibrate) your car you can start driving it. 
 
 If you are not already, please [ssh into your vehicle](/guide/robot_sbc/setup_raspberry_pi/#step-5-connecting-to-the-pi).
 
-### Start your car.
+## Start your car
  
-> *** Put your car in a safe place where the wheels are off the ground ***. This
-is the step were the car can take off. 
+> *** Put your car in a safe place where the wheels are off the ground ***.
+
+This is the step were the car can take off. 
 
 Open your car's folder and start your car. 
 ```
@@ -25,8 +26,8 @@ from a web browser at the URL: `<your car's hostname.local>:8887`
 On your phone you can now press start to set your phones current tilt to be
 zero throttle and steering. Now tilting your phone forward will increase throttle and tilting it side to side will turn the steering. 
 
-
 ### Features
+
 * Recording - Press record data to start recording images, steering angels and throttle values. 
 * Throttle mode - Option to set the throttle as constant. This is used in 
 races if you have a pilot that will steer but doesn't control throttle. 
@@ -34,6 +35,7 @@ races if you have a pilot that will steer but doesn't control throttle.
 * Max throttle - Select the maximum throttle.
 
 ### Keyboard shortcuts
+
 * `space` : stop car and stop recording
 * `r` : toggle recording
 * `i` : increase throttle
@@ -43,28 +45,30 @@ races if you have a pilot that will steer but doesn't control throttle.
 
 -----
 
-### Next let's [train an autopilot](/guide/train_autopilot/).
+If you don't have a joystick then you can skip to next section - [train an autopilot](/guide/train_autopilot/).
 
-----
+-----
 
-# Driving with Physical Joystick Controller
+## Driving with Physical Joystick Controller
 
 You may find that it helps to use a physical joystick device to control your vehicle.
 
 ### Setup Bluetooth and pair joystick
+
 Check the [Controllers](/parts/controllers/#physical-joystick-controller) section to read about setting up the bluetooth connection.
 
 ### Start car
-```
+
+```bash
 cd ~/mycar
 python manage.py drive --js
 ```
 
 Optionally, if you want joystick use to be sticky and don't want to add the --js each time, modify your __myconfig.py__ so that __USE_JOYSTICK_AS_DEFAULT = True__
-```
+
+```bash
 nano myconfig.py
 ```
-
 
 ### Joystick Controls
 
@@ -83,7 +87,6 @@ nano myconfig.py
 * dpad left - Increase steering scale
 * dpad right - Decrease steering scale
 * Start - Toggle constant throttle. Sets to max throttle (modified by X and Triangle).
-
 
 -----
 

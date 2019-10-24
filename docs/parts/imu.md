@@ -3,6 +3,7 @@
 IMUs or inertial measurement units are parts that sense the inertial forces on a robot. They vary depending on sensor, but may commonly include linear and rotational accelleration. They may sometimes include magnetometer to give global compasss facing dir. Frequently temperature is available from these as it affects their sensitivity.
 
 ## MPU6050
+
 This is a cheap, small, and moderately precise imu. Commonly available at [Amazon](https://www.amazon.com/s/ref=nb_sb_noss_2?url=search-alias%3Dindustrial&field-keywords=MPU6050).
 
 
@@ -12,11 +13,12 @@ This is a cheap, small, and moderately precise imu. Commonly available at [Amazo
 * Gyroscopes range: +/- 250 500 1000 2000 degree/sec
 * Acceleration range: ±2 ±4 ±8 ±16g
 
-##### Software Setup
+### Software Setup
 
 Install smbus:
 
 from package:
+
 ``` bash
  sudo apt install python3-smbus
 ```
@@ -31,7 +33,8 @@ python setup.py build
 sudo python setup.py install
 ```
 
-Install pip lib for mpu6050
+Install pip lib for `mpu6050`:
+
 ```bash
 pip install mpu6050-raspberrypi
 ```
