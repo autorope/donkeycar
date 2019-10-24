@@ -18,7 +18,7 @@ See also more information on [createcar.](/utility/donkey/#create-car)
 
 Look at __myconfig.py__ in your newly created directory, ~/mycar
 ```
-nano myconfig.py
+nano ~/mycar/myconfig.py
 ```
 Each line has a comment mark. The commented text shows the default value. When you want to make an edit to over-write the default, uncomment the line by removing the # and any spaces before the first charater of the option.
 
