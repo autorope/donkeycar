@@ -204,7 +204,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
               outputs=['led/blink_rate'])
 
         V.add(led, inputs=['led/blink_rate'])
-        
 
     def get_record_alert_color(num_records):
         col = (0, 0, 0)
@@ -456,9 +455,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                                         zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                         min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
-    
+        V.add(steering, inputs=['angle'], threaded=True)
+        V.add(throttle, inputs=['throttle'], threaded=True)
+
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
@@ -498,7 +497,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
         motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
-        V.add(steering, inputs=['angle'])
+        V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
 
     
@@ -568,9 +567,10 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
-            meta=args['--meta'])
-    
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
+              model_type=model_type, camera_type=camera_type,
+              meta=args['--meta'])
+
     if args['train']:
         from train import multi_train, preprocessFileList
         
