@@ -16,7 +16,7 @@ def cfg_defaults(cfg):
     cfg.MAX_EPOCHS = 1
     cfg.BATCH_SIZE = 10
     cfg.SHOW_PLOT = False
-    cfg.VEBOSE_TRAIN = False
+    cfg.VERBOSE_TRAIN = False
     cfg.OPTIMIZER = "adam"
     cfg.TARGET_H = cfg.IMAGE_H - cfg.ROI_CROP_TOP - cfg.ROI_CROP_BOTTOM
     cfg.TARGET_W = cfg.IMAGE_W
@@ -96,7 +96,7 @@ def test_train_latent(tub, tub_path):
     cfg.MAX_EPOCHS = 1
     cfg.BATCH_SIZE = 10
     cfg.SHOW_PLOT = False
-    cfg.VEBOSE_TRAIN = False
+    cfg.VERBOSE_TRAIN = False
     cfg.OPTIMIZER = "adam"
 
     tub = tub_path
