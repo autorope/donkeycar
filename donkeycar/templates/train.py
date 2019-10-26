@@ -286,7 +286,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
     ''' 
-    verbose = cfg.VEBOSE_TRAIN
+    verbose = cfg.VERBOSE_TRAIN
 
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -582,7 +582,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
                     epochs=epochs, 
-                    verbose=cfg.VEBOSE_TRAIN, 
+                    verbose=cfg.VERBOSE_TRAIN,
                     validation_data=val_gen,
                     callbacks=callbacks_list, 
                     validation_steps=val_steps,
@@ -717,7 +717,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                         train_gen,
                         steps_per_epoch=steps_per_epoch, 
                         epochs=epochs, 
-                        verbose=cfg.VEBOSE_TRAIN,
+                        verbose=cfg.VERBOSE_TRAIN,
                         validation_data=val_gen,
                         validation_steps=val_steps,
                         workers=workers_count,
@@ -775,7 +775,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     
     tubs = gather_tubs(cfg, tub_names)
     
-    verbose = cfg.VEBOSE_TRAIN
+    verbose = cfg.VERBOSE_TRAIN
 
     records = []
 
