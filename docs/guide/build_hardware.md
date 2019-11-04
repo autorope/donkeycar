@@ -20,6 +20,8 @@
 These are instructions for the [Donkey Car Starter Kit](https://www.robocarstore.com/products/donkey-car-starter-kit) purchased from [Robocar Store](https://robocarstore.com/).
 For instructions of the vanilla Donkey Car, please visit https://docs.donkeycar.com.
 
+For build instruction for [Donkey Car Starter Kit Jetson Nano Edition](https://www.robocarstore.com/products/donkey-car-starter-kit-jetson-nano-edition), please check [this google slide](https://docs.google.com/presentation/d/1kK9ZSLTNgCnTWqIKu-ZFEiG41jVWSFdFX3qqy_1fxSQ)
+
 ![donkey](../assets/build_hardware/robocarstore/0.jpg)
 
 
@@ -65,11 +67,6 @@ LiPo batteries have significantly better energy density and have a better dropof
 | Lipo Charger (takes 1hr to charge the above battery)  | [Turnigy E3 Compact 2S/3S Lipo Charger](https://hobbyking.com/en_us/turnigy-e3-compact-2s-3s-lipo-charger-100-240v-us-plug.html)                                               | $13              |
 | Lipo Battery Case | [Turnigy® Fire Retardant LiPoly Battery Bag ](https://hobbyking.com/en_us/fire-retardant-lipo-battery-bag-190x60x82mm.html)                                               | $8               |
 
-### Jetson Nano Upgrade Kit
-
-> To Be Announced
-
-
 
 
 
@@ -93,7 +90,7 @@ Bottom view:
 
 &nbsp;
 ### Step 2: Attach Raspberry Pi, Servo Driver, and Voltage Converter to Base Plate
-Use the M2.5x5mm screws to attach the Raspberry Pi, Servo Driver, and Voltage Converter through the board into the hexagon nylon standoff spacer on the base plate.  The ethernet and USB ports should face forward.  
+Use the M2.5x5mm screws to attach the Raspberry Pi, Servo Driver, and Voltage Converter through the board into the hexagon nylon standoff spacer on the base plate.  The ethernet and USB ports should face forward.
 
 ![donkey](../assets/build_hardware/robocarstore/2a.jpg)
 
@@ -107,7 +104,7 @@ Note that you should be able to access the SD card from this outlet. At this poi
 &nbsp;
 ### Step 3: Connect Servo Driver to Raspberry Pi
 
-Refer to the following pictures connect the pi and the servo driver. 
+Refer to the following pictures connect the pi and the servo driver.
 
 
 
@@ -121,7 +118,7 @@ For reference, below is the Raspberry Pi Pinout for reference.  You will notice 
 
 ### Step 4: Attach the mini Tamiya splitter
 
-Attach the open end of the mini Tamiya splitter to the Voltage Converter.  Loosen the screws in the blue connectors of the Voltage Converter and connect red wire to the IN+ side and black wire to the IN- side.  Attached the female mini Tamiya adapter to the wire from the ESC of the car.  Leave the male adapter for now, it will be connected to the battery to draw power for the Raspberry Pi before you start the car.  
+Attach the open end of the mini Tamiya splitter to the Voltage Converter.  Loosen the screws in the blue connectors of the Voltage Converter and connect red wire to the IN+ side and black wire to the IN- side.  Attached the female mini Tamiya adapter to the wire from the ESC of the car.  Leave the male adapter for now, it will be connected to the battery to draw power for the Raspberry Pi before you start the car.
 
 ![donkey](../assets/build_hardware/robocarstore/4a.jpg)
 
@@ -149,7 +146,7 @@ Slip the camera into the slot, cable end first.  However, be careful not to push
 ![donkey](../assets/build_hardware/assemble_camera.jpg)
 TODO: Insert our photo
 
-If you need to remove the camera the temptation is to push on the lens, instead push on the connector as is shown in these pictures.  
+If you need to remove the camera the temptation is to push on the lens, instead push on the connector as is shown in these pictures.
 ![donkey](../assets/build_hardware/Remove--good.jpg) ![donkey](../assets/build_hardware/Remove--bad.jpg)
 
 Before using the car, remove the plastic film or lens cover from the camera lens.

@@ -2,14 +2,23 @@
 
 ![donkey](/assets/logos/nvidia_logo.png)
 
-* [Step 1: Flash Operating System](#step-1-flash-operating-system)
-* [Step 2: Install Dependencies](#step-2-install-dependencies)
-* [Step 3: Setup Virtual Env](#step-3-setup-virtual-env)
-* [Step 4: Install OpenCV](#step-4-install-opencv)
-* [Step 5: Install Donkeycar Python Code](#step-5-install-donkeycar-python-code)
-* Then [Create your Donkeycar Application](/guide/create_application/)
+- [Get Your Jetson Nano Working](#Get-Your-Jetson-Nano-Working)
+	- [Step 1: Flash Operating System](#Step-1-Flash-Operating-System)
+	- [Step 2: Install Dependencies](#Step-2-Install-Dependencies)
+	- [Step 3: Setup Virtual Env](#Step-3-Setup-Virtual-Env)
+	- [Step 4: Install OpenCV](#Step-4-Install-OpenCV)
+	- [Step 5: Install Donkeycar Python Code](#Step-5-Install-Donkeycar-Python-Code)
+		- [Next, create your Donkeycar application.](#Next-create-your-Donkeycar-application)
 
 ## Step 1: Flash Operating System
+
+Download our pre-built image
+[Download Jetson Nano donkey car 3.2 image](https://www.dropbox.com/s/uzvsmf6j3s9fqw8/jetson_nano_dk_302.zip?dl=0)
+
+
+
+You can skip directly
+
 
 Visit the official [Nvidia Jetson Nano Getting Started Guide](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#prepare). Work through the __Prepare for Setup__, __Writing Image to the microSD Card__, and __Setup and First Boot__ instructions, then return here.
 
@@ -37,13 +46,13 @@ source ~/.bashrc
 
 ## Step 4: Install OpenCV
 
-To install Open CV on the Jetson Nano, you need to build it from source. Building OpenCV from source is going to take some time, so buckle up. If you get stuck, [here](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) is another great resource which will help you compile OpenCV. 
+To install Open CV on the Jetson Nano, you need to build it from source. Building OpenCV from source is going to take some time, so buckle up. If you get stuck, [here](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) is another great resource which will help you compile OpenCV.
 
 > Note: In some cases Python OpenCV may already be installed in your disc image. If the file exists, you can optionally copy it to your environment rather than build from source. Nvidia has said they will drop support for this, so longer term we will probably be building it. If this works:
-> 
+>
 > ```
 > mkdir ~/mycar
-> cp /usr/lib/python3.6/dist-packages/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/ 
+> cp /usr/lib/python3.6/dist-packages/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/
 > cd ~/mycar
 > python -c "import cv2"
 > ```
@@ -135,7 +144,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 
 The `cmake` command should show a summary of the configuration. Make sure that the `Interpreter` is set to the Python executable associated to *your* virtualenv.  Note: there are several paths in the CMake setup, make sure they match where you downloaded and saved the OpenCV source.
 
-To compile the code from the `build` folder issue the following command. 
+To compile the code from the `build` folder issue the following command.
 
 ```bash
 make -j2
@@ -152,7 +161,7 @@ sudo ldconfig
 
 The final step is to correctly link the built `OpenCV` native library to your virtualenv.
 
-The native library should now be installed in a location that looks like `/usr/local/lib/python3.6/site-packages/cv2/python-3.6/cv2.cpython-36m-xxx-linux-gnu.so`. 
+The native library should now be installed in a location that looks like `/usr/local/lib/python3.6/site-packages/cv2/python-3.6/cv2.cpython-36m-xxx-linux-gnu.so`.
 
 ```bash
 # Go to the folder where OpenCV's native library is built
