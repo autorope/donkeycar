@@ -20,7 +20,7 @@
 
 You need to flash a micro SD image with an operating system.
 
-1. Download [Raspian Lite(Stretch)](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-04-09/2019-04-08-raspbian-stretch-lite.zip) (352MB). 
+1. Download [Raspian Lite(Buster)](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip) (352MB). 
 2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 3. Leave micro SD card in your machine and edit/create some files as below:
 
