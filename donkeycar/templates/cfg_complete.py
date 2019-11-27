@@ -142,6 +142,9 @@ HAVE_IMU = False                #when true, this add a Mpu6050 part and records 
 #SOMBRERO
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
 
+#ROBOHAT MM!
+HAVE_ROBOHAT = True             #set to true when using the Robo HAT MM1 from Robotics Masters.  This will change to RC Control.
+
 #RECORD OPTIONS
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
 
