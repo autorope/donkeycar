@@ -454,6 +454,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             #throttle_controller = RoboHATDriver(cfg.THROTTLE_CHANNEL)
             
             V.add(RoboHATDriver(), inputs=['angle', 'throttle'])
+        elif cfg.HAVE_ROBOHAT:
+            pass
+        
         else:    
             from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 

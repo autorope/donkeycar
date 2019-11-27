@@ -234,5 +234,3 @@ PID_THROTTLE = 0.2                  # constant throttle value during path follow
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 
-#RoboHAT MM1
-ACTUATOR_MODE = "serial"
