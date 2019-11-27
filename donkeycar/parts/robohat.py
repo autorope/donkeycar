@@ -5,6 +5,8 @@ Scripts for operating the RoboHAT MM1 by Robotics Masters with the Donkeycar
 author: @wallarug (Cian Byrne) 2019
 """
 
+import time
+
 try:
     import serial
 except ImportError:
