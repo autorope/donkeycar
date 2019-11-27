@@ -75,11 +75,11 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 #between different neural network designs. You can override this setting by passing the command
 #line parameter --type to the python manage.py train and drive commands.
 DEFAULT_MODEL_TYPE = 'linear'   #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
-BATCH_SIZE = 128                #how many records to use when doing one pass of gradient decent. Use a smaller number if your gpu is running out of memory.
+BATCH_SIZE = 64                #how many records to use when doing one pass of gradient decent. Use a smaller number if your gpu is running out of memory.
 TRAIN_TEST_SPLIT = 0.8          #what percent of records to use for training. the remaining used for validation.
 MAX_EPOCHS = 100                #how many times to visit all records of your data
-SHOW_PLOT = True                #would you like to see a pop up display of final loss?
-VERBOSE_TRAIN = True             #would you like to see a progress bar with text during training?
+SHOW_PLOT = False                #would you like to see a pop up display of final loss?
+VEBOSE_TRAIN = True             #would you like to see a progress bar with text during training?
 USE_EARLY_STOP = True           #would you like to stop the training if we see it's not improving fit?
 EARLY_STOP_PATIENCE = 5         #how many epochs to wait before no improvement
 MIN_DELTA = .0005               #early stop will want this much loss change before calling it improved.
@@ -137,7 +137,7 @@ MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.5
 SEQUENCE_LENGTH = 3             #some models use a number of images over time. This controls how many.
 
 #IMU
-HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a 
+HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
 
 #SOMBRERO
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
@@ -151,7 +151,7 @@ LED_INVERT = False              #COMMON ANODE? Some RGB LED use common anode. li
 
 #LED board pin number for pwm outputs
 #These are physical pinouts. See: https://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/
-LED_PIN_R = 12      
+LED_PIN_R = 12
 LED_PIN_G = 10
 LED_PIN_B = 16
 
@@ -230,3 +230,6 @@ PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.2                  # constant throttle value during path following
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
+
+#RoboHAT MM1
+ACTUATOR_MODE = "serial"
