@@ -32,7 +32,7 @@ class RoboHATController:
         except serial.SerialTimeoutException:
             print("Serial connection timed out!")
 
-    def __del__(self):
+    def shutdown(self):
         try:
             self.serial.close()
         except:
@@ -102,4 +102,10 @@ class RoboHATDriver:
 
     def run(self, throttle, steering):
         self.set_pulse(throttle, steering)
+
+    def shutdown(self):
+        try:
+            self.serial.close()
+        except:
+            pass
 
