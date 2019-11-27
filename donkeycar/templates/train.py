@@ -10,11 +10,12 @@ Basic usage should feel familiar: python train.py --model models/mypilot
 
 
 Usage:
-    train.py [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|latent|categorical|rnn|imu|behavior|3d|look_ahead|tensorrt_linear|tflite_linear|coral_tflite_linear)] [--continuous] [--aug]
+    train.py [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|latent|categorical|rnn|imu|behavior|3d|look_ahead|tensorrt_linear|tflite_linear|coral_tflite_linear)] [--figure_format=<figure_format>] [--continuous] [--aug]
 
 Options:
-    -h --help        Show this screen.
-    -f --file=<file> A text file containing paths to tub files, one per line. Option may be used more than once.
+    -h --help              Show this screen.
+    -f --file=<file>       A text file containing paths to tub files, one per line. Option may be used more than once.
+    --figure_format=png    The file format of the generated figure (see https://matplotlib.org/api/_as_gen/matplotlib.pyplot.savefig.html), e.g. 'png', 'pdf', 'svg', ...
 """
 import os
 import glob
@@ -35,9 +36,11 @@ import donkeycar as dk
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.keras import KerasLinear, KerasIMU,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
-     KerasRNN_LSTM, KerasLatent
+     KerasRNN_LSTM, KerasLatent, KerasLocalizer
 from donkeycar.parts.augment import augment_image
 from donkeycar.utils import *
+
+figure_format = 'png'
 
 
 '''
@@ -128,6 +131,13 @@ def collate_records(records, gen_records, opts):
             sample["behavior_arr"] = behavior_arr
         except:
             pass
+
+        try:
+            location_arr = np.array(json_data['location/one_hot_state_array'])
+            sample["location"] = location_arr
+        except:
+            pass
+
 
         sample['img_data'] = None
 
@@ -276,7 +286,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     use the specified data in tub_names to train an artifical neural network
     saves the output trained model as model_name
     ''' 
-    verbose = cfg.VEBOSE_TRAIN
+    verbose = cfg.VERBOSE_TRAIN
 
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -390,6 +400,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
             has_imu = type(kl) is KerasIMU
             has_bvh = type(kl) is KerasBehavioral
             img_out = type(kl) is KerasLatent
+            loc_out = type(kl) is KerasLocalizer
             
             if img_out:
                 import cv2
@@ -420,6 +431,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                     angles = []
                     throttles = []
                     out_img = []
+                    out_loc = []
                     out = []
 
                     for record in batch_data:
@@ -443,6 +455,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                         if img_out:                            
                             rz_img_arr = cv2.resize(img_arr, (127, 127)) / 255.0
                             out_img.append(rz_img_arr[:,:,0].reshape((127, 127, 1)))
+
+                        if loc_out:
+                            out_loc.append(record['location'])
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
@@ -470,6 +485,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
                     if img_out:
                         y = [out_img, np.array(angles), np.array(throttles)]
+                    elif out_loc:
+                        y = [ np.array(angles), np.array(throttles), np.array(out_loc)]
                     elif model_out_shape[1] == 2:
                         y = [np.array([out]).reshape(batch_size, 2) ]
                     else:
@@ -565,7 +582,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     train_gen, 
                     steps_per_epoch=steps_per_epoch, 
                     epochs=epochs, 
-                    verbose=cfg.VEBOSE_TRAIN, 
+                    verbose=cfg.VERBOSE_TRAIN,
                     validation_data=val_gen,
                     callbacks=callbacks_list, 
                     validation_steps=val_steps,
@@ -607,7 +624,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                     plt.xlabel('epoch')
                     #plt.legend(['train', 'validate'], loc='upper left')
 
-                plt.savefig(model_path + '_loss_acc_%f.png' % save_best.best)
+                plt.savefig(model_path + '_loss_acc_%f.%s' % (save_best.best, figure_format))
                 plt.show()
             else:
                 print("not saving loss graph because matplotlib not set up.")
@@ -700,7 +717,7 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
                         train_gen,
                         steps_per_epoch=steps_per_epoch, 
                         epochs=epochs, 
-                        verbose=cfg.VEBOSE_TRAIN,
+                        verbose=cfg.VERBOSE_TRAIN,
                         validation_data=val_gen,
                         validation_steps=val_steps,
                         workers=workers_count,
@@ -758,7 +775,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
     
     tubs = gather_tubs(cfg, tub_names)
     
-    verbose = cfg.VEBOSE_TRAIN
+    verbose = cfg.VERBOSE_TRAIN
 
     records = []
 
@@ -792,6 +809,7 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
         sample['target_output'] = np.array([angle, throttle])
         sample['angle'] = angle
         sample['throttle'] = throttle
+
 
         sample['img_data'] = None
 
@@ -1079,6 +1097,8 @@ if __name__ == "__main__":
     model = args['--model']
     transfer = args['--transfer']
     model_type = args['--type']
+    if args['--figure_format']:
+        figure_format = args['--figure_format']
     continuous = args['--continuous']
     aug = args['--aug']
     
