@@ -9,6 +9,8 @@ Donkeycar is minimalist and modular self driving library for Python. It is
 developed for hobbyists and students with a focus on allowing fast experimentation and easy
 community contributions.
 
+__Version:__ 3.1.1rm (Robotics Masters)
+
 #### Quick Links
 * [Donkeycar Updates & Examples](http://donkeycar.com)
 * [Build instructions and Software documentation](http://docs.donkeycar.com)
