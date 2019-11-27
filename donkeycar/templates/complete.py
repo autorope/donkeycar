@@ -122,9 +122,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.HAVE_ROBOHAT:
-            from donkeycar.parts.serial_controller import SerialController
+            from donkeycar.parts.robohat import RoboHATController
             
-            ctr = SerialController()
+            ctr = RoboHATController()
         else:
             from donkeycar.parts.controller import get_js_controller
 
@@ -448,12 +448,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
         if cfg.HAVE_ROBOHAT and model_path:
-            from donkeycar.parts.actuator import SerialDevice
+            from donkeycar.parts.robohat import RoboHATDriver
             
-            steering_controller = SerialDevice(cfg.STEERING_CHANNEL)
-            throttle_controller = SerialDevice(cfg.THROTTLE_CHANNEL)
+            #steering_controller = RoboHATDriver(cfg.STEERING_CHANNEL)
+            #throttle_controller = RoboHATDriver(cfg.THROTTLE_CHANNEL)
             
-            V.add(SerialDevice(), inputs=['angle', 'throttle'])
+            V.add(RoboHATDriver(), inputs=['angle', 'throttle'])
         else:    
             from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
