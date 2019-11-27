@@ -23,7 +23,7 @@ class PCA9685:
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
             from Adafruit_GPIO import I2C
-            #replace the get_bus function with our own
+            # replace the get_bus function with our own
             def get_bus():
                 return busnum
             I2C.get_default_bus = get_bus
@@ -33,70 +33,14 @@ class PCA9685:
         time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_pulse(self, pulse):
-        self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
+        try:
+            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
+        except:
+            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
 
     def run(self, pulse):
         self.set_pulse(pulse)
 
-class RoboHATMM1:
-    """
-    PWM motor controller using Robo HAT MM1 boards.
-    This is developed by Robotics Masters
-    """
-    def __init__(self, channel, frequency=60):
-        from rm_robohat import robohat
-        # Initialise the Robo HAT using default address (0x49)
-        self.pwm = robohat.seesaw
-        self.pin = robohat.get_channel(channel)
-        self.pwm.set_pwm_freq(self.pin, frequency)
-
-    def set_pulse(self, pulse):
-        try:
-            self.pwm.analog_write(self.pin, pulse*16)
-        except OSError as err:
-            print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
-
-    def run(self, pulse):
-        self.set_pulse(pulse)
-
-class SerialDevice:
-    """
-    PWM motor controller using Robo HAT MM1 boards.
-    This is developed by Robotics Masters
-    """
-    def __init__(self):
-        import serial
-        # Initialise the Robo HAT using default address (0x49)
-        self.pwm = serial.Serial('/dev/ttyS0', 115200, timeout=1)
-
-    def set_pulse(self, throttle, steering):
-        try:
-            if throttle > 0:
-                output_throttle = dk.utils.map_range(throttle,
-                                           0, 1.0,
-                                           1500, 2000)
-            else:
-                output_throttle = dk.utils.map_range(throttle,
-                                           -1, 0,
-                                           1000, 1500)
-            
-            if steering > 0:
-                output_steering = dk.utils.map_range(steering,
-                                           0, 1.0,
-                                           1500, 2000)
-            else:
-                output_steering = dk.utils.map_range(steering,
-                                           -1, 0,
-                                           1000, 1500)
-            
-            packet = "{0},{1}".format(str(output_throttle).zfill(4), str(output_steering).zfill(4))
-            self.pwm.write(b"%d, %d\r" % (eval(packet)))
-            print("%d, %d\r" % (eval(packet)))
-        except OSError as err:
-            print("Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
-
-    def run(self, throttle, steering):
-        self.set_pulse(throttle, steering)
 
 class PiGPIO_PWM():
     '''
@@ -137,11 +81,11 @@ class JHat:
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
         print("Firing up the Hat")
         import Adafruit_PCA9685
-        LED0_OFF_L         = 0x08
+        LED0_OFF_L = 0x08
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
             from Adafruit_GPIO import I2C
-            #replace the get_bus function with our own
+            # replace the get_bus function with our own
             def get_bus():
                 return busnum
             I2C.get_default_bus = get_bus
@@ -150,15 +94,14 @@ class JHat:
         self.channel = channel
         self.register = LED0_OFF_L+4*channel
 
-        #we install our own write that is more efficient use of interrupts
+        # we install our own write that is more efficient use of interrupts
         self.pwm.set_pwm = self.set_pwm
         
     def set_pulse(self, pulse):
         self.set_pwm(self.channel, 0, pulse) 
 
     def set_pwm(self, channel, on, off):
-        #print("pulse", off)
-        """Sets a single PWM channel."""
+        # sets a single PWM channel
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
         
     def run(self, pulse):
@@ -185,14 +128,14 @@ class JHatReader:
         pwm control values from last RC input  
         '''
         h1 = self.pwm._device.readU8(self.register)
-        #first byte of header must be 100, otherwize we might be reading
-        #in the wrong byte offset
+        # first byte of header must be 100, otherwize we might be reading
+        # in the wrong byte offset
         while h1 != 100:
             print("skipping to start of header")
             h1 = self.pwm._device.readU8(self.register)
         
         h2 = self.pwm._device.readU8(self.register)
-        #h2 ignored now
+        # h2 ignored now
 
         val_a = self.pwm._device.readU8(self.register)
         val_b = self.pwm._device.readU8(self.register)
@@ -202,11 +145,9 @@ class JHatReader:
         val_d = self.pwm._device.readU8(self.register)
         self.throttle = (val_d << 8) + val_c
 
-        #scale the values from -1 to 1
+        # scale the values from -1 to 1
         self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
         self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
-        
-        #print(self.steering, self.throttle)
 
     def update(self):
         while(self.running):
@@ -223,52 +164,66 @@ class JHatReader:
 
 class PWMSteering:
     """
-    Wrapper over a PWM motor cotnroller to convert angles to PWM pulses.
+    Wrapper over a PWM motor controller to convert angles to PWM pulses.
     """
-    LEFT_ANGLE = -1 
+    LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
-    def __init__(self, controller=None,
-                       left_pulse=290,
-                       right_pulse=490):
+    def __init__(self,
+                 controller=None,
+                 left_pulse=290,
+                 right_pulse=490):
 
         self.controller = controller
         self.left_pulse = left_pulse
         self.right_pulse = right_pulse
+        self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
+        self.running = True
+        print('PWM Steering created')
 
+    def update(self):
+        while self.running:
+            self.controller.set_pulse(self.pulse)
+
+    def run_threaded(self, angle):
+        # map absolute angle to angle that vehicle can implement.
+        self.pulse = dk.utils.map_range(angle,
+                                        self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
 
     def run(self, angle):
-        #map absolute angle to angle that vehicle can implement.
-        pulse = dk.utils.map_range(angle,
-                                self.LEFT_ANGLE, self.RIGHT_ANGLE,
-                                self.left_pulse, self.right_pulse)
-
-        self.controller.set_pulse(pulse)
+        self.run_threaded(angle)
+        self.controller.set_pulse(self.pulse)
 
     def shutdown(self):
-        self.run(0) #set steering straight
-
+        # set steering straight
+        self.pulse = 0
+        time.sleep(0.3)
+        self.running = False
 
 
 class PWMThrottle:
     """
-    Wrapper over a PWM motor cotnroller to convert -1 to 1 throttle
+    Wrapper over a PWM motor controller to convert -1 to 1 throttle
     values to PWM pulses.
     """
     MIN_THROTTLE = -1
-    MAX_THROTTLE =  1
+    MAX_THROTTLE = 1
 
-    def __init__(self, controller=None,
-                       max_pulse=300,
-                       min_pulse=490,
-                       zero_pulse=350):
+    def __init__(self,
+                 controller=None,
+                 max_pulse=300,
+                 min_pulse=490,
+                 zero_pulse=350):
 
         self.controller = controller
         self.max_pulse = max_pulse
         self.min_pulse = min_pulse
         self.zero_pulse = zero_pulse
-        
-        #send zero pulse to calibrate ESC
+        self.pulse = zero_pulse
+
+        # send zero pulse to calibrate ESC
         print("Init ESC")
         self.controller.set_pulse(self.max_pulse)
         time.sleep(0.01)
@@ -276,23 +231,29 @@ class PWMThrottle:
         time.sleep(0.01)
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
+        self.running = True
+        print('PWM Throttle created')
 
+    def update(self):
+        while self.running:
+            self.controller.set_pulse(self.pulse)
+
+    def run_threaded(self, throttle):
+        if throttle > 0:
+            self.pulse = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
+                                            self.zero_pulse, self.max_pulse)
+        else:
+            self.pulse = dk.utils.map_range(throttle, self.MIN_THROTTLE, 0,
+                                            self.min_pulse, self.zero_pulse)
 
     def run(self, throttle):
-        if throttle > 0:
-            pulse = dk.utils.map_range(throttle,
-                                    0, self.MAX_THROTTLE, 
-                                    self.zero_pulse, self.max_pulse)
-        else:
-            pulse = dk.utils.map_range(throttle,
-                                    self.MIN_THROTTLE, 0, 
-                                    self.min_pulse, self.zero_pulse)
+        self.run_threaded(throttle)
+        self.controller.set_pulse(self.pulse)
 
-        self.controller.set_pulse(pulse)
-        
     def shutdown(self):
-        self.run(0) #stop vehicle
-
+        # stop vehicle
+        self.run(0)
+        self.running = False
 
 
 class Adafruit_DCMotor_Hat:
@@ -337,6 +298,7 @@ class Adafruit_DCMotor_Hat:
 
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
+
 
 class Maestro:
     '''
@@ -415,10 +377,11 @@ class Maestro:
             if Maestro.astar_device.inWaiting() > 8:
                 ret = Maestro.astar_device.readline()
 
-        if ret != None:
+        if ret is not None:
             ret = ret.rstrip()
 
         return ret
+
 
 class Teensy:
     '''
