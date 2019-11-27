@@ -20,8 +20,12 @@ class SerialController:
 
 
     def update(self):
+        # delay on startup to avoid crashing
+        print("Warming Serial Controller")
+        time.sleep(3)
+
         while True:
-            line = self.serial.readline().decode('utf-8').strip('\n').strip('\r')
+            line = str(self.serial.readline().decode()).strip('\n').strip('\r')
             output = line.split(", ")
             if len(output) == 2:
                 if output[0].isnumeric() and output[1].isnumeric():

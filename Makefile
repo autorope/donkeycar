@@ -4,7 +4,5 @@ tests:
 	pytest
 
 package:
-	python setup.py sdist bdist_wheel
+	python setup.py sdist
 
-push_tags:
-	git push --follow-tags

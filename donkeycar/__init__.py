@@ -1,15 +1,8 @@
-import os
+__version__ = '3.1.0'
 
-import pkg_resources  # part of setuptools
+print('using donkey v{} ...'.format(__version__))
+
 import sys
-
-__version__ = pkg_resources.require("donkeycar")[0].version
-print('using donkey version: {} ...'.format(__version__))
-
-
-
-current_module = sys.modules[__name__]
-
 
 if sys.version_info.major < 3:
     msg = 'Donkey Requires Python 3.4 or greater. You are using {}'.format(sys.version)
@@ -18,6 +11,7 @@ if sys.version_info.major < 3:
 from . import parts
 from .vehicle import Vehicle
 from .memory import Memory
-from . import util
+from . import utils
 from . import config
+from . import contrib
 from .config import load_config

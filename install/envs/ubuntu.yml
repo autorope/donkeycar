@@ -1,9 +1,19 @@
 name: donkey
 dependencies:
 
-- h5py=2.5.0
-- pillow=2.9.0
+- h5py
+- pillow
+- tensorflow==1.13.1
+- opencv
+- matplotlib
+- tornado
+- docopt
+- pandas
+- pylint
+- pytest
+- pip
 
 - pip:
-  - theano==0.9.0
-  - tensorflow==1.7.0
+  - moviepy
+  - paho-mqtt
+  - PrettyTable

@@ -66,4 +66,3 @@ class TestMemory(unittest.TestCase):
         mem.put(['myitem'], 888)
         
         assert dict(mem.items()) == {'myitem': 888}
-

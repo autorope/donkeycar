@@ -1,0 +1,156 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+	<body>
+		<div class="container-fluid">
+
+			<div class="row">
+				<div class="col-md-12">
+					<h2><span class="text-muted">Session:</span> {{ escape(session['name'])}} </h2>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-12 session-thumbnails">
+					<ol id="selectable">
+						<p class="text-muted"><em>Click and drag to select images, command + click to select multiple single images.</em></p>
+						{% for img in session['imgs'] %}
+							<li class="thumbnail" id="{{ img['name'] }}">
+								<img src="/session_image/{{session['name']}}/{{ img['name'] }}" class="img-responsive">
+								<div class="caption">
+									<p class="small desc">
+										{% if img['angle'] < 0 %}
+											<span class="glyphicon glyphicon-arrow-left"></span>
+										{% elif img['angle'] ==0 %}
+											<span class="glyphicon glyphicon-arrow-up"></span>
+										{% elif img['angle'] > 0 %}
+											<span class="glyphicon glyphicon-arrow-right"></span>
+										{% end %}
+										Angle: {{img['angle']}}</p>
+									<p class="small desc">
+										<span class="glyphicon glyphicon-dashboard"></span>
+										Throttle: {{img['throttle']}}</p>
+                                                                        {% if 'speed' in img.keys() %}
+									<p class="small desc">
+										<span class="glyphicon glyphicon-dashboard"></span>
+										Speed: {{img['speed']}}</p>
+                                                                        {% end %}
+								</div>
+							</li>
+						{% end %}
+					</ol>
+				</div>
+			</div>
+		</div>
+
+	<footer class='footer' >
+		<div class="container-fluid">
+			
+			<div class="col-md-5">
+				<nav aria-label="Page navigation">
+					<ul class="pagination">
+						<li>
+							<a href="./{{this_page - 1}}" aria-label="Previous">
+								<span aria-hidden="true">&laquo;</span>
+							</a>
+						</li>
+
+						{% for p in page_list %}
+							<li ><a href="./{{p}}"> {{p}} </a></li>
+						{% end %}
+
+						<li>
+							<a href="./{{this_page + 1}}" aria-label="Next">
+								<span aria-hidden="true">&raquo;</span>
+							</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
+
+            
+            <div class="col-md-2 img-controls">
+				<div class="form-inline">
+                    <form method="GET" action="download">
+					<input class="btn btn-default" type="submit" value="Download .zip" id="download">
+                    </form>
+                </div>
+			</div>
+			
+			<div class="col-md-5 img-controls text-right">
+				<div class="form-inline">
+					<label>
+						<span id="select-result">0</span> selected
+					</label>
+					<label class="btn btn-default">
+						<input id="select-all" type="checkbox"> Select All
+					</label>
+					<input class="btn btn-danger" type="button" value="Delete Selected" id="delete-all">
+				</div>
+			</div>
+
+		</div>
+	</footer>
+
+	<div class='meta' style="display:none">
+		<span id="session_id" data-id={{ escape(session['name'])}}>session_id:  {{ escape(session['name'])}} </span>
+	</div>
+
+	<script>
+		$(document).ready(function() {
+
+			$( "#selectable" ).selectable({
+			  filter: 'li',
+				autoRefresh: false,
+
+				stop: function() {
+					$( "#select-result" ).text(function( index ) {
+					  return $('.ui-selected').length;
+					});
+	}
+			});
+
+			$('#select-all').on('click', function () {
+				if ($(this).is(":checked")) {
+					$('.thumbnail').addClass('ui-selected');
+				} else {
+					$('.thumbnail').removeClass('ui-selected');
+				}
+
+				$( "#select-result" ).text(function( index ) {
+					return $('.ui-selected').length;
+				});
+			})
+
+			$('#delete-all').click(function(){
+				var selected = []
+
+				// Build array of selected images
+				$(".ui-selected").each(function() {
+					selected.push(this.id);
+				});
+
+				console.log(selected);
+
+				//Send post request to server.
+				data = JSON.stringify({ 'imgs': selected,
+																'session_id': $('#session_id').data('id'),
+																'action':'delete_images'});
+
+				console.log(data);
+				$.post('', data);
+
+				//Remove deleted images from page
+				$(selected).each(function( index, value ) {
+					console.log(value);
+					$("[id='" + value + "']").remove();
+					$( "#selectable" ).selectable( "refresh" );
+				});
+			});
+
+		} );
+	</script>
+
+	</body>
+{% end %}

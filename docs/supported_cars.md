@@ -16,7 +16,7 @@ The Desert Monster, SCT and Blaze are made by the same manufacturer as the Magne
 It is worth noting that the Desert Monster and SCT also has some nice characteristics including narrower, more road friendly tires and the Blaze has a slightly narrower stance which makes it less likely to hit things.
 
 ![Desert Monster](./assets/build_hardware/Desert_Monster.png)
-Tu purchase one of these cars follow the following links:
+To purchase one of these cars follow the following links:
 
 *  Exceed Desert Monster [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)
 *  Exceed Short Course Truck  [Blue](https://amzn.to/2KsYF1e),  [Red](https://amzn.to/2rdtQ8z)
@@ -32,6 +32,27 @@ To assemble one of these you will need some additional parts than the standard b
 To assemble first remove the plastic cover and roll cage then unscrew the posts that hold up the cover and replace with the adapters.
 
 Visual instructions to follow.
+
+## LaTrax Prerunner
+The LaTrax prerunner is a supported car and follows the same build instructions as the Desert Monster.  However the adapters get screwed in as is shown in the photo below.  
+
+![donkey](./assets/Latrax.JPG)
+
+
+## Donkey Pro
+To build a donkey pro the following parts are Needed
+
+| Part Description   | Link  | Approximate Cost |
+|---|----|---|
+|Donkey Pro Plastics and base | Thingiverse: https://www.thingiverse.com/thing:2805287 or Donkeystore: https://squareup.com/store/donkeycar | $50|
+|(8) M2.5 standoff| | |
+|(8) M2.5 Nylock nuts| | |
+|(8) M2.5x6mm socket head cap screws | | |
+|(4) M3x10 plastic self threading screw | | |
+
+To assemble the Raspberry pi to the chassis this assembly picture should clarify how it fits together.
+
+![assy](./assets/screw_assy.png)
 
 ## Tamaya TT-01 (Advanced Build)
 

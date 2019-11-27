@@ -1,7 +1,7 @@
 # donkeycar: a python self driving library
 
 [![Build Status](https://travis-ci.org/autorope/donkeycar.svg?branch=dev)](https://travis-ci.org/autorope/donkeycar)
-[![codecov](https://codecov.io/gh/autorope/donkeycar/branch/master/graph/badge.svg)](https://codecov.io/gh/autorope/donkeycar)
+[![CodeCov](https://codecov.io/gh/autoropoe/donkeycar/branch/dev/graph/badge.svg)](https://codecov.io/gh/autorope/donkeycar/branch/dev)
 [![PyPI version](https://badge.fury.io/py/donkeycar.svg)](https://badge.fury.io/py/donkeycar)
 [![Py versions](https://img.shields.io/pypi/pyversions/donkeycar.svg)](https://img.shields.io/pypi/pyversions/donkeycar.svg)
 
@@ -34,22 +34,29 @@ The donkey car is controlled by running a sequence of events
 ```python
 #Define a vehicle to take and record pictures 10 times per second.
 
+import time
 from donkeycar import Vehicle
-from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.datastore import Tub
-
-
+from donkeycar.parts.cv import CvCam
+from donkeycar.parts.datastore import TubWriter
 V = Vehicle()
 
-#add a camera part
-cam = PiCamera()
+IMAGE_W = 160
+IMAGE_H = 120
+IMAGE_DEPTH = 3
+
+#Add a camera part
+cam = CvCam(image_w=IMAGE_W, image_h=IMAGE_H, image_d=IMAGE_DEPTH)
 V.add(cam, outputs=['image'], threaded=True)
 
+#warmup camera
+while cam.run() is None:
+    time.sleep(1)
+
 #add tub part to record images
-tub = Tub(path='~/mycar/get_started',
+tub = TubWriter(path='./dat',
           inputs=['image'],
           types=['image_array'])
-V.add(tub, inputs=['image'])
+V.add(tub, inputs=['image'], outputs=['num_records'])
 
 #start the drive loop at 10 Hz
 V.start(rate_hz=10)

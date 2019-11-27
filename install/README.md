@@ -5,4 +5,6 @@ image you can use the scripts in /pi.
 
 
 ### Install on other systems
-Create a conda environment using the env files in
+Create a conda environment using the env files
+
+
