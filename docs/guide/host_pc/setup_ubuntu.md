@@ -67,4 +67,7 @@ donkey createcar --path ~/mycar
 
 ----
 
+## Installation and Training Video
+https://youtu.be/J6Ll5Obtuxk
+
 ### Next let's [install software on Donkeycar](/guide/install_software/#step-2-install-software-on-donkeycar)
