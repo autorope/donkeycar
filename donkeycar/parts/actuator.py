@@ -7,7 +7,6 @@ are wrapped in a mixer class before being used in the drive loop.
 import time
 
 import donkeycar as dk
-from utils import map_frange
 
         
 class PCA9685:
@@ -641,7 +640,7 @@ class RPi_GPIO_Servo(object):
         -1 is full backwards.
         '''
         #I've read 90 is a good max
-        self.throttle = map_frange(pulse, -1.0, 1.0, self.min, self.max)
+        self.throttle = dk.map_frange(pulse, -1.0, 1.0, self.min, self.max)
         #print(pulse, self.throttle)
         self.pwm.ChangeDutyCycle(self.throttle)
 
