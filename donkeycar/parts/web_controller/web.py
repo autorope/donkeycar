@@ -5,9 +5,7 @@ Created on Sat Jun 24 20:10:44 2017
 
 @author: wroscoe
 
-remotes.py
-
-The client and web server needed to control a car remotely. 
+The client and web server needed to control a car remotely.
 """
 
 
@@ -17,9 +15,13 @@ import time
 import asyncio
 
 import requests
-import tornado.ioloop
-import tornado.web
+from tornado.ioloop import IOLoop
+from tornado.web import Application, RedirectHandler, StaticFileHandler, \
+    RequestHandler
+from tornado.iostream import StreamClosedError
+from tornado.httpserver import HTTPServer
 import tornado.gen
+from socket import gethostname
 
 from ... import utils
 
@@ -38,11 +40,9 @@ class RemoteWebServer():
         self.throttle = 0.
         self.mode = 'user'
         self.recording = False
-        #use one session for all requests
+        # use one session for all requests
         self.session = requests.Session()
 
-
-        
     def update(self):
         '''
         Loop to run in separate thread the updates angle, throttle and 
@@ -50,45 +50,38 @@ class RemoteWebServer():
         '''
 
         while True:
-            #get latest value from server
+            # get latest value from server
             self.angle, self.throttle, self.mode, self.recording = self.run()
-
 
     def run_threaded(self):
         ''' 
         Return the last state given from the remote server.
         '''
-        
-        #return last returned last remote response.
         return self.angle, self.throttle, self.mode, self.recording
 
-        
     def run(self):
         '''
         Posts current car sensor data to webserver and returns
         angle and throttle recommendations. 
         '''
-        
         data = {}
         response = None
-        while response == None:
+        while response is None:
             try:
                 response = self.session.post(self.control_url, 
                                              files={'json': json.dumps(data)},
                                              timeout=0.25)
-                
-            except (requests.exceptions.ReadTimeout) as err:
+
+            except requests.exceptions.ReadTimeout as err:
                 print("\n Request took too long. Retrying")
-                #Lower throttle to prevent runaways.
+                # Lower throttle to prevent runaways.
                 return self.angle, self.throttle * .8, None
-                
-            except (requests.ConnectionError) as err:
-                #try to reconnect every 3 seconds
-                print("\n Vehicle could not connect to server. Make sure you've " + 
+
+            except requests.ConnectionError as err:
+                # try to reconnect every 3 seconds
+                print("\n Vehicle could not connect to server. Make sure you've " +
                     "started your server and you're referencing the right port.")
                 time.sleep(3)
-            
-
 
         data = json.loads(response.text)
         angle = float(data['angle'])
@@ -100,9 +93,9 @@ class RemoteWebServer():
 
     def shutdown(self):
         pass
-    
-    
-class LocalWebController(tornado.web.Application):
+
+
+class LocalWebController(Application):
 
     def __init__(self):
         ''' 
@@ -110,7 +103,7 @@ class LocalWebController(tornado.web.Application):
         the web handlers.
         '''
 
-        print('Starting Donkey Server...')
+        print('Starting Donkey Server...', end='')
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
@@ -119,25 +112,26 @@ class LocalWebController(tornado.web.Application):
         self.throttle = 0.0
         self.mode = 'user'
         self.recording = False
+        self.port = 8887
 
         handlers = [
-            (r"/", tornado.web.RedirectHandler, dict(url="/drive")),
+            (r"/", RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
-            (r"/video",VideoAPI),
-            (r"/static/(.*)", tornado.web.StaticFileHandler, {"path": self.static_file_path}),
-            ]
+            (r"/video", VideoAPI),
+            (r"/static/(.*)", StaticFileHandler,
+             {"path": self.static_file_path}),
+        ]
 
         settings = {'debug': True}
-
         super().__init__(handlers, **settings)
+        print("... you can now go to {}.local:8887 to drive "
+              "your car.".format(gethostname()))
 
-    def update(self, port=8887):
+    def update(self):
         ''' Start the tornado webserver. '''
         asyncio.set_event_loop(asyncio.new_event_loop())
-        print(port)
-        self.port = int(port)
         self.listen(self.port)
-        tornado.ioloop.IOLoop.instance().start()
+        IOLoop.instance().start()
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
@@ -151,13 +145,12 @@ class LocalWebController(tornado.web.Application):
         pass
 
 
-class DriveAPI(tornado.web.RequestHandler):
+class DriveAPI(RequestHandler):
 
     def get(self):
         data = {}
         self.render("templates/vehicle.html", **data)
-    
-    
+
     def post(self):
         '''
         Receive post requests as user changes the angle
@@ -170,32 +163,80 @@ class DriveAPI(tornado.web.RequestHandler):
         self.application.recording = data['recording']
 
 
-class VideoAPI(tornado.web.RequestHandler):
+class VideoAPI(RequestHandler):
     '''
     Serves a MJPEG of the images posted from the vehicle. 
     '''
+
     async def get(self):
 
-        self.set_header("Content-type", "multipart/x-mixed-replace;boundary=--boundarydonotcross")
+        self.set_header("Content-type",
+                        "multipart/x-mixed-replace;boundary=--boundarydonotcross")
 
-        self.served_image_timestamp = time.time()
+        served_image_timestamp = time.time()
         my_boundary = "--boundarydonotcross\n"
         while True:
-            
-            interval = .1
-            if self.served_image_timestamp + interval < time.time():
 
+            interval = .01
+            if served_image_timestamp + interval < time.time() and \
+                    hasattr(self.application, 'img_arr'):
 
                 img = utils.arr_to_binary(self.application.img_arr)
-
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
-                self.write("Content-length: %s\r\n\r\n" % len(img)) 
+                self.write("Content-length: %s\r\n\r\n" % len(img))
                 self.write(img)
-                self.served_image_timestamp = time.time()
+                served_image_timestamp = time.time()
                 try:
                     await self.flush()
-                except tornado.iostream.StreamClosedError:
+                except StreamClosedError:
                     pass
             else:
                 await tornado.gen.sleep(interval)
+
+
+class WebFpv(Application):
+    """
+    Class for running an FPV web server that only shows the camera in real-time.
+    The web page contains the camera view and auto-adjusts to the web browser
+    window size. Conjecture: this picture up-scaling is performed by the
+    client OS using graphics acceleration. Hence a web browser on the PC is
+    faster than a pure python application based on open cv or similar.
+    """
+
+    def __init__(self, port=8890):
+        self.port = port
+
+        """Construct and serve the tornado application."""
+        handlers = [
+            (r"/", BaseHandler),
+            (r"/video", VideoAPI),
+        ]
+
+        settings = {'debug': True}
+        super().__init__(handlers, **settings)
+        print("Started Web FPV server. You can now go to {}.local:{} to "
+              "view the car camera".format(gethostname(), self.port))
+
+    def update(self):
+        ''' Start the tornado webserver. '''
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        self.listen(self.port)
+        IOLoop.instance().start()
+
+    def run_threaded(self, img_arr=None):
+        self.img_arr = img_arr
+
+    def run(self, img_arr=None):
+        self.img_arr = img_arr
+
+    def shutdown(self):
+        pass
+
+
+class BaseHandler(RequestHandler):
+
+    def get(self):
+        data = {}
+        self.render("templates/base_fpv.html", **data)
+
