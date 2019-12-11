@@ -50,6 +50,7 @@ class RoboHATController:
                 line = str(self.serial.readline().decode()).strip('\n').strip('\r')
             except:
                 print("Serial Error!")
+                break
             output = line.split(", ")
             if len(output) == 2:
                 if output[0].isnumeric() and output[1].isnumeric():
