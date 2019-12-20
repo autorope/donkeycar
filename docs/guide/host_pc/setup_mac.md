@@ -1,6 +1,6 @@
 ## Install Donkeycar on Mac
 
-![donkey](../assets/logos/apple_logo.jpg)
+![donkey](/assets/logos/apple_logo.jpg)
 
 * Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html)
 
