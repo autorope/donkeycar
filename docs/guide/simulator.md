@@ -42,6 +42,9 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"
 
 > Note: your path to the executable will vary depending on platform and user.
 
+## Installation Video:
+https://youtu.be/J6Ll5Obtuxk
+
 ## Drive
 
 You may use all the normal commands to manage.py at this point. Such as:

@@ -40,7 +40,7 @@ pip install -e .[pc]
 
 * Tensorflow GPU
 
-Currently there is no gpu support for [tensorflow on mac](https://www.tensorflow.org/install#install-tensorflow).
+Currently there is no NVidia gpu support for [tensorflow on mac](https://www.tensorflow.org/install#install-tensorflow).
 
 * Create your local working dir:
 
