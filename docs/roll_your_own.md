@@ -40,7 +40,10 @@ While there are lots of designs out there besides the Donkeycar, but two stand o
 
 ### Chilicorn rail
 
-This is a flexible mounting system developed by Markku.ai.  More details at [markku.ai](markku.ai).
+This is a flexible mounting system developed by Markku.ai.
+
+* [markku.ai](http://markku.ai)
+* [markku-ai github](https://github.com/markku-ai)
 
 ### sCAD Files
 
