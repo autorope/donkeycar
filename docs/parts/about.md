@@ -1,6 +1,7 @@
 # What is a Part
 
 A part Python class that wraps a functional component of a vehicle.
+
 These include:
 
 * Sensors - Cameras, Lidar, Odometers, GPS ...
@@ -43,10 +44,10 @@ Now to add this to a vehicle:
 ```python
 V = dk.Vehicle()
 
-#initialize the channel value
+# initialize the channel value
 V.mem['const'] = 4
 
-#add the part to read and write to the same channel.
+# add the part to read and write to the same channel.
 V.add(RandPercent, inputs=['const'], outputs=['const'])
 
 V.start(max_loops=5)
@@ -61,21 +62,21 @@ A threaded part needs to define the function that runs in the separate thread
 and the function to call that will return the most recent values quickly.
 
 Here's an example how to make the `RandPercent` part threaded if the run
-function too a second to complete.
+function takes a second to complete.
 
 ```python
 import random
 import time
 
 class RandPercent:
-    self.in = 0.
-    self.out = 0.
+    self.in = 0.0
+    self.out = 0.0
     def run(self, x):
         return x * random.random()
         time.sleep(1)
 
     def update(self):
-        #the funtion run in it's own thread
+        # the function run in it's own thread
         while True:
             self.out = self.run(self.in)
 
