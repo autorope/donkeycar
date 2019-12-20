@@ -294,6 +294,18 @@ def my_ip():
 OTHER
 '''
 
+def map_frange(x, X_min, X_max, Y_min, Y_max):
+    ''' 
+    Linear mapping between two ranges of values 
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    return y
+
 
 def merge_two_dicts(x, y):
     """Given two dicts, merge them into a new dict as a shallow copy."""
