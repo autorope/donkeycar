@@ -3,6 +3,7 @@
 Scripts for operating the RoboHAT MM1 by Robotics Masters with the Donkeycar
 
 author: @wallarug (Cian Byrne) 2019
+contrib: @peterpanstechland 2019
 """
 
 import time
@@ -15,7 +16,7 @@ except ImportError:
 class RoboHATController:
     '''
     Driver to read signals from SAMD51 and convert into steering and throttle outputs
-    Input input signal range: 0 to 200
+    Input input signal range: 1000 to 2000
     Output range: -1.00 to 1.00
     '''
 
@@ -90,7 +91,7 @@ class RoboHATDriver:
                 output_throttle = dk.utils.map_range(throttle,
                                            -1, 0,
                                            1000, 1500)
-            
+
             if steering > 0:
                 output_steering = dk.utils.map_range(steering,
                                            0, 1.0,
@@ -99,7 +100,7 @@ class RoboHATDriver:
                 output_steering = dk.utils.map_range(steering,
                                            -1, 0,
                                            1000, 1500)
-            
+
             packet = "{0},{1}".format(str(output_throttle).zfill(4), str(output_steering).zfill(4))
             self.pwm.write(b"%d, %d\r" % (eval(packet)))
             print("%d, %d\r" % (eval(packet)))
