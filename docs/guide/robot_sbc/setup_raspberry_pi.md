@@ -35,6 +35,7 @@ This is formatted with the common FAT type and is where we will edit some files 
 > Note: If __boot__ is not visible right away, try unplugging and re-inserting the memory card reader.
 
 * Start a text editor: `gedit` on Linux. Notepad++ on Windows. TextEdit on a Mac.
+* Possible `country` codes to use can be found [here](https://www.thinkpenguin.com/gnu-linux/country-code-list)
 * Paste and edit this contents to match your wifi, adjust as needed:
 
 ```text
