@@ -20,8 +20,10 @@
 
 You need to flash a micro SD image with an operating system.
 
-1. Download [Raspian Lite(Stretch)](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-04-09/2019-04-08-raspbian-stretch-lite.zip) (352MB). 
-2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
+1. Download [Raspian Lite] depending on your device:
+  * for Raspberry Pi 3 we suggest [stretch](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-04-09/), because it is well tested. 
+  * for Rasberry Pi 4 it is required to use newer release [buster](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/).
+2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/), especially if you plan to upgrade to newest system version (pro tip, it is faster to make a fresh install from newer image than doing upgrade)
 3. Leave micro SD card in your machine and edit/create some files as below:
 
 ## Step 2: Setup the WiFi for first boot
