@@ -23,12 +23,12 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-    version='3.1.1',
+    version='3.1.1rm',
     long_description = long_description,
     description='Self driving library for python.',
-    url='https://github.com/autorope/donkeycar',
+    url='https://github.com/robotics-masters/donkeycar',
     author='Will Roscoe, Adam Conway, Tawn Kramer',
-    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
+    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com, cian@roboticsmasters.co',
     license='MIT',
     entry_points={
         'console_scripts': [
@@ -51,7 +51,8 @@ setup(name='donkeycar',
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
-                        'RPi.GPIO'
+                        'RPi.GPIO',
+                        'pyserial',
                         ],
                     'nano': [
                         'Adafruit_PCA9685',                        
@@ -93,6 +94,7 @@ setup(name='donkeycar',
 
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
 
