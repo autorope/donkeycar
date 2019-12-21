@@ -1,6 +1,6 @@
 # Donkey Simulator
 
-The [Donkey Gym](https://github.com/tawnkramer/gym-donkeycar) project is a OpenAI gym wrapper around the [Self Driving Sandbox](https://github.com/tawnkramer/sdsandbox/tree/donkey) donkey simulator. When building the sim from source, checkout the `donkey` branch of the `sdsandbox` project. 
+The [Donkey Gym](https://github.com/tawnkramer/gym-donkeycar) project is a OpenAI gym wrapper around the [Self Driving Sandbox](https://github.com/tawnkramer/sdsandbox/tree/donkey) donkey simulator (`sdsandbox`). When building the sim from source, checkout the `donkey` branch of the `sdsandbox` project. 
 
 The simulator is built on the the [Unity](https://unity.com/) game platform, uses their internal physics and graphics, and connects to a donkey Python process to use our trained model to control the simulated Donkey.
 
@@ -31,7 +31,7 @@ donkey createcar --path ~/mysim
 cd ~/mysim
 ```
 
-* Edit your myconfig.py to enable donkey gym simulator wrapper, replace `<user-name` ad the other parts of the path:
+* Edit your myconfig.py to enable donkey gym simulator wrapper, replace `<user-name>` and the other parts of the path:
 
 ```bash
 DONKEY_GYM = True
@@ -55,7 +55,9 @@ python manage.py drive
 
 This should start the simulator and connect to it automatically. By default you will have a web interface to control the donkey. Navigate to [http://localhost:8887/drive](http://localhost:8887/drive) to see control page.
 
-On Ubuntu Linux only, you may plug in your joystick of choice. If it mounts as `/dev/input/js0` then there's a good chance it will work. Modify myconfig.py to indicate your joystick model and use the `--js` arg to run.
+On Ubuntu Linux only, you may plug in your joystick of choice.
+If it mounts as `/dev/input/js0` then there's a good chance it will work.
+Modify myconfig.py to indicate your joystick model and use the `--js` arg to run.
 
 ```bash
 python manage.py drive --js
