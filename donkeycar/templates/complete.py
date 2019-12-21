@@ -97,7 +97,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             inputs = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
-            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
         elif cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam
             cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
@@ -121,15 +121,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        from donkeycar.parts.controller import get_js_controller
-        
-        ctr = get_js_controller(cfg)
-        
-        if cfg.USE_NETWORKED_JS:
-            from donkeycar.parts.controller import JoyStickSub
-            netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-            V.add(netwkJs, threaded=True)
-            ctr.js = netwkJs
+        if cfg.HAVE_ROBOHAT:
+            from donkeycar.parts.robohat import RoboHATController
+            
+            ctr = RoboHATController()
+        else:
+            from donkeycar.parts.controller import get_js_controller
+
+            ctr = get_js_controller(cfg)
+
+            if cfg.USE_NETWORKED_JS:
+                from donkeycar.parts.controller import JoyStickSub
+                netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
+                V.add(netwkJs, threaded=True)
+                ctr.js = netwkJs
 
     else:        
         #This web controller will create a web server that is capable
@@ -391,10 +396,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 return user_angle, user_throttle
             
             elif mode == 'local_angle':
-                return pilot_angle, user_throttle
+                return pilot_angle if pilot_angle else 0.0, user_throttle
             
             else: 
-                return pilot_angle, pilot_throttle * cfg.AI_THROTTLE_MULT
+                return pilot_angle if pilot_angle else 0.0, pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0
         
     V.add(DriveMode(), 
           inputs=['user/mode', 'user/angle', 'user/throttle',
@@ -442,21 +447,32 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         pass
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
-        from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-
-        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+        if cfg.HAVE_ROBOHAT and model_path:
+            from donkeycar.parts.robohat import RoboHATDriver
+            
+            #steering_controller = RoboHATDriver(cfg.STEERING_CHANNEL)
+            #throttle_controller = RoboHATDriver(cfg.THROTTLE_CHANNEL)
+            
+            V.add(RoboHATDriver(), inputs=['angle', 'throttle'])
+        elif cfg.HAVE_ROBOHAT:
+            pass
         
-        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle = PWMThrottle(controller=throttle_controller,
-                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
+        else:    
+            from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
-        V.add(steering, inputs=['angle'], threaded=True)
-        V.add(throttle, inputs=['throttle'], threaded=True)
+            steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+            steering = PWMSteering(controller=steering_controller,
+                                            left_pulse=cfg.STEERING_LEFT_PWM, 
+                                            right_pulse=cfg.STEERING_RIGHT_PWM)
+
+            throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+            throttle = PWMThrottle(controller=throttle_controller,
+                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+
+            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(throttle, inputs=['throttle'], threaded=True)
 
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
