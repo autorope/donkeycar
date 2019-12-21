@@ -23,12 +23,12 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-    version='3.1.1rm',
+    version='3.1.1',
     long_description = long_description,
     description='Self driving library for python.',
-    url='https://github.com/robotics-masters/donkeycar',
+    url='https://github.com/autorope/donkeycar',
     author='Will Roscoe, Adam Conway, Tawn Kramer',
-    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com, cian@roboticsmasters.co',
+    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
     license='MIT',
     entry_points={
         'console_scripts': [
@@ -55,7 +55,7 @@ setup(name='donkeycar',
                         'pyserial',
                         ],
                     'nano': [
-                        'Adafruit_PCA9685',                        
+                        'Adafruit_PCA9685',
                         ],
                     'pc': [
                         'matplotlib',
