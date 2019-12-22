@@ -129,7 +129,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 	# Your virtual environment's Python executable
 	# You need to specify the result of echo $(which python)
 	-D PYTHON_EXECUTABLE=~/env/bin/python \
-	-D BUILD_EXAMPLES=ON ../opencv
+	-D BUILD_EXAMPLES=ON ../
 ```
 
 The `cmake` command should show a summary of the configuration. Make sure that the `Interpreter` is set to the Python executable associated to *your* virtualenv.  Note: there are several paths in the CMake setup, make sure they match where you downloaded and saved the OpenCV source.

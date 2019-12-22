@@ -84,6 +84,32 @@ If you have assigned a non-standard address to your board, then adjust the addre
 
 Set ```HAVE_SOMBRERO = True``` in your __myconfig.py__ if you have a sombrero board.
 
+## Robo HAT MM1 Setup
+
+Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board.
+
+The Robo HAT MM1 uses a RC Controller and CircuitPython script to drive the car during training. You must put the CircuitPython script onto the Robo HAT MM1 with your computer before you can continue.
+
+1.  Download the CircuitPython Donkey Car Driver for Robo HAT MM1 to your computer from [here](https://github.com/robotics-masters/mm1-hat-cpy-native/blob/master/examples/rc-cpy-final.py)
+2.  Connect the MicroUSB connector on the Robo HAT MM1 to your computer's USB port.
+3.  A __CIRCUITPY__ device should appear on the computer as a USB Storage Device
+4.  Copy the file downloaded in Step 1 to the __CIRCUITPY__ USB Storage Device.  Rename the file __code.py__.
+5.  Unplug USB Cable from the Robo HAT MM1 and place on top of the Raspberry Pi, as you would any HAT.
+
+
+You may need to enable the hardware serial port on your Raspberry Pi.  On your Raspberry Pi...
+
+1.  Run the command ```sudo raspi-config```
+2.  Navigate to the __5 - Interfaceing options__ section.
+3.  Navigate to the __P6 - Serial__ section.
+4.  When asked: __Would you like a login shell to be accessible over serial?__  NO
+5.  When asked: __Would you like the serial port hardware to be enabled?__ YES
+6.  Close raspi-config
+7.  Restart
+
+
+Please skip to [here](/guide/get_driving) to continue setting up your car.
+
 ## Joystick setup
 
 If you plan to use a joystick, take a side track over to [here](/parts/controllers/#joystick-controller).

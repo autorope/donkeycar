@@ -1,6 +1,6 @@
 ## Install Donkeycar on Mac
 
-![donkey](../assets/logos/apple_logo.jpg)
+![donkey](/assets/logos/apple_logo.jpg)
 
 * Install [miniconda Python 3.7 64 bit](https://conda.io/miniconda.html)
 
@@ -40,7 +40,7 @@ pip install -e .[pc]
 
 * Tensorflow GPU
 
-Currently there is no gpu support for [tensorflow on mac](https://www.tensorflow.org/install#install-tensorflow).
+Currently there is no NVidia gpu support for [tensorflow on mac](https://www.tensorflow.org/install#install-tensorflow).
 
 * Create your local working dir:
 
