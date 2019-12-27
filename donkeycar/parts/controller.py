@@ -1135,6 +1135,71 @@ class XboxOneJoystickController(JoystickController):
         }
 
 
+class XboxOneSwappedJoystickController(JoystickController):
+    '''
+    A Controller object that maps inputs to actions
+    credit:
+    https://github.com/Ezward/donkeypart_ps3_controller/blob/master/donkeypart_ps3_controller/part.py
+    left joystick - acceleration
+    right joystick - turning
+    '''
+    def __init__(self, *args, **kwargs):
+        super(XboxOneSwappedJoystickController, self).__init__(*args, **kwargs)
+
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = XboxOneJoystick(self.dev_fn)
+            self.js.init()
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+
+    def magnitude(self, reversed = False):
+        def set_magnitude(axis_val):
+            '''
+            Maps raw axis values to magnitude.
+            '''
+            # Axis values range from -1. to 1.
+            minimum = -1.
+            maximum = 1.
+            # Magnitude is now normalized in the range of 0 - 1.
+            magnitude = (axis_val - minimum) / (maximum - minimum)
+            if reversed:
+                magnitude *= -1
+            self.set_throttle(magnitude)
+        return set_magnitude
+
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+
+        self.button_down_trigger_map = {
+            'a_button': self.toggle_mode,
+            'b_button': self.toggle_manual_recording,
+            'x_button': self.erase_last_N_records,
+            'y_button': self.emergency_stop,
+            'right_shoulder': self.increase_max_throttle,
+            'left_shoulder': self.decrease_max_throttle,
+            'options': self.toggle_constant_throttle,
+        }
+
+        self.axis_trigger_map = {
+            'right_stick_horz': self.set_steering,
+            'left_stick_vert': self.set_throttle,
+            # Forza Mode
+            'right_trigger': self.magnitude(),
+            'left_trigger': self.magnitude(reversed = True),
+        }
+
+
 class LogitechJoystickController(JoystickController):
     '''
     A Controller object that maps inputs to actions
@@ -1412,6 +1477,8 @@ def get_js_controller(cfg):
         cont_class = NimbusController
     elif cfg.CONTROLLER_TYPE == "xbox":
         cont_class = XboxOneJoystickController
+    elif cfg.CONTROLLER_TYPE == "xboxswapped":
+        cont_class = XboxOneSwappedJoystickController
     elif cfg.CONTROLLER_TYPE == "wiiu":
         cont_class = WiiUController
     elif cfg.CONTROLLER_TYPE == "F710":
