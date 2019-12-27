@@ -25,6 +25,7 @@ pages:
       - 'Keras': parts/keras.md
       - 'Stores': parts/stores.md
       - 'IMU': parts/imu.md
+      - 'OLED': parts/oled.md
   - Utilities:
       - 'donkey': utility/donkey.md
 
