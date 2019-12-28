@@ -108,7 +108,7 @@ You may need to enable the hardware serial port on your Raspberry Pi.  On your R
 7.  Restart
 
 
-Please skip to [here](/guide/get_driving) to continue setting up your car.
+Please skip to [here](/guide/get_driving/#driving-with-physical-joystick-controller) to continue setting up your car.
 
 ## Joystick setup
 
