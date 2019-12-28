@@ -651,7 +651,8 @@ class JoystickController(object):
                  steering_scale=1.0,
                  throttle_dir=-1.0,
                  dev_fn='/dev/input/js0',
-                 auto_record_on_throttle=True):
+                 auto_record_on_throttle=True,
+                 swap_sticks=False):
 
         self.angle = 0.0
         self.throttle = 0.0
@@ -672,6 +673,7 @@ class JoystickController(object):
         self.estop_state = self.ES_IDLE
         self.chaos_monkey_steering = None
         self.dead_zone = 0.0
+        self.swap_sticks = bool(swap_sticks)
 
         self.button_down_trigger_map = {}
         self.button_up_trigger_map = {}
@@ -1024,10 +1026,16 @@ class PS3JoystickController(JoystickController):
             "L1" : self.chaos_monkey_off,
         }
 
-        self.axis_trigger_map = {
-            'left_stick_horz' : self.set_steering,
-            'right_stick_vert' : self.set_throttle,
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                'left_stick_vert' : self.set_throttle,
+                'right_stick_horz' : self.set_steering,
+            }
+        else:
+            self.axis_trigger_map = {
+                'left_stick_horz' : self.set_steering,
+                'right_stick_vert' : self.set_throttle,
+            }
 
 
 class PS4JoystickController(JoystickController):
@@ -1067,10 +1075,16 @@ class PS4JoystickController(JoystickController):
             'options' : self.toggle_constant_throttle,
         }
 
-        self.axis_trigger_map = {
-            'left_stick_horz' : self.set_steering,
-            'right_stick_vert' : self.set_throttle,
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                    'left_stick_vert' : self.set_throttle,
+                    'right_stick_horz' : self.set_steering,
+                }
+        else:
+            self.axis_trigger_map = {
+                'left_stick_horz' : self.set_steering,
+                'right_stick_vert' : self.set_throttle,
+            }
 
 
 class XboxOneJoystickController(JoystickController):
@@ -1127,13 +1141,24 @@ class XboxOneJoystickController(JoystickController):
             'options': self.toggle_constant_throttle,
         }
 
-        self.axis_trigger_map = {
-            'left_stick_horz': self.set_steering,
-            'right_stick_vert': self.set_throttle,
-            # Forza Mode
-            'right_trigger': self.magnitude(),
-            'left_trigger': self.magnitude(reversed = True),
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                'left_stick_vert': self.set_throttle,
+                'right_stick_horz': self.set_steering,
+                # Forza Mode
+                'right_trigger': self.magnitude(),
+                'left_trigger': self.magnitude(reversed = True),
+            }
+        else:
+            self.axis_trigger_map = {
+                'left_stick_horz': self.set_steering,
+                'right_stick_vert': self.set_throttle,
+                # Forza Mode
+                'right_trigger': self.magnitude(),
+                'left_trigger': self.magnitude(reversed = True),
+            }
+
+
 
 
 class LogitechJoystickController(JoystickController):
@@ -1179,12 +1204,20 @@ class LogitechJoystickController(JoystickController):
             "L1" : self.chaos_monkey_off,
         }
 
-        self.axis_trigger_map = {
-            'left_stick_horz': self.set_steering,
-            'right_stick_vert': self.set_throttle,
-            'dpad_leftright' : self.on_axis_dpad_LR,
-            'dpad_up_down' : self.on_axis_dpad_UD,
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                'left_stick_vert': self.set_throttle,
+                'right_stick_horz': self.set_steering,
+                'dpad_leftright' : self.on_axis_dpad_LR,
+                'dpad_up_down' : self.on_axis_dpad_UD,
+            }
+        else:
+            self.axis_trigger_map = {
+                'left_stick_horz': self.set_steering,
+                'right_stick_vert': self.set_throttle,
+                'dpad_leftright' : self.on_axis_dpad_LR,
+                'dpad_up_down' : self.on_axis_dpad_UD,
+            }
 
     def on_axis_dpad_LR(self, val):
         if val == -1.0:
@@ -1237,10 +1270,16 @@ class NimbusController(JoystickController):
             'a' : self.emergency_stop,
         }
 
-        self.axis_trigger_map = {
-            'lx' : self.set_steering,
-            'ry' : self.set_throttle,
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                'ly' : self.set_throttle,
+                'rx' : self.set_steering,
+            }
+        else:
+            self.axis_trigger_map = {
+                'lx' : self.set_steering,
+                'ry' : self.set_throttle,
+            }
 
 
 class WiiUController(JoystickController):
@@ -1269,10 +1308,16 @@ class WiiUController(JoystickController):
             'A' : self.emergency_stop,
         }
 
-        self.axis_trigger_map = {
-            'LEFT_STICK_X' : self.set_steering,
-            'RIGHT_STICK_Y' : self.set_throttle,
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                'LEFT_STICK_Y' : self.set_throttle,
+                'RIGHT_STICK_X' : self.set_steering,
+            }
+        else:
+            self.axis_trigger_map = {
+                'LEFT_STICK_X' : self.set_steering,
+                'RIGHT_STICK_Y' : self.set_throttle,
+            }
 
 
 
@@ -1319,11 +1364,16 @@ class RC3ChanJoystickController(JoystickController):
             'Switch-up' : self.on_switch_up,
         }
 
-
-        self.axis_trigger_map = {
-            'Steering' : self.on_steering,
-            'Throttle' : self.on_throttle,
-        }
+        if self.swap_sticks:
+            self.axis_trigger_map = {
+                'Throttle' : self.on_steering,
+                'Steering' : self.on_throttle,
+            }
+        else:
+            self.axis_trigger_map = {
+                'Steering' : self.on_steering,
+                'Throttle' : self.on_throttle,
+            }
 
 
 class JoyStickPub(object):
@@ -1425,7 +1475,8 @@ def get_js_controller(cfg):
     ctr = cont_class(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
                                 throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE,
+                                swap_sticks=cfg.JOYSTICK_SWAP_STICKS)
 
     ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
     return ctr
