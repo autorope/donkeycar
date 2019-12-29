@@ -34,7 +34,7 @@ from PIL import Image
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
-from donkeycar.parts.keras import KerasLinear, KerasIMU,\
+from donkeycar.parts.keras import KerasLinear, KerasIMU, KerasMotion,\
      KerasCategorical, KerasBehavioral, Keras3D_CNN,\
      KerasRNN_LSTM, KerasLatent, KerasLocalizer
 from donkeycar.parts.augment import augment_image
@@ -123,6 +123,27 @@ def collate_records(records, gen_records, opts):
             gyro_z = float(json_data['imu/gyr_z'])
 
             sample['imu_array'] = np.array([accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z])
+        except:
+            pass
+
+        try:
+            pos_x = float(json_data['motion/pos_x'])
+            pos_y = float(json_data['motion/pos_y'])
+            pos_z = float(json_data['motion/pos_z'])
+
+            vel_x = float(json_data['motion/vel_x'])
+            vel_y = float(json_data['motion/vel_y'])
+            vel_z = float(json_data['motion/vel_z'])
+            
+            accl_x = float(json_data['motion/acl_x'])
+            accl_y = float(json_data['motion/acl_y'])
+            accl_z = float(json_data['motion/acl_z'])
+
+            gyro_x = float(json_data['motion/gyr_x'])
+            gyro_y = float(json_data['motion/gyr_y'])
+            gyro_z = float(json_data['motion/gyr_z'])
+
+            sample['motion_array'] = np.array([pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z])
         except:
             pass
 
@@ -398,6 +419,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                 model_in_shape = kl.model.input.shape
 
             has_imu = type(kl) is KerasIMU
+            has_motion = type(kl) is KerasMotion
             has_bvh = type(kl) is KerasBehavioral
             img_out = type(kl) is KerasLatent
             loc_out = type(kl) is KerasLocalizer
@@ -427,6 +449,7 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                 if len(batch_data) == batch_size:
                     inputs_img = []
                     inputs_imu = []
+                    inputs_motion = []
                     inputs_bvh = []
                     angles = []
                     throttles = []
@@ -461,6 +484,9 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
                             
                         if has_imu:
                             inputs_imu.append(record['imu_array'])
+
+                        if has_motion:
+                            inputs_motion.append(record['motion_array'])
                         
                         if has_bvh:
                             inputs_bvh.append(record['behavior_arr'])
@@ -478,6 +504,8 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
 
                     if has_imu:
                         X = [img_arr, np.array(inputs_imu)]
+                    elif has_motion:
+                        X = [img_arr, np.array(inputs_motion)]
                     elif has_bvh:
                         X = [img_arr, np.array(inputs_bvh)]
                     else:

@@ -45,6 +45,13 @@ def test_imu():
     imu = np.random.rand(6).tolist()
     km.run(img, *imu)
 
+def test_motion():
+    km = KerasMotion()
+    assert km.model is not None
+    img = get_test_img(km.model)
+    motion = np.random.rand(9).tolist()
+    km.run(img, *motion)
+
 def test_rnn():
     km = KerasRNN_LSTM()
     assert km.model is not None

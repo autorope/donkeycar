@@ -428,7 +428,7 @@ def get_model_by_type(model_type, cfg):
     create a Keras model and return it.
     '''
     from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, \
-        KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, \
+        KerasCategorical, KerasIMU, KerasMotion, KerasLinear, Keras3D_CNN, \
         KerasLocalizer, KerasLatent
     from donkeycar.parts.tflite import TFLitePilot
  
@@ -446,7 +446,9 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
         kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
     elif model_type == "imu":
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
+        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)     
+    elif model_type == "motion":
+        kl = KerasMotion(num_outputs=2, num_motion_inputs=9, input_shape=input_shape)    
     elif model_type == "linear":
         kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
