@@ -98,7 +98,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             inputs = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
-            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
+            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP, awb_mode=cfg.PICAMERA_AWB_MODE, awb_gains=cfg.PICAMERA_AWB_GAINS, brightness=cfg.PICAMERA_BRIGHTNESS, color_effects=cfg.PICAMERA_COLOR_EFFECTS, contrast=cfg.PICAMERA_CONTRAST, exposure_compensation=cfg.PICAMERA_EXPOSURE_COMPENSATION, exposure_mode=cfg.PICAMERA_EXPOSURE_MODE, image_denoise=cfg.PICAMERA_IMAGE_DENOISE, image_effect=cfg.PICAMERA_IMAGE_EFFECT, image_effect_params=cfg.PICAMERA_IMAGE_EFFECT_PARAMS, iso=cfg.PICAMERA_ISO, meter_mode=cfg.PICAMERA_METER_MODE, rotation=cfg.PICAMERA_ROTATION, saturation=cfg.PICAMERA_SATURATION, sharpness=cfg.PICAMERA_SHARPNESS, video_denoise=cfg.PICAMERA_VIDEO_DENOISE, video_stabilization=cfg.PICAMERA_VIDEO_STABILIZATION, zoom=cfg.PICAMERA_ZOOM)
         elif cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam
             cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
