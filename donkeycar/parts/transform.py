@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import time
+import numpy as np
 
 class Lambda:
     """
@@ -107,11 +108,14 @@ class PIDController:
 
         # Update the output
         self.alpha = curr_alpha
+        
+        curr_alpha = np.clip(curr_alpha, -1., 1.)
 
         if (self.debug):
             print('PID err value:', round(err, 4))
             print('PID output:', round(curr_alpha, 4))
 
+        # return curr_alpha
         return curr_alpha
 
 
