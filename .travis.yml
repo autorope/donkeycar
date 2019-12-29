@@ -45,7 +45,6 @@ jobs:
   allow_failures:
     - name: markdownlint
     - name: yamllint
-    - name: black
 
   include:
 
