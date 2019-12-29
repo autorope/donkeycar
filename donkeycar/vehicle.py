@@ -18,37 +18,39 @@ class PartProfiler:
         self.records = {}
 
     def profile_part(self, p):
-        self.records[p] = { "times" : [] }
+        self.records[p] = {"times": []}
 
     def on_part_start(self, p):
-        self.records[p]['times'].append(time.time())
+        self.records[p]["times"].append(time.time())
 
     def on_part_finished(self, p):
         now = time.time()
-        prev = self.records[p]['times'][-1]
+        prev = self.records[p]["times"][-1]
         delta = now - prev
         thresh = 0.000001
         if delta < thresh or delta > 100000.0:
             delta = thresh
-        self.records[p]['times'][-1] = delta
+        self.records[p]["times"][-1] = delta
 
     def report(self):
         print("Part Profile Summary: (times in ms)")
         pt = PrettyTable()
         field_names = ["part", "max", "min", "avg"]
         pctile = [50, 90, 99, 99.9]
-        pt.field_names = field_names + [str(p) + '%' for p in pctile]
+        pt.field_names = field_names + [str(p) + "%" for p in pctile]
         for p, val in self.records.items():
             # remove first and last entry because you there could be one-off
             # time spent in initialisations, and the latest diff could be
             # incomplete because of user keyboard interrupt
-            arr = val['times'][1:-1]
+            arr = val["times"][1:-1]
             if len(arr) == 0:
                 continue
-            row = [p.__class__.__name__,
-                   "%.2f" % (max(arr) * 1000),
-                   "%.2f" % (min(arr) * 1000),
-                   "%.2f" % (sum(arr) / len(arr) * 1000)]
+            row = [
+                p.__class__.__name__,
+                "%.2f" % (max(arr) * 1000),
+                "%.2f" % (min(arr) * 1000),
+                "%.2f" % (sum(arr) / len(arr) * 1000),
+            ]
             row += ["%.2f" % (np.percentile(arr, p) * 1000) for p in pctile]
             pt.add_row(row)
         print(pt)
@@ -65,8 +67,7 @@ class Vehicle:
         self.threads = []
         self.profiler = PartProfiler()
 
-    def add(self, part, inputs=[], outputs=[],
-            threaded=False, run_condition=None):
+    def add(self, part, inputs=[], outputs=[], threaded=False, run_condition=None):
         """
         Method to add a part to the vehicle drive loop.
 
@@ -88,17 +89,17 @@ class Vehicle:
         assert type(threaded) is bool, "threaded is not a boolean: %r" % threaded
 
         p = part
-        print('Adding part {}.'.format(p.__class__.__name__))
+        print("Adding part {}.".format(p.__class__.__name__))
         entry = {}
-        entry['part'] = p
-        entry['inputs'] = inputs
-        entry['outputs'] = outputs
-        entry['run_condition'] = run_condition
+        entry["part"] = p
+        entry["inputs"] = inputs
+        entry["outputs"] = outputs
+        entry["run_condition"] = run_condition
 
         if threaded:
             t = Thread(target=part.update, args=())
             t.daemon = True
-            entry['thread'] = t
+            entry["thread"] = t
 
         self.parts.append(entry)
         self.profiler.profile_part(part)
@@ -135,12 +136,12 @@ class Vehicle:
             self.on = True
 
             for entry in self.parts:
-                if entry.get('thread'):
+                if entry.get("thread"):
                     # start the update thread
-                    entry.get('thread').start()
+                    entry.get("thread").start()
 
             # wait until the parts warm up.
-            print('Starting vehicle at {} Hz'.format(rate_hz))
+            print("Starting vehicle at {} Hz".format(rate_hz))
 
             loop_count = 0
             while self.on:
@@ -159,8 +160,10 @@ class Vehicle:
                 else:
                     # print a message when could not maintain loop rate.
                     if verbose:
-                        print('WARN::Vehicle: jitter violation in vehicle loop '
-                              'with {0:4.0f}ms'.format(abs(1000 * sleep_time)))
+                        print(
+                            "WARN::Vehicle: jitter violation in vehicle loop "
+                            "with {0:4.0f}ms".format(abs(1000 * sleep_time))
+                        )
 
                 if verbose and loop_count % 200 == 0:
                     self.profiler.report()
@@ -171,41 +174,41 @@ class Vehicle:
             self.stop()
 
     def update_parts(self):
-        '''
+        """
         loop over all parts
-        '''
+        """
         for entry in self.parts:
 
             run = True
             # check run condition, if it exists
-            if entry.get('run_condition'):
-                run_condition = entry.get('run_condition')
+            if entry.get("run_condition"):
+                run_condition = entry.get("run_condition")
                 run = self.mem.get([run_condition])[0]
-            
+
             if run:
                 # get part
-                p = entry['part']
+                p = entry["part"]
                 # start timing part run
                 self.profiler.on_part_start(p)
                 # get inputs from memory
-                inputs = self.mem.get(entry['inputs'])
+                inputs = self.mem.get(entry["inputs"])
                 # run the part
-                if entry.get('thread'):
+                if entry.get("thread"):
                     outputs = p.run_threaded(*inputs)
                 else:
                     outputs = p.run(*inputs)
 
                 # save the output to memory
                 if outputs is not None:
-                    self.mem.put(entry['outputs'], outputs)
+                    self.mem.put(entry["outputs"], outputs)
                 # finish timing part run
                 self.profiler.on_part_finished(p)
 
-    def stop(self):        
-        print('Shutting down vehicle and its parts...')
+    def stop(self):
+        print("Shutting down vehicle and its parts...")
         for entry in self.parts:
             try:
-                entry['part'].shutdown()
+                entry["part"].shutdown()
             except AttributeError:
                 # usually from missing shutdown method, which should be optional
                 pass

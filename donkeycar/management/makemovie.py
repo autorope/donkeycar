@@ -9,7 +9,9 @@ try:
     from vis.losses import ActivationMaximization
     from vis.optimizer import Optimizer
 except:
-    raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
+    raise Exception(
+        "Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git"
+    )
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
@@ -21,10 +23,10 @@ class MakeMovie(object):
         self.deg_to_rad = math.pi / 180.0
 
     def run(self, args, parser):
-        '''
+        """
         Load the images from a tub and create a movie from them.
         Movie
-        '''
+        """
 
         if args.tub is None:
             print("ERR>> --tub argument missing.")
@@ -38,13 +40,18 @@ class MakeMovie(object):
 
         if args.salient:
             if args.model is None:
-                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
+                print(
+                    "ERR>> salient visualization requires a model. Pass with the --model arg."
+                )
                 parser.print_help()
 
         conf = os.path.expanduser(args.config)
         if not os.path.exists(conf):
-            print("No config file at location: %s. Add --config to specify\
-                 location or run from dir containing config.py." % conf)
+            print(
+                "No config file at location: %s. Add --config to specify\
+                 location or run from dir containing config.py."
+                % conf
+            )
             return
 
         self.cfg = dk.load_config(conf)
@@ -66,15 +73,16 @@ class MakeMovie(object):
             if args.salient:
                 self.do_salient = self.init_salient(self.keras_part.model)
 
-        print('making movie', args.out, 'from', num_frames, 'images')
-        clip = mpy.VideoClip(self.make_frame,
-                             duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
+        print("making movie", args.out, "from", num_frames, "images")
+        clip = mpy.VideoClip(
+            self.make_frame, duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ)
+        )
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
     def draw_user_input(self, record, img):
-        '''
+        """
         Draw the user input as a green line on the image
-        '''
+        """
 
         import cv2
 
@@ -90,22 +98,26 @@ class MakeMovie(object):
         mid = width // 2 - 1
 
         p1 = tuple((mid - 2, height - 1))
-        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
-                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
+        p11 = tuple(
+            (
+                int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
+                int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad)),
+            )
+        )
 
         # user is green, pilot is blue
         cv2.line(img, p1, p11, (0, 255, 0), 2)
-        
+
     def draw_model_prediction(self, record, img):
-        '''
+        """
         query the model for it's prediction, draw the predictions
         as a blue line on the image
-        '''
+        """
         if self.keras_part is None:
             return
 
         import cv2
-         
+
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
 
@@ -132,16 +144,20 @@ class MakeMovie(object):
         mid = width // 2 - 1
 
         p2 = tuple((mid + 2, height - 1))
-        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
-                     int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad))))
+        p22 = tuple(
+            (
+                int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
+                int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad)),
+            )
+        )
 
         # user is green, pilot is blue
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
     def draw_steering_distribution(self, record, img):
-        '''
+        """
         query the model for it's prediction, draw the distribution of steering choices
-        '''
+        """
         from donkeycar.parts.keras import KerasCategorical
 
         if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
@@ -166,11 +182,15 @@ class MakeMovie(object):
             x += dx
 
     def init_salient(self, model):
-        # Utility to search for layer index by name. 
+        # Utility to search for layer index by name.
         # Alternatively we can specify this as -1 since it corresponds to the last layer.
         first_output_name = None
         for i, layer in enumerate(model.layers):
-            if first_output_name is None and "dropout" not in layer.name.lower() and "out" in layer.name.lower():
+            if (
+                first_output_name is None
+                and "dropout" not in layer.name.lower()
+                and "out" in layer.name.lower()
+            ):
                 first_output_name = layer.name
                 layer_idx = i
 
@@ -181,29 +201,30 @@ class MakeMovie(object):
         print("####################")
         print("Visualizing activations on layer:", first_output_name)
         print("####################")
-        
+
         # ensure we have linear activation
         model.layers[layer_idx].activation = activations.linear
         # build salient model and optimizer
         sal_model = utils.apply_modifications(model)
-        modifier_fn = get('guided')
+        modifier_fn = get("guided")
         sal_model_mod = modifier_fn(sal_model)
-        losses = [
-            (ActivationMaximization(sal_model_mod.layers[layer_idx], None), -1)
-        ]
+        losses = [(ActivationMaximization(sal_model_mod.layers[layer_idx], None), -1)]
         self.opt = Optimizer(sal_model_mod.input, losses, norm_grads=False)
         return True
 
     def compute_visualisation_mask(self, img):
-        grad_modifier = 'absolute'
-        grads = self.opt.minimize(seed_input=img, max_iter=1, grad_modifier=grad_modifier, verbose=False)[1]
-        channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
+        grad_modifier = "absolute"
+        grads = self.opt.minimize(
+            seed_input=img, max_iter=1, grad_modifier=grad_modifier, verbose=False
+        )[1]
+        channel_idx = 1 if K.image_data_format() == "channels_first" else -1
         grads = np.max(grads, axis=channel_idx)
         res = utils.normalize(grads)[0]
         return res
 
     def draw_salient(self, img):
         import cv2
+
         alpha = 0.004
         beta = 1.0 - alpha
 
@@ -220,23 +241,25 @@ class MakeMovie(object):
         z = np.zeros_like(salient_mask)
         salient_mask_stacked = np.dstack((z, z))
         salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
-        blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
+        blend = cv2.addWeighted(
+            img.astype("float32"), alpha, salient_mask_stacked, beta, 0.0
+        )
         return blend
 
     def make_frame(self, t):
-        '''
+        """
         Callback to return an image from from our tub records.
         This is called from the VideoClip as it references a time.
         We don't use t to reference the frame, but instead increment
         a frame counter. This assumes sequential access.
-        '''
+        """
 
         if self.iRec >= self.end or self.iRec >= len(self.index):
             return None
 
         rec_ix = self.index[self.iRec]
         rec = self.tub.get_record(rec_ix)
-        image = rec['cam/image_array']
+        image = rec["cam/image_array"]
 
         if self.cfg.ROI_CROP_TOP != 0 or self.cfg.ROI_CROP_BOTTOM != 0:
             image = img_crop(image, self.cfg.ROI_CROP_TOP, self.cfg.ROI_CROP_BOTTOM)
@@ -244,8 +267,8 @@ class MakeMovie(object):
         if self.do_salient:
             image = self.draw_salient(image)
             image = image * 255
-            image = image.astype('uint8')
-        
+            image = image.astype("uint8")
+
         self.draw_user_input(rec, image)
         if self.keras_part is not None:
             self.draw_model_prediction(rec, image)
@@ -253,6 +276,7 @@ class MakeMovie(object):
 
         if self.scale != 1:
             import cv2
+
             h, w, d = image.shape
             dsize = (w * self.scale, h * self.scale)
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)

@@ -1,10 +1,12 @@
 import time
 import RPi.GPIO as GPIO
 
+
 class LED:
-    ''' 
+    """ 
     Toggle a GPIO pin for led control
-    '''
+    """
+
     def __init__(self, pin):
         self.pin = pin
 
@@ -19,7 +21,7 @@ class LED:
             self.on = True
         else:
             GPIO.output(self.pin, GPIO.LOW)
-            self.on = False            
+            self.on = False
 
     def blink(self, rate):
         if time.time() - self.blink_changed > rate:
@@ -35,21 +37,22 @@ class LED:
             self.toggle(True)
 
     def shutdown(self):
-        self.toggle(False)        
+        self.toggle(False)
         GPIO.cleanup()
 
 
 class RGB_LED:
-    ''' 
+    """ 
     Toggle a GPIO pin on at max_duty pwm if condition is true, off if condition is false.
     Good for LED pwm modulated
-    '''
+    """
+
     def __init__(self, pin_r, pin_g, pin_b, invert_flag=False):
         self.pin_r = pin_r
         self.pin_g = pin_g
         self.pin_b = pin_b
         self.invert = invert_flag
-        print('setting up gpio in board mode')
+        print("setting up gpio in board mode")
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pin_r, GPIO.OUT)
@@ -63,7 +66,7 @@ class RGB_LED:
         self.pwm_g.start(0)
         self.pwm_b.start(0)
         self.zero = 0
-        if( self.invert ):
+        if self.invert:
             self.zero = 100
 
         self.rgb = (50, self.zero, self.zero)
@@ -94,9 +97,9 @@ class RGB_LED:
             self.toggle(True)
 
     def set_rgb(self, r, g, b):
-        r = r if not self.invert else 100-r
-        g = g if not self.invert else 100-g
-        b = b if not self.invert else 100-b
+        r = r if not self.invert else 100 - r
+        g = g if not self.invert else 100 - g
+        b = b if not self.invert else 100 - b
         self.rgb = (r, g, b)
         self.set_rgb_duty(r, g, b)
 
@@ -113,28 +116,29 @@ class RGB_LED:
 if __name__ == "__main__":
     import time
     import sys
+
     pin_r = int(sys.argv[1])
     pin_g = int(sys.argv[2])
     pin_b = int(sys.argv[3])
     rate = float(sys.argv[4])
-    print('output pin', pin_r, pin_g, pin_b, 'rate', rate)
+    print("output pin", pin_r, pin_g, pin_b, "rate", rate)
 
     p = RGB_LED(pin_r, pin_g, pin_b)
-    
+
     iter = 0
     while iter < 50:
         p.run(rate)
         time.sleep(0.1)
         iter += 1
-    
+
     delay = 0.1
 
     iter = 0
     while iter < 100:
-        p.set_rgb(iter, 100-iter, 0)
+        p.set_rgb(iter, 100 - iter, 0)
         time.sleep(delay)
         iter += 1
-    
+
     iter = 0
     while iter < 100:
         p.set_rgb(100 - iter, 0, iter)
@@ -142,4 +146,3 @@ if __name__ == "__main__":
         iter += 1
 
     p.shutdown()
-

@@ -3,7 +3,7 @@ import cv2
 
 
 class Graph(object):
-    '''
+    """
     Take input values and plot them on an image.
     Takes a list of (x, y) (b, g, r) pairs and
     plots the color at the given coordinate.
@@ -11,7 +11,8 @@ class Graph(object):
     and begins with an offset to x values such that drawing
     begins again at the left edge.
     This assumes x is monotonically increasing, like a time value.
-    '''
+    """
+
     def __init__(self, res=(200, 200, 3)):
         self.img = np.zeros(res)
         self.prev = 0
@@ -36,7 +37,7 @@ class Graph(object):
             self.img = np.zeros_like(self.img)
 
         self.prev = x
-            
+
         return self.img
 
     def shutdown(self):

@@ -2,21 +2,24 @@
 
 import time
 
+
 class Lambda:
     """
     Wraps a function into a donkey part.
     """
+
     def __init__(self, f):
         """
         Accepts the function to use.
         """
         self.f = f
-        
+
     def run(self, *args, **kwargs):
         return self.f(*args, **kwargs)
-    
+
     def shutdown(self):
         return
+
 
 class TriggeredCallback:
     def __init__(self, args, func_cb):
@@ -29,6 +32,7 @@ class TriggeredCallback:
 
     def shutdown(self):
         return
+
 
 class DelayedTrigger:
     def __init__(self, delay):
@@ -108,9 +112,9 @@ class PIDController:
         # Update the output
         self.alpha = curr_alpha
 
-        if (self.debug):
-            print('PID err value:', round(err, 4))
-            print('PID output:', round(curr_alpha, 4))
+        if self.debug:
+            print("PID err value:", round(err, 4))
+            print("PID output:", round(curr_alpha, 4))
 
         return curr_alpha
 
@@ -140,43 +144,43 @@ def twiddle(evaluator, tol=0.001, params=3, error_cmp=None, initial_guess=None):
     def _error_cmp(a, b):
         # Returns true if a is closer to zero than b.
         return abs(a) < abs(b)
-        
+
     if error_cmp is None:
         error_cmp = _error_cmp
 
     if initial_guess is None:
-        p = [0]*params
+        p = [0] * params
     else:
         p = list(initial_guess)
-    dp = [1]*params
+    dp = [1] * params
     best_err = evaluator(*p)
     steps = 0
     while sum(dp) > tol:
         steps += 1
-        print('steps:', steps, 'tol:', tol, 'best error:', best_err)
+        print("steps:", steps, "tol:", tol, "best error:", best_err)
         for i, _ in enumerate(p):
-            
+
             # first try to increase param
             p[i] += dp[i]
             err = evaluator(*p)
-            
+
             if error_cmp(err, best_err):
                 # Increasing param reduced error, so record and continue to increase dp range.
                 best_err = err
                 dp[i] *= 1.1
             else:
                 # Otherwise, increased error, so undo and try decreasing dp
-                p[i] -= 2.*dp[i]
+                p[i] -= 2.0 * dp[i]
                 err = evaluator(*p)
-                
+
                 if error_cmp(err, best_err):
                     # Decreasing param reduced error, so record and continue to increase dp range.
                     best_err = err
                     dp[i] *= 1.1
-                    
+
                 else:
                     # Otherwise, reset param and reduce dp range.
                     p[i] += dp[i]
                     dp[i] *= 0.9
-                
+
     return p

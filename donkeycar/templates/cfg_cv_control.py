@@ -15,35 +15,34 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
-#PATHS
+# PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
-DATA_PATH = os.path.join(CAR_PATH, 'data')
-MODELS_PATH = os.path.join(CAR_PATH, 'models')
+DATA_PATH = os.path.join(CAR_PATH, "data")
+MODELS_PATH = os.path.join(CAR_PATH, "models")
 
-#VEHICLE
+# VEHICLE
 DRIVE_LOOP_HZ = 20
 MAX_LOOPS = -1
 
-#CAMERA
+# CAMERA
 IMAGE_W = 160
 IMAGE_H = 120
-IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+IMAGE_DEPTH = 3  # default RGB=3, make 1 for mono
 
-#9865, over rides only if needed, ie. TX2..
+# 9865, over rides only if needed, ie. TX2..
 PCA9685_I2C_ADDR = 0x40
 PCA9685_I2C_BUSNUM = None
 
-#STEERING
+# STEERING
 STEERING_CHANNEL = 1
 STEERING_LEFT_PWM = 460
 STEERING_RIGHT_PWM = 290
 
-#THROTTLE
+# THROTTLE
 THROTTLE_CHANNEL = 0
 THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
-#SOMBRERO
+# SOMBRERO
 HAVE_SOMBRERO = False
-

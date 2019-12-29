@@ -21,19 +21,26 @@ import numpy as np
 
 import donkeycar as dk
 
-#import parts
+# import parts
 from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, \
-    JoystickController, WebFpv
+from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
-    '''
+
+def drive(
+    cfg,
+    model_path=None,
+    use_joystick=False,
+    model_type=None,
+    camera_type="single",
+    meta=[],
+):
+    """
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
     it's run or run_threaded method depending on the constructor flag `threaded`.
@@ -41,12 +48,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
-    '''
+    """
 
     if cfg.DONKEY_GYM:
-        #the simulator will use cuda and then we usually run out of resources
-        #if we also try to use cuda. so disable for donkey_gym.
-        os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
+        # the simulator will use cuda and then we usually run out of resources
+        # if we also try to use cuda. so disable for donkey_gym.
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     if model_type is None:
         if cfg.TRAIN_LOCALIZER:
@@ -55,76 +62,130 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             model_type = "behavior"
         else:
             model_type = cfg.DEFAULT_MODEL_TYPE
-    
-    #Initialize car
+
+    # Initialize car
     V = dk.vehicle.Vehicle()
 
     if camera_type == "stereo":
 
         if cfg.CAMERA_TYPE == "WEBCAM":
-            from donkeycar.parts.camera import Webcam            
+            from donkeycar.parts.camera import Webcam
 
-            camA = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam = 0)
-            camB = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam = 1)
+            camA = Webcam(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                iCam=0,
+            )
+            camB = Webcam(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                iCam=1,
+            )
 
         elif cfg.CAMERA_TYPE == "CVCAM":
             from donkeycar.parts.cv import CvCam
 
-            camA = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam = 0)
-            camB = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam = 1)
+            camA = CvCam(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                iCam=0,
+            )
+            camB = CvCam(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                iCam=1,
+            )
         else:
-            raise(Exception("Unsupported camera type: %s" % cfg.CAMERA_TYPE))
+            raise (Exception("Unsupported camera type: %s" % cfg.CAMERA_TYPE))
 
-        V.add(camA, outputs=['cam/image_array_a'], threaded=True)
-        V.add(camB, outputs=['cam/image_array_b'], threaded=True)
+        V.add(camA, outputs=["cam/image_array_a"], threaded=True)
+        V.add(camB, outputs=["cam/image_array_b"], threaded=True)
 
         from donkeycar.parts.image import StereoPair
 
-        V.add(StereoPair(), inputs=['cam/image_array_a', 'cam/image_array_b'], 
-            outputs=['cam/image_array'])
+        V.add(
+            StereoPair(),
+            inputs=["cam/image_array_a", "cam/image_array_b"],
+            outputs=["cam/image_array"],
+        )
 
     else:
         print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
-            from donkeycar.parts.dgym import DonkeyGymEnv 
-        
+            from donkeycar.parts.dgym import DonkeyGymEnv
+
         inputs = []
         threaded = True
         print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
-            from donkeycar.parts.dgym import DonkeyGymEnv 
+            from donkeycar.parts.dgym import DonkeyGymEnv
+
             cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, env_name=cfg.DONKEY_GYM_ENV_NAME)
             threaded = True
-            inputs = ['angle', 'throttle']
+            inputs = ["angle", "throttle"]
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
-            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
+
+            cam = PiCamera(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                framerate=cfg.CAMERA_FRAMERATE,
+                vflip=cfg.CAMERA_VFLIP,
+                hflip=cfg.CAMERA_HFLIP,
+            )
         elif cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam
-            cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+
+            cam = Webcam(
+                image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH
+            )
         elif cfg.CAMERA_TYPE == "CVCAM":
             from donkeycar.parts.cv import CvCam
-            cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+
+            cam = CvCam(
+                image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH
+            )
         elif cfg.CAMERA_TYPE == "CSIC":
             from donkeycar.parts.camera import CSICamera
-            cam = CSICamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, gstreamer_flip=cfg.CSIC_CAM_GSTREAMER_FLIP_PARM)
+
+            cam = CSICamera(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                framerate=cfg.CAMERA_FRAMERATE,
+                gstreamer_flip=cfg.CSIC_CAM_GSTREAMER_FLIP_PARM,
+            )
         elif cfg.CAMERA_TYPE == "V4L":
             from donkeycar.parts.camera import V4LCamera
-            cam = V4LCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
+
+            cam = V4LCamera(
+                image_w=cfg.IMAGE_W,
+                image_h=cfg.IMAGE_H,
+                image_d=cfg.IMAGE_DEPTH,
+                framerate=cfg.CAMERA_FRAMERATE,
+            )
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
-            cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+
+            cam = MockCamera(
+                image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH
+            )
         else:
-            raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
-            
-        V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
-        
+            raise (Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
+
+        V.add(cam, inputs=inputs, outputs=["cam/image_array"], threaded=threaded)
+
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
-        #modify max_throttle closer to 1.0 to have more power
-        #modify steering_scale lower than 1.0 to have less responsive steering
+        # modify max_throttle closer to 1.0 to have more power
+        # modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.HAVE_ROBOHAT:
             from donkeycar.parts.robohat import RoboHATController
-            
+
             ctr = RoboHATController()
         else:
             from donkeycar.parts.controller import get_js_controller
@@ -133,52 +194,66 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
             if cfg.USE_NETWORKED_JS:
                 from donkeycar.parts.controller import JoyStickSub
+
                 netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
 
         if cfg.USE_FPV:
-            V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
+            V.add(WebFpv(), inputs=["cam/image_array"], threaded=True)
 
     else:
-        #This web controller will create a web server that is capable
-        #of managing steering, throttle, and modes, and more.
+        # This web controller will create a web server that is capable
+        # of managing steering, throttle, and modes, and more.
         ctr = LocalWebController()
 
-    
-    V.add(ctr, 
-          inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
+    V.add(
+        ctr,
+        inputs=["cam/image_array"],
+        outputs=["user/angle", "user/throttle", "user/mode", "recording"],
+        threaded=True,
+    )
 
-    #this throttle filter will allow one tap back for esc reverse
+    # this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()
-    V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
-    
-    #See if we should even run the pilot module. 
-    #This is only needed because the part run_condition only accepts boolean
+    V.add(th_filter, inputs=["user/throttle"], outputs=["user/throttle"])
+
+    # See if we should even run the pilot module.
+    # This is only needed because the part run_condition only accepts boolean
     class PilotCondition:
         def run(self, mode):
-            if mode == 'user':
+            if mode == "user":
                 return False
             else:
-                return True       
+                return True
 
-    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
-    
+    V.add(PilotCondition(), inputs=["user/mode"], outputs=["run_pilot"])
+
     class LedConditionLogic:
         def __init__(self, cfg):
             self.cfg = cfg
 
-        def run(self, mode, recording, recording_alert, behavior_state, model_file_changed, track_loc):
-            #returns a blink rate. 0 for off. -1 for on. positive for rate.
-            
+        def run(
+            self,
+            mode,
+            recording,
+            recording_alert,
+            behavior_state,
+            model_file_changed,
+            track_loc,
+        ):
+            # returns a blink rate. 0 for off. -1 for on. positive for rate.
+
             if track_loc is not None:
                 led.set_rgb(*self.cfg.LOC_COLORS[track_loc])
                 return -1
 
             if model_file_changed:
-                led.set_rgb(self.cfg.MODEL_RELOADED_LED_R, self.cfg.MODEL_RELOADED_LED_G, self.cfg.MODEL_RELOADED_LED_B)
+                led.set_rgb(
+                    self.cfg.MODEL_RELOADED_LED_R,
+                    self.cfg.MODEL_RELOADED_LED_G,
+                    self.cfg.MODEL_RELOADED_LED_B,
+                )
                 return 0.1
             else:
                 led.set_rgb(self.cfg.LED_R, self.cfg.LED_G, self.cfg.LED_B)
@@ -188,38 +263,49 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 return self.cfg.REC_COUNT_ALERT_BLINK_RATE
             else:
                 led.set_rgb(self.cfg.LED_R, self.cfg.LED_G, self.cfg.LED_B)
-        
-            if behavior_state is not None and model_type == 'behavior':
+
+            if behavior_state is not None and model_type == "behavior":
                 r, g, b = self.cfg.BEHAVIOR_LED_COLORS[behavior_state]
                 led.set_rgb(r, g, b)
-                return -1 #solid on
+                return -1  # solid on
 
             if recording:
-                return -1 #solid on
-            elif mode == 'user':
+                return -1  # solid on
+            elif mode == "user":
                 return 1
-            elif mode == 'local_angle':
+            elif mode == "local_angle":
                 return 0.5
-            elif mode == 'local':
+            elif mode == "local":
                 return 0.1
             return 0
 
     if cfg.HAVE_RGB_LED and not cfg.DONKEY_GYM:
         from donkeycar.parts.led_status import RGB_LED
-        led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
-        led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)        
-        
-        V.add(LedConditionLogic(cfg), inputs=['user/mode', 'recording', "records/alert", 'behavior/state', 'modelfile/modified', "pilot/loc"],
-              outputs=['led/blink_rate'])
 
-        V.add(led, inputs=['led/blink_rate'])
+        led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
+        led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
+
+        V.add(
+            LedConditionLogic(cfg),
+            inputs=[
+                "user/mode",
+                "recording",
+                "records/alert",
+                "behavior/state",
+                "modelfile/modified",
+                "pilot/loc",
+            ],
+            outputs=["led/blink_rate"],
+        )
+
+        V.add(led, inputs=["led/blink_rate"])
 
     def get_record_alert_color(num_records):
         col = (0, 0, 0)
         for count, color in cfg.RECORD_ALERT_COLOR_ARR:
             if num_records >= count:
                 col = color
-        return col    
+        return col
 
     class RecordTracker:
         def __init__(self):
@@ -230,17 +316,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         def run(self, num_records):
             if num_records is None:
                 return 0
-            
+
             if self.last_num_rec_print != num_records or self.force_alert:
                 self.last_num_rec_print = num_records
 
                 if num_records % 10 == 0:
                     print("recorded", num_records, "records")
-                        
+
                 if num_records % cfg.REC_COUNT_ALERT == 0 or self.force_alert:
-                    self.dur_alert = num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
+                    self.dur_alert = (
+                        num_records // cfg.REC_COUNT_ALERT * cfg.REC_COUNT_ALERT_CYC
+                    )
                     self.force_alert = 0
-                    
+
             if self.dur_alert > 0:
                 self.dur_alert -= 1
 
@@ -250,32 +338,46 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             return 0
 
     rec_tracker_part = RecordTracker()
-    V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
+    V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=["records/alert"])
 
     if cfg.AUTO_RECORD_ON_THROTTLE and isinstance(ctr, JoystickController):
-        #then we are not using the circle button. hijack that to force a record count indication
+        # then we are not using the circle button. hijack that to force a record count indication
         def show_record_acount_status():
             rec_tracker_part.last_num_rec_print = 0
             rec_tracker_part.force_alert = 1
-        ctr.set_button_down_trigger('circle', show_record_acount_status)
 
-    #Sombrero
+        ctr.set_button_down_trigger("circle", show_record_acount_status)
+
+    # Sombrero
     if cfg.HAVE_SOMBRERO:
         from donkeycar.parts.sombrero import Sombrero
+
         s = Sombrero()
 
-    #IMU
+    # IMU
     if cfg.HAVE_IMU:
         from donkeycar.parts.imu import Mpu6050
-        imu = Mpu6050()
-        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
-    class ImgPreProcess():
-        '''
+        imu = Mpu6050()
+        V.add(
+            imu,
+            outputs=[
+                "imu/acl_x",
+                "imu/acl_y",
+                "imu/acl_z",
+                "imu/gyr_x",
+                "imu/gyr_y",
+                "imu/gyr_z",
+            ],
+            threaded=True,
+        )
+
+    class ImgPreProcess:
+        """
         preprocess camera image for inference.
         normalize and crop if needed.
-        '''
+        """
+
         def __init__(self, cfg):
             self.cfg = cfg
 
@@ -283,72 +385,93 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             return normalize_and_crop(img_arr, self.cfg)
 
     if "coral" in model_type:
-        inf_input = 'cam/image_array'
+        inf_input = "cam/image_array"
     else:
-        inf_input = 'cam/normalized/cropped'
-        V.add(ImgPreProcess(cfg),
-            inputs=['cam/image_array'],
+        inf_input = "cam/normalized/cropped"
+        V.add(
+            ImgPreProcess(cfg),
+            inputs=["cam/image_array"],
             outputs=[inf_input],
-            run_condition='run_pilot')
+            run_condition="run_pilot",
+        )
 
-    #Behavioral state
+    # Behavioral state
     if cfg.TRAIN_BEHAVIORS:
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
-        V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
+        V.add(
+            bh,
+            outputs=[
+                "behavior/state",
+                "behavior/label",
+                "behavior/one_hot_state_array",
+            ],
+        )
         try:
-            ctr.set_button_down_trigger('L1', bh.increment_state)
+            ctr.set_button_down_trigger("L1", bh.increment_state)
         except:
             pass
 
-        inputs = [inf_input, "behavior/one_hot_state_array"]  
-    #IMU
+        inputs = [inf_input, "behavior/one_hot_state_array"]
+    # IMU
     elif model_type == "imu":
-        assert(cfg.HAVE_IMU)
-        #Run the pilot if the mode is not user.
-        inputs=[inf_input,
-            'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
+        assert cfg.HAVE_IMU
+        # Run the pilot if the mode is not user.
+        inputs = [
+            inf_input,
+            "imu/acl_x",
+            "imu/acl_y",
+            "imu/acl_z",
+            "imu/gyr_x",
+            "imu/gyr_y",
+            "imu/gyr_z",
+        ]
     else:
-        inputs=[inf_input]
+        inputs = [inf_input]
 
     def load_model(kl, model_path):
         start = time.time()
-        print('loading model', model_path)
+        print("loading model", model_path)
         kl.load(model_path)
-        print('finished loading in %s sec.' % (str(time.time() - start)) )
+        print("finished loading in %s sec." % (str(time.time() - start)))
 
     def load_weights(kl, weights_path):
         start = time.time()
         try:
-            print('loading model weights', weights_path)
+            print("loading model weights", weights_path)
             kl.model.load_weights(weights_path)
-            print('finished loading in %s sec.' % (str(time.time() - start)) )
+            print("finished loading in %s sec." % (str(time.time() - start)))
         except Exception as e:
             print(e)
-            print('ERR>> problems loading weights', weights_path)
+            print("ERR>> problems loading weights", weights_path)
 
     def load_model_json(kl, json_fnm):
         start = time.time()
-        print('loading model json', json_fnm)
+        print("loading model json", json_fnm)
         from tensorflow.python import keras
+
         try:
-            with open(json_fnm, 'r') as handle:
+            with open(json_fnm, "r") as handle:
                 contents = handle.read()
                 kl.model = keras.models.model_from_json(contents)
-            print('finished loading json in %s sec.' % (str(time.time() - start)) )
+            print("finished loading json in %s sec." % (str(time.time() - start)))
         except Exception as e:
             print(e)
             print("ERR>> problems loading model json", json_fnm)
 
     if model_path:
-        #When we have a model, first create an appropriate Keras part
+        # When we have a model, first create an appropriate Keras part
         kl = dk.utils.get_model_by_type(model_type, cfg)
 
         model_reload_cb = None
 
-        if '.h5' in model_path or '.uff' in model_path or 'tflite' in model_path or '.pkl' in model_path:
-            #when we have a .h5 extension
-            #load everything from the model file
+        if (
+            ".h5" in model_path
+            or ".uff" in model_path
+            or "tflite" in model_path
+            or ".pkl" in model_path
+        ):
+            # when we have a .h5 extension
+            # load everything from the model file
             load_model(kl, model_path)
 
             def reload_model(filename):
@@ -356,261 +479,331 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
             model_reload_cb = reload_model
 
-        elif '.json' in model_path:
-            #when we have a .json extension
-            #load the model from there and look for a matching
-            #.wts file with just weights
+        elif ".json" in model_path:
+            # when we have a .json extension
+            # load the model from there and look for a matching
+            # .wts file with just weights
             load_model_json(kl, model_path)
-            weights_path = model_path.replace('.json', '.weights')
+            weights_path = model_path.replace(".json", ".weights")
             load_weights(kl, weights_path)
 
             def reload_weights(filename):
-                weights_path = filename.replace('.json', '.weights')
+                weights_path = filename.replace(".json", ".weights")
                 load_weights(kl, weights_path)
-            
+
             model_reload_cb = reload_weights
 
         else:
             print("ERR>> Unknown extension type on model file!!")
             return
 
-        #this part will signal visual LED, if connected
-        V.add(FileWatcher(model_path, verbose=True), outputs=['modelfile/modified'])
+        # this part will signal visual LED, if connected
+        V.add(FileWatcher(model_path, verbose=True), outputs=["modelfile/modified"])
 
-        #these parts will reload the model file, but only when ai is running so we don't interrupt user driving
-        V.add(FileWatcher(model_path), outputs=['modelfile/dirty'], run_condition="ai_running")
-        V.add(DelayedTrigger(100), inputs=['modelfile/dirty'], outputs=['modelfile/reload'], run_condition="ai_running")
-        V.add(TriggeredCallback(model_path, model_reload_cb), inputs=["modelfile/reload"], run_condition="ai_running")
+        # these parts will reload the model file, but only when ai is running so we don't interrupt user driving
+        V.add(
+            FileWatcher(model_path),
+            outputs=["modelfile/dirty"],
+            run_condition="ai_running",
+        )
+        V.add(
+            DelayedTrigger(100),
+            inputs=["modelfile/dirty"],
+            outputs=["modelfile/reload"],
+            run_condition="ai_running",
+        )
+        V.add(
+            TriggeredCallback(model_path, model_reload_cb),
+            inputs=["modelfile/reload"],
+            run_condition="ai_running",
+        )
 
-        outputs=['pilot/angle', 'pilot/throttle']
+        outputs = ["pilot/angle", "pilot/throttle"]
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
-    
-        V.add(kl, inputs=inputs, 
-            outputs=outputs,
-            run_condition='run_pilot')            
-    
-    #Choose what inputs should change the car.
-    class DriveMode:
-        def run(self, mode, 
-                    user_angle, user_throttle,
-                    pilot_angle, pilot_throttle):
-            if mode == 'user': 
-                return user_angle, user_throttle
-            
-            elif mode == 'local_angle':
-                return pilot_angle if pilot_angle else 0.0, user_throttle
-            
-            else: 
-                return pilot_angle if pilot_angle else 0.0, pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0
-        
-    V.add(DriveMode(), 
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'], 
-          outputs=['angle', 'throttle'])
 
-    
-    #to give the car a boost when starting ai mode in a race.
-    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED)
-    
-    V.add(aiLauncher,
-        inputs=['user/mode', 'throttle'],
-        outputs=['throttle'])
+        V.add(kl, inputs=inputs, outputs=outputs, run_condition="run_pilot")
+
+    # Choose what inputs should change the car.
+    class DriveMode:
+        def run(self, mode, user_angle, user_throttle, pilot_angle, pilot_throttle):
+            if mode == "user":
+                return user_angle, user_throttle
+
+            elif mode == "local_angle":
+                return pilot_angle if pilot_angle else 0.0, user_throttle
+
+            else:
+                return (
+                    pilot_angle if pilot_angle else 0.0,
+                    pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0,
+                )
+
+    V.add(
+        DriveMode(),
+        inputs=[
+            "user/mode",
+            "user/angle",
+            "user/throttle",
+            "pilot/angle",
+            "pilot/throttle",
+        ],
+        outputs=["angle", "throttle"],
+    )
+
+    # to give the car a boost when starting ai mode in a race.
+    aiLauncher = AiLaunch(
+        cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED
+    )
+
+    V.add(aiLauncher, inputs=["user/mode", "throttle"], outputs=["throttle"])
 
     if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
-
+        ctr.set_button_down_trigger(
+            cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch
+        )
 
     class AiRunCondition:
-        '''
+        """
         A bool part to let us know when ai is running.
-        '''
+        """
+
         def run(self, mode):
             if mode == "user":
                 return False
             return True
 
-    V.add(AiRunCondition(), inputs=['user/mode'], outputs=['ai_running'])
+    V.add(AiRunCondition(), inputs=["user/mode"], outputs=["ai_running"])
 
-    #Ai Recording
+    # Ai Recording
     class AiRecordingCondition:
-        '''
+        """
         return True when ai mode, otherwize respect user mode recording flag
-        '''
+        """
+
         def run(self, mode, recording):
-            if mode == 'user':
+            if mode == "user":
                 return recording
             return True
 
     if cfg.RECORD_DURING_AI:
-        V.add(AiRecordingCondition(), inputs=['user/mode', 'recording'], outputs=['recording'])
-    
-    #Drive train setup
+        V.add(
+            AiRecordingCondition(),
+            inputs=["user/mode", "recording"],
+            outputs=["recording"],
+        )
+
+    # Drive train setup
     if cfg.DONKEY_GYM:
         pass
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
         if cfg.HAVE_ROBOHAT and model_path:
             from donkeycar.parts.robohat import RoboHATDriver
-            
-            #steering_controller = RoboHATDriver(cfg.STEERING_CHANNEL)
-            #throttle_controller = RoboHATDriver(cfg.THROTTLE_CHANNEL)
-            
-            V.add(RoboHATDriver(), inputs=['angle', 'throttle'])
+
+            # steering_controller = RoboHATDriver(cfg.STEERING_CHANNEL)
+            # throttle_controller = RoboHATDriver(cfg.THROTTLE_CHANNEL)
+
+            V.add(RoboHATDriver(), inputs=["angle", "throttle"])
         elif cfg.HAVE_ROBOHAT:
             pass
-        
-        else:    
+
+        else:
             from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
-            steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-            steering = PWMSteering(controller=steering_controller,
-                                            left_pulse=cfg.STEERING_LEFT_PWM, 
-                                            right_pulse=cfg.STEERING_RIGHT_PWM)
+            steering_controller = PCA9685(
+                cfg.STEERING_CHANNEL,
+                cfg.PCA9685_I2C_ADDR,
+                busnum=cfg.PCA9685_I2C_BUSNUM,
+            )
+            steering = PWMSteering(
+                controller=steering_controller,
+                left_pulse=cfg.STEERING_LEFT_PWM,
+                right_pulse=cfg.STEERING_RIGHT_PWM,
+            )
 
-            throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-            throttle = PWMThrottle(controller=throttle_controller,
-                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+            throttle_controller = PCA9685(
+                cfg.THROTTLE_CHANNEL,
+                cfg.PCA9685_I2C_ADDR,
+                busnum=cfg.PCA9685_I2C_BUSNUM,
+            )
+            throttle = PWMThrottle(
+                controller=throttle_controller,
+                max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                min_pulse=cfg.THROTTLE_REVERSE_PWM,
+            )
 
-            V.add(steering, inputs=['angle'], threaded=True)
-            V.add(throttle, inputs=['throttle'], threaded=True)
-
+            V.add(steering, inputs=["angle"], threaded=True)
+            V.add(throttle, inputs=["throttle"], threaded=True)
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-        
-        steering = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT, cfg.HBRIDGE_PIN_RIGHT)
+
+        steering = Mini_HBridge_DC_Motor_PWM(
+            cfg.HBRIDGE_PIN_LEFT, cfg.HBRIDGE_PIN_RIGHT
+        )
         throttle = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
-    
+        V.add(steering, inputs=["angle"])
+        V.add(throttle, inputs=["throttle"])
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
-        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, Mini_HBridge_DC_Motor_PWM
+        from donkeycar.parts.actuator import (
+            TwoWheelSteeringThrottle,
+            Mini_HBridge_DC_Motor_PWM,
+        )
 
-        left_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT_FWD, cfg.HBRIDGE_PIN_LEFT_BWD)
-        right_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_RIGHT_FWD, cfg.HBRIDGE_PIN_RIGHT_BWD)
+        left_motor = Mini_HBridge_DC_Motor_PWM(
+            cfg.HBRIDGE_PIN_LEFT_FWD, cfg.HBRIDGE_PIN_LEFT_BWD
+        )
+        right_motor = Mini_HBridge_DC_Motor_PWM(
+            cfg.HBRIDGE_PIN_RIGHT_FWD, cfg.HBRIDGE_PIN_RIGHT_BWD
+        )
         two_wheel_control = TwoWheelSteeringThrottle()
 
-        V.add(two_wheel_control, 
-                inputs=['throttle', 'angle'],
-                outputs=['left_motor_speed', 'right_motor_speed'])
+        V.add(
+            two_wheel_control,
+            inputs=["throttle", "angle"],
+            outputs=["left_motor_speed", "right_motor_speed"],
+        )
 
-        V.add(left_motor, inputs=['left_motor_speed'])
-        V.add(right_motor, inputs=['right_motor_speed'])
+        V.add(left_motor, inputs=["left_motor_speed"])
+        V.add(right_motor, inputs=["right_motor_speed"])
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
         from donkeycar.parts.actuator import ServoBlaster, PWMSteering
-        steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
-        #PWM pulse values should be in the range of 100 to 200
-        assert(cfg.STEERING_LEFT_PWM <= 200)
-        assert(cfg.STEERING_RIGHT_PWM <= 200)
-        steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
-       
+
+        steering_controller = ServoBlaster(cfg.STEERING_CHANNEL)  # really pin
+        # PWM pulse values should be in the range of 100 to 200
+        assert cfg.STEERING_LEFT_PWM <= 200
+        assert cfg.STEERING_RIGHT_PWM <= 200
+        steering = PWMSteering(
+            controller=steering_controller,
+            left_pulse=cfg.STEERING_LEFT_PWM,
+            right_pulse=cfg.STEERING_RIGHT_PWM,
+        )
 
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
+
         motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
-        V.add(steering, inputs=['angle'], threaded=True)
+        V.add(steering, inputs=["angle"], threaded=True)
         V.add(motor, inputs=["throttle"])
 
     # OLED setup
     if cfg.USE_SSD1306_128_32:
         from donkeycar.parts.oled import OLEDPart
-        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
-        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_BUSNUM, auto_record_on_throttle=auto_record_on_throttle)
-        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
-    #add tub to save data
+        auto_record_on_throttle = (
+            cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        )
+        oled_part = OLEDPart(
+            cfg.SSD1306_128_32_I2C_BUSNUM,
+            auto_record_on_throttle=auto_record_on_throttle,
+        )
+        V.add(
+            oled_part,
+            inputs=["recording", "tub/num_records", "user/mode"],
+            outputs=[],
+            threaded=True,
+        )
 
-    inputs=['cam/image_array',
-            'user/angle', 'user/throttle', 
-            'user/mode']
+    # add tub to save data
 
-    types=['image_array',
-           'float', 'float',
-           'str']
+    inputs = ["cam/image_array", "user/angle", "user/throttle", "user/mode"]
+
+    types = ["image_array", "float", "float", "str"]
 
     if cfg.TRAIN_BEHAVIORS:
-        inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
-        types += ['int', 'str', 'vector']
-    
-    if cfg.HAVE_IMU:
-        inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
+        inputs += ["behavior/state", "behavior/label", "behavior/one_hot_state_array"]
+        types += ["int", "str", "vector"]
 
-        types +=['float', 'float', 'float',
-           'float', 'float', 'float']
+    if cfg.HAVE_IMU:
+        inputs += [
+            "imu/acl_x",
+            "imu/acl_y",
+            "imu/acl_z",
+            "imu/gyr_x",
+            "imu/gyr_y",
+            "imu/gyr_z",
+        ]
+
+        types += ["float", "float", "float", "float", "float", "float"]
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/angle', 'pilot/throttle']
-        types += ['float', 'float']
-    
+        inputs += ["pilot/angle", "pilot/throttle"]
+        types += ["float", "float"]
+
     th = TubHandler(path=cfg.DATA_PATH)
     tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition="recording")
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
         from donkeycar.parts.image import ImgArrToJpg
+
         pub = TCPServeValue("camera")
-        V.add(ImgArrToJpg(), inputs=['cam/image_array'], outputs=['jpg/bin'])
-        V.add(pub, inputs=['jpg/bin'])
+        V.add(ImgArrToJpg(), inputs=["cam/image_array"], outputs=["jpg/bin"])
+        V.add(pub, inputs=["jpg/bin"])
 
     if type(ctr) is LocalWebController:
         print("You can now go to <your pis hostname.local>:8887 to drive your car.")
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
-        #tell the controller about the tub        
+        # tell the controller about the tub
         ctr.set_tub(tub)
-        
+
         if cfg.BUTTON_PRESS_NEW_TUB:
-    
+
             def new_tub_dir():
                 V.parts.pop()
                 tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+                V.add(
+                    tub,
+                    inputs=inputs,
+                    outputs=["tub/num_records"],
+                    run_condition="recording",
+                )
                 ctr.set_tub(tub)
-    
-            ctr.set_button_down_trigger('cross', new_tub_dir)
+
+            ctr.set_button_down_trigger("cross", new_tub_dir)
         ctr.print_controls()
 
-    #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
-            max_loop_count=cfg.MAX_LOOPS)
+    # run the vehicle for 20 seconds
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = docopt(__doc__)
     cfg = dk.load_config()
-    
-    if args['drive']:
-        model_type = args['--type']
-        camera_type = args['--camera']
-        drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
-              model_type=model_type, camera_type=camera_type,
-              meta=args['--meta'])
 
-    if args['train']:
+    if args["drive"]:
+        model_type = args["--type"]
+        camera_type = args["--camera"]
+        drive(
+            cfg,
+            model_path=args["--model"],
+            use_joystick=args["--js"],
+            model_type=model_type,
+            camera_type=camera_type,
+            meta=args["--meta"],
+        )
+
+    if args["train"]:
         from train import multi_train, preprocessFileList
-        
-        tub = args['--tub']
-        model = args['--model']
-        transfer = args['--transfer']
-        model_type = args['--type']
-        continuous = args['--continuous']
-        aug = args['--aug']     
 
-        dirs = preprocessFileList( args['--file'] )
+        tub = args["--tub"]
+        model = args["--model"]
+        transfer = args["--transfer"]
+        model_type = args["--type"]
+        continuous = args["--continuous"]
+        aug = args["--aug"]
+
+        dirs = preprocessFileList(args["--file"])
         if tub is not None:
-            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
-            dirs.extend( tub_paths )
+            tub_paths = [os.path.expanduser(n) for n in tub.split(",")]
+            dirs.extend(tub_paths)
 
         multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
-

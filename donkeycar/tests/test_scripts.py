@@ -4,11 +4,11 @@ import pytest
 
 def is_error(err):
     for e in err:
-        #Catch error if 'Error' is in the stderr output.
-        if 'Error' in e.decode():
+        # Catch error if 'Error' is in the stderr output.
+        if "Error" in e.decode():
             return True
-        #Catch error when the wrong command is used.
-        if 'Usage:' in e.decode():
+        # Catch error when the wrong command is used.
+        if "Usage:" in e.decode():
             return True
     return False
 
@@ -20,24 +20,26 @@ def cardir(tmpdir):
 
 
 def test_createcar(cardir):
-    cmd = ['donkey', 'createcar', '--path', cardir]
+    cmd = ["donkey", "createcar", "--path", cardir]
     out, err, proc_id = utils.run_shell_command(cmd)
     assert is_error(err) is False
 
+
 def test_drivesim(cardir):
-    cmd = ['donkey', 'createcar', '--path', cardir ,'--template', 'square']
+    cmd = ["donkey", "createcar", "--path", cardir, "--template", "square"]
     out, err, proc_id = utils.run_shell_command(cmd, timeout=10)
-    cmd = ['python', 'manage.py', 'drive']
-    out, err, proc_id = utils.run_shell_command(cmd, cwd = cardir)
+    cmd = ["python", "manage.py", "drive"]
+    out, err, proc_id = utils.run_shell_command(cmd, cwd=cardir)
     print(err)
 
     if is_error(err) is True:
-        print('out', out)
-        print('error: ', err)
-        raise ValueError (err)
+        print("out", out)
+        print("error: ", err)
+        raise ValueError(err)
+
 
 def test_bad_command_fails():
-    cmd = ['donkey', 'not a comand']
+    cmd = ["donkey", "not a comand"]
     out, err, proc_id = utils.run_shell_command(cmd)
     print(err)
     print(out)

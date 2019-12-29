@@ -20,7 +20,6 @@ def create_lbin(marker_index):
 
 
 class TestLinearBin(unittest.TestCase):
-
     def test_zero(self):
         res = linear_bin(0)
         assert res[7] == 1
@@ -39,11 +38,10 @@ class TestLinearBin(unittest.TestCase):
 
     def test_illegal_type(self):
         with pytest.raises(TypeError):
-            linear_bin('0')
+            linear_bin("0")
 
 
 class TestLinearUnbin(unittest.TestCase):
-
     def test_zero(self):
         l = create_lbin(7)
         res = linear_unbin(l)
@@ -60,12 +58,11 @@ class TestLinearUnbin(unittest.TestCase):
         assert res == -1.0
 
     def test_empty_list(self):
-        res = linear_unbin( [0] * 15 )
+        res = linear_unbin([0] * 15)
         assert res == -1.0
 
 
 class TestMapping(unittest.TestCase):
-
     def test_positive(self):
         min = map_range(-100, -100, 100, 0, 1000)
         half = map_range(0, -100, 100, 0, 1000)
@@ -94,31 +91,31 @@ class TestMapping(unittest.TestCase):
 
 
 class TestMergeDicts(unittest.TestCase):
-
     def test_merge_two_dicts(self):
-        d1 = { 'a' : 1, 'b' : 2, 'c' : 3 }
-        d2 = { 10 : 'hi', 'bob' : 20 }
+        d1 = {"a": 1, "b": 2, "c": 3}
+        d2 = {10: "hi", "bob": 20}
         res = merge_two_dicts(d1, d2)
 
-        assert res == { 'a' : 1, 'b' : 2, 'c' : 3, 10 : 'hi', 'bob' : 20 }
+        assert res == {"a": 1, "b": 2, "c": 3, 10: "hi", "bob": 20}
+
 
 class TestParamGen(unittest.TestCase):
-
     def test_param_gen(self):
-        g = param_gen({ 'a' : [ 'opt1', 'opt2' ], 'b' : [ 'opt3', 'opt4' ] })
-        l = [ x for x in g ]
+        g = param_gen({"a": ["opt1", "opt2"], "b": ["opt3", "opt4"]})
+        l = [x for x in g]
         expected = [
-                {'a': 'opt1', 'b': 'opt3'},
-                {'a': 'opt1', 'b': 'opt4'},
-                {'a': 'opt2', 'b': 'opt3'},
-                {'a': 'opt2', 'b': 'opt4'}
-            ]
+            {"a": "opt1", "b": "opt3"},
+            {"a": "opt1", "b": "opt4"},
+            {"a": "opt2", "b": "opt3"},
+            {"a": "opt2", "b": "opt4"},
+        ]
         self.assertCountEqual(expected, l)
+
 
 def test_train_test_split():
     data_set = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
     train_set, val_set = train_test_split(data_set, test_size=0.2)
     print(train_set)
     print(val_set)
-    assert(len(train_set)==8)
-    assert(len(val_set)==2)
+    assert len(train_set) == 8
+    assert len(val_set) == 2

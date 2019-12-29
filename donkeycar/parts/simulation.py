@@ -12,9 +12,8 @@ class MovingSquareTelemetry:
     """
     Generator of cordinates of a bouncing moving square for simulations.
     """
-    def __init__(self, max_velocity=29,
-                 x_min=10, x_max=150,
-                 y_min=10, y_max=110):
+
+    def __init__(self, max_velocity=29, x_min=10, x_max=150, y_min=10, y_max=110):
 
         self.velocity = random.random() * max_velocity
 
@@ -65,9 +64,8 @@ class SquareBoxCamera:
         """
         Create an image of a square box at a given coordinates.
         """
-        radius = int((box_size or self.box_size)/2)
+        radius = int((box_size or self.box_size) / 2)
         color = color or self.color
         frame = np.zeros(shape=self.resolution + (3,))
-        frame[y - radius: y + radius,
-              x - radius: x + radius, :] = color
+        frame[y - radius : y + radius, x - radius : x + radius, :] = color
         return frame

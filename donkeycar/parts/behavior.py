@@ -1,12 +1,13 @@
 class BehaviorPart(object):
-    '''
+    """
     Keep a list of states, and an active state. Keep track of switching.
     And return active state information.
-    '''
+    """
+
     def __init__(self, states):
-        '''
+        """
         expects a list of strings to enumerate state
-        '''
+        """
         print("bvh states:", states)
         self.states = states
         self.active_state = 0
@@ -38,8 +39,11 @@ class BehaviorPart(object):
         print("In State:", self.states[self.active_state])
 
     def run(self):
-        return self.active_state, self.states[self.active_state], self.one_hot_state_array
+        return (
+            self.active_state,
+            self.states[self.active_state],
+            self.one_hot_state_array,
+        )
 
     def shutdown(self):
         pass
-        

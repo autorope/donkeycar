@@ -1,9 +1,9 @@
-'''
+"""
 file: gym_real.py
 author: Tawn Kramer
 date: 2019-01-24
 desc: Control a real donkey robot via the gym interface
-'''
+"""
 import os
 import time
 
@@ -33,38 +33,44 @@ class DonkeyRealEnv(gym.Env):
     def __init__(self, time_step=0.05, frame_skip=2):
 
         print("starting DonkeyGym env")
-        
+
         try:
-            donkey_name = str(os.environ['DONKEY_NAME'])
+            donkey_name = str(os.environ["DONKEY_NAME"])
         except:
-            donkey_name = 'my_robot1234'
+            donkey_name = "my_robot1234"
             print("No DONKEY_NAME environment var. Using default:", donkey_name)
 
         try:
-            mqtt_broker = str(os.environ['DONKEY_MQTT_BROKER'])
+            mqtt_broker = str(os.environ["DONKEY_MQTT_BROKER"])
         except:
             mqtt_broker = "iot.eclipse.org"
             print("No DONKEY_MQTT_BROKER environment var. Using default:", mqtt_broker)
-            
+
         # start controller
-        self.controller = DonkeyRemoteContoller(donkey_name=donkey_name, mqtt_broker=mqtt_broker)
-        
+        self.controller = DonkeyRemoteContoller(
+            donkey_name=donkey_name, mqtt_broker=mqtt_broker
+        )
+
         # steering and throttle
-        self.action_space = spaces.Box(low=np.array([self.STEER_LIMIT_LEFT, self.THROTTLE_MIN]),
-            high=np.array([self.STEER_LIMIT_RIGHT, self.THROTTLE_MAX]), dtype=np.float32 )
+        self.action_space = spaces.Box(
+            low=np.array([self.STEER_LIMIT_LEFT, self.THROTTLE_MIN]),
+            high=np.array([self.STEER_LIMIT_RIGHT, self.THROTTLE_MAX]),
+            dtype=np.float32,
+        )
 
         # camera sensor data
-        self.observation_space = spaces.Box(0, self.VAL_PER_PIXEL, self.controller.get_sensor_size(), dtype=np.uint8)
+        self.observation_space = spaces.Box(
+            0, self.VAL_PER_PIXEL, self.controller.get_sensor_size(), dtype=np.uint8
+        )
 
         # Frame Skipping
         self.frame_skip = frame_skip
 
         # wait until loaded
         self.controller.wait_until_connected()
-        
 
     def close(self):
-        self.controller.quit()        
+        self.controller.quit()
 
     def step(self, action):
         for i in range(self.frame_skip):
