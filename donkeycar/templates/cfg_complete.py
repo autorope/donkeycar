@@ -39,9 +39,15 @@ CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Fli
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 
-#SSD1306_128_32
-USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
-SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
+#SSD1306_OLED_DISPLAY
+SSD1306_USE_DISPLAY = False            #do you have an OLED Display like https://www.amazon.com/HiLetgo-Serial-128X64-Display-Color/dp/B06XRBTBTB/
+SSD1306_WIDTH = 128                    #display width in pixel - (supported dimensions are 128x32 and 128x64)
+SSD1306_HEIGHT = 32                    #display height in pixel
+SSD1306_WLAN_INTERFACE_NAME = "wlan0"  #interface name of your wlan interface (enter command "ifconfig" to determine the name)
+SSD1306_ETH_INTERFACE_NAME = "eth0"    #interface name of your ethernet interface
+SSD1306_I2C_ADDR = 0x3C                #I2C address, use i2cdetect to validate this number
+SSD1306_I2C_BUSNUM = None              #none will auto detect, which is fine on the pi. But other platforms should specify the bus num.
+SSD1306_PROCESS_LIMIT = 32             #number of display commands send per main loop interval. Higher number lead to faster display updates, while having slower actuator movement, when using i2c-based pwm-controllers
 
 #DRIVETRAIN
 #These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
