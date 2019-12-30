@@ -176,33 +176,47 @@ class CalibrateCar(BaseCommand):
         parser.add_argument('--address', default='0x40', help="The i2c address you'd like to calibrate [default 0x40]")
         parser.add_argument('--bus', default=None, help="The i2c bus you'd like to calibrate [default autodetect]")
         parser.add_argument('--pwmFreq', default=60, help="The frequency to use for the PWM")
+        parser.add_argument('--arduino', dest='arduino', action='store_true', help='Use arduino pin for PWM (calibrate pin=<channel>)')
+        parser.set_defaults(arduino=False)
         parsed_args = parser.parse_args(args)
         return parsed_args
 
     def run(self, args):
-        from donkeycar.parts.actuator import PCA9685
-        from donkeycar.parts.sombrero import Sombrero
-
-        s = Sombrero()
-
         args = self.parse_args(args)
         channel = int(args.channel)
-        busnum = None
-        if args.bus:
-            busnum = int(args.bus)
-        address = int(args.address, 16)
-        print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
-        freq = int(args.pwmFreq)
-        print("Using PWM freq: {}".format(freq))
-        c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
-        print()
+
+        if args.arduino == True:
+            from donkeycar.parts.actuator import ArduinoFirmata
+
+            arduino_controller = ArduinoFirmata(servo_pin=channel)
+            print('init Arduino PWM on pin %d' %(channel))
+            input_prompt = "Enter a PWM setting to test ('q' for quit) (0-180): "
+        else:
+            from donkeycar.parts.actuator import PCA9685
+            from donkeycar.parts.sombrero import Sombrero
+
+            s = Sombrero()
+
+            busnum = None
+            if args.bus:
+                busnum = int(args.bus)
+            address = int(args.address, 16)
+            print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
+            freq = int(args.pwmFreq)
+            print("Using PWM freq: {}".format(freq))
+            c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
+            input_prompt = "Enter a PWM setting to test ('q' for quit) (0-1500): "
+            print()
         while True:
             try:
-                val = input("""Enter a PWM setting to test ('q' for quit) (0-1500): """)
+                val = input(input_prompt)
                 if val == 'q' or val == 'Q':
                     break
                 pmw = int(val)
-                c.run(pmw)
+                if args.arduino == True:
+                    arduino_controller.set_pulse(channel,pmw)
+                else:
+                    c.run(pmw)
             except KeyboardInterrupt:
                 print("\nKeyboardInterrupt received, exit.")
                 break
