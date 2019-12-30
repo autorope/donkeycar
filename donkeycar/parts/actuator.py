@@ -689,3 +689,115 @@ class ServoBlaster(object):
         self.run((self.max + self.min) / 2)
         self.servoblaster.close()
 
+
+class ArduinoFirmata:
+    '''
+    PWM controller using Arduino board.
+    This is particularly useful for boards like Latte Panda with built it Arduino.
+    Standard Firmata sketch needs to be loaded on Arduino side.
+    Refer to docs/parts/actuators.md for more details
+    '''
+
+    def __init__(self, servo_pin = 6, esc_pin = 5):
+        from pymata_aio.pymata3 import PyMata3
+        self.board = PyMata3()
+        self.board.sleep(0.015)
+        self.servo_pin = servo_pin
+        self.esc_pin = esc_pin
+        self.board.servo_config(servo_pin)
+        self.board.servo_config(esc_pin)
+
+    def set_pulse(self, pin, angle):
+        try:
+            self.board.analog_write(pin, int(angle))
+        except:
+            self.board.analog_write(pin, int(angle))
+
+    def set_servo_pulse(self, angle):
+        self.set_pulse(self.servo_pin, int(angle))
+
+    def set_esc_pulse(self, angle):
+        self.set_pulse(self.esc_pin, int(angle))
+
+
+
+class ArdPWMSteering:
+    """
+    Wrapper over a Arduino Firmata controller to convert angles to PWM pulses.
+    """
+    LEFT_ANGLE = -1
+    RIGHT_ANGLE = 1
+
+    def __init__(self,
+                 controller=None,
+                 left_pulse=60,
+                 right_pulse=120):
+
+        self.controller = controller
+        self.left_pulse = left_pulse
+        self.right_pulse = right_pulse
+        self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
+        self.running = True
+        print('Arduino PWM Steering created')
+
+    def run(self, angle):
+        # map absolute angle to angle that vehicle can implement.
+        self.pulse = dk.utils.map_range(angle,
+                                        self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
+        self.controller.set_servo_pulse(self.pulse)
+
+    def shutdown(self):
+        # set steering straight
+        self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
+                                        self.left_pulse, self.right_pulse)
+        time.sleep(0.3)
+        self.running = False
+
+
+class ArdPWMThrottle:
+
+    """
+    Wrapper over Arduino Firmata controller to convert -1 to 1 throttle
+    values to PWM pulses.
+    """
+    MIN_THROTTLE = -1
+    MAX_THROTTLE = 1
+
+    def __init__(self,
+                 controller=None,
+                 max_pulse=105,
+                 min_pulse=75,
+                 zero_pulse=90):
+
+        self.controller = controller
+        self.max_pulse = max_pulse
+        self.min_pulse = min_pulse
+        self.zero_pulse = zero_pulse
+        self.pulse = zero_pulse
+
+        # send zero pulse to calibrate ESC
+        print("Init ESC")
+        self.controller.set_esc_pulse(self.max_pulse)
+        time.sleep(0.01)
+        self.controller.set_esc_pulse(self.min_pulse)
+        time.sleep(0.01)
+        self.controller.set_esc_pulse(self.zero_pulse)
+        time.sleep(1)
+        self.running = True
+        print('Arduino PWM Throttle created')
+
+    def run(self, throttle):
+        if throttle > 0:
+            self.pulse = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
+                                            self.zero_pulse, self.max_pulse)
+        else:
+            self.pulse = dk.utils.map_range(throttle, self.MIN_THROTTLE, 0,
+                                            self.min_pulse, self.zero_pulse)
+        self.controller.set_esc_pulse(self.pulse)
+
+    def shutdown(self):
+        # stop vehicle
+        self.run(0)
+        self.running = False
