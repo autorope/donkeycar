@@ -17,10 +17,18 @@ class OLEDPart(object):
         # Display subystem
         self._EMPTY = ''
         self._SLOT_COUNT = 4
+        self.display_height = display_height
         self.slots = [self._EMPTY] * self._SLOT_COUNT
         self.display = SSD1306Driver(address, i2c, process_limit, display_width, display_height)
         self.canvas = self.display.get_canvas()
         self.font = ImageFont.load_default()
+
+        # Static image resources
+        self.IMAGE_RESOURCES = {
+            "user": self.get_user_image_as_pil(),
+            "local": self.get_local_pilot_image_as_pil(),
+            "local_angle": self.get_local_angle_image_as_pil()
+        }
 
         # States
         self.last_user_mode = None
@@ -39,11 +47,11 @@ class OLEDPart(object):
         eth_interface = OLEDPart.get_ip_address(name_ethernet_interface)
         wlan_interface = OLEDPart.get_ip_address(name_wlan_interface)
         if eth_interface is not None:
-            self.eth_interface = 'eth0 : %s' % (eth_interface)
+            self.eth_interface = "{}: {}".format(name_ethernet_interface, eth_interface)
         else:
             self.eth_interface = None
         if wlan_interface is not None:
-            self.wlan_interface = 'wlan0 : %s' % (wlan_interface)
+            self.wlan_interface = "{}: {}".format(name_wlan_interface, wlan_interface)
         else:
             self.wlan_interface = None
 
@@ -67,13 +75,11 @@ class OLEDPart(object):
         '''
         x = 0
         top = -2
-        self.display.cls()
         for i in range(self._SLOT_COUNT):
             text = self.slots[i]
             if len(text) > 0:
                 self.canvas.text((x, top), text, font=self.font, fill=255)
                 top += 8
-        self.display.display()
 
     def run(self, recording, num_records, user_mode):
         '''
@@ -89,8 +95,11 @@ class OLEDPart(object):
         self.process_recording_stats(recording, num_records)
         self.process_user_mode(user_mode)
         if self.update_requested:
+            self.display.cls()
             self.update_slots()
             self.display_text()
+            self.display_user_mode_icon(user_mode)
+            self.display.display()
             self.update_requested = False
         self.display.process_queues()
 
@@ -103,6 +112,14 @@ class OLEDPart(object):
         self.last_user_mode = user_mode
         self.user_mode = "User Mode ({})".format(user_mode)
         self.update_requested = True
+
+    def display_user_mode_icon(self, user_mode):
+        '''
+        On large displays with 64 and more pixels, the user mode is also visualized with an image
+        '''
+        if self.display_height >= 64:
+            assert user_mode in ["user", "local", "local_angle"]
+            self.display.render_pil_image(self.canvas, self.IMAGE_RESOURCES[user_mode], 50, 34)
 
     def process_recording_stats(self, recording, num_records):
         '''
@@ -142,6 +159,29 @@ class OLEDPart(object):
 
     def shutdown(self):
         self.display.shutdown()
+
+    def get_user_image_as_pil(self):
+        return self.display.base64_to_pil_image("""
+            iVBORw0KGgoAAAANSUhEUgAAABwAAAAcAQMAAABIw03XAAAABlBMVEUAAAD///+l2Z/dAAAAAWJL
+            R0QAiAUdSAAAADxJREFUCNdjYJBvYGBgqH8AJP5/gBKM/38QTzBAiA8wU+wPAAl+BhgAccHq2P//
+            A/L+/z/A8P8/UDUWAgBOjzmB8U2V4QAAAABJRU5ErkJggg==
+        """)
+
+    def get_local_angle_image_as_pil(self):
+        return self.display.base64_to_pil_image("""
+            iVBORw0KGgoAAAANSUhEUgAAABwAAAAcAQMAAABIw03XAAAABlBMVEUAAAD///+l2Z/dAAAAAWJL
+            R0QAiAUdSAAAAGNJREFUCNdlzqsRgDAQRdGbQSApYTshbUVEhEEgKYnthJSwOAQzy9dhjnz3QVQI
+            vkPjB3TuIBoLQlfoaZVMU0mED4tqbL4bbv7HL0yKkWSoL1nGSi+TIjJfy+tS3tCTfOL3jRMyCT0e
+            1rEppwAAAABJRU5ErkJggg==
+        """)
+
+    def get_local_pilot_image_as_pil(self):
+        return self.display.base64_to_pil_image("""
+            iVBORw0KGgoAAAANSUhEUgAAABwAAAAcAQMAAABIw03XAAAABlBMVEUAAAD///+l2Z/dAAAAAWJL
+            R0QAiAUdSAAAAIRJREFUCNctzTEKwjAYhuG3CNFB8setAbH1Bl2Fgm5eQ/AgjQgRQfBKnewieIUe
+            IWOd4j+4PHzT90J0UNxLmK0eSv0Gs3spPsLSX2HhL1BKEXDdGGhy6tmm6cC5b08cw6ZmwDZEMQ67
+            H0C+WUn5v2x10z8xMBerjeda+bTazRPQjUoV+AFd4h+0B3GDTQAAAABJRU5ErkJggg==
+        """)
 
     @classmethod
     def get_ip_address(cls, interface):
@@ -289,23 +329,35 @@ class SSD1306Driver:
 
     def display_base64_encoded_png_images(self, base64_str_data, x_offset=0, y_offset=0):
         '''
-        Display PNG image data on the display.
+        Display base64-encoded PNG image data on the display.
 
         To avoid external files, images are stored as base64-encoded black/white PNG images
-        with a one bit palette that are PNG compressed.
+        with a one bit palette.
         '''
-        logo_binary_monochrome_png = base64.b64decode(base64_str_data)
-        im = Image.open(BytesIO(logo_binary_monochrome_png))
-        width, height = im.size
+        im = self.base64_to_pil_image(base64_str_data)
+        self.render_pil_image(self.canvas, im, x_offset, y_offset)
+        self.display()
+
+    def base64_to_pil_image(self, base64_str_data):
+        '''
+        Loads pil images from base64-encoded image files
+        '''
+        binary_monochrome_png = base64.b64decode(base64_str_data)
+        return Image.open(BytesIO(binary_monochrome_png))
+
+    def render_pil_image(self, canvas, pil_image, x_offset=0, y_offset=0):
+        '''
+        Draws any PIL image on a canvas
+        '''
+        width, height = pil_image.size
         for x in range(width):
             for y in range(height):
-                data = im.getpixel((x, y))
+                data = pil_image.getpixel((x, y))
                 assert data == 0 or data == 1
                 x_coords = x + x_offset
                 y_coords = y + y_offset
-                self.canvas.rectangle(
+                canvas.rectangle(
                     (x_coords, y_coords, x_coords, y_coords), outline=data, fill=0)
-        self.display()
 
     def shutdown(self):
         # indicate that the thread should be stopped
