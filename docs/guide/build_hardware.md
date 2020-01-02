@@ -36,19 +36,19 @@ Here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars a
 
 In addition there are 3 more cars supported under the "Donkey Pro" name.  These are 1/10 scale cars which means that they are bigger, perform a little better and are slightly more expensive.  They can be found here:
 
-* HobbyKing Trooper (not pro version) [found here](https://hobbyking.com/en_us/turnigy-trooper-sct-4x4-1-10-brushless-short-course-truck-arr.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=9928905034)
-* HobbyKing Mission-D [found here](https://hobbyking.com/en_us/1-10-hobbykingr-mission-d-4wd-gtr-drift-car-arr.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=337569952)
-* Tamaya TT01 or Clone - found worldwide but usually has to be built as a kits.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
+*  HobbyKing Trooper (not pro version) [found here](https://hobbyking.com/en_us/turnigy-trooper-sct-4x4-1-10-brushless-short-course-truck-arr.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=9928905034)
+*  HobbyKing Mission-D [found here](https://hobbyking.com/en_us/1-10-hobbykingr-mission-d-4wd-gtr-drift-car-arr.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=337569952)
+*  Tamaya TT01 or Clone - found worldwide but usually has to be built as a kits.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
 
 Here is a [video](https://youtu.be/K-REL9aqPE0) that goes over the different models.  The Donkey Pro models are not yet very well documented, just a word of warning.  
 
 For more detail and other options, follow the link to: [supported cars](/supported_cars)
 
-![donkey](/assets/build_hardware/donkey.PNG)
+![donkey](/assets/build_hardware/donkey.png)
 
 ## Roll Your Own Car
 
-Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own.md)
+Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own/)
 
 ## Video Overview of Hardware Assembly
 
@@ -58,7 +58,7 @@ This [video](https://www.youtube.com/watch?v=OaVqWiR2rS0&t=48s) covers how to as
 
 ## Parts Needed
 
-The following instructions are for the Raspbeery Pi, below in Optional Upgrades section, you can find the NVIDIA Jetson Nano instructions.  
+The following instructions are for the Raspberry Pi, below in Optional Upgrades section, you can find the NVIDIA Jetson Nano instructions.  
 
 ### Option 1: Buying through an official Donkey Store
 
@@ -78,7 +78,7 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 
 ### Option 2: Bottoms Up Build
 
-If you want to buy the parts yourself, want to customize your donkey or live out to of the US, you may want to choose the bottoms up build.  Keep in mind you will have to print the donkey car parts which can be found [here](https://www.thingiverse.com/thing:2566276)
+If you want to buy the parts yourself, want to customize your donkey or live outside of the US, you may want to choose the bottoms up build.  Keep in mind you will have to print the donkey car parts which can be found [here](https://www.thingiverse.com/thing:2566276)
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
@@ -93,13 +93,13 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 | Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 &ast;&ast;           |
 | 3D Printed roll cage and top plate.                                                 | Purchase: [Donkey Store](https://store.donkeycar.com/collections/plastics-and-screws/products/standard-donkey-chassis-includes-screws) Files: [thingiverse.com/thing:2260575](https://www.thingiverse.com/thing:2566276) | $50                 |
 
-&ast; If it is hard to find these components there is some wiggle room. Instead of an M2 you can use an M2.2, m2.3 or #4 SAE screw.  Instead of an M3 a #6 SAE screw can be used.  Machine screws can be used in a pinch.  
+&ast; If it is hard to find these components, there is some wiggle room. Instead of an M2 you can use an M2.2, m2.3 or #4 SAE screw.  Instead of an M3 a #6 SAE screw can be used.  Machine screws can be used in a pinch.  
 
 &ast;&ast; This component can be purchased from Ali Express for ~$2-4 if you can wait the 30-60 days for shipping.
 
 ### Optional Upgrades
 
-* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Antennas and camera.  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) if you want to print it yourself it is on the Thingiverse page for the project.
+* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Antennas and camera.  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter). If you want to print it yourself, it is on the Thingiverse page for the project.
 
 ![adapter](/assets/Jetson_Adapter.jpg)
 
@@ -127,7 +127,7 @@ For other options for part, feel free to look at the jetbot documentation [here]
 
 * **LiPo Battery and Accessories:** LiPo batteries have significantly better energy density and have a better dropoff curve.  See below (courtesy of Traxxas).
 
-![donkey](/assets/build_hardware/traxxas.PNG)
+![donkey](/assets/build_hardware/traxxas.png)
 
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
@@ -149,11 +149,11 @@ I printed parts in black PLA, with .3mm layer height with a .5mm nozzle and no s
 
 Almost all 3D Printed parts will need clean up.  Re-drill holes, and clean up excess plastic.
 
-![donkey](/assets/build_hardware/2a.PNG)
+![donkey](/assets/build_hardware/2a.png)
 
 In particular, clean up the slots in the side of the roll bar, as shown in the picture below:
 
-![donkey](/assets/build_hardware/2b.PNG)
+![donkey](/assets/build_hardware/2b.png)
 
 ### Step 3: Assemble Top plate and Roll Cage
 
@@ -169,11 +169,11 @@ When attaching the roll cage to the top plate, ensure that the nubs on the top p
 
 You could do this after attaching the Raspberry Pi to the bottom plate, I just think it is easier to see the parts when they are laying on the workbench.  Connect the parts as you see below:
 
-![donkey](/assets/build_hardware/4a.PNG)
+![donkey](/assets/build_hardware/4a.png)
 
 For reference, below is the Raspberry Pi Pinout for reference.  You will notice we connect to 3.3v, the two I2C pins (SDA and SCL) and ground:
 
-![donkey](/assets/build_hardware/4b.PNG)
+![donkey](/assets/build_hardware/4b.png)
 
 ### Step 5: Attach Raspberry Pi to 3D Printed bottom plate
 
@@ -181,7 +181,7 @@ Before you start, now is a good time to insert the already flashed SD card and b
 
 Attach the USB battery to the underside of the printed bottom plate using cable ties or velcro.
 
-![donkey](/assets/build_hardware/5ab.PNG)
+![donkey](/assets/build_hardware/5ab.png)
 
 ### Step 6: Attach Camera
 
@@ -193,22 +193,22 @@ If you need to remove the camera the temptation is to push on the lens, instead 
 
 Before using the car, remove the plastic film or lens cover from the camera lens.
 
-![donkey](/assets/build_hardware/6a.PNG)
+![donkey](/assets/build_hardware/6a.png)
 
 It is easy to put the camera cable in the wrong way so look at these photos and make sure the cable is put in properly.  There are loads of tutorials on youtube if you are not used to this.
 
-![donkey](/assets/build_hardware/6b.PNG)
+![donkey](/assets/build_hardware/6b.png)
 
 ### Step 7: Put it all together
 
 *** Note if you have a Desert Monster Chassis see 7B section below ***
 The final steps are straightforward.  First attach the roll bar assembly to the car.  This is done using the same pins that came with the vehicle.  
 
-![donkey](/assets/build_hardware/7a.PNG)
+![donkey](/assets/build_hardware/7a.png)
 
 Second run the servo cables up to the car.  The throttle cable runs to channel 0 on the servo controller and steering is channel 1.
 
-![donkey](/assets/build_hardware/7b.PNG)
+![donkey](/assets/build_hardware/7b.png)
 
 Now you are done with the hardware!!
 
@@ -224,6 +224,6 @@ Once this is done, go back to step 7
 
 Congrats!  Now to get your get your car moving, see the [software instructions](install_software.md) section.
 
-![donkey](/assets/build_hardware/donkey2.PNG)
+![donkey](/assets/build_hardware/donkey2.png)
 
 > We are a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for us to earn fees by linking to Amazon.com and affiliated sites.

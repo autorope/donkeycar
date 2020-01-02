@@ -4,7 +4,7 @@ Stores are parts that record and replay vehicle data produced by other parts.
 
 ## Tub
 
-This is the standard donkey data store and it is modeled after the ROSBAG.
+This is the standard donkey data store and it is modeled after the [ROSBAG](http://wiki.ros.org/rosbag).
 
 > TODO: The structure of the Tub part is not ideal and should be changed.
 

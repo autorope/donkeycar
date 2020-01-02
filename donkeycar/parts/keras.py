@@ -669,7 +669,6 @@ def default_latent(num_outputs, input_shape):
     
     img_in = Input(shape=input_shape, name='img_in')
     x = img_in
-    x = Lambda(lambda x: x/255.)(x) # normalize
     x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
     x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
@@ -684,7 +683,7 @@ def default_latent(num_outputs, input_shape):
     x = Dropout(drop)(x)
     x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_7")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(10, (1,1), strides=(2,2), activation='relu', name="latent")(x)
+    x = Convolution2D(64, (1,1), strides=(2,2), activation='relu', name="latent")(x)
     
     y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_1")(x)
     y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_2")(y)

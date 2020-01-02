@@ -38,7 +38,7 @@ conda activate donkey
 pip install -e .[pc]
 ```
 
-* Optionally Install Tensorflow GPU
+* Optionally Install Tensorflow GPU - only for NVidia Graphics cards
 
 If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
 
