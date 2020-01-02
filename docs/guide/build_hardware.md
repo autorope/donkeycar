@@ -16,7 +16,7 @@
 
 ## Overview
 
-These are updated instructions from the 2017 [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
+The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.  For historical purposes, these are the outdated instructions from the 2017 [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  
 
 ## Choosing a Car
 
