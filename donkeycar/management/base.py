@@ -259,7 +259,8 @@ class TubCheck(BaseCommand):
         Check for any problems. Looks at tubs and find problems in any records or images that won't open.
         If fix is True, then delete images and records that cause problems.
         '''
-        tubs = [Tub(path) for path in tub_paths]
+        cfg = load_config('config.py')
+        tubs = gather_tubs(cfg, tub_paths)
 
         for tub in tubs:
             tub.check(fix=fix)
