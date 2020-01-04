@@ -534,7 +534,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             cfg.SSD1306_ETH_INTERFACE_NAME,
             cfg.SSD1306_WLAN_INTERFACE_NAME
         )
-        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'])
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], threaded=True)
 
     #add tub to save data
 

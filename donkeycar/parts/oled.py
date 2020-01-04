@@ -81,7 +81,7 @@ class OLEDPart(object):
                 self.canvas.text((x, top), text, font=self.font, fill=255)
                 top += 8
 
-    def run(self, recording, num_records, user_mode):
+    def run_threaded(self, recording, num_records, user_mode):
         '''
         Acquires status information, process them and triggers the
         graphic subsystem to send data to i2c
@@ -98,10 +98,13 @@ class OLEDPart(object):
             self.display.cls()
             self.update_slots()
             self.display_text()
-            self.display_user_mode_icon(user_mode)
+            self.display_user_mode_icon()
             self.display.display()
             self.update_requested = False
         self.display.process_queues()
+
+    def update(self):
+        pass
 
     def process_user_mode(self, user_mode):
         '''
@@ -113,18 +116,18 @@ class OLEDPart(object):
         self.user_mode = "User Mode ({})".format(user_mode)
         self.update_requested = True
 
-    def display_user_mode_icon(self, user_mode):
+    def display_user_mode_icon(self):
         '''
         On large displays with 64 and more pixels, the user mode is also visualized with an image
         '''
         if self.display_height >= 64:
-            assert user_mode in ["user", "local", "local_angle"]
-            self.display.render_pil_image(self.canvas, self.IMAGE_RESOURCES[user_mode], 50, 34)
+            assert self.last_user_mode in ["user", "local", "local_angle"]
+            self.display.render_pil_image(self.canvas, self.IMAGE_RESOURCES[self.last_user_mode], 50, 34)
 
     def process_recording_stats(self, recording, num_records):
         '''
         Process state changes of the recording state and the number of records.
-        The number of records is updated everytime its passes a multiply of 400.
+        The number of records is updated everytime its passes a multiply of 100.
         This avoids too much updates on the i2c bus, that cannot be processed in time.
         '''
         rounded_num_recs = self.roundup(num_records)
@@ -151,10 +154,10 @@ class OLEDPart(object):
 
     def roundup(self, x):
         '''
-        Rounds a given number up to the next 400
+        Rounds a given number up to the next 100
         '''
         if x != None:
-            return int(math.ceil(x / 400.0)) * 400
+            return int(math.ceil(x / 100.0)) * 100
         return 0
 
     def shutdown(self):
