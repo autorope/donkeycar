@@ -5,13 +5,13 @@ OLED displays can be used to show information about the current state of the car
 The OLED display currently displays the following information:
 * The IP address of the car (`eth` and `wlan`)
 * The number of records collected, for training.
-* The driving mode.
+* The driving mode (also as icon on 128x64 displays)
 
 ## Supported displays
 
-Examples of displays that are currently supported are:
-
-* [Adafruit PiOLED - 128X32 MonoChrome OLED](https://www.adafruit.com/product/3527)
+The display part supports following display types using I2C communication:
+* 0.91" with 128x32 pixel resolution ([example](https://www.adafruit.com/product/3527))
+* 0.96" with 128x64 pixel resolution ([example](https://www.adafruit.com/product/938))
 
 ## Hardware Setup
 
@@ -22,15 +22,21 @@ Simply connect the display to the I2C pins on the Raspberry Pi or the Jetson Nan
 Enable the display in `myconfig.py`.
 
 ```python
-# SSD1306_128_32
-USE_SSD1306_128_32 = True     # Enable the SSD_1306 OLED Display
-SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
+#SSD1306_OLED_DISPLAY
+SSD1306_USE_DISPLAY = False            #enable the display
+SSD1306_WIDTH = 128                    #display width in pixel
+SSD1306_HEIGHT = 32                    #display height in pixel
+SSD1306_WLAN_INTERFACE_NAME = "wlan0"  #wlan interface name
+SSD1306_ETH_INTERFACE_NAME = "eth0"    #ethernet interface name
+SSD1306_I2C_ADDR = 0x3C                #I2C address
+SSD1306_I2C_BUSNUM = None              #none will auto detect
+SSD1306_PROCESS_LIMIT = 32             #number of display commands per thread cycle
 ```
 
 ## Troubleshooting
 
-If you are unable to start the car, ensure that the `Adafruit_SSD1306` package is installed in your virtual environment. This should automatically be installed, if you are using a recent version of `donkeycar`.
-
-```bash
-pip install Adafruit_SSD1306
-```
+* If the display does not show something, use the tool `i2cdetect` to check of the display appears as a I2C device in Linux(usually with the address 0x3C). Check the wiring first to make sure, that the display is connected correctly to your compute board. If the display does not show up then, set the SSD1306_I2C_BUSNUM from _None_ (auto detect - known to work on Raspberry Pi 3+ and 4) to _1_ (known to work on Jetson Nano.)
+* To get the name of your network interfaces use the tool `ifconfig` on Linux.
+* To get faster display updates increase the value of _SSD1306_PROCESS_LIMIT_ variable.
+* If you use I2C communication to control your servos using a PCA6985 controller and you observe slow servo and ESC reactions while the display updates, decrease the value _SSD1306_PROCESS_LIMIT_.
+* Also consider decreasing the value of _SSD1306_PROCESS_LIMIT_, to reduce CPU time usage for display updates
