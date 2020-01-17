@@ -107,7 +107,7 @@ Let's get our virtual environment (`env`) ready for OpenCV.
 
 ```bash
 # Install Numpy
-pip install numpy
+pip install numpy==1.16.4
 ```
 
 Now let's setup `CMake` correctly so it generates the correct OpenCV bindings for our virtual environment.
