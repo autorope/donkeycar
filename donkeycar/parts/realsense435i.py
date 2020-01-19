@@ -10,6 +10,9 @@ import logging
 import numpy as np
 import pyrealsense2 as rs
 
+WIDTH = 424
+HEIGHT = 240
+CHANNELS = 3
 
 class RealSense435i(object):
     """
@@ -17,15 +20,26 @@ class RealSense435i(object):
     The Intel Realsense D435i camera is a device which uses an imu, twin fisheye cameras,
     and an Movidius chip to stream a depth map along with an rgb image and optionally,
     accelerometer and gyro data (the 'i' variant has an IMU, the non-i variant does not)
+    NOTE: this ALWAYS captures 424 pixels wide x 240 pixels high x RGB at 60fps.
+          If an image width, height or depth are passed with different values,
+          the the outputs will be scaled to the requested size on the way out.
     """
 
-    def __init__(self, enable_rgb=True, enable_depth=True, enable_imu=False, device_id = None):
+    def __init__(self, width = WIDTH, height = HEIGHT, channels = CHANNELS, enable_rgb=True, enable_depth=True, enable_imu=False, device_id = None):
         self.device_id = device_id  # "923322071108" # serial number of device to use or None to use default
         self.enable_imu = enable_imu
         self.enable_rgb = enable_rgb
         self.enable_depth = enable_depth
 
+        self.width = width
+        self.height = height
+        self.channels = channels
+        self.resize = (width != WIDTH) or (height != height) or (channels != CHANNELS)
+        if self.resize:
+            print("The output images will be resized from {} to {}.  This requires opencv.".format((WIDTH, HEIGHT, CHANNELS), (self.width, self.height, self.channels)))
+
         # Configure streams
+        self.imu_pipeline = None
         if self.enable_imu:
             self.imu_pipeline = rs.pipeline()
             imu_config = rs.config()
@@ -35,6 +49,7 @@ class RealSense435i(object):
             imu_config.enable_stream(rs.stream.gyro, rs.format.motion_xyz32f, 200)  # gyroscope
             imu_profile = self.imu_pipeline.start(imu_config)
 
+        self.pipeline = None
         if self.enable_depth or self.enable_rgb:
             self.pipeline = rs.pipeline()
             config = rs.config()
@@ -69,8 +84,12 @@ class RealSense435i(object):
         # initialize frame state
         self.color_image = None
         self.depth_image = None
-        self.acceleration = None
-        self.gyroscope = None
+        self.acceleration_x = None
+        self.acceleration_y = None
+        self.acceleration_z = None
+        self.gyroscope_x = None
+        self.gyroscope_y = None
+        self.gyroscope_z = None
         self.frame_count = 0
         self.start_time = time.time()
         self.frame_time = self.start_time
@@ -106,10 +125,28 @@ class RealSense435i(object):
             self.depth_image = np.asanyarray(depth_frame.get_data()) if self.enable_depth else None
             self.color_image = np.asanyarray(color_frame.get_data()) if self.enable_rgb else None
 
+            if self.resize:
+                import cv2
+                if self.width != WIDTH or self.height != HEIGHT:
+                    self.color_image = cv2.resize(self.color_image, (self.width, self.height), cv2.INTER_NEAREST) if self.enable_rgb else None
+                    self.depth_image = cv2.resize(self.depth_image, (self.width, self.height), cv2.INTER_NEAREST) if self.enable_depth else None
+                if self.channels != CHANNELS:
+                    self.color_image = cv2.cvtColor(self.color_image, cv2.COLOR_RGB2GRAY) if self.enable_rgb else None
+
         if self.enable_imu:
-            self.acceleration = imu_frames.first_or_default(rs.stream.accel, rs.format.motion_xyz32f).as_motion_frame().get_motion_data()
-            self.gyroscope = imu_frames.first_or_default(rs.stream.gyro, rs.format.motion_xyz32f).as_motion_frame().get_motion_data()
-            logging.debug("imu frame {} in {} seconds: \n\taccel = {}, \n\tgyro = {}".format(str(self.frame_count), str(self.frame_time - last_time), str(self.acceleration), str(self.gyroscope)))
+            acceleration = imu_frames.first_or_default(rs.stream.accel, rs.format.motion_xyz32f).as_motion_frame().get_motion_data()
+            self.acceleration_x = acceleration.x
+            self.acceleration_y = acceleration.y
+            self.acceleration_z = acceleration.z
+            gyroscope = imu_frames.first_or_default(rs.stream.gyro, rs.format.motion_xyz32f).as_motion_frame().get_motion_data()
+            self.gyroscope_x = gyroscope.x
+            self.gyroscope_y = gyroscope.y
+            self.gyroscope_z = gyroscope.z
+            logging.debug("imu frame {} in {} seconds: \n\taccel = {}, \n\tgyro = {}".format(
+                str(self.frame_count),
+                str(self.frame_time - last_time),
+                str((self.acceleration_x, self.acceleration_y, self.acceleration_z)),
+                str((self.gyroscope_x, self.gyroscope_y, self.gyroscope_z))))
 
     def update(self):
         """
@@ -126,7 +163,7 @@ class RealSense435i(object):
         For gyroscope, x is pitch, y is yaw and z is roll.
         :return: (rbg_image: nparray, depth_image: nparray, acceleration: (x:float, y:float, z:float), gyroscope: (x:float, y:float, z:float))
         """
-        return self.color_image, self.depth_image, self.acceleration, self.gyroscope
+        return self.color_image, self.depth_image, self.acceleration_x, self.acceleration_y, self.acceleration_z, self.gyroscope_x, self.gyroscope_y, self.gyroscope_z
 
     def run(self):
         """
@@ -149,6 +186,19 @@ class RealSense435i(object):
 # self test
 #
 if __name__ == "__main__":
+    use_opencv = False
+
+    if use_opencv:
+        import cv2
+
+    enable_rgb = True
+    enable_depth = True
+    enable_imu = True
+
+    width = 424
+    height = 240
+    channels = 3
+
     frame_count = 0
     start_time = time.time()
     frame_time = start_time
@@ -157,13 +207,46 @@ if __name__ == "__main__":
         #
         # for D435i, enable_imu can be True, for D435 enable_imu should be false
         #
-        camera = RealSense435i(enable_rgb=True, enable_depth=True, enable_imu=True)
+        camera = RealSense435i(width=width, height=height, channels=channels, enable_rgb=enable_rgb, enable_depth=enable_depth, enable_imu=enable_imu)
         while True:
-            rgb, depth, acceleration, gyroscope = camera.run()
+            color_image, depth_image, acceleration_x, acceleration_y, acceleration_z, gyroscope_x, gyroscope_y, gyroscope_z = camera.run()
             last_time = frame_time
             frame_time = time.time()
-            print("imu frame {} in {} seconds: \n\taccel = {}, \n\tgyro = {}".format(str(frame_count), str(
-                frame_time - last_time), str(acceleration), str(gyroscope)))
+
+            if enable_imu:
+                print("imu frame {} in {} seconds: \n\taccel = {}, \n\tgyro = {}".format(
+                    str(frame_count),
+                    str(frame_time - last_time),
+                    str((acceleration_x, acceleration_y, acceleration_z)),
+                    str((gyroscope_x, gyroscope_y, gyroscope_z))))
+
+            # Show images
+            if use_opencv:
+                cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+                if enable_rgb or enable_depth:
+                    # make sure depth and color images have same number of channels so we can show them together in the window
+                    if 3 == channels:
+                        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET) if enable_depth else None
+                    else:
+                        depth_colormap = cv2.cvtColor(cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET), cv2.COLOR_RGB2GRAY) if enable_depth else None
+
+
+                    # Stack both images horizontally
+                    images = None
+                    if enable_rgb:
+                        images = np.hstack((color_image, depth_colormap)) if enable_depth else color_image
+                    elif enable_depth:
+                        images = depth_colormap
+
+                    if images is not None:
+                        cv2.imshow('RealSense', images)
+
+                # Press esc or 'q' to close the image window
+                key = cv2.waitKey(1)
+                if key & 0xFF == ord('q') or key == 27:
+                    cv2.destroyAllWindows()
+                    break
+
             time.sleep(0.05)
     finally:
         camera.shutdown()
