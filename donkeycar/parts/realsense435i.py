@@ -133,6 +133,10 @@ class RealSense435i(object):
                 if self.channels != CHANNELS:
                     self.color_image = cv2.cvtColor(self.color_image, cv2.COLOR_RGB2GRAY) if self.enable_rgb else None
 
+        #
+        # output imu data as discrete values in the same order as the Mpu6050 code
+        # so we can be compatible with any other parts that consume imu data.
+        #
         if self.enable_imu:
             acceleration = imu_frames.first_or_default(rs.stream.accel, rs.format.motion_xyz32f).as_motion_frame().get_motion_data()
             self.acceleration_x = acceleration.x
@@ -186,34 +190,45 @@ class RealSense435i(object):
 # self test
 #
 if __name__ == "__main__":
-    use_opencv = False
 
-    if use_opencv:
+    show_opencv_window = False # True to show images in opencv window: note that default donkeycar environment is not configured for this.
+    if show_opencv_window:
         import cv2
 
     enable_rgb = True
     enable_depth = True
     enable_imu = True
+    device_id = None
 
-    width = 424
-    height = 240
+    width = 212
+    height = 120
     channels = 3
 
-    frame_count = 0
-    start_time = time.time()
-    frame_time = start_time
+    profile_frames = 0 # set to non-zero to calculate the max frame rate using given number of frames
 
     try:
         #
         # for D435i, enable_imu can be True, for D435 enable_imu should be false
         #
-        camera = RealSense435i(width=width, height=height, channels=channels, enable_rgb=enable_rgb, enable_depth=enable_depth, enable_imu=enable_imu)
+        camera = RealSense435i(
+            width=width, height=height, channels=channels,
+            enable_rgb=enable_rgb, enable_depth=enable_depth, enable_imu=enable_imu, device_id=device_id)
+
+        frame_count = 0
+        start_time = time.time()
+        frame_time = start_time
         while True:
+            #
+            # read data from camera
+            #
             color_image, depth_image, acceleration_x, acceleration_y, acceleration_z, gyroscope_x, gyroscope_y, gyroscope_z = camera.run()
+
+            # maintain frame timing
+            frame_count += 1
             last_time = frame_time
             frame_time = time.time()
 
-            if enable_imu:
+            if enable_imu and not profile_frames:
                 print("imu frame {} in {} seconds: \n\taccel = {}, \n\tgyro = {}".format(
                     str(frame_count),
                     str(frame_time - last_time),
@@ -221,7 +236,7 @@ if __name__ == "__main__":
                     str((gyroscope_x, gyroscope_y, gyroscope_z))))
 
             # Show images
-            if use_opencv:
+            if show_opencv_window and not profile_frames:
                 cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
                 if enable_rgb or enable_depth:
                     # make sure depth and color images have same number of channels so we can show them together in the window
@@ -246,7 +261,11 @@ if __name__ == "__main__":
                 if key & 0xFF == ord('q') or key == 27:
                     cv2.destroyAllWindows()
                     break
-
-            time.sleep(0.05)
+            if profile_frames > 0:
+                if frame_count == profile_frames:
+                    print("Aquired {} frames in {} seconds for {} fps".format(str(frame_count), str(frame_time - start_time), str(frame_count / (frame_time - start_time))))
+                    break
+            else:
+                time.sleep(0.05)
     finally:
         camera.shutdown()
