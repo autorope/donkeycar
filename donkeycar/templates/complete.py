@@ -137,9 +137,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
 
-        if cfg.USE_FPV:
-            V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
-
     else:
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
@@ -290,6 +287,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             inputs=['cam/image_array'],
             outputs=[inf_input],
             run_condition='run_pilot')
+
+    # Use the FPV preview, which will show the cropped image output, or the full frame.
+    if cfg.USE_FPV:
+        V.add(WebFpv(), inputs=[inf_input], threaded=True)
 
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
