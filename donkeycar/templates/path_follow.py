@@ -66,6 +66,11 @@ def drive(cfg):
         odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
         V.add(odom, inputs=['enc/ticks', 'user/throttle'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/delta_vel_m_s'])
 
+        if not os.path.exists(cfg.WHEEL_ODOM_CALIB):
+            print("You must supply a json file when using odom with T265. There is a sample file in templates.")
+            print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
+            exit(1)
+
     else:
         # we give the T265 no calib to indicated we don't have odom
         cfg.WHEEL_ODOM_CALIB = None
