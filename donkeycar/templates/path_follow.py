@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Scripts to drive a donkey 2 car
+Scripts to drive a donkey car using Intel T265
 
 Usage:
-    path_follower.py (drive) [--log=INFO]
+    manage.py (drive) [--log=INFO]
  
 
 Options:
