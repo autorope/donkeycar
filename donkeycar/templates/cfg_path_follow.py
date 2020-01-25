@@ -99,3 +99,13 @@ ODOM_DEBUG = False                  # Write out values on vel and distance as it
 
 #Intel T265
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
+
+#DonkeyGym
+#Only on Ubuntu linux, you can use the simulator as a virtual donkey and
+#issue the same python manage.py drive command as usual, but have them control a virtual car.
+#This enables that, and sets the path to the simualator and the environment.
+#You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
+#then extract that and modify DONKEY_SIM_PATH.
+DONKEY_GYM = False
+DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
+DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
