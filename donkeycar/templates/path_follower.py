@@ -25,7 +25,7 @@ import numpy as np
 import pigpio
 
 import donkeycar as dk
-from donkeycar.parts.controller import LocalWebController, get_js_controller
+from donkeycar.parts.controller import WebFpv, get_js_controller
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
@@ -124,7 +124,28 @@ def drive(cfg):
     # When a path is loaded, we will be in follow mode. We will not record.
     if os.path.exists(cfg.PATH_FILENAME):
         path.load(cfg.PATH_FILENAME)
-        print("loaded path:", cfg.PATH_FILENAME)
+        print("################################################")
+        print("Loaded path:", cfg.PATH_FILENAME)
+        print("Make sure your car is sitting at the origin of the path.")
+        print("View web page and refresh. You should see your path.")
+        print("Hit 'select' twice to change to ai drive mode.")
+        print("Delete file", cfg.PATH_FILENAME, "and re-start")
+        print("to record a new path.")
+        print("################################################")
+
+    else:
+        print("################################################")
+        print("You are now in record mode. Open the web page to your car")
+        print("and as you drive you should see a path.")
+        print("Complete one circuit of your course.")
+        print("When you have exactly looped, or just shy of the ")
+        print("loop, then save the path (press %s)." % cfg.SAVE_PATH_BTN)
+        print("Close this process with Ctrl+C.")
+        print("Place car exactly at the start.")
+        print("Then restart the car with 'python manage drive'.")
+        print("It will reload the path and you will be ready to  ")
+        print("follow the path using  'select' to change to ai drive mode.")
+        print("################################################")
 
     def save_path():
         path.save(cfg.PATH_FILENAME)
@@ -169,10 +190,9 @@ def drive(cfg):
     V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
     #This web controller will create a web server. We aren't using any controls, just for visualization.
-    web_ctr = LocalWebController()
+    web_ctr = WebFpv()
     V.add(web_ctr,
           inputs=['map/image'],
-          outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
           threaded=True)
     
 
@@ -211,6 +231,9 @@ def drive(cfg):
 
         V.add(steering, inputs=['angle'])
         V.add(throttle, inputs=['throttle'])
+
+    # Print Joystick controls
+    ctr.print_controls()
 
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
         max_loop_count=cfg.MAX_LOOPS)
