@@ -24,7 +24,8 @@ import donkeycar as dk
 #import parts
 from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, JoystickController
+from donkeycar.parts.controller import LocalWebController, \
+    JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -136,7 +137,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
 
-    else:        
+        if cfg.USE_FPV:
+            V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
+
+    else:
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
         ctr = LocalWebController()
@@ -516,7 +520,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
 
-    
+    # OLED setup
+    if cfg.USE_SSD1306_128_32:
+        from donkeycar.parts.oled import OLEDPart
+        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_BUSNUM, auto_record_on_throttle=auto_record_on_throttle)
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+
     #add tub to save data
 
     inputs=['cam/image_array',

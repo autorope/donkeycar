@@ -39,6 +39,10 @@ CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Fli
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 
+#SSD1306_128_32
+USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
+SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
+
 #DRIVETRAIN
 #These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
 #DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
@@ -129,6 +133,7 @@ USE_NETWORKED_JS = False            #should we listen for remote joystick contro
 NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.
 JOYSTICK_THROTTLE_DIR = -1.0        # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
+USE_FPV = False                     # send camera data to FPV webserver
 
 #For the categorical model, this limits the upper bound of the learned throttle
 #it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
