@@ -206,7 +206,7 @@ print(cv2.__version__)
 * Change to a dir you would like to use as the head of your projects.
 
 ```bash
-cd ~/projects
+mkdir -p ~/projects; cd ~/projects
 ```
 
 * Get the latest donkeycar from Github.
