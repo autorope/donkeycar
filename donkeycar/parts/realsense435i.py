@@ -94,6 +94,9 @@ class RealSense435i(object):
         self.start_time = time.time()
         self.frame_time = self.start_time
 
+        self.running = True
+
+
     def _poll(self):
         last_time = self.frame_time
         self.frame_time = time.time() - self.start_time
