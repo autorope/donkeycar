@@ -79,7 +79,7 @@ class RealSense435i(object):
                     align_to = rs.stream.color
                     self.align = rs.align(align_to)
 
-        time.sleep(1)   # let camera warm up
+        time.sleep(2)   # let camera warm up
 
         # initialize frame state
         self.color_image = None
@@ -96,6 +96,13 @@ class RealSense435i(object):
 
         self.running = True
 
+    def _stop_pipeline(self):
+        if self.imu_pipeline is not None:
+            self.imu_pipeline.stop()
+            self.imu_pipeline = None
+        if self.pipeline is not None:
+            self.pipeline.stop()
+            self.pipeline = None
 
     def _poll(self):
         last_time = self.frame_time
@@ -182,11 +189,10 @@ class RealSense435i(object):
 
     def shutdown(self):
         self.running = False
-        time.sleep(0.1)
-        if self.imu_pipeline is not None:
-            self.imu_pipeline.stop()
-        if self.pipeline is not None:
-            self.pipeline.stop()
+        time.sleep(2) # give thread enough time to shutdown
+
+        # done running
+        self._stop_pipeline()
 
 
 #
