@@ -11,6 +11,7 @@ import numpy as np
 from threading import Thread
 from .memory import Memory
 from prettytable import PrettyTable
+import traceback
 
 
 class PartProfiler:
@@ -169,6 +170,7 @@ class Vehicle:
             pass
         except Exception as e:
             print("Exception in vehicle loop: ", str(e))
+            traceback.format_exc()
         finally:
             self.stop()
 
