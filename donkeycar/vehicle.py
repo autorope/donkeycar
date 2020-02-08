@@ -170,7 +170,7 @@ class Vehicle:
             pass
         except Exception as e:
             print("Exception in vehicle loop: ", str(e))
-            traceback.format_exc()
+            traceback.print_exc()
         finally:
             self.stop()
 
