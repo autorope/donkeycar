@@ -131,8 +131,8 @@ class RealSense435i(object):
             depth_frame = aligned_frames.get_depth_frame() if aligned_frames is not None else frames.get_depth_frame()
             color_frame = aligned_frames.get_color_frame() if aligned_frames is not None else frames.get_color_frame()
 
-            # Convert images to numpy arrays
-            self.depth_image = np.asanyarray(depth_frame.get_data()) if self.enable_depth else None
+            # Convert depth to 16bit array, RGB into 8bit planar array
+            self.depth_image = np.asanyarray(depth_frame.get_data(), dtype=np.uint16) if self.enable_depth else None
             self.color_image = np.asanyarray(color_frame.get_data()) if self.enable_rgb else None
 
             if self.resize:

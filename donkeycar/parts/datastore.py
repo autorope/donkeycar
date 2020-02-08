@@ -236,6 +236,13 @@ class Tub(object):
                 img.save(os.path.join(self.path, name))
                 json_data[key]=name
 
+            elif typ == 'depth_array':
+                # save depth as a 16bit png
+                img = Image.fromarray(np.uint16(val))
+                name = self.make_file_name(key, ext='.png')
+                img.save(os.path.join(self.path, name))
+                json_data[key]=name
+
             else:
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
                 raise TypeError(msg)
