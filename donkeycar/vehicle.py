@@ -169,7 +169,6 @@ class Vehicle:
         except KeyboardInterrupt:
             pass
         except Exception as e:
-            print("Exception in vehicle loop: ", str(e))
             traceback.print_exc()
         finally:
             self.stop()
