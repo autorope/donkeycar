@@ -133,7 +133,7 @@ class RealSense435i(object):
 
             # Convert depth to 16bit array, RGB into 8bit planar array
             self.depth_image = np.asanyarray(depth_frame.get_data(), dtype=np.uint16) if self.enable_depth else None
-            self.color_image = np.asanyarray(color_frame.get_data()) if self.enable_rgb else None
+            self.color_image = np.asanyarray(color_frame.get_data(), dtype=np.uint8) if self.enable_rgb else None
 
             if self.resize:
                 import cv2
