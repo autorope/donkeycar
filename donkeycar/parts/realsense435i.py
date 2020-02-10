@@ -48,6 +48,9 @@ class RealSense435i(object):
             imu_config.enable_stream(rs.stream.accel, rs.format.motion_xyz32f, 63)  # acceleration
             imu_config.enable_stream(rs.stream.gyro, rs.format.motion_xyz32f, 200)  # gyroscope
             imu_profile = self.imu_pipeline.start(imu_config)
+            # eat some frames to allow imu to settle
+            for i in range(0, 5):
+                self.imu_pipeline.wait_for_frames()
 
         self.pipeline = None
         if self.enable_depth or self.enable_rgb:
@@ -62,7 +65,7 @@ class RealSense435i(object):
                 config.enable_stream(rs.stream.depth, 848, 480, rs.format.z16, 60)  # depth
 
             if self.enable_rgb:
-                config.enable_stream(rs.stream.color, 424, 240, rs.format.bgr8, 60)  # rgb
+                config.enable_stream(rs.stream.color, 424, 240, rs.format.rgb8, 60)  # rgb
 
             # Start streaming
             profile = self.pipeline.start(config)
@@ -78,6 +81,10 @@ class RealSense435i(object):
                     # The "align_to" is the stream type to which we plan to align depth frames.
                     align_to = rs.stream.color
                     self.align = rs.align(align_to)
+
+            # eat some frames to allow auto-exposure to settle
+            for i in range(0, 5):
+                self.pipeline.wait_for_frames()
 
         time.sleep(2)   # let camera warm up
 
@@ -113,11 +120,11 @@ class RealSense435i(object):
         # get the frames
         #
         try:
-            if self.enable_rgb or self.enable_depth:
-                frames = self.pipeline.wait_for_frames(200 if (self.frame_count > 1) else 10000) # wait 10 seconds for first frame
-
             if self.enable_imu:
-                imu_frames = self.imu_pipeline.wait_for_frames(200 if (self.frame_count > 1) else 10000)
+                imu_frames = self.imu_pipeline.wait_for_frames()
+
+            if self.enable_rgb or self.enable_depth:
+                frames = self.pipeline.wait_for_frames()
         except Exception as e:
             logging.error(e)
             return
