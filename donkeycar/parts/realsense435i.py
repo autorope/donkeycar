@@ -10,6 +10,20 @@ import logging
 import numpy as np
 import pyrealsense2 as rs
 
+#
+# NOTE: Jetson Nano users should clone the Jetson Hacks project
+#       https://github.com/JetsonHacksNano/installLibrealsense
+#       and _build librealsense from source_ in order to get the python bindings.
+#       ./buildLibrealsense.sh
+#
+
+#
+# The Realsense D435 will not output images with arbitrarily chosen dimensions.
+# The dimensions must be from the allowed list.  I've chosen a reasonable
+# resolution that I know is supported by the camera.
+# If the part is initialized with different sizes, then opencv
+# will be used to resize the image before it is returned.
+#
 WIDTH = 424
 HEIGHT = 240
 CHANNELS = 3
