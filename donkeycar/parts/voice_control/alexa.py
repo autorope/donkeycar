@@ -1,13 +1,15 @@
 import time
 import requests
 
+
 class AlexaController(object):
     '''
-    Accept simple command from alexa. For the command supported, please refer to the README.md
+    Accept simple command from alexa. For the command supported, please refer
+    to the README.md
     '''
     API_ENDPOINT = "http://alexa.robocarstore.com"
 
-    def __init__(self, ctr, cfg, debug = False):
+    def __init__(self, ctr, cfg, debug=False):
         self.running = True
         self.debug = debug
         self.ctr = ctr
@@ -16,7 +18,6 @@ class AlexaController(object):
         if self.cfg.ALEXA_DEVICE_CODE is None:
             raise Exception("Please set cfg.ALEXA_DEVICE_CODE in myconfig.py")
 
-
     def get_command(self):
         url = "{}/{}".format(self.API_ENDPOINT, 'command')
 
@@ -24,9 +25,8 @@ class AlexaController(object):
             'deviceCode': self.cfg.ALEXA_DEVICE_CODE
         }
 
-        r = requests.get(url = url, params= params)
+        r = requests.get(url=url, params=params)
         result = r.json()
-
 
         return result['command']
 
@@ -44,14 +44,14 @@ class AlexaController(object):
                 self.cfg.AI_THROTTLE_MULT += 0.05
             elif command == "slowdown":
                 self.cfg.AI_THROTTLE_MULT -= 0.05
-            elif command == "stop"
+            elif command == "stop":
                 self.ctr.mode = "user"
                 self.cfg.AI_THROTTLE_MULT = 1
 
             if self.debug:
-                print("mode = {}, cfg.AI_THROTTLE_MULT={}".format(self.ctr.mode, self.cfg.AI_THROTTLE_MULT))
+                print("mode = {}, cfg.AI_THROTTLE_MULT={}".format(
+                    self.ctr.mode, self.cfg.AI_THROTTLE_MULT))
             time.sleep(0.25)
-
 
     def run_threaded(self):
         pass
