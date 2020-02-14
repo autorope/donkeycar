@@ -99,7 +99,7 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 ### Optional Upgrades
 
-* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Antennas and camera.  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter). If you want to print it yourself, it is on the Thingiverse page for the project.
+* **NVIDIA JetsonNano Hardware Options**  The NVIDIA Jetson Nano is fully supported by the donkey Car.  To assemble the Donkey Car you will need a few parts including the Wifi card, Antennas and camera.  In addition you will need this [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter). If you want to print it yourself, it is on the Thingiverse page for the project. Due to the higher power usage and consumption you should consider the 10Ahr 3A USB battery pack listed below and a good cable rated for 3A.
 
 ![adapter](/assets/Jetson_Adapter.jpg)
 
@@ -118,6 +118,7 @@ Finally this is the Donkey Assembled.
 | Camera Module | [Camera](https://store.donkeycar.com/products/nvidia-jetson-camera-for-donkey)| $27 |
 | WiFi Card | [Card](https://www.amazon.com/Intel-Dual-Band-Wireless-Ac-8265/dp/B01MZA1AB2?tag=donkeycar-20) | $18|
 | Antennas | [Antennas](https://store.donkeycar.com/products/2x-molex-wifi-antennas-for-jetson-nano)|$7|
+| 10Ah 3A USB Battery | [INIU Power Bank](https://www.amazon.com/INIU-Portable-External-Powerbank-Compatible/dp/B07H6LB4J4)| $17|
 
 For other options for part, feel free to look at the jetbot documentation [here](https://github.com/NVIDIA-AI-IOT/jetbot).
 

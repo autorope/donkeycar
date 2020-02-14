@@ -38,19 +38,7 @@ source ~/.bashrc
 
 To install Open CV on the Jetson Nano, you need to build it from source. Building OpenCV from source is going to take some time, so buckle up. If you get stuck, [here](https://www.pyimagesearch.com/2018/08/15/how-to-install-opencv-4-on-ubuntu/) is another great resource which will help you compile OpenCV. 
 
-> Note: In some cases Python OpenCV may already be installed in your disc image. If the file exists, you can optionally copy it to your environment rather than build from source. Nvidia has said they will drop support for this, so longer term we will probably be building it. If this works:
-> 
-> ```
-> mkdir ~/mycar
-> cp /usr/lib/python3.6/dist-packages/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/ 
-> cd ~/mycar
-> python -c "import cv2"
-> ```
->
-> Then you have a working version and can skip this portion of the guide.
-> However, following the swapfile portion of this guide has made performance more predictable and solves memory thrashing.
-
-The first step in building OpenCV is to define swap space on the Jetson Nano. The Jetson Nano has `4GB` of RAM. This is not sufficient to build OpenCV from source. Therefore we need to define swap space on the Nano to prevent memory thrashing.
+The first step in building OpenCV is to define swap space on the Jetson Nano. The Jetson Nano has `4GB` of RAM. This is not sufficient to build OpenCV from source, and increasing it makes the car's performance more predictable and solves memory thrashing. We define swap space on the Nano with:
 
 ```bash
 # Allocates 4G of additional swap space at /var/swapfile
@@ -66,6 +54,20 @@ sudo bash -c 'echo "/var/swapfile swap swap defaults 0 0" >> /etc/fstab'
 # Reboot
 sudo reboot
 ```
+
+> Note: In some cases Python OpenCV may already be installed in your disc image. If the file exists, you can optionally copy it to your environment rather than build from source. Nvidia has said they will drop support for this, so longer term we will probably be building it. If this works:
+> 
+> ```
+> mkdir ~/mycar
+> cp /usr/lib/python3.6/dist-packages/cv2/python-3.6/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/
+> # If it returns "No such file or directory" try `find / -name "*cv2*.so" -print 2>/dev/null`
+> cd ~/mycar
+> sudo apt-get install python3-numpy
+> python -c "import cv2; print(cv2.__version__)"
+> # Should print 4.1.1
+> ```
+>
+> Then you have a working version and can [skip to the next section of the guide, Install Donkeycar Python Code](#step-5-install-donkeycar-python-code).
 
 Now you should have enough swap space to build OpenCV. Let's setup the Jetson Nano with the pre-requisites to build OpenCV.
 
@@ -83,7 +85,7 @@ sudo apt-get install libatlas-base-dev gfortran
 sudo apt-get install python3-dev
 ```
 
-Now you should have all the pre-requisites you need.  So, lets go ahead and download the source code for OpenCV.
+Now you should have all the pre-requisites you need.  So, let's go ahead and download the source code for OpenCV.
 
 ```bash
 # Create a directory for opencv
@@ -204,7 +206,7 @@ print(cv2.__version__)
 * Change to a dir you would like to use as the head of your projects.
 
 ```bash
-cd ~/projects
+mkdir -p ~/projects; cd ~/projects
 ```
 
 * Get the latest donkeycar from Github.
