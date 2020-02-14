@@ -205,7 +205,7 @@ Modifying your `.bashrc` in this way will automatically enable this environment 
 
 ##  Step 11: Install Donkeycar Python Code
 
-* Create and change to a direcotry you would like to use as the head of your projects.
+* Create and change to a directory you would like to use as the head of your projects.
 
 ```bash
 mkdir projects
