@@ -810,6 +810,13 @@ class JoystickController(object):
 
             time.sleep(self.poll_delay)
 
+    def do_nothing(self, param):
+        '''assign no action to the given axis
+        this is useful to unmap certain axes, for example when swapping sticks
+        '''
+        pass
+
+
 
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
@@ -1148,9 +1155,14 @@ class XboxOneSwappedJoystickController(XboxOneJoystickController):
         '''
         super(XboxOneSwappedJoystickController, self).init_trigger_maps()
 
+        # make the actual swap of the sticks
         self.set_axis_trigger('right_stick_horz', self.set_steering)
         self.set_axis_trigger('left_stick_vert', self.set_throttle)
-        
+
+        # unmap default assinments to the axes
+        self.set_axis_trigger('left_stick_horz', self.do_nothing)
+        self.set_axis_trigger('right_stick_vert', self.do_nothing)
+
 
 class LogitechJoystickController(JoystickController):
     '''
