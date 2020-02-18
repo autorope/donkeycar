@@ -68,7 +68,7 @@ class AlexaController(object):
                 self.log("mode = {}, cfg.AI_THROTTLE_MULT={}".format(
                     self.ctr.mode, self.cfg.AI_THROTTLE_MULT))
 
-            time.sleep(0.25)    # Given a break between requests
+            time.sleep(0.25)  # Give a break between requests
 
     def run_threaded(self):
         pass
