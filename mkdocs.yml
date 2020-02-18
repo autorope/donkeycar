@@ -26,6 +26,7 @@ pages:
       - 'Stores': parts/stores.md
       - 'IMU': parts/imu.md
       - 'OLED': parts/oled.md
+      - 'Voice Control': parts/voice_control.md
   - Utilities:
       - 'donkey': utility/donkey.md
 
