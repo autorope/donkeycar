@@ -554,7 +554,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     if cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_DEPTH:
         inputs += ['cam/depth_array']
-        types += ['depth_array']
+        types += ['gray16_array']
     
     if cfg.HAVE_IMU or (cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_IMU):
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
