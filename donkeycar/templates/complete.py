@@ -59,6 +59,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     #Initialize car
     V = dk.vehicle.Vehicle()
 
+    print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
     if camera_type == "stereo":
 
         if cfg.CAMERA_TYPE == "WEBCAM":
@@ -82,15 +83,25 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         V.add(StereoPair(), inputs=['cam/image_array_a', 'cam/image_array_b'], 
             outputs=['cam/image_array'])
+    elif cfg.CAMERA_TYPE == "D435":
+        from donkeycar.parts.realsense435i import RealSense435i
+        cam = RealSense435i(
+            enable_rgb=cfg.REALSENSE_D435_RGB,
+            enable_depth=cfg.REALSENSE_D435_DEPTH,
+            enable_imu=cfg.REALSENSE_D435_IMU,
+            device_id=cfg.REALSENSE_D435_ID)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/depth_array',
+                       'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+                       'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+              threaded=True)
 
     else:
-        print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
         
         inputs = []
         threaded = True
-        print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
             cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, env_name=cfg.DONKEY_GYM_ENV_NAME)
@@ -541,8 +552,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
+
+    if cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_DEPTH:
+        inputs += ['cam/depth_array']
+        types += ['gray16_array']
     
-    if cfg.HAVE_IMU:
+    if cfg.HAVE_IMU or (cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_IMU):
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
