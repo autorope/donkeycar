@@ -48,7 +48,7 @@ SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 #DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
 #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
 #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|MM1
 
 #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
@@ -128,7 +128,7 @@ USE_JOYSTICK_AS_DEFAULT = False     #when starting the manage.py, when True, wil
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE='ps3'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
+CONTROLLER_TYPE='ps3'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3|MM1)
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.
@@ -144,7 +144,7 @@ MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.5
 SEQUENCE_LENGTH = 3             #some models use a number of images over time. This controls how many.
 
 #IMU
-HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a 
+HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
 IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
 IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
 
@@ -152,7 +152,12 @@ IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
 
 #ROBOHAT MM1
-HAVE_ROBOHAT = False             #set to true when using the Robo HAT MM1 from Robotics Masters.  This will change to RC Control.
+HAVE_ROBOHAT = False            # set to true when using the Robo HAT MM1 from Robotics Masters.  This will change to RC Control.
+MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
+MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
+MM1_STOPPED_PWM = 1500
+MM1_MAX_REVERSE = 1000          # Max throttle to go reverse. The smaller the faster
+MM1_SHOW_STEERING_VALUE = False
 
 #RECORD OPTIONS
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
@@ -163,7 +168,7 @@ LED_INVERT = False              #COMMON ANODE? Some RGB LED use common anode. li
 
 #LED board pin number for pwm outputs
 #These are physical pinouts. See: https://www.raspberrypi-spy.co.uk/2012/06/simple-guide-to-the-rpi-gpio-header-and-pins/
-LED_PIN_R = 12      
+LED_PIN_R = 12
 LED_PIN_G = 10
 LED_PIN_B = 16
 
