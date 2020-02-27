@@ -105,11 +105,11 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 Plug in the Servo driver the same as the Raspberry Pi, just keep in mind that the Jetson pinout is reversed and that the Sombrero is not supported.
 
+Although it may seem reasonable to connect all pins in the set of six from the servo, the second pin is *OE Output enable. ... When the pin is high the outputs are disabled. Pulled low by default so it's an optional pin!* Connecting this pin can result in your car unexpectedly stopping.
+
 ![Jetson Servo](/assets/Servo_Wiring.png)
 
 Finally this is the Donkey assembled.  
-
-Although it may seem reasonable to connect all pins in the set of six from the servo, the second pin is *OE Output enable. ... When the pin is high the outputs are disabled. Pulled low by default so it's an optional pin!* Connecting this pin can result in your car unexpectedly stopping.
 
 ![Jetson Assembled](/assets/Jetbot_Assembled.png)
 
