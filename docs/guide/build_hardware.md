@@ -107,7 +107,9 @@ Plug in the Servo driver the same as the Raspberry Pi, just keep in mind that th
 
 ![Jetson Servo](/assets/Servo_Wiring.png)
 
-Finally this is the Donkey Assembled.  
+Finally this is the Donkey assembled.  
+
+Although it may seem reasonable to connect all pins in the set of six from the servo, the second pin is *OE Output enable. ... When the pin is high the outputs are disabled. Pulled low by default so it's an optional pin!* Connecting this pin can result in your car unexpectedly stopping.
 
 ![Jetson Assembled](/assets/Jetbot_Assembled.png)
 
