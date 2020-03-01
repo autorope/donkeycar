@@ -145,7 +145,7 @@ SEQUENCE_LENGTH = 3             #some models use a number of images over time. T
 
 #IMU
 HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a 
-
+IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
 #SOMBRERO
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
 
