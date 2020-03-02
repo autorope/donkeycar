@@ -5,8 +5,7 @@
 * [Step 1: Flash Operating System](#step-1-flash-operating-system)
 * [Step 2: Install Dependencies](#step-2-install-dependencies)
 * [Step 3: Setup Virtual Env](#step-3-setup-virtual-env)
-* [Step 4: Install OpenCV](#step-4-install-opencv)
-* [Step 5: Install Donkeycar Python Code](#step-5-install-donkeycar-python-code)
+* [Step 4: Install Donkeycar Python Code](#step-4-install-donkeycar-python-code)
 * Then [Create your Donkeycar Application](/guide/create_application/)
 
 ## Step 1: Flash Operating System
