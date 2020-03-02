@@ -39,6 +39,7 @@ class MpuIMU:
                 afs=AFS_4G,
                 mfs=AK8963_BIT_16,
                 mode=AK8963_MODE_C100HZ)
+            self.sensor.calibrateMPU6500()
             self.sensor.configure()
 
         
