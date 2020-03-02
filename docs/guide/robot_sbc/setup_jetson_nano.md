@@ -42,7 +42,7 @@ To install Open CV on the Jetson Nano, you need to build it from source. Buildin
 > 
 > ```
 > mkdir ~/mycar
-> cp /usr/lib/python3.6/dist-packages/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/ 
+> cp /usr/lib/python3.6/dist-packages/cv2/python-3.6/cv2.cpython-36m-aarch64-linux-gnu.so ~/mycar/
 > cd ~/mycar
 > python -c "import cv2"
 > ```
