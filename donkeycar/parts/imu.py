@@ -59,8 +59,9 @@ class MpuIMU:
             if self.sensortype == SENSOR_MPU6050:
                 self.accel, self.gyro, self.temp = self.sensor.get_all_data()
             else:
+                from mpu9250_jmdev.registers import GRAVITY
                 ret = self.sensor.getAllData()
-                self.accel = { 'x' : ret[1], 'y' : ret[2], 'z' : ret[3] }
+                self.accel = { 'x' : ret[1] * GRAVITY, 'y' : ret[2] * GRAVITY, 'z' : ret[3] * GRAVITY }
                 self.gyro = { 'x' : ret[4], 'y' : ret[5], 'z' : ret[6] }
                 self.mag = { 'x' : ret[13], 'y' : ret[14], 'z' : ret[15] }
         except:
