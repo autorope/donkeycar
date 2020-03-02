@@ -1,7 +1,7 @@
 import time
 SENSOR_MPU6050 = 'mpu6050'
 SENSOR_MPU9250 = 'mpu9250'
-class MpuIMU:
+class IMU:
     '''
     Installation:
     
@@ -24,8 +24,8 @@ class MpuIMU:
     def __init__(self, addr=0x68, poll_delay=0.0166, sensor=SENSOR_MPU6050):
         self.sensortype = sensor
         if self.sensortype == SENSOR_MPU6050:
-            from mpu6050 import mpu6050
-            self.sensor = mpu6050(addr)
+            from mpu6050 import mpu6050 as MPU6050
+            self.sensor = MPU6050(addr)
         else:
             from mpu9250_jmdev.registers import AK8963_ADDRESS, GFS_1000, AFS_4G, AK8963_BIT_16, AK8963_MODE_C100HZ
             from mpu9250_jmdev.mpu_9250 import MPU9250
@@ -87,7 +87,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         sensor_type = sys.argv[1]
 
-    p = MpuIMU(sensor=sensor_type)
+    p = IMU(sensor=sensor_type)
     while iter < 100:
         data = p.run()
         print(data)
