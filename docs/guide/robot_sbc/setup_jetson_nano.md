@@ -53,6 +53,19 @@ pip install --extra-index-url https://developer.download.nvidia.com/compute/redi
 
 Note: This last command can take some time to compile grpcio.
 
+##  Step 5: Install PyGame (Optional)
+
+If you plan to use a USB camera, you will also want to setup pygame:
+
+```bash
+sudo apt-get install python-dev libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsdl1.2-dev libsmpeg-dev python-numpy subversion libportmidi-dev ffmpeg libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev
+
+pip install pygame
+
+```
+
+Later on you can add the `CAMERA_TYPE="WEBCAM"` in myconfig.py.
+
 ----
 
 ### Next, [create your Donkeycar application](/guide/create_application/).
