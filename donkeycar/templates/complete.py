@@ -264,7 +264,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     #IMU
     if cfg.HAVE_IMU:
         from donkeycar.parts.imu import IMU
-        imu = IMU(sensor=cfg.IMU_SENSOR)
+        imu = IMU(sensor=cfg.IMU_SENSOR, dlp_setting=cfg.IMU_DLP_CONFIG)
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
