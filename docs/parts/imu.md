@@ -73,5 +73,5 @@ Valid settings are from 0 to 6:
 - `6` 5Hz
 
 ### Notes on MPU9250
-At startup the MPU9250 driver perform a calibration to zero accel and gyro bias. 
+At startup the MPU9250 driver performs calibration to zero accel and gyro bias. Usually the process takes less than 10 seconds, and in that time avoid moving or touching the car.
 Please place the car on the ground before starting Donkey 
