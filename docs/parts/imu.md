@@ -57,7 +57,7 @@ Enable the following configurations to your `myconfig.py`:
 #IMU
 HAVE_IMU = True
 IMU_SENSOR = 'mpu9250'          # (mpu6050|mpu9250)
-IMU_DLP_CONFIG = 6
+IMU_DLP_CONFIG = 3
 ```
 `IMU_SENSOR` can be either `mpu6050` or `mpu9250` based on the sensor you are using
 
