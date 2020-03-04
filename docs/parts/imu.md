@@ -6,7 +6,7 @@ IMUs or inertial measurement units are parts that sense the inertial forces on a
 
 This is a cheap, small, and moderately precise imu. Commonly available at [Amazon](https://www.amazon.com/s/ref=nb_sb_noss_2?url=search-alias%3Dindustrial&field-keywords=MPU6050).
 
-MPU9250 offer in addition a integrated magnetometer
+MPU9250 offers additional integrated magnetometer.
 
 * Typically uses the I2C interface and can be chained off the default PWM PCA9685 board. This configuration will also provide power.
 * MPU6050: Outputs acceleration X, Y, Z, Gyroscope X, Y, Z, and temperature.
