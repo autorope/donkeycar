@@ -59,7 +59,7 @@ HAVE_IMU = True
 IMU_SENSOR = 'mpu9250'          # (mpu6050|mpu9250)
 IMU_DLP_CONFIG = 3
 ```
-`IMU_SENSOR` can be either `mpu6050` or `mpu9250` based on the sensor you are using
+`IMU_SENSOR` can be either `mpu6050` or `mpu9250` based on the sensor you are using.
 
 `IMU_DLP_CONFIG` allows to change the digital lowpass filter settings for your imu. Lower frequency settings can filter high frequency noise at the expense of increased latency in imu sensor data.
 Valid settings are from 0 to 6:
