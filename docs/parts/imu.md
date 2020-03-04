@@ -51,7 +51,8 @@ pip install mpu9250-jmdev
 ```
 
 ### Configuration
-Enable the following configurations to your `myconfig.py`
+Enable the following configurations to your `myconfig.py`:
+
 ``` python
 #IMU
 HAVE_IMU = True
