@@ -6,7 +6,7 @@ author: @wallarug (Cian Byrne) 2019
 contrib: @peterpanstechland 2019
 contrib: @sctse999 2020
 
-Must be used with code.py bundled in this repo donkeycar/contrib/robohat/code.py
+Note: To be used with code.py bundled in this repo. See donkeycar/contrib/robohat/code.py
 """
 
 import time
