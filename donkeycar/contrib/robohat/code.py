@@ -4,6 +4,7 @@
 #   This is to be run using CircuitPython 5.0
 #   Date: 15/05/2019
 #   Updated: 20/02/2020
+#   Updated: 8/03/2020 (sctse999)
 #
 #
 
@@ -23,7 +24,8 @@ SMOOTHING_INTERVAL_IN_S = 0.025
 DEBUG = False
 ACCEL_RATE = 10
 
-def servo_duty_cycle(pulse_ms, frequency=60):
+## functions
+def servo_duty_cycle(pulse_ms, frequency = 60):
     """
     Formula for working out the servo duty_cycle at 16 bit input
     """
@@ -36,7 +38,6 @@ def state_changed(control):
     """
     Reads the RC channel and smooths value
     """
-    prev = control.value
     control.channel.pause()
     for i in range(0, len(control.channel)):
         val = control.channel[i]
@@ -46,11 +47,12 @@ def state_changed(control):
         # set new value
         control.value = (control.value + val) / 2
 
-    # if DEBUG:
-    #     print("%f\t%s (%i): %i (%i)" % (time.monotonic(), control.name, len(
-    #         control.channel), control.value, servo_duty_cycle(control.value)))
+    if DEBUG:
+        logger.debug("%f\t%s (%i): %i (%i)" % (time.monotonic(), control.name, len(
+            control.channel), control.value, servo_duty_cycle(control.value)))
     control.channel.clear()
     control.channel.resume()
+
 
 class Control:
     """
@@ -113,7 +115,6 @@ def main():
 
         # check for new RC values (channel will contain data)
         if(len(throttle.channel) != 0):
-            # state_changed_throttle(throttle)
             state_changed(throttle)
 
         if(len(steering.channel) != 0):
@@ -133,12 +134,12 @@ def main():
                 break
             last_input = time.monotonic()
 
-            logger.debug("Read from UART: %s" % (byte))
+            if (DEBUG):
+                logger.debug("Read from UART: %s" % (byte))
 
             # if data is recieved, check if it is the end of a stream
             if(byte == b'\r'):
                 data = bytearray('')
-                # datastr = ''
                 break
 
             data[len(data):len(data)] = byte
@@ -151,7 +152,7 @@ def main():
             steering_val = steering.value
             throttle_val = throttle.value
             try:
-                steering_val= int(datastr[:4])
+                steering_val = int(datastr[:4])
                 throttle_val = int(datastr[-4:])
             except ValueError:
                 None
