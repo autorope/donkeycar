@@ -137,7 +137,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             from donkeycar.parts.robohat import RoboHATController
             
             ctr = RoboHATController()
-        elif "c" == cfg.CONTROLLER_TYPE:
+        elif "custom" == cfg.CONTROLLER_TYPE:
             #
             # custom controller created with `donkey createjs` command
             #
