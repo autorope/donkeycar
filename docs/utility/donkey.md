@@ -186,7 +186,7 @@ python manage.py drive --model models/drive.json
 
 ## Joystick Wizard
 
-This command line wizard will walk you through the steps to use your joystick.
+This command line wizard will walk you through the steps to create a custom/customized controller.  
 
 Usage:
 
@@ -194,11 +194,9 @@ Usage:
 donkey createjs
 ```
 
-* This command may be run from `~/mycar` dir
-* Run on the pi
-* First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
-* Debian commonly creates the joystick device file at `/dev/input/js0`. If not, find out where.
-* Run the command `donkey createjs` and it will create a file named my_joystick.py. Drop that next to your manage.py
+* Run the command from your `~/mycar` dir
+* First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`  You must pass this utility the path to your controller's device.  Typically this is `/dev/input/js0`  However, it if is not, you must find the correct device path and provide it to the utility.  You will need this for the createjs command as well.
+* Run the command `donkey createjs` and it will create a file named my_joystick.py in your `~/mycar` folder, next to your manage.py
 * Modify myconfig.py to set `CONTROLLER_TYPE="custom"` to use your my_joystick.py controller
 
 ## Visualize CNN filter activations
