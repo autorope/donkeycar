@@ -199,7 +199,7 @@ donkey createjs
 * First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
 * Debian commonly creates the joystick device file at `/dev/input/js0`. If not, find out where.
 * Run the command `donkey createjs` and it will create a file named my_joystick.py. Drop that next to your manage.py
-* Modify myconfig.py to set `CONTROLLER_TYPE="custom" to use your my_joystick.py controller
+* Modify myconfig.py to set `CONTROLLER_TYPE="custom"` to use your my_joystick.py controller
 
 ## Visualize CNN filter activations
 
