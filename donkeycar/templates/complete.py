@@ -301,7 +301,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
-        V.add(WebFpv(), inputs=[inf_input], threaded=True)
+        V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
 
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
