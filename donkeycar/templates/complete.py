@@ -459,7 +459,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(AiRecordingCondition(), inputs=['user/mode', 'recording'], outputs=['recording'])
     
     #Drive train setup
-    if cfg.DONKEY_GYM:
+    if cfg.DONKEY_GYM or cfg.DRIVE_TRAIN_TYPE == "MOCK":
         pass
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
