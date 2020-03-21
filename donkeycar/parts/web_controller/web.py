@@ -22,6 +22,7 @@ from tornado.web import Application, RedirectHandler, StaticFileHandler, \
     RequestHandler
 from tornado.httpserver import HTTPServer
 import tornado.gen
+import tornado.websocket
 from socket import gethostname
 
 from ... import utils
@@ -118,6 +119,7 @@ class LocalWebController(tornado.web.Application):
         handlers = [
             (r"/", RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
+            (r"/wsDrive", WebSocketDriveAPI),
             (r"/video", VideoAPI),
             (r"/static/(.*)", StaticFileHandler,
              {"path": self.static_file_path}),
@@ -162,6 +164,29 @@ class DriveAPI(RequestHandler):
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
         self.application.recording = data['recording']
+
+class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
+    clients = []
+
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        # print("New client connected")
+        WebSocketDriveAPI.clients.append(self)
+
+    def on_message(self, message):
+        data = json.loads(message)
+        self.application.angle = data['angle']
+        self.application.throttle = data['throttle']
+        self.application.mode = data['drive_mode']
+        self.application.recording = data['recording']
+
+        self.write_message(message)
+
+    def on_close(self):
+        # print("Client disconnected")
+        WebSocketDriveAPI.clients.remove(self)
 
 
 class VideoAPI(RequestHandler):
