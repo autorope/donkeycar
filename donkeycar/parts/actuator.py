@@ -56,9 +56,10 @@ class PiGPIO_PWM():
     # and can range from 12K to 170K
     #
     # If you use a control circuit that inverts the steering signal, set inverted to True
+    # Default multipler for pulses from config etc is 100
     '''
 
-    def __init__(self, pin, pgio=None, freq=75, inverted=False):
+    def __init__(self, pin, pgio=None, freq=75, inverted=False, multipler=100):
         import pigpio
 
         self.pin = pin
@@ -66,12 +67,13 @@ class PiGPIO_PWM():
         self.freq = freq
         self.inverted = inverted
         self.pgio.set_mode(self.pin, pigpio.OUTPUT)
+        self.multipler = multipler
 
     def __del__(self):
         self.pgio.stop()
 
     def set_pulse(self, pulse):
-        self.pgio.hardware_PWM(self.pin, self.freq, pulse if self.inverted == False else 1e6 - pulse)
+        self.pgio.hardware_PWM(self.pin, self.freq, int(pulse*self.multipler if self.inverted == False else 1e6 - pulse*self.multipler))
 
     def run(self, pulse):
         self.set_pulse(pulse)
