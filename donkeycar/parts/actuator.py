@@ -59,7 +59,7 @@ class PiGPIO_PWM():
     # Default multipler for pulses from config etc is 100
     '''
 
-    def __init__(self, pin, pgio=None, freq=75, inverted=False, multipler=100):
+    def __init__(self, pin, pgio=None, freq=75, inverted=False):
         import pigpio
 
         self.pin = pin
