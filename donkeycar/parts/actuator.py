@@ -67,13 +67,12 @@ class PiGPIO_PWM():
         self.freq = freq
         self.inverted = inverted
         self.pgio.set_mode(self.pin, pigpio.OUTPUT)
-        self.multipler = multipler
 
     def __del__(self):
         self.pgio.stop()
 
     def set_pulse(self, pulse):
-        self.pgio.hardware_PWM(self.pin, self.freq, int(pulse*self.multipler if self.inverted == False else 1e6 - pulse*self.multipler))
+        self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
 
     def run(self, pulse):
         self.set_pulse(pulse)
