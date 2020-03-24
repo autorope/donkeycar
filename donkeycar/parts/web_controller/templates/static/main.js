@@ -37,6 +37,10 @@ var driveHandler = new function() {
     this.load = function() {
       driveURL = '/drive'
       socket = new WebSocket('ws://' + location.host + '/wsDrive');
+      
+      socket.onmessage = function (event) {
+          console.log(event.data);
+      };
 
       setBindings()
 

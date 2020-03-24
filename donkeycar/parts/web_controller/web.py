@@ -115,6 +115,9 @@ class LocalWebController(tornado.web.Application):
         self.mode = 'user'
         self.recording = False
         self.port = 8887
+        
+        self.num_records = 0
+        self.wsclients = []
 
         handlers = [
             (r"/", RedirectHandler, dict(url="/drive")),
@@ -136,8 +139,16 @@ class LocalWebController(tornado.web.Application):
         self.listen(self.port)
         IOLoop.instance().start()
 
-    def run_threaded(self, img_arr=None):
+    def run_threaded(self, img_arr=None, num_records=0):
         self.img_arr = img_arr
+        self.num_records = num_records
+
+        # Send record count to websocket clients
+        if (self.num_records is not None and self.recording is True):
+            if self.num_records % 10 == 0:
+                for wsclient in self.wsclients:
+                    wsclient.write_message(json.dumps({'num_records': self.num_records}))
+        
         return self.angle, self.throttle, self.mode, self.recording
         
     def run(self, img_arr=None):
@@ -166,16 +177,15 @@ class DriveAPI(RequestHandler):
         self.application.recording = data['recording']
 
 class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
-    clients = []
-
     def check_origin(self, origin):
         return True
 
     def open(self):
         # print("New client connected")
-        WebSocketDriveAPI.clients.append(self)
+        self.application.wsclients.append(self)
 
     def on_message(self, message):
+        print(message)
         data = json.loads(message)
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
@@ -186,7 +196,7 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
 
     def on_close(self):
         # print("Client disconnected")
-        WebSocketDriveAPI.clients.remove(self)
+        self.application.wsclients.remove(self)
 
 
 class VideoAPI(RequestHandler):
