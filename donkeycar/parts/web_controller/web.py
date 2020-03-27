@@ -176,6 +176,7 @@ class DriveAPI(RequestHandler):
         self.application.mode = data['drive_mode']
         self.application.recording = data['recording']
 
+
 class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
@@ -185,14 +186,11 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
         self.application.wsclients.append(self)
 
     def on_message(self, message):
-        print(message)
         data = json.loads(message)
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
         self.application.recording = data['recording']
-
-        self.write_message(message)
 
     def on_close(self):
         # print("Client disconnected")
