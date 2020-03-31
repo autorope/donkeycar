@@ -122,7 +122,7 @@ Finally this is the Donkey Assembled.
 
 For other options for part, feel free to look at the jetbot documentation [here](https://github.com/NVIDIA-AI-IOT/jetbot).
 
-* **Sombrero Hat** The sombrero hat replaces the Servo driver and the USB battery and can be purchased at the Donkeycar store [here](https://store.donkeycar.com/collections/accessories/products/sombrero) and video instructions can be found [here](https://www.youtube.com/watch?v=vuAXdrtNjpk). Implementing the Sombrero hat requires a LiPo battery (see below).  Documentation is in [Github](https://github.com/autorope/Sombrero-hat).
+* **Sombrero Hat** NOTE: the Sombrero is out of stock at any stores - we are looking at other options or will place another order.  The sombrero hat replaces the Servo driver and the USB battery and can be purchased at the Donkeycar store [here](https://store.donkeycar.com/collections/accessories/products/sombrero) and video instructions can be found [here](https://www.youtube.com/watch?v=vuAXdrtNjpk). Implementing the Sombrero hat requires a LiPo battery (see below).  Documentation is in [Github](https://github.com/autorope/Sombrero-hat).
 
 ![sombrero](/assets/Sombrero_assembled.jpg)
 

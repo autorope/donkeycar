@@ -24,7 +24,7 @@ To purchase one of these cars follow the following links:
 * Exceed Short Course Truck  [Blue](https://amzn.to/2KsYF1e),  [Red](https://amzn.to/2rdtQ8z)
 * Exceed Blaze [Hyper Blue](https://amzn.to/2rf4MgS), [Yellow](https://amzn.to/2jlf3EA)
 
-To assemble one of these you will need some additional parts than the standard build, these can be purchased as a kit on the donkey store at: Purchase: [Donkey Store](https://squareup.com/store/donkeycar)
+To assemble one of these you will need some additional parts than the standard build, these can be purchased as a kit on the donkey store at: Purchase: [Donkey Store](https://store.donkeycar.com)
 
 | Part Description   | Link  | Approximate Cost |
 |---|----|---|
@@ -47,7 +47,7 @@ To build a donkey pro the following parts are Needed
 
 | Part Description   | Link  | Approximate Cost |
 |---|----|---|
-|Donkey Pro Plastics and base | [Thingiverse](https://www.thingiverse.com/thing:2805287) or [Donkeystore](https://squareup.com/store/donkeycar) | $50|
+|Donkey Pro Plastics and base | [Thingiverse](https://www.thingiverse.com/thing:2805287) or [Donkeystore](https://store.donkeycar.com) | $50|
 |(8) M2.5 standoff| | |
 |(8) M2.5 Nylock nuts| | |
 |(8) M2.5x6mm socket head cap screws | | |
@@ -86,7 +86,7 @@ In addition to the standard donkey parts, Raspberry Pi etc, you will need to buy
 |Steering Servo|[Hobbyking](https://hobbyking.com/en_us/hobbykingtm-hk15138-standard-analog-servo-4-3kg-0-17sec-38g.html)| $5|
 |Battery |[Hobbyking](https://hobbyking.com/en_us/turnigy-5000mah-2s1p-20c-hardcase-pack-roar-approved-de-warehouse.html) or similar 2S 5000 mAh battery| $21|
 |Pinion Gear| [Amazon](https://www.amazon.com/gp/product/B001BHGIBG/ref=oh_aui_detailpage_o08_s00?ie=UTF8&psc=1)|$7|
-|TT01 Plastics | [Thingiverse](https://www.thingiverse.com/thing:2805287) or [Donkeystore](https://squareup.com/store/donkeycar) | $50|
+|TT01 Plastics | [Thingiverse](https://www.thingiverse.com/thing:2805287) or [Donkeystore](https://store.donkeycar.com) | $50|
 
 Note: purchasing from Hobbyking is tricky. They can ship from multiple warehouses and it can be expensive and time consuming if shipping from one overseas. You may need to buy an alternate component if one of the items above are not available in your local warehouse.
 
