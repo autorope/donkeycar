@@ -1,7 +1,11 @@
 import os
+import os
 import time
 import gym
 import gym_donkeycar
+
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
 class DonkeyGymEnv(object):
 
@@ -11,11 +15,13 @@ class DonkeyGymEnv(object):
         os.environ['DONKEY_SIM_HEADLESS'] = str(headless)
         os.environ['DONKEY_SIM_SYNC'] = str(sync)
 
-        try:
-            self.env = gym.make(env_name, exe_path=sim_path, port=port)
-        except:
-            self.env = gym.make(env_name)
+        if not os.path.exists(sim_path):
+            raise Exception("The path you provided for the sim does not exist.") 
 
+        if not is_exe(sim_path):
+            raise Exception("The path you provided is not an executable.") 
+
+        self.env = gym.make(env_name, exe_path=sim_path, port=port)
         self.frame = self.env.reset()
         self.action = [0.0, 0.0]
         self.running = True
