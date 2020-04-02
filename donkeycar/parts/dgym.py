@@ -5,13 +5,17 @@ import gym_donkeycar
 
 class DonkeyGymEnv(object):
 
-    def __init__(self, sim_path, port=9090, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous"):
+    def __init__(self, sim_path, port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous"):
         os.environ['DONKEY_SIM_PATH'] = sim_path
         os.environ['DONKEY_SIM_PORT'] = str(port)
         os.environ['DONKEY_SIM_HEADLESS'] = str(headless)
         os.environ['DONKEY_SIM_SYNC'] = str(sync)
 
-        self.env = gym.make(env_name)
+        try:
+            self.env = gym.make(env_name, exe_path=sim_path, port=port)
+        except:
+            self.env = gym.make(env_name)
+
         self.frame = self.env.reset()
         self.action = [0.0, 0.0]
         self.running = True
