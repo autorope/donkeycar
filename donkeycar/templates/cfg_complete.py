@@ -122,6 +122,9 @@ ROI_CROP_BOTTOM = 0                 #the number of rows of pixels to ignore on t
 FREEZE_LAYERS = False               #default False will allow all layers to be modified by training
 NUM_LAST_LAYERS_TO_TRAIN = 7        #when freezing layers, how many layers from the last should be allowed to train?
 
+#WEB CONTROL
+WEB_CONTROL_PORT = 8887             # which port to listen on when making a web controller
+WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
 #JOYSTICK
 USE_JOYSTICK_AS_DEFAULT = False     #when starting the manage.py, when True, will not require a --js option to use the joystick
@@ -215,10 +218,11 @@ BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data i
 #You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
 #then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = False
-DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote"
+DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
 GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "me", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
-SIM_HOST = "127.0.0.1" #when racing on virtual-race-league use host "trainmydonkey.com"
+SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
+SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
 
 #publish camera over network
 #This is used to create a tcp service to pushlish the camera feed
@@ -234,7 +238,7 @@ AI_LAUNCH_KEEP_ENABLED = False      # when False ( default) you will need to hit
 AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
 
 #Path following
-PATH_FILENAME = "donkey_path.pkl"   #the path will be saved to this filename
+PATH_FILENAME = "donkey_path.pkl"   # the path will be saved to this filename
 PATH_SCALE = 5.0                    # the path display will be scaled by this factor in the web page
 PATH_OFFSET = (0, 0)                # 255, 255 is the center of the map. This offset controls where the origin is displayed.
 PATH_MIN_DIST = 0.3                 # after travelling this distance (m), save a path point
