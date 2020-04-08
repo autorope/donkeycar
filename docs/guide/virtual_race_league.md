@@ -16,7 +16,7 @@ You may build the server from the source project above, but [pre-built binaries]
 
 ## Setup for Donkeycar users
 
-If you are using the donkeycar framework to race, you can use follow the guide to [setup the simulator](/guide/simulator/). Use this to practice before the race. When it comes time to race, modify your myconfig.py to have these two changes:
+If you are using the donkeycar framework to race, you can use follow the guide to [setup the simulator](/guide/simulator/). If visuals directions help out, checkout the [Windows Sim Setup Screen-Cast on Youtube](https://youtu.be/wqQMmHVT8qw). Use this to practice before the race. When it comes time to race, modify your myconfig.py to have these two changes:
 
 ```
 DONKEY_SIM_PATH = "remote"
