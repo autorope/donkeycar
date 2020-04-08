@@ -9,7 +9,7 @@ def is_exe(fpath):
 
 class DonkeyGymEnv(object):
 
-    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}):
+    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, delay=0):
         os.environ['DONKEY_SIM_PATH'] = sim_path
         os.environ['DONKEY_SIM_PORT'] = str(port)
         os.environ['DONKEY_SIM_HEADLESS'] = str(headless)
@@ -27,6 +27,7 @@ class DonkeyGymEnv(object):
         self.action = [0.0, 0.0]
         self.running = True
         self.info = { 'pos' : (0., 0., 0.)}
+        self.delay = float(delay)
 
         if "body_style" in conf:
             self.env.viewer.set_car_config(conf["body_style"], conf["body_rgb"], conf["car_name"], conf["font_size"])
@@ -41,6 +42,8 @@ class DonkeyGymEnv(object):
         if steering is None or throttle is None:
             steering = 0.0
             throttle = 0.0
+        if self.delay > 0.0:
+            time.sleep(self.delay / 1000.0)
         self.action = [steering, throttle]
         return self.frame
 

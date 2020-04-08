@@ -99,7 +99,7 @@ class RemoteWebServer():
     
 class LocalWebController(tornado.web.Application):
 
-    def __init__(self):
+    def __init__(self, port=8887, mode='user'):
         ''' 
         Create and publish variables needed on many of 
         the web handlers.
@@ -111,9 +111,9 @@ class LocalWebController(tornado.web.Application):
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
         self.angle = 0.0
         self.throttle = 0.0
-        self.mode = 'user'
+        self.mode = mode
         self.recording = False
-        self.port = 8887
+        self.port = port
 
         handlers = [
             (r"/", RedirectHandler, dict(url="/drive")),

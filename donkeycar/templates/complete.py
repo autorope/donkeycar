@@ -3,15 +3,17 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug] [--myconfig=<filename>]
 
 
 Options:
-    -h --help          Show this screen.
-    --js               Use physical joystick.
-    -f --file=<file>   A text file containing paths to tub files, one per line. Option may be used more than once.
-    --meta=<key:value> Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
+    -h --help               Show this screen.
+    --js                    Use physical joystick.
+    -f --file=<file>        A text file containing paths to tub files, one per line. Option may be used more than once.
+    --meta=<key:value>      Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
+    --myconfig=filename     Specify myconfig file to use. 
+                            [default: myconfig.py]
 """
 import os
 import time
@@ -32,7 +34,7 @@ from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -104,7 +106,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         threaded = True
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
-            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF)
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
             inputs = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
@@ -151,7 +153,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     else:
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
-        ctr = LocalWebController()
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
 
     
     V.add(ctr, 
@@ -301,7 +303,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
-        V.add(WebFpv(), inputs=[inf_input], threaded=True)
+        V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
 
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
@@ -580,7 +582,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(pub, inputs=['jpg/bin'])
 
     if type(ctr) is LocalWebController:
-        print("You can now go to <your pis hostname.local>:8887 to drive your car.")
+        if cfg.DONKEY_GYM:
+            print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+        else:
+            print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
@@ -604,11 +609,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    cfg = dk.load_config()
+    cfg = dk.load_config(myconfig=args['--myconfig'])
     
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
+
         drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
               model_type=model_type, camera_type=camera_type,
               meta=args['--meta'])
@@ -621,7 +627,7 @@ if __name__ == '__main__':
         transfer = args['--transfer']
         model_type = args['--type']
         continuous = args['--continuous']
-        aug = args['--aug']     
+        aug = args['--aug']        
 
         dirs = preprocessFileList( args['--file'] )
         if tub is not None:
