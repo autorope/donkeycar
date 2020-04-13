@@ -4,6 +4,16 @@ The [Donkey Gym](https://github.com/tawnkramer/gym-donkeycar) project is a OpenA
 
 The simulator is built on the the [Unity](https://unity.com/) game platform, uses their internal physics and graphics, and connects to a donkey Python process to use our trained model to control the simulated Donkey.
 
+## Installation Video:
+
+Here's some videos to help you through the installation.
+
+Linux:
+https://youtu.be/J6Ll5Obtuxk
+
+Windows:
+https://youtu.be/wqQMmHVT8qw
+
 ## My Virtual Donkey
 
 There are many ways to use the simulator, depending on your goals. You can use the simulator to get to know and use the standard Donkeycar drive/train/test cycle by treating it as virtual hardware. You will collect data, drive, and train using the __same commands__ as if you were using a real robot. We will walk through that use-case first.
@@ -41,6 +51,7 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"
 
 
 > Note: your path to the executable will vary depending on platform and user.
+
 
 ## Drive
 

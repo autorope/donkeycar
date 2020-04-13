@@ -16,7 +16,7 @@
 
 ## Overview
 
-These are updated instructions from the 2017 [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.
+The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.  For historical purposes, these are the outdated instructions from the 2017 [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  
 
 ## Choosing a Car
 
@@ -48,7 +48,7 @@ For more detail and other options, follow the link to: [supported cars](/support
 
 ## Roll Your Own Car
 
-Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own/)
+Alternatively If you know RC or need something the standard Donkey does not support, you can roll your own.  Here is a quick reference to help you along the way.  [Roll Your Own](/roll_your_own)
 
 ## Video Overview of Hardware Assembly
 
@@ -122,7 +122,7 @@ Finally this is the Donkey Assembled.
 
 For other options for part, feel free to look at the jetbot documentation [here](https://github.com/NVIDIA-AI-IOT/jetbot).
 
-* **Sombrero Hat** The sombrero hat replaces the Servo driver and the USB battery and can be purchased at the Donkeycar store [here](https://store.donkeycar.com/collections/accessories/products/sombrero) and video instructions can be found [here](https://www.youtube.com/watch?v=vuAXdrtNjpk). Implementing the Sombrero hat requires a LiPo battery (see below).  Documentation is in [Github](https://github.com/autorope/Sombrero-hat).
+* **Sombrero Hat** NOTE: the Sombrero is out of stock at any stores - we are looking at other options or will place another order.  The sombrero hat replaces the Servo driver and the USB battery and can be purchased at the Donkeycar store [here](https://store.donkeycar.com/collections/accessories/products/sombrero) and video instructions can be found [here](https://www.youtube.com/watch?v=vuAXdrtNjpk). Implementing the Sombrero hat requires a LiPo battery (see below).  Documentation is in [Github](https://github.com/autorope/Sombrero-hat).
 
 ![sombrero](/assets/Sombrero_assembled.jpg)
 

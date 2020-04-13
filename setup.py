@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-    version='3.1.1',
+    version='3.1.2',
     long_description = long_description,
     description='Self driving library for python.',
     url='https://github.com/autorope/donkeycar',
@@ -51,10 +51,13 @@ setup(name='donkeycar',
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
-                        'RPi.GPIO'
+                        'Adafruit_SSD1306',
+                        'RPi.GPIO',
+                        'pyserial',
                         ],
                     'nano': [
-                        'Adafruit_PCA9685',                        
+                        'Adafruit_PCA9685',
+                        'Adafruit_SSD1306',
                         ],
                     'pc': [
                         'matplotlib',
@@ -93,6 +96,7 @@ setup(name='donkeycar',
 
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
 

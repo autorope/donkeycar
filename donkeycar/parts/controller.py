@@ -11,6 +11,7 @@ from prettytable import PrettyTable
 
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
+from donkeycar.parts.web_controller.web import WebFpv
 
 class Joystick(object):
     '''
@@ -809,6 +810,13 @@ class JoystickController(object):
 
             time.sleep(self.poll_delay)
 
+    def do_nothing(self, param):
+        '''assign no action to the given axis
+        this is useful to unmap certain axes, for example when swapping sticks
+        '''
+        pass
+
+
 
     def set_steering(self, axis_val):
         self.angle = self.steering_scale * axis_val
@@ -1134,6 +1142,27 @@ class XboxOneJoystickController(JoystickController):
             'left_trigger': self.magnitude(reversed = True),
         }
 
+class XboxOneSwappedJoystickController(XboxOneJoystickController):
+    '''
+    Swap steering and throttle controls from std XBox one controller
+    '''
+    def __init__(self, *args, **kwargs):
+        super(XboxOneSwappedJoystickController, self).__init__(*args, **kwargs)
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+        super(XboxOneSwappedJoystickController, self).init_trigger_maps()
+
+        # make the actual swap of the sticks
+        self.set_axis_trigger('right_stick_horz', self.set_steering)
+        self.set_axis_trigger('left_stick_vert', self.set_throttle)
+
+        # unmap default assinments to the axes
+        self.set_axis_trigger('left_stick_horz', self.do_nothing)
+        self.set_axis_trigger('right_stick_vert', self.do_nothing)
+
 
 class LogitechJoystickController(JoystickController):
     '''
@@ -1412,6 +1441,8 @@ def get_js_controller(cfg):
         cont_class = NimbusController
     elif cfg.CONTROLLER_TYPE == "xbox":
         cont_class = XboxOneJoystickController
+    elif cfg.CONTROLLER_TYPE == "xboxswapped":
+        cont_class = XboxOneSwappedJoystickController
     elif cfg.CONTROLLER_TYPE == "wiiu":
         cont_class = WiiUController
     elif cfg.CONTROLLER_TYPE == "F710":

@@ -3,15 +3,17 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
+    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug] [--myconfig=<filename>]
 
 
 Options:
-    -h --help          Show this screen.
-    --js               Use physical joystick.
-    -f --file=<file>   A text file containing paths to tub files, one per line. Option may be used more than once.
-    --meta=<key:value> Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
+    -h --help               Show this screen.
+    --js                    Use physical joystick.
+    -f --file=<file>        A text file containing paths to tub files, one per line. Option may be used more than once.
+    --meta=<key:value>      Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
+    --myconfig=filename     Specify myconfig file to use. 
+                            [default: myconfig.py]
 """
 import os
 import time
@@ -24,14 +26,15 @@ import donkeycar as dk
 #import parts
 from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, JoystickController
+from donkeycar.parts.controller import LocalWebController, \
+    JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[] ):
+def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -58,6 +61,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     #Initialize car
     V = dk.vehicle.Vehicle()
 
+    print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
     if camera_type == "stereo":
 
         if cfg.CAMERA_TYPE == "WEBCAM":
@@ -81,23 +85,33 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         V.add(StereoPair(), inputs=['cam/image_array_a', 'cam/image_array_b'], 
             outputs=['cam/image_array'])
+    elif cfg.CAMERA_TYPE == "D435":
+        from donkeycar.parts.realsense435i import RealSense435i
+        cam = RealSense435i(
+            enable_rgb=cfg.REALSENSE_D435_RGB,
+            enable_depth=cfg.REALSENSE_D435_DEPTH,
+            enable_imu=cfg.REALSENSE_D435_IMU,
+            device_id=cfg.REALSENSE_D435_ID)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/depth_array',
+                       'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+                       'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+              threaded=True)
 
     else:
-        print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
         
         inputs = []
         threaded = True
-        print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
-            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, env_name=cfg.DONKEY_GYM_ENV_NAME)
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
             inputs = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
-            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
         elif cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam
             cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
@@ -121,20 +135,25 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        from donkeycar.parts.controller import get_js_controller
-        
-        ctr = get_js_controller(cfg)
-        
-        if cfg.USE_NETWORKED_JS:
-            from donkeycar.parts.controller import JoyStickSub
-            netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-            V.add(netwkJs, threaded=True)
-            ctr.js = netwkJs
+        if cfg.HAVE_ROBOHAT:
+            from donkeycar.parts.robohat import RoboHATController
+            
+            ctr = RoboHATController()
+        else:
+            from donkeycar.parts.controller import get_js_controller
 
-    else:        
+            ctr = get_js_controller(cfg)
+
+            if cfg.USE_NETWORKED_JS:
+                from donkeycar.parts.controller import JoyStickSub
+                netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
+                V.add(netwkJs, threaded=True)
+                ctr.js = netwkJs
+
+    else:
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
-        ctr = LocalWebController()
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
 
     
     V.add(ctr, 
@@ -204,7 +223,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
               outputs=['led/blink_rate'])
 
         V.add(led, inputs=['led/blink_rate'])
-        
 
     def get_record_alert_color(num_records):
         col = (0, 0, 0)
@@ -258,8 +276,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     #IMU
     if cfg.HAVE_IMU:
-        from donkeycar.parts.imu import Mpu6050
-        imu = Mpu6050()
+        from donkeycar.parts.imu import IMU
+        imu = IMU(sensor=cfg.IMU_SENSOR, dlp_setting=cfg.IMU_DLP_CONFIG)
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
@@ -282,6 +300,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             inputs=['cam/image_array'],
             outputs=[inf_input],
             run_condition='run_pilot')
+
+    # Use the FPV preview, which will show the cropped image output, or the full frame.
+    if cfg.USE_FPV:
+        V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
 
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
@@ -392,10 +414,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 return user_angle, user_throttle
             
             elif mode == 'local_angle':
-                return pilot_angle, user_throttle
+                return pilot_angle if pilot_angle else 0.0, user_throttle
             
             else: 
-                return pilot_angle, pilot_throttle * cfg.AI_THROTTLE_MULT
+                return pilot_angle if pilot_angle else 0.0, pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0
         
     V.add(DriveMode(), 
           inputs=['user/mode', 'user/angle', 'user/throttle',
@@ -443,22 +465,33 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         pass
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
-        from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-
-        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+        if cfg.HAVE_ROBOHAT and model_path:
+            from donkeycar.parts.robohat import RoboHATDriver
+            
+            #steering_controller = RoboHATDriver(cfg.STEERING_CHANNEL)
+            #throttle_controller = RoboHATDriver(cfg.THROTTLE_CHANNEL)
+            
+            V.add(RoboHATDriver(), inputs=['angle', 'throttle'])
+        elif cfg.HAVE_ROBOHAT:
+            pass
         
-        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle = PWMThrottle(controller=throttle_controller,
-                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
+        else:    
+            from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
-    
+            steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+            steering = PWMSteering(controller=steering_controller,
+                                            left_pulse=cfg.STEERING_LEFT_PWM, 
+                                            right_pulse=cfg.STEERING_RIGHT_PWM)
+
+            throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+            throttle = PWMThrottle(controller=throttle_controller,
+                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+
+            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(throttle, inputs=['throttle'], threaded=True)
+
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
@@ -498,10 +531,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
         motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
-        V.add(steering, inputs=['angle'])
+        V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
 
-    
+    # OLED setup
+    if cfg.USE_SSD1306_128_32:
+        from donkeycar.parts.oled import OLEDPart
+        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_BUSNUM, auto_record_on_throttle=auto_record_on_throttle)
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+
     #add tub to save data
 
     inputs=['cam/image_array',
@@ -515,8 +554,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
+
+    if cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_DEPTH:
+        inputs += ['cam/depth_array']
+        types += ['gray16_array']
     
-    if cfg.HAVE_IMU:
+    if cfg.HAVE_IMU or (cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_IMU):
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
 
@@ -539,7 +582,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(pub, inputs=['jpg/bin'])
 
     if type(ctr) is LocalWebController:
-        print("You can now go to <your pis hostname.local>:8887 to drive your car.")
+        if cfg.DONKEY_GYM:
+            print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+        else:
+            print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
@@ -563,14 +609,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    cfg = dk.load_config()
+    cfg = dk.load_config(myconfig=args['--myconfig'])
     
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-        drive(cfg, model_path=args['--model'], use_joystick=args['--js'], model_type=model_type, camera_type=camera_type,
-            meta=args['--meta'])
-    
+
+        drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
+              model_type=model_type, camera_type=camera_type,
+              meta=args['--meta'])
+
     if args['train']:
         from train import multi_train, preprocessFileList
         
@@ -579,7 +627,7 @@ if __name__ == '__main__':
         transfer = args['--transfer']
         model_type = args['--type']
         continuous = args['--continuous']
-        aug = args['--aug']     
+        aug = args['--aug']        
 
         dirs = preprocessFileList( args['--file'] )
         if tub is not None:
