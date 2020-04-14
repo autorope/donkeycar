@@ -51,6 +51,9 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"
 
 
 > Note: your path to the executable will vary depending on platform and user.
+>  Windows: DonkeySimWin/donkey_sim.exe
+>  Mac OS: DonkeySimMac/donkey_sim.app/Contents/MacOS/sdsim
+>  Linux: DonkeySimLinux/donkey_sim.x86_64
 
 
 ## Drive
