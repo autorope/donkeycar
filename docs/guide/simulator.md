@@ -31,7 +31,7 @@ There are many ways to use the simulator, depending on your goals. You can use t
 cd ~/projects
 git clone https://github.com/tawnkramer/gym-donkeycar
 conda activate donkey
-pip install -e gym-donkeycar
+pip install -e .[gym-donkeycar]
 ```
 
 * You may use an existing ~/mycar donkey application, or begin a new one. Here we will start fresh: 
