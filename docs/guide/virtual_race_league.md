@@ -16,14 +16,16 @@ You may build the server from the source project above, but [pre-built binaries]
 
 ## Setup for Donkeycar users
 
-If you are using the donkeycar framework to race, you can use follow the guide to [setup the simulator](/guide/simulator/). Use this to practice before the race. When it comes time to race, modify your myconfig.py to have these two changes:
+If you are using the donkeycar framework to race, you can use follow the guide to [setup the simulator](/guide/simulator/). If visuals directions help out, checkout the [Windows Sim Setup Screen-Cast on Youtube](https://youtu.be/wqQMmHVT8qw). Use this to practice before the race. When it comes time to race, modify your myconfig.py to have these two changes:
 
 ```
 DONKEY_SIM_PATH = "remote"
 SIM_HOST = "trainmydonkey.com"
 ```
 
-This racing server will not always be running. We will bring it up for testing events and on race day.
+This racing server will not always be running. We will bring it up for testing events and on race day. We are aiming to have it up from 7pm-9pm Pacific every night a week before race day. If not up, ask on Discord and we will try to get things running.
+
+> Note: If you trained a donkey model, but wish to run it on a Jetson Nano or some platform where you are having troubles installing all the dependencies, [here's a single script](https://gist.github.com/tawnkramer/a74938653ab70e3fd22af1e4788a5001) you can use to run without any donkeycar or gym-donkeycar dependencies. Just pass it the model file name, the host name, and the car name. And it will run as a client to the race sim.
 
 ## Setup for Non-Donkeycar users
 

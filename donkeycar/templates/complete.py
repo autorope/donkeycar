@@ -593,7 +593,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(pub, inputs=['jpg/bin'])
 
     if type(ctr) is LocalWebController:
-        print("You can now go to <your pis hostname.local>:8887 to drive your car.")
+        if cfg.DONKEY_GYM:
+            print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+        else:
+            print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
         #tell the controller about the tub        
