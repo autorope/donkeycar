@@ -32,17 +32,15 @@ These can be used plugged in with a USB cable. It's been much more convenient to
 
 There are controller specific setup details below.
 
-### Customizing or Adding a New Controller Type
+> Note: If you have a controller that is not listed below, or you are having troubles getting your controller to work or you want to map your controller differently, see [Creating a New or Custom Game Controller](./#creating-a-new-or-custom-game-controller). 
 
-> Note: If are having troubles getting your controller to work, try this [Joystick Wizard](/utility/donkey/#joystick-wizard). This can help customize your buttons and axis inputs as well.
-
-### Change to config.py or run with --js
+### Change myconfig.py or run with --js
 
 ```bash
 python manage.py drive --js
 ```
 
-Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify config.py to make `USE_JOYSTICK_AS_DEFAULT = True`, then you do not need to run with the `--js`.
+Will enable driving with the joystick. This disables the live preview of the camera and the web page features. If you modify myconfig.py to make `USE_JOYSTICK_AS_DEFAULT = True`, then you do not need to run with the `--js`.
 
 
 ## PS3 Controller
@@ -240,26 +238,6 @@ quit
 
 Now that your controller is trusted, it should automatically connect with your Raspberry Pi when they are both turned on.  If your controller fails to connect, run the bluetoothctl steps again to reconnect.
 
-## Discovering / Modifying Button and Axis Mappings for Game Controllers
+## Creating a New or Custom Game Controller
 
-To discover and modify your default button mappings (for your controllers) you can use the `Joystick` class defined in `donkeycar.parts.controller`.
-
-After setting up `Donkey` and activating your `virtualenv` you can do the following.
-
-First launch `python` shell session.
-
-```python
-from donkeycar.parts.controller import Joystick
-
-joystick = Joystick() # uses the connected joystick at /dev/input/js0
-
-joystick.init() # Initialize
-
-joystick.show_map() # Will give you a list of axes and buttons detected.
-
-# Now you can use the controller and check for the outputs. This will
-# tell you which buttons and axes are active when you are using the
-# controller.
-while True:
-    joystick.poll()
-```
+To discover or modify the button and axis mappings for your controller, you can use the [Joystick Wizard](/utility/donkey/#joystick-wizard). The Joystick Wizard will write a custom controller named 'my_joystick.py' to your mycar folder.  To use the custom controller, set `CONTROLLER_TYPE="custom"` in your myconfig.py.

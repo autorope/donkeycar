@@ -407,7 +407,7 @@ class ShowCnnActivations(BaseCommand):
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)
 
-        model = load_model(model_path)
+        model = load_model(model_path, compile=False)
         image = load_scaled_image_arr(image_path, cfg)[None, ...]
 
         conv_layer_names = self.get_conv_layers(model)
@@ -525,9 +525,9 @@ class ShowPredictionPlots(BaseCommand):
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
-        parser.add_argument('--tub', nargs='+', help='paths to tubs')
+        parser.add_argument('--tub', nargs='+', help='The tub to make plot from')
         parser.add_argument('--model', default=None, help='name of record to create histogram')
-        parser.add_argument('--limit', default=1000, help='how many records to process')
+        parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
