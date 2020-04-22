@@ -23,7 +23,9 @@ DONKEY_SIM_PATH = "remote"
 SIM_HOST = "trainmydonkey.com"
 ```
 
-This racing server will not always be running. We will bring it up for testing events and on race day.
+This racing server will not always be running. We will bring it up for testing events and on race day. We are aiming to have it up from 7pm-9pm Pacific every night a week before race day. If not up, ask on Discord and we will try to get things running.
+
+> Note: If you trained a donkey model, but wish to run it on a Jetson Nano or some platform where you are having troubles installing all the dependencies, [here's a single script](https://gist.github.com/tawnkramer/a74938653ab70e3fd22af1e4788a5001) you can use to run without any donkeycar or gym-donkeycar dependencies. Just pass it the model file name, the host name, and the car name. And it will run as a client to the race sim.
 
 ## Setup for Non-Donkeycar users
 
