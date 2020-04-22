@@ -137,8 +137,6 @@ class Joystick(object):
         return button, button_state, axis, axis_val
 
 
-import pygame
-
 class PyGameJoystick(object):
     def __init__( self,
                   poll_delay=0.0,
@@ -147,7 +145,9 @@ class PyGameJoystick(object):
                   throttle_dir=-1.0,
                   dev_fn='/dev/input/js0',
                   auto_record_on_throttle=True,
-                  which_js=1):
+                  which_js=0):
+
+        import pygame
 
         pygame.init()
 
@@ -163,10 +163,15 @@ class PyGameJoystick(object):
         self.button_states = [ 0 for i in range(self.joystick.get_numbuttons() + self.joystick.get_numhats() * 4)]
         self.axis_names = {}
         self.button_names = {}
-        self.dead_zone = 0.0
-
+        self.dead_zone = 0.07
+        for i in range(self.joystick.get_numaxes()):
+            self.axis_names[i] = i
+        for i in range(self.joystick.get_numbuttons() + self.joystick.get_numhats() * 4):
+            self.button_names[i] = i
 
     def poll(self):
+        import pygame
+
         button = None
         button_state = None
         axis = None
@@ -177,20 +182,27 @@ class PyGameJoystick(object):
 
         for i in range( self.joystick.get_numaxes() ):
             val = self.joystick.get_axis( i )
-            if self.axis_states[i] != val:
+            if abs(val) < self.dead_zone:
+                val = 0.0
+            if self.axis_states[i] != val and i in self.axis_names:
                 axis = self.axis_names[i]
                 axis_val = val
                 self.axis_states[i] = val
                 logging.debug("axis: %s val: %f" % (axis, val))
+                #print("axis: %s val: %f" % (axis, val))
 
 
         for i in range( self.joystick.get_numbuttons() ):
             state = self.joystick.get_button( i )
             if self.button_states[i] != state:
+                if not i in self.button_names:
+                    print('button:', i)
+                    continue
                 button = self.button_names[i]
                 button_state = state
                 self.button_states[i] = state
                 logging.info("button: %s state: %d" % (button, state))
+                #print("button: %s state: %d" % (button, state))
 
         for i in range( self.joystick.get_numhats() ):
             hat = self.joystick.get_hat( i )
@@ -200,9 +212,15 @@ class PyGameJoystick(object):
             for state in states:
                 state = int(state)
                 if self.button_states[iBtn] != state:
+                    if not iBtn in self.button_names:
+                        print("button:", iBtn)
+                        continue
                     button = self.button_names[iBtn]
                     button_state = state
                     self.button_states[iBtn] = state
+                    logging.info("button: %s state: %d" % (button, state))
+                    #print("button: %s state: %d" % (button, state))
+
                 iBtn += 1
 
         return button, button_state, axis, axis_val
@@ -438,40 +456,41 @@ class PS3JoystickPC(Joystick):
         }
 
 
-class PyGamePS3Joystick(PyGameJoystick):
+class PyGamePS4Joystick(PyGameJoystick):
     '''
-    An interface to a physical PS3 joystick available via pygame
+    An interface to a physical PS4 joystick available via pygame
     Windows setup: https://github.com/nefarius/ScpToolkit/releases/tag/v1.6.238.16010
     '''
     def __init__(self, *args, **kwargs):
-        super(PyGamePS3Joystick, self).__init__(*args, **kwargs)
+        super(PyGamePS4Joystick, self).__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
             0x01 : 'left_stick_vert',
-            0x02 : 'analog_trigger',
             0x03 : 'right_stick_vert',
-            0x04 : 'right_stick_horz',
+            0x02 : 'right_stick_horz',
         }
 
         self.button_names = {
-            0 : "cross",
-            1 : "circle",
-            2 : 'square',
+            2 : "circle",
+            1 : "cross",
+            0 : 'square',
             3 : "triangle",
 
-            6 : 'select',
-            7 : 'start',
+            8 : 'share',
+            9 : 'options',
+            13 : 'pad',
 
             4 : 'L1',
             5 : 'R1',
-            8 : 'L3',
-            9 : 'R3',
-
-            10 : 'dpad_left',
-            11 : 'dpad_right',
-            12 : 'dpad_down',
-            13 : 'dpad_up',
+            6 : 'L2',
+            7 : 'R2',
+            10 : 'L3',
+            11 : 'R3',
+            14 : 'dpad_left',
+            15 : 'dpad_right',
+            16 : 'dpad_down',
+            17 : 'dpad_up',
         }
 
 
@@ -1051,51 +1070,6 @@ class PS3JoystickController(JoystickController):
             'right_stick_vert' : self.set_throttle,
         }
 
-class PyGamePS3JoystickController(JoystickController):
-    '''
-    A Controller object that maps inputs to actions
-    '''
-    def __init__(self, *args, **kwargs):
-        super(PyGamePS3JoystickController, self).__init__(*args, **kwargs)
-
-
-    def init_js(self):
-        '''
-        attempt to init joystick
-        '''
-        try:
-            self.js = PyGamePS3Joystick(which_js=1)
-        except FileNotFoundError:
-            print(self.dev_fn, "not found.")
-            self.js = None
-        return self.js is not None
-
-
-    def init_trigger_maps(self):
-        '''
-        init set of mapping from buttons to function calls
-        '''
-
-        self.button_down_trigger_map = {
-            'share' : self.toggle_mode,
-            'circle' : self.toggle_manual_recording,
-            'triangle' : self.erase_last_N_records,
-            'cross' : self.emergency_stop,
-            'L1' : self.increase_max_throttle,
-            'R1' : self.decrease_max_throttle,
-            'options' : self.toggle_constant_throttle,
-        }
-
-        self.button_up_trigger_map = {
-            "R1" : self.chaos_monkey_off,
-            "L1" : self.chaos_monkey_off,
-        }
-
-        self.axis_trigger_map = {
-            'left_stick_horz' : self.set_steering,
-            'right_stick_vert' : self.set_throttle,
-        }
-
 
 class PS4JoystickController(JoystickController):
     '''
@@ -1138,6 +1112,28 @@ class PS4JoystickController(JoystickController):
             'left_stick_horz' : self.set_steering,
             'right_stick_vert' : self.set_throttle,
         }
+
+
+class PyGamePS4JoystickController(PS4JoystickController):
+    '''
+    A Controller object that maps inputs to actions
+    '''
+    def __init__(self, which_js=0, *args, **kwargs):
+        super(PyGamePS4JoystickController, self).__init__(*args, **kwargs)
+        self.which_js=which_js
+
+
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = PyGamePS4Joystick(which_js=self.which_js)
+        except Exception as e:
+            print(e)
+            self.js = None
+        return self.js is not None
+
 
 
 class XboxOneJoystickController(JoystickController):
@@ -1442,48 +1438,6 @@ class JoyStickPub(object):
                 self.socket.send_string( "%s %d %s %f" % message_data)
                 print("SENT", message_data)
 
-class PS4JoystickController(JoystickController):
-    '''
-    A Controller object that maps inputs to actions
-    '''
-    def __init__(self, *args, **kwargs):
-        super(PS4JoystickController, self).__init__(*args, **kwargs)
-
-
-    def init_js(self):
-        '''
-        attempt to init joystick
-        '''
-        try:
-            self.js = PS4Joystick(self.dev_fn)
-            if not self.js.init():
-                self.js = None
-        except FileNotFoundError:
-            print(self.dev_fn, "not found.")
-            self.js = None
-        return self.js is not None
-
-
-    def init_trigger_maps(self):
-        '''
-        init set of mapping from buttons to function calls for ps4
-        '''
-
-        self.button_down_trigger_map = {
-            'share' : self.toggle_mode,
-            'circle' : self.toggle_manual_recording,
-            'triangle' : self.erase_last_N_records,
-            'cross' : self.emergency_stop,
-            'L1' : self.increase_max_throttle,
-            'R1' : self.decrease_max_throttle,
-            'options' : self.toggle_constant_throttle,
-        }
-
-        self.axis_trigger_map = {
-            'left_stick_horz' : self.set_steering,
-            'right_stick_vert' : self.set_throttle,
-        }
-
 
 class JoyStickSub(object):
     '''
@@ -1552,7 +1506,7 @@ def get_js_controller(cfg):
     elif cfg.CONTROLLER_TYPE == "rc3":
         cont_class = RC3ChanJoystickController
     elif cfg.CONTROLLER_TYPE == "pygame":
-        cont_class = PyGamePS3JoystickController
+        cont_class = PyGamePS4JoystickController
     else:
         raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
 
@@ -1573,6 +1527,23 @@ if __name__ == "__main__":
     '''
     print("You may need:")
     print('xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0')
-    p = JoyStickPub()
-    p.run()
+    #p = JoyStickPub()
 
+    
+    #Ps4 pygame controller test.
+    import donkeycar
+    v = donkeycar.vehicle.Vehicle()
+    p = PyGamePS4JoystickController()
+    v.add(p, inputs=['cam/image_array'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          threaded=True)
+    v.start(max_loop_count = 100)
+    
+    '''
+    j = PyGamePS4Joystick(which_js=0)
+    i = 0
+    while i < 100:
+        j.poll()
+        time.sleep(0.1)
+        i += 1
+    '''
