@@ -12,7 +12,7 @@ We are using the [SDSandbox](https://github.com/tawnkramer/sdsandbox) open sourc
 
 We use an OpenAI GYM style wrapper to interface with the server. The project for this wrapper is [gym-donkeycar](https://github.com/tawnkramer/gym-donkeycar).
 
-You may build the server from the source project above, but [pre-built binaries](https://github.com/tawnkramer/gym-donkeycar/releases/tag/v2020.4) for Ubuntu, Mac, and Windows. This has been tested on Ubuntu 18.04, Mac 10.13, and Windows 10.
+You may build the server from the source project above, but [pre-built binaries](https://github.com/tawnkramer/gym-donkeycar/releases/tag/v2020.v.9) for Ubuntu, Mac, and Windows. This has been tested on Ubuntu 18.04, Mac 10.13, and Windows 10.
 
 ## Setup for Donkeycar users
 
