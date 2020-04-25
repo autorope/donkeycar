@@ -457,8 +457,7 @@ class TubReader(Tub):
         API function needed to use as a Donkey part.
         Accepts keys to read from the tub and retrieves them sequentially.
         """
-        record_dict = self.get_record(self.read_ix)
-        self.read_ix += 1
+        record_dict = self.get_record()
         record = [record_dict[key] for key in args]
         return record
 
