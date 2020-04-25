@@ -546,10 +546,10 @@ class TubAugment(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubaugment',
                                          usage='%(prog)s [options]')
         parser.add_argument('tubs', nargs='+', help='paths to tubs')
-        parser.add_argument('--inplace',
-                            default=False,
+        parser.add_argument('--inplace', dest='inplace', action='store_true',
                             help='If tub should be changed in place or new '
                                  'tub will be created')
+        parser.set_defaults(inplace=False)
         parsed_args = parser.parse_args(args)
         return parsed_args
 
