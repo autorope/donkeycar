@@ -220,6 +220,10 @@ pip install -e .[pi]
 pip install tensorflow==1.13.1
 ```
 
+> In case of an error about hash mismatch install tensorflow manually `wget https://www.piwheels.org/simple/tensorflow/tensorflow-1.13.1-cp35-none-linux_armv7l.whl` and `pip install  https://www.piwheels.org/simple/tensorflow/tensorflow-1.13.1-cp35-none-linux_armv7l.whl`
+
+> In case of an error about `mock` dependency requiring Python `>=3.6` install slightly older version first `pip install -U mock==3.0.5` and rerun `pip install` for tensorflow again.
+
 You can validate your tensorflow install with
 
 ```bash
