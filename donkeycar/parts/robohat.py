@@ -39,11 +39,14 @@ class RoboHATController:
         self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
         self.debug = debug
 
-        # Serial port
-        #  Raspberry Pi:  '/dev/ttyS0'
-        #  Windows:       'COMn'
-        #  macOS:         '/dev/tty.XXnn'
-        #   Please use: 'ls /dev/tty.*' to find correct port.
+        """
+        Serial port -- Default Pi: '/dev/ttyS0'
+                    -- Jetson Nano: '/dev/ttyTHS1'
+                    -- Google coral: '/dev/ttymxc0'
+                    -- Windows: 'COM3', Arduino: '/dev/ttyACM0'
+                    -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
+                       eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
+        """
         try:
             self.serial = serial.Serial('/dev/ttyS0', 115200, timeout=1)
         except serial.SerialException:
