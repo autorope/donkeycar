@@ -176,6 +176,13 @@ MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the fa
 MM1_STOPPED_PWM = 1500
 MM1_MAX_REVERSE = 1000          # Max throttle to go reverse. The smaller the faster
 MM1_SHOW_STEERING_VALUE = False
+# Serial port -- Default Pi: '/dev/ttyS0'
+#                    -- Jetson Nano: '/dev/ttyTHS1'
+#                    -- Google coral: '/dev/ttymxc0'
+#                    -- Windows: 'COM3', Arduino: '/dev/ttyACM0'
+#                    -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
+#                       eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
+MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
 #RECORD OPTIONS
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
