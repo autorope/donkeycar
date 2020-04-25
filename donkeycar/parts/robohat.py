@@ -48,7 +48,7 @@ class RoboHATController:
                        eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
         """
         try:
-            self.serial = serial.Serial('/dev/ttyS0', 115200, timeout=1)
+            self.serial = serial.Serial(cfg.MM1_SERIAL_PORT, 115200, timeout=1)
         except serial.SerialException:
             print("Serial port not found!  Please enable: sudo raspi-config")
         except serial.SerialTimeoutException:
