@@ -14,6 +14,9 @@ import math
     find_coeffs and persp_transform borrowed from:
     https://stackoverflow.com/questions/14177744/how-does-perspective-transformation-work-in-pil
 '''
+ONE_BY_255 = 1.0 / 255.0
+
+
 def find_coeffs(pa, pb):
     matrix = []
     for p1, p2 in zip(pa, pb):
@@ -26,6 +29,7 @@ def find_coeffs(pa, pb):
     res = np.dot(np.linalg.inv(A.T * A) * A.T, B)
     return np.array(res).reshape(8)
 
+
 def rand_persp_transform(img):
     width, height = img.size
     new_width = math.floor(float(width) * random.uniform(0.9, 1.1))
@@ -36,24 +40,51 @@ def rand_persp_transform(img):
 
     return img.transform((width, height), Image.PERSPECTIVE, coeffs, Image.BICUBIC)
 
+
 def augment_image(np_img, shadow_images=None, do_warp_persp=False):
+    """
+    :param np_img: numpy image
+        input image in numpy normalised format
+    :param shadow_images: list of 2-tuples of PIL images
+        shadow vector as prepared by load_shadow_images
+    :param do_warp_persp: bool
+        apply warping
+    :return: numpy image
+        output image in numpy normalised format
+    """
+    # denormalise image to 8int
     conv_img = np_img * 255.0
     conv_img = conv_img.astype(np.uint8)
+    # convert to PIL and apply transformation
     img = Image.fromarray(conv_img)
-    #change the coloration, sharpness, and composite a shadow
+    img = augment_pil_image(img, shadow_images, do_warp_persp)
+    # transform back to normalised numpy format
+    img_out = np.array(img).astype(np.float) * ONE_BY_255
+    return img_out
+
+
+def augment_pil_image(img, shadow_images=None, do_warp_persp=False):
+    """
+    :param img: PIL image
+        input image in PIL format
+    :param do_warp_persp: bool
+        apply warping
+    :param shadow_images: list of 2-tuples of PIL images
+        shadow vector as prepared by load_shadow_images
+    :return: PIL image
+        augmented image
+    """
+    # change the coloration, sharpness, and composite a shadow
     factor = random.uniform(0.5, 2.0)
     img = ImageEnhance.Brightness(img).enhance(factor)
     factor = random.uniform(0.5, 1.0)
     img = ImageEnhance.Contrast(img).enhance(factor)
     factor = random.uniform(0.5, 1.5)
     img = ImageEnhance.Sharpness(img).enhance(factor)
-    factor = random.uniform(0.0, 1.0)
+    factor = random.uniform(0.0, 2.0)
     img = ImageEnhance.Color(img).enhance(factor)
-
+    # optionally composite a shadow, prepared from load_shadow_images
     if shadow_images is not None:
-        '''
-        optionaly composite a shadow, perpared from load_shadow_images
-        '''
         iShad = random.randrange(0, len(shadow_images))
         top, mask = shadow_images[iShad]
         theta = random.randrange(-35, 35)
@@ -62,14 +93,11 @@ def augment_image(np_img, shadow_images=None, do_warp_persp=False):
         mask = ImageEnhance.Brightness(mask).enhance(random.uniform(0.3, 1.0))
         offset = (random.randrange(-128, 128), random.randrange(-128, 128))
         img.paste(top, offset, mask)
-    
+    # optionally warp perspective
     if do_warp_persp:
-        '''
-        optionaly warp perspective
-        '''
         img = rand_persp_transform(img)
+    return img
 
-    return np.array(img).astype(np.float) / 255.0
 
 def load_shadow_images(path_mask):
     shadow_images = []
