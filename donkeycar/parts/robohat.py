@@ -39,7 +39,11 @@ class RoboHATController:
         self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
         self.debug = debug
 
-        # Serial port - laptop: 'COM3', Arduino: '/dev/ttyACM0'
+        # Serial port
+        #  Raspberry Pi:  '/dev/ttyS0'
+        #  Windows:       'COMn'
+        #  macOS:         '/dev/tty.XXnn'
+        #   Please use: 'ls /dev/tty.*' to find correct port.
         try:
             self.serial = serial.Serial('/dev/ttyS0', 115200, timeout=1)
         except serial.SerialException:
