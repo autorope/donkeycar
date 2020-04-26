@@ -87,8 +87,9 @@ def test_tub_augment(tub):
         # normalise this number
         num_pixel_channel = np.prod(diff_arr.shape)
         avg_change = diff_arr.sum() / num_pixel_channel
-        # check that the augmented image is different
-        assert avg_change != 0, "Augmentation didn't do anything"
+        # check that the augmented image is different if not totally black
+        if img_arr_b.max() > 0:
+            assert avg_change != 0, "Augmentation didn't do anything"
         # change per chanel can be maximally 255 in 8-bit
         total_change += avg_change
 
