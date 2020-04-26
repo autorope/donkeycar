@@ -1,10 +1,11 @@
 ---
 language: python
-
+# this is required for python 3.7
+dist: xenial
 # This list should match the versions listed in setup.py
 python:
-  - 3.5
-  - 3.6
+- 3.6
+- 3.7
 
 os:
   - linux
