@@ -48,7 +48,7 @@ class KerasPilot(object):
         self.optimizer = "adam"
  
     def load(self, model_path):
-        self.model = keras.models.load_model(model_path)
+        self.model = keras.models.load_model(model_path, compile=False)
 
     def load_weights(self, model_path, by_name=True):
         self.model.load_weights(model_path, by_name=by_name)
