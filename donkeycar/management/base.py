@@ -407,7 +407,7 @@ class ShowCnnActivations(BaseCommand):
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)
 
-        model = load_model(model_path)
+        model = load_model(model_path, compile=False)
         image = load_scaled_image_arr(image_path, cfg)[None, ...]
 
         conv_layer_names = self.get_conv_layers(model)
