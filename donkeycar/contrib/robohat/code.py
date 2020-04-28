@@ -22,6 +22,7 @@ logger.setLevel(logging.INFO)
 # Customisation these variables
 SMOOTHING_INTERVAL_IN_S = 0.025
 DEBUG = False
+USB_SERIAL = False
 ACCEL_RATE = 10
 
 ## functions
@@ -121,9 +122,13 @@ def main():
             state_changed(steering)
 
         logger.info("Get: steering=%i, throttle=%i" % (int(steering.value), int(throttle.value)))
-
-        # write the RC values to the RPi Serial
-        uart.write(b"%i, %i\r\n" % (int(steering.value), int(throttle.value)))
+        
+        if(USB_SERIAL):
+            # simulator USB
+            print("%i, %i" % (int(steering.value), int(throttle.value)))
+        else:
+            # write the RC values to the RPi Serial
+            uart.write(b"%i, %i\r\n" % (int(steering.value), int(throttle.value)))
 
         while True:
             # wait for data on the serial port and read 1 byte
