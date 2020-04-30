@@ -1024,6 +1024,11 @@ if __name__ == "__main__":
     model = args['--model']
     transfer = args['--transfer']
     model_type = args['--type']
+
+    if model_type is None:
+        model_type = cfg.DEFAULT_MODEL_TYPE
+        print("using default model type of", model_type)
+
     if args['--figure_format']:
         figure_format = args['--figure_format']
     continuous = args['--continuous']

@@ -653,9 +653,14 @@ if __name__ == '__main__':
         continuous = args['--continuous']
         aug = args['--aug']
         dirs = preprocessFileList( args['--file'] )
+
         if tub is not None:
             tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
             dirs.extend( tub_paths )
+
+        if model_type is None:
+            model_type = cfg.DEFAULT_MODEL_TYPE
+            print("using default model type of", model_type)
 
         multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
 
