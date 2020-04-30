@@ -700,6 +700,9 @@ def sequence_train(cfg, tub_names, model_name, transfer_model, model_type, conti
 
     kl = dk.utils.get_model_by_type(model_type=model_type, cfg=cfg)
     
+    if cfg.PRINT_MODEL_SUMMARY:
+        print(kl.model.summary())
+    
     tubs = gather_tubs(cfg, tub_names)
     
     verbose = cfg.VERBOSE_TRAIN
