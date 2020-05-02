@@ -218,6 +218,7 @@ cd donkeycar
 git checkout master
 pip install -e .[pi]
 pip install tensorflow==1.13.1
+pip install numpy --upgrade
 ```
 
 You can validate your tensorflow install with
