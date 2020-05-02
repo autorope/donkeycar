@@ -20,7 +20,7 @@
 
 You need to flash a micro SD image with an operating system.
 
-1. Download [Latest Raspian(Stretch)](https://downloads.raspberrypi.org/raspbian_lite_latest). 
+1. Download [Latest Raspian(Buster)](https://downloads.raspberrypi.org/raspbian_lite_latest). 
 2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 3. Leave micro SD card in your machine and edit/create some files as below:
 
@@ -225,28 +225,6 @@ You can validate your tensorflow install with
 ```bash
 python -c "import tensorflow"
 ```
-
-Warnings like this are normal:
-
-```text
-/home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: compiletime version 3.4 of module 'tensorflow.python.framework.fast_tensor_util' does not match runtime version 3.5
-  return f(*args, **kwds)
-/home/pi/env/lib/python3.5/importlib/_bootstrap.py:222: RuntimeWarning: builtins.type size changed, may indicate binary incompatibility. Expected 432, got 412
-  return f(*args, **kwds)
-```
-
-Note: If you would like to try tflite support, you will need a newer version of Tensorflow. You can download and install this version:
-
-For Pi3 Raspian Stretch:
-
-```bash
-wget https://tawn-train.s3.amazonaws.com/tf/tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
-pip install tensorflow-2.0.0a0-cp35-cp35m-linux_armv7l.whl
-```
-
-For Raspian Buster Python 3.7:
-
-TF 2.0 Not yet available. Check [slack](http://donkeycar.slack.com) for updates.
 
 ##  Step 12: Optional - Install OpenCV
 
