@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+{% block content %}
+<script src="/static/blockly_compressed.js"></script>
+<script src="/static/blocks_compressed.js"></script>
+<script src ="/static/msg/js/en.js"> </script>
+<script src ="/static/donkey_blockly.js"> </script>
+<script src ="/static/javascript_compressed.js"> </script>
+
+
+
+
+
+<div class="container">
+  <h1> <button id ="run"> Run </button> </h1>
+  <h1> <button id ="stop">Emergency shutdown </button> </h1> 
+  <button onclick="runCode()">Run Blockly</button>
+  <button onclick="load()">load</button>
+  <button onclick="save()">save</button>
+</div>
+<div id ="blocklyDiv"style ="height:480px;width:600px;"></div>
+
+<xml xmlns="https://developers.google.com/blockly/xml" id="toolbox" style="display: none">
+  <category name="Donkey">
+    <block type="turn_left">
+      <field name="T_L">Turn left</field>
+      <field name="angle">Angle: (0 - 1)</field>
+    </block>
+    <block type="turn_right">
+      <field name="T_R">Turn right</field>
+      <field name="angle">Angle: (0 - 1)</field>
+    </block>
+    <block type="go_forward">
+      <field name="G_F">Go forward</field>
+      <field name="throttle">Throttle: (0 - 1)</field>
+    </block>
+    <block type="go_backward">
+      <field name="G_B">Go_backward</field>
+      <field name="throttle">Throttle: (0 - 1)</field>
+    </block>
+  </category>
+  <category name="Logic">
+    <block type="controls_if"></block>
+    <block type="logic_ternary"></block>
+    <block type="logic_compare">
+      <field name="OP">EQ</field>
+    </block>
+    <block type="logic_operation">
+      <field name="OP">AND</field>
+    </block>
+    <block type="logic_negate"></block>
+    <block type="logic_null"></block>
+    <block type="logic_boolean">
+      <field name="BOOL">TRUE</field>
+    </block>
+  </category>
+  <category name="Loops">
+    <block type="controls_forEach" inline="false">
+      <field name="VAR" id="[oE{4p]kcT8(w7XX4`M4">j</field>
+    </block>
+    <block type="controls_repeat_ext">
+      <value name="TIMES">
+        <shadow type="math_number">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="controls_whileUntil">
+      <field name="MODE">WHILE</field>
+    </block>
+    <block type="controls_for">
+      <field name="VAR" id="mnn+bTX%ZRc]A;[d6DPU">i</field>
+      <value name="FROM">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="TO">
+        <shadow type="math_number">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+      <value name="BY">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="controls_forEach">
+      <field name="VAR" id="[oE{4p]kcT8(w7XX4`M4">j</field>
+    </block>
+  </category>
+  <category name="Variables" colour="#a55b80" custom="VARIABLE"></category>
+  <category name="Math">
+    <block type="math_number">
+      <field name="NUM">0</field>
+    </block>
+    <block type="math_arithmetic">
+      <field name="OP">ADD</field>
+      <value name="A">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="B">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_on_list">
+      <mutation op="SUM"></mutation>
+      <field name="OP">SUM</field>
+    </block>
+    <block type="math_single">
+      <field name="OP">ROOT</field>
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">9</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_modulo">
+      <value name="DIVIDEND">
+        <shadow type="math_number">
+          <field name="NUM">64</field>
+        </shadow>
+      </value>
+      <value name="DIVISOR">
+        <shadow type="math_number">
+          <field name="NUM">10</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_trig">
+      <field name="OP">SIN</field>
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">45</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_constrain">
+      <value name="VALUE">
+        <shadow type="math_number">
+          <field name="NUM">50</field>
+        </shadow>
+      </value>
+      <value name="LOW">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="HIGH">
+        <shadow type="math_number">
+          <field name="NUM">100</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_constant">
+      <field name="CONSTANT">PI</field>
+    </block>
+    <block type="math_number_property">
+      <mutation divisor_input="false"></mutation>
+      <field name="PROPERTY">EVEN</field>
+      <value name="NUMBER_TO_CHECK">
+        <shadow type="math_number">
+          <field name="NUM">0</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_random_int">
+      <value name="FROM">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
+      <value name="TO">
+        <shadow type="math_number">
+          <field name="NUM">100</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="math_random_float"></block>
+    <block type="math_round">
+      <field name="OP">ROUND</field>
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">3.1</field>
+        </shadow>
+      </value>
+    </block>
+  </category>
+  <category name="Text">
+    <block type="text">
+      <field name="TEXT"></field>
+    </block>
+    <block type="text_join">
+      <mutation items="2"></mutation>
+    </block>
+    <block type="text_append">
+      <field name="VAR" id="o1EFe5Sn77t2+F:5BpZc">item</field>
+      <value name="TEXT">
+        <shadow type="text">
+          <field name="TEXT"></field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_length">
+      <value name="VALUE">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_print">
+      <value name="TEXT">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_isEmpty">
+      <value name="VALUE">
+        <shadow type="text">
+          <field name="TEXT"></field>
+        </shadow>
+      </value>
+    </block>
+    <block type="text_indexOf">
+      <field name="END">FIRST</field>
+      <value name="VALUE">
+        <block type="variables_get">
+          <field name="VAR" id="*{YSlV`P`}OM8deGA*(?">text</field>
+        </block>
+      </value>
+      <value name="FIND">
+        <shadow type="text">
+          <field name="TEXT">abc</field>
+        </shadow>
+      </value>
+    </block>
+  </category>
+  <category name="Lists">
+    <block type="lists_create_with">
+      <mutation items="0"></mutation>
+    </block>
+    <block type="lists_create_with">
+      <mutation items="3"></mutation>
+    </block>
+    <block type="lists_repeat">
+      <value name="NUM">
+        <shadow type="math_number">
+          <field name="NUM">5</field>
+        </shadow>
+      </value>
+    </block>
+    <block type="lists_length"></block>
+    <block type="lists_isEmpty"></block>
+    <block type="lists_indexOf">
+      <field name="END">FIRST</field>
+      <value name="VALUE">
+        <block type="variables_get">
+          <field name="VAR" id="]q~6#)L@Y_.@,@4O;D)n">list</field>
+        </block>
+      </value>
+    </block>
+  </category>
+  <category name="Functions">
+    <block type="procedures_defnoreturn">
+      <field name="NAME">do something</field>
+      <comment pinned="false" h="80" w="160">Describe this function...</comment>
+    </block>
+    <block type="procedures_defreturn">
+      <field name="NAME">do something2</field>
+      <comment pinned="false" h="80" w="160">Describe this function...</comment>
+    </block>
+    <block type="procedures_callnoreturn">
+      <mutation name="do something"></mutation>
+    </block>
+    <block type="procedures_callnoreturn">
+      <mutation name="do something"></mutation>
+    </block>
+  </category>
+</xml>
+
+
+<script type="text/javascript">
+
+
+  $( document ).ready(function() {
+    console.log( "blockly document ready!" );
+    //blockly.load()
+	driveURL = '/blockly'
+	var xml = "";
+
+	
+  });
+  
+  var state = {'tele': {
+                          "user": {
+                                  'angle': 0,
+                                  'throttle': 0,
+                                  },
+                          "pilot": {
+                                  'angle': 0,
+                                  'throttle': 0,
+                                  }
+                          },
+                  'brakeOn': true,
+                  'recording': false,
+                  'driveMode': "user",
+                  'pilot': 'None',
+                  'session': 'None',
+                  'lag': 0,
+                  'controlMode': 'joystick',
+                  'maxThrottle' : 1,
+                  'throttleMode' : 'user',
+                  }
+  
+  
+	
+	
+	
+	function stop(p1,p2){
+	data = JSON.stringify({ 'angle': p1,
+                                'throttle':p2,
+                                'drive_mode':state.driveMode,
+                                'recording': state.recording})
+	console.log(data)							
+	return $.post(driveURL, data)
+	}
+	$( "#run" ).click(function() {
+	   data = JSON.stringify({ 'angle': state.tele.user.angle,
+                                'throttle':0.2,
+                               'drive_mode':state.driveMode,
+                               'recording': true})
+		console.log(data)
+		//console.log(code)
+		//console.log("send completed")
+		//setTimeout('stop(0,0)',2000)
+		
+		return $.post(driveURL, data)
+
+				
+
+	});
+	
+	
+	$( "#stop" ).click(function() {
+	data = JSON.stringify({ 'angle': 0,
+                                'throttle':0,
+                                'drive_mode':state.driveMode,
+                                'recording': state.recording})
+	console.log(data)
+	$.post(driveURL, data)
+	console.log("send completed")							
+	});
+	
+	 var postDrive = function() {
+
+        //Send angle and throttle values
+        data = JSON.stringify({ 'angle': state.tele.user.angle,
+                                'throttle':state.tele.user.throttle,
+                                'drive_mode':state.driveMode,
+                                'recording': state.recording})
+        console.log(data)
+        $.post(driveURL, data)
+       
+    };
+	
+	var throttleUp = function(p1){
+	
+     state.tele.user.throttle = state.tele.user.throttle + p1
+	 //console.log(typeof p1)
+      postDrive()
+    };
+	var throttleDown = function(p1){
+      state.tele.user.throttle =state.tele.user.throttle- p1
+      postDrive()
+    };
+	 var angleLeft = function(p1){
+      state.tele.user.angle = state.tele.user.angle-p1
+      postDrive()
+    };
+	 var angleRight = function(p1){
+      state.tele.user.angle = state.tele.user.angle+p1
+      postDrive()
+    };
+	
+
+
+  
+</script>
+
+<script>
+Blockly.JavaScript['turn_left'] = function(block) {
+  var value_turn_left = Blockly.JavaScript.valueToCode(block, 'Angle', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+ if(value_turn_left>1){
+  alert("cant hight than 1")
+  }else if (value_turn_left == 0){
+  alert("can not set zero data")
+  }else{
+  value_turn_left=Number(value_turn_left)
+  angleLeft(value_turn_left)
+
+  }
+  var code = '\n';
+  return code;
+  
+};
+
+Blockly.JavaScript['turn_right'] = function(block) {
+  var value_turn_right = Blockly.JavaScript.valueToCode(block, 'Angle', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+  if (value_turn_right>1){
+  alert("can't ")
+  }else if (value_turn_right == 0){
+  alert("can not set zero data")
+  }else{
+  value_turn_right=Number(value_turn_right)
+  angleRight(value_turn_right)
+
+  }
+  var code = '\n';
+  return code;
+};
+
+Blockly.JavaScript['go_forward'] = function(block) {
+  var value_go_forward = Blockly.JavaScript.valueToCode(block, 'Throttle', Blockly.JavaScript.ORDER_ATOMIC);
+  value_go_backward=Number(value_go_forward)
+  // TODO: Assemble JavaScript into code variable.
+  if(value_go_forward>1){
+  alert("cant hight than 1")
+  }else if (value_go_forward == 0){
+  alert("can not set zero data")
+  }else{
+  value_go_forward=Number(value_go_forward)
+  throttleUp(value_go_forward)
+  
+  
+
+  }
+  //console.log(value_go_forward)
+  var code = '\n';
+  return code;
+
+};
+
+Blockly.JavaScript['go_backward'] = function(block) {
+  var value_go_backward= Blockly.JavaScript.valueToCode(block, 'Throttle', Blockly.JavaScript.ORDER_ATOMIC);
+  // TODO: Assemble JavaScript into code variable.
+   if (value_go_backward>1){
+	alert("can't ")
+  }else if (value_go_backward == 0){
+	alert("can not set zero data")
+  }else{
+	value_go_backward=Number(value_go_backward)
+	throttleDown(value_go_backward)
+
+  }
+  var code = '\n';
+  return code;
+  
+};
+	var workspace = Blockly.inject('blocklyDiv',
+      {toolbox: document.getElementById('toolbox')});
+	Blockly.JavaScript.addReservedWords('code');
+	var code = Blockly.JavaScript.workspaceToCode(workspace);  
+	function runCode(){
+	window.LoopTrap = 1000;
+	Blockly.JavaScript.INFINITE_LOOP_TRAP =
+          'if (--window.LoopTrap == 0) throw "Infinite loop.";\n';
+	var code = Blockly.JavaScript.workspaceToCode(workspace);
+	Blockly.JavaScript.INFINITE_LOOP_TRAP = null;
+	try{
+	eval(code);
+	}catch(e){
+	alert(e);
+	}
+	}
+	var load=function(){
+	test = localStorage.getItem("blockly")
+	var xml = Blockly.Xml.textToDom(test);
+	Blockly.Xml.domToWorkspace(xml, workspace);
+	}
+	var save = function(){
+	var xml = Blockly.Xml.workspaceToDom(workspace);
+	var xml_text = Blockly.Xml.domToText(xml);
+	localStorage.setItem("blockly", xml_text);
+	
+	}
+	
+	
+
+</script>
+
+{% end %}
