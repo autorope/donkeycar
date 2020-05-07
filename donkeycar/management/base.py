@@ -311,9 +311,10 @@ class ShowHistogram(BaseCommand):
             tg.df.hist(bins=50)
 
         try:
-            filename = os.path.basename(tub_paths) + '_hist_%s.png' % record_name.replace('/', '_')
-            plt.savefig(filename)
-            print('saving image to:', filename)
+            path = tg.resolve_tub_paths(tub_paths)[0] + '/'
+            filename = os.path.basename(tub_paths) + '_hist.png'
+            plt.savefig(path + filename)
+            print('saving image to:', path + filename)
         except:
             pass
         plt.show()
