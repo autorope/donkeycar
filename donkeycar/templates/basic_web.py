@@ -88,7 +88,7 @@ def drive(cfg, model_path=None, model_type=None):
         start = time.time()
         try:
             print('loading model', model_path)
-            kl.load(model_path)
+            kl.load(model_path, compile=False)
             print('finished loading in %s sec.' % (str(time.time() - start)) )
         except Exception as e:
             print(e)

@@ -20,7 +20,7 @@
 
 You need to flash a micro SD image with an operating system.
 
-1. Download [Raspian Lite(Buster)](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-09-30/2019-09-26-raspbian-buster-lite.zip) (352MB). 
+1. Download [Latest Raspian(Stretch)](https://downloads.raspberrypi.org/raspbian_lite_latest). 
 2. Follow OS specific guides [here](https://www.raspberrypi.org/documentation/installation/installing-images/).
 3. Leave micro SD card in your machine and edit/create some files as below:
 
@@ -203,7 +203,7 @@ Modifying your `.bashrc` in this way will automatically enable this environment 
 
 ##  Step 11: Install Donkeycar Python Code
 
-* Create and change to a direcotry you would like to use as the head of your projects.
+* Create and change to a directory you would like to use as the head of your projects.
 
 ```bash
 mkdir projects

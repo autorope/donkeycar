@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-    version='3.1.1',
+    version='3.1.2',
     long_description = long_description,
     description='Self driving library for python.',
     url='https://github.com/autorope/donkeycar',
@@ -35,7 +35,7 @@ setup(name='donkeycar',
             'donkey=donkeycar.management.base:execute_from_command_line',
         ],
     },
-    install_requires=['numpy', 
+    install_requires=['numpy',
                       'pillow',
                       'docopt',
                       'tornado',
@@ -70,9 +70,10 @@ setup(name='donkeycar',
                     'ci': ['codecov'],
                     'tf': ['tensorflow==1.13.1'],
                     'tf_gpu': ['tensorflow-gpu==1.13.1'],
+                    'mm1': ['pyserial']
                     },
     package_data={
-        'donkeycar': extra_files, 
+        'donkeycar': extra_files,
         },
 
       include_package_data=True,
@@ -94,7 +95,6 @@ setup(name='donkeycar',
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
 
-          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
       ],

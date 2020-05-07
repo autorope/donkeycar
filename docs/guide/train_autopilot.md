@@ -23,7 +23,7 @@ In a new terminal session on your host PC use rsync to copy your cars
 folder from the Raspberry Pi.
 
 ```bash
-rsync -rv --show-progress --partial pi@<your_pi_ip_address>:~/mycar/data/  ~/mycar/data/
+rsync -rv --progress --partial pi@<your_pi_ip_address>:~/mycar/data/  ~/mycar/data/
 ```
 
 ## Train a model
@@ -49,7 +49,7 @@ python ~/mycar/manage.py train --model ~/mycar/models/mypilot.h5
 * Use rsync again to move your trained model pilot back to your car.
 
 ```bash
-rsync -rv --show-progress --partial ~/mycar/models/ pi@<your_ip_address>:~/mycar/models/
+rsync -rv --progress --partial ~/mycar/models/ pi@<your_ip_address>:~/mycar/models/
 ```
 
 * Ensure to place car on the track so that it is ready to drive.
