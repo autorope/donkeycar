@@ -32,11 +32,15 @@ var driveHandler = new function() {
 
     var vehicle_id = ""
     var driveURL = ""
-    var vehicleURL = ""
+    var socket
 
     this.load = function() {
       driveURL = '/drive'
-      vehicleURL = '/drive'
+      socket = new WebSocket('ws://' + location.host + '/wsDrive');
+      
+      socket.onmessage = function (event) {
+          console.log(event.data);
+      };
 
       setBindings()
 
@@ -78,12 +82,6 @@ var driveHandler = new function() {
           if(e.which == 65) { updateDriveMode('auto') } // 'a' turn on auto mode
           if(e.which == 68) { updateDriveMode('user') } // 'd' turn on manual mode
           if(e.which == 83) { updateDriveMode('auto_angle') } // 'a' turn on auto mode
-      });
-
-
-      $('#pilot_select').on('change', function () {
-        state.pilot = $(this).val(); // get selected value
-        postPilot()
       });
 
       $('#mode_select').on('change', function () {
@@ -155,13 +153,6 @@ var driveHandler = new function() {
 
       });
     }
-
-
-    var postPilot = function(){
-        data = JSON.stringify({ 'pilot': state.pilot })
-        $.post(vehicleURL, data)
-    }
-
 
     var updateUI = function() {
       $("#throttleInput").val(state.tele.user.throttle);
@@ -267,7 +258,8 @@ var driveHandler = new function() {
                                 'drive_mode':state.driveMode,
                                 'recording': state.recording})
         console.log(data)
-        $.post(driveURL, data)
+        // $.post(driveURL, data)
+        socket.send(data)
         updateUI()
     };
 

@@ -22,6 +22,7 @@ from tornado.web import Application, RedirectHandler, StaticFileHandler, \
     RequestHandler
 from tornado.httpserver import HTTPServer
 import tornado.gen
+import tornado.websocket
 from socket import gethostname
 
 from ... import utils
@@ -114,10 +115,15 @@ class LocalWebController(tornado.web.Application):
         self.mode = mode
         self.recording = False
         self.port = port
+        
+        self.num_records = 0
+        self.wsclients = []
+
 
         handlers = [
             (r"/", RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
+            (r"/wsDrive", WebSocketDriveAPI),
             (r"/video", VideoAPI),
             (r"/static/(.*)", StaticFileHandler,
              {"path": self.static_file_path}),
@@ -134,8 +140,16 @@ class LocalWebController(tornado.web.Application):
         self.listen(self.port)
         IOLoop.instance().start()
 
-    def run_threaded(self, img_arr=None):
+    def run_threaded(self, img_arr=None, num_records=0):
         self.img_arr = img_arr
+        self.num_records = num_records
+
+        # Send record count to websocket clients
+        if (self.num_records is not None and self.recording is True):
+            if self.num_records % 10 == 0:
+                for wsclient in self.wsclients:
+                    wsclient.write_message(json.dumps({'num_records': self.num_records}))
+        
         return self.angle, self.throttle, self.mode, self.recording
         
     def run(self, img_arr=None):
@@ -162,6 +176,26 @@ class DriveAPI(RequestHandler):
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
         self.application.recording = data['recording']
+
+
+class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        # print("New client connected")
+        self.application.wsclients.append(self)
+
+    def on_message(self, message):
+        data = json.loads(message)
+        self.application.angle = data['angle']
+        self.application.throttle = data['throttle']
+        self.application.mode = data['drive_mode']
+        self.application.recording = data['recording']
+
+    def on_close(self):
+        # print("Client disconnected")
+        self.application.wsclients.remove(self)
 
 
 class VideoAPI(RequestHandler):

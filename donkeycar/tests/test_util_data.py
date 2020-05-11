@@ -93,6 +93,42 @@ class TestMapping(unittest.TestCase):
         assert max == 0
 
 
+class TestMapRangeFloat(unittest.TestCase):
+
+    def test_source_int_range(self):
+        assert 0.0 == map_range_float(0, 0, 100, 0, 1.0)
+        assert 0.5 == map_range_float(50, 0, 100, 0, 1.0)
+        assert 1.0 == map_range_float(100, 0, 100, 0, 1.0)
+
+        # Try a different range
+        assert 0.0 == map_range_float(0, 0, 20, 0, 1.0)
+        assert 0.25 == map_range_float(5, 0, 20, 0, 1.0)
+        assert 0.5 == map_range_float(10, 0, 20, 0, 1.0)
+        assert 0.75 == map_range_float(15, 0, 20, 0, 1.0)
+        assert 1.0 == map_range_float(20, 0, 20, 0, 1.0)
+
+    def test_source_float_range(self):
+        assert 0.0 == map_range_float(0, 0, 1.0, 0, 1.0)
+        assert 0.5 == map_range_float(0.5, 0, 1.0, 0, 1.0)
+        assert 1.0 == map_range_float(1.0, 0, 1.0, 0, 1.0)
+        assert 0.95 == map_range_float(0.95, 0, 1.0, 0, 1.0)
+
+    def test_negative(self):
+        assert 0.0 == map_range_float(0, -100, 100, -1.0, 1.0)
+        assert -1.0 == map_range_float(-100, -100, 100, -1.0, 1.0)
+        assert 1.0 == map_range_float(100, -100, 100, -1.0, 1.0)
+
+    def test_scale_down(self):
+        assert 0.0 == map_range_float(0, 0, 100, 0, 0.5)
+        assert 0.25 == map_range_float(50, 0, 100, 0, 0.5)
+        assert 0.5 == map_range_float(100, 0, 100, 0, 0.5)
+
+    def test_scale_up(self):
+        assert 0.0 == map_range_float(0, 0, 100, 0, 2.0)
+        assert 1.0 == map_range_float(50, 0, 100, 0, 2.0)
+        assert 2.0 == map_range_float(100, 0, 100, 0, 2.0)
+
+
 class TestMergeDicts(unittest.TestCase):
 
     def test_merge_two_dicts(self):

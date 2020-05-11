@@ -12,24 +12,26 @@ We are using the [SDSandbox](https://github.com/tawnkramer/sdsandbox) open sourc
 
 We use an OpenAI GYM style wrapper to interface with the server. The project for this wrapper is [gym-donkeycar](https://github.com/tawnkramer/gym-donkeycar).
 
-You may build the server from the source project above, but [pre-built binaries](https://github.com/tawnkramer/gym-donkeycar/releases/tag/v2020.4) for Ubuntu, Mac, and Windows. This has been tested on Ubuntu 18.04, Mac 10.13, and Windows 10.
+You may build the server from the source project above, but [pre-built binaries](https://github.com/tawnkramer/gym-donkeycar/releases) for Ubuntu, Mac, and Windows. This has been tested on Ubuntu 18.04, Mac 10.13, and Windows 10.
 
 ## Setup for Donkeycar users
 
-If you are using the donkeycar framework to race, you can use follow the guide to [setup the simulator](/guide/simulator/). Use this to practice before the race. When it comes time to race, modify your myconfig.py to have these two changes:
+If you are using the donkeycar framework to race, you can use follow the guide to [setup the simulator](/guide/simulator/). If visuals directions help out, checkout the [Windows Sim Setup Screen-Cast on Youtube](https://youtu.be/wqQMmHVT8qw). Use this to practice before the race. When it comes time to race, modify your myconfig.py to have these two changes:
 
 ```
 DONKEY_SIM_PATH = "remote"
 SIM_HOST = "trainmydonkey.com"
 ```
 
-This racing server will not always be running. We will bring it up for testing events and on race day.
+This racing server will not always be running. We will bring it up for testing events and on race day. We are aiming to have it up from 7pm-9pm Pacific every night a week before race day. If not up, ask on Discord and we will try to get things running.
+
+> Note: If you trained a donkey model, but wish to run it on a Jetson Nano or some platform where you are having troubles installing all the dependencies, [here's a single script](https://gist.github.com/tawnkramer/a74938653ab70e3fd22af1e4788a5001) you can use to run without any donkeycar or gym-donkeycar dependencies. Just pass it the model file name, the host name, and the car name. And it will run as a client to the race sim.
 
 ## Setup for Non-Donkeycar users
 
 If you would like to roll your own client, we have some python code to get you started. 
 
-* You will first want to download the sim [pre-built binary](https://github.com/tawnkramer/gym-donkeycar/releases/tag/v2020.4) for your platform. Extract that where you like.
+* You will first want to download the sim [pre-built binary](https://github.com/tawnkramer/gym-donkeycar/releases) for your platform. Extract that where you like.
 
 * Then clone the gym-donkeycar python project and install. If you are using a virtual environment, don't forget to activate it first. 
 ```bash

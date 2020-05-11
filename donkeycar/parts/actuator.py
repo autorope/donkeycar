@@ -54,21 +54,25 @@ class PiGPIO_PWM():
     #
     # Note: the range of pulses will differ from those required for PCA9685
     # and can range from 12K to 170K
+    #
+    # If you use a control circuit that inverts the steering signal, set inverted to True
+    # Default multipler for pulses from config etc is 100
     '''
 
-    def __init__(self, pin, pgio=None, freq=75):
+    def __init__(self, pin, pgio=None, freq=75, inverted=False):
         import pigpio
 
         self.pin = pin
         self.pgio = pgio or pigpio.pi()
         self.freq = freq
+        self.inverted = inverted
         self.pgio.set_mode(self.pin, pigpio.OUTPUT)
 
     def __del__(self):
         self.pgio.stop()
 
     def set_pulse(self, pulse):
-        self.pgio.hardware_PWM(self.pin, self.freq, pulse)
+        self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
 
     def run(self, pulse):
         self.set_pulse(pulse)
