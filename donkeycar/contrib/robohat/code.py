@@ -1,10 +1,11 @@
 # Donkey Car Driver for Robotics Masters Robo HAT MM1
 #
 # Notes:
-#   This is to be run using CircuitPython 5.0
+#   This is to be run using CircuitPython 5.3
 #   Date: 15/05/2019
 #   Updated: 20/02/2020
 #   Updated: 8/03/2020 (sctse999)
+#   Updated: 11/05/2020 (wallarug)
 #
 #
 
@@ -20,10 +21,14 @@ logger = logging.getLogger('code')
 logger.setLevel(logging.INFO)
 
 # Customisation these variables
-SMOOTHING_INTERVAL_IN_S = 0.025
 DEBUG = False
 USB_SERIAL = False
+SMOOTHING_INTERVAL_IN_S = 0.025
 ACCEL_RATE = 10
+
+## cannot have DEBUG and USB_SERIAL
+if USB_SERIAL:
+    DEBUG = False
 
 ## functions
 def servo_duty_cycle(pulse_ms, frequency = 60):
@@ -121,7 +126,8 @@ def main():
         if(len(steering.channel) != 0):
             state_changed(steering)
 
-        logger.info("Get: steering=%i, throttle=%i" % (int(steering.value), int(throttle.value)))
+        if DEBUG:
+            logger.info("Get: steering=%i, throttle=%i" % (int(steering.value), int(throttle.value)))
         
         if(USB_SERIAL):
             # simulator USB
