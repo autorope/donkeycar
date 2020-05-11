@@ -102,6 +102,20 @@ donkey tubcheck <tub_path> [--fix]
 * It will print the records that throw an exception while reading
 * The optional `--fix` will delete records that have problems
 
+## Augment Tub
+
+This command allows you to perform the data augmentation on a tub or set of tubs directly. The augmentation is also available in training via the `--aug` flag. Preprocessing the tub can speed up the training as the augmentation can take some time. Also you can train with the unmodified tub and the augmented tub joined together. 
+
+Usage:
+
+```bash
+donkey tubaugment <tub_path> [--inplace]
+```
+
+* Run on the host computer or the robot
+* The optional `--inplace` will replace the original tub images when provided. Otherwise `tub_XY_YY-MM-DD` will be copied to a new tub `tub_XX_aug_YY-MM-DD` and the original data remains unchanged
+
+
 ## Histogram
 
 This command will show a pop-up window showing the histogram of record values in a given tub.
@@ -186,7 +200,7 @@ python manage.py drive --model models/drive.json
 
 ## Joystick Wizard
 
-This command line wizard will walk you through the steps to use your joystick.
+This command line wizard will walk you through the steps to create a custom/customized controller.  
 
 Usage:
 
@@ -194,31 +208,10 @@ Usage:
 donkey createjs
 ```
 
-* This command may be run from `~/mycar` dir
-* Run on the pi
-* First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`
-* Debian commonly creates the joystick device file at `/dev/input/js0`. If not, find out where.
-* Run the command `donkey createjs` and it will create a file, by default my_joystick.py. Drop that next to your manage.py
-* Modify manage.py to replace:
-
-```python
-    from donkeycar.parts.controller import get_js_controller
-
-    ctr = get_js_controller(cfg)
-```
-
-with
-
-```python
-    from my_joystick import MyJoystickController
-
-    ctr = MyJoystickController(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
-                                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-                                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-
-    ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
-```
+* Run the command from your `~/mycar` dir
+* First make sure the OS can access your device. The utility `jstest` can be useful here. Installed via: `sudo apt install joystick`  You must pass this utility the path to your controller's device.  Typically this is `/dev/input/js0`  However, it if is not, you must find the correct device path and provide it to the utility.  You will need this for the createjs command as well.
+* Run the command `donkey createjs` and it will create a file named my_joystick.py in your `~/mycar` folder, next to your manage.py
+* Modify myconfig.py to set `CONTROLLER_TYPE="custom"` to use your my_joystick.py controller
 
 ## Visualize CNN filter activations
 

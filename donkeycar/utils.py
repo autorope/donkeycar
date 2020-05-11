@@ -30,7 +30,7 @@ one_byte_scale = 1.0 / 255.0
 def scale(im, size=128):
     '''
     accepts: PIL image, size of square sides
-    returns: PIL image scaled so sides lenght = size 
+    returns: PIL image scaled so sides lenght = size
     '''
     size = (size,size)
     im.thumbnail(size, Image.ANTIALIAS)
@@ -122,7 +122,7 @@ def rgb2gray(rgb):
 
 
 def img_crop(img_arr, top, bottom):
-    
+
     if bottom is 0:
         end = img_arr.shape[0]
     else:
@@ -186,11 +186,11 @@ def make_dir(path):
 
 
 def zip_dir(dir_path, zip_path):
-    """ 
+    """
     Create and save a zipfile of a one level directory
     """
     file_paths = glob.glob(dir_path + "/*") #create path to search for files.
-    
+
     zf = zipfile.ZipFile(zip_path, 'w')
     dir_name = os.path.basename(dir_path)
     for p in file_paths:
@@ -241,8 +241,8 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
 
 
 def map_range(x, X_min, X_max, Y_min, Y_max):
-    ''' 
-    Linear mapping between two ranges of values 
+    '''
+    Linear mapping between two ranges of values
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
@@ -251,6 +251,21 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
     y = ((x-X_min) / XY_ratio + Y_min) // 1
 
     return int(y)
+
+
+def map_range_float(x, X_min, X_max, Y_min, Y_max):
+    '''
+    Same as map_range but supports floats return, rounded to 2 decimal places
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    # print("y= {}".format(y))
+
+    return round(y,2)
 
 '''
 ANGLES
@@ -295,8 +310,8 @@ OTHER
 '''
 
 def map_frange(x, X_min, X_max, Y_min, Y_max):
-    ''' 
-    Linear mapping between two ranges of values 
+    '''
+    Linear mapping between two ranges of values
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
@@ -317,7 +332,7 @@ def merge_two_dicts(x, y):
 
 def param_gen(params):
     '''
-    Accepts a dictionary of parameter options and returns 
+    Accepts a dictionary of parameter options and returns
     a list of dictionary with the permutations of the parameters.
     '''
     for p in itertools.product(*params.values()):
@@ -393,13 +408,13 @@ def gather_tub_paths(cfg, tub_names=None):
         return dir_paths
 
 
-def gather_tubs(cfg, tub_names):    
+def gather_tubs(cfg, tub_names):
     '''
     takes as input the configuration, and the comma seperated list of tub paths
     returns a list of Tub objects initialized to each path
     '''
     from donkeycar.parts.datastore import Tub
-    
+
     tub_paths = gather_tub_paths(cfg, tub_names)
     tubs = [Tub(p) for p in tub_paths]
 
@@ -443,7 +458,7 @@ def get_model_by_type(model_type, cfg):
         KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, \
         KerasLocalizer, KerasLatent
     from donkeycar.parts.tflite import TFLitePilot
- 
+
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
     print("\"get_model_by_type\" model Type is: {}".format(model_type))
@@ -456,9 +471,9 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
         kl = KerasLocalizer(num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
     elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
-        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
+        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)
     elif model_type == "imu":
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
+        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "linear":
         kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
@@ -470,9 +485,9 @@ def get_model_by_type(model_type, cfg):
         from donkeycar.parts.coral import CoralLinearPilot
         kl = CoralLinearPilot()
     elif model_type == "3d":
-        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
+        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
     elif model_type == "rnn":
-        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
+        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
     elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
     elif model_type == "latent":
@@ -506,7 +521,7 @@ def get_test_img(model):
 
 def train_test_split(data_list, shuffle=True, test_size=0.2):
     '''
-    take a list, split it into two sets while selecting a 
+    take a list, split it into two sets while selecting a
     random element in order to shuffle the results.
     use the test_size to choose the split percent.
     shuffle is always True, left there to be backwards compatible
@@ -527,7 +542,7 @@ def train_test_split(data_list, shuffle=True, test_size=0.2):
     val_data = data_list
 
     return train_data, val_data
-    
+
 
 """
 Timers
