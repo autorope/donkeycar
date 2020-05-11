@@ -31,7 +31,7 @@ There are many ways to use the simulator, depending on your goals. You can use t
 cd ~/projects
 git clone https://github.com/tawnkramer/gym-donkeycar
 conda activate donkey
-pip install -e gym-donkeycar
+pip install -e .[gym-donkeycar]
 ```
 
 * You may use an existing ~/mycar donkey application, or begin a new one. Here we will start fresh: 
@@ -51,6 +51,9 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"
 
 
 > Note: your path to the executable will vary depending on platform and user.
+>  Windows: DonkeySimWin/donkey_sim.exe
+>  Mac OS: DonkeySimMac/donkey_sim.app/Contents/MacOS/sdsim
+>  Linux: DonkeySimLinux/donkey_sim.x86_64
 
 
 ## Drive
