@@ -1508,7 +1508,7 @@ def get_js_controller(cfg):
     elif cfg.CONTROLLER_TYPE == "pygame":
         cont_class = PyGamePS4JoystickController
     else:
-        raise("Unknown controller type: " + cfg.CONTROLLER_TYPE)
+        raise( Exception("Unknown controller type: " + cfg.CONTROLLER_TYPE))
 
     ctr = cont_class(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
                                 throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
