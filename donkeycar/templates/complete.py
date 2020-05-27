@@ -140,7 +140,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.CONTROLLER_TYPE == "MM1":
             from donkeycar.parts.robohat import RoboHATController            
-            ctr = RoboHATController()
+            ctr = RoboHATController(cfg)
         elif "custom" == cfg.CONTROLLER_TYPE:
             #
             # custom controller created with `donkey createjs` command
@@ -162,15 +162,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
+        
+        V.add(ctr, 
+          inputs=['cam/image_array'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          threaded=True)
 
     else:
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-
-
-    V.add(ctr,
-          inputs=['cam/image_array'],
+        
+        V.add(ctr,
+          inputs=['cam/image_array', 'tub/num_records'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
 
@@ -649,9 +653,14 @@ if __name__ == '__main__':
         continuous = args['--continuous']
         aug = args['--aug']
         dirs = preprocessFileList( args['--file'] )
+
         if tub is not None:
             tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
             dirs.extend( tub_paths )
+
+        if model_type is None:
+            model_type = cfg.DEFAULT_MODEL_TYPE
+            print("using default model type of", model_type)
 
         multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
 

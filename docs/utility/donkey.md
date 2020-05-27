@@ -102,6 +102,20 @@ donkey tubcheck <tub_path> [--fix]
 * It will print the records that throw an exception while reading
 * The optional `--fix` will delete records that have problems
 
+## Augment Tub
+
+This command allows you to perform the data augmentation on a tub or set of tubs directly. The augmentation is also available in training via the `--aug` flag. Preprocessing the tub can speed up the training as the augmentation can take some time. Also you can train with the unmodified tub and the augmented tub joined together. 
+
+Usage:
+
+```bash
+donkey tubaugment <tub_path> [--inplace]
+```
+
+* Run on the host computer or the robot
+* The optional `--inplace` will replace the original tub images when provided. Otherwise `tub_XY_YY-MM-DD` will be copied to a new tub `tub_XX_aug_YY-MM-DD` and the original data remains unchanged
+
+
 ## Histogram
 
 This command will show a pop-up window showing the histogram of record values in a given tub.
