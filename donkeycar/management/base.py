@@ -1,11 +1,11 @@
 
-import sys
-import os
-import socket
 import shutil
 import argparse
 import json
-import time
+
+from socket import *
+import os
+from threading import Thread
 
 import donkeycar as dk
 from donkeycar.parts.datastore import Tub
@@ -365,6 +365,7 @@ class ConSync(BaseCommand):
             os.system(command)
             time.sleep(5)
 
+
 class ConTrain(BaseCommand):
     '''
     continuously train data
@@ -407,7 +408,7 @@ class ShowCnnActivations(BaseCommand):
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)
 
-        model = load_model(model_path)
+        model = load_model(model_path, compile=False)
         image = load_scaled_image_arr(image_path, cfg)[None, ...]
 
         conv_layer_names = self.get_conv_layers(model)
@@ -525,9 +526,9 @@ class ShowPredictionPlots(BaseCommand):
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
-        parser.add_argument('--tub', nargs='+', help='paths to tubs')
+        parser.add_argument('--tub', nargs='+', help='The tub to make plot from')
         parser.add_argument('--model', default=None, help='name of record to create histogram')
-        parser.add_argument('--limit', default=1000, help='how many records to process')
+        parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
@@ -539,6 +540,51 @@ class ShowPredictionPlots(BaseCommand):
         cfg = load_config(args.config)
         self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
         
+
+class TubAugment(BaseCommand):
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='tubaugment',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('tubs', nargs='+', help='paths to tubs')
+        parser.add_argument('--inplace', dest='inplace', action='store_true',
+                            help='If tub should be changed in place or new '
+                                 'tub will be created')
+        parser.set_defaults(inplace=False)
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def augment(self, tub_paths, inplace=False):
+        """
+        :param tub_paths:   path list to tubs
+        :param inplace:     if tub should be changed or copied
+        :return:            None
+        """
+        cfg = load_config('config.py')
+        tubs = gather_tubs(cfg, tub_paths)
+
+        for tub in tubs:
+            if inplace:
+                tub.augment_images()
+            else:
+                tub_path = tub.path
+                # remove trailing slash if exits
+                if tub_path[-1] == '/':
+                    tub_path = tub_path[:-1]
+                # create new tub path by inserting '_aug' after 'tub_XY'
+                head, tail = os.path.split(tub_path)
+                tail_list = tail.split('_')
+                tail_list.insert(2, 'aug')
+                new_tail = '_'.join(tail_list)
+                new_path = os.path.join(head, new_tail)
+                # copy whole tub to new location and run augmentation
+                shutil.copytree(tub.path, new_path)
+                new_tub = Tub(new_path)
+                new_tub.augment_images()
+
+    def run(self, args):
+        args = self.parse_args(args)
+        self.augment(args.tubs, args.inplace)
+
 
 def execute_from_command_line():
     """
@@ -552,12 +598,13 @@ def execute_from_command_line():
             'tubhist': ShowHistogram,
             'tubplot': ShowPredictionPlots,
             'tubcheck': TubCheck,
+            'tubaugment': TubAugment,
             'makemovie': MakeMovieShell,            
             'createjs': CreateJoystick,
             'consync': ConSync,
             'contrain': ConTrain,
             'cnnactivations': ShowCnnActivations,
-            'update': UpdateCar,
+            'update': UpdateCar
                 }
     
     args = sys.argv[:]
@@ -573,4 +620,3 @@ def execute_from_command_line():
     
 if __name__ == "__main__":
     execute_from_command_line()
-    

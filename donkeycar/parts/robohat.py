@@ -38,10 +38,9 @@ class RoboHATController:
         self.SHOW_STEERING_VALUE = cfg.MM1_SHOW_STEERING_VALUE
         self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
         self.debug = debug
-
-        # Serial port - laptop: 'COM3', Arduino: '/dev/ttyACM0'
+        
         try:
-            self.serial = serial.Serial('/dev/ttyS0', 115200, timeout=1)
+            self.serial = serial.Serial(cfg.MM1_SERIAL_PORT, 115200, timeout=1)
         except serial.SerialException:
             print("Serial port not found!  Please enable: sudo raspi-config")
         except serial.SerialTimeoutException:
@@ -149,7 +148,7 @@ class RoboHATDriver:
 
     def __init__(self, cfg, debug=False):
         # Initialise the Robo HAT using the serial port
-        self.pwm = serial.Serial('/dev/ttyS0', 115200, timeout=1)
+        self.pwm = serial.Serial(cfg.MM1_SERIAL_PORT, 115200, timeout=1)
         self.MAX_FORWARD = cfg.MM1_MAX_FORWARD
         self.MAX_REVERSE = cfg.MM1_MAX_REVERSE
         self.STOPPED_PWM = cfg.MM1_STOPPED_PWM

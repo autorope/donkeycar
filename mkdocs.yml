@@ -18,6 +18,7 @@ pages:
       - 'Get driving.': guide/get_driving.md
       - 'Train an autopilot.': guide/train_autopilot.md
       - 'Donkey Simulator.': guide/simulator.md
+      - 'Virtual Race League.': guide/virtual_race_league.md
   - Parts:
       - 'About': parts/about.md
       - 'Actuators': parts/actuators.md
