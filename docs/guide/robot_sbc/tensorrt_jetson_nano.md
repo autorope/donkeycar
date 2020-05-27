@@ -32,7 +32,7 @@ nvcc --version
 
 You should see something like:
 
-```
+```text
 nvcc: NVIDIA (R) Cuda compiler driver
 Copyright (c) 2005-2018 NVIDIA Corporation
 Built on ...
@@ -66,19 +66,23 @@ After you train the `linear` model you end up with a file with a `.h5` extension
 ```bash
 # You end up with a Linear.h5 in the models folder
 python manage.py train --model=./models/Linear.h5 --tub=./data/tub_1_19-06-29,...
-# Freeze model using freeze_model.py in donkeycar/scripts
-# The frozen model is stored as protocol buffers.
+
+# (optional) copy './models/Linear.h5' from your desktop computer to your Jetson Nano in your working dir (~mycar/models/)
+
+# Freeze model using freeze_model.py in donkeycar/scripts ; the frozen model is stored as protocol buffers.
 # This command also exports some metadata about the model which is saved in ./models/Linear.metadata
-python freeze_model.py --model=./models/Linear.h5 --output=./models/Linear.pb
+python ~/projects/donkeycar/scripts/freeze_model.py --model=~/mycar/models/Linear.h5 --output=~/mycar/models/Linear.pb
+
 # Convert the frozen model to UFF. The command below creates a file ./models/Linear.uff
-convert-to-uff ./models/Linear.pb
+cd /usr/lib/python3.6/dist-packages/uff/bin/
+python convert_to_uff.py ~/mycar/models/Linear.pb
 ```
 
 Now copy the converted `uff` model and the `metadata` to your Jetson Nano.
 
 ## Step 4
 
-* In `config.py` pick the model type as `tensorrt_linear`.
+* In `myconfig.py` pick the model type as `tensorrt_linear`.
 
 ```python
 DEFAULT_MODEL_TYPE = `tensorrt_linear`

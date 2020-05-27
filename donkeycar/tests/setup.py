@@ -4,6 +4,7 @@ import pytest
 from donkeycar.parts.datastore import Tub
 from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
 from donkeycar.management.base import CreateCar
+import numpy as np
 
 def on_pi():
     if 'arm' in platform.machine():
@@ -30,15 +31,18 @@ def tubs(tmpdir, tubs=5):
     return (str(tubs_dir), tub_paths, tubs)
     
 def create_sample_tub(path, records=128):
-    inputs=['cam/image_array', 'user/angle', 'user/throttle']
-    types=['image_array', 'float', 'float']
+    inputs=['cam/image_array', 'user/angle', 'user/throttle', 'location/one_hot_state_array']
+    types=['image_array', 'float', 'float', 'vector']
     t = Tub(path, inputs=inputs, types=types)
     cam = SquareBoxCamera()
     tel = MovingSquareTelemetry()
+    num_loc = 10
     for _ in range(records):
         x, y = tel.run()
         img_arr = cam.run(x, y)
-        t.put_record({'cam/image_array': img_arr, 'user/angle': x, 'user/throttle':y})
+        loc = [0 for i in range(num_loc)]
+        loc[1] = 1.0
+        t.put_record({'cam/image_array': img_arr, 'user/angle': x, 'user/throttle':y , 'location/one_hot_state_array':loc})
 
     global temp_tub_path
     temp_tub_path = t

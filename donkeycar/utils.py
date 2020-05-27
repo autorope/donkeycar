@@ -15,6 +15,8 @@ import subprocess
 import math
 import random
 import time
+import signal
+
 
 from PIL import Image
 import numpy as np
@@ -22,11 +24,13 @@ import numpy as np
 '''
 IMAGES
 '''
+one_byte_scale = 1.0 / 255.0
+
 
 def scale(im, size=128):
     '''
     accepts: PIL image, size of square sides
-    returns: PIL image scaled so sides lenght = size 
+    returns: PIL image scaled so sides lenght = size
     '''
     size = (size,size)
     im.thumbnail(size, Image.ANTIALIAS)
@@ -57,16 +61,17 @@ def arr_to_binary(arr):
 
 def arr_to_img(arr):
     '''
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     '''
     arr = np.uint8(arr)
     img = Image.fromarray(arr)
     return img
 
+
 def img_to_arr(img):
     '''
-    accepts: numpy array with shape (Hight, Width, Channels)
+    accepts: numpy array with shape (Height, Width, Channels)
     returns: binary stream (used to save to database)
     '''
     return np.array(img)
@@ -89,7 +94,7 @@ def binary_to_img(binary):
 
 
 def norm_img(img):
-    return (img - img.mean() / np.std(img))/255.0
+    return (img - img.mean() / np.std(img)) * one_byte_scale
 
 
 def create_video(img_dir_path, output_video_path):
@@ -117,17 +122,22 @@ def rgb2gray(rgb):
 
 
 def img_crop(img_arr, top, bottom):
-    
+
     if bottom is 0:
         end = img_arr.shape[0]
     else:
         end = -bottom
-    return img_arr[top:end,: ,:]
+    return img_arr[top:end, ...]
+
 
 def normalize_and_crop(img_arr, cfg):
-    img_arr = img_arr.astype(np.float32) / 255.0
+    img_arr = img_arr.astype(np.float32) * one_byte_scale
     if cfg.ROI_CROP_TOP or cfg.ROI_CROP_BOTTOM:
         img_arr = img_crop(img_arr, cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
+        if len(img_arr.shape) == 2:
+            img_arrH = img_arr.shape[0]
+            img_arrW = img_arr.shape[1]
+            img_arr = img_arr.reshape(img_arrH, img_arrW, 1)
     return img_arr
 
 
@@ -143,15 +153,16 @@ def load_scaled_image_arr(filename, cfg):
             img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
         img_arr = np.array(img)
         img_arr = normalize_and_crop(img_arr, cfg)
+        croppedImgH = img_arr.shape[0]
+        croppedImgW = img_arr.shape[1]
         if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-            img_arr = dk.utils.rgb2gray(img_arr).reshape(cfg.IMAGE_H, cfg.IMAGE_W, 1)
+            img_arr = dk.utils.rgb2gray(img_arr).reshape(croppedImgH, croppedImgW, 1)
     except Exception as e:
         print(e)
         print('failed to load image:', filename)
         img_arr = None
     return img_arr
 
-        
 
 '''
 FILES
@@ -175,11 +186,11 @@ def make_dir(path):
 
 
 def zip_dir(dir_path, zip_path):
-    """ 
+    """
     Create and save a zipfile of a one level directory
     """
     file_paths = glob.glob(dir_path + "/*") #create path to search for files.
-    
+
     zf = zipfile.ZipFile(zip_path, 'w')
     dir_name = os.path.basename(dir_path)
     for p in file_paths:
@@ -190,11 +201,11 @@ def zip_dir(dir_path, zip_path):
 
 
 
-
 '''
 BINNING
 functions to help converte between floating point numbers and categories.
 '''
+
 
 def clamp(n, min, max):
     if n < min:
@@ -202,6 +213,7 @@ def clamp(n, min, max):
     if n > max:
         return max
     return n
+
 
 def linear_bin(a, N=15, offset=1, R=2.0):
     '''
@@ -229,8 +241,8 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
 
 
 def map_range(x, X_min, X_max, Y_min, Y_max):
-    ''' 
-    Linear mapping between two ranges of values 
+    '''
+    Linear mapping between two ranges of values
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
@@ -240,9 +252,26 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
 
     return int(y)
 
+
+def map_range_float(x, X_min, X_max, Y_min, Y_max):
+    '''
+    Same as map_range but supports floats return, rounded to 2 decimal places
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    # print("y= {}".format(y))
+
+    return round(y,2)
+
 '''
 ANGLES
 '''
+
+
 def norm_deg(theta):
     while theta > 360:
         theta -= 360
@@ -250,7 +279,9 @@ def norm_deg(theta):
         theta += 360
     return theta
 
+
 DEG_TO_RAD = math.pi / 180.0
+
 
 def deg2rad(theta):
     return theta * DEG_TO_RAD
@@ -258,6 +289,8 @@ def deg2rad(theta):
 '''
 VECTORS
 '''
+
+
 def dist(x1, y1, x2, y2):
     return math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
 
@@ -272,11 +305,23 @@ def my_ip():
     return s.getsockname()[0]
 
 
-
-
 '''
 OTHER
 '''
+
+def map_frange(x, X_min, X_max, Y_min, Y_max):
+    '''
+    Linear mapping between two ranges of values
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    return y
+
+
 def merge_two_dicts(x, y):
     """Given two dicts, merge them into a new dict as a shallow copy."""
     z = x.copy()
@@ -287,7 +332,7 @@ def merge_two_dicts(x, y):
 
 def param_gen(params):
     '''
-    Accepts a dictionary of parameter options and returns 
+    Accepts a dictionary of parameter options and returns
     a list of dictionary with the permutations of the parameters.
     '''
     for p in itertools.product(*params.values()):
@@ -311,19 +356,10 @@ def run_shell_command(cmd, cwd=None, timeout=15):
         err.append(line)
     return out, err, proc.pid
 
-'''
-def kill(proc_pid):
-    process = psutil.Process(proc_pid)
-    for proc in process.children(recursive=True):
-        proc.kill()
-    process.kill()
-'''
-import signal
+
 
 def kill(proc_id):
     os.kill(proc_id, signal.SIGINT)
-
-
 
 
 def eprint(*args, **kwargs):
@@ -333,6 +369,7 @@ def eprint(*args, **kwargs):
 """
 Tub management
 """
+
 
 def expand_path_masks(paths):
     '''
@@ -371,13 +408,13 @@ def gather_tub_paths(cfg, tub_names=None):
         return dir_paths
 
 
-def gather_tubs(cfg, tub_names):    
+def gather_tubs(cfg, tub_names):
     '''
     takes as input the configuration, and the comma seperated list of tub paths
     returns a list of Tub objects initialized to each path
     '''
     from donkeycar.parts.datastore import Tub
-    
+
     tub_paths = gather_tub_paths(cfg, tub_names)
     tubs = [Tub(p) for p in tub_paths]
 
@@ -396,6 +433,7 @@ def get_record_index(fnm):
     sl = os.path.basename(fnm).split('_')
     return int(sl[1].split('.')[0])
 
+
 def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     tubs = gather_tubs(cfg, tub_names)
@@ -410,14 +448,17 @@ def gather_records(cfg, tub_names, opts=None, verbose=False):
 
     return records
 
+
 def get_model_by_type(model_type, cfg):
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
-    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, KerasLocalizer, KerasLatent
+    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, \
+        KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, \
+        KerasLocalizer, KerasLatent
     from donkeycar.parts.tflite import TFLitePilot
- 
+
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
     print("\"get_model_by_type\" model Type is: {}".format(model_type))
@@ -428,11 +469,11 @@ def get_model_by_type(model_type, cfg):
     if model_type == "tflite_linear":
         kl = TFLitePilot()
     elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
-        kl = KerasLocalizer(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
+        kl = KerasLocalizer(num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
     elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
-        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)        
+        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)
     elif model_type == "imu":
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)        
+        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape)
     elif model_type == "linear":
         kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
@@ -440,6 +481,9 @@ def get_model_by_type(model_type, cfg):
         # to happen when using TF-GPU for training.
         from donkeycar.parts.tensorrt import TensorRTLinear
         kl = TensorRTLinear(cfg=cfg)
+    elif model_type == "coral_tflite_linear":
+        from donkeycar.parts.coral import CoralLinearPilot
+        kl = CoralLinearPilot()
     elif model_type == "3d":
         kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH)
     elif model_type == "rnn":
@@ -448,10 +492,14 @@ def get_model_by_type(model_type, cfg):
         kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
     elif model_type == "latent":
         kl = KerasLatent(input_shape=input_shape)
+    elif model_type == "fastai":
+        from donkeycar.parts.fastai import FastAiPilot
+        kl = FastAiPilot()
     else:
         raise Exception("unknown model type: %s" % model_type)
 
     return kl
+
 
 def get_test_img(model):
     '''
@@ -465,7 +513,7 @@ def get_test_img(model):
     except Exception as e:
         count, seq_len, h, w, ch = model.inputs[0].get_shape()
 
-    #generate random array in the right shape
+    # generate random array in the right shape
     img = np.random.rand(int(h), int(w), int(ch))
 
     return img
@@ -473,13 +521,12 @@ def get_test_img(model):
 
 def train_test_split(data_list, shuffle=True, test_size=0.2):
     '''
-    take a list, split it into two sets while selecting a 
+    take a list, split it into two sets while selecting a
     random element in order to shuffle the results.
     use the test_size to choose the split percent.
     shuffle is always True, left there to be backwards compatible
     '''
-    assert(shuffle==True)
-    
+    assert shuffle
     train_data = []
 
     target_train_size = len(data_list) * (1. - test_size)
@@ -491,16 +538,16 @@ def train_test_split(data_list, shuffle=True, test_size=0.2):
         train_data.append(data_list.pop(i_choice))
         i_sample += 1
 
-    #remainder of the original list is the validation set
+    # remainder of the original list is the validation set
     val_data = data_list
 
     return train_data, val_data
-    
 
 
 """
 Timers
 """
+
 
 class FPSTimer(object):
     def __init__(self):

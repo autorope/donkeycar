@@ -56,3 +56,9 @@ def test_3dconv():
     assert km.model is not None
     img = get_test_img(km.model)
     km.run(img)
+
+def test_localizer():
+    km = KerasLocalizer()
+    assert km.model is not None   
+    img = get_test_img(km.model)
+    km.run(img)

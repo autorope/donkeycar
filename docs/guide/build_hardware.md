@@ -5,17 +5,17 @@
 * [Overview](build_hardware.md#overview)
 * [Parts Included](build_hardware.md#parts-included)
 * [Hardware:](build_hardware.md#hardware)
-    * [Step 1: Mount Hexagon Copper Standoff Spacer to Base Plate](build_hardware.md#step-1-mount-hexagon-copper-standoff-spacer-to-base-plate)
-    * [Step 2: Attach Raspberry Pi, Servo Driver, and Voltage Converter to Base Plate](build_hardware.md#step-2-attach-raspberry-pi-servo-driver-and-voltage-converter-to-base-plate)
-    * [Step 3: Assemble Base Plate and Roll Cage](build_hardware.md#step-3-assemble-base-plate-and-roll-cage)
-    * [Step 4: Connect Servo Driver and Voltage Converter to Raspberry Pi](build_hardware.md#step-4-connect-servo-driver-and-voltage-converter-to-raspberry-pi)
-    * [Step 5: Attach Camera](build_hardware.md#step-5-attach-camera)
-    * [Step 6: Put it all together](build_hardware.md#step-6-put-it-all-together)
- * [Software](install_software.md)
-
-&nbsp;
+  * [Step 1: Print Parts](build_hardware.md#step-1-print-parts)
+  * [Step 2: Clean up parts](build_hardware.md#step-2-clean-up-parts)
+  * [Step 3: Assemble Top plate and Roll Cage](build_hardware.md#step-3-assemble-top-plate-and-roll-cage)
+  * [Step 4: Connect Servo Shield to Raspberry Pi](build_hardware.md#step-4-connect-servo-shield-to-raspberry-pi)
+  * [Step 5: Attach Raspberry Pi to 3D Printed bottom plate](build_hardware.md#step-5-attach-raspberry-pi-to-3d-printed-bottom-plate)
+  * [Step 6: Attach Camera](build_hardware.md#step-6-attach-camera)
+  * [Step 7: Put it all together](build_hardware.md#step-7-put-it-all-together)
+* [Software](install_software.md)
 
 ## Overview
+
 
 These are instructions for the [Donkey Car Starter Kit](https://www.robocarstore.com/products/donkey-car-starter-kit) purchased from [Robocar Store](https://robocarstore.com/).
 For instructions of the vanilla Donkey Car, please visit https://docs.donkeycar.com.
@@ -75,6 +75,7 @@ LiPo batteries have significantly better energy density and have a better dropof
 
 First, peel off the protective layer from the base plate. A lot of customer does not aware that this layer should be peeled off.
 
+### Option 2: Bottoms Up Build
 
 ![donkey](../assets/build_hardware/robocarstore/1a.jpg)
 
@@ -100,6 +101,7 @@ Note that you should be able to access the SD card from this outlet. At this poi
 
 
 
+![donkey](/assets/build_hardware/traxxas.png)
 
 &nbsp;
 ### Step 3: Connect Servo Driver to Raspberry Pi
@@ -134,7 +136,6 @@ Attach the USB cable between the Voltage Converter and the Raspberry Pi.
 Use the 3 M3x8mm PT screws from the bottom of the base plate to attach and hold the roll cage on top of it.
 
 ![donkey](../assets/build_hardware/robocarstore/5a.png)
-
 
 
 &nbsp;
@@ -173,8 +174,6 @@ Second run the servo cables up to the car.  The throttle cable runs to channel 0
 Now you are done with the hardware!!
 
 
-&nbsp;
 ## Software
-Congrats!  Now to get your get your car moving, see the [software instructions](install_software.md) section.
 
 ![donkey](../assets/build_hardware/robocarstore/0.jpg)

@@ -8,47 +8,47 @@
 
 * type `git`. If the command is not found, then install [git 64 bit](https://git-scm.com/download/win)
 
-
 * Change to a dir you would like to use as the head of your projects.
 
-```
+```bash
 mkdir projects
 cd projects
 ```
 
 * Get the latest donkey from Github.
 
-```
+```bash
 git clone https://github.com/autorope/donkeycar
 cd donkeycar
 git checkout master
 ```
 
 * If this is not your first install, update Conda and remove old donkey
-```
+
+```bash
 conda update -n base -c defaults conda
 conda env remove -n donkey
 ```
 
 * Create the Python anaconda environment
 
-```
+```bash
 conda env create -f install\envs\windows.yml
 conda activate donkey
 pip install -e .[pc]
 ```
 
-* Optionally Install Tensorflow GPU
+* Optionally Install Tensorflow GPU - only for NVidia Graphics cards
 
 If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
 
-```
+```bash
 conda install tensorflow-gpu==1.13.1
 ```
 
 * Create your local working dir:
 
-```
+```bash
 donkey createcar --path ~/mycar
 ```
 

@@ -5,30 +5,35 @@ repo_url: https://github.com/robocarstore/donkeycar
 edit_uri: edit/master/docs
 google_analytics: ['UA-118649236-2', 'docs.robocarstore.com']
 extra_css:
-    - extra.css
+  - extra.css
 
 pages:
-    - Home: index.md
-    - User Guide:
-        - 'Build a car.': guide/build_hardware.md
-        - 'Install the software.': guide/install_software.md
-        - 'Create Donkeycar App.': guide/create_application.md
-        - 'Calibrate steering and throttle.': guide/calibrate.md
-        - 'Get driving.': guide/get_driving.md
-        - 'Train an autopilot.': guide/train_autopilot.md
-        - 'Donkey Simulator.': guide/simulator.md
-    - Parts:
-        - 'About': parts/about.md
-        - 'Actuators': parts/actuators.md
-        - 'Controllers': parts/controllers.md
-        - 'Stores': parts/stores.md
-        - 'IMU': parts/imu.md
-    - Utilities:
-        - 'donkey': utility/donkey.md
+  - Home: index.md
+  - User Guide:
+      - 'Build a car.': guide/build_hardware.md
+      - 'Install the software.': guide/install_software.md
+      - 'Create Donkeycar App.': guide/create_application.md
+      - 'Calibrate steering and throttle.': guide/calibrate.md
+      - 'Get driving.': guide/get_driving.md
+      - 'Train an autopilot.': guide/train_autopilot.md
+      - 'Donkey Simulator.': guide/simulator.md
+      - 'Virtual Race League.': guide/virtual_race_league.md
+  - Parts:
+      - 'About': parts/about.md
+      - 'Actuators': parts/actuators.md
+      - 'Controllers': parts/controllers.md
+      - 'Keras': parts/keras.md
+      - 'Stores': parts/stores.md
+      - 'IMU': parts/imu.md
+      - 'OLED': parts/oled.md
+      - 'Voice Control': parts/voice_control.md
+  - Utilities:
+      - 'donkey': utility/donkey.md
 
-    - Supported Cars: supported_cars.md
-    - Roll Your Own: roll_your_own.md
-    - Contribute : contribute.md
-    - Tests : tests.md
-    - Releases : release.md
-    - FAQ : faq.md
+  - Supported Cars: supported_cars.md
+  - Roll Your Own: roll_your_own.md
+  - Contribute: contribute.md
+  - Tests: tests.md
+  - Releases: release.md
+  - FAQ: faq.md
+  - Legacy: legacy.md

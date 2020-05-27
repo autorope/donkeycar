@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>Donkey FPV</title>
+
+    <style>
+        img {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            height: 100%;
+            border: 2px solid rgb(226, 110, 57);
+            border-radius: 8px;
+        }
+        .img_container {
+            text-align: center;
+        }
+        h1 {
+            background-color: rgb(226, 110, 57);
+            text-align: left;
+            text-align: top;
+            padding: 0px;
+        }
+        body {
+            font-family: Verdana;
+        }
+        .gap {
+            width: 100%;
+            height: 4px;
+		}
+        * {
+          box-sizing: border-box;
+        }
+
+        .row {
+          display: flex;
+          border-radius: 8px;
+        }
+
+        /* Create two equal columns that sits next to each other */
+        .column {
+          flex: 50%;
+          padding: 0px;
+          height: 61px;
+        }
+        
+        .logo {
+            height: 70px
+        }
+        
+        body {
+            margin: 0px
+        }
+        
+        #mpeg-image {
+            width: auto;
+            height: calc(100vh - 80px);
+        }
+
+    </style>
+</head>
+
+<div class="row" style="background-color:rgb(226, 110, 57);">
+    <img class="logo" src="/static/donkeycar-logo-sideways.png" alt="Donkeycar Logo">
+</div>
+
+<body style="background-color:rgb(48, 49, 51);">
+
+<div class="gap"></div>
+<div>    
+    <img id='mpeg-image' class='img-responsive' src="/video"/> </img>
+</div>
+
+</body>
+</html>

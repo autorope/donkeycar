@@ -1,7 +1,29 @@
 import tensorflow as tf
 
-def keras_model_to_tflite(in_filename, out_filename):
-    converter = tf.lite.TFLiteConverter.from_keras_model_file(in_filename)
+def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
+    verStr = tf.__version__
+    if verStr.find('1.1')  == 0: # found MAJOR.MINOR match for version 1.1x.x
+        converter = tf.lite.TFLiteConverter.from_keras_model_file(in_filename)
+    if verStr.find('2.')  == 0: # found MAJOR.MINOR match for version 2.x.x
+        new_model= tf.keras.models.load_model(in_filename) #filepath="keras_model.h5")
+        converter = tf.lite.TFLiteConverter.from_keras_model(new_model)
+    if data_gen is not None:
+        #when we have a data_gen that is the trigger to use it to 
+        #create integer weights and calibrate them. Warning: this model will
+        #no longer run with the standard tflite engine. That uses only float.
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]
+        converter.representative_dataset = data_gen
+        try:
+            converter.target_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+        except:
+            pass
+        try:
+            converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+        except:
+            pass
+        converter.inference_input_type = tf.uint8
+        converter.inference_output_type = tf.uint8
+        print("----- using data generator to create int optimized weights for Coral TPU -----")
     tflite_model = converter.convert()
     open(out_filename, "wb").write(tflite_model)
 

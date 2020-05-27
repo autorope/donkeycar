@@ -88,7 +88,7 @@ def drive(cfg, model_path=None, model_type=None):
         start = time.time()
         try:
             print('loading model', model_path)
-            kl.load(model_path)
+            kl.load(model_path, compile=False)
             print('finished loading in %s sec.' % (str(time.time() - start)) )
         except Exception as e:
             print(e)
@@ -153,10 +153,10 @@ def drive(cfg, model_path=None, model_type=None):
                 return user_angle, user_throttle
             
             elif mode == 'local_angle':
-                return pilot_angle, user_throttle
+                return pilot_angle if pilot_angle else 0.0, user_throttle
             
             else: 
-                return pilot_angle, pilot_throttle * cfg.AI_THROTTLE_MULT
+                return pilot_angle if pilot_angle else 0.0, pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0
         
     V.add(DriveMode(), 
           inputs=['user/mode', 'user/angle', 'user/throttle',
@@ -195,7 +195,7 @@ def drive(cfg, model_path=None, model_type=None):
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
-    print("You can now go to <your pi ip address>:8887 to drive your car.")
+    print("You can now go to <your pis hostname.local>:8887 to drive your car.")
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 

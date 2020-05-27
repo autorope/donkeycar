@@ -24,14 +24,12 @@ This is not the only method for getting your Donkeycar to drive itself. But it r
 
 When controlling your Donkey via behavioral cloning, you will need to setup a host pc to train your machine learning model from the data collected on the robot. Choose a setup that matches your computer OS.
 
-
 * Setup [Linux Host PC](host_pc/setup_ubuntu.md)
 ![donkey](/assets/logos/linux_logo.png)
 * Setup [Windows Host PC](host_pc/setup_windows.md)
 ![donkey](/assets/logos/windows_logo.png)
 * Setup [Mac Host PC](host_pc/setup_mac.md)
 ![donkey](/assets/logos/apple_logo.jpg)
-
 
 # Step 2: Install Software On Donkeycar
 
@@ -43,5 +41,8 @@ This guide will help you to setup the software to run Donkeycar on your Raspberr
 * Setup [Jetson Nano](robot_sbc/setup_jetson_nano.md)
 ![donkey](/assets/logos/nvidia_logo.png)
 
+## [Optional] Use TensorRT on the Jetson Nano
 
-## Next: [Create Your Donkeycar Application](/guide/create_application/).
+Read [this](/guide/robot_sbc/tensorrt_jetson_nano) for more information.
+
+### Next: [Create Your Donkeycar Application](/guide/create_application/).

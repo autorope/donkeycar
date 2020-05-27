@@ -2,13 +2,12 @@
 
 ![donkey](/assets/logos/nvidia_logo.png)
 
-- [Get Your Jetson Nano Working](#Get-Your-Jetson-Nano-Working)
-	- [Step 1: Flash Operating System](#Step-1-Flash-Operating-System)
-	- [Step 2: Install Dependencies](#Step-2-Install-Dependencies)
-	- [Step 3: Setup Virtual Env](#Step-3-Setup-Virtual-Env)
-	- [Step 4: Install OpenCV](#Step-4-Install-OpenCV)
-	- [Step 5: Install Donkeycar Python Code](#Step-5-Install-Donkeycar-Python-Code)
-		- [Next, create your Donkeycar application.](#Next-create-your-Donkeycar-application)
+- [Get Your Jetson Nano Working](#get-your-jetson-nano-working)
+	- [Step 1: Flash Operating System](#step-1-flash-operating-system)
+	- [Step 2: Install Dependencies](#step-2-install-dependencies)
+	- [Step 3: Setup Virtual Env](#step-3-setup-virtual-env)
+	- [Step 4: Install OpenCV](#step-4-install-opencv)
+		- [Next, create your Donkeycar application.](#next-create-your-donkeycar-application)
 
 ## Step 1: Flash Operating System
 
@@ -26,11 +25,10 @@ Visit the official [Nvidia Jetson Nano Getting Started Guide](https://developer.
 
 ssh into your vehicle. Use the the terminal for Ubuntu or Mac. [Putty](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) for windows.
 
-
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential python3 python3-dev python3-pip libhdf5-serial-dev hdf5-tools nano
+sudo apt-get install build-essential python3 python3-dev python3-pip python3-pandas python3-opencv python3-h5py libhdf5-serial-dev hdf5-tools nano ntp
 ```
 
 Optionally, you can install RPi.GPIO clone for Jetson Nano from [here](https://github.com/NVIDIA/jetson-gpio). This is not required for default setup, but can be useful if using LED or other GPIO driven devices.
@@ -147,73 +145,7 @@ The `cmake` command should show a summary of the configuration. Make sure that t
 To compile the code from the `build` folder issue the following command.
 
 ```bash
-make -j2
-```
-
-This will take a while. Go grab a coffee, or watch a movie.
-Once the compilation is complete, you are almost done. Only a few more steps to go.
-
-```bash
-# Install OpenCV
-sudo make install
-sudo ldconfig
-```
-
-The final step is to correctly link the built `OpenCV` native library to your virtualenv.
-
-The native library should now be installed in a location that looks like `/usr/local/lib/python3.6/site-packages/cv2/python-3.6/cv2.cpython-36m-xxx-linux-gnu.so`.
-
-```bash
-# Go to the folder where OpenCV's native library is built
-cd /usr/local/lib/python3.6/site-packages/cv2/python-3.6
-# Rename
-mv cv2.cpython-36m-xxx-linux-gnu.so cv2.so
-# Go to your virtual environments site-packages folder
-cd ~/env/lib/python3.6/site-packages/
-# Symlink the native library
-ln -s /usr/local/lib/python3.6/site-packages/cv2/python-3.6/cv2.so cv2.so
-```
-
-Congratulations ! You are now done compiling OpenCV from source.
-
-A quick check to see if you did everything correctly is
-
-```bash
-ls -al
-```
-
-You should see something that looks like
-
-```
-total 48
-drwxr-xr-x 10 user user 4096 Jun 16 13:03 .
-drwxr-xr-x  5 user user 4096 Jun 16 07:46 ..
-lrwxrwxrwx  1 user user   60 Jun 16 13:03 cv2.so -> /usr/local/lib/python3.6/site-packages/cv2/python-3.6/cv2.so
--rw-r--r--  1 user user  126 Jun 16 07:46 easy_install.py
-drwxr-xr-x  5 user user 4096 Jun 16 07:47 pip
-drwxr-xr-x  2 user user 4096 Jun 16 07:47 pip-19.1.1.dist-info
-drwxr-xr-x  5 user user 4096 Jun 16 07:46 pkg_resources
-drwxr-xr-x  2 user user 4096 Jun 16 07:46 __pycache__
-drwxr-xr-x  6 user user 4096 Jun 16 07:46 setuptools
-drwxr-xr-x  2 user user 4096 Jun 16 07:46 setuptools-41.0.1.dist-info
-drwxr-xr-x  4 user user 4096 Jun 16 07:47 wheel
-drwxr-xr-x  2 user user 4096 Jun 16 07:47 wheel-0.33.4.dist-info
-```
-
-To test the OpenCV installation, run `python` and do the following
-
-```python
-import cv2
-
-# Should print 4.1.0
-print(cv2.__version__)
-```
-##  Step 5: Install Donkeycar Python Code
-
-* Change to a dir you would like to use as the head of your projects.
-
-```
-cd projects
+mkdir -p ~/projects; cd ~/projects
 ```
 
 * Get the latest donkeycar from Github.
@@ -225,6 +157,21 @@ git checkout master
 pip install -e .[nano]
 pip install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v42 tensorflow-gpu==1.13.1+nv19.3
 ```
+
+Note: This last command can take some time to compile grpcio.
+
+The native library should now be installed in a location that looks like `/usr/local/lib/python3.6/site-packages/cv2/python-3.6/cv2.cpython-36m-xxx-linux-gnu.so`.
+
+If you plan to use a USB camera, you will also want to setup pygame:
+
+```bash
+sudo apt-get install python-dev libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsdl1.2-dev libsmpeg-dev python-numpy subversion libportmidi-dev ffmpeg libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev
+
+pip install pygame
+
+```
+
+Later on you can add the `CAMERA_TYPE="WEBCAM"` in myconfig.py.
 
 ----
 

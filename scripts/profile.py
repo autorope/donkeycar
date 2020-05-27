@@ -28,7 +28,7 @@ def profile(model_path, model_type):
         seq_len = cfg.SEQUENCE_LENGTH
 
     #generate random array in the right shape
-    img = np.random.rand(int(h), int(w), int(ch))
+    img = np.random.rand(int(h), int(w), int(ch)).astype(np.uint8)
 
     if seq_len:
         img_arr = []
