@@ -22,15 +22,12 @@ The latest version of the software installation instructions are maintained in t
 
 There are 4 fully supported chassis all made under the "Exceed" Brand:
 
-*  Exceed Magnet [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)
-*  Exceed Desert Monster [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)
-*  Exceed Short Course Truck  [Blue](https://amzn.to/2KsYF1e),  [Red](https://amzn.to/2rdtQ8z)
-*  Exceed Blaze [Hyper Blue](https://amzn.to/2rf4MgS), [Yellow](https://amzn.to/2jlf3EA)
+*  Exceed Magnet [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkey05-20)
+*  Exceed Desert Monster [Green](https://amzn.to/2MhOfn6)
+*  Exceed Short Course Truck  [Green](https://amzn.to/2Bek0ew),  [Red](https://amzn.to/3cmCNkE)
+*  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR) [Wild Blue](https://amzn.to/3dkI4uD) [Max Red](https://amzn.to/2TWOxE8)
 
 These cars are electrically identical but have different tires, mounting and other details.  It is worth noting that the Desert Monster, Short Course Truck and Blaze all require adapters which can be easily printed or purchased from the donkey store.  These are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.
-
-In a pinch, the Latrax prerunner also works, with the existing adapters and plastics.  
-LaTrax Prerunner [link](https://www.amazon.com/Traxxas-LaTrax-Electric-Prerunner-Control/dp/B07B3PQTRD)
 
 Here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars and how to assemble them.
 
@@ -38,7 +35,7 @@ In addition there are 3 more cars supported under the "Donkey Pro" name.  These 
 
 *  HobbyKing Trooper (not pro version) [found here](https://hobbyking.com/en_us/turnigy-trooper-sct-4x4-1-10-brushless-short-course-truck-arr.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=9928905034)
 *  HobbyKing Mission-D [found here](https://hobbyking.com/en_us/1-10-hobbykingr-mission-d-4wd-gtr-drift-car-arr.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=337569952)
-*  Tamaya TT01 or Clone - found worldwide but usually has to be built as a kits.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
+*  Tamaya TT01 or Clone [commonly used knockoff found here](https://amzn.to/2MdNLhZ) - found worldwide but usually has to be built as a kits.  The other two cars are ready to be donkified, this one, however is harder to assemble.  
 
 Here is a [video](https://youtu.be/K-REL9aqPE0) that goes over the different models.  The Donkey Pro models are not yet very well documented, just a word of warning.  
 
@@ -71,9 +68,9 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
 | Exceed Magnet, Desert Monster, Blaze, or Short Course Truck                                                                       | See links above                                     | ~$90              |
-| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
-| Raspberry Pi 3b+                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/ELEMENT-Element14-Raspberry-Pi-Motherboard/dp/B07BDR5PDW?tag=donkeycar-20)                                          | $38              |
-| MicroSD Card (many will work, we strongly recommend this one)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/SanDisk-128GB-Extreme-microSD-Adapter/dp/B07FCMKK5X?tag=donkeycar-20)                            | $18.99           |
+| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](https://amzn.to/2AlMQJz)                                           | $22              |
+| Raspberry Pi 3b+                                                                      | [Pi 3b+](https://amzn.to/3gCUcZL)                                          | $42              |
+| MicroSD Card (many will work, we strongly recommend this one)             | 64GB [https://amzn.to/2XP7UAa](https://www.amazon.com/SanDisk-128GB-Extreme-microSD-Adapter/dp/B07FCMKK5X?tag=donkeycar-20)                            | $11.99           |
 | Donkey Partial Kit                                                      | [KIT](https://store.donkeycar.com/collections/frontpage)                                        | $82 to $125              |
 
 ### Option 2: Bottoms Up Build
@@ -83,14 +80,14 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
 | Magnet Car or alternative                                                                        | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)                                         | $92              |
-| M2x6 screws (4)                                                                     | [Zinc](https://www.amazon.com/uxcell-Stainless-Phillips-Tapping-Screws/dp/B01KXTSW6Q?tag=donkeycar-20)                                          | $3.50 &ast;          |
-| M3x10 screws (8)                                                                  | [Black Oxide](https://www.amazon.com/Screws-Mushroom-Phillips-Self-Tapping-Electronic/dp/B07NQCG6JP?tag=donkeycar-20)                                          | $7.89 &ast;          |
-| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](http://amzn.to/2ptshm0)                                           | $17              |
-| Raspberry Pi 3b+                                                                      | [amazon.com/gp/product/B01CD5VC92](https://www.amazon.com/ELEMENT-Element14-Raspberry-Pi-Motherboard/dp/B07BDR5PDW?tag=donkeycar-20)                                          | $38              |
-| MicroSD Card (many will work, I like this one because it boots quickly)             | [amazon.com/gp/product/B01HU3Q6F2](https://www.amazon.com/SanDisk-128GB-Extreme-microSD-Adapter/dp/B07FCMKK5X?tag=donkeycar-20)                                         | $18.99           |
-| Wide Angle Raspberry Pi Camera                                                      | [amazon.com/gp/product/B00N1YJKFS](https://www.amazon.com/gp/product/B00N1YJKFS?tag=donkeycar-20)                                         | $25              |
-| Female to Female Jumper Wire                                                        | [amazon.com/gp/product/B010L30SE8](https://www.amazon.com/gp/product/B010L30SE8?tag=donkeycar-20)                                          | $7 &ast;             |
-| Servo Driver PCA 9685                                                               | [amazon.com/gp/product/B014KTSMLA](https://www.amazon.com/gp/product/B014KTSMLA?tag=donkeycar-20)                                          | $12 &ast;&ast;           |
+| M2x6 screws (4)                                                                     | [Zinc](https://amzn.to/2ZSKa0D)                                          | $4.89 &ast;          |
+| M3x10 screws (8)                                                                  | [Black Oxide](https://amzn.to/3gBQuzE)                                          | $7.89 &ast;          |
+| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](https://amzn.to/2AlMQJz)                                           | $22              |
+| Raspberry Pi 3b+                                                                      | [Pi 3B+](https://amzn.to/3gCUcZL)                                          | $38              |
+| MicroSD Card (many will work, I like this one because it boots quickly)             | [64GB](https://amzn.to/2XP7UAa)                                         | $18.99           |
+| Wide Angle Raspberry Pi Camera                                                      | [camera](https://amzn.to/2TYCo1s)                                         | $25              |
+| Female to Female Jumper Wire                                                        | [wire](https://amzn.to/36RiMlo)                                          | $7 &ast;             |
+| Servo Driver PCA 9685                                                               | [servo](https://amzn.to/2BbVYkj)                                          | $12 &ast;&ast;           |
 | 3D Printed roll cage and top plate.                                                 | Purchase: [Donkey Store](https://store.donkeycar.com/collections/plastics-and-screws/products/standard-donkey-chassis-includes-screws) Files: [thingiverse.com/thing:2260575](https://www.thingiverse.com/thing:2566276) | $50                 |
 
 &ast; If it is hard to find these components, there is some wiggle room. Instead of an M2 you can use an M2.2, m2.3 or #4 SAE screw.  Instead of an M3 a #6 SAE screw can be used.  Machine screws can be used in a pinch.  
@@ -113,12 +110,12 @@ Finally this is the Donkey Assembled.
 
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
-| Nvidia Jetson Nano | [Jetson Nano](https://www.amazon.com/NVIDIA-Jetson-Nano-Developer-Kit/dp/B07PZHBDKT?tag=donkeycar-20)| $99 |
+| Nvidia Jetson Nano | [Jetson Nano](https://amzn.to/2TTGHLK)| $99 |
 | Jetson Nano Adapter | [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) | $7          |
 | Camera Module | [Camera](https://store.donkeycar.com/products/nvidia-jetson-camera-for-donkey)| $27 |
-| WiFi Card | [Card](https://www.amazon.com/Intel-Dual-Band-Wireless-Ac-8265/dp/B01MZA1AB2?tag=donkeycar-20) | $18|
+| WiFi Card | [Card](https://amzn.to/2UcHszJ) | $18|
 | Antennas | [Antennas](https://store.donkeycar.com/products/2x-molex-wifi-antennas-for-jetson-nano)|$7|
-| 10Ah 3A USB Battery | [INIU Power Bank](https://www.amazon.com/INIU-Portable-External-Powerbank-Compatible/dp/B07H6LB4J4)| $17|
+
 
 For other options for part, feel free to look at the jetbot documentation [here](https://github.com/NVIDIA-AI-IOT/jetbot).
 
@@ -133,8 +130,8 @@ For other options for part, feel free to look at the jetbot documentation [here]
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
 | LiPo Battery                                          | [hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html](https://hobbyking.com/en_us/turnigy-1800mah-2s-20c-lipo-pack.html?affiliate_code=XFPFGDFDZOPWEHF&_asc=1096095044) or [amazon.com/gp/product/B0072AERBE/](https://www.amazon.com/gp/product/B0072AERBE/) | $8.94 to $~17           |
-| Lipo Charger (takes 1hr to charge the above battery)  | [amazon.com/gp/product/B00XU4ZR06](https://www.amazon.com/gp/product/B00XU4ZR06?tag=donkeycar-20)                                               | $13              |
-| Lipo Battery Case (to prevent damage if they explode) | [amazon.com/gp/product/B00T01LLP8](https://www.amazon.com/gp/product/B00T01LLP8?tag=donkeycar-20)                                               | $8               |
+| Lipo Charger (takes 1hr to charge the above battery)  | [charger](https://amzn.to/3gE6DVe)                                               | $13              |
+| Lipo Battery Case (to prevent damage if they explode) | [lipo safe](https://amzn.to/2XkUhcV)                                               | $8               |
 
 ## Hardware
 
