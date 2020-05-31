@@ -22,7 +22,7 @@ The latest version of the software installation instructions are maintained in t
 
 There are 4 fully supported chassis all made under the "Exceed" Brand:
 
-*  Exceed Magnet [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkey05-20)
+*  Exceed Magnet [Blue](https://amzn.to/2BkBRka)
 *  Exceed Desert Monster [Green](https://amzn.to/2MhOfn6)
 *  Exceed Short Course Truck  [Green](https://amzn.to/2Bek0ew),  [Red](https://amzn.to/3cmCNkE)
 *  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR), [Wild Blue](https://amzn.to/3dkI4uD), [Max Red](https://amzn.to/2TWOxE8)
