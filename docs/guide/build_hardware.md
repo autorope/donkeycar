@@ -16,7 +16,7 @@
 
 ## Overview
 
-The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car.  For historical purposes, these are the outdated instructions from the 2017 [Make Magazine article](https://makezine.com/projects/build-autonomous-rc-car-raspberry-pi/).  
+The latest version of the software installation instructions are maintained in the [software instructions](install_software.md) section.   Be sure to follow those instructions after you've built your car. 
 
 ## Choosing a Car
 
@@ -25,7 +25,7 @@ There are 4 fully supported chassis all made under the "Exceed" Brand:
 *  Exceed Magnet [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkey05-20)
 *  Exceed Desert Monster [Green](https://amzn.to/2MhOfn6)
 *  Exceed Short Course Truck  [Green](https://amzn.to/2Bek0ew),  [Red](https://amzn.to/3cmCNkE)
-*  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR) [Wild Blue](https://amzn.to/3dkI4uD) [Max Red](https://amzn.to/2TWOxE8)
+*  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR), [Wild Blue](https://amzn.to/3dkI4uD), [Max Red](https://amzn.to/2TWOxE8)
 
 These cars are electrically identical but have different tires, mounting and other details.  It is worth noting that the Desert Monster, Short Course Truck and Blaze all require adapters which can be easily printed or purchased from the donkey store.  These are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.
 
