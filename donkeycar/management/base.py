@@ -294,6 +294,7 @@ class ShowHistogram(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubhist', usage='%(prog)s [options]')
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--record', default=None, help='name of record to create histogram')
+        parser.add_argument('--out', default=None, help='path where to save histogram end with .png')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
