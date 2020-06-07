@@ -294,35 +294,43 @@ class ShowHistogram(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubhist', usage='%(prog)s [options]')
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--record', default=None, help='name of record to create histogram')
+        parser.add_argument('--out', default=None, help='path where to save histogram end with .png')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
-    def show_histogram(self, tub_paths, record_name):
+    def show_histogram(self, tub_paths, record_name, out):
         '''
         Produce a histogram of record type frequency in the given tub
         '''
         from matplotlib import pyplot as plt
         from donkeycar.parts.datastore import TubGroup
 
+        output = out or os.path.basename(tub_paths)
         tg = TubGroup(tub_paths=tub_paths)
+
         if record_name is not None:
             tg.df[record_name].hist(bins=50)
         else:
             tg.df.hist(bins=50)
-
+  
         try:
-            path = tg.resolve_tub_paths(tub_paths)[0] + '/'
-            filename = os.path.basename(tub_paths) + '_hist.png'
-            plt.savefig(path + filename)
-            print('saving image to:', path + filename)
-        except:
-            pass
+            if out is not None:
+                filename = output
+            else:
+                if record_name is not None:
+                    filename = output + '_hist_%s.png' % record_name.replace('/', '_')
+                else:
+                    filename = output + '_hist.png'
+            plt.savefig(filename)
+            print('saving image to:', filename)
+        except Exception as e:
+            print(e)
         plt.show()
 
     def run(self, args):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
-        self.show_histogram(args.tub, args.record)
+        self.show_histogram(args.tub, args.record, args.out)
 
 
 class ConSync(BaseCommand):
