@@ -150,8 +150,14 @@ class LocalWebController(tornado.web.Application):
         if (self.num_records is not None and self.recording is True):
             if self.num_records % 10 == 0:
                 for wsclient in self.wsclients:
-                    wsclient.write_message(json.dumps({'num_records': self.num_records}))
-
+                    try:
+                        data = {
+                            'num_records': self.num_records
+                        }
+                        wsclient.write_message(json.dumps(data))
+                    except:
+                        pass
+        
         return self.angle, self.throttle, self.mode, self.recording
 
     def run(self, img_arr=None):
@@ -196,6 +202,7 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         data = json.loads(message)
+        
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
