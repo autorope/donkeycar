@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>Donkey Real-time calibration</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+</head>
+
+
+<body>
+    <h1>Donkey Real-time calibration</h1>
+
+
+    <div class="container">
+        <div class="row">
+            <div class="col">
+                <textarea id="replyBox" rows="40" cols="60">
+                </textarea>
+            </div>
+            <div class="col">
+                <h2>Introduction</h2>
+                <p> This page allow you to dynamically re-adjust the calibration
+                    value of PCA9685 or MM1. Please note that after finding the
+                    desire value, you need to update the value in myconfig.py manually </p>
+                <h2>Instruction</h2>
+
+                <h3>Steering</h3>
+                <p>Simply use +/- and your steering will be adjusted
+                    incrementally</p>
+
+                <h3>Throttle</h3>
+                <p>After adjusting the throttle value, use the up arrow will
+                    trigger a 5 seconds (default, configurable below) full throttle to test the result</p>
+
+                <form name="calibrate_form">
+                    <fieldset>
+
+                        <legend>PCA9685</legend>
+                        <div>
+                            <label for="STEERING_LEFT_PWM">
+                                <span>STEERING_LEFT_PWM:</span>
+                                <input name="STEERING_LEFT_PWM" type="text" value="460"> </input>
+                                <input type="button" value="+">
+                                <input type="button" value="-">
+                            </label>
+                        </div>
+                        <div>
+                            <label for="STEERING_RIGHT_PWM">
+                                <span>STEERING_RIGHT_PWM:</span>
+                                <input name="STEERING_RIGHT_PWM" type="text" value="290"> </input>
+                                <input type="button" value="+">
+                                <input type="button" value="-">
+                            </label>
+                        </div>
+                        <p>
+                            <label for="THROTTLE_FORWARD_PWM">
+                                <span>THROTTLE_FORWARD_PWM:</span>
+                                <input name="THROTTLE_FORWARD_PWM" type="text" value="500"> </input>
+                                <input type="button" value="+">
+                                <input type="button" value="-">
+                            </label>
+                        </p>
+                    </fieldset>
+
+
+                    <fieldset>
+                        <legend>MM1</legend>
+                        <div>
+                            <label for="MM1_STEERING_MID">
+                                <span>MM1_STEERING_MID:</span>
+                                <input name="MM1_STEERING_MID" type="text" value="1500"> </input>
+                                <input type="button" value="+">
+                                <input type="button" value="-">
+                            </label>
+                        </div>
+
+                        <p>
+                            <label for="MM1_MAX_FORWARD">
+                                <span>MM1_MAX_FORWARD:</span>
+                                <input name="MM1_MAX_FORWARD" type="text" value="1800"> </input>
+                                <input type="button" value="+">
+                                <input type="button" value="-">
+                            </label>
+                        </p>
+                        
+                        <p>
+                            <label for="MM1_MAX_REVERSE">
+                                <span>MM1_MAX_REVERSE:</span>
+                                <input name="MM1_MAX_REVERSE" type="text" value="1200"> </input>
+                                <input type="button" value="+">
+                                <input type="button" value="-">
+                            </label>
+                        </p>
+
+                    </fieldset>
+
+
+                    <fieldset>
+                        <legend>Calibrate Settings</legend>
+
+                        <div>
+                            <span>Throttle seconds:</span>
+                            <input name="throttle_second" type="text" value="5">
+                            </input> seconds
+                        </div>
+
+                    </fieldset>
+
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+
+
+    <script>
+        $(document).ready(function () {
+            var textarea = document.getElementById('replyBox');
+
+            var buttons = $('input[type=button]')
+
+            buttons.click(function () {
+                $(this).css('color', 'blue')
+                button_value = $(this).val()
+
+                console.log(button_value)
+
+
+                text_el = $(this).parent().find('input[type=text]')
+
+
+                var config_value = parseInt(text_el.val())
+                if (button_value == '+') {
+                    config_value = config_value + 10
+                } else {
+                    config_value = config_value - 10
+                }
+
+                text_el.val(config_value)
+
+                var config_name = text_el.attr('name')
+
+                var data = { 'config': { [config_name]: config_value } }
+                sendMsg(data)
+
+            });
+
+            autoscroll = function (event) {
+                textarea.scrollTop = textarea.scrollHeight
+            }
+
+            var socket = new WebSocket('ws://' + window.location.hostname + ':8887/wsCalibrate');
+
+            socket.onopen = async function (event) {
+                textarea.append('Connected');
+
+
+            }
+
+            socket.onmessage = function (event) {
+                textarea.append(event.data + "\n");
+                autoscroll()
+
+                console.log(event.data);
+            };
+
+            socket.addEventListener('error', function (event) {
+                console.log(event)
+                textarea.append(event);
+            });
+
+
+            socket.addEventListener('close', (event) => {
+                console.log('The connection has been closed successfully.');
+            });
+
+
+            $(window).unload(function (event) {
+                $('#replyBox').append('socket closed');
+                socket.close();
+            });
+
+            function sendMsg(data) {
+                msg = JSON.stringify(data)
+                socket.send(msg)
+                textarea.append(msg + '\n');
+
+                autoscroll()
+            }
+
+            $(document).keydown(async function (e) {
+                switch (e.which) {
+                    case 37: // left
+                        MM1_STEERING_MID = MM1_STEERING_MID - 10
+                        data = { config: { 'MM1_STEERING_MID': MM1_STEERING_MID } }
+                        sendMsg(data)
+                        break;
+
+                    case 38: // up
+                        data = { "angle": 0.0, "throttle": 1.0, "recording": true, "drive_mode": "user" }
+                        sendMsg(data)
+                        throttle_second = $('input[name="throttle_second"]').val()
+                        await sleep(throttle_second * 1000)
+                        data = { "angle": 0.0, "throttle": 0.0, "recording": true, "drive_mode": "user" }
+
+                        sendMsg(data)
+                        break;
+
+                    case 39: // right
+                        MM1_STEERING_MID = MM1_STEERING_MID + 10
+                        data = { config: { 'MM1_STEERING_MID': MM1_STEERING_MID } }
+                        sendMsg(data)
+
+                        break;
+
+                    case 40: // down
+                        data = { "angle": 0.0, "throttle": -1.0, "recording": true, "drive_mode": "user" }
+                        sendMsg(data)
+                        await sleep(500)
+                        data = { "angle": 0.0, "throttle": 0.0, "recording": true, "drive_mode": "user" }
+
+                        sendMsg(data)
+
+                        break;
+
+                    default: return; // exit this handler for other keys
+                }
+                e.preventDefault(); // prevent the default action (scroll / move caret)
+            });
+
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+        });
+
+    </script>
+</body>
+
+</html>
