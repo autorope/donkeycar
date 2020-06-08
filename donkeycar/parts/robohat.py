@@ -187,11 +187,11 @@ class RoboHATDriver:
             if steering > 0:
                 output_steering = dk.utils.map_range(steering,
                                                      0, 1.0,
-                                                     self.STEERING_MID, 1000)
+                                                     self.STEERING_MID, 2000)
             else:
                 output_steering = dk.utils.map_range(steering,
                                                      -1, 0,
-                                                     2000, self.STEERING_MID)
+                                                     1000, self.STEERING_MID)
 
             packet = "{0},{1}".format(str(output_steering).zfill(4),
                                       str(output_throttle).zfill(4),)
