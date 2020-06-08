@@ -103,12 +103,12 @@ class RoboHATController:
                 if angle_pwm >= self.STEERING_MID:
                     # Turn Left
                     self.angle = dk.utils.map_range_float(angle_pwm,
-                                                          2000, self.STEERING_MID,
+                                                          self.STEERING_MID, 2000,
                                                           -1, 0)
                 else:
                     # Turn Right
                     self.angle = dk.utils.map_range_float(angle_pwm,
-                                                          self.STEERING_MID, 1000,
+                                                          1000, self.STEERING_MID,
                                                           0, 1)
 
                 if self.debug:
