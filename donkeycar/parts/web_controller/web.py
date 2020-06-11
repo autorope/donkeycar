@@ -124,6 +124,8 @@ class LocalWebController(tornado.web.Application):
             (r"/", RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
             (r"/wsDrive", WebSocketDriveAPI),
+            (r"/wsCalibrate", WebSocketCalibrateAPI),
+            (r"/calibrate", CalibrateHandler),
             (r"/video", VideoAPI),
             (r"/static/(.*)", StaticFileHandler,
              {"path": self.static_file_path}),
@@ -182,6 +184,12 @@ class DriveAPI(RequestHandler):
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
         self.application.recording = data['recording']
+
+
+class CalibrateHandler(RequestHandler):
+    """ Serves the calibration web page"""
+    async def get(self):
+        await self.render("templates/calibrate.html")
 
 
 class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
