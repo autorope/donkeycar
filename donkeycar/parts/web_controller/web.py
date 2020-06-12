@@ -157,7 +157,7 @@ class LocalWebController(tornado.web.Application):
                         wsclient.write_message(json.dumps(data))
                     except:
                         pass
-        
+
         return self.angle, self.throttle, self.mode, self.recording
 
     def run(self, img_arr=None):
@@ -202,7 +202,7 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         data = json.loads(message)
-        
+
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
@@ -226,6 +226,10 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
         if 'throttle' in data:
             print(data['throttle'])
             self.application.throttle = data['throttle']
+
+        if 'angle' in data:
+            print(data['angle'])
+            self.application.angle = data['angle']
 
         if 'config' in data:
             config = data['config']
