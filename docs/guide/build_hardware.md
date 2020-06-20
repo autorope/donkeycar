@@ -68,7 +68,7 @@ If you are in Asia, the DIYRobocars community in Hong Kong also sells car kits a
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
 | Exceed Magnet, Desert Monster, Blaze, or Short Course Truck                                                                       | See links above                                     | ~$90              |
-| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](https://amzn.to/2AlMQJz)                                           | $22              |
+| USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](https://amzn.to/2AlMQJz) or [Anker Powercore II](https://amzn.to/3hPPHeX)                                           | $22              |
 | Raspberry Pi 3b+                                                                      | [Pi 3b+](https://amzn.to/3gCUcZL)                                          | $42              |
 | MicroSD Card (many will work, we strongly recommend this one)             | 64GB [https://amzn.to/2XP7UAa](https://www.amazon.com/SanDisk-128GB-Extreme-microSD-Adapter/dp/B07FCMKK5X?tag=donkeycar-20)                            | $11.99           |
 | Donkey Partial Kit                                                      | [KIT](https://store.donkeycar.com/collections/frontpage)                                        | $82 to $125              |
@@ -79,15 +79,15 @@ If you want to buy the parts yourself, want to customize your donkey or live out
 
 | Part Description                                                                    | Link                                                                                  | Approximate Cost |
 |-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|------------------|
-| Magnet Car or alternative                                                                        | [Blue](https://www.amazon.com/gp/product/9269803775/?tag=donkeycar-20), [Red](http://amzn.to/2EIC1CF)                                         | $92              |
-| M2x6 screws (4)                                                                     | [Zinc](https://amzn.to/2ZSKa0D)                                          | $4.89 &ast;          |
-| M3x10 screws (8)                                                                  | [Black Oxide](https://amzn.to/3gBQuzE)                                          | $7.89 &ast;          |
+| Magnet Car or alternative                                                                        | see cars above under 'choosing a car'                                         | $92              |
+| M2x6 screws (8)                                                                     | [Amazon](https://amzn.to/2ZSKa0D) or [Donkey Store](https://store.donkeycar.com/collections/accessories/products/plastic-thread-forming-screw-kit)                                          | $4.89 &ast;          |
+| M3x10 screws (3)                                                                  | [Amazon](https://amzn.to/3gBQuzE)  or [Donkey Store](https://store.donkeycar.com/collections/accessories/products/plastic-thread-forming-screw-kit)                                                    | $7.89 &ast;          |
 | USB Battery with microUSB cable (any battery capable of 2A 5V output is sufficient) | [Anker 6700 mAh](https://amzn.to/2AlMQJz)                                           | $22              |
 | Raspberry Pi 3b+                                                                      | [Pi 3B+](https://amzn.to/3gCUcZL)                                          | $38              |
 | MicroSD Card (many will work, I like this one because it boots quickly)             | [64GB](https://amzn.to/2XP7UAa)                                         | $18.99           |
-| Wide Angle Raspberry Pi Camera                                                      | [camera](https://amzn.to/2TYCo1s)                                         | $25              |
-| Female to Female Jumper Wire                                                        | [wire](https://amzn.to/36RiMlo)                                          | $7 &ast;             |
-| Servo Driver PCA 9685                                                               | [servo](https://amzn.to/2BbVYkj)                                          | $12 &ast;&ast;           |
+| Wide Angle Raspberry Pi Camera                                                      | [Amazon](https://amzn.to/2TYCo1s) or [Donkey Store](https://store.donkeycar.com/collections/accessories/products/wide-angle-raspberry-pi-camera-for-donkey)                                       | $25              |
+| Female to Female Jumper Wire                                                        | [Amazon](https://amzn.to/36RiMlo) or [Donkey Car Store](https://store.donkeycar.com/collections/accessories/products/servo-driver-pca-9685-with-jumper-cables)                                         | $7 &ast;             |
+| Servo Driver PCA 9685                                                               | [Amazon](https://amzn.to/2BbVYkj) or [Donkey Car Store](https://store.donkeycar.com/collections/accessories/products/servo-driver-pca-9685-with-jumper-cables)                                          | $12 &ast;&ast;           |
 | 3D Printed roll cage and top plate.                                                 | Purchase: [Donkey Store](https://store.donkeycar.com/collections/plastics-and-screws/products/standard-donkey-chassis-includes-screws) Files: [thingiverse.com/thing:2260575](https://www.thingiverse.com/thing:2566276) | $50                 |
 
 &ast; If it is hard to find these components, there is some wiggle room. Instead of an M2 you can use an M2.2, m2.3 or #4 SAE screw.  Instead of an M3 a #6 SAE screw can be used.  Machine screws can be used in a pinch.  
@@ -110,11 +110,11 @@ Finally this is the Donkey Assembled.
 
 | Part Description                                      | Link                                                              | Approximate Cost |
 |-------------------------------------------------------|-------------------------------------------------------------------|------------------|
-| Nvidia Jetson Nano | [Jetson Nano](https://amzn.to/2TTGHLK)| $99 |
-| Jetson Nano Adapter | [Adapter](https://store.donkeycar.com/products/jetson-donkey-adapter) | $7          |
-| Camera Module | [Camera](https://store.donkeycar.com/products/nvidia-jetson-camera-for-donkey)| $27 |
-| WiFi Card | [Card](https://amzn.to/2UcHszJ) | $18|
-| Antennas | [Antennas](https://store.donkeycar.com/products/2x-molex-wifi-antennas-for-jetson-nano)|$7|
+| Nvidia Jetson Nano | [Amazon](https://amzn.to/2TTGHLK)| $99 |
+| Jetson Nano Adapter | [Donkey Store](https://store.donkeycar.com/products/jetson-donkey-adapter) | $7          |
+| Camera Module | [Donkey Store](https://store.donkeycar.com/products/nvidia-jetson-camera-for-donkey)| $27 |
+| WiFi Card | [Amazon](https://amzn.to/2UcHszJ) | $18|
+| Antennas | [Donkey Store](https://store.donkeycar.com/products/2x-molex-wifi-antennas-for-jetson-nano)|$7|
 
 
 For other options for part, feel free to look at the jetbot documentation [here](https://github.com/NVIDIA-AI-IOT/jetbot).
