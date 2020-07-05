@@ -48,6 +48,24 @@ def test_tub_write_numpy(tub):
     rec_out = tub.get_record(rec_index)
     assert type(rec_out['user/throttle']) == float
 
+def test_tub_dict(tub):
+    """Tub can save a record that contains a dictionary with json-able types."""
+    d = {'pos': (49.99962, 0.7410042, 50.16277),
+        'cte': -0.0006235633,
+        'hit': None,
+        'done': True }
+    x=123
+    z=0.0
+    rec_in  = {'user/angle': x, 'user/throttle':z, 'sim/info':d}
+    tub.meta['inputs'].append('sim/info')
+    tub.meta['types'].append('dict')
+    rec_index = tub.put_record(rec_in)
+    rec_out = tub.get_record(rec_index)
+    assert type(rec_out['sim/info']) == dict
+    assert type(rec_out['sim/info']['cte']) == float
+    assert rec_out['sim/info']['hit'] is None
+    assert rec_out['sim/info']['done'] is True
+
 
 def test_tub_exclude(tub):
     """ Make sure the Tub will exclude records in the exclude set """

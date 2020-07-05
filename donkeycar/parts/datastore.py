@@ -222,7 +222,7 @@ class Tub(object):
                 # in case val is a numpy.float32, which json doesn't like
                 json_data[key] = float(val)
 
-            elif typ in ['str', 'float', 'int', 'boolean', 'vector']:
+            elif typ in ['str', 'float', 'int', 'boolean', 'vector', 'dict']:
                 json_data[key] = val
 
             elif typ is 'image':
