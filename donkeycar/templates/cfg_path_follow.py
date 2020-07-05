@@ -109,3 +109,4 @@ WHEEL_ODOM_CALIB = "calibration_odometry.json"
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
+DONKEY_GYM_INFO = False             # Include Sim info dict when saving Tub files.

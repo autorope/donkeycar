@@ -223,6 +223,7 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"
 GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "me", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
 SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
 SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
+DONKEY_GYM_INFO = False             # Include Sim info dict when saving Tub files.
 
 #publish camera over network
 #This is used to create a tcp service to pushlish the camera feed
