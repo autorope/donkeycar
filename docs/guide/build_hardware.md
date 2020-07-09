@@ -27,6 +27,8 @@ There are 4 fully supported chassis all made under the "Exceed" Brand:
 *  Exceed Short Course Truck  [Green](https://amzn.to/2Bek0ew),  [Red](https://amzn.to/3cmCNkE)
 *  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR), [Wild Blue](https://amzn.to/3dkI4uD), [Max Red](https://amzn.to/2TWOxE8)
 
+Note: If they are out of stock on Amazon, you can find the cars at the [Exceed Website](https://www.nitrorcx.com/1rcelca.html)
+
 These cars are electrically identical but have different tires, mounting and other details.  It is worth noting that the Desert Monster, Short Course Truck and Blaze all require adapters which can be easily printed or purchased from the donkey store.  These are the standard build cars because they are mostly plug and play, both have a brushed motor which makes training easier, they handle rough driving surfaces well and are inexpensive.
 
 Here is a [video](https://youtu.be/UucnCmCAGTI) overview of the different cars and how to assemble them.
