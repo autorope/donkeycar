@@ -31,16 +31,6 @@ class MakeMovie(object):
             parser.print_help()
             return
 
-        if args.type is None and args.model is not None:
-            print("ERR>> --type argument missing. Required when providing a model.")
-            parser.print_help()
-            return
-
-        if args.salient:
-            if args.model is None:
-                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
-                parser.print_help()
-
         conf = os.path.expanduser(args.config)
         if not os.path.exists(conf):
             print("No config file at location: %s. Add --config to specify\
@@ -48,6 +38,21 @@ class MakeMovie(object):
             return
 
         self.cfg = dk.load_config(conf)
+
+        if args.type is None and args.model is not None:
+            args.type = self.cfg.DEFAULT_MODEL_TYPE
+            print("Model type not provided. Using default model type from config file")
+
+        if args.salient:
+            if args.model is None:
+                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
+                parser.print_help()
+
+            if args.type not in ['linear', 'categorical']:
+                print("Model type {} is not supported. Only linear or categorical is supported for salient visualization".format(args.type))
+                parser.print_help()
+                return
+
         self.tub = Tub(args.tub)
         self.index = self.tub.get_index(shuffled=False)
         start = args.start
