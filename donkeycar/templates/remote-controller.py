@@ -12,7 +12,7 @@ class ZMQValueSub(object):
     '''
     Use Zero Message Queue (zmq) to subscribe to value messages from a remote publisher
     '''
-    def __init__(self, name, ip, port = 5562, hwm=10, return_last=True):
+    def __init__(self, name, ip, port = 5562, hwm=1, return_last=True):
         context = zmq.Context()
         self.socket = context.socket(zmq.SUB)
         self.socket.set_hwm(hwm)
