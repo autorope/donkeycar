@@ -4,7 +4,7 @@ These parts encapsulate models defined using the [Keras](https://keras.io/) high
 
 ## Keras Categorical
 
-This model type is created with the `--type=catagorical`. 
+This model type is created with the `--type=categorical`. 
 
 The `KerasCategorical` pilot breaks the steering and throttle decisions into discreet angles and then uses categorical cross entropy to train the network to activate a single neuron for each steering and throttle choice. This can be interesting because we get the confidence value as a distribution over all choices.
 This uses the `dk.utils.linear_bin` and `dk.utils.linear_unbin` to transform continuous real numbers into a range of discreet values for training and runtime.
