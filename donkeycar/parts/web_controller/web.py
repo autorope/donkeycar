@@ -250,13 +250,12 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
                     self.application.drive_train['throttle'].min_pulse = config['THROTTLE_REVERSE_PWM']
 
             elif self.application.drive_train_type == "MM1":
-                if 'MM1_STEERING_MID' in config:
-                    self.application.drive_train.STEERING_MID = config['MM1_STEERING_MID']
-                if 'MM1_MAX_FORWARD' in config:
-                    self.application.drive_train.MAX_FORWARD = config['MM1_MAX_FORWARD']
-                if 'MM1_MAX_REVERSE' in config:
+                if ('MM1_STEERING_MID' in config) and (config['MM1_STEERING_MID'] != 0):
+                        self.application.drive_train.STEERING_MID = config['MM1_STEERING_MID']
+                if ('MM1_MAX_FORWARD' in config) and (config['MM1_MAX_FORWARD'] != 0):
+                        self.application.drive_train.MAX_FORWARD = config['MM1_MAX_FORWARD']
+                if ('MM1_MAX_REVERSE' in config) and (config['MM1_MAX_REVERSE'] != 0):
                     self.application.drive_train.MAX_REVERSE = config['MM1_MAX_REVERSE']
-
 
     def on_close(self):
         print("Client disconnected")
