@@ -38,7 +38,7 @@ class RoboHATController:
         self.SHOW_STEERING_VALUE = cfg.MM1_SHOW_STEERING_VALUE
         self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
         self.debug = debug
-        
+
         try:
             self.serial = serial.Serial(cfg.MM1_SERIAL_PORT, 115200, timeout=1)
         except serial.SerialException:
@@ -193,22 +193,30 @@ class RoboHATDriver:
                                                      -1, 0,
                                                      2000, self.STEERING_MID)
 
-            packet = "{0},{1}".format(str(output_steering).zfill(4),
-                                      str(output_throttle).zfill(4),)
-            self.write_pwm(packet)
+            if self.is_valid_pwm_value(output_steering) and self.is_valid_pwm_value(output_throttle):
+                if self.debug:
+                    print("output_steering=%d, output_throttle=%d" % (output_steering, output_throttle))
+                self.write_pwm(output_steering, output_throttle)
+            else:
+                print(f"Warning: steering = {output_steering}, STEERING_MID = {self.STEERING_MID}")
+                print(f"Warning: throttle = {output_throttle}, MAX_FORWARD = {self.MAX_FORWARD}, STOPPED_PWM = {self.STOPPED_PWM}, MAX_REVERSE = {self.MAX_REVERSE}")
+                print("Not sending PWM value to MM1")
 
-            if self.debug:
-                print("output_steering=%d, output_throttle=%d\r" %
-                      (eval(packet)))
         except OSError as err:
             print(
                 "Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
 
-    def write_pwm(self, data):
-        self.pwm.write(b"%d, %d\r" % (eval(data)))
+    def is_valid_pwm_value(self, value):
+        if 1000 <= value <= 2000:
+            return True
+        else:
+            return False
 
-    def run(self, throttle, steering):
-        self.set_pulse(throttle, steering)
+    def write_pwm(self, steering, throttle):
+        self.pwm.write(b"%d, %d\r" % (steering, throttle))
+
+    def run(self, steering, throttle):
+        self.set_pulse(steering, throttle)
 
     def shutdown(self):
         try:
