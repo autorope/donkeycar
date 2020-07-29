@@ -136,7 +136,12 @@ class CSICamera(BaseCamera):
         return 'nvarguscamerasrc ! video/x-raw(memory:NVMM), width=%d, height=%d, format=(string)NV12, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! nvvidconv ! video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! videoconvert ! appsink' % (
                 capture_width, capture_height, framerate, flip_method, output_width, output_height)
     
-    def __init__(self, image_w=160, image_h=120, image_d=3, capture_width=3280, capture_height=2464, framerate=60, gstreamer_flip=0):
+    # ORIGINAL
+    #def __init__(self, image_w=160, image_h=120, image_d=3, capture_width=3280, capture_height=2464, framerate=60, gstreamer_flip=0):
+    # USE 360
+    #def __init__(self, image_w=204, image_h=154, image_d=3, capture_width=3264, capture_height=2464, framerate=21, gstreamer_flip=0):
+    # USE 120FPS
+    def __init__(self, image_w=160, image_h=120, image_d=3, capture_width=1280, capture_height=720, framerate=120, gstreamer_flip=0):
         '''
         gstreamer_flip = 0 - no flip
         gstreamer_flip = 1 - rotate CCW 90
@@ -178,7 +183,10 @@ class CSICamera(BaseCamera):
     def poll_camera(self):
         import cv2
         self.ret , frame = self.camera.read()
-        self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if self.ret:
+            self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        else:
+            print("Camera is not ready yet")
 
     def run(self):
         self.poll_camera()
