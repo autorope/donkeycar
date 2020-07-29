@@ -5,6 +5,7 @@ from PIL import ImageDraw
 from PIL import ImageFont
 import subprocess
 import time
+import os.path
 
 class OLEDDisplay(object):
     '''
@@ -88,11 +89,11 @@ class OLEDPart(object):
         eth0 = OLEDPart.get_ip_address('eth0')
         wlan0 = OLEDPart.get_ip_address('wlan0')
         if eth0 is not None:
-            self.eth0 = 'eth0 : %s' % (eth0)
+            self.eth0 = 'eth0:%s' % (eth0)
         else:
             self.eth0 = None
         if wlan0 is not None:
-            self.wlan0 = 'wlan0 : %s' % (wlan0)
+            self.wlan0 = 'wlan0:%s' % (wlan0)
         else:
             self.wlan0 = None
 
@@ -135,11 +136,21 @@ class OLEDPart(object):
 
     @classmethod
     def get_ip_address(cls, interface):
-        if OLEDPart.get_network_interface_state(interface) == 'down':
+        interface_state = OLEDPart.get_network_interface_state(interface)
+        if interface_state is None: # No interface found
+            return None
+        elif interface_state == 'down':
             return None
         cmd = "ifconfig %s | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'" % interface
-        return subprocess.check_output(cmd, shell=True).decode('ascii')[:-1]
+        try:
+            return subprocess.check_output(cmd, shell=True).decode('ascii')[:-1]
+        except:
+            return None
 
     @classmethod
     def get_network_interface_state(cls, interface):
-        return subprocess.check_output('cat /sys/class/net/%s/operstate' % interface, shell=True).decode('ascii')[:-1]
+        if os.path.isfile('/sys/class/net/%s/operstate' % interface):
+            return subprocess.check_output('cat /sys/class/net/%s/operstate' % interface, shell=True).decode('ascii')[:-1]
+        else:
+            # No interface found
+            return None
