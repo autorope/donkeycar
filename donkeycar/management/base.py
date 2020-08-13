@@ -148,12 +148,14 @@ class UpdateCar(BaseCommand):
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='update', usage='%(prog)s [options]')
+        parser.add_argument('--template', default=None, help='name of car template to use')
         parsed_args = parser.parse_args(args)
         return parsed_args
         
     def run(self, args):
+        args = self.parse_args(args)
         cc = CreateCar()
-        cc.create_car(path=".", overwrite=True)
+        cc.create_car(path=".", overwrite=True, template=args.template)
         
 
 class FindCar(BaseCommand):
