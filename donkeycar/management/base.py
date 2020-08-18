@@ -253,7 +253,7 @@ class MakeMovieShell(BaseCommand):
         parser.add_argument('--start', type=int, default=0, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
         parser.add_argument('--scale', type=int, default=2, help='make image frame output larger by X mult')
-        parser.add_argument('--user', type=bool, default=True, help='show user input on the video')
+        parser.add_argument('--user', default=True, action='store_false', help='show user input on the video')
         parsed_args = parser.parse_args(args)
         return parsed_args, parser
 
