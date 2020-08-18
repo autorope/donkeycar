@@ -20,16 +20,18 @@ It is worth noting that the Desert Monster and SCT also has some nice characteri
 ![Desert Monster](./assets/build_hardware/Desert_Monster.png)
 To purchase one of these cars follow the following links:
 
-* Exceed Desert Monster [Blue](http://amzn.to/2HLXJmc),  [Red](http://amzn.to/2pnIitV)
-* Exceed Short Course Truck  [Blue](https://amzn.to/2KsYF1e),  [Red](https://amzn.to/2rdtQ8z)
-* Exceed Blaze [Hyper Blue](https://amzn.to/2rf4MgS), [Yellow](https://amzn.to/2jlf3EA)
+*  Exceed Magnet [Blue](https://amzn.to/2BkBRka)
+*  Exceed Desert Monster [Green](https://amzn.to/2MhOfn6)
+*  Exceed Short Course Truck  [Green](https://amzn.to/2Bek0ew),  [Red](https://amzn.to/3cmCNkE)
+*  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR) [Wild Blue](https://amzn.to/3dkI4uD) [Max Red](https://amzn.to/2TWOxE8)
+*  Exceed Blaze [Blue](https://amzn.to/3cnP9ci), [Yellow](https://amzn.to/2zOGthR), [Wild Blue](https://amzn.to/3dkI4uD), [Max Red](https://amzn.to/2TWOxE8)
 
 To assemble one of these you will need some additional parts than the standard build, these can be purchased as a kit on the donkey store at: Purchase: [Donkey Store](https://store.donkeycar.com)
 
 | Part Description   | Link  | Approximate Cost |
 |---|----|---|
 |3D printed Adapters | Files: [thingiverse.com/thing:2260575](http://www.thingiverse.com/thing:2260575)| $10 |
-|Chassis Clips | [Amazon](http://amzn.to/2FNSCFI) | $5|
+|Chassis Clips | [Amazon](https://amzn.to/2zFn0QZ) | $5|
 
 To assemble first remove the plastic cover and roll cage then unscrew the posts that hold up the cover and replace with the adapters.
 
@@ -80,7 +82,7 @@ In addition to the standard donkey parts, Raspberry Pi etc, you will need to buy
 
 | Part Description   | Link  | Approximate Cost |
 |------|-------------|------------------|
-|TT-01 Clone Chassis| [eBay](https://www.ebay.com/itm/Alloy-Carbon-TT01-TT01E-Shaft-Drive-1-10-4WD-Racing-Car-Chassis-Frame-Kit/261607459461?_trkparms=aid%3D555019%26algo%3DPL.BANDIT%26ao%3D1%26asc%3D20150817211623%26meid%3Da9b0995835f04dc2ae610bb9de46099b%26pid%3D100505%26rk%3D1%26rkt%3D1%26%26itm%3D261607459461&_trksid=p2045573.c100505.m3226) other TT01s may be used| $130|
+|TT-01 Clone Chassis| [amazon](https://amzn.to/2XQLVJn) other TT01s may be used| $130|
 |ESC|[Hobbyking](https://hobbyking.com/en_us/hobbyking-x-car-45a-brushed-car-esc.html) |10.60|
 |Brushed Motor |[Hobbyking](https://hobbyking.com/en_us/mabuchi-rs-540sh-6527-brushed-motor-90w.html) |$5|
 |Steering Servo|[Hobbyking](https://hobbyking.com/en_us/hobbykingtm-hk15138-standard-analog-servo-4-3kg-0-17sec-38g.html)| $5|

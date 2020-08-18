@@ -247,8 +247,12 @@ BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data i
 #then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
-DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
-GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "me", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
+DONKEY_GYM_ENV_NAME = "donkey-mountain-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
+GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "car", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
+GYM_CONF["racer_name"] = "Your Name"
+GYM_CONF["country"] = "Place"
+GYM_CONF["bio"] = "I race robots."
+
 SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
 SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
 
@@ -283,4 +287,7 @@ REALSENSE_D435_DEPTH = True     # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
-
+# Stop Sign Detector
+STOP_SIGN_DETECTOR = False
+STOP_SIGN_MIN_SCORE = 0.2
+STOP_SIGN_SHOW_BOUNDING_BOX = True

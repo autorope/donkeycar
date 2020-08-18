@@ -91,10 +91,12 @@ class CreateCar(BaseCommand):
         config_template_path = os.path.join(TEMPLATES_PATH, 'cfg_' + template + '.py')
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
+        calibrate_template_path = os.path.join(TEMPLATES_PATH, 'calibrate.py')
         car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
+        calibrate_app_path = os.path.join(path, 'calibrate.py')        
         
         if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
@@ -113,6 +115,12 @@ class CreateCar(BaseCommand):
         else:
             print("Copying train script. Adjust these before starting your car.")
             shutil.copyfile(train_template_path, train_app_path)
+            
+        if os.path.exists(calibrate_app_path) and not overwrite:
+            print('Calibrate already exists. Delete it and rerun createcar to replace.')
+        else:
+            print("Copying calibrate script. Adjust these before starting your car.")
+            shutil.copyfile(calibrate_template_path, calibrate_app_path)
 
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")
@@ -140,12 +148,14 @@ class UpdateCar(BaseCommand):
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='update', usage='%(prog)s [options]')
+        parser.add_argument('--template', default=None, help='name of car template to use')
         parsed_args = parser.parse_args(args)
         return parsed_args
         
     def run(self, args):
+        args = self.parse_args(args)
         cc = CreateCar()
-        cc.create_car(path=".", overwrite=True)
+        cc.create_car(path=".", overwrite=True, template=args.template)
         
 
 class FindCar(BaseCommand):
@@ -238,7 +248,7 @@ class MakeMovieShell(BaseCommand):
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
         parser.add_argument('--model', default=None, help='the model to use to show control outputs')
-        parser.add_argument('--type', default=None, help='the model type to load')
+        parser.add_argument('--type', default=None, required=False, help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing activations')
         parser.add_argument('--start', type=int, default=0, help='first frame to process')
         parser.add_argument('--end', type=int, default=-1, help='last frame to process')
@@ -294,34 +304,43 @@ class ShowHistogram(BaseCommand):
         parser = argparse.ArgumentParser(prog='tubhist', usage='%(prog)s [options]')
         parser.add_argument('--tub', nargs='+', help='paths to tubs')
         parser.add_argument('--record', default=None, help='name of record to create histogram')
+        parser.add_argument('--out', default=None, help='path where to save histogram end with .png')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
-    def show_histogram(self, tub_paths, record_name):
+    def show_histogram(self, tub_paths, record_name, out):
         '''
         Produce a histogram of record type frequency in the given tub
         '''
         from matplotlib import pyplot as plt
         from donkeycar.parts.datastore import TubGroup
 
+        output = out or os.path.basename(tub_paths)
         tg = TubGroup(tub_paths=tub_paths)
+
         if record_name is not None:
             tg.df[record_name].hist(bins=50)
         else:
             tg.df.hist(bins=50)
-
+  
         try:
-            filename = os.path.basename(tub_paths) + '_hist_%s.png' % record_name.replace('/', '_')
+            if out is not None:
+                filename = output
+            else:
+                if record_name is not None:
+                    filename = output + '_hist_%s.png' % record_name.replace('/', '_')
+                else:
+                    filename = output + '_hist.png'
             plt.savefig(filename)
             print('saving image to:', filename)
-        except:
-            pass
+        except Exception as e:
+            print(e)
         plt.show()
 
     def run(self, args):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
-        self.show_histogram(args.tub, args.record)
+        self.show_histogram(args.tub, args.record, args.out)
 
 
 class ConSync(BaseCommand):

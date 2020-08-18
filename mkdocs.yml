@@ -19,6 +19,7 @@ pages:
       - 'Train an autopilot.': guide/train_autopilot.md
       - 'Donkey Simulator.': guide/simulator.md
       - 'Virtual Race League.': guide/virtual_race_league.md
+      - 'Mobile app': guide/mobile_app.md
   - Parts:
       - 'About': parts/about.md
       - 'Actuators': parts/actuators.md
@@ -28,6 +29,7 @@ pages:
       - 'IMU': parts/imu.md
       - 'OLED': parts/oled.md
       - 'Voice Control': parts/voice_control.md
+      - 'Stop Sign Detection': parts/stop_sign_detection.md
   - Utilities:
       - 'donkey': utility/donkey.md
 
