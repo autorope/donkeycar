@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-    version='3.1.3',
+    version='3.1.4',
     long_description = long_description,
     description='Self driving library for python.',
     url='https://github.com/autorope/donkeycar',
@@ -44,7 +44,8 @@ setup(name='donkeycar',
                       'moviepy',
                       'pandas',
                       'PrettyTable',
-                      'paho-mqtt'
+                      'paho-mqtt',
+                      "simple_pid"
                      ],
 
     extras_require={
