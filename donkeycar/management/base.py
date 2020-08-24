@@ -2,6 +2,7 @@
 import shutil
 import argparse
 import json
+import uuid
 
 from socket import *
 import os
@@ -64,6 +65,25 @@ class CreateCar(BaseCommand):
     def run(self, args):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
+
+    def check_guid(self, filename):
+        with open(filename, "rt") as infile:
+            text = infile.read()
+        guid_setting = 'GYM_CONF["guid"]'
+        if guid_setting in text:
+            return
+
+        # if no GYM_CONF dict, then ignore the guid
+        if not 'GYM_CONF' in text:
+            return
+
+        with open(filename, "at") as outfile:
+            # make a random UUID
+            guid = uuid.uuid4()
+            comment = "# This random string identifies this robot in a race. Should remain constant."
+            outfile.write("\n\n%s\n" % comment)
+            outfile.write('%s = "%s"\n' % (guid_setting, guid))
+
     
     def create_car(self, path, template='complete', overwrite=False):
         """
@@ -137,6 +157,8 @@ class CreateCar(BaseCommand):
             cfg.close()
             mcfg.close()
 
+        # ensure that we have a GUID
+        self.check_guid(mycar_config_path)
  
         print("Donkey setup complete.")
 
