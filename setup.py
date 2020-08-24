@@ -23,7 +23,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='donkeycar',
-    version='3.1.4',
+    version='3.1.5',
     long_description = long_description,
     description='Self driving library for python.',
     url='https://github.com/autorope/donkeycar',
