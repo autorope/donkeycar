@@ -86,7 +86,25 @@ Set ```HAVE_SOMBRERO = True``` in your __myconfig.py__ if you have a sombrero bo
 
 ## Robo HAT MM1 Setup
 
-Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board.
+Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board.   Also set the following variables according to your setup.  Most people will be using the below values, however, if you are using a Jetson Nano, please set `MM1_SERIAL_PORT = '/dev/ttyTHS1'`
+
+```python3
+#ROBOHAT MM1
+HAVE_ROBOHAT = False            # set to true when using the Robo HAT MM1 from Robotics Masters.  This will change to RC Control.
+MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
+MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
+MM1_STOPPED_PWM = 1500
+MM1_MAX_REVERSE = 1000          # Max throttle to go reverse. The smaller the faster
+MM1_SHOW_STEERING_VALUE = False
+# Serial port 
+# -- Default Pi: '/dev/ttyS0'
+# -- Jetson Nano: '/dev/ttyTHS1'
+# -- Google coral: '/dev/ttymxc0'
+# -- Windows: 'COM3', Arduino: '/dev/ttyACM0'
+# -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
+#  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
+MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data (raspberry pi default)
+```
 
 The Robo HAT MM1 uses a RC Controller and CircuitPython script to drive the car during training. You must put the CircuitPython script onto the Robo HAT MM1 with your computer before you can continue.
 
