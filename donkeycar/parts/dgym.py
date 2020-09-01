@@ -21,6 +21,7 @@ class DonkeyGymEnv(object):
         conf["exe_path"] = sim_path
         conf["host"] = host
         conf["port"] = port
+        conf['guid'] = 0
         self.env = gym.make(env_name, conf=conf)
         self.frame = self.env.reset()
         self.action = [0.0, 0.0]
