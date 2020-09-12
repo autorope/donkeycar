@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 Scripts to train a keras model using tensorflow.
 Basic usage should feel familiar: python train_v2.py --model models/mypilot
 
@@ -8,7 +8,7 @@ Usage:
 
 Options:
     -h --help              Show this screen.
-'''
+"""
 
 import os
 import random

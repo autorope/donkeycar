@@ -1,4 +1,5 @@
 
+import shutil
 import argparse
 import os
 import shutil
@@ -118,7 +119,7 @@ class CreateCar(BaseCommand):
             print("Copying train script. Adjust these before starting your car.")
             shutil.copyfile(train_template_path, train_app_path)
             os.chmod(train_app_path, stat.S_IRWXU)
-            
+
         if os.path.exists(calibrate_app_path) and not overwrite:
             print('Calibrate already exists. Delete it and rerun createcar to replace.')
         else:
@@ -179,7 +180,7 @@ class FindCar(BaseCommand):
         print("Your car's ip address is:" )
         os.system(cmd)
 
-        
+
 class CalibrateCar(BaseCommand):    
     
     def parse_args(self, args):
@@ -434,7 +435,7 @@ def execute_from_command_line():
         'calibrate': CalibrateCar,
         'tubclean': TubManager,
         'tubplot': ShowPredictionPlots,
-        'makemovie': MakeMovieShell,            
+        'makemovie': MakeMovieShell,
         'createjs': CreateJoystick,
         'cnnactivations': ShowCnnActivations,
         'update': UpdateCar,

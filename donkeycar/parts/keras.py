@@ -134,7 +134,7 @@ class KerasCategorical(KerasPilot):
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
         return angle_unbinned, throttle
 
-    
+
 class KerasLinear(KerasPilot):
     """
     The KerasLinear pilot uses one neuron to output a continous value via the
@@ -345,7 +345,7 @@ def default_categorical(input_shape=(120, 160, 3)):
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)
     # categorical output of throttle into 20 bins
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)
-    
+
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     return model
 
