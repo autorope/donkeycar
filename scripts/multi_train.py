@@ -10,6 +10,7 @@ import os
 import time
 import random
 import subprocess
+import uuid
 
 num_clients = 4
 model_file = "mtn_drv2.h5" #or any model in ~/mycar/models/
@@ -35,6 +36,7 @@ for i in range(num_clients):
 		outfile.write('GYM_CONF["racer_name"] = "ai-%d"\n' % (i+1))
 		outfile.write('GYM_CONF["country"] = "USA"\n')
 		outfile.write('GYM_CONF["bio"] = "I am an ai!"\n')
+		outfile.write('GYM_CONF["guid"] = "%d"\n' % i)
 		outfile.close()
 
 	command = "python manage.py drive --model=models/%s --myconfig=%s" % (model_file, conf_file)
@@ -42,7 +44,7 @@ for i in range(num_clients):
 	print(com_list)
 	proc = subprocess.Popen(com_list)
 	procs.append(proc)
-	time.sleep(1)
+	time.sleep(2)
 
 
 print("running for 30 min...")

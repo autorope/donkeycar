@@ -63,4 +63,4 @@ V.start(rate_hz=10)
 ```
 
 See [home page](http://donkeycar.com), [docs](http://docs.donkeycar.com)
-or join the [Slack channel](http://www.donkeycar.com/community.html) to learn more.
+or join the [Discord server](http://www.donkeycar.com/community.html) to learn more.
