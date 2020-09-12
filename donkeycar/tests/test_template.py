@@ -2,7 +2,7 @@
 import tempfile
 from tempfile import gettempdir
 import unittest
-from donkeycar.parts.datastore import TubWriter, Tub
+from donkeycar.parts.tub_v2 import TubWriter, Tub
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.templates import complete
 import donkeycar as dk

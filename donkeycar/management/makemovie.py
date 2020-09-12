@@ -12,7 +12,7 @@ except:
     raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
 
 import donkeycar as dk
-from donkeycar.parts.datastore import Tub
+from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import *
 
 
@@ -54,13 +54,18 @@ class MakeMovie(object):
                 return
 
         self.tub = Tub(args.tub)
-        self.index = self.tub.get_index(shuffled=False)
+
         start = args.start
-        self.end = args.end if args.end != -1 else len(self.index)
-        if self.end >= len(self.index):
-            self.end = len(self.index) - 1
-        num_frames = self.end - start
-        self.iRec = start
+        self.end_index = args.end if args.end != -1 else len(self.tub)
+        num_frames = self.end_index - start
+
+        # Move to the correct offset
+        self.current = 0
+        self.iterator = self.tub.__iter__()
+        while self.current < start:
+            self.iterator.next()
+            self.current += 1
+
         self.scale = args.scale
         self.keras_part = None
         self.do_salient = False
@@ -72,8 +77,7 @@ class MakeMovie(object):
                 self.do_salient = self.init_salient(self.keras_part.model)
 
         print('making movie', args.out, 'from', num_frames, 'images')
-        clip = mpy.VideoClip(self.make_frame,
-                             duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
+        clip = mpy.VideoClip(self.make_frame, duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
     def draw_user_input(self, record, img):
@@ -236,11 +240,10 @@ class MakeMovie(object):
         a frame counter. This assumes sequential access.
         '''
 
-        if self.iRec >= self.end or self.iRec >= len(self.index):
+        if self.current >= self.end_index:
             return None
 
-        rec_ix = self.index[self.iRec]
-        rec = self.tub.get_record(rec_ix)
+        rec = self.iterator.next()
         image = rec['cam/image_array']
 
         if self.cfg.ROI_CROP_TOP != 0 or self.cfg.ROI_CROP_BOTTOM != 0:
@@ -262,6 +265,6 @@ class MakeMovie(object):
             dsize = (w * self.scale, h * self.scale)
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
 
-        self.iRec += 1
+        self.current += 1
         # returns a 8-bit RGB array
         return image

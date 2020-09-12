@@ -366,88 +366,6 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-"""
-Tub management
-"""
-
-
-def expand_path_masks(paths):
-    '''
-    take a list of paths and expand any wildcards
-    returns a new list of paths fully expanded
-    '''
-    import glob
-    expanded_paths = []
-    for path in paths:
-        if '*' in path or '?' in path:
-            mask_paths = glob.glob(path)
-            expanded_paths += mask_paths
-        else:
-            expanded_paths.append(path)
-
-    return expanded_paths
-
-
-def gather_tub_paths(cfg, tub_names=None):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub paths
-    '''
-    if tub_names:
-        if type(tub_names) == list:
-            tub_paths = [os.path.expanduser(n) for n in tub_names]
-        else:
-            tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        return expand_path_masks(tub_paths)
-    else:
-        paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-        dir_paths = []
-        for p in paths:
-            if os.path.isdir(p):
-                dir_paths.append(p)
-        return dir_paths
-
-
-def gather_tubs(cfg, tub_names):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub objects initialized to each path
-    '''
-    from donkeycar.parts.datastore import Tub
-
-    tub_paths = gather_tub_paths(cfg, tub_names)
-    tubs = [Tub(p) for p in tub_paths]
-
-    return tubs
-
-"""
-Training helpers
-"""
-
-def get_image_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[0])
-
-
-def get_record_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[1].split('.')[0])
-
-
-def gather_records(cfg, tub_names, opts=None, verbose=False):
-
-    tubs = gather_tubs(cfg, tub_names)
-
-    records = []
-
-    for tub in tubs:
-        if verbose:
-            print(tub.path)
-        record_paths = tub.gather_records()
-        records += record_paths
-
-    return records
-
 
 def get_model_by_type(model_type, cfg):
     '''
@@ -495,6 +413,12 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "fastai":
         from donkeycar.parts.fastai import FastAiPilot
         kl = FastAiPilot()
+    elif model_type == "transfer":
+        from donkeycar.parts.keras import KerasTransferLearning
+        kl = KerasTransferLearning(input_shape=input_shape, roi_crop=roi_crop)
+    elif model_type == "inferred":
+        from donkeycar.parts.keras import KerasInferred
+        kl = KerasInferred(input_shape=input_shape)
     else:
         raise Exception("unknown model type: %s" % model_type)
 

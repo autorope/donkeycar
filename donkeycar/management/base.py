@@ -1,19 +1,21 @@
 
-import shutil
 import argparse
 import json
-import uuid
-
-from socket import *
 import os
+import shutil
+import socket
+import sys
+import time
+import uuid
+from socket import *
 from threading import Thread
 
-import donkeycar as dk
-from donkeycar.parts.datastore import Tub
-from donkeycar.utils import *
-from donkeycar.management.tub import TubManager
-from donkeycar.management.joystick_creator import CreateJoystick
 import numpy as np
+
+import donkeycar as dk
+from donkeycar.management.joystick_creator import CreateJoystick
+from donkeycar.management.tub import TubManager
+from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -269,147 +271,6 @@ class MakeMovieShell(BaseCommand):
         mm.run(args, parser)
 
 
-class TubCheck(BaseCommand):
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='tubcheck', usage='%(prog)s [options]')
-        parser.add_argument('tubs', nargs='+', help='paths to tubs')
-        parser.add_argument('--fix', action='store_true', help='remove problem records')
-        parser.add_argument('--delete_empty', action='store_true', help='delete tub dir with no records')
-        parsed_args = parser.parse_args(args)
-        return parsed_args
-
-    def check(self, tub_paths, fix=False, delete_empty=False):
-        '''
-        Check for any problems. Looks at tubs and find problems in any records or images that won't open.
-        If fix is True, then delete images and records that cause problems.
-        '''
-        cfg = load_config('config.py')
-        tubs = gather_tubs(cfg, tub_paths)
-
-        for tub in tubs:
-            tub.check(fix=fix)
-            if delete_empty and tub.get_num_records() == 0:
-                import shutil
-                print("removing empty tub", tub.path)
-                shutil.rmtree(tub.path)
-
-    def run(self, args):
-        args = self.parse_args(args)
-        self.check(args.tubs, args.fix, args.delete_empty)
-
-
-class ShowHistogram(BaseCommand):
-
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='tubhist', usage='%(prog)s [options]')
-        parser.add_argument('--tub', nargs='+', help='paths to tubs')
-        parser.add_argument('--record', default=None, help='name of record to create histogram')
-        parser.add_argument('--out', default=None, help='path where to save histogram end with .png')
-        parsed_args = parser.parse_args(args)
-        return parsed_args
-
-    def show_histogram(self, tub_paths, record_name, out):
-        '''
-        Produce a histogram of record type frequency in the given tub
-        '''
-        from matplotlib import pyplot as plt
-        from donkeycar.parts.datastore import TubGroup
-
-        output = out or os.path.basename(tub_paths)
-        tg = TubGroup(tub_paths=tub_paths)
-
-        if record_name is not None:
-            tg.df[record_name].hist(bins=50)
-        else:
-            tg.df.hist(bins=50)
-  
-        try:
-            if out is not None:
-                filename = output
-            else:
-                if record_name is not None:
-                    filename = output + '_hist_%s.png' % record_name.replace('/', '_')
-                else:
-                    filename = output + '_hist.png'
-            plt.savefig(filename)
-            print('saving image to:', filename)
-        except Exception as e:
-            print(e)
-        plt.show()
-
-    def run(self, args):
-        args = self.parse_args(args)
-        args.tub = ','.join(args.tub)
-        self.show_histogram(args.tub, args.record, args.out)
-
-
-class ConSync(BaseCommand):
-    '''
-    continuously rsync data
-    '''
-    
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='consync', usage='%(prog)s [options]')
-        parser.add_argument('--dir', default='./cont_data/', help='paths to tubs')
-        parser.add_argument('--delete', default='y', help='remove files locally that were deleted remotely y=yes n=no')
-        parsed_args = parser.parse_args(args)
-        return parsed_args
-
-    def run(self, args):
-        args = self.parse_args(args)
-        cfg = load_config('config.py')
-        dest_dir = args.dir
-        del_arg = ""
-
-        if args.delete == 'y':
-            reply = input('WARNING:this rsync operation will delete data in the target dir: %s. ok to proceeed? [y/N]: ' % dest_dir)
-
-            if reply != 'y' and reply != "Y":
-                return
-            del_arg = "--delete"
-
-        if not dest_dir[-1] == '/' and not dest_dir[-1] == '\\':
-            print("Desination dir should end with a /")
-            return
-
-        try:
-            os.mkdir(dest_dir)
-        except:
-            pass
-
-        while True:
-            command = "rsync -aW --progress %s@%s:%s/data/ %s %s" %\
-                (cfg.PI_USERNAME, cfg.PI_HOSTNAME, cfg.PI_DONKEY_ROOT, dest_dir, del_arg)
-
-            os.system(command)
-            time.sleep(5)
-
-
-class ConTrain(BaseCommand):
-    '''
-    continuously train data
-    '''
-    
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='contrain', usage='%(prog)s [options]')
-        parser.add_argument('--tub', default='./cont_data/*', help='paths to tubs')
-        parser.add_argument('--model', default='./models/drive.h5', help='path to model')
-        parser.add_argument('--transfer', default=None, help='path to transfer model')
-        parser.add_argument('--type', default='categorical', help='type of model (linear|categorical|rnn|imu|behavior|3d)')
-        parser.add_argument('--aug', action="store_true", help='perform image augmentation')        
-        parsed_args = parser.parse_args(args)
-        return parsed_args
-
-    def run(self, args):
-        args = self.parse_args(args)
-        cfg = load_config('config.py')
-        import sys
-        sys.path.append('.')
-        from train import multi_train
-        continuous = True
-        multi_train(cfg, args.tub, args.model, args.transfer, args.type, continuous, args.aug)
-
-
 class ShowCnnActivations(BaseCommand):
 
     def __init__(self):
@@ -499,20 +360,21 @@ class ShowPredictionPlots(BaseCommand):
             model_type = cfg.DEFAULT_MODEL_TYPE
         model.load(model_path)
 
-        records = gather_records(cfg, tub_paths)
         user_angles = []
         user_throttles = []
         pilot_angles = []
         pilot_throttles = []       
 
-        records = records[:limit]
-        num_records = len(records)
-        print('processing %d records:' % num_records)
+        from donkeycar.parts.tub_v2 import Tub
+        from pathlib import Path
 
-        for record_path in records:
-            with open(record_path, 'r') as fp:
-                record = json.load(fp)
-            img_filename = os.path.join(tub_paths, record['cam/image_array'])
+        base_path = Path(os.path.expanduser(tub_paths)).absolute().as_posix()
+        tub = Tub(base_path)
+        records = list(tub)
+        records = records[:limit]
+
+        for record in records:
+            img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
             img = load_scaled_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
             user_throttle = float(record["user/throttle"])
@@ -558,51 +420,6 @@ class ShowPredictionPlots(BaseCommand):
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
         self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
-        
-
-class TubAugment(BaseCommand):
-    def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='tubaugment',
-                                         usage='%(prog)s [options]')
-        parser.add_argument('tubs', nargs='+', help='paths to tubs')
-        parser.add_argument('--inplace', dest='inplace', action='store_true',
-                            help='If tub should be changed in place or new '
-                                 'tub will be created')
-        parser.set_defaults(inplace=False)
-        parsed_args = parser.parse_args(args)
-        return parsed_args
-
-    def augment(self, tub_paths, inplace=False):
-        """
-        :param tub_paths:   path list to tubs
-        :param inplace:     if tub should be changed or copied
-        :return:            None
-        """
-        cfg = load_config('config.py')
-        tubs = gather_tubs(cfg, tub_paths)
-
-        for tub in tubs:
-            if inplace:
-                tub.augment_images()
-            else:
-                tub_path = tub.path
-                # remove trailing slash if exits
-                if tub_path[-1] == '/':
-                    tub_path = tub_path[:-1]
-                # create new tub path by inserting '_aug' after 'tub_XY'
-                head, tail = os.path.split(tub_path)
-                tail_list = tail.split('_')
-                tail_list.insert(2, 'aug')
-                new_tail = '_'.join(tail_list)
-                new_path = os.path.join(head, new_tail)
-                # copy whole tub to new location and run augmentation
-                shutil.copytree(tub.path, new_path)
-                new_tub = Tub(new_path)
-                new_tub.augment_images()
-
-    def run(self, args):
-        args = self.parse_args(args)
-        self.augment(args.tubs, args.inplace)
 
 
 def execute_from_command_line():
@@ -610,21 +427,15 @@ def execute_from_command_line():
     This is the function linked to the "donkey" terminal command.
     """
     commands = {
-            'createcar': CreateCar,
-            'findcar': FindCar,
-            'calibrate': CalibrateCar,
-            'tubclean': TubManager,
-            'tubhist': ShowHistogram,
-            'tubplot': ShowPredictionPlots,
-            'tubcheck': TubCheck,
-            'tubaugment': TubAugment,
-            'makemovie': MakeMovieShell,            
-            'createjs': CreateJoystick,
-            'consync': ConSync,
-            'contrain': ConTrain,
-            'cnnactivations': ShowCnnActivations,
-            'update': UpdateCar
-                }
+        'createcar': CreateCar,
+        'findcar': FindCar,
+        'calibrate': CalibrateCar,
+        'tubclean': TubManager,
+        'makemovie': MakeMovieShell,            
+        'createjs': CreateJoystick,
+        'cnnactivations': ShowCnnActivations,
+        'update': UpdateCar,
+    }
     
     args = sys.argv[:]
 
