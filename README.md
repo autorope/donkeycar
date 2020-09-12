@@ -12,7 +12,7 @@ community contributions.
 #### Quick Links
 * [Donkeycar Updates & Examples](http://donkeycar.com)
 * [Build instructions and Software documentation](http://docs.donkeycar.com)
-* [Slack / Chat](https://donkey-slackin.herokuapp.com/)
+* [Discord / Chat](https://discord.gg/PN6kFeA)
 
 ![donkeycar](./docs/assets/build_hardware/donkey2.png)
 
