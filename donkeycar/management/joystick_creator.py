@@ -5,7 +5,6 @@ import json
 import time
 import math
 
-from donkeycar.parts.datastore import Tub
 from donkeycar.utils import *
 from donkeycar.parts.controller import JoystickCreatorController
 

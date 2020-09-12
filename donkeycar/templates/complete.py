@@ -25,9 +25,8 @@ import donkeycar as dk
 
 #import parts
 from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
-from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, \
-    JoystickController, WebFpv
+from donkeycar.parts.tub_v2 import TubWriter
+from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -597,10 +596,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
-
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+    
+    tub_writer = TubWriter(cfg.DATA_PATH, inputs=inputs, types=types, metadata=meta)
+    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
@@ -616,23 +614,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
-        #tell the controller about the tub
-        ctr.set_tub(tub)
-
-        if cfg.BUTTON_PRESS_NEW_TUB:
-
-            def new_tub_dir():
-                V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
-                ctr.set_tub(tub)
-
-            ctr.set_button_down_trigger('cross', new_tub_dir)
+        ctr.set_tub(tub_writer.tub)
         ctr.print_controls()
 
     #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
-            max_loop_count=cfg.MAX_LOOPS)
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
@@ -648,23 +634,5 @@ if __name__ == '__main__':
               meta=args['--meta'])
 
     if args['train']:
-        from train import multi_train, preprocessFileList
-
-        tub = args['--tub']
-        model = args['--model']
-        transfer = args['--transfer']
-        model_type = args['--type']
-        continuous = args['--continuous']
-        aug = args['--aug']
-        dirs = preprocessFileList( args['--file'] )
-
-        if tub is not None:
-            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
-            dirs.extend( tub_paths )
-
-        if model_type is None:
-            model_type = cfg.DEFAULT_MODEL_TYPE
-            print("using default model type of", model_type)
-
-        multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
+        print('Use python train.py instead.\n')
 
