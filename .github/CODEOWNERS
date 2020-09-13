@@ -1,0 +1,38 @@
+# This is a comment.
+# Each line is a file pattern followed by one or more owners.
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence, 
+# they will be requested for review when someone opens a pull request.
+* @tawnkramer
+
+# Python files 
+**/*.py @tawnkramer @wroscoe
+
+# Fine-grained owners of specific code parts are below.
+
+# Web UI / Frontend
+**/*.html @Schmill
+**/*.js @Schmill
+
+# Docs
+/docs/*.md @tawnkramer @wroscoe @Ezward @nvtkaszpir
+
+# Robohat - anything under robohat subdir will be owned by @wallarug
+# notice there is no prepending slash
+robohat/ @wallarug
+# specific donkey part file is owned by more people
+/donkeycar/parts/robohat.py @wallarug @sctse999
+
+# Object detection and voice control
+/donkeycar/parts/object_detector/* @sctse999
+/donkeycar/parts/voice_control/* @sctse999
+
+# AI related
+/donkeycar/parts/keras.py @tawnkramer @tikurahul
+/donkeycar/parts/tensorrt.py @tikurahul @dlam
+/donkeycar/parts/tflite.py @dlarue
+
+# Other hardware parts
+/donkeycar/parts/oled.py @tikurahul
+/donkeycar/parts/serial_controller.py @wallarug
