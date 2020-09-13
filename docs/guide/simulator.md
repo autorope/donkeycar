@@ -159,7 +159,7 @@ Example:
 
 ### Get Scene Names
 
-Client=>Sim. Ask names of the scnee you can load.
+Client=>Sim. Ask names of the scene you can load.
 
 Fields: *None*
 
