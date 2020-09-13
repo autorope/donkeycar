@@ -18,6 +18,8 @@
 
 ## Step 1: Flash Operating System
 
+> Note:  If you plan to use the mobile app, consider using the pre-built image. Refer to the [mobile app user guide](../mobile_app.md) for details. 
+
 You need to flash a micro SD image with an operating system.
 
 1. Download [Latest Raspian(Buster)](https://downloads.raspberrypi.org/raspbian_lite_latest). 
