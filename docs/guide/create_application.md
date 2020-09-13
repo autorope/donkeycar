@@ -86,7 +86,8 @@ Set ```HAVE_SOMBRERO = True``` in your __myconfig.py__ if you have a sombrero bo
 
 ## Robo HAT MM1 Setup
 
-Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board.   Also set the following variables according to your setup.  Most people will be using the below values, however, if you are using a Jetson Nano, please set `MM1_SERIAL_PORT = '/dev/ttyTHS1'`
+Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board. Also set the following variables according to your setup.  Most people will be using the below values, however, if you are using a Jetson Nano, please set `MM1_SERIAL_PORT = '/dev/ttyTHS1'`
+
 
 ```python3
 #ROBOHAT MM1
@@ -104,6 +105,11 @@ MM1_SHOW_STEERING_VALUE = False
 # -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data (raspberry pi default)
+
+# adjust controller type as Robohat MM1
+CONTROLLER_TYPE='MM1'
+# adjust drive train for web interface
+DRIVE_TRAIN_TYPE = 'MM1'
 ```
 
 The Robo HAT MM1 uses a RC Controller and CircuitPython script to drive the car during training. You must put the CircuitPython script onto the Robo HAT MM1 with your computer before you can continue.
