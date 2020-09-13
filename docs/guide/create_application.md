@@ -86,11 +86,35 @@ Set ```HAVE_SOMBRERO = True``` in your __myconfig.py__ if you have a sombrero bo
 
 ## Robo HAT MM1 Setup
 
-Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board.
+Set ```HAVE_ROBOHAT = True``` in your __myconfig.py__ if you have a Robo HAT MM1 board. Also set the following variables according to your setup.  Most people will be using the below values, however, if you are using a Jetson Nano, please set `MM1_SERIAL_PORT = '/dev/ttyTHS1'`
+
+
+```python3
+#ROBOHAT MM1
+HAVE_ROBOHAT = False            # set to true when using the Robo HAT MM1 from Robotics Masters.  This will change to RC Control.
+MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
+MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
+MM1_STOPPED_PWM = 1500
+MM1_MAX_REVERSE = 1000          # Max throttle to go reverse. The smaller the faster
+MM1_SHOW_STEERING_VALUE = False
+# Serial port 
+# -- Default Pi: '/dev/ttyS0'
+# -- Jetson Nano: '/dev/ttyTHS1'
+# -- Google coral: '/dev/ttymxc0'
+# -- Windows: 'COM3', Arduino: '/dev/ttyACM0'
+# -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
+#  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
+MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data (raspberry pi default)
+
+# adjust controller type as Robohat MM1
+CONTROLLER_TYPE='MM1'
+# adjust drive train for web interface
+DRIVE_TRAIN_TYPE = 'MM1'
+```
 
 The Robo HAT MM1 uses a RC Controller and CircuitPython script to drive the car during training. You must put the CircuitPython script onto the Robo HAT MM1 with your computer before you can continue.
 
-1.  Download the CircuitPython Donkey Car Driver for Robo HAT MM1 to your computer from [here](https://github.com/robotics-masters/mm1-hat-cpy-native/blob/master/examples/rc-cpy-final.py)
+1.  Download the CircuitPython Donkey Car Driver for Robo HAT MM1 to your computer from [here](https://github.com/autorope/donkeycar/blob/dev/donkeycar/contrib/robohat/code.py)
 2.  Connect the MicroUSB connector on the Robo HAT MM1 to your computer's USB port.
 3.  A __CIRCUITPY__ device should appear on the computer as a USB Storage Device
 4.  Copy the file downloaded in Step 1 to the __CIRCUITPY__ USB Storage Device.  Rename the file __code.py__.
@@ -106,6 +130,15 @@ You may need to enable the hardware serial port on your Raspberry Pi.  On your R
 5.  When asked: __Would you like the serial port hardware to be enabled?__ YES
 6.  Close raspi-config
 7.  Restart
+
+
+If you would like additional hardware or software support with Robo HAT MM1, there are a few guides published on Hackster.io.  They are listed below.
+
+[Raspberry Pi + Robo HAT MM1](https://www.hackster.io/wallarug/autonomous-cars-with-robo-hat-mm1-8d0e65)
+
+[Jetson Nano + Robo HAT MM1](https://www.hackster.io/wallarug/donkey-car-with-jetson-nano-robo-hat-mm1-e53e21)
+
+[Simulator + Robo HAT MM1](https://www.hackster.io/wallarug/donkey-car-simulator-with-real-rc-controller-628e77)
 
 
 ## Joystick setup
