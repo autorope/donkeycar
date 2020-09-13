@@ -421,6 +421,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(kl, inputs=inputs,
             outputs=outputs,
             run_condition='run_pilot')
+    
+    if cfg.STOP_SIGN_DETECTOR:
+        from donkeycar.parts.object_detector.stop_sign_detector import StopSignDetector
+        V.add(StopSignDetector(cfg.STOP_SIGN_MIN_SCORE, cfg.STOP_SIGN_SHOW_BOUNDING_BOX), inputs=['cam/image_array', 'pilot/throttle'], outputs=['pilot/throttle', 'cam/image_array'])
 
     #Choose what inputs should change the car.
     class DriveMode:

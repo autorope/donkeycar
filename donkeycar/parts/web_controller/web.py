@@ -7,7 +7,7 @@ Created on Sat Jun 24 20:10:44 2017
 
 remotes.py
 
-The client and web server needed to control a car remotely. 
+The client and web server needed to control a car remotely.
 """
 
 
@@ -31,9 +31,9 @@ from ... import utils
 class RemoteWebServer():
     '''
     A controller that repeatedly polls a remote webserver and expects
-    the response to be angle, throttle and drive mode. 
+    the response to be angle, throttle and drive mode.
     '''
-    
+
     def __init__(self, remote_url, connection_timeout=.25):
 
         self.control_url = remote_url
@@ -47,8 +47,8 @@ class RemoteWebServer():
 
     def update(self):
         '''
-        Loop to run in separate thread the updates angle, throttle and 
-        drive mode. 
+        Loop to run in separate thread the updates angle, throttle and
+        drive mode.
         '''
 
         while True:
@@ -56,7 +56,7 @@ class RemoteWebServer():
             self.angle, self.throttle, self.mode, self.recording = self.run()
 
     def run_threaded(self):
-        ''' 
+        '''
         Return the last state given from the remote server.
         '''
         return self.angle, self.throttle, self.mode, self.recording
@@ -64,9 +64,9 @@ class RemoteWebServer():
     def run(self):
         '''
         Posts current car sensor data to webserver and returns
-        angle and throttle recommendations. 
+        angle and throttle recommendations.
         '''
-        
+
         data = {}
         response = None
         while response is None:
@@ -96,13 +96,13 @@ class RemoteWebServer():
 
     def shutdown(self):
         pass
-    
-    
+
+
 class LocalWebController(tornado.web.Application):
 
     def __init__(self, port=8887, mode='user'):
-        ''' 
-        Create and publish variables needed on many of 
+        '''
+        Create and publish variables needed on many of
         the web handlers.
         '''
 
@@ -115,7 +115,7 @@ class LocalWebController(tornado.web.Application):
         self.mode = mode
         self.recording = False
         self.port = port
-        
+
         self.num_records = 0
         self.wsclients = []
 
@@ -124,6 +124,8 @@ class LocalWebController(tornado.web.Application):
             (r"/", RedirectHandler, dict(url="/drive")),
             (r"/drive", DriveAPI),
             (r"/wsDrive", WebSocketDriveAPI),
+            (r"/wsCalibrate", WebSocketCalibrateAPI),
+            (r"/calibrate", CalibrateHandler),
             (r"/video", VideoAPI),
             (r"/static/(.*)", StaticFileHandler,
              {"path": self.static_file_path}),
@@ -148,10 +150,16 @@ class LocalWebController(tornado.web.Application):
         if (self.num_records is not None and self.recording is True):
             if self.num_records % 10 == 0:
                 for wsclient in self.wsclients:
-                    wsclient.write_message(json.dumps({'num_records': self.num_records}))
-        
+                    try:
+                        data = {
+                            'num_records': self.num_records
+                        }
+                        wsclient.write_message(json.dumps(data))
+                    except:
+                        pass
+
         return self.angle, self.throttle, self.mode, self.recording
-        
+
     def run(self, img_arr=None):
         self.img_arr = img_arr
         return self.angle, self.throttle, self.mode, self.recording
@@ -178,6 +186,12 @@ class DriveAPI(RequestHandler):
         self.application.recording = data['recording']
 
 
+class CalibrateHandler(RequestHandler):
+    """ Serves the calibration web page"""
+    async def get(self):
+        await self.render("templates/calibrate.html")
+
+
 class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
@@ -188,6 +202,7 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         data = json.loads(message)
+
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
@@ -196,6 +211,54 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def on_close(self):
         # print("Client disconnected")
         self.application.wsclients.remove(self)
+
+
+class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
+    def check_origin(self, origin):
+        return True
+
+    def open(self):
+        print("New client connected")
+
+    def on_message(self, message):
+        print(f"wsCalibrate {message}")
+        data = json.loads(message)
+        if 'throttle' in data:
+            print(data['throttle'])
+            self.application.throttle = data['throttle']
+
+        if 'angle' in data:
+            print(data['angle'])
+            self.application.angle = data['angle']
+
+        if 'config' in data:
+            config = data['config']
+            if self.application.drive_train_type == "SERVO_ESC":
+                if 'STEERING_LEFT_PWM' in config:
+                    self.application.drive_train['steering'].left_pulse = config['STEERING_LEFT_PWM']
+
+                if 'STEERING_RIGHT_PWM' in config:
+                    self.application.drive_train['steering'].right_pulse = config['STEERING_RIGHT_PWM']
+
+                if 'THROTTLE_FORWARD_PWM' in config:
+                    self.application.drive_train['throttle'].max_pulse = config['THROTTLE_FORWARD_PWM']
+
+                if 'THROTTLE_STOPPED_PWM' in config:
+                    self.application.drive_train['throttle'].zero_pulse = config['THROTTLE_STOPPED_PWM']
+
+                if 'THROTTLE_REVERSE_PWM' in config:
+                    self.application.drive_train['throttle'].min_pulse = config['THROTTLE_REVERSE_PWM']
+
+            elif self.application.drive_train_type == "MM1":
+                if ('MM1_STEERING_MID' in config) and (config['MM1_STEERING_MID'] != 0):
+                        self.application.drive_train.STEERING_MID = config['MM1_STEERING_MID']
+                if ('MM1_MAX_FORWARD' in config) and (config['MM1_MAX_FORWARD'] != 0):
+                        self.application.drive_train.MAX_FORWARD = config['MM1_MAX_FORWARD']
+                if ('MM1_MAX_REVERSE' in config) and (config['MM1_MAX_REVERSE'] != 0):
+                    self.application.drive_train.MAX_REVERSE = config['MM1_MAX_REVERSE']
+
+    def on_close(self):
+        print("Client disconnected")
 
 
 class VideoAPI(RequestHandler):

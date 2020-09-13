@@ -58,10 +58,13 @@ except:
 '''
 Tub management
 '''
+
+
 def make_key(sample):
     tub_path = sample['tub_path']
     index = sample['index']
     return tub_path + str(index)
+
 
 def make_next_key(sample, index_offset):
     tub_path = sample['tub_path']
@@ -190,7 +193,7 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
     '''
 
     def __init__(self, send_model_cb=None, cfg=None, *args, **kwargs):
-        super(MyCPCallback, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.reset_best_end_of_epoch = False
         self.send_model_cb = send_model_cb
         self.last_modified_time = None
@@ -200,7 +203,7 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
         self.reset_best_end_of_epoch = True
 
     def on_epoch_end(self, epoch, logs=None):
-        super(MyCPCallback, self).on_epoch_end(epoch, logs)
+        super().on_epoch_end(epoch, logs)
 
         if self.send_model_cb:
             '''
@@ -224,15 +227,10 @@ class MyCPCallback(keras.callbacks.ModelCheckpoint):
 
 def on_best_model(cfg, model, model_filename):
 
-    model.save(model_filename, include_optimizer=False)
-        
-    if not cfg.SEND_BEST_MODEL_TO_PI:
-        return
-
     on_windows = os.name == 'nt'
 
-    #If we wish, send the best model to the pi.
-    #On mac or linux we have scp:
+    # If we wish, send the best model to the pi.
+    # On mac or linux we have scp:
     if not on_windows:
         print('sending model to the pi')
         
@@ -498,15 +496,15 @@ def train(cfg, tub_names, model_name, transfer_model, model_type, continuous, au
     
     model_path = os.path.expanduser(model_name)
 
-    
-    #checkpoint to save model after each epoch and send best to the pi.
-    save_best = MyCPCallback(send_model_cb=on_best_model,
-                                    filepath=model_path,
-                                    monitor='val_loss', 
-                                    verbose=verbose, 
-                                    save_best_only=True, 
-                                    mode='min',
-                                    cfg=cfg)
+    # checkpoint to save model after each epoch and send best to the pi.
+    send_model_cb = on_best_model if cfg.SEND_BEST_MODEL_TO_PI else None
+    save_best = MyCPCallback(send_model_cb=send_model_cb,
+                             filepath=model_path,
+                             monitor='val_loss',
+                             verbose=verbose,
+                             save_best_only=True,
+                             mode='min',
+                             cfg=cfg)
 
     train_gen = generator(save_best, opts, gen_records, cfg.BATCH_SIZE, True)
     val_gen = generator(save_best, opts, gen_records, cfg.BATCH_SIZE, False)
@@ -544,16 +542,16 @@ def go_train(kl, cfg, train_gen, val_gen, gen_records, model_name, steps_per_epo
     start = time.time()
 
     model_path = os.path.expanduser(model_name)
-
-    #checkpoint to save model after each epoch and send best to the pi.
+    send_model_cb = on_best_model if cfg.SEND_BEST_MODEL_TO_PI else None
+    # checkpoint to save model after each epoch and send best to the pi.
     if save_best is None:
-        save_best = MyCPCallback(send_model_cb=on_best_model,
-                                    filepath=model_path,
-                                    monitor='val_loss', 
-                                    verbose=verbose, 
-                                    save_best_only=True, 
-                                    mode='min',
-                                    cfg=cfg)
+        save_best = MyCPCallback(send_model_cb=send_model_cb,
+                                 filepath=model_path,
+                                 monitor='val_loss',
+                                 verbose=verbose,
+                                 save_best_only=True,
+                                 mode='min',
+                                 cfg=cfg)
 
     #stop training if the validation error stops improving.
     early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
