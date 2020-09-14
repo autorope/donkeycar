@@ -12,7 +12,7 @@ community contributions.
 #### Quick Links
 * [Donkeycar Updates & Examples](http://donkeycar.com)
 * [Build instructions and Software documentation](http://docs.donkeycar.com)
-* [Slack / Chat](https://donkey-slackin.herokuapp.com/)
+* [Discord / Chat](https://discord.gg/PN6kFeA)
 
 ![donkeycar](./docs/assets/build_hardware/donkey2.png)
 
@@ -63,4 +63,4 @@ V.start(rate_hz=10)
 ```
 
 See [home page](http://donkeycar.com), [docs](http://docs.donkeycar.com)
-or join the [Slack channel](http://www.donkeycar.com/community.html) to learn more.
+or join the [Discord server](http://www.donkeycar.com/community.html) to learn more.

@@ -2,6 +2,7 @@
 import shutil
 import argparse
 import json
+import uuid
 
 from socket import *
 import os
@@ -64,7 +65,7 @@ class CreateCar(BaseCommand):
     def run(self, args):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
-    
+  
     def create_car(self, path, template='complete', overwrite=False):
         """
         This script sets up the folder structure for donkey to work.
@@ -136,7 +137,6 @@ class CreateCar(BaseCommand):
                     mcfg.write("# " + line)
             cfg.close()
             mcfg.close()
-
  
         print("Donkey setup complete.")
 

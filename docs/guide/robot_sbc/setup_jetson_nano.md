@@ -19,7 +19,7 @@ ssh into your vehicle. Use the the terminal for Ubuntu or Mac. [Putty](https://w
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
-sudo apt-get install build-essential python3 python3-dev python3-pip python3-pandas python3-opencv python3-h5py libhdf5-serial-dev hdf5-tools nano ntp
+sudo apt-get install build-essential python3 python3-dev python3-pip python3-pandas python3-h5py libhdf5-serial-dev hdf5-tools nano ntp
 ```
 
 Optionally, you can install RPi.GPIO clone for Jetson Nano from [here](https://github.com/NVIDIA/jetson-gpio). This is not required for default setup, but can be useful if using LED or other GPIO driven devices.
