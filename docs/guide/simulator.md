@@ -30,6 +30,7 @@ There are many ways to use the simulator, depending on your goals. You can use t
 ```bash
 cd ~/projects
 git clone https://github.com/tawnkramer/gym-donkeycar
+cd gym-donkeycar
 conda activate donkey
 pip install -e .[gym-donkeycar]
 ```
