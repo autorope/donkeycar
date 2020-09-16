@@ -12,6 +12,8 @@ dependencies:
 - pylint
 - pytest
 - pip
+- imgaug
+- progress
 
 - pip:
   - moviepy

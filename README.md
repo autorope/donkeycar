@@ -37,7 +37,7 @@ The donkey car is controlled by running a sequence of events
 import time
 from donkeycar import Vehicle
 from donkeycar.parts.cv import CvCam
-from donkeycar.parts.datastore import TubWriter
+from donkeycar.parts.datastore_v2 import TubWriter
 V = Vehicle()
 
 IMAGE_W = 160
@@ -53,9 +53,7 @@ while cam.run() is None:
     time.sleep(1)
 
 #add tub part to record images
-tub = TubWriter(path='./dat',
-          inputs=['image'],
-          types=['image_array'])
+tub = TubWriter(path='./dat', inputs=['image'], types=['image_array'])
 V.add(tub, inputs=['image'], outputs=['num_records'])
 
 #start the drive loop at 10 Hz

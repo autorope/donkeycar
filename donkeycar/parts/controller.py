@@ -786,8 +786,8 @@ class JoystickController(object):
     def erase_last_N_records(self):
         if self.tub is not None:
             try:
-                self.tub.erase_last_n_records(self.num_records_to_erase)
-                print('erased last %d records.' % self.num_records_to_erase)
+                self.tub.delete_last_n_records(self.num_records_to_erase)
+                print('deleted last %d records.' % self.num_records_to_erase)
             except:
                 print('failed to erase')
 
