@@ -16,18 +16,28 @@ class Seekable(object):
     def __init__(self, file, method='a+', line_lengths=list()):
         self.method = method
         self.line_lengths = list()
+        self.cumulative_lengths = list()
         self.file = open(file, self.method)
+        self.total_length = 0
         if len(line_lengths) <= 0:
             self._read_contents()
         else:
             self.line_lengths.extend(line_lengths)
+            for line_length in self.line_lengths:
+                self.total_length += line_length
+                self.cumulative_lengths.append(self.total_length)
 
     def _read_contents(self):
         self.line_lengths.clear()
+        self.cumulative_lengths.clear()
+        self.total_length = 0
         self.file.seek(0)
         contents = self.file.readline()
         while len(contents) > 0:
-            self.line_lengths.append(len(contents))
+            line_length = len(contents)
+            self.line_lengths.append(line_length)
+            self.total_length += line_length
+            self.cumulative_lengths.append(self.total_length)
             contents = self.file.readline()
         self.seek_end_of_file()
 
@@ -42,7 +52,9 @@ class Seekable(object):
             line = '%s\n' % (contents)
 
         offset = len(line)
+        self.total_length += offset
         self.line_lengths.append(offset)
+        self.cumulative_lengths.append(self.total_length)
         self.file.write(line)
         self.file.flush()
 
@@ -53,7 +65,8 @@ class Seekable(object):
         return self._offset_until(line_number)
 
     def _offset_until(self, line_index):
-        return sum(self.line_lengths[:line_index])
+        end_index = line_index - 1
+        return self.cumulative_lengths[end_index] if end_index >= 0 and end_index < len(self.cumulative_lengths) else 0
 
     def readline(self):
         return self.file.readline().rstrip('\n')
@@ -62,10 +75,12 @@ class Seekable(object):
         self.file.seek(self._line_start_offset(line_number))
 
     def seek_end_of_file(self):
-        self.file.seek(sum(self.line_lengths))
+        self.file.seek(self.total_length)
 
     def truncate_until_end(self, line_number):
         self.line_lengths = self.line_lengths[:line_number]
+        self.cumulative_lengths = self.cumulative_lengths[:line_number]
+        self.total_length = self.cumulative_lengths[-1] if len(self.cumulative_lengths) > 0 else 0
         self.seek_end_of_file()
         self.file.truncate()
     
