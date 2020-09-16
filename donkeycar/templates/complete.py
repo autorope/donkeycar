@@ -563,11 +563,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(throttle, inputs=['throttle'], threaded=True)
 
     # OLED setup
-    if cfg.USE_SSD1306_128_32:
+    if cfg.SSD1306_USE_DISPLAY:
         from donkeycar.parts.oled import OLEDPart
         auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
-        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_BUSNUM, auto_record_on_throttle=auto_record_on_throttle)
-        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+        oled_part = OLEDPart(
+            cfg.SSD1306_I2C_ADDR,
+            cfg.SSD1306_I2C_BUSNUM,
+            cfg.SSD1306_PROCESS_LIMIT,
+            auto_record_on_throttle,
+            cfg.SSD1306_WIDTH,
+            cfg.SSD1306_HEIGHT,
+            cfg.SSD1306_ETH_INTERFACE_NAME,
+            cfg.SSD1306_WLAN_INTERFACE_NAME
+        )
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], threaded=True)
 
     #add tub to save data
 

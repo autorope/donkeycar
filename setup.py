@@ -52,13 +52,11 @@ setup(name='donkeycar',
                     'pi': [
                         'picamera',
                         'Adafruit_PCA9685',
-                        'Adafruit_SSD1306',
                         'RPi.GPIO',
                         'pyserial',
                         ],
                     'nano': [
-                        'Adafruit_PCA9685',
-                        'Adafruit_SSD1306',
+                        'Adafruit_PCA9685'
                         ],
                     'pc': [
                         'matplotlib',
