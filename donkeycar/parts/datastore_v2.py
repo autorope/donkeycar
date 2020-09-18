@@ -133,7 +133,7 @@ class Catalog(object):
         atexit.register(self._exit_handler)
 
     def _exit_handler(self):
-        self.seekable.file.close()
+        self.close()
 
     def write_record(self, record):
         # Add record and update manifest
@@ -193,7 +193,7 @@ class CatalogMetadata(object):
         self.seekeable.writeline(contents)
 
     def close(self):
-        self.seekeable.close();
+        self.seekeable.close()
 
     def _exit_handler(self):
         self.close()
