@@ -3,9 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug] [--myconfig=<filename>]
-
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical)] [--camera=(single|stereo)] [--meta=<key:value> ...]
 
 Options:
     -h --help               Show this screen.
@@ -129,6 +127,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.CAMERA_TYPE == "IMAGE_LIST":
             from donkeycar.parts.camera import ImageListCamera
             cam = ImageListCamera(path_mask=cfg.PATH_MASK)
+        elif cfg.CAMERA_TYPE == "LEOPARD":
+            from donkeycar.parts.leopard_imaging import LICamera
+            cam = LICamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, fps=cfg.CAMERA_FRAMERATE)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 

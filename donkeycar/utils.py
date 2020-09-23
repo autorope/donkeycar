@@ -222,7 +222,7 @@ def linear_bin(a, N=15, offset=1, R=2.0):
     offset one hot bin by offset, commonly R/2
     '''
     a = a + offset
-    b = round(a / (R/(N-offset)))
+    b = round(a / (R / (N - offset)))
     arr = np.zeros(N)
     b = clamp(b, 0, N - 1)
     arr[int(b)] = 1
@@ -236,7 +236,7 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
     rescale given R range and offset
     '''
     b = np.argmax(arr)
-    a = b *(R/(N + offset)) + offset
+    a = b * (R / (N + offset)) + offset
     return a
 
 
@@ -402,42 +402,23 @@ def get_model_by_type(model_type, cfg):
     print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
-    roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
-
-    if model_type == "tflite_linear":
+    if model_type == "linear":
+        kl = KerasLinear(input_shape=input_shape)
+    elif model_type == "categorical":
+        kl = KerasCategorical(input_shape=input_shape,
+                              throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+    elif model_type == "tflite_linear":
         kl = TFLitePilot()
-    elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
-        kl = KerasLocalizer(num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
-    elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
-        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)
-    elif model_type == "imu":
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape, roi_crop=roi_crop)
-    elif model_type == "linear":
-        kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
-        # Aggressively lazy load this. This module imports pycuda.autoinit which causes a lot of unexpected things
-        # to happen when using TF-GPU for training.
+        # Aggressively lazy load this. This module imports pycuda.autoinit
+        # which causes a lot of unexpected things to happen when using TF-GPU
+        # for training.
         from donkeycar.parts.tensorrt import TensorRTLinear
         kl = TensorRTLinear(cfg=cfg)
-    elif model_type == "coral_tflite_linear":
-        from donkeycar.parts.coral import CoralLinearPilot
-        kl = CoralLinearPilot()
-    elif model_type == "3d":
-        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
-    elif model_type == "rnn":
-        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
-    elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
-    elif model_type == "latent":
-        kl = KerasLatent(input_shape=input_shape)
-    elif model_type == "fastai":
-        from donkeycar.parts.fastai import FastAiPilot
-        kl = FastAiPilot()
-    elif model_type == "inferred":
-        from donkeycar.parts.keras import KerasInferred
-        kl = KerasInferred(input_shape=input_shape)
     else:
-        raise Exception("unknown model type: %s" % model_type)
+        raise Exception("Unknown model type {:}, supported types are "
+                        "linear, categorical, tflite_linear, tensorrt_linear"
+                        .format(model_type))
 
     return kl
 

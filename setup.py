@@ -1,8 +1,9 @@
-from setuptools import setup, find_packages
-
 import os
 
-#include the non python files
+from setuptools import find_packages, setup
+
+
+# include the non python files
 def package_files(directory, strip_leading):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
@@ -11,16 +12,16 @@ def package_files(directory, strip_leading):
             paths.append(package_file[len(strip_leading):])
     return paths
 
-car_templates=['templates/*']
-web_controller_html = package_files('donkeycar/parts/controllers/templates', 'donkeycar/')
 
+car_templates = ['templates/*']
+web_controller_html = package_files('donkeycar/parts/controllers/templates',
+                                    'donkeycar/')
 
 extra_files = car_templates + web_controller_html
 print('extra_files', extra_files)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
 
 setup(name='donkeycar',
     version='3.1.5',
@@ -41,8 +42,6 @@ setup(name='donkeycar',
                       'tornado',
                       'requests',
                       'h5py',
-                      'moviepy',
-                      'pandas',
                       'PrettyTable',
                       'paho-mqtt',
                       "simple_pid"
@@ -59,6 +58,7 @@ setup(name='donkeycar',
                     'nano': [
                         'Adafruit_PCA9685',
                         'Adafruit_SSD1306',
+                        'RPi.GPIO'
                         ],
                     'pc': [
                         'matplotlib',
@@ -80,28 +80,22 @@ setup(name='donkeycar',
         },
 
       include_package_data=True,
-
       classifiers=[
           # How mature is this project? Common values are
           #   3 - Alpha
           #   4 - Beta
           #   5 - Production/Stable
-          'Development Status :: 3 - Alpha',
-
+          'Development Status :: 4 - Alpha',
           # Indicate who your project is intended for
           'Intended Audience :: Developers',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
-
           # Pick your license as you wish (should match "license" above)
           'License :: OSI Approved :: MIT License',
-
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
-
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
-
       packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
-      )
+)

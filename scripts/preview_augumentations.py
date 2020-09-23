@@ -7,12 +7,7 @@ Note:
 '''
 
 import time
-from pathlib import Path
-
 import cv2
-import imgaug as ia
-import imgaug.augmenters as iaa
-import numpy as np
 
 from donkeycar.parts.augumentations import Augumentations
 
@@ -23,6 +18,7 @@ HEIGHT = 480
 # Example augumentations
 cropping = Augumentations.crop(0, 0, 100, 0, keep_size=True)
 mask = Augumentations.trapezoidal_mask(10, 630, 100, 300, 50, 480)
+
 
 def preview_augumentations():
     print('Connecting to Camera')

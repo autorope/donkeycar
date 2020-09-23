@@ -21,13 +21,13 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 #VEHICLE
-DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
+DRIVE_LOOP_HZ = 21      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 #CAMERA
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
-IMAGE_W = 160
-IMAGE_H = 120
+CAMERA_TYPE = "LEOPARD" # (PICAM|WEBCAM|CVCAM|CSIC|V4L|MOCK|D435|LEOPARD)
+IMAGE_W = 224
+IMAGE_H = 224
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 CAMERA_VFLIP = False
@@ -39,11 +39,11 @@ CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Fli
 # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 
 #9865, over rides only if needed, ie. TX2..
-PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
-PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
+PCA9685_I2C_ADDR = 0x40     # I2C address, use i2cdetect to validate this number
+PCA9685_I2C_BUSNUM = 0      # None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 
 #SSD1306_128_32
-USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
+USE_SSD1306_128_32 = True     # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 
 #DRIVETRAIN
@@ -56,8 +56,8 @@ DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_
 
 #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
-STEERING_LEFT_PWM = 460         #pwm value for full left steering
-STEERING_RIGHT_PWM = 290        #pwm value for full right steering
+STEERING_LEFT_PWM = 390         #pwm value for full left steering
+STEERING_RIGHT_PWM = 305        #pwm value for full right steering
 
 #STEERING FOR PIGPIO_PWM
 STEERING_PWM_PIN = 13           #Pin numbering according to Broadcom numbers
@@ -66,9 +66,9 @@ STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
 
 #THROTTLE
 THROTTLE_CHANNEL = 0            #channel on the 9685 pwm board 0-15
-THROTTLE_FORWARD_PWM = 500      #pwm value for max forward throttle
+THROTTLE_FORWARD_PWM = 420      #pwm value for max forward throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
-THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
+THROTTLE_REVERSE_PWM = 320      #pwm value for max reverse throttle
 
 #THROTTLE FOR PIGPIO_PWM
 THROTTLE_PWM_PIN = 18           #Pin numbering according to Broadcom numbers
@@ -94,7 +94,7 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 #The DEFAULT_MODEL_TYPE will choose which model will be created at training time. This chooses
 #between different neural network designs. You can override this setting by passing the command
 #line parameter --type to the python manage.py train and drive commands.
-DEFAULT_MODEL_TYPE = 'linear'   #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
+DEFAULT_MODEL_TYPE = 'linear'   #(linear|categorical|rnn|imu|behavior|3d|localizer|latent|transfer|inferred)
 BATCH_SIZE = 128                #how many records to use when doing one pass of gradient decent. Use a smaller number if your gpu is running out of memory.
 TRAIN_TEST_SPLIT = 0.8          #what percent of records to use for training. the remaining used for validation.
 MAX_EPOCHS = 100                #how many times to visit all records of your data
@@ -116,14 +116,6 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
-#Pi login information
-#When using the continuous train option, these credentials will
-#be used to copy the final model to your vehicle. If not using this option, no need to set these.
-PI_USERNAME = "pi"                  # username on pi
-PI_PASSWD = "raspberry"             # password is optional. Only used from Windows machine. Ubuntu and mac users should copy their public keys to the pi. `ssh-copy-id username@hostname`
-PI_HOSTNAME = "raspberrypi.local"   # the network hostname or ip address
-PI_DONKEY_ROOT = "/home/pi/mycar"   # the location of the mycar dir on the pi. this will be used to help locate the final model destination.
-
 # Region of interst cropping
 # only supported in Categorical and Linear models.
 # If these crops values are too large, they will cause the stride values to become negative and the model with not be valid.
@@ -141,15 +133,15 @@ WEB_CONTROL_PORT = 8887             # which port to listen on when making a web 
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
 #JOYSTICK
-USE_JOYSTICK_AS_DEFAULT = False     #when starting the manage.py, when True, will not require a --js option to use the joystick
+USE_JOYSTICK_AS_DEFAULT = True      #when starting the manage.py, when True, will not require a --js option to use the joystick
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE='ps3'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
+CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
-NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control, which ip is serving this information
-JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.
-JOYSTICK_THROTTLE_DIR = -1.0        # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
+NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
+JOYSTICK_DEADZONE = 0.01            # when non zero, this is the smallest throttle before recording triggered.
+JOYSTICK_THROTTLE_DIR = 1.0         # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
 USE_FPV = False                     # send camera data to FPV webserver
 JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access the joystick.
 
@@ -280,6 +272,7 @@ PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.2                  # constant throttle value during path following
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
+
 # Intel Realsense D435 and D435i depth sensing camera
 REALSENSE_D435_RGB = True       # True to capture RGB image
 REALSENSE_D435_DEPTH = True     # True to capture depth as image array
@@ -290,4 +283,3 @@ REALSENSE_D435_ID = None        # serial number of camera or None if you only ha
 STOP_SIGN_DETECTOR = False
 STOP_SIGN_MIN_SCORE = 0.2
 STOP_SIGN_SHOW_BOUNDING_BOX = True
-
