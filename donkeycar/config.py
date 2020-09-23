@@ -42,7 +42,6 @@ class Config:
                 print(attr, ":", getattr(self, attr))
 
 
-
 def load_config(config_path=None, myconfig="myconfig.py"):
     
     if config_path is None:
@@ -58,29 +57,20 @@ def load_config(config_path=None, myconfig="myconfig.py"):
     cfg = Config()
     cfg.from_pyfile(config_path)
 
-    #look for the optional myconfig.py in the same path.
-    print("myconfig", myconfig)
+    # look for the optional myconfig.py in the same path.
     personal_cfg_path = config_path.replace("config.py", myconfig)
     if os.path.exists(personal_cfg_path):
         print("loading personal config over-rides from", myconfig)
         personal_cfg = Config()
         personal_cfg.from_pyfile(personal_cfg_path)
-        #personal_cfg.show()
-
         cfg.from_object(personal_cfg)
-        #print("final settings:")
-        #cfg.show()
     else:
         print("personal config: file not found ", personal_cfg_path)
-        
-    
-    #derivative settings
+
+    # derived settings
     if hasattr(cfg, 'IMAGE_H') and hasattr(cfg, 'IMAGE_W'): 
         cfg.TARGET_H = cfg.IMAGE_H - cfg.ROI_CROP_TOP - cfg.ROI_CROP_BOTTOM
         cfg.TARGET_W = cfg.IMAGE_W
         cfg.TARGET_D = cfg.IMAGE_DEPTH
 
-    print()
-
-    print('config loaded')
     return cfg
