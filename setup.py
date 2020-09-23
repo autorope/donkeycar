@@ -51,30 +51,40 @@ setup(name='donkeycar',
                         'progress'
                         ],
 
-      extras_require={
-          'pi': [
-              'picamera',
-              'Adafruit_PCA9685',
-              'Adafruit_SSD1306',
-              'RPi.GPIO',
-              'pyserial',
-          ],
-          'nano': [
-              'Adafruit_PCA9685',
-              'Adafruit_SSD1306',
-          ],
-          'dev': [
-              'pytest',
-              'pytest-cov',
-              'codecov'
-          ],
-          'mm1': ['pyserial']
-      },
-      package_data={
-          'donkeycar': extra_files,
-      },
+    extras_require={
+                    'pi': [
+                        'picamera',
+                        'Adafruit_PCA9685',
+                        'Adafruit_SSD1306',
+                        'RPi.GPIO',
+                        'pyserial',
+                        ],
+                    'nano': [
+                        'Adafruit_PCA9685',
+                        'Adafruit_SSD1306',
+                        'RPi.GPIO'
+                        ],
+                    'pc': [
+                        'matplotlib',
+                        'imgaug',
+                        'progress',
+                        ],
+                    'dev' : [
+                        'pytest',
+                        'pytest-cov',
+                        'responses',
+                        ],
+                    'ci': ['codecov'],
+                    'tf': ['tensorflow==1.13.1'],
+                    'tf_gpu': ['tensorflow-gpu==1.13.1'],
+                    'mm1': ['pyserial']
+                    },
+    package_data={
+        'donkeycar': extra_files,
+        },
 
       include_package_data=True,
+
       classifiers=[
           # How mature is this project? Common values are
           #   3 - Alpha
