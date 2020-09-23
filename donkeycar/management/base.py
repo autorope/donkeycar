@@ -1,16 +1,12 @@
 
 import argparse
-import json
 import os
 import shutil
 import socket
+import stat
 import sys
-import time
-import uuid
 from socket import *
-from threading import Thread
 
-import numpy as np
 
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
@@ -19,6 +15,7 @@ from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
+
 
 def make_dir(path):
     real_path = os.path.expanduser(path)
@@ -75,7 +72,7 @@ class CreateCar(BaseCommand):
         docker can build the folder structure for docker to mount to.
         """
 
-        #these are neeeded incase None is passed as path
+        # these are neeeded incase None is passed as path
         path = path or '~/mycar'
         template = template or 'complete'
 
@@ -89,7 +86,7 @@ class CreateCar(BaseCommand):
         for fp in folder_paths:
             make_dir(fp)
             
-        #add car application and config files if they don't exist
+        # add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
         config_template_path = os.path.join(TEMPLATES_PATH, 'cfg_' + template + '.py')
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
@@ -106,7 +103,8 @@ class CreateCar(BaseCommand):
         else:
             print("Copying car application template: {}".format(template))
             shutil.copyfile(app_template_path, car_app_path)
-            
+            os.chmod(car_app_path, stat.S_IRWXU)
+
         if os.path.exists(car_config_path) and not overwrite:
             print('Car config already exists. Delete it and rerun createcar to replace.')
         else:
@@ -118,17 +116,20 @@ class CreateCar(BaseCommand):
         else:
             print("Copying train script. Adjust these before starting your car.")
             shutil.copyfile(train_template_path, train_app_path)
+            os.chmod(train_app_path, stat.S_IRWXU)
             
         if os.path.exists(calibrate_app_path) and not overwrite:
             print('Calibrate already exists. Delete it and rerun createcar to replace.')
         else:
             print("Copying calibrate script. Adjust these before starting your car.")
             shutil.copyfile(calibrate_template_path, calibrate_app_path)
+            os.chmod(calibrate_app_path, stat.S_IRWXU)
 
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")
             shutil.copyfile(myconfig_template_path, mycar_config_path)
-            #now copy file contents from config to myconfig, with all lines commented out.
+            # now copy file contents from config to myconfig, with all lines
+            # commented out.
             cfg = open(car_config_path, "rt")
             mcfg = open(mycar_config_path, "at")
             copy = False
@@ -164,7 +165,6 @@ class FindCar(BaseCommand):
     def parse_args(self, args):
         pass        
 
-        
     def run(self, args):
         print('Looking up your computer IP address...')
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -177,8 +177,7 @@ class FindCar(BaseCommand):
         cmd = "sudo nmap -sP " + ip + "/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'"
         print("Your car's ip address is:" )
         os.system(cmd)
-        
-        
+
         
 class CalibrateCar(BaseCommand):    
     

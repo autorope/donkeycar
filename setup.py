@@ -2,7 +2,8 @@ from setuptools import setup, find_packages
 
 import os
 
-#include the non python files
+
+# include the non python files
 def package_files(directory, strip_leading):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
@@ -11,9 +12,10 @@ def package_files(directory, strip_leading):
             paths.append(package_file[len(strip_leading):])
     return paths
 
-car_templates=['templates/*']
-web_controller_html = package_files('donkeycar/parts/controllers/templates', 'donkeycar/')
 
+car_templates = ['templates/*']
+web_controller_html = package_files('donkeycar/parts/controllers/templates',
+                                    'donkeycar/')
 
 extra_files = car_templates + web_controller_html
 print('extra_files', extra_files)
@@ -21,63 +23,63 @@ print('extra_files', extra_files)
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
 setup(name='donkeycar',
-    version='3.1.5',
-    long_description = long_description,
-    description='Self driving library for python.',
-    url='https://github.com/autorope/donkeycar',
-    author='Will Roscoe, Adam Conway, Tawn Kramer',
-    author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
-    license='MIT',
-    entry_points={
-        'console_scripts': [
-            'donkey=donkeycar.management.base:execute_from_command_line',
-        ],
-    },
-    install_requires=['numpy',
-                      'pillow',
-                      'docopt',
-                      'tornado',
-                      'requests',
-                      'h5py',
-                      'moviepy',
-                      'pandas',
-                      'PrettyTable',
-                      'paho-mqtt',
-                      "simple_pid"
-                     ],
+      version='4.0.0',
+      long_description=long_description,
+      description='Self driving library for python.',
+      url='https://github.com/autorope/donkeycar',
+      author='Will Roscoe, Adam Conway, Tawn Kramer',
+      author_email='wroscoe@gmail.com, adam@casaconway.com, '
+                   'tawnkramer@gmail.com',
+      license='MIT',
+      entry_points={
+          'console_scripts': [
+              'donkey=donkeycar.management.base:execute_from_command_line',
+          ],
+      },
+      install_requires=['numpy',
+                        'pillow',
+                        'docopt',
+                        'tornado',
+                        'requests',
+                        'h5py',
+                        'moviepy',
+                        'pandas',
+                        'PrettyTable',
+                        'paho-mqtt',
+                        "simple_pid"
+                        ],
 
-    extras_require={
-                    'pi': [
-                        'picamera',
-                        'Adafruit_PCA9685',
-                        'Adafruit_SSD1306',
-                        'RPi.GPIO',
-                        'pyserial',
-                        ],
-                    'nano': [
-                        'Adafruit_PCA9685',
-                        'Adafruit_SSD1306',
-                        ],
-                    'pc': [
-                        'matplotlib',
-                        'imgaug',
-                        'progress',
-                        ],
-                    'dev' : [
-                        'pytest',
-                        'pytest-cov',
-                        'responses',
-                        ],
-                    'ci': ['codecov'],
-                    'tf': ['tensorflow==1.13.1'],
-                    'tf_gpu': ['tensorflow-gpu==1.13.1'],
-                    'mm1': ['pyserial']
-                    },
-    package_data={
-        'donkeycar': extra_files,
-        },
+      extras_require={
+          'pi': [
+              'picamera',
+              'Adafruit_PCA9685',
+              'Adafruit_SSD1306',
+              'RPi.GPIO',
+              'pyserial',
+          ],
+          'nano': [
+              'Adafruit_PCA9685',
+              'Adafruit_SSD1306',
+          ],
+          'pc': [
+              'matplotlib',
+              'imgaug',
+              'progress',
+          ],
+          'dev': [
+              'pytest',
+              'pytest-cov',
+              'responses',
+          ],
+          'ci': ['codecov'],
+          'tf': ['tensorflow==2.2.0'],
+          'tf_gpu': ['tensorflow-gpu==2.2.0'],
+          'mm1': ['pyserial']
+      },
+      package_data={
+          'donkeycar': extra_files,
+      },
 
       include_package_data=True,
 
@@ -97,7 +99,6 @@ setup(name='donkeycar',
 
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
-
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
       ],

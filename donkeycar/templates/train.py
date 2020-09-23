@@ -141,8 +141,8 @@ def train(cfg, tub_paths, output_path, model_type):
     batch_size = cfg.BATCH_SIZE
     dataset = TubDataset(tub_paths, test_size=(1. - cfg.TRAIN_TEST_SPLIT))
     training_records, validation_records = dataset.train_test_split()
-    print('Records # Training %s' % (len(training_records)))
-    print('Records # Validation %s' % (len(validation_records)))
+    print('Records # Training %s' % len(training_records))
+    print('Records # Validation %s' % len(validation_records))
 
     training = TubSequence(kl, cfg, training_records)
     validation = TubSequence(kl, cfg, validation_records)
@@ -158,9 +158,10 @@ def train(cfg, tub_paths, output_path, model_type):
         )
     ]
 
-    kl.model.fit_generator(
-        generator=training,
+    kl.model.fit(
+        x=training,
         steps_per_epoch=len(training),
+        batch_size=batch_size,
         callbacks=callbacks,
         validation_data=validation,
         validation_steps=len(validation),
