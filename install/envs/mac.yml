@@ -3,7 +3,6 @@ dependencies:
 
 - h5py
 - pillow
-- tensorflow==1.13.1
 - opencv
 - matplotlib
 - tornado
@@ -14,8 +13,10 @@ dependencies:
 - pip
 - imgaug
 - progress
+- moviepy
+- paho-mqtt
+- PrettyTable
 
 - pip:
-  - moviepy
-  - paho-mqtt
-  - PrettyTable
+  - tensorflow==2.2.0
+  - git+https://github.com/autorope/keras-vis.git
