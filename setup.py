@@ -29,24 +29,27 @@ setup(name='donkeycar',
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
       author='Will Roscoe, Adam Conway, Tawn Kramer',
-      author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
+      author_email='wroscoe@gmail.com, adam@casaconway.com, '
+                   'tawnkramer@gmail.com',
       license='MIT',
       entry_points={
           'console_scripts': [
               'donkey=donkeycar.management.base:execute_from_command_line',
           ],
       },
-      install_requires=[
-          'numpy',
-          'pillow',
-          'docopt',
-          'tornado',
-          'requests',
-          'h5py',
-          'PrettyTable',
-          'paho-mqtt',
-          "simple_pid"
-      ],
+      install_requires=['numpy',
+                        'pillow',
+                        'docopt',
+                        'tornado',
+                        'requests',
+                        'h5py',
+                        'moviepy',
+                        'pandas',
+                        'PrettyTable',
+                        'paho-mqtt',
+                        "simple_pid"
+                        ],
+
       extras_require={
           'pi': [
               'picamera',
@@ -58,7 +61,6 @@ setup(name='donkeycar',
           'nano': [
               'Adafruit_PCA9685',
               'Adafruit_SSD1306',
-              'RPi.GPIO'
           ],
           'pc': [
               'matplotlib',
@@ -71,12 +73,14 @@ setup(name='donkeycar',
               'responses',
           ],
           'ci': ['codecov'],
-          'tf': ['tensorflow>=2.2.0'],
+          'tf': ['tensorflow==2.2.0'],
+          'tf_gpu': ['tensorflow-gpu==2.2.0'],
           'mm1': ['pyserial']
       },
       package_data={
           'donkeycar': extra_files,
       },
+
       include_package_data=True,
       classifiers=[
           # How mature is this project? Common values are
