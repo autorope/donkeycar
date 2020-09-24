@@ -33,7 +33,7 @@ conda env remove -n donkey
 * Create the Python anaconda environment
 
 ```bash
-conda env create -f install\envs\windows.yml
+conda env create -f install\envs\pc.yml
 conda activate donkey
 pip install -e .[pc]
 ```
@@ -43,7 +43,7 @@ pip install -e .[pc]
 If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
 
 ```bash
-conda install tensorflow-gpu==1.13.1
+conda install tensorflow-gpu==2.2.0
 ```
 
 * Create your local working dir:
