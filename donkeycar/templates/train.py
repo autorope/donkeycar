@@ -22,9 +22,10 @@ from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.python.keras.utils.data_utils import Sequence
 
 import donkeycar
-from donkeycar.parts.keras import KerasInferred
+from donkeycar.parts.keras import KerasInferred, KerasCategorical
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import get_model_by_type, load_scaled_image_arr, train_test_split
+from donkeycar.utils import get_model_by_type, load_scaled_image_arr, \
+    train_test_split, linear_bin
 
 
 class TubDataset(object):
@@ -67,6 +68,7 @@ class TubSequence(Sequence):
         throttles = []
 
         is_inferred = type(self.keras_model) is KerasInferred
+        is_categorical = type(self.keras_model) is KerasCategorical
 
         while count < self.batch_size:
             i = (index * self.batch_size) + count
@@ -84,6 +86,10 @@ class TubSequence(Sequence):
             throttle = record['user/throttle']
 
             images.append(image)
+            # for categorical convert to one-hot vector
+            if is_categorical:
+                angle = linear_bin(angle, N=15, offset=1, R=2.0)
+                throttle = linear_bin(throttle, N=20, offset=0.0, R=1)
             angles.append(angle)
             throttles.append(throttle)
 

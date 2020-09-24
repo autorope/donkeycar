@@ -8,6 +8,7 @@ import sys
 from socket import *
 
 
+from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
@@ -371,6 +372,7 @@ class ShowPredictionPlots(BaseCommand):
         tub = Tub(base_path)
         records = list(tub)
         records = records[:limit]
+        bar = IncrementalBar('Inferencing', max=len(records))
 
         for record in records:
             img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
@@ -383,6 +385,7 @@ class ShowPredictionPlots(BaseCommand):
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
+            bar.next()
 
         angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
         throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
