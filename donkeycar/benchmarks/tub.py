@@ -23,7 +23,8 @@ def benchmark():
         record = {'input': i}
         tub.put_record(record)
 
-    deletions = set(np.random.randint(0, write_count, 100))
+    # old tub starts counting at 1
+    deletions = set(np.random.randint(1, write_count + 1, 100))
     for index in deletions:
         index = int(index)
         tub.remove_record(index)
@@ -33,11 +34,11 @@ def benchmark():
         contents = record_file.read_text()
         if contents:
             contents = json.loads(contents)
-            print('Record %s' % (contents))
+            print('Record %s' % contents)
 
 
 if __name__ == "__main__":
     timer = timeit.Timer(benchmark)
     time_taken = timer.timeit(number=1)
-    print('Time taken %s seconds' % (time_taken))
+    print('Time taken %s seconds' % time_taken)
     print('\nDone.')

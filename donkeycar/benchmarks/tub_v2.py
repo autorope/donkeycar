@@ -30,12 +30,13 @@ def benchmark():
         tub.delete_record(index)
  
     for record in tub:
-        print('Record %s' % (record))
+        print('Record %s' % record)
 
     tub.close()
+
 
 if __name__ == "__main__":
     timer = timeit.Timer(benchmark)
     time_taken = timer.timeit(number=1)
-    print('Time taken %s seconds' % (time_taken))
+    print('Time taken %s seconds' % time_taken)
     print('\nDone.')
