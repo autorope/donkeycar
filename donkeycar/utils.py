@@ -236,7 +236,7 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
     rescale given R range and offset
     '''
     b = np.argmax(arr)
-    a = b *(R/(N + offset)) + offset
+    a = b * (R / (N + offset)) + offset
     return a
 
 
@@ -407,27 +407,42 @@ def get_model_by_type(model_type, cfg):
     if model_type == "tflite_linear":
         kl = TFLitePilot()
     elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
-        kl = KerasLocalizer(num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
+        kl = KerasLocalizer(num_locations=cfg.NUM_LOCATIONS,
+                            input_shape=input_shape)
     elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
-        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)
+        kl = KerasBehavioral(num_outputs=2,
+                             num_behavior_inputs=len(cfg.BEHAVIOR_LIST),
+                             input_shape=input_shape)
     elif model_type == "imu":
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape, roi_crop=roi_crop)
+        kl = KerasIMU(num_outputs=2, num_imu_inputs=6,
+                      input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "linear":
         kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
-        # Aggressively lazy load this. This module imports pycuda.autoinit which causes a lot of unexpected things
-        # to happen when using TF-GPU for training.
+        # Aggressively lazy load this. This module imports pycuda.autoinit
+        # which causes a lot of unexpected things to happen when using TF-GPU
+        # for training.
         from donkeycar.parts.tensorrt import TensorRTLinear
         kl = TensorRTLinear(cfg=cfg)
     elif model_type == "coral_tflite_linear":
         from donkeycar.parts.coral import CoralLinearPilot
         kl = CoralLinearPilot()
     elif model_type == "3d":
-        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
+        kl = Keras3D_CNN(image_w=cfg.IMAGE_W,
+                         image_h=cfg.IMAGE_H,
+                         image_d=cfg.IMAGE_DEPTH,
+                         seq_length=cfg.SEQUENCE_LENGTH,
+                         roi_crop=roi_crop)
     elif model_type == "rnn":
-        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
+        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W,
+                           image_h=cfg.IMAGE_H,
+                           image_d=cfg.IMAGE_DEPTH,
+                           seq_length=cfg.SEQUENCE_LENGTH,
+                           roi_crop=roi_crop)
     elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
+        kl = KerasCategorical(input_shape=input_shape,
+                              throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE,
+                              roi_crop=roi_crop)
     elif model_type == "latent":
         kl = KerasLatent(input_shape=input_shape)
     elif model_type == "fastai":
