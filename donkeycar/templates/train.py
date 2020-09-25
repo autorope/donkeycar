@@ -23,6 +23,7 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 import donkeycar
 from donkeycar.parts.keras import KerasInferred, KerasCategorical
+from donkeycar.parts.tflite import keras_model_to_tflite
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import get_model_by_type, load_scaled_image_arr, \
     train_test_split, linear_bin
@@ -185,6 +186,10 @@ def main():
     tubs = args['--tubs']
     model = args['--model']
     model_type = args['--type']
+    model_name, model_ext = os.path.splitext(model)
+    is_tflite = model_ext == '.tflite'
+    if is_tflite:
+        model = model_name + '.h5'
 
     if not model_type:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -193,6 +198,9 @@ def main():
     data_paths = [Path(os.path.expanduser(tub)).absolute().as_posix() for tub in tubs]
     output_path = os.path.expanduser(model)
     train(cfg, data_paths, output_path, model_type)
+    if is_tflite:
+        tflite_model_path = os.path.splitext(output_path)[0] + '.tflite'
+        keras_model_to_tflite(output_path, tflite_model_path)
 
 
 if __name__ == "__main__":
