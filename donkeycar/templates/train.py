@@ -88,8 +88,9 @@ class TubSequence(Sequence):
             images.append(image)
             # for categorical convert to one-hot vector
             if is_categorical:
+                R = self.config.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE
                 angle = linear_bin(angle, N=15, offset=1, R=2.0)
-                throttle = linear_bin(throttle, N=20, offset=0.0, R=1)
+                throttle = linear_bin(throttle, N=20, offset=0.0, R=R)
             angles.append(angle)
             throttles.append(throttle)
 

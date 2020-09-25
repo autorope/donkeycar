@@ -109,7 +109,8 @@ class KerasCategorical(KerasPilot):
     want to enable a higher throttle range. And cars with larger steering
     throw may want more bins.
     """
-    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5, roi_crop=(0, 0)):
+    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5,
+                 roi_crop=(0, 0)):
         super().__init__()
         self.model = default_categorical(input_shape, roi_crop)
         self.compile()
@@ -276,7 +277,7 @@ class KerasLocalizer(KerasPilot):
 def adjust_input_shape(input_shape, roi_crop):
     height = input_shape[0]
     new_height = height - roi_crop[0] - roi_crop[1]
-    return (new_height, input_shape[1], input_shape[2])
+    return new_height, input_shape[1], input_shape[2]
 
 
 def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
@@ -288,26 +289,26 @@ def default_categorical(input_shape=(120, 160, 3), roi_crop=(0, 0)):
     x = img_in
     # 24 features, 5 pixel x 5 pixel kernel (convolution, feature) window,
     # 2wx2h stride, relu activation
-    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
+    x = Convolution2D(24, (5, 5), strides=(2, 2), activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
     # 32 features, 5px5p kernel window, 2wx2h stride, relu activation
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
+    x = Convolution2D(32, (5, 5), strides=(2, 2), activation='relu', name="conv2d_2")(x)
     x = Dropout(drop)(x)
     if input_shape[0] > 32:
-        # 64 features, 5px5p kernal window, 2wx2h stride, relu
-        x = Convolution2D(64, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
+        # 64 features, 5px5p kernel window, 2wx2h stride, relu
+        x = Convolution2D(64, (5, 5), strides=(2, 2), activation='relu', name="conv2d_3")(x)
     else:
-        # 64 features, 5px5p kernal window, 2wx2h stride, relu
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_3")(x)
+        # 64 features, 5px5p kernel window, 2wx2h stride, relu
+        x = Convolution2D(64, (3, 3), strides=(1, 1), activation='relu', name="conv2d_3")(x)
     if input_shape[0] > 64 :
-        # 64 features, 3px3p kernal window, 2wx2h stride, relu
-        x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_4")(x)
+        # 64 features, 3px3p kernel window, 2wx2h stride, relu
+        x = Convolution2D(64, (3, 3), strides=(2, 2), activation='relu', name="conv2d_4")(x)
     elif input_shape[0] > 32 :
-        # 64 features, 3px3p kernal window, 2wx2h stride, relu
-        x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)
+        # 64 features, 3px3p kernel window, 2wx2h stride, relu
+        x = Convolution2D(64, (3, 3), strides=(1, 1), activation='relu', name="conv2d_4")(x)
     x = Dropout(drop)(x)
-    # 64 features, 3px3p kernal window, 1wx1h stride, relu
-    x = Convolution2D(64, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
+    # 64 features, 3px3p kernel window, 1wx1h stride, relu
+    x = Convolution2D(64, (3, 3), strides=(1, 1), activation='relu', name="conv2d_5")(x)
     x = Dropout(drop)(x)
     # Flatten to 1D (Fully connected)
     x = Flatten(name='flattened')(x)
