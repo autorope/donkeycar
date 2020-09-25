@@ -47,7 +47,8 @@ setup(name='donkeycar',
                         'pandas',
                         'PrettyTable',
                         'paho-mqtt',
-                        "simple_pid"
+                        'simple_pid',
+                        'progress'
                         ],
 
       extras_require={
