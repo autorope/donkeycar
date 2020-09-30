@@ -10,6 +10,7 @@ from socket import *
 
 from progress.bar import IncrementalBar
 import donkeycar as dk
+from donkeycar.builder import Builder
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
 from donkeycar.utils import *
@@ -424,6 +425,26 @@ class ShowPredictionPlots(BaseCommand):
         self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
 
 
+class Drive(BaseCommand):
+    '''
+    always run in the base ~/mycar dir
+    '''
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='drive',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('--vehicle_file', default='vehicle.yaml',
+                            help='vehicle yaml file to use')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        b = Builder(car_file=args.vehicle_file)
+        vehicle, drive_hz, loops, verbose = b.build_vehicle()
+        vehicle.start(rate_hz=drive_hz, max_loop_count=loops, verbose=verbose)
+
+
 def execute_from_command_line():
     """
     This is the function linked to the "donkey" terminal command.
@@ -438,6 +459,7 @@ def execute_from_command_line():
         'createjs': CreateJoystick,
         'cnnactivations': ShowCnnActivations,
         'update': UpdateCar,
+        'drive': Drive
     }
     
     args = sys.argv[:]

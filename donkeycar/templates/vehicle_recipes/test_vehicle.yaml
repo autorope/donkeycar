@@ -1,0 +1,16 @@
+# vehicle file
+vehicle_hz: 20
+verbose: True
+parts:
+  - MockCamera:
+      parameters:
+        image_w: 320
+        image_h: 240
+      outputs: [cam/img_array]
+  - TubWriter:
+      parameters:
+        base_path: data2/tub_new
+        inputs: [cam/img_array]
+        types: [image_array]
+      inputs: [cam/img_array]
+      outputs: [img_index]

@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
+from donkeycar.parts.part import Part
 
 
 class Tub(object):
@@ -95,7 +96,7 @@ class Tub(object):
         return name
 
 
-class TubWriter(object):
+class TubWriter(Part):
     '''
     A Donkey threaded part, which can write records to the datastore.
     '''
@@ -103,7 +104,7 @@ class TubWriter(object):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
 
     def run(self, *args):
-        assert  len(self.tub.inputs) == len(args)
+        assert len(self.tub.inputs) == len(args)
         record = dict(zip(self.tub.inputs, args))
         self.tub.write_record(record)
         return self.tub.manifest.current_index

@@ -1,6 +1,9 @@
 import yaml
-from donkeycar.parts import PartFactory
+from donkeycar.parts.part import PartFactory
 from donkeycar import Vehicle
+# -- !!! THIS import cannot be removed as otherwise the metaclass
+# initialisation does not run for all parts !!!
+from donkeycar.parts.camera import *
 
 
 class Builder:
@@ -22,15 +25,18 @@ class Builder:
 
         for part in parts:
             for part_name, part_params in part.items():
-                part_args = part_params['parameters']
+                # we are using .get on part parameters here as the part might
+                # might not require any
+                part_args = part_params.get('parameters')
                 # this creates the part
                 vehicle_part = PartFactory.make(part_name, part_args)
-                inputs = part_params['inputs']
-                outputs = part_params['outputs']
+                inputs = part_params.get('inputs', [])
+                outputs = part_params.get('outputs', [])
                 threaded = part_params.get('threaded', False)
                 run_condition = None
                 # adding part to vehicle
                 car.add(vehicle_part, inputs=inputs, outputs=outputs,
                         threaded=threaded, run_condition=run_condition)
 
-        return car
+        return car, self.vehicle_hz, self.max_loop_count, self.verbose
+
