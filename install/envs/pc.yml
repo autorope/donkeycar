@@ -16,6 +16,7 @@ dependencies:
 - moviepy
 - paho-mqtt
 - PrettyTable
+- pyyaml
 
 - pip:
   - tensorflow==2.2.0

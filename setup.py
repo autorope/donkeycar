@@ -48,7 +48,8 @@ setup(name='donkeycar',
                         'PrettyTable',
                         'paho-mqtt',
                         'simple_pid',
-                        'progress'
+                        'progress',
+                        'pyyaml'
                         ],
 
       extras_require={
