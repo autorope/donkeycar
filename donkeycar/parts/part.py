@@ -7,11 +7,11 @@ class PartFactory(type):
     register = {}
 
     def __init__(cls, name, bases, d):
-        cls.register[cls.__name__] = cls.create
+        cls.register[cls.__name__.lower()] = cls.create
 
     @classmethod
     def make(mcs, concrete, kwargs):
-        return mcs.register[concrete](kwargs)
+        return mcs.register[concrete.lower()](kwargs)
 
 
 class Part(object, metaclass=PartFactory):
@@ -33,7 +33,9 @@ class TestPart(Part):
 
 
 if __name__ == '__main__':
-    data = [{'TestPart': {'value': 4}}, {'TestPart': {'value': 'hello part!'}}]
+    # we allow any case for the part in the dictionary, as python classes are
+    # expected to be camel case
+    data = [{'testpart': {'value': 4}}, {'TestPart': {'value': 'hello part!'}}]
 
     for d in data:
         for obj, ctor in d.items():

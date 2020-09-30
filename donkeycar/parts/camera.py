@@ -3,11 +3,12 @@ import time
 import numpy as np
 from PIL import Image
 import glob
+import cv2
 from donkeycar.utils import rgb2gray
 from donkeycar.parts.part import Part
 
 
-class BaseCamera(object):
+class BaseCamera(Part):
 
     def run_threaded(self):
         return self.frame
@@ -255,7 +256,7 @@ class V4LCamera(BaseCamera):
         time.sleep(0.5)
 
 
-class MockCamera(Part):
+class MockCamera(BaseCamera):
     '''
     Fake camera. Returns only a single static frame
     '''
@@ -313,3 +314,26 @@ class ImageListCamera(BaseCamera):
 
     def shutdown(self):
         pass
+
+
+class CvCam(BaseCamera):
+    """
+    OpenCV based camera
+    """
+    def __init__(self, image_w=160, image_h=120):
+        self.frame = None
+        self.cap = cv2.VideoCapture(0)
+        # The resolution doesnt seem to be acknowledged for some cameras,
+        # e.g. MacBook does not rescale.
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, image_w)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, image_h)
+        time.sleep(1)
+        assert self.cap.isOpened(), 'Unable to connect to OpenCV camera.'
+
+    def update(self):
+        while True:
+            success, self.frame = self.cap.read()
+
+    def shutdown(self):
+        self.cap.release()
+        cv2.destroyAllWindows()

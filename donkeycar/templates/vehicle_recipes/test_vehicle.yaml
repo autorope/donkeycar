@@ -2,12 +2,12 @@
 vehicle_hz: 20
 verbose: True
 parts:
-  - MockCamera:
+  - cvcam:
       parameters:
         image_w: 320
         image_h: 240
       outputs: [cam/img_array]
-  - TubWriter:
+  - tubwriter:
       parameters:
         base_path: data2/tub_new
         inputs: [cam/img_array]
