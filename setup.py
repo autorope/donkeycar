@@ -49,6 +49,7 @@ setup(name='donkeycar',
                         'paho-mqtt',
                         'simple_pid',
                         'progress',
+                        'opencv',
                         'pyyaml'
                         ],
 
