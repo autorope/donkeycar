@@ -20,18 +20,14 @@ install:
   - conda update -q conda
   - conda info -a
   - conda create -q -n test-environment-$TRAVIS_PYTHON_VERSION python=$TRAVIS_PYTHON_VERSION
-  - source activate test-environment-$TRAVIS_PYTHON_VERSION
-  - pip install --upgrade pip
+  - conda activate test-environment-$TRAVIS_PYTHON_VERSION
   - hash -r
   - conda info -a
-  - pip install -e .[tf]
-  - pip install -e .[pc]
   - pip install -e .[dev]
   - pip install -e .[ci]
   - pip install -e .[mm1]
-  - echo "pip freeze virtualenv=test-environment python=${TRAVIS_PYTHON_VERSION}"
-  - pip freeze > test-environment-${TRAVIS_PYTHON_VERSION}.txt
-  - cat test-environment-${TRAVIS_PYTHON_VERSION}.txt
+  - conda env export > environment.yml
+  - cat environment.yml
 
 script:
   - pytest -v donkeycar/tests --cov=./

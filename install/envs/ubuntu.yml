@@ -1,0 +1,25 @@
+name: donkey
+dependencies:
+
+- h5py
+- pillow
+- opencv
+- matplotlib
+- tornado
+- docopt
+- pandas
+- pylint
+- pytest
+- pip
+- imgaug
+- progress
+- moviepy
+- paho-mqtt
+- PrettyTable
+- tensorflow==2.2.0
+
+- pip:
+  - git+https://github.com/autorope/keras-vis.git
+  - simple-pid
+  - opencv-python-headless
+
