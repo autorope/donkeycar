@@ -60,9 +60,7 @@ jobs:
       name: black
       language: python
       install:
-        - pip install --upgrade pip
-        - hash -r
-        - pip install black
+        - conda install black
       script:
         - "black --check ."
 
