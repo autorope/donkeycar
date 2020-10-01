@@ -23,9 +23,7 @@ install:
   - conda info -a
   - conda env create -f install/envs/ubuntu.yml python=$TRAVIS_PYTHON_VERSION
   - conda activate donkey
-  - pip install -e .[dev]
   - pip install -e .[ci]
-  - pip install -e .[mm1]
   - conda env export > environment.yml
   - cat environment.yml
 
