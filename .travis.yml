@@ -1,7 +1,10 @@
 ---
 language: python
-dist: bionic
+# this is required for python 3.7
+dist: xenial
+# This list should match the versions listed in setup.py
 python:
+  - 3.6
   - 3.7
 
 os:
@@ -20,7 +23,9 @@ install:
   - conda info -a
   - conda env create -f install/envs/ubuntu.yml python=$TRAVIS_PYTHON_VERSION
   - conda activate donkey
-  - pip install -e .
+  - pip install -e .[dev]
+  - pip install -e .[ci]
+  - pip install -e .[mm1]
   - conda env export > environment.yml
   - cat environment.yml
 
