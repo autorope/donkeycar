@@ -1,10 +1,7 @@
 ---
 language: python
-# this is required for python 3.7
-dist: xenial
-# This list should match the versions listed in setup.py
+dist: bionic
 python:
-- 3.6
 - 3.7
 
 os:
@@ -21,11 +18,9 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda env create -f install/envs/ubuntu.yml python=$TRAVIS_PYTHON_VERSION
+  - conda env create -f install/envs/ubuntu.yml
   - conda activate donkey
-  - pip install -e .[dev]
-  - pip install -e .[ci]
-  - pip install -e .[mm1]
+  - pip install -e .
   - conda env export > environment.yml
   - cat environment.yml
 
@@ -52,7 +47,7 @@ jobs:
       name: mkdocs
       language: python
       install:
-        - pip install mkdocs
+        - conda install mkdocs
       script:
         - mkdocs build
 
@@ -61,11 +56,8 @@ jobs:
     - stage: lint
       name: black
       language: python
-      python: 3.6
       install:
-        - pip install --upgrade pip
-        - hash -r
-        - pip install black
+        - conda install black
       script:
         - "black --check ."
 

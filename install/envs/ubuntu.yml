@@ -1,6 +1,6 @@
 name: donkey
 dependencies:
-
+- python=3.7
 - h5py
 - pillow
 - opencv
@@ -10,6 +10,8 @@ dependencies:
 - pandas
 - pylint
 - pytest
+- pytest-cov
+- codecov
 - pip
 - imgaug
 - progress
