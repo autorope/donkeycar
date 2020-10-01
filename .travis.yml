@@ -47,7 +47,7 @@ jobs:
       name: mkdocs
       language: python
       install:
-        - conda install mkdocs
+        - pip install mkdocs
       script:
         - mkdocs build
 
@@ -57,7 +57,9 @@ jobs:
       name: black
       language: python
       install:
-        - conda install black
+        - pip install --upgrade pip
+        - hash -r
+        - pip install black
       script:
         - "black --check ."
 
