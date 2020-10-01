@@ -4,7 +4,7 @@ language: python
 dist: bionic
 # This python is used in the initial venv but conda's python is in the yaml file
 python:
-  - 3.7
+  - 3.6
 
 os:
   - linux
