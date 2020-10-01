@@ -1,7 +1,7 @@
 ---
 language: python
 # ubuntu 18.04
-dist: xenial
+dist: bionic
 # This python is used in the initial venv but conda's python is in the yaml file
 python:
   - 3.7
