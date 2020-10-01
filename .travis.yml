@@ -16,6 +16,7 @@ install:
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
+  - conda init
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a
@@ -23,7 +24,6 @@ install:
   - conda activate test-environment-$TRAVIS_PYTHON_VERSION
   - hash -r
   - conda info -a
-  - conda init
   - pip install -e .[dev]
   - pip install -e .[ci]
   - pip install -e .[mm1]
