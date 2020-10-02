@@ -59,7 +59,6 @@ class CreateCar(BaseCommand):
         parser.add_argument('--path', default=None, help='path where to create car folder')
         parser.add_argument('--template', default=None, help='name of car template to use')
         parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
-        
         parsed_args = parser.parse_args(args)
         return parsed_args
         
@@ -67,7 +66,7 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
   
-    def create_car(self, path, template='complete', overwrite=False):
+    def create_car(self, path, template='basic_web', overwrite=False):
         """
         This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
@@ -76,8 +75,7 @@ class CreateCar(BaseCommand):
 
         # these are neeeded incase None is passed as path
         path = path or '~/mycar'
-        template = template or 'complete'
-
+        template = template or 'basic_web'
 
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
@@ -94,7 +92,7 @@ class CreateCar(BaseCommand):
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         calibrate_template_path = os.path.join(TEMPLATES_PATH, 'calibrate.py')
-        car_app_path = os.path.join(path, 'manage.py')
+        car_app_path = os.path.join(path, 'drive.py')
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')

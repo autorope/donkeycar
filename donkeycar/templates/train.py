@@ -189,7 +189,7 @@ def main():
     model_name, model_ext = os.path.splitext(model)
     is_tflite = model_ext == '.tflite'
     if is_tflite:
-        model = model_name + '.h5'
+        model = f'{model_name}.h5'
 
     if not model_type:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -199,7 +199,7 @@ def main():
     output_path = os.path.expanduser(model)
     train(cfg, data_paths, output_path, model_type)
     if is_tflite:
-        tflite_model_path = os.path.splitext(output_path)[0] + '.tflite'
+        tflite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
         keras_model_to_tflite(output_path, tflite_model_path)
 
 
