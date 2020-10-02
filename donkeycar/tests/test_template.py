@@ -11,7 +11,7 @@ from .setup import default_template, d2_path, custom_template
 def test_config():
     path = default_template(d2_path(gettempdir()))
     cfg = dk.load_config(os.path.join(path, 'config.py'))
-    assert (cfg != None)
+    assert (cfg is not None)
 
 
 def test_drive():
