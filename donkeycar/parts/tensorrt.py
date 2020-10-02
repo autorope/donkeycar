@@ -10,12 +10,13 @@ import tensorrt as trt
 
 HostDeviceMemory = namedtuple('HostDeviceMemory', 'host_memory device_memory')
 
+
 class TensorRTLinear(KerasPilot):
     '''
     Uses TensorRT to do the inference.
     '''
-    def __init__(self, cfg, *args, **kwargs):
-        super(TensorRTLinear, self).__init__(*args, **kwargs)
+    def __init__(self, cfg):
+        super().__init__()
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.cfg = cfg
         self.engine = None
