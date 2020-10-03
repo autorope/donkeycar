@@ -27,7 +27,7 @@ def test_drive():
 
 
 def test_custom_templates():
-    template_names = ["complete", "basic_web", "square"]
+    template_names = ["complete", "basic", "square"]
     for template in template_names:
         path = custom_template(d2_path(gettempdir()), template=template)
         cfg = dk.load_config(os.path.join(path, 'config.py'))

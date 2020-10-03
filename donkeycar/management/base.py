@@ -66,7 +66,7 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
   
-    def create_car(self, path, template='basic_web', overwrite=False):
+    def create_car(self, path, template='basic', overwrite=False):
         """
         This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
@@ -75,7 +75,7 @@ class CreateCar(BaseCommand):
 
         # these are neeeded incase None is passed as path
         path = path or '~/mycar'
-        template = template or 'basic_web'
+        template = template or 'basic'
 
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
