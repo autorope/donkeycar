@@ -1,22 +1,18 @@
 # -*- coding: utf-8 -*-
-import tempfile
+
 from tempfile import gettempdir
-import unittest
-from donkeycar.parts.tub_v2 import TubWriter, Tub
-from donkeycar.parts.datastore import TubHandler
 from donkeycar.templates import complete
 import donkeycar as dk
 import os
 
-import pytest
+from .setup import default_template, d2_path, custom_template
 
-#fixtures
-from .setup import tub, tub_path, on_pi, default_template, d2_path, custom_template
 
 def test_config():
     path = default_template(d2_path(gettempdir()))
     cfg = dk.load_config(os.path.join(path, 'config.py'))
-    assert(cfg != None)
+    assert (cfg is not None)
+
 
 def test_drive():
     path = default_template(d2_path(gettempdir()))
@@ -30,10 +26,10 @@ def test_drive():
 
 
 def test_custom_templates():
-    template_names = ["complete", "basic_web", "square"]
+    template_names = ["complete", "basic", "square"]
     for template in template_names:
         path = custom_template(d2_path(gettempdir()), template=template)
         cfg = dk.load_config(os.path.join(path, 'config.py'))
-        assert(cfg != None)
+        assert (cfg is not None)
         mcfg = dk.load_config(os.path.join(path, 'myconfig.py'))
-        assert(mcfg != None)
+        assert (mcfg is not None)

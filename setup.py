@@ -63,17 +63,11 @@ setup(name='donkeycar',
               'Adafruit_PCA9685',
               'Adafruit_SSD1306',
           ],
-          'pc': [
-              'matplotlib',
-          ],
           'dev': [
               'pytest',
               'pytest-cov',
-              'responses',
+              'codecov'
           ],
-          'ci': ['codecov'],
-          'tf': ['tensorflow==2.2.0'],
-          'tf_gpu': ['tensorflow-gpu==2.2.0'],
           'mm1': ['pyserial']
       },
       package_data={
