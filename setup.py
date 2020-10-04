@@ -67,6 +67,8 @@ setup(name='donkeycar',
               'pytest-cov',
               'codecov'
           ],
+          'ci': ['codecov'],
+          'tf': ['tensorflow>=2.2.0'],
           'mm1': ['pyserial']
       },
       package_data={

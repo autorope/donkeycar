@@ -131,14 +131,7 @@ def img_crop(img_arr, top, bottom):
 
 
 def normalize_and_crop(img_arr, cfg):
-    img_arr = img_arr.astype(np.float32) * one_byte_scale
-    if cfg.ROI_CROP_TOP or cfg.ROI_CROP_BOTTOM:
-        img_arr = img_crop(img_arr, cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
-        if len(img_arr.shape) == 2:
-            img_arrH = img_arr.shape[0]
-            img_arrW = img_arr.shape[1]
-            img_arr = img_arr.reshape(img_arrH, img_arrW, 1)
-    return img_arr
+    return img_arr.astype(np.float32) * one_byte_scale
 
 
 def load_scaled_image_arr(filename, cfg):

@@ -94,7 +94,7 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 #The DEFAULT_MODEL_TYPE will choose which model will be created at training time. This chooses
 #between different neural network designs. You can override this setting by passing the command
 #line parameter --type to the python manage.py train and drive commands.
-DEFAULT_MODEL_TYPE = 'linear'   #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
+DEFAULT_MODEL_TYPE = 'linear'   # (linear|categorical|tflite_liner|tensorrt_linear)
 BATCH_SIZE = 128                #how many records to use when doing one pass of gradient decent. Use a smaller number if your gpu is running out of memory.
 TRAIN_TEST_SPLIT = 0.8          #what percent of records to use for training. the remaining used for validation.
 MAX_EPOCHS = 100                #how many times to visit all records of your data
@@ -123,12 +123,6 @@ PI_USERNAME = "pi"                  # username on pi
 PI_PASSWD = "raspberry"             # password is optional. Only used from Windows machine. Ubuntu and mac users should copy their public keys to the pi. `ssh-copy-id username@hostname`
 PI_HOSTNAME = "raspberrypi.local"   # the network hostname or ip address
 PI_DONKEY_ROOT = "/home/pi/mycar"   # the location of the mycar dir on the pi. this will be used to help locate the final model destination.
-
-# Region of interst cropping
-# only supported in Categorical and Linear models.
-# If these crops values are too large, they will cause the stride values to become negative and the model with not be valid.
-ROI_CROP_TOP = 0                    #the number of rows of pixels to ignore on the top of the image
-ROI_CROP_BOTTOM = 0                 #the number of rows of pixels to ignore on the bottom of the image
 
 #Model transfer options
 #When copying weights during a model transfer operation, should we freeze a certain number of layers
