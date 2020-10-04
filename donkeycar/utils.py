@@ -24,7 +24,7 @@ import numpy as np
 '''
 IMAGES
 '''
-one_byte_scale = 1.0 / 255.0
+ONE_BYTE_SCALE = 1.0 / 255.0
 
 
 def scale(im, size=128):
@@ -94,7 +94,7 @@ def binary_to_img(binary):
 
 
 def norm_img(img):
-    return (img - img.mean() / np.std(img)) * one_byte_scale
+    return (img - img.mean() / np.std(img)) * ONE_BYTE_SCALE
 
 
 def create_video(img_dir_path, output_video_path):
@@ -130,8 +130,8 @@ def img_crop(img_arr, top, bottom):
     return img_arr[top:end, ...]
 
 
-def normalize_and_crop(img_arr, cfg):
-    return img_arr.astype(np.float32) * one_byte_scale
+def normalize_and_crop(img_arr):
+    return img_arr.astype(np.float32) * ONE_BYTE_SCALE
 
 
 def load_scaled_image_arr(filename, cfg):

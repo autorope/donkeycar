@@ -8,7 +8,7 @@ include one or more models to help direct the vehicles motion.
 
 """
 
-
+from abc import ABC, abstractmethod
 import numpy as np
 
 import tensorflow as tf
@@ -23,9 +23,12 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
 
 import donkeycar as dk
+from donkeycar.utils import normalize_and_crop
+
+ONE_BYTE_SCALE = 1.0 / 255.0
 
 
-class KerasPilot(object):
+class KerasPilot(ABC):
     """
     Base class for Keras models that will provide steering and throttle to
     guide a car.
@@ -55,7 +58,15 @@ class KerasPilot(object):
             self.model.optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
         else:
             raise Exception("unknown optimizer type: %s" % optimizer_type)
-    
+
+    def run(self, img_arr, other_arr=None):
+        norm_arr = normalize_and_crop(img_arr)
+        return self.inference(norm_arr, other_arr)
+
+    @abstractmethod
+    def inference(self, img_arr, other_arr):
+        pass
+
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=100, train_split=0.8,
               verbose=1, min_delta=.0005, patience=5, use_early_stop=True):
@@ -121,7 +132,7 @@ class KerasCategorical(KerasPilot):
                                  'throttle_out': 'categorical_crossentropy'},
                            loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
         
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         if img_arr is None:
             print('no image')
             return 0.0, 0.0
@@ -149,7 +160,7 @@ class KerasLinear(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
@@ -166,7 +177,7 @@ class KerasInferred(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
@@ -211,11 +222,10 @@ class KerasIMU(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
         
-    def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z):
+    def inference(self, img_arr, other_arr):
         # TODO: would be nice to take a vector input array.
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        imu_arr = np.array([accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z])\
-            .reshape(1,self.num_imu_inputs)
+        imu_arr = np.array(other_arr).reshape(1, self.num_imu_inputs)
         outputs = self.model.predict([img_arr, imu_arr])
         steering = outputs[0]
         throttle = outputs[1]
@@ -236,7 +246,7 @@ class KerasBehavioral(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
         
-    def run(self, img_arr, state_array):        
+    def inference(self, img_arr, state_array):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1,len(state_array))
         angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
@@ -267,7 +277,7 @@ class KerasLocalizer(KerasPilot):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
                            loss='mse')
         
-    def run(self, img_arr):        
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle, throttle, track_loc = self.model.predict([img_arr])
         loc = np.argmax(track_loc[0])
@@ -445,7 +455,7 @@ class KerasRNN_LSTM(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
             img_arr = dk.utils.rgb2gray(img_arr)
 
@@ -512,7 +522,7 @@ class Keras3D_CNN(KerasPilot):
                            optimizer=self.optimizer,
                            metrics=['accuracy'])
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
 
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
             img_arr = dk.utils.rgb2gray(img_arr)
@@ -611,7 +621,7 @@ class KerasLatent(KerasPilot):
         self.model.compile(optimizer=self.optimizer,
                            loss=loss, loss_weights=weights)
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         steering = outputs[1]

@@ -112,19 +112,13 @@ def drive(cfg, model_path=None, model_type=None):
     # pilot condition to determine if user or ai are driving
     car.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
 
-    # this normalizes the image to [0,1]
-    car.add(ImgPrecondition(cfg),
-            inputs=['cam/image_array'],
-            outputs=['cam/normalized/cropped'],
-            run_condition='run_pilot')
-
     # adding the auto-pilot
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
     if model_path:
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
-        inputs = ['cam/normalized/cropped']
+        inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
