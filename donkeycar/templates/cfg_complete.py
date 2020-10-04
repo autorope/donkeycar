@@ -43,7 +43,7 @@ PCA9685_I2C_ADDR = 0x40     # I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = 0      # None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 
 #SSD1306_128_32
-USE_SSD1306_128_32 = True     # Enable the SSD_1306 OLED Display
+USE_SSD1306_128_32 = False     # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 
 #DRIVETRAIN
