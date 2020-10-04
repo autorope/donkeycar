@@ -69,11 +69,6 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
-# Region of interst cropping
-# only supported in Categorical and Linear models.
-ROI_CROP_TOP = 0
-ROI_CROP_BOTTOM = 0
-
 #model transfer options
 FREEZE_LAYERS = False
 NUM_LAST_LAYERS_TO_TRAIN = 7
