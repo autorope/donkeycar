@@ -247,9 +247,6 @@ class MakeMovie(object):
         img_path = os.path.join(self.tub.images_base_path, rec['cam/image_array'])
         image = img_to_arr(Image.open(img_path))
 
-        if self.cfg.ROI_CROP_TOP != 0 or self.cfg.ROI_CROP_BOTTOM != 0:
-            image = img_crop(image, self.cfg.ROI_CROP_TOP, self.cfg.ROI_CROP_BOTTOM)
-
         if self.do_salient:
             image = self.draw_salient(image)
             image = image * 255
