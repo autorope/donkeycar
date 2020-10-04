@@ -1,6 +1,6 @@
-from setuptools import setup, find_packages
-
 import os
+
+from setuptools import find_packages, setup
 
 
 # include the non python files
@@ -37,20 +37,19 @@ setup(name='donkeycar',
               'donkey=donkeycar.management.base:execute_from_command_line',
           ],
       },
-      install_requires=['numpy',
-                        'pillow',
-                        'docopt',
-                        'tornado',
-                        'requests',
-                        'h5py',
-                        'moviepy',
-                        'pandas',
-                        'PrettyTable',
-                        'paho-mqtt',
-                        'simple_pid',
-                        'progress'
-                        ],
-
+      install_requires=[
+          'numpy',
+          'pillow',
+          'docopt',
+          'tornado',
+          'requests',
+          'h5py',
+          'moviepy',
+          'PrettyTable',
+          'paho-mqtt',
+          'simple_pid',
+          'progress'
+      ],
       extras_require={
           'pi': [
               'picamera',
@@ -75,27 +74,22 @@ setup(name='donkeycar',
       },
 
       include_package_data=True,
-
       classifiers=[
           # How mature is this project? Common values are
           #   3 - Alpha
           #   4 - Beta
           #   5 - Production/Stable
-          'Development Status :: 3 - Alpha',
-
+          'Development Status :: 4 - Alpha',
           # Indicate who your project is intended for
           'Intended Audience :: Developers',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
-
           # Pick your license as you wish (should match "license" above)
           'License :: OSI Approved :: MIT License',
-
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
-
       packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
-      )
+)
