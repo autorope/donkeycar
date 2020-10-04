@@ -22,6 +22,7 @@ def test_drive():
     path = default_template(d2_path(gettempdir()))
     myconfig = open(os.path.join(path, 'myconfig.py'), "wt")
     myconfig.write("CAMERA_TYPE = 'MOCK'\n")
+    myconfig.write("USE_SSD1306_128_32 = False \n")
     myconfig.write("DRIVE_TRAIN_TYPE = 'None'")
     myconfig.close()
     cfg = dk.load_config(os.path.join(path, 'config.py'))
