@@ -220,7 +220,10 @@ cd donkeycar
 git checkout master
 pip install -e .[pi]
 pip install numpy --upgrade
-pip install https://github.com/lhelontra/tensorflow-on-arm/releases/download/v2.2.0/tensorflow-2.2.0-cp37-none-linux_armv7l.whl
+wget "https://raw.githubusercontent.com/PINTO0309/Tensorflow-bin/master/tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh"
+chmod u+x tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
+tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
+pip install tensorflow-2.3.1-cp37-none-linux_armv7l.whl
 ```
 
 You can validate your tensorflow install with
