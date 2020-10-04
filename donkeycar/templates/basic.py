@@ -14,8 +14,6 @@ from docopt import docopt
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.controller import LocalWebController
-from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.image import ImgPrecondition
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
 

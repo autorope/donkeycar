@@ -108,11 +108,3 @@ class ImgStack:
 
     def shutdown(self):
         pass
-
-
-class ImgPrecondition:
-    def __init__(self, cfg):
-        self.cfg = cfg
-
-    def run(self, img_arr):
-        return normalize_and_crop(img_arr, self.cfg)
