@@ -131,14 +131,7 @@ def img_crop(img_arr, top, bottom):
 
 
 def normalize_and_crop(img_arr, cfg):
-    img_arr = img_arr.astype(np.float32) * one_byte_scale
-    if cfg.ROI_CROP_TOP or cfg.ROI_CROP_BOTTOM:
-        img_arr = img_crop(img_arr, cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
-        if len(img_arr.shape) == 2:
-            img_arrH = img_arr.shape[0]
-            img_arrW = img_arr.shape[1]
-            img_arr = img_arr.reshape(img_arrH, img_arrW, 1)
-    return img_arr
+    return img_arr.astype(np.float32) * one_byte_scale
 
 
 def load_scaled_image_arr(filename, cfg):
@@ -222,7 +215,7 @@ def linear_bin(a, N=15, offset=1, R=2.0):
     offset one hot bin by offset, commonly R/2
     '''
     a = a + offset
-    b = round(a / (R/(N-offset)))
+    b = round(a / (R / (N - offset)))
     arr = np.zeros(N)
     b = clamp(b, 0, N - 1)
     arr[int(b)] = 1
@@ -236,7 +229,7 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
     rescale given R range and offset
     '''
     b = np.argmax(arr)
-    a = b *(R/(N + offset)) + offset
+    a = b * (R / (N + offset)) + offset
     return a
 
 
@@ -304,6 +297,26 @@ def my_ip():
     s.connect(('192.0.0.8', 1027))
     return s.getsockname()[0]
 
+'''
+THROTTLE
+'''
+
+STEERING_MIN = -1.
+STEERING_MAX = 1.
+# Scale throttle ~ 0.5 - 1.0 depending on the steering angle
+EXP_SCALING_FACTOR = 0.5
+DAMPENING = 0.05
+
+def _steering(input_value):
+    input_value = clamp(input_value, STEERING_MIN, STEERING_MAX)
+    return ((input_value - STEERING_MIN) / (STEERING_MAX - STEERING_MIN))
+
+
+def throttle(input_value):
+    magnitude = _steering(input_value)
+    decay = math.exp(magnitude * EXP_SCALING_FACTOR)
+    dampening = DAMPENING * magnitude
+    return ((1 / decay) - dampening)
 
 '''
 OTHER
@@ -366,88 +379,6 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-"""
-Tub management
-"""
-
-
-def expand_path_masks(paths):
-    '''
-    take a list of paths and expand any wildcards
-    returns a new list of paths fully expanded
-    '''
-    import glob
-    expanded_paths = []
-    for path in paths:
-        if '*' in path or '?' in path:
-            mask_paths = glob.glob(path)
-            expanded_paths += mask_paths
-        else:
-            expanded_paths.append(path)
-
-    return expanded_paths
-
-
-def gather_tub_paths(cfg, tub_names=None):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub paths
-    '''
-    if tub_names:
-        if type(tub_names) == list:
-            tub_paths = [os.path.expanduser(n) for n in tub_names]
-        else:
-            tub_paths = [os.path.expanduser(n) for n in tub_names.split(',')]
-        return expand_path_masks(tub_paths)
-    else:
-        paths = [os.path.join(cfg.DATA_PATH, n) for n in os.listdir(cfg.DATA_PATH)]
-        dir_paths = []
-        for p in paths:
-            if os.path.isdir(p):
-                dir_paths.append(p)
-        return dir_paths
-
-
-def gather_tubs(cfg, tub_names):
-    '''
-    takes as input the configuration, and the comma seperated list of tub paths
-    returns a list of Tub objects initialized to each path
-    '''
-    from donkeycar.parts.datastore import Tub
-
-    tub_paths = gather_tub_paths(cfg, tub_names)
-    tubs = [Tub(p) for p in tub_paths]
-
-    return tubs
-
-"""
-Training helpers
-"""
-
-def get_image_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[0])
-
-
-def get_record_index(fnm):
-    sl = os.path.basename(fnm).split('_')
-    return int(sl[1].split('.')[0])
-
-
-def gather_records(cfg, tub_names, opts=None, verbose=False):
-
-    tubs = gather_tubs(cfg, tub_names)
-
-    records = []
-
-    for tub in tubs:
-        if verbose:
-            print(tub.path)
-        record_paths = tub.gather_records()
-        records += record_paths
-
-    return records
-
 
 def get_model_by_type(model_type, cfg):
     '''
@@ -464,39 +395,23 @@ def get_model_by_type(model_type, cfg):
     print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
-    roi_crop = (cfg.ROI_CROP_TOP, cfg.ROI_CROP_BOTTOM)
-
-    if model_type == "tflite_linear":
+    if model_type == "linear":
+        kl = KerasLinear(input_shape=input_shape)
+    elif model_type == "categorical":
+        kl = KerasCategorical(input_shape=input_shape,
+                              throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+    elif model_type == "tflite_linear":
         kl = TFLitePilot()
-    elif model_type == "localizer" or cfg.TRAIN_LOCALIZER:
-        kl = KerasLocalizer(num_locations=cfg.NUM_LOCATIONS, input_shape=input_shape)
-    elif model_type == "behavior" or cfg.TRAIN_BEHAVIORS:
-        kl = KerasBehavioral(num_outputs=2, num_behavior_inputs=len(cfg.BEHAVIOR_LIST), input_shape=input_shape)
-    elif model_type == "imu":
-        kl = KerasIMU(num_outputs=2, num_imu_inputs=6, input_shape=input_shape, roi_crop=roi_crop)
-    elif model_type == "linear":
-        kl = KerasLinear(input_shape=input_shape, roi_crop=roi_crop)
     elif model_type == "tensorrt_linear":
-        # Aggressively lazy load this. This module imports pycuda.autoinit which causes a lot of unexpected things
-        # to happen when using TF-GPU for training.
+        # Aggressively lazy load this. This module imports pycuda.autoinit
+        # which causes a lot of unexpected things to happen when using TF-GPU
+        # for training.
         from donkeycar.parts.tensorrt import TensorRTLinear
         kl = TensorRTLinear(cfg=cfg)
-    elif model_type == "coral_tflite_linear":
-        from donkeycar.parts.coral import CoralLinearPilot
-        kl = CoralLinearPilot()
-    elif model_type == "3d":
-        kl = Keras3D_CNN(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
-    elif model_type == "rnn":
-        kl = KerasRNN_LSTM(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, seq_length=cfg.SEQUENCE_LENGTH, roi_crop=roi_crop)
-    elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape, throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE, roi_crop=roi_crop)
-    elif model_type == "latent":
-        kl = KerasLatent(input_shape=input_shape)
-    elif model_type == "fastai":
-        from donkeycar.parts.fastai import FastAiPilot
-        kl = FastAiPilot()
     else:
-        raise Exception("unknown model type: %s" % model_type)
+        raise Exception("Unknown model type {:}, supported types are "
+                        "linear, categorical, tflite_linear, tensorrt_linear"
+                        .format(model_type))
 
     return kl
 

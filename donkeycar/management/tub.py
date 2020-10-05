@@ -4,10 +4,16 @@ tub.py
 Manage tubs
 '''
 
-import os, sys, time
 import json
+import os
+import sys
+import time
+from pathlib import Path
+from stat import S_ISREG, ST_ATIME, ST_CTIME, ST_MODE, ST_MTIME
+
 import tornado.web
-from stat import S_ISREG, ST_MTIME, ST_MODE, ST_CTIME, ST_ATIME
+
+from donkeycar.parts.tub_v2 import Tub
 
 
 class TubManager:
@@ -24,8 +30,6 @@ class WebServer(tornado.web.Application):
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         static_file_path = os.path.join(this_dir, 'tub_web', 'static')
-
-
 
         handlers = [
             (r"/", tornado.web.RedirectHandler, dict(url="/tubs")),
@@ -70,47 +74,44 @@ class TubView(tornado.web.RequestHandler):
 class TubApi(tornado.web.RequestHandler):
 
     def initialize(self, data_path):
-        self.data_path = data_path
-
-    def image_path(self, tub_path, frame_id):
-        return os.path.join(tub_path, str(frame_id) + "_cam-image_array_.jpg")
-
-    def record_path(self, tub_path, frame_id):
-        return os.path.join(tub_path, "record_" + frame_id + ".json")
+        path = Path(os.path.expanduser(data_path))
+        self.data_path = path.absolute()
 
     def clips_of_tub(self, tub_path):
-        seqs = [ int(f.split("_")[0]) for f in os.listdir(tub_path) if f.endswith('.jpg') ]
-        seqs.sort()
+        tub = Tub(tub_path)
 
-        entries = ((os.stat(self.image_path(tub_path, seq))[ST_ATIME], seq) for seq in seqs)
+        clips = []
+        for record in tub:
+            index = record['_index']
+            images_relative_path = os.path.join(Tub.images(), record['cam/image_array'])
+            record['cam/image_array'] = images_relative_path
+            clips.append(record)
 
-        (last_ts, seq) = next(entries)
-        clips = [[seq]]
-        for next_ts, next_seq in entries:
-            #if next_ts - last_ts > 100:  #greater than 1s apart
-            #    clips.append([next_seq])
-            #else:
-            #    clips[-1].append(next_seq)
-            clips[-1].append(next_seq)
-            last_ts = next_ts
-
-        return clips
+        return [clips]
 
     def get(self, tub_id):
-        clips = self.clips_of_tub(os.path.join(self.data_path, tub_id))
-
+        base_path = os.path.join(self.data_path, tub_id)
+        clips = self.clips_of_tub(base_path)
         self.set_header("Content-Type", "application/json; charset=UTF-8")
         self.write(json.dumps({'clips': clips}))
 
     def post(self, tub_id):
         tub_path = os.path.join(self.data_path, tub_id)
+        tub = Tub(tub_path)
         old_clips = self.clips_of_tub(tub_path)
         new_clips = tornado.escape.json_decode(self.request.body)
 
         import itertools
         old_frames = list(itertools.chain(*old_clips))
+        old_indexes = set()
+        for frame in old_frames:
+            old_indexes.add(frame['_index'])
+
         new_frames = list(itertools.chain(*new_clips['clips']))
-        frames_to_delete = [str(item) for item in old_frames if item not in new_frames]
+        new_indexes = set()
+        for frame in new_frames:
+            new_indexes.add(frame['_index'])
+
+        frames_to_delete = [index for index in old_indexes if index not in new_indexes]
         for frm in frames_to_delete:
-            os.remove(self.record_path(tub_path, frm))
-            os.remove(self.image_path(tub_path, frm))
+            tub.delete_record(frm)
