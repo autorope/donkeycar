@@ -71,8 +71,8 @@ def arr_to_img(arr):
 
 def img_to_arr(img):
     '''
-    accepts: numpy array with shape (Height, Width, Channels)
-    returns: binary stream (used to save to database)
+    accepts: PIL image
+    returns: a numpy uint8 image
     '''
     return np.array(img)
 
@@ -115,10 +115,13 @@ def create_video(img_dir_path, output_video_path):
 
 
 def rgb2gray(rgb):
-    '''
-    take a numpy rgb image return a new single channel image converted to greyscale
-    '''
-    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+    """
+    Convert normalized numpy image array with shape (w, h, 3) into greyscale
+    image of shape (w, h)
+    :param rgb:     normalized [0,1] float32 numpy image array shape(w,h,3)
+    :return:        normalized [0,1] float32 numpy image array shape(w,h)
+    """
+    return np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
 
 
 def img_crop(img_arr, top, bottom):
@@ -130,26 +133,40 @@ def img_crop(img_arr, top, bottom):
     return img_arr[top:end, ...]
 
 
-def normalize_and_crop(img_arr):
-    return img_arr.astype(np.float32) * ONE_BYTE_SCALE
+def normalize_image(img_arr_uint):
+    """
+    Convert uint8 numpy image array into [0,1] float image array
+    :param img_arr_uint:    [0,255]uint8 numpy image array
+    :return:                [0,1] float32 numpy image array
+    """
+    return img_arr_uint.astype(np.float32) * ONE_BYTE_SCALE
 
 
-def load_scaled_image_arr(filename, cfg):
-    '''
-    load an image from the filename, and use the cfg to resize if needed
-    also apply cropping and normalize
-    '''
-    import donkeycar as dk
+def denormalize_image(img_arr_float):
+    """
+    :param img_arr_float:   [0,1] float numpy image array
+    :return:                [0,255]uint8 numpy image array
+    """
+    return (img_arr_float * 255.0).astype(np.uint8)
+
+
+def load_image_arr(filename, cfg):
+    """
+    :param string filename:     path to image file
+    :param cfg:                 donkey config
+    :return np.ndarray:         numpy uint8 image array
+    """
     try:
         img = Image.open(filename)
         if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
             img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
         img_arr = np.array(img)
-        img_arr = normalize_and_crop(img_arr, cfg)
-        croppedImgH = img_arr.shape[0]
-        croppedImgW = img_arr.shape[1]
+        cropped_img_h = img_arr.shape[0]
+        cropped_img_w = img_arr.shape[1]
         if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-            img_arr = dk.utils.rgb2gray(img_arr).reshape(croppedImgH, croppedImgW, 1)
+            img_arr = normalize_image(img_arr)
+            img_arr = rgb2gray(img_arr).reshape(cropped_img_h, cropped_img_w, 1)
+            img_arr = denormalize_image(img_arr)
     except Exception as e:
         print(e)
         print('failed to load image:', filename)
@@ -417,10 +434,12 @@ def get_model_by_type(model_type, cfg):
 
 
 def get_test_img(model):
-    '''
-    query the input to see what it likes
-    make an image capable of using with that test model
-    '''
+    """
+    query the input to see what it likes make an image capable of using with
+    that test model
+    :param model:                   input keras model
+    :return np.ndarry(np.uint8):    numpy random img array
+    """
     assert(len(model.inputs) > 0)
     try:
         count, h, w, ch = model.inputs[0].get_shape()
@@ -429,8 +448,7 @@ def get_test_img(model):
         count, seq_len, h, w, ch = model.inputs[0].get_shape()
 
     # generate random array in the right shape
-    img = np.random.rand(int(h), int(w), int(ch))
-
+    img = np.random.randint(0, 255, size=(h, w, ch))
     return img
 
 
