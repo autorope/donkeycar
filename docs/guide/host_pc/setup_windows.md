@@ -43,7 +43,7 @@ conda env remove -n donkey
 * Create the Python anaconda environment
 
 ```bash
-conda env create -f install\envs\windows.yml
+conda env create -f install\envs\ubuntu.yml
 conda activate donkey
 pip install --user tensorflow==2.2.0
 pip install -e .[pc]

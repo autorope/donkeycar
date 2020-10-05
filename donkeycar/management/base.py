@@ -6,7 +6,7 @@ import socket
 import stat
 import sys
 from socket import *
-from pathlib import Path
+
 
 from progress.bar import IncrementalBar
 import donkeycar as dk
@@ -58,6 +58,7 @@ class CreateCar(BaseCommand):
         parser.add_argument('--path', default=None, help='path where to create car folder')
         parser.add_argument('--template', default=None, help='name of car template to use')
         parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
+        
         parsed_args = parser.parse_args(args)
         return parsed_args
         
@@ -65,16 +66,18 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
   
-    def create_car(self, path, template='basic', overwrite=False):
+    def create_car(self, path, template='complete', overwrite=False):
         """
         This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
         docker can build the folder structure for docker to mount to.
         """
 
-        # these are neeeded incase None is passed as path
+        #these are neeeded incase None is passed as path
         path = path or '~/mycar'
-        template = template or 'basic'
+        template = template or 'complete'
+
+
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
         
@@ -84,7 +87,7 @@ class CreateCar(BaseCommand):
         for fp in folder_paths:
             make_dir(fp)
             
-        # add car application and config files if they don't exist
+        #add car application and config files if they don't exist
         app_template_path = os.path.join(TEMPLATES_PATH, template+'.py')
         config_template_path = os.path.join(TEMPLATES_PATH, 'cfg_' + template + '.py')
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
@@ -94,21 +97,20 @@ class CreateCar(BaseCommand):
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
-        calibrate_app_path = os.path.join(path, 'calibrate.py')
+        calibrate_app_path = os.path.join(path, 'calibrate.py')        
         
         if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
         else:
             print("Copying car application template: {}".format(template))
             shutil.copyfile(app_template_path, car_app_path)
-            os.chmod(car_app_path, stat.S_IRWXU)
-
+            
         if os.path.exists(car_config_path) and not overwrite:
             print('Car config already exists. Delete it and rerun createcar to replace.')
         else:
             print("Copying car config defaults. Adjust these before starting your car.")
             shutil.copyfile(config_template_path, car_config_path)
-
+ 
         if os.path.exists(train_app_path) and not overwrite:
             print('Train already exists. Delete it and rerun createcar to replace.')
         else:
@@ -121,13 +123,11 @@ class CreateCar(BaseCommand):
         else:
             print("Copying calibrate script. Adjust these before starting your car.")
             shutil.copyfile(calibrate_template_path, calibrate_app_path)
-            os.chmod(calibrate_app_path, stat.S_IRWXU)
 
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")
             shutil.copyfile(myconfig_template_path, mycar_config_path)
-            # now copy file contents from config to myconfig, with all lines
-            # commented out.
+            #now copy file contents from config to myconfig, with all lines commented out.
             cfg = open(car_config_path, "rt")
             mcfg = open(mycar_config_path, "at")
             copy = False
@@ -176,7 +176,7 @@ class FindCar(BaseCommand):
         print("Your car's ip address is:" )
         os.system(cmd)
 
-
+        
 class CalibrateCar(BaseCommand):    
     
     def parse_args(self, args):
@@ -287,7 +287,7 @@ class ShowCnnActivations(BaseCommand):
         image_path = os.path.expanduser(image_path)
 
         model = load_model(model_path, compile=False)
-        image = load_image(image_path, cfg)[None, ...]
+        image = load_scaled_image_arr(image_path, cfg)[None, ...]
 
         conv_layer_names = self.get_conv_layers(model)
         input_layer = model.get_layer(name='img_in').input
@@ -374,7 +374,7 @@ class ShowPredictionPlots(BaseCommand):
 
         for record in records:
             img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
-            img = load_image(img_filename, cfg)
+            img = load_scaled_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
             user_throttle = float(record["user/throttle"])
             pilot_angle, pilot_throttle = model.run(img)
@@ -420,7 +420,6 @@ class ShowPredictionPlots(BaseCommand):
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
         self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
-
 
 class Train(BaseCommand):
 
