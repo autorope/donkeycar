@@ -288,7 +288,7 @@ class ShowCnnActivations(BaseCommand):
         image_path = os.path.expanduser(image_path)
 
         model = load_model(model_path, compile=False)
-        image = load_scaled_image_arr(image_path, cfg)[None, ...]
+        image = load_image_arr(image_path, cfg)[None, ...]
 
         conv_layer_names = self.get_conv_layers(model)
         input_layer = model.get_layer(name='img_in').input
@@ -375,7 +375,7 @@ class ShowPredictionPlots(BaseCommand):
 
         for record in records:
             img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
-            img = load_scaled_image_arr(img_filename, cfg)
+            img = load_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
             user_throttle = float(record["user/throttle"])
             pilot_angle, pilot_throttle = model.run(img)

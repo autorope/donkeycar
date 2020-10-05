@@ -23,7 +23,7 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
 
 import donkeycar as dk
-from donkeycar.utils import normalize_and_crop
+from donkeycar.utils import normalize_image
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
@@ -60,7 +60,7 @@ class KerasPilot(ABC):
             raise Exception("unknown optimizer type: %s" % optimizer_type)
 
     def run(self, img_arr, other_arr=None):
-        norm_arr = normalize_and_crop(img_arr)
+        norm_arr = normalize_image(img_arr)
         return self.inference(norm_arr, other_arr)
 
     @abstractmethod
@@ -138,12 +138,12 @@ class KerasCategorical(KerasPilot):
             return 0.0, 0.0
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned, throttle = self.model.predict(img_arr)
-        N = len(throttle[0])
-        throttle = dk.utils.linear_unbin(throttle, N=N,
+        angle_binned, throttle_binned = self.model.predict(img_arr)
+        N = len(throttle_binned[0])
+        throttle = dk.utils.linear_unbin(throttle_binned, N=N,
                                          offset=0.0, R=self.throttle_range)
-        angle_unbinned = dk.utils.linear_unbin(angle_binned)
-        return angle_unbinned, throttle
+        angle = dk.utils.linear_unbin(angle_binned)
+        return angle, throttle
 
 
 class KerasLinear(KerasPilot):

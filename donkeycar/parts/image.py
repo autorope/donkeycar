@@ -2,7 +2,7 @@
 from PIL import Image
 import numpy as np
 from donkeycar.utils import img_to_binary, binary_to_img, arr_to_img, \
-    img_to_arr, normalize_and_crop
+    img_to_arr, normalize_image
 
 
 class ImgArrToJpg():

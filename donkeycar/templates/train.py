@@ -25,8 +25,8 @@ import donkeycar
 from donkeycar.parts.keras import KerasInferred, KerasCategorical
 from donkeycar.parts.tflite import keras_model_to_tflite
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import get_model_by_type, load_scaled_image_arr, \
-    train_test_split, linear_bin
+from donkeycar.utils import get_model_by_type, load_image_arr, \
+    train_test_split, linear_bin, normalize_image
 
 
 class TubDataset(object):
@@ -108,8 +108,8 @@ class TubSequence(Sequence):
         for key, value in record.items():
             if key == 'cam/image_array' and isinstance(value, str):
                 image_path = os.path.join(record['_image_base_path'], value)
-                image = load_scaled_image_arr(image_path, self.config)
-                record[key] = image
+                image = load_image_arr(image_path, self.config)
+                record[key] = normalize_image(image)
 
         return record
 

@@ -1,6 +1,8 @@
 import os
 import tensorflow as tf
 
+from donkeycar.utils import normalize_image
+
 
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
     print('Convert model {:} to TFLite {:}'.format(in_filename, out_filename))
@@ -53,7 +55,8 @@ class TFLitePilot(object):
         self.input_shape = self.input_details[0]['shape']
     
     def run(self, image):
-        input_data = image.reshape(self.input_shape).astype('float32')
+        norm_arr = normalize_image(image)
+        input_data = norm_arr.reshape(self.input_shape)
         self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
         self.interpreter.invoke()
 
