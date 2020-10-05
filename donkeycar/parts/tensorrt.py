@@ -1,5 +1,6 @@
 from collections import namedtuple
 from donkeycar.parts.keras import KerasPilot
+from donkeycar.utils import throttle as calculate_throttle
 import json
 import numpy as np
 import pycuda.driver as cuda
@@ -10,12 +11,13 @@ import tensorrt as trt
 
 HostDeviceMemory = namedtuple('HostDeviceMemory', 'host_memory device_memory')
 
+
 class TensorRTLinear(KerasPilot):
     '''
     Uses TensorRT to do the inference.
     '''
-    def __init__(self, cfg, *args, **kwargs):
-        super(TensorRTLinear, self).__init__(*args, **kwargs)
+    def __init__(self, cfg):
+        super().__init__()
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.cfg = cfg
         self.engine = None
@@ -31,13 +33,10 @@ class TensorRTLinear(KerasPilot):
         uff_model = Path(model_path)
         metadata_path = Path('%s/%s.metadata' % (uff_model.parent.as_posix(), uff_model.stem))
         with open(metadata_path.as_posix(), 'r') as metadata, trt.Builder(self.logger) as builder, builder.create_network() as network, trt.UffParser() as parser:
-            
-            # Without this max_workspace_size setting, I was getting:
-            # Building CUDA Engine
-            # [TensorRT] ERROR: Internal error: could not find any implementation for node 2-layer MLP, try increasing the workspace size with IBuilder::setMaxWorkspaceSize()
-            # [TensorRT] ERROR: ../builder/tacticOptimizer.cpp (1230) - OutOfMemory Error in computeCosts: 0
-            builder.max_workspace_size = 1 << 20 #common.GiB(1)
+
+            builder.max_workspace_size = 1 << 20
             builder.max_batch_size = 1
+            builder.fp16_mode=True
 
             metadata = json.loads(metadata.read())
             # Configure inputs and outputs
@@ -68,8 +67,13 @@ class TensorRTLinear(KerasPilot):
         image_input = self.inputs[0] 
         np.copyto(image_input.host_memory, image)
         with self.engine.create_execution_context() as context:
-            [throttle, steering] = TensorRTLinear.infer(context=context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)
-            return steering[0], throttle[0]
+            inference_output = TensorRTLinear.infer(context=context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)
+            if (len(inference_output) == 2):
+                [throttle, steering] = inference_output
+                return steering[0], throttle[0]
+            else:
+                [steering] = inference_output
+                return steering[0], calculate_throttle(steering[0])
 
     @classmethod
     def allocate_buffers(cls, engine):

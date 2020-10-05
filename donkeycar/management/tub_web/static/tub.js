@@ -50,21 +50,20 @@ $(document).ready(function(){
     // UI elements update
     var updateStreamImg = function() {
         var curFrame = selectedClip().frames[currentFrameIdx];
-        $('#img-preview').attr('src', '/tub_data/' + tubId + '/' + curFrame + '_cam-image_array_.jpg');
-        $('#cur-frame').text(curFrame);
-        $.getJSON('/tub_data/' + tubId + '/' + 'record_' + curFrame + '.json', function(data) {
-            var angle = data["user/angle"];
-            var steeringPercent = Math.round(Math.abs(angle) * 100) + '%';
-            var steeringRounded = angle.toFixed(2)
-
-            $('.steering-bar .progress-bar').css('width', '0%').html('');
-            if(angle < 0) {
-                $('#angle-bar-backward').css('width', steeringPercent).html(steeringRounded)
-            }
-            if (angle > 0) {
-                $('#angle-bar-forward').css('width', steeringPercent).html(steeringRounded)
-            }
-        });
+        var frameIndex = curFrame['_index'];
+        var imagePath = curFrame['cam/image_array'];
+        $('#img-preview').attr('src', '/tub_data/' + tubId + '/' + imagePath);
+        $('#cur-frame').text(frameIndex);
+        var angle = curFrame["user/angle"];
+        var steeringPercent = Math.round(Math.abs(angle) * 100) + '%';
+        var steeringRounded = angle.toFixed(2)
+        $('.steering-bar .progress-bar').css('width', '0%').html('');
+        if(angle < 0) {
+            $('#angle-bar-backward').css('width', steeringPercent).html(steeringRounded)
+        }
+        if (angle > 0) {
+            $('#angle-bar-forward').css('width', steeringPercent).html(steeringRounded)
+        }
     };
 
     var updateStreamControls = function() {
@@ -105,7 +104,9 @@ $(document).ready(function(){
             return Math.round(frames.length/16*i);
         })
         .map(function(frameIdx) {
-            return '<img class="clip-thumbnail" id="clipThumbnail" data-clip="' + clipIdx + '" data-frame="' + frameIdx + '" src="/tub_data/' + tubId + '/' + frames[frameIdx] + '_cam-image_array_.jpg" "/>';
+            var frame = frames[frameIdx];
+            var imagePath = frame['cam/image_array'];
+            return '<img class="clip-thumbnail" id="clipThumbnail" data-clip="' + clipIdx + '" data-frame="' + frameIdx + '" src="/tub_data/' + tubId + '/' + imagePath + '" />';
         })
         .join('');
 
