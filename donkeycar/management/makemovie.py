@@ -113,18 +113,18 @@ class MakeMovie(object):
             return
 
         import cv2
-         
-        expected = self.keras_part.model.inputs[0].shape[1:]
+
+        expected = tuple(self.keras_part.get_input_shape()[1:])
         actual = img.shape
 
-        # check input depth
+        # if model expects grey-scale but got rgb, covert
         if expected[2] == 1 and actual[2] == 3:
             # normalize image before grey conversion
             pred_img = normalize_image(img)
             pred_img = rgb2gray(pred_img)
             pred_img = denormalize_image(pred_img)
-            pred_img = pred_img.reshape(pred_img.shape + (1,))
             actual = pred_img.shape
+            img = pred_img.reshape(pred_img.shape + (1,))
 
         if expected != actual:
             print("expected input dim", expected, "didn't match actual dim", actual)

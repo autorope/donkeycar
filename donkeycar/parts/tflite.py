@@ -2,6 +2,7 @@ import os
 import tensorflow as tf
 
 from donkeycar.utils import normalize_image
+from donkeycar.parts.keras import KerasPilot
 
 
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
@@ -29,12 +30,12 @@ def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
     open(out_filename, "wb").write(tflite_model)
 
 
-class TFLitePilot(object):
+class TFLitePilot(KerasPilot):
     """
     This class wraps around the TensorFlow Lite interpreter.
     """
     def __init__(self):
-        self.model = None
+        super().__init__()
         self.interpreter = None
         self.input_shape = None
         self.input_details = None
@@ -54,9 +55,8 @@ class TFLitePilot(object):
         # Get Input shape
         self.input_shape = self.input_details[0]['shape']
     
-    def run(self, image):
-        norm_arr = normalize_image(image)
-        input_data = norm_arr.reshape(self.input_shape)
+    def inference(self, img_arr, other_arr):
+        input_data = img_arr.reshape(self.input_shape)
         self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
         self.interpreter.invoke()
 
@@ -73,4 +73,7 @@ class TFLitePilot(object):
 
         return steering, throttle
 
+    def get_input_shape(self):
+        assert self.input_shape is not None, "Need to load model first"
+        return self.input_shape
 
