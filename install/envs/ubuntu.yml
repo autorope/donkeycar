@@ -1,24 +1,29 @@
 name: donkey
+
+channels:
+  - defaults
+  - conda-forge
+
 dependencies:
-- python=3.7
-- h5py
-- pillow
-- opencv
-- matplotlib
-- tornado
-- docopt
-- pandas
-- pylint
-- pytest
-- pytest-cov
-- codecov
-- pip
-- imgaug
-- progress
-- moviepy
-- paho-mqtt
-- PrettyTable
-- tensorflow==2.2.0
+  - python=3.7
+  - h5py
+  - pillow
+  - opencv
+  - matplotlib
+  - tornado
+  - docopt
+  - pandas
+  - pylint
+  - pytest
+  - pytest-cov
+  - codecov
+  - pip
+  - imgaug
+  - progress
+  - moviepy
+  - paho-mqtt
+  - PrettyTable
+  - tensorflow==2.2.0
 
 - pip:
   - git+https://github.com/autorope/keras-vis.git
