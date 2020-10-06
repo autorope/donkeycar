@@ -59,6 +59,10 @@ class KerasPilot(ABC):
         else:
             raise Exception("unknown optimizer type: %s" % optimizer_type)
 
+    def get_input_shape(self):
+        assert self.model is not None, "Need to load model first"
+        return self.model.inputs[0].shape
+
     def run(self, img_arr, other_arr=None):
         norm_arr = normalize_image(img_arr)
         return self.inference(norm_arr, other_arr)
