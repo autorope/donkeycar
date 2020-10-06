@@ -449,7 +449,7 @@ def get_test_img(model):
 
     # generate random array in the right shape
     img = np.random.randint(0, 255, size=(h, w, ch))
-    return img
+    return img.astype(np.uint8)
 
 
 def train_test_split(data_list, shuffle=True, test_size=0.2):
