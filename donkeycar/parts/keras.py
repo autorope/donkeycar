@@ -149,7 +149,7 @@ class KerasCategorical(KerasPilot):
         angle = dk.utils.linear_unbin(angle_binned)
         return angle, throttle
 
-
+    
 class KerasLinear(KerasPilot):
     """
     The KerasLinear pilot uses one neuron to output a continous value via the

@@ -1,5 +1,4 @@
 
-import shutil
 import argparse
 import os
 import shutil
@@ -178,7 +177,7 @@ class FindCar(BaseCommand):
         print("Your car's ip address is:" )
         os.system(cmd)
 
-
+        
 class CalibrateCar(BaseCommand):    
     
     def parse_args(self, args):

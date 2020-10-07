@@ -29,62 +29,55 @@ setup(name='donkeycar',
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
       author='Will Roscoe, Adam Conway, Tawn Kramer',
-      author_email='wroscoe@gmail.com, adam@casaconway.com, '
-                   'tawnkramer@gmail.com',
+      author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
       license='MIT',
       entry_points={
           'console_scripts': [
               'donkey=donkeycar.management.base:execute_from_command_line',
           ],
       },
-      install_requires=['numpy',
-                        'pillow',
-                        'docopt',
-                        'tornado',
-                        'requests',
-                        'h5py',
-                        'moviepy',
-                        'pandas',
-                        'PrettyTable',
-                        'paho-mqtt',
-                        'simple_pid',
-                        'progress'
-                        ],
-
-    extras_require={
-                    'pi': [
-                        'picamera',
-                        'Adafruit_PCA9685',
-                        'Adafruit_SSD1306',
-                        'RPi.GPIO',
-                        'pyserial',
-                        ],
-                    'nano': [
-                        'Adafruit_PCA9685',
-                        'Adafruit_SSD1306',
-                        'RPi.GPIO'
-                        ],
-                    'pc': [
-                        'matplotlib',
-                        'imgaug',
-                        'progress',
-                        ],
-                    'dev' : [
-                        'pytest',
-                        'pytest-cov',
-                        'responses',
-                        ],
-                    'ci': ['codecov'],
-                    'tf': ['tensorflow==1.13.1'],
-                    'tf_gpu': ['tensorflow-gpu==1.13.1'],
-                    'mm1': ['pyserial']
-                    },
-    package_data={
-        'donkeycar': extra_files,
-        },
-
+      install_requires=[
+          'numpy',
+          'pillow',
+          'docopt',
+          'tornado',
+          'requests',
+          'h5py',
+          'PrettyTable',
+          'paho-mqtt',
+          "simple_pid"
+      ],
+      extras_require={
+          'pi': [
+              'picamera',
+              'Adafruit_PCA9685',
+              'Adafruit_SSD1306',
+              'RPi.GPIO',
+              'pyserial',
+          ],
+          'nano': [
+              'Adafruit_PCA9685',
+              'Adafruit_SSD1306',
+              'RPi.GPIO'
+          ],
+          'pc': [
+              'matplotlib',
+              'imgaug',
+              'progress',
+          ],
+          'dev': [
+              'pytest',
+              'pytest-cov',
+              'responses',
+          ],
+          'ci': ['codecov'],
+          'tf': ['tensorflow>=2.2.0'],
+          'mm1': ['pyserial']
+      },
+      package_data={
+          'donkeycar': extra_files,
+      },
       include_package_data=True,
-
       classifiers=[
           # How mature is this project? Common values are
           #   3 - Alpha
