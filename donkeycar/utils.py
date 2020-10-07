@@ -118,10 +118,17 @@ def rgb2gray(rgb):
     """
     Convert normalized numpy image array with shape (w, h, 3) into greyscale
     image of shape (w, h)
-    :param rgb:     normalized [0,1] float32 numpy image array shape(w,h,3)
-    :return:        normalized [0,1] float32 numpy image array shape(w,h)
+    :param rgb:     normalized [0,1] float32 numpy image array or [0,255] uint8
+                    numpy image array with shape(w,h,3)
+    :return:        normalized [0,1] float32 numpy image array shape(w,h) or
+                    [0,255] uint8 numpy array in grey scale
     """
-    return np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
+    # this will translate a uint8 array into a float64 one
+    grey = np.dot(rgb[..., :3], [0.299, 0.587, 0.114])
+    # transform back if the input is a uint8 array
+    if rgb.dtype.type is np.uint8:
+        grey = round(grey).astype(np.uint8)
+    return grey
 
 
 def img_crop(img_arr, top, bottom):
@@ -164,9 +171,7 @@ def load_image_arr(filename, cfg):
         cropped_img_h = img_arr.shape[0]
         cropped_img_w = img_arr.shape[1]
         if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-            img_arr = normalize_image(img_arr)
             img_arr = rgb2gray(img_arr).reshape(cropped_img_h, cropped_img_w, 1)
-            img_arr = denormalize_image(img_arr)
     except Exception as e:
         print(e)
         print('failed to load image:', filename)
@@ -309,6 +314,7 @@ def dist(x1, y1, x2, y2):
 NETWORKING
 '''
 
+
 def my_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(('192.0.0.8', 1027))
@@ -324,6 +330,7 @@ STEERING_MAX = 1.
 EXP_SCALING_FACTOR = 0.5
 DAMPENING = 0.05
 
+
 def _steering(input_value):
     input_value = clamp(input_value, STEERING_MIN, STEERING_MAX)
     return ((input_value - STEERING_MIN) / (STEERING_MAX - STEERING_MIN))
@@ -338,6 +345,7 @@ def throttle(input_value):
 '''
 OTHER
 '''
+
 
 def map_frange(x, X_min, X_max, Y_min, Y_max):
     '''
@@ -357,7 +365,6 @@ def merge_two_dicts(x, y):
     z = x.copy()
     z.update(y)
     return z
-
 
 
 def param_gen(params):
@@ -387,14 +394,12 @@ def run_shell_command(cmd, cwd=None, timeout=15):
     return out, err, proc.pid
 
 
-
 def kill(proc_id):
     os.kill(proc_id, signal.SIGINT)
 
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
-
 
 
 def get_model_by_type(model_type, cfg):

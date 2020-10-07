@@ -120,11 +120,9 @@ class MakeMovie(object):
         # if model expects grey-scale but got rgb, covert
         if expected[2] == 1 and actual[2] == 3:
             # normalize image before grey conversion
-            pred_img = normalize_image(img)
-            pred_img = rgb2gray(pred_img)
-            pred_img = denormalize_image(pred_img)
-            actual = pred_img.shape
-            img = pred_img.reshape(pred_img.shape + (1,))
+            grey_img = rgb2gray(img)
+            actual = grey_img.shape
+            img = grey_img.reshape(grey_img.shape + (1,))
 
         if expected != actual:
             print("expected input dim", expected, "didn't match actual dim", actual)
@@ -215,17 +213,16 @@ class MakeMovie(object):
         import cv2
         alpha = 0.004
         beta = 1.0 - alpha
-
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
-        pred_img = normalize_image(img)
 
-        # check input depth
+        # check input depth and convert to grey to match expected model input
         if expected[2] == 1 and actual[2] == 3:
-            pred_img = rgb2gray(pred_img)
-            pred_img = pred_img.reshape(pred_img.shape + (1,))
+            grey_img = rgb2gray(img)
+            img = grey_img.reshape(grey_img.shape + (1,))
 
-        salient_mask = self.compute_visualisation_mask(pred_img)
+        norm_img = normalize_image(img)
+        salient_mask = self.compute_visualisation_mask(norm_img)
         z = np.zeros_like(salient_mask)
         salient_mask_stacked = np.dstack((z, z))
         salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))

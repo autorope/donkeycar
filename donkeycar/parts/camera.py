@@ -35,7 +35,6 @@ class PiCamera(BaseCamera):
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
 
-
     def run(self):
         f = next(self.stream)
         frame = f.array
