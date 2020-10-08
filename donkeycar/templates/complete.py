@@ -298,26 +298,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
-    class ImgPreProcess():
-        '''
-        preprocess camera image for inference.
-        normalize and crop if needed.
-        '''
-        def __init__(self, cfg):
-            self.cfg = cfg
-
-        def run(self, img_arr):
-            return normalize_and_crop(img_arr, self.cfg)
-
-    if "coral" in model_type:
-        inf_input = 'cam/image_array'
-    else:
-        inf_input = 'cam/normalized/cropped'
-        V.add(ImgPreProcess(cfg),
-            inputs=['cam/image_array'],
-            outputs=[inf_input],
-            run_condition='run_pilot')
-
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
         V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
@@ -331,16 +311,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         except:
             pass
 
-        inputs = [inf_input, "behavior/one_hot_state_array"]
+        inputs = ['cam/image_array', "behavior/one_hot_state_array"]
     #IMU
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
-        inputs=[inf_input,
+        inputs=['cam/image_array',
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
     else:
-        inputs=[inf_input]
+        inputs=['cam/image_array']
 
     def load_model(kl, model_path):
         start = time.time()
@@ -419,8 +399,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             outputs.append("pilot/loc")
 
         V.add(kl, inputs=inputs,
-            outputs=outputs,
-            run_condition='run_pilot')
+              outputs=outputs,
+              run_condition='run_pilot')
     
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector import StopSignDetector

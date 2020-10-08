@@ -97,13 +97,13 @@ class Tub(object):
 
 class TubWriter(object):
     '''
-    A Donkey threaded part, which can write records to the datastore.
+    A Donkey part, which can write records to the datastore.
     '''
     def __init__(self, base_path, inputs=[], types=[], metadata=[], max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
 
     def run(self, *args):
-        assert  len(self.tub.inputs) == len(args)
+        assert len(self.tub.inputs) == len(args)
         record = dict(zip(self.tub.inputs, args))
         self.tub.write_record(record)
         return self.tub.manifest.current_index
