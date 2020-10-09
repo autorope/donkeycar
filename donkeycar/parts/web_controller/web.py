@@ -98,11 +98,10 @@ class RemoteWebServer():
 class LocalWebController(tornado.web.Application):
 
     def __init__(self, port=8887, mode='user'):
-        '''
+        """
         Create and publish variables needed on many of
         the web handlers.
-        '''
-
+        """
         print('Starting Donkey Server...', end='')
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
@@ -116,7 +115,6 @@ class LocalWebController(tornado.web.Application):
         self.num_records = 0
         self.wsclients = []
         self.loop = None
-
 
         handlers = [
             (r"/", RedirectHandler, dict(url="/drive")),
@@ -137,7 +135,7 @@ class LocalWebController(tornado.web.Application):
               "your car.".format(gethostname(), port))
 
     def update(self):
-        ''' Start the tornado webserver. '''
+        """ Start the tornado webserver. """
         asyncio.set_event_loop(asyncio.new_event_loop())
         self.listen(self.port)
         self.loop = IOLoop.instance()
@@ -160,7 +158,7 @@ class LocalWebController(tornado.web.Application):
         self.num_records = num_records
 
         # Send record count to websocket clients
-        if (self.num_records is not None and self.recording is True):
+        if self.num_records is not None and self.recording is True:
             if self.num_records % 10 == 0:
                 if self.loop is not None:
                     self.loop.add_callback(self.update_wsclients)
