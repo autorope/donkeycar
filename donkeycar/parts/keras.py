@@ -8,7 +8,7 @@ include one or more models to help direct the vehicles motion.
 
 """
 
-
+from abc import ABC, abstractmethod
 import numpy as np
 
 import tensorflow as tf
@@ -23,9 +23,12 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
 
 import donkeycar as dk
+from donkeycar.utils import normalize_image
+
+ONE_BYTE_SCALE = 1.0 / 255.0
 
 
-class KerasPilot(object):
+class KerasPilot(ABC):
     """
     Base class for Keras models that will provide steering and throttle to
     guide a car.
@@ -55,7 +58,37 @@ class KerasPilot(object):
             self.model.optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
         else:
             raise Exception("unknown optimizer type: %s" % optimizer_type)
-    
+
+    def get_input_shape(self):
+        assert self.model is not None, "Need to load model first"
+        return self.model.inputs[0].shape
+
+    def run(self, img_arr, other_arr=None):
+        """
+        Donkeycar parts interface to run the part in the loop.
+
+        :param img_arr:     uint8 [0,255] numpy array with image data
+        :param other_arr:   numpy array of additional data to be used in the
+                            pilot, like IMU array for the IMU model or a
+                            state vector in the Behavioural model
+        :return:            tuple of (angle, throttle)
+        """
+        norm_arr = normalize_image(img_arr)
+        return self.inference(norm_arr, other_arr)
+
+    @abstractmethod
+    def inference(self, img_arr, other_arr):
+        """
+        Virtual method to be implemented by child classes for inferencing
+
+        :param img_arr:     float32 [0,1] numpy array with normalized image data
+        :param other_arr:   numpy array of additional data to be used in the
+                            pilot, like IMU array for the IMU model or a
+                            state vector in the Behavioural model
+        :return:            tuple of (angle, throttle)
+        """
+        pass
+
     def train(self, train_gen, val_gen, 
               saved_model_path, epochs=100, steps=100, train_split=0.8,
               verbose=1, min_delta=.0005, patience=5, use_early_stop=True):
@@ -121,20 +154,20 @@ class KerasCategorical(KerasPilot):
                                  'throttle_out': 'categorical_crossentropy'},
                            loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
         
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         if img_arr is None:
             print('no image')
             return 0.0, 0.0
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned, throttle = self.model.predict(img_arr)
-        N = len(throttle[0])
-        throttle = dk.utils.linear_unbin(throttle, N=N,
+        angle_binned, throttle_binned = self.model.predict(img_arr)
+        N = len(throttle_binned[0])
+        throttle = dk.utils.linear_unbin(throttle_binned, N=N,
                                          offset=0.0, R=self.throttle_range)
-        angle_unbinned = dk.utils.linear_unbin(angle_binned)
-        return angle_unbinned, throttle
+        angle = dk.utils.linear_unbin(angle_binned)
+        return angle, throttle
 
-    
+
 class KerasLinear(KerasPilot):
     """
     The KerasLinear pilot uses one neuron to output a continous value via the
@@ -149,7 +182,7 @@ class KerasLinear(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
@@ -166,7 +199,7 @@ class KerasInferred(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
@@ -211,11 +244,10 @@ class KerasIMU(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
         
-    def run(self, img_arr, accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z):
+    def inference(self, img_arr, other_arr):
         # TODO: would be nice to take a vector input array.
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        imu_arr = np.array([accel_x, accel_y, accel_z, gyr_x, gyr_y, gyr_z])\
-            .reshape(1,self.num_imu_inputs)
+        imu_arr = np.array(other_arr).reshape(1, self.num_imu_inputs)
         outputs = self.model.predict([img_arr, imu_arr])
         steering = outputs[0]
         throttle = outputs[1]
@@ -236,7 +268,7 @@ class KerasBehavioral(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
         
-    def run(self, img_arr, state_array):        
+    def inference(self, img_arr, state_array):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1,len(state_array))
         angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
@@ -267,7 +299,7 @@ class KerasLocalizer(KerasPilot):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
                            loss='mse')
         
-    def run(self, img_arr):        
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         angle, throttle, track_loc = self.model.predict([img_arr])
         loc = np.argmax(track_loc[0])
@@ -278,6 +310,7 @@ def conv2d(filters, kernel, strides, layer_num, activation='relu'):
     """
     Helper function to create a standard valid-padded convolutional layer
     with square kernel and strides and unified naming convention
+
     :param filters:     channel dimension of the layer
     :param kernel:      creates (kernel, kernel) kernel matrix dimension
     :param strides:     creates (strides, strides) stride
@@ -292,12 +325,14 @@ def conv2d(filters, kernel, strides, layer_num, activation='relu'):
                          name='conv2d_' + str(layer_num))
 
 
-def core_cnn_layers(img_in, drop):
+def core_cnn_layers(img_in, drop, l4_stride=1):
     """
     Returns the core CNN layers that are shared among the different models,
     like linear, imu, behavioural
+
     :param img_in:          input layer of network
     :param drop:            dropout rate
+    :param l4_stride:       4-th layer stride, default 1
     :return:                stack of CNN layers
     """
     x = img_in
@@ -307,7 +342,7 @@ def core_cnn_layers(img_in, drop):
     x = Dropout(drop)(x)
     x = conv2d(64, 5, 2, 3)(x)
     x = Dropout(drop)(x)
-    x = conv2d(64, 3, 1, 4)(x)
+    x = conv2d(64, 3, l4_stride, 4)(x)
     x = Dropout(drop)(x)
     x = conv2d(64, 3, 1, 5)(x)
     x = Dropout(drop)(x)
@@ -336,7 +371,7 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
 def default_categorical(input_shape=(120, 160, 3)):
     drop = 0.2
     img_in = Input(shape=input_shape, name='img_in')
-    x = core_cnn_layers(img_in, drop)
+    x = core_cnn_layers(img_in, drop, l4_stride=2)
     x = Dense(100, activation='relu', name="dense_1")(x)
     x = Dropout(drop)(x)
     x = Dense(50, activation='relu', name="dense_2")(x)
@@ -345,7 +380,7 @@ def default_categorical(input_shape=(120, 160, 3)):
     angle_out = Dense(15, activation='softmax', name='angle_out')(x)
     # categorical output of throttle into 20 bins
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)
-    
+
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
     return model
 
@@ -444,7 +479,7 @@ class KerasRNN_LSTM(KerasPilot):
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
             img_arr = dk.utils.rgb2gray(img_arr)
 
@@ -511,7 +546,7 @@ class Keras3D_CNN(KerasPilot):
                            optimizer=self.optimizer,
                            metrics=['accuracy'])
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
 
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
             img_arr = dk.utils.rgb2gray(img_arr)
@@ -533,6 +568,7 @@ class Keras3D_CNN(KerasPilot):
 def build_3d_cnn(input_shape, s, num_outputs):
     """
     Credit: https://github.com/jessecha/DNRacing/blob/master/3D_CNN_Model/model.py
+
     :param input_shape:     image input shape
     :param s:               sequence length
     :param num_outputs:     output dimension
@@ -610,7 +646,7 @@ class KerasLatent(KerasPilot):
         self.model.compile(optimizer=self.optimizer,
                            loss=loss, loss_weights=weights)
 
-    def run(self, img_arr):
+    def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
         steering = outputs[1]

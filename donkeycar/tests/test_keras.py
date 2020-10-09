@@ -4,15 +4,6 @@ from donkeycar.parts.keras import *
 from donkeycar.utils import *
 import numpy as np
 
-@pytest.fixture
-def pilot():
-    kp = KerasPilot()
-    return kp
-
-
-def test_pilot_types(pilot):
-    assert 1 == 1
-
 
 def test_categorical():
     km = KerasCategorical()
@@ -33,7 +24,7 @@ def test_imu():
     assert km.model is not None
     img = get_test_img(km.model)
     imu = np.random.rand(6).tolist()
-    km.run(img, *imu)
+    km.run(img, imu)
 
 
 def test_rnn():

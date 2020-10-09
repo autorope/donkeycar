@@ -1,8 +1,9 @@
-import os
-import io
+
 from PIL import Image
 import numpy as np
-from donkeycar.utils import img_to_binary, binary_to_img, arr_to_img, img_to_arr
+from donkeycar.utils import img_to_binary, binary_to_img, arr_to_img, \
+    img_to_arr, normalize_image
+
 
 class ImgArrToJpg():
 
@@ -16,6 +17,7 @@ class ImgArrToJpg():
         except:
             return None
 
+
 class JpgToImgArr():
 
     def run(self, jpg):
@@ -24,6 +26,7 @@ class JpgToImgArr():
         image = binary_to_img(jpg)
         img_arr = img_to_arr(image)
         return img_arr
+
 
 class StereoPair:
     '''
@@ -70,13 +73,13 @@ class ImgCrop:
 
     def shutdown(self):
         pass
-        
 
 
 class ImgStack:
     """
-    Stack N previous images into a single N channel image, after converting each to grayscale.
-    The most recent image is the last channel, and pushes previous images towards the front.
+    Stack N previous images into a single N channel image, after converting
+    each to grayscale. The most recent image is the last channel, and pushes
+    previous images towards the front.
     """
     def __init__(self, num_channels=3):
         self.img_arr = None
@@ -84,7 +87,8 @@ class ImgStack:
 
     def rgb2gray(self, rgb):
         '''
-        take a numpy rgb image return a new single channel image converted to greyscale
+        take a numpy rgb image return a new single channel image converted to
+        greyscale
         '''
         return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
         

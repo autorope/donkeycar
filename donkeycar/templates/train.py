@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 Scripts to train a keras model using tensorflow.
 Basic usage should feel familiar: python train_v2.py --model models/mypilot
 
@@ -8,7 +8,7 @@ Usage:
 
 Options:
     -h --help              Show this screen.
-'''
+"""
 
 import os
 import random
@@ -25,8 +25,8 @@ import donkeycar
 from donkeycar.parts.keras import KerasInferred, KerasCategorical
 from donkeycar.parts.tflite import keras_model_to_tflite
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import get_model_by_type, load_scaled_image_arr, \
-    train_test_split, linear_bin
+from donkeycar.utils import get_model_by_type, load_image_arr, \
+    train_test_split, linear_bin, normalize_image
 
 
 class TubDataset(object):
@@ -108,8 +108,8 @@ class TubSequence(Sequence):
         for key, value in record.items():
             if key == 'cam/image_array' and isinstance(value, str):
                 image_path = os.path.join(record['_image_base_path'], value)
-                image = load_scaled_image_arr(image_path, self.config)
-                record[key] = image
+                image = load_image_arr(image_path, self.config)
+                record[key] = normalize_image(image)
 
         return record
 
@@ -189,7 +189,7 @@ def main():
     model_name, model_ext = os.path.splitext(model)
     is_tflite = model_ext == '.tflite'
     if is_tflite:
-        model = model_name + '.h5'
+        model = f'{model_name}.h5'
 
     if not model_type:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -199,7 +199,7 @@ def main():
     output_path = os.path.expanduser(model)
     train(cfg, data_paths, output_path, model_type)
     if is_tflite:
-        tflite_model_path = os.path.splitext(output_path)[0] + '.tflite'
+        tflite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
         keras_model_to_tflite(output_path, tflite_model_path)
 
 

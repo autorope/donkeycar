@@ -58,7 +58,6 @@ class CreateCar(BaseCommand):
         parser.add_argument('--path', default=None, help='path where to create car folder')
         parser.add_argument('--template', default=None, help='name of car template to use')
         parser.add_argument('--overwrite', action='store_true', help='should replace existing files')
-        
         parsed_args = parser.parse_args(args)
         return parsed_args
         
@@ -66,7 +65,7 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
   
-    def create_car(self, path, template='complete', overwrite=False):
+    def create_car(self, path, template='basic', overwrite=False):
         """
         This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
@@ -75,8 +74,7 @@ class CreateCar(BaseCommand):
 
         # these are neeeded incase None is passed as path
         path = path or '~/mycar'
-        template = template or 'complete'
-
+        template = template or 'basic'
 
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
@@ -93,7 +91,7 @@ class CreateCar(BaseCommand):
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         calibrate_template_path = os.path.join(TEMPLATES_PATH, 'calibrate.py')
-        car_app_path = os.path.join(path, 'manage.py')
+        car_app_path = os.path.join(path, 'drive.py')
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
@@ -118,7 +116,7 @@ class CreateCar(BaseCommand):
             print("Copying train script. Adjust these before starting your car.")
             shutil.copyfile(train_template_path, train_app_path)
             os.chmod(train_app_path, stat.S_IRWXU)
-            
+
         if os.path.exists(calibrate_app_path) and not overwrite:
             print('Calibrate already exists. Delete it and rerun createcar to replace.')
         else:
@@ -179,7 +177,7 @@ class FindCar(BaseCommand):
         print("Your car's ip address is:" )
         os.system(cmd)
 
-        
+
 class CalibrateCar(BaseCommand):    
     
     def parse_args(self, args):
@@ -289,7 +287,7 @@ class ShowCnnActivations(BaseCommand):
         image_path = os.path.expanduser(image_path)
 
         model = load_model(model_path, compile=False)
-        image = load_scaled_image_arr(image_path, cfg)[None, ...]
+        image = load_image_arr(image_path, cfg)[None, ...]
 
         conv_layer_names = self.get_conv_layers(model)
         input_layer = model.get_layer(name='img_in').input
@@ -376,7 +374,7 @@ class ShowPredictionPlots(BaseCommand):
 
         for record in records:
             img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
-            img = load_scaled_image_arr(img_filename, cfg)
+            img = load_image_arr(img_filename, cfg)
             user_angle = float(record["user/angle"])
             user_throttle = float(record["user/throttle"])
             pilot_angle, pilot_throttle = model.run(img)
@@ -434,7 +432,7 @@ def execute_from_command_line():
         'calibrate': CalibrateCar,
         'tubclean': TubManager,
         'tubplot': ShowPredictionPlots,
-        'makemovie': MakeMovieShell,            
+        'makemovie': MakeMovieShell,
         'createjs': CreateJoystick,
         'cnnactivations': ShowCnnActivations,
         'update': UpdateCar,
