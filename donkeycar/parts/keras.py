@@ -64,11 +64,29 @@ class KerasPilot(ABC):
         return self.model.inputs[0].shape
 
     def run(self, img_arr, other_arr=None):
+        """
+        Donkeycar parts interface to run the part in the loop.
+
+        :param img_arr:     uint8 [0,255] numpy array with image data
+        :param other_arr:   numpy array of additional data to be used in the
+                            pilot, like IMU array for the IMU model or a
+                            state vector in the Behavioural model
+        :return:            tuple of (angle, throttle)
+        """
         norm_arr = normalize_image(img_arr)
         return self.inference(norm_arr, other_arr)
 
     @abstractmethod
     def inference(self, img_arr, other_arr):
+        """
+        Virtual method to be implemented by child classes for inferencing
+
+        :param img_arr:     float32 [0,1] numpy array with normalized image data
+        :param other_arr:   numpy array of additional data to be used in the
+                            pilot, like IMU array for the IMU model or a
+                            state vector in the Behavioural model
+        :return:            tuple of (angle, throttle)
+        """
         pass
 
     def train(self, train_gen, val_gen, 
@@ -292,6 +310,7 @@ def conv2d(filters, kernel, strides, layer_num, activation='relu'):
     """
     Helper function to create a standard valid-padded convolutional layer
     with square kernel and strides and unified naming convention
+
     :param filters:     channel dimension of the layer
     :param kernel:      creates (kernel, kernel) kernel matrix dimension
     :param strides:     creates (strides, strides) stride
@@ -310,6 +329,7 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     """
     Returns the core CNN layers that are shared among the different models,
     like linear, imu, behavioural
+
     :param img_in:          input layer of network
     :param drop:            dropout rate
     :param l4_stride:       4-th layer stride, default 1
@@ -548,6 +568,7 @@ class Keras3D_CNN(KerasPilot):
 def build_3d_cnn(input_shape, s, num_outputs):
     """
     Credit: https://github.com/jessecha/DNRacing/blob/master/3D_CNN_Model/model.py
+
     :param input_shape:     image input shape
     :param s:               sequence length
     :param num_outputs:     output dimension
