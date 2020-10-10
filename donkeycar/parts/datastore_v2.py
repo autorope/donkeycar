@@ -210,7 +210,8 @@ class Manifest(object):
     [ json object with catalog metadata ]\n
     '''
 
-    def __init__(self, base_path, inputs=[], types=[], metadata=[], max_len=1000):
+    def __init__(self, base_path, inputs=[], types=[], metadata=[],
+                 max_len=1000, read_only=False):
         self.base_path = Path(os.path.expanduser(base_path)).absolute()
         self.manifest_path = Path(os.path.join(self.base_path, 'manifest.json'))
         self.inputs = inputs
@@ -236,8 +237,8 @@ class Manifest(object):
             if not self.base_path.exists():
                 self.base_path.mkdir(parents=True, exist_ok=True)
                 print('Created a new datastore at %s' % (self.base_path.as_posix()))
-
-            self.seekeable = Seekable(self.manifest_path)
+            method = 'r' if read_only else 'a+'
+            self.seekeable = Seekable(self.manifest_path, method=method)
 
         if not has_catalogs:
             self._write_contents()

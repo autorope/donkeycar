@@ -149,10 +149,10 @@ class KerasCategorical(KerasPilot):
         self.throttle_range = throttle_range
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
+        self.model.compile(optimizer=self.optimizer, metrics=['accuracy'],
                            loss={'angle_out': 'categorical_crossentropy',
                                  'throttle_out': 'categorical_crossentropy'},
-                           loss_weights={'angle_out': 0.5, 'throttle_out': 1.0})
+                           loss_weights={'angle_out': 0.5, 'throttle_out': 0.5})
         
     def inference(self, img_arr, other_arr):
         if img_arr is None:
