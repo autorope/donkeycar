@@ -13,6 +13,7 @@ from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import TubWriter
+from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
@@ -146,7 +147,10 @@ def drive(cfg, model_path=None, model_type=None):
     # add tub to save data
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
     types = ['image_array', 'float', 'float', 'str']
-    tub_writer = TubWriter(base_path=cfg.DATA_PATH, inputs=inputs, types=types)
+    # do we want to store new records into own dir or append to existing
+    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
+        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+    tub_writer = TubWriter(base_path=tub_path, inputs=inputs, types=types)
     car.add(tub_writer, inputs=inputs, outputs=["tub/num_records"],
             run_condition='recording')
     # start the car
