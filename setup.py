@@ -54,6 +54,7 @@ setup(name='donkeycar',
               'Adafruit_SSD1306',
               'RPi.GPIO',
               'pyserial',
+              'progress',          
           ],
           'nano': [
               'Adafruit_PCA9685',
