@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 Usage:
     convert_to_tub_v2.py --tub=<path> --output=<path>

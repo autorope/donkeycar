@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import pytest
+
 from donkeycar.parts.keras import *
 from donkeycar.utils import *
 import numpy as np
@@ -46,3 +46,7 @@ def test_localizer():
     assert km.model is not None   
     img = get_test_img(km.model)
     km.run(img)
+
+
+
+

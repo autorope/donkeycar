@@ -38,7 +38,8 @@ class TubDataset(object):
         self.tub_paths = tub_paths
         self.test_size = test_size
         self.shuffle = shuffle
-        self.tubs = [Tub(tub_path) for tub_path in self.tub_paths]
+        self.tubs = [Tub(tub_path, read_only=True) for tub_path in
+                     self.tub_paths]
         self.records = list()
 
     def train_test_split(self):
@@ -132,9 +133,13 @@ class ImagePreprocessing(Sequence):
 
 
 def train(cfg, tub_paths, output_path, model_type):
-    '''
+    """
     Train the model
-    '''
+    """
+    # convert single path into list of one element
+    if type(tub_paths) is str:
+        tub_paths = [tub_paths]
+
     if 'linear' in model_type:
         train_type = 'linear'
     else:
@@ -154,6 +159,8 @@ def train(cfg, tub_paths, output_path, model_type):
 
     training = TubSequence(kl, cfg, training_records)
     validation = TubSequence(kl, cfg, validation_records)
+    assert len(validation) > 0, "Not enough validation data, decrease the " \
+                                "batch size or add more data."
 
     # Setup early stoppage callbacks
     callbacks = [
@@ -166,7 +173,7 @@ def train(cfg, tub_paths, output_path, model_type):
         )
     ]
 
-    kl.model.fit(
+    history = kl.model.fit(
         x=training,
         steps_per_epoch=len(training),
         batch_size=batch_size,
@@ -178,6 +185,7 @@ def train(cfg, tub_paths, output_path, model_type):
         workers=1,
         use_multiprocessing=False
     )
+    return history
 
 
 def main():
@@ -197,7 +205,7 @@ def main():
     tubs = tubs.split(',')
     data_paths = [Path(os.path.expanduser(tub)).absolute().as_posix() for tub in tubs]
     output_path = os.path.expanduser(model)
-    train(cfg, data_paths, output_path, model_type)
+    history = train(cfg, data_paths, output_path, model_type)
     if is_tflite:
         tflite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
         keras_model_to_tflite(output_path, tflite_model_path)

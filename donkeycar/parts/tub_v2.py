@@ -13,13 +13,16 @@ class Tub(object):
     A datastore to store sensor data in a key, value format. \n
     Accepts str, int, float, image_array, image, and array data types.
     '''
-    def __init__(self, base_path, inputs=[], types=[], metadata=[], max_catalog_len=1000):
+    def __init__(self, base_path, inputs=[], types=[], metadata=[],
+                 max_catalog_len=1000, read_only=False):
         self.base_path = base_path
         self.images_base_path = os.path.join(self.base_path, Tub.images())
         self.inputs = inputs
         self.types = types
         self.metadata = metadata
-        self.manifest = Manifest(base_path, inputs=inputs, types=types, metadata=metadata, max_len=max_catalog_len)
+        self.manifest = Manifest(base_path, inputs=inputs, types=types,
+                                 metadata=metadata, max_len=max_catalog_len,
+                                 read_only=read_only)
         self.input_types = dict(zip(self.inputs, self.types))
         # Create images folder if necessary
         if not os.path.exists(self.images_base_path):
@@ -99,7 +102,8 @@ class TubWriter(object):
     '''
     A Donkey part, which can write records to the datastore.
     '''
-    def __init__(self, base_path, inputs=[], types=[], metadata=[], max_catalog_len=1000):
+    def __init__(self, base_path, inputs=[], types=[], metadata=[],
+                 max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
 
     def run(self, *args):
