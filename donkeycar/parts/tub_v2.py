@@ -68,6 +68,33 @@ class Tub(object):
     def delete_record(self, record_index):
         self.manifest.delete_record(record_index)
 
+    def delete_records_by_value(self, key, value):
+        """
+        Deletes records where record[key] == value
+
+        :param key:     key to compare against
+        :param value:   value to compare with
+        :return:        list of indexes which are marked deleted
+        """
+        indexes = [record['_index'] for record in self if key in record and
+                   record[key] == value]
+        for i in indexes:
+            self.delete_record(i)
+
+        return indexes
+
+    def undelete_records(self, indexes):
+        """
+        Resurrecting deleted indexes
+
+        :param int or list indexes:     indexes to be resurrected
+        :return:                        None
+        """
+        if type(indexes) is int:
+            indexes = [indexes]
+        for i in indexes:
+            self.manifest.undelete_record(i)
+
     def delete_last_n_records(self, n):
         last_index = self.manifest.current_index
         first_index = last_index - n

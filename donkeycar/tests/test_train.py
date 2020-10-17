@@ -1,10 +1,12 @@
-import tempfile
 import pytest
 import tarfile
 import os
+from collections import namedtuple
 
 from donkeycar.templates.train import train
 from donkeycar.config import Config
+
+Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
 
 
 @pytest.fixture
@@ -21,42 +23,52 @@ def config():
     cfg.MAX_EPOCHS = 20
     cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
     cfg.VERBOSE_TRAIN = True
+    cfg.TRAIN_SHUFFLE = False
     return cfg
 
 
-@pytest.fixture
-def car_dir():
-    """ temp directory to extract tub and run training"""
-    return tempfile.mkdtemp()
-
-
-@pytest.fixture
-def tub_dir(car_dir):
-    """ extract tub.tar.gz into temp car_dir/tub """
-    tub_dir = os.path.join(car_dir, 'tub')
+@pytest.fixture(scope='session')
+def car_dir(tmpdir_factory):
+    """ Creating car dir with sub dirs and extracting tub """
+    dir = tmpdir_factory.mktemp('mycar')
+    os.mkdir(os.path.join(dir, 'models'))
+    # extract tub.tar.gz into temp car_dir/tub
     this_dir = os.path.dirname(os.path.abspath(__file__))
     with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
-        file.extractall(car_dir)
-    return tub_dir
+        file.extractall(dir)
+
+    return dir
 
 
-@pytest.mark.parametrize('model_type_and_loss', [
-                            ('linear', 0.2),
-                            ('categorical', 2.0)
-                            ])
-def test_train(config, car_dir, tub_dir, model_type_and_loss):
+# define the test data
+d1 = Data(type='linear', name='lin1', convergence=0.6, pretrained=None)
+d2 = Data(type='categorical', name='cat1', convergence=0.85, pretrained=None)
+d3 = Data(type='latent', name='lat1', convergence=0.5, pretrained=None)
+d4 = Data(type='latent', name='lat2', convergence=0.5, pretrained='lat1')
+test_data = [d1, d2, d3, d4]
+
+
+@pytest.mark.skipif("TRAVIS" in os.environ,
+                    reason='Suppress training test in CI')
+@pytest.mark.parametrize('data', test_data)
+def test_train(config, car_dir, data):
     """
     Testing convergence of the linear an categorical models
 
-    :param config:                  donkey config
-    :param car_dir:                 car directory (this is a temp dir)
-    :param tub_dir:                 tub directory (car_dir/tub)
-    :param model_type_and_loss:     test specification of model type and loss
-                                    threshold in training
-    :return:                        None
+    :param config:          donkey config
+    :param car_dir:         car directory (this is a temp dir)
+    :param data:            test case data
+    :return:                None
     """
-    model_path = os.path.join(car_dir, 'models', 'pilot.h5')
-    history = train(config, tub_dir, model_path, model_type_and_loss[0])
+    def pilot_path(name):
+        pilot_name = f'pilot_{name}.h5'
+        return os.path.join(car_dir, 'models', pilot_name)
+
+    if data.pretrained:
+        config.LATENT_TRAINED = pilot_path(data.pretrained)
+    tub_dir = os.path.join(car_dir, 'tub')
+    history = train(config, tub_dir, pilot_path(data.name), data.type)
     loss = history.history['loss']
-    assert loss[-1] < model_type_and_loss[1]
+    # check loss is converging
+    assert loss[-1] < loss[0] * data.convergence
 

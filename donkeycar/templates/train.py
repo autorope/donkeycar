@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
 Scripts to train a keras model using tensorflow.
-Basic usage should feel familiar: python train_v2.py --model models/mypilot
+Basic usage should feel familiar: train.py --model models/mypilot
 
 Usage:
-    train.py [--tubs=tubs] (--model=<model>) [--type=(linear|inferred|tensorrt_linear|tflite_linear)]
+    train.py [--tubs=tubs] (--model=<model>)
+             [--type=(linear|inferred|latent|tensorrt_linear|tflite_linear)]
+             [--latent_trained=<model>]
 
 Options:
     -h --help              Show this screen.
 """
-
+import datetime
 import os
 import random
+import time
 from pathlib import Path
 
 import cv2
@@ -22,7 +25,7 @@ from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.python.keras.utils.data_utils import Sequence
 
 import donkeycar
-from donkeycar.parts.keras import KerasInferred, KerasCategorical
+from donkeycar.parts.keras import KerasInferred, KerasCategorical, KerasLatent
 from donkeycar.parts.tflite import keras_model_to_tflite
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import get_model_by_type, load_image_arr, \
@@ -70,7 +73,7 @@ class TubSequence(Sequence):
         throttles = []
 
         is_inferred = type(self.keras_model) is KerasInferred
-        is_categorical = type(self.keras_model) is KerasCategorical
+        is_latent = type(self.keras_model) is KerasLatent
 
         while count < self.batch_size:
             i = (index * self.batch_size) + count
@@ -88,11 +91,6 @@ class TubSequence(Sequence):
             throttle = record['user/throttle']
 
             images.append(image)
-            # for categorical convert to one-hot vector
-            if is_categorical:
-                R = self.config.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE
-                angle = linear_bin(angle, N=15, offset=1, R=2.0)
-                throttle = linear_bin(throttle, N=20, offset=0.0, R=R)
             angles.append(angle)
             throttles.append(throttle)
 
@@ -102,15 +100,31 @@ class TubSequence(Sequence):
             Y = np.array(angles)
         else:
             Y = [np.array(angles), np.array(throttles)]
+            if is_latent and self.keras_model.decoder:
+                Y.append(X)
 
         return X, Y
 
     def _transform_record(self, record):
+        is_categorical = type(self.keras_model) is KerasCategorical
+
         for key, value in record.items():
             if key == 'cam/image_array' and isinstance(value, str):
                 image_path = os.path.join(record['_image_base_path'], value)
                 image = load_image_arr(image_path, self.config)
                 record[key] = normalize_image(image)
+
+            # for categorical convert to one-hot vector
+            if key in ['user/angle', 'user/throttle'] and is_categorical \
+                and isinstance(value, float):
+
+                if key == 'user/angle':
+                    angle = linear_bin(value, N=15, offset=1, R=2.0)
+                    record[key] = angle
+                elif key == 'user/throttle':
+                    R = self.config.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE
+                    throttle = linear_bin(value, N=20, offset=0.0, R=R)
+                    record[key] = throttle
 
         return record
 
@@ -152,7 +166,10 @@ def train(cfg, tub_paths, output_path, model_type):
         print(kl.model.summary())
 
     batch_size = cfg.BATCH_SIZE
-    dataset = TubDataset(tub_paths, test_size=(1. - cfg.TRAIN_TEST_SPLIT))
+    shuffle = getattr(cfg, 'TRAIN_SHUFFLE', True)
+    dataset = TubDataset(tub_paths,
+                         test_size=(1. - cfg.TRAIN_TEST_SPLIT),
+                         shuffle=shuffle)
     training_records, validation_records = dataset.train_test_split()
     print('Records # Training %s' % len(training_records))
     print('Records # Validation %s' % len(validation_records))
@@ -194,6 +211,10 @@ def main():
     tubs = args['--tubs']
     model = args['--model']
     model_type = args['--type']
+    latent_trained = args['--latent_trained']
+    if latent_trained:
+        cfg.LATENT_TRAINED = latent_trained
+        model_type = 'latent'
     model_name, model_ext = os.path.splitext(model)
     is_tflite = model_ext == '.tflite'
     if is_tflite:
@@ -205,10 +226,13 @@ def main():
     tubs = tubs.split(',')
     data_paths = [Path(os.path.expanduser(tub)).absolute().as_posix() for tub in tubs]
     output_path = os.path.expanduser(model)
+    start = time.time()
     history = train(cfg, data_paths, output_path, model_type)
     if is_tflite:
         tflite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
         keras_model_to_tflite(output_path, tflite_model_path)
+    td = datetime.timedelta(seconds=time.time() - start)
+    print(f'{"-" * 40}\nTraining completed in {td}')
 
 
 if __name__ == "__main__":

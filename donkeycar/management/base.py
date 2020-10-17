@@ -1,10 +1,7 @@
 
 import argparse
-import os
 import shutil
-import socket
 import stat
-import sys
 from socket import *
 
 
@@ -342,7 +339,8 @@ class ShowCnnActivations(BaseCommand):
 
 class ShowPredictionPlots(BaseCommand):
 
-    def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
+    def plot_predictions(self, cfg, tub_paths, model_path, start, limit,
+                         model_type):
         '''
         Plot model predictions for angle and throttle against data from tubs.
 
@@ -368,7 +366,7 @@ class ShowPredictionPlots(BaseCommand):
         base_path = Path(os.path.expanduser(tub_paths)).absolute().as_posix()
         tub = Tub(base_path)
         records = list(tub)
-        records = records[:limit]
+        records = records[start:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
         for record in records:
@@ -405,12 +403,19 @@ class ShowPredictionPlots(BaseCommand):
         plt.show()
 
     def parse_args(self, args):
-        parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
-        parser.add_argument('--tub', nargs='+', help='The tub to make plot from')
-        parser.add_argument('--model', default=None, help='name of record to create histogram')
-        parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
+        parser = argparse.ArgumentParser(prog='tubplot',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+',
+                            help='The tub to make plot from')
+        parser.add_argument('--model', default=None,
+                            help='name of record to create histogram')
+        parser.add_argument('--start', type=int, default=0,
+                            help='from which record to start')
+        parser.add_argument('--limit', type=int, default=1000,
+                            help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py',
+                            help='location of config file to use. default: ./config.py')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -418,7 +423,8 @@ class ShowPredictionPlots(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
-        self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
+        self.plot_predictions(cfg, args.tub, args.model, args.start,
+                              args.limit, args.type)
 
 
 def execute_from_command_line():
@@ -450,3 +456,4 @@ def execute_from_command_line():
     
 if __name__ == "__main__":
     execute_from_command_line()
+

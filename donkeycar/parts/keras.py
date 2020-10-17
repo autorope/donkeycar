@@ -21,6 +21,7 @@ from tensorflow.keras.layers import TimeDistributed as TD
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
+from tensorflow.python.keras.layers import Reshape
 
 import donkeycar as dk
 from donkeycar.utils import normalize_image
@@ -322,10 +323,10 @@ def conv2d(filters, kernel, strides, layer_num, activation='relu'):
                          kernel_size=(kernel, kernel),
                          strides=(strides, strides),
                          activation=activation,
-                         name='conv2d_' + str(layer_num))
+                         name='conv_' + str(layer_num))
 
 
-def core_cnn_layers(img_in, drop, l4_stride=1):
+def core_cnn_layers(img_in, drop, l4_stride=1, return_shape=False):
     """
     Returns the core CNN layers that are shared among the different models,
     like linear, imu, behavioural
@@ -333,6 +334,7 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     :param img_in:          input layer of network
     :param drop:            dropout rate
     :param l4_stride:       4-th layer stride, default 1
+    :param return_shape:    if last cnn shape should be returned
     :return:                stack of CNN layers
     """
     x = img_in
@@ -345,8 +347,35 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     x = conv2d(64, 3, l4_stride, 4)(x)
     x = Dropout(drop)(x)
     x = conv2d(64, 3, 1, 5)(x)
+    out_shape = x.shape
     x = Dropout(drop)(x)
     x = Flatten(name='flattened')(x)
+    if return_shape:
+        return x, out_shape
+    else:
+        return x
+
+
+def core_deconv_layers(latent_in, cnn_output_shape):
+    """
+    Returns the inverse of the core CNN layers that are shared among the
+
+    :param latent_in:       input latent vector of network
+    :return:                stack of Deconv CNN layers
+    """
+    dim = np.prod(cnn_output_shape)
+    x = Dense(dim, activation="relu", name='dense_decode')(latent_in)
+    x = Reshape(cnn_output_shape, name='deconv_5')(x)
+    x = Conv2DTranspose(filters=64, kernel_size=3, strides=1,
+                        name="deconv_4")(x)
+    x = Conv2DTranspose(filters=64, kernel_size=3, strides=1,
+                        name="deconv_3")(x)
+    x = Conv2DTranspose(filters=32, kernel_size=5, strides=2,
+                        name="deconv_2")(x)
+    x = Conv2DTranspose(filters=24, kernel_size=5, strides=2, output_padding=1,
+                        name="deconv_1")(x)
+    x = Conv2DTranspose(filters=3, kernel_size=5, strides=2, output_padding=1,
+                        name="img_out")(x)
     return x
 
 
@@ -635,66 +664,103 @@ def build_3d_cnn(input_shape, s, num_outputs):
 
 
 class KerasLatent(KerasPilot):
-    def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
+    """
+    Latent model that is built on a CNN autoencoder. The encoder is the
+    linear model which in the last layer maps into a latent vector. The
+    decoder is the reverse deconvolutional CNN that transforms the latent
+    vector back into an image. Then there is a controller which takes the
+    latent vector and generates steering and throttle. The controller is
+    small compared to the encoder / decoder.
+    The model can be built in two ways:
+        1) Create the model from scratch which creates all
+           components and makes them all trainable.
+        2) Create the model from an existing encoder which is assumed to come
+           from an already trained model. In this form the model will only
+           add the controller and make this trainable.
+    """
+    def __init__(self, input_shape=(120, 160, 3), latent_dim=128, encoder=None):
+        """
+        Build the full autoencoder from scratch or only build the controller
+        if the encoder is given.
+
+        :param input_shape:     Shape of input image
+        :param latent_dim:      Dimension of latent vector
+        :param encoder:         Encoder (CNN) - if passed no decoder will be
+                                created, only the controller which then can
+                                be trained.
+        """
         super().__init__()
-        self.model = default_latent(num_outputs, input_shape)
+        self.input_shape = input_shape
+        self.latent_dim = latent_dim
+        self.drop = 0.2
+        # this will be filled by make_encoder
+        self.cnn_output_shape = None
+        if encoder:
+            self.encoder = encoder
+            self.encoder.trainable = False
+            self.decoder = None
+        else:
+            self.encoder = self.make_encoder()
+            self.decoder = self.make_decoder()
+        self.controller = self.make_controller()
+        self.model = self.make_model()
         self.compile()
 
     def compile(self):
-        loss = {"img_out": "mse", "n_outputs0": "mse", "n_outputs1": "mse"}
-        weights = {"img_out": 100.0, "n_outputs0": 2.0, "n_outputs1": 1.0}
+        loss = {"controller": "mse", "controller_1": "mse"}
+        weights = {"controller": 2.0, "controller_1": 1.0}
+        if self.decoder:
+            loss["decoder"] = "mse"
+            weights["decoder"] = 100.0
+
         self.model.compile(optimizer=self.optimizer,
                            loss=loss, loss_weights=weights)
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         outputs = self.model.predict(img_arr)
-        steering = outputs[1]
-        throttle = outputs[2]
+        steering = outputs[0]
+        throttle = outputs[1]
         return steering[0][0], throttle[0][0]
 
+    def make_encoder(self):
+        img_in = Input(shape=self.input_shape, name='img_in')
+        x, out_shape = core_cnn_layers(img_in, self.drop, return_shape=True)
+        self.cnn_output_shape = tuple(out_shape[1:])
+        # latent vector is [0,1]^latent_dim
+        latent_out = Dense(self.latent_dim, 'sigmoid', name='latent_out')(x)
+        encoder = Model(inputs=[img_in], outputs=[latent_out], name='encoder')
+        return encoder
 
-def default_latent(num_outputs, input_shape):
-    # TODO: this auto-encoder should run the standard cnn in encoding and
-    #  have corresponding decoder. Also outputs should be reversed with
-    #  images at end.
-    drop = 0.2
-    img_in = Input(shape=input_shape, name='img_in')
-    x = img_in
-    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_6")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_7")(x)
-    x = Dropout(drop)(x)
-    x = Convolution2D(64, (1,1), strides=(2,2), activation='relu', name="latent")(x)
-    
-    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_1")(x)
-    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_2")(y)
-    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_3")(y)
-    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_4")(y)
-    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_5")(y)
-    y = Conv2DTranspose(filters=1, kernel_size=(3,3), strides=2, name="img_out")(y)
-    
-    x = Flatten(name='flattened')(x)
-    x = Dense(256, activation='relu')(x)
-    x = Dropout(drop)(x)
-    x = Dense(100, activation='relu')(x)
-    x = Dropout(drop)(x)
-    x = Dense(50, activation='relu')(x)
-    x = Dropout(drop)(x)
+    def make_decoder(self):
+        latent = Input(shape=(self.latent_dim, ), name='latent_in')
+        img_out = core_deconv_layers(latent_in=latent,
+                                     cnn_output_shape=self.cnn_output_shape)
+        decoder = Model(inputs=[latent], outputs=[img_out], name='decoder')
+        return decoder
 
-    outputs = [y]
-    for i in range(num_outputs):
-        outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
-        
-    model = Model(inputs=[img_in], outputs=outputs)
-    return model
+    def make_controller(self):
+        latent_in = Input(shape=(self.latent_dim, ), name='latent_in')
+        x = latent_in
+        x = Dense(100, activation='relu', name='dense_1')(x)
+        x = Dropout(self.drop)(x)
+        x = Dense(50, activation='relu', name='dense_2')(x)
+        x = Dropout(self.drop)(x)
+        angle = Dense(1, activation='linear', name='angle')(x)
+        throttle = Dense(1, activation='linear', name='throttle')(x)
+        outputs = [angle, throttle]
+        model = Model(inputs=[latent_in], outputs=outputs, name='controller')
+        return model
+
+    def make_model(self):
+        img_in = Input(shape=self.input_shape, name='img_in')
+        latent = self.encoder(img_in)
+        angle, throttle = self.controller(latent)
+        outputs = [angle, throttle]
+        if self.decoder:
+            img_out = self.decoder(latent)
+            outputs.append(img_out)
+
+        model = Model(inputs=[img_in], outputs=outputs, name='latent')
+        return model
+

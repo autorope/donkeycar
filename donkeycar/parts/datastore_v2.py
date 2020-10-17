@@ -256,6 +256,11 @@ class Manifest(object):
         self.deleted_indexes.add(record_index)
         self._update_catalog_metadata(update=True)
 
+    def undelete_record(self, record_index):
+        # Does not actually delete the record, but marks it as deleted.
+        self.deleted_indexes.discard(record_index)
+        self._update_catalog_metadata(update=True)
+
     def _add_catalog(self):
         current_length = len(self.catalog_paths)
         catalog_name = 'catalog_%s.catalog' % (current_length)
