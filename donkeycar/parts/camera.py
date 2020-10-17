@@ -35,7 +35,6 @@ class PiCamera(BaseCamera):
         print('PiCamera loaded.. .warming camera')
         time.sleep(2)
 
-
     def run(self):
         f = next(self.stream)
         frame = f.array
@@ -193,6 +192,7 @@ class CSICamera(BaseCamera):
         time.sleep(.5)
         del(self.camera)
 
+
 class V4LCamera(BaseCamera):
     '''
     uses the v4l2capture library from this fork for python3 support: https://github.com/atareao/python3-v4l2capture
@@ -233,7 +233,6 @@ class V4LCamera(BaseCamera):
         # Start the device. This lights the LED if it's a camera that has one.
         self.video.start()
 
-
     def update(self):
         import select
         from donkeycar.parts.image import JpgToImgArr
@@ -247,11 +246,9 @@ class V4LCamera(BaseCamera):
             image_data = self.video.read_and_queue()
             self.frame = jpg_conv.run(image_data)
 
-
     def shutdown(self):
         self.running = False
         time.sleep(0.5)
-
 
 
 class MockCamera(BaseCamera):
@@ -270,11 +267,12 @@ class MockCamera(BaseCamera):
     def shutdown(self):
         pass
 
+
 class ImageListCamera(BaseCamera):
     '''
     Use the images from a tub as a fake camera output
     '''
-    def __init__(self, path_mask='~/mycar/data/**/*.jpg'):
+    def __init__(self, path_mask='~/mycar/data/**/images/*.jpg'):
         self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
     
         def get_image_index(fnm):

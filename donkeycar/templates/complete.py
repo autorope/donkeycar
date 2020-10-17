@@ -3,9 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer|latent)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
-    manage.py (train) [--tub=<tub1,tub2,..tubn>] [--file=<file> ...] (--model=<model>) [--transfer=<model>] [--type=(linear|categorical|rnn|imu|behavior|3d|localizer)] [--continuous] [--aug] [--myconfig=<filename>]
-
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical)] [--camera=(single|stereo)] [--meta=<key:value> ...]
 
 Options:
     -h --help               Show this screen.
@@ -23,16 +21,16 @@ import numpy as np
 
 import donkeycar as dk
 
-#import parts
-from donkeycar.parts.transform import Lambda, TriggeredCallback, DelayedTrigger
+from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
+from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, \
-    JoystickController, WebFpv
+from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
+
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
     '''
@@ -130,6 +128,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         elif cfg.CAMERA_TYPE == "IMAGE_LIST":
             from donkeycar.parts.camera import ImageListCamera
             cam = ImageListCamera(path_mask=cfg.PATH_MASK)
+        elif cfg.CAMERA_TYPE == "LEOPARD":
+            from donkeycar.parts.leopard_imaging import LICamera
+            cam = LICamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, fps=cfg.CAMERA_FRAMERATE)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
@@ -298,26 +299,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
 
-    class ImgPreProcess():
-        '''
-        preprocess camera image for inference.
-        normalize and crop if needed.
-        '''
-        def __init__(self, cfg):
-            self.cfg = cfg
-
-        def run(self, img_arr):
-            return normalize_and_crop(img_arr, self.cfg)
-
-    if "coral" in model_type:
-        inf_input = 'cam/image_array'
-    else:
-        inf_input = 'cam/normalized/cropped'
-        V.add(ImgPreProcess(cfg),
-            inputs=['cam/image_array'],
-            outputs=[inf_input],
-            run_condition='run_pilot')
-
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
         V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
@@ -331,16 +312,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         except:
             pass
 
-        inputs = [inf_input, "behavior/one_hot_state_array"]
+        inputs = ['cam/image_array', "behavior/one_hot_state_array"]
     #IMU
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
-        inputs=[inf_input,
+        inputs=['cam/image_array',
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
     else:
-        inputs=[inf_input]
+        inputs=['cam/image_array']
 
     def load_model(kl, model_path):
         start = time.time()
@@ -419,8 +400,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             outputs.append("pilot/loc")
 
         V.add(kl, inputs=inputs,
-            outputs=outputs,
-            run_condition='run_pilot')
+              outputs=outputs,
+              run_condition='run_pilot')
     
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector import StopSignDetector
@@ -598,9 +579,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
 
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+    # do we want to store new records into own dir or append to existing
+    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
+        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+    tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
+    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
@@ -616,23 +599,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     elif isinstance(ctr, JoystickController):
         print("You can now move your joystick to drive your car.")
-        #tell the controller about the tub
-        ctr.set_tub(tub)
-
-        if cfg.BUTTON_PRESS_NEW_TUB:
-
-            def new_tub_dir():
-                V.parts.pop()
-                tub = th.new_tub_writer(inputs=inputs, types=types, user_meta=meta)
-                V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
-                ctr.set_tub(tub)
-
-            ctr.set_button_down_trigger('cross', new_tub_dir)
+        ctr.set_tub(tub_writer.tub)
         ctr.print_controls()
 
     #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
-            max_loop_count=cfg.MAX_LOOPS)
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
@@ -648,23 +619,5 @@ if __name__ == '__main__':
               meta=args['--meta'])
 
     if args['train']:
-        from train import multi_train, preprocessFileList
-
-        tub = args['--tub']
-        model = args['--model']
-        transfer = args['--transfer']
-        model_type = args['--type']
-        continuous = args['--continuous']
-        aug = args['--aug']
-        dirs = preprocessFileList( args['--file'] )
-
-        if tub is not None:
-            tub_paths = [os.path.expanduser(n) for n in tub.split(',')]
-            dirs.extend( tub_paths )
-
-        if model_type is None:
-            model_type = cfg.DEFAULT_MODEL_TYPE
-            print("using default model type of", model_type)
-
-        multi_train(cfg, dirs, model, transfer, model_type, continuous, aug)
+        print('Use python train.py instead.\n')
 

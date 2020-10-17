@@ -12,7 +12,7 @@ except:
     raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
 
 import donkeycar as dk
-from donkeycar.parts.datastore import Tub
+from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import *
 
 
@@ -54,26 +54,29 @@ class MakeMovie(object):
                 return
 
         self.tub = Tub(args.tub)
-        self.index = self.tub.get_index(shuffled=False)
+
         start = args.start
-        self.end = args.end if args.end != -1 else len(self.index)
-        if self.end >= len(self.index):
-            self.end = len(self.index) - 1
-        num_frames = self.end - start
-        self.iRec = start
+        self.end_index = args.end if args.end != -1 else len(self.tub)
+        num_frames = self.end_index - start
+
+        # Move to the correct offset
+        self.current = 0
+        self.iterator = self.tub.__iter__()
+        while self.current < start:
+            self.iterator.next()
+            self.current += 1
+
         self.scale = args.scale
         self.keras_part = None
         self.do_salient = False
         if args.model is not None:
             self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
-            self.keras_part.compile()
             if args.salient:
                 self.do_salient = self.init_salient(self.keras_part.model)
 
         print('making movie', args.out, 'from', num_frames, 'images')
-        clip = mpy.VideoClip(self.make_frame,
-                             duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
+        clip = mpy.VideoClip(self.make_frame, duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
     def draw_user_input(self, record, img):
@@ -101,34 +104,32 @@ class MakeMovie(object):
         # user is green, pilot is blue
         cv2.line(img, p1, p11, (0, 255, 0), 2)
         
-    def draw_model_prediction(self, record, img):
-        '''
+    def draw_model_prediction(self, img):
+        """
         query the model for it's prediction, draw the predictions
         as a blue line on the image
-        '''
+        """
         if self.keras_part is None:
             return
 
         import cv2
-         
-        expected = self.keras_part.model.inputs[0].shape[1:]
+
+        expected = tuple(self.keras_part.get_input_shape()[1:])
         actual = img.shape
 
-        # normalize image before prediction
-        pred_img = img.astype(np.float32) / 255.0
-
-        # check input depth
+        # if model expects grey-scale but got rgb, covert
         if expected[2] == 1 and actual[2] == 3:
-            pred_img = rgb2gray(pred_img)
-            pred_img = pred_img.reshape(pred_img.shape + (1,))
-            actual = pred_img.shape
+            # normalize image before grey conversion
+            grey_img = rgb2gray(img)
+            actual = grey_img.shape
+            img = grey_img.reshape(grey_img.shape + (1,))
 
         if expected != actual:
             print("expected input dim", expected, "didn't match actual dim", actual)
             return
 
-        pilot_angle, pilot_throttle = self.keras_part.run(pred_img)
-        height, width, _ = pred_img.shape
+        pilot_angle, pilot_throttle = self.keras_part.run(img)
+        height, width, _ = img.shape
 
         length = height
         a2 = pilot_angle * 45.0
@@ -143,7 +144,7 @@ class MakeMovie(object):
         # user is green, pilot is blue
         cv2.line(img, p2, p22, (0, 0, 255), 2)
 
-    def draw_steering_distribution(self, record, img):
+    def draw_steering_distribution(self, img):
         '''
         query the model for it's prediction, draw the distribution of steering choices
         '''
@@ -154,7 +155,8 @@ class MakeMovie(object):
 
         import cv2
 
-        pred_img = img.reshape((1,) + img.shape)
+        pred_img = normalize_image(img)
+        pred_img = pred_img.reshape((1,) + pred_img.shape)
         angle_binned, _ = self.keras_part.model.predict(pred_img)
 
         x = 4
@@ -211,17 +213,16 @@ class MakeMovie(object):
         import cv2
         alpha = 0.004
         beta = 1.0 - alpha
-
         expected = self.keras_part.model.inputs[0].shape[1:]
         actual = img.shape
-        pred_img = img.astype(np.float32) / 255.0
 
-        # check input depth
+        # check input depth and convert to grey to match expected model input
         if expected[2] == 1 and actual[2] == 3:
-            pred_img = rgb2gray(pred_img)
-            pred_img = pred_img.reshape(pred_img.shape + (1,))
+            grey_img = rgb2gray(img)
+            img = grey_img.reshape(grey_img.shape + (1,))
 
-        salient_mask = self.compute_visualisation_mask(pred_img)
+        norm_img = normalize_image(img)
+        salient_mask = self.compute_visualisation_mask(norm_img)
         z = np.zeros_like(salient_mask)
         salient_mask_stacked = np.dstack((z, z))
         salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
@@ -236,15 +237,12 @@ class MakeMovie(object):
         a frame counter. This assumes sequential access.
         '''
 
-        if self.iRec >= self.end or self.iRec >= len(self.index):
+        if self.current >= self.end_index:
             return None
 
-        rec_ix = self.index[self.iRec]
-        rec = self.tub.get_record(rec_ix)
-        image = rec['cam/image_array']
-
-        if self.cfg.ROI_CROP_TOP != 0 or self.cfg.ROI_CROP_BOTTOM != 0:
-            image = img_crop(image, self.cfg.ROI_CROP_TOP, self.cfg.ROI_CROP_BOTTOM)
+        rec = self.iterator.next()
+        img_path = os.path.join(self.tub.images_base_path, rec['cam/image_array'])
+        image = img_to_arr(Image.open(img_path))
 
         if self.do_salient:
             image = self.draw_salient(image)
@@ -253,8 +251,8 @@ class MakeMovie(object):
         
         self.draw_user_input(rec, image)
         if self.keras_part is not None:
-            self.draw_model_prediction(rec, image)
-            self.draw_steering_distribution(rec, image)
+            self.draw_model_prediction(image)
+            self.draw_steering_distribution(image)
 
         if self.scale != 1:
             import cv2
@@ -262,6 +260,6 @@ class MakeMovie(object):
             dsize = (w * self.scale, h * self.scale)
             image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
 
-        self.iRec += 1
+        self.current += 1
         # returns a 8-bit RGB array
         return image
