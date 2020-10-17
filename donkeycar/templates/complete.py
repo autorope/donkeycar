@@ -618,6 +618,6 @@ if __name__ == '__main__':
               model_type=model_type, camera_type=camera_type,
               meta=args['--meta'])
 
-    if args['train']:
+    elif args['train']:
         print('Use python train.py instead.\n')
 
