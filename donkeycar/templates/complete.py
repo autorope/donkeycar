@@ -3,7 +3,7 @@
 Scripts to drive a donkey 2 car
 
 Usage:
-    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical)] [--camera=(single|stereo)] [--meta=<key:value> ...]
+    manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
 
 Options:
     -h --help               Show this screen.
