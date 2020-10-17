@@ -43,11 +43,12 @@ class Seekable(object):
         return self
 
     def writeline(self, contents):
-        has_newline = contents[-1] == '\n'
+        seperator_length = len(os.linesep)
+        has_newline = contents[-1 * seperator_length:] == os.linesep
         if has_newline:
             line = contents
         else:
-            line = f'{contents}\n'
+            line = f'{contents}{os.linesep}'
 
         offset = len(line)
         self.total_length += offset
@@ -67,7 +68,7 @@ class Seekable(object):
         return self.cumulative_lengths[end_index] if end_index >= 0 and end_index < len(self.cumulative_lengths) else 0
 
     def readline(self):
-        return self.file.readline().rstrip('\n')
+        return self.file.readline().rstrip(os.linesep)
 
     def seek_line_start(self, line_number):
         self.file.seek(self._line_start_offset(line_number))
@@ -112,6 +113,9 @@ class Seekable(object):
     def close(self):
         self.file.flush()
         self.file.close()
+
+    def __exit__(self, type, value, traceback):
+        self.close()
 
 
 class Catalog(object):
