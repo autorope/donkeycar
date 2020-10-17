@@ -1,8 +1,11 @@
 import json
 import os
 import time
-from collections import namedtuple
 from pathlib import Path
+
+
+NEWLINE = '\r\n'
+NEWLINE_LENGTH = len(NEWLINE)
 
 
 class Seekable(object):
@@ -43,12 +46,11 @@ class Seekable(object):
         return self
 
     def writeline(self, contents):
-        seperator_length = len(os.linesep)
-        has_newline = contents[-1 * seperator_length:] == os.linesep
+        has_newline = contents[-1 * NEWLINE_LENGTH] == NEWLINE
         if has_newline:
             line = contents
         else:
-            line = f'{contents}{os.linesep}'
+            line = f'{contents}{NEWLINE}'
 
         offset = len(line)
         self.total_length += offset
@@ -68,7 +70,8 @@ class Seekable(object):
         return self.cumulative_lengths[end_index] if end_index >= 0 and end_index < len(self.cumulative_lengths) else 0
 
     def readline(self):
-        return self.file.readline().rstrip(os.linesep)
+        contents = self.file.readline()
+        return contents.rstrip(NEWLINE)
 
     def seek_line_start(self, line_number):
         self.file.seek(self._line_start_offset(line_number))
