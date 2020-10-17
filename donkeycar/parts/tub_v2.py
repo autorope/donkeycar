@@ -1,4 +1,4 @@
-import json
+import atexit
 import os
 import time
 
@@ -105,6 +105,11 @@ class TubWriter(object):
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
+        def shutdown_hook():
+            self.close()
+
+        # Register hook
+        atexit.register(shutdown_hook)
 
     def run(self, *args):
         assert len(self.tub.inputs) == len(args)
@@ -114,3 +119,6 @@ class TubWriter(object):
 
     def __iter__(self):
         return self.tub.__iter__()
+
+    def close(self):
+        self.tub.manifest.close()
