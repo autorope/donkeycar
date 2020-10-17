@@ -23,7 +23,6 @@ import donkeycar as dk
 
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
-from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
@@ -580,8 +579,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         types += ['float', 'float']
 
     # do we want to store new records into own dir or append to existing
-    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
-        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+    tub_path = cfg.DATA_PATH
     tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
     V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
