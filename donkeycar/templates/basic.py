@@ -24,15 +24,16 @@ class DriveMode:
     def __init__(self, cfg):
         self.cfg = cfg
 
-    def run(self, mode, user_angle, user_throttle, pilot_angle, pilot_throttle):
+    def run(self, mode, user_angle, user_throttle, user_brake, pilot_angle, pilot_throttle, pilot_brake):
         if mode == 'user':
-            return user_angle, user_throttle
+            return user_angle, user_throttle, user_brake
         elif mode == 'local_angle':
-            return pilot_angle if pilot_angle else 0.0, user_throttle
+            return pilot_angle if pilot_angle else 0.0, user_throttle, user_brake
         else:
             return pilot_angle if pilot_angle else 0.0, \
                    pilot_throttle * self.cfg.AI_THROTTLE_MULT if \
-                       pilot_throttle else 0.0
+                       pilot_throttle else 0.0. if \
+                       pilot-brake else 0.0
 
 
 class PilotCondition:
@@ -105,7 +106,7 @@ def drive(cfg, model_path=None, model_type=None):
 
     car.add(ctr,
             inputs=['cam/image_array'],
-            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+            outputs=['user/angle', 'user/throttle', 'user/brake', 'user/mode', 'recording'],
             threaded=True)
 
     # pilot condition to determine if user or ai are driving

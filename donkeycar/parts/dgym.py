@@ -34,7 +34,7 @@ class DonkeyGymEnv(object):
             self.frame, _, _, self.info = self.env.step(self.action)
 
     def run_threaded(self, steering, throttle):
-        if steering is None or throttle is None or if brake is None:
+        if steering is None or throttle is None or brake is None:
             steering = 0.0
             throttle = 0.0
             brake = 0.0
