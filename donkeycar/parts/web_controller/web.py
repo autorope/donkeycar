@@ -111,6 +111,7 @@ class LocalWebController(tornado.web.Application):
         self.static_file_path = os.path.join(this_dir, 'templates', 'static')
         self.angle = 0.0
         self.throttle = 0.0
+        self.brake = 0.0
         self.mode = mode
         self.recording = False
         self.port = port
@@ -156,11 +157,11 @@ class LocalWebController(tornado.web.Application):
                     except:
                         pass
 
-        return self.angle, self.throttle, self.mode, self.recording
+        return self.angle, self.throttle, self.brake, self.mode, self.recording
 
     def run(self, img_arr=None):
         self.img_arr = img_arr
-        return self.angle, self.throttle, self.mode, self.recording
+        return self.angle, self.throttle, self.brake, self.mode, self.recording
 
     def shutdown(self):
         pass

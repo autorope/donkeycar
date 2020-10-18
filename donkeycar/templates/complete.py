@@ -24,7 +24,6 @@ import donkeycar as dk
 
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
-from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
@@ -107,7 +106,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             from donkeycar.parts.dgym import DonkeyGymEnv 
             cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
-            inputs = ['angle', 'throttle']
+            inputs = ['angle', 'throttle', 'brake']
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
             cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
@@ -177,7 +176,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         
         V.add(ctr,
           inputs=['cam/image_array', 'tub/num_records'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          outputs=['user/angle', 'user/throttle', 'user/brake', 'user/mode', 'recording'],
           threaded=True)
 
     #this throttle filter will allow one tap back for esc reverse
@@ -411,29 +410,29 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     #Choose what inputs should change the car.
     class DriveMode:
         def run(self, mode,
-                    user_angle, user_throttle,
-                    pilot_angle, pilot_throttle):
+                    user_angle, user_throttle, user_brake,
+                    pilot_angle, pilot_throttle, pilot_brake):
             if mode == 'user':
-                return user_angle, user_throttle
+                return user_angle, user_throttle, user_brake
 
             elif mode == 'local_angle':
-                return pilot_angle if pilot_angle else 0.0, user_throttle
+                return pilot_angle if pilot_angle else 0.0, user_throttle. user_brake
 
             else:
-                return pilot_angle if pilot_angle else 0.0, pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0
+                return pilot_angle if pilot_angle else 0.0, pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0, pilot_brake if pilot_brake else 0.0
 
     V.add(DriveMode(),
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
+          inputs=['user/mode', 'user/angle', 'user/throttle', 'user/brake',
+                  'pilot/angle', 'pilot/throttle', 'pilot/brake'],
+          outputs=['angle', 'throttle', 'brake'])
 
 
     #to give the car a boost when starting ai mode in a race.
     aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED)
 
     V.add(aiLauncher,
-        inputs=['user/mode', 'throttle'],
-        outputs=['throttle'])
+        inputs=['user/mode', 'throttle', 'brake'],
+        outputs=['throttle', 'brake'])
 
     if isinstance(ctr, JoystickController):
         ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
@@ -581,8 +580,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         types += ['float', 'float']
 
     # do we want to store new records into own dir or append to existing
-    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
-        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+    tub_path = cfg.DATA_PATH
     tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
     V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
@@ -617,6 +615,7 @@ if __name__ == '__main__':
         drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
               model_type=model_type, camera_type=camera_type,
               meta=args['--meta'])
+
     elif args['train']:
         print('Use python train.py instead.\n')
 
