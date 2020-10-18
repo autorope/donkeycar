@@ -6,7 +6,6 @@ from pathlib import Path
 
 NEWLINE = '\n'
 NEWLINE_STRIP = '\r\n'
-NEWLINE_LENGTH = len(NEWLINE)
 
 
 class Seekable(object):
@@ -47,7 +46,7 @@ class Seekable(object):
         return self
 
     def writeline(self, contents):
-        has_newline = contents[-1 * NEWLINE_LENGTH] == NEWLINE
+        has_newline = contents[-1] == NEWLINE
         if has_newline:
             line = contents
         else:
