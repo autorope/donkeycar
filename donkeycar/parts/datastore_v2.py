@@ -4,7 +4,8 @@ import time
 from pathlib import Path
 
 
-NEWLINE = '\r\n'
+NEWLINE = '\n'
+NEWLINE_STRIP = '\r\n'
 NEWLINE_LENGTH = len(NEWLINE)
 
 
@@ -18,7 +19,7 @@ class Seekable(object):
         self.method = method
         self.line_lengths = list()
         self.cumulative_lengths = list()
-        self.file = open(file, self.method)
+        self.file = open(file, self.method, newline=NEWLINE)
         self.total_length = 0
         if len(line_lengths) <= 0:
             self._read_contents()
@@ -71,7 +72,7 @@ class Seekable(object):
 
     def readline(self):
         contents = self.file.readline()
-        return contents.rstrip(NEWLINE)
+        return contents.rstrip(NEWLINE_STRIP)
 
     def seek_line_start(self, line_number):
         self.file.seek(self._line_start_offset(line_number))
