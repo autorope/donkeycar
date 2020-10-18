@@ -1,5 +1,4 @@
 import atexit
-import json
 import os
 import time
 
@@ -106,6 +105,11 @@ class TubWriter(object):
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
+        def shutdown_hook():
+            self.close()
+
+        # Register hook
+        atexit.register(shutdown_hook)
 
         def shutdown_hook():
             self.close()
@@ -123,5 +127,4 @@ class TubWriter(object):
         return self.tub.__iter__()
 
     def close(self):
-        print(f'Stopping TubWriter.')
-        return self.tub.manifest.close()
+        self.tub.manifest.close()

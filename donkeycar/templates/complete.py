@@ -4,6 +4,7 @@ Scripts to drive a donkey 2 car
 
 Usage:
     manage.py (drive) [--model=<model>] [--js] [--type=(linear|categorical)] [--camera=(single|stereo)] [--meta=<key:value> ...] [--myconfig=<filename>]
+    manage.py (train) [--tubs=tubs] (--model=<model>) [--type=(linear|inferred|tensorrt_linear|tflite_linear)]
 
 Options:
     -h --help               Show this screen.
@@ -611,7 +612,6 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
-
         drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
               model_type=model_type, camera_type=camera_type,
               meta=args['--meta'])

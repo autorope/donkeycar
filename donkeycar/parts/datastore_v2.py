@@ -1,9 +1,12 @@
 import json
-import mmap
 import os
 import time
-from collections import namedtuple
 from pathlib import Path
+
+
+NEWLINE = '\n'
+NEWLINE_STRIP = '\r\n'
+NEWLINE_LENGTH = len(NEWLINE)
 
 
 class Seekable(object):
@@ -16,7 +19,7 @@ class Seekable(object):
         self.method = method
         self.line_lengths = list()
         self.cumulative_lengths = list()
-        self.file = open(file, self.method)
+        self.file = open(file, self.method, newline=NEWLINE)
         self.total_length = 0
         if len(line_lengths) <= 0:
             self._read_contents()
@@ -44,11 +47,11 @@ class Seekable(object):
         return self
 
     def writeline(self, contents):
-        has_newline = contents[-1] == '\n'
+        has_newline = contents[-1 * NEWLINE_LENGTH] == NEWLINE
         if has_newline:
             line = contents
         else:
-            line = '%s\n' % (contents)
+            line = f'{contents}{NEWLINE}'
 
         offset = len(line)
         self.total_length += offset
@@ -68,7 +71,8 @@ class Seekable(object):
         return self.cumulative_lengths[end_index] if end_index >= 0 and end_index < len(self.cumulative_lengths) else 0
 
     def readline(self):
-        return self.file.readline().rstrip('\n')
+        contents = self.file.readline()
+        return contents.rstrip(NEWLINE_STRIP)
 
     def seek_line_start(self, line_number):
         self.file.seek(self._line_start_offset(line_number))
@@ -127,6 +131,9 @@ class Catalog(object):
         self.path = Path(os.path.expanduser(path))
         self.manifest = CatalogMetadata(self.path, start_index=start_index)
         self.seekable = Seekable(self.path.as_posix(), line_lengths=self.manifest.line_lengths())
+
+    def _exit_handler(self):
+        self.close()
 
     def write_record(self, record):
         # Add record and update manifest

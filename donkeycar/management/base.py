@@ -75,7 +75,6 @@ class CreateCar(BaseCommand):
         # these are neeeded incase None is passed as path
         path = path or '~/mycar'
         template = template or 'basic'
-
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
         
@@ -91,7 +90,7 @@ class CreateCar(BaseCommand):
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         calibrate_template_path = os.path.join(TEMPLATES_PATH, 'calibrate.py')
-        car_app_path = os.path.join(path, 'drive.py')
+        car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
