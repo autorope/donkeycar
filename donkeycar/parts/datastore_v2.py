@@ -115,7 +115,6 @@ class Seekable(object):
         return self.lines() > 0
 
     def close(self):
-        self.file.flush()
         self.file.close()
 
     def __exit__(self, type, value, traceback):
