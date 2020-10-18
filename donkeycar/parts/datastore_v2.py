@@ -1,10 +1,12 @@
-import atexit
 import json
-import mmap
 import os
 import time
-from collections import namedtuple
 from pathlib import Path
+
+
+NEWLINE = '\n'
+NEWLINE_STRIP = '\r\n'
+NEWLINE_LENGTH = len(NEWLINE)
 
 
 class Seekable(object):
@@ -17,7 +19,7 @@ class Seekable(object):
         self.method = method
         self.line_lengths = list()
         self.cumulative_lengths = list()
-        self.file = open(file, self.method)
+        self.file = open(file, self.method, newline=NEWLINE)
         self.total_length = 0
         if len(line_lengths) <= 0:
             self._read_contents()
@@ -45,11 +47,11 @@ class Seekable(object):
         return self
 
     def writeline(self, contents):
-        has_newline = contents[-1] == '\n'
+        has_newline = contents[-1 * NEWLINE_LENGTH] == NEWLINE
         if has_newline:
             line = contents
         else:
-            line = '%s\n' % (contents)
+            line = f'{contents}{NEWLINE}'
 
         offset = len(line)
         self.total_length += offset
@@ -69,7 +71,8 @@ class Seekable(object):
         return self.cumulative_lengths[end_index] if end_index >= 0 and end_index < len(self.cumulative_lengths) else 0
 
     def readline(self):
-        return self.file.readline().rstrip('\n')
+        contents = self.file.readline()
+        return contents.rstrip(NEWLINE_STRIP)
 
     def seek_line_start(self, line_number):
         self.file.seek(self._line_start_offset(line_number))
@@ -112,6 +115,7 @@ class Seekable(object):
         return self.lines() > 0
 
     def close(self):
+        self.file.flush()
         self.file.close()
 
     def __exit__(self, type, value, traceback):
@@ -130,7 +134,6 @@ class Catalog(object):
         self.path = Path(os.path.expanduser(path))
         self.manifest = CatalogMetadata(self.path, start_index=start_index)
         self.seekable = Seekable(self.path.as_posix(), line_lengths=self.manifest.line_lengths())
-        atexit.register(self._exit_handler)
 
     def _exit_handler(self):
         self.close()
@@ -174,9 +177,6 @@ class CatalogMetadata(object):
             self.contents['line_lengths'] = list()
             self._update()
 
-        # Register shutdown hooks
-        atexit.register(self._exit_handler)
-
     def update_line_lengths(self, new_lengths):
         self.contents['line_lengths'] = new_lengths
         self._update()
@@ -194,9 +194,6 @@ class CatalogMetadata(object):
 
     def close(self):
         self.seekeable.close()
-
-    def _exit_handler(self):
-        self.close()
 
 
 class Manifest(object):
@@ -247,9 +244,6 @@ class Manifest(object):
             last_known_catalog = os.path.join(self.base_path, self.catalog_paths[-1]);
             print('Using catalog %s' % (last_known_catalog))
             self.current_catalog = Catalog(last_known_catalog, self.current_index)
-
-        # Register shutdown hook
-        atexit.register(self._exit_handler)
 
     def write_record(self, record):
         new_catalog = self.current_index > 0 and (self.current_index % self.max_len) == 0
@@ -319,9 +313,6 @@ class Manifest(object):
     def close(self):
         self.current_catalog.close()
         self.seekeable.close()
-
-    def _exit_handler(self):
-        self.close()
 
     def __iter__(self):
         return ManifestIterator(self)
