@@ -1,18 +1,19 @@
 ---
-language: python
-# ubuntu 18.04
-dist: bionic
-# This python is used in the initial venv but conda's python is in the yaml file
-python:
-  - 3.6
-  - 3.7
+# travis pipeline
+dist: focal
 
 os:
   - linux
+  - osx
 
 install:
-  - sudo apt-get update -qq
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then
+    sudo apt-get update -qq;
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then
+    wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh;
+    fi
   - bash miniconda.sh -b -p $HOME/miniconda
   - source "$HOME/miniconda/etc/profile.d/conda.sh"
   - hash -r
@@ -21,7 +22,8 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda env create -f install/envs/ubuntu.yml
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then conda env create -f install/envs/mac.yml ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then conda env create -f install/envs/ubuntu.yml ; fi
   - conda activate donkey
   - pip install -e .
   - conda env export > environment.yml
