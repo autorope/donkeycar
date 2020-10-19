@@ -111,12 +111,6 @@ class TubWriter(object):
         # Register hook
         atexit.register(shutdown_hook)
 
-        def shutdown_hook():
-            self.close()
-
-        # Replace with partial later.
-        atexit.register(shutdown_hook)
-
     def run(self, *args):
         assert len(self.tub.inputs) == len(args)
         record = dict(zip(self.tub.inputs, args))

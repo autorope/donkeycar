@@ -116,6 +116,9 @@ class Seekable(object):
     def close(self):
         self.file.close()
 
+    def __exit__(self, type, value, traceback):
+        self.close()
+
 
 class Catalog(object):
     '''
@@ -153,11 +156,11 @@ class CatalogMetadata(object):
         path = Path(catalog_path)
         manifest_name = '%s.catalog_manifest' % (path.stem)
         self.manifest_path = Path(os.path.join(path.parent.as_posix(), manifest_name))
-        self.seekable = Seekable(self.manifest_path)
+        self.seekeable = Seekable(self.manifest_path)
         has_contents = False
-        if os.path.exists(self.manifest_path) and self.seekable.has_content():
-            self.seekable.seek_line_start(1)
-            contents = self.seekable.readline()
+        if os.path.exists(self.manifest_path) and self.seekeable.has_content():
+            self.seekeable.seek_line_start(1)
+            contents = self.seekeable.readline()
             if contents:
                 self.contents = json.loads(contents)
                 has_contents = True
@@ -184,11 +187,11 @@ class CatalogMetadata(object):
 
     def _update(self):
         contents = json.dumps(self.contents, allow_nan=False, sort_keys=True)
-        self.seekable.truncate_until_end(0)
-        self.seekable.writeline(contents)
+        self.seekeable.truncate_until_end(0)
+        self.seekeable.writeline(contents)
 
     def close(self):
-        self.seekable.close()
+        self.seekeable.close()
 
 
 class Manifest(object):
@@ -224,6 +227,8 @@ class Manifest(object):
                 self._read_contents()
             has_catalogs = len(self.catalog_paths) > 0
         else:
+            created_at = time.time()
+            self.manifest_metadata['created_at'] = created_at
             if not self.base_path.exists():
                 self.base_path.mkdir(parents=True, exist_ok=True)
                 print('Created a new datastore at %s' % (self.base_path.as_posix()))
@@ -289,7 +294,7 @@ class Manifest(object):
         self.seekeable.writeline(json.dumps(self.types))
         self.seekeable.writeline(json.dumps(self.metadata))
         self.seekeable.writeline(json.dumps(self.manifest_metadata))
-        self._update_catalog_metadata(update=True)
+        self._update_catalog_metadata(update=False)
 
     def _update_catalog_metadata(self, update=True):
         if update:
