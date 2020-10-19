@@ -4,7 +4,7 @@ Windows provides a few different methods for setting up and installing Donkey Ca
 
 1. Miniconda
 2. Native
-3. Windows Linux Subsystem (WSL) - Experimental
+3. Windows Subsystem for Linux (WSL) - Experimental
 
 If you are unfarmilar or concerned about the way that you install Donkey Car, please use option 1 above.
 
