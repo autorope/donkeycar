@@ -40,7 +40,7 @@ def drive(cfg, model_path=None):
     ctr = LocalWebController()
     V.add(ctr, 
           inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 
+          outputs=['user/angle', 'user/throttle', 'user/brake',
                    'user/mode', 'recording'],
           threaded=True)
     
