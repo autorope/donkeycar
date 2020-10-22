@@ -69,6 +69,7 @@ class MakeMovie(object):
         self.scale = args.scale
         self.keras_part = None
         self.do_salient = False
+        self.user = args.draw_user_input
         if args.model is not None:
             self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
@@ -249,7 +250,7 @@ class MakeMovie(object):
             image = image * 255
             image = image.astype('uint8')
         
-        self.draw_user_input(rec, image)
+        if self.user: self.draw_user_input(rec, image)
         if self.keras_part is not None:
             self.draw_model_prediction(image)
             self.draw_steering_distribution(image)
