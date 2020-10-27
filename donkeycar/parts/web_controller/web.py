@@ -136,8 +136,8 @@ class LocalWebController(tornado.web.Application):
 
         settings = {'debug': True}
         super().__init__(handlers, **settings)
-        print("... you can now go to {}.local:8887 to drive "
-              "your car.".format(gethostname()))
+        print("... you can now go to {}.local:{} to drive "
+              "your car.".format(gethostname(), port))
 
     def update(self):
         ''' Start the tornado webserver. '''

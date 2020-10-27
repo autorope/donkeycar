@@ -137,7 +137,7 @@ FREEZE_LAYERS = False               #default False will allow all layers to be m
 NUM_LAST_LAYERS_TO_TRAIN = 7        #when freezing layers, how many layers from the last should be allowed to train?
 
 #WEB CONTROL
-WEB_CONTROL_PORT = 8887             # which port to listen on when making a web controller
+WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
 #JOYSTICK
