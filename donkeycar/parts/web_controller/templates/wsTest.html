@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <title>Websocket Test</title>
+
+</head>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function (event) {
+        var socket = new WebSocket('ws://127.0.0.1:8887/wsDrive');
+
+        socket.onopen = async function (event) {
+            console.log('Connected');
+
+            console.log("Sending 1000 instructions\n")
+            while (true) {
+                data = { "angle": 1.0, "throttle": Math.random(), "recording": true, "drive_mode": "user" }
+                socket.send(JSON.stringify(data))
+
+                await sleep(Math.random() * 10);
+            }
+        }
+
+        socket.onmessage = function (event) {
+
+            console.log(event.data);
+        };
+
+        socket.addEventListener('error', function (event) {
+            console.log(event)
+        });
+
+
+        socket.addEventListener('close', (event) => {
+            console.log('The connection has been closed successfully.');
+        });
+
+        window.addEventListener('unload', function (event) {
+            console.log('socket closed');
+            socket.close();
+        })
+
+        function sleep(ms) {
+            // console.log("sleeping " + ms + " ms")
+
+            let timeout = new Promise((resolve, reject) => {
+                let id = setTimeout(() => {
+                    clearTimeout(id);
+                    reject('Timed out in ' + ms + 'ms.')
+                }, ms)
+            })
+
+            return timeout;
+        }
+
+    });
+
+
+</script>
+</body>
+
+</html>
