@@ -3,7 +3,7 @@
 Scripts to drive a donkey car
 
 Usage:
-    drive.py [--model=<model>] [--type=(linear|categorical|tflite_linear)]
+    manage.py drive [--model=<model>] [--type=(linear|categorical|tflite_linear)]
 
 Options:
     -h --help          Show this screen.
