@@ -38,7 +38,7 @@ def drive(cfg ):
     #Initialize car
     V = dk.vehicle.Vehicle()
 
-    ctr = LocalWebController()
+    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT)
     V.add(ctr,
           inputs=['cam/image_array', 'tub/num_records'],
           outputs=['angle', 'throttle', 'user/mode', 'recording'],
@@ -87,7 +87,7 @@ def drive(cfg ):
     
     class ShowHowTo:
         def __init__(self):
-            print(f"Go to http://{gethostname()}.local:8887/calibrate to calibrate ")
+            print(f"Go to http://{gethostname()}.local:{ctr.port}/calibrate to calibrate ")
             
         def run(self):
             pass
