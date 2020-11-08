@@ -56,7 +56,12 @@ def drive(cfg, model_path=None, model_type=None):
 
     car = dk.vehicle.Vehicle()
     # add camera
-    if cfg.CAMERA_TYPE == "PICAM":
+    inputs = []
+    if cfg.DONKEY_GYM:
+        from donkeycar.parts.dgym import DonkeyGymEnv 
+        cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
+        inputs = ['angle', 'throttle', 'brake']
+    elif cfg.CAMERA_TYPE == "PICAM":
         from donkeycar.parts.camera import PiCamera
         cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H,
                        image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE,
@@ -88,7 +93,7 @@ def drive(cfg, model_path=None, model_type=None):
     else:
         raise (Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
-    car.add(cam, inputs=[], outputs=['cam/image_array'], threaded=True)
+    car.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
 
     # add controller
     if cfg.USE_JOYSTICK_AS_DEFAULT:
@@ -128,21 +133,24 @@ def drive(cfg, model_path=None, model_type=None):
             outputs=['angle', 'throttle'])
 
     # Drive train setup
-    steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR,
-                                  busnum=cfg.PCA9685_I2C_BUSNUM)
-    steering = PWMSteering(controller=steering_controller,
-                           left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM)
+    if cfg.DONKEY_GYM or cfg.DRIVE_TRAIN_TYPE == "MOCK":
+        pass
+    else:
+        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR,
+                                    busnum=cfg.PCA9685_I2C_BUSNUM)
+        steering = PWMSteering(controller=steering_controller,
+                            left_pulse=cfg.STEERING_LEFT_PWM,
+                            right_pulse=cfg.STEERING_RIGHT_PWM)
 
-    throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR,
-                                  busnum=cfg.PCA9685_I2C_BUSNUM)
-    throttle = PWMThrottle(controller=throttle_controller,
-                           max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                           zero_pulse=cfg.THROTTLE_STOPPED_PWM,
-                           min_pulse=cfg.THROTTLE_REVERSE_PWM)
+        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR,
+                                    busnum=cfg.PCA9685_I2C_BUSNUM)
+        throttle = PWMThrottle(controller=throttle_controller,
+                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-    car.add(steering, inputs=['angle'])
-    car.add(throttle, inputs=['throttle'])
+        car.add(steering, inputs=['angle'])
+        car.add(throttle, inputs=['throttle'])
 
     # add tub to save data
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
