@@ -30,12 +30,17 @@ conda update -n base -c defaults conda
 conda env remove -n donkey
 ```
 
+* If your current shell is zsh rather than bash
+
+```bash
+conda init zsh
+```
+
 * Create the Python anaconda environment
 
 ```bash
 conda env create -f install/envs/mac.yml
 conda activate donkey
-pip install -e .[pc]
 ```
 
 * Tensorflow GPU
@@ -45,7 +50,7 @@ Currently there is no NVidia gpu support for [tensorflow on mac](https://www.ten
 * Create your local working dir:
 
 ```bash
-donkey createcar --path ~/mycar
+donkey createcar ~/mycar
 ```
 
 > Note: After closing the Terminal, when you open it again, you will need to 
