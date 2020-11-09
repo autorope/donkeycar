@@ -45,7 +45,7 @@ def drive(cfg, model_path=None, model_type=None):
     V.add(cam, outputs=['cam/image_array'], threaded=True)
         
    
-    V.add(LocalWebController(), 
+    V.add(LocalWebController(port=cfg.WEB_CONTROL_PORT), 
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
@@ -195,7 +195,7 @@ def drive(cfg, model_path=None, model_type=None):
     tub = th.new_tub_writer(inputs=inputs, types=types)
     V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
-    print("You can now go to <your pis hostname.local>:8887 to drive your car.")
+    print(f"You can now go to <your pis hostname.local>:{cfg.WEB_CONTROL_PORT} to drive your car.")
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
