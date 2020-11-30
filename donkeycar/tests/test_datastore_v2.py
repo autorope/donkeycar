@@ -44,6 +44,23 @@ class TestDatastore(unittest.TestCase):
 
         self.assertEqual((count - deleted), read_records)
 
+
+    def test_memory_mapped_read(self):
+        manifest = Manifest(self._path, max_len=2)
+        for i in range(10):
+            manifest.write_record(self._newRecord())
+        manifest.close()
+
+        manifest_2 = Manifest(self._path, read_only=True)
+        read_records = 0
+        for _ in manifest_2:
+            read_records += 1
+
+        manifest_2.close()
+
+        self.assertEqual(10, read_records)
+
+
     def tearDown(self):
         shutil.rmtree(self._path)
 

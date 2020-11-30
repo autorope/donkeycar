@@ -1,4 +1,5 @@
 import json
+import mmap
 import os
 import time
 from pathlib import Path
@@ -14,11 +15,14 @@ class Seekable(object):
     This reader maintains an index of line lengths, so seeking a line is a O(1) operation.
     '''
 
-    def __init__(self, file, method='a+', line_lengths=list()):
-        self.method = method
+    def __init__(self, file, read_only=False, line_lengths=list()):
         self.line_lengths = list()
         self.cumulative_lengths = list()
+        self.method = 'r' if read_only else 'a+'
         self.file = open(file, self.method, newline=NEWLINE)
+        if self.method == 'r':
+            # If file is read only improve performance by memory mappping the file.
+            self.file = mmap.mmap(self.file.fileno(), length=0, access=mmap.ACCESS_READ)
         self.total_length = 0
         if len(line_lengths) <= 0:
             self._read_contents()
@@ -46,6 +50,9 @@ class Seekable(object):
         return self
 
     def writeline(self, contents):
+        if self.method == 'r':
+            raise RuntimeError(f'Seekable {self.file} is read-only.')
+
         has_newline = contents[-1] == NEWLINE
         if has_newline:
             line = contents
@@ -71,6 +78,9 @@ class Seekable(object):
 
     def readline(self):
         contents = self.file.readline()
+        # When Seekable is a memory mapped file, readline() returns a `bytes`
+        if isinstance(contents, bytes):
+            contents = contents.decode(encoding='utf-8')
         return contents.rstrip(NEWLINE_STRIP)
 
     def seek_line_start(self, line_number):
@@ -128,10 +138,10 @@ class Catalog(object):
     [ json object record ] \n
     ...
     '''
-    def __init__(self, path, start_index=0):
+    def __init__(self, path, read_only=False, start_index=0):
         self.path = Path(os.path.expanduser(path))
-        self.manifest = CatalogMetadata(self.path, start_index=start_index)
-        self.seekable = Seekable(self.path.as_posix(), line_lengths=self.manifest.line_lengths())
+        self.manifest = CatalogMetadata(self.path, read_only=read_only, start_index=start_index)
+        self.seekable = Seekable(self.path.as_posix(), line_lengths=self.manifest.line_lengths(), read_only=read_only)
 
     def _exit_handler(self):
         self.close()
@@ -152,11 +162,11 @@ class CatalogMetadata(object):
     '''
     Manifest for a Catalog
     '''
-    def __init__(self, catalog_path, start_index=0):
+    def __init__(self, catalog_path, read_only=False, start_index=0):
         path = Path(catalog_path)
         manifest_name = '%s.catalog_manifest' % (path.stem)
         self.manifest_path = Path(os.path.join(path.parent.as_posix(), manifest_name))
-        self.seekeable = Seekable(self.manifest_path)
+        self.seekeable = Seekable(self.manifest_path, read_only=read_only)
         has_contents = False
         if os.path.exists(self.manifest_path) and self.seekeable.has_content():
             self.seekeable.seek_line_start(1)
@@ -214,6 +224,7 @@ class Manifest(object):
         self._read_metadata(metadata)
         self.manifest_metadata = dict()
         self.max_len = max_len
+        self.read_only = read_only
         self.current_catalog = None
         self.current_index = 0
         self.catalog_paths = list()
@@ -222,7 +233,7 @@ class Manifest(object):
         has_catalogs = False
 
         if self.manifest_path.exists():
-            self.seekeable = Seekable(self.manifest_path)
+            self.seekeable = Seekable(self.manifest_path, read_only=self.read_only)
             if self.seekeable.has_content():
                 self._read_contents()
             has_catalogs = len(self.catalog_paths) > 0
@@ -232,16 +243,15 @@ class Manifest(object):
             if not self.base_path.exists():
                 self.base_path.mkdir(parents=True, exist_ok=True)
                 print('Created a new datastore at %s' % (self.base_path.as_posix()))
-            method = 'r' if read_only else 'a+'
-            self.seekeable = Seekable(self.manifest_path, method=method)
+            self.seekeable = Seekable(self.manifest_path, read_only=self.read_only)
 
         if not has_catalogs:
             self._write_contents()
             self._add_catalog()
         else:
-            last_known_catalog = os.path.join(self.base_path, self.catalog_paths[-1]);
+            last_known_catalog = os.path.join(self.base_path, self.catalog_paths[-1])
             print('Using catalog %s' % (last_known_catalog))
-            self.current_catalog = Catalog(last_known_catalog, self.current_index)
+            self.current_catalog = Catalog(last_known_catalog, read_only=self.read_only, start_index=self.current_index)
 
     def write_record(self, record):
         new_catalog = self.current_index > 0 and (self.current_index % self.max_len) == 0
@@ -263,7 +273,7 @@ class Manifest(object):
         catalog_name = 'catalog_%s.catalog' % (current_length)
         catalog_path = os.path.join(self.base_path, catalog_name)
         current_catalog = self.current_catalog
-        self.current_catalog = Catalog(catalog_path, start_index=self.current_index)
+        self.current_catalog = Catalog(catalog_path, start_index=self.current_index, read_only=self.read_only)
         # Store relative paths
         self.catalog_paths.append(catalog_name)
         self._update_catalog_metadata(update=True)
@@ -342,7 +352,7 @@ class ManifestIterator(object):
 
         if self.current_catalog is None:
             current_catalog_path = os.path.join(self.manifest.base_path, self.manifest.catalog_paths[self.current_catalog_index])
-            self.current_catalog = Catalog(current_catalog_path)
+            self.current_catalog = Catalog(current_catalog_path, read_only=self.manifest.read_only)
             self.current_catalog.seekable.seek_line_start(1)
 
         contents = self.current_catalog.seekable.readline()
