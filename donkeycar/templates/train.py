@@ -10,23 +10,22 @@ Options:
     -h --help              Show this screen.
 """
 
+import math
 import os
-import random
 from pathlib import Path
-
-import cv2
-import numpy as np
-from docopt import docopt
-from PIL import Image
-from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.python.keras.utils.data_utils import Sequence
+from typing import Any, List, Optional, Tuple, cast
 
 import donkeycar
-from donkeycar.parts.keras import KerasInferred, KerasCategorical
+import numpy as np
+from docopt import docopt
+from donkeycar.parts.keras import KerasCategorical, KerasInferred, KerasLinear
 from donkeycar.parts.tflite import keras_model_to_tflite
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import get_model_by_type, load_image_arr, \
-    train_test_split, linear_bin, normalize_image
+from donkeycar.pipeline.sequence import TubRecord
+from donkeycar.pipeline.sequence import TubSequence as PipelineSequence
+from donkeycar.utils import get_model_by_type, linear_bin, train_test_split
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class TubDataset(object):
@@ -34,85 +33,106 @@ class TubDataset(object):
     Loads the dataset, and creates a train/test split.
     '''
 
-    def __init__(self, tub_paths, test_size=0.2, shuffle=True):
+    def __init__(self, config, tub_paths, test_size=0.2, shuffle=True):
+        self.config = config
         self.tub_paths = tub_paths
         self.test_size = test_size
         self.shuffle = shuffle
-        self.tubs = [Tub(tub_path, read_only=True) for tub_path in
-                     self.tub_paths]
-        self.records = list()
+        self.tubs = [Tub(tub_path, read_only=True)
+                     for tub_path in self.tub_paths]
+        self.records: List[TubRecord] = list()
 
-    def train_test_split(self):
+    def train_test_split(self) -> Tuple[List[TubRecord], List[TubRecord]]:
         print('Loading tubs from paths %s' % (self.tub_paths))
         for tub in self.tubs:
-            for record in tub:
-                record['_image_base_path'] = tub.images_base_path
+            for underlying in tub:
+                record = TubRecord(self.config, tub.base_path,
+                                   underlying=underlying)
                 self.records.append(record)
 
         return train_test_split(self.records, shuffle=self.shuffle, test_size=self.test_size)
 
 
 class TubSequence(Sequence):
-    def __init__(self, keras_model, config, records=list()):
+    # Improve batched_pipeline to make most of this go away as well.
+    # The idea is to have a shallow sequence with types that can hydrate themselves to an ndarray
+
+    def __init__(self, keras_model, config, records: List[TubRecord] = list()):
         self.keras_model = keras_model
         self.config = config
         self.records = records
+        self.sequence = PipelineSequence(self.records)
         self.batch_size = self.config.BATCH_SIZE
+        self.consumed = 0
+
+        # Keep track of model type
+        # Eventually move this part into the model itself.
+        self.is_linear = type(self.keras_model) is KerasLinear
+        self.is_inferred = type(self.keras_model) is KerasInferred
+        self.is_categorical = type(self.keras_model) is KerasCategorical
+
+        # Define transformations
+        def x_transform(record: TubRecord):
+            # Using an identity transform to delay image loading
+            return record
+
+        def y_categorical(record: TubRecord):
+            angle: np.ndarray = record.underlying['user/angle']
+            throttle: np.ndarray = record.underlying['user/throttle']
+            R = self.config.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE
+            angle = linear_bin(angle, N=15, offset=1, R=2.0)
+            throttle = linear_bin(throttle, N=20, offset=0.0, R=R)
+            return angle, throttle
+
+        def y_inferred(record: TubRecord):
+            return record.underlying['user/angle']
+
+        def y_linear(record: TubRecord):
+            angle: float = record.underlying['user/angle']
+            throttle: float = record.underlying['user/throttle']
+            return angle, throttle
+
+        if self.is_linear:
+            self.pipeline = list(self.sequence.build_pipeline(x_transform=x_transform, y_transform=y_linear))
+        elif self.is_categorical:
+            self.pipeline = list(self.sequence.build_pipeline(x_transform=x_transform, y_transform=y_categorical))
+        else:
+            self.pipeline = list(self.sequence.build_pipeline(x_transform=x_transform, y_transform=y_inferred))
 
     def __len__(self):
-        return len(self.records) // self.batch_size
+        if not self.pipeline:
+            raise RuntimeError('Pipeline is not initialized')
+
+        return math.ceil(len(self.pipeline) / self.batch_size)
 
     def __getitem__(self, index):
         count = 0
-        records = []
         images = []
         angles = []
         throttles = []
-
-        is_inferred = type(self.keras_model) is KerasInferred
-        is_categorical = type(self.keras_model) is KerasCategorical
-
         while count < self.batch_size:
             i = (index * self.batch_size) + count
-            if i >= len(self.records):
+            if i >= len(self.pipeline):
                 break
 
-            record = self.records[i]
-            record = self._transform_record(record)
-            records.append(record)
+            record, r = self.pipeline[i]
+            images.append(record.image(cached=False, normalize=True))
+
+            if isinstance(r, tuple):
+                angle, throttle = r
+                angles.append(angle)
+                throttles.append(throttle)
+            else:
+                angles.append(r)
+
             count += 1
 
-        for record in records:
-            image = record['cam/image_array']
-            angle = record['user/angle']
-            throttle = record['user/throttle']
-
-            images.append(image)
-            # for categorical convert to one-hot vector
-            if is_categorical:
-                R = self.config.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE
-                angle = linear_bin(angle, N=15, offset=1, R=2.0)
-                throttle = linear_bin(throttle, N=20, offset=0.0, R=R)
-            angles.append(angle)
-            throttles.append(throttle)
-
         X = np.array(images)
-
-        if is_inferred:
+        if self.is_inferred:
             Y = np.array(angles)
         else:
             Y = [np.array(angles), np.array(throttles)]
-
         return X, Y
-
-    def _transform_record(self, record):
-        for key, value in record.items():
-            if key == 'cam/image_array' and isinstance(value, str):
-                image_path = os.path.join(record['_image_base_path'], value)
-                image = load_image_arr(image_path, self.config)
-                record[key] = normalize_image(image)
-
-        return record
 
 
 class ImagePreprocessing(Sequence):
@@ -152,7 +172,7 @@ def train(cfg, tub_paths, output_path, model_type):
         print(kl.model.summary())
 
     batch_size = cfg.BATCH_SIZE
-    dataset = TubDataset(tub_paths, test_size=(1. - cfg.TRAIN_TEST_SPLIT))
+    dataset = TubDataset(cfg, tub_paths, test_size=(1. - cfg.TRAIN_TEST_SPLIT))
     training_records, validation_records = dataset.train_test_split()
     print('Records # Training %s' % len(training_records))
     print('Records # Validation %s' % len(validation_records))
