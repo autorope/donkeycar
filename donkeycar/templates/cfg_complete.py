@@ -171,6 +171,15 @@ MM1_SHOW_STEERING_VALUE = False
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
+#TELEMETRY
+TELEMETRY_DONKEY_NAME = 'my_robot1234'
+TELEMETRY_PUBLISH_PERIOD = 1
+HAVE_MQTT_TELEMETRY = False
+TELEMETRY_MQTT_TOPIC_TEMPLATE = 'donkey/%s/telemetry'
+TELEMETRY_MQTT_JSON_ENABLE = True
+TELEMETRY_MQTT_BROKER_HOST = 'mqtt.eclipse.org'
+TELEMETRY_MQTT_BROKER_PORT = 1883
+
 #RECORD OPTIONS
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
 AUTO_CREATE_NEW_TUB = False     #create a new tub (tub_YY_MM_DD) directory when recording or append records to data directory directly
