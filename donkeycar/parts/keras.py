@@ -15,12 +15,14 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.layers import Convolution2D, MaxPooling2D, BatchNormalization
+from tensorflow.keras.layers import GlobalAveragePooling2D
 from tensorflow.keras.layers import Activation, Dropout, Flatten
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import TimeDistributed as TD
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
+from donkeycar.parts.keras_resnet18 import identity_block,conv_block,ResNet18
 
 import donkeycar as dk
 from donkeycar.utils import normalize_image
@@ -698,3 +700,111 @@ def default_latent(num_outputs, input_shape):
         
     model = Model(inputs=[img_in], outputs=outputs)
     return model
+
+# ResNet18 pre-requesite parameters
+backend = tf.compat.v1.keras.backend
+layers = tf.keras.layers
+models = tf.keras.models
+utils = tf.keras.utils
+
+
+def resnet18_default_n_linear(num_outputs, input_shape=(120,60,3)):
+
+    # Instantiate a ResNet18 model
+    resnet18 = ResNet18(include_top=False,weights='cifar100_coarse',input_shape=input_shape,backend=backend,layers=layers,models=models,utils=utils)
+    for layer in resnet18.layers: 
+        layer.trainable=False 
+    resnet18_preprocess = tf.keras.applications.resnet.preprocess_input
+
+    # Transfer learning with Resnet18
+    drop = 0.2
+    img_in = Input(shape=input_shape,name='img_in')
+    x = resnet18_preprocess(img_in)
+    x = resnet18(img_in,training=True)
+    x = GlobalAveragePooling2D()(x) 
+    # Classifier
+    x = Dense(128,activation='relu',name='dense_1')(x) 
+    x = Dropout(drop)(x) 
+    x = Dense(64,activation='relu',name='dense_2')(x)
+    x = Dropout(drop)(x)
+
+    outputs = []
+    for i in range(num_outputs):
+        outputs.append(
+            Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+
+    model = Model(inputs=[img_in],outputs=outputs)
+
+    return model
+
+
+def resnet18_default_categorical(input_shape=(120, 60, 3)):
+     # Instantiate a ResNet18 model
+    resnet18 = ResNet18(include_top=False,weights='cifar100_coarse',input_shape=input_shape,backend=backend,layers=layers,models=models,utils=utils)
+    for layer in resnet18.layers: 
+        layer.trainable=False     
+    resnet18_preprocess = tf.keras.applications.resnet.preprocess_input
+
+    # Transfer learning with Resnet18
+    drop = 0.2
+    img_in = Input(shape=input_shape,name='img_in')
+    x = resnet18_preprocess(img_in)
+    x = resnet18(img_in,training=True)
+    x = GlobalAveragePooling2D()(x) 
+    # Classifier
+    x = Dense(128,activation='relu',name='dense_1')(x) 
+    x = Dropout(drop)(x) 
+    x = Dense(64,activation='relu',name='dense_2')(x)
+    x = Dropout(drop)(x)
+
+    # Categorical output of the angle into 15 bins
+    angle_out = Dense(15, activation='softmax', name='angle_out')(x)
+    # categorical output of throttle into 20 bins
+    throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)
+
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+    return model
+
+
+class Resnet18LinearKeras(KerasPilot):
+    def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
+        super().__init__()
+        self.model = resnet18_default_n_linear(num_outputs, input_shape)
+        self.optimizer = 'adam'
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, loss='mse',metrics='mse')
+
+    def inference(self, img_arr, other_arr):
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        outputs = self.model.predict(img_arr)
+        steering = outputs[0]
+        return steering[0] , dk.utils.throttle(steering[0])
+
+    
+class Resnet18CategoricalKeras(KerasPilot):
+    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5):
+        super().__init__()
+        self.model = resnet18_default_categorical(input_shape)
+        self.optimizer = 'adam'
+        self.compile()
+        self.throttle_range = throttle_range
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, metrics=['accuracy'],
+                           loss={'angle_out': 'categorical_crossentropy',
+                                 'throttle_out': 'categorical_crossentropy'},
+                           loss_weights={'angle_out': 0.5, 'throttle_out': 0.5})
+        
+    def inference(self, img_arr, other_arr):
+        if img_arr is None:
+            print('no image')
+            return 0.0, 0.0
+
+        img_arr = img_arr.reshape((1,) + img_arr.shape)
+        angle_binned, throttle_binned = self.model.predict(img_arr)
+        N = len(throttle_binned[0])
+        throttle = dk.utils.linear_unbin(throttle_binned, N=N,
+                                         offset=0.0, R=self.throttle_range)
+        angle = dk.utils.linear_unbin(angle_binned)
+        return angle, throttle
