@@ -48,6 +48,7 @@ setup(name='donkeycar',
           "simple_pid",
           'progress',
           'typing_extensions',
+          'psutil'
       ],
       extras_require={
           'pi': [

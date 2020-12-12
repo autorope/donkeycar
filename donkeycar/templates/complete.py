@@ -304,6 +304,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.USE_FPV:
         V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
 
+    #PERFMON
+    if cfg.HAVE_PERFMON:
+        from donkeycar.parts.perfmon import PerfMonitor
+        mon = PerfMonitor(cfg)
+        V.add(mon, inputs=[], outputs=['perf/cpu', 'perf/mem', 'perf/freq'], threaded=True)
+
     #Behavioral state
     if cfg.TRAIN_BEHAVIORS:
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
@@ -579,6 +585,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
+
+    if cfg.HAVE_PERFMON:
+        inputs += ['perf/cpu', 'perf/mem', 'perf/freq']
+        types += ['float', 'float', 'float']
 
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
