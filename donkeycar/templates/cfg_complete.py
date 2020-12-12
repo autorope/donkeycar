@@ -177,7 +177,7 @@ TELEMETRY_PUBLISH_PERIOD = 1
 HAVE_MQTT_TELEMETRY = False
 TELEMETRY_MQTT_TOPIC_TEMPLATE = 'donkey/%s/telemetry'
 TELEMETRY_MQTT_JSON_ENABLE = True
-TELEMETRY_MQTT_BROKER_HOST = 'mqtt.eclipse.org'
+TELEMETRY_MQTT_BROKER_HOST = 'broker.emqx.io'  # 'broker.emqx.io' / 'broker.hivemq.com' / 'mqtt.eclipse.org'
 TELEMETRY_MQTT_BROKER_PORT = 1883
 
 # PERF MONITOR
