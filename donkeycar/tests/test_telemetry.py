@@ -8,7 +8,6 @@ from donkeycar.parts.telemetry import MqttTelemetry
 import pytest
 
 
-@pytest.mark.skip(reason="the connection always times out")
 def test_mqtt_telemetry():
 
     # Create receiver
