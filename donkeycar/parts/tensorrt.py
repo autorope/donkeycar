@@ -31,12 +31,16 @@ class TensorRTLinear(KerasPilot):
 
     def load(self, model_path):
         uff_model = Path(model_path)
-        metadata_path = Path('%s/%s.metadata' % (uff_model.parent.as_posix(), uff_model.stem))
-        with open(metadata_path.as_posix(), 'r') as metadata, trt.Builder(self.logger) as builder, builder.create_network() as network, trt.UffParser() as parser:
+        metadata_path = Path('%s/%s.metadata'
+                             % (uff_model.parent.as_posix(), uff_model.stem))
+        with open(metadata_path.as_posix(), 'r') as metadata, \
+                trt.Builder(self.logger) as builder, \
+                builder.create_network() as network, \
+                trt.UffParser() as parser:
 
             builder.max_workspace_size = 1 << 20
             builder.max_batch_size = 1
-            builder.fp16_mode=True
+            builder.fp16_mode = True
 
             metadata = json.loads(metadata.read())
             # Configure inputs and outputs
@@ -44,7 +48,9 @@ class TensorRTLinear(KerasPilot):
             input_names = metadata['input_names']
             output_names = metadata['output_names']
             for name in input_names:
-                parser.register_input(name, (self.cfg.TARGET_D, self.cfg.TARGET_H, self.cfg.TARGET_W))
+                parser.register_input(name, (self.cfg.TARGET_D,
+                                             self.cfg.TARGET_H,
+                                             self.cfg.TARGET_W))
 
             for name in output_names:
                 parser.register_output(name)
@@ -55,10 +61,11 @@ class TensorRTLinear(KerasPilot):
             self.engine = builder.build_cuda_engine(network)
             # Allocate buffers
             print('Allocating Buffers')
-            self.inputs, self.outputs, self.bindings, self.stream = TensorRTLinear.allocate_buffers(self.engine)
+            self.inputs, self.outputs, self.bindings, self.stream \
+                = TensorRTLinear.allocate_buffers(self.engine)
             print('Ready')
 
-    def run(self, image):
+    def run(self, image, other_arr=None):
         # Channel first image format
         image = image.transpose((2,0,1))
         # Flatten it to a 1D array.
@@ -67,13 +74,21 @@ class TensorRTLinear(KerasPilot):
         image_input = self.inputs[0] 
         np.copyto(image_input.host_memory, image)
         with self.engine.create_execution_context() as context:
-            inference_output = TensorRTLinear.infer(context=context, bindings=self.bindings, inputs=self.inputs, outputs=self.outputs, stream=self.stream)
-            if (len(inference_output) == 2):
+            inference_output = TensorRTLinear.infer(context=context,
+                                                    bindings=self.bindings,
+                                                    inputs=self.inputs,
+                                                    outputs=self.outputs,
+                                                    stream=self.stream)
+            if len(inference_output) == 2:
                 [throttle, steering] = inference_output
                 return steering[0], throttle[0]
             else:
                 [steering] = inference_output
                 return steering[0], calculate_throttle(steering[0])
+
+    def inference(self, img_arr, other_arr):
+        """ Because TensorRT overrides run() directly this is not needed"""
+        pass
 
     @classmethod
     def allocate_buffers(cls, engine):
@@ -82,7 +97,8 @@ class TensorRTLinear(KerasPilot):
         bindings = []
         stream = cuda.Stream()
         for binding in engine:
-            size = trt.volume(engine.get_binding_shape(binding)) * engine.max_batch_size
+            size = trt.volume(engine.get_binding_shape(binding)) \
+                   * engine.max_batch_size
             dtype = trt.nptype(engine.get_binding_dtype(binding))
             # Allocate host and device buffers
             host_memory = cuda.pagelocked_empty(size, dtype)
@@ -98,11 +114,14 @@ class TensorRTLinear(KerasPilot):
     @classmethod
     def infer(cls, context, bindings, inputs, outputs, stream, batch_size=1):
         # Transfer input data to the GPU.
-        [cuda.memcpy_htod_async(inp.device_memory, inp.host_memory, stream) for inp in inputs]
+        [cuda.memcpy_htod_async(inp.device_memory, inp.host_memory, stream)
+         for inp in inputs]
         # Run inference.
-        context.execute_async(batch_size=batch_size, bindings=bindings, stream_handle=stream.handle)
+        context.execute_async(batch_size=batch_size, bindings=bindings,
+                              stream_handle=stream.handle)
         # Transfer predictions back from the GPU.
-        [cuda.memcpy_dtoh_async(out.host_memory, out.device_memory, stream) for out in outputs]
+        [cuda.memcpy_dtoh_async(out.host_memory, out.device_memory, stream)
+         for out in outputs]
         # Synchronize the stream
         stream.synchronize()
         # Return only the host outputs.
