@@ -65,7 +65,7 @@ class TensorRTLinear(KerasPilot):
                 = TensorRTLinear.allocate_buffers(self.engine)
             print('Ready')
 
-    def run(self, image, other_arr=None):
+    def inference(self, image, other_arr=None):
         # Channel first image format
         image = image.transpose((2,0,1))
         # Flatten it to a 1D array.
@@ -85,10 +85,6 @@ class TensorRTLinear(KerasPilot):
             else:
                 [steering] = inference_output
                 return steering[0], calculate_throttle(steering[0])
-
-    def inference(self, img_arr, other_arr):
-        """ Because TensorRT overrides run() directly this is not needed"""
-        pass
 
     @classmethod
     def allocate_buffers(cls, engine):
