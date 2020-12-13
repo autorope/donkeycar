@@ -1,11 +1,9 @@
 import math
 import os
-from pathlib import Path
 from typing import List
 
 from donkeycar.parts.tflite import keras_model_to_tflite
-from donkeycar.pipeline.sequence import TubRecord
-from donkeycar.pipeline.sequence import TubSequence
+from donkeycar.pipeline.sequence import TubRecord, TfmShallowList
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.utils import get_model_by_type, normalize_image
@@ -21,7 +19,7 @@ class BatchSequence(object):
     def __init__(self, model, config, records: List[TubRecord], is_train: bool):
         self.model = model
         self.config = config
-        self.sequence = TubSequence(records)
+        self.sequence = records
         self.batch_size = self.config.BATCH_SIZE
         self.is_train = is_train
         self.augmentation = ImageAugmentation(config)
@@ -44,9 +42,9 @@ class BatchSequence(object):
             return self.model.y_transform(record)
 
         # 2. Build pipeline using the transformations
-        pipeline = self.sequence.build_pipeline(x_transform=get_x,
-                                                y_transform=get_y)
-
+        pipeline = TfmShallowList(self.sequence,
+                                  x_transform=get_x,
+                                  y_transform=get_y)
         return pipeline
 
     def create_tf_data(self):
