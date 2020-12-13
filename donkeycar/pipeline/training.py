@@ -1,15 +1,16 @@
 import math
 import os
-from pathlib import Path
-from typing import List
+from typing import List, Dict, Union
 
+from donkeycar.config import Config
+from donkeycar.parts.keras import KerasPilot
 from donkeycar.parts.tflite import keras_model_to_tflite
-from donkeycar.pipeline.sequence import TubRecord
-from donkeycar.pipeline.sequence import TubSequence
+from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.utils import get_model_by_type, normalize_image
 import tensorflow as tf
+import numpy as np
 
 
 class BatchSequence(object):
@@ -18,7 +19,11 @@ class BatchSequence(object):
     themselves to np.ndarray initially and later into the types required by
     tf.data (i.e. dictionaries or np.ndarrays).
     """
-    def __init__(self, model, config, records: List[TubRecord], is_train: bool):
+    def __init__(self,
+                 model: KerasPilot,
+                 config: Config,
+                 records: List[TubRecord],
+                 is_train: bool) -> None:
         self.model = model
         self.config = config
         self.sequence = TubSequence(records)
@@ -27,29 +32,43 @@ class BatchSequence(object):
         self.augmentation = ImageAugmentation(config)
         self.pipeline = self._create_pipeline()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return math.ceil(len(self.pipeline) / self.batch_size)
 
-    def _create_pipeline(self):
+    def _create_pipeline(self) -> TfmIterator:
         """ This can be overridden if more complicated pipelines are
             required """
         # 1. Initialise TubRecord -> x, y transformations
-        def get_x(record):
+        def get_x(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
+            """ Extracting x from record for training"""
+            # this transforms the record into x for training the model to x,y
             x0 = self.model.x_transform(record)
-            x1 = self.augmentation.augment(x0) if self.is_train else x0
-            x2 = normalize_image(x1)
-            return x2
+            # for multiple input tensors the return value here is a tuple
+            # where the image is in first slot otherwise x0 is the image
+            x1 = x0[0] if isinstance(x0, tuple) else x0
+            # apply augmentation to training data only
+            x2 = self.augmentation.augment(x1) if self.is_train else x1
+            # normalise image, assume other input data comes already normalised
+            x3 = normalize_image(x2)
+            # fill normalised image back into tuple if necessary
+            x4 = (x3, ) + x0[1:] if isinstance(x0, tuple) else x3
+            # convert tuple to dictionary which is understood by tf.data
+            x5 = self.model.x_translate(x4)
+            return x5
 
-        def get_y(record):
-            return self.model.y_transform(record)
+        def get_y(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
+            """ Extracting y from record for training """
+            y0 = self.model.y_transform(record)
+            y1 = self.model.y_translate(y0)
+            return y1
 
         # 2. Build pipeline using the transformations
         pipeline = self.sequence.build_pipeline(x_transform=get_x,
                                                 y_transform=get_y)
-
         return pipeline
 
-    def create_tf_data(self):
+    def create_tf_data(self) -> tf.data.Dataset:
+        """ Assembles the tf data pipeline """
         dataset = tf.data.Dataset.from_generator(
             generator=lambda: self.pipeline,
             output_types=self.model.output_types(),
@@ -57,7 +76,8 @@ class BatchSequence(object):
         return dataset.repeat().batch(self.batch_size)
 
 
-def train(cfg, tub_paths, model, model_type):
+def train(cfg: Config, tub_paths: str, model: str, model_type: str) \
+        -> tf.keras.callbacks.History:
     """
     Train the model
     """
@@ -70,7 +90,7 @@ def train(cfg, tub_paths, model, model_type):
         model_type = cfg.DEFAULT_MODEL_TYPE
 
     tubs = tub_paths.split(',')
-    tub_paths = [os.path.expanduser(tub) for tub in tubs]
+    all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     output_path = os.path.expanduser(model)
     train_type = 'linear' if 'linear' in model_type else model_type
 
@@ -78,7 +98,7 @@ def train(cfg, tub_paths, model, model_type):
     if cfg.PRINT_MODEL_SUMMARY:
         print(kl.model.summary())
 
-    dataset = TubDataset(cfg, tub_paths)
+    dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
     print('Records # Training %s' % len(training_records))
     print('Records # Validation %s' % len(validation_records))

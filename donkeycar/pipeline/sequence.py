@@ -132,7 +132,8 @@ class TubSequence(Iterable[TubRecord]):
 
     def build_pipeline(self,
                        x_transform: Callable[[TubRecord], X],
-                       y_transform: Callable[[TubRecord], Y]) -> SizedIterator[Tuple[X, Y]]:
+                       y_transform: Callable[[TubRecord], Y]) \
+            -> TfmIterator:
         return TfmIterator(self, x_transform=x_transform, y_transform=y_transform)
 
     @classmethod

@@ -2,6 +2,7 @@ import os
 from typing import Any, List, Optional, TypeVar, Tuple
 
 import numpy as np
+from donkeycar.config import Config
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import load_image_arr, normalize_image, train_test_split
 from typing_extensions import TypedDict
@@ -26,7 +27,8 @@ TubRecordDict = TypedDict(
 
 
 class TubRecord(object):
-    def __init__(self, config: Any, base_path: str, underlying: TubRecordDict) -> None:
+    def __init__(self, config: Config, base_path: str,
+                 underlying: TubRecordDict) -> None:
         self.config = config
         self.base_path = base_path
         self.underlying = underlying
@@ -52,7 +54,8 @@ class TubDataset(object):
     Loads the dataset, and creates a train/test split.
     '''
 
-    def __init__(self, config: Any, tub_paths: List[str], shuffle: bool = True):
+    def __init__(self, config: Config, tub_paths: List[str],
+                 shuffle: bool = True) -> None:
         self.config = config
         self.tub_paths = tub_paths
         self.shuffle = shuffle

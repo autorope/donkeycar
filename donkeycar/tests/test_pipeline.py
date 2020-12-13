@@ -3,7 +3,11 @@ import unittest
 from typing import List
 
 import numpy as np
+
+from donkeycar.config import Config
+from donkeycar.parts.keras import KerasLinear
 from donkeycar.pipeline.sequence import SizedIterator, TubSequence
+from donkeycar.pipeline.training import BatchSequence
 from donkeycar.pipeline.types import TubRecord, TubRecordDict
 
 
@@ -25,7 +29,7 @@ def random_record() -> TubRecord:
         'imu/gyr_y': None,
         'imu/gyr_z': None
     }
-    return TubRecord('/base', None, underlying=underlying)
+    return TubRecord(config=Config(), base_path='/base', underlying=underlying)
 
 
 size = 10

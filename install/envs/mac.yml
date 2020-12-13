@@ -23,6 +23,8 @@ dependencies:
   - moviepy
   - paho-mqtt
   - PrettyTable
+  - pyfiglet
+  - mypy
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git

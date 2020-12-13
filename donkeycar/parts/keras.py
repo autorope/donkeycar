@@ -31,6 +31,9 @@ from tensorflow.keras.optimizers import Optimizer
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
+# type of x
+XY = Union[float, np.ndarray, Tuple[float, ...], Tuple[np.ndarray, ...]]
+
 
 class KerasPilot(ABC):
     """
@@ -46,6 +49,7 @@ class KerasPilot(ABC):
         self.model = keras.models.load_model(model_path, compile=False)
 
     def load_weights(self, model_path: str, by_name: bool = True) -> None:
+        assert self.model, 'Model not set'
         self.model.load_weights(model_path, by_name=by_name)
 
     def shutdown(self) -> None:
@@ -56,6 +60,7 @@ class KerasPilot(ABC):
 
     def set_optimizer(self, optimizer_type: str,
                       rate: float, decay: float) -> None:
+        assert self.model, 'Model not set'
         if optimizer_type == "adam":
             self.model.optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
         elif optimizer_type == "sgd":
@@ -66,10 +71,11 @@ class KerasPilot(ABC):
             raise Exception("unknown optimizer type: %s" % optimizer_type)
 
     def get_input_shape(self) -> tf.TensorShape:
-        assert self.model is not None, "Need to load model first"
+        assert self.model, 'Model not set'
         return self.model.inputs[0].shape
 
-    def run(self, img_arr: np.ndarray, other_arr: np.ndarray = None) -> Any:
+    def run(self, img_arr: np.ndarray, other_arr: np.ndarray = None) \
+            -> Tuple[Union[float, np.ndarray], ...]:
         """
         Donkeycar parts interface to run the part in the loop.
 
@@ -83,7 +89,8 @@ class KerasPilot(ABC):
         return self.inference(norm_arr, other_arr)
 
     @abstractmethod
-    def inference(self, img_arr: np.ndarray, other_arr: np.ndarray) -> Any:
+    def inference(self, img_arr: np.ndarray, other_arr: np.ndarray) \
+            -> Tuple[Union[float, np.ndarray], ...]:
         """
         Virtual method to be implemented by child classes for inferencing
 
@@ -105,7 +112,7 @@ class KerasPilot(ABC):
               epochs: int,
               verbose: int = 1,
               min_delta: float = .0005,
-              patience: int = 5) -> Dict[str, Any]:
+              patience: int = 5) -> tf.keras.callbacks.History:
         """
         trains the model
         """
@@ -139,18 +146,32 @@ class KerasPilot(ABC):
         """ Model used for training, could be just a sub part of the model"""
         return self.model
 
-    def x_transform(self, record: TubRecord):
-        # Using an identity transform to delay image loading
+    def x_transform(self, record: TubRecord) -> XY:
         img_arr = record.image(cached=True)
         return img_arr
 
-    def y_transform(self, record: TubRecord):
-        raise NotImplemented(f'{self} not ready yet for new training pipeline')
+    def y_transform(self, record: TubRecord) -> XY:
+        raise NotImplementedError(f'{self} not ready yet for new training '
+                                  f'pipeline')
+
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        return {'img_in': x}
+
+    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+        raise NotImplementedError(f'{self} not ready yet for new training '
+                                  f'pipeline')
+
+    def output_types(self) -> Dict[str, np.typename]:
+        raise NotImplementedError(f'{self} not ready yet for new training '
+                                  f'pipeline')
 
     def output_types(self):
-        raise NotImplemented(f'{self} not ready yet for new training pipeline')
+        """ Used in tf.data, assume all types are doubles"""
+        shapes = self.output_shapes()
+        types = tuple({k: tf.float64 for k in d} for d in shapes)
+        return types
 
-    def output_shapes(self):
+    def output_shapes(self) -> Optional[Dict[str, tf.TensorShape]]:
         return None
 
     def __str__(self) -> str:
@@ -201,17 +222,19 @@ class KerasCategorical(KerasPilot):
         throttle: float = record.underlying['user/throttle']
         angle = linear_bin(angle, N=15, offset=1, R=2.0)
         throttle = linear_bin(throttle, N=20, offset=0.0, R=self.throttle_range)
-        return {'angle_out': angle, 'throttle_out': throttle}
+        return angle, throttle
 
-    def output_types(self):
-        types = (tf.float64, {'angle_out': tf.float64,
-                              'throttle_out': tf.float64})
-        return types
+    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+        if isinstance(y, tuple):
+            angle, throttle = y
+            return {'angle_out': angle, 'throttle_out': throttle}
+        else:
+            raise TypeError('Expected tuple')
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape()[1:]
-        shapes = (img_shape,
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
                   {'angle_out': tf.TensorShape([15]),
                    'throttle_out': tf.TensorShape([20])})
         return shapes
@@ -240,17 +263,19 @@ class KerasLinear(KerasPilot):
     def y_transform(self, record: TubRecord):
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
-        return {'n_outputs0': angle, 'n_outputs1': throttle}
+        return angle, throttle
 
-    def output_types(self):
-        types = (tf.float64, {'n_outputs0': tf.float64,
-                              'n_outputs1': tf.float64})
-        return types
+    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+        if isinstance(y, tuple):
+            angle, throttle = y
+            return {'n_outputs0': angle, 'n_outputs1': throttle}
+        else:
+            raise TypeError('Expected tuple')
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape()[1:]
-        shapes = (img_shape,
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
                   {'n_outputs0': tf.TensorShape([]),
                    'n_outputs1': tf.TensorShape([])})
         return shapes
@@ -272,16 +297,16 @@ class KerasInferred(KerasPilot):
 
     def y_transform(self, record: TubRecord):
         angle: float = record.underlying['user/angle']
-        return {'n_outputs0': angle}
+        return angle
 
-    def output_types(self):
-        types = (tf.float64, {'n_outputs0': tf.float64})
-        return types
+    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+        return {'n_outputs0': y}
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape()[1:]
-        shapes = (img_shape, {'n_outputs0': tf.TensorShape([])})
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'n_outputs0': tf.TensorShape([])})
         return shapes
 
 
