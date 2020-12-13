@@ -1,4 +1,4 @@
-__version__ = '4.0.1-dev'
+__version__ = '4.1.0-dev'
 
 print('using donkey v{} ...'.format(__version__))
 
@@ -11,7 +11,6 @@ if sys.version_info.major < 3:
 # The default recursion limits in CPython are too small.
 sys.setrecursionlimit(10**5)
 
-from . import parts
 from .vehicle import Vehicle
 from .memory import Memory
 from . import utils

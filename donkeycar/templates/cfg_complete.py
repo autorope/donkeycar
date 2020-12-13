@@ -116,6 +116,13 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
+# Region of interst cropping
+# only supported in Categorical and Linear models.
+# If these crops values are too large, they will cause the stride values to become negative and the model with not be valid.
+ROI_CROP_TOP = 0                    #the number of rows of pixels to ignore on the top of the image
+ROI_CROP_BOTTOM = 0                 #the number of rows of pixels to ignore on the bottom of the image
+
+
 #Model transfer options
 #When copying weights during a model transfer operation, should we freeze a certain number of layers
 #to the incoming weights and not allow them to change during training?

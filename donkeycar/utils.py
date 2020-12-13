@@ -16,7 +16,7 @@ import math
 import random
 import time
 import signal
-
+from typing import List, Any, Tuple
 
 from PIL import Image
 import numpy as np
@@ -97,23 +97,6 @@ def norm_img(img):
     return (img - img.mean() / np.std(img)) * ONE_BYTE_SCALE
 
 
-def create_video(img_dir_path, output_video_path):
-    import envoy
-    # Setup path to the images with telemetry.
-    full_path = os.path.join(img_dir_path, 'frame_*.png')
-
-    # Run ffmpeg.
-    command = ("""ffmpeg
-               -framerate 30/1
-               -pattern_type glob -i '%s'
-               -c:v libx264
-               -r 15
-               -pix_fmt yuv420p
-               -y
-               %s""" % (full_path, output_video_path))
-    response = envoy.run(command)
-
-
 def rgb2gray(rgb):
     """
     Convert normalized numpy image array with shape (w, h, 3) into greyscale
@@ -146,7 +129,7 @@ def normalize_image(img_arr_uint):
     :param img_arr_uint:    [0,255]uint8 numpy image array
     :return:                [0,1] float32 numpy image array
     """
-    return img_arr_uint.astype(np.float32) * ONE_BYTE_SCALE
+    return img_arr_uint.astype(np.float64) * ONE_BYTE_SCALE
 
 
 def denormalize_image(img_arr_float):
@@ -409,7 +392,7 @@ def get_model_by_type(model_type, cfg):
     '''
     from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, \
         KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, \
-        KerasLocalizer, KerasLatent
+        KerasLocalizer, KerasLatent, KerasInferred
     from donkeycar.parts.tflite import TFLitePilot
 
     if model_type is None:
@@ -422,6 +405,9 @@ def get_model_by_type(model_type, cfg):
     elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape,
                               throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+
+    elif model_type == 'inferred':
+        kl = KerasInferred(input_shape=input_shape)
     elif model_type == "tflite_linear":
         kl = TFLitePilot()
     elif model_type == "tensorrt_linear":
@@ -432,7 +418,8 @@ def get_model_by_type(model_type, cfg):
         kl = TensorRTLinear(cfg=cfg)
     else:
         raise Exception("Unknown model type {:}, supported types are "
-                        "linear, categorical, tflite_linear, tensorrt_linear"
+                        "linear, categorical, inferred, tflite_linear, "
+                        "tensorrt_linear"
                         .format(model_type))
 
     return kl
@@ -457,27 +444,31 @@ def get_test_img(model):
     return img.astype(np.uint8)
 
 
-def train_test_split(data_list, shuffle=True, test_size=0.2):
+def train_test_split(data_list: List[Any],
+                     shuffle: bool = True,
+                     test_size: float = 0.2) -> Tuple[List[Any], List[Any]]:
     '''
     take a list, split it into two sets while selecting a
     random element in order to shuffle the results.
     use the test_size to choose the split percent.
     shuffle is always True, left there to be backwards compatible
     '''
-    assert shuffle
-    train_data = []
+    target_train_size = int(len(data_list) * (1. - test_size))
 
-    target_train_size = len(data_list) * (1. - test_size)
+    if shuffle:
+        train_data = []
+        i_sample = 0
+        while i_sample < target_train_size and len(data_list) > 1:
+            i_choice = random.randint(0, len(data_list) - 1)
+            train_data.append(data_list.pop(i_choice))
+            i_sample += 1
 
-    i_sample = 0
+        # remainder of the original list is the validation set
+        val_data = data_list
 
-    while i_sample < target_train_size and len(data_list) > 1:
-        i_choice = random.randint(0, len(data_list) - 1)
-        train_data.append(data_list.pop(i_choice))
-        i_sample += 1
-
-    # remainder of the original list is the validation set
-    val_data = data_list
+    else:
+        train_data = data_list[:target_train_size]
+        val_data = data_list[target_train_size:]
 
     return train_data, val_data
 

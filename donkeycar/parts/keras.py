@@ -10,20 +10,24 @@ include one or more models to help direct the vehicles motion.
 
 from abc import ABC, abstractmethod
 import numpy as np
+from typing import Dict, Any, Tuple, Optional, Union
+import donkeycar as dk
+from donkeycar.utils import normalize_image, linear_bin
+from donkeycar.pipeline.types import TubRecord
 
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.layers import Input, Dense
-from tensorflow.keras.layers import Convolution2D, MaxPooling2D, BatchNormalization
+from tensorflow.keras.layers import Convolution2D, MaxPooling2D, \
+    BatchNormalization
 from tensorflow.keras.layers import Activation, Dropout, Flatten
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import TimeDistributed as TD
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
-
-import donkeycar as dk
-from donkeycar.utils import normalize_image
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.optimizers import Optimizer
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
@@ -33,23 +37,25 @@ class KerasPilot(ABC):
     Base class for Keras models that will provide steering and throttle to
     guide a car.
     """
-    def __init__(self):
-        self.model = None
+    def __init__(self) -> None:
+        self.model: Optional[Model] = None
         self.optimizer = "adam"
- 
-    def load(self, model_path):
+        print(f'Created {self}')
+
+    def load(self, model_path: str) -> None:
         self.model = keras.models.load_model(model_path, compile=False)
 
-    def load_weights(self, model_path, by_name=True):
+    def load_weights(self, model_path: str, by_name: bool = True) -> None:
         self.model.load_weights(model_path, by_name=by_name)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         pass
 
-    def compile(self):
+    def compile(self) -> None:
         pass
 
-    def set_optimizer(self, optimizer_type, rate, decay):
+    def set_optimizer(self, optimizer_type: str,
+                      rate: float, decay: float) -> None:
         if optimizer_type == "adam":
             self.model.optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
         elif optimizer_type == "sgd":
@@ -59,11 +65,11 @@ class KerasPilot(ABC):
         else:
             raise Exception("unknown optimizer type: %s" % optimizer_type)
 
-    def get_input_shape(self):
+    def get_input_shape(self) -> tf.TensorShape:
         assert self.model is not None, "Need to load model first"
         return self.model.inputs[0].shape
 
-    def run(self, img_arr, other_arr=None):
+    def run(self, img_arr: np.ndarray, other_arr: np.ndarray = None) -> Any:
         """
         Donkeycar parts interface to run the part in the loop.
 
@@ -77,7 +83,7 @@ class KerasPilot(ABC):
         return self.inference(norm_arr, other_arr)
 
     @abstractmethod
-    def inference(self, img_arr, other_arr):
+    def inference(self, img_arr: np.ndarray, other_arr: np.ndarray) -> Any:
         """
         Virtual method to be implemented by child classes for inferencing
 
@@ -89,43 +95,67 @@ class KerasPilot(ABC):
         """
         pass
 
-    def train(self, train_gen, val_gen, 
-              saved_model_path, epochs=100, steps=100, train_split=0.8,
-              verbose=1, min_delta=.0005, patience=5, use_early_stop=True):
-        
+    def train(self,
+              model_path: str,
+              train_data: 'BatchSequence',
+              train_steps: int,
+              batch_size: int,
+              validation_data: 'BatchSequence',
+              validation_steps: int,
+              epochs: int,
+              verbose: int = 1,
+              min_delta: float = .0005,
+              patience: int = 5) -> Dict[str, Any]:
         """
-        train_gen: generator that yields an array of images an array of 
-        
+        trains the model
         """
+        model = self._get_train_model()
+        self.compile()
 
-        # checkpoint to save model after each epoch
-        save_best = keras.callbacks.ModelCheckpoint(saved_model_path, 
-                                                    monitor='val_loss', 
-                                                    verbose=verbose, 
-                                                    save_best_only=True, 
-                                                    mode='min')
-        
-        # stop training if the validation error stops improving.
-        early_stop = keras.callbacks.EarlyStopping(monitor='val_loss', 
-                                                   min_delta=min_delta, 
-                                                   patience=patience, 
-                                                   verbose=verbose, 
-                                                   mode='auto')
-        
-        callbacks_list = [save_best]
+        callbacks = [
+            EarlyStopping(monitor='val_loss',
+                          patience=patience,
+                          min_delta=min_delta),
+            ModelCheckpoint(monitor='val_loss',
+                            filepath=model_path,
+                            save_best_only=True,
+                            verbose=verbose)]
 
-        if use_early_stop:
-            callbacks_list.append(early_stop)
-        
-        hist = self.model.fit_generator(
-                        train_gen, 
-                        steps_per_epoch=steps, 
-                        epochs=epochs, 
-                        verbose=1, 
-                        validation_data=val_gen,
-                        callbacks=callbacks_list, 
-                        validation_steps=steps*(1.0 - train_split))
-        return hist
+        history: Dict[str, Any] = model.fit(
+            x=train_data,
+            steps_per_epoch=train_steps,
+            batch_size=batch_size,
+            callbacks=callbacks,
+            validation_data=validation_data,
+            validation_steps=validation_steps,
+            epochs=epochs,
+            verbose=verbose,
+            workers=1,
+            use_multiprocessing=False
+        )
+        return history
+
+    def _get_train_model(self) -> Model:
+        """ Model used for training, could be just a sub part of the model"""
+        return self.model
+
+    def x_transform(self, record: TubRecord):
+        # Using an identity transform to delay image loading
+        img_arr = record.image(cached=True)
+        return img_arr
+
+    def y_transform(self, record: TubRecord):
+        raise NotImplemented(f'{self} not ready yet for new training pipeline')
+
+    def output_types(self):
+        raise NotImplemented(f'{self} not ready yet for new training pipeline')
+
+    def output_shapes(self):
+        return None
+
+    def __str__(self) -> str:
+        """ For printing model initialisation """
+        return type(self).__name__
 
 
 class KerasCategorical(KerasPilot):
@@ -145,7 +175,6 @@ class KerasCategorical(KerasPilot):
     def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5):
         super().__init__()
         self.model = default_categorical(input_shape)
-        self.compile()
         self.throttle_range = throttle_range
 
     def compile(self):
@@ -167,6 +196,26 @@ class KerasCategorical(KerasPilot):
         angle = dk.utils.linear_unbin(angle_binned)
         return angle, throttle
 
+    def y_transform(self, record: TubRecord):
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        angle = linear_bin(angle, N=15, offset=1, R=2.0)
+        throttle = linear_bin(throttle, N=20, offset=0.0, R=self.throttle_range)
+        return {'angle_out': angle, 'throttle_out': throttle}
+
+    def output_types(self):
+        types = (tf.float64, {'angle_out': tf.float64,
+                              'throttle_out': tf.float64})
+        return types
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = tf.TensorShape(self.get_input_shape().as_list()[1:])
+        shapes = (img_shape,
+                  {'angle_out': tf.TensorShape([15]),
+                   'throttle_out': tf.TensorShape([20])})
+        return shapes
+
 
 class KerasLinear(KerasPilot):
     """
@@ -177,7 +226,6 @@ class KerasLinear(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
         super().__init__()
         self.model = default_n_linear(num_outputs, input_shape)
-        self.compile()
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
@@ -189,12 +237,29 @@ class KerasLinear(KerasPilot):
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
 
+    def y_transform(self, record: TubRecord):
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        return {'n_outputs0': angle, 'n_outputs1': throttle}
+
+    def output_types(self):
+        types = (tf.float64, {'n_outputs0': tf.float64,
+                              'n_outputs1': tf.float64})
+        return types
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = tf.TensorShape(self.get_input_shape().as_list()[1:])
+        shapes = (img_shape,
+                  {'n_outputs0': tf.TensorShape([]),
+                   'n_outputs1': tf.TensorShape([])})
+        return shapes
+
 
 class KerasInferred(KerasPilot):
     def __init__(self, num_outputs=1, input_shape=(120, 160, 3)):
         super().__init__()
         self.model = default_n_linear(num_outputs, input_shape)
-        self.compile()
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
@@ -204,6 +269,20 @@ class KerasInferred(KerasPilot):
         outputs = self.model.predict(img_arr)
         steering = outputs[0]
         return steering[0], dk.utils.throttle(steering[0])
+
+    def y_transform(self, record: TubRecord):
+        angle: float = record.underlying['user/angle']
+        return {'n_outputs0': angle}
+
+    def output_types(self):
+        types = (tf.float64, {'n_outputs0': tf.float64})
+        return types
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = tf.TensorShape(self.get_input_shape().as_list()[1:])
+        shapes = (img_shape, {'n_outputs0': tf.TensorShape([])})
+        return shapes
 
 
 class KerasIMU(KerasPilot):
@@ -239,19 +318,22 @@ class KerasIMU(KerasPilot):
         self.model = default_imu(num_outputs=num_outputs,
                                  num_imu_inputs=num_imu_inputs,
                                  input_shape=input_shape)
-        self.compile()
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
         
     def inference(self, img_arr, other_arr):
-        # TODO: would be nice to take a vector input array.
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         imu_arr = np.array(other_arr).reshape(1, self.num_imu_inputs)
         outputs = self.model.predict([img_arr, imu_arr])
         steering = outputs[0]
         throttle = outputs[1]
         return steering[0][0], throttle[0][0]
+
+    def y_transform(self, record: TubRecord):
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        return {'n_out0': angle, 'n_out1': throttle}
 
 
 class KerasBehavioral(KerasPilot):
@@ -263,14 +345,13 @@ class KerasBehavioral(KerasPilot):
         super(KerasBehavioral, self).__init__()
         self.model = default_bhv(num_bvh_inputs=num_behavior_inputs,
                                  input_shape=input_shape)
-        self.compile()
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, loss='mse')
         
     def inference(self, img_arr, state_array):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        bhv_arr = np.array(state_array).reshape(1,len(state_array))
+        bhv_arr = np.array(state_array).reshape(1, len(state_array))
         angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
         # In order to support older models with linear throttle,we will test for
         # shape of throttle to see if it's the newer binned version.
@@ -283,6 +364,13 @@ class KerasBehavioral(KerasPilot):
         angle_unbinned = dk.utils.linear_unbin(angle_binned)
         return angle_unbinned, throttle
 
+    def y_transform(self, record: TubRecord):
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        angle = linear_bin(angle, N=15, offset=1, R=2.0)
+        throttle = linear_bin(throttle, N=20, offset=0.0, R=0.5)
+        return {'angle_out': angle, 'throttle_out': throttle}
+
 
 class KerasLocalizer(KerasPilot):
     """
@@ -293,7 +381,6 @@ class KerasLocalizer(KerasPilot):
         super().__init__()
         self.model = default_loc(num_locations=num_locations,
                                  input_shape=input_shape)
-        self.compile()
 
     def compile(self):
         self.model.compile(optimizer=self.optimizer, metrics=['acc'],
@@ -304,6 +391,7 @@ class KerasLocalizer(KerasPilot):
         angle, throttle, track_loc = self.model.predict([img_arr])
         loc = np.argmax(track_loc[0])
         return angle, throttle, loc
+
 
 
 def conv2d(filters, kernel, strides, layer_num, activation='relu'):
@@ -473,7 +561,6 @@ class KerasRNN_LSTM(KerasPilot):
                               input_shape=input_shape)
         self.seq_length = seq_length
         self.img_seq = []
-        self.compile()
         self.optimizer = "rmsprop"
 
     def compile(self):
@@ -495,7 +582,7 @@ class KerasRNN_LSTM(KerasPilot):
         steering = outputs[0][0]
         throttle = outputs[0][1]
         return steering, throttle
-  
+
 
 def rnn_lstm(seq_length=3, num_outputs=2, input_shape=(120, 160, 3)):
     # add sequence length dimensions as keras time-distributed expects shape
@@ -539,7 +626,6 @@ class Keras3D_CNN(KerasPilot):
                                   num_outputs=num_outputs)
         self.seq_length = seq_length
         self.img_seq = []
-        self.compile()
 
     def compile(self):
         self.model.compile(loss='mean_squared_error',
@@ -638,7 +724,6 @@ class KerasLatent(KerasPilot):
     def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
         super().__init__()
         self.model = default_latent(num_outputs, input_shape)
-        self.compile()
 
     def compile(self):
         loss = {"img_out": "mse", "n_outputs0": "mse", "n_outputs1": "mse"}

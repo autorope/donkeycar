@@ -67,6 +67,7 @@ class PiCamera(BaseCamera):
         self.rawCapture.close()
         self.camera.close()
 
+
 class Webcam(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, iCam = 0):
         import pygame
