@@ -26,9 +26,6 @@ class ImageAugmentationPart:
             if self.img_arr is not None:
                 self.aug_img_arr = self.augmenter.augment(self.img_arr)
                 self.img_arr = None
-            else:
-                # waiting for 500 mu s and then trying again
-                time.sleep(0.0005)
 
     def run_threaded(self, img_arr: np.ndarray) -> np.ndarray:
         self.img_arr = img_arr

@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List
 
 from donkeycar.parts.tflite import keras_model_to_tflite
-from donkeycar.pipeline.sequence import TubRecord, Pipeline
+from donkeycar.pipeline.sequence import TubRecord
 from donkeycar.pipeline.sequence import TubSequence
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
@@ -16,9 +16,8 @@ class BatchSequence(object):
     """
     The idea is to have a shallow sequence with types that can hydrate
     themselves to np.ndarray initially and later into the types required by
-    tf.data (i.e. dictionaries or np.ndarrays.
+    tf.data (i.e. dictionaries or np.ndarrays).
     """
-
     def __init__(self, model, config, records: List[TubRecord], is_train: bool):
         self.model = model
         self.config = config
@@ -27,8 +26,6 @@ class BatchSequence(object):
         self.is_train = is_train
         self.augmentation = ImageAugmentation(config)
         self.pipeline = self._make_pipeline()
-        self.types = self.model.output_types()
-        self.shapes = self.model.output_shapes()
 
     def __len__(self):
         return math.ceil(len(self.pipeline) / self.batch_size)
@@ -47,20 +44,16 @@ class BatchSequence(object):
             return self.model.y_transform(record)
 
         # 2. Build pipeline using the transformations
-        pipeline = self.sequence.build_pipeline(
-                x_transform=get_x,
-                y_transform=get_y)
-        # pipeline = Pipeline(self.sequence,
-        #                     x_transform=get_x,
-        #                     y_transform=get_y)
+        pipeline = self.sequence.build_pipeline(x_transform=get_x,
+                                                y_transform=get_y)
 
         return pipeline
 
     def make_tf_data(self):
         dataset = tf.data.Dataset.from_generator(
             generator=lambda: self.pipeline,
-            output_types=self.types,
-            output_shapes=self.shapes)
+            output_types=self.model.output_types(),
+            output_shapes=self.model.output_shapes())
         return dataset.repeat().batch(self.batch_size)
 
 
@@ -77,14 +70,9 @@ def train(cfg, tub_paths, model, model_type):
         model_type = cfg.DEFAULT_MODEL_TYPE
 
     tubs = tub_paths.split(',')
-    tub_paths = [Path(os.path.expanduser(tub)).absolute().as_posix() for tub in
-                 tubs]
+    tub_paths = [os.path.expanduser(tub) for tub in tubs]
     output_path = os.path.expanduser(model)
-
-    if 'linear' in model_type:
-        train_type = 'linear'
-    else:
-        train_type = model_type
+    train_type = 'linear' if 'linear' in model_type else model_type
 
     kl = get_model_by_type(train_type, cfg)
     if cfg.PRINT_MODEL_SUMMARY:
@@ -118,7 +106,7 @@ def train(cfg, tub_paths, model, model_type):
                        patience=cfg.EARLY_STOP_PATIENCE)
 
     if is_tflite:
-        tflite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
-        keras_model_to_tflite(output_path, tflite_model_path)
+        tf_lite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
+        keras_model_to_tflite(output_path, tf_lite_model_path)
 
     return history

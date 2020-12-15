@@ -210,7 +210,7 @@ class KerasCategorical(KerasPilot):
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = tf.TensorShape(self.get_input_shape().as_list()[1:])
+        img_shape = self.get_input_shape()[1:]
         shapes = (img_shape,
                   {'angle_out': tf.TensorShape([15]),
                    'throttle_out': tf.TensorShape([20])})
@@ -249,7 +249,7 @@ class KerasLinear(KerasPilot):
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = tf.TensorShape(self.get_input_shape().as_list()[1:])
+        img_shape = self.get_input_shape()[1:]
         shapes = (img_shape,
                   {'n_outputs0': tf.TensorShape([]),
                    'n_outputs1': tf.TensorShape([])})
@@ -280,7 +280,7 @@ class KerasInferred(KerasPilot):
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = tf.TensorShape(self.get_input_shape().as_list()[1:])
+        img_shape = self.get_input_shape()[1:]
         shapes = (img_shape, {'n_outputs0': tf.TensorShape([])})
         return shapes
 
