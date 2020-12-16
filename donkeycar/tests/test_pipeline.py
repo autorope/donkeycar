@@ -4,7 +4,7 @@ from os import pipe
 from typing import List, Tuple, cast
 
 import numpy as np
-from donkeycar.pipeline.sequence import SizedIterator, TubSequence, Reshaper
+from donkeycar.pipeline.sequence import SizedIterator, TubSequence
 from donkeycar.pipeline.types import TubRecord, TubRecordDict
 
 
@@ -132,37 +132,6 @@ class TestPipeline(unittest.TestCase):
 
         self.assertAlmostEqual(x1 * 2, x2)
         self.assertAlmostEqual(y1 * 2, y2)
-
-    def test_batch_1(self):
-        transformed = TubSequence.build_pipeline(
-            self.sequence,
-            x_transform=lambda record: record.underlying['user/angle'],
-            y_transform=lambda record: record.underlying['user/throttle'])
-
-        batch_size = 4
-        batched = transformed.batched(batch_size=batch_size)
-        self.assertEqual(len(batched), 3)
-        for records in batched:
-            print(f'Records {records}')
-            self.assertLessEqual(len(records), batch_size)
-
-    def test_batch_2(self):
-        transformed = TubSequence.build_pipeline(
-            self.sequence,
-            x_transform=lambda record: record.underlying['user/angle'],
-            y_transform=lambda record: record.underlying['user/throttle'])
-
-        batch_size = 4
-        batched = transformed.batched(batch_size=batch_size)
-        batched = cast(SizedIterator[List[Tuple[float, float]]], batched)
-        reshaped = Reshaper(batched=batched)
-        self.assertEqual(len(batched), len(reshaped))
-        count = 0
-        for X, Y in reshaped:
-            print(f'X = {X}, Y = {Y}')
-            count += 1
-
-        self.assertEqual(count, len(batched))
 
 
 if __name__ == '__main__':
