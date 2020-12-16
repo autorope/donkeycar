@@ -1,7 +1,6 @@
-from typing import Any, Callable, Generic, Iterable, Iterator, List, Sized, Tuple, TypeVar
 
-import math
-import numpy as np
+from typing import (Any, Callable, Generic, Iterable, Iterator, List, Sized, Tuple, TypeVar)
+
 from donkeycar.pipeline.types import TubRecord
 
 # Note: Be careful when re-using `TypeVar`s.
@@ -20,12 +19,6 @@ class SizedIterator(Generic[X], Iterator[X], Sized):
         # Using `Protocol` requires Python 3.7
         pass
 
-    def batched(self, batch_size: int) -> Iterator[List[X]]:
-        # Produces a batch of results
-        # Ideally we should be able to return a `SizedIterator` but `mypy`
-        # won't resolve this kind of recursive type
-        raise NotImplemented
-
 
 class TubSeqIterator(SizedIterator[TubRecord]):
     def __init__(self, records: List[TubRecord]) -> None:
@@ -36,7 +29,7 @@ class TubSeqIterator(SizedIterator[TubRecord]):
         return len(self.records)
 
     def __iter__(self) -> SizedIterator[TubRecord]:
-        return self
+        return TubSeqIterator(self.records)
 
     def __next__(self):
         if self.current_index >= len(self.records):
@@ -51,46 +44,48 @@ class TubSeqIterator(SizedIterator[TubRecord]):
 
 class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
     def __init__(self,
-                 iterator: Iterable[R],
+                 iterable: Iterable[R],
                  x_transform: Callable[[R], XOut],
                  y_transform: Callable[[R], YOut]) -> None:
 
+        self.iterable = iterable
+        self.x_transform = x_transform
+        self.y_transform = y_transform
         self.iterator = BaseTfmIterator_(
-            iterator=iterator, x_transform=x_transform, y_transform=y_transform)
+            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
 
     def __len__(self):
         return len(self.iterator)
 
     def __iter__(self) -> SizedIterator[Tuple[XOut, YOut]]:
-        return self
+        return BaseTfmIterator_(
+            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
 
     def __next__(self):
         return next(self.iterator)
-
-    def batched(self, batch_size=64) -> SizedIterator[List[Tuple[XOut, YOut]]]:
-        return self.iterator.batched(batch_size=batch_size)
 
 
 class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
     def __init__(self,
-                 iterator: Iterable[Tuple[X, Y]],
+                 iterable: Iterable[Tuple[X, Y]],
                  x_transform: Callable[[X], XOut],
                  y_transform: Callable[[Y], YOut]) -> None:
 
+        self.iterable = iterable
+        self.x_transform = x_transform
+        self.y_transform = y_transform
         self.iterator = BaseTfmIterator_(
-            iterator=iterator, x_transform=x_transform, y_transform=y_transform)
+            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
 
     def __len__(self):
         return len(self.iterator)
 
     def __iter__(self) -> SizedIterator[Tuple[XOut, YOut]]:
-        return self
+        return BaseTfmIterator_(
+            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
 
     def __next__(self):
         return next(self.iterator)
-
-    def batched(self, batch_size=64) -> SizedIterator[List[Tuple[XOut, YOut]]]:
-        return self.iterator.batched(batch_size=batch_size)
 
 
 class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
@@ -101,19 +96,20 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
 
     def __init__(self,
                  # Losing a bit of type safety here for a common implementation
-                 iterator: Iterable[Any],
+                 iterable: Iterable[Any],
                  x_transform: Callable[[R], XOut],
                  y_transform: Callable[[R], YOut]) -> None:
 
-        self.iterator = iter(iterator)
+        self.iterable = iterable
         self.x_transform = x_transform
         self.y_transform = y_transform
+        self.iterator = iter(self.iterable)
 
     def __len__(self):
         return len(self.iterator)
 
     def __iter__(self) -> SizedIterator[Tuple[XOut, YOut]]:
-        return self
+        return BaseTfmIterator_(self.iterable, self.x_transform, self.y_transform)
 
     def __next__(self):
         record = next(self.iterator)
@@ -122,37 +118,6 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
             return self.x_transform(x), self.y_transform(y)
         else:
             return self.x_transform(record), self.y_transform(record)
-
-    def batched(self, batch_size=64) -> SizedIterator[List[Tuple[XOut, YOut]]]:
-        batched_iterator = BatchedIterator(self, batch_size=batch_size)
-        return batched_iterator
-
-
-class BatchedIterator(SizedIterator[List[R]]):
-    def __init__(self, pipeline: SizedIterator[R], batch_size: int) -> None:
-        self.pipeline = pipeline
-        self.batch_size = batch_size
-        self.consumed = 0
-
-    def __len__(self):
-        return math.ceil(len(self.pipeline) / self.batch_size)
-
-    def __next__(self) -> List[R]:
-        count = 0
-        batch = list()
-        while count < self.batch_size and self.consumed < len(self.pipeline):
-            r = next(self.pipeline)
-            batch.append(r)
-            count += 1
-            self.consumed += 1
-
-        if len(batch) > 0:
-            return batch
-        else:
-            raise StopIteration('No more records')
-
-    def __iter__(self) -> Iterator[List[R]]:
-        return self
 
 
 class TubSequence(Iterable[TubRecord]):
@@ -187,31 +152,3 @@ class TubSequence(Iterable[TubRecord]):
 
         pipeline = factory()
         return cls.map_pipeline(pipeline=pipeline, x_transform=x_transform, y_transform=y_transform)
-
-
-R1 = TypeVar('R1', covariant=True)
-R2 = TypeVar('R2', covariant=True)
-
-
-class Reshaper(Generic[R1, R2], SizedIterator[Tuple[np.ndarray, np.ndarray]]):
-    def __init__(self, batched: SizedIterator[List[Tuple[R1, R2]]]) -> None:
-        self.batch = batched
-
-    def __len__(self) -> int:
-        return len(self.batch)
-
-    def __next__(self):
-        records: List[Tuple[R1, R2]] = next(self.batch)
-        X: List[R1] = list()
-        Y: List[R2] = list()
-        for record in records:
-            x, y = record
-            X.append(x)
-            Y.append(y)
-
-        return np.array(X), np.array(Y)
-
-    def __iter__(self) -> Iterator[Tuple[np.ndarray, np.ndarray]]:
-        return self
-
-    next = __next__
