@@ -3,7 +3,7 @@ import pytest
 import tarfile
 import os
 
-from donkeycar.templates.train import train
+from donkeycar.pipeline.training import train
 from donkeycar.config import Config
 
 
@@ -21,6 +21,7 @@ def config():
     cfg.MAX_EPOCHS = 20
     cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
     cfg.VERBOSE_TRAIN = True
+    cfg.MIN_DELTA = 0.0005
     return cfg
 
 

@@ -9,18 +9,18 @@ Note:
 import time
 import cv2
 
-from donkeycar.parts.augumentations import Augumentations
+from donkeycar.parts.augmentations import Augmentations
 
 # Camera Parameters
 WIDTH = 640
 HEIGHT = 480
 
 # Example augumentations
-cropping = Augumentations.crop(0, 0, 100, 0, keep_size=True)
-mask = Augumentations.trapezoidal_mask(10, 630, 100, 300, 50, 480)
+cropping = Augmentations.crop(0, 0, 100, 0, keep_size=True)
+mask = Augmentations.trapezoidal_mask(10, 630, 100, 300, 50, 480)
 
 
-def preview_augumentations():
+def preview_augmentations():
     print('Connecting to Camera')
     capture = cv2.VideoCapture(0)
     time.sleep(2)
@@ -51,4 +51,4 @@ def preview_augumentations():
 
 
 if __name__ == "__main__":
-    preview_augumentations()
+    preview_augmentations()

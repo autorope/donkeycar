@@ -1,9 +1,9 @@
 import os
-from typing import Any, List, Optional, TypeVar, cast
+from typing import Any, List, Optional, TypeVar, Tuple
 
 import numpy as np
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import load_image_arr, normalize_image
+from donkeycar.utils import load_image_arr, normalize_image, train_test_split
 from typing_extensions import TypedDict
 
 X = TypeVar('X', covariant=True)
@@ -32,36 +32,42 @@ class TubRecord(object):
         self.underlying = underlying
         self._image: Optional[Any] = None
 
-    def image(self, cached=True, normalize=False) -> np.ndarray:
-        if not self._image:
+    def image(self, cached=True) -> np.ndarray:
+        if self._image is None:
             image_path = self.underlying['cam/image_array']
             full_path = os.path.join(self.base_path, 'images', image_path)
             _image = load_image_arr(full_path, cfg=self.config)
-            if normalize:
-                _image = normalize_image(_image)
             if cached:
                 self._image = _image
-            return _image
         else:
-            return self._image
+            _image = self._image
+        return _image
 
     def __repr__(self) -> str:
         return repr(self.underlying)
 
 
 class TubDataset(object):
-    def __init__(self, paths: List[str], config: Any) -> None:
-        self.paths = paths
+    '''
+    Loads the dataset, and creates a train/test split.
+    '''
+
+    def __init__(self, config: Any, tub_paths: List[str], shuffle: bool = True):
         self.config = config
-        self.tubs = [Tub(path) for path in self.paths]
+        self.tub_paths = tub_paths
+        self.shuffle = shuffle
+        self.tubs: List[Tub] = [Tub(tub_path, read_only=True)
+                                for tub_path in self.tub_paths]
         self.records: List[TubRecord] = list()
 
-    def load_records(self) -> List[TubRecord]:
+    def train_test_split(self) -> Tuple[List[TubRecord], List[TubRecord]]:
+        print(f'Loading tubs from paths {self.tub_paths}')
         self.records.clear()
         for tub in self.tubs:
-            for record in tub:
-                underlying = cast(TubRecordDict, record)
-                tub_record = TubRecord(self.config, tub.base_path, underlying)
-                self.records.append(tub_record)
+            for underlying in tub:
+                record = TubRecord(self.config, tub.base_path,
+                                   underlying=underlying)
+                self.records.append(record)
 
-        return self.records
+        return train_test_split(self.records, shuffle=self.shuffle,
+                                test_size=(1. - self.config.TRAIN_TEST_SPLIT))

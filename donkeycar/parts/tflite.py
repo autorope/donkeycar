@@ -1,7 +1,6 @@
 import os
 import tensorflow as tf
 
-from donkeycar.utils import normalize_image
 from donkeycar.parts.keras import KerasPilot
 
 
@@ -54,7 +53,6 @@ class TFLitePilot(KerasPilot):
 
         # Get Input shape
         self.input_shape = self.input_details[0]['shape']
-
     
     def inference(self, img_arr, other_arr):
         input_data = img_arr.reshape(self.input_shape)

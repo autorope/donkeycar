@@ -6,12 +6,13 @@ import socket
 import stat
 import sys
 from socket import *
-
+from pathlib import Path
 
 from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
+from donkeycar.pipeline.training import train
 from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -94,7 +95,7 @@ class CreateCar(BaseCommand):
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
-        calibrate_app_path = os.path.join(path, 'calibrate.py')        
+        calibrate_app_path = os.path.join(path, 'calibrate.py')
         
         if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
@@ -108,7 +109,7 @@ class CreateCar(BaseCommand):
         else:
             print("Copying car config defaults. Adjust these before starting your car.")
             shutil.copyfile(config_template_path, car_config_path)
- 
+
         if os.path.exists(train_app_path) and not overwrite:
             print('Train already exists. Delete it and rerun createcar to replace.')
         else:
@@ -408,7 +409,7 @@ class ShowPredictionPlots(BaseCommand):
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
         parser.add_argument('--tub', nargs='+', help='The tub to make plot from')
-        parser.add_argument('--model', default=None, help='name of record to create histogram')
+        parser.add_argument('--model', default=None, help='model for predictions')
         parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
@@ -420,6 +421,24 @@ class ShowPredictionPlots(BaseCommand):
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
         self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
+
+
+class Train(BaseCommand):
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='train', usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+', help='tub data for training')
+        parser.add_argument('--model', default=None, help='output model name')
+        parser.add_argument('--type', default=None, help='model type')
+        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def run(self, args):
+        args = self.parse_args(args)
+        args.tub = ','.join(args.tub)
+        cfg = load_config(args.config)
+        train(cfg, args.tub, args.model, args.type)
 
 
 def execute_from_command_line():
@@ -436,6 +455,7 @@ def execute_from_command_line():
         'createjs': CreateJoystick,
         'cnnactivations': ShowCnnActivations,
         'update': UpdateCar,
+        'train': Train,
     }
     
     args = sys.argv[:]

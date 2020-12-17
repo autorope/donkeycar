@@ -1,7 +1,6 @@
 import time
 import unittest
-from os import pipe
-from typing import List, Tuple, cast
+from typing import List
 
 import numpy as np
 from donkeycar.pipeline.sequence import SizedIterator, TubSequence
@@ -12,7 +11,7 @@ def random_records(size: int = 100) -> List[TubRecord]:
     return [random_record() for _ in range(size)]
 
 
-def random_record():
+def random_record() -> TubRecord:
     now = int(time.time())
     underlying: TubRecordDict = {
         'cam/image_array': f'/path/to/{now}.txt',
@@ -132,6 +131,35 @@ class TestPipeline(unittest.TestCase):
 
         self.assertAlmostEqual(x1 * 2, x2)
         self.assertAlmostEqual(y1 * 2, y2)
+
+    def test_iterator_consistency(self):
+        extract = TubSequence.build_pipeline(
+            self.sequence,
+            x_transform=lambda record: record.underlying['user/angle'],
+            y_transform=lambda record: record.underlying['user/throttle'])
+        # iterate twice through half the data
+        r1 = list()
+        r2 = list()
+        for r in r1, r2:
+            iterator = iter(extract)
+            for i in range(size // 2):
+                r.append(next(iterator))
+
+        self.assertEqual(r1, r2)
+        # now transform and iterate through pipeline twice to see iterator
+        # doesn't exhaust
+        transformed = TubSequence.map_pipeline(
+            x_transform=lambda x: 2 * x,
+            y_transform=lambda y: 3 * y,
+            pipeline=extract)
+        l1 = list(transformed)
+        l2 = list(transformed)
+        self.assertEqual(l1, l2)
+        for e, t in zip(extract, transformed):
+            ex, ey = e
+            tx, ty = t
+            self.assertAlmostEqual(2 * ex, tx)
+            self.assertAlmostEqual(3 * ey, ty)
 
 
 if __name__ == '__main__':
