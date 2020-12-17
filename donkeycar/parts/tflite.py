@@ -46,6 +46,11 @@ class TFLitePilot(KerasPilot):
             'TFlitePilot should load only .tflite files'
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
+        '''
+        #Uncomment below self.interpreter and comment above in case you have TPU edge on your donkeycar to accelerate inference
+        #You need tpu edge runtime installed as pre-requesite: https://coral.ai/docs/accelerator/get-started
+        self.interpreter = tf.lite.Interpreter(model_path=model_path,experimental_delegates=[tflite.load_delegate('libedgetpu.so.1')])
+        '''
         self.interpreter.allocate_tensors()
 
         # Get input and output tensors.

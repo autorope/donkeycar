@@ -409,7 +409,7 @@ def get_model_by_type(model_type, cfg):
     '''
     from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, \
         KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, \
-        KerasLocalizer, KerasLatent
+        KerasLocalizer, KerasLatent, Resnet18LinearKeras, Resnet18CategoricalKeras
     from donkeycar.parts.tflite import TFLitePilot
 
     if model_type is None:
@@ -419,10 +419,19 @@ def get_model_by_type(model_type, cfg):
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     if model_type == "linear":
         kl = KerasLinear(input_shape=input_shape)
+    elif model_type == "resnet18_lin":
+        kl = Resnet18LinearKeras(input_shape=input_shape)
     elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape,
                               throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+    elif model_type == 'resnet18_cat':
+        kl = Resnet18CategoricalKeras(input_shape=input_shape,
+                              throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
     elif model_type == "tflite_linear":
+        kl = TFLitePilot()
+    elif model_type == "tflite_r18_lin":
+        kl = TFLitePilot()
+    elif model_type == "tflite_r18_cat":
         kl = TFLitePilot()
     elif model_type == "tensorrt_linear":
         # Aggressively lazy load this. This module imports pycuda.autoinit
@@ -432,7 +441,7 @@ def get_model_by_type(model_type, cfg):
         kl = TensorRTLinear(cfg=cfg)
     else:
         raise Exception("Unknown model type {:}, supported types are "
-                        "linear, categorical, tflite_linear, tensorrt_linear"
+                        "linear,resnet18_lin, categorical, resnet18_cat, tflite_linear, tensorrt_linear"
                         .format(model_type))
 
     return kl
