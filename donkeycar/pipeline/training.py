@@ -25,12 +25,12 @@ class BatchSequence(object):
         self.batch_size = self.config.BATCH_SIZE
         self.is_train = is_train
         self.augmentation = ImageAugmentation(config)
-        self.pipeline = self._make_pipeline()
+        self.pipeline = self._create_pipeline()
 
     def __len__(self):
         return math.ceil(len(self.pipeline) / self.batch_size)
 
-    def _make_pipeline(self):
+    def _create_pipeline(self):
         """ This can be overridden if more complicated pipelines are
             required """
         # 1. Initialise TubRecord -> x, y transformations
@@ -49,7 +49,7 @@ class BatchSequence(object):
 
         return pipeline
 
-    def make_tf_data(self):
+    def create_tf_data(self):
         dataset = tf.data.Dataset.from_generator(
             generator=lambda: self.pipeline,
             output_types=self.model.output_types(),
@@ -86,8 +86,8 @@ def train(cfg, tub_paths, model, model_type):
     training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
     validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
 
-    dataset_train = training_pipe.make_tf_data()
-    dataset_validate = validation_pipe.make_tf_data()
+    dataset_train = training_pipe.create_tf_data()
+    dataset_validate = validation_pipe.create_tf_data()
     train_size = len(training_pipe)
     val_size = len(validation_pipe)
 

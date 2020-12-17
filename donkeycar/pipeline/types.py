@@ -62,6 +62,7 @@ class TubDataset(object):
 
     def train_test_split(self) -> Tuple[List[TubRecord], List[TubRecord]]:
         print(f'Loading tubs from paths {self.tub_paths}')
+        self.records.clear()
         for tub in self.tubs:
             for underlying in tub:
                 record = TubRecord(self.config, tub.base_path,
