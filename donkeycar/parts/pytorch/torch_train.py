@@ -6,7 +6,7 @@ from donkeycar.parts.pytorch.torch_data import TorchTubDataModule
 from donkeycar.parts.pytorch.torch_utils import get_model_by_type
 
 
-def train(cfg, tub_paths, model_output_path, model_type):
+def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
     """
     Train the model
     """
@@ -26,7 +26,7 @@ def train(cfg, tub_paths, model_output_path, model_type):
 
     output_dir = Path(model_output_path).parent
 
-    model = get_model_by_type(train_type, cfg)
+    model = get_model_by_type(train_type, cfg, checkpoint_path=checkpoint_path)
 
     if torch.cuda.is_available():
         print('Using CUDA')

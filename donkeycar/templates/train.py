@@ -27,7 +27,8 @@ def main():
         train(cfg, tubs, model, model_type)
     elif framework == 'torch':
         from donkeycar.parts.pytorch.torch_train import train
-        train(cfg, tubs, model, model_type)
+        checkpoint_path = args.get('--checkpoint', None)
+        train(cfg, tubs, model, model_type, checkpoint_path=checkpoint_path)
     else:
         print("Unrecognized framework: {}. Please specify one of 'tf' or 'torch'".format(framework))
 

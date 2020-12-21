@@ -19,6 +19,7 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
                         .format(model_type))
 
     if checkpoint_path:
+        print("Loading model from checkpoint {}".format(checkpoint_path))
         model.load_from_checkpoint(checkpoint_path)
         
     return model
