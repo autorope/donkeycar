@@ -439,7 +439,8 @@ class Train(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
-        framework = args.framework if args.framework else cfg.DEFAULT_AI_FRAMEWORK
+        framework = args.framework if args.framework \
+            else getattr(cfg, 'DEFAULT_AI_FRAMEWORK', 'tensorflow')
 
         if framework == 'tensorflow':
             from donkeycar.pipeline.training import train
@@ -449,7 +450,14 @@ class Train(BaseCommand):
             train(cfg, args.tub, args.model, args.type,
                   checkpoint_path=args.checkpoint)
         else:
-            print("Unrecognized framework: {}. Please specify one of 'tensorflow' or 'pytorch'".format(framework))
+            print(f"Unrecognized framework: {framework}. Please specify one of "
+                  f"'tensorflow' or 'pytorch'")
+
+
+class Gui(BaseCommand):
+    def run(self, args):
+        from donkeycar.management.tub_gui import main
+        main()
 
 
 def execute_from_command_line():
@@ -467,6 +475,7 @@ def execute_from_command_line():
         'cnnactivations': ShowCnnActivations,
         'update': UpdateCar,
         'train': Train,
+        'ui': Gui,
     }
     
     args = sys.argv[:]
@@ -478,7 +487,7 @@ def execute_from_command_line():
     else:
         dk.utils.eprint('Usage: The available commands are:')
         dk.utils.eprint(list(commands.keys()))
-        
+
     
 if __name__ == "__main__":
     execute_from_command_line()
