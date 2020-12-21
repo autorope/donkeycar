@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch
 import numpy as np
 import torch.optim as optim
-
+from donkeycar.parts.pytorch.torch_data import get_default_transform
 
 def load_resnet18():
     # Load the pre-trained model (on ImageNet)
@@ -38,6 +38,8 @@ class ResNet18(pl.LightningModule):
     self.valid_precision = pl.metrics.Precision()
 
     self.model = load_resnet18()
+
+    self.inference_transform = get_default_transform(for_inference=True)
 
   def forward(self, x):
     # Forward defines the prediction/inference action
@@ -92,4 +94,5 @@ class ResNet18(pl.LightningModule):
       """
       from PIL import Image
       pil_image = Image.fromarray(img_arr)
-      return self.forward(pil_image)
+      tensor_image = self.inference_transform(pil_image)
+      return self.forward(tensor_image)
