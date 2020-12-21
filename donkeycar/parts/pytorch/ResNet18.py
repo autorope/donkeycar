@@ -95,4 +95,5 @@ class ResNet18(pl.LightningModule):
       from PIL import Image
       pil_image = Image.fromarray(img_arr)
       tensor_image = self.inference_transform(pil_image)
+      tensor_image = tensor_image.unsqueeze(0)
       return self.forward(tensor_image)
