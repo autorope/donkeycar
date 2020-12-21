@@ -116,8 +116,7 @@ def rgb2gray(rgb):
 
 
 def img_crop(img_arr, top, bottom):
-
-    if bottom is 0:
+    if bottom == 0:
         end = img_arr.shape[0]
     else:
         end = -bottom
@@ -141,27 +140,44 @@ def denormalize_image(img_arr_float):
     return (img_arr_float * 255.0).astype(np.uint8)
 
 
+def load_pil_image(filename, cfg):
+    """Loads an image from a file path as a PIL image. Also handles resizing.
+
+    Args:
+        filename (string): path to the image file
+        cfg (object): donkey configuration file
+
+    Returns: a PIL image
+    """
+    try:
+        img = Image.open(filename)
+        if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
+            img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
+        return img
+    except Exception as e:
+        print(e)
+        print('failed to load image:', filename)
+        return None
+
+
 def load_image_arr(filename, cfg):
     """
     :param string filename:     path to image file
     :param cfg:                 donkey config
     :return np.ndarray:         numpy uint8 image array
     """
-    try:
-        img = Image.open(filename)
-        if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
-            img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
-        img_arr = np.array(img)
-        cropped_img_h = img_arr.shape[0]
-        cropped_img_w = img_arr.shape[1]
-        if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-            img_arr = rgb2gray(img_arr).reshape(cropped_img_h, cropped_img_w, 1)
-    except Exception as e:
-        print(e)
-        print('failed to load image:', filename)
-        img_arr = None
-    return img_arr
+    img = load_pil_image(filename, cfg)
 
+    if not img:
+        return None
+
+    img_arr = np.array(img)
+    cropped_img_h = img_arr.shape[0]
+    cropped_img_w = img_arr.shape[1]
+    if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
+        img_arr = rgb2gray(img_arr).reshape(cropped_img_h, cropped_img_w, 1)
+
+    return img_arr
 
 '''
 FILES
