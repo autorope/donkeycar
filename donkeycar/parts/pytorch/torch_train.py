@@ -42,8 +42,6 @@ def train(cfg, tub_paths, model_output_path, model_type):
         # Create Tensorboard logger
         logger = TensorBoardLogger('tb_logs', name='DonkeyNet')
 
-
-    cfg.MAX_EPOCHS = 3
     weights_summary = 'full' if cfg.PRINT_MODEL_SUMMARY else 'top'
     trainer = pl.Trainer(gpus=gpus, logger=logger, progress_bar_refresh_rate=30,
                          max_epochs=cfg.MAX_EPOCHS, default_root_dir=output_dir, weights_summary=weights_summary)
