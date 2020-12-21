@@ -21,6 +21,7 @@ from typing import List, Any, Tuple
 from PIL import Image
 import numpy as np
 
+
 '''
 IMAGES
 '''
@@ -385,14 +386,13 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def get_model_by_type(model_type, cfg):
+def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
-    from donkeycar.parts.keras import KerasRNN_LSTM, KerasBehavioral, \
-        KerasCategorical, KerasIMU, KerasLinear, Keras3D_CNN, \
-        KerasLocalizer, KerasLatent, KerasInferred
+    from donkeycar.parts.keras import KerasPilot, KerasCategorical, \
+        KerasLinear, KerasInferred
     from donkeycar.parts.tflite import TFLitePilot
 
     if model_type is None:
@@ -400,12 +400,12 @@ def get_model_by_type(model_type, cfg):
     print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+    kl: KerasPilot
     if model_type == "linear":
         kl = KerasLinear(input_shape=input_shape)
     elif model_type == "categorical":
         kl = KerasCategorical(input_shape=input_shape,
                               throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
-
     elif model_type == 'inferred':
         kl = KerasInferred(input_shape=input_shape)
     elif model_type == "tflite_linear":
