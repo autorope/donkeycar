@@ -37,10 +37,11 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
 
     logger = None
     if cfg.VERBOSE_TRAIN:
+        print("Tensorboard logging started. Run `tensorboard --logdir ./tb_logs` in a new terminal")
         from pytorch_lightning.loggers import TensorBoardLogger
 
         # Create Tensorboard logger
-        logger = TensorBoardLogger('tb_logs', name='DonkeyNet')
+        logger = TensorBoardLogger('tb_logs', name=model_name)
 
     weights_summary = 'full' if cfg.PRINT_MODEL_SUMMARY else 'top'
     trainer = pl.Trainer(gpus=gpus, logger=logger, progress_bar_refresh_rate=30,
