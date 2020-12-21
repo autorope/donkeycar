@@ -4,7 +4,7 @@ Scripts to train a model using tensorflow or pytorch.
 Basic usage should feel familiar: train.py --tubs data/ --model models/mypilot.h5
 
 Usage:
-    train.py [--tubs=tubs] (--model=<model>) [--type=(linear|inferred|tensorrt_linear|tflite_linear)] [--framework=(tf|torch)]
+    train.py [--tubs=tubs] (--model=<model>) [--type=(linear|inferred|tensorrt_linear|tflite_linear)] [--framework=(tf|torch)] [--checkpoint=checkpoint]
 
 Options:
     -h --help              Show this screen.
