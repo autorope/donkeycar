@@ -1,6 +1,6 @@
 import math
 import os
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 
 from donkeycar.config import Config
 from donkeycar.parts.keras import KerasPilot
@@ -76,8 +76,8 @@ class BatchSequence(object):
         return dataset.repeat().batch(self.batch_size)
 
 
-def train(cfg: Config, tub_paths: str, model: str, model_type: str) \
-        -> tf.keras.callbacks.History:
+def train(cfg: Config, tub_paths: str, model: str, model_type: str) -> \
+        tf.keras.callbacks.History:
     """
     Train the model
     """
@@ -100,14 +100,16 @@ def train(cfg: Config, tub_paths: str, model: str, model_type: str) \
 
     dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
-    print('Records # Training %s' % len(training_records))
-    print('Records # Validation %s' % len(validation_records))
+    print(f'Records # Training {len(training_records)}')
+    print(f'Records # Validation {len(validation_records)}')
 
     training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
     validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
 
-    dataset_train = training_pipe.create_tf_data()
-    dataset_validate = validation_pipe.create_tf_data()
+    dataset_train = training_pipe.create_tf_data().prefetch(
+        tf.data.experimental.AUTOTUNE)
+    dataset_validate = validation_pipe.create_tf_data().prefetch(
+        tf.data.experimental.AUTOTUNE)
     train_size = len(training_pipe)
     val_size = len(validation_pipe)
 

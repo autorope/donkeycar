@@ -27,7 +27,6 @@ from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.optimizers import Optimizer
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
@@ -195,18 +194,14 @@ class KerasPilot(ABC):
         raise NotImplementedError(f'{self} not ready yet for new training '
                                   f'pipeline')
 
-    def output_types(self) -> Dict[str, np.typename]:
-        raise NotImplementedError(f'{self} not ready yet for new training '
-                                  f'pipeline')
-
-    def output_types(self):
+    def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
         """ Used in tf.data, assume all types are doubles"""
         shapes = self.output_shapes()
         types = tuple({k: tf.float64 for k in d} for d in shapes)
         return types
 
-    def output_shapes(self) -> Optional[Dict[str, tf.TensorShape]]:
-        return None
+    def output_shapes(self) -> Dict[str, tf.TensorShape]:
+        return {}
 
     def __str__(self) -> str:
         """ For printing model initialisation """
