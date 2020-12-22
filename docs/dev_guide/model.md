@@ -1,9 +1,14 @@
 # How to build your own model
 
+---
+ **Note:** _This requires version >= 4.1.X_
+
+---
+
 * [Overview](model.md#overview)
 * [Constructor](model.md#constructor)
-* [Training Interface](model.md#training interface)
-* [Parts Interface](model.md#parts interface)
+* [Training Interface](model.md#training-interface)
+* [Parts Interface](model.md#parts-interface)
 * [Example](model.md#example)
 
 ## Overview
