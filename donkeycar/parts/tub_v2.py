@@ -13,8 +13,6 @@ class Tub(object):
     A datastore to store sensor data in a key, value format. \n
     Accepts str, int, float, image_array, image, and array data types.
     """
-    # static variable for empty records
-    empty_record = {'__empty__': True}
 
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000, read_only=False):
@@ -35,8 +33,6 @@ class Tub(object):
         """
         Can handle various data types including images.
         """
-        if not record:
-            record = self.empty_record
         contents = dict()
         for key, value in record.items():
             if value is None:

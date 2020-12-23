@@ -22,6 +22,8 @@ from donkeycar.parts.tub_v2 import Tub
 
 
 def convert_to_tub_v2(paths, output_path):
+    empty_record = {'__empty__': True}
+
     if type(paths) is str:
         paths = [paths]
     legacy_tubs = [LegacyTub(path) for path in paths]
@@ -30,8 +32,11 @@ def convert_to_tub_v2(paths, output_path):
 
     for legacy_tub in legacy_tubs:
         if not output_tub:
-            output_tub = Tub(output_path, legacy_tub.inputs,
-                             legacy_tub.types, list(legacy_tub.meta.items()))
+            # add input and type for empty records recording
+            inputs = legacy_tub.inputs + ['__empty__']
+            types = legacy_tub.types + ['boolean']
+            output_tub = Tub(output_path, inputs, types,
+                             list(legacy_tub.meta.items()))
 
         record_paths = legacy_tub.gather_records()
         bar = IncrementalBar('Converting', max=len(record_paths))
@@ -58,7 +63,7 @@ def convert_to_tub_v2(paths, output_path):
                     # until the next valid record.
                     while previous_index < current_index:
                         idx = output_tub.manifest.current_index
-                        output_tub.write_record()
+                        output_tub.write_record(empty_record)
                         output_tub.delete_record(idx)
                         previous_index += 1
                 bar.next()
