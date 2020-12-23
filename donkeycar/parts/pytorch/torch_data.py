@@ -1,11 +1,12 @@
 # PyTorch
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import IterableDataset, DataLoader
 from donkeycar.utils import train_test_split
 from donkeycar.parts.tub_v2 import Tub
 from torchvision import transforms
 from typing import List, Any
 from donkeycar.pipeline.types import TubRecord, TubDataset
+from donkeycar.pipeline.sequence import TubSequence
 import pytorch_lightning as pl
 
 def get_default_transform(for_video=False, for_inference=False):
@@ -39,7 +40,7 @@ def get_default_transform(for_video=False, for_inference=False):
     return transform
 
 
-class TorchTubDataset(Dataset):
+class TorchTubDataset(IterableDataset):
     '''
     Loads the dataset, and creates a train/test split.
     '''
@@ -60,25 +61,31 @@ class TorchTubDataset(Dataset):
         else:
             self.transform = get_default_transform()
 
-        self.records: List[TubRecord] = records
+        self.sequence = TubSequence(records)
+        self.pipeline = self._create_pipeline()
 
-    def y_transform(self, record: TubRecord):
-        angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
-        return torch.tensor([angle, throttle])
+    def _create_pipeline(self):
+        """ This can be overridden if more complicated pipelines are
+            required """
 
-    def x_transform(self, record: TubRecord):
-        # Loads the result of Image.open()
-        img_arr = record.image(cached=True, as_nparray=False)
-        return self.transform(img_arr)
+        def y_transform(record: TubRecord):
+            angle: float = record.underlying['user/angle']
+            throttle: float = record.underlying['user/throttle']
+            return torch.tensor([angle, throttle])
 
-    def __len__(self):
-        return len(self.records)
+        def x_transform(record: TubRecord):
+            # Loads the result of Image.open()
+            img_arr = record.image(cached=True, as_nparray=False)
+            return self.transform(img_arr)
 
-    def __getitem__(self, idx):
-        y = self.y_transform(self.records[idx])
-        x = self.x_transform(self.records[idx])
-        return x, y
+        # Build pipeline using the transformations
+        pipeline = self.sequence.build_pipeline(x_transform=x_transform,
+                                                y_transform=y_transform)
+
+        return pipeline
+
+    def __iter__(self):
+        return iter(self.pipeline)
 
 
 class TorchTubDataModule(pl.LightningDataModule):
@@ -132,7 +139,11 @@ class TorchTubDataModule(pl.LightningDataModule):
         
 
     def train_dataloader(self):
-        return DataLoader(self.train_dataset, batch_size=self.config.BATCH_SIZE, shuffle=True, num_workers=0)
+        # The number of workers are set to 0 to avoid errors on Macs and Windows
+        # See: https://github.com/rusty1s/pytorch_geometric/issues/366#issuecomment-498022534
+        return DataLoader(self.train_dataset, batch_size=self.config.BATCH_SIZE, num_workers=0)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.config.BATCH_SIZE, shuffle=False, num_workers=0)
+        # The number of workers are set to 0 to avoid errors on Macs and Windows
+        # See: https://github.com/rusty1s/pytorch_geometric/issues/366#issuecomment-498022534
+        return DataLoader(self.val_dataset, batch_size=self.config.BATCH_SIZE, num_workers=0)
