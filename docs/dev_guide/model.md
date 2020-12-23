@@ -1,9 +1,14 @@
 # How to build your own model
 
+---
+ **Note:** _This requires version >= 4.1.X_
+
+---
+
 * [Overview](model.md#overview)
 * [Constructor](model.md#constructor)
-* [Training Interface](model.md#training interface)
-* [Parts Interface](model.md#parts interface)
+* [Training Interface](model.md#training-interface)
+* [Parts Interface](model.md#parts-interface)
 * [Example](model.md#example)
 
 ## Overview
@@ -62,6 +67,8 @@ only the image as input.
 
 The function returns a single data item if the model has only one input. You 
 need to return a tuple if your model uses more input data.
+
+
 **Note:** _If your model has more inputs, the tuple needs to have the image in 
 the first place._ 
 
@@ -84,9 +91,11 @@ be fed into `tf.data`. Note, `tf.data` expects a dictionary if the model has
 more than one input variable, so we have chosen to use dictionaries also in the
 one-argument case for consistency. Above we have shown the implementation in the
 base class which works for all models that have only the image as input. You
-don't have to overwrite neither `x_transform` nor
-`x_translate` if your model only uses the image as input data.
-**Note:** _the keys of the dictionary must match the name of the **input**  
+don't have to overwrite neither `x_transform` nor `x_translate` if your 
+model only uses the image as input data.
+
+
+**Note:** _the keys of the dictionary must match the name of the **input** 
 layers in the model._
 
 ```python
@@ -100,6 +109,8 @@ def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
 Similar to the above, this provides the translation of the `y` data into the
 dictionary required for `tf.data`. This example shows the implementation of
 `KerasLinear`.
+
+
 **Note:** _the keys of the dictionary must match the name of the **output**
 layers in the model._
 
@@ -115,8 +126,12 @@ def output_shapes(self):
 This function returns a tuple of _two_ dictionaries that tells tensorflow which
 shapes are used in the model. We have shown the example of the 
 `KerasCategorical` model here.
-**Note 1:** _The keys of the two dictionaries must match the name of the
-**input** and **output** layers in the model._
+
+
+**Note 1:** _As above, the keys of the two dictionaries must match the name 
+of the **input** and **output** layers in the model._
+
+
 **Note 2:** _Where the model returns scalar numbers, the corresponding 
 type has to be `tf.TensorShape([])`._
 
@@ -141,6 +156,8 @@ Here we are showing the implementation of the linear model. Please note that
 the input tensor shape always contains the batch dimension in the first 
 place, hence the shape of the input image is adjusted from 
 `(120, 160, 3) -> (1, 120, 160, 3)`.
+
+
 **Note:** _If you are passing another array in the`other_arr` variable, you will
 have to do a similar re-shaping.
 
@@ -177,7 +194,7 @@ class KerasSensors(KerasPilot):
         sensor_in = Input(shape=(self.num_sensors, ), name='sensor_in')
         y = sensor_in
         z = concatenate([x, y])
-        # here we add two more dens layers
+        # here we add two more dense layers
         z = Dense(50, activation='relu', name='dense_3')(z)
         z = Dropout(drop)(z)
         z = Dense(50, activation='relu', name='dense_4')(z)
@@ -237,9 +254,11 @@ class KerasSensors(KerasPilot):
                    'n_outputs1': tf.TensorShape([])})
         return shapes
 ```
-We could have inherited from `KerasLinear` which would provide the 
-implementation of `y_transform(), y_translate(), compile()`. The model 
-requires the sensor data to be an array in the TubRecord with key `"sensor"`.
+We could have inherited from `KerasLinear` which already provides the 
+implementation of `y_transform(), y_translate(), compile()`. However, to 
+make it explicit for the general case we have implemented all functions here. 
+The model requires the sensor data to be an array in the TubRecord with key 
+`"sensor"`. 
 
 ### Creating a tub
 

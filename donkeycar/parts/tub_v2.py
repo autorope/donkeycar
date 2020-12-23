@@ -9,10 +9,11 @@ from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
 
 
 class Tub(object):
-    '''
+    """
     A datastore to store sensor data in a key, value format. \n
     Accepts str, int, float, image_array, image, and array data types.
-    '''
+    """
+
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000, read_only=False):
         self.base_path = base_path
@@ -28,15 +29,15 @@ class Tub(object):
         if not os.path.exists(self.images_base_path):
             os.makedirs(self.images_base_path, exist_ok=True)
 
-    def write_record(self, record):
-        '''
+    def write_record(self, record=None):
+        """
         Can handle various data types including images.
-        '''
+        """
         contents = dict()
         for key, value in record.items():
             if value is None:
                 continue
-            elif not key in self.input_types:
+            elif key not in self.input_types:
                 continue
             else:
                 input_type = self.input_types[key]
@@ -99,9 +100,9 @@ class Tub(object):
 
 
 class TubWriter(object):
-    '''
+    """
     A Donkey part, which can write records to the datastore.
-    '''
+    """
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
