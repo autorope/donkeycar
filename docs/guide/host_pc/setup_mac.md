@@ -37,6 +37,7 @@ conda env create -f install/envs/mac.yml
 conda activate donkey
 pip install -e .[pc]
 ```
+Note: if you are using ZSH (you'll know if you are), you won't be able to run `pip install -e .[pc]`. If you followed the setup using `conda`, then you can just run `pip install -e .` and you'll be fine. If you didn't use `conda`, you should manually install the packages in `setup.py` under the `pc` flag.
 
 * Tensorflow GPU
 
