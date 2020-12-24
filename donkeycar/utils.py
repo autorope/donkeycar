@@ -147,20 +147,25 @@ def load_pil_image(filename, cfg):
         filename (string): path to the image file
         cfg (object): donkey configuration file
 
-    Returns: a PIL image
+    Returns: a PIL image.
     """
     try:
         img = Image.open(filename)
         if img.height != cfg.IMAGE_H or img.width != cfg.IMAGE_W:
             img = img.resize((cfg.IMAGE_W, cfg.IMAGE_H))
+
+        if cfg.IMAGE_DEPTH == 1:
+            img = img.convert('L')
+        
         return img
+
     except Exception as e:
         print(e)
         print('failed to load image:', filename)
         return None
 
 
-def load_image_arr(filename, cfg):
+def load_image(filename, cfg):
     """
     :param string filename:     path to image file
     :param cfg:                 donkey config
@@ -171,11 +176,13 @@ def load_image_arr(filename, cfg):
     if not img:
         return None
 
-    img_arr = np.array(img)
-    cropped_img_h = img_arr.shape[0]
-    cropped_img_w = img_arr.shape[1]
-    if img_arr.shape[2] == 3 and cfg.IMAGE_DEPTH == 1:
-        img_arr = rgb2gray(img_arr).reshape(cropped_img_h, cropped_img_w, 1)
+    img_arr = np.asarray(img)
+
+    # If the PIL image is greyscale, the np array will have shape (H, W)
+    # Need to add a depth channel by expanding to (H, W, 1)
+    if img.mode == 'L':
+        h, w = img_arr.shape[:2]
+        img_arr = img_arr.reshape(h, w, 1)
 
     return img_arr
 

@@ -4,7 +4,7 @@ from typing import Any, List, Optional, TypeVar, Tuple
 import numpy as np
 from donkeycar.config import Config
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import load_image_arr, load_pil_image, normalize_image, train_test_split
+from donkeycar.utils import load_image, load_pil_image, normalize_image, train_test_split
 from typing_extensions import TypedDict
 
 X = TypeVar('X', covariant=True)
@@ -50,7 +50,7 @@ class TubRecord(object):
             full_path = os.path.join(self.base_path, 'images', image_path)
 
             if as_nparray:
-                _image = load_image_arr(full_path, cfg=self.config)
+                _image = load_image(full_path, cfg=self.config)
             else:
                 # If you just want the raw Image
                 _image = load_pil_image(full_path, cfg=self.config)
