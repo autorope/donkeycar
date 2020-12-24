@@ -75,6 +75,11 @@ setup(name='donkeycar',
           ],
           'ci': ['codecov'],
           'tf': ['tensorflow>=2.2.0'],
+          'torch': [
+              'pytorch>=1.7.1',
+              'torchvision',
+              'torchaudio',
+              ],
           'mm1': ['pyserial']
       },
       package_data={
