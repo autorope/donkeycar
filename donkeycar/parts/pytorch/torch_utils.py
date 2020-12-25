@@ -14,6 +14,10 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
 
     if model_type == "resnet18":
         from donkeycar.parts.pytorch.ResNet18 import ResNet18
+        # ResNet18 will always use the following input size
+        # regardless of what the user specifies. This is necessary since
+        # the model is pre-trained on ImageNet
+        input_shape = (cfg.BATCH_SIZE, 3, 224, 224)
         model = ResNet18(input_shape=input_shape)
     else:
         raise Exception("Unknown model type {:}, supported types are "

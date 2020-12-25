@@ -8,7 +8,7 @@ import torch.optim as optim
 from donkeycar.parts.pytorch.torch_data import get_default_transform
 
 
-def load_resnet18():
+def load_resnet18(num_classes=2):
     # Load the pre-trained model (on ImageNet)
     model = models.resnet18(pretrained=True)
 
@@ -38,7 +38,7 @@ class ResNet18(pl.LightningModule):
         self.train_precision = pl.metrics.Precision()
         self.valid_precision = pl.metrics.Precision()
 
-        self.model = load_resnet18()
+        self.model = load_resnet18(num_classes=output_size[0])
 
         self.inference_transform = get_default_transform(for_inference=True)
 
