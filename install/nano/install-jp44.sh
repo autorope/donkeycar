@@ -20,17 +20,9 @@ sudo apt-get install -y git
 sudo apt-get install -y openmpi-doc openmpi-bin libopenmpi-dev libopenblas-dev
 
 # Install Tensorflow as system package
-sudo -H pip3 install -U pip testresources setuptools
-sudo -H pip3 install -U futures==3.1.1 protobuf==3.12.2 pybind11==2.5.0
-sudo -H pip3 install -U cython==0.29.21
-sudo -H pip3 install -U numpy==1.19.0
-sudo -H pip3 install -U future==0.18.2 mock==4.0.2 h5py==2.10.0 keras_preprocessing==1.1.2 keras_applications==1.0.8 gast==0.3.3
-sudo -H pip3 install -U grpcio==1.30.0 absl-py==0.9.0 py-cpuinfo==7.0.0 psutil==5.7.2 portpicker==1.3.1 six requests==2.24.0 astor==0.8.1 termcolor==1.1.0 wrapt==1.12.1 google-pasta==0.2.0
-sudo -H pip3 install -U scipy==1.4.1
-sudo -H pip3 install -U pandas==1.0.5
+sudo -H pip3 install -r requirements.txt
 #sudo -H pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v44 'tensorflow>2'
 sudo -H pip3 install --pre --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v44 tensorflow==2.2.0+nv20.6
-sudo -H pip3 install -U gdown
 
 ########################################
 # Install PyTorch v1.7 - torchvision v0.8.1
