@@ -12,7 +12,6 @@ from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
-from donkeycar.pipeline.training import train
 from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -431,6 +430,8 @@ class Train(BaseCommand):
         parser.add_argument('--model', default=None, help='output model name')
         parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--framework', choices=['tensorflow', 'pytorch'], default='tensorflow', help='the AI framework to use (tensorflow|pytorch). default: tensorflow')
+        parser.add_argument('--checkpoint', type=str, help='location of checkpoint to resume training from')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -438,7 +439,17 @@ class Train(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
-        train(cfg, args.tub, args.model, args.type)
+        framework = args.framework
+
+        if framework == 'tensorflow':
+            from donkeycar.pipeline.training import train
+            train(cfg, args.tub, args.model, args.type)
+        elif framework == 'pytorch':
+            from donkeycar.parts.pytorch.torch_train import train
+            train(cfg, args.tub, args.model, args.type,
+                  checkpoint_path=args.checkpoint)
+        else:
+            print("Unrecognized framework: {}. Please specify one of 'tensorflow' or 'pytorch'".format(framework))
 
 
 def execute_from_command_line():

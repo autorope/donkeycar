@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Scripts to train a model using tensorflow or pytorch.
+Scripts to train a keras model using tensorflow.
 Basic usage should feel familiar: train.py --tubs data/ --model models/mypilot.h5
 
 Usage:
-    train.py [--tubs=tubs] (--model=<model>) [--type=(linear|inferred|tensorrt_linear|tflite_linear)] [--framework=(tf|torch)] [--checkpoint=checkpoint]
+    train.py [--tubs=tubs] (--model=<model>) [--type=(linear|inferred|tensorrt_linear|tflite_linear)]
 
 Options:
     -h --help              Show this screen.
@@ -12,6 +12,7 @@ Options:
 
 from docopt import docopt
 import donkeycar as dk
+from donkeycar.pipeline.training import train
 
 
 def main():
@@ -20,17 +21,8 @@ def main():
     tubs = args['--tubs']
     model = args['--model']
     model_type = args['--type']
-    framework = args.get('--framework', 'tf')
+    train(cfg, tubs, model, model_type)
 
-    if framework == 'tf':
-        from donkeycar.pipeline.training import train
-        train(cfg, tubs, model, model_type)
-    elif framework == 'torch':
-        from donkeycar.parts.pytorch.torch_train import train
-        checkpoint_path = args.get('--checkpoint', None)
-        train(cfg, tubs, model, model_type, checkpoint_path=checkpoint_path)
-    else:
-        print("Unrecognized framework: {}. Please specify one of 'tf' or 'torch'".format(framework))
 
 if __name__ == "__main__":
     main()
