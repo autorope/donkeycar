@@ -10,7 +10,7 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
     print("\"get_model_by_type\" model Type is: {}".format(model_type))
 
     input_shape = (cfg.BATCH_SIZE, cfg.IMAGE_DEPTH, cfg.IMAGE_H, cfg.IMAGE_W)
-    
+
     if model_type == "linear":
         model = ResNet18(input_shape=input_shape)
     else:
@@ -21,5 +21,5 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
     if checkpoint_path:
         print("Loading model from checkpoint {}".format(checkpoint_path))
         model.load_from_checkpoint(checkpoint_path)
-        
+
     return model

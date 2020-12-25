@@ -9,6 +9,7 @@ from donkeycar.pipeline.types import TubRecord, TubDataset
 from donkeycar.pipeline.sequence import TubSequence
 import pytorch_lightning as pl
 
+
 def get_default_transform(for_video=False, for_inference=False):
     """
     Creates a default transform to work with torchvision models
@@ -110,7 +111,8 @@ class TorchTubDataModule(pl.LightningDataModule):
         else:
             self.transform = get_default_transform()
 
-        self.tubs: List[Tub] = [Tub(tub_path, read_only=True) for tub_path in self.tub_paths]
+        self.tubs: List[Tub] = [Tub(tub_path, read_only=True)
+                                for tub_path in self.tub_paths]
         self.records: List[TubRecord] = []
 
     def setup(self, stage=None):
@@ -128,15 +130,15 @@ class TorchTubDataModule(pl.LightningDataModule):
                                    underlying=underlying)
                 self.records.append(record)
 
-        train_records, val_records = train_test_split(self.records, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
-        
+        train_records, val_records = train_test_split(
+            self.records, test_size=(1. - self.config.TRAIN_TEST_SPLIT))
+
         assert len(val_records) > 0, "Not enough validation data. Add more data"
 
         self.train_dataset = TorchTubDataset(
             self.config, train_records, transform=self.transform)
         self.val_dataset = TorchTubDataset(
             self.config, val_records, transform=self.transform)
-        
 
     def train_dataloader(self):
         # The number of workers are set to 0 to avoid errors on Macs and Windows
