@@ -430,7 +430,7 @@ class Train(BaseCommand):
         parser.add_argument('--model', default=None, help='output model name')
         parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--framework', choices=['tensorflow', 'pytorch'], default='tensorflow', help='the AI framework to use (tensorflow|pytorch). default: tensorflow')
+        parser.add_argument('--framework', choices=['tensorflow', 'pytorch', None], required=False, help='the AI framework to use (tensorflow|pytorch). Defaults to config.DEFAULT_AI_FRAMEWORK')
         parser.add_argument('--checkpoint', type=str, help='location of checkpoint to resume training from')
         parsed_args = parser.parse_args(args)
         return parsed_args
@@ -439,7 +439,7 @@ class Train(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
-        framework = args.framework
+        framework = args.framework if args.framework else cfg.DEFAULT_AI_FRAMEWORK
 
         if framework == 'tensorflow':
             from donkeycar.pipeline.training import train
