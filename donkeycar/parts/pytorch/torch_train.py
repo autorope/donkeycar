@@ -15,6 +15,10 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
     is_torch_model = model_ext == '.ckpt'
     if is_torch_model:
         model = f'{model_name}.ckpt'
+    else:
+        print("Unrecognized model file extension for model_output_path: '{}'. Please use the '.ckpt' extension.".format(
+            model_output_path))
+
 
     if not model_type:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -22,11 +26,10 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
     tubs = tub_paths.split(',')
     tub_paths = [os.path.expanduser(tub) for tub in tubs]
     output_path = os.path.expanduser(model_output_path)
-    train_type = 'linear' if 'linear' in model_type else model_type
 
     output_dir = Path(model_output_path).parent
 
-    model = get_model_by_type(train_type, cfg, checkpoint_path=checkpoint_path)
+    model = get_model_by_type(model_type, cfg, checkpoint_path=checkpoint_path)
 
     if torch.cuda.is_available():
         print('Using CUDA')
