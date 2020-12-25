@@ -55,4 +55,4 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
         trainer.save_checkpoint(checkpoint_model_path)
         print("Saved final model to {}".format(checkpoint_model_path))
 
-    return None
+    return model.loss_history

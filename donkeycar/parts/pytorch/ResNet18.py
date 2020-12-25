@@ -42,6 +42,9 @@ class ResNet18(pl.LightningModule):
 
         self.inference_transform = get_default_transform(for_inference=True)
 
+        # Keep track of the loss history. This is useful for writing tests
+        self.loss_history = []
+
     def forward(self, x):
         # Forward defines the prediction/inference action
         return self.model(x)
@@ -51,6 +54,7 @@ class ResNet18(pl.LightningModule):
         logits = self.model(x)
 
         loss = F.l1_loss(logits, y)
+        self.loss_history.append(loss)
         self.log('train_loss', loss)
 
         # Log Metrics
