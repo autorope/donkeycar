@@ -237,7 +237,7 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
         print("New client connected")
 
     def on_message(self, message):
-        print("wsCalibrate ",message)
+        print(f"wsCalibrate {message}")
         data = json.loads(message)
         if 'throttle' in data:
             print(data['throttle'])
