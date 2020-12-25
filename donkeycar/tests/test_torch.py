@@ -4,8 +4,9 @@ import os
 import numpy as np
 from collections import defaultdict, namedtuple
 
-from donkeycar.parts.pytorch.torch_train import train
+import torch
 import pytorch_lightning as pl
+from donkeycar.parts.pytorch.torch_train import train
 from donkeycar.parts.pytorch.torch_data import TorchTubDataModule
 from donkeycar.parts.pytorch.torch_utils import get_model_by_type
 
@@ -18,7 +19,7 @@ Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
 def config() -> Config:
     """ Config for the test with relevant parameters"""
     cfg = Config()
-    cfg.BATCH_SIZE = 64
+    cfg.BATCH_SIZE = 2
     cfg.TRAIN_TEST_SPLIT = 0.8
     cfg.IMAGE_H = 120
     cfg.IMAGE_W = 160
@@ -45,7 +46,7 @@ def car_dir(tmpdir_factory):
 
 
 # define the test data
-d1 = Data(type='linear', name='lin1', convergence=0.6, pretrained=None)
+d1 = Data(type='resnet18', name='resnet18a', convergence=0.8, pretrained=None)
 test_data = [d1]
 
 
@@ -60,15 +61,20 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     :param car_dir:         car directory (this is a temp dir)
     :param data:            test case data
     :return:                None
-    """            
+    """
+    def pilot_path(name):
+        pilot_name = f'pilot_{name}.ckpt'
+        return os.path.join(car_dir, 'models', pilot_name)
+
     tub_dir = os.path.join(car_dir, 'tub')
-    history = train(config, tub_dir, pilot_path(
+    loss = train(config, tub_dir, pilot_path(
         data.name), data.type, checkpoint_path=None)
-    loss = history.history['loss']
+    
     # check loss is converging
     assert loss[-1] < loss[0] * data.convergence
 
-@pytest.mark.parametrize('model_type', ['linear'])
+
+@pytest.mark.parametrize('model_type', ['resnet18'])
 def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
         -> None:
     """
@@ -92,21 +98,26 @@ def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
     else:
         print('Not using CUDA')
         gpus = 0
-    
+
     # Overfit the data
     trainer = pl.Trainer(gpus=gpus, overfit_batches=2,
                          progress_bar_refresh_rate=30, max_epochs=30)
     trainer.fit(model, data_module)
-    final_loss = model.loss_history
-    assert final_loss < 0.10
+    final_loss = model.loss_history[-1]
+    assert final_loss < 0.30, "final_loss of {} is too high. History: {}".format(
+        final_loss, model.loss_history)
 
     # Check the batch data makes sense
     for batch in data_module.train_dataloader():
         x, y = batch
-        assert(x.shape == (config.IMAGE_DEPTH, config.IMAGE_H, config.IMAGE_W))
-        assert(.shape == (2,))
+        # In order to use a model pre-trained on ImageNet, the image
+        # will be re-sized to 3x224x224 regardless of what the user chooses.
+        assert(x.shape == (config.BATCH_SIZE, 3, 224, 224))
+        assert(y.shape == (config.BATCH_SIZE, 2))
+        break
+
 
     # Check inference
     val_x, val_y = next(iter(data_module.val_dataloader()))
     output = model(val_x)
-    assert(output.shape == (2,))
+    assert(output.shape == (config.BATCH_SIZE, 2))
