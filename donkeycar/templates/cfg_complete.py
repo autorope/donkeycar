@@ -91,10 +91,15 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 
 
 #TRAINING
+# The default AI framework to use. Choose from (tensorflow|pytorch)
+DEFAULT_AI_FRAMEWORK='tensorflow'
+
 #The DEFAULT_MODEL_TYPE will choose which model will be created at training time. This chooses
 #between different neural network designs. You can override this setting by passing the command
 #line parameter --type to the python manage.py train and drive commands.
-DEFAULT_MODEL_TYPE = 'linear'   #(linear|categorical|tflite_linear|tensorrt_linear)
+# tensorflow models: (linear|categorical|tflite_linear|tensorrt_linear)
+# pytorch models: (resnet18)
+DEFAULT_MODEL_TYPE = 'linear'
 BATCH_SIZE = 128                #how many records to use when doing one pass of gradient decent. Use a smaller number if your gpu is running out of memory.
 TRAIN_TEST_SPLIT = 0.8          #what percent of records to use for training. the remaining used for validation.
 MAX_EPOCHS = 100                #how many times to visit all records of your data

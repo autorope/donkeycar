@@ -47,6 +47,7 @@ conda env create -f install\envs\ubuntu.yml
 conda activate donkey
 pip install -e .[pc]
 ```
+Note: if you are using ZSH (you'll know if you are), you won't be able to run `pip install -e .[pc]`. You'll need to escape the brackets and run `pip install -e .\[pc\]`.
 
 * Optionally Install Tensorflow GPU - only for NVidia Graphics cards
 
@@ -55,6 +56,16 @@ If you have an NVidia card, you should update to the lastest drivers and [instal
 ```bash
 conda install tensorflow-gpu==2.2.0
 ```
+
+* Optionally configure PyTorch to use GPU - only for NVidia Graphics cards
+
+If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
+
+```bash
+conda install cudatoolkit=<CUDA Version> -c pytorch
+```
+
+You should replace `<CUDA Version>` with your CUDA version. Any version above 10.0 should work. You can find out your CUDA version by running `nvcc --version` or `nvidia-smi`.
 
 * Create your local working dir:
 

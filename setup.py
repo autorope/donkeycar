@@ -56,7 +56,7 @@ setup(name='donkeycar',
               'Adafruit_PCA9685',
               'Adafruit_SSD1306',
               'RPi.GPIO',
-              'pyserial',     
+              'pyserial',
           ],
           'nano': [
               'Adafruit_PCA9685',
@@ -75,6 +75,11 @@ setup(name='donkeycar',
           ],
           'ci': ['codecov'],
           'tf': ['tensorflow>=2.2.0'],
+          'torch': [
+              'pytorch>=1.7.1',
+              'torchvision',
+              'torchaudio'
+          ],
           'mm1': ['pyserial']
       },
       package_data={
@@ -99,4 +104,4 @@ setup(name='donkeycar',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
       packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
-)
+      )

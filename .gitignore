@@ -23,3 +23,7 @@ build
 
 # codecov
 htmlcov/
+
+# PyTorch
+lightning_logs
+tb_logs

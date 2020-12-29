@@ -3,6 +3,7 @@ name: donkey
 channels:
   - defaults
   - conda-forge
+  - pytorch
 
 dependencies:
   - python=3.7
@@ -25,6 +26,11 @@ dependencies:
   - PrettyTable
   - pyfiglet
   - mypy
+  - pytorch=1.7.1
+  - torchvision
+  - torchaudio
+  - pytorch-lightning
+  - numpy
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git
