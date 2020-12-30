@@ -1,7 +1,7 @@
 name: donkey
 dependencies:
 
-- h5py==2.10.0
+- h5py==2.8.0
 - pillow
 - tensorflow==1.13.1
 - opencv
