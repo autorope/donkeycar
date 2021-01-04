@@ -1,225 +1,128 @@
-# -*- coding: utf-8 -*- #
 import pytest
+import tarfile
 import os
+import numpy as np
+from collections import defaultdict, namedtuple
 
-from donkeycar.templates.train import multi_train
-from donkeycar.parts.datastore import Tub
-from donkeycar.parts.simulation import SquareBoxCamera, MovingSquareTelemetry
+from donkeycar.pipeline.training import train, BatchSequence
+from donkeycar.config import Config
+from donkeycar.pipeline.types import TubDataset
+from donkeycar.utils import get_model_by_type, normalize_image
 
-from donkeycar.templates.train import gather_records, collate_records
-
-#fixtures
-from .setup import tub, tub_path, on_pi
-from .setup import create_sample_tub
-
-def cfg_defaults(cfg):
-    cfg.MAX_EPOCHS = 1
-    cfg.BATCH_SIZE = 10
-    cfg.SHOW_PLOT = False
-    cfg.VERBOSE_TRAIN = False
-    cfg.OPTIMIZER = "adam"
-    cfg.TARGET_H = cfg.IMAGE_H - cfg.ROI_CROP_TOP - cfg.ROI_CROP_BOTTOM
-    cfg.TARGET_W = cfg.IMAGE_W
-    cfg.TARGET_D = cfg.IMAGE_DEPTH
-    cfg.NUM_LOCATIONS = 10
+Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
 
 
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_cat(tub, tub_path):
-    t = Tub(tub_path)
-    assert t is not None
-
-    import donkeycar.templates.cfg_complete as cfg
-    tempfolder = tub_path[:-3]
-    model_path = os.path.join(tempfolder, 'test.h5')
-    cfg_defaults(cfg)
-
-    tub = tub_path
-    model = model_path
-    transfer = None
-    model_type = "categorical"
-    continuous = False
-    aug = False
-    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
-
-
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_linear(tub, tub_path):
-    t = Tub(tub_path)
-    assert t is not None
-
-    import donkeycar.templates.cfg_complete as cfg
-    tempfolder = tub_path[:-3]
-    model_path = os.path.join(tempfolder, 'test.h5')
-    cfg_defaults(cfg)
-
-    tub = tub_path
-    model = model_path
-    transfer = None
-    model_type = "linear"
-    continuous = False
-    aug = False
-    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
+@pytest.fixture
+def config() -> Config:
+    """ Config for the test with relevant parameters"""
+    cfg = Config()
+    cfg.BATCH_SIZE = 64
+    cfg.TRAIN_TEST_SPLIT = 0.8
+    cfg.IMAGE_H = 120
+    cfg.IMAGE_W = 160
+    cfg.IMAGE_DEPTH = 3
+    cfg.PRINT_MODEL_SUMMARY = True
+    cfg.EARLY_STOP_PATIENCE = 1000
+    cfg.MAX_EPOCHS = 20
+    cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
+    cfg.VERBOSE_TRAIN = True
+    cfg.MIN_DELTA = 0.0005
+    return cfg
 
 
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_localizer(tub, tub_path):
-    t = Tub(tub_path)
-    assert t is not None
+@pytest.fixture(scope='session')
+def car_dir(tmpdir_factory):
+    """ Creating car dir with sub dirs and extracting tub """
+    dir = tmpdir_factory.mktemp('mycar')
+    os.mkdir(os.path.join(dir, 'models'))
+    # extract tub.tar.gz into temp car_dir/tub
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
+        file.extractall(dir)
+    return dir
 
-    import donkeycar.templates.cfg_complete as cfg
-    tempfolder = tub_path[:-3]
-    model_path = os.path.join(tempfolder, 'test.h5')
-    cfg_defaults(cfg)
 
-    tub = tub_path
-    model = model_path
-    transfer = None
-    model_type = "localizer"
-    continuous = False
-    aug = False
-    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
+# define the test data
+d1 = Data(type='linear', name='lin1', convergence=0.6, pretrained=None)
+d2 = Data(type='categorical', name='cat1', convergence=0.85, pretrained=None)
+d3 = Data(type='inferred', name='inf1', convergence=0.6, pretrained=None)
+d4 = Data(type='latent', name='lat1', convergence=0.5, pretrained=None)
+d5 = Data(type='latent', name='lat2', convergence=0.5, pretrained='lat1')
+test_data = [d1, d2, d3]
 
-'''
 
-latent test requires opencv right now. and fails on travis ci. 
-re-enable when we figure out a recipe for opencv on travis.
+@pytest.mark.skipif("TRAVIS" in os.environ,
+                    reason='Suppress training test in CI')
+@pytest.mark.parametrize('data', test_data)
+def test_train(config: Config, car_dir: str, data: Data) -> None:
+    """
+    Testing convergence of the linear an categorical models
 
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_latent(tub, tub_path):
-    t = Tub(tub_path)
-    assert t is not None
+    :param config:          donkey config
+    :param car_dir:         car directory (this is a temp dir)
+    :param data:            test case data
+    :return:                None
+    """
+    def pilot_path(name):
+        pilot_name = f'pilot_{name}.h5'
+        return os.path.join(car_dir, 'models', pilot_name)
 
-    import donkeycar.templates.cfg_complete as cfg
-    tempfolder = tub_path[:-3]
-    model_path = os.path.join(tempfolder, 'test.h5')
-    cfg.MAX_EPOCHS = 1
-    cfg.BATCH_SIZE = 10
-    cfg.SHOW_PLOT = False
-    cfg.VERBOSE_TRAIN = False
-    cfg.OPTIMIZER = "adam"
+    if data.pretrained:
+        config.LATENT_TRAINED = pilot_path(data.pretrained)
+    tub_dir = os.path.join(car_dir, 'tub')
+    history = train(config, tub_dir, pilot_path(data.name), data.type)
+    loss = history.history['loss']
+    # check loss is converging
+    assert loss[-1] < loss[0] * data.convergence
 
-    tub = tub_path
-    model = model_path
-    transfer = None
-    model_type = "latent"
-    continuous = False
-    aug = True
-    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
-'''
 
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_seq(tub, tub_path):
-    t = Tub(tub_path)
-    assert t is not None
+@pytest.mark.parametrize('model_type', ['linear', 'categorical', 'inferred'])
+def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
+        -> None:
+    """
+    Testing consistency of the model interfaces and data used in training
+    pipeline.
 
-    import donkeycar.templates.cfg_complete as cfg
-    tempfolder = tub_path[:-3]
-    model_path = os.path.join(tempfolder, 'test.h5')
-    cfg_defaults(cfg)
+    :param config:                  donkey config
+    :param model_type:              test specification of model type
+    :param tub_dir:                 tub directory (car_dir/tub)
+    :return:                        None
+    """
+    kl = get_model_by_type(model_type, config)
+    tub_dir = os.path.join(car_dir, 'tub')
+    # don't shuffle so we can identify data for testing
+    dataset = TubDataset(config, [tub_dir], shuffle=False)
+    training_records, validation_records = dataset.train_test_split()
+    seq = BatchSequence(kl, config, training_records, True)
+    data_train = seq.create_tf_data()
+    num_whole_batches = len(training_records) // config.BATCH_SIZE
+    # this takes all batches into one list
+    tf_batch = list(data_train.take(num_whole_batches).as_numpy_iterator())
+    it = iter(training_records)
+    for xy_batch in tf_batch:
+        # extract x and y values from records, asymmetric in x and y b/c x
+        # requires image manipulations
+        batch_records = [next(it) for _ in range(config.BATCH_SIZE)]
+        records_x = [kl.x_translate(normalize_image(kl.x_transform(r))) for
+                     r in batch_records]
+        records_y = [kl.y_translate(kl.y_transform(r)) for r in
+                     batch_records]
+        # from here all checks are symmetrical between x and y
+        for batch, o_type, records \
+                in zip(xy_batch, kl.output_types(), (records_x, records_y)):
+            # check batch dictionary have expected keys
+            assert batch.keys() == o_type.keys(), \
+                'batch keys need to match models output types'
+            # convert record values into arrays of batch size
+            values = defaultdict(list)
+            for r in records:
+                for k, v in r.items():
+                    values[k].append(v)
+            # now convert arrays of floats or numpy arrays into numpy arrays
+            np_dict = dict()
+            for k, v in values.items():
+                np_dict[k] = np.array(v)
+            # compare record values with values from tf.data
+            for k, v in batch.items():
+                assert np.isclose(v, np_dict[k]).all()
 
-    tub = tub_path
-    model = model_path
-    transfer = None
-    model_type = "rnn"
-    continuous = False
-    aug = True
-    multi_train(cfg, tub, model, transfer, model_type, continuous, aug)
-
-# Helper function to calculate the Train-Test split (ratio) of a collated dataset
-def calculate_TrainTestSplit(gen_records):
-    train_recs = 0
-    test_recs = 0
-    for key in gen_records:
-        if gen_records[key]['train']:
-            train_recs += 1
-        else:
-            test_recs += 1
-
-    total_recs = len(gen_records)
-    print("Total Records: {}".format(total_recs))
-    print("Train Records: {}".format(train_recs))
-    print("Test Records: {}".format(test_recs))
-    assert total_recs == train_recs + test_recs
-    ratio = train_recs / total_recs
-    print("Calculated Train-Test Split: {}".format(ratio))
-    return ratio
-
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_TrainTestSplit_simple(tub_path):
-    # Check whether the Train-Test splitting is working correctly on a dataset.
-    initial_records = 100
-
-    # Setup the test data
-    t = create_sample_tub(tub_path, records=initial_records)
-    assert t is not None
-
-    # Import the configuration
-    import donkeycar.templates.cfg_complete as cfg
-
-    # Initial Setup
-    opts = {'categorical' : False}
-    opts['cfg'] = cfg
-
-    orig_TRAIN_TEST_SPLIT = cfg.TRAIN_TEST_SPLIT
-    records = gather_records(cfg, tub_path, opts, verbose=True)
-    assert len(records) == initial_records
-
-    # Attempt a 50:50 split
-    gen_records = {}
-    cfg.TRAIN_TEST_SPLIT = 0.5
-    print()
-    print("Testing a {} Test-Train split...".format(opts['cfg'].TRAIN_TEST_SPLIT))
-    print()
-    collate_records(records, gen_records, opts)
-    ratio = calculate_TrainTestSplit(gen_records)
-    assert ratio == cfg.TRAIN_TEST_SPLIT
-
-    # Attempt a split based on config file (reset of the record set)
-    gen_records = {}
-    cfg.TRAIN_TEST_SPLIT = orig_TRAIN_TEST_SPLIT
-    print()
-    print("Testing a {} Test-Train split...".format(opts['cfg'].TRAIN_TEST_SPLIT))
-    print()
-    collate_records(records, gen_records, opts)
-    ratio = calculate_TrainTestSplit(gen_records)
-    assert ratio == cfg.TRAIN_TEST_SPLIT
-
-@pytest.mark.skipif(on_pi() == True, reason='Too slow on RPi')
-def test_train_TrainTestSplit_continuous(tub_path):
-    # Check whether the Train-Test splitting is working correctly when a dataset is extended.
-    initial_records = 100
-
-    # Setup the test data
-    t = create_sample_tub(tub_path, records=initial_records)
-    assert t is not None
-
-    # Import the configuration
-    import donkeycar.templates.cfg_complete as cfg
-
-    # Initial Setup
-    gen_records = {}
-    opts = {'categorical' : False}
-    opts['cfg'] = cfg
-
-    # Perform the initial split
-    print()
-    print("Initial split of {} records to {} Test-Train split...".format(initial_records, opts['cfg'].TRAIN_TEST_SPLIT))
-    print()
-    records = gather_records(cfg, tub_path, opts, verbose=True)
-    assert len(records) == initial_records
-    collate_records(records, gen_records, opts)
-    ratio = calculate_TrainTestSplit(gen_records)
-    assert ratio == cfg.TRAIN_TEST_SPLIT
-
-    # Add some more records and recheck the ratio (only the NEW records should be added)
-    additional_records = 200
-    print()
-    print("Added an extra {} records, aiming for overall {} Test-Train split...".format(additional_records, opts['cfg'].TRAIN_TEST_SPLIT))
-    print()
-    create_sample_tub(tub_path, records=additional_records)
-    records = gather_records(cfg, tub_path, opts, verbose=True)
-    assert len(records) == (initial_records + additional_records)
-    collate_records(records, gen_records, opts)
-    ratio = calculate_TrainTestSplit(gen_records)
-    assert ratio == cfg.TRAIN_TEST_SPLIT

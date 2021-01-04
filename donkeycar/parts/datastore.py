@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+# Archived, will get removed once all the functionality has been ported over.
 """
 Created on Tue Jul  4 12:32:53 2017
 
 @author: wroscoe
 """
+import datetime
+import glob
+import json
 import os
+import random
 import sys
 import time
-import json
-import datetime
-import random
-import glob
+
 import numpy as np
 import pandas as pd
-
 from PIL import Image
-
-from donkeycar.parts.augment import augment_pil_image
-from donkeycar.utils import arr_to_img
 
 
 class Tub(object):
@@ -341,27 +340,6 @@ class Tub(object):
         except:
             pass
 
-    def augment_images(self):
-        # Get all record's index
-        index = self.get_index(shuffled=False)
-        # Go through index
-        count = 0
-        for ix in index:
-            data = self.get_record(ix)
-            for key, val in data.items():
-                typ = self.get_input_type(key)
-                if typ == 'image_array':
-                    # here val is an img_arr
-                    img = arr_to_img(val)
-                    # then augment and denormalise
-                    img_aug = augment_pil_image(img)
-                    name = self.make_file_name(key, ext='.jpg', ix=ix)
-                    try:
-                        img_aug.save(os.path.join(self.path, name))
-                        count += 1
-                    except IOError as err:
-                        print(err)
-        print('Augmenting', count, 'images in', self.path)
 
     def write_exclude(self):
         if 0 == len(self.exclude):
@@ -372,65 +350,6 @@ class Tub(object):
             with open(self.exclude_path, 'w') as f:
                 json.dump(list(self.exclude), f)
 
-    def get_record_gen(self, record_transform=None, shuffle=True, df=None):
-
-        if df is None:
-            df = self.get_df()
-
-        while True:
-            for _, row in self.df.iterrows():
-                if shuffle:
-                    record_dict = df.sample(n=1).to_dict(orient='record')[0]
-                else:
-                    record_dict = row
-
-                if record_transform:
-                    record_dict = record_transform(record_dict)
-
-                record_dict = self.read_record(record_dict)
-                yield record_dict
-
-    def get_batch_gen(self, keys, record_transform=None, batch_size=128, shuffle=True, df=None):
-
-        record_gen = self.get_record_gen(record_transform, shuffle=shuffle, df=df)
-
-        if keys is None:
-            keys = list(self.df.columns)
-
-        while True:
-            record_list = []
-            for _ in range(batch_size):
-                record_list.append(next(record_gen))
-
-            batch_arrays = {}
-            for i, k in enumerate(keys):
-                arr = np.array([r[k] for r in record_list])
-                batch_arrays[k] = arr
-
-            yield batch_arrays
-
-    def get_train_gen(self, X_keys, Y_keys, batch_size=128, record_transform=None, df=None):
-
-        batch_gen = self.get_batch_gen(X_keys + Y_keys,
-                                       batch_size=batch_size, record_transform=record_transform, df=df)
-
-        while True:
-            batch = next(batch_gen)
-            X = [batch[k] for k in X_keys]
-            Y = [batch[k] for k in Y_keys]
-            yield X, Y
-
-    def get_train_val_gen(self, X_keys, Y_keys, batch_size=128, record_transform=None, train_frac=.8):
-        train_df = train=self.df.sample(frac=train_frac,random_state=200)
-        val_df = self.df.drop(train_df.index)
-
-        train_gen = self.get_train_gen(X_keys=X_keys, Y_keys=Y_keys, batch_size=batch_size,
-                                       record_transform=record_transform, df=train_df)
-
-        val_gen = self.get_train_gen(X_keys=X_keys, Y_keys=Y_keys, batch_size=batch_size,
-                                       record_transform=record_transform, df=val_df)
-
-        return train_gen, val_gen
 
 
 class TubWriter(Tub):

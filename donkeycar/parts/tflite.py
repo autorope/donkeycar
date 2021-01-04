@@ -1,16 +1,17 @@
+import os
 import tensorflow as tf
 
+from donkeycar.parts.keras import KerasPilot
+
+
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
-    verStr = tf.__version__
-    if verStr.find('1.1')  == 0: # found MAJOR.MINOR match for version 1.1x.x
-        converter = tf.lite.TFLiteConverter.from_keras_model_file(in_filename)
-    if verStr.find('2.')  == 0: # found MAJOR.MINOR match for version 2.x.x
-        new_model= tf.keras.models.load_model(in_filename) #filepath="keras_model.h5")
-        converter = tf.lite.TFLiteConverter.from_keras_model(new_model)
+    print('Convert model {:} to TFLite {:}'.format(in_filename, out_filename))
+    new_model = tf.keras.models.load_model(in_filename)
+    converter = tf.lite.TFLiteConverter.from_keras_model(new_model)
     if data_gen is not None:
-        #when we have a data_gen that is the trigger to use it to 
-        #create integer weights and calibrate them. Warning: this model will
-        #no longer run with the standard tflite engine. That uses only float.
+        # when we have a data_gen that is the trigger to use it to create
+        # integer weights and calibrate them. Warning: this model will no
+        # longer run with the standard tflite engine. That uses only float.
         converter.optimizations = [tf.lite.Optimize.DEFAULT]
         converter.representative_dataset = data_gen
         try:
@@ -23,28 +24,25 @@ def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
             pass
         converter.inference_input_type = tf.uint8
         converter.inference_output_type = tf.uint8
-        print("----- using data generator to create int optimized weights for Coral TPU -----")
+        print("using data generator to create int optimized weights for Coral TPU")
     tflite_model = converter.convert()
     open(out_filename, "wb").write(tflite_model)
 
-def keras_session_to_tflite(model, out_filename):
-    inputs = model.inputs
-    outputs = model.outputs
-    with tf.keras.backend.get_session() as sess:        
-        converter = tf.lite.TFLiteConverter.from_session(sess, inputs, outputs)
-        tflite_model = converter.convert()
-        open(out_filename, "wb").write(tflite_model)
 
-
-class TFLitePilot(object):
-    '''
-    Base class for TFlite models that will provide steering and throttle to guide a car.
-    '''
+class TFLitePilot(KerasPilot):
+    """
+    This class wraps around the TensorFlow Lite interpreter.
+    """
     def __init__(self):
-        self.model = None
- 
+        super().__init__()
+        self.interpreter = None
+        self.input_shape = None
+        self.input_details = None
+        self.output_details = None
     
     def load(self, model_path):
+        assert os.path.splitext(model_path)[1] == '.tflite', \
+            'TFlitePilot should load only .tflite files'
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
@@ -55,15 +53,12 @@ class TFLitePilot(object):
 
         # Get Input shape
         self.input_shape = self.input_details[0]['shape']
-
     
-    def run(self, image):
-        input_data = image.reshape(self.input_shape).astype('float32') 
-
+    def inference(self, img_arr, other_arr):
+        input_data = img_arr.reshape(self.input_shape)
         self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
         self.interpreter.invoke()
 
-        steering = 0.0
         throttle = 0.0
         outputs = []
 
@@ -71,10 +66,13 @@ class TFLitePilot(object):
             output_data = self.interpreter.get_tensor(tensor['index'])
             outputs.append(output_data[0][0])
 
+        steering = outputs[0]
         if len(outputs) > 1:
-            steering = outputs[0]
             throttle = outputs[1]
 
         return steering, throttle
 
+    def get_input_shape(self):
+        assert self.input_shape is not None, "Need to load model first"
+        return self.input_shape
 

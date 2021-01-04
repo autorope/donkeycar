@@ -1,14 +1,19 @@
-__version__ = '3.1.5'
-
-print('using donkey v{} ...'.format(__version__))
-
 import sys
+from pyfiglet import Figlet
 
-if sys.version_info.major < 3:
-    msg = 'Donkey Requires Python 3.4 or greater. You are using {}'.format(sys.version)
+__version__ = '4.1.0-dev'
+f = Figlet(font='speed')
+
+print(f.renderText('Donkey Car'))
+print(f'using donkey v{__version__} ...')
+
+if sys.version_info.major < 3 or sys.version_info.minor < 6:
+    msg = f'Donkey Requires Python 3.6 or greater. You are using {sys.version}'
     raise ValueError(msg)
 
-from . import parts
+# The default recursion limits in CPython are too small.
+sys.setrecursionlimit(10**5)
+
 from .vehicle import Vehicle
 from .memory import Memory
 from . import utils

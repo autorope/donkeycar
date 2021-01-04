@@ -30,4 +30,3 @@ def test_web_control_user_defined_port():
     
     assert server.port == 12345
 
-
