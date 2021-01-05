@@ -21,7 +21,8 @@ After you’ve done that, set up the directory with this:
 
 Running
 
-```cd ~/follow``` 
+```cd ~/follow```
+
 ```python3 manage.py drive```
 
 Once it’s running, open a browser on your laptop and enter this in the URL bar: http://<your nano’s IP address>:8887
