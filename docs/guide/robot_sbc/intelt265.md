@@ -19,7 +19,7 @@ After you’ve done that, set up the directory with this:
 
 ```donkey createcar --path ~/follow --template path_follow```
 
-Running
+To run this go to the "follow" directory and start Donkey as per the below
 
 ```cd ~/follow```
 
