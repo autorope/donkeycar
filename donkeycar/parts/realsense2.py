@@ -8,7 +8,7 @@ import time
 import logging
 
 import numpy as np
-import pyrealsense2 as rs
+import pyrealsense2.pyrealsense2 as rs
 
 class RS_T265(object):
     '''

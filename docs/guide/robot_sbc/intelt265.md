@@ -17,7 +17,7 @@ Using the latest version of Raspian (tested with Raspian Buster) on the RPi, fol
 
 After you’ve done that, set up the directory with this:
 
-```donkey createcar --path ~/follow --template path_follower 
+```donkey createcar --path ~/follow --template path_follow 
 
 Running
 ``` cd ~/follow 
