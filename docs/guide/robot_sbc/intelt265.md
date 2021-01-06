@@ -25,7 +25,7 @@ To run this go to the "follow" directory and start Donkey as per the below
 
 ```python3 manage.py drive```
 
-Once it’s running, open a browser on your laptop and enter this in the URL bar: http://<your nano’s IP address>:8887
+Once it’s running, open a browser on your laptop and enter this in the URL bar: http://<your nano’s IP address>:8890
 
 The rest of the instructions from Tawn’s repo:
 
@@ -35,7 +35,8 @@ Drive the car in some kind of loop. You see the red line show the path.
 Hit X on the PS3/4 controller to save the path.
 Put the bot back at the start spot.
 Then hit the “select” button (on a PS3 controller) or “share” (on a PS4 controller) twice to go to pilot mode. This will start driving on the path. If you want it go faster or slower, change this line in the myconfig.py file: THROTTLE_FORWARD_PWM = 530
-Check the bottom of myconfig.py for some settings to tweak. PID values, map offsets and scale. things like that. You might want to start by downloading and using the myconfig.py file from my repo, which has some known-good settings and is otherwise a good place to start.
+Check the bottom of myconfig.py for some settings to tweak. PID values, map offsets and scale. things like that. 
+
 Some tips:
 
 When you start, the green dot will be in the top left corner of the box. You may prefer to have it in the center. If so, change PATH_OFFSET = (0, 0) in the myconfig.py file to PATH_OFFSET = (250, 250)
