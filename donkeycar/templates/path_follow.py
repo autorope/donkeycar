@@ -184,7 +184,7 @@ def drive(cfg):
     ctr.set_button_down_trigger("R2", inc_pid_d)
 
     # Plot a circle on the map where the car is located
-    if mode == 'user':
+    if PilotCondition() == True:
             carcolor = 'green'
     else:
             carcolor = 'blue'
