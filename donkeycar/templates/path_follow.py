@@ -136,16 +136,29 @@ def drive(cfg):
         path.save(cfg.PATH_FILENAME)
         print("saved path:", cfg.PATH_FILENAME)
 
+    def erase_path():
+        if os.path.exists(cfg.PATH_FILENAME):
+            os.remove(cfg.PATH_FILENAME)
+            print("erased path", cfg.PATH_FILENAME)
+        else:
+            print("no path found to erase")
+
+    
     # Here's a trigger to save the path. Complete one circuit of your course, when you
     # have exactly looped, or just shy of the loop, then save the path and shutdown
     # this process. Restart and the path will be loaded.
     ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
+
+    # Here's a trigger to erase a previously saved path. 
+
+    ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
 
     # Here's an image we can map to.
     img = PImage(clear_each_frame=True)
     V.add(img, outputs=['map/image'])
 
     # This PathPlot will draw path on the image
+
     plot = PathPlot(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
     V.add(plot, inputs=['map/image', 'path'], outputs=['map/image'])
 
@@ -171,7 +184,11 @@ def drive(cfg):
     ctr.set_button_down_trigger("R2", inc_pid_d)
 
     # Plot a circle on the map where the car is located
-    loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
+    if mode == 'user':
+            carcolor = 'green'
+    else:
+            carcolor = 'blue'
+    loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = carcolor)
     V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
     #This web controller will create a web server. We aren't using any controls, just for visualization.

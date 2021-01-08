@@ -90,6 +90,7 @@ PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.25                 # constant throttle value during path following
 SAVE_PATH_BTN = "cross"             # joystick button to save path
+ERASE_PATH_BTN = "square"           # joystick button to erase path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 
 #Odometry
