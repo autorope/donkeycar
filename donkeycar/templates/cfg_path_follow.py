@@ -85,10 +85,15 @@ PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a
 PID_P = -0.5                        # proportional mult for PID path follower
 # PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                       # differential mult for PID path follower
-# PID_THROTTLE = 0.25                 # constant throttle value during path following
-SAVE_PATH_BTN = "cross"             # joystick button to save path
-RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
-ERASE_PATH_BTN = "square"
+PID_THROTTLE = 0.30                 # constant throttle value during path following
+
+# the cross button is already reserved for the emergency stop
+SAVE_PATH_BTN = "circle"             # joystick button to save path
+RESET_ORIGIN_BTN = "square"       # joystick button to press to move car back to origin
+ERASE_PATH_BTN = "triangle"     # joystick button to erase path
+
+
+
 # 
 # #Odometry
 # HAVE_ODOM = False                   # Do you have an odometer? Uses pigpio 
