@@ -8,7 +8,7 @@
 # The update operation will not touch this file.
 # """
 
-# import os
+import os
 # 
 # #PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
