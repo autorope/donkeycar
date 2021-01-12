@@ -1,7 +1,7 @@
 import sys
 from pyfiglet import Figlet
 
-__version__ = '4.1.0-dev'
+__version__ = '4.1.0'
 f = Figlet(font='speed')
 
 print(f.renderText('Donkey Car'))
