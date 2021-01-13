@@ -113,12 +113,6 @@ class TubWriter(object):
                  max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
 
-        def shutdown_hook():
-            self.close()
-
-        # Register hook
-        atexit.register(shutdown_hook)
-
     def run(self, *args):
         assert len(self.tub.inputs) == len(args), \
             f'Expected {len(self.tub.inputs)} inputs but received {len(args)}'

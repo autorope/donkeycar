@@ -240,7 +240,7 @@ class Manifest(object):
         self.catalog_paths = list()
         self.catalog_metadata = dict()
         self.deleted_indexes = set()
-        self._got_updated = False
+        self._updated_session = False
         has_catalogs = False
 
         if self.manifest_path.exists():
@@ -267,8 +267,9 @@ class Manifest(object):
             self.current_catalog = Catalog(last_known_catalog,
                                            read_only=self.read_only,
                                            start_index=self.current_index)
-
-        self.session_id = self.create_session_id()
+        # Create a new session_id, which will be added to each record in the
+        # tub, when Tub.write_record() is called.
+        self.session_id = self.create_new_session()
 
     def write_record(self, record):
         new_catalog = self.current_index > 0 \
@@ -280,7 +281,11 @@ class Manifest(object):
         self.current_index += 1
         # Update metadata to keep track of the last index
         self._update_catalog_metadata(update=True)
-        self._got_updated = True
+        # Set session_id update status to True if this method is called at
+        # least once. Then session id metadata  will be updated when the
+        # session gets closed
+        if not self._updated_session:
+            self._updated_session = True
 
     def delete_record(self, record_index):
         # Does not actually delete the record, but marks it as deleted.
@@ -344,36 +349,30 @@ class Manifest(object):
         self.catalog_metadata = catalog_metadata
         self.seekeable.writeline(json.dumps(catalog_metadata))
 
-    def _write_metadata_contents(self):
-        self.seekeable.truncate_until_end(2)
-        self.seekeable.writeline(json.dumps(self.metadata))
-
-    def create_session_id(self):
+    def create_new_session(self):
         """ Creates a new session id and appends it to the metadata."""
-        last_session_id = None
-        last_session_ids = self.manifest_metadata.get('session_ids')
-        if last_session_ids:
-            last_session_id = last_session_ids[-1]
-        last_num = -1
-        if last_session_id:
-            session_id_parts = last_session_id.split('_')
-            if len(session_id_parts) == 2 \
-                    and session_id_parts[1].isnumeric() \
-                    and len(session_id_parts[0].split('-')) == 3:
-                last_num = int(session_id_parts[1])
-        tub_num = last_num + 1
-        date = time.strftime('%y-%m-%d')
-        session_id = date + '_' + str(tub_num)
-        if last_session_ids:
-            last_session_ids.append(session_id)
+        sessions = self.manifest_metadata.get('sessions', {})
+        last_id = -1
+        if sessions:
+            last_id = sessions['last_id']
         else:
-            self.manifest_metadata['session_ids'] = [session_id]
-        return session_id
+            sessions['all_full_ids'] = []
+        this_id = last_id + 1
+        date = time.strftime('%y-%m-%d')
+        this_full_id = date + '_' + str(this_id)
+        sessions['last_id'] = this_id
+        sessions['last_full_id'] = this_full_id
+        sessions['all_full_ids'].append(this_full_id)
+        self.manifest_metadata['sessions'] = sessions
+        return this_full_id
 
     def close(self):
-        # if records were received, write updated the metadata
-        if self._got_updated:
-            self._write_contents()
+        """ Closing tub closes open files for catalog, catalog manifest and
+            manifest.json"""
+        # If records were received, write updated session_id dictionary into
+        # the metadata, otherwise keep the session_id information unchanged
+        if self._updated_session:
+            self.seekeable.update_line(4, json.dumps(self.manifest_metadata))
         self.current_catalog.close()
         self.seekeable.close()
 
