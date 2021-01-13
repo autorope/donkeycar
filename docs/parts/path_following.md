@@ -42,7 +42,7 @@ Keep the terminal open to see the printed output of the app while it is running.
 
 If you get an error saying that it can't find the T265, unplug the sensor, plug it back in and try again. Ensure that your gamepad is on and connected, too (blue light is on the controller)
 
-Once it’s running, open a browser on your laptop and enter this in the URL bar: http://<your pi’s IP address or "raspberrypi.local">:8890
+Once it’s running, open a browser on your laptop and enter this in the URL bar: http://<your pi’s IP address or "raspberrypi.local">:8887
 
 When you drive, the Web interface will draw a red line for the path, a green circle for the robot location. If you're seeing the green dot but not the red line, that means that a path file has already been written. Delete “donkey_path.pkl” (rm donkey_path.pkl), restart and the red line should show up
 

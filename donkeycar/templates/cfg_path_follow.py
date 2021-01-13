@@ -15,7 +15,7 @@ CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # 
-# #VEHICLE
+# VEHICLE
 DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 # 
@@ -25,15 +25,15 @@ WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to lis
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
 
-# #9865, over rides only if needed, ie. TX2..
+# 9865, over rides only if needed, ie. TX2..
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 # 
-# #DRIVETRAIN
-# #These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
-# #DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-# #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
-# #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+# DRIVETRAIN
+#These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
+#DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
+#DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
+#SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
 DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM
 # 
 # #STEERING
@@ -47,15 +47,15 @@ THROTTLE_FORWARD_PWM = 400       #pwm value for auto mode throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
 THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
 # 
-# #DC_STEER_THROTTLE with one motor as steering, one as drive
-# #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
+#DC_STEER_THROTTLE with one motor as steering, one as drive
+# these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
 HBRIDGE_PIN_LEFT = 18
 HBRIDGE_PIN_RIGHT = 16
 HBRIDGE_PIN_FWD = 15
 HBRIDGE_PIN_BWD = 13
 # 
-# #DC_TWO_WHEEL - with two wheels as drive, left and right.
-# #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL
+#DC_TWO_WHEEL - with two wheels as drive, left and right.
+#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL
 HBRIDGE_PIN_LEFT_FWD = 18
 HBRIDGE_PIN_LEFT_BWD = 16
 HBRIDGE_PIN_RIGHT_FWD = 15
@@ -78,7 +78,7 @@ USE_FPV = False                     # send camera data to FPV webserver
 
 # 
 # 
-# #SOMBRERO
+#SOMBRERO
 HAVE_SOMBRERO = False               #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
 # 
 # 
@@ -100,21 +100,21 @@ ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 
 
 # 
-# #Odometry
+# Odometry
 HAVE_ODOM = False                   # Do you have an odometer? Uses pigpio 
 MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm
 ODOM_PIN = 4                        # Which GPIO board mode pin to use as input
 ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
 # 
-# #Intel T265
+# Intel T265
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
 # 
-# #DonkeyGym
-# #Only on Ubuntu linux, you can use the simulator as a virtual donkey and
-# #issue the same python manage.py drive command as usual, but have them control a virtual car.
-# #This enables that, and sets the path to the simualator and the environment.
-# #You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
-# #then extract that and modify DONKEY_SIM_PATH.
+# DonkeyGym
+# Only on Ubuntu linux, you can use the simulator as a virtual donkey and
+# issue the same python manage.py drive command as usual, but have them control a virtual car.
+# This enables that, and sets the path to the simualator and the environment.
+# You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
+# then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
