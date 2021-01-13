@@ -94,29 +94,24 @@ class CurrentState:
     def step(self, fwd=True):
         self.i += 1 if fwd else -1
 
-
-# global current state shared between the UI objects
-_state = CurrentState()
+    def update_all(self):
+        for dependant in self.dependants:
+            dependant.update()
 
 
 class RecordDependent:
     """ Base class for gui objects that share the global state"""
-    state = _state
 
-    def __init__(self):
+    def __init__(self, state):
+        self.state = state
         self.state.dependants.append(self)
-
-    @classmethod
-    def update_all(cls):
-        for dependant in cls.state.dependants:
-            dependant.update()
 
     @abstractmethod
     def update(self):
         pass
 
     def update_others(self):
-        for dependant in _state.dependants:
+        for dependant in self.state.dependants:
             if dependant != self:
                 dependant.update()
 
@@ -167,7 +162,7 @@ class TubManager(RecordDependent):
     """ Class to manage loading or reloading of the Tub from the tub directory.
         Loading triggers many actions on other widgets of the app. """
     def __init__(self, app, row):
-        super().__init__()
+        super().__init__(app.current_state)
         self.app = app
         self.base_path = self.app.rc_handler.data.get('last_tub')
         self.tub = None
@@ -186,11 +181,11 @@ class TubManager(RecordDependent):
         self.base_path = filedialog.askdirectory(initialdir=start_dir,
                                                  title="Select the tub dir")
         self.update_tub()
-        RecordDependent.update_all()
+        self.state.update_all()
         self.app.rc_handler.data['last_tub'] = self.base_path
 
     def update_tub(self, reload=False):
-        if self.base_path is None or self.app.config_loader.config is None:
+        if not self.base_path or not self.app.config_loader.config:
             return
         if not os.path.exists(os.path.join(self.base_path, 'manifest.json')):
             self.app.update_status(f'Path {self.base_path} is not a valid tub.')
@@ -250,7 +245,7 @@ class TubManipulator(RecordDependent):
     """ UI element to perform tub manipulation, like delete, restore and
         filtering."""
     def __init__(self, app, row):
-        super().__init__()
+        super().__init__(app.current_state)
         self.app = app
         self.lr = [0, 0]
         self.filter_expression = None
@@ -410,21 +405,25 @@ class LabelBar:
 
     def update(self, record):
         field, index = decompose(self.field)
-        val = record.underlying[field]
-        if index is not None:
-            val = val[index]
-        # update bar if present
-        if self.field_property:
-            norm_val = val / self.max
-            new_bar_val = (norm_val + 1) * 50 if self.center else norm_val * 100
-            self.bar_val.set(new_bar_val)
-        if isinstance(val, float):
-            text = f' {val:+07.3f}'
-        elif isinstance(val, int):
-            text = f' {val:10}'
+        if field in record.underlying:
+            val = record.underlying[field]
+            if index is not None:
+                val = val[index]
+            # update bar if present
+            if self.field_property:
+                norm_val = val / self.max
+                new_bar_val = (norm_val + 1) * 50 if self.center else norm_val * 100
+                self.bar_val.set(new_bar_val)
+            if isinstance(val, float):
+                text = f' {val:+07.3f}'
+            elif isinstance(val, int):
+                text = f' {val:10}'
+            else:
+                text = ' ' + val
+            self.text.set(self.field + text)
         else:
-            text = ' ' + val
-        self.text.set(self.field + text)
+            print(f'Bad record {self.app.tub_manager.state.i} - missing field '
+                  f'{field}')
 
     def destroy(self):
         self.label.destroy()
@@ -438,7 +437,7 @@ class DataPanel(RecordDependent):
     """ Data panel which allows do dynamically add and remove LabelBars from
         a drop down menu."""
     def __init__(self, app, row):
-        super().__init__()
+        super().__init__(app.current_state)
         self.app = app
         self.bars = dict()
         self.data_frame = tk.LabelFrame(self.app.window, padx=10, pady=10)
@@ -461,7 +460,7 @@ class DataPanel(RecordDependent):
             del(self.bars[field])
         else:
             self.bars[field] = LabelBar(self.app, field, field_property)
-        RecordDependent.update_all()
+        self.state.update_all()
         self.app.data_plot.plot_from_current_bars()
 
     def update(self):
@@ -477,7 +476,7 @@ class DataPanel(RecordDependent):
 class ControlPanel(RecordDependent):
     """ Control panel <, > , <<, >> and speed drop down. """
     def __init__(self, app, row):
-        super().__init__()
+        super().__init__(app.current_state)
         self.app = app
         self.speed_settings = ['0.25', '0.50', '1.00', '1.50', '2.00',
                                '3.00', '4.00']
@@ -583,7 +582,7 @@ class DataPlot:
         for k, v in zip(self.app.tub_manager.tub.manifest.inputs,
                         self.app.tub_manager.tub.manifest.types):
             if v == 'vector' or v == 'list':
-                dim = len(self.app.tub_manager.current_rec.underlying[k])
+                dim = len(self.app.tub_manager.state.record.underlying[k])
                 df_keys = [k + f'_{i}' for i in range(dim)]
                 self.df[df_keys] = pd.DataFrame(self.df[k].tolist(),
                                                 index=self.df.index)
@@ -607,7 +606,7 @@ class DataPlot:
 class ImageFrame(RecordDependent):
     """ UI Image element"""
     def __init__(self, app, row):
-        super().__init__()
+        super().__init__(app.current_state)
         self.app = app
         self.image = None
         self.label = tk.Label(app.window, image=None, bg='black',
@@ -630,7 +629,7 @@ class ImageFrame(RecordDependent):
 class TubSlider(RecordDependent):
     """ UI slider element"""
     def __init__(self, app, row):
-        super().__init__()
+        super().__init__(app.current_state)
         self.app = app
         self.being_updated = False
         self.slider = ttk.Scale(self.app.window, from_=0,
@@ -640,19 +639,19 @@ class TubSlider(RecordDependent):
 
     def slide(self, val):
         """ Callback function for slider"""
-        self.state.i = int(math.floor(float(val)))
-        # if we are slided, update others:
-        if not self.being_updated:
-            self.update_others()
         # if we are being updated externally, no need to update others,
         # just reset the state
-        else:
+        if self.being_updated:
             self.being_updated = False
+        # else we are sliding, update state and others:
+        else:
+            self.state.i = int(math.floor(float(val)))
+            self.update_others()
 
     def update(self):
         # This is a bit tricky, because set() will call slide() as the slider
         # is moved by this command. Here we are only being called by other
-        # UI elements, hence we set the flag to not update others in slide.
+        # UI elements, hence we set the flag to not update others in slide().
         self.being_updated = True
         self.slider.set(self.state.i)
 
@@ -662,6 +661,7 @@ class TubUI:
         self.window = window
         self.rc_handler = rc_handler
         self.window.title("Donkey Tub Manager")
+        self.current_state = CurrentState()
         self.run = False
         self.thread = None
         self.enable_keys = True
@@ -699,25 +699,30 @@ class TubUI:
         # refresh
         self.config_loader.update_config()
         self.tub_manager.update_tub()
-        RecordDependent.update_all()
+        self.current_state.update_all()
 
     def set_enable_keys(self, event):
         self.enable_keys = True
 
     def step(self, fwd=True):
-        RecordDependent.state.step(fwd)
-        RecordDependent.update_all()
-        msg = f'Donkey step {"forward" if fwd else "backward"} - you can use ' \
-              f'{"<right>" if fwd else "<left>"} key as well.'
+        self.current_state.step(fwd)
+        self.current_state.update_all()
         if not self.run:
+            msg = f'Donkey step {"forward" if fwd else "backward"} - you can ' \
+                  f'use {"<right>" if fwd else "<left>"} key as well.'
             self.update_status(msg)
 
     def loop(self, fwd=True):
         self.update_status(f'Donkey running... - toggle stop with <space> key')
         while self.run:
+            cycle_time = 1.0 / (self.control_panel.speed *
+                                self.config_loader.config.DRIVE_LOOP_HZ)
+            tic = time.time()
             self.step(fwd)
-            time.sleep(1.0 / (self.control_panel.speed *
-                              self.config_loader.config.DRIVE_LOOP_HZ))
+            toc = time.time()
+            delta_time = toc - tic
+            if delta_time < cycle_time:
+                time.sleep(cycle_time - delta_time)
         self.update_status('Donkey stopped - toggle run with <space> key')
 
     def thread_run(self, fwd=True):

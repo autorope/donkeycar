@@ -77,8 +77,9 @@ donkey train --tub=<tub_path> [--config=<config.py>] [--model=<model path>]
 * Uses the config file from the `--config` path (optionally)
 * Saves the model into `--model`
 * Uses the model type `--type`
-* Supports a logic function to filter records if this is defined in 
-  the variable `TRAIN_FILTER` in the `my_config.py` file. For example:
+* Supports filtering of records using a function defined in the variable 
+  `TRAIN_FILTER` in the `my_config.py` file. For example: 
+  
   ```python
   def filter_record(record):
       return record['user/throttle'] > 0
