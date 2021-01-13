@@ -385,10 +385,9 @@ class PS4Joystick(Joystick):
             0x139 : 'R1',
             0x136 : 'L2',
             0x137 : 'R2',
-            0x13a : 'L3',
-            0x13b : 'R3',
+            0x13d : 'L3',
+            0x13e : 'R3',
 
-            0x13d : 'pad',
             0x13a : 'share',
             0x13b : 'options',
             0x13c : 'PS',
