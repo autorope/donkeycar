@@ -31,13 +31,7 @@ rsync -rv --progress --partial pi@<your_pi_ip_address>:~/mycar/data/  ~/mycar/da
 * In the same terminal you can now run the training script on the latest tub by passing the path to that tub as an argument. You can optionally pass path masks, such as `./data/*` or `./data/tub_?_17-08-28` to gather multiple tubs. For example:
 
 ```bash
-python ~/mycar/manage.py train --tub <tub folder names comma separated> --model ./models/mypilot.h5
-```
-
-Optionally you can pass no arguments for the tub, and then all tubs will be used in the default data dir.
-
-```bash
-python ~/mycar/manage.py train --model ~/mycar/models/mypilot.h5
+donkey train --tub <tub folder names comma separated> --model ./models/mypilot.h5
 ```
 
 * You can create different model types with the `--type` argument during training. You may also choose to change the default model type in myconfig.py `DEFAULT_MODEL_TYPE`. When specifying a new model type, be sure to provide that type when running the model, or using the model in other tools like plotting or profiling. For more information on the different model types, look here for [Keras Parts](/parts/keras).
