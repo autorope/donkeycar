@@ -170,8 +170,10 @@ class FindCar(BaseCommand):
         
         print("Finding your car's IP address...")
         cmd = "sudo nmap -sP " + ip + "/24 | awk '/^Nmap/{ip=$NF}/B8:27:EB/{print ip}'"
+        cmdRPi4 = "sudo nmap -sP " + ip + "/24 | awk '/^Nmap/{ip=$NF}/DC:A6:32/{print ip}'"
         print("Your car's ip address is:" )
         os.system(cmd)
+        os.system(cmdRPi4)
 
 
 class CalibrateCar(BaseCommand):    
