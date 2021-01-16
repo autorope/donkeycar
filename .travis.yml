@@ -23,7 +23,7 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then conda env create -f install/envs/mac.yml ; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then conda env create -f install/envs/ubuntu.yml ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then conda env create -f install/envs/pc.yml ; fi
   - conda activate donkey
   - pip install -e .
   - conda env export > environment.yml
