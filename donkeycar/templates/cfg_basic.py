@@ -107,6 +107,10 @@ WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to lis
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
 
+#DRIVING
+AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
+
+
 #DonkeyGym
 #Only on Ubuntu linux, you can use the simulator as a virtual donkey and
 #issue the same python manage.py drive command as usual, but have them control a virtual car.
