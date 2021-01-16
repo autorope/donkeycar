@@ -4,7 +4,7 @@ from typing import Any, List, Optional, TypeVar, Tuple
 import numpy as np
 from donkeycar.config import Config
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import load_image_arr, normalize_image, train_test_split
+from donkeycar.utils import load_image, load_pil_image, normalize_image, train_test_split
 from typing_extensions import TypedDict
 
 X = TypeVar('X', covariant=True)
@@ -34,17 +34,32 @@ class TubRecord(object):
         self.underlying = underlying
         self._image: Optional[Any] = None
 
-    def image(self, cached=True) -> np.ndarray:
+    def image(self, cached=True, as_nparray=True) -> np.ndarray:
+        """Loads the image for you
+
+        Args:
+            cached (bool, optional): whether to cache the image. Defaults to True.
+            as_nparray (bool, optional): whether to convert the image to a np array of uint8.
+                                         Defaults to True. If false, returns result of Image.open()
+
+        Returns:
+            np.ndarray: [description]
+        """
         if self._image is None:
             image_path = self.underlying['cam/image_array']
             full_path = os.path.join(self.base_path, 'images', image_path)
-            _image = load_image_arr(full_path, cfg=self.config)
+
+            if as_nparray:
+                _image = load_image(full_path, cfg=self.config)
+            else:
+                # If you just want the raw Image
+                _image = load_pil_image(full_path, cfg=self.config)
+
             if cached:
                 self._image = _image
         else:
             _image = self._image
         return _image
-
     def __repr__(self) -> str:
         return repr(self.underlying)
 

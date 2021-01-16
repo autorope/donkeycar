@@ -37,6 +37,7 @@ conda env create -f install/envs/mac.yml
 conda activate donkey
 pip install -e .[pc]
 ```
+Note: if you are using ZSH (you'll know if you are), you won't be able to run `pip install -e .[pc]`. You'll need to escape the brackets and run `pip install -e .\[pc\]`.
 
 * Tensorflow GPU
 
