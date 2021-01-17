@@ -51,7 +51,7 @@
         text: 'Load Tub'
         size_hint_x: 0.5
         disabled: True
-        on_press: print('Tub button pressed')
+        on_press: root.open_popup()
     AutoLabel:
         text: '/A/very_long/path/User/dirk/mycar/data3'
 
@@ -110,6 +110,7 @@
         text: 'Restore'
 
 <TubFilter>:
+    id: tub_filter
     orientation: 'horizontal'
     size_hint_y: None
     height: common_height
@@ -117,6 +118,7 @@
         text: 'Set filter'
         size_hint_x: 0.25
     TextInput:
+        id: record_filter
         text: 'user/throttle > 0.1'
         multiline: False
 
@@ -137,7 +139,8 @@
         orientation: 'horizontal'
         size_hint_y: None
         height: common_height
-        ConfigManager
+        ConfigManager:
+            id: config_manager
         TubManager:
             id: tub_manager
     BoxLayout:
@@ -154,10 +157,12 @@
         size_hint_y: None
         height: common_height
     TubEditor
-    TubFilter
+    TubFilter:
+        id: tub_filter
     Label:
         text: 'Graphics here'
     Label:
+        id: status
         text_size: self.size
         halign: 'left'
         valign: 'bottom'
