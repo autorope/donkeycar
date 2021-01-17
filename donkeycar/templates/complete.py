@@ -18,10 +18,8 @@ import os
 import time
 import logging
 from docopt import docopt
-import numpy as np
 
 import donkeycar as dk
-
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
@@ -33,19 +31,21 @@ from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
 logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
 
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
-    '''
-    Construct a working robotic vehicle from many parts.
-    Each part runs as a job in the Vehicle loop, calling either
-    it's run or run_threaded method depending on the constructor flag `threaded`.
-    All parts are updated one after another at the framerate given in
-    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
-    Parts may have named outputs and inputs. The framework handles passing named outputs
-    to parts requesting the same named input.
-    '''
-
+def drive(cfg, model_path=None, use_joystick=False, model_type=None,
+          camera_type='single', meta=[]):
+    """
+    Construct a working robotic vehicle from many parts. Each part runs as a
+    job in the Vehicle loop, calling either it's run or run_threaded method
+    depending on the constructor flag `threaded`. All parts are updated one
+    after another at the framerate given in cfg.DRIVE_LOOP_HZ assuming each
+    part finishes processing in a timely manner. Parts may have named outputs
+    and inputs. The framework handles passing named outputs to parts
+    requesting the same named input.
+    """
+    logger.info(f'PID: {os.getpid()}')
     if cfg.DONKEY_GYM:
         #the simulator will use cuda and then we usually run out of resources
         #if we also try to use cuda. so disable for donkey_gym.

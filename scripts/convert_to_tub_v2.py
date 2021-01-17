@@ -63,11 +63,13 @@ def convert_to_tub_v2(paths, output_path):
                     previous_index += 1
                     # Adding empty record nodes, and marking them deleted
                     # until the next valid record.
+                    delete_list = []
                     while previous_index < current_index:
                         idx = output_tub.manifest.current_index
                         output_tub.write_record(empty_record)
-                        output_tub.delete_record(idx)
+                        delete_list.append(idx)
                         previous_index += 1
+                    output_tub.delete_records(delete_list)
                 bar.next()
             except Exception as exception:
                 print(f'Ignoring record path {record_path}\n', exception)

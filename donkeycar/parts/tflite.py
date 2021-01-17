@@ -1,8 +1,9 @@
 import os
-import numpy as np
 import tensorflow as tf
+import numpy as np
+from typing import Dict, Union
 
-from donkeycar.parts.keras import KerasPilot
+from donkeycar.parts.keras import KerasPilot, KerasLinear, XY
 
 
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
@@ -44,6 +45,7 @@ class TFLitePilot(KerasPilot):
     def load(self, model_path):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'
+        print(f'Loading model {model_path}')
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()
@@ -77,3 +79,6 @@ class TFLitePilot(KerasPilot):
         assert self.input_shape is not None, "Need to load model first"
         return self.input_shape
 
+    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+        """ For now only support keras linear"""
+        return KerasLinear.y_translate(self, y)

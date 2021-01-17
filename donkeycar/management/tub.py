@@ -113,5 +113,4 @@ class TubApi(tornado.web.RequestHandler):
             new_indexes.add(frame['_index'])
 
         frames_to_delete = [index for index in old_indexes if index not in new_indexes]
-        for frm in frames_to_delete:
-            tub.delete_record(frm)
+        tub.delete_records(frames_to_delete)

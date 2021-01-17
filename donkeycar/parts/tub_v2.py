@@ -71,20 +71,16 @@ class Tub(object):
 
         self.manifest.write_record(contents)
 
-    def delete_record(self, record_index):
-        self.manifest.delete_record(record_index)
+    def delete_records(self, record_indexes):
+        self.manifest.delete_records(record_indexes)
 
     def delete_last_n_records(self, n):
         last_index = self.manifest.current_index
-        first_index = last_index - n
-        for index in range(first_index, last_index):
-            if index < 0:
-                continue
-            else:
-                self.manifest.delete_record(index)
+        first_index = max(last_index - n, 0)
+        self.manifest.delete_records(range(first_index, last_index))
 
-    def restore_record(self, record_index):
-        self.manifest.restore_record(record_index)
+    def restore_records(self, record_indexes):
+        self.manifest.restore_records(record_indexes)
 
     def close(self):
         self.manifest.close()

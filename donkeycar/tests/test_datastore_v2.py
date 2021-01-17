@@ -35,15 +35,37 @@ class TestDatastore(unittest.TestCase):
             manifest.write_record(self._newRecord())
 
         for i in range(deleted):
-            manifest.delete_record(i)
+            manifest.delete_records(i)
 
         read_records = 0
         for entry in manifest:
-            print('Entry %s' % (entry))
+            print(f'Entry {entry}')
             read_records += 1
 
         self.assertEqual((count - deleted), read_records)
 
+    def test_delete_and_restore_by_set(self):
+        manifest = Manifest(self._path, max_len=2)
+        count = 10
+        deleted = range(3, 7)
+        for i in range(count):
+            manifest.write_record(self._newRecord())
+
+        manifest.delete_records(deleted)
+        read_records = 0
+        for entry in manifest:
+            print(f'Entry {entry}')
+            read_records += 1
+
+        self.assertEqual(count - len(deleted), read_records)
+
+        manifest.restore_records(deleted)
+        read_records = 0
+        for entry in manifest:
+            print(f'Entry {entry}')
+            read_records += 1
+
+        self.assertEqual(count, read_records)
 
     def test_memory_mapped_read(self):
         manifest = Manifest(self._path, max_len=2)
@@ -60,13 +82,13 @@ class TestDatastore(unittest.TestCase):
 
         self.assertEqual(10, read_records)
 
-
     def tearDown(self):
         shutil.rmtree(self._path)
 
     def _newRecord(self):
         record = {'at' : time.time()}
         return record
+
 
 if __name__ == '__main__':
     unittest.main()
