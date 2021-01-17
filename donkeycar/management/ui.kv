@@ -1,8 +1,9 @@
 
 <FileChooserPopup>:
     title: "Choose the directory"
-    size_hint: 0.5, 0.5
+    size_hint: 1.0, 1.0
     auto_dismiss: False
+    pos_hint: {'center_x': .5, 'center_y': .5}
 
     BoxLayout:
         orientation: "vertical"
@@ -31,6 +32,10 @@
 
 <ConfigManager>
     orientation: 'horizontal'
+    on_config:
+        print('config changed')
+        app.layout.ids.tub_manager.ids.tub_button.disabled = False
+        car_dir.text = self.car_dir
     Button:
         text: 'Load car directory'
         size_hint_x: 0.5
@@ -42,8 +47,11 @@
 <TubManager>
     orientation: 'horizontal'
     Button:
+        id: tub_button
         text: 'Load Tub'
         size_hint_x: 0.5
+        disabled: True
+        on_press: print('Tub button pressed')
     AutoLabel:
         text: '/A/very_long/path/User/dirk/mycar/data3'
 
@@ -130,7 +138,8 @@
         size_hint_y: None
         height: common_height
         ConfigManager
-        TubManager
+        TubManager:
+            id: tub_manager
     BoxLayout:
         orientation: 'horizontal'
         spacing: 5
