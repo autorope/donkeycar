@@ -1,0 +1,155 @@
+
+<FileChooserPopup>:
+    title: "Choose the directory"
+    size_hint: 0.5, 0.5
+    auto_dismiss: False
+
+    BoxLayout:
+        orientation: "vertical"
+        FileChooser:
+            id: filechooser
+            rootpath: root.root_path
+            dirselect: True
+            FileChooserListLayout
+
+        BoxLayout:
+            size_hint: (1, 0.1)
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            spacing: 20
+            Button:
+                text: "Cancel"
+                on_release: root.dismiss()
+            Button:
+                text: "Load"
+                on_release: root.load(filechooser.selection)
+                disabled: filechooser.selection==[]
+
+<AutoLabel@Label>
+    text_size: self.size
+    halign: 'center'
+    valign: 'middle'
+
+<ConfigManager>
+    orientation: 'horizontal'
+    Button:
+        text: 'Load car directory'
+        size_hint_x: 0.5
+        on_press: root.open_popup()
+    AutoLabel:
+        id: car_dir
+        text: '/User/dirk/mycar'
+
+<TubManager>
+    orientation: 'horizontal'
+    Button:
+        text: 'Load Tub'
+        size_hint_x: 0.5
+    AutoLabel:
+        text: '/A/very_long/path/User/dirk/mycar/data3'
+
+<LabelBar>:
+    orientation: 'horizontal'
+    Label:
+        text: 'New label {:}'.format(root.i)
+    ProgressBar:
+        value: root.i * 10
+
+<DataPanel>
+    cols: 1
+    GridLayout:
+        cols: 2
+        Button:
+            text: 'Add box'
+            size_hint_y: None
+            height: common_height
+            on_press: root.add_label()
+        Button:
+            text: 'Remove box'
+            size_hint_y: None
+            height: common_height
+            on_press: root.remove_label()
+
+<ControlPanel>
+    cols: 2
+    Button:
+        text: 'Left dummy'
+    Button:
+        text: 'Right dummy'
+    Button:
+        text: '<'
+        on_press: app.layout.index -= 1
+    Button:
+        text: '>'
+        on_press: app.layout.index += 1
+    Button:
+        text: '<<'
+    Button:
+        text: '>>'
+
+<TubEditor>
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: common_height
+    Button:
+        text: 'Set left'
+    Button:
+        text: 'Set right'
+    Button:
+        text: '[80, 180)'
+    Button:
+        text: 'Delete'
+    Button:
+        text: 'Restore'
+
+<TubFilter>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: common_height
+    Button:
+        text: 'Set filter'
+        size_hint_x: 0.25
+    TextInput:
+        text: 'user/throttle > 0.1'
+        multiline: False
+
+<-FullImage>:
+    # texture: self.get_texture()
+    canvas:
+        Color:
+            rgb: (1, 1, 1)
+        Rectangle:
+            texture: self.texture
+            size: self.width, self.height
+            pos: self.x, self.y
+
+<UiLayout>:
+    orientation: 'vertical'
+    #:set common_height 60
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: common_height
+        ConfigManager
+        TubManager
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: 5
+        DataPanel
+        FullImage:
+            id: img
+        ControlPanel
+    Slider:
+        min: 0
+        max: 100
+        value: 25
+        size_hint_y: None
+        height: common_height
+    TubEditor
+    TubFilter
+    Label:
+        text: 'Graphics here'
+    Label:
+        text_size: self.size
+        halign: 'left'
+        valign: 'bottom'
+        text: 'Status: here'
