@@ -58,29 +58,19 @@ class FileChooserBase:
 class ConfigManager(BoxLayout, FileChooserBase):
     """ Class to mange loading of the config file from the car directory"""
     config = ObjectProperty(None)
+    file_path = rc_handler.data.get('car_dir', '')
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.car_dir = rc_handler.data.get('car_dir')
-
-    def update_config(self):
-        if self.car_dir:
+    def load_action(self):
+        if self.file_path:
             try:
-                self.config = load_config(os.path.join(self.car_dir, 'config.py'))
-                # self.parent.parent.ids.tub_manager.ids.tub_button.disabled =
-                # False
+                self.config = load_config(os.path.join(self.file_path, 'config.py'))
+                rc_handler.data['car_dir'] = self.file_path
                 return True
             except FileNotFoundError:
-                print(f'Directory {self.car_dir} has no config.py')
+                print(f'Directory {self.file_path} has no config.py')
             except Exception as e:
                 print(e)
             return False
-
-    def load_action(self):
-        self.car_dir = self.file_path
-        if self.update_config():
-            # self.ids.car_dir.text = self.car_dir
-            rc_handler.data['car_dir'] = self.car_dir
 
 
 class TubManager(BoxLayout):
