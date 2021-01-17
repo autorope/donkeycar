@@ -35,14 +35,14 @@
     on_config:
         print('config changed')
         app.layout.ids.tub_manager.ids.tub_button.disabled = False
-        car_dir.text = self.car_dir
+        car_dir.text = self.file_path
     Button:
         text: 'Load car directory'
         size_hint_x: 0.5
         on_press: root.open_popup()
     AutoLabel:
         id: car_dir
-        text: '/User/dirk/mycar'
+        text: root.file_path
 
 <TubManager>
     orientation: 'horizontal'
