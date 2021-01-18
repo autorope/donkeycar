@@ -48,7 +48,8 @@ setup(name='donkeycar',
           "simple_pid",
           'progress',
           'typing_extensions',
-          'pyfiglet'
+          'pyfiglet',
+          'imgaug',
       ],
       extras_require={
           'pi': [
@@ -65,7 +66,6 @@ setup(name='donkeycar',
           ],
           'pc': [
               'matplotlib',
-              'imgaug',
           ],
           'dev': [
               'pytest',
