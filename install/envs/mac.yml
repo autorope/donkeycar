@@ -32,7 +32,7 @@ dependencies:
   - pytorch-lightning
   - numpy
   - pip:
-    - tensorflow>=2.2.0,<=2.3.2
+    - tensorflow=2.2.0
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
     - opencv-python-headless
