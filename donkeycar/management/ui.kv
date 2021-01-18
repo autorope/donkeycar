@@ -46,6 +46,7 @@
 
 <TubManager>
     orientation: 'horizontal'
+    on_tub: tub_dir.text = root.file_path
     Button:
         id: tub_button
         text: 'Load Tub'
@@ -53,7 +54,8 @@
         disabled: True
         on_press: root.open_popup()
     AutoLabel:
-        text: '/A/very_long/path/User/dirk/mycar/data3'
+        id: tub_dir
+        text: root.file_path
 
 <LabelBar>:
     orientation: 'horizontal'

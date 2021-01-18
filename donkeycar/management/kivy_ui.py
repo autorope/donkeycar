@@ -62,6 +62,12 @@ class ConfigManager(BoxLayout, FileChooserBase):
     config = ObjectProperty(None)
     file_path = rc_handler.data.get('car_dir', '')
 
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     print(self.file_path)
+    #     if self.file_path:
+    #         self.load_action()
+
     def load_action(self):
         if self.file_path:
             try:
@@ -198,6 +204,12 @@ class TubFilter(BoxLayout):
 class UiLayout(BoxLayout):
     index = NumericProperty(0)
 
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+
+    def initialise(self):
+        self.ids.config_manager.load_action()
+
     def on_index(self, obj, val):
         self.ids.img.update(val)
 
@@ -209,6 +221,7 @@ class TubApp(App):
     def __init__(self):
         super().__init__(title='Tub Manager')
         self.layout = UiLayout()
+        self.layout.initialise()
 
     def build(self):
         return self.layout
