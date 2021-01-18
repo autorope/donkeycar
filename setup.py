@@ -74,7 +74,7 @@ setup(name='donkeycar',
               'mypy'
           ],
           'ci': ['codecov'],
-          'tf': ['tensorflow>=2.2.0'],
+          'tf': ['tensorflow==2.2.0'],
           'torch': [
               'pytorch>=1.7.1',
               'torchvision',
