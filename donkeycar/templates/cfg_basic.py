@@ -50,6 +50,9 @@ THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
 #TRAINING
+# The default AI framework to use. Choose from (tensorflow|pytorch)
+DEFAULT_AI_FRAMEWORK='tensorflow'
+
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
