@@ -140,6 +140,40 @@ class KerasPilot(ABC):
             workers=1,
             use_multiprocessing=False
         )
+            
+        try:
+            import matplotlib.pyplot as plt
+            from pathlib import Path
+        
+            plt.figure(1)
+
+            # Only do accuracy if we have that data (e.g. categorical outputs)
+            if 'angle_out_acc' in history.history:
+                plt.subplot(121)
+
+            # summarize history for loss
+            plt.plot(history.history['loss'])
+            plt.plot(history.history['val_loss'])
+            plt.title('model loss')
+            plt.ylabel('loss')
+            plt.xlabel('epoch')
+            plt.legend(['train', 'validate'], loc='upper right')
+            
+            # summarize history for acc
+            if 'angle_out_acc' in history.history:
+                plt.subplot(122)
+                plt.plot(history.history['angle_out_acc'])
+                plt.plot(history.history['val_angle_out_acc'])
+                plt.title('model angle accuracy')
+                plt.ylabel('acc')
+                plt.xlabel('epoch')
+            
+            plt.savefig(Path(model_path).with_suffix('.png'))
+            # plt.show()
+            
+        except Exception as ex:
+            print("problems with loss graph: {}".format( ex ) )
+            
         return history
 
     def _get_train_model(self) -> Model:
