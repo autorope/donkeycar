@@ -8,7 +8,7 @@
     BoxLayout:
         orientation: "vertical"
         FileChooser:
-            id: filechooser
+            id: file_chooser
             rootpath: root.root_path
             dirselect: True
             FileChooserListLayout
@@ -22,8 +22,8 @@
                 on_release: root.dismiss()
             Button:
                 text: "Load"
-                on_release: root.load(filechooser.selection)
-                disabled: filechooser.selection==[]
+                on_release: root.load(file_chooser.selection)
+                disabled: file_chooser.selection==[]
 
 <AutoLabel@Label>
     text_size: self.size
@@ -31,11 +31,14 @@
     valign: 'middle'
 
 <ConfigManager>
+    title: 'Choose the car directory'
     orientation: 'horizontal'
     on_config:
-        print('config changed')
-        app.layout.ids.tub_manager.ids.tub_button.disabled = False
         car_dir.text = self.file_path
+        app.layout.ids.tub_manager.ids.tub_button.disabled = False
+        app.layout.ids.tub_manager.root_path = self.file_path
+        print('config changed')
+
     Button:
         text: 'Load car directory'
         size_hint_x: 0.5
@@ -45,6 +48,7 @@
         text: root.file_path
 
 <TubManager>
+    title: 'Choose the tub directory'
     orientation: 'horizontal'
     on_tub: tub_dir.text = root.file_path
     Button:
