@@ -37,8 +37,7 @@
         car_dir.text = self.file_path
         app.layout.ids.tub_loader.ids.tub_button.disabled = False
         app.layout.ids.tub_loader.root_path = self.file_path
-        print('config changed')
-
+        app.layout.ids.status.text = 'Config loaded from' + self.file_path
     Button:
         text: 'Load car directory'
         size_hint_x: 0.5
