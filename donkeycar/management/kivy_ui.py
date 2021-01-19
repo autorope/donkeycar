@@ -171,18 +171,19 @@ class FullImage(Image):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def set_texture(self, i=0):
-        source = f'/Users/dirk/mycar/data2/tub_53/images/' \
-                 f'{i}_cam_image_array_.jpg'
-        image = PilImage.open(source)
-        bytes_io = io.BytesIO()
-        image.save(bytes_io, format='png')
-        bytes_io.seek(0)
-        core_img = CoreImage(bytes_io, ext='png')
-        self.texture = core_img.texture
-
-    def update(self, index):
-        self.set_texture(index)
+    def update(self, record):
+        try:
+            img_arr = record.image()
+            pil_image = PilImage.fromarray(img_arr)
+            bytes_io = io.BytesIO()
+            pil_image.save(bytes_io, format='png')
+            bytes_io.seek(0)
+            core_img = CoreImage(bytes_io, ext='png')
+            self.texture = core_img.texture
+        except KeyError as e:
+            print('Missing key:', e)
+        except Exception as e:
+            print('Bad record:', e)
 
 
 class ControlPanel(GridLayout):
@@ -200,16 +201,22 @@ class TubFilter(BoxLayout):
 
 
 class UiLayout(BoxLayout):
-    index = NumericProperty(0)
+    index = NumericProperty(None)
+    current_record = ObjectProperty(None)
 
     # def __init__(self, **kwargs):
     #     super().__init__(**kwargs)
 
     def initialise(self):
         self.ids.config_manager.load_action()
+        self.ids.tub_loader.update_tub()
+        self.index = 0
 
-    def on_index(self, obj, val):
-        self.ids.img.update(val)
+    def on_index(self, obj, index):
+        self.current_record = self.ids.tub_loader.records[index]
+
+    def on_current_record(self, obj, record):
+        self.ids.img.update(record)
 
     def status(self, msg):
         self.ids.status.text = msg
