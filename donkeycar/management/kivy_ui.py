@@ -36,20 +36,24 @@ rc_handler = RcFileHandler()
 
 class FileChooserPopup(Popup):
     load = ObjectProperty()
-    root_path = os.path.expanduser('~')
+    root_path = StringProperty()
 
 
 class FileChooserBase:
     file_path = StringProperty("No file chosen")
-    the_popup = ObjectProperty(None)
+    popup = ObjectProperty(None)
+    root_path = os.path.expanduser('~')
+    title = StringProperty(None)
 
     def open_popup(self):
-        self.the_popup = FileChooserPopup(load=self.load)
-        self.the_popup.open()
+        self.popup = FileChooserPopup(load=self.load,
+                                      root_path=self.root_path,
+                                      title=self.title)
+        self.popup.open()
 
     def load(self, selection):
         self.file_path = str(selection[0])
-        self.the_popup.dismiss()
+        self.popup.dismiss()
         print(self.file_path)
         self.load_action()
 
@@ -61,12 +65,6 @@ class ConfigManager(BoxLayout, FileChooserBase):
     """ Class to mange loading of the config file from the car directory"""
     config = ObjectProperty(None)
     file_path = rc_handler.data.get('car_dir', '')
-
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
-    #     print(self.file_path)
-    #     if self.file_path:
-    #         self.load_action()
 
     def load_action(self):
         if self.file_path:
