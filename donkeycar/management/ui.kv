@@ -35,8 +35,8 @@
     orientation: 'horizontal'
     on_config:
         car_dir.text = self.file_path
-        app.layout.ids.tub_manager.ids.tub_button.disabled = False
-        app.layout.ids.tub_manager.root_path = self.file_path
+        app.layout.ids.tub_loader.ids.tub_button.disabled = False
+        app.layout.ids.tub_loader.root_path = self.file_path
         print('config changed')
 
     Button:
@@ -47,7 +47,7 @@
         id: car_dir
         text: root.file_path
 
-<TubManager>
+<TubLoader>
     title: 'Choose the tub directory'
     orientation: 'horizontal'
     on_tub: tub_dir.text = root.file_path
@@ -147,8 +147,8 @@
         height: common_height
         ConfigManager:
             id: config_manager
-        TubManager:
-            id: tub_manager
+        TubLoader:
+            id: tub_loader
     BoxLayout:
         orientation: 'horizontal'
         spacing: 5
