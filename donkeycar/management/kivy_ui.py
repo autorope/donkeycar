@@ -194,17 +194,32 @@ class ControlPanel(BoxLayout):
     speed = NumericProperty(1.0)
     record_display = StringProperty()
     clock = None
+    fwd = None
+    continuous = None
 
     def start(self, fwd=True, continuous=False):
         time.sleep(0.1)
-        arg = partial(self.step, fwd)
-        self.clock = Clock.schedule_interval(arg, 0.08)
+        call = partial(self.step, fwd)
+        if continuous:
+            self.fwd = fwd
+            self.continuous = continuous
+            cycle_time = 1.0 / \
+                (float(self.speed) *
+                 self.parent.parent.ids.config_manager.config.DRIVE_LOOP_HZ)
+        else:
+            cycle_time = 0.08
+        self.clock = Clock.schedule_interval(call, cycle_time)
 
     def step(self, fwd=True, *largs):
         self.parent.parent.index += 1 if fwd else -1
 
     def stop(self):
         self.clock.cancel()
+
+    def restart(self):
+        if self.clock:
+            self.stop()
+            self.start(self.fwd, self.continuous)
 
 
 class TubEditor(BoxLayout):
