@@ -64,7 +64,7 @@ class FileChooserBase:
 class ConfigManager(BoxLayout, FileChooserBase):
     """ Class to mange loading of the config file from the car directory"""
     config = ObjectProperty(None)
-    file_path = rc_handler.data.get('car_dir', '')
+    file_path = StringProperty(rc_handler.data.get('car_dir', ''))
 
     def load_action(self):
         if self.file_path:
@@ -80,7 +80,7 @@ class ConfigManager(BoxLayout, FileChooserBase):
 class TubLoader(BoxLayout, FileChooserBase):
     """ Class to manage loading or reloading of the Tub from the tub directory.
         Loading triggers many actions on other widgets of the app. """
-    file_path = rc_handler.data.get('last_tub')
+    file_path = StringProperty(rc_handler.data.get('last_tub'))
     tub = ObjectProperty(None)
 
     def __init__(self, **kwargs):
@@ -187,6 +187,7 @@ class FullImage(Image):
 
 
 class ControlPanel(GridLayout):
+    speed = NumericProperty(1.0)
     pass
 
 
@@ -200,12 +201,9 @@ class TubFilter(BoxLayout):
     pass
 
 
-class UiLayout(BoxLayout):
+class TubWindow(BoxLayout):
     index = NumericProperty(None)
     current_record = ObjectProperty(None)
-
-    # def __init__(self, **kwargs):
-    #     super().__init__(**kwargs)
 
     def initialise(self):
         self.ids.config_manager.load_action()
@@ -217,6 +215,8 @@ class UiLayout(BoxLayout):
 
     def on_current_record(self, obj, record):
         self.ids.img.update(record)
+        index = record.underlying['_index']
+        self.ids.control_panel.ids.record_num.text = f"Record {index:06}"
 
     def status(self, msg):
         self.ids.status.text = msg
@@ -225,7 +225,7 @@ class UiLayout(BoxLayout):
 class TubApp(App):
     def __init__(self):
         super().__init__(title='Tub Manager')
-        self.layout = UiLayout()
+        self.layout = TubWindow()
         self.layout.initialise()
 
     def build(self):
