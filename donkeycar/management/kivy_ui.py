@@ -190,12 +190,12 @@ class FullImage(Image):
             print('Bad record:', e)
 
 
-class ControlPanel(GridLayout):
+class ControlPanel(BoxLayout):
     speed = NumericProperty(1.0)
     record_display = StringProperty()
     clock = None
 
-    def start(self, fwd=True):
+    def start(self, fwd=True, continuous=False):
         time.sleep(0.1)
         arg = partial(self.step, fwd)
         self.clock = Clock.schedule_interval(arg, 0.08)
