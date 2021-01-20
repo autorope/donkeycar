@@ -86,11 +86,11 @@ class TubLoader(BoxLayout, FileChooserBase):
         Loading triggers many actions on other widgets of the app. """
     file_path = StringProperty(rc_handler.data.get('last_tub'))
     tub = ObjectProperty(None)
+    len = NumericProperty(1)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.records = None
-        self.len = 1
 
     def load_action(self):
         if self.update_tub(reload=False):
@@ -246,6 +246,7 @@ class TubWindow(BoxLayout):
 
     def on_index(self, obj, index):
         self.current_record = self.ids.tub_loader.records[index]
+        self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
         self.ids.img.update(record)
