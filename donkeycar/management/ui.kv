@@ -97,7 +97,7 @@
                 app.layout.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
                 root.restart()
         Button:
-            id: step_fwd
+            id: step_bwd
             text: '<'
             on_press:
                 root.start(fwd=False)
@@ -105,7 +105,7 @@
             on_release:
                 root.stop()
         Button:
-            id: step_bwd
+            id: step_fwd
             text: '>'
             on_press:
                 root.start(fwd=True)
