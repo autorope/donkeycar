@@ -82,35 +82,64 @@
             on_press: root.remove_label()
 
 <ControlPanel>
-    cols: 2
-    Label:
-        id: record_num
-        text: root.record_display
-    Spinner:
-        pos_hint: {'center': (.5, .5)}
-        text: '1.00'
-        values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
-        on_text:
-            root.speed = float(self.text)
-            app.layout.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
+    orientation: 'vertical'
+    GridLayout:
+        cols: 2
+        Label:
+            id: record_num
+            text: root.record_display
+        Spinner:
+            pos_hint: {'center': (.5, .5)}
+            text: '1.00'
+            values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
+            on_text:
+                root.speed = float(self.text)
+                app.layout.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
+        Button:
+            id: step_fwd
+            text: '<'
+            on_press:
+                root.start(fwd=False)
+                app.layout.ids.status.text = 'Donkey step backward - you can <left> key as well.'
+            on_release:
+                root.stop()
+        Button:
+            id: step_bwd
+            text: '>'
+            on_press:
+                root.start(fwd=True)
+                app.layout.ids.status.text = 'Donkey step forward - you can use <right> key as well.'
+            on_release:
+                root.stop()
+        Button:
+            id: run_bwd
+            text: '<<'
+            on_press:
+                root.start(fwd=False, continuous=True)
+                app.layout.ids.status.text = 'Donkey running backwards...'
+                run_bwd.disabled = True
+                run_fwd.disabled = True
+                step_fwd.disabled = True
+                step_bwd.disabled = True
+        Button:
+            id: run_fwd
+            text: '>>'
+            on_press:
+                root.start(fwd=True, continuous=True)
+                app.layout.ids.status.text = 'Donkey running...'
+                run_fwd.disabled = True
+                run_bwd.disabled = True
+                step_fwd.disabled = True
+                step_bwd.disabled = True
+
     Button:
-        text: '<'
+        size_hint_y: 0.3
+        text: 'Stop'
         on_press:
-            root.start(fwd=False)
-            app.layout.ids.status.text = 'Donkey step backward - you can <left> key as well.'
-        on_release:
             root.stop()
-    Button:
-        text: '>'
-        on_press:
-            root.start(fwd=True)
-            app.layout.ids.status.text = 'Donkey step forward - you can use <right> key as well.'
-        on_release:
-            root.stop()
-    Button:
-        text: '<<'
-    Button:
-        text: '>>'
+            run_fwd.disabled = False; run_bwd.disabled = False
+            step_fwd.disabled = False; step_bwd.disabled = False
+            app.layout.ids.status.text = 'Donkey stopped'
 
 <TubEditor>
     orientation: 'horizontal'
