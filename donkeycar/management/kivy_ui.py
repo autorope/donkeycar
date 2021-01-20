@@ -251,8 +251,48 @@ class TubEditor(BoxLayout):
 
 class TubFilter(BoxLayout):
     filter_expression = StringProperty(None)
-    record_filter = StringProperty(None)
-    pass
+    record_filter = StringProperty(rc_handler.data.get('record_filter', ''))
+
+    def update_filter(self):
+        filter_text = self.ids.record_filter.text
+        # empty string resets the filter
+        if filter_text == '':
+            self.record_filter = ''
+            self.filter_expression = None
+            rc_handler.data['record_filter'] = self.record_filter
+            self.parent.status(f'Filter cleared')
+            return
+        filter_expression = self.create_filter_string(filter_text)
+        try:
+            record = self.parent.current_record
+            res = eval(filter_expression)
+            status = f'Filter result on current record: {res}'
+            if isinstance(res, bool):
+                self.record_filter = filter_text
+                self.filter_expression = filter_expression
+                rc_handler.data['record_filter'] = self.record_filter
+            else:
+                status += ' - non bool expression can\'t be applied'
+            status += ' - press <Reload tub> to see effect'
+            self.parent.status(status)
+        except Exception as e:
+            self.parent.status(f'Filter error on current record: {e}')
+
+    def create_filter_string(self, filter_text, record_name='record'):
+        """ Converts text like 'user/angle' into 'record.underlying['user/angle']
+        so that it can be used in a filter. Will replace only expressions that
+        are found in the tub inputs list.
+
+        :param filter_text: input text like 'user/throttle > 0.1'
+        :param record_name: name of the record in the expression
+        :return:            updated string that has all input fields wrapped
+        """
+        for field in self.parent.current_record.underlying.keys():
+            field_list = filter_text.split(field)
+            if len(field_list) > 1:
+                filter_text = f'{record_name}.underlying["{field}"]'\
+                    .join(field_list)
+        return filter_text
 
 
 class TubWindow(BoxLayout):
