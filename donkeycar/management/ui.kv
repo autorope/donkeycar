@@ -34,7 +34,7 @@
     title: 'Choose the car directory'
     orientation: 'horizontal'
     on_config:
-        car_dir.text = self.file_path
+        # car_dir.text = self.file_path
         app.layout.ids.tub_loader.ids.tub_button.disabled = False
         app.layout.ids.tub_loader.root_path = self.file_path
         app.layout.ids.status.text = 'Config loaded from' + self.file_path
@@ -49,7 +49,6 @@
 <TubLoader>
     title: 'Choose the tub directory'
     orientation: 'horizontal'
-    on_tub: tub_dir.text = root.file_path
     Button:
         id: tub_button
         text: 'Load Tub'
@@ -84,16 +83,22 @@
 
 <ControlPanel>
     cols: 2
-    Button:
+    Label:
+        id: record_num
         text: 'Left dummy'
-    Button:
-        text: 'Right dummy'
+    Spinner:
+        pos_hint: {'center': (.5, .5)}
+        text: '1.00'
+        values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
+        on_text:
+            root.speed = float(self.text)
+            app.layout.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
     Button:
         text: '<'
-        on_press: app.layout.index -= 1
+        on_press: app.layout.index -= 1; app.layout.ids.status.text = 'Donkey step backward'
     Button:
         text: '>'
-        on_press: app.layout.index += 1
+        on_press: app.layout.index += 1; app.layout.ids.status.text = 'Donkey step forward'
     Button:
         text: '<<'
     Button:
@@ -137,7 +142,7 @@
             size: self.width, self.height
             pos: self.x, self.y
 
-<UiLayout>:
+<TubWindow>:
     orientation: 'vertical'
     #:set common_height 60
     BoxLayout:
@@ -155,6 +160,7 @@
         FullImage:
             id: img
         ControlPanel
+            id: control_panel
     Slider:
         min: 0
         max: 100
