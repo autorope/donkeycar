@@ -1,4 +1,8 @@
+import time
+from functools import partial
 from random import random
+
+from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.app import App
 from kivy.uix.scatter import Scatter
@@ -188,7 +192,19 @@ class FullImage(Image):
 
 class ControlPanel(GridLayout):
     speed = NumericProperty(1.0)
-    pass
+    record_display = StringProperty()
+    clock = None
+
+    def start(self, fwd=True):
+        time.sleep(0.1)
+        arg = partial(self.step, fwd)
+        self.clock = Clock.schedule_interval(arg, 0.08)
+
+    def step(self, fwd=True, *largs):
+        self.parent.parent.index += 1 if fwd else -1
+
+    def stop(self):
+        self.clock.cancel()
 
 
 class TubEditor(BoxLayout):
@@ -215,8 +231,8 @@ class TubWindow(BoxLayout):
 
     def on_current_record(self, obj, record):
         self.ids.img.update(record)
-        index = record.underlying['_index']
-        self.ids.control_panel.ids.record_num.text = f"Record {index:06}"
+        i = record.underlying['_index']
+        self.ids.control_panel.record_display = f"Record {i:06}"
 
     def status(self, msg):
         self.ids.status.text = msg

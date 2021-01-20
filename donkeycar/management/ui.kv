@@ -85,7 +85,7 @@
     cols: 2
     Label:
         id: record_num
-        text: 'Left dummy'
+        text: root.record_display
     Spinner:
         pos_hint: {'center': (.5, .5)}
         text: '1.00'
@@ -95,10 +95,18 @@
             app.layout.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
     Button:
         text: '<'
-        on_press: app.layout.index -= 1; app.layout.ids.status.text = 'Donkey step backward'
+        on_press:
+            root.start(fwd=False)
+            app.layout.ids.status.text = 'Donkey step backward - you can <left> key as well.'
+        on_release:
+            root.stop()
     Button:
         text: '>'
-        on_press: app.layout.index += 1; app.layout.ids.status.text = 'Donkey step forward'
+        on_press:
+            root.start(fwd=True)
+            app.layout.ids.status.text = 'Donkey step forward - you can use <right> key as well.'
+        on_release:
+            root.stop()
     Button:
         text: '<<'
     Button:
