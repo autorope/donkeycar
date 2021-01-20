@@ -166,16 +166,20 @@
         text: 'Delete'
         on_press:
             root.del_lr(True)
-            # msg = f'Delete records {root.lr} - press <Reload tub> to see the ' \
-            msg = f'effect, but you can delete multiple ranges before doing so.'
+            msg = f'Delete records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can delete multiple ranges before doing so.'
             app.layout.ids.status.text = msg
     Button:
         text: 'Restore'
         on_press:
-            root.del_lr(True)
-            # msg = f'Restore records {root.lr} - press <Reload tub> to see the ' \
-            msg = f'effect, but you can restore multiple ranges before doing so.'
+            root.del_lr(False)
+            msg = f'Restore records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can restore multiple ranges before doing so.'
             app.layout.ids.status.text = msg
+    Button:
+        text: 'Reload Tub'
+        on_press: app.layout.ids.tub_loader.update_tub(reload=True)
+
 
 <TubFilter>:
     id: tub_filter
@@ -184,7 +188,7 @@
     height: common_height
     Button:
         text: 'Set filter'
-        size_hint_x: 0.25
+        size_hint_x: 0.2
     TextInput:
         id: record_filter
         text: 'user/throttle > 0.1'
