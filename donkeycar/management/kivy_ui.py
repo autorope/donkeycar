@@ -18,7 +18,8 @@ from kivy.uix.slider import Slider
 from kivy.uix.filechooser import FileChooser
 from kivy.uix.image import Image
 from kivy.core.image import Image as CoreImage
-from kivy.properties import NumericProperty, ObjectProperty, StringProperty
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
+    ListProperty
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 
@@ -226,7 +227,26 @@ class ControlPanel(BoxLayout):
 
 
 class TubEditor(BoxLayout):
-    pass
+    lr = ListProperty([0, 0])
+
+    def set_lr(self, is_l=True):
+        """ Sets left or right range to the current tubrecord index """
+        if not self.parent.current_record:
+            return
+        self.lr[0 if is_l else 1] \
+            = self.parent.current_record.underlying['_index']
+
+    def del_lr(self, is_del):
+        """ Deletes or restores records in chosen range """
+        tub = self.parent.ids.tub_loader.tub
+        if self.lr[1] >= self.lr[0]:
+            selected = list(range(*self.lr))
+        else:
+            last_id = tub.manifest.current_index
+            selected = list(range(self.lr[0], last_id))
+            selected += list(range(self.lr[1]))
+        for d in selected:
+            tub.delete_record(d) if is_del else tub.restore_record(d)
 
 
 class TubFilter(BoxLayout):

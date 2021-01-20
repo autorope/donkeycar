@@ -146,16 +146,36 @@
     orientation: 'horizontal'
     size_hint_y: None
     height: common_height
+    on_lr:
+        msg = f'Setting range, '
+        if root.lr[0] < root.lr[1]: msg += (f'affecting records inside [{root.lr[0]}, {root.lr[1]}) ' + \
+        '- you can affect records outside by setting left > right')
+        else: msg += (f'affecting records outside ({root.lr[1]}, {root.lr[0]}] ' + \
+        '- you can affect records inside by setting left < right')
+        app.layout.ids.status.text = msg
     Button:
         text: 'Set left'
+        on_press: root.set_lr(True)
     Button:
         text: 'Set right'
-    Button:
-        text: '[80, 180)'
+        on_press: root.set_lr(False)
+    Label:
+        text: '[' + str(root.lr[0]) + ', ' + str(root.lr[1]) + ')'
+        # text: f'Index range [{root.lr[0]}, {root.lr[1]})'
     Button:
         text: 'Delete'
+        on_press:
+            root.del_lr(True)
+            # msg = f'Delete records {root.lr} - press <Reload tub> to see the ' \
+            msg = f'effect, but you can delete multiple ranges before doing so.'
+            app.layout.ids.status.text = msg
     Button:
         text: 'Restore'
+        on_press:
+            root.del_lr(True)
+            # msg = f'Restore records {root.lr} - press <Reload tub> to see the ' \
+            msg = f'effect, but you can restore multiple ranges before doing so.'
+            app.layout.ids.status.text = msg
 
 <TubFilter>:
     id: tub_filter
