@@ -115,7 +115,7 @@ class TubLoader(BoxLayout, FileChooserBase):
 
         # Use filter, this defines the function
         def select(underlying):
-            if expression is None:
+            if not expression:
                 return True
             else:
                 record = TubRecord(cfg, self.tub.base_path, underlying)
@@ -126,20 +126,18 @@ class TubLoader(BoxLayout, FileChooserBase):
                         for record in self.tub if select(record)]
         self.len = len(self.records)
         if self.len > 0:
-            # self.state.record = self.records[self.state.i]
             # # update app components, manipulator, slider and plot
             # self.app.tub_manipulator.set_lr(is_l=True)
             # self.app.tub_manipulator.set_lr(is_l=False)
             # # clear bars for new tub only but not for reloading existing tub
             # if not reload:
             #     self.app.data_panel.clear()
-            # self.app.slider.slider.configure(to=self.len - 1)
             # # update graph
             # self.app.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
-        if self.parent.parent.ids.tub_filter.record_filter:
+        if expression:
             msg += f' using filter {self.parent.parent.ids.tub_filter.record_filter}'
         self.parent.parent.status(msg)
         return True
@@ -258,7 +256,7 @@ class TubFilter(BoxLayout):
         # empty string resets the filter
         if filter_text == '':
             self.record_filter = ''
-            self.filter_expression = None
+            self.filter_expression = ''
             rc_handler.data['record_filter'] = self.record_filter
             self.parent.status(f'Filter cleared')
             return
