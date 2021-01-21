@@ -30,6 +30,7 @@ There are many ways to use the simulator, depending on your goals. You can use t
 ```bash
 cd ~/projects
 git clone https://github.com/tawnkramer/gym-donkeycar
+cd gym-donkeycar
 conda activate donkey
 pip install -e .[gym-donkeycar]
 ```
@@ -52,7 +53,7 @@ DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"
 
 > Note: your path to the executable will vary depending on platform and user.
 >  Windows: DonkeySimWin/donkey_sim.exe
->  Mac OS: DonkeySimMac/donkey_sim.app/Contents/MacOS/sdsim
+>  Mac OS: DonkeySimMac/donkey_sim.app/Contents/MacOS/donkey_sim
 >  Linux: DonkeySimLinux/donkey_sim.x86_64
 
 
@@ -158,7 +159,7 @@ Example:
 
 ### Get Scene Names
 
-Client=>Sim. Ask names of the scnee you can load.
+Client=>Sim. Ask names of the scene you can load.
 
 Fields: *None*
 

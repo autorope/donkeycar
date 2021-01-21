@@ -65,6 +65,16 @@ donkey tubclean <folder containing tubs>
 * Opens the web server to delete bad data.
 * Hit `Ctrl + C` to exit
 
+## Train the model
+**Note:** _This section only applies to version >= 4.1_
+This command trains the model.
+```bash
+donkey train --tub=<tub_path> [--config=<config.py>] [--model=<model path>] [--model_type=(linear|categorical|inferred)] 
+```
+The `createcar` command still creates a `train.py` file for backward 
+compatibility, but it's not required for training.
+
+
 ## Make Movie from Tub
 
 This command allows you to create a movie file from the images in a Tub.

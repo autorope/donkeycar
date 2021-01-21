@@ -38,22 +38,33 @@ conda env remove -n donkey
 * Create the Python anaconda environment
 
 ```bash
-conda env create -f install/envs/ubuntu.yml
+conda env create -f install/envs/pc.yml
 conda activate donkey
 pip install -e .[pc]
 ```
+Note: if you are using ZSH (you'll know if you are), you won't be able to run `pip install -e .[pc]`. You'll need to escape the brackets and run `pip install -e .\[pc\]`.
 
 * Optional Install Tensorflow GPU - only for NVidia Graphics cards
 
 You should have an NVidia GPU with the latest drivers. Conda will handle installing the correct cuda and cuddn libraries for the version of tensorflow you are using.
 
 ```bash
-conda install tensorflow-gpu==1.13.1
+conda install tensorflow-gpu==2.2.0
 ```
 
 * Optional Install Coral edge tpu compiler
 
 If you have a Google Coral edge tpu, you may wish to compile models. You will need to install the edgetpu_compiler exectutable. Follow [their instructions](https://coral.withgoogle.com/docs/edgetpu/compiler/).
+
+* Optionally configure PyTorch to use GPU - only for NVidia Graphics cards
+
+If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
+
+```bash
+conda install cudatoolkit=<CUDA Version> -c pytorch
+```
+
+You should replace `<CUDA Version>` with your CUDA version. Any version above 10.0 should work. You can find out your CUDA version by running `nvcc --version` or `nvidia-smi`. If the version given by these two commands don't match, go with the version given by `nvidia-smi`.
 
 * Create your local working dir:
 

@@ -40,6 +40,8 @@ The uncompressed image will be around 16GB. Download [Etcher](https://www.balena
 
 ### Ground up install
 
+> Note:  If you plan to use the mobile app, consider using the pre-built image. Refer to the [mobile app user guide](../mobile_app.md) for details. 
+
 You need to flash a micro SD image with an operating system.
 
 1. Download [Raspian Lite(Stretch)](https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2019-04-09/2019-04-08-raspbian-stretch-lite.zip) (352MB).
@@ -228,8 +230,11 @@ git clone https://github.com/autorope/donkeycar
 cd donkeycar
 git checkout master
 pip install -e .[pi]
-pip install tensorflow==1.13.1
 pip install numpy --upgrade
+wget "https://raw.githubusercontent.com/PINTO0309/Tensorflow-bin/master/tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh"
+chmod u+x tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
+tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
+pip install tensorflow-2.3.1-cp37-none-linux_armv7l.whl
 ```
 
 You can validate your tensorflow install with
