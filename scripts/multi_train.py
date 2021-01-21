@@ -24,7 +24,7 @@ for i in range(num_clients):
 		outfile.write('WEB_CONTROL_PORT = 888%d\n' % i)
 		outfile.write('WEB_INIT_MODE = "local"\n')
 		outfile.write('DONKEY_GYM = True\n')
-		outfile.write('DONKEY_GYM_ENV_NAME = "donkey-mountain-track-v0"\n')
+		outfile.write('DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"\n')
 		outfile.write('DONKEY_SIM_PATH = "remote"\n')
 		outfile.write('SIM_HOST = "%s"\n' % host)
 		iStyle = random.randint(0, len(body_styles) - 1)
