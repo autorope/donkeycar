@@ -28,7 +28,7 @@ import os
 from PIL import Image as PilImage
 
 from donkeycar import load_config
-from donkeycar.management.tub_gui import RcFileHandler
+from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.types import TubRecord
 
@@ -134,6 +134,8 @@ class TubLoader(BoxLayout, FileChooserBase):
             #     self.app.data_panel.clear()
             # # update graph
             # self.app.data_plot.update_dataframe_from_tub()
+            self.parent.parent.ids.data_panel.ids.data_spinner.values = \
+                self.tub.manifest.inputs
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
@@ -144,30 +146,48 @@ class TubLoader(BoxLayout, FileChooserBase):
 
 
 class LabelBar(BoxLayout):
-    i = NumericProperty(0)
+    row = NumericProperty(0)
+    field = StringProperty()
+    field_property = ObjectProperty()
+    value = NumericProperty()
 
-    def __init__(self, i, **kwargs):
-        super().__init__(**kwargs)
-        self.i = i
+    def update(self, record):
+        field, index = decompose(self.field)
+        if field in record.underlying:
+            val = record.underlying[field]
+            if index is not None:
+                val = val[index]
+            # update bar if present
+            if self.field_property:
+                norm_val = val / self.max
+                new_bar_val = (norm_val + 1) * 50 if self.field_property.centered else norm_val * 100
+                self.ids.bar.value = new_bar_val
+            if isinstance(val, float):
+                text = f' {val:+07.3f}'
+            elif isinstance(val, int):
+                text = f' {val:10}'
+            else:
+                text = ' ' + val
+            self.ids.bar_label.text = self.field + text
+        else:
+            print(f'Bad record {self.parent.parent.index} - missing field {field}')
 
 
 class DataPanel(GridLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.labels = []
-        self.count = 0
+        self.labels = {}
 
-    def add_label(self):
-        lb = LabelBar(self.count)
-        self.labels.append(lb)
-        self.add_widget(lb)
-        self.count += 1
-
-    def remove_label(self):
-        if self.labels:
-            self.remove_widget(self.labels[-1])
-            self.labels.pop()
-            self.count -= 1
+    def add_remove(self):
+        field = self.ids.data_spinner.text
+        if field in self.labels:
+            self.remove_widget(self.labels[field])
+            del(self.labels[field])
+        else:
+            field_property = rc_handler.field_properties.get(decompose(field)[0])
+            lb = LabelBar(field=field, field_property=field_property)
+            self.labels[field] = lb
+            self.add_widget(lb)
 
 
 class FullImage(Image):
