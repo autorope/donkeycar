@@ -34,7 +34,6 @@
     title: 'Choose the car directory'
     orientation: 'horizontal'
     on_config:
-        # car_dir.text = self.file_path
         app.layout.ids.tub_loader.ids.tub_button.disabled = False
         app.layout.ids.tub_loader.root_path = self.file_path
         app.layout.ids.status.text = 'Config loaded from' + self.file_path
@@ -62,24 +61,27 @@
 <LabelBar>:
     orientation: 'horizontal'
     Label:
-        text: 'New label {:}'.format(root.i)
+        id: bar_label
+        text: root.field
     ProgressBar:
-        value: root.i * 10
+        id: bar
+        value: root.value
 
 <DataPanel>
+    #:set common_height 60
     cols: 1
     GridLayout:
         cols: 2
-        Button:
-            text: 'Add box'
+        Label:
+            text: 'Add/remove field'
             size_hint_y: None
             height: common_height
-            on_press: root.add_label()
-        Button:
-            text: 'Remove box'
+        Spinner:
+            id: data_spinner
             size_hint_y: None
             height: common_height
-            on_press: root.remove_label()
+            pos_hint: {'center': (.5, .5)}
+            on_text: root.add_remove()
 
 <ControlPanel>
     orientation: 'vertical'
@@ -219,7 +221,8 @@
     BoxLayout:
         orientation: 'horizontal'
         spacing: 5
-        DataPanel
+        DataPanel:
+            id: data_panel
         FullImage:
             id: img
         ControlPanel
