@@ -26,6 +26,8 @@ from kivy.lang.builder import Builder
 import io
 import os
 from PIL import Image as PilImage
+import pandas as pd
+import plotly.express as px
 
 from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
@@ -134,6 +136,8 @@ class TubLoader(BoxLayout, FileChooserBase):
             #     self.app.data_panel.clear()
             # # update graph
             # self.app.data_plot.update_dataframe_from_tub()
+            self.parent.parent.ids.data_plot.df \
+                = pd.DataFrame(r.underlying for r in self.records)
             fields = []
             for k, v in zip(self.tub.manifest.inputs, self.tub.manifest.types):
                 if v == 'vector' or v == 'list':
@@ -337,6 +341,57 @@ class TubFilter(BoxLayout):
         return filter_text
 
 
+class DataPlot(Button):
+    """ Data plot panel which embeds matplotlib interactive graph"""
+    df = ObjectProperty()
+
+    def plot_from_current_bars(self):
+        """ Plotting from current selected bars. The DataFrame for plotting
+            should contain all bars except for strings fields and all data is
+            selected if bars are empty.  """
+        field_map = dict(zip(self.parent.ids.tub_loader.tub.manifest.inputs,
+                             self.parent.ids.tub_loader.tub.manifest.types))
+        cols = [c for c in self.parent.ids.data_panel.labels.keys() if
+                decompose(c)[0] in field_map and field_map[decompose(c)[0]]
+                != 'str']
+        df = self.df[cols + ['_index']] if cols else self.df
+        if df is None:
+            return
+        # Don't plot the milliseconds time stamp as this is a too big number
+        df = df.drop(labels=['_timestamp_ms'], axis=1, errors='ignore')
+        df = df.drop(labels=['cam/image_array'], axis=1, errors='ignore')
+        df = df.drop(labels=['timestamp'], axis=1, errors='ignore')
+        fig = px.line(df, x="_index", y=df.columns,
+                      title=self.parent.ids.tub_loader.tub.base_path)
+        fig.update_xaxes(rangeslider=dict(visible=True))
+        fig.show()
+
+    def unravel_vectors(self):
+        """ Unravels vector and list entries in tub which are created
+            when the DataFrame is created from a list of records"""
+        for k, v in zip(self.parent.ids.tub_loader.tub.manifest.inputs,
+                        self.parent.ids.tub_loader.tub.manifest.types):
+            if v == 'vector' or v == 'list':
+                dim = len(self.parent.current_record.underlying[k])
+                df_keys = [k + f'_{i}' for i in range(dim)]
+                self.df[df_keys] = pd.DataFrame(self.df[k].tolist(),
+                                                index=self.df.index)
+                self.df.drop(k, axis=1, inplace=True)
+
+    def update_dataframe_from_tub(self):
+        """ Called from TubManager when a tub is reloaded/recreated. Fills
+            the DataFrame from records, and updates the dropdown menu in the
+            data panel."""
+        underlying_generator = (t.underlying for t in
+                                self.app.tub_manager.records)
+        self.df = pd.DataFrame(underlying_generator).dropna()
+        to_drop = {'cam/image_array'}
+        self.df.drop(labels=to_drop, axis=1, errors='ignore', inplace=True)
+        self.df.set_index('_index', inplace=True)
+        self.unravel_vectors()
+        self.plot_from_current_bars()
+
+
 class TubWindow(BoxLayout):
     index = NumericProperty(None)
     current_record = ObjectProperty(None)
@@ -345,6 +400,7 @@ class TubWindow(BoxLayout):
         self.ids.config_manager.load_action()
         self.ids.tub_loader.update_tub()
         self.index = 0
+        self.ids.data_plot.unravel_vectors()
 
     def on_index(self, obj, index):
         self.current_record = self.ids.tub_loader.records[index]
