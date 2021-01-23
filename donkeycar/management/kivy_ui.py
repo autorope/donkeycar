@@ -134,8 +134,14 @@ class TubLoader(BoxLayout, FileChooserBase):
             #     self.app.data_panel.clear()
             # # update graph
             # self.app.data_plot.update_dataframe_from_tub()
-            self.parent.parent.ids.data_panel.ids.data_spinner.values = \
-                self.tub.manifest.inputs
+            fields = []
+            for k, v in zip(self.tub.manifest.inputs, self.tub.manifest.types):
+                if v == 'vector' or v == 'list':
+                    vec = self.records[0].underlying[k]
+                    fields += [k + f'_{i}' for i in range(len(vec))]
+                else:
+                    fields.append(k)
+            self.parent.parent.ids.data_panel.ids.data_spinner.values = fields
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
@@ -182,9 +188,7 @@ class LabelBar(BoxLayout):
 
 
 class DataPanel(GridLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.labels = {}
+    labels = {}
 
     def add_remove(self):
         field = self.ids.data_spinner.text
