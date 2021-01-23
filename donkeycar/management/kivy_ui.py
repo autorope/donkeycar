@@ -187,7 +187,7 @@ class LabelBar(BoxLayout):
                   f'{self.field}')
 
 
-class DataPanel(GridLayout):
+class DataPanel(BoxLayout):
     labels = {}
 
     def add_remove(self):
