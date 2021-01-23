@@ -61,20 +61,31 @@
 <LabelBar>:
     orientation: 'horizontal'
     Label:
+        id: field_label
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        font_size: 28
         canvas.before:
             Color:
-                rgba: 0.5, 0.4, 0.35, 1
+                rgba: 0.15, 0.1, 0.1, 1
             Rectangle:
                 pos: self.pos
                 size: self.size
-        id: bar_label
-        size: self.texture_size
+    Label:
+        id: value_label
+        text_size: self.size
+        halign: 'right'
+        valign: 'middle'
+        font_size: 28
+        size_hint_x: 0.5
     ProgressBar:
         id: bar
 
 <DataPanel>
     #:set common_height 60
     orientation: 'vertical'
+    spacing: 2
     GridLayout:
         cols: 2
         Label:
@@ -85,7 +96,6 @@
             id: data_spinner
             size_hint_y: None
             height: common_height
-            pos_hint: {'center': (.5, .5)}
             text: 'Add/remove'
             on_text: root.add_remove()
 
@@ -229,6 +239,7 @@
         orientation: 'horizontal'
         spacing: 5
         DataPanel:
+            size_hint_x: 1.4
             id: data_panel
         FullImage:
             id: img
