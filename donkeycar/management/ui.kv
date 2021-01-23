@@ -61,7 +61,14 @@
 <LabelBar>:
     orientation: 'horizontal'
     Label:
+        canvas.before:
+            Color:
+                rgba: 0.5, 0.4, 0.35, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
         id: bar_label
+        size: self.texture_size
     ProgressBar:
         id: bar
 
