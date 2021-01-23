@@ -62,10 +62,8 @@
     orientation: 'horizontal'
     Label:
         id: bar_label
-        text: root.field
     ProgressBar:
         id: bar
-        value: root.value
 
 <DataPanel>
     #:set common_height 60
@@ -73,7 +71,7 @@
     GridLayout:
         cols: 2
         Label:
-            text: 'Add/remove field'
+            text: 'Record field'
             size_hint_y: None
             height: common_height
         Spinner:
@@ -81,7 +79,9 @@
             size_hint_y: None
             height: common_height
             pos_hint: {'center': (.5, .5)}
+            text: 'Add/remove'
             on_text: root.add_remove()
+
 
 <ControlPanel>
     orientation: 'vertical'

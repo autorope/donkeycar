@@ -146,21 +146,28 @@ class TubLoader(BoxLayout, FileChooserBase):
 
 
 class LabelBar(BoxLayout):
-    row = NumericProperty(0)
     field = StringProperty()
     field_property = ObjectProperty()
-    value = NumericProperty()
+    config = ObjectProperty()
+    msg = ''
 
     def update(self, record):
         field, index = decompose(self.field)
+        self.msg = f'Adding {field}'
         if field in record.underlying:
             val = record.underlying[field]
             if index is not None:
                 val = val[index]
             # update bar if present
             if self.field_property:
-                norm_val = val / self.max
-                new_bar_val = (norm_val + 1) * 50 if self.field_property.centered else norm_val * 100
+                max_val_key = self.field_property.max_value_id
+                max = getattr(self.config, max_val_key, 1.0)
+                if max == 1 and max_val_key:
+                    self.msg += f' - could not find {max_val_key} in ' \
+                                f'my_config.py, defaulting to 1.0'
+                norm_val = val / max
+                new_bar_val = (norm_val + 1) * 50 if \
+                    self.field_property.centered else norm_val * 100
                 self.ids.bar.value = new_bar_val
             if isinstance(val, float):
                 text = f' {val:+07.3f}'
@@ -170,7 +177,8 @@ class LabelBar(BoxLayout):
                 text = ' ' + val
             self.ids.bar_label.text = self.field + text
         else:
-            print(f'Bad record {self.parent.parent.index} - missing field {field}')
+            print(f'Bad record {self.parent.parent.index} - missing field '
+                  f'{self.field}')
 
 
 class DataPanel(GridLayout):
@@ -180,14 +188,25 @@ class DataPanel(GridLayout):
 
     def add_remove(self):
         field = self.ids.data_spinner.text
+        if field is 'Add/remove':
+            return
         if field in self.labels:
             self.remove_widget(self.labels[field])
             del(self.labels[field])
         else:
             field_property = rc_handler.field_properties.get(decompose(field)[0])
-            lb = LabelBar(field=field, field_property=field_property)
+            cfg = self.parent.parent.ids.config_manager.config
+            lb = LabelBar(field=field, field_property=field_property,
+                          config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
+            lb.update(self.parent.parent.current_record)
+            self.parent.parent.status(lb.msg)
+        self.ids.data_spinner.text = 'Add/remove'
+
+    def update(self, record):
+        for v in self.labels.values():
+            v.update(record)
 
 
 class FullImage(Image):
@@ -330,6 +349,7 @@ class TubWindow(BoxLayout):
         self.ids.img.update(record)
         i = record.underlying['_index']
         self.ids.control_panel.record_display = f"Record {i:06}"
+        self.ids.data_panel.update(record)
 
     def status(self, msg):
         self.ids.status.text = msg
