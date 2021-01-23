@@ -177,11 +177,11 @@ class LabelBar(BoxLayout):
                 self.ids.bar.value = new_bar_val
             self.ids.field_label.text = self.field
             if isinstance(val, float):
-                text = f'{val:+07.3f} '
+                text = f'{val:+07.3f}'
             elif isinstance(val, int):
-                text = f'{val:10} '
+                text = f'{val:10}'
             else:
-                text = val + ' '
+                text = val
             self.ids.value_label.text = text
         else:
             print(f'Bad record {self.parent.parent.index} - missing field '
