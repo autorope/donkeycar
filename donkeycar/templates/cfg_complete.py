@@ -189,13 +189,18 @@ LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'I
 LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 
 #TELEMETRY
-TELEMETRY_DONKEY_NAME = 'my_robot1234'
-TELEMETRY_PUBLISH_PERIOD = 1
 HAVE_MQTT_TELEMETRY = False
+TELEMETRY_DONKEY_NAME = 'my_robot1234'
 TELEMETRY_MQTT_TOPIC_TEMPLATE = 'donkey/%s/telemetry'
-TELEMETRY_MQTT_JSON_ENABLE = True
-TELEMETRY_MQTT_BROKER_HOST = 'broker.emqx.io'
+TELEMETRY_MQTT_JSON_ENABLE = False
+TELEMETRY_MQTT_BROKER_HOST = 'broker.hivemq.com'
 TELEMETRY_MQTT_BROKER_PORT = 1883
+TELEMETRY_PUBLISH_PERIOD = 1
+TELEMETRY_LOGGING_ENABLE = True
+TELEMETRY_LOGGING_LEVEL = 'INFO' # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+TELEMETRY_LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle,recording'
+TELEMETRY_DEFAULT_TYPES = 'float,float'
 
 # PERF MONITOR
 HAVE_PERFMON = False
