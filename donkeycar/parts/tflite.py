@@ -67,9 +67,9 @@ class TFLitePilot(KerasPilot):
             output_data = self.interpreter.get_tensor(tensor['index'])
             outputs.append(output_data[0][0])
 
-        steering = outputs[0]
+        steering = float(outputs[0])
         if len(outputs) > 1:
-            throttle = outputs[1]
+            throttle = float(outputs[1])
 
         return steering, throttle
 
