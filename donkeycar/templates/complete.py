@@ -580,6 +580,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
 
+    if cfg.HAVE_PERFMON:
+        from donkeycar.parts.perfmon import PerfMonitor
+        mon = PerfMonitor(cfg)
+        perfmon_outputs = ['perf/cpu', 'perf/mem', 'perf/freq']
+        inputs += perfmon_outputs
+        types += ['float', 'float', 'float']
+        V.add(mon, inputs=[], outputs=perfmon_outputs, threaded=True)
+
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
@@ -591,7 +599,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         from donkeycar.parts.telemetry import MqttTelemetry
         published_inputs, published_types = MqttTelemetry.filter_supported_metrics(inputs, types)
         tel = MqttTelemetry(cfg, default_inputs=published_inputs, default_types=published_types)
-        V.add(tel, inputs=published_inputs, outputs=["tub/queue_size"], threaded=False)
+        V.add(tel, inputs=published_inputs, outputs=["tub/queue_size"], threaded=True)
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
