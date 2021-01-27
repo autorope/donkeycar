@@ -33,6 +33,7 @@ from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.types import TubRecord
+from donkeycar.management.graph import TsPlot
 
 
 Builder.load_file('ui.kv')
@@ -365,6 +366,7 @@ class DataPlot(Button):
                       title=self.parent.ids.tub_loader.tub.base_path)
         fig.update_xaxes(rangeslider=dict(visible=True))
         fig.show()
+        self.parent.ids.graph.df = df
 
     def unravel_vectors(self):
         """ Unravels vector and list entries in tub which are created
