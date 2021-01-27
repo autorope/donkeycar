@@ -7,6 +7,74 @@ from donkeycar.parts.teensy import TeensyRCin
 import re
 import time
 
+
+
+
+# The Arduino class is for a quadrature wheel or motor encoder that is being read by an offboard microcontroller
+# such as an Arduino or Teensy that is feeding serial data to the RaspberryPy or Nano via USB serial. 
+# The microcontroller should be flashed with this sketch (use the Arduino IDE to do that): https://github.com/zlite/donkeycar/tree/master/donkeycar/parts/encoder/encoder
+# Make sure you check the sketch using the "test_encoder.py code in the Donkeycar tests folder to make sure you've got your 
+# encoder plugged into the right pins, or edit it to reflect the pins you are using.
+
+# You will need to calibrate the mm_per_tick line below to reflect your own car. Just measure out a meter and roll your car
+# along it. Change the number below until it the distance reads out almost exactly 1.0 
+
+# This samples the odometer at 10HZ and does a moving average over the past ten readings to derive a velocity
+
+class ArduinoEncoder:
+    def __init__(self, mm_per_tick=0.0000599, debug=False):
+        import serial
+        import serial.tools.list_ports
+        for item in serial.tools.list_ports.comports():
+            print(item)  # list all the serial ports
+        self.ser = serial.Serial('/dev/ttyACM0', 115200, 8, 'N', 1, timeout=1)
+        # initialize the odometer values
+        self.ave_velocity = []
+        for i in range(10):
+            self.ave_velocity.append(0)
+        self.ser.write(str.encode('reset'))  # restart the encoder to zero
+        self.on = True
+        self.debug = debug
+        self.mm_per_tick = mm_per_tick
+
+
+    def update(self):
+        last_time = time.time()
+        start_distance = 0
+        ticks = 0
+        # keep looping infinitely until the thread is stopped
+        while (self.on):
+            input = self.ser.readline()
+            ticks = input.decode()
+            ticks = ticks.strip()  # remove any whitespace
+            if (ticks.isnumeric()):
+                ticks = int(ticks)
+                # print("ticks=", ticks)
+                current_time = time.time()
+        #       print('seconds:', seconds)
+                if current_time >= last_time + 0.1:   # print at 10Hz
+                    end_distance = ticks * self.mm_per_tick
+                    instant_velocity = (end_distance-start_distance)*10  # multiply times ten to convert to m/s
+                    for i in range(9):
+                        self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
+                    self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
+                    self.velocity = sum(self.ave_velocity)/len(self.ave_velocity)  # moving average
+                    if self.debug:
+                        print('distance (m):', round(end_distance,3))
+                        print('velocity (m/s):', round(self.velocity,3))
+                    last_time = current_time
+                    start_distance = end_distance
+
+
+    def run_threaded(self):
+        return self.velocity 
+
+    def shutdown(self):
+        # indicate that the thread should be stopped
+        self.on = False
+        print('stopping Arduino encoder')
+        time.sleep(.5)
+
 class AStarSpeed:
     def __init__(self):
         self.speed = 0

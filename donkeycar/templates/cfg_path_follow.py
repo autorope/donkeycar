@@ -96,9 +96,10 @@ ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 # 
 # #Odometry
 HAVE_ODOM = False                   # Do you have an odometer? Uses pigpio 
-MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm
-ODOM_PIN = 4                        # Which GPIO board mode pin to use as input
-ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+MM_PER_TICK = 0.0000599               # How much travel with a single tick, in mm
+ODOM_TYPE = "arduino"                # arduino|gpio|astar
+# ODOM_PIN = 4                        # Which GPIO board mode pin to use as input
+ODOM_DEBUG = True                  # Write out values on vel and distance as it runs
 # 
 # #Intel T265
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
