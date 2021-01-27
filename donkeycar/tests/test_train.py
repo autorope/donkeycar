@@ -3,10 +3,11 @@ import tarfile
 import os
 import numpy as np
 from collections import defaultdict, namedtuple
+from typing import Callable
 
 from donkeycar.pipeline.training import train, BatchSequence
 from donkeycar.config import Config
-from donkeycar.pipeline.types import TubDataset
+from donkeycar.pipeline.types import TubDataset, TubRecord
 from donkeycar.utils import get_model_by_type, normalize_image
 
 Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
@@ -23,7 +24,7 @@ def config() -> Config:
     cfg.IMAGE_DEPTH = 3
     cfg.PRINT_MODEL_SUMMARY = True
     cfg.EARLY_STOP_PATIENCE = 1000
-    cfg.MAX_EPOCHS = 20
+    cfg.MAX_EPOCHS = 5
     cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
     cfg.VERBOSE_TRAIN = True
     cfg.MIN_DELTA = 0.0005
@@ -44,8 +45,8 @@ def car_dir(tmpdir_factory):
 
 # define the test data
 d1 = Data(type='linear', name='lin1', convergence=0.6, pretrained=None)
-d2 = Data(type='categorical', name='cat1', convergence=0.85, pretrained=None)
-d3 = Data(type='inferred', name='inf1', convergence=0.6, pretrained=None)
+d2 = Data(type='categorical', name='cat1', convergence=0.9, pretrained=None)
+d3 = Data(type='inferred', name='inf1', convergence=0.9, pretrained=None)
 d4 = Data(type='latent', name='lat1', convergence=0.5, pretrained=None)
 d5 = Data(type='latent', name='lat2', convergence=0.5, pretrained='lat1')
 test_data = [d1, d2, d3]
@@ -76,9 +77,16 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     assert loss[-1] < loss[0] * data.convergence
 
 
+filters = [lambda r: r.underlying['user/throttle'] > 0.5,
+           lambda r: r.underlying['user/angle'] < 0,
+           lambda r: r.underlying['user/throttle'] < 0.6 and
+                     r.underlying['user/angle'] > -0.5]
+
+
 @pytest.mark.parametrize('model_type', ['linear', 'categorical', 'inferred'])
-def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
-        -> None:
+@pytest.mark.parametrize('train_filter', filters)
+def test_training_pipeline(config: Config, model_type: str, car_dir: str,
+                           train_filter: Callable[[TubRecord], bool]) -> None:
     """
     Testing consistency of the model interfaces and data used in training
     pipeline.
@@ -86,11 +94,14 @@ def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
     :param config:                  donkey config
     :param model_type:              test specification of model type
     :param tub_dir:                 tub directory (car_dir/tub)
+    :param train_filter:            filter for records
     :return:                        None
     """
+    config.TRAIN_FILTER = train_filter
     kl = get_model_by_type(model_type, config)
     tub_dir = os.path.join(car_dir, 'tub')
     # don't shuffle so we can identify data for testing
+    config.TRAIN_FILTER = train_filter
     dataset = TubDataset(config, [tub_dir], shuffle=False)
     training_records, validation_records = dataset.train_test_split()
     seq = BatchSequence(kl, config, training_records, True)
