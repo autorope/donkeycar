@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import tensorflow as tf
 
 from donkeycar.parts.keras import KerasPilot
@@ -55,7 +56,7 @@ class TFLitePilot(KerasPilot):
         self.input_shape = self.input_details[0]['shape']
     
     def inference(self, img_arr, other_arr):
-        input_data = img_arr.reshape(self.input_shape)
+        input_data = np.float32(img_arr.reshape(self.input_shape))
         self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
         self.interpreter.invoke()
 
@@ -66,9 +67,9 @@ class TFLitePilot(KerasPilot):
             output_data = self.interpreter.get_tensor(tensor['index'])
             outputs.append(output_data[0][0])
 
-        steering = outputs[0]
+        steering = float(outputs[0])
         if len(outputs) > 1:
-            throttle = outputs[1]
+            throttle = float(outputs[1])
 
         return steering, throttle
 

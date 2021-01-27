@@ -48,7 +48,8 @@ setup(name='donkeycar',
           "simple_pid",
           'progress',
           'typing_extensions',
-          'pyfiglet'
+          'pyfiglet',
+          'psutil'
       ],
       extras_require={
           'pi': [
