@@ -255,14 +255,16 @@
     TubEditor
     TubFilter:
         id: tub_filter
+    TsPlot:
+        id: graph
     DataPlot:
         id: data_plot
         text: 'Graphics here'
         on_press: self.plot_from_current_bars()
-    TsPlot:
-        id: graph
     Label:
         id: status
+        size_hint_y: None
+        height: 30
         text_size: self.size
         halign: 'left'
         valign: 'bottom'

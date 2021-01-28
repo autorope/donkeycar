@@ -53,14 +53,6 @@ Builder.load_string('''
             id: legend
             size_hint_x: 0.15
             orientation: 'vertical' 
-    BoxLayout:
-        size_hint_y: 0.1
-        Button:
-            text: 'here we go'
-            on_press: root.set_df()
-        Button:
-            text: 'clear'
-            on_press: plot.canvas.clear(); root.draw_axes(); root.len = 0 
 ''')
 
 
