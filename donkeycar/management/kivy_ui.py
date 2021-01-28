@@ -137,16 +137,17 @@ class TubLoader(BoxLayout, FileChooserBase):
             #     self.app.data_panel.clear()
             # # update graph
             # self.app.data_plot.update_dataframe_from_tub()
-            self.parent.parent.ids.data_plot.df \
-                = pd.DataFrame(r.underlying for r in self.records)
-            fields = []
-            for k, v in zip(self.tub.manifest.inputs, self.tub.manifest.types):
-                if v == 'vector' or v == 'list':
-                    vec = self.records[0].underlying[k]
-                    fields += [k + f'_{i}' for i in range(len(vec))]
-                else:
-                    fields.append(k)
-            self.parent.parent.ids.data_panel.ids.data_spinner.values = fields
+
+            # update field list first as their names are used in tub plot
+            # fields = []
+            # for k, v in zip(self.tub.manifest.inputs, self.tub.manifest.types):
+            #     if v == 'vector' or v == 'list':
+            #         vec = self.records[0].underlying[k]
+            #         fields += [k + f'_{i}' for i in range(len(vec))]
+            #     else:
+            #         fields.append(k)
+            # self.parent.parent.ids.data_panel.ids.data_spinner.values = fields
+            self.parent.parent.ids.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
@@ -210,6 +211,7 @@ class DataPanel(BoxLayout):
                           config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
+            self.parent.parent.ids.data_plot.plot_from_current_bars()
             lb.update(self.parent.parent.current_record)
             self.parent.parent.status(lb.msg)
         self.ids.data_spinner.text = 'Add/remove'
@@ -346,27 +348,32 @@ class DataPlot(Button):
     """ Data plot panel which embeds matplotlib interactive graph"""
     df = ObjectProperty()
 
-    def plot_from_current_bars(self):
+    def plot_from_current_bars(self, in_app=True):
         """ Plotting from current selected bars. The DataFrame for plotting
             should contain all bars except for strings fields and all data is
             selected if bars are empty.  """
         field_map = dict(zip(self.parent.ids.tub_loader.tub.manifest.inputs,
                              self.parent.ids.tub_loader.tub.manifest.types))
-        cols = [c for c in self.parent.ids.data_panel.labels.keys() if
-                decompose(c)[0] in field_map and field_map[decompose(c)[0]]
-                != 'str']
-        df = self.df[cols + ['_index']] if cols else self.df
+        # Use selected fields or all fields if nothing is slected
+        all_cols = self.parent.ids.data_panel.labels.keys() or self.df.columns
+        cols = [c for c in all_cols if decompose(c)[0] in field_map
+                and field_map[decompose(c)[0]] not in ('image_array', 'str')]
+
+        df = self.df[cols]
         if df is None:
             return
         # Don't plot the milliseconds time stamp as this is a too big number
         df = df.drop(labels=['_timestamp_ms'], axis=1, errors='ignore')
         df = df.drop(labels=['cam/image_array'], axis=1, errors='ignore')
         df = df.drop(labels=['timestamp'], axis=1, errors='ignore')
-        fig = px.line(df, x="_index", y=df.columns,
-                      title=self.parent.ids.tub_loader.tub.base_path)
-        fig.update_xaxes(rangeslider=dict(visible=True))
-        fig.show()
-        self.parent.ids.graph.df = df
+
+        if in_app:
+            self.parent.ids.graph.df = df
+        else:
+            fig = px.line(df, x="_index", y=df.columns,
+                          title=self.parent.ids.tub_loader.tub.base_path)
+            fig.update_xaxes(rangeslider=dict(visible=True))
+            fig.show()
 
     def unravel_vectors(self):
         """ Unravels vector and list entries in tub which are created
@@ -385,13 +392,13 @@ class DataPlot(Button):
             the DataFrame from records, and updates the dropdown menu in the
             data panel."""
         underlying_generator = (t.underlying for t in
-                                self.app.tub_manager.records)
+                                self.parent.ids.tub_loader.records)
         self.df = pd.DataFrame(underlying_generator).dropna()
         to_drop = {'cam/image_array'}
         self.df.drop(labels=to_drop, axis=1, errors='ignore', inplace=True)
         self.df.set_index('_index', inplace=True)
         self.unravel_vectors()
-        self.plot_from_current_bars()
+        self.parent.ids.data_panel.ids.data_spinner.values = self.df.columns
 
 
 class TubWindow(BoxLayout):
@@ -402,7 +409,7 @@ class TubWindow(BoxLayout):
         self.ids.config_manager.load_action()
         self.ids.tub_loader.update_tub()
         self.index = 0
-        self.ids.data_plot.unravel_vectors()
+        self.ids.data_plot.plot_from_current_bars()
 
     def on_index(self, obj, index):
         self.current_record = self.ids.tub_loader.records[index]
