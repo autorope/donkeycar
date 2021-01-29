@@ -1,21 +1,10 @@
 import time
 from functools import partial
-from random import random
 
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.app import App
-from kivy.uix.scatter import Scatter
-from kivy.uix.label import Label
-from kivy.uix.widget import Widget
-from kivy.uix.button import Button
-from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.textinput import TextInput
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.progressbar import ProgressBar
-from kivy.uix.slider import Slider
-from kivy.uix.filechooser import FileChooser
 from kivy.uix.image import Image
 from kivy.core.image import Image as CoreImage
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
@@ -33,7 +22,6 @@ from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.types import TubRecord
-from donkeycar.management.graph import TsPlot
 
 
 Builder.load_file('ui.kv')
@@ -54,8 +42,7 @@ class FileChooserBase:
     title = StringProperty(None)
 
     def open_popup(self):
-        self.popup = FileChooserPopup(load=self.load,
-                                      root_path=self.root_path,
+        self.popup = FileChooserPopup(load=self.load,root_path=self.root_path,
                                       title=self.title)
         self.popup.open()
 
@@ -121,32 +108,18 @@ class TubLoader(BoxLayout, FileChooserBase):
             if not expression:
                 return True
             else:
-                record = TubRecord(cfg, self.tub.base_path, underlying)
-                res = eval(expression)
-                return res
+                try:
+                    record = TubRecord(cfg, self.tub.base_path, underlying)
+                    res = eval(expression)
+                    return res
+                except KeyError as err:
+                    print(err)
+                    return True
 
         self.records = [TubRecord(cfg, self.tub.base_path, record)
                         for record in self.tub if select(record)]
         self.len = len(self.records)
         if self.len > 0:
-            # # update app components, manipulator, slider and plot
-            # self.app.tub_manipulator.set_lr(is_l=True)
-            # self.app.tub_manipulator.set_lr(is_l=False)
-            # # clear bars for new tub only but not for reloading existing tub
-            # if not reload:
-            #     self.app.data_panel.clear()
-            # # update graph
-            # self.app.data_plot.update_dataframe_from_tub()
-
-            # update field list first as their names are used in tub plot
-            # fields = []
-            # for k, v in zip(self.tub.manifest.inputs, self.tub.manifest.types):
-            #     if v == 'vector' or v == 'list':
-            #         vec = self.records[0].underlying[k]
-            #         fields += [k + f'_{i}' for i in range(len(vec))]
-            #     else:
-            #         fields.append(k)
-            # self.parent.parent.ids.data_panel.ids.data_spinner.values = fields
             self.parent.parent.index = 0
             self.parent.parent.ids.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
@@ -212,9 +185,9 @@ class DataPanel(BoxLayout):
                           config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
-            self.parent.parent.ids.data_plot.plot_from_current_bars()
             lb.update(self.parent.parent.current_record)
             self.parent.parent.status(lb.msg)
+        self.parent.parent.ids.data_plot.plot_from_current_bars()
         self.ids.data_spinner.text = 'Add/remove'
 
     def update(self, record):
@@ -404,7 +377,7 @@ class DataPlot(BoxLayout):
 
 
 class TubWindow(BoxLayout):
-    index = NumericProperty(None)
+    index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
 
     def initialise(self):
@@ -427,12 +400,14 @@ class TubWindow(BoxLayout):
 
 
 class TubApp(App):
+    layout = None
+
     def __init__(self):
         super().__init__(title='Tub Manager')
-        self.layout = TubWindow()
-        self.layout.initialise()
 
     def build(self):
+        self.layout = TubWindow()
+        self.layout.initialise()
         return self.layout
 
 

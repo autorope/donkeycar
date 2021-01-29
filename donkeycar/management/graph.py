@@ -8,6 +8,7 @@ from kivy.app import App
 import numpy as np
 from random import random
 import pandas as pd
+from kivy.uix.widget import Widget
 
 Builder.load_string('''
 <LegendLabel>:
@@ -27,17 +28,20 @@ Builder.load_string('''
         halign: 'center'
         valign: 'middle'
 
+<PlotArea>:
+    bounding_box: self.make_bounding_box()
+    on_size: self.bounding_box = self.make_bounding_box()
+
 <TsPlot>:
-    bounding_box: [[plot.x + self.offset[0], plot.y + self.offset[1]], [plot.x + plot.size[0] - self.offset[0], plot.y + plot.size[1] - self.offset[1]]]
     orientation: 'vertical'
     BoxLayout:
         orientation: 'horizontal'
         BoxLayout:
             orientation: 'vertical'
-            Widget: 
+            PlotArea: 
                 id: plot
                 size_hint_y: 8.0
-                on_size: root.draw_axes()  # root.on_df()
+                on_size: root.draw_axes() 
             BoxLayout:
                 id: x_ticks
                 orientation: 'horizontal'
@@ -56,67 +60,84 @@ Builder.load_string('''
 ''')
 
 
-class TsPlot(BoxLayout):
+class PlotArea(Widget):
     offset = [50, 20]
-    len = 0
-    x_ticks = 10
     bounding_box = ListProperty()
-    df = ObjectProperty(force_dispatch=True, allownone=True)
+
+    def make_bounding_box(self):
+        return [[self.x + self.offset[0],
+                 self.y + self.offset[1]],
+                [self.x + self.size[0] - self.offset[0],
+                 self.y + self.size[1] - self.offset[1]]]
 
     def draw_axes(self):
-        plot = self.ids.plot
-        plot.canvas.clear()
-        self.ids.x_ticks.clear_widgets()
-        self.ids.legend.clear_widgets()
-        self.len = 0
+        self.canvas.clear()
         bb = self.bounding_box
-        with self.ids.plot.canvas:
+        with self.canvas:
             Color(.9, .9, .9, 1.)
             points = [bb[0][0], bb[1][1], bb[0][0], bb[0][1], bb[1][0], bb[0][1]]
             Line(width=1.5, points=points)
 
-    def draw_x_ticks(self):
-        if self.len == 0:
-            return
-        plot = self.ids.plot
-        x_length = plot.size[0] - 2 * self.offset[0]
-        for i in range(self.x_ticks + 1):
-            i_len = x_length * i / self.x_ticks
+    def draw_x_ticks(self, num_ticks):
+        x_length = self.bounding_box[1][0] - self.bounding_box[0][0]
+        for i in range(num_ticks + 1):
+            i_len = x_length * i / num_ticks
             top = [self.bounding_box[0][0] + i_len, self.bounding_box[0][1]]
             bottom = [top[0], top[1] - self.offset[1] / 2]
-            with plot.canvas:
+            with self.canvas:
                 Color(.9, .9, .9, 1.)
                 Line(width=1.5, points=bottom+top)
-            tick_label = Label(text=str(int(i * self.len / self.x_ticks)),
-                               font_size=24)
-            self.ids.x_ticks.add_widget(tick_label)
 
-    def get_x(self, length):
+    def get_x(self, num_points):
         x_scale = (self.bounding_box[1][0] - self.bounding_box[0][0]) \
-                  / (length - 1)
-        x_trafo = x_scale * np.array(range(length)) + self.bounding_box[0][0]
+                  / (num_points - 1)
+        x_trafo = x_scale * np.array(range(num_points)) + self.bounding_box[0][0]
         return x_trafo
 
     def transform_y(self, y):
-        y_scale = (self.ids.plot.size[1] - 2 * self.offset[1]) \
+        y_scale = (self.bounding_box[1][1] - self.bounding_box[0][1]) \
                   / (y.max() - y.min())
-        y_trafo = y_scale * (y - y.min()) + self.ids.plot.y + self.offset[1]
+        y_trafo = y_scale * (y - y.min()) + self.y + self.offset[1]
         return y_trafo
 
-    def add_line(self, y_points, idx):
-        if self.len == 0:
-            self.len = len(y_points)
-            self.draw_x_ticks()
-        x_transformed = self.get_x(self.len)
+    def add_line(self, y_points, len, hsv):
+        x_transformed = self.get_x(len)
         y_transformed = self.transform_y(y_points)
         xy_points = list()
         for x, y, in zip(x_transformed, y_transformed):
             if not xy_points or x > xy_points[-2] + 1:
                 xy_points += [x, y]
-        hsv = idx / len(self.df.columns), 0.7, 0.8
-        with self.ids.plot.canvas:
+        with self.canvas:
             Color(*hsv, mode='hsv')
             Line(points=xy_points, width=1.5)
+
+
+class TsPlot(BoxLayout):
+    len = 0
+    x_ticks = 10
+    df = ObjectProperty(force_dispatch=True, allownone=True)
+
+    def draw_axes(self):
+        self.ids.x_ticks.clear_widgets()
+        self.ids.legend.clear_widgets()
+        self.len = 0
+        self.ids.plot.draw_axes()
+
+    def draw_x_ticks(self):
+        if self.len == 0:
+            return
+        self.ids.plot.draw_x_ticks(self.x_ticks)
+        for i in range(self.x_ticks + 1):
+            tick_label = Label(text=str(int(i * self.len / self.x_ticks)),
+                               font_size=24)
+            self.ids.x_ticks.add_widget(tick_label)
+
+    def add_line(self, y_points, idx):
+        if self.len == 0:
+            self.len = len(y_points)
+            self.draw_x_ticks()
+        hsv = idx / len(self.df.columns), 0.7, 0.8
+        self.ids.plot.add_line(y_points, self.len, hsv)
         l = LegendLabel(text=self.df.columns[idx], hsv=hsv)
         self.ids.legend.add_widget(l)
 
