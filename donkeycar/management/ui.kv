@@ -1,3 +1,4 @@
+#: import TsPlot donkeycar.management.graph.TsPlot
 
 <FileChooserPopup>:
     title: "Choose the directory"
@@ -48,7 +49,6 @@
 <TubLoader>
     title: 'Choose the tub directory'
     orientation: 'horizontal'
-    #on_tub: app.layout.ids.data_plot.unravel_vectors()
     Button:
         id: tub_button
         text: 'Load Tub'
@@ -80,7 +80,7 @@
         halign: 'right'
         valign: 'middle'
         font_size: 28
-        size_hint_x: 0.5
+        size_hint_x: 0.8
         padding_x: 10
     ProgressBar:
         id: bar
@@ -244,8 +244,8 @@
     BoxLayout:
         orientation: 'horizontal'
         spacing: 5
+        size_hint_y: 0.75
         DataPanel:
-            size_hint_x: 1.4
             id: data_panel
         FullImage:
             id: img
@@ -258,7 +258,7 @@
         value: 0
         size_hint_y: None
         height: common_height
-        on_value: app.layout.index = int(self.value)
+        on_value: root.index = int(self.value)
     TubEditor
     TubFilter:
         id: tub_filter
