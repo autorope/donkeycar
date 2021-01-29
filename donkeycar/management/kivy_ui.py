@@ -147,6 +147,7 @@ class TubLoader(BoxLayout, FileChooserBase):
             #     else:
             #         fields.append(k)
             # self.parent.parent.ids.data_panel.ids.data_spinner.values = fields
+            self.parent.parent.index = 0
             self.parent.parent.ids.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
@@ -190,7 +191,7 @@ class LabelBar(BoxLayout):
                 text = val
             self.ids.value_label.text = text
         else:
-            print(f'Bad record {self.parent.parent.index} - missing field '
+            print(f'Bad record {record.underlying["_index"]} - missing field '
                   f'{self.field}')
 
 
@@ -344,7 +345,7 @@ class TubFilter(BoxLayout):
         return filter_text
 
 
-class DataPlot(Button):
+class DataPlot(BoxLayout):
     """ Data plot panel which embeds matplotlib interactive graph"""
     df = ObjectProperty()
 
@@ -370,7 +371,7 @@ class DataPlot(Button):
         if in_app:
             self.parent.ids.graph.df = df
         else:
-            fig = px.line(df, x="_index", y=df.columns,
+            fig = px.line(df, x=df.index, y=df.columns,
                           title=self.parent.ids.tub_loader.tub.base_path)
             fig.update_xaxes(rangeslider=dict(visible=True))
             fig.show()
@@ -399,6 +400,7 @@ class DataPlot(Button):
         self.df.set_index('_index', inplace=True)
         self.unravel_vectors()
         self.parent.ids.data_panel.ids.data_spinner.values = self.df.columns
+        self.plot_from_current_bars()
 
 
 class TubWindow(BoxLayout):
@@ -409,7 +411,6 @@ class TubWindow(BoxLayout):
         self.ids.config_manager.load_action()
         self.ids.tub_loader.update_tub()
         self.index = 0
-        self.ids.data_plot.plot_from_current_bars()
 
     def on_index(self, obj, index):
         self.current_record = self.ids.tub_loader.records[index]

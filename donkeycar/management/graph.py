@@ -37,7 +37,7 @@ Builder.load_string('''
             Widget: 
                 id: plot
                 size_hint_y: 8.0
-                on_size: root.draw_axes()
+                on_size: root.draw_axes()  # root.on_df()
             BoxLayout:
                 id: x_ticks
                 orientation: 'horizontal'
@@ -111,7 +111,8 @@ class TsPlot(BoxLayout):
         y_transformed = self.transform_y(y_points)
         xy_points = list()
         for x, y, in zip(x_transformed, y_transformed):
-            xy_points += [x, y]
+            if not xy_points or x > xy_points[-2] + 1:
+                xy_points += [x, y]
         hsv = idx / len(self.df.columns), 0.7, 0.8
         with self.ids.plot.canvas:
             Color(*hsv, mode='hsv')
@@ -119,8 +120,7 @@ class TsPlot(BoxLayout):
         l = LegendLabel(text=self.df.columns[idx], hsv=hsv)
         self.ids.legend.add_widget(l)
 
-    def on_df(self, e, z):
-        self.ids.plot.canvas.clear()
+    def on_df(self, e=None, z=None):
         self.draw_axes()
         if self.df is not None:
             self.ids.index_label.text = self.df.index.name or 'index'
