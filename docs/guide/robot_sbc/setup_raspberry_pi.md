@@ -220,10 +220,10 @@ cd donkeycar
 git checkout master
 pip install -e .[pi]
 pip install numpy --upgrade
-wget "https://raw.githubusercontent.com/PINTO0309/Tensorflow-bin/master/tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh"
-chmod u+x tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
-tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
-pip install tensorflow-2.3.1-cp37-none-linux_armv7l.whl
+curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=1AUlqf3oosa6FLlkQgO-NSO1Ur2YutG9o" > /dev/null
+CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"
+curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CODE}&id=1AUlqf3oosa6FLlkQgO-NSO1Ur2YutG9o" -o tensorflow-2.0.0-cp37-cp37m-linux_armv7l.whl
+pip install tensorflow-2.0.0-cp37-cp37m-linux_armv7l.whl
 ```
 
 You can validate your tensorflow install with
