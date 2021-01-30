@@ -411,9 +411,7 @@ class TubWindow(BoxLayout):
 
 class TubApp(App):
     layout = None
-
-    def __init__(self):
-        super().__init__(title='Tub Manager')
+    title = 'Tub Manager'
 
     def build(self):
         self.layout = TubWindow()
