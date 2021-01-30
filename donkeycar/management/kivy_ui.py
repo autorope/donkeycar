@@ -185,8 +185,7 @@ class DataPanel(BoxLayout):
         else:
             field_property = rc_handler.field_properties.get(decompose(field)[0])
             cfg = root().ids.config_manager.config
-            lb = LabelBar(field=field, field_property=field_property,
-                          config=cfg)
+            lb = LabelBar(field=field, field_property=field_property, config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
             lb.update(root().current_record)
@@ -197,6 +196,11 @@ class DataPanel(BoxLayout):
     def update(self, record):
         for v in self.labels.values():
             v.update(record)
+
+    def clear(self):
+        for v in self.labels.values():
+            self.remove_widget(v)
+        self.labels.clear()
 
 
 class FullImage(Image):
@@ -323,14 +327,14 @@ class TubFilter(BoxLayout):
 
 class DataPlot(BoxLayout):
     """ Data plot panel which embeds matplotlib interactive graph"""
-    df = ObjectProperty()
+    df = ObjectProperty(force_dispatch=True, allownone=True)
 
     def plot_from_current_bars(self, in_app=True):
         """ Plotting from current selected bars. The DataFrame for plotting
             should contain all bars except for strings fields and all data is
             selected if bars are empty.  """
-        field_map = dict(zip(root().ids.tub_loader.tub.manifest.inputs,
-                             root().ids.tub_loader.tub.manifest.types))
+        tub = root().ids.tub_loader.tub
+        field_map = dict(zip(tub.manifest.inputs, tub.manifest.types))
         # Use selected fields or all fields if nothing is slected
         all_cols = root().ids.data_panel.labels.keys() or self.df.columns
         cols = [c for c in all_cols if decompose(c)[0] in field_map
@@ -341,22 +345,19 @@ class DataPlot(BoxLayout):
             return
         # Don't plot the milliseconds time stamp as this is a too big number
         df = df.drop(labels=['_timestamp_ms'], axis=1, errors='ignore')
-        df = df.drop(labels=['cam/image_array'], axis=1, errors='ignore')
-        df = df.drop(labels=['timestamp'], axis=1, errors='ignore')
 
         if in_app:
             root().ids.graph.df = df
         else:
-            fig = px.line(df, x=df.index, y=df.columns,
-                          title=root().ids.tub_loader.tub.base_path)
+            fig = px.line(df, x=df.index, y=df.columns, title=tub.base_path)
             fig.update_xaxes(rangeslider=dict(visible=True))
             fig.show()
 
     def unravel_vectors(self):
         """ Unravels vector and list entries in tub which are created
             when the DataFrame is created from a list of records"""
-        for k, v in zip(root().ids.tub_loader.tub.manifest.inputs,
-                        root().ids.tub_loader.tub.manifest.types):
+        manifest = root().ids.tub_loader.tub.manifest
+        for k, v in zip(manifest.inputs, manifest.types):
             if v == 'vector' or v == 'list':
                 dim = len(root().current_record.underlying[k])
                 df_keys = [k + f'_{i}' for i in range(dim)]
@@ -382,10 +383,9 @@ class TubWindow(BoxLayout):
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
 
-    def initialise(self):
+    def initialise(self, e):
         self.ids.config_manager.load_action()
         self.ids.tub_loader.update_tub()
-        self.index = 0
 
     def on_index(self, obj, index):
         self.current_record = self.ids.tub_loader.records[index]
@@ -417,7 +417,7 @@ class TubApp(App):
 
     def build(self):
         self.layout = TubWindow()
-        self.layout.initialise()
+        Clock.schedule_once(self.layout.initialise)
         Window.bind(on_keyboard=self.layout.on_keyboard)
         return self.layout
 

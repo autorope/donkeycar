@@ -1,5 +1,6 @@
 from kivy.properties import ListProperty, ObjectProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.lang import Builder
 from kivy.graphics import Color, Line
@@ -29,8 +30,7 @@ Builder.load_string('''
         valign: 'middle'
 
 <PlotArea>:
-    bounding_box: self.make_bounding_box()
-    on_size: self.bounding_box = self.make_bounding_box()
+
 
 <TsPlot>:
     orientation: 'vertical'
@@ -41,7 +41,6 @@ Builder.load_string('''
             PlotArea: 
                 id: plot
                 size_hint_y: 8.0
-                on_size: root.draw_axes() 
             BoxLayout:
                 id: x_ticks
                 orientation: 'horizontal'
@@ -72,6 +71,7 @@ class PlotArea(Widget):
 
     def draw_axes(self):
         self.canvas.clear()
+        self.bounding_box = self.make_bounding_box()
         bb = self.bounding_box
         with self.canvas:
             Color(.9, .9, .9, 1.)
@@ -152,7 +152,7 @@ class TsPlot(BoxLayout):
             y = self.df[col]
             self.add_line(y, i)
 
-    def set_df(self):
+    def set_df(self, e):
         n = int(random() * 20) + 1
         cols = ['very very long line ' + str(i) for i in range(n)]
         df = pd.DataFrame(np.random.randn(20, n), columns=cols)
@@ -168,7 +168,13 @@ class LegendLabel(BoxLayout):
 
 class GraphApp(App):
     def build(self):
-        return TsPlot()
+        b = BoxLayout(orientation='vertical')
+        ts_plot = TsPlot()
+        b.add_widget(ts_plot)
+        btn = Button(text='Create random series', size_hint_y=0.1)
+        btn.bind(on_press=ts_plot.set_df)
+        b.add_widget(btn)
+        return b
 
 
 if __name__ == '__main__':
