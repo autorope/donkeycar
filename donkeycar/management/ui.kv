@@ -111,6 +111,7 @@
             id: record_num
             text: root.record_display
         Spinner:
+            id: control_spinner
             pos_hint: {'center': (.5, .5)}
             text: '1.00'
             values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
@@ -130,8 +131,7 @@
             id: step_fwd
             text: '>'
             on_press:
-                root.start(fwd=True)
-                app.layout.ids.status.text = 'Donkey step forward - you can use <right> key as well.'
+                root.step_fwd()
             on_release:
                 root.stop()
         Button:
