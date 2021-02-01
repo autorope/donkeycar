@@ -27,7 +27,6 @@ from donkeycar.pipeline.types import TubRecord
 
 Builder.load_file('ui.kv')
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
-HEIGHT = 60
 rc_handler = RcFileHandler()
 
 # for easy access
@@ -249,12 +248,44 @@ class ControlPanel(BoxLayout):
 
     def stop(self):
         self.clock.cancel()
-        self.fwd = None
 
     def restart(self):
         if self.clock:
             self.stop()
             self.start(self.fwd, True)
+
+    def step_fwd(self):
+        self.start(fwd=True)
+        root().status('Donkey step forward - you can use <right> key as well.')
+
+    def update_speed(self, up=True):
+        values = self.ids.control_spinner.values
+        idx = values.index(self.ids.control_spinner.text)
+        if up and idx < len(values) - 1:
+            self.ids.control_spinner.text = values[idx + 1]
+        elif not up and idx > 0:
+            self.ids.control_spinner.text = values[idx - 1]
+
+    def set_button_status(self, disable=True):
+        self.ids.run_bwd.disabled = self.ids.run_fwd.disabled = \
+            self.ids.step_fwd.disabled = self.ids.step_bwd.disabled = disable
+
+    def on_keyboard(self, key, scancode):
+        if key == ' ':
+            if self.clock and self.clock.is_triggered:
+                self.stop()
+                self.set_button_status(disable=False)
+            else:
+                self.start(continuous=True)
+                self.set_button_status(disable=True)
+        elif scancode == 79:
+            self.step(fwd=True)
+        elif scancode == 80:
+            self.step(fwd=False)
+        elif scancode == 45:
+            self.update_speed(up=False)
+        elif scancode == 46:
+            self.update_speed(up=True)
 
 
 class TubEditor(BoxLayout):
@@ -401,12 +432,8 @@ class TubWindow(BoxLayout):
         self.ids.status.text = msg
 
     def on_keyboard(self, instance, keycode, scancode, key, modifiers):
-        print(f'code ##{key}##')
-        if key == ' ':
-            if self.ids.control_panel.fwd is None:
-                self.ids.control_panel.start(fwd=True, continuous=True)
-            else:
-                self.ids.control_panel.stop()
+        print(f'code ##{key}## scancode {scancode}')
+        self.ids.control_panel.on_keyboard(key, scancode)
 
 
 class TubApp(App):
