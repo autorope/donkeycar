@@ -433,7 +433,6 @@ class TubWindow(BoxLayout):
         self.ids.status.text = msg
 
     def on_keyboard(self, instance, keycode, scancode, key, modifiers):
-        print(f'code ##{key}## scancode {scancode}')
         if self.keys_enabled:
             self.ids.control_panel.on_keyboard(key, scancode)
 
