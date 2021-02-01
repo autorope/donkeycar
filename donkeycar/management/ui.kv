@@ -139,22 +139,22 @@
             text: '<<'
             on_press:
                 root.start(fwd=False, continuous=True)
+                root.set_button_status(disabled=True)
                 app.layout.ids.status.text = 'Donkey running backwards...'
-                run_bwd.disabled = run_fwd.disabled = step_fwd.disabled = step_bwd.disabled = True
         Button:
             id: run_fwd
             text: '>>'
             on_press:
                 root.start(fwd=True, continuous=True)
+                root.set_button_status(disabled=True)
                 app.layout.ids.status.text = 'Donkey running...'
-                run_bwd.disabled = run_fwd.disabled = step_fwd.disabled = step_bwd.disabled = True
 
     Button:
         size_hint_y: 0.3
         text: 'Stop'
         on_press:
             root.stop()
-            run_fwd.disabled = run_bwd.disabled = step_fwd.disabled = step_bwd.disabled = False
+            root.set_button_status(disabled=False)
             app.layout.ids.status.text = 'Donkey stopped'
 
 <TubEditor>
@@ -209,6 +209,7 @@
         id: record_filter
         text: root.record_filter
         multiline: False
+        on_focus: app.layout.keys_enabled = not app.layout.keys_enabled
 
 <-FullImage>:
     # texture: self.get_texture()

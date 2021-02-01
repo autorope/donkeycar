@@ -8,7 +8,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
 from kivy.core.image import Image as CoreImage
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
-    ListProperty
+    ListProperty, BooleanProperty
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
@@ -266,18 +266,18 @@ class ControlPanel(BoxLayout):
         elif not up and idx > 0:
             self.ids.control_spinner.text = values[idx - 1]
 
-    def set_button_status(self, disable=True):
+    def set_button_status(self, disabled=True):
         self.ids.run_bwd.disabled = self.ids.run_fwd.disabled = \
-            self.ids.step_fwd.disabled = self.ids.step_bwd.disabled = disable
+            self.ids.step_fwd.disabled = self.ids.step_bwd.disabled = disabled
 
     def on_keyboard(self, key, scancode):
         if key == ' ':
             if self.clock and self.clock.is_triggered:
                 self.stop()
-                self.set_button_status(disable=False)
+                self.set_button_status(disabled=False)
             else:
                 self.start(continuous=True)
-                self.set_button_status(disable=True)
+                self.set_button_status(disabled=True)
         elif scancode == 79:
             self.step(fwd=True)
         elif scancode == 80:
@@ -413,6 +413,7 @@ class DataPlot(BoxLayout):
 class TubWindow(BoxLayout):
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
+    keys_enabled = BooleanProperty(True)
 
     def initialise(self, e):
         self.ids.config_manager.load_action()
@@ -433,7 +434,8 @@ class TubWindow(BoxLayout):
 
     def on_keyboard(self, instance, keycode, scancode, key, modifiers):
         print(f'code ##{key}## scancode {scancode}')
-        self.ids.control_panel.on_keyboard(key, scancode)
+        if self.keys_enabled:
+            self.ids.control_panel.on_keyboard(key, scancode)
 
 
 class TubApp(App):
