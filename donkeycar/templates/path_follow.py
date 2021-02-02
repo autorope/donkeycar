@@ -67,9 +67,9 @@ def drive(cfg):
             odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
  
         if cfg.ODOM_TYPE = "arduino":
-            enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
+            enc = ArduinoEncoder()
             V.add(enc, outputs=['enc/ticks'])
-
+            odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
 
         V.add(odom, inputs=['enc/ticks', 'user/throttle'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/delta_vel_m_s'])
 

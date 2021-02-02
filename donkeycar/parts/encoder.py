@@ -41,14 +41,14 @@ class ArduinoEncoder:
     def update(self):
         last_time = time.time()
         start_distance = 0
-        ticks = 0
+        self.ticks = 0
         # keep looping infinitely until the thread is stopped
         while (self.on):
             input = self.ser.readline()
-            ticks = input.decode()
-            ticks = ticks.strip()  # remove any whitespace
-            if (ticks.isnumeric()):
-                ticks = int(ticks)
+            self.ticks = input.decode()
+            self.ticks = ticks.strip()  # remove any whitespace
+            if (self.ticks.isnumeric()):
+                self.ticks = int(self.ticks)
                 # print("ticks=", ticks)
                 current_time = time.time()
         #       print('seconds:', seconds)
@@ -67,7 +67,7 @@ class ArduinoEncoder:
 
 
     def run_threaded(self):
-        return self.velocity 
+        return self.ticks
 
     def shutdown(self):
         # indicate that the thread should be stopped
