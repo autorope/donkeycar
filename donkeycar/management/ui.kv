@@ -124,14 +124,13 @@
             text: '<'
             on_press:
                 root.start(fwd=False)
-                app.layout.ids.status.text = 'Donkey step backward - you can <left> key as well.'
             on_release:
                 root.stop()
         Button:
             id: step_fwd
             text: '>'
             on_press:
-                root.step_fwd()
+                root.start(fwd=True)
             on_release:
                 root.stop()
         Button:
@@ -140,14 +139,12 @@
             on_press:
                 root.start(fwd=False, continuous=True)
                 root.set_button_status(disabled=True)
-                app.layout.ids.status.text = 'Donkey running backwards...'
         Button:
             id: run_fwd
             text: '>>'
             on_press:
                 root.start(fwd=True, continuous=True)
                 root.set_button_status(disabled=True)
-                app.layout.ids.status.text = 'Donkey running...'
 
     Button:
         size_hint_y: 0.3
@@ -155,7 +152,6 @@
         on_press:
             root.stop()
             root.set_button_status(disabled=False)
-            app.layout.ids.status.text = 'Donkey stopped'
 
 <TubEditor>
     orientation: 'horizontal'

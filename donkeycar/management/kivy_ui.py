@@ -12,6 +12,7 @@ from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
+from kivy.uix.screenmanager import ScreenManager, Screen
 
 import io
 import os
@@ -229,7 +230,7 @@ class ControlPanel(BoxLayout):
 
     def start(self, fwd=True, continuous=False):
         time.sleep(0.1)
-        call = partial(self.step, fwd)
+        call = partial(self.step, fwd, continuous)
         if continuous:
             self.fwd = fwd
             s = float(self.speed) * root().ids.config_manager.config.DRIVE_LOOP_HZ
@@ -238,13 +239,18 @@ class ControlPanel(BoxLayout):
             cycle_time = 0.08
         self.clock = Clock.schedule_interval(call, cycle_time)
 
-    def step(self, fwd=True, *largs):
+    def step(self, fwd=True, continuous=False, *largs):
         new_index = root().index + (1 if fwd else -1)
         if new_index >= root().ids.tub_loader.len:
             new_index = 0
         elif new_index < 0:
             new_index = root().ids.tub_loader.len - 1
         root().index = new_index
+        msg = f'Donkey {"run" if continuous else "step"} ' \
+              f'{"forward" if fwd else "backward"}'
+        if not continuous:
+            msg += f' - you can also use {"<right>" if fwd else "<left>"} key'
+        root().status(msg)
 
     def stop(self):
         self.clock.cancel()
@@ -253,10 +259,6 @@ class ControlPanel(BoxLayout):
         if self.clock:
             self.stop()
             self.start(self.fwd, True)
-
-    def step_fwd(self):
-        self.start(fwd=True)
-        root().status('Donkey step forward - you can use <right> key as well.')
 
     def update_speed(self, up=True):
         values = self.ids.control_spinner.values
@@ -275,6 +277,7 @@ class ControlPanel(BoxLayout):
             if self.clock and self.clock.is_triggered:
                 self.stop()
                 self.set_button_status(disabled=False)
+                root().status('Donkey stopped')
             else:
                 self.start(continuous=True)
                 self.set_button_status(disabled=True)
@@ -437,15 +440,27 @@ class TubWindow(BoxLayout):
             self.ids.control_panel.on_keyboard(key, scancode)
 
 
+class PilotWindow(BoxLayout):
+    pass
+
+
 class TubApp(App):
     layout = None
     title = 'Tub Manager'
 
     def build(self):
         self.layout = TubWindow()
-        Clock.schedule_once(self.layout.initialise)
         Window.bind(on_keyboard=self.layout.on_keyboard)
-        return self.layout
+        # Create the screen manager
+        sm = ScreenManager()
+        tub_screen = Screen(name='tub_screen')
+        tub_screen.add_widget(self.layout)
+        sm.add_widget(tub_screen)
+        pilot_screen = Screen(name='pilot_screen')
+        pilot_screen.add_widget(PilotWindow())
+        sm.add_widget(pilot_screen)
+        Clock.schedule_once(self.layout.initialise)
+        return sm
 
 
 if __name__ == '__main__':
