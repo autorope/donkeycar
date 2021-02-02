@@ -1,4 +1,5 @@
 #: import TsPlot donkeycar.management.graph.TsPlot
+#: import get_model_by_type donkeycar.utils.get_model_by_type
 
 <FileChooserPopup>:
     title: "Choose the directory"
@@ -284,6 +285,26 @@
         TubWindow:
             id: tub_window
 
+<PilotLoader>:
+    title: 'Choose the pilot'
+    orientation: 'horizontal'
+    Button:
+        id: tub_button
+        text: 'Load Pilot'
+        size_hint_x: 0.5
+        on_press: root.open_popup()
+    Spinner:
+        id: pilot_spinner
+        pos_hint: {'center': (.5, .5)}
+        size_hint_x: 0.5
+        text: 'Choose type'
+        values: ['linear', 'categorical', 'tflite_linear']
+        on_text: root.pilot = get_model_by_type(self.text, app.layout.ids.config_manager.config)
+    AutoLabel:
+        id: pilot_file
+        text: root.file_path
+
+
 <PilotScreen>:
     BoxLayout:
         orientation: 'vertical'
@@ -293,4 +314,26 @@
             text: 'Switch to Tub Manager'
             on_press: root.manager.current = 'tub'
         BoxLayout:
-            id: pilot_window
+            size_hint_y: None
+            height: common_height
+            PilotLoader:
+                id: pilot_loader_1
+            PilotLoader:
+                id: pilot_loader_2
+        BoxLayout:
+            OverlayImage:
+                id: img_1
+                keras_part: pilot_loader_1.pilot
+            OverlayImage:
+                id: img_2
+                keras_part: pilot_loader_2.pilot
+        Slider:
+            id: slider
+            min: 0
+            max: app.layout.ids.tub_loader.len - 1
+            value: 0
+            size_hint_y: None
+            height: common_height
+            on_value: root.index = int(self.value)
+        Label:
+            text: 'more stuff here'
