@@ -184,6 +184,11 @@ MM1_SHOW_STEERING_VALUE = False
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
+#LOGGING
+HAVE_CONSOLE_LOGGING = True
+LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+
 #TELEMETRY
 TELEMETRY_DONKEY_NAME = 'my_robot1234'
 TELEMETRY_PUBLISH_PERIOD = 1
