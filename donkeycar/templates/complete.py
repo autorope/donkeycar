@@ -17,6 +17,7 @@ Options:
 import os
 import time
 
+import logging
 from docopt import docopt
 import numpy as np
 
@@ -31,6 +32,9 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
+
+
+logger = logging.getLogger()
 
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
@@ -60,7 +64,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     #Initialize car
     V = dk.vehicle.Vehicle()
 
-    print("cfg.CAMERA_TYPE", cfg.CAMERA_TYPE)
+    #Initialize logging before anything else to allow console logging
+    if cfg.HAVE_CONSOLE_LOGGING:
+        logger.setLevel(logging.getLevelName(cfg.LOGGING_LEVEL))
+        ch = logging.StreamHandler()
+        ch.setFormatter(logging.Formatter(cfg.LOGGING_FORMAT))
+        logger.addHandler(ch)
+
+    logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
 
         if cfg.CAMERA_TYPE == "WEBCAM":

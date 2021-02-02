@@ -8,11 +8,13 @@ Created on Sun Jun 25 10:44:24 2017
 
 import time
 import numpy as np
+import logging
 from threading import Thread
 from .memory import Memory
 from prettytable import PrettyTable
 import traceback
 
+logger = logging.getLogger(__name__)
 
 class PartProfiler:
     def __init__(self):
@@ -34,7 +36,7 @@ class PartProfiler:
         self.records[p]['times'][-1] = delta
 
     def report(self):
-        print("Part Profile Summary: (times in ms)")
+        logger.info("Part Profile Summary: (times in ms)")
         pt = PrettyTable()
         field_names = ["part", "max", "min", "avg"]
         pctile = [50, 90, 99, 99.9]
@@ -52,7 +54,7 @@ class PartProfiler:
                    "%.2f" % (sum(arr) / len(arr) * 1000)]
             row += ["%.2f" % (np.percentile(arr, p) * 1000) for p in pctile]
             pt.add_row(row)
-        print(pt)
+        logger.info(pt)
 
 
 class Vehicle:
@@ -89,7 +91,7 @@ class Vehicle:
         assert type(threaded) is bool, "threaded is not a boolean: %r" % threaded
 
         p = part
-        print('Adding part {}.'.format(p.__class__.__name__))
+        logger.info('Adding part {}.'.format(p.__class__.__name__))
         entry = {}
         entry['part'] = p
         entry['inputs'] = inputs
@@ -141,7 +143,7 @@ class Vehicle:
                     entry.get('thread').start()
 
             # wait until the parts warm up.
-            print('Starting vehicle at {} Hz'.format(rate_hz))
+            logger.info('Starting vehicle at {} Hz'.format(rate_hz))
 
             loop_count = 0
             while self.on:
@@ -160,7 +162,7 @@ class Vehicle:
                 else:
                     # print a message when could not maintain loop rate.
                     if verbose:
-                        print('WARN::Vehicle: jitter violation in vehicle loop '
+                        logger.info('WARN::Vehicle: jitter violation in vehicle loop '
                               'with {0:4.0f}ms'.format(abs(1000 * sleep_time)))
 
                 if verbose and loop_count % 200 == 0:
@@ -205,7 +207,7 @@ class Vehicle:
                 self.profiler.on_part_finished(p)
 
     def stop(self):        
-        print('Shutting down vehicle and its parts...')
+        logger.info('Shutting down vehicle and its parts...')
         for entry in self.parts:
             try:
                 entry['part'].shutdown()
@@ -213,6 +215,6 @@ class Vehicle:
                 # usually from missing shutdown method, which should be optional
                 pass
             except Exception as e:
-                print(e)
+                logger.error(e)
 
         self.profiler.report()
