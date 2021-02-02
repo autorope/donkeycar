@@ -1,3 +1,4 @@
+import math
 import time
 from functools import partial
 
@@ -24,7 +25,7 @@ from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.types import TubRecord
-
+from donkeycar.utils import get_model_by_type
 
 Builder.load_file('ui.kv')
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
@@ -204,12 +205,11 @@ class DataPanel(BoxLayout):
 
 
 class FullImage(Image):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def update(self, record):
         try:
             img_arr = record.image()
+            img_arr = self.overlay(img_arr)
             pil_image = PilImage.fromarray(img_arr)
             bytes_io = io.BytesIO()
             pil_image.save(bytes_io, format='png')
@@ -220,6 +220,9 @@ class FullImage(Image):
             print('Missing key:', e)
         except Exception as e:
             print('Bad record:', e)
+
+    def overlay(self, img_arr):
+        return img_arr
 
 
 class ControlPanel(BoxLayout):
@@ -440,12 +443,47 @@ class TubWindow(BoxLayout):
             self.ids.control_panel.on_keyboard(key, scancode)
 
 
+class PilotLoader(BoxLayout, FileChooserBase):
+    """ Class to mange loading of the config file from the car directory"""
+    pilot = ObjectProperty(None)
+    file_path = StringProperty(rc_handler.data.get('pilot', ''))
+
+    def load_action(self):
+        if self.file_path:
+            try:
+                self.pilot.load(os.path.join(self.file_path))
+                rc_handler.data['pilot'] = self.file_path
+            except FileNotFoundError:
+                print(f'Model {self.file_path} not found')
+            except Exception as e:
+                print(e)
+
+
 class TubScreen(Screen):
     pass
 
 
+class OverlayImage(FullImage):
+    keras_part = ObjectProperty()
+    deg_to_rad = math.pi / 180.0
+
+    def overlay(self, img_arr):
+        from donkeycar.management.makemovie import MakeMovie
+        MakeMovie.draw_model_prediction(self, img_arr)
+        return img_arr
+
+
 class PilotScreen(Screen):
-    pass
+    index = NumericProperty(None, force_dispatch=True)
+    current_record = ObjectProperty(None)
+
+    def on_index(self, obj, index):
+        self.current_record = root().ids.tub_loader.records[index]
+        self.ids.slider.value = index
+
+    def on_current_record(self, obj, record):
+        self.ids.img_1.update(record)
+        self.ids.img_2.update(record)
 
 
 class TubApp(App):
@@ -458,10 +496,11 @@ class TubApp(App):
         tub_screen = TubScreen(name='tub')
         self.layout = tub_screen.ids.tub_window
         Window.bind(on_keyboard=self.layout.on_keyboard)
+        Clock.schedule_once(self.layout.initialise)
         sm.add_widget(tub_screen)
         pilot_screen = PilotScreen(name='pilot')
         sm.add_widget(pilot_screen)
-        Clock.schedule_once(self.layout.initialise)
+
         return sm
 
 
