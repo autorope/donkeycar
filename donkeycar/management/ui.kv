@@ -271,3 +271,26 @@
         halign: 'left'
         valign: 'bottom'
         text: 'Status: here'
+
+
+<TubScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Button:
+            size_hint_y: None
+            height: common_height
+            text: 'Switch to Pilot Manager'
+            on_press: root.manager.current = 'pilot'
+        TubWindow:
+            id: tub_window
+
+<PilotScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        Button:
+            size_hint_y: None
+            height: common_height
+            text: 'Switch to Tub Manager'
+            on_press: root.manager.current = 'tub'
+        BoxLayout:
+            id: pilot_window

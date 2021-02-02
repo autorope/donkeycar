@@ -440,7 +440,11 @@ class TubWindow(BoxLayout):
             self.ids.control_panel.on_keyboard(key, scancode)
 
 
-class PilotWindow(BoxLayout):
+class TubScreen(Screen):
+    pass
+
+
+class PilotScreen(Screen):
     pass
 
 
@@ -449,15 +453,13 @@ class TubApp(App):
     title = 'Tub Manager'
 
     def build(self):
-        self.layout = TubWindow()
-        Window.bind(on_keyboard=self.layout.on_keyboard)
         # Create the screen manager
         sm = ScreenManager()
-        tub_screen = Screen(name='tub_screen')
-        tub_screen.add_widget(self.layout)
+        tub_screen = TubScreen(name='tub')
+        self.layout = tub_screen.ids.tub_window
+        Window.bind(on_keyboard=self.layout.on_keyboard)
         sm.add_widget(tub_screen)
-        pilot_screen = Screen(name='pilot_screen')
-        pilot_screen.add_widget(PilotWindow())
+        pilot_screen = PilotScreen(name='pilot')
         sm.add_widget(pilot_screen)
         Clock.schedule_once(self.layout.initialise)
         return sm
