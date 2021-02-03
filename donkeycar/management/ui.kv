@@ -290,14 +290,14 @@
     orientation: 'horizontal'
     Button:
         id: tub_button
-        text: 'Load Pilot'
+        text: 'Choose Pilot'
         size_hint_x: 0.5
         on_press: root.open_popup()
     Spinner:
         id: pilot_spinner
         pos_hint: {'center': (.5, .5)}
         size_hint_x: 0.5
-        text: 'Choose type'
+        text: root.model_type
         values: ['linear', 'categorical', 'tflite_linear']
         on_text: root.pilot = get_model_by_type(self.text, app.layout.ids.config_manager.config)
     AutoLabel:

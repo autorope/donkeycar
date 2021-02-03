@@ -208,8 +208,7 @@ class FullImage(Image):
 
     def update(self, record):
         try:
-            img_arr = record.image()
-            img_arr = self.overlay(img_arr)
+            img_arr = self.get_image(record)
             pil_image = PilImage.fromarray(img_arr)
             bytes_io = io.BytesIO()
             pil_image.save(bytes_io, format='png')
@@ -221,8 +220,8 @@ class FullImage(Image):
         except Exception as e:
             print('Bad record:', e)
 
-    def overlay(self, img_arr):
-        return img_arr
+    def get_image(self, record):
+        return record.image()
 
 
 class ControlPanel(BoxLayout):
@@ -447,16 +446,23 @@ class PilotLoader(BoxLayout, FileChooserBase):
     """ Class to mange loading of the config file from the car directory"""
     pilot = ObjectProperty(None)
     file_path = StringProperty(rc_handler.data.get('pilot', ''))
+    model_type = StringProperty(rc_handler.data.get('model_type', ''))
 
     def load_action(self):
         if self.file_path:
             try:
                 self.pilot.load(os.path.join(self.file_path))
                 rc_handler.data['pilot'] = self.file_path
+                rc_handler.data['model_type'] = self.model_type
             except FileNotFoundError:
                 print(f'Model {self.file_path} not found')
             except Exception as e:
                 print(e)
+
+    def on_model_type(self, obj, model_type):
+        if self.model_type:
+            self.pilot = get_model_by_type(self.model_type,
+                                           root().ids.config_manager.config)
 
 
 class TubScreen(Screen):
@@ -467,9 +473,11 @@ class OverlayImage(FullImage):
     keras_part = ObjectProperty()
     deg_to_rad = math.pi / 180.0
 
-    def overlay(self, img_arr):
+    def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
+        img_arr = super().get_image(record)
         MakeMovie.draw_model_prediction(self, img_arr)
+        MakeMovie.draw_user_input(self, record.underlying, img_arr)
         return img_arr
 
 
@@ -485,6 +493,12 @@ class PilotScreen(Screen):
         self.ids.img_1.update(record)
         self.ids.img_2.update(record)
 
+    def initialise(self, e):
+        self.ids.pilot_loader_1.on_model_type(None, None)
+        self.ids.pilot_loader_1.load_action()
+        self.ids.pilot_loader_2.on_model_type(None, None)
+        self.ids.pilot_loader_2.load_action()
+
 
 class TubApp(App):
     layout = None
@@ -499,6 +513,7 @@ class TubApp(App):
         Clock.schedule_once(self.layout.initialise)
         sm.add_widget(tub_screen)
         pilot_screen = PilotScreen(name='pilot')
+        Clock.schedule_once(pilot_screen.initialise)
         sm.add_widget(pilot_screen)
 
         return sm
