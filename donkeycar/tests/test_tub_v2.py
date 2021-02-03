@@ -11,7 +11,8 @@ class TestTub(unittest.TestCase):
         self._path = tempfile.mkdtemp()
         inputs = ['input']
         types = ['int']
-        self.tub = Tub(self._path, inputs, types)
+        metadata = [("meta1", "metavalue1")]
+        self.tub = Tub(self._path, inputs, types, metadata)
 
     def test_basic_tub_operations(self):
         entries = list(self.tub)
@@ -33,6 +34,18 @@ class TestTub(unittest.TestCase):
 
         self.assertEqual(count, (write_count - len(delete_indexes)))
         self.assertEqual(len(self.tub), (write_count - len(delete_indexes)))
+
+        # Note that self.tub.metadata is an array of tuples
+        assert ("meta1", "metavalue1") in self.tub.metadata 
+
+        # Note that self.tub.manifest.metadata is a dict
+        assert self.tub.manifest.metadata['meta1'] == "metavalue1"
+
+    def test_empty_tub(self):
+        assert len(self.tub) == 0
+        tub_iter = iter(self.tub)
+
+        self.assertRaises(StopIteration, next, tub_iter)
 
     def tearDown(self):
         shutil.rmtree(self._path)

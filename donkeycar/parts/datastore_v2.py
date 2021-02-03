@@ -292,6 +292,10 @@ class Manifest(object):
         self.deleted_indexes.add(record_index)
         self._update_catalog_metadata(update=True)
 
+    def update_metadata(self, metadata):
+        self.metadata = {**self.metadata, **metadata}
+        self._write_contents()
+        
     def restore_record(self, record_index):
         # Does not actually delete the record, but marks it as deleted.
         self.deleted_indexes.discard(record_index)
