@@ -68,7 +68,6 @@ NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control
 JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.
 JOYSTICK_THROTTLE_DIR = -1.0        # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
 JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access the joystick.
-USE_FPV = False                     # send camera data to FPV webserver
 
 # 
 # 
