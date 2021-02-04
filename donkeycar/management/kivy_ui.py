@@ -221,7 +221,7 @@ class FullImage(Image):
             print('Bad record:', e)
 
     def get_image(self, record):
-        return record.image()
+        return record.image(cached=False)
 
 
 class ControlPanel(BoxLayout):
