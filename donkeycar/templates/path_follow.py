@@ -60,13 +60,13 @@ def drive(cfg):
           threaded=True)
 
     if cfg.HAVE_ODOM:
-        if cfg.ODOM_TYPE = "gpio":
+        if cfg.ODOM_TYPE == "gpio":
             pi = pigpio.pi()
             enc = PiPGIOEncoder(cfg.ODOM_PIN, pi)
             V.add(enc, outputs=['enc/ticks'])
             odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
  
-        if cfg.ODOM_TYPE = "arduino":
+        if cfg.ODOM_TYPE == "arduino":
             enc = ArduinoEncoder()
             V.add(enc, outputs=['enc/ticks'])
             odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
