@@ -34,6 +34,7 @@ class ArduinoEncoder:
             self.ave_velocity.append(0)
         self.ser.write(str.encode('reset'))  # restart the encoder to zero
         self.on = True
+        self.ticks = 0
         self.debug = debug
         self.mm_per_tick = mm_per_tick
 
@@ -46,14 +47,14 @@ class ArduinoEncoder:
         while (self.on):
             input = self.ser.readline()
             self.ticks = input.decode()
-            self.ticks = ticks.strip()  # remove any whitespace
+            self.ticks = self.ticks.strip()  # remove any whitespace
             if (self.ticks.isnumeric()):
                 self.ticks = int(self.ticks)
                 # print("ticks=", ticks)
                 current_time = time.time()
         #       print('seconds:', seconds)
                 if current_time >= last_time + 0.1:   # print at 10Hz
-                    end_distance = ticks * self.mm_per_tick
+                    end_distance = self.ticks * self.mm_per_tick
                     instant_velocity = (end_distance-start_distance)*10  # multiply times ten to convert to m/s
                     for i in range(9):
                         self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
@@ -66,7 +67,9 @@ class ArduinoEncoder:
                     start_distance = end_distance
 
 
-    def run_threaded(self):
+    def run(self):
+        if self.debug:
+            print("Ticks =", self.ticks)
         return self.ticks
 
     def shutdown(self):

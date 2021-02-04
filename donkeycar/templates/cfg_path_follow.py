@@ -94,7 +94,7 @@ ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 
 # 
 # #Odometry
-HAVE_ODOM = False                   # Do you have an odometer? Uses pigpio 
+HAVE_ODOM = True                   # Do you have an odometer? Uses pigpio 
 MM_PER_TICK = 0.0000599               # How much travel with a single tick, in mm
 ODOM_TYPE = "arduino"                # arduino|gpio|astar
 # ODOM_PIN = 4                        # Which GPIO board mode pin to use as input
