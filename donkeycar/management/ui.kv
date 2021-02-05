@@ -13,6 +13,7 @@
             id: file_chooser
             rootpath: root.root_path
             dirselect: True
+            filters: root.filters
             FileChooserListLayout
 
         BoxLayout:
@@ -36,9 +37,11 @@
     title: 'Choose the car directory'
     orientation: 'horizontal'
     on_config:
-        app.layout.ids.tub_loader.ids.tub_button.disabled = False
-        app.layout.ids.tub_loader.root_path = self.file_path
-        app.layout.ids.status.text = 'Config loaded from' + self.file_path
+        app.tub_screen.ids.tub_loader.ids.tub_button.disabled = False
+        app.tub_screen.ids.tub_loader.root_path = self.file_path
+        app.pilot_screen.ids.pilot_loader_1.root_path = self.file_path
+        app.pilot_screen.ids.pilot_loader_2.root_path = self.file_path
+        app.tub_screen.ids.status.text = 'Config loaded from' + self.file_path
     Button:
         text: 'Load car directory'
         size_hint_x: 0.5
@@ -118,7 +121,7 @@
             values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
             on_text:
                 root.speed = float(self.text)
-                app.layout.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
+                app.tub_screen.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
                 root.restart()
         Button:
             id: step_bwd
@@ -164,7 +167,7 @@
         '- you can affect records outside by setting left > right')
         else: msg += (f'affecting records outside ({root.lr[1]}, {root.lr[0]}] ' + \
         '- you can affect records inside by setting left < right')
-        app.layout.ids.status.text = msg
+        app.tub_screen.ids.status.text = msg
     Button:
         text: 'Set left'
         on_press: root.set_lr(True)
@@ -180,18 +183,18 @@
             root.del_lr(True)
             msg = f'Delete records {root.lr} - press <Reload tub> to see the ' \
             + f'effect, but you can delete multiple ranges before doing so.'
-            app.layout.ids.status.text = msg
+            app.tub_screen.ids.status.text = msg
     Button:
         text: 'Restore'
         on_press:
             root.del_lr(False)
             msg = f'Restore records {root.lr} - press <Reload tub> to see the ' \
             + f'effect, but you can restore multiple ranges before doing so.'
-            app.layout.ids.status.text = msg
+            app.tub_screen.ids.status.text = msg
     Button:
         text: 'Reload Tub'
         on_press:
-            app.layout.ids.tub_loader.update_tub(reload=True)
+            app.tub_screen.ids.tub_loader.update_tub(reload=True)
 
 <TubFilter>:
     id: tub_filter
@@ -206,7 +209,7 @@
         id: record_filter
         text: root.record_filter
         multiline: False
-        on_focus: app.layout.keys_enabled = not app.layout.keys_enabled
+        on_focus: app.tub_screen.keys_enabled = not app.tub_screen.keys_enabled
 
 <-FullImage>:
     # texture: self.get_texture()
@@ -228,53 +231,9 @@
         text: 'Browser Graph'
         on_press: root.plot_from_current_bars(in_app=False)
 
-<TubWindow>:
-    orientation: 'vertical'
-    #:set common_height 60
-    BoxLayout:
-        orientation: 'horizontal'
-        size_hint_y: None
-        height: common_height
-        ConfigManager:
-            id: config_manager
-        TubLoader:
-            id: tub_loader
-    BoxLayout:
-        orientation: 'horizontal'
-        spacing: 5
-        size_hint_y: 0.75
-        DataPanel:
-            id: data_panel
-        FullImage:
-            id: img
-        ControlPanel
-            id: control_panel
-    Slider:
-        id: slider
-        min: 0
-        max: tub_loader.len - 1
-        value: 0
-        size_hint_y: None
-        height: common_height
-        on_value: root.index = int(self.value)
-    TubEditor
-    TubFilter:
-        id: tub_filter
-    TsPlot:
-        id: graph
-    DataPlot:
-        id: data_plot
-    Label:
-        id: status
-        size_hint_y: None
-        height: 30
-        text_size: self.size
-        halign: 'left'
-        valign: 'bottom'
-        text: 'Status: here'
-
 
 <TubScreen>:
+    #:set common_height 60
     BoxLayout:
         orientation: 'vertical'
         Button:
@@ -282,16 +241,58 @@
             height: common_height
             text: 'Switch to Pilot Manager'
             on_press: root.manager.current = 'pilot'
-        TubWindow:
-            id: tub_window
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: common_height
+            ConfigManager:
+                id: config_manager
+            TubLoader:
+                id: tub_loader
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: 5
+            size_hint_y: 0.75
+            DataPanel:
+                id: data_panel
+            FullImage:
+                id: img
+            ControlPanel
+                id: control_panel
+        Slider:
+            id: slider
+            min: 0
+            max: tub_loader.len - 1
+            value: 0
+            size_hint_y: None
+            height: common_height
+            on_value: root.index = int(self.value)
+        TubEditor
+        TubFilter:
+            id: tub_filter
+        TsPlot:
+            id: graph
+        DataPlot:
+            id: data_plot
+        Label:
+            id: status
+            size_hint_y: None
+            height: 30
+            text_size: self.size
+            halign: 'left'
+            valign: 'bottom'
+            text: 'Donkey ready'
+
 
 <PilotLoader>:
     title: 'Choose the pilot'
     orientation: 'horizontal'
+    model_type: pilot_spinner.text
     Button:
-        id: tub_button
+        id: pilot_button
         text: 'Choose Pilot'
         size_hint_x: 0.5
+        disabled: True
         on_press: root.open_popup()
     Spinner:
         id: pilot_spinner
@@ -299,7 +300,7 @@
         size_hint_x: 0.5
         text: root.model_type
         values: ['linear', 'categorical', 'tflite_linear']
-        on_text: root.pilot = get_model_by_type(self.text, app.layout.ids.config_manager.config)
+        #on_text: root.pilot = get_model_by_type(self.text, app.tub_screen.ids.config_manager.config)
     AutoLabel:
         id: pilot_file
         text: root.file_path
@@ -317,9 +318,12 @@
             size_hint_y: None
             height: common_height
             PilotLoader:
+                num: num
                 id: pilot_loader_1
+                num: '1'
             PilotLoader:
                 id: pilot_loader_2
+                num: '2'
         BoxLayout:
             OverlayImage:
                 id: img_1
@@ -330,7 +334,7 @@
         Slider:
             id: slider
             min: 0
-            max: app.layout.ids.tub_loader.len - 1
+            max: app.tub_screen.ids.tub_loader.len - 1
             value: 0
             size_hint_y: None
             height: common_height

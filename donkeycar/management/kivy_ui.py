@@ -31,14 +31,15 @@ Builder.load_file('ui.kv')
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
 rc_handler = RcFileHandler()
 
-# for easy access
-def root():
-    return App.get_running_app().layout if App.get_running_app() else None
+
+def tub_screen():
+    return App.get_running_app().tub_screen if App.get_running_app() else None
 
 
 class FileChooserPopup(Popup):
     load = ObjectProperty()
     root_path = StringProperty()
+    filters = ListProperty()
 
 
 class FileChooserBase:
@@ -46,10 +47,14 @@ class FileChooserBase:
     popup = ObjectProperty(None)
     root_path = os.path.expanduser('~')
     title = StringProperty(None)
+    filters = ListProperty()
+
+    def __init__(self):
+        pass
 
     def open_popup(self):
         self.popup = FileChooserPopup(load=self.load, root_path=self.root_path,
-                                      title=self.title)
+                                      title=self.title, filters=self.filters)
         self.popup.open()
 
     def load(self, selection):
@@ -97,16 +102,16 @@ class TubLoader(BoxLayout, FileChooserBase):
         if not self.file_path:
             return False
         if not os.path.exists(os.path.join(self.file_path, 'manifest.json')):
-            root().status(f'Path {self.file_path} is not a valid tub.')
+            tub_screen().status(f'Path {self.file_path} is not a valid tub.')
             return False
         try:
             self.tub = Tub(self.file_path)
         except Exception as e:
-            root().status(f'Failed loading tub: {str(e)}')
+            tub_screen().status(f'Failed loading tub: {str(e)}')
             return False
 
-        cfg = root().ids.config_manager.config
-        expression = root().ids.tub_filter.filter_expression
+        cfg = tub_screen().ids.config_manager.config
+        expression = tub_screen().ids.tub_filter.filter_expression
 
         # Use filter, this defines the function
         def select(underlying):
@@ -125,14 +130,14 @@ class TubLoader(BoxLayout, FileChooserBase):
                         for record in self.tub if select(record)]
         self.len = len(self.records)
         if self.len > 0:
-            root().index = 0
-            root().ids.data_plot.update_dataframe_from_tub()
+            tub_screen().index = 0
+            tub_screen().ids.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
         if expression:
-            msg += f' using filter {root().ids.tub_filter.record_filter}'
-        root().status(msg)
+            msg += f' using filter {tub_screen().ids.tub_filter.record_filter}'
+        tub_screen().status(msg)
         return True
 
 
@@ -185,13 +190,13 @@ class DataPanel(BoxLayout):
             del(self.labels[field])
         else:
             field_property = rc_handler.field_properties.get(decompose(field)[0])
-            cfg = root().ids.config_manager.config
+            cfg = tub_screen().ids.config_manager.config
             lb = LabelBar(field=field, field_property=field_property, config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
-            lb.update(root().current_record)
-            root().status(lb.msg)
-        root().ids.data_plot.plot_from_current_bars()
+            lb.update(tub_screen().current_record)
+            tub_screen().status(lb.msg)
+        tub_screen().ids.data_plot.plot_from_current_bars()
         self.ids.data_spinner.text = 'Add/remove'
 
     def update(self, record):
@@ -235,24 +240,24 @@ class ControlPanel(BoxLayout):
         call = partial(self.step, fwd, continuous)
         if continuous:
             self.fwd = fwd
-            s = float(self.speed) * root().ids.config_manager.config.DRIVE_LOOP_HZ
+            s = float(self.speed) * tub_screen().ids.config_manager.config.DRIVE_LOOP_HZ
             cycle_time = 1.0 / s
         else:
             cycle_time = 0.08
         self.clock = Clock.schedule_interval(call, cycle_time)
 
     def step(self, fwd=True, continuous=False, *largs):
-        new_index = root().index + (1 if fwd else -1)
-        if new_index >= root().ids.tub_loader.len:
+        new_index = tub_screen().index + (1 if fwd else -1)
+        if new_index >= tub_screen().ids.tub_loader.len:
             new_index = 0
         elif new_index < 0:
-            new_index = root().ids.tub_loader.len - 1
-        root().index = new_index
+            new_index = tub_screen().ids.tub_loader.len - 1
+        tub_screen().index = new_index
         msg = f'Donkey {"run" if continuous else "step"} ' \
               f'{"forward" if fwd else "backward"}'
         if not continuous:
             msg += f' - you can also use {"<right>" if fwd else "<left>"} key'
-        root().status(msg)
+        tub_screen().status(msg)
 
     def stop(self):
         self.clock.cancel()
@@ -279,7 +284,7 @@ class ControlPanel(BoxLayout):
             if self.clock and self.clock.is_triggered:
                 self.stop()
                 self.set_button_status(disabled=False)
-                root().status('Donkey stopped')
+                tub_screen().status('Donkey stopped')
             else:
                 self.start(continuous=True)
                 self.set_button_status(disabled=True)
@@ -298,13 +303,13 @@ class TubEditor(BoxLayout):
 
     def set_lr(self, is_l=True):
         """ Sets left or right range to the current tubrecord index """
-        if not root().current_record:
+        if not tub_screen().current_record:
             return
-        self.lr[0 if is_l else 1] = root().current_record.underlying['_index']
+        self.lr[0 if is_l else 1] = tub_screen().current_record.underlying['_index']
 
     def del_lr(self, is_del):
         """ Deletes or restores records in chosen range """
-        tub = root().ids.tub_loader.tub
+        tub = tub_screen().ids.tub_loader.tub
         if self.lr[1] >= self.lr[0]:
             selected = list(range(*self.lr))
         else:
@@ -326,11 +331,11 @@ class TubFilter(BoxLayout):
             self.record_filter = ''
             self.filter_expression = ''
             rc_handler.data['record_filter'] = self.record_filter
-            root().status(f'Filter cleared')
+            tub_screen().status(f'Filter cleared')
             return
         filter_expression = self.create_filter_string(filter_text)
         try:
-            record = root().current_record
+            record = tub_screen().current_record
             res = eval(filter_expression)
             status = f'Filter result on current record: {res}'
             if isinstance(res, bool):
@@ -340,9 +345,9 @@ class TubFilter(BoxLayout):
             else:
                 status += ' - non bool expression can\'t be applied'
             status += ' - press <Reload tub> to see effect'
-            root().status(status)
+            tub_screen().status(status)
         except Exception as e:
-            root().status(f'Filter error on current record: {e}')
+            tub_screen().status(f'Filter error on current record: {e}')
 
     def create_filter_string(self, filter_text, record_name='record'):
         """ Converts text like 'user/angle' into 'record.underlying['user/angle']
@@ -353,7 +358,7 @@ class TubFilter(BoxLayout):
         :param record_name: name of the record in the expression
         :return:            updated string that has all input fields wrapped
         """
-        for field in root().current_record.underlying.keys():
+        for field in tub_screen().current_record.underlying.keys():
             field_list = filter_text.split(field)
             if len(field_list) > 1:
                 filter_text = f'{record_name}.underlying["{field}"]'\
@@ -369,10 +374,10 @@ class DataPlot(BoxLayout):
         """ Plotting from current selected bars. The DataFrame for plotting
             should contain all bars except for strings fields and all data is
             selected if bars are empty.  """
-        tub = root().ids.tub_loader.tub
+        tub = tub_screen().ids.tub_loader.tub
         field_map = dict(zip(tub.manifest.inputs, tub.manifest.types))
         # Use selected fields or all fields if nothing is slected
-        all_cols = root().ids.data_panel.labels.keys() or self.df.columns
+        all_cols = tub_screen().ids.data_panel.labels.keys() or self.df.columns
         cols = [c for c in all_cols if decompose(c)[0] in field_map
                 and field_map[decompose(c)[0]] not in ('image_array', 'str')]
 
@@ -383,7 +388,7 @@ class DataPlot(BoxLayout):
         df = df.drop(labels=['_timestamp_ms'], axis=1, errors='ignore')
 
         if in_app:
-            root().ids.graph.df = df
+            tub_screen().ids.graph.df = df
         else:
             fig = px.line(df, x=df.index, y=df.columns, title=tub.base_path)
             fig.update_xaxes(rangeslider=dict(visible=True))
@@ -392,10 +397,10 @@ class DataPlot(BoxLayout):
     def unravel_vectors(self):
         """ Unravels vector and list entries in tub which are created
             when the DataFrame is created from a list of records"""
-        manifest = root().ids.tub_loader.tub.manifest
+        manifest = tub_screen().ids.tub_loader.tub.manifest
         for k, v in zip(manifest.inputs, manifest.types):
             if v == 'vector' or v == 'list':
-                dim = len(root().current_record.underlying[k])
+                dim = len(tub_screen().current_record.underlying[k])
                 df_keys = [k + f'_{i}' for i in range(dim)]
                 self.df[df_keys] = pd.DataFrame(self.df[k].tolist(),
                                                 index=self.df.index)
@@ -405,17 +410,17 @@ class DataPlot(BoxLayout):
         """ Called from TubManager when a tub is reloaded/recreated. Fills
             the DataFrame from records, and updates the dropdown menu in the
             data panel."""
-        generator = (t.underlying for t in root().ids.tub_loader.records)
+        generator = (t.underlying for t in tub_screen().ids.tub_loader.records)
         self.df = pd.DataFrame(generator).dropna()
         to_drop = {'cam/image_array'}
         self.df.drop(labels=to_drop, axis=1, errors='ignore', inplace=True)
         self.df.set_index('_index', inplace=True)
         self.unravel_vectors()
-        root().ids.data_panel.ids.data_spinner.values = self.df.columns
+        tub_screen().ids.data_panel.ids.data_spinner.values = self.df.columns
         self.plot_from_current_bars()
 
 
-class TubWindow(BoxLayout):
+class TubScreen(Screen):
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
     keys_enabled = BooleanProperty(True)
@@ -444,16 +449,17 @@ class TubWindow(BoxLayout):
 
 class PilotLoader(BoxLayout, FileChooserBase):
     """ Class to mange loading of the config file from the car directory"""
+    num = StringProperty()
+    model_type = StringProperty()
     pilot = ObjectProperty(None)
-    file_path = StringProperty(rc_handler.data.get('pilot', ''))
-    model_type = StringProperty(rc_handler.data.get('model_type', ''))
+    filters = ['*.h5', '*.tflite']
 
     def load_action(self):
         if self.file_path:
             try:
                 self.pilot.load(os.path.join(self.file_path))
-                rc_handler.data['pilot'] = self.file_path
-                rc_handler.data['model_type'] = self.model_type
+                rc_handler.data['pilot_' + self.num] = self.file_path
+                rc_handler.data['model_type_' + self.num] = self.model_type
             except FileNotFoundError:
                 print(f'Model {self.file_path} not found')
             except Exception as e:
@@ -461,12 +467,14 @@ class PilotLoader(BoxLayout, FileChooserBase):
 
     def on_model_type(self, obj, model_type):
         if self.model_type:
-            self.pilot = get_model_by_type(self.model_type,
-                                           root().ids.config_manager.config)
+            cfg = tub_screen().ids.config_manager.config
+            if cfg:
+                self.pilot = get_model_by_type(self.model_type, cfg)
+                self.ids.pilot_button.disabled = False
 
-
-class TubScreen(Screen):
-    pass
+    def on_num(self, e, num):
+        self.file_path = rc_handler.data.get('pilot_' + self.num, '')
+        self.model_type = rc_handler.data.get('model_type_' + self.num, '')
 
 
 class OverlayImage(FullImage):
@@ -486,7 +494,7 @@ class PilotScreen(Screen):
     current_record = ObjectProperty(None)
 
     def on_index(self, obj, index):
-        self.current_record = root().ids.tub_loader.records[index]
+        self.current_record = tub_screen().ids.tub_loader.records[index]
         self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
@@ -501,20 +509,20 @@ class PilotScreen(Screen):
 
 
 class TubApp(App):
-    layout = None
-    title = 'Tub Manager'
+    tub_screen = None
+    pilot_screen = None
+    title = 'Donkey Manager'
 
     def build(self):
         # Create the screen manager
         sm = ScreenManager()
-        tub_screen = TubScreen(name='tub')
-        self.layout = tub_screen.ids.tub_window
-        Window.bind(on_keyboard=self.layout.on_keyboard)
-        Clock.schedule_once(self.layout.initialise)
-        sm.add_widget(tub_screen)
-        pilot_screen = PilotScreen(name='pilot')
-        Clock.schedule_once(pilot_screen.initialise)
-        sm.add_widget(pilot_screen)
+        self.tub_screen = TubScreen(name='tub')
+        Window.bind(on_keyboard=self.tub_screen.on_keyboard)
+        Clock.schedule_once(self.tub_screen.initialise)
+        sm.add_widget(self.tub_screen)
+        self.pilot_screen = PilotScreen(name='pilot')
+        Clock.schedule_once(self.pilot_screen.initialise)
+        sm.add_widget(self.pilot_screen)
 
         return sm
 
