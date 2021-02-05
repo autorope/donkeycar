@@ -61,6 +61,12 @@ second so slow parts should be threaded to avoid holding up the drive loop.
 A threaded part needs to define the function that runs in the separate thread
 and the function to call that will return the most recent values quickly.
 
+When you add ```threaded = True``` when adding a part, the main Donkey program 
+will call the part's "run_threaded" function instead of the "run" function. So for
+the below example you would add the part with this:
+
+```V.add(RandPercent, inputs=['const'], outputs=['const'], threaded=True)```
+
 Here's an example how to make the `RandPercent` part threaded if the run
 function takes a second to complete.
 
@@ -76,7 +82,7 @@ class RandPercent:
         time.sleep(1)
 
     def update(self):
-        # the function run in it's own thread
+        # the function run in its own thread
         while True:
             self.out = self.run(self.in)
 
