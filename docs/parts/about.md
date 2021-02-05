@@ -67,6 +67,9 @@ the below example you would add the part with this:
 
 ```V.add(RandPercent, inputs=['const'], outputs=['const'], threaded=True)```
 
+Once you have a "run_threaded" function, Donkey will automatically look for an "update" 
+function and run that in its own thread, as you can see below. 
+
 Here's an example how to make the `RandPercent` part threaded if the run
 function takes a second to complete.
 
