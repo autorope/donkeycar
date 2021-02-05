@@ -16,9 +16,10 @@ from donkeycar.parts.tub_v2 import Tub
 from donkeycar.utils import *
 
 
+DEG_TO_RAD = math.pi / 180.0
+
+
 class MakeMovie(object):
-    def __init__(self):
-        self.deg_to_rad = math.pi / 180.0
 
     def run(self, args, parser):
         '''
@@ -99,8 +100,8 @@ class MakeMovie(object):
         mid = width // 2 - 1
 
         p1 = tuple((mid - 2, height - 1))
-        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * self.deg_to_rad)),
-                     int(p1[1] + l1 * math.sin((a1 + 270.0) * self.deg_to_rad))))
+        p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * DEG_TO_RAD)),
+                     int(p1[1] + l1 * math.sin((a1 + 270.0) * DEG_TO_RAD))))
 
         # user is green, pilot is blue
         cv2.line(img, p1, p11, (0, 255, 0), 2)
@@ -139,8 +140,8 @@ class MakeMovie(object):
         mid = width // 2 - 1
 
         p2 = tuple((mid + 2, height - 1))
-        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * self.deg_to_rad)),
-                     int(p2[1] + l2 * math.sin((a2 + 270.0) * self.deg_to_rad))))
+        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * DEG_TO_RAD)),
+                     int(p2[1] + l2 * math.sin((a2 + 270.0) * DEG_TO_RAD))))
 
         # user is green, pilot is blue
         cv2.line(img, p2, p22, (0, 0, 255), 2)
