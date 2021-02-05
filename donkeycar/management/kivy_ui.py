@@ -479,7 +479,6 @@ class PilotLoader(BoxLayout, FileChooserBase):
 
 class OverlayImage(FullImage):
     keras_part = ObjectProperty()
-    deg_to_rad = math.pi / 180.0
 
     def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
@@ -506,6 +505,7 @@ class PilotScreen(Screen):
         self.ids.pilot_loader_1.load_action()
         self.ids.pilot_loader_2.on_model_type(None, None)
         self.ids.pilot_loader_2.load_action()
+        self.index = 0
 
 
 class TubApp(App):
