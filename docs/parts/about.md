@@ -29,8 +29,12 @@ V.start()
 
 ## Anatomy of a Part
 
-All parts share a common structure so that they can all be run by the vehicles
-drive loop. Here is an example of a part that will accept a number, multiply
+All parts share a common structure so that they can all be run by the vehicle's
+drive loop. 
+
+A part must have either an "run" or a "run_threaded" function that does the work (see below). It may also require ``inputs=['in single quotes', 'seperated by commas']`` and will always generate at least one ``outputs=['in single quotes', 'seperated by commas']``
+
+Here is an example of a part that will accept a number, multiply
 it by a random number and return the result.
 
 ```python
