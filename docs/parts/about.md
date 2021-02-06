@@ -34,6 +34,8 @@ drive loop.
 
 A part must have either an "run" or a "run_threaded" function that does the work (see below). It may also require ``inputs=['in single quotes', 'seperated by commas']`` and will always generate at least one ``outputs=['in single quotes', 'seperated by commas']``
 
+If the part grabs some hardware resource, such as a camera or a serial port, it shoud also have a ```shutdown``` function that releases those resources properly when donkey is stopped.
+
 Here is an example of a part that will accept a number, multiply
 it by a random number and return the result.
 
