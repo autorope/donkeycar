@@ -240,7 +240,10 @@
             size_hint_y: None
             height: common_height
             text: 'Switch to Pilot Manager'
-            on_press: root.manager.current = 'pilot'
+            on_press:
+                root.keys_enabled = False
+                root.manager.current = 'pilot'
+                root.manager.current_screen.keys_enabled = True
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: None
@@ -259,6 +262,7 @@
                 id: img
             ControlPanel
                 id: control_panel
+                screen: root
         Slider:
             id: slider
             min: 0
@@ -313,7 +317,10 @@
             size_hint_y: None
             height: common_height
             text: 'Switch to Tub Manager'
-            on_press: root.manager.current = 'tub'
+            on_press:
+                root.keys_enabled = False
+                root.manager.current = 'tub'
+                root.manager.current_screen.keys_enabled = True
         BoxLayout:
             size_hint_y: None
             height: common_height
@@ -347,6 +354,14 @@
         BoxLayout:
             ControlPanel:
                 id: pilot_control
+                screen: root
             DataPanel:
                 id: data_in
-
+        Label:
+            id: status
+            size_hint_y: None
+            height: 30
+            text_size: self.size
+            halign: 'left'
+            valign: 'bottom'
+            text: 'Donkey ready'

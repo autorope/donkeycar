@@ -36,7 +36,10 @@ class RcFileHandler:
     # the file
     known_entries = [
         FieldProperty('user/angle', '', centered=True),
-        FieldProperty('user/throttle', '', centered=False)]
+        FieldProperty('user/throttle', '', centered=False),
+        FieldProperty('pilot/angle', '', centered=True),
+        FieldProperty('pilot/throttle', '', centered=False),
+    ]
 
     def __init__(self, file_path='~/.donkeyrc'):
         self.file_path = os.path.expanduser(file_path)
