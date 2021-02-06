@@ -339,5 +339,14 @@
             size_hint_y: None
             height: common_height
             on_value: root.index = int(self.value)
-        Label:
-            text: 'more stuff here'
+        BoxLayout:
+            DataPanel:
+                id: data_panel_1
+            DataPanel:
+                id: data_panel_2
+        BoxLayout:
+            ControlPanel:
+                id: pilot_control
+            DataPanel:
+                id: data_in
+
