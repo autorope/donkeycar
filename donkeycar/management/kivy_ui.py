@@ -19,6 +19,7 @@ import io
 import os
 from PIL import Image as PilImage
 import pandas as pd
+import numpy as np
 import plotly.express as px
 
 from donkeycar import load_config
@@ -171,7 +172,7 @@ class LabelBar(BoxLayout):
                     self.field_property.centered else norm_val * 100
                 self.ids.bar.value = new_bar_val
             self.ids.field_label.text = self.field
-            if isinstance(val, float):
+            if isinstance(val, float) or isinstance(val, np.float32):
                 text = f'{val:+07.3f}'
             elif isinstance(val, int):
                 text = f'{val:10}'
@@ -184,7 +185,10 @@ class LabelBar(BoxLayout):
 
 
 class DataPanel(BoxLayout):
-    labels = {}
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.labels = {}
 
     def add_remove(self):
         field = self.ids.data_spinner.text
@@ -235,6 +239,7 @@ class FullImage(Image):
 
 
 class ControlPanel(BoxLayout):
+    screen = ObjectProperty()
     speed = NumericProperty(1.0)
     record_display = StringProperty()
     clock = None
@@ -252,20 +257,21 @@ class ControlPanel(BoxLayout):
         self.clock = Clock.schedule_interval(call, cycle_time)
 
     def step(self, fwd=True, continuous=False, *largs):
-        new_index = tub_screen().index + (1 if fwd else -1)
+        new_index = self.screen.index + (1 if fwd else -1)
         if new_index >= tub_screen().ids.tub_loader.len:
             new_index = 0
         elif new_index < 0:
             new_index = tub_screen().ids.tub_loader.len - 1
-        tub_screen().index = new_index
+        self.screen.index = new_index
         msg = f'Donkey {"run" if continuous else "step"} ' \
               f'{"forward" if fwd else "backward"}'
         if not continuous:
             msg += f' - you can also use {"<right>" if fwd else "<left>"} key'
-        tub_screen().status(msg)
+        self.screen.status(msg)
 
     def stop(self):
-        self.clock.cancel()
+        if self.clock:
+            self.clock.cancel()
 
     def restart(self):
         if self.clock:
@@ -289,7 +295,7 @@ class ControlPanel(BoxLayout):
             if self.clock and self.clock.is_triggered:
                 self.stop()
                 self.set_button_status(disabled=False)
-                tub_screen().status('Donkey stopped')
+                self.screen.status('Donkey stopped')
             else:
                 self.start(continuous=True)
                 self.set_button_status(disabled=True)
@@ -507,12 +513,15 @@ class OverlayImage(FullImage):
 class PilotScreen(Screen):
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
+    keys_enabled = BooleanProperty(False)
 
     def on_index(self, obj, index):
         self.current_record = tub_screen().ids.tub_loader.records[index]
         self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
+        i = record.underlying['_index']
+        self.ids.pilot_control.record_display = f"Record {i:06}"
         self.ids.data_in.update(record)
         self.ids.img_1.update(record)
         self.ids.data_panel_1.update(self.ids.img_1.pilot_record)
@@ -530,6 +539,13 @@ class PilotScreen(Screen):
             = self.ids.data_panel_2.ids.data_spinner.values \
             = ['pilot/angle', 'pilot/throttle']
 
+    def status(self, msg):
+        self.ids.status.text = msg
+
+    def on_keyboard(self, instance, keycode, scancode, key, modifiers):
+        if self.keys_enabled:
+            self.ids.pilot_control.on_keyboard(key, scancode)
+
 
 class TubApp(App):
     tub_screen = None
@@ -544,6 +560,7 @@ class TubApp(App):
         Clock.schedule_once(self.tub_screen.initialise)
         sm.add_widget(self.tub_screen)
         self.pilot_screen = PilotScreen(name='pilot')
+        Window.bind(on_keyboard=self.pilot_screen.on_keyboard)
         Clock.schedule_once(self.pilot_screen.initialise)
         sm.add_widget(self.pilot_screen)
 
