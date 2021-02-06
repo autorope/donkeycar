@@ -81,30 +81,30 @@ class MakeMovie(object):
         clip = mpy.VideoClip(self.make_frame, duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
-    def draw_user_input(self, record, img):
-        '''
-        Draw the user input as a green line on the image
-        '''
-
+    @staticmethod
+    def draw_line_into_image(angle, throttle, is_left, img, color):
         import cv2
 
-        user_angle = float(record["user/angle"])
-        user_throttle = float(record["user/throttle"])
-
         height, width, _ = img.shape
-
         length = height
-        a1 = user_angle * 45.0
-        l1 = user_throttle * length
-
-        mid = width // 2 - 1
+        a1 = angle * 45.0
+        l1 = throttle * length
+        mid = width // 2 + (- 1 if is_left else +1)
 
         p1 = tuple((mid - 2, height - 1))
         p11 = tuple((int(p1[0] + l1 * math.cos((a1 + 270.0) * DEG_TO_RAD)),
                      int(p1[1] + l1 * math.sin((a1 + 270.0) * DEG_TO_RAD))))
 
-        # user is green, pilot is blue
-        cv2.line(img, p1, p11, (0, 255, 0), 2)
+        cv2.line(img, p1, p11, color, 2)
+
+    def draw_user_input(self, record, img):
+        """
+        Draw the user input as a green line on the image
+        """
+        user_angle = float(record["user/angle"])
+        user_throttle = float(record["user/throttle"])
+        green = (0, 255, 0)
+        self.draw_line_into_image(user_angle, user_throttle, False, img, green)
         
     def draw_model_prediction(self, img):
         """
@@ -113,8 +113,6 @@ class MakeMovie(object):
         """
         if self.keras_part is None:
             return
-
-        import cv2
 
         expected = tuple(self.keras_part.get_input_shape()[1:])
         actual = img.shape
@@ -127,29 +125,19 @@ class MakeMovie(object):
             img = grey_img.reshape(grey_img.shape + (1,))
 
         if expected != actual:
-            print("expected input dim", expected, "didn't match actual dim", actual)
+            print(f"expected input dim {expected} didn't match actual dim "
+                  f"{actual}")
             return
 
+        blue = (0, 0, 255)
         pilot_angle, pilot_throttle = self.keras_part.run(img)
-        height, width, _ = img.shape
-
-        length = height
-        a2 = pilot_angle * 45.0
-        l2 = pilot_throttle * length
-
-        mid = width // 2 - 1
-
-        p2 = tuple((mid + 2, height - 1))
-        p22 = tuple((int(p2[0] + l2 * math.cos((a2 + 270.0) * DEG_TO_RAD)),
-                     int(p2[1] + l2 * math.sin((a2 + 270.0) * DEG_TO_RAD))))
-
-        # user is green, pilot is blue
-        cv2.line(img, p2, p22, (0, 0, 255), 2)
+        self.draw_line_into_image(pilot_angle, pilot_throttle, True, img, blue)
 
     def draw_steering_distribution(self, img):
-        '''
-        query the model for it's prediction, draw the distribution of steering choices
-        '''
+        """
+        query the model for it's prediction, draw the distribution of
+        steering choices
+        """
         from donkeycar.parts.keras import KerasCategorical
 
         if self.keras_part is None or type(self.keras_part) is not KerasCategorical:

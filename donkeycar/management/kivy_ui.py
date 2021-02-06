@@ -36,6 +36,10 @@ def tub_screen():
     return App.get_running_app().tub_screen if App.get_running_app() else None
 
 
+def pilot_screen():
+    return App.get_running_app().pilot_screen if App.get_running_app() else None
+
+
 class FileChooserPopup(Popup):
     load = ObjectProperty()
     root_path = StringProperty()
@@ -131,6 +135,7 @@ class TubLoader(BoxLayout, FileChooserBase):
         self.len = len(self.records)
         if self.len > 0:
             tub_screen().index = 0
+            pilot_screen().index = 0
             tub_screen().ids.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
@@ -171,7 +176,7 @@ class LabelBar(BoxLayout):
             elif isinstance(val, int):
                 text = f'{val:10}'
             else:
-                text = val
+                text = str(val)
             self.ids.value_label.text = text
         else:
             print(f'Bad record {record.underlying["_index"]} - missing field '
@@ -479,12 +484,23 @@ class PilotLoader(BoxLayout, FileChooserBase):
 
 class OverlayImage(FullImage):
     keras_part = ObjectProperty()
+    pilot_record = ObjectProperty()
 
     def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
         img_arr = super().get_image(record)
-        MakeMovie.draw_model_prediction(self, img_arr)
-        MakeMovie.draw_user_input(self, record.underlying, img_arr)
+        user_angle = record.underlying['user/angle']
+        user_throttle = record.underlying['user/throttle']
+        MakeMovie.draw_line_into_image(user_angle, user_throttle, False,
+                                       img_arr, (0, 255, 0))
+        if not self.keras_part:
+            return img_arr
+        pilot_angle, pilot_throttle = self.keras_part.run(img_arr)
+        MakeMovie.draw_line_into_image(pilot_angle, pilot_throttle, True,
+                                       img_arr, (0, 0, 255))
+        self.pilot_record = record
+        self.pilot_record.underlying['pilot/angle'] = pilot_angle
+        self.pilot_record.underlying['pilot/throttle'] = pilot_throttle
         return img_arr
 
 
@@ -497,15 +513,22 @@ class PilotScreen(Screen):
         self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
+        self.ids.data_in.update(record)
         self.ids.img_1.update(record)
+        self.ids.data_panel_1.update(self.ids.img_1.pilot_record)
         self.ids.img_2.update(record)
+        self.ids.data_panel_2.update(self.ids.img_2.pilot_record)
 
     def initialise(self, e):
         self.ids.pilot_loader_1.on_model_type(None, None)
         self.ids.pilot_loader_1.load_action()
         self.ids.pilot_loader_2.on_model_type(None, None)
         self.ids.pilot_loader_2.load_action()
-        self.index = 0
+        self.ids.data_in.ids.data_spinner.values \
+            = ['user/angle', 'user/throttle']
+        self.ids.data_panel_1.ids.data_spinner.values \
+            = self.ids.data_panel_2.ids.data_spinner.values \
+            = ['pilot/angle', 'pilot/throttle']
 
 
 class TubApp(App):
