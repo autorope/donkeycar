@@ -10,6 +10,8 @@ These include:
 * Controllers - Web based or Bluetooth.
 * Stores - Tub, or a way to save data.
 
+This is an excellent video by Tawn Kramer that walks through how to make a part: https://www.youtube.com/watch?v=YZ4ESrtfShs
+
 Here is an example how to use the PiCamera part to publish an image in the
 'cam/img' channel on every drive loop.
 
