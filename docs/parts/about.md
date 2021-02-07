@@ -1,6 +1,6 @@
 # What is a Part
 
-A part Python class that wraps a functional component of a vehicle.
+A part is a Python class that wraps a functional component of a vehicle.
 
 These include:
 
