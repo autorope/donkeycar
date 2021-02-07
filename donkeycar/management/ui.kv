@@ -251,7 +251,7 @@
             on_press:
                 root.keys_enabled = False
                 root.manager.current = 'pilot'
-                root.manager.current_screen.index = 0
+                if not root.manager.current_screen.index: root.manager.current_screen.index = 0
                 root.manager.current_screen.keys_enabled = True
         BoxLayout:
             orientation: 'horizontal'

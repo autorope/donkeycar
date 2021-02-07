@@ -560,16 +560,14 @@ class TubApp(App):
         Clock.schedule_once(self.tub_screen.ids.tub_loader.update_tub)
 
     def build(self):
-        # Create the screen manager
-        sm = ScreenManager()
         self.tub_screen = TubScreen(name='tub')
-        Window.bind(on_keyboard=self.tub_screen.on_keyboard)
-        sm.add_widget(self.tub_screen)
         self.pilot_screen = PilotScreen(name='pilot')
+        Window.bind(on_keyboard=self.tub_screen.on_keyboard)
         Window.bind(on_keyboard=self.pilot_screen.on_keyboard)
-        sm.add_widget(self.pilot_screen)
         Clock.schedule_once(self.initialise)
-
+        sm = ScreenManager()
+        sm.add_widget(self.tub_screen)
+        sm.add_widget(self.pilot_screen)
         return sm
 
 
