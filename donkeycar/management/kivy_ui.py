@@ -1,5 +1,6 @@
 import math
 import time
+from copy import copy, deepcopy
 from functools import partial
 
 from kivy.clock import Clock
@@ -136,7 +137,6 @@ class TubLoader(BoxLayout, FileChooserBase):
         self.len = len(self.records)
         if self.len > 0:
             tub_screen().index = 0
-            pilot_screen().index = 0
             tub_screen().ids.data_plot.update_dataframe_from_tub()
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
@@ -504,7 +504,7 @@ class OverlayImage(FullImage):
         pilot_angle, pilot_throttle = self.keras_part.run(img_arr)
         MakeMovie.draw_line_into_image(pilot_angle, pilot_throttle, True,
                                        img_arr, (0, 0, 255))
-        self.pilot_record = record
+        self.pilot_record = deepcopy(record)
         self.pilot_record.underlying['pilot/angle'] = pilot_angle
         self.pilot_record.underlying['pilot/throttle'] = pilot_throttle
         return img_arr
