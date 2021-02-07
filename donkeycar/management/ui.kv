@@ -259,6 +259,8 @@
             size_hint_y: 0.75
             DataPanel:
                 id: data_panel
+                screen: root
+                record: root.current_record
             FullImage:
                 id: img
             ControlPanel
@@ -350,20 +352,26 @@
             height: common_height
             on_value: root.index = int(self.value)
         BoxLayout:
-            size_hint_y: 0.6
+            size_hint_y: 0.5
             spacing: 5
             DataPanel:
                 id: data_panel_1
+                screen: root
+                record: img_1.pilot_record
             DataPanel:
                 id: data_panel_2
+                screen: root
+                record: img_2.pilot_record
         BoxLayout:
-            size_hint_y: 0.6
+            size_hint_y: 0.5
             spacing: 5
             ControlPanel:
                 id: pilot_control
                 screen: root
             DataPanel:
                 id: data_in
+                screen: root
+                record: root.current_record
         Label:
             id: status
             size_hint_y: None

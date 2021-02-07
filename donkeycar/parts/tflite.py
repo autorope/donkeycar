@@ -44,6 +44,7 @@ class TFLitePilot(KerasPilot):
     def load(self, model_path):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'
+        print(f'Loading model {model_path}')
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.interpreter.allocate_tensors()

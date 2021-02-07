@@ -45,6 +45,7 @@ class KerasPilot(ABC):
         print(f'Created {self}')
 
     def load(self, model_path: str) -> None:
+        print(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False)
 
     def load_weights(self, model_path: str, by_name: bool = True) -> None:

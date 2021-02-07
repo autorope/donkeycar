@@ -104,7 +104,7 @@ class TubLoader(BoxLayout, FileChooserBase):
         if self.update_tub(reload=False):
             rc_handler.data['last_tub'] = self.file_path
 
-    def update_tub(self, reload=False):
+    def update_tub(self, event=None):
         if not self.file_path:
             return False
         if not os.path.exists(os.path.join(self.file_path, 'manifest.json')):
@@ -189,6 +189,8 @@ class DataPanel(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.labels = {}
+        self.screen = ObjectProperty()
+        self.record = ObjectProperty()
 
     def add_remove(self):
         field = self.ids.data_spinner.text
@@ -203,9 +205,10 @@ class DataPanel(BoxLayout):
             lb = LabelBar(field=field, field_property=field_property, config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
-            lb.update(tub_screen().current_record)
-            tub_screen().status(lb.msg)
-        tub_screen().ids.data_plot.plot_from_current_bars()
+            lb.update(self.record)
+            self.screen.status(lb.msg)
+        if self.screen.name == 'tub':
+            self.screen.ids.data_plot.plot_from_current_bars()
         self.ids.data_spinner.text = 'Add/remove'
 
     def update(self, record):
@@ -552,17 +555,23 @@ class TubApp(App):
     pilot_screen = None
     title = 'Donkey Manager'
 
+    def initialise(self, event):
+        self.tub_screen.ids.config_manager.load_action()
+        self.pilot_screen.initialise(event)
+        # This builds the graph which can only happen after everything else
+        # has run, therefore delay until the next round.
+        Clock.schedule_once(self.tub_screen.ids.tub_loader.update_tub)
+
     def build(self):
         # Create the screen manager
         sm = ScreenManager()
         self.tub_screen = TubScreen(name='tub')
         Window.bind(on_keyboard=self.tub_screen.on_keyboard)
-        Clock.schedule_once(self.tub_screen.initialise)
         sm.add_widget(self.tub_screen)
         self.pilot_screen = PilotScreen(name='pilot')
         Window.bind(on_keyboard=self.pilot_screen.on_keyboard)
-        Clock.schedule_once(self.pilot_screen.initialise)
         sm.add_widget(self.pilot_screen)
+        Clock.schedule_once(self.initialise)
 
         return sm
 
