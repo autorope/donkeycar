@@ -185,12 +185,12 @@ class LabelBar(BoxLayout):
 
 
 class DataPanel(BoxLayout):
+    record = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.labels = {}
         self.screen = ObjectProperty()
-        self.record = ObjectProperty()
 
     def add_remove(self):
         field = self.ids.data_spinner.text
@@ -211,7 +211,7 @@ class DataPanel(BoxLayout):
             self.screen.ids.data_plot.plot_from_current_bars()
         self.ids.data_spinner.text = 'Add/remove'
 
-    def update(self, record):
+    def on_record(self, obj, record):
         for v in self.labels.values():
             v.update(record)
 
@@ -451,7 +451,6 @@ class TubScreen(Screen):
         self.ids.img.update(record)
         i = record.underlying['_index']
         self.ids.control_panel.record_display = f"Record {i:06}"
-        self.ids.data_panel.update(record)
 
     def status(self, msg):
         self.ids.status.text = msg
@@ -507,9 +506,10 @@ class OverlayImage(FullImage):
         pilot_angle, pilot_throttle = self.keras_part.run(img_arr)
         MakeMovie.draw_line_into_image(pilot_angle, pilot_throttle, True,
                                        img_arr, (0, 0, 255))
-        self.pilot_record = deepcopy(record)
-        self.pilot_record.underlying['pilot/angle'] = pilot_angle
-        self.pilot_record.underlying['pilot/throttle'] = pilot_throttle
+        record = deepcopy(record)
+        record.underlying['pilot/angle'] = pilot_angle
+        record.underlying['pilot/throttle'] = pilot_throttle
+        self.pilot_record = record
         return img_arr
 
 
@@ -525,11 +525,8 @@ class PilotScreen(Screen):
     def on_current_record(self, obj, record):
         i = record.underlying['_index']
         self.ids.pilot_control.record_display = f"Record {i:06}"
-        self.ids.data_in.update(record)
         self.ids.img_1.update(record)
-        self.ids.data_panel_1.update(self.ids.img_1.pilot_record)
         self.ids.img_2.update(record)
-        self.ids.data_panel_2.update(self.ids.img_2.pilot_record)
 
     def initialise(self, e):
         self.ids.pilot_loader_1.on_model_type(None, None)
