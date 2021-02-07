@@ -231,6 +231,14 @@
         text: 'Browser Graph'
         on_press: root.plot_from_current_bars(in_app=False)
 
+<StatusLabel@Label>:
+    size_hint_y: None
+    height: 30
+    text_size: self.size
+    halign: 'left'
+    valign: 'bottom'
+    text: 'Donkey ready'
+
 
 <TubScreen>:
     #:set common_height 60
@@ -281,14 +289,8 @@
             id: graph
         DataPlot:
             id: data_plot
-        Label:
+        StatusLabel:
             id: status
-            size_hint_y: None
-            height: 30
-            text_size: self.size
-            halign: 'left'
-            valign: 'bottom'
-            text: 'Donkey ready'
 
 
 <PilotLoader>:
@@ -372,11 +374,6 @@
                 id: data_in
                 screen: root
                 record: root.current_record
-        Label:
+        StatusLabel:
             id: status
-            size_hint_y: None
-            height: 30
-            text_size: self.size
-            halign: 'left'
-            valign: 'bottom'
-            text: 'Donkey ready'
+
