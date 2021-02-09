@@ -21,7 +21,7 @@ import time
 
 # This samples the odometer at 10HZ and does a moving average over the past ten readings to derive a velocity
 
-class ArduinoEncoder:
+class ArduinoEncoder(object):
     def __init__(self, mm_per_tick=0.0000599, debug=False):
         import serial
         import serial.tools.list_ports
@@ -46,13 +46,11 @@ class ArduinoEncoder:
         # keep looping infinitely until the thread is stopped
         while (self.on):
             input = self.ser.readline()
-            self.ticks = input.decode()
-            self.ticks = self.ticks.strip()  # remove any whitespace
-            if (self.ticks.isnumeric()):
-                self.ticks = int(self.ticks)
-                # print("ticks=", ticks)
+            self.temp = input.decode()
+            self.temp = self.temp.strip()  # remove any whitespace
+            if (self.temp.isnumeric()):
+                self.ticks = int(self.temp)
                 current_time = time.time()
-        #       print('seconds:', seconds)
                 if current_time >= last_time + 0.1:   # print at 10Hz
                     end_distance = self.ticks * self.mm_per_tick
                     instant_velocity = (end_distance-start_distance)*10  # multiply times ten to convert to m/s
@@ -60,16 +58,15 @@ class ArduinoEncoder:
                         self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
                     self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
                     self.velocity = sum(self.ave_velocity)/len(self.ave_velocity)  # moving average
-                    if self.debug:
-                        print('distance (m):', round(end_distance,3))
-                        print('velocity (m/s):', round(self.velocity,3))
+                    # if self.debug:
+                    #     if self.velocity != 0:
+                            # print('distance (m):', round(end_distance,3))
+                            # print('velocity (m/s):', round(self.velocity,3))
                     last_time = current_time
                     start_distance = end_distance
 
 
-    def run(self):
-        if self.debug:
-            print("Ticks =", self.ticks)
+    def run_threaded(self):
         return self.ticks
 
     def shutdown(self):

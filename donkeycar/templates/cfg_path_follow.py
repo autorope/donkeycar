@@ -59,10 +59,10 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 # 
 # 
 # #JOYSTICK
-JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
+JOYSTICK_MAX_THROTTLE = 1.0         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE='ps4'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
+CONTROLLER_TYPE='xbox'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.
@@ -85,22 +85,28 @@ PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                       # differential mult for PID path follower
 PID_THROTTLE = 0.30                 # constant throttle value during path following
 
+# If using a PS3 controller
 # the cross button is already reserved for the emergency stop
 SAVE_PATH_BTN = "circle"             # joystick button to save path
 RESET_ORIGIN_BTN = "square"       # joystick button to press to move car back to origin
 ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 
-
+# If using an Xbox controller
+# the A button is already reserved for the emergency stop
+SAVE_PATH_BTN = "b_button"             # joystick button to save path
+RESET_ORIGIN_BTN = "x_button"       # joystick button to press to move car back to origin
+ERASE_PATH_BTN = "y_button"     # joystick button to erase path
 
 # 
 # #Odometry
-HAVE_ODOM = True                   # Do you have an odometer? Uses pigpio 
-MM_PER_TICK = 0.0000599               # How much travel with a single tick, in mm
-ODOM_TYPE = "arduino"                # arduino|gpio|astar
-# ODOM_PIN = 4                        # Which GPIO board mode pin to use as input
-ODOM_DEBUG = True                  # Write out values on vel and distance as it runs
+HAVE_ODOM = True                   # Do you have an odometer? 
+MM_PER_TICK = 0.0605              # How much travel with a single tick, in mm. Change ODOM_DEBUG to True 
+                                 # to print out the distance. Roll car over measured 1m and adjust until distance readout is correct 
+ODOM_TYPE = "arduino"             # arduino|gpio|astar
+# ODOM_PIN = 4                     # Which GPIO board mode pin to use as input, if you're measuring the encoder directly with the RPi
+ODOM_DEBUG = False                 # Write out values on vel and distance as it runs
 # 
-# #Intel T265
+# If using the Intel T265
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
 # 
 # #DonkeyGym
