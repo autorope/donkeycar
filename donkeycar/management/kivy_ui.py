@@ -193,6 +193,7 @@ class DataPanel(BoxLayout):
     record = ObjectProperty()
     dual_mode = BooleanProperty(False)
     auto_text = StringProperty(LABEL_SPINNER_TEXT)
+    throttle_field = StringProperty('user/throttle')
     link = False
 
     def __init__(self, **kwargs):
@@ -220,6 +221,8 @@ class DataPanel(BoxLayout):
             self.labels[field] = lb
             self.add_widget(lb)
             lb.update(self.record)
+            if len(self.labels) == 2:
+                self.throttle_field = field
             self.screen.status(f'Adding {field}')
         if self.screen.name == 'tub':
             self.screen.ids.data_plot.plot_from_current_bars()
@@ -562,8 +565,10 @@ class PilotScreen(Screen):
         del(mapping['user/angle'])
         self.ids.data_in.ids.data_spinner.values = mapping.keys()
         self.ids.data_in.ids.data_spinner.text = 'user/angle'
+        self.ids.data_panel_1.ids.data_spinner.disabled = True
+        self.ids.data_panel_2.ids.data_spinner.disabled = True
 
-    def map_throttle_field(self, text):
+    def map_pilot_field(self, text):
         if text == LABEL_SPINNER_TEXT:
             return text
         return rc_handler.data['user_pilot_map'][text]
