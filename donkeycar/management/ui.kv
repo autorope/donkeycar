@@ -342,11 +342,11 @@
             OverlayImage:
                 id: img_1
                 keras_part: pilot_loader_1.pilot
-                pilot_throttle_field: data_panel_1.ids.data_spinner.text
+                throttle_field: data_in.throttle_field
             OverlayImage:
                 id: img_2
                 keras_part: pilot_loader_2.pilot
-                pilot_throttle_field: data_panel_1.ids.data_spinner.text
+                throttle_field: data_in.throttle_field
         Slider:
             id: slider
             min: 0
@@ -364,14 +364,14 @@
                 record: img_1.pilot_record
                 dual_mode: True
                 link: True
-                auto_text: root.map_throttle_field(data_in.auto_text)
+                auto_text: root.map_pilot_field(data_in.auto_text)
             DataPanel:
                 id: data_panel_2
                 screen: root
                 record: img_2.pilot_record
                 dual_mode: True
                 link: True
-                auto_text: root.map_throttle_field(data_in.auto_text)
+                auto_text: root.map_pilot_field(data_in.auto_text)
         BoxLayout:
             size_hint_y: 0.5
             spacing: 5
