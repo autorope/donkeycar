@@ -28,6 +28,15 @@ FieldProperty = namedtuple('FieldProperty',
                            ['field', 'max_value_id', 'centered'])
 
 
+def recursive_update(target, source):
+    for k, v in source.items():
+        v_t = target.get(k)
+        if isinstance(v, dict) and isinstance(v_t, dict):
+            recursive_update(v_t, v)
+        else:
+            target[k] = v
+
+
 class RcFileHandler:
     """ This handles the config file which stores the data, like the field
         mapping for displaying of bars and last opened car, tub directory. """
@@ -43,7 +52,8 @@ class RcFileHandler:
 
     def __init__(self, file_path='~/.donkeyrc'):
         self.file_path = os.path.expanduser(file_path)
-        self.data = self.read_file()
+        self.data = self.create_data()
+        recursive_update(self.data, self.read_file())
         self.field_properties = self.create_field_properties()
 
         def exit_hook():
@@ -63,6 +73,12 @@ class RcFileHandler:
             field_property = FieldProperty(**entry)
             field_properties[field_property.field] = field_property
         return field_properties
+
+    def create_data(self):
+        data = dict()
+        data['user_pilot_map'] = {'user/throttle': 'pilot/throttle',
+                                  'user/angle': 'pilot/angle'}
+        return data
 
     def read_file(self):
         if os.path.exists(self.file_path):

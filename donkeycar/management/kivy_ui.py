@@ -27,11 +27,18 @@ from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.types import TubRecord
-from donkeycar.utils import get_model_by_type
+from donkeycar.utils import get_model_by_type, normalize_image
 
 Builder.load_file('ui.kv')
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
 rc_handler = RcFileHandler()
+
+
+def get_norm_value(value, cfg, field_property, normalised=True):
+    max_val_key = field_property.max_value_id
+    max_value = getattr(cfg, max_val_key, 1.0)
+    out_val = value / max_value if normalised else value * max_value
+    return out_val
 
 
 def tub_screen():
@@ -154,22 +161,19 @@ class LabelBar(BoxLayout):
     msg = ''
 
     def update(self, record):
+        if not record:
+            return
         field, index = decompose(self.field)
-        self.msg = f'Adding {field}'
         if field in record.underlying:
             val = record.underlying[field]
             if index is not None:
                 val = val[index]
             # update bar if present
             if self.field_property:
-                max_val_key = self.field_property.max_value_id
-                max = getattr(self.config, max_val_key, 1.0)
-                if max == 1 and max_val_key:
-                    self.msg += f' - could not find {max_val_key} in ' \
-                                f'my_config.py, defaulting to 1.0'
-                norm_val = val / max
-                new_bar_val = (norm_val + 1) * 50 if \
-                    self.field_property.centered else norm_val * 100
+                norm_value = get_norm_value(val, self.config,
+                                            self.field_property)
+                new_bar_val = (norm_value + 1) * 50 if \
+                    self.field_property.centered else norm_value * 100
                 self.ids.bar.value = new_bar_val
             self.ids.field_label.text = self.field
             if isinstance(val, float) or isinstance(val, np.float32):
@@ -186,6 +190,8 @@ class LabelBar(BoxLayout):
 
 class DataPanel(BoxLayout):
     record = ObjectProperty()
+    dual_mode = BooleanProperty(False)
+    auto_text = StringProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -196,20 +202,27 @@ class DataPanel(BoxLayout):
         field = self.ids.data_spinner.text
         if field is 'Add/remove':
             return
-        if field in self.labels:
+        if field in self.labels and not self.dual_mode:
             self.remove_widget(self.labels[field])
             del(self.labels[field])
+            self.screen.status(f'Removing {field}')
         else:
+            # in dual mode replace the second entry with the new one
+            if self.dual_mode and len(self.labels) == 2:
+                k, v = list(self.labels.items())[-1]
+                self.remove_widget(v)
+                del(self.labels[k])
             field_property = rc_handler.field_properties.get(decompose(field)[0])
             cfg = tub_screen().ids.config_manager.config
             lb = LabelBar(field=field, field_property=field_property, config=cfg)
             self.labels[field] = lb
             self.add_widget(lb)
             lb.update(self.record)
-            self.screen.status(lb.msg)
+            self.screen.status(f'Adding {field}')
         if self.screen.name == 'tub':
             self.screen.ids.data_plot.plot_from_current_bars()
         self.ids.data_spinner.text = 'Add/remove'
+        self.auto_text = field
 
     def on_record(self, obj, record):
         for v in self.labels.values():
@@ -493,23 +506,33 @@ class PilotLoader(BoxLayout, FileChooserBase):
 class OverlayImage(FullImage):
     keras_part = ObjectProperty()
     pilot_record = ObjectProperty()
+    throttle_field = StringProperty('user/throttle')
 
     def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
         img_arr = super().get_image(record)
-        user_angle = record.underlying['user/angle']
-        user_throttle = record.underlying['user/throttle']
-        MakeMovie.draw_line_into_image(user_angle, user_throttle, False,
-                                       img_arr, (0, 255, 0))
+        angle = record.underlying['user/angle']
+        throttle = get_norm_value(record.underlying[self.throttle_field],
+                                  tub_screen().ids.config_manager.config,
+                                  rc_handler.field_properties[
+                                      self.throttle_field])
+        rgb = (0, 255, 0)
+        MakeMovie.draw_line_into_image(angle, throttle, False, img_arr, rgb)
         if not self.keras_part:
             return img_arr
-        pilot_angle, pilot_throttle = self.keras_part.run(img_arr)
-        MakeMovie.draw_line_into_image(pilot_angle, pilot_throttle, True,
-                                       img_arr, (0, 0, 255))
-        record = deepcopy(record)
-        record.underlying['pilot/angle'] = pilot_angle
-        record.underlying['pilot/throttle'] = pilot_throttle
-        self.pilot_record = record
+        output = self.keras_part.evaluate(record)
+        rgb = (0, 0, 255)
+        MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
+        out_record = copy(record)
+        out_record.underlying['pilot/angle'] = output[0]
+        # rename and denormalise the throttle output
+        pilot_throttle_field \
+            = rc_handler.data['user_pilot_map'][self.throttle_field]
+        out_record.underlying[pilot_throttle_field] \
+            = get_norm_value(output[1], tub_screen().ids.config_manager.config,
+                             rc_handler.field_properties[self.throttle_field],
+                             normalised=False)
+        self.pilot_record = out_record
         return img_arr
 
 
@@ -533,11 +556,14 @@ class PilotScreen(Screen):
         self.ids.pilot_loader_1.load_action()
         self.ids.pilot_loader_2.on_model_type(None, None)
         self.ids.pilot_loader_2.load_action()
-        self.ids.data_in.ids.data_spinner.values \
-            = ['user/angle', 'user/throttle']
-        self.ids.data_panel_1.ids.data_spinner.values \
-            = self.ids.data_panel_2.ids.data_spinner.values \
-            = ['pilot/angle', 'pilot/throttle']
+        mapping = rc_handler.data['user_pilot_map']
+        self.ids.data_in.ids.data_spinner.values = mapping.keys()
+        self.ids.data_in.ids.data_spinner.text = 'user/angle'
+
+    def map_throttle_field(self, text):
+        if text == 'Add/remove' or text == '':
+            return text
+        return rc_handler.data['user_pilot_map'][text]
 
     def status(self, msg):
         self.ids.status.text = msg
