@@ -102,6 +102,17 @@ class KerasPilot(ABC):
         """
         pass
 
+    def evaluate(self, record: TubRecord) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        # extract model input from record
+        x = self.x_transform(record)
+        # for multiple input tensors the image is in first slot otherwise x
+        # is the image
+        if isinstance(x, tuple):
+            return self.inference(normalize_image(x[0]), *x[1:])
+        else:
+            return self.inference(normalize_image(x), None)
+
     def train(self,
               model_path: str,
               train_data: 'BatchSequence',

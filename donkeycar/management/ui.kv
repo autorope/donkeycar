@@ -103,7 +103,7 @@
             id: data_spinner
             size_hint_y: None
             height: common_height
-            text: 'Add/remove'
+            text: 'Add/remove' if not root.auto_text else root.auto_text
             on_text: root.add_remove()
             on_values: root.clear()
 
@@ -149,7 +149,6 @@
             on_press:
                 root.start(fwd=True, continuous=True)
                 root.set_button_status(disabled=True)
-
     Button:
         size_hint_y: 0.3
         text: 'Stop'
@@ -309,7 +308,6 @@
         size_hint_x: 0.5
         text: root.model_type
         values: ['linear', 'categorical', 'tflite_linear']
-        #on_text: root.pilot = get_model_by_type(self.text, app.tub_screen.ids.config_manager.config)
     AutoLabel:
         id: pilot_file
         text: root.file_path
@@ -334,17 +332,21 @@
                 num: num
                 id: pilot_loader_1
                 num: '1'
+                data_panel: data_panel_1
             PilotLoader:
                 id: pilot_loader_2
                 num: '2'
+                data_panel: data_panel_2
         BoxLayout:
             spacing: 5
             OverlayImage:
                 id: img_1
                 keras_part: pilot_loader_1.pilot
+                pilot_throttle_field: data_panel_1.ids.data_spinner.text
             OverlayImage:
                 id: img_2
                 keras_part: pilot_loader_2.pilot
+                pilot_throttle_field: data_panel_1.ids.data_spinner.text
         Slider:
             id: slider
             min: 0
@@ -360,10 +362,14 @@
                 id: data_panel_1
                 screen: root
                 record: img_1.pilot_record
+                dual_mode: True
+                auto_text: root.map_throttle_field(data_in.auto_text)
             DataPanel:
                 id: data_panel_2
                 screen: root
                 record: img_2.pilot_record
+                dual_mode: True
+                auto_text: root.map_throttle_field(data_in.auto_text)
         BoxLayout:
             size_hint_y: 0.5
             spacing: 5
@@ -374,6 +380,7 @@
                 id: data_in
                 screen: root
                 record: root.current_record
+                dual_mode: True
         StatusLabel:
             id: status
 
