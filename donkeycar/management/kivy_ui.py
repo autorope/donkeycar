@@ -32,6 +32,7 @@ from donkeycar.utils import get_model_by_type, normalize_image
 Builder.load_file('ui.kv')
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
 rc_handler = RcFileHandler()
+LABEL_SPINNER_TEXT = 'Add/remove'
 
 
 def get_norm_value(value, cfg, field_property, normalised=True):
@@ -191,7 +192,8 @@ class LabelBar(BoxLayout):
 class DataPanel(BoxLayout):
     record = ObjectProperty()
     dual_mode = BooleanProperty(False)
-    auto_text = StringProperty()
+    auto_text = StringProperty(LABEL_SPINNER_TEXT)
+    link = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -200,7 +202,7 @@ class DataPanel(BoxLayout):
 
     def add_remove(self):
         field = self.ids.data_spinner.text
-        if field is 'Add/remove':
+        if field is LABEL_SPINNER_TEXT:
             return
         if field in self.labels and not self.dual_mode:
             self.remove_widget(self.labels[field])
@@ -221,7 +223,7 @@ class DataPanel(BoxLayout):
             self.screen.status(f'Adding {field}')
         if self.screen.name == 'tub':
             self.screen.ids.data_plot.plot_from_current_bars()
-        self.ids.data_spinner.text = 'Add/remove'
+        self.ids.data_spinner.text = LABEL_SPINNER_TEXT
         self.auto_text = field
 
     def on_record(self, obj, record):
@@ -556,12 +558,13 @@ class PilotScreen(Screen):
         self.ids.pilot_loader_1.load_action()
         self.ids.pilot_loader_2.on_model_type(None, None)
         self.ids.pilot_loader_2.load_action()
-        mapping = rc_handler.data['user_pilot_map']
+        mapping = copy(rc_handler.data['user_pilot_map'])
+        del(mapping['user/angle'])
         self.ids.data_in.ids.data_spinner.values = mapping.keys()
         self.ids.data_in.ids.data_spinner.text = 'user/angle'
 
     def map_throttle_field(self, text):
-        if text == 'Add/remove' or text == '':
+        if text == LABEL_SPINNER_TEXT:
             return text
         return rc_handler.data['user_pilot_map'][text]
 

@@ -103,7 +103,7 @@
             id: data_spinner
             size_hint_y: None
             height: common_height
-            text: 'Add/remove' if not root.auto_text else root.auto_text
+            text: root.auto_text if root.link else 'Add/remove'
             on_text: root.add_remove()
             on_values: root.clear()
 
@@ -363,12 +363,14 @@
                 screen: root
                 record: img_1.pilot_record
                 dual_mode: True
+                link: True
                 auto_text: root.map_throttle_field(data_in.auto_text)
             DataPanel:
                 id: data_panel_2
                 screen: root
                 record: img_2.pilot_record
                 dual_mode: True
+                link: True
                 auto_text: root.map_throttle_field(data_in.auto_text)
         BoxLayout:
             size_hint_y: 0.5
