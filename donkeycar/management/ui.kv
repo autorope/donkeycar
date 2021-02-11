@@ -1,6 +1,7 @@
 #: import TsPlot donkeycar.management.graph.TsPlot
 #: import get_model_by_type donkeycar.utils.get_model_by_type
 
+
 <FileChooserPopup>:
     title: "Choose the directory"
     size_hint: 1.0, 1.0
@@ -89,6 +90,8 @@
     ProgressBar:
         id: bar
 
+
+
 <DataPanel>
     #:set common_height 60
     orientation: 'vertical'
@@ -99,7 +102,7 @@
             text: 'Record field'
             size_hint_y: None
             height: common_height
-        Spinner:
+        MySpinner:
             id: data_spinner
             size_hint_y: None
             height: common_height
@@ -114,7 +117,7 @@
         Label:
             id: record_num
             text: root.record_display
-        Spinner:
+        MySpinner:
             id: control_spinner
             pos_hint: {'center': (.5, .5)}
             text: '1.00'
@@ -211,7 +214,6 @@
         on_focus: app.tub_screen.keys_enabled = not app.tub_screen.keys_enabled
 
 <-FullImage>:
-    # texture: self.get_texture()
     canvas:
         Color:
             rgb: (1, 1, 1)
@@ -243,15 +245,22 @@
     #:set common_height 60
     BoxLayout:
         orientation: 'vertical'
-        Button:
+        BoxLayout:
             size_hint_y: None
             height: common_height
-            text: 'Switch to Pilot Manager'
-            on_press:
-                root.keys_enabled = False
-                root.manager.current = 'pilot'
-                if not root.manager.current_screen.index: root.manager.current_screen.index = 0
-                root.manager.current_screen.keys_enabled = True
+            Button:
+                text: 'Switch to Pilot Arena'
+                on_press:
+                    root.keys_enabled = False
+                    root.manager.current = 'pilot'
+                    if not root.manager.current_screen.index: root.manager.current_screen.index = 0
+                    root.manager.current_screen.keys_enabled = True
+            Button:
+                text: 'Switch to Trainer'
+                on_press:
+                    root.keys_enabled = False
+                    root.manager.current = 'train'
+                    root.manager.current_screen.keys_enabled = True
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: None
@@ -298,11 +307,11 @@
     model_type: pilot_spinner.text
     Button:
         id: pilot_button
-        text: 'Choose Pilot'
+        text: 'Choose pilot'
         size_hint_x: 0.5
         disabled: True
         on_press: root.open_popup()
-    Spinner:
+    MySpinner:
         id: pilot_spinner
         pos_hint: {'center': (.5, .5)}
         size_hint_x: 0.5
@@ -316,14 +325,21 @@
 <PilotScreen>:
     BoxLayout:
         orientation: 'vertical'
-        Button:
+        BoxLayout:
             size_hint_y: None
             height: common_height
-            text: 'Switch to Tub Manager'
-            on_press:
-                root.keys_enabled = False
-                root.manager.current = 'tub'
-                root.manager.current_screen.keys_enabled = True
+            Button:
+                text: 'Switch to Tub Manager'
+                on_press:
+                    root.keys_enabled = False
+                    root.manager.current = 'tub'
+                    root.manager.current_screen.keys_enabled = True
+            Button:
+                text: 'Switch to Trainer'
+                on_press:
+                    root.keys_enabled = False
+                    root.manager.current = 'train'
+                    root.manager.current_screen.keys_enabled = True
         BoxLayout:
             spacing: 5
             size_hint_y: None
@@ -383,6 +399,65 @@
                 screen: root
                 record: root.current_record
                 dual_mode: True
+        StatusLabel:
+            id: status
+
+
+<TrainScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            Button:
+                text: 'Switch to Tub Manager'
+                on_press:
+                    root.keys_enabled = False
+                    root.manager.current = 'tub'
+                    root.manager.current_screen.keys_enabled = True
+            Button:
+                size_hint_y: None
+                height: common_height
+                text: 'Switch to Pilot Arena'
+                on_press:
+                    root.keys_enabled = False
+                    root.manager.current = 'pilot'
+                    if not root.manager.current_screen.index: root.manager.current_screen.index = 0
+                    root.manager.current_screen.keys_enabled = True
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            Label:
+                size_hint_x: 0.5
+                text: 'Overwrite config'
+            MySpinner:
+                id: cfg_spinner
+                text: 'select'
+                values: root.value_list()
+            TextInput:
+                id: cfg_overwrite
+                multiline: False
+                text: 'New value'
+                on_text_validate: root.set_config_attribute(self.text)
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            Label:
+                size_hint_x: 0.5
+                text: 'Set model type'
+            MySpinner:
+                id: train_spinner
+                text: 'linear'
+                values: ['linear', 'categorical', 'tflite_linear']
+            Button:
+                id: train_button
+                text: 'Train'
+                on_press: root.train(train_spinner.text)
+
+        Label:
+            text: 'More stuff here'
+            size_hint_y: 5
+
         StatusLabel:
             id: status
 
