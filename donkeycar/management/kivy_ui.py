@@ -1,7 +1,9 @@
+import json
 import math
 import time
 from copy import copy, deepcopy
 from functools import partial
+from threading import Thread
 
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -22,12 +24,14 @@ from PIL import Image as PilImage
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.types import TubRecord
-from donkeycar.utils import get_model_by_type, normalize_image
+from donkeycar.utils import get_model_by_type
+from donkeycar.pipeline.training import train
 
 Builder.load_file('ui.kv')
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
@@ -48,6 +52,20 @@ def tub_screen():
 
 def pilot_screen():
     return App.get_running_app().pilot_screen if App.get_running_app() else None
+
+
+def train_screen():
+    return App.get_running_app().train_screen if App.get_running_app() else None
+
+
+class MySpinnerOption(SpinnerOption):
+    def __init__(self, **kwargs):
+        super().__init__(height=60, **kwargs)
+
+
+class MySpinner(Spinner):
+    def __init__(self, **kwargs):
+        super().__init__(option_cls=MySpinnerOption, **kwargs)
 
 
 class FileChooserPopup(Popup):
@@ -91,6 +109,7 @@ class ConfigManager(BoxLayout, FileChooserBase):
             try:
                 self.config = load_config(os.path.join(self.file_path, 'config.py'))
                 rc_handler.data['car_dir'] = self.file_path
+                train_screen().config = self.config
             except FileNotFoundError:
                 print(f'Directory {self.file_path} has no config.py')
             except Exception as e:
@@ -103,13 +122,10 @@ class TubLoader(BoxLayout, FileChooserBase):
     file_path = StringProperty(rc_handler.data.get('last_tub'))
     tub = ObjectProperty(None)
     len = NumericProperty(1)
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.records = None
+    records = None
 
     def load_action(self):
-        if self.update_tub(reload=False):
+        if self.update_tub():
             rc_handler.data['last_tub'] = self.file_path
 
     def update_tub(self, event=None):
@@ -581,8 +597,49 @@ class PilotScreen(Screen):
             self.ids.pilot_control.on_keyboard(key, scancode)
 
 
-class TubApp(App):
+class TrainScreen(Screen):
+    config = ObjectProperty(force_dispatch=True, allownone=True)
+
+    def train_call(self, model_type, *args):
+        model_path = os.path.join(self.config.MODELS_PATH, 'model_ui.h5')
+        tub_path = tub_screen().ids.tub_loader.tub.base_path
+        try:
+            history = train(self.config, tub_paths=tub_path, model=model_path,
+                            model_type=model_type)
+            self.ids.status.text = f'Training completed.'
+        except Exception as e:
+            self.ids.status.text = f'Train error {e}'
+
+    def train(self, model_type):
+        Thread(target=self.train_call, args=(model_type,)).start()
+        self.ids.status.text = f'Training started.'
+
+    def set_config_attribute(self, input):
+        try:
+            val = json.loads(input)
+        except ValueError:
+            val = input
+
+        att = self.ids.cfg_spinner.text.split(':')[0]
+        setattr(self.config, att, val)
+        self.ids.cfg_spinner.values = self.value_list()
+        self.ids.status.text = f'Setting {att} to {val} of type ' \
+                               f'{type(val).__name__}'
+
+    def value_list(self):
+        if self.config:
+            return [f'{k}: {v}' for k, v in self.config.__dict__.items()]
+        else:
+            return ['select']
+
+    def on_config(self, obj, config):
+        if self.ids:
+            self.ids.cfg_spinner.values = self.value_list()
+
+
+class DonkeyApp(App):
     tub_screen = None
+    train_screen = None
     pilot_screen = None
     title = 'Donkey Manager'
 
@@ -595,16 +652,19 @@ class TubApp(App):
 
     def build(self):
         self.tub_screen = TubScreen(name='tub')
+        self.train_screen = TrainScreen(name='train',
+                                        config=self.tub_screen.ids.config_manager.config)
         self.pilot_screen = PilotScreen(name='pilot')
         Window.bind(on_keyboard=self.tub_screen.on_keyboard)
         Window.bind(on_keyboard=self.pilot_screen.on_keyboard)
         Clock.schedule_once(self.initialise)
         sm = ScreenManager()
         sm.add_widget(self.tub_screen)
+        sm.add_widget(self.train_screen)
         sm.add_widget(self.pilot_screen)
         return sm
 
 
 if __name__ == '__main__':
-    tub_app = TubApp()
+    tub_app = DonkeyApp()
     tub_app.run()
