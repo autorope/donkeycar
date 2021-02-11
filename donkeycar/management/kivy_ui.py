@@ -654,8 +654,7 @@ class DonkeyApp(App):
 
     def build(self):
         self.tub_screen = TubScreen(name='tub')
-        self.train_screen = TrainScreen(name='train',
-                                        config=self.tub_screen.ids.config_manager.config)
+        self.train_screen = TrainScreen(name='train')
         self.pilot_screen = PilotScreen(name='pilot')
         Window.bind(on_keyboard=self.tub_screen.on_keyboard)
         Window.bind(on_keyboard=self.pilot_screen.on_keyboard)
