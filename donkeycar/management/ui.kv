@@ -40,8 +40,8 @@
     on_config:
         app.tub_screen.ids.tub_loader.ids.tub_button.disabled = False
         app.tub_screen.ids.tub_loader.root_path = self.file_path
-        app.pilot_screen.ids.pilot_loader_1.root_path = self.file_path
-        app.pilot_screen.ids.pilot_loader_2.root_path = self.file_path
+        app.pilot_screen.ids.pilot_loader_1.root_path = self.config.MODELS_PATH
+        app.pilot_screen.ids.pilot_loader_2.root_path = self.config.MODELS_PATH
         app.tub_screen.ids.status.text = 'Config loaded from' + self.file_path
     Button:
         text: 'Load car directory'
@@ -67,6 +67,7 @@
 
 <LabelBar>:
     orientation: 'horizontal'
+    spacing: 4
     Label:
         id: field_label
         text_size: self.size
@@ -87,9 +88,26 @@
         font_size: 28
         size_hint_x: 0.8
         padding_x: 10
+        canvas.before:
+            Color:
+                rgba: 0.14, 0.15, 0.22, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
     ProgressBar:
         id: bar
+        canvas.before:
+            Color:
+                rgba: 0.12, 0.13, 0.20, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
 
+<MySpinnerOption>:
+    text_size: self.size
+    halign: 'left'
+    valign: 'middle'
+    height: common_height
 
 
 <DataPanel>

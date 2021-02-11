@@ -1,7 +1,6 @@
 import json
-import math
 import time
-from copy import copy, deepcopy
+from copy import copy
 from functools import partial
 from threading import Thread
 
@@ -59,8 +58,7 @@ def train_screen():
 
 
 class MySpinnerOption(SpinnerOption):
-    def __init__(self, **kwargs):
-        super().__init__(height=60, **kwargs)
+    pass
 
 
 class MySpinner(Spinner):
@@ -257,6 +255,10 @@ class DataPanel(BoxLayout):
 
 class FullImage(Image):
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.core_image = None
+
     def update(self, record):
         try:
             img_arr = self.get_image(record)
@@ -264,8 +266,8 @@ class FullImage(Image):
             bytes_io = io.BytesIO()
             pil_image.save(bytes_io, format='png')
             bytes_io.seek(0)
-            core_img = CoreImage(bytes_io, ext='png')
-            self.texture = core_img.texture
+            self.core_image = CoreImage(bytes_io, ext='png')
+            self.texture = self.core_image.texture
         except KeyError as e:
             print('Missing key:', e)
         except Exception as e:
@@ -531,7 +533,7 @@ class OverlayImage(FullImage):
 
     def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
-        img_arr = super().get_image(record)
+        img_arr = copy(super().get_image(record))
         angle = record.underlying['user/angle']
         throttle = get_norm_value(record.underlying[self.throttle_field],
                                   tub_screen().ids.config_manager.config,
