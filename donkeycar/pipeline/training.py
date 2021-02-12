@@ -1,10 +1,13 @@
 import math
 import os
-from typing import List, Dict, Union, Optional
+from time import time
+from typing import List, Dict, Union, Tuple
 
 from donkeycar.config import Config
 from donkeycar.parts.keras import KerasPilot
 from donkeycar.parts.tflite import keras_model_to_tflite
+from donkeycar.pipeline.database import read_database, generate_model_name, \
+    PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
@@ -76,28 +79,41 @@ class BatchSequence(object):
         return dataset.repeat().batch(self.batch_size)
 
 
-def train(cfg: Config, tub_paths: str, model: str, model_type: str) -> \
-        tf.keras.callbacks.History:
+def get_model_train_details(cfg: Config, database: PilotDatabase, model: str,
+                            model_type: str) -> Tuple[str, int, str, bool]:
+    if not model_type:
+        model_type = cfg.DEFAULT_MODEL_TYPE
+    train_type = model_type
+    is_tflite = False
+    if 'tflite_' in train_type:
+        train_type.replace('tflite_', '')
+        is_tflite = True
+    model_num = 0
+    if not model:
+        model_name, model_num = database.generate_model_name()
+    else:
+        model_name, model_ext = os.path.splitext(model)
+        is_tflite = model_ext == '.tflite'
+
+    return model_name, model_num, train_type, is_tflite
+
+
+def train(cfg: Config, tub_paths: str, model: str, model_type: str,
+          comment: str = None) -> tf.keras.callbacks.History:
     """
     Train the model
     """
-    model_name, model_ext = os.path.splitext(model)
-    is_tflite = model_ext == '.tflite'
-    if is_tflite:
-        model = f'{model_name}.h5'
+    database = PilotDatabase(cfg)
+    model_name, model_num, train_type, is_tflite = \
+        get_model_train_details(cfg, database, model, model_type)
 
-    if not model_type:
-        model_type = cfg.DEFAULT_MODEL_TYPE
-
-    tubs = tub_paths.split(',')
-    all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
-    output_path = os.path.expanduser(model)
-    train_type = 'linear' if 'linear' in model_type else model_type
-
+    output_path = os.path.expanduser(model_name + '.h5')
     kl = get_model_by_type(train_type, cfg)
     if cfg.PRINT_MODEL_SUMMARY:
         print(kl.model.summary())
 
+    tubs = tub_paths.split(',')
+    all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
     print(f'Records # Training {len(training_records)}')
@@ -130,5 +146,17 @@ def train(cfg: Config, tub_paths: str, model: str, model_type: str) -> \
     if is_tflite:
         tf_lite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
         keras_model_to_tflite(output_path, tf_lite_model_path)
+
+    database_entry = {
+        'number': model_num,
+        'name': model_name,
+        'type': str(kl),
+        'tubs': tubs,
+        'time': time(),
+        'history': history,
+        'comment': comment,
+    }
+    database.add_entry(database_entry)
+    database.write()
 
     return history
