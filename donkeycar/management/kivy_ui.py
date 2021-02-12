@@ -23,11 +23,13 @@ from PIL import Image as PilImage
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
+from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.types import TubRecord
 from donkeycar.utils import get_model_by_type
 from donkeycar.pipeline.training import train
@@ -599,15 +601,18 @@ class PilotScreen(Screen):
             self.ids.pilot_control.on_keyboard(key, scancode)
 
 
+class ScrollableLabel(ScrollView):
+    pass
+
 class TrainScreen(Screen):
     config = ObjectProperty(force_dispatch=True, allownone=True)
 
     def train_call(self, model_type, *args):
-        model_path = os.path.join(self.config.MODELS_PATH, 'model_ui.h5')
         tub_path = tub_screen().ids.tub_loader.tub.base_path
         try:
-            history = train(self.config, tub_paths=tub_path, model=model_path,
-                            model_type=model_type)
+            history = train(self.config, tub_paths=tub_path,
+                            model_type=model_type,
+                            comment=self.ids.comment.text)
             self.ids.status.text = f'Training completed.'
         except Exception as e:
             self.ids.status.text = f'Train error {e}'
@@ -637,6 +642,15 @@ class TrainScreen(Screen):
     def on_config(self, obj, config):
         if self.ids:
             self.ids.cfg_spinner.values = self.value_list()
+            self.ids.scroll.text = self.get_database_text()
+
+    def get_database_text(self):
+        if self.config:
+            database = PilotDatabase(self.config)
+            df = database.to_df()
+            return str(df)
+        else:
+            return ''
 
 
 class DonkeyApp(App):

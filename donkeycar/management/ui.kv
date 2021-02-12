@@ -468,11 +468,20 @@
                 id: train_spinner
                 text: 'linear'
                 values: ['linear', 'categorical', 'tflite_linear']
-            Button:
-                id: train_button
-                text: 'Train'
-                on_press: root.train(train_spinner.text)
-
+            TextInput:
+                id: comment
+                multiline: False
+                text: 'Comment'
+        Button:
+            id: train_button
+            text: 'Train'
+            on_press: root.train(train_spinner.text)
+        ScrollableLabel:
+            Label:
+                id: scroll
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
         Label:
             text: 'More stuff here'
             size_hint_y: 5
