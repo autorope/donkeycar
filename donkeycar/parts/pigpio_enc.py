@@ -34,24 +34,28 @@ class OdomDist(object):
         
         #calculate elapsed time and distance traveled
         seconds = end_time - start_time
-        if seconds >= 0.01:   # average at 100Hz
-            self.distance = ticks * self.m_per_tick  #converted to meters here
-            if throttle < 0.0:
-                print("throttle is negative")
-                self.distance = self.distance * -1.0
-            instant_velocity = (self.distance - self.prev_distance)/seconds
-            for i in range(9):
-                self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
-            self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
-            velocity = sum(self.ave_velocity)/10  # moving average
-            #update the odometer values
-            self.meters += self.distance
-            self.meters_per_second = velocity
-            self.prev_distance = self.distance
-            #console output for debugging
-            if(self.debug):
-                print('distance (m):', round(self.meters,3))
-                print('velocity (m/s):', round(self.meters_per_second,3))
+        self.distance = ticks * self.m_per_tick  #converted to meters here
+        # if throttle < 0.0:
+        #     print("throttle is negative")
+        #     self.distance = self.distance * -1.0
+        delta_distance = self.distance - self.prev_distance
+        instant_velocity = delta_distance/seconds
+        for i in range(9):
+            self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
+        self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
+        velocity = sum(self.ave_velocity)/10  # moving average
+        #update the odometer values
+        self.meters += delta_distance
+        self.meters_per_second = velocity
+        self.prev_distance = self.distance
+        #console output for debugging
+        if(self.debug):
+            print("ticks", ticks)
+            print('delta time', seconds)
+            print('delta distance', delta_distance)
+            print('instant velocity', instant_velocity)
+            print('distance (m):', round(self.meters,3))
+            print('velocity (m/s):', round(self.meters_per_second,3))
 
         return self.meters, self.meters_per_second, self.distance
 

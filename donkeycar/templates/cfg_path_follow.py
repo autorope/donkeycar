@@ -59,7 +59,7 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 # 
 # 
 # #JOYSTICK
-JOYSTICK_MAX_THROTTLE = 1.0         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
+JOYSTICK_MAX_THROTTLE = 1.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
 CONTROLLER_TYPE='xbox'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
@@ -104,7 +104,7 @@ MM_PER_TICK = 0.0605              # How much travel with a single tick, in mm. C
                                  # to print out the distance. Roll car over measured 1m and adjust until distance readout is correct 
 ODOM_TYPE = "arduino"             # arduino|gpio|astar
 # ODOM_PIN = 4                     # Which GPIO board mode pin to use as input, if you're measuring the encoder directly with the RPi
-ODOM_DEBUG = False                 # Write out values on vel and distance as it runs
+ODOM_DEBUG = True                 # Write out values on vel and distance as it runs
 # 
 # If using the Intel T265
 WHEEL_ODOM_CALIB = "calibration_odometry.json"

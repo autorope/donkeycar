@@ -29,50 +29,27 @@ class ArduinoEncoder(object):
             print(item)  # list all the serial ports
         self.ser = serial.Serial('/dev/ttyACM0', 115200, 8, 'N', 1, timeout=1)
         # initialize the odometer values
-        self.ave_velocity = []
-        for i in range(10):
-            self.ave_velocity.append(0)
         self.ser.write(str.encode('reset'))  # restart the encoder to zero
-        self.on = True
         self.ticks = 0
         self.debug = debug
-        self.mm_per_tick = mm_per_tick
-
+        self.on = True
 
     def update(self):
-        last_time = time.time()
-        start_distance = 0
-        self.ticks = 0
-        # keep looping infinitely until the thread is stopped
-        while (self.on):
+        while self.on:
             input = self.ser.readline()
             self.temp = input.decode()
             self.temp = self.temp.strip()  # remove any whitespace
             if (self.temp.isnumeric()):
                 self.ticks = int(self.temp)
-                current_time = time.time()
-                if current_time >= last_time + 0.1:   # print at 10Hz
-                    end_distance = self.ticks * self.mm_per_tick
-                    instant_velocity = (end_distance-start_distance)*10  # multiply times ten to convert to m/s
-                    for i in range(9):
-                        self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
-                    self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
-                    self.velocity = sum(self.ave_velocity)/len(self.ave_velocity)  # moving average
-                    # if self.debug:
-                    #     if self.velocity != 0:
-                            # print('distance (m):', round(end_distance,3))
-                            # print('velocity (m/s):', round(self.velocity,3))
-                    last_time = current_time
-                    start_distance = end_distance
-
 
     def run_threaded(self):
-        return self.ticks
+        return self.ticks 
+
 
     def shutdown(self):
         # indicate that the thread should be stopped
-        self.on = False
         print('stopping Arduino encoder')
+        self.on = False
         time.sleep(.5)
 
 class AStarSpeed:
