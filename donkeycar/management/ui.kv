@@ -214,7 +214,7 @@
     Button:
         text: 'Reload Tub'
         on_press:
-            app.tub_screen.ids.tub_loader.update_tub(reload=True)
+            app.tub_screen.ids.tub_loader.update_tub()
 
 <TubFilter>:
     id: tub_filter
@@ -420,6 +420,13 @@
         StatusLabel:
             id: status
 
+<DataframeLabel>:
+    font_name: 'data/fonts/RobotoMono-Regular.ttf'
+    font_size: 24
+    size_hint_y: None
+    height: self.texture_size[1]
+    text_size: self.width, None
+
 
 <TrainScreen>:
     config: app.tub_screen.ids.config_manager.config
@@ -466,26 +473,32 @@
                 text: 'Set model type'
             MySpinner:
                 id: train_spinner
+                size_hint_x: 0.5
                 text: 'linear'
                 values: ['linear', 'categorical', 'tflite_linear']
             TextInput:
                 id: comment
                 multiline: False
                 text: 'Comment'
-        Button:
-            id: train_button
-            text: 'Train'
-            on_press: root.train(train_spinner.text)
-        ScrollableLabel:
+            Button:
+                id: train_button
+                text: 'Train'
+                on_press: root.train(train_spinner.text)
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
             Label:
-                id: scroll
-                size_hint_y: None
-                height: self.texture_size[1]
-                text_size: self.width, None
-        Label:
-            text: 'More stuff here'
-            size_hint_y: 5
-
+                text: 'Group multiple tubs'
+            ToggleButton:
+                id: check
+                on_press: root.on_config(None, None)
+                text: 'On' if self.state == 'down' else 'Off'
+        ScrollableLabel:
+            DataFrameLabel:
+                id: scroll_pilots
+        ScrollableLabel:
+            DataFrameLabel:
+                id: scroll_tubs
         StatusLabel:
             id: status
 

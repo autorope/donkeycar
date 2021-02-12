@@ -12,6 +12,7 @@ from kivy.uix.image import Image
 from kivy.core.image import Image as CoreImage
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     ListProperty, BooleanProperty
+from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
@@ -109,7 +110,7 @@ class ConfigManager(BoxLayout, FileChooserBase):
             try:
                 self.config = load_config(os.path.join(self.file_path, 'config.py'))
                 rc_handler.data['car_dir'] = self.file_path
-                train_screen().config = self.config
+                # train_screen().config = self.config
             except FileNotFoundError:
                 print(f'Directory {self.file_path} has no config.py')
             except Exception as e:
@@ -604,6 +605,11 @@ class PilotScreen(Screen):
 class ScrollableLabel(ScrollView):
     pass
 
+
+class DataFrameLabel(Label):
+    pass
+
+
 class TrainScreen(Screen):
     config = ObjectProperty(force_dispatch=True, allownone=True)
 
@@ -640,17 +646,29 @@ class TrainScreen(Screen):
             return ['select']
 
     def on_config(self, obj, config):
-        if self.ids:
+        if self.config and self.ids:
             self.ids.cfg_spinner.values = self.value_list()
-            self.ids.scroll.text = self.get_database_text()
+            if self.ids.check.state == 'down':
+                text_df, text_tub = self.toggle_tub_df()
+                self.ids.scroll_pilots.text = text_df
+                self.ids.scroll_tubs.text = text_tub
+            else:
+                self.ids.scroll_pilots.text = self.get_database_text()
+                self.ids.scroll_tubs.text = ''
 
     def get_database_text(self):
         if self.config:
             database = PilotDatabase(self.config)
             df = database.to_df()
-            return str(df)
-        else:
-            return ''
+            df.drop(columns='History', inplace=True)
+            return df.to_string()
+
+    def toggle_tub_df(self):
+        if self.config:
+            database = PilotDatabase(self.config)
+            df, df_tub = database.to_df_tubgrouped()
+            df.drop(columns='History', inplace=True)
+            return df.to_string(), df_tub.to_string()
 
 
 class DonkeyApp(App):
