@@ -148,13 +148,13 @@ def train(cfg: Config, tub_paths: str, model: str, model_type: str,
         keras_model_to_tflite(output_path, tf_lite_model_path)
 
     database_entry = {
-        'number': model_num,
-        'name': model_name,
-        'type': str(kl),
-        'tubs': tubs,
-        'time': time(),
-        'history': history,
-        'comment': comment,
+        'Number': model_num,
+        'Name': model_name,
+        'Type': str(kl),
+        'Tubs': tubs,
+        'Time': time(),
+        'History': history,
+        'Comment': comment,
     }
     database.add_entry(database_entry)
     database.write()
