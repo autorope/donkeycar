@@ -39,7 +39,7 @@ class PilotDatabase:
 
     def to_df(self) -> pd.DataFrame:
         df = pd.DataFrame.from_records(self.entries)
-        df.set_index('number', inplace=True)
+        df.set_index('Number', inplace=True)
         return df
 
     def write(self):
@@ -51,3 +51,25 @@ class PilotDatabase:
 
     def add_entry(self, entry: Dict):
         self.entries.append(entry)
+
+    def to_df_tubgrouped(self):
+        df = self.to_df()
+        tubs = df.Tubs
+        multi_tubs = [tub for tub in tubs if ',' in tub]
+        # We might still have 'duplicates in here as 'tub_1,tub2' and 'tub_2,
+        # tub_1' would be two different entries. Hence we need to compress these
+        multi_tub_set = set([sorted_string(tub) for tub in multi_tubs])
+        # Because set is only using unique entries we can now map each list to a
+        # group and give it a name
+        d = dict(zip(multi_tub_set,
+                     ['tub_group_' + str(i) for i in range(len(multi_tubs))]))
+        new_tubs = [d[sorted_string(tub)] if tub in multi_tubs
+                    else tub for tub in df_pilots['Tubs']]
+        df_pilots['Tubs'] = new_tubs
+        df_pilots.sort_index(inplace=True)
+        # pandas explode normalises multiplicity of arrays as entries in data
+        # frame
+        df_tubs = pd.DataFrame(
+            zip(d.values(), [k.split(',') for k in d.keys()]),
+            columns=['TubGroup', 'Tubs']).explode('Tubs')
+        return df_pilots, df_tubs
