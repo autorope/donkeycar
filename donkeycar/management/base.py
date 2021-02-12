@@ -439,6 +439,7 @@ class Train(BaseCommand):
                             help=HELP_FRAMEWORK)
         parser.add_argument('--checkpoint', type=str,
                             help='location of checkpoint to resume training from')
+        parser.add_argument('--transfer', type=str, help='transfer model')
         parser.add_argument('--comment', type=str,
                             help='comment added to model database - use '
                                  'double quotes for multiple words')
@@ -454,7 +455,8 @@ class Train(BaseCommand):
 
         if framework == 'tensorflow':
             from donkeycar.pipeline.training import train
-            train(cfg, args.tub, args.model, args.type, args.comment)
+            train(cfg, args.tub, args.model, args.type, args.transfer,
+                  args.comment)
         elif framework == 'pytorch':
             from donkeycar.parts.pytorch.torch_train import train
             train(cfg, args.tub, args.model, args.type,
