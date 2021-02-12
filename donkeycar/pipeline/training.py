@@ -6,8 +6,7 @@ from typing import List, Dict, Union, Tuple
 from donkeycar.config import Config
 from donkeycar.parts.keras import KerasPilot
 from donkeycar.parts.tflite import keras_model_to_tflite
-from donkeycar.pipeline.database import read_database, generate_model_name, \
-    PilotDatabase
+from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
@@ -151,9 +150,9 @@ def train(cfg: Config, tub_paths: str, model: str, model_type: str,
         'Number': model_num,
         'Name': model_name,
         'Type': str(kl),
-        'Tubs': tubs,
+        'Tubs': tub_paths,
         'Time': time(),
-        'History': history,
+        'History': history.history,
         'Comment': comment,
     }
     database.add_entry(database_entry)

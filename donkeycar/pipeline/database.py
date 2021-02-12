@@ -1,7 +1,7 @@
 import json
 import os
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import pandas as pd
 
 from donkeycar.config import Config
@@ -18,24 +18,23 @@ class PilotDatabase:
 
     def read(self) -> List[Dict]:
         if os.path.exists(self.path):
-            try:
-                with open(self.path, "r") as read_file:
-                    data = json.load(read_file)
-                    return data
-            except FileNotFoundError as f:
-                print(f)
-            except Exception as e:
-                print(e)
+            with open(self.path, "r") as read_file:
+                data = json.load(read_file)
+                return data
         else:
             return []
 
-    def generate_model_name(self) -> str:
-        df = self.to_df()
-        last_num = df.number.max()
-        this_num = last_num + 1
+    def generate_model_name(self) -> Tuple[str, int]:
+        if self.entries:
+            df = self.to_df()
+            # otherwise this will be a numpy int
+            last_num = int(df.index.max())
+            this_num = last_num + 1
+        else:
+            this_num = 0
         date = time.strftime('%y-%m-%d')
         name = 'pilot_' + date + '_' + str(this_num)
-        return name
+        return name, this_num
 
     def to_df(self) -> pd.DataFrame:
         df = pd.DataFrame.from_records(self.entries)
@@ -53,8 +52,12 @@ class PilotDatabase:
         self.entries.append(entry)
 
     def to_df_tubgrouped(self):
-        df = self.to_df()
-        tubs = df.Tubs
+        def sorted_string(comma_separated_string):
+            """ Return sorted list of comma separated string list"""
+            return ','.join(sorted(comma_separated_string.split(',')))
+
+        df_pilots = self.to_df()
+        tubs = df_pilots.Tubs
         multi_tubs = [tub for tub in tubs if ',' in tub]
         # We might still have 'duplicates in here as 'tub_1,tub2' and 'tub_2,
         # tub_1' would be two different entries. Hence we need to compress these
