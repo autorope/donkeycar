@@ -64,7 +64,9 @@ V.start(max_loops=5)
 ## Threaded Parts
 
 For a vehicle to perform well the drive loop must execute 10-30 times per
-second so slow parts should be threaded to avoid holding up the drive loop.
+second (determined by the ```DRIVE_LOOP_HZ``` setting in your config file; the default is 20hz)
+overall, so slow parts should be threaded to avoid holding up the drive loop. In addition
+any part that must run *faster* than that default can also be threaded.
 
 A threaded part needs to define the function that runs in the separate thread
 and the function to call that will return the most recent values quickly.
