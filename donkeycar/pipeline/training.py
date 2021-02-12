@@ -78,8 +78,9 @@ class BatchSequence(object):
         return dataset.repeat().batch(self.batch_size)
 
 
-def get_model_train_details(cfg: Config, database: PilotDatabase, model: str,
-                            model_type: str) -> Tuple[str, int, str, bool]:
+def get_model_train_details(cfg: Config, database: PilotDatabase,
+                            model: str = None, model_type: str = None) \
+        -> Tuple[str, int, str, bool]:
     if not model_type:
         model_type = cfg.DEFAULT_MODEL_TYPE
     train_type = model_type
@@ -97,8 +98,9 @@ def get_model_train_details(cfg: Config, database: PilotDatabase, model: str,
     return model_name, model_num, train_type, is_tflite
 
 
-def train(cfg: Config, tub_paths: str, model: str, model_type: str,
-          transfer: str, comment: str = None) -> tf.keras.callbacks.History:
+def train(cfg: Config, tub_paths: str, model: str = None,
+          model_type: str = None, transfer: str = None, comment: str = None) \
+        -> tf.keras.callbacks.History:
     """
     Train the model
     """
@@ -155,7 +157,7 @@ def train(cfg: Config, tub_paths: str, model: str, model_type: str,
         'Tubs': tub_paths,
         'Time': time(),
         'History': history.history,
-        'Transfer': transfer,
+        'Transfer': os.path.basename(transfer) if transfer else None,
         'Comment': comment,
     }
     database.add_entry(database_entry)
