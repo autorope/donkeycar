@@ -6,7 +6,6 @@ import socket
 import stat
 import sys
 from socket import *
-from pathlib import Path
 
 from progress.bar import IncrementalBar
 import donkeycar as dk
@@ -16,6 +15,8 @@ from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
+
+HELP_CONFIG = 'location of config file to use. default: ./config.py'
 
 
 def make_dir(path):
@@ -247,7 +248,7 @@ class MakeMovieShell(BaseCommand):
         parser = argparse.ArgumentParser(prog='makemovie')
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
         parser.add_argument('--model', default=None, help='the model to use to show control outputs')
         parser.add_argument('--type', default=None, required=False, help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing activations')
@@ -331,7 +332,7 @@ class ShowCnnActivations(BaseCommand):
         parser = argparse.ArgumentParser(prog='cnnactivations', usage='%(prog)s [options]')
         parser.add_argument('--image', help='path to image')
         parser.add_argument('--model', default=None, help='path to model')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
         
         parsed_args = parser.parse_args(args)
         return parsed_args
@@ -413,7 +414,7 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--model', default=None, help='model for predictions')
         parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -427,13 +428,22 @@ class ShowPredictionPlots(BaseCommand):
 class Train(BaseCommand):
 
     def parse_args(self, args):
+        HELP_FRAMEWORK = 'the AI framework to use (tensorflow|pytorch). ' \
+                         'Defaults to config.DEFAULT_AI_FRAMEWORK'
         parser = argparse.ArgumentParser(prog='train', usage='%(prog)s [options]')
         parser.add_argument('--tub', nargs='+', help='tub data for training')
         parser.add_argument('--model', default=None, help='output model name')
         parser.add_argument('--type', default=None, help='model type')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--framework', choices=['tensorflow', 'pytorch', None], required=False, help='the AI framework to use (tensorflow|pytorch). Defaults to config.DEFAULT_AI_FRAMEWORK')
-        parser.add_argument('--checkpoint', type=str, help='location of checkpoint to resume training from')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
+        parser.add_argument('--framework',
+                            choices=['tensorflow', 'pytorch', None],
+                            required=False,
+                            help=HELP_FRAMEWORK)
+        parser.add_argument('--checkpoint', type=str,
+                            help='location of checkpoint to resume training from')
+        parser.add_argument('--comment', type=str,
+                            help='comment added to model database - use '
+                                 'double quotes for multiple words')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -446,7 +456,7 @@ class Train(BaseCommand):
 
         if framework == 'tensorflow':
             from donkeycar.pipeline.training import train
-            train(cfg, args.tub, args.model, args.type)
+            train(cfg, args.tub, args.model, args.type, args.comment)
         elif framework == 'pytorch':
             from donkeycar.parts.pytorch.torch_train import train
             train(cfg, args.tub, args.model, args.type,
