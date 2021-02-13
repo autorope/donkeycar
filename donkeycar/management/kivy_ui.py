@@ -1,6 +1,7 @@
 import json
 import time
 from copy import copy
+from datetime import datetime
 from functools import partial
 from threading import Thread
 
@@ -610,22 +611,38 @@ class DataFrameLabel(Label):
     pass
 
 
+class TransferSelector(BoxLayout, FileChooserBase):
+    """ Class to select transfer model"""
+    filters = ['*.h5']
+
+
 class TrainScreen(Screen):
     config = ObjectProperty(force_dispatch=True, allownone=True)
+    database = ObjectProperty()
+    pilot_df = ObjectProperty()
+    tub_df = ObjectProperty()
 
     def train_call(self, model_type, *args):
-        tub_path = tub_screen().ids.tub_loader.tub.base_path
+        # remove car directory from path
+        tub_path = tub_screen().ids.tub_loader.tub.base_path.replace(
+            tub_screen().ids.config_manager.file_path + os.path.sep, '')
+        transfer = self.ids.transfer_selector.file_path.replace(
+            tub_screen().ids.config_manager.file_path + os.path.sep, '')
         try:
             history = train(self.config, tub_paths=tub_path,
                             model_type=model_type,
+                            transfer=transfer,
                             comment=self.ids.comment.text)
             self.ids.status.text = f'Training completed.'
+            self.ids.train_button.state = 'normal'
+            self.reload_database()
         except Exception as e:
             self.ids.status.text = f'Train error {e}'
 
     def train(self, model_type):
         Thread(target=self.train_call, args=(model_type,)).start()
         self.ids.status.text = f'Training started.'
+        self.ids.comment.text = 'Comment'
 
     def set_config_attribute(self, input):
         try:
@@ -648,27 +665,31 @@ class TrainScreen(Screen):
     def on_config(self, obj, config):
         if self.config and self.ids:
             self.ids.cfg_spinner.values = self.value_list()
-            if self.ids.check.state == 'down':
-                text_df, text_tub = self.toggle_tub_df()
-                self.ids.scroll_pilots.text = text_df
-                self.ids.scroll_tubs.text = text_tub
-            else:
-                self.ids.scroll_pilots.text = self.get_database_text()
-                self.ids.scroll_tubs.text = ''
+            self.reload_database()
 
-    def get_database_text(self):
+    def reload_database(self):
         if self.config:
-            database = PilotDatabase(self.config)
-            df = database.to_df()
-            df.drop(columns='History', inplace=True)
-            return df.to_string()
+            self.database = PilotDatabase(self.config)
 
-    def toggle_tub_df(self):
-        if self.config:
-            database = PilotDatabase(self.config)
-            df, df_tub = database.to_df_tubgrouped()
-            df.drop(columns='History', inplace=True)
-            return df.to_string(), df_tub.to_string()
+    def on_database(self, obj, database):
+        if self.ids.check.state == 'down':
+            self.pilot_df, self.tub_df = self.database.to_df_tubgrouped()
+            self.ids.scroll_tub.text = self.tub_df.to_string()
+        else:
+            self.pilot_df = self.database.to_df()
+            self.tub_df = None
+            self.ids.scroll_tub.text = ''
+
+        self.ids.scroll_pilot.text \
+            = self.pilot_df.drop(columns='History', inplace=True).to_string(
+                formatters=self.formatter())
+
+    @staticmethod
+    def formatter():
+        def time_fmt(t):
+            fmt = '%Y-%m-%d %H:%M:%S'
+            return datetime.fromtimestamp(t).strftime(format=fmt)
+        return {'Time': time_fmt}
 
 
 class DonkeyApp(App):

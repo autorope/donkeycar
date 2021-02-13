@@ -427,6 +427,16 @@
     height: self.texture_size[1]
     text_size: self.width, None
 
+<TransferSelector>:
+    title: 'Choose transfer model'
+    orientation: 'horizontal'
+    Button:
+        id: transfer_button
+        text: 'Transfer model'
+        size_hint_x: 0.5
+        on_press: root.open_popup()
+    AutoLabel:
+        text: root.file_path
 
 <TrainScreen>:
     config: app.tub_screen.ids.config_manager.config
@@ -470,7 +480,7 @@
             height: common_height
             Label:
                 size_hint_x: 0.5
-                text: 'Set model type'
+                text: 'Model type'
             MySpinner:
                 id: train_spinner
                 size_hint_x: 0.5
@@ -480,9 +490,15 @@
                 id: comment
                 multiline: False
                 text: 'Comment'
-            Button:
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            MySpinner:
+                id: transfer_spinner
+                text: 'Choose transfer model'
+            ToggleButton:
                 id: train_button
-                text: 'Train'
+                text: 'Training running...' if self.state == 'down' else 'Train'
                 on_press: root.train(train_spinner.text)
         BoxLayout:
             size_hint_y: None
@@ -491,7 +507,7 @@
                 text: 'Group multiple tubs'
             ToggleButton:
                 id: check
-                on_press: root.on_config(None, None)
+                on_press: root.on_database(None, None)
                 text: 'On' if self.state == 'down' else 'Off'
         ScrollableLabel:
             DataFrameLabel:

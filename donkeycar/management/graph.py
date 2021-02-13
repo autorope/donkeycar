@@ -41,6 +41,7 @@ Builder.load_string('''
             PlotArea: 
                 id: plot
                 size_hint_y: 8.0
+                on_size: self.draw_axes()
             BoxLayout:
                 id: x_ticks
                 orientation: 'horizontal'
