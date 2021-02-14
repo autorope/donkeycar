@@ -11,13 +11,17 @@ Options:
 """
 
 from docopt import docopt
+import logging
+import os
 
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import TubWriter, TubWiper
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, RCReceiver
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.lidar import RPLidar
+
+logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
 
 
 class DriveMode:
@@ -43,12 +47,6 @@ class PilotCondition:
         return mode != 'user'
 
 
-class RCHelper:
-    """ Helper class for RC controller to produce right mode"""
-    def run(self):
-        return 'user'
-
-
 def drive(cfg, model_path=None, model_type=None):
     """
     Construct a minimal robotic vehicle from many parts. Here, we use a
@@ -61,7 +59,7 @@ def drive(cfg, model_path=None, model_type=None):
     manner. Parts may have named outputs and inputs. The framework handles
     passing named outputs to parts requesting the same named input.
     """
-
+    logger.info(f'PID: {os.getpid()}')
     car = dk.vehicle.Vehicle()
     # add camera
     inputs = []
@@ -122,10 +120,13 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
         car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
         car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
-        car.add(RCHelper(), outputs=['user/mode'])
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                            mode=cfg.WEB_INIT_MODE)
-        car.add(ctr,inputs=['cam/image_array'], outputs=['recording'], threaded=True)
+                                 mode=cfg.WEB_INIT_MODE)
+        # web controller sets user mode, its angle, throttle are not used.
+        car.add(ctr, inputs=['cam/image_array'],
+                outputs=['webcontroller/angle', 'webcontroller/throttle',
+                         'user/mode', 'recording'],
+                threaded=True)
 
     else:
         if cfg.USE_JOYSTICK_AS_DEFAULT:
@@ -138,10 +139,12 @@ def drive(cfg, model_path=None, model_type=None):
                 ctr.js = netwkJs
         else:
             ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                            mode=cfg.WEB_INIT_MODE)
+                                     mode=cfg.WEB_INIT_MODE)
         car.add(ctr,
                 inputs=['cam/image_array'],
-                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'], threaded=True)
+                outputs=['user/angle', 'user/throttle', 'user/mode',
+                         'recording'],
+                threaded=True)
 
     # pilot condition to determine if user or ai are driving
     car.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
@@ -189,7 +192,8 @@ def drive(cfg, model_path=None, model_type=None):
 
     # add tub to save data
     if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle',
+                  'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:    
         inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
