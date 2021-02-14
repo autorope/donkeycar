@@ -118,7 +118,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         threaded = True
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
-            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
+            #rbx
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
             inputs = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
@@ -148,7 +149,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
-        V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
+        # Donkey gym part will output position information if it is configured
+        if cfg.DONKEY_GYM:
+            outputs = ['cam/image_array']
+            if cfg.SIM_RECORD_LOCATION:  outputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
+            if cfg.SIM_RECORD_GYROACCEL: outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
+            if cfg.SIM_RECORD_VELOCITY:  outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+            
+        V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -588,6 +596,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
+
+    # rbx
+    if cfg.DONKEY_GYM:
+        if cfg.SIM_RECORD_LOCATION:  
+            inputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
+            types  += ['float', 'float', 'float', 'float', 'float']
+        if cfg.SIM_RECORD_GYROACCEL: 
+            inputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
+            types  += ['float', 'float', 'float', 'float', 'float', 'float']
+        if cfg.SIM_RECORD_VELOCITY:  
+            inputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+            types  += ['float', 'float', 'float']
 
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
