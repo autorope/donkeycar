@@ -121,7 +121,7 @@ class ConfigManager(BoxLayout, FileChooserBase):
 class TubLoader(BoxLayout, FileChooserBase):
     """ Class to manage loading or reloading of the Tub from the tub directory.
         Loading triggers many actions on other widgets of the app. """
-    file_path = StringProperty(rc_handler.data.get('last_tub'))
+    file_path = StringProperty(rc_handler.data.get('last_tub', ''))
     tub = ObjectProperty(None)
     len = NumericProperty(1)
     records = None
