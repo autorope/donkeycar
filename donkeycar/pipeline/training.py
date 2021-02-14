@@ -116,7 +116,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         print(kl.model.summary())
 
     tubs = tub_paths.split(',')
-    all_tub_paths = [os.path.abspath(os.path.expanduser(tub)) for tub in tubs]
+    all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
     print(f'Records # Training {len(training_records)}')
