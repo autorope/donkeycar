@@ -36,7 +36,7 @@ from donkeycar.pipeline.types import TubRecord
 from donkeycar.utils import get_model_by_type
 from donkeycar.pipeline.training import train
 
-Builder.load_file('ui.kv')
+Builder.load_file(os.path.join(os.path.dirname(__file__), 'ui.kv'))
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
 rc_handler = RcFileHandler()
 LABEL_SPINNER_TEXT = 'Add/remove'
@@ -729,6 +729,10 @@ class DonkeyApp(App):
         return sm
 
 
-if __name__ == '__main__':
+def main():
     tub_app = DonkeyApp()
     tub_app.run()
+
+
+if __name__ == '__main__':
+    main()

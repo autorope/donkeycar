@@ -509,6 +509,13 @@
             size_hint_y: None
             height: common_height
             text: 'View pilots'
+
+        ScrollableLabel:
+            DataFrameLabel:
+                id: scroll_pilots
+        ScrollableLabel:
+            DataFrameLabel:
+                id: scroll_tubs
         BoxLayout:
             size_hint_y: None
             height: common_height
@@ -518,12 +525,6 @@
                 id: check
                 on_press: root.on_database(None, None)
                 text: 'On' if self.state == 'down' else 'Off'
-        ScrollableLabel:
-            DataFrameLabel:
-                id: scroll_pilots
-        ScrollableLabel:
-            DataFrameLabel:
-                id: scroll_tubs
         StatusLabel:
             id: status
 
