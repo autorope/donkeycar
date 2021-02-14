@@ -50,17 +50,7 @@ THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
-
-#ODOMETRY
-HAVE_ODOM = True                   # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
-MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
-ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
-ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
-
-#TRAINING
-# The default AI framework to use. Choose from (tensorflow|pytorch)
-DEFAULT_AI_FRAMEWORK='tensorflow'
+# DRIVETRAIN
 DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 # #LIDAR
@@ -83,7 +73,7 @@ LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.o
 
 
 #TRAINING
-DEFAULT_AI_FRAMEWORK = 'tensorflow'
+DEFAULT_AI_FRAMEWORK = 'tensorflow'  # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
@@ -139,6 +129,9 @@ JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access th
 #WEB CONTROL
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
+
+#DRIVING
+AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
 
 
 #DonkeyGym

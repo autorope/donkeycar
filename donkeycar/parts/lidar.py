@@ -35,7 +35,7 @@ class RPLidar(object):
                 pass
         if port_found:
             self.port = result[0]
-            self.distances = [] #a list of distance measurements 
+            self.distances = [] #a list of distance measurements
             self.angles = [] # a list of angles corresponding to dist meas above
             self.lidar = RPLidar(self.port, baudrate=115200)
             self.lidar.clear_input()
@@ -87,7 +87,7 @@ class YDLidar(object):
     def __init__(self, port='/dev/ttyUSB0'):
         import PyLidar3
         self.port = port
-        self.distances = [] #a list of distance measurements 
+        self.distances = [] #a list of distance measurements
         self.angles = [] # a list of angles corresponding to dist meas above
         self.lidar = PyLidar3.YdLidarX4(port)
         if(self.lidar.Connect()):
@@ -102,7 +102,7 @@ class YDLidar(object):
         import PyLidar3
         print("Starting lidar...")
         self.port = port
-        self.distances = [] #a list of distance measurements 
+        self.distances = [] #a list of distance measurements
         self.angles = [] # a list of angles corresponding to dist meas above
         self.lidar = PyLidar3.YdLidarX4(port)
         if(self.lidar.Connect()):
@@ -121,7 +121,7 @@ class YDLidar(object):
                 self.data = next(lidar)
                 for angle in range(0,360):
                     if(self.data[angle]>1000):
-                        self.angles = [angle] 
+                        self.angles = [angle]
                         self.distances = [self.data[angle]]
                 if debug:
                     return self.distances, self.angles
