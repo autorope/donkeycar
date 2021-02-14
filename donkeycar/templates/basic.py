@@ -19,7 +19,6 @@ from donkeycar.parts.tub_v2 import TubWriter, TubWiper
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, RCReceiver
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.lidar import RPLidar
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
@@ -104,17 +103,6 @@ def drive(cfg, model_path=None, model_type=None):
 
     car.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
 
-    # add lidar
-    if cfg.USE_LIDAR:
-        if cfg.LIDAR_TYPE == 'RP':
-            print("adding RP lidar part")
-            lidar = RPLidar(lower_limit=cfg.LIDAR_LOWER_LIMIT,
-                            upper_limit=cfg.LIDAR_UPPER_LIMIT)
-            car.add(lidar, inputs=[], outputs=['lidar/dist_array'],
-                    threaded=True)
-        if cfg.LIDAR_TYPE == 'YD':
-            print("YD Lidar not yet supported")
-            
     # add controller
     if cfg.USE_RC:
         rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
@@ -142,7 +130,7 @@ def drive(cfg, model_path=None, model_type=None):
                 ctr.js = netwkJs
         else:
             ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                            mode=cfg.WEB_INIT_MODE)
+                                     mode=cfg.WEB_INIT_MODE)
         car.add(ctr,
                 inputs=['cam/image_array'],
                 outputs=['user/angle', 'user/throttle', 'user/mode',
@@ -158,10 +146,7 @@ def drive(cfg, model_path=None, model_type=None):
     if model_path:
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
-        if cfg.USE_LIDAR:
-            inputs = ['cam/image_array', 'lidar/dist_array']
-        else:
-            inputs = ['cam/image_array']
+        inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
@@ -194,13 +179,8 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(throttle, inputs=['throttle'])
 
     # add tub to save data
-    if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle',
-                  'user/throttle', 'user/mode']
-        types = ['image_array', 'nparray','float', 'float', 'str']
-    else:    
-        inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
-        types = ['image_array', 'float', 'float', 'str']
+    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
+    types = ['image_array', 'float', 'float', 'str']
 
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
