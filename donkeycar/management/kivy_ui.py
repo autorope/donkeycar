@@ -31,6 +31,7 @@ from kivy.uix.spinner import SpinnerOption, Spinner
 from donkeycar import load_config
 from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
+from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.types import TubRecord
 from donkeycar.utils import get_model_by_type
@@ -538,6 +539,10 @@ class OverlayImage(FullImage):
     def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
         img_arr = copy(super().get_image(record))
+        augmentation = pilot_screen().augmentation if pilot_screen().auglist \
+            else None
+        if augmentation:
+            img_arr = pilot_screen().augmentation.augment(img_arr)
         angle = record.underlying['user/angle']
         throttle = get_norm_value(record.underlying[self.throttle_field],
                                   tub_screen().ids.config_manager.config,
@@ -547,7 +552,8 @@ class OverlayImage(FullImage):
         MakeMovie.draw_line_into_image(angle, throttle, False, img_arr, rgb)
         if not self.keras_part:
             return img_arr
-        output = self.keras_part.evaluate(record)
+
+        output = self.keras_part.evaluate(record, augmentation)
         rgb = (0, 0, 255)
         MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
         out_record = copy(record)
@@ -567,6 +573,9 @@ class PilotScreen(Screen):
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
     keys_enabled = BooleanProperty(False)
+    auglist = ListProperty(force_dispatch=True)
+    augmentation = ObjectProperty()
+    config = ObjectProperty()
 
     def on_index(self, obj, index):
         self.current_record = tub_screen().ids.tub_loader.records[index]
@@ -594,6 +603,34 @@ class PilotScreen(Screen):
         if text == LABEL_SPINNER_TEXT:
             return text
         return rc_handler.data['user_pilot_map'][text]
+
+    def set_brightness(self, val=None):
+        if self.ids.button_bright.state == 'down':
+            self.config.AUG_MULTIPLY_RANGE = (val, val)
+            if self.ids.button_blur.state == 'down':
+                self.auglist = ['MULTIPLY', 'BLUR']
+            else:
+                self.auglist = ['MULTIPLY']
+
+    def remove_brightness(self):
+        self.auglist = ['BLUR'] if self.ids.button_blur.state == 'down' else[]
+
+    def set_blur(self, val=None):
+        if self.ids.button_blur.state == 'down':
+            self.config.AUG_BLUR_RANGE = (val, val)
+            if self.ids.button_bright.state == 'down':
+                self.auglist = ['MULTIPLY', 'BLUR']
+            else:
+                self.auglist = ['BLUR']
+
+    def remove_blur(self):
+        self.auglist = ['MULTIPLY'] if self.ids.button_bright.state == 'down' \
+            else []
+
+    def on_auglist(self, obj, auglist):
+        self.config.AUGMENTATIONS = self.auglist
+        self.augmentation = ImageAugmentation(self.config)
+        self.on_current_record(None, self.current_record)
 
     def status(self, msg):
         self.ids.status.text = msg

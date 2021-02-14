@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from typing import Dict, Any, Tuple, Optional, Union
 import donkeycar as dk
+from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.utils import normalize_image, linear_bin
 from donkeycar.pipeline.types import TubRecord
 
@@ -102,16 +103,20 @@ class KerasPilot(ABC):
         """
         pass
 
-    def evaluate(self, record: TubRecord) \
+    def evaluate(self, record: TubRecord,
+                 augmentation: ImageAugmentation = None) \
             -> Tuple[Union[float, np.ndarray], ...]:
         # extract model input from record
-        x = self.x_transform(record)
-        # for multiple input tensors the image is in first slot otherwise x
-        # is the image
-        if isinstance(x, tuple):
-            return self.inference(normalize_image(x[0]), *x[1:])
+        x0 = self.x_transform(record)
+        x1 = x0[0] if isinstance(x0, tuple) else x0
+        # apply augmentation to training data only
+        x2 = augmentation.augment(x1) if augmentation else x1
+        # normalise image, assume other input data comes already normalised
+        x3 = normalize_image(x2)
+        if isinstance(x0, tuple):
+            return self.inference(x3, *x0[1:])
         else:
-            return self.inference(normalize_image(x), None)
+            return self.inference(x3, None)
 
     def train(self,
               model_path: str,

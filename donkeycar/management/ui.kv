@@ -341,6 +341,7 @@
 
 
 <PilotScreen>:
+    config: app.tub_screen.ids.config_manager.config
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
@@ -381,6 +382,31 @@
                 id: img_2
                 keras_part: pilot_loader_2.pilot
                 throttle_field: data_in.throttle_field
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            ToggleButton:
+                id: button_bright
+                size_hint_x: 0.5
+                text: 'Brightness'
+                on_press: root.set_brightness(slider_bright.value) if self.state == 'down' else root.remove_brightness()
+            Slider:
+                id: slider_bright
+                value: 1
+                min: 0
+                max: 3
+                on_value: root.set_brightness(self.value)
+            ToggleButton:
+                id: button_blur
+                size_hint_x: 0.5
+                text: 'Blur'
+                on_press: root.set_blur(slider_blur.value) if self.state == 'down' else root.remove_blur()
+            Slider:
+                id: slider_blur
+                value: 0
+                min: 0
+                max: 4
+                on_value: root.set_blur(self.value)
         Slider:
             id: slider
             min: 0
