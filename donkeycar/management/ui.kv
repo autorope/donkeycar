@@ -105,7 +105,7 @@
 
 <MySpinnerOption>:
     text_size: self.size
-    halign: 'left'
+    halign: 'center'
     valign: 'middle'
     height: common_height
 
@@ -460,12 +460,13 @@
                     root.manager.current = 'pilot'
                     if not root.manager.current_screen.index: root.manager.current_screen.index = 0
                     root.manager.current_screen.keys_enabled = True
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'Overwrite config'
         BoxLayout:
             size_hint_y: None
             height: common_height
-            Label:
-                size_hint_x: 0.5
-                text: 'Overwrite config'
             MySpinner:
                 id: cfg_spinner
                 text: 'select'
@@ -475,6 +476,10 @@
                 multiline: False
                 text: 'New value'
                 on_text_validate: root.set_config_attribute(self.text)
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'Train pilot'
         BoxLayout:
             size_hint_y: None
             height: common_height
@@ -500,6 +505,10 @@
                 id: train_button
                 text: 'Training running...' if self.state == 'down' else 'Train'
                 on_press: root.train(train_spinner.text)
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'View pilots'
         BoxLayout:
             size_hint_y: None
             height: common_height
