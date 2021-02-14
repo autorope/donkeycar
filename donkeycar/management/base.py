@@ -470,7 +470,7 @@ class Train(BaseCommand):
 
 class Gui(BaseCommand):
     def run(self, args):
-        from donkeycar.management.tub_gui import main
+        from donkeycar.management.kivy_ui import main
         main()
 
 
