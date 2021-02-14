@@ -115,13 +115,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             from donkeycar.parts.dgym import DonkeyGymEnv
 
         inputs = []
+        outputs = []
         threaded = True
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
             #rbx
             cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
-            inputs = ['angle', 'throttle']
+            inputs  = ['angle', 'throttle']
+            outputs = ['cam/image_array']
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
             cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
@@ -151,7 +153,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         # Donkey gym part will output position information if it is configured
         if cfg.DONKEY_GYM:
-            outputs = ['cam/image_array']
             if cfg.SIM_RECORD_LOCATION:  outputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
             if cfg.SIM_RECORD_GYROACCEL: outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
             if cfg.SIM_RECORD_VELOCITY:  outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
