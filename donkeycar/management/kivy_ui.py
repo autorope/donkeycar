@@ -619,15 +619,18 @@ class TransferSelector(BoxLayout, FileChooserBase):
 class TrainScreen(Screen):
     config = ObjectProperty(force_dispatch=True, allownone=True)
     database = ObjectProperty()
-    pilot_df = ObjectProperty()
-    tub_df = ObjectProperty()
+    pilot_df = ObjectProperty(force_dispatch=True)
+    tub_df = ObjectProperty(force_dispatch=True)
 
     def train_call(self, model_type, *args):
         # remove car directory from path
         tub_path = tub_screen().ids.tub_loader.tub.base_path.replace(
             tub_screen().ids.config_manager.file_path + os.path.sep, '')
-        transfer = self.ids.transfer_selector.file_path.replace(
-            tub_screen().ids.config_manager.file_path + os.path.sep, '')
+        transfer = self.ids.transfer_spinner.text
+        if transfer != 'Choose transfer model':
+            transfer = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
+        else:
+            transfer = None
         try:
             history = train(self.config, tub_paths=tub_path,
                             model_type=model_type,
@@ -635,6 +638,7 @@ class TrainScreen(Screen):
                             comment=self.ids.comment.text)
             self.ids.status.text = f'Training completed.'
             self.ids.train_button.state = 'normal'
+            self.ids.transfer_spinner.text = 'Choose transfer model'
             self.reload_database()
         except Exception as e:
             self.ids.status.text = f'Train error {e}'
@@ -674,22 +678,28 @@ class TrainScreen(Screen):
     def on_database(self, obj, database):
         if self.ids.check.state == 'down':
             self.pilot_df, self.tub_df = self.database.to_df_tubgrouped()
-            self.ids.scroll_tub.text = self.tub_df.to_string()
+            self.ids.scroll_tubs.text = self.tub_df.to_string()
         else:
             self.pilot_df = self.database.to_df()
-            self.tub_df = None
-            self.ids.scroll_tub.text = ''
+            self.tub_df = pd.DataFrame()
+            self.ids.scroll_tubs.text = ''
 
-        self.ids.scroll_pilot.text \
-            = self.pilot_df.drop(columns='History', inplace=True).to_string(
-                formatters=self.formatter())
+        self.pilot_df.drop(columns='History', inplace=True)
+        text = self.pilot_df.to_string(formatters=self.formatter())
+        self.ids.scroll_pilots.text = text
+        self.ids.transfer_spinner.values = \
+            ['Choose transfer model'] + self.pilot_df['Name'].tolist()
 
     @staticmethod
     def formatter():
         def time_fmt(t):
             fmt = '%Y-%m-%d %H:%M:%S'
             return datetime.fromtimestamp(t).strftime(format=fmt)
-        return {'Time': time_fmt}
+
+        def transfer_fmt(model_name):
+            return model_name.replace('.h5', '')
+
+        return {'Time': time_fmt, 'Transfer': transfer_fmt}
 
 
 class DonkeyApp(App):
