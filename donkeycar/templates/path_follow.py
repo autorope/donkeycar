@@ -90,7 +90,7 @@ def drive(cfg):
         V.add(NoOdom(), outputs=['enc/vel_m_s'])
    
     # This requires use of the Intel Realsense T265
-    rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB)
+    rs = RS_T265(image_output=False)
     V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array'], threaded=True)
 
     # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
