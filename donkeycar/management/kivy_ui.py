@@ -624,8 +624,7 @@ class TrainScreen(Screen):
 
     def train_call(self, model_type, *args):
         # remove car directory from path
-        tub_path = tub_screen().ids.tub_loader.tub.base_path.replace(
-            tub_screen().ids.config_manager.file_path + os.path.sep, '')
+        tub_path = tub_screen().ids.tub_loader.tub.base_path
         transfer = self.ids.transfer_spinner.text
         if transfer != 'Choose transfer model':
             transfer = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
