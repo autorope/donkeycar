@@ -238,6 +238,19 @@ quit
 
 Now that your controller is trusted, it should automatically connect with your Raspberry Pi when they are both turned on.  If your controller fails to connect, run the bluetoothctl steps again to reconnect.
 
+## RC Controller
+If you bought an RC car then it might have come with a standard 2.4GHz car 
+radio and receiver as in this picture. This can be used to drive the car. 
+
+![RC_receiver](../assets/RC_receiver.jpg)
+
+The connectors from lift to right are (S)ignal, +, -. Just attach the +/- to a free RPi 3.3V  and ground pin or pick these up from the other end of the PCA9685. These receivers seem to work fine with 3.3V as well. It doesn't matter which +, - you are choosing. 
+
+Then connect the PWM signal pins to three wires, in this example CH1 - purple, CH2 - white, CH3 - blue. The other ends can go an any RPi GPIO, except for the +, - and SCL, SDA pins.  CH-1 is for steering, CH-2 for throttle and CH-3 is linked to a press button on the remote control. The default connections are steering - GPIO 26, throttle - GPIO 20, channel 3 (for record deletion) - GPIO 19.
+
+The `basic` template which you install with `donkey createcar --path ~/mycar --template basic` has and additional function `manage.py calibrate` which you should use to zero your angle and throttle PWM signal. 
+> Note: The PWM signal drifts over time. Hence check your calibration regularly before starting recording.
+
 ## Creating a New or Custom Game Controller
 
 To discover or modify the button and axis mappings for your controller, you can use the [Joystick Wizard](/utility/donkey/#joystick-wizard). The Joystick Wizard will write a custom controller named 'my_joystick.py' to your mycar folder.  To use the custom controller, set `CONTROLLER_TYPE="custom"` in your myconfig.py.
