@@ -287,14 +287,18 @@ class Manifest(object):
         if not self._updated_session:
             self._updated_session = True
 
-    def delete_record(self, record_index):
+    def delete_records(self, record_indexes):
         # Does not actually delete the record, but marks it as deleted.
-        self.deleted_indexes.add(record_index)
+        if isinstance(record_indexes, int):
+            record_indexes = {record_indexes}
+        self.deleted_indexes.update(record_indexes)
         self._update_catalog_metadata(update=True)
 
-    def restore_record(self, record_index):
+    def restore_records(self, record_indexes):
         # Does not actually delete the record, but marks it as deleted.
-        self.deleted_indexes.discard(record_index)
+        if isinstance(record_indexes, int):
+            record_indexes = {record_indexes}
+        self.deleted_indexes.difference_update(record_indexes)
         self._update_catalog_metadata(update=True)
 
     def _add_catalog(self):

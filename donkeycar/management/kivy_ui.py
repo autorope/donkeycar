@@ -311,6 +311,8 @@ class ControlPanel(BoxLayout):
               f'{"forward" if fwd else "backward"}'
         if not continuous:
             msg += f' - you can also use {"<right>" if fwd else "<left>"} key'
+        else:
+            msg += ' - you can toggle run/stop with <space>'
         self.screen.status(msg)
 
     def stop(self):
@@ -371,8 +373,7 @@ class TubEditor(BoxLayout):
             last_id = tub.manifest.current_index
             selected = list(range(self.lr[0], last_id))
             selected += list(range(self.lr[1]))
-        for d in selected:
-            tub.delete_record(d) if is_del else tub.restore_record(d)
+        tub.delete_records(selected) if is_del else tub.restore_records(selected)
 
 
 class TubFilter(BoxLayout):

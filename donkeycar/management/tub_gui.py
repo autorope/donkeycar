@@ -324,12 +324,10 @@ class TubManipulator(RecordDependent):
             selected = list(range(self.lr[0], last_id))
             selected += list(range(self.lr[1]))
         if is_del:
-            for d in selected:
-                self.app.tub_manager.tub.delete_record(d)
+            self.app.tub_manager.tub.delete_records(selected)
             msg = 'Deleting '
         else:
-            for d in selected:
-                self.app.tub_manager.tub.restore_record(d)
+            self.app.tub_manager.tub.restore_records(selected)
             msg = 'Restoring '
         msg += f'records {self.lr} - press <Reload tub> to see the ' \
                f'effect, but you can select multiple ranges before doing so.'
