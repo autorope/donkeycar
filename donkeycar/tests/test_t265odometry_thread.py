@@ -147,7 +147,7 @@ if(tm2):
                 pos = data.translation
                 x = pos.x
                 y = pos.y
-                if time.time() > lasttime3 + 0.5:  # plot once per second
+                if time.time() > lasttime3 + 0.5:  # plot twice per second
                     lasttime3 = time.time()
                     plot(x,y)
 
