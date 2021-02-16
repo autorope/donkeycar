@@ -40,7 +40,7 @@ class OdomDist(object):
         #     self.distance = self.distance * -1.0
         delta_distance = self.distance - self.prev_distance
         instant_velocity = delta_distance/seconds
-        for i in range(9):
+        for i in range(9):  # do a moving average over a 1/2 second window (10 readings of a 20Hz feed)
             self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
         self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
         velocity = sum(self.ave_velocity)/10  # moving average
@@ -50,10 +50,6 @@ class OdomDist(object):
         self.prev_distance = self.distance
         #console output for debugging
         if(self.debug):
-            print("ticks", ticks)
-            print('delta time', seconds)
-            print('delta distance', delta_distance)
-            print('instant velocity', instant_velocity)
             print('distance (m):', round(self.meters,3))
             print('velocity (m/s):', round(self.meters_per_second,3))
 

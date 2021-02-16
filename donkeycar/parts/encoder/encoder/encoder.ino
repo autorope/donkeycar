@@ -16,7 +16,7 @@ Encoder myEnc(2, 3);
 String newcommand = "";
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("Basic Encoder Test:");
 }
 

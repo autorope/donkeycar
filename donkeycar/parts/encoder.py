@@ -27,7 +27,7 @@ class ArduinoEncoder(object):
         import serial.tools.list_ports
         for item in serial.tools.list_ports.comports():
             print(item)  # list all the serial ports
-        self.ser = serial.Serial('/dev/ttyACM0', 115200, 8, 'N', 1, timeout=1)
+        self.ser = serial.Serial('/dev/ttyACM0', 9600, 8, 'N', 1, timeout=1)
         # initialize the odometer values
         self.ser.write(str.encode('reset'))  # restart the encoder to zero
         self.ticks = 0
