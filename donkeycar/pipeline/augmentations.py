@@ -1,7 +1,11 @@
 import cv2
 import numpy as np
+import logging
 import imgaug.augmenters as iaa
 from donkeycar.config import Config
+
+
+logger = logging.getLogger()
 
 
 class Augmentations(object):
@@ -73,6 +77,7 @@ class ImageAugmentation:
 
     @classmethod
     def create(cls, aug_type: str, config: Config) -> iaa.meta.Augmenter:
+        logger.info(f'Creating augmentation {aug_type}')
         if aug_type == 'CROP':
             return Augmentations.crop(left=config.ROI_CROP_TOP,
                                       right=config.ROI_CROP_TOP,

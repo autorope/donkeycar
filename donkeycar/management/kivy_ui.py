@@ -721,7 +721,8 @@ class TrainScreen(Screen):
             self.tub_df = pd.DataFrame()
             self.ids.scroll_tubs.text = ''
 
-        self.pilot_df.drop(columns='History', inplace=True)
+        self.pilot_df.drop(columns=['History', 'Config'], errors='ignore',
+                           inplace=True)
         text = self.pilot_df.to_string(formatters=self.formatter())
         self.ids.scroll_pilots.text = text
         self.ids.transfer_spinner.values = \

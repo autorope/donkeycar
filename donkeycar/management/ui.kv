@@ -388,7 +388,7 @@
             ToggleButton:
                 id: button_bright
                 size_hint_x: 0.5
-                text: 'Brightness'
+                text: 'Brightness {:4.2f}'.format(slider_bright.value)
                 on_press: root.set_brightness(slider_bright.value) if self.state == 'down' else root.remove_brightness()
             Slider:
                 id: slider_bright
@@ -399,7 +399,7 @@
             ToggleButton:
                 id: button_blur
                 size_hint_x: 0.5
-                text: 'Blur'
+                text: 'Blur {:4.2f}'.format(slider_blur.value)
                 on_press: root.set_blur(slider_blur.value) if self.state == 'down' else root.remove_blur()
             Slider:
                 id: slider_blur
