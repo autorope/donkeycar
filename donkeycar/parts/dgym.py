@@ -26,7 +26,7 @@ class DonkeyGymEnv(object):
         self.frame = self.env.reset()
         self.action = [0.0, 0.0, 0.0]
         self.running = True
-        self.info = { 'pos' : (0., 0., 0.)}
+        self.info = { 'pos' : (0., 0., 0.), 'speed' : 0.0}
         self.delay = float(delay)
         
     def update(self):
@@ -42,7 +42,7 @@ class DonkeyGymEnv(object):
         if self.delay > 0.0:
             time.sleep(self.delay / 1000.0)
         self.action = [steering, throttle, brake]
-        return self.frame
+        return self.frame, self.info['speed']
 
     def shutdown(self):
         self.running = False

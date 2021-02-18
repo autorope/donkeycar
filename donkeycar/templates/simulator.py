@@ -68,7 +68,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     threaded = True
     inputs = ['angle', 'throttle', 'brake']
 
-    V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
+    V.add(cam, inputs=inputs, outputs=['cam/image_array', 'speed'], threaded=threaded)
 
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
