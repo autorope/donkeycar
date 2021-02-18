@@ -59,9 +59,7 @@ for i in range(10):
 
 for item in serial.tools.list_ports.comports():
     print(item)  # list all the serial ports
-ser = serial.Serial(PORT_NAME, 9600, timeout=0, parity=serial.PARITY_EVEN, rtscts=1)
-# initialize the odometer values
-ser.write(str.encode('reset'))  # restart the encoder to zero
+
 # load wheel odometry config before pipe.start(...)
 # get profile/device/ wheel odometry sensor by profile = cfg.resolve(pipe)
 pipe = rs.pipeline()
@@ -75,34 +73,49 @@ fig = plt.figure()
 canvas = np.zeros((480,640))
 screen = pf.screen(canvas, 'Position')
 
+def parse_serial(ticks):
+    global lasttime, prev_distance, ave_velocity
+    start_time = lasttime
+    end_time = time.time()
+    lasttime = end_time
+    #calculate elapsed time and distance traveled
+    seconds = end_time - start_time
+    distance = ticks * m_per_tick
+    delta_distance = distance - prev_distance
+    prev_distance = distance
+    instant_velocity = delta_distance/seconds
+    for i in range(9):  # do a moving average over a 1/2 second window (10 readings of a 20Hz feed)
+        ave_velocity[9-i] = ave_velocity[8-i]  # move the time window down one
+    ave_velocity[0] = instant_velocity  # stick the latest reading at the start
+    velocity = sum(ave_velocity)/10  # moving average
+    # velocity = instant_velocity
+    print("Total distance", distance, "Delta distance", delta_distance)
+    print("Velocity", velocity)
+    return velocity
+
 async def encoder():
-    global lasttime, velocity, prev_distance
-    reader, writer = await open_serial_connection(url='/dev/ttyACM0', baudrate=9600)
+    global lasttime, lasttime3, ticks, velocity
+
+    print("Opened", reader)
+    writer.write(str.encode('reset'))  # restart the encoder to zero
     while True:
         if stop == True:
             ioloop.stop
             task.cancel(encoder())
-        if time.time() > (lasttime + 0.01):  # run this a hundred time a second
+        if time.time() > (lasttime + 0.001):  # read the serial port a thousand time a second
             #calculate elapsed time and distance traveled
-            seconds = time.time() - lasttime
+            print("Checking serial")
             input = await reader.readline()
-            temp = input.decode()
-            temp = temp.strip()  # remove any whitespace
+            print("Serial output", input)
+            temp = input.strip()  # remove any whitespace
             if (temp.isnumeric()):
                 ticks = int(temp)
-                distance = ticks * m_per_tick
-                delta_distance = distance - prev_distance
-                prev_distance = distance
-                instant_velocity = delta_distance/seconds
-                for i in range(9):  # do a moving average over a 1/2 second window (10 readings of a 20Hz feed)
-                    ave_velocity[9-i] = ave_velocity[8-i]  # move the time window down one
-                ave_velocity[0] = instant_velocity  # stick the latest reading at the start
-                velocity = sum(ave_velocity)/10  # moving average
-                print("Total distance", distance)
-                print("Delta distance", delta_distance)
-                print("velocity", velocity)
             lasttime = time.time()  # reset 10Hz time
-        await asyncio.sleep(0)  # this allows other threads to run
+        if time.time() > (lasttime3 + 0.01):  # report the velocity a hundred times a second
+            print("parsing")
+            lasttime3 = time.time()
+            velocity = parse_serial(ticks)
+        await asyncio.sleep(0)  # go back to running other threads
 
 async def realsense():
     global lasttime2, x, y
@@ -151,14 +164,7 @@ async def plot():
             ioloop.stop
         if time.time() > lasttime3 + 1.0: # run this once per second
             lasttime3 = time.time()
-            plt.xlim(-2*x, 2*x)
-            plt.ylim(-2*y,2*y)
-            plt.scatter(x, y, c='black')
-            fig.canvas.draw()
-            image = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-            image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-            screen.update(image)
-
+            print("this is a plot")
         await asyncio.sleep(0)  # go back to running other threads
 
 def run():
@@ -167,8 +173,9 @@ def run():
     print("Starting program")
     if stop == False:
         ioloop = asyncio.get_event_loop()
+        coro = serial_asyncio.create_serial_connection(ioloop, Output, PORT_NAME, baudrate=9600)
         tasks = [
-                ioloop.create_task(encoder()),
+                ioloop.create_task(coro()),
                 ioloop.create_task(realsense()),
                 ioloop.create_task(plot())
                 ]
