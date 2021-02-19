@@ -34,6 +34,7 @@ delta_distance = 0
 last_time = time.time()
 velocity = 0
 ticks = 0
+lasttick = 0
 xlist = np.array([0]) 
 ylist = np.array([0])
 dotcolor = np.array(['black'])
@@ -53,7 +54,7 @@ lasttime3 = time.time()
 # # plt.ylim(-0.1, 0.1)
 
 plt.ion()
-plt.show()
+plt.show(block=False)
 
 
 ave_velocity = []
@@ -64,7 +65,7 @@ baud = 9600
 
 for item in serial.tools.list_ports.comports():
     print(item)  # list all the serial ports
-ser = serial.Serial(port, baud, timeout = 1)
+ser = serial.Serial(port, baud, timeout = 0.1)
 # initialize the odometer values
 ser.write(str.encode('reset'))  # restart the encoder to zero
 # load wheel odometry config before pipe.start(...)
@@ -96,17 +97,27 @@ def parse_serial(ticks):
     return velocity
 
 def read_serial(ser):
-    global lasttime2, ticks
-    while True:
-        if time.time() > (lasttime2 + 0.001):  # run this a thousand time a second
-            lasttime2 = time.time()  # reset 1khz time
-            serdata = ser.readline().decode()
-            temp = serdata.strip()  # remove any whitespace
-            if (temp.isnumeric()):
-                ticks = int(temp)
+    global lasttime2, lasttick
+    newdata = False
+    input = ''
+    lasttime2 = time.time()
+    while (ser.in_waiting > 0) and (time.time() < lasttime2 + 0.1):   # read the serial port for a millisecond
+        buffer = ser.readline()
+        input = buffer.decode('ascii')
+    if input != '':
+        temp = input.strip()  # remove any whitespace
+        if (temp.isnumeric()):
+            ticks = int(temp)
+            newdata = True
+            lasttick = ticks
+    if newdata:
+        return ticks
+    else:
+        return lasttick
 
 def plot(x,y):
     global counter, xlist, ylist, dotcolor, area, lasttime3
+    plt.pause(0.0001)
     if time.time() > lasttime3 + 0.5:  # plot twice per second
         lasttime3 = time.time()
         for i in range(counter):   # make all older points smaller and black
@@ -122,7 +133,7 @@ def plot(x,y):
         plt.ylim(-0.1, 0.1)
     #   plt.autoscale(False)
         plt.scatter(xlist, ylist, s=area, c=dotcolor)
-        plt.pause(0.01)
+        plt.pause(0.0001)
         # fig.canvas.draw()
         # image = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
         # image = image.reshape(fig.canvas.get_width_height()[::-1] + (3,))
@@ -142,12 +153,11 @@ if(tm2):
 
     # load/configure wheel odometer
     wheel_odometer.load_wheel_odometery_config(chars)
-    thread = threading.Thread(target=read_serial, args=(ser,))
-    thread.start()
     pipe.start(cfg)
     try:
         while True:
-            velocity = parse_serial(ticks)
+#            ticks = read_serial(ser)
+#            velocity = parse_serial(ticks)
             if velocity != 0:
                 v = rs.vector()
                 wo_sensor_id = 0  # indexed from 0, match to order in calibration file
