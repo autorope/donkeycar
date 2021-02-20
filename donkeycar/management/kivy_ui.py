@@ -110,9 +110,10 @@ class ConfigManager(BoxLayout, FileChooserBase):
     def load_action(self):
         if self.file_path:
             try:
-                self.config = load_config(os.path.join(self.file_path, 'config.py'))
+                path = os.path.join(self.file_path, 'config.py')
+                self.config = load_config(path)
+                print('Loaded config', path)
                 rc_handler.data['car_dir'] = self.file_path
-                # train_screen().config = self.config
             except FileNotFoundError:
                 print(f'Directory {self.file_path} has no config.py')
             except Exception as e:
@@ -144,6 +145,8 @@ class TubLoader(BoxLayout, FileChooserBase):
             return False
 
         cfg = tub_screen().ids.config_manager.config
+        if not cfg:
+            return False
         expression = tub_screen().ids.tub_filter.filter_expression
 
         # Use filter, this defines the function
@@ -510,7 +513,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
     filters = ['*.h5', '*.tflite']
 
     def load_action(self):
-        if self.file_path:
+        if self.file_path and self.pilot:
             try:
                 self.pilot.load(os.path.join(self.file_path))
                 rc_handler.data['pilot_' + self.num] = self.file_path
@@ -521,7 +524,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 print(e)
 
     def on_model_type(self, obj, model_type):
-        if self.model_type:
+        if self.model_type and self.model_type != 'Model type':
             cfg = tub_screen().ids.config_manager.config
             if cfg:
                 self.pilot = get_model_by_type(self.model_type, cfg)
@@ -725,8 +728,10 @@ class TrainScreen(Screen):
                            inplace=True)
         text = self.pilot_df.to_string(formatters=self.formatter())
         self.ids.scroll_pilots.text = text
-        self.ids.transfer_spinner.values = \
-            ['Choose transfer model'] + self.pilot_df['Name'].tolist()
+        values = ['Choose transfer model']
+        if not self.pilot_df.empty:
+            values += self.pilot_df['Name'].tolist()
+        self.ids.transfer_spinner.values = values
 
     @staticmethod
     def formatter():

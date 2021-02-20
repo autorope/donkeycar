@@ -77,7 +77,6 @@ class ImageAugmentation:
 
     @classmethod
     def create(cls, aug_type: str, config: Config) -> iaa.meta.Augmenter:
-        logger.info(f'Creating augmentation {aug_type}')
         if aug_type == 'CROP':
             return Augmentations.crop(left=config.ROI_CROP_TOP,
                                       right=config.ROI_CROP_TOP,
@@ -94,10 +93,12 @@ class ImageAugmentation:
 
         elif aug_type == 'MULTIPLY':
             interval = getattr(config, 'AUG_MULTIPLY_RANGE', (0.5, 1.5))
+            logger.info(f'Creating augmentation {aug_type} {interval}')
             return iaa.Multiply(interval)
 
         elif aug_type == 'BLUR':
             interval = getattr(config, 'AUG_BLUR_RANGE', (0.0, 3.0))
+            logger.info(f'Creating augmentation {aug_type} {interval}')
             return iaa.GaussianBlur(sigma=interval)
 
     def augment(self, img_arr):

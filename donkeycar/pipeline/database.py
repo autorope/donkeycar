@@ -37,9 +37,12 @@ class PilotDatabase:
         return name, this_num
 
     def to_df(self) -> pd.DataFrame:
-        df = pd.DataFrame.from_records(self.entries)
-        df.set_index('Number', inplace=True)
-        return df
+        if self.entries:
+            df = pd.DataFrame.from_records(self.entries)
+            df.set_index('Number', inplace=True)
+            return df
+        else:
+            return pd.DataFrame()
 
     def write(self):
         try:

@@ -1,4 +1,5 @@
-from kivy.properties import ListProperty, ObjectProperty, StringProperty
+from kivy.properties import ListProperty, ObjectProperty, StringProperty, \
+    NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
@@ -7,11 +8,13 @@ from kivy.graphics import Color, Line
 from kivy.app import App
 
 import numpy as np
+import sys
 from random import random
 import pandas as pd
 from kivy.uix.widget import Widget
 
 Builder.load_string('''
+#: import platform sys.platform
 <LegendLabel>:
     orientation: 'horizontal'
     Label:
@@ -25,7 +28,7 @@ Builder.load_string('''
     Label:
         text: root.text
         text_size: self.size
-        font_size: 24
+        font_size: sp(12)
         halign: 'center'
         valign: 'middle'
 
@@ -50,7 +53,7 @@ Builder.load_string('''
                 size_hint_y: None
                 halign: 'center'
                 valign: 'top'
-                font_size: 24
+                font_size: 12 if platform == 'linux' else 24
                 size: self.texture_size
                 text: 'index'
         BoxLayout:
@@ -77,7 +80,7 @@ class PlotArea(Widget):
         with self.canvas:
             Color(.9, .9, .9, 1.)
             points = [bb[0][0], bb[1][1], bb[0][0], bb[0][1], bb[1][0], bb[0][1]]
-            Line(width=1.5, points=points)
+            Line(width=1 if sys.platform == 'linux' else 1.5, points=points)
 
     def draw_x_ticks(self, num_ticks):
         x_length = self.bounding_box[1][0] - self.bounding_box[0][0]
@@ -87,7 +90,7 @@ class PlotArea(Widget):
             bottom = [top[0], top[1] - self.offset[1] / 2]
             with self.canvas:
                 Color(.9, .9, .9, 1.)
-                Line(width=1.5, points=bottom+top)
+                Line(width=1 if sys.platform == 'linux' else 1.5, points=bottom+top)
 
     def get_x(self, num_points):
         x_scale = (self.bounding_box[1][0] - self.bounding_box[0][0]) \
@@ -110,7 +113,7 @@ class PlotArea(Widget):
                 xy_points += [x, y]
         with self.canvas:
             Color(*hsv, mode='hsv')
-            Line(points=xy_points, width=1.5)
+            Line(points=xy_points, width=1 if sys.platform == 'linux' else 1.5)
 
 
 class TsPlot(BoxLayout):
@@ -130,7 +133,7 @@ class TsPlot(BoxLayout):
         self.ids.plot.draw_x_ticks(self.x_ticks)
         for i in range(self.x_ticks + 1):
             tick_label = Label(text=str(int(i * self.len / self.x_ticks)),
-                               font_size=24)
+                               font_size=12 if sys.platform == 'linux' else 24)
             self.ids.x_ticks.add_widget(tick_label)
 
     def add_line(self, y_points, idx):

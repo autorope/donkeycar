@@ -1,6 +1,8 @@
 #: import TsPlot donkeycar.management.graph.TsPlot
 #: import get_model_by_type donkeycar.utils.get_model_by_type
+#: import platform sys.platform
 
+#:set common_height 30 if platform != 'darwin' else 60
 
 <FileChooserPopup>:
     title: "Choose the directory"
@@ -73,7 +75,7 @@
         text_size: self.size
         halign: 'left'
         valign: 'middle'
-        font_size: 28
+        font_size: '14sp' # 14 if platform == 'linux' else 28
         canvas.before:
             Color:
                 rgba: 0.17, 0.18, 0.25, 1
@@ -85,7 +87,7 @@
         text_size: self.size
         halign: 'right'
         valign: 'middle'
-        font_size: 28
+        font_size: 14 if platform == 'linux' else 28
         size_hint_x: 0.8
         padding_x: 10
         canvas.before:
@@ -111,7 +113,6 @@
 
 
 <DataPanel>
-    #:set common_height 60
     orientation: 'vertical'
     spacing: 2
     GridLayout:
@@ -260,7 +261,6 @@
 
 
 <TubScreen>:
-    #:set common_height 60
     BoxLayout:
         orientation: 'vertical'
         BoxLayout:
@@ -313,6 +313,7 @@
             id: tub_filter
         TsPlot:
             id: graph
+            #size_hint_y: 3.0 if platform == 'linux' else None
         DataPlot:
             id: data_plot
         StatusLabel:
@@ -448,7 +449,7 @@
 
 <DataframeLabel>:
     font_name: 'data/fonts/RobotoMono-Regular.ttf'
-    font_size: 24
+    font_size: 12 if platform == 'linux' else 24
     size_hint_y: None
     height: self.texture_size[1]
     text_size: self.width, None
@@ -478,8 +479,6 @@
                     root.manager.current = 'tub'
                     root.manager.current_screen.keys_enabled = True
             Button:
-                size_hint_y: None
-                height: common_height
                 text: 'Switch to Pilot Arena'
                 on_press:
                     root.keys_enabled = False
@@ -540,6 +539,7 @@
             DataFrameLabel:
                 id: scroll_pilots
         ScrollableLabel:
+            size_hint_y: 1.0 if check.state == 'down' else 0.1
             DataFrameLabel:
                 id: scroll_tubs
         BoxLayout:
