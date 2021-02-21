@@ -60,6 +60,8 @@ class PilotDatabase:
             return ','.join(sorted(comma_separated_string.split(',')))
 
         df_pilots = self.to_df()
+        if df_pilots.empty:
+            return pd.DataFrame(), pd.DataFrame()
         tubs = df_pilots.Tubs
         multi_tubs = [tub for tub in tubs if ',' in tub]
         # We might still have 'duplicates in here as 'tub_1,tub2' and 'tub_2,
