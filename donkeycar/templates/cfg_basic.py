@@ -48,6 +48,14 @@ THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
+#DRIVETRAIN
+#These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
+#DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
+#DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
+#SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+#PIGPIO_PWM uses Raspberrys internal PWM
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+
 #TRAINING
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 BATCH_SIZE = 128
