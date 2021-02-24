@@ -222,7 +222,7 @@ pip install -e .[pi]
 pip install numpy --upgrade
 wget "https://raw.githubusercontent.com/PINTO0309/Tensorflow-bin/master/tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh"
 chmod u+x tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
-tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
+./tensorflow-2.3.1-cp37-none-linux_armv7l_download.sh
 pip install tensorflow-2.3.1-cp37-none-linux_armv7l.whl
 ```
 
