@@ -49,7 +49,7 @@ class PiGPIO_PWM():
     # for PCA9685.
     #
     # Install and setup:
-    # sudo update && sudo apt install pigpio python3-pigpio
+    # sudo apt update && sudo apt install pigpio python3-pigpio
     # sudo systemctl start pigpiod
     #
     # Note: the range of pulses will differ from those required for PCA9685
