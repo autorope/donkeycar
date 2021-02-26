@@ -14,7 +14,7 @@ class RPLidar(object):
     '''
     https://github.com/SkoltechRobotics/rplidar
     '''
-    def __init__(self, port='/dev/ttyUSB0'):
+    def __init__(self, port='/dev/ttyUSB0', debug=False):
         from rplidar import RPLidar
         self.port = port
         self.distances = [] #a list of distance measurements 
@@ -66,8 +66,7 @@ class YDLidar(object):
         #print(self.lidar.get_info())
         #print(self.lidar.get_health())
 
-
-    def update(self):
+    def update(self, debug = False):
         while self.on:
             try:
                 self.data = next(self.gen)
@@ -75,6 +74,8 @@ class YDLidar(object):
                     if(self.data[angle]>1000):
                         self.angles = [angle] 
                         self.distances = [self.data[angle]]
+                if debug:
+                    return self.distances, self.angles
             except serial.serialutil.SerialException:
                 print('serial.serialutil.SerialException from Lidar. common when shutting down.')
 
