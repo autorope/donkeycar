@@ -2,20 +2,37 @@
 import serial
 import time
 port = '/dev/ttyACM0'
-baud = 9600
+baud = 115200
 
 lasttime = time.time()
+lasttick = 0
 ser = serial.Serial(port, baud, timeout = 0.1)
 # initialize the odometer values
-ser.write(str.encode('reset'))  # restart the encoder to zero
+ser.write(str.encode('r'))  # restart the encoder to zero
 
 ascii = ''
 
-while True:
-    lasttime = time.time()
-    while (ser.in_waiting > 0) and (time.time() < lasttime + .001):   # read the serial port for a millisecond
+
+def read_serial(ser):
+    global lasttime2, lasttick
+    newdata = False
+    input = ''
+    lasttime2 = time.time()
+    while (ser.in_waiting > 0):
         buffer = ser.readline()
-        ascii = buffer.decode('ascii')
-    if ascii != '':
-        print('ascii=', ascii)
-        ascii = ''
+        input = buffer.decode('ascii')
+        print("encoder reading", input)
+    ser.write(str.encode('p'))  # queue up another reading
+    if input != '':
+        temp = input.strip()  # remove any whitespace
+        if (temp.isnumeric()):
+            ticks = int(temp)
+            newdata = True
+            lasttick = ticks
+    if newdata:
+        return ticks
+    else:
+        return lasttick
+
+while True:
+    read_serial(ser)

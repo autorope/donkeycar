@@ -16,7 +16,7 @@ Encoder myEnc(2, 3);
 String newcommand = "";
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Basic Encoder Test:");
 }
 
@@ -25,15 +25,16 @@ long oldPosition  = -999;
 void loop() {
   long newPosition = myEnc.read();
   if (Serial.available() > 0) {
-    newcommand = Serial.readString();
-    if (newcommand == "reset") {
+    newcommand = Serial.read();
+    if (newcommand == "r") {
       Serial.println("Resetting");
       myEnc.write(0);    // set encoder back to zero
       }
+     if (newcommand == "p") {
+      Serial.println(newPosition);
+      }
   }
-    
   if (newPosition != oldPosition) {
     oldPosition = newPosition;
-    Serial.println(newPosition);
   }
 }

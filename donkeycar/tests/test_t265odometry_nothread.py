@@ -22,7 +22,7 @@ import serial
 import serial.tools.list_ports
 import time
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import threading
 #import pyformulas as pf
 
@@ -53,25 +53,25 @@ lasttime3 = time.time()
 # # plt.xlim(-0.1, 0.1)
 # # plt.ylim(-0.1, 0.1)
 
-plt.ion()
-plt.show(block=False)
+# plt.ion()
+# plt.show(block=False)
 
 
 ave_velocity = []
 for i in range(10):
     ave_velocity.append(0)
 port = '/dev/ttyACM0'
-baud = 9600
+baud = 115200
 
 for item in serial.tools.list_ports.comports():
     print(item)  # list all the serial ports
 ser = serial.Serial(port, baud, timeout = 0.1)
 # initialize the odometer values
-ser.write(str.encode('reset'))  # restart the encoder to zero
-# load wheel odometry config before pipe.start(...)
-# get profile/device/ wheel odometry sensor by profile = cfg.resolve(pipe)
+ser.write(str.encode('r'))  # restart the encoder to zero
+
 pipe = rs.pipeline()
 cfg = rs.config()
+# load wheel odometry config before pipe.start(...)  
 profile = cfg.resolve(pipe)
 dev = profile.get_device()
 tm2 = dev.as_tm2()
@@ -101,9 +101,10 @@ def read_serial(ser):
     newdata = False
     input = ''
     lasttime2 = time.time()
-    while (ser.in_waiting > 0) and (time.time() < lasttime2 + 0.1):   # read the serial port for a millisecond
+    while (ser.in_waiting > 0):   # read the serial port for a millisecond
         buffer = ser.readline()
         input = buffer.decode('ascii')
+    ser.write(str.encode('p'))  # queue up another reading
     if input != '':
         temp = input.strip()  # remove any whitespace
         if (temp.isnumeric()):
@@ -156,8 +157,8 @@ if(tm2):
     pipe.start(cfg)
     try:
         while True:
-#            ticks = read_serial(ser)
-#            velocity = parse_serial(ticks)
+            ticks = read_serial(ser)
+            velocity = parse_serial(ticks)
             if velocity != 0:
                 v = rs.vector()
                 wo_sensor_id = 0  # indexed from 0, match to order in calibration file
@@ -179,3 +180,4 @@ if(tm2):
     except KeyboardInterrupt:
         print("stopping...")
         pipe.stop()
+        ser.close()

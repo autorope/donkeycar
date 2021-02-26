@@ -27,20 +27,27 @@ class ArduinoEncoder(object):
         import serial.tools.list_ports
         for item in serial.tools.list_ports.comports():
             print(item)  # list all the serial ports
-        self.ser = serial.Serial('/dev/ttyACM0', 9600, 8, 'N', 1, timeout=1)
+        self.ser = serial.Serial('/dev/ttyACM0', 115200, 8, 'N', 1, timeout=0.1)
         # initialize the odometer values
-        self.ser.write(str.encode('reset'))  # restart the encoder to zero
+        self.ser.write(str.encode('r'))  # restart the encoder to zero
         self.ticks = 0
         self.debug = debug
         self.on = True
 
     def update(self):
+        global lasttick
         while self.on:
-            input = self.ser.readline()
-            self.temp = input.decode()
-            self.temp = self.temp.strip()  # remove any whitespace
-            if (self.temp.isnumeric()):
-                self.ticks = int(self.temp)
+            input = ''
+            while (self.ser.in_waiting > 0):   # read the serial port and see if there's any data there
+                buffer = self.ser.readline()
+                input = buffer.decode('ascii')
+            self.ser.write(str.encode('p'))  # queue up another reading by sending the "p" character to the Arduino
+            if input != '':
+                temp = input.strip()  # remove any whitespace
+                if (temp.isnumeric()):
+                    self.ticks = int(temp)
+                    lasttick = self.ticks
+            else: self.ticks = lasttick
 
     def run_threaded(self):
         return self.ticks 

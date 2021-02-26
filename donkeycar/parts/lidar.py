@@ -47,6 +47,45 @@ class RPLidar(object):
         self.lidar.stop_motor()
         self.lidar.disconnect()
 
+class YDLidar(object):
+    '''
+    https://pypi.org/project/PyLidar3/
+    '''
+    def __init__(self, port='/dev/ttyUSB0'):
+        import PyLidar3
+        self.port = port
+        self.distances = [] #a list of distance measurements 
+        self.angles = [] # a list of angles corresponding to dist meas above
+        self.lidar = PyLidar3.YdLidarX4(port)
+        if(self.lidar.Connect()):
+            print(self.lidar.GetDeviceInfo())
+            self.gen = self.lidar.StartScanning()
+        else:
+            print("Error connecting to lidar")
+        self.on = True
+        #print(self.lidar.get_info())
+        #print(self.lidar.get_health())
+
+
+    def update(self):
+        while self.on:
+            try:
+                self.data = next(self.gen)
+                for angle in range(0,360):
+                    if(self.data[angle]>1000):
+                        self.angles = [angle] 
+                        self.distances = [self.data[angle]]
+            except serial.serialutil.SerialException:
+                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
+
+    def run_threaded(self):
+        return self.distances, self.angles
+
+    def shutdown(self):
+        self.on = False
+        time.sleep(2)
+        self.lidar.StopScanning()
+        self.lidar.Disconnect()
 
 class LidarPlot(object):
     '''
