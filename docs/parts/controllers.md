@@ -249,6 +249,9 @@ The connectors from lift to right are (S)ignal, +, -. Just attach the +/- to a f
 Then connect the PWM signal pins to three wires, in this example CH1 - purple, CH2 - white, CH3 - blue. The other ends can go an any RPi GPIO, except for the +, - and SCL, SDA pins.  CH-1 is for steering, CH-2 for throttle and CH-3 is linked to a press button on the remote control. The default connections are steering - GPIO 26, throttle - GPIO 20, channel 3 (for record deletion) - GPIO 19.
 
 The `basic` template which you install with `donkey createcar --path ~/mycar --template basic` has and additional function `manage.py calibrate` which you should use to zero your angle and throttle PWM signal. 
+
+You must also have `pigpio` installed. Do so with these commands: `sudo update && sudo apt install python3-pigpio & sudo systemctl start pigpiod`
+
 > Note: The PWM signal drifts over time. Hence check your calibration regularly before starting recording.
 
 ## Creating a New or Custom Game Controller
