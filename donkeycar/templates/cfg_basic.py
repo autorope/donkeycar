@@ -49,6 +49,10 @@ THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
+#LIDAR
+USE_LIDAR = False
+LIDAR_TYPE = 'RP' #(RP|YD) 
+
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_AI_FRAMEWORK='tensorflow'

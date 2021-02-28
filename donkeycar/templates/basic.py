@@ -17,6 +17,7 @@ from donkeycar.parts.tub_v2 import TubWriter, TubWiper
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, RCReceiver
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
+from donkeycar.parts.lidar import RPLidar
 
 
 class DriveMode:
@@ -103,6 +104,11 @@ def drive(cfg, model_path=None, model_type=None):
         raise (Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
     car.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
+
+    # add lidar
+    if cfg.USE_LIDAR:
+        lidar = RPLIdar()
+        car.add(lidar, outputs=['user/distances', 'user/angles'])
 
     # add controller
     if cfg.USE_RC:
