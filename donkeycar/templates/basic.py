@@ -181,7 +181,7 @@ def drive(cfg, model_path=None, model_type=None):
     tub_writer = TubWriter(base_path=tub_path, inputs=inputs, types=types)
     car.add(tub_writer, inputs=inputs, outputs=["tub/num_records"],
             run_condition='recording')
-    if not model_path:
+    if not model_path and cfg.USE_RC:
         tub_wiper = TubWiper(tub_writer.tub, num_records=cfg.DRIVE_LOOP_HZ)
         car.add(tub_wiper, inputs=['user/wiper_on'])
     # start the car
