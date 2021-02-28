@@ -42,6 +42,12 @@ class PilotCondition:
         return mode != 'user'
 
 
+class RCHelper:
+    """ Helper class for RC controller to produce right mode"""
+    def run(self):
+        return 'user'
+
+
 def drive(cfg, model_path=None, model_type=None):
     """
     Construct a minimal robotic vehicle from many parts. Here, we use a
@@ -106,6 +112,8 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
         car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
         car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+        car.add(RCHelper(), outputs=['user/mode'])
+
     else:
         if cfg.USE_JOYSTICK_AS_DEFAULT:
             from donkeycar.parts.controller import get_js_controller
