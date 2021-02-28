@@ -107,8 +107,9 @@ def drive(cfg, model_path=None, model_type=None):
 
     # add lidar
     if cfg.USE_LIDAR:
-        lidar = RPLIdar()
-        car.add(lidar, outputs=['user/distances', 'user/angles'])
+        if cfg.LIDAR_TYPE == 'RP':
+            lidar = RPLidar()
+            car.add(lidar, outputs=['user/distances', 'user/angles'], threaded=True)
 
     # add controller
     if cfg.USE_RC:
