@@ -16,10 +16,20 @@ class RPLidar(object):
     '''
     def __init__(self, port='/dev/ttyUSB0', debug=False):
         from rplidar import RPLidar
-        self.port = port
+        import glob
+        temp_list = glob.glob ('/dev/ttyUSB*')
+        result = []
+        for a_port in temp_list:
+            try:
+                s = serial.Serial(a_port)
+                s.close()
+                result.append(a_port)
+            except serial.SerialException:
+                pass
+        self.port = result[0]
         self.distances = [] #a list of distance measurements 
         self.angles = [] # a list of angles corresponding to dist meas above
-        self.lidar = RPLidar(self.port)
+        self.lidar = RPLidar(self.port, baudrate=115200)
         self.lidar.clear_input()
         time.sleep(1)
         self.on = True
