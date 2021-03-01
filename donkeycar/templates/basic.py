@@ -111,7 +111,7 @@ def drive(cfg, model_path=None, model_type=None):
     if cfg.USE_LIDAR:
         if cfg.LIDAR_TYPE == 'RP':
             lidar = RPLidar()
-            car.add(lidar, outputs=['user/distances', 'user/angles'], threaded=True)
+            car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
 
     # add controller
     if cfg.USE_RC:
@@ -149,7 +149,7 @@ def drive(cfg, model_path=None, model_type=None):
     if model_path:
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
-        inputs = ['cam/image_array']
+        inputs = ['cam/image_array', 'lidar/dist_array']
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
@@ -183,8 +183,8 @@ def drive(cfg, model_path=None, model_type=None):
 
     # add tub to save data
     if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'user/distances', 'user/angles']
-        types = ['image_array', 'float', 'float', 'str']
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'nparray','float', 'float', 'str']
     else:    
         inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'float', 'float', 'str']
