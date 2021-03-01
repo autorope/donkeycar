@@ -2,6 +2,8 @@
 Lidar
 """
 
+# requies glob to be installed: "pip3 install glob2"
+
 import time
 import math
 import pickle
@@ -48,7 +50,18 @@ class RPLidar(object):
                 print('serial.serialutil.SerialException from Lidar. common when shutting down.')
 
     def run_threaded(self):
-        return self.distances, self.angles
+        lowerang = 44
+        higherang = 136
+
+        angs = np.copy(self.angles)
+        dists = np.copy(self.distances)
+
+        filter_angs = angs[(angs > lowerang) & (angs < higherang)]
+        filter_dist = dists[(angs > lowerang) & (angs < higherang)] #sorts distances based on angle values
+
+        angles_ind = filter_angs.argsort()         # returns the indexes that sorts filter_angs
+        sorted_distances = filter_dist(angles_ind) # sorts distances based on angle indexes
+        return sorted_distances
 
     def shutdown(self):
         self.on = False
