@@ -14,7 +14,7 @@ class RPLidar(object):
     '''
     https://github.com/SkoltechRobotics/rplidar
     '''
-    def __init__(self, port='/dev/ttyUSB0', debug=False):
+    def __init__(self, debug=False):
         from rplidar import RPLidar
         import glob
         temp_list = glob.glob ('/dev/ttyUSB*')

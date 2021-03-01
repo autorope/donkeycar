@@ -38,7 +38,7 @@ class DriveMode:
 
 
 class PilotCondition:
-    """ Helper class to determine how is in charge of driving"""
+    """ Helper class to determine who is in charge of driving"""
     def run(self, mode):
         return mode != 'user'
 
@@ -180,8 +180,12 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(throttle, inputs=['throttle'])
 
     # add tub to save data
-    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
-    types = ['image_array', 'float', 'float', 'str']
+    if cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'user/distances', 'user/angles']
+        types = ['image_array', 'float', 'float', 'str']
+    else:    
+        inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'float', 'float', 'str']
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
