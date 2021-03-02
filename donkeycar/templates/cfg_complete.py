@@ -277,6 +277,11 @@ GYM_CONF["bio"] = "I race robots."
 SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
 SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
 
+# Save info from Simulator (pln)
+SIM_RECORD_LOCATION = False
+SIM_RECORD_GYROACCEL= False
+SIM_RECORD_VELOCITY = False
+
 #publish camera over network
 #This is used to create a tcp service to pushlish the camera feed
 PUB_CAMERA_IMAGES = False
