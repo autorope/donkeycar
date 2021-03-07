@@ -15,6 +15,7 @@ jobs:
       with:
         python-version: 3.7
     - name: Add conda to system path
+      shell: bash -l {0}
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         echo $CONDA/bin >> $GITHUB_PATH
