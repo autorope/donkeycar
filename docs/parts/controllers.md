@@ -250,7 +250,7 @@ Then connect the PWM signal pins to three wires, in this example CH1 - purple, C
 
 The `basic` template which you install with `donkey createcar --path ~/mycar --template basic` has and additional function `manage.py calibrate` which you should use to zero your angle and throttle PWM signal. 
 
-You must also have `pigpio` installed. Do so with these commands: `sudo apt update && sudo apt install python3-pigpio & sudo systemctl start pigpiod`
+You must also have `pigpio` installed. Do so with these commands: `sudo apt update && sudo apt install python3-pigpio & & sudo systemctl enable pigpiod & sudo systemctl start pigpiod`
 
 > Note: The PWM signal drifts over time. Hence check your calibration regularly before starting recording.
 
