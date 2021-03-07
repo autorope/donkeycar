@@ -74,6 +74,8 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     assert loss[-1] < loss[0] * data.convergence
 
 
+@pytest.mark.skipif("TRAVIS" in os.environ,
+                    reason='Suppress training test in CI')
 @pytest.mark.parametrize('model_type', ['resnet18'])
 def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
         -> None:
