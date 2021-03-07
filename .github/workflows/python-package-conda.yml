@@ -21,7 +21,8 @@ jobs:
         conda init bash
     - name: Install dependencies
       run: |
-        shell: bash -l {0}
+        shell:
+          bash -l {0}
         conda config --set always_yes yes --set changeps1 no
         conda config --append channels conda-forge
         conda update -q conda
