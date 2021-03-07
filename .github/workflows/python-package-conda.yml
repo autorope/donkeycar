@@ -21,14 +21,15 @@ jobs:
         conda init bash
     - name: Install dependencies
       run: |
+        shell: bash -l {0}
         conda config --set always_yes yes --set changeps1 no
         conda config --append channels conda-forge
         conda update -q conda
         # Useful for debugging any issues with conda
         conda info -a
         conda env create -f install/envs/pc.yml
-        conda init bash
         conda activate donkey
         pip install -e .
         conda env export > environment.yml
         cat environment.yml
+
