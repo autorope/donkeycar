@@ -41,7 +41,6 @@ stages:
 jobs:
   fast_finish: false
   allow_failures:
-    - name: markdownlint
     - name: yamllint
     - name: black
 
@@ -75,14 +74,6 @@ jobs:
       install: skip
       script:
         - "docker run --rm -v $PWD:/yaml:ro sdesbure/yamllint yamllint ."
-
-    # markdownlint CLI https://github.com/06kellyjac/docker_markdownlint-cli
-    - stage: lint
-      name: markdownlint
-      language: shell
-      install: skip
-      script:
-        - "docker run -v $PWD:/markdown:ro 06kellyjac/markdownlint-cli ."
 
     - stage: deploy
       python: 3.6
