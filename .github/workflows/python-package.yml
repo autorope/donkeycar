@@ -20,8 +20,10 @@ jobs:
           python-version: 3.7
           activate-environment: donkey
           environment-file:
-            if [ "$RUNNER_OS" == "Linux" ]; then install/envs/pc.yml
-            else install/envs/mac.yml
+            if matrix.os == 'ubuntu-latest'
+              install/envs/pc.yml
+            if matrix.os == 'macos-latest'
+              install/envs/mac.yml
           auto-activate-base: false
           channels: conda-forge
       - run: |
