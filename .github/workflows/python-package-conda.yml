@@ -23,6 +23,6 @@ jobs:
           conda list
           conda activate donkey
           pip install -e .[pc]
-
+          pytest
 
 
