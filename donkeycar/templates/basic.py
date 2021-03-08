@@ -110,6 +110,7 @@ def drive(cfg, model_path=None, model_type=None):
     # add lidar
     if cfg.USE_LIDAR:
         if cfg.LIDAR_TYPE == 'RP':
+            print("adding RP lidar part")
             lidar = RPLidar()
             car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
 
@@ -122,6 +123,9 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
         car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
         car.add(RCHelper(), outputs=['user/mode'])
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                            mode=cfg.WEB_INIT_MODE)
+        car.add(ctr,inputs=['cam/image_array'], outputs=['recording'], threaded=True)
 
     else:
         if cfg.USE_JOYSTICK_AS_DEFAULT:
@@ -134,11 +138,10 @@ def drive(cfg, model_path=None, model_type=None):
                 ctr.js = netwkJs
         else:
             ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                     mode=cfg.WEB_INIT_MODE)
+                                            mode=cfg.WEB_INIT_MODE)
         car.add(ctr,
                 inputs=['cam/image_array'],
-                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-                threaded=True)
+                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'], threaded=True)
 
     # pilot condition to determine if user or ai are driving
     car.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
@@ -188,6 +191,7 @@ def drive(cfg, model_path=None, model_type=None):
     else:    
         inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'float', 'float', 'str']
+
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH

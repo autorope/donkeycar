@@ -35,6 +35,7 @@ class RPLidar(object):
         self.lidar.clear_input()
         time.sleep(1)
         self.on = True
+        print("starting lidar")
         #print(self.lidar.get_info())
         #print(self.lidar.get_health())
 
