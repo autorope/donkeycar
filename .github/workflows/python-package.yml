@@ -1,10 +1,10 @@
-name: Python Package using Conda
+name: Python package and test
 
 on: [push]
 
 jobs:
-  build-linux:
-    name: Set up Python 3.7
+  checkout-test:
+    name: set up python 3.7
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -21,7 +21,6 @@ jobs:
       - run: |
           conda info
           conda list
-          conda activate donkey
           pip install -e .[pc]
           pytest
 
