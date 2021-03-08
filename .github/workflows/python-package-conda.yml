@@ -4,33 +4,25 @@ on: [push]
 
 jobs:
   build-linux:
+    name: Set up Python 3.7
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
-
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Add conda to system path
-      shell: bash -l {0}
-      run: |
-        # $CONDA is an environment variable pointing to the root of the miniconda directory
-        echo $CONDA/bin >> $GITHUB_PATH
-        conda init bash
-    - name: Install dependencies
-      shell: bash -l {0}
-      run: |
-        conda config --set always_yes yes --set changeps1 no
-        conda config --append channels conda-forge
-        conda update -q conda
-        # Useful for debugging any issues with conda
-        conda info -a
-        conda env create -f install/envs/pc.yml
-        conda activate donkey
-        pip install -e .
-        conda env export > environment.yml
-        cat environment.yml
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.7
+          activate-environment: donkey
+          environment-file: install/envs/pc.yml
+          auto-activate-base: false
+          channels: defaults, conda-forge
+      - run: |
+          conda info
+          conda list
+
+
 
