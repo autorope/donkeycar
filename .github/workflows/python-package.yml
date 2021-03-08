@@ -1,11 +1,15 @@
 name: Python package and test
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   checkout-test:
     name: set up python 3.7
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
     defaults:
       run:
         shell: bash -l {0}
@@ -15,7 +19,9 @@ jobs:
         with:
           python-version: 3.7
           activate-environment: donkey
-          environment-file: install/envs/pc.yml
+          environment-file:
+            if [ "$RUNNER_OS" == "Linux" ]; then install/envs/pc.yml
+            else install/envs/mac.yml
           auto-activate-base: false
           channels: conda-forge
       - run: |
