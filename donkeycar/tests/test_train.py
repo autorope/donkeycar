@@ -54,7 +54,7 @@ d5 = Data(type='latent', name='lat2', convergence=0.5, pretrained='lat1')
 test_data = [d1, d2, d3]
 
 
-@pytest.mark.skipif("TRAVIS" in os.environ,
+@pytest.mark.skipif("TRAVIS" in os.environ or "GITHUB_ACTIONS" in os.environ,
                     reason='Suppress training test in CI')
 @pytest.mark.parametrize('data', test_data)
 def test_train(config: Config, data: Data) -> None:
