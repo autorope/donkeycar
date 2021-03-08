@@ -16,14 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
+      - name: if_linux
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          FILE: 'install/envs/pc.yml'
+      - name: if_mac
+        if: matrix.os == 'macos-latest'
+        env:
+          FILE: 'install/envs/mac.yml'
         with:
           python-version: 3.7
           activate-environment: donkey
-          environment-file:
-            if matrix.os == 'ubuntu-latest'
-              install/envs/pc.yml
-            if matrix.os == 'macos-latest'
-              install/envs/mac.yml
+          environment-file: $FILE
           auto-activate-base: false
           channels: conda-forge
       - run: |
