@@ -139,7 +139,6 @@ class Vehicle:
             print("starting drive loop")
             for entry in self.parts:
                 if entry.get('thread'):
-                    print("part entry", entry)
                     # start the update thread
                     entry.get('thread').start()
 
@@ -181,7 +180,6 @@ class Vehicle:
         loop over all parts
         '''
         for entry in self.parts:
-            print("trying part ", entry)
             run = True
             # check run condition, if it exists
             if entry.get('run_condition'):
