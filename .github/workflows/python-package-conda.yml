@@ -5,29 +5,17 @@ on: [push, pull_request]
 jobs:
   checkout-test:
     name: set up python 3.7
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v2
       - uses: conda-incubator/setup-miniconda@v2
-      - name: if_linux
-        if: matrix.os == 'ubuntu-latest'
-        env:
-          FILE: 'install/envs/pc.yml'
-      - name: if_mac
-        if: matrix.os == 'macos-latest'
-        env:
-          FILE: 'install/envs/mac.yml'
         with:
           python-version: 3.7
           activate-environment: donkey
-          environment-file: $FILE
+          environment-file: install/envs/pc.yml
           auto-activate-base: false
           channels: conda-forge
       - run: |
