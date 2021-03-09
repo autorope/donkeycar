@@ -2,6 +2,8 @@
 """
 Scripts to drive a donkey car
 
+
+
 Usage:
     manage.py drive [--model=<model>] [--type=(linear|categorical|tflite_linear)]
     manage.py calibrate
@@ -38,7 +40,7 @@ class DriveMode:
 
 
 class PilotCondition:
-    """ Helper class to determine how is in charge of driving"""
+    """ Helper class to determine who is in charge of driving"""
     def run(self, mode):
         return mode != 'user'
 
@@ -107,8 +109,10 @@ def drive(cfg, model_path=None, model_type=None):
 
     # add lidar
     if cfg.USE_LIDAR:
-        lidar = RPLIdar()
-        car.add(lidar, outputs=['user/distances', 'user/angles'])
+        if cfg.LIDAR_TYPE == 'RP':
+            print("adding RP lidar part")
+            lidar = RPLidar()
+            car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
 
     # add controller
     if cfg.USE_RC:
@@ -119,6 +123,9 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
         car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
         car.add(RCHelper(), outputs=['user/mode'])
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                            mode=cfg.WEB_INIT_MODE)
+        car.add(ctr,inputs=['cam/image_array'], outputs=['recording'], threaded=True)
 
     else:
         if cfg.USE_JOYSTICK_AS_DEFAULT:
@@ -131,11 +138,10 @@ def drive(cfg, model_path=None, model_type=None):
                 ctr.js = netwkJs
         else:
             ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                     mode=cfg.WEB_INIT_MODE)
+                                            mode=cfg.WEB_INIT_MODE)
         car.add(ctr,
                 inputs=['cam/image_array'],
-                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-                threaded=True)
+                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'], threaded=True)
 
     # pilot condition to determine if user or ai are driving
     car.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
@@ -146,7 +152,7 @@ def drive(cfg, model_path=None, model_type=None):
     if model_path:
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
-        inputs = ['cam/image_array']
+        inputs = ['cam/image_array', 'lidar/dist_array']
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
@@ -179,8 +185,13 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(throttle, inputs=['throttle'])
 
     # add tub to save data
-    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
-    types = ['image_array', 'float', 'float', 'str']
+    if cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'nparray','float', 'float', 'str']
+    else:    
+        inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'float', 'float', 'str']
+
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
