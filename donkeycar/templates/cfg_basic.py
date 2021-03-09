@@ -4,7 +4,7 @@ CAR CONFIG
 This file is read by your car application's manage.py script to change the car
 performance. 
 
-EXMAPLE
+EXAMPLE
 -----------
 import dk
 cfg = dk.load_config(config_path='~/mycar/config.py')
@@ -53,6 +53,12 @@ USE_RC = False
 STEERING_RC_GPIO = 26
 THROTTLE_RC_GPIO = 20
 DATA_WIPER_RC_GPIO = 19
+
+#LOGGING
+HAVE_CONSOLE_LOGGING = True
+LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+
 
 #THROTTLE
 THROTTLE_CHANNEL = 0

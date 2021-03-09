@@ -68,6 +68,7 @@ class RPLidar(object):
 
 
     def shutdown(self):
+        print("Stopping Lidar...")
         self.on = False
         time.sleep(2)
         self.lidar.stop()
