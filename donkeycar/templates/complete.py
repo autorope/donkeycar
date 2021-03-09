@@ -35,6 +35,9 @@ from donkeycar.utils import *
 logger = logging.getLogger()
 
 
+logger = logging.getLogger()
+
+
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
     '''
     Construct a working robotic vehicle from many parts.
@@ -68,10 +71,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         ch = logging.StreamHandler()
         ch.setFormatter(logging.Formatter(cfg.LOGGING_FORMAT))
         logger.addHandler(ch)
-
-    if cfg.HAVE_MQTT_TELEMETRY:
-        from donkeycar.parts.telemetry import MqttTelemetry
-        tel = MqttTelemetry(cfg)
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
@@ -632,8 +631,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     # Telemetry (we add the same metrics added to the TubHandler
     if cfg.HAVE_MQTT_TELEMETRY:
-        telem_inputs, _ = tel.add_step_inputs(inputs, types)
-        V.add(tel, inputs=telem_inputs, outputs=["tub/queue_size"], threaded=True)
+        from donkeycar.parts.telemetry import MqttTelemetry
+        published_inputs, published_types = MqttTelemetry.filter_supported_metrics(inputs, types)
+        tel = MqttTelemetry(cfg, default_inputs=published_inputs, default_types=published_types)
+        V.add(tel, inputs=published_inputs, outputs=["tub/queue_size"], threaded=True)
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue

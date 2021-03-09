@@ -205,6 +205,9 @@ TELEMETRY_DEFAULT_TYPES = 'float,float'
 # PERF MONITOR
 HAVE_PERFMON = False
 
+# PERF MONITOR
+HAVE_PERFMON = False
+
 #RECORD OPTIONS
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
 AUTO_CREATE_NEW_TUB = False     #create a new tub (tub_YY_MM_DD) directory when recording or append records to data directory directly
