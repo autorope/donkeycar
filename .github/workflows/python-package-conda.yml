@@ -5,7 +5,16 @@ on: [push, pull_request]
 jobs:
   checkout-test:
     name: set up python 3.7
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            ENV_FILE: install/envs/mac.yml
+
+          - os: ubuntu-latest
+            ENV_FILE: install/envs/pc.yml
+
     defaults:
       run:
         shell: bash -l {0}
@@ -15,13 +24,12 @@ jobs:
         with:
           python-version: 3.7
           activate-environment: donkey
-          environment-file: install/envs/pc.yml
+          environment-file: ${{matrix.ENV_FILE}}
           auto-activate-base: false
           channels: conda-forge
       - run: |
           conda info
           conda list
+          echo Environment file ${{matrix.ENV_FILE}}
           pip install -e .[pc]
           pytest
-
-
