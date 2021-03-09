@@ -2,8 +2,6 @@
 Lidar
 """
 
-# requies glob to be installed: "pip3 install glob2"
-
 import time
 import math
 import pickle
@@ -16,26 +14,15 @@ class RPLidar(object):
     '''
     https://github.com/SkoltechRobotics/rplidar
     '''
-    def __init__(self, debug=False):
+    def __init__(self, port='/dev/ttyUSB0'):
         from rplidar import RPLidar
-        import glob
-        temp_list = glob.glob ('/dev/ttyUSB*')
-        result = []
-        for a_port in temp_list:
-            try:
-                s = serial.Serial(a_port)
-                s.close()
-                result.append(a_port)
-            except serial.SerialException:
-                pass
-        self.port = result[0]
+        self.port = port
         self.distances = [] #a list of distance measurements 
         self.angles = [] # a list of angles corresponding to dist meas above
-        self.lidar = RPLidar(self.port, baudrate=115200)
+        self.lidar = RPLidar(self.port)
         self.lidar.clear_input()
         time.sleep(1)
         self.on = True
-        print("starting lidar")
         #print(self.lidar.get_info())
         #print(self.lidar.get_health())
 
@@ -51,21 +38,7 @@ class RPLidar(object):
                 print('serial.serialutil.SerialException from Lidar. common when shutting down.')
 
     def run_threaded(self):
-        lowerang = 44
-        higherang = 136
-        sorted_distances = []
-        if (self.angles != []) and (self.distances != []):
-            angs = np.copy(self.angles)
-            dists = np.copy(self.distances)
-
-            filter_angs = angs[(angs > lowerang) & (angs < higherang)]
-            filter_dist = dists[(angs > lowerang) & (angs < higherang)] #sorts distances based on angle values
-
-            angles_ind = np.argsort(filter_angs)         # returns the indexes that sorts filter_angs
-            if angles_ind != []:
-                sorted_distances = np.argsort(filter_dist) # sorts distances based on angle indexes
-        return sorted_distances
-
+        return self.distances, self.angles
 
     def shutdown(self):
         self.on = False
@@ -74,46 +47,6 @@ class RPLidar(object):
         self.lidar.stop_motor()
         self.lidar.disconnect()
 
-class YDLidar(object):
-    '''
-    https://pypi.org/project/PyLidar3/
-    '''
-    def __init__(self, port='/dev/ttyUSB0'):
-        import PyLidar3
-        self.port = port
-        self.distances = [] #a list of distance measurements 
-        self.angles = [] # a list of angles corresponding to dist meas above
-        self.lidar = PyLidar3.YdLidarX4(port)
-        if(self.lidar.Connect()):
-            print(self.lidar.GetDeviceInfo())
-            self.gen = self.lidar.StartScanning()
-        else:
-            print("Error connecting to lidar")
-        self.on = True
-        #print(self.lidar.get_info())
-        #print(self.lidar.get_health())
-
-    def update(self, debug = False):
-        while self.on:
-            try:
-                self.data = next(self.gen)
-                for angle in range(0,360):
-                    if(self.data[angle]>1000):
-                        self.angles = [angle] 
-                        self.distances = [self.data[angle]]
-                if debug:
-                    return self.distances, self.angles
-            except serial.serialutil.SerialException:
-                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
-
-    def run_threaded(self):
-        return self.distances, self.angles
-
-    def shutdown(self):
-        self.on = False
-        time.sleep(2)
-        self.lidar.StopScanning()
-        self.lidar.Disconnect()
 
 class LidarPlot(object):
     '''

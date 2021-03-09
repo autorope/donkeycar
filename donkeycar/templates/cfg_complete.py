@@ -4,7 +4,7 @@ CAR CONFIG
 This file is read by your car application's manage.py script to change the car
 performance.
 
-EXAMPLE
+EXMAPLE
 -----------
 import dk
 cfg = dk.load_config(config_path='~/mycar/config.py')
@@ -189,13 +189,18 @@ LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'I
 LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 
 #TELEMETRY
-TELEMETRY_DONKEY_NAME = 'my_robot1234'
-TELEMETRY_PUBLISH_PERIOD = 1
 HAVE_MQTT_TELEMETRY = False
+TELEMETRY_DONKEY_NAME = 'my_robot1234'
 TELEMETRY_MQTT_TOPIC_TEMPLATE = 'donkey/%s/telemetry'
-TELEMETRY_MQTT_JSON_ENABLE = True
-TELEMETRY_MQTT_BROKER_HOST = 'broker.emqx.io'
+TELEMETRY_MQTT_JSON_ENABLE = False
+TELEMETRY_MQTT_BROKER_HOST = 'broker.hivemq.com'
 TELEMETRY_MQTT_BROKER_PORT = 1883
+TELEMETRY_PUBLISH_PERIOD = 1
+TELEMETRY_LOGGING_ENABLE = True
+TELEMETRY_LOGGING_LEVEL = 'INFO' # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+TELEMETRY_LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle,recording'
+TELEMETRY_DEFAULT_TYPES = 'float,float'
 
 # PERF MONITOR
 HAVE_PERFMON = False
@@ -271,6 +276,11 @@ GYM_CONF["bio"] = "I race robots."
 
 SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
 SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
+
+# Save info from Simulator (pln)
+SIM_RECORD_LOCATION = False
+SIM_RECORD_GYROACCEL= False
+SIM_RECORD_VELOCITY = False
 
 #publish camera over network
 #This is used to create a tcp service to pushlish the camera feed

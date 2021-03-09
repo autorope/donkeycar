@@ -620,21 +620,18 @@ class XboxOneJoystick(Joystick):
 
         self.axis_names = {
             0x00: 'left_stick_horz',
-            0x5: 'right_stick_horz',
-            0x1: 'left_stick_vert',
-            0x4: 'left_stick_vert',
-            0xa: 'left_trigger',
-            0x9: 'right_trigger'
+            0x02: 'left_trigger',
+            0x05: 'right_trigger'
         }
 
         self.button_names = {
             0x130: 'a_button',
             0x131: 'b_button',
-            0x132: 'x_button',
-            0x133: 'y_button',
-            0x134: 'left_shoulder',
-            0x135: 'right_shoulder',
-            0x137: 'options',
+            0x133: 'x_button',
+            0x134: 'y_button',
+            0x136: 'left_shoulder',
+            0x137: 'right_shoulder',
+            0x13b: 'options',
         }
 
 
@@ -1281,12 +1278,13 @@ class XboxOneJoystickController(JoystickController):
         '''
 
         self.button_down_trigger_map = {
+            'a_button': self.toggle_mode,
             'b_button': self.toggle_manual_recording,
-            'y_button': self.erase_last_N_records,
-            'a_button': self.emergency_stop,
+            'x_button': self.erase_last_N_records,
+            'y_button': self.emergency_stop,
             'right_shoulder': self.increase_max_throttle,
             'left_shoulder': self.decrease_max_throttle,
-            'options': self.toggle_mode,
+            'options': self.toggle_constant_throttle,
         }
 
         self.axis_trigger_map = {

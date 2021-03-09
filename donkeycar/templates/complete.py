@@ -16,7 +16,6 @@ Options:
 """
 import os
 import time
-
 import logging
 from docopt import docopt
 import numpy as np
@@ -32,7 +31,6 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
-
 
 logger = logging.getLogger()
 
@@ -70,6 +68,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         ch = logging.StreamHandler()
         ch.setFormatter(logging.Formatter(cfg.LOGGING_FORMAT))
         logger.addHandler(ch)
+
+    if cfg.HAVE_MQTT_TELEMETRY:
+        from donkeycar.parts.telemetry import MqttTelemetry
+        tel = MqttTelemetry(cfg)
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
@@ -113,12 +115,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             from donkeycar.parts.dgym import DonkeyGymEnv
 
         inputs = []
+        outputs = ['cam/image_array']
         threaded = True
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
-            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
+            #rbx
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
-            inputs = ['angle', 'throttle']
+            inputs  = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
             cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
@@ -146,7 +150,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
-        V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
+        # Donkey gym part will output position information if it is configured
+        if cfg.DONKEY_GYM:
+            if cfg.SIM_RECORD_LOCATION:
+                outputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
+            if cfg.SIM_RECORD_GYROACCEL:
+                outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
+            if cfg.SIM_RECORD_VELOCITY:
+                outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+            
+        V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -587,6 +600,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
 
+    # rbx
+    if cfg.DONKEY_GYM:
+        if cfg.SIM_RECORD_LOCATION:  
+            inputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
+            types  += ['float', 'float', 'float', 'float', 'float']
+        if cfg.SIM_RECORD_GYROACCEL: 
+            inputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
+            types  += ['float', 'float', 'float', 'float', 'float', 'float']
+        if cfg.SIM_RECORD_VELOCITY:  
+            inputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+            types  += ['float', 'float', 'float']
+
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
@@ -607,10 +632,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     # Telemetry (we add the same metrics added to the TubHandler
     if cfg.HAVE_MQTT_TELEMETRY:
-        from donkeycar.parts.telemetry import MqttTelemetry
-        published_inputs, published_types = MqttTelemetry.filter_supported_metrics(inputs, types)
-        tel = MqttTelemetry(cfg, default_inputs=published_inputs, default_types=published_types)
-        V.add(tel, inputs=published_inputs, outputs=["tub/queue_size"], threaded=True)
+        telem_inputs, _ = tel.add_step_inputs(inputs, types)
+        V.add(tel, inputs=telem_inputs, outputs=["tub/queue_size"], threaded=True)
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue

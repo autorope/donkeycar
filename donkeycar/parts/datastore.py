@@ -235,9 +235,6 @@ class Tub(object):
                 name = self.make_file_name(key, ext='.png')
                 img.save(os.path.join(self.path, name))
                 json_data[key]=name
-                
-            elif typ == 'nparray':                         # if array type
-                json_data[key] = (np.array(val)).tolist()  # store the input as an array into tub
 
             else:
                 msg = 'Tub does not know what to do with this type {}'.format(typ)

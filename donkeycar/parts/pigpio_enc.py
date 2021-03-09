@@ -13,11 +13,6 @@ class OdomDist(object):
         self.meters_per_second = 0
         self.debug = debug
         self.prev_ticks = 0
-        self.distance = 0
-        self.prev_distance = 0
-        self.ave_velocity = []
-        for i in range(10):
-            self.ave_velocity.append(0)
 
     def run(self, ticks, throttle):
         """
@@ -25,7 +20,8 @@ class OdomDist(object):
         inputs => throttle, used to determine positive or negative vel
         return => total dist (m), current vel (m/s), delta dist (m)
         """
-
+        new_ticks = ticks - self.prev_ticks
+        self.prev_ticks = ticks
 
         #save off the last time interval and reset the timer
         start_time = self.last_time
@@ -34,26 +30,25 @@ class OdomDist(object):
         
         #calculate elapsed time and distance traveled
         seconds = end_time - start_time
-        self.distance = ticks * self.m_per_tick  #converted to meters here
-        # if throttle < 0.0:
-        #     print("throttle is negative")
-        #     self.distance = self.distance * -1.0
-        delta_distance = self.distance - self.prev_distance
-        instant_velocity = delta_distance/seconds
-        for i in range(9):  # do a moving average over a 1/2 second window (10 readings of a 20Hz feed)
-            self.ave_velocity[9-i] = self.ave_velocity[8-i]  # move the time window down one
-        self.ave_velocity[0] = instant_velocity  # stick the latest reading at the start
-        velocity = sum(self.ave_velocity)/10  # moving average
+        distance = new_ticks * self.m_per_tick
+        if throttle < 0.0:
+            distance = distance * -1.0
+        velocity = distance / seconds
+        
         #update the odometer values
-        self.meters += delta_distance
+        self.meters += distance
         self.meters_per_second = velocity
-        self.prev_distance = self.distance
+
         #console output for debugging
         if(self.debug):
-            print('distance (m):', round(self.meters,3))
-            print('velocity (m/s):', round(self.meters_per_second,3))
+            print('seconds:', seconds)
+            print('delta:', distance)
+            print('velocity:', velocity)
 
-        return self.meters, self.meters_per_second, self.distance
+            print('distance (m):', self.meters)
+            print('velocity (m/s):', self.meters_per_second)
+
+        return self.meters, self.meters_per_second, distance
 
 
 class PiPGIOEncoder():
