@@ -11,7 +11,8 @@ jobs:
     name: Lint code base
     # Set the type of machine to run on
     runs-on: ubuntu-latest
-
+    # Don't flag failure
+    continue-on-error: true
     steps:
       # Checks out a copy of your repository on the ubuntu-latest machine
       - name: Checkout code

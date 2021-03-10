@@ -18,7 +18,7 @@ jobs:
 
           - os: ubuntu-latest
             ENV_FILE: install/envs/pc.yml
-
+      fail-fast: false
     defaults:
       run:
         shell: bash -l {0}
