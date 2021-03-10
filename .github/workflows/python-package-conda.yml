@@ -1,10 +1,6 @@
 name: Python package and test
 
-on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-  pull_request:
+on: [push, pull_request]
 
 jobs:
   checkout-test:
@@ -17,8 +13,8 @@ jobs:
             ENV_FILE: install/envs/mac.yml
 
           - os: ubuntu-latest
-            ENV_FILE: install/envs/ubuntu.yml
-      fail-fast: false
+            ENV_FILE: install/envs/pc.yml
+
     defaults:
       run:
         shell: bash -l {0}
@@ -30,7 +26,7 @@ jobs:
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
           auto-activate-base: false
-          channels: conda-forge, pytorch
+          channels: conda-forge
       - run: |
           conda info
           conda list
