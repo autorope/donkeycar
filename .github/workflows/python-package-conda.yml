@@ -1,6 +1,10 @@
 name: Python package and test
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
 
 jobs:
   checkout-test:
