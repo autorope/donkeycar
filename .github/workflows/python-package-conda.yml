@@ -1,6 +1,10 @@
 name: Python package and test
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
 
 jobs:
   checkout-test:
@@ -14,7 +18,7 @@ jobs:
 
           - os: ubuntu-latest
             ENV_FILE: install/envs/pc.yml
-
+      fail-fast: false
     defaults:
       run:
         shell: bash -l {0}
