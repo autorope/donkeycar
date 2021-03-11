@@ -16,9 +16,11 @@ class RPLidar(object):
     '''
     https://github.com/SkoltechRobotics/rplidar
     '''
-    def __init__(self, debug=False):
+    def __init__(self, lower_limit = 0, upper_limit = 360, debug=False):
         from rplidar import RPLidar
         import glob
+        self.lower_limit = lower_limit
+        self.upper_limit = upper_limit
         temp_list = glob.glob ('/dev/ttyUSB*')
         result = []
         for a_port in temp_list:
@@ -50,15 +52,13 @@ class RPLidar(object):
                 print('serial.serialutil.SerialException from Lidar. common when shutting down.')
 
     def run_threaded(self):
-        lowerang = 44
-        higherang = 136
         sorted_distances = []
         if (self.angles != []) and (self.distances != []):
             angs = np.copy(self.angles)
             dists = np.copy(self.distances)
 
-            filter_angs = angs[(angs > lowerang) & (angs < higherang)]
-            filter_dist = dists[(angs > lowerang) & (angs < higherang)] #sorts distances based on angle values
+            filter_angs = angs[(angs > self.lower_limit) & (angs < self.upper_limit)]
+            filter_dist = dists[(angs > self.lower_limit) & (angs < self.upper_limit)] #sorts distances based on angle values
 
             angles_ind = np.argsort(filter_angs)         # returns the indexes that sorts filter_angs
             if angles_ind != []:

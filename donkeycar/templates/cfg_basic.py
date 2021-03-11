@@ -46,7 +46,9 @@ DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_
 
 # #LIDAR
 USE_LIDAR = False
-LIDAR_TYPE = 'RP' #(RP|YD) 
+LIDAR_TYPE = 'RP' #(RP|YD)
+LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor 
+UPPER_LIMIT = 136
 
 # #RC CONTROL
 USE_RC = False
