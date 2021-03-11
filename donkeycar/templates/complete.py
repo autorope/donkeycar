@@ -31,12 +31,47 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
+from donkeycar.parts.lidar import RPLidar
 
 logger = logging.getLogger()
 
+def calibrate(cfg):
+    """
+    Construct an auxiliary robotic vehicle from only the RC controllers and
+    prints their values. The RC remote usually has a tuning pot for the throttle
+    and steering channel. In this loop we run the controllers and simply print
+    their values in order to allow centering the RC pwm signals. If there is a
+    third channel on the remote we can use it for wiping bad data while
+    recording, so we print its values here, too.
+    """
+    donkey_car = dk.vehicle.Vehicle()
 
-logger = logging.getLogger()
+    # create the RC receiver
+    rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
+    rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
+    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
+    donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
+    donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
+    donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
 
+    # create plotter part for printing into the shell
+    class Plotter:
+        def run(self, angle, steering_on, throttle, throttle_on, wiper, wiper_on):
+            print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, '
+                  'throttle_on=%1d wiper=%+5.4f, wiper_on=%1d' %
+                  (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
+
+    # add plotter part
+    donkey_car.add(Plotter(), inputs=['user/angle', 'user/steering_on',
+                                      'user/throttle', 'user/throttle_on',
+                                      'user/wiper', 'user/wiper_on'])
+    # run the vehicle at 5Hz to keep network traffic down
+    donkey_car.start(rate_hz=10, max_loop_count=cfg.MAX_LOOPS)
+
+class RCHelper:
+    """ Helper class for RC controller to produce right mode"""
+    def run(self):
+        return 'user'
 
 def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
     '''
@@ -62,6 +97,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             model_type = cfg.DEFAULT_MODEL_TYPE
 
+
     #Initialize car
     V = dk.vehicle.Vehicle()
 
@@ -71,6 +107,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         ch = logging.StreamHandler()
         ch.setFormatter(logging.Formatter(cfg.LOGGING_FORMAT))
         logger.addHandler(ch)
+
+    if cfg.HAVE_MQTT_TELEMETRY:
+        from donkeycar.parts.telemetry import MqttTelemetry
+        tel = MqttTelemetry(cfg)
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
@@ -159,6 +199,26 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
+    
+    # add lidar
+    if cfg.USE_LIDAR:
+        if cfg.LIDAR_TYPE == 'RP':
+            print("adding RP lidar part")
+            lidar = RPLidar(lower_limit = cfg.LOWER_LIMIT, upper_limit = cfg.UPPER_LIMIT)
+            car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
+
+    # add controller
+    if cfg.USE_RC:
+        rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
+        rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
+        rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
+        car.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
+        car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
+        car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+        car.add(RCHelper(), outputs=['user/mode'])
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                            mode=cfg.WEB_INIT_MODE)
+        car.add(ctr,inputs=['cam/image_array'], outputs=['recording'], threaded=True)
 
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
@@ -575,12 +635,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
     #add tub to save data
-
-    inputs=['cam/image_array',
+    if cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'nparray','float', 'float', 'str']
+    else:    
+        inputs=['cam/image_array',
             'user/angle', 'user/throttle',
             'user/mode']
-
-    types=['image_array',
+        types=['image_array',
            'float', 'float',
            'str']
 
@@ -631,10 +693,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     # Telemetry (we add the same metrics added to the TubHandler
     if cfg.HAVE_MQTT_TELEMETRY:
-        from donkeycar.parts.telemetry import MqttTelemetry
-        published_inputs, published_types = MqttTelemetry.filter_supported_metrics(inputs, types)
-        tel = MqttTelemetry(cfg, default_inputs=published_inputs, default_types=published_types)
-        V.add(tel, inputs=published_inputs, outputs=["tub/queue_size"], threaded=True)
+        telem_inputs, _ = tel.add_step_inputs(inputs, types)
+        V.add(tel, inputs=telem_inputs, outputs=["tub/queue_size"], threaded=True)
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
@@ -669,4 +729,6 @@ if __name__ == '__main__':
               meta=args['--meta'])
     elif args['train']:
         print('Use python train.py instead.\n')
+    elif args['calibrate']:
+        calibrate(cfg)
 

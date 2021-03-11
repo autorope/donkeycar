@@ -111,7 +111,7 @@ def drive(cfg, model_path=None, model_type=None):
     if cfg.USE_LIDAR:
         if cfg.LIDAR_TYPE == 'RP':
             print("adding RP lidar part")
-            lidar = RPLidar()
+            lidar = RPLidar(lower_limit = cfg.LOWER_LIMIT, upper_limit = cfg.UPPER_LIMIT)
             car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
 
     # add controller
@@ -245,6 +245,7 @@ def calibrate(cfg):
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
+    print("you are running a beta of the Lidar branch of Donkeycar")
     if args['drive']:
         drive(cfg, model_path=args['--model'], model_type=args['--type'])
     elif args['calibrate']:
