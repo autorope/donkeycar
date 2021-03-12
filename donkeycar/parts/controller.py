@@ -619,9 +619,10 @@ class XboxOneJoystick(Joystick):
         super(XboxOneJoystick, self).__init__(*args, **kwargs)
 
         self.axis_names = {
-            0x00: 'left_stick_horz',
-            0x02: 'left_trigger',
-            0x05: 'right_trigger'
+            0x0 : 'left_stick_horz',
+            0x1 : 'left_stick_vert',
+            0x4 : 'right_stick_vert',
+            0x3 : 'right_stick_horz',
         }
 
         self.button_names = {
@@ -629,11 +630,16 @@ class XboxOneJoystick(Joystick):
             0x131: 'b_button',
             0x133: 'x_button',
             0x134: 'y_button',
-            0x136: 'left_shoulder',
-            0x137: 'right_shoulder',
             0x13b: 'options',
+            0x2: 'L1',
+            0x5: 'R1',
+            0x13e : 'L2',
+            0x13d : 'R2',
+            0x220 : 'dpad_up',
+            0x221 : 'dpad_down',
+            0x222 : 'dpad_left',
+            0x223 : 'dpad_right'
         }
-
 
 class LogitechJoystick(Joystick):
     '''
