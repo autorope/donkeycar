@@ -31,7 +31,7 @@ jobs:
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
           auto-activate-base: false
-          channels: conda-forge
+          channels: conda-forge, pytorch
       - run: |
           conda info
           conda list
