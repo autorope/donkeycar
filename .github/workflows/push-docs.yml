@@ -19,6 +19,7 @@ jobs:
         with:
           python-version: 3.7
           auto-activate-base: true
+          channels: defaults, conda-forge
       - run: |
           conda info
           conda list
