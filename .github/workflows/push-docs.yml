@@ -24,5 +24,5 @@ jobs:
           conda info
           conda list
           conda install mkdocs
-          # mkdocs gh-deploy
+          mkdocs gh-deploy
           echo Done!!!
