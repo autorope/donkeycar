@@ -40,7 +40,7 @@ Here are a couple systems that people have tried or talked about.
 
 * Pi-Zero - Yes, Try following the steps for the PiB/B+. They should work for the PiZero.
 
-## After a reboot, I don't see the (donkey) in front of the prompt, and I get python errors when I run
+### After a reboot, I don't see the (donkey) in front of the prompt, and I get python errors when I run
 
 1. If you used this disc setup guide above, you used conda to manage your virtual environment. You need to activate the donkey conda environment with:
 
