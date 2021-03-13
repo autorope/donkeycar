@@ -35,7 +35,7 @@ dependencies:
   - kivy=2.0.0
   - plotly
   - pip:
-    - --user
+    - --user --no-deps
     - rwin_pip_requirements.txt
 
 
