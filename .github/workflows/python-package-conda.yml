@@ -17,8 +17,6 @@ jobs:
             ENV_FILE: install/envs/mac.yml
           - os: ubuntu-latest
             ENV_FILE: install/envs/pc.yml
-          - os: windows-latest
-            ENV_FILE: install/envs/win.yml
       fail-fast: false
     defaults:
       run:
