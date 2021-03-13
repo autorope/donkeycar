@@ -248,7 +248,7 @@ Opens a UI to analyse tub data with features for.
 
 The UI is an alternative to the web based `donkey tubclean`.
 
-![Tub UI](/assets/tub_ui.png)
+![Tub UI](/assets/donkey_ui.png)
 
 If you have more data than `user/angle` and `user/throttle` and want to 
 visualise this through the bars, then you have to add an entry in the 
