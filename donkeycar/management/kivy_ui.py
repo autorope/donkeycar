@@ -4,9 +4,17 @@ from copy import copy
 from datetime import datetime
 from functools import partial
 from threading import Thread
+from collections import namedtuple
+import io
+import os
+import atexit
+import yaml
+from PIL import Image as PilImage
+import pandas as pd
+import numpy as np
+import plotly.express as px
 
 from kivy.clock import Clock
-from kivy.core.window import Window
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.image import Image
@@ -18,13 +26,6 @@ from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
 from kivy.uix.screenmanager import ScreenManager, Screen
-
-import io
-import os
-from PIL import Image as PilImage
-import pandas as pd
-import numpy as np
-import plotly.express as px
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
@@ -41,6 +42,11 @@ Builder.load_file(os.path.join(os.path.dirname(__file__), 'ui.kv'))
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
 rc_handler = RcFileHandler()
 LABEL_SPINNER_TEXT = 'Add/remove'
+
+# Data struct to show tub field in the progress bar, containing the name,
+# the name of the maximum value in the config file and if it is centered.
+FieldProperty = namedtuple('FieldProperty',
+                           ['field', 'max_value_id', 'centered'])
 
 
 def get_norm_value(value, cfg, field_property, normalised=True):
@@ -62,43 +68,129 @@ def train_screen():
     return App.get_running_app().train_screen if App.get_running_app() else None
 
 
+def recursive_update(target, source):
+    """ Recursively update dictionary """
+    for k, v in source.items():
+        v_t = target.get(k)
+        if isinstance(v, dict) and isinstance(v_t, dict):
+            recursive_update(v_t, v)
+        else:
+            target[k] = v
+
+
+def decompose(field):
+    """ Function to decompose a string vector field like 'gyroscope_1' into a
+        tuple ('gyroscope', 1) """
+    field_split = field.split('_')
+    if len(field_split) > 1 and field_split[-1].isdigit():
+        return '_'.join(field_split[:-1]), int(field_split[-1])
+    return field, None
+
+
+class RcFileHandler:
+    """ This handles the config file which stores the data, like the field
+        mapping for displaying of bars and last opened car, tub directory. """
+
+    # These entries are expected in every tub, so they don't need to be in
+    # the file
+    known_entries = [
+        FieldProperty('user/angle', '', centered=True),
+        FieldProperty('user/throttle', '', centered=False),
+        FieldProperty('pilot/angle', '', centered=True),
+        FieldProperty('pilot/throttle', '', centered=False),
+    ]
+
+    def __init__(self, file_path='~/.donkeyrc'):
+        self.file_path = os.path.expanduser(file_path)
+        self.data = self.create_data()
+        recursive_update(self.data, self.read_file())
+        self.field_properties = self.create_field_properties()
+
+        def exit_hook():
+            self.write_file()
+        # Automatically save config when program ends
+        atexit.register(exit_hook)
+
+    def create_field_properties(self):
+        """ Merges known field properties with the ones from the file """
+        field_properties = {entry.field: entry for entry in self.known_entries}
+        field_list = self.data.get('field_mapping')
+        if field_list is None:
+            field_list = {}
+        for entry in field_list:
+            assert isinstance(entry, dict), \
+                'Dictionary required in each entry in the field_mapping list'
+            field_property = FieldProperty(**entry)
+            field_properties[field_property.field] = field_property
+        return field_properties
+
+    def create_data(self):
+        data = dict()
+        data['user_pilot_map'] = {'user/throttle': 'pilot/throttle',
+                                  'user/angle': 'pilot/angle'}
+        return data
+
+    def read_file(self):
+        if os.path.exists(self.file_path):
+            with open(self.file_path) as f:
+                data = yaml.load(f, Loader=yaml.FullLoader)
+                print(f'Donkey file {self.file_path} loaded.')
+                return data
+        else:
+            print(f'Donkey file {self.file_path} does not exist.')
+            return {}
+
+    def write_file(self):
+        if os.path.exists(self.file_path):
+            print(f'Donkey file {self.file_path} updated.')
+        with open(self.file_path, mode='w') as f:
+            now = datetime.datetime.now()
+            self.data['time_stamp'] = now
+            data = yaml.dump(self.data, f)
+            return data
+
+
 class MySpinnerOption(SpinnerOption):
+    """ Customization for Spinner """
     pass
 
 
 class MySpinner(Spinner):
+    """ Customization of Spinner drop down menu """
     def __init__(self, **kwargs):
         super().__init__(option_cls=MySpinnerOption, **kwargs)
 
 
 class FileChooserPopup(Popup):
-    load = ObjectProperty()
+    """ File Chooser popup window"""
     root_path = StringProperty()
     filters = ListProperty()
 
 
 class FileChooserBase:
+    """ Base class for file chooser widgets"""
     file_path = StringProperty("No file chosen")
     popup = ObjectProperty(None)
     root_path = os.path.expanduser('~')
     title = StringProperty(None)
     filters = ListProperty()
 
-    def __init__(self):
-        pass
-
     def open_popup(self):
-        self.popup = FileChooserPopup(load=self.load, root_path=self.root_path,
-                                      title=self.title, filters=self.filters)
+        """ Method to open the file chooser popup"""
+        self.popup = FileChooserPopup(root_path=self.root_path,
+                                      title=self.title,
+                                      filters=self.filters)
         self.popup.open()
 
     def load(self, selection):
+        """ Method to load the chosen file into the path and call an action"""
         self.file_path = str(selection[0])
         self.popup.dismiss()
         print(self.file_path)
         self.load_action()
 
     def load_action(self):
+        """ Virtual method to run when file_path has been updated """
         pass
 
 
@@ -108,11 +200,13 @@ class ConfigManager(BoxLayout, FileChooserBase):
     file_path = StringProperty(rc_handler.data.get('car_dir', ''))
 
     def load_action(self):
+        """ Load the config from the file path"""
         if self.file_path:
             try:
                 path = os.path.join(self.file_path, 'config.py')
                 self.config = load_config(path)
                 print('Loaded config', path)
+                # If load successful, store into app config
                 rc_handler.data['car_dir'] = self.file_path
             except FileNotFoundError:
                 print(f'Directory {self.file_path} has no config.py')
@@ -129,12 +223,19 @@ class TubLoader(BoxLayout, FileChooserBase):
     records = None
 
     def load_action(self):
+        """ Update tub from the file path"""
         if self.update_tub():
+            # If update successful, store into app config
             rc_handler.data['last_tub'] = self.file_path
 
     def update_tub(self, event=None):
         if not self.file_path:
             return False
+        # If config not yet loaded return
+        cfg = tub_screen().ids.config_manager.config
+        if not cfg:
+            return False
+        # At least check if there is a manifest file in the tub path
         if not os.path.exists(os.path.join(self.file_path, 'manifest.json')):
             tub_screen().status(f'Path {self.file_path} is not a valid tub.')
             return False
@@ -143,10 +244,7 @@ class TubLoader(BoxLayout, FileChooserBase):
         except Exception as e:
             tub_screen().status(f'Failed loading tub: {str(e)}')
             return False
-
-        cfg = tub_screen().ids.config_manager.config
-        if not cfg:
-            return False
+        # Check if filter is set in tub screen
         expression = tub_screen().ids.tub_filter.filter_expression
 
         # Use filter, this defines the function
@@ -178,12 +276,15 @@ class TubLoader(BoxLayout, FileChooserBase):
 
 
 class LabelBar(BoxLayout):
+    """ Widget that combines a label with a progress bar. This is used to
+        display the record fields in the data panel."""
     field = StringProperty()
     field_property = ObjectProperty()
     config = ObjectProperty()
     msg = ''
 
     def update(self, record):
+        """ This function is called everytime the current record is updated"""
         if not record:
             return
         field, index = decompose(self.field)
@@ -191,7 +292,7 @@ class LabelBar(BoxLayout):
             val = record.underlying[field]
             if index is not None:
                 val = val[index]
-            # update bar if present
+            # Update bar if a field property for this field is known
             if self.field_property:
                 norm_value = get_norm_value(val, self.config,
                                             self.field_property)
@@ -212,7 +313,11 @@ class LabelBar(BoxLayout):
 
 
 class DataPanel(BoxLayout):
+    """ Data panel widget that contains the label/bar widgets and the drop
+        down menu to select/deselect fields."""
     record = ObjectProperty()
+    # dual mode is used in the pilot arena where we only show angle and
+    # throttle or speed
     dual_mode = BooleanProperty(False)
     auto_text = StringProperty(LABEL_SPINNER_TEXT)
     throttle_field = StringProperty('user/throttle')
@@ -224,6 +329,9 @@ class DataPanel(BoxLayout):
         self.screen = ObjectProperty()
 
     def add_remove(self):
+        """ Method to add or remove a LabelBar. Depending on the value of the
+            drop down menu the LabelBar is added if it is not present otherwise
+            removed."""
         field = self.ids.data_spinner.text
         if field is LABEL_SPINNER_TEXT:
             return
@@ -252,6 +360,7 @@ class DataPanel(BoxLayout):
         self.auto_text = field
 
     def on_record(self, obj, record):
+        """ Kivy function that is called every time self.record changes"""
         for v in self.labels.values():
             v.update(record)
 
@@ -262,12 +371,13 @@ class DataPanel(BoxLayout):
 
 
 class FullImage(Image):
-
+    """ Widget to display an image that fills the space. """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.core_image = None
 
     def update(self, record):
+        """ This method is called ever time a record gets updated. """
         try:
             img_arr = self.get_image(record)
             pil_image = PilImage.fromarray(img_arr)
@@ -286,6 +396,7 @@ class FullImage(Image):
 
 
 class ControlPanel(BoxLayout):
+    """ Class for control panel navigation. """
     screen = ObjectProperty()
     speed = NumericProperty(1.0)
     record_display = StringProperty()
@@ -293,6 +404,13 @@ class ControlPanel(BoxLayout):
     fwd = None
 
     def start(self, fwd=True, continuous=False):
+        """
+        Method to cycle through records if either single <,> or continuous
+        <<, >> buttons are pressed
+        :param fwd:         If we go forward or backward
+        :param continuous:  If we do <<, >> or <, >
+        :return:            None
+        """
         time.sleep(0.1)
         call = partial(self.step, fwd, continuous)
         if continuous:
@@ -304,6 +422,13 @@ class ControlPanel(BoxLayout):
         self.clock = Clock.schedule_interval(call, cycle_time)
 
     def step(self, fwd=True, continuous=False, *largs):
+        """
+        Updating a single step and cap/floor the index so we stay w/in the tub.
+        :param fwd:         If we go forward or backward
+        :param continuous:  If we are in continuous mode <<, >>
+        :param largs:       dummy
+        :return:            None
+        """
         new_index = self.screen.index + (1 if fwd else -1)
         if new_index >= tub_screen().ids.tub_loader.len:
             new_index = 0
@@ -328,6 +453,7 @@ class ControlPanel(BoxLayout):
             self.start(self.fwd, True)
 
     def update_speed(self, up=True):
+        """ Method to update the speed on the controller"""
         values = self.ids.control_spinner.values
         idx = values.index(self.ids.control_spinner.text)
         if up and idx < len(values) - 1:
@@ -336,10 +462,12 @@ class ControlPanel(BoxLayout):
             self.ids.control_spinner.text = values[idx - 1]
 
     def set_button_status(self, disabled=True):
+        """ Method to disable(enable) all buttons. """
         self.ids.run_bwd.disabled = self.ids.run_fwd.disabled = \
             self.ids.step_fwd.disabled = self.ids.step_bwd.disabled = disabled
 
     def on_keyboard(self, key, scancode):
+        """ Method to chack with keystroke has ben sent. """
         if key == ' ':
             if self.clock and self.clock.is_triggered:
                 self.stop()
@@ -359,10 +487,12 @@ class ControlPanel(BoxLayout):
 
 
 class TubEditor(BoxLayout):
+    """ Tub editor widget. Contains left/right index interval and the
+        manipulator buttons for deleting / restoring and reloading """
     lr = ListProperty([0, 0])
 
     def set_lr(self, is_l=True):
-        """ Sets left or right range to the current tubrecord index """
+        """ Sets left or right range to the current tub record index """
         if not tub_screen().current_record:
             return
         self.lr[0 if is_l else 1] = tub_screen().current_record.underlying['_index']
@@ -380,6 +510,7 @@ class TubEditor(BoxLayout):
 
 
 class TubFilter(BoxLayout):
+    """ Tub filter widget. """
     filter_expression = StringProperty(None)
     record_filter = StringProperty(rc_handler.data.get('record_filter', ''))
 
@@ -480,6 +611,7 @@ class DataPlot(BoxLayout):
 
 
 class TubScreen(Screen):
+    """ First screen of the app managing the tub data. """
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
     keys_enabled = BooleanProperty(True)
@@ -489,10 +621,12 @@ class TubScreen(Screen):
         self.ids.tub_loader.update_tub()
 
     def on_index(self, obj, index):
+        """ Kivy method that is called if self.index changes"""
         self.current_record = self.ids.tub_loader.records[index]
         self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
+        """ Kivy method that is called if self.current_record changes."""
         self.ids.img.update(record)
         i = record.underlying['_index']
         self.ids.control_panel.record_display = f"Record {i:06}"
@@ -524,6 +658,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 print(e)
 
     def on_model_type(self, obj, model_type):
+        """ Kivy method that is called if self.model_type changes. """
         if self.model_type and self.model_type != 'Model type':
             cfg = tub_screen().ids.config_manager.config
             if cfg:
@@ -531,11 +666,13 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 self.ids.pilot_button.disabled = False
 
     def on_num(self, e, num):
+        """ Kivy method that is called if self.num changes. """
         self.file_path = rc_handler.data.get('pilot_' + self.num, '')
         self.model_type = rc_handler.data.get('model_type_' + self.num, '')
 
 
 class OverlayImage(FullImage):
+    """ Widget to display the image and the user/pilot data for the tub. """
     keras_part = ObjectProperty()
     pilot_record = ObjectProperty()
     throttle_field = StringProperty('user/throttle')
@@ -574,6 +711,7 @@ class OverlayImage(FullImage):
 
 
 class PilotScreen(Screen):
+    """ Screen to do the pilot vs pilot comparison ."""
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
     keys_enabled = BooleanProperty(False)
@@ -582,10 +720,14 @@ class PilotScreen(Screen):
     config = ObjectProperty()
 
     def on_index(self, obj, index):
+        """ Kivy method that is called if self.index changes. Here we update
+            self.current_record and the slider value. """
         self.current_record = tub_screen().ids.tub_loader.records[index]
         self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
+        """ Kivy method that is called when self.current_index changes. Here
+            we update the images and the control panel entry."""
         i = record.underlying['_index']
         self.ids.pilot_control.record_display = f"Record {i:06}"
         self.ids.img_1.update(record)
@@ -604,6 +746,8 @@ class PilotScreen(Screen):
         self.ids.data_panel_2.ids.data_spinner.disabled = True
 
     def map_pilot_field(self, text):
+        """ Method to return user -> pilot mapped fields except for the
+            intial vale called Add/remove. """
         if text == LABEL_SPINNER_TEXT:
             return text
         return rc_handler.data['user_pilot_map'][text]
@@ -658,6 +802,7 @@ class TransferSelector(BoxLayout, FileChooserBase):
 
 
 class TrainScreen(Screen):
+    """ Class showing the training screen. """
     config = ObjectProperty(force_dispatch=True, allownone=True)
     database = ObjectProperty()
     pilot_df = ObjectProperty(force_dispatch=True)
