@@ -2,11 +2,10 @@
 
 ### What types of RC cars work with the donkey platform?
 
-Most hobby grade RC cars will work fine with the electronics but you'll need to make your own baseplate and camera
-holder. To make sure the car will work with Donkey check theses things.
+Most hobby grade RC cars will work fine with the electronics, but you'll need to make your own base-plate and camera
+holder. To make sure the car will work with Donkey check these things.
 
-* it has a separate ESC and receiver. Some of the cheaper cars have these combined so it would require soldering to
-connect the Donkey motor controller to the ESC.
+* it has a separate ESC and receiver. Some cheaper cars have these combined so it would require soldering to connect the Donkey motor controller to the ESC.
 * The ESC uses three-wire connectors. This will make it easy to just plug into the Donkey hardware.
 * Brushed motors are easier because they can go slower but sensored brushless motors(w/sensored ESC) can work as well.
 
@@ -23,8 +22,7 @@ works with the parts. Here are some parts people have said work in other countri
 
 ### How can I make my own track?
 
-You can use tape, ribbon or even rope. The most popular tracks are 4ft wide and have 2in white borders with a dashed
-yellow center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
+You can use tape, ribbon or even rope. The most popular tracks are 4ft wide and have 2in white borders with a dashed yellow center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
 
 * straightaways.
 * left and right turns
@@ -38,7 +36,7 @@ Here are a couple systems that people have tried or talked about.
 
 * NVIDA TX2 - This was implemented with a webcam and used a teensy to control the motor/servos. I2c control of PCA9685 works as well.
 
-* Pi-Zero - Yes, Try following the steps for the PiB/B+. They should work for the PiZero.
+* Pi-Zero - Yes, try following the steps for the PiB/B+. They should work for the PiZero.
 
 ### After a reboot, I don't see the (donkey) in front of the prompt, and I get python errors when I run
 
