@@ -50,7 +50,7 @@ conda activate donkey
 
 2. optionally you can add that line to the last line of your `~/.bashrc` to have it active each time you login.
 
-## How to get latest Donkey source
+### How to get latest Donkey source
 
 1. When donkey has changed you can get the latest source. You've installed it directly from the github repo, so getting latest is easy:
 
