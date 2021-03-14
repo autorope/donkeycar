@@ -10,7 +10,7 @@ connect the Donkey motor controller to the ESC.
 * The ESC uses three-wire connectors. This will make it easy to just plug into the Donkey hardware.
 * Brushed motors are easier because they can go slower but sensored brushless motors(w/sensored ESC) can work as well.
 
-For more information, see [Roll Your Own](/roll_your_own.md).
+For more information, see [Roll Your Own](./roll_your_own.md).
 
 ### What car can I use if I'm not in the USA?
 
