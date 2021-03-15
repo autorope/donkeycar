@@ -163,6 +163,7 @@ class MySpinner(Spinner):
 
 class FileChooserPopup(Popup):
     """ File Chooser popup window"""
+    load = ObjectProperty()
     root_path = StringProperty()
     filters = ListProperty()
 
@@ -176,10 +177,8 @@ class FileChooserBase:
     filters = ListProperty()
 
     def open_popup(self):
-        """ Method to open the file chooser popup"""
-        self.popup = FileChooserPopup(root_path=self.root_path,
-                                      title=self.title,
-                                      filters=self.filters)
+        self.popup = FileChooserPopup(load=self.load, root_path=self.root_path,
+                                      title=self.title, filters=self.filters)
         self.popup.open()
 
     def load(self, selection):
