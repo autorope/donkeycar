@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import partial
 from threading import Thread
 from collections import namedtuple
+from kivy.logger import Logger
 import io
 import os
 import atexit
@@ -30,7 +31,6 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
-from donkeycar.management.tub_gui import RcFileHandler, decompose
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.pipeline.database import PilotDatabase
@@ -38,9 +38,9 @@ from donkeycar.pipeline.types import TubRecord
 from donkeycar.utils import get_model_by_type
 from donkeycar.pipeline.training import train
 
+
 Builder.load_file(os.path.join(os.path.dirname(__file__), 'ui.kv'))
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
-rc_handler = RcFileHandler()
 LABEL_SPINNER_TEXT = 'Add/remove'
 
 # Data struct to show tub field in the progress bar, containing the name,
@@ -70,12 +70,14 @@ def train_screen():
 
 def recursive_update(target, source):
     """ Recursively update dictionary """
-    for k, v in source.items():
-        v_t = target.get(k)
-        if isinstance(v, dict) and isinstance(v_t, dict):
-            recursive_update(v_t, v)
-        else:
-            target[k] = v
+    if isinstance(target, dict) and isinstance(source, dict):
+        for k, v in source.items():
+            v_t = target.get(k)
+            if not recursive_update(v_t, v):
+                target[k] = v
+        return True
+    else:
+        return False
 
 
 def decompose(field):
@@ -134,20 +136,23 @@ class RcFileHandler:
         if os.path.exists(self.file_path):
             with open(self.file_path) as f:
                 data = yaml.load(f, Loader=yaml.FullLoader)
-                print(f'Donkey file {self.file_path} loaded.')
+                Logger.info(f'Donkeyrc: Donkey file {self.file_path} loaded.')
                 return data
         else:
-            print(f'Donkey file {self.file_path} does not exist.')
+            Logger.warn(f'Donkeyrc: Donkey file {self.file_path} does not '
+                        f'exist.')
             return {}
 
     def write_file(self):
         if os.path.exists(self.file_path):
-            print(f'Donkey file {self.file_path} updated.')
+            Logger.info(f'Donkeyrc: Donkey file {self.file_path} updated.')
         with open(self.file_path, mode='w') as f:
-            now = datetime.datetime.now()
-            self.data['time_stamp'] = now
+            self.data['time_stamp'] = datetime.now()
             data = yaml.dump(self.data, f)
             return data
+
+
+rc_handler = RcFileHandler()
 
 
 class MySpinnerOption(SpinnerOption):
@@ -185,7 +190,6 @@ class FileChooserBase:
         """ Method to load the chosen file into the path and call an action"""
         self.file_path = str(selection[0])
         self.popup.dismiss()
-        print(self.file_path)
         self.load_action()
 
     def load_action(self):
@@ -204,13 +208,13 @@ class ConfigManager(BoxLayout, FileChooserBase):
             try:
                 path = os.path.join(self.file_path, 'config.py')
                 self.config = load_config(path)
-                print('Loaded config', path)
                 # If load successful, store into app config
                 rc_handler.data['car_dir'] = self.file_path
             except FileNotFoundError:
-                print(f'Directory {self.file_path} has no config.py')
+                Logger.error(f'Config: Directory {self.file_path} has no '
+                             f'config.py')
             except Exception as e:
-                print(e)
+                Logger.error(f'Config: {e}')
 
 
 class TubLoader(BoxLayout, FileChooserBase):
@@ -256,7 +260,7 @@ class TubLoader(BoxLayout, FileChooserBase):
                     res = eval(expression)
                     return res
                 except KeyError as err:
-                    print(err)
+                    Logger.error(f'Filter: {err}')
                     return True
 
         self.records = [TubRecord(cfg, self.tub.base_path, record)
@@ -307,8 +311,8 @@ class LabelBar(BoxLayout):
                 text = str(val)
             self.ids.value_label.text = text
         else:
-            print(f'Bad record {record.underlying["_index"]} - missing field '
-                  f'{self.field}')
+            Logger.error(f'Record: Bad record {record.underlying["_index"]} - '
+                         f'missing field {self.field}')
 
 
 class DataPanel(BoxLayout):
@@ -386,9 +390,9 @@ class FullImage(Image):
             self.core_image = CoreImage(bytes_io, ext='png')
             self.texture = self.core_image.texture
         except KeyError as e:
-            print('Missing key:', e)
+            Logger.error('Record: Missing key:', e)
         except Exception as e:
-            print('Bad record:', e)
+            Logger.error('Record: Bad record:', e)
 
     def get_image(self, record):
         return record.image(cached=False)
@@ -445,6 +449,7 @@ class ControlPanel(BoxLayout):
     def stop(self):
         if self.clock:
             self.clock.cancel()
+            self.clock = None
 
     def restart(self):
         if self.clock:
@@ -538,7 +543,8 @@ class TubFilter(BoxLayout):
         except Exception as e:
             tub_screen().status(f'Filter error on current record: {e}')
 
-    def create_filter_string(self, filter_text, record_name='record'):
+    @staticmethod
+    def create_filter_string(filter_text, record_name='record'):
         """ Converts text like 'user/angle' into 'record.underlying['user/angle']
         so that it can be used in a filter. Will replace only expressions that
         are found in the tub inputs list.
@@ -652,9 +658,9 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 rc_handler.data['pilot_' + self.num] = self.file_path
                 rc_handler.data['model_type_' + self.num] = self.model_type
             except FileNotFoundError:
-                print(f'Model {self.file_path} not found')
+                Logger.error(f'Pilot: Model {self.file_path} not found')
             except Exception as e:
-                print(e)
+                Logger.error(f'Pilot: {e}')
 
     def on_model_type(self, obj, model_type):
         """ Kivy method that is called if self.model_type changes. """
