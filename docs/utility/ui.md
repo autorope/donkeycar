@@ -1,17 +1,18 @@
 # Donkey UI
 
-The Donkey UI currently contains three tabs supporting corresponding workflows:
+The Donkey UI currently contains three screens supporting the following workflows:
+
 1. The tub manager - this is a replacement for the web-based application launched through `donkey tubclean`
    
-1. The trainer - this is a UI based alternative to train the pilot. Note, for longer tranings containing larger tubs or batches it is recommended to perform these in the shell using the `donkey train` command. The UI based training is geared towards an experimental and rapid analysis cycle consisting of:
+1. The trainer - this is a UI based alternative to train the pilot. Note, for longer trainings containing larger tubs or batches it is recommended to perform these in the shell using the `donkey train` command. The UI based training is geared towards an experimental and rapid analysis cycle consisting of:
      * data manipulation / selection
      * training
      * pilot benchmarking
 
-1. The pilot arena: here you can test two pilots' performance  against each other.
+1. The pilot arena - here you can test two pilots' performance  against each other.
 
 ## The tub manager
-![Tubmanager UI](../assets/ui-tub-manager.png)
+![Tub_manager UI](../assets/ui-tub-manager.png)
 
 In the tub manager screen you have to select the car directory that contains the config file `config.py` first, using the `Load car directory` button. Then select the tub you want to be working with using `Load tub`, the tub needs to be inside the car directory.
 
@@ -25,7 +26,7 @@ field_mapping:
   max_value_id: IMU_ACCEL_NORM
 ```
 
-This data entry into the `field_mapping` list contains the name of the tub field, if the data is centered around 0 and the name of the maximum value of that data field which has to be provided in the `myconfig.py` file. For example, the data above represents the IMU acceleration of the IMU6050 which ranges between +/- 2g, i.e. ~ +/-20 m/s<sup>2</sup>. With an IMU_ACCEL_NORM of 20 the progress bar can display these values. Therefore the `myconfig.py` should contain:
+This data entry into the `field_mapping` list contains the name of the tub field, a switch, if the data is centered around 0 and the name of the maximum value of that data field which has to be provided in the `myconfig.py` file. For example, the data above represents the IMU acceleration of the IMU6050 which ranges between +/- 2g, i.e. ~ +/-20 m/s<sup>2</sup>. With an IMU_ACCEL_NORM of 20 the progress bar can display these values. Therefore, the `myconfig.py` should contain:
 ```python
 IMU_ACCEL_NORM = 20
 ```
@@ -33,7 +34,7 @@ IMU_ACCEL_NORM = 20
 **Note**: Vectors, i.e. list / arrays are being decomposed by the UI into their components automatically.
 
 Here is an example of a tub that has `car/accel` and `car/gyro` arrays that hold IMU data, as well as `car/distance` and `car/m_in_lap`. The first two show a progress bar because there is a corresponding entry in the `field_mapping` list as explained above.
-![Tubmanager UI_more_data](../assets/ui-tub-manager-2.png)
+![Tub_manager UI_more_data](../assets/ui-tub-manager-2.png)
 
 The control panel allows moving forward and backward in single steps using <, > and scrolling continuously with <<, >>. These buttons are also linked to the keyboard keys < left >, < right >, < space >.
 
@@ -51,7 +52,7 @@ The lower panel contains a graph with the currently selected data from the data 
 
 The trainer screen allows to train a model to the tub data. In the `Overwrite config` section you can set any config parameter by typing an updated value into the text field on the right and hitting return. 
 
-To train a pilot use the model type dropdown, enter a comment and hit `Train`. After training the pilot will appear in the pilot database which is shown underneath. You can also choose a transfer model if you don't want to train from scratch. Note, tensorflow saves the model with the optimiser state, so training will commence where it stopped in the saved state.
+To train a pilot use the model type dropdown, enter a comment and hit `Train`. After training, the pilot will appear in the pilot database which is shown underneath. You can also choose a transfer model if you don't want to train from scratch. Note, tensorflow saves the model with the optimiser state, so training will commence where it stopped in the saved state.
 
 Pilots might be trained on multiple tubs, this is currently not supported in the trainer. However, if multiple tubs are passed in `donkey train` then these will show in the database too. In order to not clutter up the view and group different tubs, you can use the `Group multiple tubs` button to group all tub groups of two and more, and show a group alias instead. The group alias mapping is shown in the lower area of the window then.
 
@@ -60,7 +61,7 @@ Pilots might be trained on multiple tubs, this is currently not supported in the
 
 Here you can benchmark two pilots against each other. Use this panel to test if changes in the training through optimiser parameters or model types, or through deletion of certain records, or augmentations to images have made the pilot better or worse. The last selected pilots will be remembered in the app.
 
-Choose a pilot by selecting the `model type` and loading the keras model using the file chooser by pressing `Choose pilot`. The control panel is the same as in the tub manager. The lower right data panel shows the tub record's data. You can select the throttle field as some folks train on car speed instead of throttle values. In such case, the corresponding field name must be added into the `.donkeyrc` file in the section, see an example here.
+Choose a pilot by selecting the `Model type` and loading the keras model using the file chooser by pressing `Choose pilot`. The control panel is the same as in the tub manager. The lower right data panel shows the tub record's data. You can select the throttle field as some folks train on car speed instead of throttle values. In such case, the corresponding field name must be added into the `.donkeyrc` file in the section, see an example here.
 
 ```yaml
 user_pilot_map:
@@ -69,15 +70,16 @@ user_pilot_map:
   user/throttle: pilot/throttle
 ```
 
-The 'user/angle' and 'user/throttle' mappings are automatically loaded by the app. But to show the variable `car/speed` and compare it to the AI produced `pilot/speed` the map has to contain the corresponding entry.
+The 'user/angle' and 'user/throttle' mappings are automatically loaded by the app. In order to show the variable `car/speed` and compare it to the AI produced `pilot/speed` the map has to contain the corresponding entry.
 
-Under the two pilots there are sliders with pre-defined image augmentations, here `Brightness` and `Blur`. You can mix brightness and blur values into the images and compare how well the pilots are reacting to such a generalisation of the testing data. Press the buttons to activate the sliders for setting this data.
+Under the two pilots there are sliders with pre-defined image augmentations, here `Brightness` and `Blur`. You can mix brightness and blur values into the images and compare how well the pilots are reacting to such a modification of the testing data. Press the buttons to activate the sliders for enabling this feature.
 
 The application will remember the last two selected pilots.
 
 ### Future plans
 A couple of nice-to-haves include:
-1) Handling of multiple tubs
-1) The ability to also use the filter in training without the need to edit the `myconfig.py` file.
-1) Migration of the `~/.donkeyrc` file to the kivy internal settings
-1) Support using only a single pilot (or more than two) in the pilot arena
+
+1. Handling of multiple tubs
+1. The ability to also use the filter in training without the need to edit the `myconfig.py` file.
+1. Migration of the `~/.donkeyrc` file to the kivy internal settings
+1. Support using only a single pilot (or more than two) in the pilot arena
