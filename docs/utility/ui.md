@@ -25,11 +25,14 @@ field_mapping:
   max_value_id: IMU_ACCEL_NORM
 ```
 
-This data entry into the `field_mapping` list contains the name of the tub field, if the data is centered around 0 and the name of the maximum value of that data field which has to be provided in the `myconfig.py` file. For example, the data above represents the IMU acceleration of the IMU6050 which ranges between +/- 2g, i.e. ~ +/-20 m/s<sup>2</sup>. So with an IMU_ACCEL_NORM = 20 the progress bar can display these values. Here is an example displaying tub records with many more data fields. 
+This data entry into the `field_mapping` list contains the name of the tub field, if the data is centered around 0 and the name of the maximum value of that data field which has to be provided in the `myconfig.py` file. For example, the data above represents the IMU acceleration of the IMU6050 which ranges between +/- 2g, i.e. ~ +/-20 m/s<sup>2</sup>. With an IMU_ACCEL_NORM of 20 the progress bar can display these values. Therefore the `myconfig.py` should contain:
+```python
+IMU_ACCEL_NORM = 20
+```
 
 **Note**: Vectors, i.e. list / arrays are being decomposed by the UI into their components automatically.
 
-
+Here is an example of a tub that has `car/accel` and `car/gyro` arrays that hold IMU data, as well as `car/distance` and `car/m_in_lap`. The first two show a progress bar because there is a corresponding entry in the `field_mapping` list as explained above.
 ![Tubmanager UI_more_data](../assets/ui-tub-manager-2.png)
 
 The control panel allows moving forward and backward in single steps using <, > and scrolling continuously with <<, >>. These buttons are also linked to the keyboard keys < left >, < right >, < space >.
@@ -74,6 +77,7 @@ The application will remember the last two selected pilots.
 
 ### Future plans
 A couple of nice-to-haves include:
-1) The ability to also use the filter in training without the need to edit the myconfig file.
-2) Migration of the `~/.donkeyrc` file to the kivy internal settings
-3) 
+1) Handling of multiple tubs
+1) The ability to also use the filter in training without the need to edit the `myconfig.py` file.
+1) Migration of the `~/.donkeyrc` file to the kivy internal settings
+1) Support using only a single pilot (or more than two) in the pilot arena
