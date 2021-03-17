@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 import os
 import array
 import time
