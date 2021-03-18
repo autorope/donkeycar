@@ -70,6 +70,13 @@ LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'I
 LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 
 
+#ODOMETRY
+HAVE_ODOM = True                   # Do you have an odometer/encoder
+ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar
+MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+
 #TRAINING
 DEFAULT_AI_FRAMEWORK = 'tensorflow'
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
@@ -127,6 +134,10 @@ JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access th
 #WEB CONTROL
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
+
+
+#DRIVING
+AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
 
 
 #DonkeyGym
