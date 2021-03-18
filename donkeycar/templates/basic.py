@@ -111,7 +111,9 @@ def drive(cfg, model_path=None, model_type=None):
             print("adding RP lidar part")
             lidar = RPLidar(lower_limit = cfg.LOWER_LIMIT, upper_limit = cfg.UPPER_LIMIT)
             car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
-
+        if cfg.LIDAR_TYPE == 'YD':
+            print("YD Lidar not yet supported")
+            
     # add controller
     if cfg.USE_RC:
         rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
