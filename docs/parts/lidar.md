@@ -16,10 +16,22 @@ Mount the Lidar underneath the camera canopy as shown above (the RPLidar A2M8 is
 
 ## Software Setup
 
-Right now Lidar is only supported with the basic template. Install it as follows
+Lidar requires the glob library to be installed. If you don't already have that, install it with `pip3 install glob2`
 
-donkey createcar path = ./lidarcar  template = basic
+Right now Lidar is only supported with the basic template. Install it as follows:
+
+`donkey createcar --path ~/lidarcar --template basic`
+
+Then go to the lidarcar directory and edit the myconfig.py file to ensure that the Lidar is turned on. The upper and lower limits should be set to reflect the areas you want your Lidar to "look at", omitting the areas that are blocked by parts of the car body. An example is shown below. For the RPLidar series, 0 degrees is in the direction of the motor (in the case of the A1M8) or cable (in the case of the A2M8)
+
+```
+# LIDAR
+USE_LIDAR = True
+LIDAR_TYPE = 'RP' #(RP|YD)
+LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car and/or to avoid looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor 
+UPPER_LIMIT = 136
+```
+![Lidar limits](../assets/lidar_angle.png) 
 
 
-## Troubleshooting
 
