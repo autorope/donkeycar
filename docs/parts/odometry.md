@@ -17,24 +17,45 @@ There are several ways to read encoders with Donkey:
 
 Examples of rotary encoders that are supported:
 
+* Optical encoder sensors and discs [Available from many sources on Amazon](https://amzn.to/3s05QmG)
 * Quadrature encoders. [Larger, cheaper](https://amzn.to/3liBUjj), [Smaller, more expensive](https://www.sparkfun.com/products/10932)
-* Optical encoder sensors and discs [Available from many sources on Amazon](https://amzn.to/2Q6BOjk)
 
 ## Hardware Setup
 
-How you attach your encoder is up to you. [Here's](https://diyrobocars.com/2020/01/31/how-to-add-an-encoder-to-the-donkeycar-chassis/) one way to put a quadrature encoder on the main drive shaft. [Here](https://guitar.ucsd.edu/maeece148/index.php/Project_encoders) is a more complex setup with dual encoders. 
+How you attach your encoder is up to you. For example, [here's](https://diyrobocars.com/2020/01/31/how-to-add-an-encoder-to-the-donkeycar-chassis/) one way to put a quadrature encoder on the main drive shaft. [Here](https://guitar.ucsd.edu/maeece148/index.php/Project_encoders) is a more complex setup with dual encoders. 
 
-If you are using the RPi GPIO pins, connect the encoder sensors GND, V+ (which might say 5V or 3.3V) and data pin (which will say "Out or "D0". If your encoder has four pins, ignore the one that says "A0") to the RPi 5V, Ground and GPIO 13 as shown here:
-![wiring diagram](../assets/encoder.jpg)
+But this is the easiest way to do it, with a cheap and simple optical encoder on the main drive shaft of a standard Donkeycar chassis:
+
+First, unscrew the plate over the main drive shaft. Tilt the rear wheels back a bit and you should be able to remove the shaft
+
+![drive shaft](../assets/driveshaft.jpg)
+
+Now enlarge the hole in the optical encoder disc (use a drill or Dremel grinding stone) so you can slip it onto the shaft. Stretch a rubber grommet (of the sort typically included with servos to mount them) over the shaft and push it into the encoder disc hole. If you don't have a grommet, you can wrap tape around the shaft until it's large enough to hold the disc firmly)
+
+![drive shaft](../assets/encoder1.jpg)
+
+![drive shaft](../assets/encoder2.jpg)
+
+Now cut out a small notch (marked in pencil here) in the plate covering the drive shaft, so you can mount the encoder sensor so the disc turns freely in the gap in front of the steering servo
+
+![drive plate](../assets/cuthere.jpg)
+
+Now replace the plate and drill two holes so you can screw in the encoder sensor. Slide the disc along the shaft so that it doesn't bind on the sensor. 
+
+![drive plate](../assets/encoder_inplace.jpg)
+
+Use three female-to-female jumper cables and connect the sensor to your RPi GPIO pins as follows. Connect the GND, V+ (which might say 5V or 3.3V) and data pin (which will say "Out or "D0") to the RPi 5V, Ground and GPIO 13 as shown here (if your sensor encoder has four pins, ignore the one that says "A0"):
+![wiring diagram](../assets/encoder_wiring.jpg)
+
 
 ## Software Setup
 
 Enable odometry in `myconfig.py`.
 
 ```HAVE_ODOM = True                   # Do you have an odometer/encoder 
-ENCODER_TYPE = 'Arduino'            # What kind of encoder? GPIO|Arduino|Astar 
+ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
 MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
-ODOM_PIN = 4                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
 ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
 ```
 
