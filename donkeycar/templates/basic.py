@@ -56,7 +56,7 @@ def drive(cfg, model_path=None, model_type=None):
     Construct a minimal robotic vehicle from many parts. Here, we use a
     single camera, web or joystick controller, autopilot and tubwriter.
 
-    Each part runs as a job in the Vehicle loop, calling either it's run or
+    Each part runs as a job in the Vehicle loop, calling either its run or
     run_threaded method depending on the constructor flag `threaded`. All
     parts are updated one after another at the framerate given in
     cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely
