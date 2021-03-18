@@ -2,8 +2,6 @@
 """
 Scripts to drive a donkey car
 
-
-
 Usage:
     manage.py drive [--model=<model>] [--type=(linear|categorical|tflite_linear)]
     manage.py calibrate
