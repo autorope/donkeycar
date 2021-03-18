@@ -19,6 +19,7 @@ class RPLidar(object):
     def __init__(self, lower_limit = 0, upper_limit = 360, debug=False):
         from rplidar import RPLidar
         import glob
+        port_found = False
         self.lower_limit = lower_limit
         self.upper_limit = upper_limit
         temp_list = glob.glob ('/dev/ttyUSB*')
@@ -28,17 +29,22 @@ class RPLidar(object):
                 s = serial.Serial(a_port)
                 s.close()
                 result.append(a_port)
+                port_found = True
             except serial.SerialException:
                 pass
-        self.port = result[0]
-        self.distances = [] #a list of distance measurements 
-        self.angles = [] # a list of angles corresponding to dist meas above
-        self.lidar = RPLidar(self.port, baudrate=115200)
-        self.lidar.clear_input()
-        time.sleep(1)
-        self.on = True
-        #print(self.lidar.get_info())
-        #print(self.lidar.get_health())
+        if port_found:
+            self.port = result[0]
+            self.distances = [] #a list of distance measurements 
+            self.angles = [] # a list of angles corresponding to dist meas above
+            self.lidar = RPLidar(self.port, baudrate=115200)
+            self.lidar.clear_input()
+            time.sleep(1)
+            self.on = True
+            #print(self.lidar.get_info())
+            #print(self.lidar.get_health())
+        else:
+            print("No Lidar found")
+
 
 
     def update(self):

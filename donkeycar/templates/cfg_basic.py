@@ -32,6 +32,8 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 CAMERA_VFLIP = False
 CAMERA_HFLIP = False
+# For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
+CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 
 #9865, over rides only if needed, ie. TX2..
 PCA9685_I2C_ADDR = 0x40
@@ -41,6 +43,12 @@ PCA9685_I2C_BUSNUM = None
 STEERING_CHANNEL = 1
 STEERING_LEFT_PWM = 460
 STEERING_RIGHT_PWM = 290
+
+#THROTTLE
+THROTTLE_CHANNEL = 0
+THROTTLE_FORWARD_PWM = 500
+THROTTLE_STOPPED_PWM = 370
+THROTTLE_REVERSE_PWM = 220
 
 DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
@@ -61,12 +69,6 @@ HAVE_CONSOLE_LOGGING = True
 LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
 LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 
-
-#THROTTLE
-THROTTLE_CHANNEL = 0
-THROTTLE_FORWARD_PWM = 500
-THROTTLE_STOPPED_PWM = 370
-THROTTLE_REVERSE_PWM = 220
 
 #TRAINING
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)

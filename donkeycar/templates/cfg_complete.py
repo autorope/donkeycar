@@ -89,6 +89,12 @@ HBRIDGE_PIN_LEFT_BWD = 16
 HBRIDGE_PIN_RIGHT_FWD = 15
 HBRIDGE_PIN_RIGHT_BWD = 13
 
+#Odometry
+HAVE_ODOM = False                   # Do you have an odometer/encoder 
+ENCODER_TYPE = 'Arduino'            # What kind of encoder? GPIO|Arduino|Astar 
+MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm
+ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
@@ -201,9 +207,6 @@ TELEMETRY_LOGGING_LEVEL = 'INFO' # (Python logging level) 'NOTSET' / 'DEBUG' / '
 TELEMETRY_LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle,recording'
 TELEMETRY_DEFAULT_TYPES = 'float,float'
-
-# PERF MONITOR
-HAVE_PERFMON = False
 
 # PERF MONITOR
 HAVE_PERFMON = False
