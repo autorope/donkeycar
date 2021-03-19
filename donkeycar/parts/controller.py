@@ -1,4 +1,3 @@
-
 import os
 import array
 import time
@@ -227,6 +226,108 @@ class PyGameJoystick(object):
         
     def set_deadzone(self, val):
         self.dead_zone = val
+
+
+class RCReceiver:
+    """
+    Class to read PWM from an RC control and convert into a float output number.
+    Uses pigpio library. The code is essentially a copy of
+    http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will need a voltage
+    divider from a 5V RC receiver to a 3.3V Pi input pin if the receiver runs
+    on 5V. If your receiver accepts 3.3V input, then it can be connected
+    directly to the Pi.
+    """
+    MIN_OUT = -1
+    MAX_OUT = 1
+
+    def __init__(self, gpio, invert=False, jitter=0.025, no_action=None):
+        """
+        :param gpio: gpio pin connected to RC channel
+        :param invert: invert value of run() within [MIN_OUT,MAX_OUT]
+        :param jitter: threshold below which no signal is reported
+        :param no_action: value within [MIN_OUT,MAX_OUT] if no RC signal is
+                          sent. This is usually zero for throttle and steering
+                          being the center values when the controls are not
+                          pressed.
+        """
+        import pigpio
+        self.pi = pigpio.pi()
+        self.gpio = gpio
+        self.high_tick = None
+        self.period = None
+        self.high = None
+        self.min_pwm = 1000
+        self.max_pwm = 2000
+        self.invert = invert
+        self.jitter = jitter
+        if no_action is not None:
+            self.no_action = no_action
+        else:
+            self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
+
+        self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
+        self.pi.set_mode(self.gpio, pigpio.INPUT)
+        self.cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
+        print('RCReceiver gpio ' + str(gpio) + ' created')
+
+    def _update_param(self, tick):
+        """ Helper function for callback function _cbf.
+        :param tick: current tick in mu s
+        :return: difference in ticks
+        """
+        import pigpio
+        if self.high_tick is not None:
+            t = pigpio.tickDiff(self.high_tick, tick)
+            return t
+
+    def _cbf(self, gpio, level, tick):
+        """ Callback function for pigpio interrupt gpio. Signature is determined
+            by pigpiod library. This function is called every time the gpio
+            changes state as we specified EITHER_EDGE.
+        :param gpio: gpio to listen for state changes
+        :param level: rising/falling edge
+        :param tick: # of mu s since boot, 32 bit int
+        """
+        if level == 1:
+            self.period = self._update_param(tick)
+            self.high_tick = tick
+        elif level == 0:
+            self.high = self._update_param(tick)
+
+    def pulse_width(self):
+        """
+        :return: the PWM pulse width in microseconds.
+        """
+        if self.high is not None:
+            return self.high
+        else:
+            return 0.0
+
+    def run(self):
+        """
+        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
+        [MAX_OUT,MIN_OUT]
+        """
+        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+        signal = (self.pulse_width() - self.min_pwm) * self.factor
+        # Assuming non-activity if the pulse is at no_action point
+        is_action = abs(signal - self.no_action) > self.jitter
+        # if deemed noise assume no signal
+        if not is_action:
+            signal = self.no_action
+        # convert into min max interval
+        if self.invert:
+            signal = -signal + self.MAX_OUT
+        else:
+            signal += self.MIN_OUT
+        return signal, is_action
+
+    def shutdown(self):
+        """
+        Donkey parts interface
+        """
+        import pigpio
+        self.cb.cancel()
 
 
 class JoystickCreator(Joystick):
@@ -519,12 +620,13 @@ class XboxOneJoystick(Joystick):
         self.axis_names = {
             0x00 : 'left_stick_horz',
             0x01 : 'left_stick_vert',
-            0x05 : 'right_stick_vert',
-            0x02 : 'right_stick_horz',
-            0x0a : 'left_trigger',
-            0x09 : 'right_trigger',
-            0x10 : 'dpad_horiz',
-            0x11 : 'dpad_vert'
+
+            0x04 : 'right_stick_vert',
+            0x03 : 'right_stick_horz',
+            0x02 : 'left_trigger',
+            0x05 : 'right_trigger',
+            0x07 : 'dpad_horiz',
+            0x06 : 'dpad_vert'
         }
 
         self.button_names = {
