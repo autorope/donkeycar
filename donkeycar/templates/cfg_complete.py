@@ -89,6 +89,17 @@ HBRIDGE_PIN_LEFT_BWD = 16
 HBRIDGE_PIN_RIGHT_FWD = 15
 HBRIDGE_PIN_RIGHT_BWD = 13
 
+# #LIDAR
+USE_LIDAR = False
+LIDAR_TYPE = 'RP' #(RP|YD)
+LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor 
+UPPER_LIMIT = 136
+
+# #RC CONTROL
+USE_RC = False
+STEERING_RC_GPIO = 26
+THROTTLE_RC_GPIO = 20
+DATA_WIPER_RC_GPIO = 19
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)

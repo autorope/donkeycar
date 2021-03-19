@@ -150,6 +150,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
+        # add lidar
+        if cfg.USE_LIDAR:
+            from donkeycar.parts.lidar import RPLidar
+            if cfg.LIDAR_TYPE == 'RP':
+                print("adding RP lidar part")
+                lidar = RPLidar(lower_limit = cfg.LOWER_LIMIT, upper_limit = cfg.UPPER_LIMIT)
+                car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
+            if cfg.LIDAR_TYPE == 'YD':
+                print("YD Lidar not yet supported")
+
         # Donkey gym part will output position information if it is configured
         if cfg.DONKEY_GYM:
             if cfg.SIM_RECORD_LOCATION:
@@ -345,6 +355,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs=['cam/image_array',
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
+    elif cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array']
     else:
         inputs=['cam/image_array']
 
@@ -577,13 +589,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     #add tub to save data
 
-    inputs=['cam/image_array',
-            'user/angle', 'user/throttle',
-            'user/mode']
-
-    types=['image_array',
-           'float', 'float',
-           'str']
+    if cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'nparray','float', 'float', 'str']
+    else:
+        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
+        types=['image_array','float', 'float','str']
 
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]

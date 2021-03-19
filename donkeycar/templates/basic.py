@@ -245,7 +245,6 @@ def calibrate(cfg):
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
-    print("you are running a beta of the Lidar branch of Donkeycar")
     if args['drive']:
         drive(cfg, model_path=args['--model'], model_type=args['--type'])
     elif args['calibrate']:
