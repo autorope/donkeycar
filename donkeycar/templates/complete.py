@@ -156,7 +156,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             if cfg.LIDAR_TYPE == 'RP':
                 print("adding RP lidar part")
                 lidar = RPLidar(lower_limit = cfg.LOWER_LIMIT, upper_limit = cfg.UPPER_LIMIT)
-                car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
+                V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
             if cfg.LIDAR_TYPE == 'YD':
                 print("YD Lidar not yet supported")
 
