@@ -1619,6 +1619,7 @@ def get_js_controller(cfg):
     ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
     return ctr
 
+
 if __name__ == "__main__":
     # Testing the XboxOneJoystickController
     js = XboxOneJoystick('/dev/input/js0')
@@ -1626,6 +1627,6 @@ if __name__ == "__main__":
 
     while True:
         button, button_state, axis, axis_val = js.poll()
-        if (button is not None or axis is not None):
+        if button is not None or axis is not None:
             print(button, button_state, axis, axis_val)
             time.sleep(0.1)

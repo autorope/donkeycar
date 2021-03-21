@@ -53,7 +53,7 @@ class Tub(object):
                 elif input_type == 'boolean':
                     contents[key] = bool(value)
                 elif input_type == 'nparray':
-                    contents[key] = (np.array(value)).tolist()
+                    contents[key] = value.tolist()
                 elif input_type == 'list' or input_type == 'vector':
                     contents[key] = list(value)
                 elif input_type == 'image_array':
