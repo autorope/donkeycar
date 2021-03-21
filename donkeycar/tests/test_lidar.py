@@ -4,10 +4,10 @@ import pytest
 def has_lidar():
     """ Determine if test platform (nano, pi) has lidar"""
     # for now just return false, better to use an environ
-    return True
+    return False
 
 
-@pytest.mark.skipif(has_lidar(), reason='Need lidar installed')
+@pytest.mark.skipif(not has_lidar(), reason='Need lidar installed')
 def test_lidar():
     from rplidar import RPLidar
     import serial
