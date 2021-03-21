@@ -30,8 +30,8 @@ Then go to the lidarcar directory and edit the myconfig.py file to ensure that t
 # LIDAR
 USE_LIDAR = True
 LIDAR_TYPE = 'RP' #(RP|YD)
-LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car and/or to avoid looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor 
-UPPER_LIMIT = 136
+LIDAR_LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car and/or to avoid looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor 
+LIDAR_UPPER_LIMIT = 136
 ```
 ![Lidar limits](../assets/lidar_angle.png) 
 
