@@ -71,6 +71,7 @@ LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.o
 
 
 #TRAINING
+DEFAULT_AI_FRAMEWORK = 'tensorflow'
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
