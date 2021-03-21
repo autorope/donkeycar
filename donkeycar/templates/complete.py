@@ -155,7 +155,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             from donkeycar.parts.lidar import RPLidar
             if cfg.LIDAR_TYPE == 'RP':
                 print("adding RP lidar part")
-                lidar = RPLidar(lower_limit = cfg.LOWER_LIMIT, upper_limit = cfg.UPPER_LIMIT)
+                lidar = RPLidar(lower_limit = cfg.LIDAR_LOWER_LIMIT, upper_limit = cfg.LIDAR_UPPER_LIMIT)
                 V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
             if cfg.LIDAR_TYPE == 'YD':
                 print("YD Lidar not yet supported")

@@ -236,8 +236,9 @@ class Tub(object):
                 img.save(os.path.join(self.path, name))
                 json_data[key]=name
                 
-            elif typ == 'nparray':                         # if array type
-                json_data[key] = (np.array(val)).tolist()  # store the input as an array into tub
+            elif typ == 'nparray':
+                # convert np array to python so it is jsonable
+                json_data[key] = val.tolist()
 
             else:
                 msg = 'Tub does not know what to do with this type {}'.format(typ)
