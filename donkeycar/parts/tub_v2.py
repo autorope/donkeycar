@@ -52,6 +52,8 @@ class Tub(object):
                     contents[key] = int(value)
                 elif input_type == 'boolean':
                     contents[key] = bool(value)
+                elif input_type == 'nparray':
+                    contents[key] = value.tolist()
                 elif input_type == 'list' or input_type == 'vector':
                     contents[key] = list(value)
                 elif input_type == 'image_array':
@@ -130,3 +132,38 @@ class TubWriter(object):
         self.close()
 
 
+
+
+class TubWiper:
+    """
+    Donkey part which deletes a bunch of records from the end of tub.
+    This allows to remove bad data already during recording. As this gets called
+    in the vehicle loop the deletion runs only once in each continuous
+    activation. A new execution requires to release of the input trigger. The
+    action could result in a multiple number of executions otherwise.
+    """
+    def __init__(self, tub, num_records=20):
+        """
+        :param tub: tub to operate on
+        :param num_records: number or records to delete
+        """
+        self._tub = tub
+        self._num_records = num_records
+        self._active_loop = False
+
+    def run(self, is_delete):
+        """
+        Method in the vehicle loop. Delete records when trigger switches from
+        False to True only.
+        :param is_delete: if deletion has been triggered by the caller
+        """
+        # only run if input is true and debounced
+        if is_delete:
+            if not self._active_loop:
+                # action command
+                self._tub.delete_last_n_records(self._num_records)
+                # increase the loop counter
+                self._active_loop = True
+        else:
+            # trigger released, reset active loop
+            self._active_loop = False
