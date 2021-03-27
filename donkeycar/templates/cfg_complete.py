@@ -93,8 +93,8 @@ HBRIDGE_PIN_RIGHT_BWD = 13
 # #LIDAR
 USE_LIDAR = False
 LIDAR_TYPE = 'RP' #(RP|YD)
-LIDAR_LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
-LIDAR_UPPER_LIMIT = 136
+LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
+LIDAR_UPPER_LIMIT = 270
 
 # #RC CONTROL
 USE_RC = False
