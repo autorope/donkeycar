@@ -23,7 +23,6 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 #VEHICLE
 DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #CAMERA
 CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -53,7 +52,7 @@ SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
 #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
 #PIGPIO_PWM uses Raspberrys internal PWM
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
@@ -101,6 +100,16 @@ USE_RC = False
 STEERING_RC_GPIO = 26
 THROTTLE_RC_GPIO = 20
 DATA_WIPER_RC_GPIO = 19
+
+#DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
+#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+HBRIDGE_L298N_PIN_LEFT_FWD = 16
+HBRIDGE_L298N_PIN_LEFT_BWD = 18
+HBRIDGE_L298N_PIN_LEFT_EN = 22
+
+HBRIDGE_L298N_PIN_RIGHT_FWD = 15
+HBRIDGE_L298N_PIN_RIGHT_BWD = 13
+HBRIDGE_L298N_PIN_RIGHT_EN = 11
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
