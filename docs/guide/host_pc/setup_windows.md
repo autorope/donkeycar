@@ -45,6 +45,7 @@ conda env remove -n donkey
 ```bash
 conda env create -f install\envs\pc.yml
 conda activate donkey
+pip install --user tensorflow==2.2.0
 pip install -e .[pc]
 ```
 Note: if you are using ZSH (you'll know if you are), you won't be able to run `pip install -e .[pc]`. You'll need to escape the brackets and run `pip install -e .\[pc\]`.
