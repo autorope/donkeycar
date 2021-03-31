@@ -508,6 +508,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(left_motor, inputs=['left_motor_speed'])
         V.add(right_motor, inputs=['right_motor_speed'])
 
+    elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL_L298N":
+        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, Mini_HBridge_DC_Motor_PWM
+
+        left_motor = L298N_HBridge_DC_Motor(cfg.HBRIDGE_L298N_PIN_LEFT_FWD, cfg.HBRIDGE_L298N_PIN_LEFT_BWD, cfg.HBRIDGE_L298N_PIN_LEFT_EN)
+        right_motor = L298N_HBridge_DC_Motor(cfg.HBRIDGE_L298N_PIN_RIGHT_FWD, cfg.HBRIDGE_L298N_PIN_RIGHT_BWD, cfg.HBRIDGE_L298N_PIN_RIGHT_EN)
+        two_wheel_control = TwoWheelSteeringThrottle()
+
+        V.add(two_wheel_control,
+                inputs=['throttle', 'angle'],
+                outputs=['left_motor_speed', 'right_motor_speed'])
+
+        V.add(left_motor, inputs=['left_motor_speed'])
+        V.add(right_motor, inputs=['right_motor_speed'])
+        
+
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
         from donkeycar.parts.actuator import ServoBlaster, PWMSteering
         steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
