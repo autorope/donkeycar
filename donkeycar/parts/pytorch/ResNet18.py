@@ -107,5 +107,8 @@ class ResNet18(pl.LightningModule):
 
         # Resize to (2,)
         result = result.reshape(-1)
+
+        # Convert from being normalized between [0, 1] to being between [-1, 1]
+        result = result * 2 - 1
         print("ResNet18 result: {}".format(result))
         return result
