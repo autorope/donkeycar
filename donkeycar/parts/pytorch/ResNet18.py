@@ -33,10 +33,8 @@ class ResNet18(pl.LightningModule):
         self.example_input_array = torch.rand(input_shape)
 
         # Metrics
-        self.train_acc = pl.metrics.Accuracy()
-        self.valid_acc = pl.metrics.Accuracy()
-        self.train_precision = pl.metrics.Precision()
-        self.valid_precision = pl.metrics.Precision()
+        self.train_mse = pl.metrics.MeanSquaredError()
+        self.valid_mse = pl.metrics.MeanSquaredError()
 
         self.model = load_resnet18(num_classes=output_size[0])
 
@@ -55,15 +53,11 @@ class ResNet18(pl.LightningModule):
 
         loss = F.l1_loss(logits, y)
         self.loss_history.append(loss)
-        self.log('train_loss', loss)
+        self.log("train_loss", loss)
 
         # Log Metrics
-        self.train_acc(logits, y)
-        self.log('train_acc', self.train_acc, on_step=False, on_epoch=True)
-
-        self.train_precision(logits, y)
-        self.log('train_precision', self.train_precision,
-                 on_step=False, on_epoch=True)
+        self.train_mse(logits, y)
+        self.log("train_mse", self.train_mse, on_step=False, on_epoch=True)
 
         return loss
 
@@ -72,19 +66,14 @@ class ResNet18(pl.LightningModule):
         logits = self.forward(x)
         loss = F.l1_loss(logits, y)
 
+        self.log("val_loss", loss)
+
         # Log Metrics
-        self.log('val_loss', loss)
-
-        self.valid_acc(logits, y)
-        self.log('valid_acc', self.valid_acc, on_step=False, on_epoch=True)
-
-        self.valid_precision(logits, y)
-        self.log('valid_precision', self.valid_precision,
-                 on_step=False, on_epoch=True)
+        self.valid_mse(logits, y)
+        self.log("valid_mse", self.valid_mse, on_step=False, on_epoch=True)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(
-            self.model.parameters(), lr=0.0001, weight_decay=0.0005)
+        optimizer = optim.Adam(self.model.parameters(), lr=0.0001, weight_decay=0.0005)
         return optimizer
 
     def run(self, img_arr: np.ndarray, other_arr: np.ndarray = None):
@@ -98,6 +87,7 @@ class ResNet18(pl.LightningModule):
         :return:            tuple of (angle, throttle)
         """
         from PIL import Image
+
         pil_image = Image.fromarray(img_arr)
         tensor_image = self.inference_transform(pil_image)
         tensor_image = tensor_image.unsqueeze(0)
