@@ -38,7 +38,7 @@ conda env remove -n donkey
 * Create the Python anaconda environment
 
 ```bash
-conda env create -f install/envs/pc.yml
+conda env create -f install/envs/ubuntu.yml
 conda activate donkey
 pip install -e .[pc]
 ```

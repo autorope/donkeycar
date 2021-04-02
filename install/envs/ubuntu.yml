@@ -1,3 +1,10 @@
+name: donkey
+
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+
 dependencies:
   - python=3.7
   - h5py
