@@ -27,7 +27,7 @@ class TestTub(unittest.TestCase):
         for record in tub_writer.tub:
             print(f'Record: {record}')
             session_number = int(record['_session_id'].split('_')[1])
-            self.assertEqual(session_number, id ,
+            self.assertEqual(session_number, id,
                              'Session id not correctly generated')
             total += 1
             if total == write_counts[0]:

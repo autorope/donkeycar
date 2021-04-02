@@ -3,9 +3,13 @@ import tempfile
 import unittest
 
 from donkeycar.parts.tub_v2 import Tub
+from donkeycar.pipeline.types import TubRecord, Collator
+from donkeycar.config import Config
 
 
 class TestTub(unittest.TestCase):
+    _path = None
+    delete_indexes = [3, 8]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -17,23 +21,42 @@ class TestTub(unittest.TestCase):
     def test_basic_tub_operations(self):
         entries = list(self.tub)
         self.assertEqual(len(entries), 0)
-        write_count = 10
-        delete_indexes = [0, 8]
+        write_count = 14
 
         records = [{'input': i} for i in range(write_count)]
         for record in records:
             self.tub.write_record(record)
 
-        for index in delete_indexes:
+        for index in self.delete_indexes:
             self.tub.delete_records(index)
 
         count = 0
         for record in self.tub:
-            print('Record %s' % (record))
+            print(f'Record {record}')
             count += 1
 
-        self.assertEqual(count, (write_count - len(delete_indexes)))
-        self.assertEqual(len(self.tub), (write_count - len(delete_indexes)))
+        self.assertEqual(count, (write_count - len(self.delete_indexes)))
+        self.assertEqual(len(self.tub),
+                         (write_count - len(self.delete_indexes)))
+
+    def test_sequence(self):
+        cfg = Config()
+        records = [TubRecord(cfg, self.tub.base_path, underlying) for
+                   underlying in self.tub]
+        for seq_len in (2, 3, 4, 5):
+            seq = Collator(seq_len, records)
+            for l in seq:
+                print(l)
+                assert len(l) == seq_len, 'Sequence has wrong length'
+                assert not any((r.underlying['_index'] == del_idx for del_idx in
+                                self.delete_indexes for r in l)), \
+                    'Deleted index found'
+                it1 = iter(l)
+                it2 = iter(l)
+                next(it2)
+                assert all((Collator.is_continuous(rec_1, rec_2)
+                            for rec_1, rec_2 in zip(it1, it2))), \
+                    'Non continuous records found'
 
     def test_delete_last_n_records(self):
         start_len = len(self.tub)

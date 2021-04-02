@@ -5,10 +5,8 @@ from typing import List
 import numpy as np
 
 from donkeycar.config import Config
-from donkeycar.parts.keras import KerasLinear
-from donkeycar.pipeline.sequence import SizedIterator, TubSequence
-from donkeycar.pipeline.training import BatchSequence
-from donkeycar.pipeline.types import TubRecord, TubRecordDict
+from donkeycar.pipeline.sequence import TubSequence
+from donkeycar.pipeline.types import TubRecord
 
 
 def random_records(size: int = 100) -> List[TubRecord]:
@@ -17,7 +15,7 @@ def random_records(size: int = 100) -> List[TubRecord]:
 
 def random_record() -> TubRecord:
     now = int(time.time())
-    underlying: TubRecordDict = {
+    underlying = {
         'cam/image_array': f'/path/to/{now}.txt',
         'user/angle': np.random.uniform(0, 1.),
         'user/throttle': np.random.uniform(0, 1.),

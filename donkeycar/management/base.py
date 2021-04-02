@@ -1,4 +1,3 @@
-
 import argparse
 import os
 import shutil
@@ -6,17 +5,19 @@ import socket
 import stat
 import sys
 from socket import *
+import logging
 
 from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
+from donkeycar.pipeline.types import TubRecord, TubDataset
 from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
-
 HELP_CONFIG = 'location of config file to use. default: ./config.py'
+logger = logging.getLogger(__name__)
 
 
 def make_dir(path):
@@ -347,12 +348,12 @@ class ShowCnnActivations(BaseCommand):
 class ShowPredictionPlots(BaseCommand):
 
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
-        '''
+        """
         Plot model predictions for angle and throttle against data from tubs.
-
-        '''
+        """
         import matplotlib.pyplot as plt
         import pandas as pd
+        from pathlib import Path
 
         model_path = os.path.expanduser(model_path)
         model = dk.utils.get_model_by_type(model_type, cfg)
@@ -366,46 +367,42 @@ class ShowPredictionPlots(BaseCommand):
         pilot_angles = []
         pilot_throttles = []       
 
-        from donkeycar.parts.tub_v2 import Tub
-        from pathlib import Path
-
         base_path = Path(os.path.expanduser(tub_paths)).absolute().as_posix()
-        tub = Tub(base_path)
-        records = list(tub)
-        records = records[:limit]
+        dataset = TubDataset(config=cfg, tub_paths=[base_path],
+                             seq_size=model.seq_size())
+        records = dataset.get_records()[:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
-        for record in records:
-            img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
-            img = load_image(img_filename, cfg)
-            user_angle = float(record["user/angle"])
-            user_throttle = float(record["user/throttle"])
-            pilot_angle, pilot_throttle = model.run(img)
-
+        for tub_record in records:
+            inputs = model.x_transform_and_process(
+                tub_record, lambda x: normalize_image(x))
+            input_dict = model.x_translate(inputs)
+            pilot_angle, pilot_throttle = \
+                model.inference_from_dict(input_dict)
+            user_angle, user_throttle = model.y_transform(tub_record)
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
             bar.next()
 
-        angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-        throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+        angles_df = pd.DataFrame({'user_angle': user_angles,
+                                  'pilot_angle': pilot_angles})
+        throttles_df = pd.DataFrame({'user_throttle': user_throttles,
+                                     'pilot_throttle': pilot_throttles})
 
         fig = plt.figure()
-
-        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " + model_path + "\nType: " + model_type
+        title = f"Model Predictions\nTubs: {tub_paths}\nModel: {model_path}\n" \
+                f"Type: {model_type}"
         fig.suptitle(title)
-
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
-
         angles_df.plot(ax=ax1)
         throttles_df.plot(ax=ax2)
-
         ax1.legend(loc=4)
         ax2.legend(loc=4)
-
         plt.savefig(model_path + '_pred.png')
+        logger.info(f'Saving model at {model_path}_pred.png')
         plt.show()
 
     def parse_args(self, args):
