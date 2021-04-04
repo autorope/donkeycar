@@ -143,7 +143,7 @@ Example:
 
 ### Scene Selection Ready
 
-Sim=>Client. When the Menu scene is finished loading this will be sent. After this point, the sim can honor the Scene Loading message.
+Sim=>Client. When the Menu scene is finished loading this will be sent. After this point, the sim can honor the Scene Loading message. (Menu only)
 
 Fields: *None*
 
@@ -159,7 +159,7 @@ Example:
 
 ### Get Scene Names
 
-Client=>Sim. Ask names of the scene you can load.
+Client=>Sim. Ask names of the scene you can load. (Menu only)
 
 Fields: *None*
 
@@ -196,7 +196,7 @@ Example:
 
 ### Load Scene
 
-Client=>Sim. Asks the sim to load one of 4 scenes from the Menu screen.
+Client=>Sim. Asks the sim to load one of the scenes from the Menu screen. (Menu only)
 
 Fields: 
 
@@ -242,11 +242,11 @@ Example:
 
 ### Car Config
 
-Client=>Sim. Once loaded, you may configure your car visual details
+Client=>Sim. Once loaded, you may configure your car visual details (scene only)
 
 Fields: 
 
-* *body_style* :  **donkey | bare | car01**
+* *body_style* :  **donkey | bare | car01 | cybertruck | f1**
 * *body_r* :  string value of integer between 0-255
 * *body_g* :  string value of integer between 0-255
 * *body_b* :  string value of integer between 0-255
@@ -306,6 +306,9 @@ Example:
     }
 ```
 
+Note:
+You can add an other camera by changing the msg_type to "cam_config_b"
+
 ---
 
 ### Control Car
@@ -342,11 +345,25 @@ Fields:
 * *throttle* :  Last throttle applied.
 * *speed* :  magnitude of linear velocity.
 * *image* :  a BinHex encoded binary image. Use PIL.Image.open(BytesIO(base64.b64decode(imgString)))
+* *imageb* :  (optionnal) same as above but for the second camera
+* *lidar* :  (optionnal) list of lidar points in the following format: {d: distanceToObject, rx: rayRotationX, ry: rayRotationY}
 * *hit* :  name of the last object struck. Or None if no object hit.
-* *pos_x* :  x world coordinate of vehicle.
-* *pos_y* :  y world coordinate of vehicle.
-* *pos_z* :  z world coordinate of vehicle.
-* *cte* :  Cross track error. The distance from the car to the path in the center of the right most lane.
+* *accel_x* :  x acceleration of vehicle.
+* *accel_y* :  y acceleration of vehicle.
+* *accel_z* :  z acceleration of vehicle.
+* *gyro_x* :  x gyro acceleration.
+* *gyro_y* :  y gyro acceleration.
+* *gyro_z* :  z gyro acceleration.
+* *gyro_w* :  w gyro acceleration.
+* *activeNode* : Progress on track (not working properly with multiple car for the moment)
+* *totalNodes* : number of nodes on track
+* *pos_x* :  (training only) x world coordinate of vehicle.
+* *pos_y* :  (training only) y world coordinate of vehicle.
+* *pos_z* :  (training only) z world coordinate of vehicle.
+* *vel_x* :  (training only) x velocity of vehicle.
+* *vel_y* :  (training only) y velocity of vehicle.
+* *vel_z* :  (training only) z velocity of vehicle.
+* *cte* :  (training only) Cross track error. The distance from the car to the path in the center of the right most lane or center of the track (depends on the track)
 
 Example:
 ```bash
@@ -360,7 +377,16 @@ Example:
     "pos_x" : "0.0", 
     "pos_y" : "0.0", 
     "pos_z" : "0.0", 
-    "cte" : "0.5", 
+    "accel_x" : "0.0", 
+    "accel_y" : "0.0", 
+    "accel_z" : "0.0", 
+    "gyro_x" : "0.0", 
+    "gyro_y" : "0.0", 
+    "gyro_z" : "0.0", 
+    "gyro_w" : "0.0",
+    "activeNode" : "5"
+    "totalNodes" : "26"
+    "cte" : "0.5"
     }
 ```
 
@@ -380,6 +406,28 @@ Example:
     }
 ```
 
+
+---
+
+### Set Car Position
+Client=>Sim. Move the car to the given position (training only)
+
+Fields: 
+* *pos_x* :  x world coordinate.
+* *pos_y* :  y world coordinate.
+* *pos_z* :  z world coordinate. 
+
+Example:
+```bash
+    {
+    "msg_type" : "set_position" 
+    "pos_x" : "0.0", 
+    "pos_y" : "0.0", 
+    "pos_z" : "0.0"
+    }
+```
+
+
 ---
 
 ### Exit Scene
@@ -396,9 +444,12 @@ Example:
     }
 ```
 
+
+---
+
 ### Quit App
 
-Client=>Sim. Close the sim executable.
+Client=>Sim. Close the sim executable. (Menu only)
 
 Fields: *None*
 
