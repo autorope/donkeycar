@@ -16,6 +16,7 @@ import traceback
 
 logger = logging.getLogger(__name__)
 
+
 class PartProfiler:
     def __init__(self):
         self.records = {}
@@ -54,7 +55,7 @@ class PartProfiler:
                    "%.2f" % (sum(arr) / len(arr) * 1000)]
             row += ["%.2f" % (np.percentile(arr, p) * 1000) for p in pctile]
             pt.add_row(row)
-        logger.info(pt)
+        logger.info('\n' + str(pt))
 
 
 class Vehicle:
