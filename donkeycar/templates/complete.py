@@ -72,6 +72,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.HAVE_MQTT_TELEMETRY:
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
+        
+    if cfg.HAVE_ODOM:
+        if cfg.ENCODER_TYPE == "GPIO":
+            from donkeycar.parts.encoder import RotaryEncoder
+            enc = RotaryEncoder(mm_per_tick=0.306096, pin = cfg.ODOM_PIN, debug = cfg.ODOM_DEBUG)
+            V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
+        elif cfg.ENCODER_TYPE == "arduino":
+            from donkeycar.parts.encoder import ArduinoEncoder
+            enc = ArduinoEncoder()
+            V.add(enc, outputs=['enc/speed'], threaded=True)
+        else:
+            print("No supported encoder found")
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
@@ -339,6 +351,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]
     #IMU
+    elif cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array']
+
+    elif cfg.HAVE_ODOM:
+        inputs = ['cam/image_array', 'enc/speed']
+
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
@@ -584,6 +602,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     types=['image_array',
            'float', 'float',
            'str']
+
+    if cfg.USE_LIDAR:
+        inputs += ['lidar/dist_array']
+        types += ['nparray']
+
+    if cfg.HAVE_ODOM:
+        inputs += ['enc/speed']
+        types += ['float']
 
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]

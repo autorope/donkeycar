@@ -1,19 +1,114 @@
 """
-Rotary Encoder
+Encoders and odometry
 """
 
 from datetime import datetime
-from donkeycar.parts.teensy import TeensyRCin
 import re
 import time
 
+
+# The Arduino class is for a quadrature wheel or motor encoder that is being read by an offboard microcontroller
+# such as an Arduino or Teensy that is feeding serial data to the RaspberryPy or Nano via USB serial. 
+# The microcontroller should be flashed with this sketch (use the Arduino IDE to do that): https://github.com/zlite/donkeycar/tree/master/donkeycar/parts/encoder/encoder
+# Make sure you check the sketch using the "test_encoder.py code in the Donkeycar tests folder to make sure you've got your 
+# encoder plugged into the right pins, or edit it to reflect the pins you are using.
+
+# You will need to calibrate the mm_per_tick line below to reflect your own car. Just measure out a meter and roll your car
+# along it. Change the number below until it the distance reads out almost exactly 1.0 
+
+# This samples the odometer at 10HZ and does a moving average over the past ten readings to derive a velocity
+
+class ArduinoEncoder(object):
+    def __init__(self, mm_per_tick=0.0000599, debug=False):
+        import serial
+        import serial.tools.list_ports
+        for item in serial.tools.list_ports.comports():
+            print(item)  # list all the serial ports
+        self.ser = serial.Serial('/dev/ttyACM0', 115200, 8, 'N', 1, timeout=0.1)
+        # initialize the odometer values
+        self.ser.write(str.encode('r'))  # restart the encoder to zero
+        self.ticks = 0
+        self.debug = debug
+        self.on = True
+
+    def OdomDist(ticks, mm_per_tick, throttle, debug = False):
+        """
+        Take a tick input from odometry and compute the distance and speed travelled
+        """
+        m_per_tick = mm_per_tick / 1000.0
+        meters = 0
+        last_time = time.time()
+        meters_per_second = 0
+        prev_ticks = 0
+
+        """
+        inputs => total ticks since start
+        inputs => throttle, used to determine positive or negative vel
+        return => total dist (m), current vel (m/s), delta dist (m)
+        """
+        new_ticks = ticks - prev_ticks
+        prev_ticks = ticks
+
+        #save off the last time interval and reset the timer
+        start_time = last_time
+        end_time = time.time()
+        last_time = end_time
+        
+        #calculate elapsed time and distance traveled
+        seconds = end_time - start_time
+        distance = new_ticks * m_per_tick
+        if throttle < 0.0:
+            distance = distance * -1.0
+        velocity = distance / seconds
+        
+        #update the odometer values
+        meters += distance
+        meters_per_second = velocity
+
+        #console output for debugging
+        if(debug):
+            print('seconds:', seconds)
+            print('delta:', distance)
+            print('velocity:', velocity)
+
+            print('distance (m):', meters)
+            print('velocity (m/s):', meters_per_second)
+
+        return velocity, distance
+
+    def update(self):
+        global lasttick
+        while self.on:
+            input = ''
+            while (self.ser.in_waiting > 0):   # read the serial port and see if there's any data there
+                buffer = self.ser.readline()
+                input = buffer.decode('ascii')
+            self.ser.write(str.encode('p'))  # queue up another reading by sending the "p" character to the Arduino
+            if input != '':
+                temp = input.strip()  # remove any whitespace
+                if (temp.isnumeric()):
+                    self.ticks = int(temp)
+                    lasttick = self.ticks
+            else: self.ticks = lasttick
+            self.speed, self.distance = self.OdomDist(ticks, mm_per_tick)
+
+    def run_threaded(self):
+        self.speed 
+        return self.speed 
+
+
+    def shutdown(self):
+        # indicate that the thread should be stopped
+        print('stopping Arduino encoder')
+        self.on = False
+        time.sleep(.5)
+
 class AStarSpeed:
     def __init__(self):
+        from donkeycar.parts.teensy import TeensyRCin
         self.speed = 0
         self.linaccel = None
-
         self.sensor = TeensyRCin(0)
-
         self.on = True
 
     def update(self):
@@ -68,10 +163,13 @@ class AStarSpeed:
 
 class RotaryEncoder():
     def __init__(self, mm_per_tick=0.306096, pin=13, poll_delay=0.0166, debug=False):
-        import RPi.GPIO as GPIO
-        GPIO.setmode(GPIO.BOARD)
-        GPIO.setup(pin, GPIO.IN)
-        GPIO.add_event_detect(pin, GPIO.RISING, callback=self.isr)
+        import pigpio
+        self.pi = pigpio.pi()
+        self.pin = pin
+        self.pi.set_mode(self.pin, pigpio.INPUT)
+        self.pi.set_pull_up_down(self.pin, pigpio.PUD_DOWN)
+        self.cb = self.pi.callback(self.pin, pigpio.FALLING_EDGE, self._cb)
+
 
         # initialize the odometer values
         self.m_per_tick = mm_per_tick / 1000.0
@@ -84,10 +182,10 @@ class RotaryEncoder():
         self.debug = debug
         self.top_speed = 0
         self.prev_dist = 0.
-    
-    def isr(self, channel):
+
+    def _cb(self, pin, level, tick):
         self.counter += 1
-        
+
     def update(self):
         # keep looping infinitely until the thread is stopped
         while(self.on):
@@ -123,10 +221,9 @@ class RotaryEncoder():
 
             time.sleep(self.poll_delay)
 
-    def run_threaded(self):
-        delta = self.meters - self.prev_dist
+    def run_threaded(self, throttle):
         self.prev_dist = self.meters
-        return self.meters, self.meters_per_second, delta
+        return self.meters_per_second
 
     def shutdown(self):
         # indicate that the thread should be stopped
@@ -134,7 +231,7 @@ class RotaryEncoder():
         print('Stopping Rotary Encoder')
         print("\tDistance Travelled: {} meters".format(round(self.meters, 4)))
         print("\tTop Speed: {} meters/second".format(round(self.top_speed, 4)))
-        time.sleep(.5)
-        
-        import RPi.GPIO as GPIO
-        GPIO.cleanup()
+        if self.cb != None:
+            self.cb.cancel()
+            self.cb = None
+        self.pi.stop()
