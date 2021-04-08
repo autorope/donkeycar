@@ -40,5 +40,5 @@ to find a better solution.
 
 ## Improve the documentation
 
-You can fix grammar or provide clarity by clicking the the *Edit on GitHub*
+You can fix grammar or provide clarity by clicking the *Edit on GitHub*
 link in the top right corner.

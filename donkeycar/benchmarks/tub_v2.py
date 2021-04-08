@@ -25,9 +25,7 @@ def benchmark():
         tub.write_record(record)
 
     deletions = np.random.randint(0, write_count, 100)
-    for index in deletions:
-        index = int(index)
-        tub.delete_record(index)
+    tub.delete_records(deletions)
  
     for record in tub:
         print('Record %s' % record)

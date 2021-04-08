@@ -24,7 +24,7 @@ class TestTub(unittest.TestCase):
             self.tub.write_record(record)
 
         for index in delete_indexes:
-            self.tub.delete_record(index)
+            self.tub.delete_records(index)
 
         count = 0
         for record in self.tub:

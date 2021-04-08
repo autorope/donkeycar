@@ -240,7 +240,8 @@ Usage:
 donkey ui
 ```
 
-Opens a UI to analyse tub data with features for. 
+This opens a UI to analyse tub data supporting following features:
+
 * show selected data fields live as values and graphical bars
 * delete or un-delete records
 * try filters for data selection
@@ -248,10 +249,6 @@ Opens a UI to analyse tub data with features for.
 
 The UI is an alternative to the web based `donkey tubclean`.
 
-![Tub UI](/assets/tub_ui.png)
+![Tub UI](../assets/ui-tub-manager.png)
 
-If you have more data than `user/angle` and `user/throttle` and want to 
-visualise this through the bars, then you have to add an entry in the 
-`field_mapping` table in the file `~/.donkeyrc` specifying if the data is 
-centered and providing the name of the maximum value of that data in your 
-`myconfig.py`.
+A full documentation of the UI is [here.](./ui.md)

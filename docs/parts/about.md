@@ -1,6 +1,6 @@
 # What is a Part
 
-A part Python class that wraps a functional component of a vehicle.
+A part is a Python class that wraps a functional component of a vehicle.
 
 These include:
 
@@ -9,6 +9,8 @@ These include:
 * Pilots - Lane Detectors, Behavioral Cloning models, ...
 * Controllers - Web based or Bluetooth.
 * Stores - Tub, or a way to save data.
+
+This is an excellent video by Tawn Kramer that walks through how to make a part: https://www.youtube.com/watch?v=YZ4ESrtfShs
 
 Here is an example how to use the PiCamera part to publish an image in the
 'cam/img' channel on every drive loop.
@@ -27,8 +29,14 @@ V.start()
 
 ## Anatomy of a Part
 
-All parts share a common structure so that they can all be run by the vehicles
-drive loop. Here is an example of a part that will accept a number, multiply
+All parts share a common structure so that they can all be run by the vehicle's
+drive loop. 
+
+A part must have either an "run" or a "run_threaded" function that does the work (see below). It may also require ``inputs=['in single quotes', 'seperated by commas']`` and will always generate at least one ``outputs=['in single quotes', 'seperated by commas']``
+
+If the part grabs some hardware resource, such as a camera or a serial port, it should also have a ```shutdown``` function that releases those resources properly when donkey is stopped.
+
+Here is an example of a part that will accept a number, multiply
 it by a random number and return the result.
 
 ```python
@@ -56,10 +64,20 @@ V.start(max_loops=5)
 ## Threaded Parts
 
 For a vehicle to perform well the drive loop must execute 10-30 times per
-second so slow parts should be threaded to avoid holding up the drive loop.
+second (determined by the ```DRIVE_LOOP_HZ``` setting in your config file; the default is 20hz)
+overall, so slow parts should be threaded to avoid holding up the drive loop.
 
 A threaded part needs to define the function that runs in the separate thread
 and the function to call that will return the most recent values quickly.
+
+When you add ```threaded = True``` when adding a part, the main Donkey program 
+will call the part's "run_threaded" function instead of the "run" function. So for
+the below example you would add the part with this:
+
+```V.add(RandPercent, inputs=['const'], outputs=['const'], threaded=True)```
+
+Once you have a "run_threaded" function, Donkey will automatically look for an "update" 
+function and run that in its own thread, as you can see below. 
 
 Here's an example how to make the `RandPercent` part threaded if the run
 function takes a second to complete.
@@ -76,7 +94,7 @@ class RandPercent:
         time.sleep(1)
 
     def update(self):
-        # the function run in it's own thread
+        # the function run in its own thread
         while True:
             self.out = self.run(self.in)
 
