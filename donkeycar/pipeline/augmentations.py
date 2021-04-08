@@ -1,7 +1,11 @@
 import cv2
 import numpy as np
+import logging
 import imgaug.augmenters as iaa
 from donkeycar.config import Config
+
+
+logger = logging.getLogger()
 
 
 class Augmentations(object):
@@ -89,10 +93,12 @@ class ImageAugmentation:
 
         elif aug_type == 'MULTIPLY':
             interval = getattr(config, 'AUG_MULTIPLY_RANGE', (0.5, 1.5))
+            logger.info(f'Creating augmentation {aug_type} {interval}')
             return iaa.Multiply(interval)
 
         elif aug_type == 'BLUR':
             interval = getattr(config, 'AUG_BLUR_RANGE', (0.0, 3.0))
+            logger.info(f'Creating augmentation {aug_type} {interval}')
             return iaa.GaussianBlur(sigma=interval)
 
     def augment(self, img_arr):

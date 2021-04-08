@@ -1,6 +1,8 @@
 # Odometry
 
-Odometry is way to calculate the speed and distance travelled of the car by measuring the rotation of its wheels using a sensor called an rotary encoder. This encoder can be on the motor, on the main drive shaft or on individual wheels. The advantage of using an encoder is that it "closes the loop" with your throttle, so your car can reliably command an actual velocity rather than just issuing a motor control which will produce a faster or slower velocity depending on the slope of the track, the surface or mechanical friction in your drive train while turning. In short, an encoder gives you much better control over your speed.
+
+Odometry is a way to calculate the speed and distance travelled of the car by measuring the rotation of its wheels using a sensor called an rotary encoder. This encoder can be on the motor, on the main drive shaft or on individual wheels. The advantage of using an encoder is that it "closes the loop" with your throttle, so your car can reliably command an actual velocity rather than just issuing a motor control which will produce a faster or slower velocity depending on the slope of the track, the surface or mechanical friction in your drive train while turning. In short, an encoder gives you much better control over your speed.
+=======
 
 Encoders come in various forms:
 * Quadrature encoders use hall-effect sensors to measure magnetic pulses as the shaft turns, and have the advantage of being very precise as well as being able to tell the difference between forward and reverse rotation
@@ -48,6 +50,7 @@ Use three female-to-female jumper cables and connect the sensor to your RPi GPIO
 ![wiring diagram](../assets/encoder_wiring.jpg)
 
 
+
 ## Software Setup
 
 Enable odometry in `myconfig.py`.
@@ -60,3 +63,9 @@ ODOM_DEBUG = False                  # Write out values on vel and distance as it
 ```
 
 If you are using an Arduino or Teensy to read your encoder, select 'Arduino' in the myconfig.py file libe above. The microcontroller should be flashed using the Arduino IDE with [this sketch](https://github.com/zlite/donkeycar/tree/master/donkeycar/parts/encoder/encoder). Make sure you check the sketch using the "test_encoder.py code in the Donkeycar tests folder to make sure you've got your encoder plugged into the right pins, or edit it to reflect the pins you are using.
+
+ENCODER_TYPE = 'Arduino'            # What kind of encoder? GPIO|Arduino|Astar 
+MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+ODOM_PIN = 4                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+```

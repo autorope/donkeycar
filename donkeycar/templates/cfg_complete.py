@@ -52,7 +52,7 @@ SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
 #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
 #PIGPIO_PWM uses Raspberrys internal PWM
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
@@ -102,15 +102,27 @@ LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 136
 
+
 # #RC CONTROL
 USE_RC = False
 STEERING_RC_GPIO = 26
 THROTTLE_RC_GPIO = 20
 DATA_WIPER_RC_GPIO = 19
 
+#DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
+#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+HBRIDGE_L298N_PIN_LEFT_FWD = 16
+HBRIDGE_L298N_PIN_LEFT_BWD = 18
+HBRIDGE_L298N_PIN_LEFT_EN = 22
+
+HBRIDGE_L298N_PIN_RIGHT_FWD = 15
+HBRIDGE_L298N_PIN_RIGHT_BWD = 13
+HBRIDGE_L298N_PIN_RIGHT_EN = 11
+
+
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
-DEFAULT_AI_FRAMEWORK='tensorflow'
+DEFAULT_AI_FRAMEWORK = 'tensorflow'
 
 #The DEFAULT_MODEL_TYPE will choose which model will be created at training time. This chooses
 #between different neural network designs. You can override this setting by passing the command

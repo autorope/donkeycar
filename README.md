@@ -37,7 +37,7 @@ The donkey car is controlled by running a sequence of events
 import time
 from donkeycar import Vehicle
 from donkeycar.parts.cv import CvCam
-from donkeycar.parts.datastore_v2 import TubWriter
+from donkeycar.parts.tub_v2 import TubWriter
 V = Vehicle()
 
 IMAGE_W = 160
