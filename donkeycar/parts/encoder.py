@@ -31,51 +31,6 @@ class ArduinoEncoder(object):
         self.debug = debug
         self.on = True
 
-    def OdomDist(ticks, mm_per_tick, throttle, debug = False):
-        """
-        Take a tick input from odometry and compute the distance and speed travelled
-        """
-        m_per_tick = mm_per_tick / 1000.0
-        meters = 0
-        last_time = time.time()
-        meters_per_second = 0
-        prev_ticks = 0
-
-        """
-        inputs => total ticks since start
-        inputs => throttle, used to determine positive or negative vel
-        return => total dist (m), current vel (m/s), delta dist (m)
-        """
-        new_ticks = ticks - prev_ticks
-        prev_ticks = ticks
-
-        #save off the last time interval and reset the timer
-        start_time = last_time
-        end_time = time.time()
-        last_time = end_time
-        
-        #calculate elapsed time and distance traveled
-        seconds = end_time - start_time
-        distance = new_ticks * m_per_tick
-        if throttle < 0.0:
-            distance = distance * -1.0
-        velocity = distance / seconds
-        
-        #update the odometer values
-        meters += distance
-        meters_per_second = velocity
-
-        #console output for debugging
-        if(debug):
-            print('seconds:', seconds)
-            print('delta:', distance)
-            print('velocity:', velocity)
-
-            print('distance (m):', meters)
-            print('velocity (m/s):', meters_per_second)
-
-        return velocity, distance
-
     def update(self):
         global lasttick
         while self.on:

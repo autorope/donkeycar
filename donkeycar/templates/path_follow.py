@@ -31,6 +31,7 @@ from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PIm
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.pigpio_enc import PiPGIOEncoder, OdomDist
 from donkeycar.parts.realsense2 import RS_T265
+from donkeycar.parts.encoder import ArduinoEncoder
         
 
 def drive(cfg):
@@ -59,11 +60,17 @@ def drive(cfg):
             threaded=True)
 
     if cfg.HAVE_ODOM:
-        pi = pigpio.pi()
-        enc = PiPGIOEncoder(cfg.ODOM_PIN, pi)
-        V.add(enc, outputs=['enc/ticks'])
+        if cfg.ODOM_TYPE == "gpio":
+            pi = pigpio.pi()
+            enc = PiPGIOEncoder(cfg.ODOM_PIN, pi)
+            V.add(enc, outputs=['enc/ticks'], threaded=True)
+            odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
+ 
+        if cfg.ODOM_TYPE == "arduino":
+            enc = ArduinoEncoder()
+            V.add(enc, outputs=['enc/ticks'], threaded=True)
+            odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
 
-        odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
         V.add(odom, inputs=['enc/ticks', 'user/throttle'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/delta_vel_m_s'])
 
         if not os.path.exists(cfg.WHEEL_ODOM_CALIB):
@@ -83,7 +90,7 @@ def drive(cfg):
         V.add(NoOdom(), outputs=['enc/vel_m_s'])
    
     # This requires use of the Intel Realsense T265
-    rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB)
+    rs = RS_T265(image_output=False)
     V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array'], threaded=True)
 
     # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
@@ -197,10 +204,13 @@ def drive(cfg):
     ctr.set_button_down_trigger("L2", dec_pid_d)
     ctr.set_button_down_trigger("R2", inc_pid_d)
 
-    # #This web controller will create a web server. We aren't using any controls, just for visualization.
+    # Plot a circle on the map where the car is located
 
-    web_ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                 mode=cfg.WEB_INIT_MODE)
+
+    carcolor = 'green'
+
+    loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = carcolor)
+    V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
     V.add(web_ctr,
         inputs=['map/image'],
@@ -253,7 +263,7 @@ def drive(cfg):
         print("Make sure your car is sitting at the origin of the path.")
         print("View web page and refresh. You should see your path.")
         print("Hit 'select' twice to change to ai drive mode.")
-        print("You can press the X button (e-stop) to stop the car at any time.")
+        print("You can press the X/A button (e-stop) to stop the car at any time.")
         print("Delete file", cfg.PATH_FILENAME, "and re-start")
         print("to record a new path.")
         print("###############################################################################")
@@ -268,7 +278,7 @@ def drive(cfg):
         print("Complete one circuit of your course.")
         print("When you have exactly looped, or just shy of the ")
         print("loop, then save the path (press %s)." % cfg.SAVE_PATH_BTN)
-        print("You can also erase a path with the Triangle button.")
+        print("You can also erase a path with the Triangle/Y button.")
         print("When you're done, close this process with Ctrl+C.")
         print("Place car exactly at the start. ")
         print("Then restart the car with 'python manage drive'.")

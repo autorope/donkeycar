@@ -8,7 +8,7 @@ import time
 import logging
 
 import numpy as np
-import pyrealsense2 as rs
+import pyrealsense2.pyrealsense2 as rs
 
 class RS_T265(object):
     '''
@@ -22,7 +22,7 @@ class RS_T265(object):
         # This can be a bit much for USB2, but you can try it. Docs recommend USB3 connection for this.
         self.image_output = image_output
 
-        # When we have and encoder, this will be the last vel measured. 
+        # When we have an encoder, this will be the last vel measured. 
         self.enc_vel_ms = 0.0
         self.wheel_odometer = None
 
@@ -74,8 +74,8 @@ class RS_T265(object):
             wo_sensor_id = 0  # indexed from 0, match to order in calibration file
             frame_num = 0  # not used
             v = rs.vector()
-            v.x = -1.0 * self.enc_vel_ms  # m/s
-            #v.z = -1.0 * self.enc_vel_ms  # m/s
+            v.x = 1.0 * self.enc_vel_ms  # m/s
+ #           v.z = -1.0 * self.enc_vel_ms  # m/s
             self.wheel_odometer.send_wheel_odometry(wo_sensor_id, frame_num, v)
 
         try:
