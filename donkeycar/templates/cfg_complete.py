@@ -4,7 +4,7 @@ CAR CONFIG
 This file is read by your car application's manage.py script to change the car
 performance.
 
-EXMAPLE
+EXAMPLE
 -----------
 import dk
 cfg = dk.load_config(config_path='~/mycar/config.py')
@@ -52,7 +52,7 @@ SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
 #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
 #PIGPIO_PWM uses Raspberrys internal PWM
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
@@ -89,10 +89,40 @@ HBRIDGE_PIN_LEFT_BWD = 16
 HBRIDGE_PIN_RIGHT_FWD = 15
 HBRIDGE_PIN_RIGHT_BWD = 13
 
+#ODOMETRY
+HAVE_ODOM = False                   # Do you have an odometer/encoder 
+ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
+MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+
+# #LIDAR
+USE_LIDAR = False
+LIDAR_TYPE = 'RP' #(RP|YD)
+LIDAR_LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
+LIDAR_UPPER_LIMIT = 136
+
+
+# #RC CONTROL
+USE_RC = False
+STEERING_RC_GPIO = 26
+THROTTLE_RC_GPIO = 20
+DATA_WIPER_RC_GPIO = 19
+
+#DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
+#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+HBRIDGE_L298N_PIN_LEFT_FWD = 16
+HBRIDGE_L298N_PIN_LEFT_BWD = 18
+HBRIDGE_L298N_PIN_LEFT_EN = 22
+
+HBRIDGE_L298N_PIN_RIGHT_FWD = 15
+HBRIDGE_L298N_PIN_RIGHT_BWD = 13
+HBRIDGE_L298N_PIN_RIGHT_EN = 11
+
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
-DEFAULT_AI_FRAMEWORK='tensorflow'
+DEFAULT_AI_FRAMEWORK = 'tensorflow'
 
 #The DEFAULT_MODEL_TYPE will choose which model will be created at training time. This chooses
 #between different neural network designs. You can override this setting by passing the command
@@ -182,13 +212,6 @@ MM1_SHOW_STEERING_VALUE = False
 # -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
-
-#ODOMETRY
-HAVE_ODOM = True                   # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
-MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
-ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
-ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
 
 #LOGGING
 HAVE_CONSOLE_LOGGING = True

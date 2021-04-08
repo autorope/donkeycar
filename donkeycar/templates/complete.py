@@ -18,10 +18,8 @@ import os
 import time
 import logging
 from docopt import docopt
-import numpy as np
 
 import donkeycar as dk
-
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
@@ -33,19 +31,21 @@ from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
 logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
 
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
-    '''
-    Construct a working robotic vehicle from many parts.
-    Each part runs as a job in the Vehicle loop, calling either
-    it's run or run_threaded method depending on the constructor flag `threaded`.
-    All parts are updated one after another at the framerate given in
-    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
-    Parts may have named outputs and inputs. The framework handles passing named outputs
-    to parts requesting the same named input.
-    '''
-
+def drive(cfg, model_path=None, use_joystick=False, model_type=None,
+          camera_type='single', meta=[]):
+    """
+    Construct a working robotic vehicle from many parts. Each part runs as a
+    job in the Vehicle loop, calling either it's run or run_threaded method
+    depending on the constructor flag `threaded`. All parts are updated one
+    after another at the framerate given in cfg.DRIVE_LOOP_HZ assuming each
+    part finishes processing in a timely manner. Parts may have named outputs
+    and inputs. The framework handles passing named outputs to parts
+    requesting the same named input.
+    """
+    logger.info(f'PID: {os.getpid()}')
     if cfg.DONKEY_GYM:
         #the simulator will use cuda and then we usually run out of resources
         #if we also try to use cuda. so disable for donkey_gym.
@@ -72,6 +72,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.HAVE_MQTT_TELEMETRY:
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
+        
+    if cfg.HAVE_ODOM:
+        if cfg.ENCODER_TYPE == "GPIO":
+            from donkeycar.parts.encoder import RotaryEncoder
+            enc = RotaryEncoder(mm_per_tick=0.306096, pin = cfg.ODOM_PIN, debug = cfg.ODOM_DEBUG)
+            V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
+        elif cfg.ENCODER_TYPE == "arduino":
+            from donkeycar.parts.encoder import ArduinoEncoder
+            enc = ArduinoEncoder()
+            V.add(enc, outputs=['enc/speed'], threaded=True)
+        else:
+            print("No supported encoder found")
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
@@ -149,6 +161,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             cam = LICamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, fps=cfg.CAMERA_FRAMERATE)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
+
+        # add lidar
+        if cfg.USE_LIDAR:
+            from donkeycar.parts.lidar import RPLidar
+            if cfg.LIDAR_TYPE == 'RP':
+                print("adding RP lidar part")
+                lidar = RPLidar(lower_limit = cfg.LIDAR_LOWER_LIMIT, upper_limit = cfg.LIDAR_UPPER_LIMIT)
+                V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
+            if cfg.LIDAR_TYPE == 'YD':
+                print("YD Lidar not yet supported")
 
         # Donkey gym part will output position information if it is configured
         if cfg.DONKEY_GYM:
@@ -339,12 +361,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]
     #IMU
+    elif cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array']
+
+    elif cfg.HAVE_ODOM:
+        inputs = ['cam/image_array', 'enc/speed']
+
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
         inputs=['cam/image_array',
             'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
+    elif cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array']
     else:
         inputs=['cam/image_array']
 
@@ -532,6 +562,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(left_motor, inputs=['left_motor_speed'])
         V.add(right_motor, inputs=['right_motor_speed'])
 
+    elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL_L298N":
+        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, L298N_HBridge_DC_Motor
+
+        left_motor = L298N_HBridge_DC_Motor(cfg.HBRIDGE_L298N_PIN_LEFT_FWD, cfg.HBRIDGE_L298N_PIN_LEFT_BWD, cfg.HBRIDGE_L298N_PIN_LEFT_EN)
+        right_motor = L298N_HBridge_DC_Motor(cfg.HBRIDGE_L298N_PIN_RIGHT_FWD, cfg.HBRIDGE_L298N_PIN_RIGHT_BWD, cfg.HBRIDGE_L298N_PIN_RIGHT_EN)
+        two_wheel_control = TwoWheelSteeringThrottle()
+
+        V.add(two_wheel_control,
+                inputs=['throttle', 'angle'],
+                outputs=['left_motor_speed', 'right_motor_speed'])
+
+        V.add(left_motor, inputs=['left_motor_speed'])
+        V.add(right_motor, inputs=['right_motor_speed'])
+        
+
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
         from donkeycar.parts.actuator import ServoBlaster, PWMSteering
         steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
@@ -577,13 +622,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     #add tub to save data
 
-    inputs=['cam/image_array',
-            'user/angle', 'user/throttle',
-            'user/mode']
+    if cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        types = ['image_array', 'nparray','float', 'float', 'str']
+    else:
+        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
+        types=['image_array','float', 'float','str']
 
-    types=['image_array',
-           'float', 'float',
-           'str']
+    if cfg.USE_LIDAR:
+        inputs += ['lidar/dist_array']
+        types += ['nparray']
+
+    if cfg.HAVE_ODOM:
+        inputs += ['enc/speed']
+        types += ['float']
 
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
@@ -668,4 +720,3 @@ if __name__ == '__main__':
               meta=args['--meta'])
     elif args['train']:
         print('Use python train.py instead.\n')
-
