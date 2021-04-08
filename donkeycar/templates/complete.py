@@ -18,10 +18,8 @@ import os
 import time
 import logging
 from docopt import docopt
-import numpy as np
 
 import donkeycar as dk
-
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
@@ -33,19 +31,21 @@ from donkeycar.parts.launch import AiLaunch
 from donkeycar.utils import *
 
 logger = logging.getLogger()
+logging.basicConfig(level=logging.INFO)
 
 
-def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type='single', meta=[]):
-    '''
-    Construct a working robotic vehicle from many parts.
-    Each part runs as a job in the Vehicle loop, calling either
-    it's run or run_threaded method depending on the constructor flag `threaded`.
-    All parts are updated one after another at the framerate given in
-    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
-    Parts may have named outputs and inputs. The framework handles passing named outputs
-    to parts requesting the same named input.
-    '''
-
+def drive(cfg, model_path=None, use_joystick=False, model_type=None,
+          camera_type='single', meta=[]):
+    """
+    Construct a working robotic vehicle from many parts. Each part runs as a
+    job in the Vehicle loop, calling either it's run or run_threaded method
+    depending on the constructor flag `threaded`. All parts are updated one
+    after another at the framerate given in cfg.DRIVE_LOOP_HZ assuming each
+    part finishes processing in a timely manner. Parts may have named outputs
+    and inputs. The framework handles passing named outputs to parts
+    requesting the same named input.
+    """
+    logger.info(f'PID: {os.getpid()}')
     if cfg.DONKEY_GYM:
         #the simulator will use cuda and then we usually run out of resources
         #if we also try to use cuda. so disable for donkey_gym.
@@ -72,6 +72,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.HAVE_MQTT_TELEMETRY:
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
+        
+    if cfg.HAVE_ODOM:
+        if cfg.ENCODER_TYPE == "GPIO":
+            from donkeycar.parts.encoder import RotaryEncoder
+            enc = RotaryEncoder(mm_per_tick=0.306096, pin = cfg.ODOM_PIN, debug = cfg.ODOM_DEBUG)
+            V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
+        elif cfg.ENCODER_TYPE == "arduino":
+            from donkeycar.parts.encoder import ArduinoEncoder
+            enc = ArduinoEncoder()
+            V.add(enc, outputs=['enc/speed'], threaded=True)
+        else:
+            print("No supported encoder found")
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
@@ -171,15 +183,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
-    #This web controller will create a web server that is capable
-    #of managing steering, throttle, and modes, and more.
-    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-    
-    V.add(ctr,
-        inputs=['cam/image_array', 'tub/num_records'],
-        outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-        threaded=True)
-        
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -210,6 +213,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         
         V.add(ctr, 
           inputs=['cam/image_array'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          threaded=True)
+
+    else:
+        #This web controller will create a web server that is capable
+        #of managing steering, throttle, and modes, and more.
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
+        
+        V.add(ctr,
+          inputs=['cam/image_array', 'tub/num_records'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
 
@@ -348,6 +361,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]
     #IMU
+    elif cfg.USE_LIDAR:
+        inputs = ['cam/image_array', 'lidar/dist_array']
+
+    elif cfg.HAVE_ODOM:
+        inputs = ['cam/image_array', 'enc/speed']
+
     elif model_type == "imu":
         assert(cfg.HAVE_IMU)
         #Run the pilot if the mode is not user.
@@ -610,6 +629,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
         types=['image_array','float', 'float','str']
 
+    if cfg.USE_LIDAR:
+        inputs += ['lidar/dist_array']
+        types += ['nparray']
+
+    if cfg.HAVE_ODOM:
+        inputs += ['enc/speed']
+        types += ['float']
+
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
@@ -693,4 +720,3 @@ if __name__ == '__main__':
               meta=args['--meta'])
     elif args['train']:
         print('Use python train.py instead.\n')
-
