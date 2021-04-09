@@ -22,17 +22,19 @@ class ArduinoEncoder(object):
     def __init__(self, mm_per_tick=0.0000599, debug=False):
         import serial
         import serial.tools.list_ports
+        from donkeycar.parts.pigpio_enc import OdomDist
         for item in serial.tools.list_ports.comports():
             print(item)  # list all the serial ports
         self.ser = serial.Serial('/dev/ttyACM0', 115200, 8, 'N', 1, timeout=0.1)
         # initialize the odometer values
         self.ser.write(str.encode('r'))  # restart the encoder to zero
         self.ticks = 0
+        self.lasttick = 0
         self.debug = debug
         self.on = True
+        self.mm_per_tick = mm_per_tick
 
     def update(self):
-        global lasttick
         while self.on:
             input = ''
             while (self.ser.in_waiting > 0):   # read the serial port and see if there's any data there
@@ -43,9 +45,9 @@ class ArduinoEncoder(object):
                 temp = input.strip()  # remove any whitespace
                 if (temp.isnumeric()):
                     self.ticks = int(temp)
-                    lasttick = self.ticks
-            else: self.ticks = lasttick
-            self.speed, self.distance = self.OdomDist(ticks, mm_per_tick)
+                    self.lasttick = self.ticks
+            else: self.ticks = self.lasttick
+            self.speed, self.distance = self.OdomDist(self.ticks, self.mm_per_tick)
 
     def run_threaded(self):
         self.speed 
