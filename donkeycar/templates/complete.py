@@ -171,6 +171,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
+    #This web controller will create a web server that is capable
+    #of managing steering, throttle, and modes, and more.
+    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
+    
+    V.add(ctr,
+        inputs=['cam/image_array', 'tub/num_records'],
+        outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+        threaded=True)
+        
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
@@ -201,16 +210,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         
         V.add(ctr, 
           inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
-
-    else:
-        #This web controller will create a web server that is capable
-        #of managing steering, throttle, and modes, and more.
-        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-        
-        V.add(ctr,
-          inputs=['cam/image_array', 'tub/num_records'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
 
