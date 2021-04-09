@@ -2,15 +2,14 @@
 
 ### What types of RC cars work with the donkey platform?
 
-Most hobby grade RC cars will work fine with the electronics but you'll need to make your own baseplate and camera
-holder. To make sure the car will work with Donkey check theses things.
+Most hobby grade RC cars will work fine with the electronics, but you'll need to make your own base-plate and camera
+holder. To make sure the car will work with Donkey check these things.
 
-* it has a separate ESC and receiver. Some of the cheaper cars have these combined so it would require soldering to
-connect the Donkey motor controller to the ESC.
+* it has a separate ESC and receiver. Some cheaper cars have these combined so it would require soldering to connect the Donkey motor controller to the ESC.
 * The ESC uses three-wire connectors. This will make it easy to just plug into the Donkey hardware.
 * Brushed motors are easier because they can go slower but sensored brushless motors(w/sensored ESC) can work as well.
 
-For more information, see [Roll Your Own](/roll_your_own.md).
+For more information, see [Roll Your Own](./roll_your_own.md).
 
 ### What car can I use if I'm not in the USA?
 
@@ -23,8 +22,7 @@ works with the parts. Here are some parts people have said work in other countri
 
 ### How can I make my own track?
 
-You can use tape, ribbon or even rope. The most popular tracks are 4ft wide and have 2in white borders with a dashed
-yellow center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
+You can use tape, ribbon or even rope. The most popular tracks are 4ft wide and have 2in white borders with a dashed yellow center line. The Oakland track is about 70 feet around the center line. Key race characteristics include:
 
 * straightaways.
 * left and right turns
@@ -38,9 +36,9 @@ Here are a couple systems that people have tried or talked about.
 
 * NVIDA TX2 - This was implemented with a webcam and used a teensy to control the motor/servos. I2c control of PCA9685 works as well.
 
-* Pi-Zero - Yes, Try following the steps for the PiB/B+. They should work for the PiZero.
+* Pi-Zero - Yes, try following the steps for the PiB/B+. They should work for the PiZero.
 
-## After a reboot, I don't see the (donkey) in front of the prompt, and I get python errors when I run
+### After a reboot, I don't see the (donkey) in front of the prompt, and I get python errors when I run
 
 1. If you used this disc setup guide above, you used conda to manage your virtual environment. You need to activate the donkey conda environment with:
 
@@ -50,7 +48,7 @@ conda activate donkey
 
 2. optionally you can add that line to the last line of your `~/.bashrc` to have it active each time you login.
 
-## How to get latest Donkey source
+### How to get latest Donkey source
 
 1. When donkey has changed you can get the latest source. You've installed it directly from the github repo, so getting latest is easy:
 

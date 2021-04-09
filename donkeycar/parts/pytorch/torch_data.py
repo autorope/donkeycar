@@ -72,7 +72,12 @@ class TorchTubDataset(IterableDataset):
         def y_transform(record: TubRecord):
             angle: float = record.underlying['user/angle']
             throttle: float = record.underlying['user/throttle']
-            return torch.tensor([angle, throttle])
+            predictions = torch.tensor([angle, throttle], dtype=torch.float)
+
+            # Normalize to be between [0, 1]
+            # angle and throttle are originally between [-1, 1]
+            predictions = (predictions + 1) / 2
+            return predictions
 
         def x_transform(record: TubRecord):
             # Loads the result of Image.open()
