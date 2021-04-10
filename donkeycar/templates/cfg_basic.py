@@ -61,7 +61,6 @@ ODOM_DEBUG = False                  # Write out values on vel and distance as it
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_AI_FRAMEWORK='tensorflow'
-=======
 DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 # #LIDAR
