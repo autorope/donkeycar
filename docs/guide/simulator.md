@@ -412,10 +412,15 @@ Example:
 ### Set Car Position
 Client=>Sim. Move the car to the given position (training only)
 
-Fields: 
+Fields:
+
 * *pos_x* :  x world coordinate.
 * *pos_y* :  y world coordinate.
 * *pos_z* :  z world coordinate. 
+* *qx* :  (optionnal) quaternion x
+* *qy* :  (optionnal) quaternion y
+* *qz* :  (optionnal) quaternion z
+* *qw* :  (optionnal) quaternion w
 
 Example:
 ```bash
@@ -426,7 +431,20 @@ Example:
     "pos_z" : "0.0"
     }
 ```
+or:
 
+```bash
+    {
+    "msg_type" : "set_position" 
+    "pos_x" : "0.0", 
+    "pos_y" : "0.0", 
+    "pos_z" : "0.0",
+    "qx" : "0.0",
+    "qy" : "0.2",
+    "qz" : "0.0",
+    "qw" : "1.0"
+    }
+```
 
 ---
 
