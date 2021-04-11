@@ -11,6 +11,11 @@ The Donkey UI currently contains three screens supporting the following workflow
 
 1. The pilot arena - here you can test two pilots' performance  against each other.
 
+**_Note_:** Under linux the app depends on `xclip`, if this is not installed, then please run:
+```bash
+sudo apt-get install xclip
+```
+
 ## The tub manager
 ![Tub_manager UI](../assets/ui-tub-manager.png)
 

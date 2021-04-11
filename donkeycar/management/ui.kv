@@ -1,6 +1,7 @@
 #: import TsPlot donkeycar.management.graph.TsPlot
 #: import get_model_by_type donkeycar.utils.get_model_by_type
 #: import platform sys.platform
+#: import os os
 
 #:set common_height 30 if platform != 'darwin' else 60
 #:set layout_pad_x 10 if platform != 'darwin' else 20
@@ -591,8 +592,9 @@
             # first row
             Label:
                 text: 'Car directory (hit return)'
-            Label:
-                text: 'Select tub'
+            ToggleButton:
+                id: create_dir
+                text: 'Create new folder'
             ProgressBar:
                 value: root.pull_bar
             ProgressBar:
@@ -673,5 +675,6 @@
             id: tab_bar
             manager: root.manager
         Image:
-            source: '../parts/web_controller/templates/static/donkeycar-logo-sideways.png'
+            source: root.img_path
             size: self.texture_size
+
