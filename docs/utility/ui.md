@@ -82,13 +82,25 @@ Under the two pilots there are sliders with pre-defined image augmentations, her
 The application will remember the last two selected pilots.
 
 ## The car connection
-![Car_Connector_UI](../assets/ui-car-connector.png)
+![Car_Connector_UI](../assets/ui-car-connector-1.png)
 
-**_Note_**: This screen will only work on linux / OSX as it makes use of `ssh` and `rsync` in the background. 
+**_Note_**: This screen will only work on linux / OSX as it makes use of `ssh` and `rsync` in the background. SSH needs to be configured to allow login from the PC to the car without password. This can be done by running on the PC:
+```bash
+ssh-keygen
+```
+When being asked for a passphrase just hit &lt;return&gt;. This creates a public and private key in your `./ssh` directory. Then copy the key over to the car with the command below. Here we assume your car's hostname is `donkeypi` - otherwise replace it with the corresponding hostname.
+```bash
+ssh-copy-id -i ~/.ssh/id_rsa.pub pi@donkeypi.local
+```
+Log into your car using:
+```bash
+ssh pi@donkeypi.local
+```
+If SSH asks you if that host should be added to the list of known hosts, hit &lt;return&gt; and you are done. From now on, you can ssh into the car without being prompted for the password again. **The login-free setup is required for the screen to work.**
 
 With the car connector you can transfer the tub data from the car to your PC and transfer the pilots back to the car.
 
-* Under the `Car directory` enter the car folder and hit return. This should populate the `Select tub` drop down. Most likely you want to select the `data/` directory but you might have tubs in subfolders. In that case use `~/mycar/data` in the `Car directory`.
+* Under the `Car directory` enter the car folder and hit return. This should populate the `Select tub` drop down. Most likely you want to select the `data/` directory but you might have tubs in subfolders. In that case use `~/mycar/data` in the `Car directory`, select the tub you want to pull and enable `Create new folder` on the button. This will copy a tub on the car like `~/mycar/data/tub_21-04-09_11` into the same location on your PC. Without the `Create new folder` it would copy the content of the car's tub folder into `~/mycar/data` of your PC, possibly overwriting other tub data that might be there.
 
 * Press `Pull tub data/` to copy the tub from the car
 * Press `Send pilots` to sync your local `models/` folder with the `models/` folder on the car. This command syncs all pilots that are locally stored.
@@ -97,9 +109,8 @@ With the car connector you can transfer the tub data from the car to your PC and
 
 
 ### Future plans
-A couple of nice-to-haves include:
-
-1. Handling of multiple tubs
+1. Moving the car connector screen to a web interface, supported on all OS.
+1. Handling of multiple tubs.
 1. The ability to also use the filter in training without the need to edit the `myconfig.py` file.
-1. Migration of the `~/.donkeyrc` file to the kivy internal settings
-1. Support using only a single pilot (or more than two) in the pilot arena
+1. Migration of the `~/.donkeyrc` file to the kivy internal settings.
+1. Support using only a single pilot (or more than two) in the pilot arena.
