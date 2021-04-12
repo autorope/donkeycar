@@ -747,8 +747,9 @@ class PilotScreen(Screen):
     def on_index(self, obj, index):
         """ Kivy method that is called if self.index changes. Here we update
             self.current_record and the slider value. """
-        self.current_record = tub_screen().ids.tub_loader.records[index]
-        self.ids.slider.value = index
+        if tub_screen().ids.tub_loader.records:
+            self.current_record = tub_screen().ids.tub_loader.records[index]
+            self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
         """ Kivy method that is called when self.current_index changes. Here
@@ -954,10 +955,12 @@ class CarScreen(Screen):
         self.pilots = self.list_remote_dir(model_dir)
 
     def pull(self, tub_dir):
+        target = f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}' + \
+               f':{os.path.join(self.car_dir, tub_dir)}'
+        if self.ids.create_dir.state == 'normal':
+            target += '/'
         dest = self.config.DATA_PATH
-        cmd = ['rsync', '-rv', '--progress', '--partial',
-               f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}' + \
-               f':{os.path.join(self.car_dir, tub_dir)}', dest]
+        cmd = ['rsync', '-rv', '--progress', '--partial', target, dest]
         Logger.info('car pull: ' + str(cmd))
         proc = Popen(cmd, shell=False, stdout=PIPE, text=True,
                      encoding='utf-8', universal_newlines=True)
@@ -1013,7 +1016,13 @@ class CarScreen(Screen):
                 return False
 
     def connected(self, event):
+        if not self.config:
+            return
         if self.connection is None:
+            if not hasattr(self.config, 'PI_USERNAME') and \
+                    not hasattr(self.config, 'PI_HOSTNAME'):
+                self.ids.connected.text = 'Requires PI_USERNAME, PI_HOSTNAME'
+                return
             # run new command to check connection status
             cmd = ['ssh',
                    '-o ConnectTimeout=3',
@@ -1084,6 +1093,9 @@ class CarScreen(Screen):
 
 
 class StartScreen(Screen):
+    img_path = os.path.realpath(os.path.join(
+        os.path.dirname(__file__),
+        '../parts/web_controller/templates/static/donkeycar-logo-sideways.png'))
     pass
 
 
