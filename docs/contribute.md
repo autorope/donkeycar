@@ -23,7 +23,7 @@ template.
 Are you a hardware specialist that can write a donkey part wrapper for a
 GPS unit or a data scientist that can write an recursive neural net autopilot?
 If so please write a part so other people driving donkeys can use the part. How do parts work? Check out [this overview]
-(parts/about)
+(/parts/about/)
 
 ## Fix or report a bug
 
