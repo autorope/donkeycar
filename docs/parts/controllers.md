@@ -17,7 +17,7 @@ If you bought an RC car then it might have come with a standard 2.4GHz car radio
 
 * Hardware setup
  
-Using female-to-female jumper cables connect the following pins from your RC receiver to your RPi GPIO row as showin the diagram below
+Using female-to-female jumper cables connect the following pins from your RC receiver to your RPi GPIO row as shown the diagram below
 ![wiring diagram](../assets/rc_wiring.jpg)
 
 Any of the RC receiver's + pin should go to any of the RPi's 3v pins. Any of the receiver's - pins can go to any RPi ground pin.
