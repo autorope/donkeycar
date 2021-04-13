@@ -41,4 +41,4 @@ to find a better solution.
 ## Improve the documentation
 
 You can fix grammar or provide clarity by clicking the the *Edit on GitHub*
-link in the top right corner.
+link in the top right corner. Here's [a guide](/docs/dev_guide/docs) to how to create and edit docs
