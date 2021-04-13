@@ -1,6 +1,6 @@
-# Create your car application
+# How to create and edit docs
 
-If you are not already, please [ssh into your vehicle](/guide/robot_sbc/setup_raspberry_pi/#step-5-connecting-to-the-pi).
+This guide will show you how to create and edit docs in markdown format, and submit them for integration into the Donkeycar official docs.
 
 ## Create Donkeycar from Template
 
