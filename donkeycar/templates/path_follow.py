@@ -22,14 +22,12 @@ import shlex
 
 from docopt import docopt
 import numpy as np
-import pigpio
 
 import donkeycar as dk
 from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
-from donkeycar.parts.pigpio_enc import PiPGIOEncoder, OdomDist
 from donkeycar.parts.realsense2 import RS_T265
 from donkeycar.parts.encoder import ArduinoEncoder
         
@@ -61,6 +59,7 @@ def drive(cfg):
 
     if cfg.HAVE_ODOM:
         if cfg.ODOM_TYPE == "gpio":
+            import pigpio
             pi = pigpio.pi()
             enc = PiPGIOEncoder(cfg.ODOM_PIN, pi)
             V.add(enc, outputs=['enc/ticks'], threaded=True)
