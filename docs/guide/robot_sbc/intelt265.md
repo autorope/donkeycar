@@ -9,19 +9,21 @@ Original T265 path follower code by [Tawn Kramer](https://github.com/tawnkramer/
 
 ## Step 1: Setup Donkeycar
 
-## Step 2: Setup Librealsense on Ubuntu Machine
+## Step 2: Setup Librealsense
 
 Using the latest version of Raspian (tested with Raspian Buster) on the RPi, follow [these instructions](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation_raspbian.md) to set up Intel's Realsense libraries (Librealsense) and dependencies. 
 
-## Step 3: Setup TensorRT on your Jetson Nano
+## Step 3: Setup Path Follow
 
 After you’ve done that, set up the directory with this:
 
-```donkey createcar --path ~/follow --template path_follower 
+```donkey createcar --path ~/follow --template path_follow```
 
-Running
-``` cd ~/follow 
-python3 manage.py drive```
+To run this go to the "follow" directory and start Donkey as per the below
+
+```cd ~/follow```
+
+```python3 manage.py drive```
 
 Once it’s running, open a browser on your laptop and enter this in the URL bar: http://<your nano’s IP address>:8887
 
