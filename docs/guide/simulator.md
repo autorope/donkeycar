@@ -355,6 +355,9 @@ Fields:
 * *gyro_y* :  y gyro acceleration.
 * *gyro_z* :  z gyro acceleration.
 * *gyro_w* :  w gyro acceleration.
+* *pitch* :  pitch of the car in degrees.
+* *roll* :  roll of the car degrees.
+* *yaw* :  yaw of the car degrees.
 * *activeNode* : Progress on track (not working properly with multiple car for the moment)
 * *totalNodes* : number of nodes on track
 * *pos_x* :  (training only) x world coordinate of vehicle.
@@ -384,6 +387,9 @@ Example:
     "gyro_y" : "0.0", 
     "gyro_z" : "0.0", 
     "gyro_w" : "0.0",
+    "pitch" : "0.0", 
+    "roll" : "0.0", 
+    "yaw" : "0.0",
     "activeNode" : "5"
     "totalNodes" : "26"
     "cte" : "0.5"
