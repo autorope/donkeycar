@@ -103,15 +103,6 @@ def drive(cfg, model_path=None, model_type=None):
 
     car.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
 
-    # add lidar
-    if cfg.USE_LIDAR:
-        if cfg.LIDAR_TYPE == 'RP':
-            print("adding RP lidar part")
-            lidar = RPLidar(lower_limit = cfg.LIDAR_LOWER_LIMIT, upper_limit = cfg.LIDAR_UPPER_LIMIT)
-            car.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
-        if cfg.LIDAR_TYPE == 'YD':
-            print("YD Lidar not yet supported")
-            
     # add controller
     if cfg.USE_RC:
         rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
@@ -155,9 +146,6 @@ def drive(cfg, model_path=None, model_type=None):
     if model_path:
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
-        if cfg.USE_LIDAR:
-            inputs = ['cam/image_array', 'lidar/dist_array']
-        else:
             inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
@@ -191,11 +179,6 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(throttle, inputs=['throttle'])
 
     # add tub to save data
-    if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle',
-                  'user/throttle', 'user/mode']
-        types = ['image_array', 'nparray','float', 'float', 'str']
-    else:    
         inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'float', 'float', 'str']
 
