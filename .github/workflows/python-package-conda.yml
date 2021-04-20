@@ -13,7 +13,7 @@ jobs:
             ENV_FILE: install/envs/mac.yml
           - os: ubuntu-latest
             ENV_FILE: install/envs/ubuntu.yml
-
+      fail-fast: false
     defaults:
       run:
         shell: bash -l {0}
