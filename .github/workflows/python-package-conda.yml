@@ -11,9 +11,8 @@ jobs:
         include:
           - os: macos-latest
             ENV_FILE: install/envs/mac.yml
-
           - os: ubuntu-latest
-            ENV_FILE: install/envs/pc.yml
+            ENV_FILE: install/envs/ubuntu.yml
 
     defaults:
       run:
