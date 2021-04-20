@@ -45,6 +45,7 @@ class KerasPilot(ABC):
         print(f'Created {self}')
 
     def load(self, model_path: str) -> None:
+        print(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False)
 
     def load_weights(self, model_path: str, by_name: bool = True) -> None:
@@ -101,6 +102,21 @@ class KerasPilot(ABC):
         """
         pass
 
+    def evaluate(self, record: TubRecord,
+                 augmentation: 'ImageAugmentation' = None) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        # extract model input from record
+        x0 = self.x_transform(record)
+        x1 = x0[0] if isinstance(x0, tuple) else x0
+        # apply augmentation to training data only
+        x2 = augmentation.augment(x1) if augmentation else x1
+        # normalise image, assume other input data comes already normalised
+        x3 = normalize_image(x2)
+        if isinstance(x0, tuple):
+            return self.inference(x3, *x0[1:])
+        else:
+            return self.inference(x3, None)
+
     def train(self,
               model_path: str,
               train_data: 'BatchSequence',
@@ -111,7 +127,8 @@ class KerasPilot(ABC):
               epochs: int,
               verbose: int = 1,
               min_delta: float = .0005,
-              patience: int = 5) -> tf.keras.callbacks.History:
+              patience: int = 5,
+              show_plot: bool = False) -> tf.keras.callbacks.History:
         """
         trains the model
         """
@@ -127,7 +144,7 @@ class KerasPilot(ABC):
                             save_best_only=True,
                             verbose=verbose)]
 
-        history: Dict[str, Any] = model.fit(
+        history: tf.keras.callbacks.History = model.fit(
             x=train_data,
             steps_per_epoch=train_steps,
             batch_size=batch_size,
@@ -140,13 +157,14 @@ class KerasPilot(ABC):
             use_multiprocessing=False
         )
             
+        if show_plot:
         try:
             import matplotlib.pyplot as plt
             from pathlib import Path
         
             plt.figure(1)
-
-            # Only do accuracy if we have that data (e.g. categorical outputs)
+                # Only do accuracy if we have that data
+                # (e.g. categorical outputs)
             if 'angle_out_acc' in history.history:
                 plt.subplot(121)
 
@@ -171,7 +189,7 @@ class KerasPilot(ABC):
             # plt.show()
             
         except Exception as ex:
-            print("problems with loss graph: {}".format( ex ) )
+                print(f"problems with loss graph: {ex}")
             
         return history
 
