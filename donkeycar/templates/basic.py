@@ -146,7 +146,7 @@ def drive(cfg, model_path=None, model_type=None):
     if model_path:
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
-            inputs = ['cam/image_array']
+        inputs = ['cam/image_array']
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
