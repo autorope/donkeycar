@@ -630,10 +630,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
         types=['image_array','float', 'float','str']
 
-    if cfg.USE_LIDAR:
-        inputs += ['lidar/dist_array']
-        types += ['nparray']
-
     if cfg.HAVE_ODOM:
         inputs += ['enc/speed']
         types += ['float']
