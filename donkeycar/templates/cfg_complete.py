@@ -311,6 +311,7 @@ SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in control
 SIM_RECORD_LOCATION = False
 SIM_RECORD_GYROACCEL= False
 SIM_RECORD_VELOCITY = False
+SIM_RECORD_LIDAR = False
 
 #publish camera over network
 #This is used to create a tcp service to pushlish the camera feed
