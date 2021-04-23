@@ -58,13 +58,13 @@ If you have a Google Coral edge tpu, you may wish to compile models. You will ne
 
 * Optionally configure PyTorch to use GPU - only for NVidia Graphics cards
 
-If you have an NVidia card, you should update to the lastest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
+If you have an NVidia card, you should update to the latest drivers and [install Cuda SDK](https://www.tensorflow.org/install/gpu#windows_setup). 
 
 ```bash
 conda install cudatoolkit=<CUDA Version> -c pytorch
 ```
 
-You should replace `<CUDA Version>` with your CUDA version. Any version above 10.0 should work. You can find out your CUDA version by running `nvcc --version` or `nvidia-smi`. If the version given by these two commands don't match, go with the version given by `nvidia-smi`.
+You should replace `<CUDA Version>` with your CUDA version. Any version above 10.0 should work. You can find out your CUDA version by running `nvcc --version` or `nvidia-smi`. (if those commands don't work, it means you don't already have them installed. Follow the directions given by that error to install them.) If the version given by these two commands don't match, go with the version given by `nvidia-smi`.
 
 * Create your local working dir:
 
