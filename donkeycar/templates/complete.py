@@ -72,18 +72,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.HAVE_MQTT_TELEMETRY:
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
-        
-    if cfg.HAVE_ODOM:
-        if cfg.ENCODER_TYPE == "GPIO":
-            from donkeycar.parts.encoder import RotaryEncoder
-            enc = RotaryEncoder(mm_per_tick=0.306096, pin = cfg.ODOM_PIN, debug = cfg.ODOM_DEBUG)
-            V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
-        elif cfg.ENCODER_TYPE == "arduino":
-            from donkeycar.parts.encoder import ArduinoEncoder
-            enc = ArduinoEncoder()
-            V.add(enc, outputs=['enc/speed'], threaded=True)
-        else:
-            print("No supported encoder found")
 
     if cfg.HAVE_ODOM:
         if cfg.ENCODER_TYPE == "GPIO":
