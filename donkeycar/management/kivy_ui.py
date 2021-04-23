@@ -1019,7 +1019,7 @@ class CarScreen(Screen):
         if not self.config:
             return
         if self.connection is None:
-            if not hasattr(self.config, 'PI_USERNAME') and \
+            if not hasattr(self.config, 'PI_USERNAME') or \
                     not hasattr(self.config, 'PI_HOSTNAME'):
                 self.ids.connected.text = 'Requires PI_USERNAME, PI_HOSTNAME'
                 return
