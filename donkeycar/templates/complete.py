@@ -132,7 +132,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.DONKEY_GYM:
             from donkeycar.parts.dgym import DonkeyGymEnv 
             #rbx
-            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, delay=cfg.SIM_ARTIFICIAL_LATENCY)
+            cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
             inputs  = ['angle', 'throttle']
         elif cfg.CAMERA_TYPE == "PICAM":
@@ -180,6 +180,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
             if cfg.SIM_RECORD_VELOCITY:
                 outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+            if cfg.SIM_RECORD_LIDAR:
+                outputs += ['lidar/dist_array']
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
@@ -628,10 +630,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
         types=['image_array','float', 'float','str']
 
-    if cfg.USE_LIDAR:
-        inputs += ['lidar/dist_array']
-        types += ['nparray']
-
     if cfg.HAVE_ODOM:
         inputs += ['enc/speed']
         types += ['float']
@@ -662,6 +660,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.SIM_RECORD_VELOCITY:  
             inputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
             types  += ['float', 'float', 'float']
+        if cfg.SIM_RECORD_LIDAR:
+            inputs += ['lidar/dist_array']
+            types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
