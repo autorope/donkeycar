@@ -22,7 +22,7 @@ template.
 
 Are you a hardware specialist that can write a donkey part wrapper for a
 GPS unit or a data scientist that can write an recursive neural net autopilot?
-If so please write a part so other people driving donkeys can use the part.
+If so please write a part so other people driving donkeys can use the part. How do parts work? Check out [this overview](/parts/about)
 
 ## Fix or report a bug
 
@@ -41,4 +41,4 @@ to find a better solution.
 ## Improve the documentation
 
 You can fix grammar or provide clarity by clicking the the *Edit on GitHub*
-link in the top right corner.
+link in the top right corner. Here's [a guide](/docs/dev_guide/docs) to how to create and edit docs

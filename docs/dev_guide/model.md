@@ -313,7 +313,7 @@ elif model_type == 'sensor':
 In your car app folder now the following should work:
 `donkey train --tub data2/tub_sensor --model models/pilot.h5 --type sensor`
 Because of the random values in the data the model will not converge quickly,
-the goal here is to get it working in the frame work.
+the goal here is to get it working in the framework.
 
 
 ## Support and discussions
