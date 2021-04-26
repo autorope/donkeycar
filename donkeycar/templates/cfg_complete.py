@@ -198,7 +198,6 @@ IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
 
 #ROBOHAT MM1
-HAVE_ROBOHAT = False            # set to true when using the Robo HAT MM1 from Robotics Masters.  This will change to RC Control.
 MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
 MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
 MM1_STOPPED_PWM = 1500
