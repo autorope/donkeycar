@@ -1,10 +1,12 @@
 import math
 import os
-from typing import List, Dict, Union
+from time import time
+from typing import List, Dict, Union, Tuple
 
 from donkeycar.config import Config
 from donkeycar.parts.keras import KerasPilot
 from donkeycar.parts.tflite import keras_model_to_tflite
+from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
@@ -76,38 +78,57 @@ class BatchSequence(object):
         return dataset.repeat().batch(self.batch_size)
 
 
-def train(cfg: Config, tub_paths: str, model: str, model_type: str) \
+def get_model_train_details(cfg: Config, database: PilotDatabase,
+                            model: str = None, model_type: str = None) \
+        -> Tuple[str, int, str, bool]:
+    if not model_type:
+        model_type = cfg.DEFAULT_MODEL_TYPE
+    train_type = model_type
+    is_tflite = False
+    if 'tflite_' in train_type:
+        train_type = train_type.replace('tflite_', '')
+        is_tflite = True
+    model_num = 0
+    if not model:
+        model_name, model_num = database.generate_model_name()
+    else:
+        model_name, model_ext = os.path.splitext(model)
+        is_tflite = model_ext == '.tflite'
+
+    return model_name, model_num, train_type, is_tflite
+
+
+def train(cfg: Config, tub_paths: str, model: str = None,
+          model_type: str = None, transfer: str = None, comment: str = None) \
         -> tf.keras.callbacks.History:
     """
     Train the model
     """
-    model_name, model_ext = os.path.splitext(model)
-    is_tflite = model_ext == '.tflite'
-    if is_tflite:
-        model = f'{model_name}.h5'
+    database = PilotDatabase(cfg)
+    model_name, model_num, train_type, is_tflite = \
+        get_model_train_details(cfg, database, model, model_type)
 
-    if not model_type:
-        model_type = cfg.DEFAULT_MODEL_TYPE
-
-    tubs = tub_paths.split(',')
-    all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
-    output_path = os.path.expanduser(model)
-    train_type = 'linear' if 'linear' in model_type else model_type
-
+    output_path = os.path.join(cfg.MODELS_PATH, model_name + '.h5')
     kl = get_model_by_type(train_type, cfg)
+    if transfer:
+        kl.load(transfer)
     if cfg.PRINT_MODEL_SUMMARY:
         print(kl.model.summary())
 
+    tubs = tub_paths.split(',')
+    all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(cfg, all_tub_paths)
     training_records, validation_records = dataset.train_test_split()
-    print('Records # Training %s' % len(training_records))
-    print('Records # Validation %s' % len(validation_records))
+    print(f'Records # Training {len(training_records)}')
+    print(f'Records # Validation {len(validation_records)}')
 
     training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
     validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
 
-    dataset_train = training_pipe.create_tf_data()
-    dataset_validate = validation_pipe.create_tf_data()
+    dataset_train = training_pipe.create_tf_data().prefetch(
+        tf.data.experimental.AUTOTUNE)
+    dataset_validate = validation_pipe.create_tf_data().prefetch(
+        tf.data.experimental.AUTOTUNE)
     train_size = len(training_pipe)
     val_size = len(validation_pipe)
 
@@ -123,10 +144,25 @@ def train(cfg: Config, tub_paths: str, model: str, model_type: str) \
                        epochs=cfg.MAX_EPOCHS,
                        verbose=cfg.VERBOSE_TRAIN,
                        min_delta=cfg.MIN_DELTA,
-                       patience=cfg.EARLY_STOP_PATIENCE)
+                       patience=cfg.EARLY_STOP_PATIENCE,
+                       show_plot=cfg.SHOW_PLOT)
 
     if is_tflite:
         tf_lite_model_path = f'{os.path.splitext(output_path)[0]}.tflite'
         keras_model_to_tflite(output_path, tf_lite_model_path)
+
+    database_entry = {
+        'Number': model_num,
+        'Name': model_name,
+        'Type': str(kl),
+        'Tubs': tub_paths,
+        'Time': time(),
+        'History': history.history,
+        'Transfer': os.path.basename(transfer) if transfer else None,
+        'Comment': comment,
+        'Config': str(cfg)
+    }
+    database.add_entry(database_entry)
+    database.write()
 
     return history

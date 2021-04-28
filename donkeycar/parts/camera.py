@@ -122,7 +122,7 @@ class Webcam(BaseCamera):
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('stoping Webcam')
+        print('stopping Webcam')
         time.sleep(.5)
 
 
@@ -189,7 +189,7 @@ class CSICamera(BaseCamera):
     
     def shutdown(self):
         self.running = False
-        print('stoping CSICamera')
+        print('stopping CSICamera')
         time.sleep(.5)
         del(self.camera)
 

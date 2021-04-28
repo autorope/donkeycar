@@ -110,7 +110,6 @@ class OLEDPart(object):
             self.recording = 'NO (Records = %s)' % (self.num_records)
 
         self.user_mode = 'User Mode (%s)' % (user_mode)
-        self.update()
 
     def update_slots(self):
         updates = [self.eth0, self.wlan0, self.recording, self.user_mode]
@@ -125,7 +124,10 @@ class OLEDPart(object):
         self.oled.update()
 
     def update(self):
-        self.update_slots()
+        self.on = True
+        # Run threaded loop by itself
+        while self.on:
+            self.update_slots()
 
     def shutdown(self):
         self.oled.clear_display()

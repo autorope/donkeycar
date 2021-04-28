@@ -4,7 +4,7 @@ CAR CONFIG
 This file is read by your car application's manage.py script to change the car
 performance. 
 
-EXMAPLE
+EXAMPLE
 -----------
 import dk
 cfg = dk.load_config(config_path='~/mycar/config.py')
@@ -23,7 +23,6 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 #VEHICLE
 DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #CAMERA
 CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -33,6 +32,8 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 CAMERA_VFLIP = False
 CAMERA_HFLIP = False
+# For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
+CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 
 #9865, over rides only if needed, ie. TX2..
 PCA9685_I2C_ADDR = 0x40
@@ -49,7 +50,30 @@ THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
+# DRIVETRAIN
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+
+# #LIDAR
+USE_LIDAR = False
+LIDAR_TYPE = 'RP' #(RP|YD)
+LIDAR_LOWER_LIMIT = 44 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
+LIDAR_UPPER_LIMIT = 136
+
+# #RC CONTROL
+USE_RC = False
+STEERING_RC_GPIO = 26
+THROTTLE_RC_GPIO = 20
+DATA_WIPER_RC_GPIO = 19
+
+
+#LOGGING
+HAVE_CONSOLE_LOGGING = True
+LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+
+
 #TRAINING
+DEFAULT_AI_FRAMEWORK = 'tensorflow'  # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
@@ -106,6 +130,9 @@ JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access th
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
+#DRIVING
+AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
+
 
 #DonkeyGym
 #Only on Ubuntu linux, you can use the simulator as a virtual donkey and
@@ -115,7 +142,7 @@ WEB_INIT_MODE = "user"              # which control mode to start in. one of use
 #then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
-DONKEY_GYM_ENV_NAME = "donkey-mountain-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
+DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
 GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "car", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
 GYM_CONF["racer_name"] = "Your Name"
 GYM_CONF["country"] = "Place"

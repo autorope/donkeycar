@@ -25,7 +25,7 @@ import numpy as np
 import pigpio
 
 import donkeycar as dk
-from donkeycar.parts.controller import WebFpv, get_js_controller
+from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
@@ -53,10 +53,10 @@ def drive(cfg):
    
     ctr = get_js_controller(cfg)
 
-    V.add(ctr, 
-          inputs=['null'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
+    V.add(ctr,
+            inputs=['cam/image_array'],
+            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+            threaded=True)
 
     if cfg.HAVE_ODOM:
         pi = pigpio.pi()
@@ -197,19 +197,15 @@ def drive(cfg):
     ctr.set_button_down_trigger("L2", dec_pid_d)
     ctr.set_button_down_trigger("R2", inc_pid_d)
 
-    # Plot a circle on the map where the car is located
+    # #This web controller will create a web server. We aren't using any controls, just for visualization.
 
+    web_ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                 mode=cfg.WEB_INIT_MODE)
 
-    carcolor = 'green'
-
-    loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = carcolor)
-    V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
-
-    #This web controller will create a web server. We aren't using any controls, just for visualization.
-    web_ctr = WebFpv()
     V.add(web_ctr,
-          inputs=['map/image'],
-          threaded=True)
+        inputs=['map/image'],
+        outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
+        threaded=True)
     
 
     #Choose what inputs should change the car.
@@ -280,6 +276,9 @@ def drive(cfg):
         print("follow the path using  'select' to change to ai drive mode.")
         print("You can also press the Square button to reset the origin")
         print("###############################################################################")
+        carcolor = 'green'
+        loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = carcolor)
+        V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
         max_loop_count=cfg.MAX_LOOPS)

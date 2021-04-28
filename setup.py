@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version='4.1.0',
+      version='4.2.0',
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
@@ -48,7 +48,8 @@ setup(name='donkeycar',
           "simple_pid",
           'progress',
           'typing_extensions',
-          'pyfiglet'
+          'pyfiglet',
+          'psutil'
       ],
       extras_require={
           'pi': [
@@ -66,6 +67,7 @@ setup(name='donkeycar',
           'pc': [
               'matplotlib',
               'imgaug',
+              'kivy'
           ],
           'dev': [
               'pytest',
@@ -74,7 +76,7 @@ setup(name='donkeycar',
               'mypy'
           ],
           'ci': ['codecov'],
-          'tf': ['tensorflow>=2.2.0'],
+          'tf': ['tensorflow==2.2.0'],
           'torch': [
               'pytorch>=1.7.1',
               'torchvision',

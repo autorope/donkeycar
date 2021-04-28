@@ -4,7 +4,7 @@ CAR CONFIG
 This file is read by your car application's manage.py script to change the car
 performance.
 
-EXMAPLE
+EXAMPLE
 -----------
 import dk
 cfg = dk.load_config(config_path='~/mycar/config.py')
@@ -23,7 +23,6 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 #VEHICLE
 DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #CAMERA
 CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -53,7 +52,7 @@ SSD1306_128_32_I2C_BUSNUM = 1 # I2C bus number
 #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
 #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
 #PIGPIO_PWM uses Raspberrys internal PWM
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
@@ -91,9 +90,40 @@ HBRIDGE_PIN_RIGHT_FWD = 15
 HBRIDGE_PIN_RIGHT_BWD = 13
 
 
+#ODOMETRY
+HAVE_ODOM = False                   # Do you have an odometer/encoder
+ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar
+MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+
+# #LIDAR
+USE_LIDAR = False
+LIDAR_TYPE = 'RP' #(RP|YD)
+LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
+LIDAR_UPPER_LIMIT = 270
+
+
+# #RC CONTROL
+USE_RC = False
+STEERING_RC_GPIO = 26
+THROTTLE_RC_GPIO = 20
+DATA_WIPER_RC_GPIO = 19
+
+#DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
+#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+HBRIDGE_L298N_PIN_LEFT_FWD = 16
+HBRIDGE_L298N_PIN_LEFT_BWD = 18
+HBRIDGE_L298N_PIN_LEFT_EN = 22
+
+HBRIDGE_L298N_PIN_RIGHT_FWD = 15
+HBRIDGE_L298N_PIN_RIGHT_BWD = 13
+HBRIDGE_L298N_PIN_RIGHT_EN = 11
+
+
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
-DEFAULT_AI_FRAMEWORK='tensorflow'
+DEFAULT_AI_FRAMEWORK = 'tensorflow'
 
 #The DEFAULT_MODEL_TYPE will choose which model will be created at training time. This chooses
 #between different neural network designs. You can override this setting by passing the command
@@ -140,7 +170,7 @@ WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to lis
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
 
 #JOYSTICK
-USE_JOYSTICK_AS_DEFAULT = True      #when starting the manage.py, when True, will not require a --js option to use the joystick
+USE_JOYSTICK_AS_DEFAULT = False      #when starting the manage.py, when True, will not require a --js option to use the joystick
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
@@ -148,7 +178,7 @@ CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3|MM1|cust
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.01            # when non zero, this is the smallest throttle before recording triggered.
-JOYSTICK_THROTTLE_DIR = 1.0         # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
+JOYSTICK_THROTTLE_DIR = -1.0         # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
 USE_FPV = False                     # send camera data to FPV webserver
 JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access the joystick.
 
@@ -184,14 +214,27 @@ MM1_SHOW_STEERING_VALUE = False
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
+#LOGGING
+HAVE_CONSOLE_LOGGING = True
+LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+
 #TELEMETRY
-TELEMETRY_DONKEY_NAME = 'my_robot1234'
-TELEMETRY_PUBLISH_PERIOD = 1
 HAVE_MQTT_TELEMETRY = False
+TELEMETRY_DONKEY_NAME = 'my_robot1234'
 TELEMETRY_MQTT_TOPIC_TEMPLATE = 'donkey/%s/telemetry'
-TELEMETRY_MQTT_JSON_ENABLE = True
-TELEMETRY_MQTT_BROKER_HOST = 'broker.emqx.io'
+TELEMETRY_MQTT_JSON_ENABLE = False
+TELEMETRY_MQTT_BROKER_HOST = 'broker.hivemq.com'
 TELEMETRY_MQTT_BROKER_PORT = 1883
+TELEMETRY_PUBLISH_PERIOD = 1
+TELEMETRY_LOGGING_ENABLE = True
+TELEMETRY_LOGGING_LEVEL = 'INFO' # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
+TELEMETRY_LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
+TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle,recording'
+TELEMETRY_DEFAULT_TYPES = 'float,float'
+
+# PERF MONITOR
+HAVE_PERFMON = False
 
 #RECORD OPTIONS
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
@@ -256,7 +299,7 @@ BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data i
 #then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
-DONKEY_GYM_ENV_NAME = "donkey-mountain-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
+DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
 GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "car", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
 GYM_CONF["racer_name"] = "Your Name"
 GYM_CONF["country"] = "Place"
@@ -264,6 +307,11 @@ GYM_CONF["bio"] = "I race robots."
 
 SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
 SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
+
+# Save info from Simulator (pln)
+SIM_RECORD_LOCATION = False
+SIM_RECORD_GYROACCEL= False
+SIM_RECORD_VELOCITY = False
 
 #publish camera over network
 #This is used to create a tcp service to pushlish the camera feed

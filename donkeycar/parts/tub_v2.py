@@ -1,6 +1,8 @@
 import atexit
 import os
 import time
+from datetime import datetime
+import json
 
 import numpy as np
 from PIL import Image
@@ -50,6 +52,8 @@ class Tub(object):
                     contents[key] = int(value)
                 elif input_type == 'boolean':
                     contents[key] = bool(value)
+                elif input_type == 'nparray':
+                    contents[key] = value.tolist()
                 elif input_type == 'list' or input_type == 'vector':
                     contents[key] = list(value)
                 elif input_type == 'image_array':
@@ -63,20 +67,20 @@ class Tub(object):
         # Private properties
         contents['_timestamp_ms'] = int(round(time.time() * 1000))
         contents['_index'] = self.manifest.current_index
+        contents['_session_id'] = self.manifest.session_id
 
         self.manifest.write_record(contents)
 
-    def delete_record(self, record_index):
-        self.manifest.delete_record(record_index)
+    def delete_records(self, record_indexes):
+        self.manifest.delete_records(record_indexes)
 
     def delete_last_n_records(self, n):
         last_index = self.manifest.current_index
-        first_index = last_index - n
-        for index in range(first_index, last_index):
-            if index < 0:
-                continue
-            else:
-                self.manifest.delete_record(index)
+        first_index = max(last_index - n, 0)
+        self.manifest.delete_records(range(first_index, last_index))
+
+    def restore_records(self, record_indexes):
+        self.manifest.restore_records(record_indexes)
 
     def close(self):
         self.manifest.close()
@@ -106,14 +110,10 @@ class TubWriter(object):
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
-        def shutdown_hook():
-            self.close()
-
-        # Register hook
-        atexit.register(shutdown_hook)
 
     def run(self, *args):
-        assert len(self.tub.inputs) == len(args)
+        assert len(self.tub.inputs) == len(args), \
+            f'Expected {len(self.tub.inputs)} inputs but received {len(args)}'
         record = dict(zip(self.tub.inputs, args))
         self.tub.write_record(record)
         return self.tub.manifest.current_index
@@ -122,4 +122,44 @@ class TubWriter(object):
         return self.tub.__iter__()
 
     def close(self):
-        self.tub.manifest.close()
+        self.tub.close()
+
+    def shutdown(self):
+        self.close()
+
+
+
+
+class TubWiper:
+    """
+    Donkey part which deletes a bunch of records from the end of tub.
+    This allows to remove bad data already during recording. As this gets called
+    in the vehicle loop the deletion runs only once in each continuous
+    activation. A new execution requires to release of the input trigger. The
+    action could result in a multiple number of executions otherwise.
+    """
+    def __init__(self, tub, num_records=20):
+        """
+        :param tub: tub to operate on
+        :param num_records: number or records to delete
+        """
+        self._tub = tub
+        self._num_records = num_records
+        self._active_loop = False
+
+    def run(self, is_delete):
+        """
+        Method in the vehicle loop. Delete records when trigger switches from
+        False to True only.
+        :param is_delete: if deletion has been triggered by the caller
+        """
+        # only run if input is true and debounced
+        if is_delete:
+            if not self._active_loop:
+                # action command
+                self._tub.delete_last_n_records(self._num_records)
+                # increase the loop counter
+                self._active_loop = True
+        else:
+            # trigger released, reset active loop
+            self._active_loop = False

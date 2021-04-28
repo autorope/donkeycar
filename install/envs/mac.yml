@@ -31,6 +31,9 @@ dependencies:
   - torchaudio
   - pytorch-lightning
   - numpy
+  - psutil
+  - kivy=2.0.0
+  - plotly
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git

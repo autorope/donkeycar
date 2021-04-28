@@ -9,7 +9,7 @@ def is_exe(fpath):
 
 class DonkeyGymEnv(object):
 
-    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, delay=0):
+    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, record_location=False, record_gyroaccel=False, record_velocity=False, delay=0):
 
         if sim_path != "remote":
             if not os.path.exists(sim_path):
@@ -26,8 +26,13 @@ class DonkeyGymEnv(object):
         self.frame = self.env.reset()
         self.action = [0.0, 0.0, 0.0]
         self.running = True
-        self.info = { 'pos' : (0., 0., 0.)}
+        self.info = { 'pos' : (0., 0., 0.), 'speed' : 0, 'cte': 0, 'gyro': (0., 0., 0.), 'accel': (0.,0.,0.), 'vel': (0., 0., 0.)}
         self.delay = float(delay)
+        self.record_location  = record_location
+        self.record_gyroaccel = record_gyroaccel
+        self.record_velocity  = record_velocity
+
+        
         
     def update(self):
         while self.running:
@@ -42,8 +47,17 @@ class DonkeyGymEnv(object):
         if self.delay > 0.0:
             time.sleep(self.delay / 1000.0)
         self.action = [steering, throttle, brake]
-        return self.frame
-
+        
+        # Output Sim-car position information if configured
+        outputs  = [self.frame]       
+        if self.record_location:  outputs += self.info['pos'][0],  self.info['pos'][1],  self.info['pos'][2],  self.info['speed'], self.info['cte']
+        if self.record_gyroaccel: outputs += self.info['gyro'][0], self.info['gyro'][1], self.info['gyro'][2], self.info['accel'][0], self.info['accel'][1], self.info['accel'][2]
+        if self.record_velocity:  outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
+        if len(outputs)==1:
+            return self.frame
+        else:
+            return outputs 
+    
     def shutdown(self):
         self.running = False
         time.sleep(0.2)

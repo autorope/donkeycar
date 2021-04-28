@@ -66,11 +66,29 @@ donkey tubclean <folder containing tubs>
 * Hit `Ctrl + C` to exit
 
 ## Train the model
-**Note:** _This section only applies to version >= 4.1_
+**Note:** _This section only applies to version >= 4.1.0_
 This command trains the model.
+
 ```bash
-donkey train --tub=<tub_path> [--config=<config.py>] [--model=<model path>] [--model_type=(linear|categorical|inferred)] 
+donkey train --tub=<tub_path> [--config=<config.py>] [--model=<model path>] 
+[--model_type=(linear|categorical|inferred)]
 ```
+* Uses the data from the `--tub` datastore
+* Uses the config file from the `--config` path (optionally)
+* Saves the model into `--model`
+* Uses the model type `--type`
+* Supports filtering of records using a function defined in the variable 
+  `TRAIN_FILTER` in the `my_config.py` file. For example: 
+  
+  ```python
+  def filter_record(record):
+      return record['user/throttle'] > 0
+  
+  TRAIN_FILTER = filter_record
+  ```
+  only uses records with positive throttle in training.
+ 
+
 The `createcar` command still creates a `train.py` file for backward 
 compatibility, but it's not required for training.
 
@@ -94,36 +112,6 @@ donkey makemovie --tub=<tub_path> [--out=<tub_movie.mp4>] [--config=<config.py>]
 * optional `--salient` will overlay a visualization of which pixels excited the NN the most
 * optional `--start` and/or `--end` can specify a range of frame numbers to use.
 * scale will cause ouput image to be scaled by this amount
-
-## Check Tub
-
-This command allows you to see how many records are contained in any/all tubs. It will also open each record and ensure that the data is readable and intact. If not, it will allow you to remove corrupt records.
-
-> Note: This should be moved from manage.py to donkey command
-
-Usage:
-
-```bash
-donkey tubcheck <tub_path> [--fix]
-```
-
-* Run on the host computer or the robot
-* It will print summary of record count and channels recorded for each tub
-* It will print the records that throw an exception while reading
-* The optional `--fix` will delete records that have problems
-
-## Augment Tub
-
-This command allows you to perform the data augmentation on a tub or set of tubs directly. The augmentation is also available in training via the `--aug` flag. Preprocessing the tub can speed up the training as the augmentation can take some time. Also you can train with the unmodified tub and the augmented tub joined together. 
-
-Usage:
-
-```bash
-donkey tubaugment <tub_path> [--inplace]
-```
-
-* Run on the host computer or the robot
-* The optional `--inplace` will replace the original tub images when provided. Otherwise `tub_XY_YY-MM-DD` will be copied to a new tub `tub_XX_aug_YY-MM-DD` and the original data remains unchanged
 
 
 ## Histogram
@@ -240,3 +228,27 @@ Example:
 ```bash
 donkey cnnactivations --model models/model.h5 --image data/tub/1_cam-image_array_.jpg
 ```
+
+## Tub manager UI
+
+**Note:** _This section only applies to version >= 4.2.0_
+
+
+Usage:
+
+```bash
+donkey ui
+```
+
+This opens a UI to analyse tub data supporting following features:
+
+* show selected data fields live as values and graphical bars
+* delete or un-delete records
+* try filters for data selection
+* plot data of selected data fields
+
+The UI is an alternative to the web based `donkey tubclean`.
+
+![Tub UI](../assets/ui-tub-manager.png)
+
+A full documentation of the UI is [here.](./ui.md)
