@@ -66,7 +66,7 @@ donkey tubclean <folder containing tubs>
 * Hit `Ctrl + C` to exit
 
 ## Train the model
-**Note:** _This section only applies to version >= 4.2.0_
+**Note:** _This section only applies to version >= 4.1.0_
 This command trains the model.
 
 ```bash
