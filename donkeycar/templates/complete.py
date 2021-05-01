@@ -200,6 +200,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.CONTROLLER_TYPE == "MM1":
             from donkeycar.parts.robohat import RoboHATController            
             ctr = RoboHATController(cfg)
+            V.add(ctr, inputs=['cam/image_array'],outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=True)
+        elif cfg.CONTROLLER_TYPE == "pigpio_rc":
+            from donkeycar.parts.controller import RCReceiver
+            rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
+            rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
+            rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
+            V.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
+            V.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
+            V.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+            ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                    mode=cfg.WEB_INIT_MODE)
+            # web controller sets user mode, its angle, throttle are not used.
+            V.add(ctr, inputs=['cam/image_array'],outputs=['webcontroller/angle', 'webcontroller/throttle','user/mode', 'recording'],threaded=True)
         elif "custom" == cfg.CONTROLLER_TYPE:
             #
             # custom controller created with `donkey createjs` command
@@ -222,10 +235,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
         
-        V.add(ctr, 
-          inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
+            V.add(ctr, 
+            inputs=['cam/image_array'],
+            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+            threaded=True)
 
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()

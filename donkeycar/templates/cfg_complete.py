@@ -105,7 +105,6 @@ LIDAR_UPPER_LIMIT = 270
 
 
 # #RC CONTROL
-USE_RC = False
 STEERING_RC_GPIO = 26
 THROTTLE_RC_GPIO = 20
 DATA_WIPER_RC_GPIO = 19
@@ -173,7 +172,7 @@ USE_JOYSTICK_AS_DEFAULT = False      #when starting the manage.py, when True, wi
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
+CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|pigpio_rc|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.01            # when non zero, this is the smallest throttle before recording triggered.
