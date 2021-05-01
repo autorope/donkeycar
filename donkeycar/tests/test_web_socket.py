@@ -33,7 +33,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         # Now we can run a test on the WebSocket.
         self.app.drive_train = dict()
         self.app.drive_train['steering'] = Mock()
-        self.app.drive_train_type = "SERVO_ESC"
+        self.app.drive_train_type = "I2C_SERVO"
 
         data = {"config": {"STEERING_LEFT_PWM": 444}}
         yield ws_client.write_message(json.dumps(data))
@@ -49,7 +49,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         # Now we can run a test on the WebSocket.
         self.app.drive_train = dict()
         self.app.drive_train['steering'] = Mock()
-        self.app.drive_train_type = "SERVO_ESC"
+        self.app.drive_train_type = "I2C_SERVO"
 
         data = {"config": {"STEERING_RIGHT_PWM": 555}}
         yield ws_client.write_message(json.dumps(data))
@@ -65,7 +65,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         # Now we can run a test on the WebSocket.
         self.app.drive_train = dict()
         self.app.drive_train['throttle'] = Mock()
-        self.app.drive_train_type = "SERVO_ESC"
+        self.app.drive_train_type = "I2C_SERVO"
 
         data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
         yield ws_client.write_message(json.dumps(data))
