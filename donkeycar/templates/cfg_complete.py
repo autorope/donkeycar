@@ -151,7 +151,7 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
-# Region of interst cropping
+# Region of interest cropping
 # only supported in Categorical and Linear models.
 # If these crops values are too large, they will cause the stride values to become negative and the model with not be valid.
 ROI_CROP_TOP = 0                    #the number of rows of pixels to ignore on the top of the image
@@ -282,7 +282,7 @@ BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS =[ (0, 10, 0), (10, 0, 0) ] #RGB tuples 0-100 per chanel
 
 #Localizer
-#The localizer is a neural network that can learn to predice it's location on the track.
+#The localizer is a neural network that can learn to predict its location on the track.
 #This is an experimental feature that needs more developement. But it can currently be used
 #to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
 TRAIN_LOCALIZER = False
@@ -313,7 +313,7 @@ SIM_RECORD_VELOCITY = False
 SIM_RECORD_LIDAR = False
 
 #publish camera over network
-#This is used to create a tcp service to pushlish the camera feed
+#This is used to create a tcp service to publish the camera feed
 PUB_CAMERA_IMAGES = False
 
 #When racing, to give the ai a boost, configure these values.
