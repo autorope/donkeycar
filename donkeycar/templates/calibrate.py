@@ -54,7 +54,7 @@ def drive(cfg ):
     if cfg.DONKEY_GYM or cfg.DRIVE_TRAIN_TYPE == "MOCK":
         pass
 
-    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
+    elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
 
         from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 

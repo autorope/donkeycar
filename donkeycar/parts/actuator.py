@@ -81,7 +81,8 @@ class PiGPIO_PWM():
         # if self.pin == 13:
         #     print("Throttle", pulse)
         pulse = pulse * 200
-        self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
+        if pulse > 0:
+            self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
         #servo.ChangeDutyCycle(duty)
 
     def run(self, pulse):

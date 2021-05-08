@@ -331,13 +331,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     rec_tracker_part = RecordTracker()
     V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
 
-    if cfg.AUTO_RECORD_ON_THROTTLE and (cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):
-        if isinstance(ctr, JoystickController):
-            #then we are not using the circle button. hijack that to force a record count indication
-            def show_record_acount_status():
-                rec_tracker_part.last_num_rec_print = 0
-                rec_tracker_part.force_alert = 1
-            ctr.set_button_down_trigger('circle', show_record_acount_status)
+    if cfg.AUTO_RECORD_ON_THROTTLE:
+        def show_record_count_status():
+            rec_tracker_part.last_num_rec_print = 0
+            rec_tracker_part.force_alert = 1
+        if (cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):  # these controllers don't use the joystick class
+            if isinstance(ctr, JoystickController):
+                ctr.set_button_down_trigger('circle', show_record_count_status) #then we are not using the circle button. hijack that to force a record count indication
+        else:
+            print("this should do something")
+            show_record_count_status()
+         #   ctr.set_button_down_trigger('circle', show_record_count_status)
+    
 
     #Sombrero
     if cfg.HAVE_SOMBRERO:
@@ -526,7 +531,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #Drive train setup
     if cfg.DONKEY_GYM or cfg.DRIVE_TRAIN_TYPE == "MOCK":
         pass
-    elif cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
+    elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
         from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
         steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
