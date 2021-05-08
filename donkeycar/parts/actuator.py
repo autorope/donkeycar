@@ -61,6 +61,12 @@ class PiGPIO_PWM():
 
     def __init__(self, pin, pgio=None, freq=75, inverted=False):
         import pigpio
+        # import RPi.GPIO as GPIO
+        # GPIO.setmode(GPIO.BCM)
+        # GPIO.setup(self.pin, GPIO.OUT)
+
+        # servo = GPIO.PWM(self.pin, 50) # GPIO for PWM with 50Hz
+        # servo.start(2.5) # Initialization
 
         self.pin = pin
         self.pgio = pgio or pigpio.pi()
@@ -72,7 +78,11 @@ class PiGPIO_PWM():
         self.pgio.stop()
 
     def set_pulse(self, pulse):
+        # if self.pin == 13:
+        #     print("Throttle", pulse)
+        pulse = pulse * 200
         self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
+        #servo.ChangeDutyCycle(duty)
 
     def run(self, pulse):
         self.set_pulse(pulse)

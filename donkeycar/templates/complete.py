@@ -19,11 +19,12 @@ import time
 import logging
 from docopt import docopt
 
+
 import donkeycar as dk
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
+from donkeycar.parts.controller import LocalWebController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -197,10 +198,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        if cfg.CONTROLLER_TYPE == "MM1":
-            from donkeycar.parts.robohat import RoboHATController            
-            ctr = RoboHATController(cfg)
-        elif cfg.CONTROLLER_TYPE == "pigpio_rc":
+        if cfg.CONTROLLER_TYPE == "pigpio_pwm":    # an RC controllers read by GPIO pins. They typically don't have buttons
             from donkeycar.parts.controller import RCReceiver
             rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
             rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
@@ -208,27 +206,28 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             V.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
             V.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
             V.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
-        elif "custom" == cfg.CONTROLLER_TYPE:
-            #
-            # custom controller created with `donkey createjs` command
-            #
-            from my_joystick import MyJoystickController
-            ctr = MyJoystickController(
-                throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
-                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-            ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+#            V.add(ctr, inputs=['cam/image_array'], outputs=['webcontroller/angle', 'webcontroller/throttle','user/mode', 'recording'],threaded=True)
         else:
-            from donkeycar.parts.controller import get_js_controller
-
-            ctr = get_js_controller(cfg)
-
-            if cfg.USE_NETWORKED_JS:
-                from donkeycar.parts.controller import JoyStickSub
-                netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-                V.add(netwkJs, threaded=True)
-                ctr.js = netwkJs
+            if cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
+                from my_joystick import MyJoystickController
+                ctr = MyJoystickController(
+                    throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
+                    throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                    steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                    auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+                ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)          
+            elif cfg.CONTROLLER_TYPE == "MM1":
+                    from donkeycar.parts.robohat import RoboHATController            
+                    ctr = RoboHATController(cfg)
+            else:
+                from donkeycar.parts.controller import get_js_controller, JoystickController
+                ctr = get_js_controller(cfg)
+                if cfg.USE_NETWORKED_JS:
+                    from donkeycar.parts.controller import JoyStickSub
+                    netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
+                    V.add(netwkJs, threaded=True)
+                    ctr.js = netwkJs
+            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=True)
         
 
     #this throttle filter will allow one tap back for esc reverse
@@ -332,12 +331,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     rec_tracker_part = RecordTracker()
     V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
 
-    if cfg.AUTO_RECORD_ON_THROTTLE and isinstance(ctr, JoystickController):
-        #then we are not using the circle button. hijack that to force a record count indication
-        def show_record_acount_status():
-            rec_tracker_part.last_num_rec_print = 0
-            rec_tracker_part.force_alert = 1
-        ctr.set_button_down_trigger('circle', show_record_acount_status)
+    if cfg.AUTO_RECORD_ON_THROTTLE and (cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):
+        if isinstance(ctr, JoystickController):
+            #then we are not using the circle button. hijack that to force a record count indication
+            def show_record_acount_status():
+                rec_tracker_part.last_num_rec_print = 0
+                rec_tracker_part.force_alert = 1
+            ctr.set_button_down_trigger('circle', show_record_acount_status)
 
     #Sombrero
     if cfg.HAVE_SOMBRERO:
@@ -494,8 +494,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs=['user/mode', 'throttle'],
         outputs=['throttle'])
 
-    if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
+    if (cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):
+        if isinstance(ctr, JoystickController):
+            ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
 
     class AiRunCondition:

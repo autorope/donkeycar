@@ -12,6 +12,7 @@ from prettytable import PrettyTable
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
 
+
 class Joystick(object):
     '''
     An interface to a physical joystick
@@ -1622,11 +1623,11 @@ def get_js_controller(cfg):
 
 if __name__ == "__main__":
     # Testing the XboxOneJoystickController
-    js = XboxOneJoystick('/dev/input/js0')
-    js.init()
+    # js = XboxOneJoystick('/dev/input/js0')
+    # js.init()
 
     while True:
-        button, button_state, axis, axis_val = js.poll()
-        if button is not None or axis is not None:
-            print(button, button_state, axis, axis_val)
-            time.sleep(0.1)
+        #button, button_state, axis, axis_val = js.poll()
+        #if button is not None or axis is not None:
+            # print(button, button_state, axis, axis_val)
+        time.sleep(0.1)
