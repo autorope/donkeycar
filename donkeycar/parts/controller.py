@@ -13,20 +13,6 @@ from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
 
 
-class RC(object):
-
-    def __init__(self):
-        # define variables here
-        pass
-
-    def init(self):
-        # do startup stuff here
-        pass
-
-    def poll(self):
-        while True
-        pass
-
 class Joystick(object):
     '''
     An interface to a physical joystick
