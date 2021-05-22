@@ -199,14 +199,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.CONTROLLER_TYPE == "pigpio_pwm":    # an RC controllers read by GPIO pins. They typically don't have buttons
-            from donkeycar.parts.controller import RCReceiver
-            rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
-            rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
-            rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
-            V.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
-            V.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
-            V.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
-#            V.add(ctr, inputs=['cam/image_array'], outputs=['webcontroller/angle', 'webcontroller/throttle','user/mode', 'recording'],threaded=True)
+            from donkeycar.parts.controller import RCReceiver2
+            ctr = RCReceiver2(cfg)
+            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
         else:
             if cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
                 from my_joystick import MyJoystickController
@@ -339,7 +334,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             if isinstance(ctr, JoystickController):
                 ctr.set_button_down_trigger('circle', show_record_count_status) #then we are not using the circle button. hijack that to force a record count indication
         else:
-            print("this should do something")
+            
             show_record_count_status()
          #   ctr.set_button_down_trigger('circle', show_record_count_status)
     
@@ -621,8 +616,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                                             max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                             zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                             min_pulse=cfg.THROTTLE_REVERSE_PWM)
-        V.add(steering, inputs=['angle'], threaded=True)
-        V.add(throttle, inputs=['throttle'], threaded=True)
+        V.add(steering, inputs=['user/angle'], threaded=True)
+        V.add(throttle, inputs=['user/throttle'], threaded=True)
 
     # OLED setup
     if cfg.USE_SSD1306_128_32:
@@ -708,11 +703,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.DONKEY_GYM:
             print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
         else:
-            print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
-    elif isinstance(ctr, JoystickController):
-        print("You can now move your joystick to drive your car.")
-        ctr.set_tub(tub_writer.tub)
-        ctr.print_controls()
+            print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)        
+    elif(cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):
+        if isinstance(ctr, JoystickController):
+            print("You can now move your joystick to drive your car.")
+            ctr.set_tub(tub_writer.tub)
+            ctr.print_controls()
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)

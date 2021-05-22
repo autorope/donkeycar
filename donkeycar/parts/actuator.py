@@ -73,109 +73,20 @@ class PiGPIO_PWM():
         self.freq = freq
         self.inverted = inverted
         self.pgio.set_mode(self.pin, pigpio.OUTPUT)
+        self.dead_zone = 37000
 
     def __del__(self):
         self.pgio.stop()
 
     def set_pulse(self, pulse):
-        # if self.pin == 13:
-        #     print("Throttle", pulse)
-        pulse = pulse * 200
-        if pulse > 0:
-            self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
-        #servo.ChangeDutyCycle(duty)
+#
+        self.output = pulse * 200
+        if self.output > 0:
+            self.pgio.hardware_PWM(self.pin, self.freq, int(self.output if self.inverted == False else 1e6 - self.output))
+
 
     def run(self, pulse):
         self.set_pulse(pulse)
-
-
-class JHat:
-    ''' 
-    PWM motor controler using Teensy emulating PCA9685. 
-    '''
-    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
-        print("Firing up the Hat")
-        import Adafruit_PCA9685
-        LED0_OFF_L = 0x08
-        # Initialise the PCA9685 using the default address (0x40).
-        if busnum is not None:
-            from Adafruit_GPIO import I2C
-            # replace the get_bus function with our own
-            def get_bus():
-                return busnum
-            I2C.get_default_bus = get_bus
-        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
-        self.pwm.set_pwm_freq(frequency)
-        self.channel = channel
-        self.register = LED0_OFF_L+4*channel
-
-        # we install our own write that is more efficient use of interrupts
-        self.pwm.set_pwm = self.set_pwm
-        
-    def set_pulse(self, pulse):
-        self.set_pwm(self.channel, 0, pulse) 
-
-    def set_pwm(self, channel, on, off):
-        # sets a single PWM channel
-        self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
-        
-    def run(self, pulse):
-        self.set_pulse(pulse)
-
-class JHatReader:
-    ''' 
-    Read RC controls from teensy 
-    '''
-    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
-        import Adafruit_PCA9685
-        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
-        self.pwm.set_pwm_freq(frequency)
-        self.register = 0 #i2c read doesn't take an address
-        self.steering = 0
-        self.throttle = 0
-        self.running = True
-        #send a reset
-        self.pwm._device.writeRaw8(0x06)
-
-    def read_pwm(self):
-        '''
-        send read requests via i2c bus to Teensy to get
-        pwm control values from last RC input  
-        '''
-        h1 = self.pwm._device.readU8(self.register)
-        # first byte of header must be 100, otherwize we might be reading
-        # in the wrong byte offset
-        while h1 != 100:
-            print("skipping to start of header")
-            h1 = self.pwm._device.readU8(self.register)
-        
-        h2 = self.pwm._device.readU8(self.register)
-        # h2 ignored now
-
-        val_a = self.pwm._device.readU8(self.register)
-        val_b = self.pwm._device.readU8(self.register)
-        self.steering = (val_b << 8) + val_a
-        
-        val_c = self.pwm._device.readU8(self.register)
-        val_d = self.pwm._device.readU8(self.register)
-        self.throttle = (val_d << 8) + val_c
-
-        # scale the values from -1 to 1
-        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
-        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
-
-    def update(self):
-        while(self.running):
-            self.read_pwm()
-            time.sleep(0.015)
-        
-    def run_threaded(self):
-        return self.steering, self.throttle
-
-    def shutdown(self):
-        self.running = False
-        time.sleep(0.1)
-
 
 class PWMSteering:
     """
@@ -269,6 +180,96 @@ class PWMThrottle:
         # stop vehicle
         self.run(0)
         self.running = False
+
+class JHat:
+    ''' 
+    PWM motor controler using Teensy emulating PCA9685. 
+    '''
+    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
+        print("Firing up the Hat")
+        import Adafruit_PCA9685
+        LED0_OFF_L = 0x08
+        # Initialise the PCA9685 using the default address (0x40).
+        if busnum is not None:
+            from Adafruit_GPIO import I2C
+            # replace the get_bus function with our own
+            def get_bus():
+                return busnum
+            I2C.get_default_bus = get_bus
+        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
+        self.pwm.set_pwm_freq(frequency)
+        self.channel = channel
+        self.register = LED0_OFF_L+4*channel
+
+        # we install our own write that is more efficient use of interrupts
+        self.pwm.set_pwm = self.set_pwm
+        
+    def set_pulse(self, pulse):
+        self.set_pwm(self.channel, 0, pulse) 
+
+    def set_pwm(self, channel, on, off):
+        # sets a single PWM channel
+        self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
+        
+    def run(self, pulse):
+        self.set_pulse(pulse)
+
+class JHatReader:
+    ''' 
+    Read RC controls from teensy 
+    '''
+    def __init__(self, channel, address=0x40, frequency=60, busnum=None):
+        import Adafruit_PCA9685
+        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
+        self.pwm.set_pwm_freq(frequency)
+        self.register = 0 #i2c read doesn't take an address
+        self.steering = 0
+        self.throttle = 0
+        self.running = True
+        #send a reset
+        self.pwm._device.writeRaw8(0x06)
+
+    def read_pwm(self):
+        '''
+        send read requests via i2c bus to Teensy to get
+        pwm control values from last RC input  
+        '''
+        h1 = self.pwm._device.readU8(self.register)
+        # first byte of header must be 100, otherwize we might be reading
+        # in the wrong byte offset
+        while h1 != 100:
+            print("skipping to start of header")
+            h1 = self.pwm._device.readU8(self.register)
+        
+        h2 = self.pwm._device.readU8(self.register)
+        # h2 ignored now
+
+        val_a = self.pwm._device.readU8(self.register)
+        val_b = self.pwm._device.readU8(self.register)
+        self.steering = (val_b << 8) + val_a
+        
+        val_c = self.pwm._device.readU8(self.register)
+        val_d = self.pwm._device.readU8(self.register)
+        self.throttle = (val_d << 8) + val_c
+
+        # scale the values from -1 to 1
+        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
+        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
+
+    def update(self):
+        while(self.running):
+            self.read_pwm()
+            time.sleep(0.015)
+        
+    def run_threaded(self):
+        return self.steering, self.throttle
+
+    def shutdown(self):
+        self.running = False
+        time.sleep(0.1)
+
+
+
 
 
 class Adafruit_DCMotor_Hat:

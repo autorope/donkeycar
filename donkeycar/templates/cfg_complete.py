@@ -103,12 +103,6 @@ LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
 
-
-# #RC CONTROL
-STEERING_RC_GPIO = 26
-THROTTLE_RC_GPIO = 20
-DATA_WIPER_RC_GPIO = 19
-
 #DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
 #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
 HBRIDGE_L298N_PIN_LEFT_FWD = 16
@@ -195,6 +189,20 @@ IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184
 
 #SOMBRERO
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
+
+#PIGPIO RC control
+STEERING_RC_GPIO = 26
+THROTTLE_RC_GPIO = 20
+DATA_WIPER_RC_GPIO = 19
+PIGPIO_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
+PIGPIO_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
+PIGPIO_STOPPED_PWM = 1500
+PIGPIO_MAX_REVERSE = 1000          # Max throttle to go reverse. The smaller the faster
+PIGPIO_SHOW_STEERING_VALUE = False
+PIGPIO_INVERT = False
+PIGPIO_JITTER = 0.025   # threshold below which no signal is reported
+
+
 
 #ROBOHAT MM1
 MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line

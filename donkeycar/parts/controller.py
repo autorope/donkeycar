@@ -237,6 +237,12 @@ class RCReceiver:
     divider from a 5V RC receiver to a 3.3V Pi input pin if the receiver runs
     on 5V. If your receiver accepts 3.3V input, then it can be connected
     directly to the Pi.
+    
+    Install and setup:
+    sudo apt update && sudo apt install pigpio python3-pigpio
+    sudo systemctl start pigpiod
+
+    This class is modelled after the Robohat MM1 class found in the robohat.py part
     """
     MIN_OUT = -1
     MAX_OUT = 1
@@ -329,6 +335,169 @@ class RCReceiver:
         """
         import pigpio
         self.cb.cancel()
+
+class RCReceiver2:
+    MIN_OUT = -1
+    MAX_OUT = 1
+    def __init__(self, cfg, no_action=None, debug=False):
+        import pigpio
+
+        self.rc1 = pigpio.pi()
+        self.rc2 = pigpio.pi()
+        self.rc3 = pigpio.pi()
+
+        # standard variables
+        self.high_tick1 = None
+        self.high_tick2 = None
+        self.high_tick3 = None
+        self.high1 = None
+        self.high2 = None
+        self.high3 = None
+        self.min_pwm = 1000
+        self.max_pwm = 2000
+        self.oldtime = 0
+        self.recording = False
+        self.STEERING_MID = cfg.PIGPIO_STEERING_MID
+        self.MAX_FORWARD = cfg.PIGPIO_MAX_FORWARD
+        self.STOPPED_PWM = cfg.PIGPIO_STOPPED_PWM
+        self.MAX_REVERSE = cfg.PIGPIO_MAX_REVERSE
+        self.SHOW_STEERING_VALUE = cfg.PIGPIO_SHOW_STEERING_VALUE
+        self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
+        self.debug = debug
+        self.RC1_in_PIN = cfg.STEERING_RC_GPIO
+        self.RC2_in_PIN = cfg.THROTTLE_RC_GPIO
+        self.RC3_in_PIN = cfg.DATA_WIPER_RC_GPIO
+        self.period = None
+        self.invert = cfg.PIGPIO_INVERT
+        self.jitter = cfg.PIGPIO_JITTER
+
+        if no_action is not None:
+            pass
+        else:
+            self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
+
+        self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
+        self.rc1.set_mode(self.RC1_in_PIN, pigpio.INPUT)
+        self.cb1 = self.rc1.callback(self.RC1_in_PIN, pigpio.EITHER_EDGE, self.cbf)
+        self.rc2.set_mode(self.RC2_in_PIN, pigpio.INPUT)
+        self.cb2 = self.rc2.callback(self.RC2_in_PIN, pigpio.EITHER_EDGE, self.cbf)
+        self.rc3.set_mode(self.RC3_in_PIN, pigpio.INPUT)
+        self.cb3 = self.rc3.callback(self.RC3_in_PIN, pigpio.EITHER_EDGE, self.cbf)
+
+        # print('RCReceiver gpio ' + str(self.RC1_in_PIN) + ' created')
+        # print('RCReceiver gpio ' + str(self.RC2_in_PIN) + ' created')
+        # print('RCReceiver gpio ' + str(self.RC3_in_PIN) + ' created')
+
+    def cbf(self, gpio, level, tick):
+        import pigpio
+        """ Callback function for pigpio interrupt gpio. Signature is determined
+            by pigpiod library. This function is called every time the gpio
+            changes state as we specified EITHER_EDGE.  The pigpio callback library
+            sends the user-defined callback function three parameters, which it may or may not use
+        :param gpio: gpio to listen for state changes
+        :param level: rising/falling edge
+        :param tick: # of mu s since boot, 32 bit int
+        """
+        if gpio == self.RC1_in_PIN:
+            if level == 1:
+        #        period = pigpio.tickDiff(high_tick1, tick1)
+                self.high_tick1 = tick
+            elif level == 0:
+                if self.high_tick1 is not None:
+                    self.high1 = pigpio.tickDiff(self.high_tick1, tick)
+        if gpio == self.RC2_in_PIN:
+            if level == 1:
+        #        period = pigpio.tickDiff(high_tick1, tick1)
+                self.high_tick2 = tick
+            elif level == 0:
+                if self.high_tick2 is not None:
+                    self.high2 = pigpio.tickDiff(self.high_tick2, tick)
+        if gpio == self.RC3_in_PIN:
+            if level == 1:
+        #        period = pigpio.tickDiff(high_tick1, tick1)
+                self.high_tick3 = tick
+            elif level == 0:
+                if self.high_tick3 is not None:
+                    self.high3 = pigpio.tickDiff(self.high_tick3, tick)
+
+
+    def pulse_width(self, high):
+        """
+        :return: the PWM pulse width in microseconds.
+        """
+        if high is not None:
+            return high
+        else:
+            return 0.0
+
+    def read_PWM(self):
+        """
+        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
+        [MAX_OUT,MIN_OUT]
+        """
+        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+        signal = (self.pulse_width() - self.min_pwm) * self.factor
+        # Assuming non-activity if the pulse is at no_action point
+        is_action = abs(signal - self.no_action) > self.jitter
+        # if deemed noise assume no signal
+        if not is_action:
+            signal = self.no_action
+        # convert into min max interval
+        if self.invert:
+            signal = -signal + self.MAX_OUT
+        else:
+            signal += self.MIN_OUT
+        return signal, is_action
+
+    # def update(self):
+    #     while True:
+    #         run()
+
+
+    def run(self, img_arr=None):
+        """
+        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
+        [MAX_OUT,MIN_OUT]
+        """
+        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+        signal1 = (self.pulse_width(self.high1) - self.min_pwm) * self.factor
+        # convert into min max interval
+        if self.invert:
+            signal1 = -signal1 + self.MAX_OUT
+        else:
+            signal1 += self.MIN_OUT
+
+        signal2 = (self.pulse_width(self.high2) - self.min_pwm) * self.factor
+        # Assuming non-activity if the pulse is at no_action point
+        is_action = abs(signal2 - self.no_action) > self.jitter
+        # if deemed noise assume no signal
+        if not is_action:
+            signal2 = self.no_action
+        # convert into min max interval
+        if self.invert:
+            signal2 = -signal2 + self.MAX_OUT
+        else:
+            signal2 += self.MIN_OUT
+
+        signal3 = (self.pulse_width(self.high3) - self.min_pwm) * self.factor
+        # convert into min max interval
+        if self.invert:
+            signal3 = -signal3 + self.MAX_OUT
+        else:
+            signal3 += self.MIN_OUT
+        return signal1, signal2, signal3, is_action
+
+def shutdown(self):
+    """
+    Donkey parts interface
+    """
+    self.cb1.cancel()
+    self.cb2.cancel()
+    self.cb3.cancel()
+
+
+
+
 
 
 class JoystickCreator(Joystick):
