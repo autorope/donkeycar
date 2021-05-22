@@ -199,8 +199,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.CONTROLLER_TYPE == "pigpio_pwm":    # an RC controllers read by GPIO pins. They typically don't have buttons
-            from donkeycar.parts.controller import RCReceiver2
-            ctr = RCReceiver2(cfg)
+            from donkeycar.parts.controller import RCReceiver
+            ctr = RCReceiver(cfg)
             V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
         else:
             if cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
