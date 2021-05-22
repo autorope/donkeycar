@@ -228,7 +228,6 @@ class PyGameJoystick(object):
     def set_deadzone(self, val):
         self.dead_zone = val
 
-
 class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
@@ -378,7 +377,7 @@ class RCReceiver:
             signal3 = -signal3 + self.MAX_OUT
         else:
             signal3 += self.MIN_OUT
-        return signal1, signal2, signal3, is_action
+        return signal1, signal2, is_action
 
 def shutdown(self):
     """

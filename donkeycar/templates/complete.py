@@ -201,7 +201,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.CONTROLLER_TYPE == "pigpio_pwm":    # an RC controllers read by GPIO pins. They typically don't have buttons
             from donkeycar.parts.controller import RCReceiver
             ctr = RCReceiver(cfg)
-            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
+            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'recording'],threaded=False)
         else:
             if cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
                 from my_joystick import MyJoystickController
@@ -616,8 +616,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                                             max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                             zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                             min_pulse=cfg.THROTTLE_REVERSE_PWM)
-        V.add(steering, inputs=['user/angle'], threaded=True)
-        V.add(throttle, inputs=['user/throttle'], threaded=True)
+        V.add(steering, inputs=['angle'], threaded=True)
+        V.add(throttle, inputs=['throttle'], threaded=True)
 
     # OLED setup
     if cfg.USE_SSD1306_128_32:
