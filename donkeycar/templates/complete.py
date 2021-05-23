@@ -24,7 +24,7 @@ import donkeycar as dk
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, WebFpv
+from donkeycar.parts.controller import LocalWebController, WebFpv, JoystickController
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -215,7 +215,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                     from donkeycar.parts.robohat import RoboHATController            
                     ctr = RoboHATController(cfg)
             else:
-                from donkeycar.parts.controller import get_js_controller, JoystickController
+                from donkeycar.parts.controller import get_js_controller
                 ctr = get_js_controller(cfg)
                 if cfg.USE_NETWORKED_JS:
                     from donkeycar.parts.controller import JoyStickSub
