@@ -1,6 +1,3 @@
-from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
 import subprocess
 import time
 from board import SCL, SDA
