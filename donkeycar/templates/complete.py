@@ -198,7 +198,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
-        if cfg.CONTROLLER_TYPE == "pigpio_pwm":    # an RC controllers read by GPIO pins. They typically don't have buttons
+        if cfg.CONTROLLER_TYPE == "pigpio_rc":    # an RC controllers read by GPIO pins. They typically don't have buttons
             from donkeycar.parts.controller import RCReceiver
             ctr = RCReceiver(cfg)
             V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'recording'],threaded=False)
@@ -494,7 +494,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs=['user/mode', 'throttle'],
         outputs=['throttle'])
 
-    if (cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):
+    if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
             ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
@@ -604,7 +604,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         from donkeycar.parts.robohat import RoboHATDriver
         V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
     
-    elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_RC":
+    elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
         from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PiGPIO_PWM
         steering_controller = PiGPIO_PWM(cfg.STEERING_PWM_PIN, freq=cfg.STEERING_PWM_FREQ, inverted=cfg.STEERING_PWM_INVERTED)
         steering = PWMSteering(controller=steering_controller,
@@ -704,7 +704,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
         else:
             print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)        
-    elif(cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):
+    elif(cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
             print("You can now move your joystick to drive your car.")
             ctr.set_tub(tub_writer.tub)
