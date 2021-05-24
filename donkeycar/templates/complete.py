@@ -330,7 +330,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         def show_record_count_status():
             rec_tracker_part.last_num_rec_print = 0
             rec_tracker_part.force_alert = 1
-        if (cfg.CONTROLLER_TYPE != "pigpio_pwm") and (cfg.CONTROLLER_TYPE != "MM1"):  # these controllers don't use the joystick class
+        if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):  # these controllers don't use the joystick class
             if isinstance(ctr, JoystickController):
                 ctr.set_button_down_trigger('circle', show_record_count_status) #then we are not using the circle button. hijack that to force a record count indication
         else:
