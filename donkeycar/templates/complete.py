@@ -604,7 +604,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         from donkeycar.parts.robohat import RoboHATDriver
         V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
     
-    elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
+    elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_RC":
         from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PiGPIO_PWM
         steering_controller = PiGPIO_PWM(cfg.STEERING_PWM_PIN, freq=cfg.STEERING_PWM_FREQ, inverted=cfg.STEERING_PWM_INVERTED)
         steering = PWMSteering(controller=steering_controller,
