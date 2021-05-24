@@ -3,7 +3,7 @@ Lidar
 """
 
 # requies glob to be installed: "pip3 install glob2"
-# requires rplidar to be installed: "pip3 install rplidar"
+# requires Adafruit RPLidar driver to be installed: pip install Adafruit_CircuitPython_RPLIDAR
 
 import time
 import math
@@ -15,10 +15,14 @@ from PIL import Image, ImageDraw
 
 class RPLidar(object):
     '''
-    https://github.com/SkoltechRobotics/rplidar
+    https://github.com/adafruit/Adafruit_CircuitPython_RPLIDAR
     '''
     def __init__(self, lower_limit = 0, upper_limit = 360, debug=False):
-        from rplidar import RPLidar
+        from adafruit_rplidar import RPLidar
+
+        # Setup the RPLidar
+        PORT_NAME = "/dev/ttyUSB0"
+
         import glob
         port_found = False
         self.lower_limit = lower_limit
@@ -37,7 +41,7 @@ class RPLidar(object):
             self.port = result[0]
             self.distances = [] #a list of distance measurements
             self.angles = [] # a list of angles corresponding to dist meas above
-            self.lidar = RPLidar(self.port, baudrate=115200)
+            self.lidar = RPLidar(None, self.port, timeout=3)
             self.lidar.clear_input()
             time.sleep(1)
             self.on = True
