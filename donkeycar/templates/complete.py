@@ -704,7 +704,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
         else:
             print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)        
-    elif(cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
+    elif (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
             print("You can now move your joystick to drive your car.")
             ctr.set_tub(tub_writer.tub)

@@ -265,12 +265,6 @@ class RCReceiver:
         self.invert = cfg.PIGPIO_INVERT
         self.jitter = cfg.PIGPIO_JITTER
         self.no_action = 0
-
-        # if self.RECORD:
-        #     self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0   # this is neutral throttle, the midpoint between top and bottom. If throttle is neutral don't record
-        # else:
-        #     pass
-
         self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
         self.rc1.set_mode(self.RC1_in_PIN, pigpio.INPUT)
         self.cb1 = self.rc1.callback(self.RC1_in_PIN, pigpio.EITHER_EDGE, self.cbf)
@@ -295,21 +289,18 @@ class RCReceiver:
         """
         if gpio == self.RC1_in_PIN:
             if level == 1:
-        #        period = pigpio.tickDiff(high_tick1, tick1)
                 self.high_tick1 = tick
             elif level == 0:
                 if self.high_tick1 is not None:
                     self.high1 = pigpio.tickDiff(self.high_tick1, tick)
         if gpio == self.RC2_in_PIN:
             if level == 1:
-        #        period = pigpio.tickDiff(high_tick1, tick1)
                 self.high_tick2 = tick
             elif level == 0:
                 if self.high_tick2 is not None:
                     self.high2 = pigpio.tickDiff(self.high_tick2, tick)
         if gpio == self.RC3_in_PIN:
             if level == 1:
-        #        period = pigpio.tickDiff(high_tick1, tick1)
                 self.high_tick3 = tick
             elif level == 0:
                 if self.high_tick3 is not None:
@@ -1662,12 +1653,12 @@ def get_js_controller(cfg):
 
 
 if __name__ == "__main__":
-    # Testing the XboxOneJoystickController
-    # js = XboxOneJoystick('/dev/input/js0')
-    # js.init()
+ #   Testing the XboxOneJoystickController
+    js = XboxOneJoystick('/dev/input/js0')
+    js.init()
 
     while True:
-        #button, button_state, axis, axis_val = js.poll()
-        #if button is not None or axis is not None:
-            # print(button, button_state, axis, axis_val)
+        button, button_state, axis, axis_val = js.poll()
+        if button is not None or axis is not None:
+            print(button, button_state, axis, axis_val)
         time.sleep(0.1)
