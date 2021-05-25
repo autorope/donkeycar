@@ -231,7 +231,7 @@ class PyGameJoystick(object):
 class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
-    def __init__(self, cfg, no_action=None, debug=False):
+    def __init__(self, cfg, debug=False):
         import pigpio
 
         self.rc1 = pigpio.pi()
@@ -255,18 +255,21 @@ class RCReceiver:
         self.MAX_REVERSE = cfg.PIGPIO_MAX_REVERSE
         self.SHOW_STEERING_VALUE = cfg.PIGPIO_SHOW_STEERING_VALUE
         self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
+        self.RECORD = cfg.AUTO_RECORD_ON_THROTTLE
         self.debug = debug
         self.RC1_in_PIN = cfg.STEERING_RC_GPIO
         self.RC2_in_PIN = cfg.THROTTLE_RC_GPIO
         self.RC3_in_PIN = cfg.DATA_WIPER_RC_GPIO
         self.period = None
+        self.is_action = False
         self.invert = cfg.PIGPIO_INVERT
         self.jitter = cfg.PIGPIO_JITTER
+        self.no_action = 0
 
-        if no_action is not None:
-            pass
-        else:
-            self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
+        # if self.RECORD:
+        #     self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0   # this is neutral throttle, the midpoint between top and bottom. If throttle is neutral don't record
+        # else:
+        #     pass
 
         self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
         self.rc1.set_mode(self.RC1_in_PIN, pigpio.INPUT)
@@ -322,30 +325,6 @@ class RCReceiver:
         else:
             return 0.0
 
-    def read_PWM(self):
-        """
-        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
-        [MAX_OUT,MIN_OUT]
-        """
-        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
-        signal = (self.pulse_width() - self.min_pwm) * self.factor
-        # Assuming non-activity if the pulse is at no_action point
-        is_action = abs(signal - self.no_action) > self.jitter
-        # if deemed noise assume no signal
-        if not is_action:
-            signal = self.no_action
-        # convert into min max interval
-        if self.invert:
-            signal = -signal + self.MAX_OUT
-        else:
-            signal += self.MIN_OUT
-        return signal, is_action
-
-    # def update(self):
-    #     while True:
-    #         run()
-
-
     def run(self, img_arr=None):
         """
         Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
@@ -361,10 +340,10 @@ class RCReceiver:
 
         signal2 = (self.pulse_width(self.high2) - self.min_pwm) * self.factor
         # Assuming non-activity if the pulse is at no_action point
-        is_action = abs(signal2 - self.no_action) > self.jitter
-        # if deemed noise assume no signal
-        if not is_action:
-            signal2 = self.no_action
+        if abs(signal2 - self.jitter) > 1.0:  # this is structured as a boolean
+            is_action = True
+        else:
+            is_action = False
         # convert into min max interval
         if self.invert:
             signal2 = -signal2 + self.MAX_OUT
