@@ -47,7 +47,7 @@ USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_ROTATION = 0 # 0 = text is right-side up, 1 = rotated 90 degrees clockwise, 2 = 180 degrees (flipped), 3 = 270 degrees
 
 #DRIVETRAIN
-#These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
+#These options specify which chasis and motor setup you are using. Most are using I2C_SERVO.
 #DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
 #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
 #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
