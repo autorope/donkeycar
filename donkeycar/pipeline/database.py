@@ -33,8 +33,8 @@ class PilotDatabase:
         else:
             this_num = 0
         date = time.strftime('%y-%m-%d')
-        name = 'pilot_' + date + '_' + str(this_num)
-        return name, this_num
+        name = f'pilot_{date}_{this_num}.h5'
+        return os.path.join(self.cfg.MODELS_PATH, name), this_num
 
     def to_df(self) -> pd.DataFrame:
         if self.entries:
