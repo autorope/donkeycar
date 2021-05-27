@@ -1,9 +1,12 @@
+# requires the Adafruit ssd1306 library: pip install adafruit-circuitpython-ssd1306
+
 import subprocess
 import time
 from board import SCL, SDA
 import busio
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
+
 
 class OLEDDisplay(object):
     '''
