@@ -248,24 +248,21 @@ class RCReceiver:
         self.min_pwm = 1000
         self.max_pwm = 2000
         self.oldtime = 0
-        self.recording = False
         self.STEERING_MID = cfg.PIGPIO_STEERING_MID
         self.MAX_FORWARD = cfg.PIGPIO_MAX_FORWARD
         self.STOPPED_PWM = cfg.PIGPIO_STOPPED_PWM
         self.MAX_REVERSE = cfg.PIGPIO_MAX_REVERSE
-        self.SHOW_STEERING_VALUE = cfg.PIGPIO_SHOW_STEERING_VALUE
-        self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
         self.RECORD = cfg.AUTO_RECORD_ON_THROTTLE
         self.debug = debug
         self.RC1_in_PIN = cfg.STEERING_RC_GPIO
         self.RC2_in_PIN = cfg.THROTTLE_RC_GPIO
         self.RC3_in_PIN = cfg.DATA_WIPER_RC_GPIO
-        self.period = None
         self.is_action = False
         self.invert = cfg.PIGPIO_INVERT
         self.jitter = cfg.PIGPIO_JITTER
-        self.no_action = 0
         self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
+
+        # initialize pins and callbacks
         self.rc1.set_mode(self.RC1_in_PIN, pigpio.INPUT)
         self.cb1 = self.rc1.callback(self.RC1_in_PIN, pigpio.EITHER_EDGE, self.cbf)
         self.rc2.set_mode(self.RC2_in_PIN, pigpio.INPUT)
@@ -273,9 +270,10 @@ class RCReceiver:
         self.rc3.set_mode(self.RC3_in_PIN, pigpio.INPUT)
         self.cb3 = self.rc3.callback(self.RC3_in_PIN, pigpio.EITHER_EDGE, self.cbf)
 
-        # print('RCReceiver gpio ' + str(self.RC1_in_PIN) + ' created')
-        # print('RCReceiver gpio ' + str(self.RC2_in_PIN) + ' created')
-        # print('RCReceiver gpio ' + str(self.RC3_in_PIN) + ' created')
+        if self.debug:
+            print('RCReceiver gpio ' + str(self.RC1_in_PIN) + ' created')
+            print('RCReceiver gpio ' + str(self.RC2_in_PIN) + ' created')
+            print('RCReceiver gpio ' + str(self.RC3_in_PIN) + ' created')
 
     def cbf(self, gpio, level, tick):
         import pigpio
@@ -331,7 +329,7 @@ class RCReceiver:
 
         signal2 = (self.pulse_width(self.high2) - self.min_pwm) * self.factor
         # Assuming non-activity if the pulse is at no_action point
-        if abs(signal2 - self.jitter) > 1.0:  # this is structured as a boolean
+        if (abs(signal2 - self.jitter) > 1.0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record 
             is_action = True
         else:
             is_action = False
@@ -347,6 +345,8 @@ class RCReceiver:
             signal3 = -signal3 + self.MAX_OUT
         else:
             signal3 += self.MIN_OUT
+        if self.debug:
+            print('RC CH1 signal:', round(signal1, 3), 'RC CH2 signal:', round(signal2, 3), 'RC CH3 signal:', round(signal3, 3))
         return signal1, signal2, is_action
 
 def shutdown(self):
