@@ -254,6 +254,7 @@ class RCReceiver:
         self.MAX_REVERSE = cfg.PIGPIO_MAX_REVERSE
         self.RECORD = cfg.AUTO_RECORD_ON_THROTTLE
         self.debug = debug
+        self.mode = 'user'
         self.RC1_in_PIN = cfg.STEERING_RC_GPIO
         self.RC2_in_PIN = cfg.THROTTLE_RC_GPIO
         self.RC3_in_PIN = cfg.DATA_WIPER_RC_GPIO
@@ -333,6 +334,7 @@ class RCReceiver:
             is_action = True
         else:
             is_action = False
+
         # convert into min max interval
         if self.invert:
             signal2 = -signal2 + self.MAX_OUT
@@ -347,7 +349,11 @@ class RCReceiver:
             signal3 += self.MIN_OUT
         if self.debug:
             print('RC CH1 signal:', round(signal1, 3), 'RC CH2 signal:', round(signal2, 3), 'RC CH3 signal:', round(signal3, 3))
-        return signal1, signal2, is_action
+        if (signal3 - self.jitter) > 0:
+            self.mode = 'local'
+        else:
+            self.mode = 'user'
+        return signal1, signal2, self.mode, is_action
 
 def shutdown(self):
     """

@@ -201,19 +201,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.CONTROLLER_TYPE == "pigpio_rc":    # an RC controllers read by GPIO pins. They typically don't have buttons
             from donkeycar.parts.controller import RCReceiver
             ctr = RCReceiver(cfg)
-            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'recording'],threaded=False)
+            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
         else:
             if cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
                 from my_joystick import MyJoystickController
                 ctr = MyJoystickController(
-                    throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
-                    throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-                    steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                    auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+                throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
+                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
                 ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)          
             elif cfg.CONTROLLER_TYPE == "MM1":
-                    from donkeycar.parts.robohat import RoboHATController            
-                    ctr = RoboHATController(cfg)
+                from donkeycar.parts.robohat import RoboHATController            
+                ctr = RoboHATController(cfg)
             else:
                 from donkeycar.parts.controller import get_js_controller
                 ctr = get_js_controller(cfg)
@@ -336,8 +336,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         else:
             
             show_record_count_status()
-         #   ctr.set_button_down_trigger('circle', show_record_count_status)
-    
 
     #Sombrero
     if cfg.HAVE_SOMBRERO:

@@ -21,7 +21,7 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 #VEHICLE
-DRIVE_LOOP_HZ = 40      # the vehicle loop will pause if faster than this speed.
+DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 #CAMERA

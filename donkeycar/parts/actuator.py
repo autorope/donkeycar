@@ -61,13 +61,6 @@ class PiGPIO_PWM():
 
     def __init__(self, pin, pgio=None, freq=75, inverted=False):
         import pigpio
-        # import RPi.GPIO as GPIO
-        # GPIO.setmode(GPIO.BCM)
-        # GPIO.setup(self.pin, GPIO.OUT)
-
-        # servo = GPIO.PWM(self.pin, 50) # GPIO for PWM with 50Hz
-        # servo.start(2.5) # Initialization
-
         self.pin = pin
         self.pgio = pgio or pigpio.pi()
         self.freq = freq
@@ -207,7 +200,7 @@ class JHat:
     def set_pulse(self, pulse):
         self.set_pwm(self.channel, 0, pulse) 
 
-    def set_pwm(self, channel, on, off):
+    def set_pwm(self, channel, on, off:
         # sets a single PWM channel
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
         
@@ -253,13 +246,12 @@ class JHatReader:
         self.throttle = (val_d << 8) + val_c
 
         # scale the values from -1 to 1
-        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
-        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
+        self.steering = (self.steering - 1500.0) / 500.0  + 0.158
+        self.throttle = (self.throttle - 1500.0) / 500.0  + 0.136
 
     def update(self):
         while(self.running):
             self.read_pwm()
-            time.sleep(0.015)
         
     def run_threaded(self):
         return self.steering, self.throttle
