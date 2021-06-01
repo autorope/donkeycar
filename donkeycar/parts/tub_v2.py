@@ -130,8 +130,6 @@ class TubWriter(object):
         self.close()
 
 
-
-
 class TubWiper:
     """
     Donkey part which deletes a bunch of records from the end of tub.
