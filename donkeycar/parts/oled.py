@@ -20,7 +20,7 @@ class OLEDDisplay(object):
         self.slots = [self._EMPTY] * self._SLOT_COUNT
         self.display = None
         self.rotation = rotation
-        if resolution = 2:
+        if resolution == 2:
             self.height = 64
         else:
             self.height = 32
@@ -90,8 +90,9 @@ class OLEDPart(object):
     '''
     The part that updates status on the oled display.
     '''
-    def __init__(self, rotation, auto_record_on_throttle=False):
+    def __init__(self, rotation, resolution, auto_record_on_throttle=False):
         self.rotation = rotation
+        self.resolution = resolution
         self.oled = OLEDDisplay(self.rotation)
         self.oled.init_display()
         self.on = False
