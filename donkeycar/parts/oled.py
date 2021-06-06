@@ -12,7 +12,7 @@ class OLEDDisplay(object):
     '''
     Manages drawing of text on the OLED display.
     '''
-    def __init__(self, rotation=0, resolution = 1):
+    def __init__(self, rotation=0, resolution=1):
         # Placeholder
         self._EMPTY = ''
         # Total number of lines of text
@@ -24,7 +24,6 @@ class OLEDDisplay(object):
             self.height = 64
         else:
             self.height = 32
-        self.resolution = resolution
 
     def init_display(self):
         '''
@@ -91,9 +90,7 @@ class OLEDPart(object):
     The part that updates status on the oled display.
     '''
     def __init__(self, rotation, resolution, auto_record_on_throttle=False):
-        self.rotation = rotation
-        self.resolution = resolution
-        self.oled = OLEDDisplay(self.rotation)
+        self.oled = OLEDDisplay(rotation, resolution)
         self.oled.init_display()
         self.on = False
         if auto_record_on_throttle:
