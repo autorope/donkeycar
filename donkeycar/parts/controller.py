@@ -228,23 +228,22 @@ class PyGameJoystick(object):
     def set_deadzone(self, val):
         self.dead_zone = val
 
+# this class is a helper for the RCReceiver class
+class Channel:
+    def __init__(self, pin):
+        self.pin = pin
+        self.tick = None
+        self.high_tick = None
+
 class RCReceiver:
     MIN_OUT = -1
     MAX_OUT = 1
     def __init__(self, cfg, debug=False):
         import pigpio
-
-        self.rc1 = pigpio.pi()
-        self.rc2 = pigpio.pi()
-        self.rc3 = pigpio.pi()
+        self.pi = pigpio.pi()
 
         # standard variables
-        self.high_tick1 = None
-        self.high_tick2 = None
-        self.high_tick3 = None
-        self.high1 = None
-        self.high2 = None
-        self.high3 = None
+        self.channels = [Channel(cfg.STEERING_RC_GPIO), Channel(cfg.THROTTLE_RC_GPIO), Channel(cfg.DATA_WIPER_RC_GPIO)]
         self.min_pwm = 1000
         self.max_pwm = 2000
         self.oldtime = 0
@@ -255,26 +254,18 @@ class RCReceiver:
         self.RECORD = cfg.AUTO_RECORD_ON_THROTTLE
         self.debug = debug
         self.mode = 'user'
-        self.RC1_in_PIN = cfg.STEERING_RC_GPIO
-        self.RC2_in_PIN = cfg.THROTTLE_RC_GPIO
-        self.RC3_in_PIN = cfg.DATA_WIPER_RC_GPIO
         self.is_action = False
         self.invert = cfg.PIGPIO_INVERT
         self.jitter = cfg.PIGPIO_JITTER
         self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
-
-        # initialize pins and callbacks
-        self.rc1.set_mode(self.RC1_in_PIN, pigpio.INPUT)
-        self.cb1 = self.rc1.callback(self.RC1_in_PIN, pigpio.EITHER_EDGE, self.cbf)
-        self.rc2.set_mode(self.RC2_in_PIN, pigpio.INPUT)
-        self.cb2 = self.rc2.callback(self.RC2_in_PIN, pigpio.EITHER_EDGE, self.cbf)
-        self.rc3.set_mode(self.RC3_in_PIN, pigpio.INPUT)
-        self.cb3 = self.rc3.callback(self.RC3_in_PIN, pigpio.EITHER_EDGE, self.cbf)
-
-        if self.debug:
-            print('RCReceiver gpio ' + str(self.RC1_in_PIN) + ' created')
-            print('RCReceiver gpio ' + str(self.RC2_in_PIN) + ' created')
-            print('RCReceiver gpio ' + str(self.RC3_in_PIN) + ' created')
+        self.cbs = []
+        self.signals = [0,0,0]
+        for channel in self.channels:
+            self.pi.set_mode(channel.pin, pigpio.INPUT)
+            self.cbs.append(self.pi.callback(channel.pin, pigpio.EITHER_EDGE, self.cbf))
+            if self.debug:
+                print(f'RCReceiver gpio {channel.pin} created')
+    
 
     def cbf(self, gpio, level, tick):
         import pigpio
@@ -286,25 +277,13 @@ class RCReceiver:
         :param level: rising/falling edge
         :param tick: # of mu s since boot, 32 bit int
         """
-        if gpio == self.RC1_in_PIN:
-            if level == 1:
-                self.high_tick1 = tick
-            elif level == 0:
-                if self.high_tick1 is not None:
-                    self.high1 = pigpio.tickDiff(self.high_tick1, tick)
-        if gpio == self.RC2_in_PIN:
-            if level == 1:
-                self.high_tick2 = tick
-            elif level == 0:
-                if self.high_tick2 is not None:
-                    self.high2 = pigpio.tickDiff(self.high_tick2, tick)
-        if gpio == self.RC3_in_PIN:
-            if level == 1:
-                self.high_tick3 = tick
-            elif level == 0:
-                if self.high_tick3 is not None:
-                    self.high3 = pigpio.tickDiff(self.high_tick3, tick)
-
+        for channel in self.channels:
+            if gpio == channel.pin:            
+                if level == 1:                
+                    channel.high_tick = tick            
+                elif level == 0:                
+                    if channel.high_tick is not None:                    
+                        channel.tick = pigpio.tickDiff(channel.high_tick, tick)
 
     def pulse_width(self, high):
         """
@@ -315,56 +294,39 @@ class RCReceiver:
         else:
             return 0.0
 
-    def run(self, img_arr=None):
-        """
-        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
-        [MAX_OUT,MIN_OUT]
-        """
-        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
-        signal1 = (self.pulse_width(self.high1) - self.min_pwm) * self.factor
-        # convert into min max interval
-        if self.invert:
-            signal1 = -signal1 + self.MAX_OUT
-        else:
-            signal1 += self.MIN_OUT
-
-        signal2 = (self.pulse_width(self.high2) - self.min_pwm) * self.factor
-        # Assuming non-activity if the pulse is at no_action point
-        if (abs(signal2 - self.jitter) > 1.0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record 
-            is_action = True
-        else:
-            is_action = False
-
-        # convert into min max interval
-        if self.invert:
-            signal2 = -signal2 + self.MAX_OUT
-        else:
-            signal2 += self.MIN_OUT
-
-        signal3 = (self.pulse_width(self.high3) - self.min_pwm) * self.factor
-        # convert into min max interval
-        if self.invert:
-            signal3 = -signal3 + self.MAX_OUT
-        else:
-            signal3 += self.MIN_OUT
+    def run(self):
+        i = 0
+        for channel in self.channels:
+            # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+            self.signals[i] = (self.pulse_width(channel.tick) - self.min_pwm) * self.factor
+            # convert into min max interval
+            if self.invert:
+                self.signals[i] = -self.signals[i] + self.MAX_OUT
+            else:
+                self.signals[i] += self.MIN_OUT
+            i += 1
         if self.debug:
-            print('RC CH1 signal:', round(signal1, 3), 'RC CH2 signal:', round(signal2, 3), 'RC CH3 signal:', round(signal3, 3))
-        if (signal3 - self.jitter) > 0:
+            print('RC CH1 signal:', round(self.signals[0], 3), 'RC CH2 signal:', round(self.signals[1], 3), 'RC CH3 signal:', round(self.signals[2], 3))
+
+        # check mode channel if present
+        if (self.signals[2] - self.jitter) > 0:  
             self.mode = 'local'
         else:
             self.mode = 'user'
-        return signal1, signal2, self.mode, is_action
 
-def shutdown(self):
-    """
-    Donkey parts interface
-    """
-    self.cb1.cancel()
-    self.cb2.cancel()
-    self.cb3.cancel()
+        # check throttle channel
+        if ((self.signals[1] - self.jitter) > 0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record 
+            is_action = True
+        else:
+            is_action = False
+        return self.signals[0], self.signals[1], self.mode, is_action
 
-
-
+    def shutdown(self):
+        """
+        Cancel all the callbacks on shutdown
+        """
+        for channel in self.channels:
+            self.cbs[channel].cancel()
 
 
 

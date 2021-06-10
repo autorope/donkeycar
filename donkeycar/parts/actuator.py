@@ -200,7 +200,7 @@ class JHat:
     def set_pulse(self, pulse):
         self.set_pwm(self.channel, 0, pulse) 
 
-    def set_pwm(self, channel, on, off:
+    def set_pwm(self, channel, on, off):
         # sets a single PWM channel
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
         
