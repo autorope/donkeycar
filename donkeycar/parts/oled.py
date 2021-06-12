@@ -12,7 +12,7 @@ class OLEDDisplay(object):
     '''
     Manages drawing of text on the OLED display.
     '''
-    def __init__(self, rotation=0):
+    def __init__(self, rotation=0, resolution=1):
         # Placeholder
         self._EMPTY = ''
         # Total number of lines of text
@@ -20,6 +20,10 @@ class OLEDDisplay(object):
         self.slots = [self._EMPTY] * self._SLOT_COUNT
         self.display = None
         self.rotation = rotation
+        if resolution == 2:
+            self.height = 64
+        else:
+            self.height = 32
 
     def init_display(self):
         '''
@@ -31,7 +35,7 @@ class OLEDDisplay(object):
             # Create the SSD1306 OLED class.
             # The first two parameters are the pixel width and pixel height.  Change these
             # to the right size for your display!
-            self.display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c)
+            self.display = adafruit_ssd1306.SSD1306_I2C(128, self.height, i2c)
             self.display.rotation = self.rotation
 
 
@@ -41,7 +45,6 @@ class OLEDDisplay(object):
             # Create blank image for drawing.
             # Make sure to create image with mode '1' for 1-bit color.
             self.width = self.display.width
-            self.height = self.display.height
             self.image = Image.new("1", (self.width, self.height))
 
             # Get drawing object to draw on image.
@@ -86,9 +89,8 @@ class OLEDPart(object):
     '''
     The part that updates status on the oled display.
     '''
-    def __init__(self, rotation, auto_record_on_throttle=False):
-        self.rotation = rotation
-        self.oled = OLEDDisplay(self.rotation)
+    def __init__(self, rotation, resolution, auto_record_on_throttle=False):
+        self.oled = OLEDDisplay(rotation, resolution)
         self.oled.init_display()
         self.on = False
         if auto_record_on_throttle:
