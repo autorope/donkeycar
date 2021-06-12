@@ -12,6 +12,7 @@ from prettytable import PrettyTable
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
 
+
 class Joystick(object):
     '''
     An interface to a physical joystick
@@ -227,107 +228,106 @@ class PyGameJoystick(object):
     def set_deadzone(self, val):
         self.dead_zone = val
 
+# this class is a helper for the RCReceiver class
+class Channel:
+    def __init__(self, pin):
+        self.pin = pin
+        self.tick = None
+        self.high_tick = None
 
 class RCReceiver:
-    """
-    Class to read PWM from an RC control and convert into a float output number.
-    Uses pigpio library. The code is essentially a copy of
-    http://abyz.me.uk/rpi/pigpio/code/read_PWM_py.zip. You will need a voltage
-    divider from a 5V RC receiver to a 3.3V Pi input pin if the receiver runs
-    on 5V. If your receiver accepts 3.3V input, then it can be connected
-    directly to the Pi.
-    """
     MIN_OUT = -1
     MAX_OUT = 1
-
-    def __init__(self, gpio, invert=False, jitter=0.025, no_action=None):
-        """
-        :param gpio: gpio pin connected to RC channel
-        :param invert: invert value of run() within [MIN_OUT,MAX_OUT]
-        :param jitter: threshold below which no signal is reported
-        :param no_action: value within [MIN_OUT,MAX_OUT] if no RC signal is
-                          sent. This is usually zero for throttle and steering
-                          being the center values when the controls are not
-                          pressed.
-        """
+    def __init__(self, cfg, debug=False):
         import pigpio
         self.pi = pigpio.pi()
-        self.gpio = gpio
-        self.high_tick = None
-        self.period = None
-        self.high = None
+
+        # standard variables
+        self.channels = [Channel(cfg.STEERING_RC_GPIO), Channel(cfg.THROTTLE_RC_GPIO), Channel(cfg.DATA_WIPER_RC_GPIO)]
         self.min_pwm = 1000
         self.max_pwm = 2000
-        self.invert = invert
-        self.jitter = jitter
-        if no_action is not None:
-            self.no_action = no_action
-        else:
-            self.no_action = (self.MAX_OUT - self.MIN_OUT) / 2.0
-
+        self.oldtime = 0
+        self.STEERING_MID = cfg.PIGPIO_STEERING_MID
+        self.MAX_FORWARD = cfg.PIGPIO_MAX_FORWARD
+        self.STOPPED_PWM = cfg.PIGPIO_STOPPED_PWM
+        self.MAX_REVERSE = cfg.PIGPIO_MAX_REVERSE
+        self.RECORD = cfg.AUTO_RECORD_ON_THROTTLE
+        self.debug = debug
+        self.mode = 'user'
+        self.is_action = False
+        self.invert = cfg.PIGPIO_INVERT
+        self.jitter = cfg.PIGPIO_JITTER
         self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
-        self.pi.set_mode(self.gpio, pigpio.INPUT)
-        self.cb = self.pi.callback(self.gpio, pigpio.EITHER_EDGE, self._cbf)
-        print('RCReceiver gpio ' + str(gpio) + ' created')
+        self.cbs = []
+        self.signals = [0,0,0]
+        for channel in self.channels:
+            self.pi.set_mode(channel.pin, pigpio.INPUT)
+            self.cbs.append(self.pi.callback(channel.pin, pigpio.EITHER_EDGE, self.cbf))
+            if self.debug:
+                print(f'RCReceiver gpio {channel.pin} created')
+    
 
-    def _update_param(self, tick):
-        """ Helper function for callback function _cbf.
-        :param tick: current tick in mu s
-        :return: difference in ticks
-        """
+    def cbf(self, gpio, level, tick):
         import pigpio
-        if self.high_tick is not None:
-            t = pigpio.tickDiff(self.high_tick, tick)
-            return t
-
-    def _cbf(self, gpio, level, tick):
         """ Callback function for pigpio interrupt gpio. Signature is determined
             by pigpiod library. This function is called every time the gpio
-            changes state as we specified EITHER_EDGE.
+            changes state as we specified EITHER_EDGE.  The pigpio callback library
+            sends the user-defined callback function three parameters, which it may or may not use
         :param gpio: gpio to listen for state changes
         :param level: rising/falling edge
         :param tick: # of mu s since boot, 32 bit int
         """
-        if level == 1:
-            self.period = self._update_param(tick)
-            self.high_tick = tick
-        elif level == 0:
-            self.high = self._update_param(tick)
+        for channel in self.channels:
+            if gpio == channel.pin:            
+                if level == 1:                
+                    channel.high_tick = tick            
+                elif level == 0:                
+                    if channel.high_tick is not None:                    
+                        channel.tick = pigpio.tickDiff(channel.high_tick, tick)
 
-    def pulse_width(self):
+    def pulse_width(self, high):
         """
         :return: the PWM pulse width in microseconds.
         """
-        if self.high is not None:
-            return self.high
+        if high is not None:
+            return high
         else:
             return 0.0
 
     def run(self):
-        """
-        Donkey parts interface, returns pulse mapped into [MIN_OUT,MAX_OUT] or
-        [MAX_OUT,MIN_OUT]
-        """
-        # signal is a value in [0, (MAX_OUT-MIN_OUT)]
-        signal = (self.pulse_width() - self.min_pwm) * self.factor
-        # Assuming non-activity if the pulse is at no_action point
-        is_action = abs(signal - self.no_action) > self.jitter
-        # if deemed noise assume no signal
-        if not is_action:
-            signal = self.no_action
-        # convert into min max interval
-        if self.invert:
-            signal = -signal + self.MAX_OUT
+        i = 0
+        for channel in self.channels:
+            # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+            self.signals[i] = (self.pulse_width(channel.tick) - self.min_pwm) * self.factor
+            # convert into min max interval
+            if self.invert:
+                self.signals[i] = -self.signals[i] + self.MAX_OUT
+            else:
+                self.signals[i] += self.MIN_OUT
+            i += 1
+        if self.debug:
+            print('RC CH1 signal:', round(self.signals[0], 3), 'RC CH2 signal:', round(self.signals[1], 3), 'RC CH3 signal:', round(self.signals[2], 3))
+
+        # check mode channel if present
+        if (self.signals[2] - self.jitter) > 0:  
+            self.mode = 'local'
         else:
-            signal += self.MIN_OUT
-        return signal, is_action
+            self.mode = 'user'
+
+        # check throttle channel
+        if ((self.signals[1] - self.jitter) > 0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record 
+            is_action = True
+        else:
+            is_action = False
+        return self.signals[0], self.signals[1], self.mode, is_action
 
     def shutdown(self):
         """
-        Donkey parts interface
+        Cancel all the callbacks on shutdown
         """
-        import pigpio
-        self.cb.cancel()
+        for channel in self.channels:
+            self.cbs[channel].cancel()
+
 
 
 class JoystickCreator(Joystick):
@@ -1621,7 +1621,7 @@ def get_js_controller(cfg):
 
 
 if __name__ == "__main__":
-    # Testing the XboxOneJoystickController
+ #   Testing the XboxOneJoystickController
     js = XboxOneJoystick('/dev/input/js0')
     js.init()
 
@@ -1629,4 +1629,4 @@ if __name__ == "__main__":
         button, button_state, axis, axis_val = js.poll()
         if button is not None or axis is not None:
             print(button, button_state, axis, axis_val)
-            time.sleep(0.1)
+        time.sleep(0.1)
