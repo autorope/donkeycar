@@ -1,13 +1,11 @@
 import moviepy.editor as mpy
 from tensorflow.python.keras import activations
 from tensorflow.python.keras import backend as K
-
+import tensorflow as tf
+import cv2
+from matplotlib import cm
 try:
-    from vis.visualization import visualize_saliency, overlay
     from vis.utils import utils
-    from vis.backprop_modifiers import get
-    from vis.losses import ActivationMaximization
-    from vis.optimizer import Optimizer
 except:
     raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
 
@@ -105,7 +103,7 @@ class MakeMovie(object):
         user_throttle = float(record["user/throttle"])
         green = (0, 255, 0)
         self.draw_line_into_image(user_angle, user_throttle, False, img, green)
-        
+          
     def draw_model_prediction(self, img):
         """
         query the model for it's prediction, draw the predictions
@@ -183,24 +181,27 @@ class MakeMovie(object):
         model.layers[layer_idx].activation = activations.linear
         # build salient model and optimizer
         sal_model = utils.apply_modifications(model)
-        modifier_fn = get('guided')
-        sal_model_mod = modifier_fn(sal_model)
-        losses = [
-            (ActivationMaximization(sal_model_mod.layers[layer_idx], None), -1)
-        ]
-        self.opt = Optimizer(sal_model_mod.input, losses, norm_grads=False)
+        self.sal_model = sal_model
         return True
 
     def compute_visualisation_mask(self, img):
-        grad_modifier = 'absolute'
-        grads = self.opt.minimize(seed_input=img, max_iter=1, grad_modifier=grad_modifier, verbose=False)[1]
+        img = img.reshape((1,) + img.shape)
+        images = tf.Variable(img, dtype=float)
+        with tf.GradientTape() as tape:
+            pred = self.sal_model(images, training=False)
+            loss = 0
+            for p in pred:
+                loss = loss + p
+        grads = tape.gradient(loss, images)
+        grads = tf.math.abs(grads)
+
         channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
-        grads = np.max(grads, axis=channel_idx)
+        grads = np.sum(grads, axis=channel_idx)
         res = utils.normalize(grads)[0]
         return res
 
     def draw_salient(self, img):
-        import cv2
+
         alpha = 0.004
         beta = 1.0 - alpha
         expected = self.keras_part.model.inputs[0].shape[1:]
@@ -213,10 +214,10 @@ class MakeMovie(object):
 
         norm_img = normalize_image(img)
         salient_mask = self.compute_visualisation_mask(norm_img)
-        z = np.zeros_like(salient_mask)
-        salient_mask_stacked = np.dstack((z, z))
-        salient_mask_stacked = np.dstack((salient_mask_stacked, salient_mask))
-        blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked, beta, 0.0)
+        salient_mask_stacked = cm.inferno(salient_mask)[:,:,0:3]
+        salient_mask_stacked = cv2.GaussianBlur(salient_mask_stacked,(3,3),cv2.BORDER_DEFAULT)
+        # img = cv2.GaussianBlur(img,(3,3),cv2.BORDER_DEFAULT)
+        blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked.astype('float32'), beta, 0)
         return blend
 
     def make_frame(self, t):
@@ -236,19 +237,19 @@ class MakeMovie(object):
 
         if self.do_salient:
             image = self.draw_salient(image)
-            image = image * 255
-            image = image.astype('uint8')
-        
+            # image = np.power(image, 0.7)
+            image = cv2.normalize(src=image, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+
         if self.user: self.draw_user_input(rec, image)
         if self.keras_part is not None:
             self.draw_model_prediction(image)
             self.draw_steering_distribution(image)
 
         if self.scale != 1:
-            import cv2
             h, w, d = image.shape
             dsize = (w * self.scale, h * self.scale)
-            image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_CUBIC)
+            image = cv2.resize(image, dsize=dsize, interpolation=cv2.INTER_LINEAR)
+            image = cv2.GaussianBlur(image,(3,3),cv2.BORDER_DEFAULT)
 
         self.current += 1
         # returns a 8-bit RGB array
