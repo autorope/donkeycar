@@ -1,0 +1,683 @@
+#: import TsPlot donkeycar.management.graph.TsPlot
+#: import get_model_by_type donkeycar.utils.get_model_by_type
+#: import platform sys.platform
+#: import os os
+
+#:set common_height 30 if platform != 'darwin' else 60
+#:set layout_pad_x 10 if platform != 'darwin' else 20
+#:set layout_height common_height + layout_pad_x
+#:set layout_height_double 2 * common_height + layout_pad_x
+#:set layout_pad_xy [layout_pad_x, layout_pad_x // 2]
+
+<PaddedBoxLayout>:
+    size_hint_y: None
+    height: layout_height
+    padding: layout_pad_xy
+    spacing: layout_pad_x
+
+
+<FileChooserPopup>:
+    title: "Choose the directory"
+    size_hint: 1.0, 1.0
+    auto_dismiss: False
+    pos_hint: {'center_x': .5, 'center_y': .5}
+
+    BoxLayout:
+        orientation: "vertical"
+        FileChooser:
+            id: file_chooser
+            rootpath: root.root_path
+            dirselect: True
+            filters: root.filters
+            FileChooserListLayout
+
+        BoxLayout:
+            size_hint: (1, 0.1)
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            spacing: 20
+            Button:
+                text: "Cancel"
+                on_release: root.dismiss()
+            Button:
+                text: "Load"
+                on_release: root.load(file_chooser.selection)
+                disabled: file_chooser.selection==[]
+
+<AutoLabel@Label>
+    text_size: self.size
+    halign: 'center'
+    valign: 'middle'
+
+<ConfigManager>
+    title: 'Choose the car directory'
+    orientation: 'horizontal'
+    on_config:
+        app.tub_screen.ids.tub_loader.ids.tub_button.disabled = False
+        app.tub_screen.ids.tub_loader.root_path = self.file_path
+        app.pilot_screen.ids.pilot_loader_1.root_path = self.config.MODELS_PATH
+        app.pilot_screen.ids.pilot_loader_2.root_path = self.config.MODELS_PATH
+        app.tub_screen.ids.status.text = 'Config loaded from' + self.file_path
+    Button:
+        text: 'Load car directory'
+        size_hint_x: 0.5
+        on_press: root.open_popup()
+    AutoLabel:
+        id: car_dir
+        text: root.file_path
+
+<TubLoader>
+    title: 'Choose the tub directory'
+    orientation: 'horizontal'
+    Button:
+        id: tub_button
+        text: 'Load tub'
+        size_hint_x: 0.5
+        disabled: True
+        on_press: root.open_popup()
+    AutoLabel:
+        id: tub_dir
+        text: root.file_path
+
+
+<LabelBar>:
+    orientation: 'horizontal'
+    spacing: 4
+    Label:
+        id: field_label
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        font_size: '14sp' # 14 if platform == 'linux' else 28
+        canvas.before:
+            Color:
+                rgba: 0.17, 0.18, 0.25, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    Label:
+        id: value_label
+        text_size: self.size
+        halign: 'right'
+        valign: 'middle'
+        font_size: 14 if platform == 'linux' else 28
+        size_hint_x: 0.8
+        padding_x: 10
+        canvas.before:
+            Color:
+                rgba: 0.14, 0.15, 0.22, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+    ProgressBar:
+        id: bar
+        canvas.before:
+            Color:
+                rgba: 0.12, 0.13, 0.20, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+<MySpinnerOption>:
+    text_size: self.size
+    halign: 'center'
+    valign: 'middle'
+    height: common_height
+
+
+<DataPanel>
+    orientation: 'vertical'
+    spacing: 2
+    GridLayout:
+        cols: 2
+        Label:
+            text: 'Record field'
+            size_hint_y: None
+            height: common_height
+        MySpinner:
+            id: data_spinner
+            size_hint_y: None
+            height: common_height
+            text: root.auto_text if root.link else 'Add/remove'
+            on_text: root.add_remove()
+            on_values: root.clear()
+
+<ControlPanel>
+    orientation: 'vertical'
+    GridLayout:
+        cols: 2
+        Label:
+            id: record_num
+            text: root.record_display
+        MySpinner:
+            id: control_spinner
+            pos_hint: {'center': (.5, .5)}
+            text: '1.00'
+            values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
+            on_text:
+                root.speed = float(self.text)
+                app.tub_screen.ids.status.text = f'Setting speed to {self.text} - you can also use the +/- keys.'
+                root.restart()
+        Button:
+            id: step_bwd
+            text: '<'
+            on_press:
+                root.start(fwd=False)
+            on_release:
+                root.stop()
+        Button:
+            id: step_fwd
+            text: '>'
+            on_press:
+                root.start(fwd=True)
+            on_release:
+                root.stop()
+        Button:
+            id: run_bwd
+            text: '<<'
+            on_press:
+                root.start(fwd=False, continuous=True)
+                root.set_button_status(disabled=True)
+        Button:
+            id: run_fwd
+            text: '>>'
+            on_press:
+                root.start(fwd=True, continuous=True)
+                root.set_button_status(disabled=True)
+    Button:
+        size_hint_y: 0.3
+        text: 'Stop'
+        on_press:
+            root.stop()
+            root.set_button_status(disabled=False)
+
+<TubEditor>
+    orientation: 'horizontal'
+    on_lr:
+        msg = f'Setting range, '
+        if root.lr[0] < root.lr[1]: msg += (f'affecting records inside [{root.lr[0]}, {root.lr[1]}) ' + \
+        '- you can affect records outside by setting left > right')
+        else: msg += (f'affecting records outside ({root.lr[1]}, {root.lr[0]}] ' + \
+        '- you can affect records inside by setting left < right')
+        app.tub_screen.ids.status.text = msg
+    Button:
+        text: 'Set left'
+        on_press: root.set_lr(True)
+    Button:
+        text: 'Set right'
+        on_press: root.set_lr(False)
+    Label:
+        text: '[' + str(root.lr[0]) + ', ' + str(root.lr[1]) + ')'
+        # text: f'Index range [{root.lr[0]}, {root.lr[1]})'
+    Button:
+        text: 'Delete'
+        on_press:
+            root.del_lr(True)
+            msg = f'Delete records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can delete multiple ranges before doing so.'
+            app.tub_screen.ids.status.text = msg
+    Button:
+        text: 'Restore'
+        on_press:
+            root.del_lr(False)
+            msg = f'Restore records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can restore multiple ranges before doing so.'
+            app.tub_screen.ids.status.text = msg
+    Button:
+        text: 'Reload Tub'
+        on_press:
+            app.tub_screen.ids.tub_loader.update_tub()
+
+<TubFilter>:
+    id: tub_filter
+    orientation: 'horizontal'
+    Button:
+        text: 'Set filter'
+        size_hint_x: 0.2
+        on_press: root.update_filter()
+    TextInput:
+        id: record_filter
+        text: root.record_filter
+        multiline: False
+        on_focus: app.tub_screen.keys_enabled = not app.tub_screen.keys_enabled
+
+<-FullImage>:
+    size_hint_x: 1.2
+    size_hint_y: 1.2
+    canvas:
+        Color:
+            rgb: (1, 1, 1)
+        Rectangle:
+            texture: self.texture
+            size: self.width, self.height / 1.2
+            pos: self.x, self.y
+
+<DataPlot>:
+    Button:
+        text: 'Reload Graph'
+        on_press: root.plot_from_current_bars()
+    Button:
+        text: 'Browser Graph'
+        on_press: root.plot_from_current_bars(in_app=False)
+
+<StatusLabel@Label>:
+    size_hint_y: None
+    height: 30
+    text_size: self.size
+    halign: 'left'
+    valign: 'bottom'
+    text: 'Donkey ready'
+
+<TabBar>:
+    size_hint_y: None
+    height: common_height + 40
+    padding: [20, 20]
+    spacing: 20
+    canvas.before:
+        Color:
+            rgba: 0.25, 0.138, 0.0, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Button:
+        id: tub_btn
+        text: 'Tub Manager'
+        on_press:
+            root.keys_enabled = False
+            root.manager.current = 'tub'
+            root.manager.current_screen.keys_enabled = True
+            root.manager.current_screen.ids.tab_bar.disable_only(root.manager.current_screen.name)
+    Button:
+        id: train_btn
+        text: 'Trainer'
+        on_press:
+            root.keys_enabled = False
+            root.manager.current = 'train'
+            root.manager.current_screen.keys_enabled = True
+            root.manager.current_screen.ids.tab_bar.disable_only(root.manager.current_screen.name)
+    Button:
+        id: pilot_btn
+        text: 'Pilot Arena'
+        on_press:
+            root.keys_enabled = False
+            root.manager.current = 'pilot'
+            if not root.manager.current_screen.index: root.manager.current_screen.index = 0
+            root.manager.current_screen.keys_enabled = True
+            root.manager.current_screen.ids.tab_bar.disable_only(root.manager.current_screen.name)
+    Button:
+        id: car_btn
+        text: 'Car Connector'
+        on_press:
+            root.keys_enabled = False
+            root.manager.current = 'car'
+            root.manager.current_screen.keys_enabled = True
+            root.manager.current_screen.ids.tab_bar.disable_only(root.manager.current_screen.name)
+            root.manager.current_screen.update_pilots()
+
+<TubScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        TabBar:
+            id: tab_bar
+            manager: root.manager
+        PaddedBoxLayout:
+            orientation: 'horizontal'
+            ConfigManager:
+                id: config_manager
+            TubLoader:
+                id: tub_loader
+        PaddedBoxLayout:
+            size_hint_y: 1.0
+            DataPanel:
+                id: data_panel
+                screen: root
+                record: root.current_record
+            FullImage:
+                id: img
+            ControlPanel
+                id: control_panel
+                screen: root
+        Slider:
+            id: slider
+            min: 0
+            max: tub_loader.len - 1
+            value: 0
+            size_hint_y: None
+            height: common_height
+            on_value: root.index = int(self.value)
+        TubEditor
+        TubFilter:
+            id: tub_filter
+        TsPlot:
+            id: graph
+            #size_hint_y: 3.0 if platform == 'linux' else None
+        DataPlot:
+            id: data_plot
+        StatusLabel:
+            id: status
+
+
+<PilotLoader>:
+    title: 'Choose the pilot'
+    orientation: 'horizontal'
+    model_type: pilot_spinner.text
+    Button:
+        id: pilot_button
+        text: 'Choose pilot'
+        size_hint_x: 0.5
+        disabled: True
+        on_press: root.open_popup()
+    MySpinner:
+        id: pilot_spinner
+        pos_hint: {'center': (.5, .5)}
+        size_hint_x: 0.5
+        text: 'Model type'
+        values: ['linear', 'categorical', 'tflite_linear']
+    AutoLabel:
+        id: pilot_file
+        text: root.file_path
+
+
+<PilotScreen>:
+    config: app.tub_screen.ids.config_manager.config
+    BoxLayout:
+        orientation: 'vertical'
+        TabBar:
+            id: tab_bar
+            manager: root.manager
+        PaddedBoxLayout:
+            PilotLoader:
+                num: num
+                id: pilot_loader_1
+                num: '1'
+                data_panel: data_panel_1
+            PilotLoader:
+                id: pilot_loader_2
+                num: '2'
+                data_panel: data_panel_2
+        BoxLayout:
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            OverlayImage:
+                id: img_1
+                keras_part: pilot_loader_1.pilot
+                throttle_field: data_in.throttle_field
+            OverlayImage:
+                id: img_2
+                keras_part: pilot_loader_2.pilot
+                throttle_field: data_in.throttle_field
+        PaddedBoxLayout:
+            size_hint_y: 0.5
+            DataPanel:
+                id: data_panel_1
+                screen: root
+                record: img_1.pilot_record
+                dual_mode: True
+                link: True
+                auto_text: root.map_pilot_field(data_in.auto_text)
+            DataPanel:
+                id: data_panel_2
+                screen: root
+                record: img_2.pilot_record
+                dual_mode: True
+                link: True
+                auto_text: root.map_pilot_field(data_in.auto_text)
+        Slider:
+            id: slider
+            min: 0
+            max: app.tub_screen.ids.tub_loader.len - 1
+            value: 0
+            size_hint_y: None
+            height: common_height
+            on_value: root.index = int(self.value)
+
+        PaddedBoxLayout:
+            ToggleButton:
+                id: button_bright
+                size_hint_x: 0.5
+                text: 'Brightness {:4.2f}'.format(slider_bright.value)
+                on_press: root.set_brightness(slider_bright.value) if self.state == 'down' else root.remove_brightness()
+            Slider:
+                id: slider_bright
+                value: 1
+                min: 0
+                max: 3
+                on_value: root.set_brightness(self.value)
+            ToggleButton:
+                id: button_blur
+                size_hint_x: 0.5
+                text: 'Blur {:4.2f}'.format(slider_blur.value)
+                on_press: root.set_blur(slider_blur.value) if self.state == 'down' else root.remove_blur()
+            Slider:
+                id: slider_blur
+                value: 0
+                min: 0
+                max: 4
+                on_value: root.set_blur(self.value)
+        PaddedBoxLayout:
+            size_hint_y: 0.5
+            ControlPanel:
+                id: pilot_control
+                screen: root
+            DataPanel:
+                id: data_in
+                screen: root
+                record: root.current_record
+                dual_mode: True
+        StatusLabel:
+            id: status
+
+<DataframeLabel>:
+    font_name: 'data/fonts/RobotoMono-Regular.ttf'
+    font_size: 12 if platform == 'linux' else 24
+    size_hint_y: None
+    height: self.texture_size[1]
+    text_size: self.width, None
+
+<TransferSelector>:
+    title: 'Choose transfer model'
+    orientation: 'horizontal'
+    Button:
+        id: transfer_button
+        text: 'Transfer model'
+        size_hint_x: 0.5
+        on_press: root.open_popup()
+    AutoLabel:
+        text: root.file_path
+
+<TrainScreen>:
+    config: app.tub_screen.ids.config_manager.config
+    BoxLayout:
+        orientation: 'vertical'
+        TabBar:
+            id: tab_bar
+            manager: root.manager
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'Overwrite config'
+        BoxLayout:
+            size_hint_y: None
+            height: layout_height
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            MySpinner:
+                id: cfg_spinner
+                text: 'select'
+                values: root.value_list()
+            TextInput:
+                id: cfg_overwrite
+                multiline: False
+                text: 'New value'
+                on_text_validate: root.set_config_attribute(self.text)
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'Train pilot'
+        BoxLayout:
+            size_hint_y: None
+            height: layout_height
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            Label:
+                size_hint_x: 0.5
+                text: 'Model type'
+            MySpinner:
+                id: train_spinner
+                size_hint_x: 0.5
+                text: 'linear'
+                values: ['linear', 'categorical', 'tflite_linear']
+            TextInput:
+                id: comment
+                multiline: False
+                text: 'Comment'
+        BoxLayout:
+            size_hint_y: None
+            height: layout_height
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            MySpinner:
+                id: transfer_spinner
+                text: 'Choose transfer model'
+            ToggleButton:
+                id: train_button
+                text: 'Training running...' if self.state == 'down' else 'Train'
+                on_press: root.train(train_spinner.text)
+
+        ScrollableLabel:
+            DataFrameLabel:
+                id: scroll_pilots
+        ScrollableLabel:
+            size_hint_y: 1.0 if check.state == 'down' else 0.1
+            DataFrameLabel:
+                id: scroll_tubs
+        BoxLayout:
+            size_hint_y: None
+            height: layout_height
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            Label:
+                text: 'Group multiple tubs'
+            ToggleButton:
+                id: check
+                on_press: root.on_database(None, None)
+                text: 'On' if self.state == 'down' else 'Off'
+        StatusLabel:
+            id: status
+
+<CarScreen>:
+    config: app.tub_screen.ids.config_manager.config
+    BoxLayout:
+        orientation: 'vertical'
+        TabBar:
+            id: tab_bar
+            manager: root.manager
+        AutoLabel:
+            text: 'This screen is experimental and only works on Linux and OSX if ssh is configured to login without password. Please see the docs.'
+            color: (1, 0.35, 0, 1)
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            Label:
+                text: 'Connection status'
+            Label:
+                id: connected
+                text: 'Checking...'
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'Transfer tub from car -> pc and pilot from pc -> car'
+        GridLayout:
+            cols: 4
+            row_default_height: layout_height
+            row_force_default: True
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            # first row
+            Label:
+                text: 'Car directory (hit return)'
+            ToggleButton:
+                id: create_dir
+                text: 'Create new folder'
+            ProgressBar:
+                value: root.pull_bar
+            ProgressBar:
+                value: root.push_bar
+            # second row
+            TextInput:
+                id: car_dir
+                multiline: False
+                text: root.car_dir
+                on_text_validate:
+                    root.list_car_dir(self.text)
+                    root.update_pilots()
+            MySpinner:
+                id: tub_dir_spinner
+                text: 'select'
+                values: root.files
+            Button:
+                id: pull_tub
+                text: 'Pull tub ' + tub_dir_spinner.text
+                on_press:
+                    self.disabled = True
+                    root.pull(tub_dir_spinner.text)
+            Button:
+                id: send_pilots
+                multiline: False
+                text: 'Send pilots'
+                on_press:
+                    self.disabled = True
+                    root.send_pilot()
+        Label:
+            size_hint_y: None
+            height: common_height
+            text: 'Drive car'
+        BoxLayout:
+            size_hint_y: None
+            height: layout_height_double
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            MySpinner:
+                id: type_spinner
+                text: 'linear'
+                values: ['linear', 'categorical', 'tflite_linear']
+            MySpinner:
+                id: pilot_spinner
+                text: 'No pilot'
+                values: ['No pilot'] + root.pilots
+
+        BoxLayout:
+            size_hint_y: None
+            height: layout_height_double
+            padding: layout_pad_xy
+            spacing: layout_pad_x
+            Button:
+                id: drive_btn
+                text: 'Drive'
+                on_press:
+                    root.drive()
+                    self.disabled = True
+                    stop_btn.disabled = False
+            Button:
+                id: stop_btn
+                text: 'Stop'
+                disabled: True
+                on_press:
+                    root.stop()
+                    self.disabled = True
+                    drive_btn.disabled = False
+
+        Label:
+            size_hint_y: 1.0
+            text: ''
+
+
+<StartScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        TabBar:
+            id: tab_bar
+            manager: root.manager
+        Image:
+            source: root.img_path
+            size: self.texture_size
+

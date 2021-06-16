@@ -12,6 +12,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from typing import Dict, Any, Tuple, Optional, Union
 import donkeycar as dk
+
 from donkeycar.utils import normalize_image, linear_bin
 from donkeycar.pipeline.types import TubRecord
 
@@ -27,7 +28,6 @@ from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.keras.optimizers import Optimizer
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
@@ -46,6 +46,7 @@ class KerasPilot(ABC):
         print(f'Created {self}')
 
     def load(self, model_path: str) -> None:
+        print(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False)
 
     def load_weights(self, model_path: str, by_name: bool = True) -> None:
@@ -102,6 +103,21 @@ class KerasPilot(ABC):
         """
         pass
 
+    def evaluate(self, record: TubRecord,
+                 augmentation: 'ImageAugmentation' = None) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        # extract model input from record
+        x0 = self.x_transform(record)
+        x1 = x0[0] if isinstance(x0, tuple) else x0
+        # apply augmentation to training data only
+        x2 = augmentation.augment(x1) if augmentation else x1
+        # normalise image, assume other input data comes already normalised
+        x3 = normalize_image(x2)
+        if isinstance(x0, tuple):
+            return self.inference(x3, *x0[1:])
+        else:
+            return self.inference(x3, None)
+
     def train(self,
               model_path: str,
               train_data: 'BatchSequence',
@@ -112,7 +128,8 @@ class KerasPilot(ABC):
               epochs: int,
               verbose: int = 1,
               min_delta: float = .0005,
-              patience: int = 5) -> tf.keras.callbacks.History:
+              patience: int = 5,
+              show_plot: bool = False) -> tf.keras.callbacks.History:
         """
         trains the model
         """
@@ -128,7 +145,7 @@ class KerasPilot(ABC):
                             save_best_only=True,
                             verbose=verbose)]
 
-        history: Dict[str, Any] = model.fit(
+        history: tf.keras.callbacks.History = model.fit(
             x=train_data,
             steps_per_epoch=train_steps,
             batch_size=batch_size,
@@ -141,38 +158,39 @@ class KerasPilot(ABC):
             use_multiprocessing=False
         )
             
-        try:
-            import matplotlib.pyplot as plt
-            from pathlib import Path
-        
-            plt.figure(1)
+        if show_plot:
+            try:
+                import matplotlib.pyplot as plt
+                from pathlib import Path
 
-            # Only do accuracy if we have that data (e.g. categorical outputs)
-            if 'angle_out_acc' in history.history:
-                plt.subplot(121)
+                plt.figure(1)
+                # Only do accuracy if we have that data
+                # (e.g. categorical outputs)
+                if 'angle_out_acc' in history.history:
+                    plt.subplot(121)
 
-            # summarize history for loss
-            plt.plot(history.history['loss'])
-            plt.plot(history.history['val_loss'])
-            plt.title('model loss')
-            plt.ylabel('loss')
-            plt.xlabel('epoch')
-            plt.legend(['train', 'validate'], loc='upper right')
-            
-            # summarize history for acc
-            if 'angle_out_acc' in history.history:
-                plt.subplot(122)
-                plt.plot(history.history['angle_out_acc'])
-                plt.plot(history.history['val_angle_out_acc'])
-                plt.title('model angle accuracy')
-                plt.ylabel('acc')
+                # summarize history for loss
+                plt.plot(history.history['loss'])
+                plt.plot(history.history['val_loss'])
+                plt.title('model loss')
+                plt.ylabel('loss')
                 plt.xlabel('epoch')
-            
-            plt.savefig(Path(model_path).with_suffix('.png'))
-            # plt.show()
-            
-        except Exception as ex:
-            print("problems with loss graph: {}".format( ex ) )
+                plt.legend(['train', 'validate'], loc='upper right')
+
+                # summarize history for acc
+                if 'angle_out_acc' in history.history:
+                    plt.subplot(122)
+                    plt.plot(history.history['angle_out_acc'])
+                    plt.plot(history.history['val_angle_out_acc'])
+                    plt.title('model angle accuracy')
+                    plt.ylabel('acc')
+                    plt.xlabel('epoch')
+
+                plt.savefig(Path(model_path).with_suffix('.png'))
+                # plt.show()
+
+            except Exception as ex:
+                print(f"problems with loss graph: {ex}")
             
         return history
 
@@ -195,18 +213,14 @@ class KerasPilot(ABC):
         raise NotImplementedError(f'{self} not ready yet for new training '
                                   f'pipeline')
 
-    def output_types(self) -> Dict[str, np.typename]:
-        raise NotImplementedError(f'{self} not ready yet for new training '
-                                  f'pipeline')
-
-    def output_types(self):
+    def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
         """ Used in tf.data, assume all types are doubles"""
         shapes = self.output_shapes()
         types = tuple({k: tf.float64 for k in d} for d in shapes)
         return types
 
-    def output_shapes(self) -> Optional[Dict[str, tf.TensorShape]]:
-        return None
+    def output_shapes(self) -> Dict[str, tf.TensorShape]:
+        return {}
 
     def __str__(self) -> str:
         """ For printing model initialisation """
@@ -244,7 +258,9 @@ class KerasCategorical(KerasPilot):
             return 0.0, 0.0
 
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned, throttle_binned = self.model.predict(img_arr)
+        angle_binned_tensor, throttle_binned_tensor = self.model(img_arr)
+        angle_binned = angle_binned_tensor.numpy()
+        throttle_binned = throttle_binned_tensor.numpy()
         N = len(throttle_binned[0])
         throttle = dk.utils.linear_unbin(throttle_binned, N=N,
                                          offset=0.0, R=self.throttle_range)
@@ -289,9 +305,9 @@ class KerasLinear(KerasPilot):
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model.predict(img_arr)
-        steering = outputs[0]
-        throttle = outputs[1]
+        outputs = self.model(img_arr)
+        steering = outputs[0].numpy()
+        throttle = outputs[1].numpy()
         return steering[0][0], throttle[0][0]
 
     def y_transform(self, record: TubRecord):
@@ -325,8 +341,8 @@ class KerasInferred(KerasPilot):
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model.predict(img_arr)
-        steering = outputs[0]
+        outputs = self.model(img_arr)
+        steering = outputs[0].numpy()
         return steering[0], dk.utils.throttle(steering[0])
 
     def y_transform(self, record: TubRecord):
@@ -384,9 +400,9 @@ class KerasIMU(KerasPilot):
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         imu_arr = np.array(other_arr).reshape(1, self.num_imu_inputs)
-        outputs = self.model.predict([img_arr, imu_arr])
-        steering = outputs[0]
-        throttle = outputs[1]
+        outputs = self.model([img_arr, imu_arr])
+        steering = outputs[0].numpy()
+        throttle = outputs[1].numpy()
         return steering[0][0], throttle[0][0]
 
     def y_transform(self, record: TubRecord):
@@ -411,7 +427,9 @@ class KerasBehavioral(KerasPilot):
     def inference(self, img_arr, state_array):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
         bhv_arr = np.array(state_array).reshape(1, len(state_array))
-        angle_binned, throttle = self.model.predict([img_arr, bhv_arr])
+        angle_binned_tensor, throttle_tensor = self.model([img_arr, bhv_arr])
+        angle_binned = angle_binned_tensor.numpy()
+        throttle = throttle_tensor.numpy()
         # In order to support older models with linear throttle,we will test for
         # shape of throttle to see if it's the newer binned version.
         N = len(throttle[0])
@@ -447,7 +465,10 @@ class KerasLocalizer(KerasPilot):
         
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle, throttle, track_loc = self.model.predict([img_arr])
+        angle_t, throttle_t, track_loc_t = self.model([img_arr])
+        angle = angle_t.numpy()
+        throttle = throttle_t.numpy()
+        track_loc = track_loc_t.numpy()
         loc = np.argmax(track_loc[0])
         return angle, throttle, loc
 
@@ -637,9 +658,9 @@ class KerasRNN_LSTM(KerasPilot):
         
         img_arr = np.array(self.img_seq).reshape((1, self.seq_length,
                                                   *self.input_shape))
-        outputs = self.model.predict([img_arr])
-        steering = outputs[0][0]
-        throttle = outputs[0][1]
+        outputs = self.model([img_arr])
+        steering = outputs[0][0].numpy()
+        throttle = outputs[0][1].numpy()
         return steering, throttle
 
 
@@ -704,9 +725,9 @@ class Keras3D_CNN(KerasPilot):
         
         img_arr = np.array(self.img_seq).reshape((1, self.seq_length,
                                                   *self.input_shape))
-        outputs = self.model.predict([img_arr])
-        steering = outputs[0][0]
-        throttle = outputs[0][1]
+        outputs = self.model([img_arr])
+        steering = outputs[0][0].numpy()
+        throttle = outputs[0][1].numpy()
         return steering, throttle
 
 
@@ -792,9 +813,9 @@ class KerasLatent(KerasPilot):
 
     def inference(self, img_arr, other_arr):
         img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model.predict(img_arr)
-        steering = outputs[1]
-        throttle = outputs[2]
+        outputs = self.model(img_arr)
+        steering = outputs[1].numpy()
+        throttle = outputs[2].numpy()
         return steering[0][0], throttle[0][0]
 
 

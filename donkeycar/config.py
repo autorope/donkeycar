@@ -69,6 +69,7 @@ def load_config(config_path=None, myconfig="myconfig.py"):
     if hasattr(cfg, 'IMAGE_H') and hasattr(cfg, 'IMAGE_W'): 
         cfg.TARGET_H = cfg.IMAGE_H
         cfg.TARGET_W = cfg.IMAGE_W
-        cfg.TARGET_D = cfg.IMAGE_DEPTH
+        if hasattr(cfg, 'IMAGE_DEPTH'):
+            cfg.TARGET_D = cfg.IMAGE_DEPTH
 
     return cfg

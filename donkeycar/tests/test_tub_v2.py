@@ -7,11 +7,12 @@ from donkeycar.parts.tub_v2 import Tub
 
 class TestTub(unittest.TestCase):
 
-    def setUp(self):
-        self._path = tempfile.mkdtemp()
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._path = tempfile.mkdtemp()
         inputs = ['input']
         types = ['int']
-        self.tub = Tub(self._path, inputs, types)
+        cls.tub = Tub(cls._path, inputs, types)
 
     def test_basic_tub_operations(self):
         entries = list(self.tub)
@@ -24,7 +25,7 @@ class TestTub(unittest.TestCase):
             self.tub.write_record(record)
 
         for index in delete_indexes:
-            self.tub.delete_record(index)
+            self.tub.delete_records(index)
 
         count = 0
         for record in self.tub:
@@ -34,8 +35,18 @@ class TestTub(unittest.TestCase):
         self.assertEqual(count, (write_count - len(delete_indexes)))
         self.assertEqual(len(self.tub), (write_count - len(delete_indexes)))
 
-    def tearDown(self):
-        shutil.rmtree(self._path)
+    def test_delete_last_n_records(self):
+        start_len = len(self.tub)
+        self.tub.delete_last_n_records(2)
+        self.assertEqual(start_len - 2, len(self.tub),
+                         "error in deleting 2 last records")
+        self.tub.delete_last_n_records(3)
+        self.assertEqual(start_len - 5, len(self.tub),
+                         "error in deleting 3 last records")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        shutil.rmtree(cls._path)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-
 import os
 import array
 import time
@@ -12,6 +11,7 @@ from prettytable import PrettyTable
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
+
 
 class Joystick(object):
     '''
@@ -228,6 +228,107 @@ class PyGameJoystick(object):
     def set_deadzone(self, val):
         self.dead_zone = val
 
+# this class is a helper for the RCReceiver class
+class Channel:
+    def __init__(self, pin):
+        self.pin = pin
+        self.tick = None
+        self.high_tick = None
+
+class RCReceiver:
+    MIN_OUT = -1
+    MAX_OUT = 1
+    def __init__(self, cfg, debug=False):
+        import pigpio
+        self.pi = pigpio.pi()
+
+        # standard variables
+        self.channels = [Channel(cfg.STEERING_RC_GPIO), Channel(cfg.THROTTLE_RC_GPIO), Channel(cfg.DATA_WIPER_RC_GPIO)]
+        self.min_pwm = 1000
+        self.max_pwm = 2000
+        self.oldtime = 0
+        self.STEERING_MID = cfg.PIGPIO_STEERING_MID
+        self.MAX_FORWARD = cfg.PIGPIO_MAX_FORWARD
+        self.STOPPED_PWM = cfg.PIGPIO_STOPPED_PWM
+        self.MAX_REVERSE = cfg.PIGPIO_MAX_REVERSE
+        self.RECORD = cfg.AUTO_RECORD_ON_THROTTLE
+        self.debug = debug
+        self.mode = 'user'
+        self.is_action = False
+        self.invert = cfg.PIGPIO_INVERT
+        self.jitter = cfg.PIGPIO_JITTER
+        self.factor = (self.MAX_OUT - self.MIN_OUT) / (self.max_pwm - self.min_pwm)
+        self.cbs = []
+        self.signals = [0,0,0]
+        for channel in self.channels:
+            self.pi.set_mode(channel.pin, pigpio.INPUT)
+            self.cbs.append(self.pi.callback(channel.pin, pigpio.EITHER_EDGE, self.cbf))
+            if self.debug:
+                print(f'RCReceiver gpio {channel.pin} created')
+    
+
+    def cbf(self, gpio, level, tick):
+        import pigpio
+        """ Callback function for pigpio interrupt gpio. Signature is determined
+            by pigpiod library. This function is called every time the gpio
+            changes state as we specified EITHER_EDGE.  The pigpio callback library
+            sends the user-defined callback function three parameters, which it may or may not use
+        :param gpio: gpio to listen for state changes
+        :param level: rising/falling edge
+        :param tick: # of mu s since boot, 32 bit int
+        """
+        for channel in self.channels:
+            if gpio == channel.pin:            
+                if level == 1:                
+                    channel.high_tick = tick            
+                elif level == 0:                
+                    if channel.high_tick is not None:                    
+                        channel.tick = pigpio.tickDiff(channel.high_tick, tick)
+
+    def pulse_width(self, high):
+        """
+        :return: the PWM pulse width in microseconds.
+        """
+        if high is not None:
+            return high
+        else:
+            return 0.0
+
+    def run(self):
+        i = 0
+        for channel in self.channels:
+            # signal is a value in [0, (MAX_OUT-MIN_OUT)]
+            self.signals[i] = (self.pulse_width(channel.tick) - self.min_pwm) * self.factor
+            # convert into min max interval
+            if self.invert:
+                self.signals[i] = -self.signals[i] + self.MAX_OUT
+            else:
+                self.signals[i] += self.MIN_OUT
+            i += 1
+        if self.debug:
+            print('RC CH1 signal:', round(self.signals[0], 3), 'RC CH2 signal:', round(self.signals[1], 3), 'RC CH3 signal:', round(self.signals[2], 3))
+
+        # check mode channel if present
+        if (self.signals[2] - self.jitter) > 0:  
+            self.mode = 'local'
+        else:
+            self.mode = 'user'
+
+        # check throttle channel
+        if ((self.signals[1] - self.jitter) > 0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record 
+            is_action = True
+        else:
+            is_action = False
+        return self.signals[0], self.signals[1], self.mode, is_action
+
+    def shutdown(self):
+        """
+        Cancel all the callbacks on shutdown
+        """
+        for channel in self.channels:
+            self.cbs[channel].cancel()
+
+
 
 class JoystickCreator(Joystick):
     '''
@@ -356,11 +457,11 @@ class PS4Joystick(Joystick):
         self.axis_names = {
             0x00 : 'left_stick_horz',
             0x01 : 'left_stick_vert',
-            0x02 : 'right_stick_horz',
-            0x05 : 'right_stick_vert',
+            0x03 : 'right_stick_horz',
+            0x04 : 'right_stick_vert',
 
-            0x03 : 'left_trigger_axis',
-            0x04 : 'right_trigger_axis',
+            0x02 : 'left_trigger_axis',
+            0x05 : 'right_trigger_axis',
 
             0x10 : 'dpad_leftright',
             0x11 : 'dpad_updown',
@@ -376,21 +477,21 @@ class PS4Joystick(Joystick):
 
         self.button_names = {
 
-            0x130 : 'square',
-            0x131 : 'cross',
-            0x132 : 'circle',
+            0x134 : 'square',
+            0x130 : 'cross',
+            0x131 : 'circle',
             0x133 : 'triangle',
 
-            0x134 : 'L1',
-            0x135 : 'R1',
+            0x138 : 'L1',
+            0x139 : 'R1',
             0x136 : 'L2',
             0x137 : 'R2',
             0x13a : 'L3',
             0x13b : 'R3',
 
             0x13d : 'pad',
-            0x138 : 'share',
-            0x139 : 'options',
+            0x13a : 'share',
+            0x13b : 'options',
             0x13c : 'PS',
         }
 
@@ -517,9 +618,14 @@ class XboxOneJoystick(Joystick):
         super(XboxOneJoystick, self).__init__(*args, **kwargs)
 
         self.axis_names = {
-            0x00: 'left_stick_horz',
-            0x02: 'left_trigger',
-            0x05: 'right_trigger'
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x05 : 'right_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x0a : 'left_trigger',
+            0x09 : 'right_trigger',
+            0x10 : 'dpad_horiz',
+            0x11 : 'dpad_vert'
         }
 
         self.button_names = {
@@ -527,11 +633,10 @@ class XboxOneJoystick(Joystick):
             0x131: 'b_button',
             0x133: 'x_button',
             0x134: 'y_button',
+            0x13b: 'options',
             0x136: 'left_shoulder',
             0x137: 'right_shoulder',
-            0x13b: 'options',
         }
-
 
 class LogitechJoystick(Joystick):
     '''
@@ -1514,13 +1619,14 @@ def get_js_controller(cfg):
     ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
     return ctr
 
+
 if __name__ == "__main__":
-    # Testing the XboxOneJoystickController
+ #   Testing the XboxOneJoystickController
     js = XboxOneJoystick('/dev/input/js0')
     js.init()
 
     while True:
         button, button_state, axis, axis_val = js.poll()
-        if (button is not None or axis is not None):
+        if button is not None or axis is not None:
             print(button, button_state, axis, axis_val)
-            time.sleep(0.1)
+        time.sleep(0.1)

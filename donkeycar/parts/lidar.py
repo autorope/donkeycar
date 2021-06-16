@@ -2,6 +2,9 @@
 Lidar
 """
 
+# requies glob to be installed: "pip3 install glob2"
+# requires Adafruit RPLidar driver to be installed: pip install Adafruit_CircuitPython_RPLIDAR
+
 import time
 import math
 import pickle
@@ -12,19 +15,41 @@ from PIL import Image, ImageDraw
 
 class RPLidar(object):
     '''
-    https://github.com/SkoltechRobotics/rplidar
+    https://github.com/adafruit/Adafruit_CircuitPython_RPLIDAR
     '''
-    def __init__(self, port='/dev/ttyUSB0'):
-        from rplidar import RPLidar
-        self.port = port
-        self.distances = [] #a list of distance measurements 
-        self.angles = [] # a list of angles corresponding to dist meas above
-        self.lidar = RPLidar(self.port)
-        self.lidar.clear_input()
-        time.sleep(1)
-        self.on = True
-        #print(self.lidar.get_info())
-        #print(self.lidar.get_health())
+    def __init__(self, lower_limit = 0, upper_limit = 360, debug=False):
+        from adafruit_rplidar import RPLidar
+
+        # Setup the RPLidar
+        PORT_NAME = "/dev/ttyUSB0"
+
+        import glob
+        port_found = False
+        self.lower_limit = lower_limit
+        self.upper_limit = upper_limit
+        temp_list = glob.glob ('/dev/ttyUSB*')
+        result = []
+        for a_port in temp_list:
+            try:
+                s = serial.Serial(a_port)
+                s.close()
+                result.append(a_port)
+                port_found = True
+            except serial.SerialException:
+                pass
+        if port_found:
+            self.port = result[0]
+            self.distances = [] #a list of distance measurements
+            self.angles = [] # a list of angles corresponding to dist meas above
+            self.lidar = RPLidar(None, self.port, timeout=3)
+            self.lidar.clear_input()
+            time.sleep(1)
+            self.on = True
+            #print(self.lidar.get_info())
+            #print(self.lidar.get_health())
+        else:
+            print("No Lidar found")
+
 
 
     def update(self):
@@ -38,7 +63,19 @@ class RPLidar(object):
                 print('serial.serialutil.SerialException from Lidar. common when shutting down.')
 
     def run_threaded(self):
-        return self.distances, self.angles
+        sorted_distances = []
+        if (self.angles != []) and (self.distances != []):
+            angs = np.copy(self.angles)
+            dists = np.copy(self.distances)
+
+            filter_angs = angs[(angs > self.lower_limit) & (angs < self.upper_limit)]
+            filter_dist = dists[(angs > self.lower_limit) & (angs < self.upper_limit)] #sorts distances based on angle values
+
+            angles_ind = np.argsort(filter_angs)         # returns the indexes that sorts filter_angs
+            if angles_ind != []:
+                sorted_distances = np.argsort(filter_dist) # sorts distances based on angle indexes
+        return sorted_distances
+
 
     def shutdown(self):
         self.on = False
@@ -47,6 +84,62 @@ class RPLidar(object):
         self.lidar.stop_motor()
         self.lidar.disconnect()
 
+class YDLidar(object):
+    '''
+    https://pypi.org/project/PyLidar3/
+    '''
+    def __init__(self, port='/dev/ttyUSB0'):
+        import PyLidar3
+        self.port = port
+        self.distances = [] #a list of distance measurements
+        self.angles = [] # a list of angles corresponding to dist meas above
+        self.lidar = PyLidar3.YdLidarX4(port)
+        if(self.lidar.Connect()):
+            print(self.lidar.GetDeviceInfo())
+            self.gen = self.lidar.StartScanning()
+        else:
+            print("Error connecting to lidar")
+        self.on = True
+
+
+    def init(self, port='/dev/ttyUSB0'):
+        import PyLidar3
+        print("Starting lidar...")
+        self.port = port
+        self.distances = [] #a list of distance measurements
+        self.angles = [] # a list of angles corresponding to dist meas above
+        self.lidar = PyLidar3.YdLidarX4(port)
+        if(self.lidar.Connect()):
+            print(self.lidar.GetDeviceInfo())
+            gen = self.lidar.StartScanning()
+            return gen
+        else:
+            print("Error connecting to lidar")
+        self.on = True
+        #print(self.lidar.get_info())
+        #print(self.lidar.get_health())
+
+    def update(self, lidar, debug = False):
+        while self.on:
+            try:
+                self.data = next(lidar)
+                for angle in range(0,360):
+                    if(self.data[angle]>1000):
+                        self.angles = [angle]
+                        self.distances = [self.data[angle]]
+                if debug:
+                    return self.distances, self.angles
+            except serial.serialutil.SerialException:
+                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
+
+    def run_threaded(self):
+        return self.distances, self.angles
+
+    def shutdown(self):
+        self.on = False
+        time.sleep(2)
+        self.lidar.StopScanning()
+        self.lidar.Disconnect()
 
 class LidarPlot(object):
     '''
@@ -178,4 +271,3 @@ class MapToImage(object):
 
     def shutdown(self):
         pass
-

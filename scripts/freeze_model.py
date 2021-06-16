@@ -19,13 +19,14 @@ output = os.path.expanduser(args['--output'])
 output_path = Path(output)
 output_meta = Path('%s/%s.metadata' % (output_path.parent.as_posix(), output_path.stem))
 
+tf.compat.v1.disable_eager_execution()
 
 # Reset session
 tf.keras.backend.clear_session()
 tf.keras.backend.set_learning_phase(0)
 
-model = tf.keras.models.load_model(in_model, compile=False)
-session = tf.keras.backend.get_session()
+model = tf.compat.v1.keras.models.load_model(in_model, compile=False)
+session = tf.compat.v1.keras.backend.get_session()
 
 input_names = sorted([layer.op.name for layer in model.inputs])
 output_names = sorted([layer.op.name for layer in model.outputs])
