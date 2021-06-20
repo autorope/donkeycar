@@ -45,6 +45,7 @@ PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But
 #SSD1306_128_32
 USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_ROTATION = 0 # 0 = text is right-side up, 1 = rotated 90 degrees clockwise, 2 = 180 degrees (flipped), 3 = 270 degrees
+SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 
 #DRIVETRAIN
 #These options specify which chasis and motor setup you are using. Most are using I2C_SERVO.
