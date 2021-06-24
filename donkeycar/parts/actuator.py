@@ -8,12 +8,13 @@ import time
 
 import donkeycar as dk
 
-        
+
 class PCA9685:
     ''' 
     PWM motor controler using PCA9685 boards. 
     This is used for most RC Cars
     '''
+
     def __init__(self, channel, address=0x40, frequency=60, busnum=None, init_delay=0.1):
 
         self.default_freq = 60
@@ -24,13 +25,15 @@ class PCA9685:
         if busnum is not None:
             from Adafruit_GPIO import I2C
             # replace the get_bus function with our own
+
             def get_bus():
                 return busnum
             I2C.get_default_bus = get_bus
         self.pwm = Adafruit_PCA9685.PCA9685(address=address)
         self.pwm.set_pwm_freq(frequency)
         self.channel = channel
-        time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
+        # "Tamiya TBLE-02" makes a little leap otherwise
+        time.sleep(init_delay)
 
     def set_pulse(self, pulse):
         try:
@@ -72,7 +75,8 @@ class PiGPIO_PWM():
         self.pgio.stop()
 
     def set_pulse(self, pulse):
-        self.pgio.hardware_PWM(self.pin, self.freq, int(pulse if self.inverted == False else 1e6 - pulse))
+        self.pgio.hardware_PWM(self.pin, self.freq, int(
+            pulse if self.inverted == False else 1e6 - pulse))
 
     def run(self, pulse):
         self.set_pulse(pulse)
@@ -82,6 +86,7 @@ class JHat:
     ''' 
     PWM motor controler using Teensy emulating PCA9685. 
     '''
+
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
         print("Firing up the Hat")
         import Adafruit_PCA9685
@@ -90,6 +95,7 @@ class JHat:
         if busnum is not None:
             from Adafruit_GPIO import I2C
             # replace the get_bus function with our own
+
             def get_bus():
                 return busnum
             I2C.get_default_bus = get_bus
@@ -100,30 +106,32 @@ class JHat:
 
         # we install our own write that is more efficient use of interrupts
         self.pwm.set_pwm = self.set_pwm
-        
+
     def set_pulse(self, pulse):
-        self.set_pwm(self.channel, 0, pulse) 
+        self.set_pwm(self.channel, 0, pulse)
 
     def set_pwm(self, channel, on, off):
         # sets a single PWM channel
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
-        
+
     def run(self, pulse):
         self.set_pulse(pulse)
+
 
 class JHatReader:
     ''' 
     Read RC controls from teensy 
     '''
+
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
         import Adafruit_PCA9685
         self.pwm = Adafruit_PCA9685.PCA9685(address=address)
         self.pwm.set_pwm_freq(frequency)
-        self.register = 0 #i2c read doesn't take an address
+        self.register = 0  # i2c read doesn't take an address
         self.steering = 0
         self.throttle = 0
         self.running = True
-        #send a reset
+        # send a reset
         self.pwm._device.writeRaw8(0x06)
 
     def read_pwm(self):
@@ -137,27 +145,27 @@ class JHatReader:
         while h1 != 100:
             print("skipping to start of header")
             h1 = self.pwm._device.readU8(self.register)
-        
+
         h2 = self.pwm._device.readU8(self.register)
         # h2 ignored now
 
         val_a = self.pwm._device.readU8(self.register)
         val_b = self.pwm._device.readU8(self.register)
         self.steering = (val_b << 8) + val_a
-        
+
         val_c = self.pwm._device.readU8(self.register)
         val_d = self.pwm._device.readU8(self.register)
         self.throttle = (val_d << 8) + val_c
 
         # scale the values from -1 to 1
-        self.steering = (((float)(self.steering)) - 1500.0) / 500.0  + 0.158
-        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0  + 0.136
+        self.steering = (((float)(self.steering)) - 1500.0) / 500.0 + 0.158
+        self.throttle = (((float)(self.throttle)) - 1500.0) / 500.0 + 0.136
 
     def update(self):
         while(self.running):
             self.read_pwm()
             time.sleep(0.015)
-        
+
     def run_threaded(self):
         return self.steering, self.throttle
 
@@ -265,40 +273,40 @@ class Adafruit_DCMotor_Hat:
     Adafruit DC Motor Controller 
     Used for each motor on a differential drive car.
     '''
+
     def __init__(self, motor_num):
         from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
         import atexit
-        
+
         self.FORWARD = Adafruit_MotorHAT.FORWARD
         self.BACKWARD = Adafruit_MotorHAT.BACKWARD
-        self.mh = Adafruit_MotorHAT(addr=0x60) 
-        
+        self.mh = Adafruit_MotorHAT(addr=0x60)
+
         self.motor = self.mh.getMotor(motor_num)
         self.motor_num = motor_num
-        
+
         atexit.register(self.turn_off_motors)
         self.speed = 0
         self.throttle = 0
-    
-        
+
     def run(self, speed):
         '''
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
         '''
         if speed > 1 or speed < -1:
-            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
-        
+            raise ValueError(
+                "Speed must be between 1(forward) and -1(reverse)")
+
         self.speed = speed
         self.throttle = int(dk.utils.map_range(abs(speed), -1, 1, -255, 255))
-        
-        if speed > 0:            
+
+        if speed > 0:
             self.motor.run(self.FORWARD)
         else:
             self.motor.run(self.BACKWARD)
-            
+
         self.motor.setSpeed(self.throttle)
-        
 
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
@@ -316,7 +324,7 @@ class Maestro:
     maestro_lock = threading.Lock()
     astar_lock = threading.Lock()
 
-    def __init__(self, channel, frequency = 60):
+    def __init__(self, channel, frequency=60):
         import serial
 
         if Maestro.maestro_device == None:
@@ -330,20 +338,21 @@ class Maestro:
         self.brakelights = False
 
         if Maestro.astar_device == None:
-            Maestro.astar_device = serial.Serial('/dev/ttyACM2', 115200, timeout= 0.01)
+            Maestro.astar_device = serial.Serial(
+                '/dev/ttyACM2', 115200, timeout=0.01)
 
     def set_pulse(self, pulse):
         # Recalculate pulse width from the Adafruit values
-        w = pulse * (1 / (self.frequency * 4096)) # in seconds
+        w = pulse * (1 / (self.frequency * 4096))  # in seconds
         w *= 1000 * 1000  # in microseconds
         w *= 4  # in quarter microsenconds the maestro wants
         w = int(w)
 
         with Maestro.maestro_lock:
-            Maestro.maestro_device.write(bytearray([ 0x84,
-                                                     self.channel,
-                                                     (w & 0x7F),
-                                                     ((w >> 7) & 0x7F)]))
+            Maestro.maestro_device.write(bytearray([0x84,
+                                                    self.channel,
+                                                    (w & 0x7F),
+                                                    ((w >> 7) & 0x7F)]))
 
     def set_turn_left(self, v):
         if self.lturn != v:
@@ -398,11 +407,12 @@ class Teensy:
     teensy_lock = threading.Lock()
     astar_lock = threading.Lock()
 
-    def __init__(self, channel, frequency = 60):
+    def __init__(self, channel, frequency=60):
         import serial
 
         if Teensy.teensy_device == None:
-            Teensy.teensy_device = serial.Serial('/dev/teensy', 115200, timeout = 0.01)
+            Teensy.teensy_device = serial.Serial(
+                '/dev/teensy', 115200, timeout=0.01)
 
         self.channel = channel
         self.frequency = frequency
@@ -412,15 +422,17 @@ class Teensy:
         self.brakelights = False
 
         if Teensy.astar_device == None:
-            Teensy.astar_device = serial.Serial('/dev/astar', 115200, timeout = 0.01)
+            Teensy.astar_device = serial.Serial(
+                '/dev/astar', 115200, timeout=0.01)
 
     def set_pulse(self, pulse):
         # Recalculate pulse width from the Adafruit values
-        w = pulse * (1 / (self.frequency * 4096)) # in seconds
+        w = pulse * (1 / (self.frequency * 4096))  # in seconds
         w *= 1000 * 1000  # in microseconds
 
         with Teensy.teensy_lock:
-            Teensy.teensy_device.write(("%c %.1f\n" % (self.channel, w)).encode('ascii'))
+            Teensy.teensy_device.write(
+                ("%c %.1f\n" % (self.channel, w)).encode('ascii'))
 
     def set_turn_left(self, v):
         if self.lturn != v:
@@ -476,6 +488,7 @@ class Teensy:
 
         return ret
 
+
 class MockController(object):
     def __init__(self):
         pass
@@ -491,7 +504,8 @@ class L298N_HBridge_DC_Motor(object):
     '''
     Motor controlled with an L298N hbridge from the gpio pins on Rpi
     '''
-    def __init__(self, pin_forward, pin_backward, pwm_pin, freq = 50):
+
+    def __init__(self, pin_forward, pin_backward, pwm_pin, freq=50):
         import RPi.GPIO as GPIO
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
@@ -501,7 +515,7 @@ class L298N_HBridge_DC_Motor(object):
         GPIO.setup(self.pin_forward, GPIO.OUT)
         GPIO.setup(self.pin_backward, GPIO.OUT)
         GPIO.setup(self.pwm_pin, GPIO.OUT)
-        
+
         self.pwm = GPIO.PWM(self.pwm_pin, freq)
         self.pwm.start(0)
 
@@ -512,12 +526,14 @@ class L298N_HBridge_DC_Motor(object):
         -1 is full backwards.
         '''
         if speed > 1 or speed < -1:
-            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
-        
+            raise ValueError(
+                "Speed must be between 1(forward) and -1(reverse)")
+
         self.speed = speed
-        max_duty = 90 #I've read 90 is a good max
-        self.throttle = int(dk.utils.map_range(speed, -1, 1, -max_duty, max_duty))
-        
+        max_duty = 90  # I've read 90 is a good max
+        self.throttle = int(dk.utils.map_range(
+            speed, -1, 1, -max_duty, max_duty))
+
         if self.throttle > 0:
             self.pwm.ChangeDutyCycle(self.throttle)
             GPIO.output(self.pin_forward, GPIO.HIGH)
@@ -531,7 +547,6 @@ class L298N_HBridge_DC_Motor(object):
             GPIO.output(self.pin_forward, GPIO.LOW)
             GPIO.output(self.pin_backward, GPIO.LOW)
 
-
     def shutdown(self):
         import RPi.GPIO as GPIO
         self.pwm.stop()
@@ -542,14 +557,15 @@ class TwoWheelSteeringThrottle(object):
 
     def run(self, throttle, steering):
         if throttle > 1 or throttle < -1:
-            raise ValueError( "throttle must be between 1(forward) and -1(reverse)")
- 
+            raise ValueError(
+                "throttle must be between 1(forward) and -1(reverse)")
+
         if steering > 1 or steering < -1:
-            raise ValueError( "steering must be between 1(right) and -1(left)")
+            raise ValueError("steering must be between 1(right) and -1(left)")
 
         left_motor_speed = throttle
         right_motor_speed = throttle
- 
+
         if steering < 0:
             left_motor_speed *= (1.0 - (-steering))
         elif steering > 0:
@@ -569,7 +585,8 @@ class Mini_HBridge_DC_Motor_PWM(object):
     https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Dtoys-and-games&field-keywords=Mini+Dual+DC+Motor+H-Bridge+Driver
     https://www.aliexpress.com/item/5-pc-2-DC-Motor-Drive-Module-Reversing-PWM-Speed-Dual-H-Bridge-Stepper-Motor-Mini
     '''
-    def __init__(self, pin_forward, pin_backward, freq = 50, max_duty = 90):
+
+    def __init__(self, pin_forward, pin_backward, freq=50, max_duty=90):
         '''
         max_duy is from 0 to 100. I've read 90 is a good max.
         '''
@@ -577,11 +594,11 @@ class Mini_HBridge_DC_Motor_PWM(object):
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
         self.max_duty = max_duty
-        
+
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pin_forward, GPIO.OUT)
         GPIO.setup(self.pin_backward, GPIO.OUT)
-        
+
         self.pwm_f = GPIO.PWM(self.pin_forward, freq)
         self.pwm_f.start(0)
         self.pwm_b = GPIO.PWM(self.pin_backward, freq)
@@ -595,13 +612,15 @@ class Mini_HBridge_DC_Motor_PWM(object):
         '''
         if speed is None:
             return
-        
+
         if speed > 1 or speed < -1:
-            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
-        
+            raise ValueError(
+                "Speed must be between 1(forward) and -1(reverse)")
+
         self.speed = speed
-        self.throttle = int(dk.utils.map_range(speed, -1, 1, -self.max_duty, self.max_duty))
-        
+        self.throttle = int(dk.utils.map_range(
+            speed, -1, 1, -self.max_duty, self.max_duty))
+
         if self.throttle > 0:
             self.pwm_f.ChangeDutyCycle(self.throttle)
             self.pwm_b.ChangeDutyCycle(0)
@@ -612,7 +631,6 @@ class Mini_HBridge_DC_Motor_PWM(object):
             self.pwm_f.ChangeDutyCycle(0)
             self.pwm_b.ChangeDutyCycle(0)
 
-
     def shutdown(self):
         import RPi.GPIO as GPIO
         self.pwm_f.ChangeDutyCycle(0)
@@ -621,17 +639,18 @@ class Mini_HBridge_DC_Motor_PWM(object):
         self.pwm_b.stop()
         GPIO.cleanup()
 
-    
+
 class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
     '''
-    def __init__(self, pin, freq = 50, min=5.0, max=7.8):
+
+    def __init__(self, pin, freq=50, min=5.0, max=7.8):
         import RPi.GPIO as GPIO
         self.pin = pin
         GPIO.setmode(GPIO.BOARD)
         GPIO.setup(self.pin, GPIO.OUT)
-        
+
         self.pwm = GPIO.PWM(self.pin, freq)
         self.pwm.start(0)
         self.min = min
@@ -643,11 +662,10 @@ class RPi_GPIO_Servo(object):
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
         '''
-        #I've read 90 is a good max
+        # I've read 90 is a good max
         self.throttle = dk.map_frange(pulse, -1.0, 1.0, self.min, self.max)
         #print(pulse, self.throttle)
         self.pwm.ChangeDutyCycle(self.throttle)
-
 
     def shutdown(self):
         import RPi.GPIO as GPIO
@@ -675,6 +693,7 @@ class ServoBlaster(object):
     If you want it to start on boot:
     sudo make install
     '''
+
     def __init__(self, pin):
         self.pin = pin
         self.servoblaster = open('/dev/servoblaster', 'w')
@@ -702,7 +721,7 @@ class ArduinoFirmata:
     Refer to docs/parts/actuators.md for more details
     '''
 
-    def __init__(self, servo_pin = 6, esc_pin = 5):
+    def __init__(self, servo_pin=6, esc_pin=5):
         from pymata_aio.pymata3 import PyMata3
         self.board = PyMata3()
         self.board.sleep(0.015)
@@ -722,7 +741,6 @@ class ArduinoFirmata:
 
     def set_esc_pulse(self, angle):
         self.set_pulse(self.esc_pin, int(angle))
-
 
 
 class ArdPWMSteering:
@@ -805,3 +823,31 @@ class ArdPWMThrottle:
         # stop vehicle
         self.run(0)
         self.running = False
+
+
+class SunFounder:
+    # to use this actuator change import SunFounder in manage.py, change throttle to SunFounder(),
+    # and comment out throttle_controller
+    def __init__(self):
+        import logging        
+        import picar
+        from picar import back_wheels
+        logger = logging.getLogger(__name__)
+        logger.info('Set up back_wheels')        
+        picar.setup()
+        # place path to your car's config file below
+        db_file = "/home/pi/SunFounder_PiCar-V/remote_control/remote_control/driver/config"
+        self.bw = back_wheels.Back_Wheels(debug=False, db=db_file)
+        self.bw.ready()
+
+    def run(self, speed):
+        speed = int(speed * 100)
+        if speed > 0:
+            self.bw.forward()
+            self.bw.speed = speed
+        elif speed < 0:
+            self.bw.backward()
+            self.bw.speed = -speed
+
+    def shutdown(self):
+        self.bw.speed = 0
