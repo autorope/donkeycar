@@ -12,7 +12,9 @@ from donkeycar.config import Config
 from donkeycar.pipeline.types import TubDataset, TubRecord
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 
-Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
+Data = namedtuple('Data',
+                  ['type', 'name', 'convergence', 'pretrained', 'preprocess'],
+                  defaults=(None, ) * 5)
 
 
 @pytest.fixture(scope='session')
@@ -46,6 +48,18 @@ def config(base_config, car_dir) -> Config:
     return cfg
 
 
+def add_transformation_to_config(config: Config):
+    config.TRANSFORMATIONS = ['CROP']
+    config.ROI_CROP_TOP = 45
+    config.ROI_CROP_BOTTOM = 0
+    config.ROI_CROP_RIGHT = 0
+    config.ROI_CROP_LEFT = 0
+
+
+def add_augmentation_to_config(config: Config):
+    config.AUGMENTATIONS = ['MULTIPLY', 'BLUR']
+
+
 @pytest.fixture(scope='session')
 def imu_fields() -> List[str]:
     return [f'imu/{prefix}_{x}' for prefix, x in product(('acl', 'gyr'), 'xyz')]
@@ -65,9 +79,9 @@ def car_dir(tmpdir_factory, base_config, imu_fields) -> str:
     tub = Tub(base_path=tub_dir)
     full_dir = os.path.join(car_dir, 'tub_full')
     tub_full = Tub(base_path=full_dir,
-                  inputs=tub.manifest.inputs + imu_fields
-                  + ['behavior/one_hot_state_array', 'localizer/location'],
-                  types=tub.manifest.types + ['float'] * 6 + ['list', 'int'])
+                   inputs=tub.manifest.inputs + imu_fields
+                   + ['behavior/one_hot_state_array', 'localizer/location'],
+                   types=tub.manifest.types + ['float'] * 6 + ['list', 'int'])
     count = 0
     for record in tub:
         t = TubRecord(base_config, tub.base_path, record)
@@ -96,8 +110,10 @@ d8 = Data(type='behavior', name='bhv1', convergence=0.9, pretrained=None)
 d9 = Data(type='localizer', name='loc1', convergence=0.85, pretrained=None)
 d10 = Data(type='rnn', name='rnn1', convergence=0.85, pretrained=None)
 d11 = Data(type='3d', name='3d1', convergence=0.6, pretrained=None)
+d12 = Data(type='linear', name='lin2', convergence=0.7, preprocess='aug')
+d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
 
-test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11]
+test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
@@ -119,6 +135,11 @@ def test_train(config: Config, data: Data) -> None:
         config.LATENT_TRAINED = pilot_path(data.pretrained)
     tub_dir = config.DATA_PATH_ALL if data.type in full_tub else \
         config.DATA_PATH
+    if data.preprocess == 'aug':
+        add_augmentation_to_config(config)
+    elif data.preprocess == 'trans':
+        add_transformation_to_config(config)
+
     history = train(config, tub_dir, pilot_path(data.name), data.type)
     loss = history.history['loss']
     # check loss is converging

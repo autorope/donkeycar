@@ -1,11 +1,11 @@
 import copy
 import os
-from typing import Any, List, Optional, TypeVar, Tuple, Iterator, Union, Iterable
+from typing import Any, List, Optional, TypeVar, Iterator, Iterable
 import logging
 import numpy as np
 from donkeycar.config import Config
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import load_image, load_pil_image, train_test_split
+from donkeycar.utils import load_image, load_pil_image
 from typing_extensions import TypedDict
 
 
@@ -74,7 +74,7 @@ class TubRecord(object):
 
 class TubDataset(object):
     """
-    Loads the dataset, and creates a train/test split.
+    Loads the dataset and creates a TubRecord list (or list of lists).
     """
 
     def __init__(self, config: Config, tub_paths: List[str],
@@ -89,9 +89,7 @@ class TubDataset(object):
 
     def get_records(self):
         if not self.records:
-            msg = f'Loading tubs from paths {self.tub_paths} with filter ' \
-                  f'{self.train_filter}' if self.train_filter else ''
-            logger.info(msg)
+            logger.info(f'Loading tubs from paths {self.tub_paths}')
             for tub in self.tubs:
                 for underlying in tub:
                     record = TubRecord(self.config, tub.base_path, underlying)

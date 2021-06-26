@@ -438,7 +438,7 @@
                 id: button_bright
                 size_hint_x: 0.5
                 text: 'Brightness {:4.2f}'.format(slider_bright.value)
-                on_press: root.set_brightness(slider_bright.value) if self.state == 'down' else root.remove_brightness()
+                on_press: root.set_brightness(slider_bright.value)
             Slider:
                 id: slider_bright
                 value: 1
@@ -449,13 +449,22 @@
                 id: button_blur
                 size_hint_x: 0.5
                 text: 'Blur {:4.2f}'.format(slider_blur.value)
-                on_press: root.set_blur(slider_blur.value) if self.state == 'down' else root.remove_blur()
+                on_press: root.set_blur(slider_blur.value)
             Slider:
                 id: slider_blur
                 value: 0
                 min: 0
                 max: 4
                 on_value: root.set_blur(self.value)
+        PaddedBoxLayout:
+            ToggleButton:
+                id: button_mask
+                text: 'Trapezoidal mask'
+                on_press: root.set_mask(self.state)
+            ToggleButton:
+                id: button_crop
+                text: 'Cropping mask'
+                on_press: root.set_crop(self.state)
         PaddedBoxLayout:
             size_hint_y: 0.5
             ControlPanel:
@@ -497,7 +506,7 @@
         Label:
             size_hint_y: None
             height: common_height
-            text: 'Overwrite config'
+            text: 'Overwrite config: use json syntax, i.e. "abc" for strings and true/false for bool'
         BoxLayout:
             size_hint_y: None
             height: layout_height

@@ -1,15 +1,16 @@
-'''
+#!/usr/bin/env python3
+"""
 Usage:
-    preview_augumentations.py
+    preview_augmentations.py
 
 Note:
-    This script helps preview augumentations used when the model is being trained.
-'''
+    This script helps preview augmentations used when the model is being trained.
+"""
 
 import time
 import cv2
 
-from donkeycar.parts.augmentations import Augmentations
+from donkeycar.pipeline.augmentations import Augmentations
 
 # Camera Parameters
 WIDTH = 640
