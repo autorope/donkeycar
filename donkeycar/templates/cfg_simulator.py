@@ -108,7 +108,6 @@ OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
 LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
-CACHE_IMAGES = True             #keep images in memory. will speed succesive epochs, but crater if not enough mem.
 
 PRUNE_CNN = False               #This will remove weights from your model. The primary goal is to increase performance.
 PRUNE_PERCENT_TARGET = 75       # The desired percentage of pruning.

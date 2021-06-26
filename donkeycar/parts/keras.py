@@ -10,11 +10,15 @@ include one or more models to help direct the vehicles motion.
 
 from abc import ABC, abstractmethod
 import numpy as np
-from typing import Dict, Any, Tuple, Optional, Union
-import donkeycar as dk
+from typing import Dict, Tuple, Optional, Union, List, Sequence, Callable
+from logging import getLogger
 
+from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
+
+import donkeycar as dk
 from donkeycar.utils import normalize_image, linear_bin
 from donkeycar.pipeline.types import TubRecord
+from donkeycar.parts.interpreter import Interpreter, KerasInterpreter
 
 import tensorflow as tf
 from tensorflow import keras
@@ -26,13 +30,16 @@ from tensorflow.keras.layers import LSTM
 from tensorflow.keras.layers import TimeDistributed as TD
 from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
-from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.models import Model
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
 # type of x
-XY = Union[float, np.ndarray, Tuple[float, ...], Tuple[np.ndarray, ...]]
+XY = Union[float, np.ndarray, Tuple[Union[float, np.ndarray], ...]]
+
+
+logger = getLogger(__name__)
 
 
 class KerasPilot(ABC):
@@ -40,18 +47,22 @@ class KerasPilot(ABC):
     Base class for Keras models that will provide steering and throttle to
     guide a car.
     """
-    def __init__(self) -> None:
-        self.model: Optional[Model] = None
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3)) -> None:
+        # self.model: Optional[Model] = None
+        self.input_shape = input_shape
         self.optimizer = "adam"
-        print(f'Created {self}')
+        self.interpreter = interpreter
+        self.interpreter.set_model(self)
+        logger.info(f'Created {self} with interpreter: {interpreter}')
 
     def load(self, model_path: str) -> None:
-        print(f'Loading model {model_path}')
-        self.model = keras.models.load_model(model_path, compile=False)
+        logger.info(f'Loading model {model_path}')
+        self.interpreter.load(model_path)
 
     def load_weights(self, model_path: str, by_name: bool = True) -> None:
-        assert self.model, 'Model not set'
-        self.model.load_weights(model_path, by_name=by_name)
+        self.interpreter.load_weights(model_path, by_name=by_name)
 
     def shutdown(self) -> None:
         pass
@@ -59,23 +70,29 @@ class KerasPilot(ABC):
     def compile(self) -> None:
         pass
 
+    @abstractmethod
+    def create_model(self):
+        pass
+
     def set_optimizer(self, optimizer_type: str,
                       rate: float, decay: float) -> None:
-        assert self.model, 'Model not set'
         if optimizer_type == "adam":
-            self.model.optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
+            optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
         elif optimizer_type == "sgd":
-            self.model.optimizer = keras.optimizers.SGD(lr=rate, decay=decay)
+            optimizer = keras.optimizers.SGD(lr=rate, decay=decay)
         elif optimizer_type == "rmsprop":
-            self.model.optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
+            optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
         else:
-            raise Exception("unknown optimizer type: %s" % optimizer_type)
+            raise Exception(f"Unknown optimizer type: {optimizer_type}")
+        self.interpreter.set_optimizer(optimizer)
 
-    def get_input_shape(self) -> tf.TensorShape:
-        assert self.model, 'Model not set'
-        return self.model.inputs[0].shape
+    def get_input_shapes(self) -> List[tf.TensorShape]:
+        return self.interpreter.get_input_shapes()
 
-    def run(self, img_arr: np.ndarray, other_arr: np.ndarray = None) \
+    def seq_size(self) -> int:
+        return 0
+
+    def run(self, img_arr: np.ndarray, other_arr: List[float] = None) \
             -> Tuple[Union[float, np.ndarray], ...]:
         """
         Donkeycar parts interface to run the part in the loop.
@@ -87,43 +104,48 @@ class KerasPilot(ABC):
         :return:            tuple of (angle, throttle)
         """
         norm_arr = normalize_image(img_arr)
-        return self.inference(norm_arr, other_arr)
+        np_other_array = np.array(other_arr) if other_arr else None
+        return self.inference(norm_arr, np_other_array)
+
+    def inference(self, img_arr: np.ndarray, other_arr: Optional[np.ndarray]) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        """ Inferencing using the interpreter
+            :param img_arr:     float32 [0,1] numpy array with normalized image
+                                data
+            :param other_arr:   numpy array of additional data to be used in the
+                                pilot, like IMU array for the IMU model or a
+                                state vector in the Behavioural model
+            :return:            tuple of (angle, throttle)
+        """
+        out = self.interpreter.predict(img_arr, other_arr)
+        return self.interpreter_to_output(out)
+
+    def inference_from_dict(self, input_dict: Dict[str, np.ndarray]) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        """ Inferencing using the interpreter
+            :param input_dict:  input dictionary of str and np.ndarray
+            :return:            typically tuple of (angle, throttle)
+        """
+        output = self.interpreter.predict_from_dict(input_dict)
+        return self.interpreter_to_output(output)
 
     @abstractmethod
-    def inference(self, img_arr: np.ndarray, other_arr: np.ndarray) \
+    def interpreter_to_output(
+            self,
+            interpreter_out: Sequence[Union[float, np.ndarray]]) \
             -> Tuple[Union[float, np.ndarray], ...]:
-        """
-        Virtual method to be implemented by child classes for inferencing
-
-        :param img_arr:     float32 [0,1] numpy array with normalized image data
-        :param other_arr:   numpy array of additional data to be used in the
-                            pilot, like IMU array for the IMU model or a
-                            state vector in the Behavioural model
-        :return:            tuple of (angle, throttle)
+        """ Virtual method to be implemented by child classes for conversion
+            :param interpreter_out:  input data
+            :return:                 output values, possibly tuple of np.ndarray
         """
         pass
 
-    def evaluate(self, record: TubRecord,
-                 augmentation: 'ImageAugmentation' = None) \
-            -> Tuple[Union[float, np.ndarray], ...]:
-        # extract model input from record
-        x0 = self.x_transform(record)
-        x1 = x0[0] if isinstance(x0, tuple) else x0
-        # apply augmentation to training data only
-        x2 = augmentation.augment(x1) if augmentation else x1
-        # normalise image, assume other input data comes already normalised
-        x3 = normalize_image(x2)
-        if isinstance(x0, tuple):
-            return self.inference(x3, *x0[1:])
-        else:
-            return self.inference(x3, None)
-
     def train(self,
               model_path: str,
-              train_data: 'BatchSequence',
+              train_data: Union[DatasetV1, DatasetV2],
               train_steps: int,
               batch_size: int,
-              validation_data: 'BatchSequence',
+              validation_data: Union[DatasetV1, DatasetV2],
               validation_steps: int,
               epochs: int,
               verbose: int = 1,
@@ -133,7 +155,8 @@ class KerasPilot(ABC):
         """
         trains the model
         """
-        model = self._get_train_model()
+        assert isinstance(self.interpreter, KerasInterpreter)
+        model = self.interpreter.model
         self.compile()
 
         callbacks = [
@@ -155,8 +178,7 @@ class KerasPilot(ABC):
             epochs=epochs,
             verbose=verbose,
             workers=1,
-            use_multiprocessing=False
-        )
+            use_multiprocessing=False)
             
         if show_plot:
             try:
@@ -194,22 +216,37 @@ class KerasPilot(ABC):
             
         return history
 
-    def _get_train_model(self) -> Model:
-        """ Model used for training, could be just a sub part of the model"""
-        return self.model
-
-    def x_transform(self, record: TubRecord) -> XY:
+    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Return x from record, default returns only image array"""
+        assert isinstance(record, TubRecord), "TubRecord required"
         img_arr = record.image(cached=True)
         return img_arr
 
-    def y_transform(self, record: TubRecord) -> XY:
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        """ Translates x into dictionary where all model input layer's names
+            must be matched by dictionary keys. """
+        return {'img_in': x}
+
+    def x_transform_and_process(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        """ Transforms the record into x for training the model to x,y, and
+            applies an image augmentation. Here we assume the model only takes
+            the image as input. """
+        x_img = self.x_transform(record)
+        # apply augmentation / normalisation
+        x_process = img_processor(x_img)
+        return x_process
+
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Return y from record, needs to be implemented"""
         raise NotImplementedError(f'{self} not ready yet for new training '
                                   f'pipeline')
 
-    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
-        return {'img_in': x}
-
-    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        """ Translates y into dictionary where all model output layer's names
+            must be matched by dictionary keys. """
         raise NotImplementedError(f'{self} not ready yet for new training '
                                   f'pipeline')
 
@@ -241,49 +278,48 @@ class KerasCategorical(KerasPilot):
     want to enable a higher throttle range. And cars with larger steering
     throw may want more bins.
     """
-    def __init__(self, input_shape=(120, 160, 3), throttle_range=0.5):
-        super().__init__()
-        self.model = default_categorical(input_shape)
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 throttle_range: float = 0.5):
+        super().__init__(interpreter, input_shape)
         self.throttle_range = throttle_range
 
-    def compile(self):
-        self.model.compile(optimizer=self.optimizer, metrics=['accuracy'],
-                           loss={'angle_out': 'categorical_crossentropy',
-                                 'throttle_out': 'categorical_crossentropy'},
-                           loss_weights={'angle_out': 0.5, 'throttle_out': 0.5})
-        
-    def inference(self, img_arr, other_arr):
-        if img_arr is None:
-            print('no image')
-            return 0.0, 0.0
+    def create_model(self):
+        return default_categorical(self.input_shape)
 
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_binned_tensor, throttle_binned_tensor = self.model(img_arr)
-        angle_binned = angle_binned_tensor.numpy()
-        throttle_binned = throttle_binned_tensor.numpy()
-        N = len(throttle_binned[0])
+    def compile(self):
+        self.interpreter.compile(
+            optimizer=self.optimizer,
+            metrics=['accuracy'],
+            loss={'angle_out': 'categorical_crossentropy',
+                  'throttle_out': 'categorical_crossentropy'},
+            loss_weights={'angle_out': 0.5, 'throttle_out': 0.5})
+
+    def interpreter_to_output(self, interpreter_out):
+        angle_binned, throttle_binned = interpreter_out
+        N = len(throttle_binned)
         throttle = dk.utils.linear_unbin(throttle_binned, N=N,
                                          offset=0.0, R=self.throttle_range)
         angle = dk.utils.linear_unbin(angle_binned)
         return angle, throttle
 
-    def y_transform(self, record: TubRecord):
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), "TubRecord expected"
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
         angle = linear_bin(angle, N=15, offset=1, R=2.0)
         throttle = linear_bin(throttle, N=20, offset=0.0, R=self.throttle_range)
         return angle, throttle
 
-    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
-        if isinstance(y, tuple):
-            angle, throttle = y
-            return {'angle_out': angle, 'throttle_out': throttle}
-        else:
-            raise TypeError('Expected tuple')
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, tuple), 'Expected tuple'
+        angle, throttle = y
+        return {'angle_out': angle, 'throttle_out': throttle}
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = self.get_input_shape()[1:]
+        img_shape = self.get_input_shapes()[0][1:]
         shapes = ({'img_in': tf.TensorShape(img_shape)},
                   {'angle_out': tf.TensorShape([15]),
                    'throttle_out': tf.TensorShape([20])})
@@ -292,69 +328,168 @@ class KerasCategorical(KerasPilot):
 
 class KerasLinear(KerasPilot):
     """
-    The KerasLinear pilot uses one neuron to output a continous value via the
-    Keras Dense layer with linear activation. One each for steering and
+    The KerasLinear pilot uses one neuron to output a continuous value via
+    the Keras Dense layer with linear activation. One each for steering and
     throttle. The output is not bounded.
     """
-    def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
-        super().__init__()
-        self.model = default_n_linear(num_outputs, input_shape)
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 num_outputs: int = 2):
+        self.num_outputs = num_outputs
+        super().__init__(interpreter, input_shape)
+
+    def create_model(self):
+        return default_n_linear(self.num_outputs, self.input_shape)
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
+        self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
-    def inference(self, img_arr, other_arr):
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model(img_arr)
-        steering = outputs[0].numpy()
-        throttle = outputs[1].numpy()
-        return steering[0][0], throttle[0][0]
+    def interpreter_to_output(self, interpreter_out):
+        steering = interpreter_out[0]
+        throttle = interpreter_out[1]
+        return steering[0], throttle[0]
 
-    def y_transform(self, record: TubRecord):
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
         return angle, throttle
 
-    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
-        if isinstance(y, tuple):
-            angle, throttle = y
-            return {'n_outputs0': angle, 'n_outputs1': throttle}
-        else:
-            raise TypeError('Expected tuple')
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, tuple), 'Expected tuple'
+        angle, throttle = y
+        return {'n_outputs0': angle, 'n_outputs1': throttle}
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = self.get_input_shape()[1:]
+        img_shape = self.get_input_shapes()[0][1:]
         shapes = ({'img_in': tf.TensorShape(img_shape)},
                   {'n_outputs0': tf.TensorShape([]),
                    'n_outputs1': tf.TensorShape([])})
         return shapes
 
 
+class KerasMemory(KerasLinear):
+    """
+    The KerasLinearWithMemory is based on KerasLinear but uses the last n
+    steering and throttle commands as input in order to produce smoother
+    steering outputs
+    """
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 mem_length: int = 3,
+                 mem_depth: int = 0):
+        self.mem_length = mem_length
+        self.mem_seq: List[np.array] = []
+        self.mem_depth = mem_depth
+        super().__init__(interpreter, input_shape)
+
+    def seq_size(self) -> int:
+        return self.mem_length + 1
+
+    def create_model(self):
+        return default_memory(self.input_shape,
+                              self.mem_length, self.mem_depth, )
+
+    def load(self, model_path: str) -> None:
+        super().load(model_path)
+        self.mem_length = self.interpreter.get_input_shapes()[1][1] // 2
+        logger.info(f'Loaded mem length {self.mem_length}')
+
+    def run(self, img_arr: np.ndarray, other_arr: List[float] = None) -> \
+            Tuple[Union[float, np.ndarray], ...]:
+        while len(self.mem_seq) < self.mem_length:
+            self.mem_seq.append(other_arr)
+
+        self.mem_seq = self.mem_seq[1:]
+        self.mem_seq.append(other_arr)
+        np_mem_arr = np.array(self.mem_seq).reshape((2 * self.mem_length,))
+        img_arr_norm = normalize_image(img_arr)
+        return super().inference(img_arr_norm, np_mem_arr)
+
+    def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Return x from record, here x = image, previous angle/throttle
+            values """
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        assert len(records) == self.mem_length + 1, \
+            f"Record list of length {self.mem_length} required but " \
+            f"{len(records)} was passed"
+        img_arr = records[-1].image(cached=True)
+        mem = [[r.underlying['user/angle'], r.underlying['user/throttle']]
+               for r in records[:-1]]
+        return img_arr, np.array(mem).reshape((2 * self.mem_length,))
+
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        """ Translates x into dictionary where all model input layer's names
+            must be matched by dictionary keys. """
+        assert(isinstance(x, tuple)), 'Tuple expected'
+        img_arr, mem = x
+        return {'img_in': img_arr, 'mem_in': mem}
+
+    def x_transform_and_process(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        """ Transforms the record into x for training the model to x,y,
+            here we assume the model only takes the image as input. """
+        xt = self.x_transform(record)
+        assert isinstance(xt, tuple), 'Tuple expected'
+        x_img, mem = xt
+        # apply augmentation / normalisation
+        x_process = img_processor(x_img)
+        return x_process, mem
+
+    def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        angle = records[-1].underlying['user/angle']
+        throttle = records[-1].underlying['user/throttle']
+        return angle, throttle
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        shapes = ({'img_in': tf.TensorShape(img_shape),
+                   'mem_in': tf.TensorShape(2 * self.mem_length)},
+                  {'n_outputs0': tf.TensorShape([]),
+                   'n_outputs1': tf.TensorShape([])})
+        return shapes
+
+    def __str__(self) -> str:
+        """ For printing model initialisation """
+        return super().__str__() \
+            + f'-L:{self.mem_length}-D:{self.mem_depth}'
+
+
 class KerasInferred(KerasPilot):
-    def __init__(self, num_outputs=1, input_shape=(120, 160, 3)):
-        super().__init__()
-        self.model = default_n_linear(num_outputs, input_shape)
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3)):
+        super().__init__(interpreter, input_shape)
+
+    def create_model(self):
+        return default_n_linear(1, self.input_shape)
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
+        self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
-    def inference(self, img_arr, other_arr):
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model(img_arr)
-        steering = outputs[0].numpy()
-        return steering[0], dk.utils.throttle(steering[0])
+    def interpreter_to_output(self, interpreter_out):
+        steering = interpreter_out[0]
+        return steering, dk.utils.throttle(steering)
 
-    def y_transform(self, record: TubRecord):
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), "TubRecord expected"
         angle: float = record.underlying['user/angle']
         return angle
 
-    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, float), 'Float expected'
         return {'n_outputs0': y}
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = self.get_input_shape()[1:]
+        img_shape = self.get_input_shapes()[0][1:]
         shapes = ({'img_in': tf.TensorShape(img_shape)},
                   {'n_outputs0': tf.TensorShape([])})
         return shapes
@@ -387,66 +522,123 @@ class KerasIMU(KerasPilot):
                                                     train_frac=cfg.TRAIN_TEST_SPLIT)
 
     """
-    def __init__(self, num_outputs=2, num_imu_inputs=6, input_shape=(120, 160, 3)):
-        super().__init__()
+    # keys for imu data in TubRecord
+    imu_vec = [f'imu/{f}_{x}' for f in ('acl', 'gyr') for x in 'xyz']
+
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 num_outputs: int = 2, num_imu_inputs: int = 6):
+        self.num_outputs = num_outputs
         self.num_imu_inputs = num_imu_inputs
-        self.model = default_imu(num_outputs=num_outputs,
-                                 num_imu_inputs=num_imu_inputs,
-                                 input_shape=input_shape)
+        super().__init__(interpreter, input_shape)
+
+    def create_model(self):
+        return default_imu(num_outputs=self.num_outputs,
+                           num_imu_inputs=self.num_imu_inputs,
+                           input_shape=self.input_shape)
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
-        
-    def inference(self, img_arr, other_arr):
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        imu_arr = np.array(other_arr).reshape(1, self.num_imu_inputs)
-        outputs = self.model([img_arr, imu_arr])
-        steering = outputs[0].numpy()
-        throttle = outputs[1].numpy()
-        return steering[0][0], throttle[0][0]
+        self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
-    def y_transform(self, record: TubRecord):
+    def interpreter_to_output(self, interpreter_out) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        steering = interpreter_out[0]
+        throttle = interpreter_out[1]
+        return steering[0], throttle[0]
+
+    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        img_arr = record.image(cached=True)
+        imu_arr = [record.underlying[k] for k in self.imu_vec]
+        return img_arr, np.array(imu_arr)
+
+    def x_transform_and_process(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        # this transforms the record into x for training the model to x,y
+        xt = self.x_transform(record)
+        assert isinstance(xt, tuple), 'Tuple expected'
+        x_img, x_imu = xt
+        # here the image is in first slot of the tuple
+        x_img_process = img_processor(x_img)
+        return x_img_process, x_imu
+
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        assert isinstance(x, tuple), 'Tuple required'
+        return {'img_in': x[0], 'imu_in': x[1]}
+
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), "TubRecord expected"
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
-        return {'n_out0': angle, 'n_out1': throttle}
+        return angle, throttle
+
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, tuple), 'Expected tuple'
+        angle, throttle = y
+        return {'out_0': angle, 'out_1': throttle}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape),
+                   'imu_in': tf.TensorShape([self.num_imu_inputs])},
+                  {'out_0': tf.TensorShape([]),
+                   'out_1': tf.TensorShape([])})
+        return shapes
 
 
-class KerasBehavioral(KerasPilot):
+class KerasBehavioral(KerasCategorical):
     """
     A Keras part that take an image and Behavior vector as input,
     outputs steering and throttle
     """
-    def __init__(self, num_behavior_inputs=2, input_shape=(120, 160, 3)):
-        super(KerasBehavioral, self).__init__()
-        self.model = default_bhv(num_bvh_inputs=num_behavior_inputs,
-                                 input_shape=input_shape)
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 throttle_range: float = 0.5,
+                 num_behavior_inputs: int = 2):
+        self.num_behavior_inputs = num_behavior_inputs
+        super().__init__(interpreter, input_shape, throttle_range)
 
-    def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
-        
-    def inference(self, img_arr, state_array):
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        bhv_arr = np.array(state_array).reshape(1, len(state_array))
-        angle_binned_tensor, throttle_tensor = self.model([img_arr, bhv_arr])
-        angle_binned = angle_binned_tensor.numpy()
-        throttle = throttle_tensor.numpy()
-        # In order to support older models with linear throttle,we will test for
-        # shape of throttle to see if it's the newer binned version.
-        N = len(throttle[0])
-        
-        if N > 0:
-            throttle = dk.utils.linear_unbin(throttle, N=N, offset=0.0, R=0.5)
-        else:
-            throttle = throttle[0][0]
-        angle_unbinned = dk.utils.linear_unbin(angle_binned)
-        return angle_unbinned, throttle
+    def create_model(self):
+        return default_bhv(num_bvh_inputs=self.num_behavior_inputs,
+                           input_shape=self.input_shape)
 
-    def y_transform(self, record: TubRecord):
-        angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
-        angle = linear_bin(angle, N=15, offset=1, R=2.0)
-        throttle = linear_bin(throttle, N=20, offset=0.0, R=0.5)
-        return {'angle_out': angle, 'throttle_out': throttle}
+    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        img_arr = record.image(cached=True)
+        bhv_arr = record.underlying['behavior/one_hot_state_array']
+        return img_arr, np.array(bhv_arr)
+
+    def x_transform_and_process(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        # this transforms the record into x for training the model to x,y
+        xt = self.x_transform(record)
+        assert isinstance(xt, tuple), 'Tuple expected'
+        x_img, bhv_arr = xt
+        # here the image is in first slot of the tuple
+        x_img_process = img_processor(x_img)
+        return x_img_process, bhv_arr
+
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        assert isinstance(x, tuple), 'Tuple required'
+        return {'img_in': x[0], 'xbehavior_in': x[1]}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape),
+                   'xbehavior_in': tf.TensorShape([self.num_behavior_inputs])},
+                  {'angle_out': tf.TensorShape([15]),
+                   'throttle_out': tf.TensorShape([20])})
+        return shapes
 
 
 class KerasLocalizer(KerasPilot):
@@ -454,24 +646,256 @@ class KerasLocalizer(KerasPilot):
     A Keras part that take an image as input,
     outputs steering and throttle, and localisation category
     """
-    def __init__(self, num_locations=8, input_shape=(120, 160, 3)):
-        super().__init__()
-        self.model = default_loc(num_locations=num_locations,
-                                 input_shape=input_shape)
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 num_locations: int = 8):
+        self.num_locations = num_locations
+        super().__init__(interpreter, input_shape)
+
+    def create_model(self):
+        return default_loc(num_locations=self.num_locations,
+                           input_shape=self.input_shape)
 
     def compile(self):
-        self.model.compile(optimizer=self.optimizer, metrics=['acc'],
-                           loss='mse')
+        self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'],
+                                 loss='mse')
         
-    def inference(self, img_arr, other_arr):
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        angle_t, throttle_t, track_loc_t = self.model([img_arr])
-        angle = angle_t.numpy()
-        throttle = throttle_t.numpy()
-        track_loc = track_loc_t.numpy()
-        loc = np.argmax(track_loc[0])
-        return angle, throttle, loc
+    def interpreter_to_output(self, interpreter_out) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        angle, throttle, track_loc = interpreter_out
+        loc = np.argmax(track_loc)
+        return angle[0], throttle[0], loc
 
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), "TubRecord expected"
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        loc = record.underlying['localizer/location']
+        loc_one_hot = np.zeros(self.num_locations)
+        loc_one_hot[loc] = 1
+        return angle, throttle, loc_one_hot
+
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, tuple), 'Expected tuple'
+        angle, throttle, loc = y
+        return {'angle': angle, 'throttle': throttle, 'zloc': loc}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'angle': tf.TensorShape([]),
+                   'throttle': tf.TensorShape([]),
+                   'zloc': tf.TensorShape([self.num_locations])})
+        return shapes
+
+
+class KerasLSTM(KerasPilot):
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 seq_length=3,
+                 num_outputs=2):
+        self.num_outputs = num_outputs
+        self.seq_length = seq_length
+        super().__init__(interpreter, input_shape)
+        self.img_seq: List[np.ndarray] = []
+        self.optimizer = "rmsprop"
+
+    def seq_size(self) -> int:
+        return self.seq_length
+
+    def create_model(self):
+        return rnn_lstm(seq_length=self.seq_length,
+                        num_outputs=self.num_outputs,
+                        input_shape=self.input_shape)
+
+    def compile(self):
+        self.interpreter.compile(optimizer=self.optimizer, loss='mse')
+
+    def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Return x from record, here x = stacked images """
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        assert len(records) == self.seq_length, \
+            f"Record list of length {self.seq_length} required but " \
+            f"{len(records)} was passed"
+        img_arrays = [rec.image(cached=True) for rec in records]
+        return np.array(img_arrays)
+
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        """ Translates x into dictionary where all model input layer's names
+            must be matched by dictionary keys. """
+        img_arr = x
+        return {'img_in': img_arr}
+
+    def x_transform_and_process(
+            self,
+            records: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        """ Transforms the record sequence into x for training the model to
+            x, y. """
+        img_seq = self.x_transform(records)
+        assert isinstance(img_seq, np.ndarray)
+        # apply augmentation / normalisation on sequence of images
+        x_process = [img_processor(img) for img in img_seq]
+        return np.array(x_process)
+
+    def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Only return the last entry of angle/throttle"""
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        angle = records[-1].underlying['user/angle']
+        throttle = records[-1].underlying['user/throttle']
+        return angle, throttle
+
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, tuple), 'Expected tuple'
+        return {'model_outputs': list(y)}
+
+    def run(self, img_arr, other_arr=None):
+        if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
+            img_arr = dk.utils.rgb2gray(img_arr)
+
+        while len(self.img_seq) < self.seq_length:
+            self.img_seq.append(img_arr)
+
+        self.img_seq = self.img_seq[1:]
+        self.img_seq.append(img_arr)
+        new_shape = (self.seq_length, *self.input_shape)
+        img_arr = np.array(self.img_seq).reshape(new_shape)
+        img_arr_norm = normalize_image(img_arr)
+        return self.inference(img_arr_norm, other_arr)
+
+    def interpreter_to_output(self, interpreter_out) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        steering = interpreter_out[0]
+        throttle = interpreter_out[1]
+        return steering, throttle
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'model_outputs': tf.TensorShape([self.num_outputs])})
+        return shapes
+
+    def __str__(self) -> str:
+        """ For printing model initialisation """
+        return f'{super().__str__()}-L:{self.seq_length}'
+
+
+class Keras3D_CNN(KerasPilot):
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 seq_length=20,
+                 num_outputs=2):
+        self.num_outputs = num_outputs
+        self.seq_length = seq_length
+        super().__init__(interpreter, input_shape)
+        self.img_seq: List[np.ndarray] = []
+
+    def seq_size(self) -> int:
+        return self.seq_length
+
+    def create_model(self):
+        return build_3d_cnn(self.input_shape, s=self.seq_length,
+                            num_outputs=self.num_outputs)
+
+    def compile(self):
+        self.interpreter.compile(loss='mse', optimizer=self.optimizer)
+
+    def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Return x from record, here x = stacked images """
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        assert len(records) == self.seq_length, \
+            f"Record list of length {self.seq_length} required but " \
+            f"{len(records)} was passed"
+        img_arrays = [rec.image(cached=True) for rec in records]
+        return np.array(img_arrays)
+
+    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
+        """ Translates x into dictionary where all model input layer's names
+            must be matched by dictionary keys. """
+        img_arr = x
+        return {'img_in': img_arr}
+
+    def x_transform_and_process(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        """ Transforms the record sequence into x for training the model to
+            x, y. """
+        img_seq = self.x_transform(record)
+        assert isinstance(img_seq, np.ndarray), 'Expected np.ndarray'
+        # apply augmentation / normalisation on sequence of images
+        x_process = [img_processor(img) for img in img_seq]
+        return np.array(x_process)
+
+    def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
+        """ Only return the last entry of angle/throttle"""
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        angle = records[-1].underlying['user/angle']
+        throttle = records[-1].underlying['user/throttle']
+        return angle, throttle
+
+    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(y, tuple), 'Expected tuple'
+        return {'outputs': list(y)}
+
+    def run(self, img_arr, other_arr=None):
+        if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
+            img_arr = dk.utils.rgb2gray(img_arr)
+
+        while len(self.img_seq) < self.seq_length:
+            self.img_seq.append(img_arr)
+
+        self.img_seq = self.img_seq[1:]
+        self.img_seq.append(img_arr)
+        new_shape = (self.seq_length, *self.input_shape)
+        img_arr = np.array(self.img_seq).reshape(new_shape)
+        img_arr_norm = normalize_image(img_arr)
+        return self.inference(img_arr_norm, other_arr)
+
+    def interpreter_to_output(self, interpreter_out) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        steering = interpreter_out[0]
+        throttle = interpreter_out[1]
+        return steering, throttle
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'outputs': tf.TensorShape([self.num_outputs])})
+        return shapes
+
+
+class KerasLatent(KerasPilot):
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 num_outputs: int = 2):
+        self.num_outputs = num_outputs
+        super().__init__(interpreter, input_shape)
+
+    def create_model(self):
+        return default_latent(self.num_outputs, self.input_shape)
+
+    def compile(self):
+        loss = {"img_out": "mse", "n_outputs0": "mse", "n_outputs1": "mse"}
+        weights = {"img_out": 100.0, "n_outputs0": 2.0, "n_outputs1": 1.0}
+        self.interpreter.compile(optimizer=self.optimizer,
+                                 loss=loss, loss_weights=weights)
+
+    def interpreter_to_output(self, interpreter_out) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        steering = interpreter_out[1]
+        throttle = interpreter_out[2]
+        return steering[0][0], throttle[0][0]
 
 
 def conv2d(filters, kernel, strides, layer_num, activation='relu'):
@@ -532,7 +956,34 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
         outputs.append(
             Dense(1, activation='linear', name='n_outputs' + str(i))(x))
 
-    model = Model(inputs=[img_in], outputs=outputs)
+    model = Model(inputs=[img_in], outputs=outputs, name='linear')
+    return model
+
+
+def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
+    drop = 0.2
+    drop2 = 0.1
+    logger.info(f'Creating memory model with length {mem_length}, depth '
+                f'{mem_depth}')
+    img_in = Input(shape=input_shape, name='img_in')
+    x = core_cnn_layers(img_in, drop)
+    mem_in = Input(shape=(2 * mem_length,), name='mem_in')
+    y = mem_in
+    for i in range(mem_depth):
+        y = Dense(4 * mem_length, activation='relu', name=f'mem_{i}')(y)
+        y = Dropout(drop2)(y)
+    for i in range(1, mem_length):
+        y = Dense(2 * (mem_length - i), activation='relu', name=f'mem_c_{i}')(y)
+        y = Dropout(drop2)(y)
+    x = concatenate([x, y])
+    x = Dense(100, activation='relu', name='dense_1')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu', name='dense_2')(x)
+    x = Dropout(drop)(x)
+    activation = ['tanh', 'sigmoid']
+    outputs = [Dense(1, activation=activation[i], name='n_outputs' + str(i))(x)
+               for i in range(2)]
+    model = Model(inputs=[img_in, mem_in], outputs=outputs, name='memory')
     return model
 
 
@@ -549,7 +1000,8 @@ def default_categorical(input_shape=(120, 160, 3)):
     # categorical output of throttle into 20 bins
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(x)
 
-    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out])
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out],
+                  name='categorical')
     return model
 
 
@@ -577,14 +1029,16 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
         
-    model = Model(inputs=[img_in, imu_in], outputs=outputs)
+    model = Model(inputs=[img_in, imu_in], outputs=outputs, name='imu')
     return model
 
 
 def default_bhv(num_bvh_inputs, input_shape):
     drop = 0.2
     img_in = Input(shape=input_shape, name='img_in')
-    bvh_in = Input(shape=(num_bvh_inputs,), name="behavior_in")
+    # tensorflow is ordering the model inputs alphabetically in tensorrt,
+    # so behavior must come after image, hence we put an x here in front.
+    bvh_in = Input(shape=(num_bvh_inputs,), name="xbehavior_in")
 
     x = core_cnn_layers(img_in, drop)
     x = Dense(100, activation='relu')(x)
@@ -606,7 +1060,8 @@ def default_bhv(num_bvh_inputs, input_shape):
     # Categorical output of throttle into 20 bins
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(z)
         
-    model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out])
+    model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out],
+                  name='behavioral')
     return model
 
 
@@ -625,110 +1080,49 @@ def default_loc(num_locations, input_shape):
     angle_out = Dense(1, activation='linear', name='angle')(z)
     # linear output of throttle
     throttle_out = Dense(1, activation='linear', name='throttle')(z)
-    # categorical output of location
-    loc_out = Dense(num_locations, activation='softmax', name='loc')(z)
+    # Categorical output of location
+    # Here is a crazy detail b/c TF Lite has a bug and returns the outputs
+    # in the alphabetical order of the name of the layers, so make sure
+    # this output comes last
+    loc_out = Dense(num_locations, activation='softmax', name='zloc')(z)
 
-    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out])
+    model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out],
+                  name='localizer')
     return model
-
-
-class KerasRNN_LSTM(KerasPilot):
-    def __init__(self, input_shape=(120, 160, 3), seq_length=3, num_outputs=2):
-        super().__init__()
-        self.input_shape = input_shape
-        self.model = rnn_lstm(seq_length=seq_length,
-                              num_outputs=num_outputs,
-                              input_shape=input_shape)
-        self.seq_length = seq_length
-        self.img_seq = []
-        self.optimizer = "rmsprop"
-
-    def compile(self):
-        self.model.compile(optimizer=self.optimizer, loss='mse')
-
-    def inference(self, img_arr, other_arr):
-        if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
-            img_arr = dk.utils.rgb2gray(img_arr)
-
-        while len(self.img_seq) < self.seq_length:
-            self.img_seq.append(img_arr)
-
-        self.img_seq = self.img_seq[1:]
-        self.img_seq.append(img_arr)
-        
-        img_arr = np.array(self.img_seq).reshape((1, self.seq_length,
-                                                  *self.input_shape))
-        outputs = self.model([img_arr])
-        steering = outputs[0][0].numpy()
-        throttle = outputs[0][1].numpy()
-        return steering, throttle
 
 
 def rnn_lstm(seq_length=3, num_outputs=2, input_shape=(120, 160, 3)):
     # add sequence length dimensions as keras time-distributed expects shape
     # of (num_samples, seq_length, input_shape)
-    img_seq_shape = (seq_length,) + input_shape   
-    img_in = Input(batch_shape=img_seq_shape, name='img_in')
+    img_seq_shape = (seq_length,) + input_shape
+    img_in = Input(shape=img_seq_shape, name='img_in')
     drop_out = 0.3
 
-    x = Sequential()
-    x.add(TD(Convolution2D(24, (5,5), strides=(2,2), activation='relu'),
-             input_shape=img_seq_shape))
-    x.add(TD(Dropout(drop_out)))
-    x.add(TD(Convolution2D(32, (5, 5), strides=(2, 2), activation='relu')))
-    x.add(TD(Dropout(drop_out)))
-    x.add(TD(Convolution2D(32, (3, 3), strides=(2, 2), activation='relu')))
-    x.add(TD(Dropout(drop_out)))
-    x.add(TD(Convolution2D(32, (3, 3), strides=(1, 1), activation='relu')))
-    x.add(TD(Dropout(drop_out)))
-    x.add(TD(MaxPooling2D(pool_size=(2, 2))))
-    x.add(TD(Flatten(name='flattened')))
-    x.add(TD(Dense(100, activation='relu')))
-    x.add(TD(Dropout(drop_out)))
-      
-    x.add(LSTM(128, return_sequences=True, name="LSTM_seq"))
-    x.add(Dropout(.1))
-    x.add(LSTM(128, return_sequences=False, name="LSTM_fin"))
-    x.add(Dropout(.1))
-    x.add(Dense(128, activation='relu'))
-    x.add(Dropout(.1))
-    x.add(Dense(64, activation='relu'))
-    x.add(Dense(10, activation='relu'))
-    x.add(Dense(num_outputs, activation='linear', name='model_outputs'))
-    return x
+    x = img_in
+    x = TD(Convolution2D(24, (5, 5), strides=(2, 2), activation='relu'))(x)
+    x = TD(Dropout(drop_out))(x)
+    x = TD(Convolution2D(32, (5, 5), strides=(2, 2), activation='relu'))(x)
+    x = TD(Dropout(drop_out))(x)
+    x = TD(Convolution2D(32, (3, 3), strides=(2, 2), activation='relu'))(x)
+    x = TD(Dropout(drop_out))(x)
+    x = TD(Convolution2D(32, (3, 3), strides=(1, 1), activation='relu'))(x)
+    x = TD(Dropout(drop_out))(x)
+    x = TD(MaxPooling2D(pool_size=(2, 2)))(x)
+    x = TD(Flatten(name='flattened'))(x)
+    x = TD(Dense(100, activation='relu'))(x)
+    x = TD(Dropout(drop_out))(x)
 
-
-class Keras3D_CNN(KerasPilot):
-    def __init__(self, input_shape=(120, 160, 3), seq_length=20, num_outputs=2):
-        super().__init__()
-        self.input_shape = input_shape
-        self.model = build_3d_cnn(input_shape, s=seq_length,
-                                  num_outputs=num_outputs)
-        self.seq_length = seq_length
-        self.img_seq = []
-
-    def compile(self):
-        self.model.compile(loss='mean_squared_error',
-                           optimizer=self.optimizer,
-                           metrics=['accuracy'])
-
-    def inference(self, img_arr, other_arr):
-
-        if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
-            img_arr = dk.utils.rgb2gray(img_arr)
-
-        while len(self.img_seq) < self.seq_length:
-            self.img_seq.append(img_arr)
-
-        self.img_seq = self.img_seq[1:]
-        self.img_seq.append(img_arr)
-        
-        img_arr = np.array(self.img_seq).reshape((1, self.seq_length,
-                                                  *self.input_shape))
-        outputs = self.model([img_arr])
-        steering = outputs[0][0].numpy()
-        throttle = outputs[0][1].numpy()
-        return steering, throttle
+    x = LSTM(128, return_sequences=True, name="LSTM_seq")(x)
+    x = Dropout(.1)(x)
+    x = LSTM(128, return_sequences=False, name="LSTM_fin")(x)
+    x = Dropout(.1)(x)
+    x = Dense(128, activation='relu')(x)
+    x = Dropout(.1)(x)
+    x = Dense(64, activation='relu')(x)
+    x = Dense(10, activation='relu')(x)
+    out = Dense(num_outputs, activation='linear', name='model_outputs')(x)
+    model = Model(inputs=[img_in], outputs=[out], name='lstm')
+    return model
 
 
 def build_3d_cnn(input_shape, s, num_outputs):
@@ -738,85 +1132,56 @@ def build_3d_cnn(input_shape, s, num_outputs):
     :param input_shape:     image input shape
     :param s:               sequence length
     :param num_outputs:     output dimension
-    :return:
+    :return:                keras model
     """
+    drop = 0.5
     input_shape = (s, ) + input_shape
-    model = Sequential()
-
+    img_in = Input(shape=input_shape, name='img_in')
+    x = img_in
     # Second layer
-    model.add(Conv3D(
-        filters=16, kernel_size=(3, 3, 3), strides=(1, 3, 3),
-        data_format='channels_last', padding='same', input_shape=input_shape)
-    )
-    model.add(Activation('relu'))
-    model.add(MaxPooling3D(
-        pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
-        data_format=None)
-    )
+    x = Conv3D(
+            filters=16, kernel_size=(3, 3, 3), strides=(1, 3, 3),
+            data_format='channels_last', padding='same', activation='relu')(x)
+    x = MaxPooling3D(
+            pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
+            data_format=None)(x)
     # Third layer
-    model.add(Conv3D(
-        filters=32, kernel_size=(3, 3, 3), strides=(1, 1, 1),
-        data_format='channels_last', padding='same')
-    )
-    model.add(Activation('relu'))
-    model.add(MaxPooling3D(
+    x = Conv3D(
+            filters=32, kernel_size=(3, 3, 3), strides=(1, 1, 1),
+            data_format='channels_last', padding='same', activation='relu')(x)
+    x = MaxPooling3D(
         pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
-        data_format=None)
-    )
+        data_format=None)(x)
     # Fourth layer
-    model.add(Conv3D(
-        filters=64, kernel_size=(3, 3, 3), strides=(1, 1, 1),
-        data_format='channels_last', padding='same')
-    )
-    model.add(Activation('relu'))
-    model.add(MaxPooling3D(
-        pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
-        data_format=None)
-    )
+    x = Conv3D(
+            filters=64, kernel_size=(3, 3, 3), strides=(1, 1, 1),
+            data_format='channels_last', padding='same', activation='relu')(x)
+    x = MaxPooling3D(
+            pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
+            data_format=None)(x)
     # Fifth layer
-    model.add(Conv3D(
-        filters=128, kernel_size=(3, 3, 3), strides=(1, 1, 1),
-        data_format='channels_last', padding='same')
-    )
-    model.add(Activation('relu'))
-    model.add(MaxPooling3D(
-        pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
-        data_format=None)
-    )
+    x = Conv3D(
+            filters=128, kernel_size=(3, 3, 3), strides=(1, 1, 1),
+            data_format='channels_last', padding='same', activation='relu')(x)
+    x = MaxPooling3D(
+            pool_size=(1, 2, 2), strides=(1, 2, 2), padding='valid',
+            data_format=None)(x)
     # Fully connected layer
-    model.add(Flatten())
+    x = Flatten()(x)
 
-    model.add(Dense(256))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    x = Dense(256)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dropout(drop)(x)
 
-    model.add(Dense(256))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
+    x = Dense(256)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dropout(drop)(x)
 
-    model.add(Dense(num_outputs))
+    out = Dense(num_outputs, name='outputs')(x)
+    model = Model(inputs=[img_in], outputs=out, name='3dcnn')
     return model
-
-
-class KerasLatent(KerasPilot):
-    def __init__(self, num_outputs=2, input_shape=(120, 160, 3)):
-        super().__init__()
-        self.model = default_latent(num_outputs, input_shape)
-
-    def compile(self):
-        loss = {"img_out": "mse", "n_outputs0": "mse", "n_outputs1": "mse"}
-        weights = {"img_out": 100.0, "n_outputs0": 2.0, "n_outputs1": 1.0}
-        self.model.compile(optimizer=self.optimizer,
-                           loss=loss, loss_weights=weights)
-
-    def inference(self, img_arr, other_arr):
-        img_arr = img_arr.reshape((1,) + img_arr.shape)
-        outputs = self.model(img_arr)
-        steering = outputs[1].numpy()
-        throttle = outputs[2].numpy()
-        return steering[0][0], throttle[0][0]
 
 
 def default_latent(num_outputs, input_shape):
@@ -826,28 +1191,33 @@ def default_latent(num_outputs, input_shape):
     drop = 0.2
     img_in = Input(shape=input_shape, name='img_in')
     x = img_in
-    x = Convolution2D(24, (5,5), strides=(2,2), activation='relu', name="conv2d_1")(x)
+    x = Convolution2D(24, 5, strides=2, activation='relu', name="conv2d_1")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_2")(x)
+    x = Convolution2D(32, 5, strides=2, activation='relu', name="conv2d_2")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(32, (5,5), strides=(2,2), activation='relu', name="conv2d_3")(x)
+    x = Convolution2D(32, 5, strides=2, activation='relu', name="conv2d_3")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_4")(x)
+    x = Convolution2D(32, 3, strides=1, activation='relu', name="conv2d_4")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(32, (3,3), strides=(1,1), activation='relu', name="conv2d_5")(x)
+    x = Convolution2D(32, 3, strides=1, activation='relu', name="conv2d_5")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_6")(x)
+    x = Convolution2D(64, 3, strides=2, activation='relu', name="conv2d_6")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(64, (3,3), strides=(2,2), activation='relu', name="conv2d_7")(x)
+    x = Convolution2D(64, 3, strides=2, activation='relu', name="conv2d_7")(x)
     x = Dropout(drop)(x)
-    x = Convolution2D(64, (1,1), strides=(2,2), activation='relu', name="latent")(x)
+    x = Convolution2D(64, 1, strides=2, activation='relu', name="latent")(x)
     
-    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_1")(x)
-    y = Conv2DTranspose(filters=64, kernel_size=(3,3), strides=2, name="deconv2d_2")(y)
-    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_3")(y)
-    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_4")(y)
-    y = Conv2DTranspose(filters=32, kernel_size=(3,3), strides=2, name="deconv2d_5")(y)
-    y = Conv2DTranspose(filters=1, kernel_size=(3,3), strides=2, name="img_out")(y)
+    y = Conv2DTranspose(filters=64, kernel_size=3, strides=2,
+                        name="deconv2d_1")(x)
+    y = Conv2DTranspose(filters=64, kernel_size=3, strides=2,
+                        name="deconv2d_2")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=3, strides=2,
+                        name="deconv2d_3")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=3, strides=2,
+                        name="deconv2d_4")(y)
+    y = Conv2DTranspose(filters=32, kernel_size=3, strides=2,
+                        name="deconv2d_5")(y)
+    y = Conv2DTranspose(filters=1, kernel_size=3, strides=2, name="img_out")(y)
     
     x = Flatten(name='flattened')(x)
     x = Dense(256, activation='relu')(x)
@@ -861,5 +1231,5 @@ def default_latent(num_outputs, input_shape):
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
         
-    model = Model(inputs=[img_in], outputs=outputs)
+    model = Model(inputs=[img_in], outputs=outputs, name='latent')
     return model

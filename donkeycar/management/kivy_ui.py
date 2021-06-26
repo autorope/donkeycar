@@ -4,11 +4,11 @@ import time
 from copy import copy
 from datetime import datetime
 from functools import partial
-import subprocess
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, STDOUT
 from threading import Thread
 from collections import namedtuple
 from kivy.logger import Logger
+
 import io
 import os
 import atexit
@@ -17,7 +17,6 @@ from PIL import Image as PilImage
 import pandas as pd
 import numpy as np
 import plotly.express as px
-
 from kivy.clock import Clock
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -34,6 +33,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
+from donkeycar.parts.keras import KerasMemory
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.pipeline.database import PilotDatabase
@@ -41,6 +41,7 @@ from donkeycar.pipeline.types import TubRecord
 from donkeycar.utils import get_model_by_type
 from donkeycar.pipeline.training import train
 
+Logger.propagate = False
 
 Builder.load_file(os.path.join(os.path.dirname(__file__), 'ui.kv'))
 Window.clearcolor = (0.2, 0.2, 0.2, 1)
@@ -399,7 +400,7 @@ class FullImage(Image):
         except KeyError as e:
             Logger.error('Record: Missing key:', e)
         except Exception as e:
-            Logger.error('Record: Bad record:', e)
+            Logger.error('Record: Bad record:', str(e))
 
     def get_image(self, record):
         return record.image(cached=False)
@@ -669,7 +670,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
     num = StringProperty()
     model_type = StringProperty()
     pilot = ObjectProperty(None)
-    filters = ['*.h5', '*.tflite']
+    filters = ['*.h5', '*.tflite', '*.savedmodel', '*.trt']
 
     def load_action(self):
         if self.file_path and self.pilot:
@@ -677,10 +678,12 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 self.pilot.load(os.path.join(self.file_path))
                 rc_handler.data['pilot_' + self.num] = self.file_path
                 rc_handler.data['model_type_' + self.num] = self.model_type
+                self.ids.pilot_spinner.text = self.model_type
+                Logger.info(f'Pilot: Successfully loaded {self.file_path}')
             except FileNotFoundError:
                 Logger.error(f'Pilot: Model {self.file_path} not found')
             except Exception as e:
-                Logger.error(f'Pilot: {e}')
+                Logger.error(f'Failed loading {self.file_path}: {e}')
 
     def on_model_type(self, obj, model_type):
         """ Kivy method that is called if self.model_type changes. """
@@ -689,6 +692,12 @@ class PilotLoader(BoxLayout, FileChooserBase):
             if cfg:
                 self.pilot = get_model_by_type(self.model_type, cfg)
                 self.ids.pilot_button.disabled = False
+                if 'tflite' in self.model_type:
+                    self.filters = ['*.tflite']
+                elif 'tensorrt' in self.model_type:
+                    self.filters = ['*.trt']
+                else:
+                    self.filters = ['*.h5', '*.savedmodel']
 
     def on_num(self, e, num):
         """ Kivy method that is called if self.num changes. """
@@ -698,28 +707,44 @@ class PilotLoader(BoxLayout, FileChooserBase):
 
 class OverlayImage(FullImage):
     """ Widget to display the image and the user/pilot data for the tub. """
-    keras_part = ObjectProperty()
+    pilot = ObjectProperty()
     pilot_record = ObjectProperty()
     throttle_field = StringProperty('user/throttle')
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.last_output = (0, 0)
+
+    def augment(self, img_arr):
+        if pilot_screen().auglist:
+            img_arr = pilot_screen().augmentation.augment(img_arr)
+        return img_arr
+
     def get_image(self, record):
         from donkeycar.management.makemovie import MakeMovie
-        img_arr = copy(super().get_image(record))
-        augmentation = pilot_screen().augmentation if pilot_screen().auglist \
-            else None
-        if augmentation:
-            img_arr = pilot_screen().augmentation.augment(img_arr)
+        orig_img_arr = super().get_image(record)
+        aug_img_arr = self.augment(orig_img_arr)
+        img_arr = copy(aug_img_arr)
         angle = record.underlying['user/angle']
-        throttle = get_norm_value(record.underlying[self.throttle_field],
-                                  tub_screen().ids.config_manager.config,
-                                  rc_handler.field_properties[
-                                      self.throttle_field])
+        throttle = get_norm_value(
+            record.underlying[self.throttle_field],
+            tub_screen().ids.config_manager.config,
+            rc_handler.field_properties[self.throttle_field])
         rgb = (0, 255, 0)
         MakeMovie.draw_line_into_image(angle, throttle, False, img_arr, rgb)
-        if not self.keras_part:
+        if not self.pilot:
             return img_arr
 
-        output = self.keras_part.evaluate(record, augmentation)
+        args = (aug_img_arr, np.array(self.last_output)) \
+            if type(self.pilot) is KerasMemory else (aug_img_arr,)
+        output = (0, 0)
+        try:
+            # Not each model is supported in each interpreter
+            output = self.pilot.run(*args)
+        except Exception as e:
+            Logger.error(e)
+
+        self.last_output = output
         rgb = (0, 0, 255)
         MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
         out_record = copy(record)
@@ -848,6 +873,7 @@ class TrainScreen(Screen):
                             transfer=transfer,
                             comment=self.ids.comment.text)
             self.ids.status.text = f'Training completed.'
+            self.ids.comment.text = 'Comment'
             self.ids.train_button.state = 'normal'
             self.ids.transfer_spinner.text = 'Choose transfer model'
             self.reload_database()
@@ -858,7 +884,6 @@ class TrainScreen(Screen):
         self.config.SHOW_PLOT = False
         Thread(target=self.train_call, args=(model_type,)).start()
         self.ids.status.text = f'Training started.'
-        self.ids.comment.text = 'Comment'
 
     def set_config_attribute(self, input):
         try:
@@ -970,9 +995,22 @@ class CarScreen(Screen):
 
     def send_pilot(self):
         src = self.config.MODELS_PATH
-        cmd = ['rsync', '-rv', '--progress', '--partial', src,
-               f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}:' +
-               f'{self.car_dir}']
+        # check if any sync buttons are pressed and update path accordingly
+        buttons = ['h5', 'savedmodel', 'tflite', 'trt']
+        select = [btn for btn in buttons if self.ids[f'btn_{btn}'].state
+                  == 'down']
+        # build filter: for example this rsyncs all .tfilte models
+        # --include="*/" --include="*.tflite" --exclude="*"
+        filter = ['--include=*/']
+        for ext in select:
+            filter.append(f'--include=*.{ext}')
+        # if nothing selected, sync all
+        if not select:
+            filter.append('--include=*')
+        filter.append('--exclude=*')
+        dest = f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}:' + \
+               f'{self.car_dir}'
+        cmd = ['rsync', '-rv', '--progress', '--partial', *filter, src, dest]
         Logger.info('car push: ' + ' '.join(cmd))
         proc = Popen(cmd, shell=False, stdout=PIPE,
                      encoding='utf-8', universal_newlines=True)
@@ -1028,8 +1066,9 @@ class CarScreen(Screen):
                    '-o ConnectTimeout=3',
                    f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}',
                    'date']
-            Logger.info('car check: ' + ' '.join(cmd))
-            self.connection = Popen(cmd, shell=False, stdout=PIPE, text=True,
+            # Logger.info('car check: ' + ' '.join(cmd))
+            self.connection = Popen(cmd, shell=False, stdout=PIPE,
+                                    stderr=STDOUT, text=True,
                                     encoding='utf-8', universal_newlines=True)
         else:
             # ssh is already running, check where we are

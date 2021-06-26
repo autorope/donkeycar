@@ -3,9 +3,10 @@ import os
 import time
 from typing import Dict, List, Tuple
 import pandas as pd
-
+import logging
 from donkeycar.config import Config
 
+logger = logging.getLogger(__name__)
 
 FILE = 'database.json'
 
@@ -49,7 +50,7 @@ class PilotDatabase:
             with open(self.path, "w") as data_file:
                 json.dump(self.entries, data_file)
         except Exception as e:
-            print(e)
+            logger.error(f'Failed writing database file: {e}')
 
     def add_entry(self, entry: Dict):
         self.entries.append(entry)

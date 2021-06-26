@@ -113,7 +113,7 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
 
     def __next__(self):
         record = next(self.iterator)
-        if (isinstance(record, tuple) and len(record) == 2):
+        if isinstance(record, tuple) and len(record) == 2:
             x, y = record
             return self.x_transform(x), self.y_transform(y)
         else:

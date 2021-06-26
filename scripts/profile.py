@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Script to drive a TF model as fast as possible
 

@@ -101,7 +101,7 @@ class PlotArea(Widget):
 
     def transform_y(self, y):
         y_scale = (self.bounding_box[1][1] - self.bounding_box[0][1]) \
-                  / (y.max() - y.min())
+                  / (y.max() - y.min() + 1e-10)  # to avoid division by zero
         y_trafo = y_scale * (y - y.min()) + self.y + self.offset[1]
         return y_trafo
 

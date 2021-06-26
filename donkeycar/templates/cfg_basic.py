@@ -50,7 +50,6 @@ THROTTLE_FORWARD_PWM = 500
 THROTTLE_STOPPED_PWM = 370
 THROTTLE_REVERSE_PWM = 220
 
-# DRIVETRAIN
 DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
 
 # #LIDAR
@@ -65,7 +64,6 @@ STEERING_RC_GPIO = 26
 THROTTLE_RC_GPIO = 20
 DATA_WIPER_RC_GPIO = 19
 
-
 #LOGGING
 HAVE_CONSOLE_LOGGING = True
 LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
@@ -75,6 +73,8 @@ LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.o
 #TRAINING
 DEFAULT_AI_FRAMEWORK = 'tensorflow'  # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
+CREATE_TF_LITE = True  # automatically create tflite model in training
+CREATE_TENSOR_RT = False  # automatically create tensorrt model in training
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
 MAX_EPOCHS = 100
@@ -87,7 +87,6 @@ PRINT_MODEL_SUMMARY = True      #print layers and weights to stdout
 OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
 LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
-CACHE_IMAGES = True             #keep images in memory. will speed succesive epochs, but crater if not enough mem.
 PRUNE_CNN = False
 PRUNE_PERCENT_TARGET = 75 # The desired percentage of pruning.
 PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per iteration.

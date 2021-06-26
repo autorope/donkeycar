@@ -112,7 +112,7 @@ class MakeMovie(object):
         if self.keras_part is None:
             return
 
-        expected = tuple(self.keras_part.get_input_shape()[1:])
+        expected = tuple(self.keras_part.get_input_shapes()[0][1:])
         actual = img.shape
 
         # if model expects grey-scale but got rgb, covert
@@ -145,7 +145,7 @@ class MakeMovie(object):
 
         pred_img = normalize_image(img)
         pred_img = pred_img.reshape((1,) + pred_img.shape)
-        angle_binned, _ = self.keras_part.model.predict(pred_img)
+        angle_binned, _ = self.keras_part.model.interpreter.predict(pred_img)
 
         x = 4
         dx = 4

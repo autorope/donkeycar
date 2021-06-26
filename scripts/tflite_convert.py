@@ -9,7 +9,7 @@ Note:
 import os
 
 from docopt import docopt
-from donkeycar.parts.tflite import keras_model_to_tflite
+from donkeycar.parts.interpreter import keras_model_to_tflite
 
 args = docopt(__doc__)
 
