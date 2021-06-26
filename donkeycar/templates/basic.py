@@ -3,7 +3,7 @@
 Scripts to drive a donkey car
 
 Usage:
-    manage.py drive [--model=<model>] [--type=(linear|categorical|tflite_linear)]
+    manage.py drive [--model=<model>] [--type=(linear|categorical|...)]
     manage.py calibrate
 
 Options:
@@ -19,6 +19,7 @@ from donkeycar.parts.tub_v2 import TubWriter, TubWiper
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.controller import LocalWebController, RCReceiver
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
+from donkeycar.pipeline.augmentations import ImageAugmentation
 
 logger = logging.getLogger()
 logging.basicConfig(level=logging.INFO)
@@ -147,6 +148,13 @@ def drive(cfg, model_path=None, model_type=None):
         kl = dk.utils.get_model_by_type(model_type, cfg)
         kl.load(model_path=model_path)
         inputs = ['cam/image_array']
+        # Add image transformations like crop or trapezoidal mask
+        if hasattr(cfg, 'TRANSFORMATIONS') and cfg.TRANSFORMATIONS:
+            outputs = ['cam/image_array_trans']
+            car.add(ImageAugmentation(cfg, 'TRANSFORMATIONS'),
+                    inputs=inputs, outputs=outputs)
+            inputs = outputs
+
         outputs = ['pilot/angle', 'pilot/throttle']
         car.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
