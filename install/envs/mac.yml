@@ -21,7 +21,6 @@ dependencies:
   - pip
   - imgaug
   - progress
-  - moviepy
   - paho-mqtt
   - PrettyTable
   - pyfiglet
@@ -39,4 +38,5 @@ dependencies:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
     - opencv-python-headless
+    - moviepy
 
