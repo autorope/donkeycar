@@ -188,14 +188,27 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.LIDAR_TYPE == 'YD':
             print("YD Lidar not yet supported")
     
+    if cfg.INFO_OVERLAY:
+        from donkeycar.parts.info_overlay import InfoOverlayer
+        V.add(InfoOverlayer(cfg.IMAGE_W, cfg.IMAGE_H),
+              inputs=['cam/image_array', 'fps/current', 'user/mode',
+                      'user/throttle', 'user/angle', 'pilot/throttle', 'pilot/angle'],
+              outputs=['overlay/image_array'])
+
 #This web controller will create a web server that is capable
     #of managing steering, throttle, and modes, and more.
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     
-    V.add(ctr,
-        inputs=['cam/image_array', 'tub/num_records'],
-        outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-        threaded=True)
+    if cfg.INFO_OVERLAY:
+        V.add(ctr,
+            inputs=['overlay/image_array', 'tub/num_records'],
+            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+            threaded=True)
+    else:
+        V.add(ctr,
+            inputs=['cam/image_array', 'tub/num_records'],
+            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+            threaded=True)
         
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
