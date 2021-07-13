@@ -375,3 +375,7 @@ STOP_SIGN_MIN_SCORE = 0.2
 STOP_SIGN_SHOW_BOUNDING_BOX = True
 STOP_SIGN_MAX_REVERSE_COUNT = 10    # How many times should the car reverse when detected a stop sign, set to 0 to disable reversing
 STOP_SIGN_REVERSE_THROTTLE = -0.5     # Throttle during reversing when detected a stop sign
+
+# FPS counter
+SHOW_FPS = False
+FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency info into the shell

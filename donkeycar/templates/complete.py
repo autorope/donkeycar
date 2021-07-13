@@ -187,6 +187,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.LIDAR_TYPE == 'YD':
             print("YD Lidar not yet supported")
     
+    if cfg.SHOW_FPS:
+        from donkeycar.parts.fps import FrequencyLogger
+        V.add(FrequencyLogger(cfg.FPS_DEBUG_INTERVAL), outputs=["fps/current", "fps/fps_list"])
+
 #This web controller will create a web server that is capable
     #of managing steering, throttle, and modes, and more.
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
