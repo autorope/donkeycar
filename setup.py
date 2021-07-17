@@ -55,18 +55,21 @@ setup(name='donkeycar',
           'pi': [
               'picamera',
               'Adafruit_PCA9685',
-              'Adafruit_SSD1306',
+              'adafruit-circuitpython-lis3dh',
+              'adafruit-circuitpython-ssd1306',
               'RPi.GPIO',
               'pyserial',
           ],
           'nano': [
               'Adafruit_PCA9685',
-              'Adafruit_SSD1306',
+              'adafruit-circuitpython-lis3dh',
+              'adafruit-circuitpython-ssd1306',
               'RPi.GPIO'
           ],
           'pc': [
               'matplotlib',
               'imgaug',
+              'kivy'
           ],
           'dev': [
               'pytest',

@@ -1,4 +1,3 @@
-
 import argparse
 import os
 import shutil
@@ -6,16 +5,19 @@ import socket
 import stat
 import sys
 from socket import *
-from pathlib import Path
+import logging
 
 from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
+from donkeycar.pipeline.types import TubRecord, TubDataset
 from donkeycar.utils import *
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
+HELP_CONFIG = 'location of config file to use. default: ./config.py'
+logger = logging.getLogger(__name__)
 
 
 def make_dir(path):
@@ -65,7 +67,7 @@ class CreateCar(BaseCommand):
         args = self.parse_args(args)
         self.create_car(path=args.path, template=args.template, overwrite=args.overwrite)
   
-    def create_car(self, path, template='basic', overwrite=False):
+    def create_car(self, path, template='complete', overwrite=False):
         """
         This script sets up the folder structure for donkey to work.
         It must run without donkey installed so that people installing with
@@ -74,7 +76,7 @@ class CreateCar(BaseCommand):
 
         # these are neeeded incase None is passed as path
         path = path or '~/mycar'
-        template = template or 'basic'
+        template = template or 'complete'
         print("Creating car folder: {}".format(path))
         path = make_dir(path)
         
@@ -247,7 +249,7 @@ class MakeMovieShell(BaseCommand):
         parser = argparse.ArgumentParser(prog='makemovie')
         parser.add_argument('--tub', help='The tub to make movie from')
         parser.add_argument('--out', default='tub_movie.mp4', help='The movie filename to create. default: tub_movie.mp4')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
         parser.add_argument('--model', default=None, help='the model to use to show control outputs')
         parser.add_argument('--type', default=None, required=False, help='the model type to load')
         parser.add_argument('--salient', action="store_true", help='should we overlay salient map showing activations')
@@ -331,7 +333,7 @@ class ShowCnnActivations(BaseCommand):
         parser = argparse.ArgumentParser(prog='cnnactivations', usage='%(prog)s [options]')
         parser.add_argument('--image', help='path to image')
         parser.add_argument('--model', default=None, help='path to model')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
         
         parsed_args = parser.parse_args(args)
         return parsed_args
@@ -346,12 +348,12 @@ class ShowCnnActivations(BaseCommand):
 class ShowPredictionPlots(BaseCommand):
 
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
-        '''
+        """
         Plot model predictions for angle and throttle against data from tubs.
-
-        '''
+        """
         import matplotlib.pyplot as plt
         import pandas as pd
+        from pathlib import Path
 
         model_path = os.path.expanduser(model_path)
         model = dk.utils.get_model_by_type(model_type, cfg)
@@ -365,46 +367,42 @@ class ShowPredictionPlots(BaseCommand):
         pilot_angles = []
         pilot_throttles = []       
 
-        from donkeycar.parts.tub_v2 import Tub
-        from pathlib import Path
-
         base_path = Path(os.path.expanduser(tub_paths)).absolute().as_posix()
-        tub = Tub(base_path)
-        records = list(tub)
-        records = records[:limit]
+        dataset = TubDataset(config=cfg, tub_paths=[base_path],
+                             seq_size=model.seq_size())
+        records = dataset.get_records()[:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
-        for record in records:
-            img_filename = os.path.join(base_path, Tub.images(), record['cam/image_array'])
-            img = load_image(img_filename, cfg)
-            user_angle = float(record["user/angle"])
-            user_throttle = float(record["user/throttle"])
-            pilot_angle, pilot_throttle = model.run(img)
-
+        for tub_record in records:
+            inputs = model.x_transform_and_process(
+                tub_record, lambda x: normalize_image(x))
+            input_dict = model.x_translate(inputs)
+            pilot_angle, pilot_throttle = \
+                model.inference_from_dict(input_dict)
+            user_angle, user_throttle = model.y_transform(tub_record)
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
             bar.next()
 
-        angles_df = pd.DataFrame({'user_angle': user_angles, 'pilot_angle': pilot_angles})
-        throttles_df = pd.DataFrame({'user_throttle': user_throttles, 'pilot_throttle': pilot_throttles})
+        angles_df = pd.DataFrame({'user_angle': user_angles,
+                                  'pilot_angle': pilot_angles})
+        throttles_df = pd.DataFrame({'user_throttle': user_throttles,
+                                     'pilot_throttle': pilot_throttles})
 
         fig = plt.figure()
-
-        title = "Model Predictions\nTubs: " + tub_paths + "\nModel: " + model_path + "\nType: " + model_type
+        title = f"Model Predictions\nTubs: {tub_paths}\nModel: {model_path}\n" \
+                f"Type: {model_type}"
         fig.suptitle(title)
-
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
-
         angles_df.plot(ax=ax1)
         throttles_df.plot(ax=ax2)
-
         ax1.legend(loc=4)
         ax2.legend(loc=4)
-
         plt.savefig(model_path + '_pred.png')
+        logger.info(f'Saving model at {model_path}_pred.png')
         plt.show()
 
     def parse_args(self, args):
@@ -413,7 +411,7 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--model', default=None, help='model for predictions')
         parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -427,13 +425,23 @@ class ShowPredictionPlots(BaseCommand):
 class Train(BaseCommand):
 
     def parse_args(self, args):
+        HELP_FRAMEWORK = 'the AI framework to use (tensorflow|pytorch). ' \
+                         'Defaults to config.DEFAULT_AI_FRAMEWORK'
         parser = argparse.ArgumentParser(prog='train', usage='%(prog)s [options]')
         parser.add_argument('--tub', nargs='+', help='tub data for training')
         parser.add_argument('--model', default=None, help='output model name')
         parser.add_argument('--type', default=None, help='model type')
-        parser.add_argument('--config', default='./config.py', help='location of config file to use. default: ./config.py')
-        parser.add_argument('--framework', choices=['tensorflow', 'pytorch', None], required=False, help='the AI framework to use (tensorflow|pytorch). Defaults to config.DEFAULT_AI_FRAMEWORK')
-        parser.add_argument('--checkpoint', type=str, help='location of checkpoint to resume training from')
+        parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
+        parser.add_argument('--framework',
+                            choices=['tensorflow', 'pytorch', None],
+                            required=False,
+                            help=HELP_FRAMEWORK)
+        parser.add_argument('--checkpoint', type=str,
+                            help='location of checkpoint to resume training from')
+        parser.add_argument('--transfer', type=str, help='transfer model')
+        parser.add_argument('--comment', type=str,
+                            help='comment added to model database - use '
+                                 'double quotes for multiple words')
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -446,7 +454,8 @@ class Train(BaseCommand):
 
         if framework == 'tensorflow':
             from donkeycar.pipeline.training import train
-            train(cfg, args.tub, args.model, args.type)
+            train(cfg, args.tub, args.model, args.type, args.transfer,
+                  args.comment)
         elif framework == 'pytorch':
             from donkeycar.parts.pytorch.torch_train import train
             train(cfg, args.tub, args.model, args.type,
@@ -458,7 +467,7 @@ class Train(BaseCommand):
 
 class Gui(BaseCommand):
     def run(self, args):
-        from donkeycar.management.tub_gui import main
+        from donkeycar.management.kivy_ui import main
         main()
 
 

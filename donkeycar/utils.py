@@ -16,23 +16,42 @@ import math
 import random
 import time
 import signal
+import logging
 from typing import List, Any, Tuple
 
 from PIL import Image
 import numpy as np
 
+logger = logging.getLogger(__name__)
+
+
+ONE_BYTE_SCALE = 1.0 / 255.0
+
+
+class EqMemorizedString:
+    """ String that remembers what it was compared against """
+    def __init__(self, string):
+        self.string = string
+        self.mem = set()
+
+    def __eq__(self, other):
+        self.mem.add(other)
+        return self.string == other
+
+    def mem_as_str(self):
+        return ', '.join(self.mem)
+
 
 '''
 IMAGES
 '''
-ONE_BYTE_SCALE = 1.0 / 255.0
 
 
 def scale(im, size=128):
-    '''
+    """
     accepts: PIL image, size of square sides
-    returns: PIL image scaled so sides lenght = size
-    '''
+    returns: PIL image scaled so sides length == size
+    """
     size = (size,size)
     im.thumbnail(size, Image.ANTIALIAS)
     return im
@@ -414,53 +433,76 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
-    from donkeycar.parts.keras import KerasPilot, KerasCategorical, \
-        KerasLinear, KerasInferred
-    from donkeycar.parts.tflite import TFLitePilot
+    from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
+        KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
+        KerasLSTM, Keras3D_CNN
+    from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT
 
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
-    print("\"get_model_by_type\" model Type is: {}".format(model_type))
-
+    logger.info(f'get_model_by_type: model type is: {model_type}')
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
-    kl: KerasPilot
-    if model_type == "linear":
-        kl = KerasLinear(input_shape=input_shape)
-    elif model_type == "categorical":
-        kl = KerasCategorical(input_shape=input_shape,
-                              throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
-    elif model_type == 'inferred':
-        kl = KerasInferred(input_shape=input_shape)
-    elif model_type == "tflite_linear":
-        kl = TFLitePilot()
-    elif model_type == "tensorrt_linear":
-        # Aggressively lazy load this. This module imports pycuda.autoinit
-        # which causes a lot of unexpected things to happen when using TF-GPU
-        # for training.
-        from donkeycar.parts.tensorrt import TensorRTLinear
-        kl = TensorRTLinear(cfg=cfg)
+    if 'tflite_' in model_type:
+        interpreter = TfLite()
+        used_model_type = model_type.replace('tflite_', '')
+    elif 'tensorrt_' in model_type:
+        interpreter = TensorRT()
+        used_model_type = model_type.replace('tensorrt_', '')
     else:
-        raise Exception("Unknown model type {:}, supported types are "
-                        "linear, categorical, inferred, tflite_linear, "
-                        "tensorrt_linear"
-                        .format(model_type))
-
+        interpreter = KerasInterpreter()
+        used_model_type = model_type
+    used_model_type = EqMemorizedString(used_model_type)
+    if used_model_type == "linear":
+        kl = KerasLinear(interpreter=interpreter, input_shape=input_shape)
+    elif used_model_type == "categorical":
+        kl = KerasCategorical(
+            interpreter=interpreter,
+            input_shape=input_shape,
+            throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+    elif used_model_type == 'inferred':
+        kl = KerasInferred(interpreter=interpreter, input_shape=input_shape)
+    elif used_model_type == "imu":
+        kl = KerasIMU(interpreter=interpreter, input_shape=input_shape)
+    elif used_model_type == "memory":
+        mem_length = getattr(cfg, 'SEQUENCE_LENGTH', 3)
+        mem_depth = getattr(cfg, 'MEM_DEPTH', 0)
+        kl = KerasMemory(interpreter=interpreter, input_shape=input_shape,
+                         mem_length=mem_length, mem_depth=mem_depth)
+    elif used_model_type == "behavior":
+        kl = KerasBehavioral(
+            interpreter=interpreter,
+            input_shape=input_shape,
+            throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE,
+            num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
+    elif used_model_type == 'localizer':
+        kl = KerasLocalizer(interpreter=interpreter, input_shape=input_shape,
+                            num_locations=cfg.NUM_LOCATIONS)
+    elif used_model_type == 'rnn':
+        kl = KerasLSTM(interpreter=interpreter, input_shape=input_shape,
+                       seq_length=cfg.SEQUENCE_LENGTH)
+    elif used_model_type == '3d':
+        kl = Keras3D_CNN(interpreter=interpreter, input_shape=input_shape,
+                         seq_length=cfg.SEQUENCE_LENGTH)
+    else:
+        known = [k + u for k in ('', 'tflite_', 'tensorrt_')
+                 for u in used_model_type.mem]
+        raise ValueError(f"Unknown model type {model_type}, supported types are"
+                         f" { ', '.join(known)}")
     return kl
 
 
-def get_test_img(model):
+def get_test_img(keras_pilot):
     """
     query the input to see what it likes make an image capable of using with
     that test model
-    :param model:                   input keras model
+    :param keras_pilot:             input keras pilot
     :return np.ndarry(np.uint8):    numpy random img array
     """
-    assert(len(model.inputs) > 0)
     try:
-        count, h, w, ch = model.inputs[0].get_shape()
+        count, h, w, ch = keras_pilot.get_input_shapes()[0]
         seq_len = 0
     except Exception as e:
-        count, seq_len, h, w, ch = model.inputs[0].get_shape()
+        count, seq_len, h, w, ch = keras_pilot.get_input_shapes()[0]
 
     # generate random array in the right shape
     img = np.random.randint(0, 255, size=(h, w, ch))

@@ -25,7 +25,7 @@ import numpy as np
 import pigpio
 
 import donkeycar as dk
-from donkeycar.parts.controller import WebFpv, get_js_controller
+from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
@@ -53,10 +53,10 @@ def drive(cfg):
    
     ctr = get_js_controller(cfg)
 
-    V.add(ctr, 
-          inputs=['null'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
+    V.add(ctr,
+            inputs=['cam/image_array'],
+            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+            threaded=True)
 
     if cfg.HAVE_ODOM:
         pi = pigpio.pi()
@@ -97,9 +97,11 @@ def drive(cfg):
     # This part will reset the car back to the origin. You must put the car in the known origin
     # and push the cfg.RESET_ORIGIN_BTN on your controller. This will allow you to induce an offset
     # in the mapping.
+
+
     origin_reset = OriginOffset()
     V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
-    ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, origin_reset.init_to_last)
+
 
     class UserCondition:
         def run(self, mode):
@@ -136,16 +138,41 @@ def drive(cfg):
         path.save(cfg.PATH_FILENAME)
         print("saved path:", cfg.PATH_FILENAME)
 
+    def erase_path():
+        global mode, path_loaded
+        if os.path.exists(cfg.PATH_FILENAME):
+            os.remove(cfg.PATH_FILENAME)
+            mode = 'user'
+            path_loaded = False
+            print("erased path", cfg.PATH_FILENAME)
+        else:
+            print("no path found to erase")
+    
+    def reset_origin():
+        print("Resetting origin")
+        origin_reset.init_to_last
+
+
+    
     # Here's a trigger to save the path. Complete one circuit of your course, when you
     # have exactly looped, or just shy of the loop, then save the path and shutdown
     # this process. Restart and the path will be loaded.
     ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
+
+    # Here's a trigger to erase a previously saved path. 
+
+    ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
+
+    # Here's a trigger to reset the origin. 
+
+    ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
 
     # Here's an image we can map to.
     img = PImage(clear_each_frame=True)
     V.add(img, outputs=['map/image'])
 
     # This PathPlot will draw path on the image
+
     plot = PathPlot(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
     V.add(plot, inputs=['map/image', 'path'], outputs=['map/image'])
 
@@ -170,15 +197,15 @@ def drive(cfg):
     ctr.set_button_down_trigger("L2", dec_pid_d)
     ctr.set_button_down_trigger("R2", inc_pid_d)
 
-    # Plot a circle on the map where the car is located
-    loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET)
-    V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
+    # #This web controller will create a web server. We aren't using any controls, just for visualization.
 
-    #This web controller will create a web server. We aren't using any controls, just for visualization.
-    web_ctr = WebFpv()
+    web_ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                 mode=cfg.WEB_INIT_MODE)
+
     V.add(web_ctr,
-          inputs=['map/image'],
-          threaded=True)
+        inputs=['map/image'],
+        outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
+        threaded=True)
     
 
     #Choose what inputs should change the car.
@@ -226,9 +253,13 @@ def drive(cfg):
         print("Make sure your car is sitting at the origin of the path.")
         print("View web page and refresh. You should see your path.")
         print("Hit 'select' twice to change to ai drive mode.")
+        print("You can press the X button (e-stop) to stop the car at any time.")
         print("Delete file", cfg.PATH_FILENAME, "and re-start")
         print("to record a new path.")
         print("###############################################################################")
+        carcolor = "blue"
+        loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = carcolor)
+        V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
     else:
         print("###############################################################################")
@@ -237,12 +268,17 @@ def drive(cfg):
         print("Complete one circuit of your course.")
         print("When you have exactly looped, or just shy of the ")
         print("loop, then save the path (press %s)." % cfg.SAVE_PATH_BTN)
-        print("Close this process with Ctrl+C.")
-        print("Place car exactly at the start.")
+        print("You can also erase a path with the Triangle button.")
+        print("When you're done, close this process with Ctrl+C.")
+        print("Place car exactly at the start. ")
         print("Then restart the car with 'python manage drive'.")
         print("It will reload the path and you will be ready to  ")
         print("follow the path using  'select' to change to ai drive mode.")
+        print("You can also press the Square button to reset the origin")
         print("###############################################################################")
+        carcolor = 'green'
+        loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = carcolor)
+        V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'])
 
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
         max_loop_count=cfg.MAX_LOOPS)

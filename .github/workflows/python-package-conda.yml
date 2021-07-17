@@ -1,0 +1,38 @@
+name: Python package and test
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+
+jobs:
+  checkout-test:
+    name: set up python 3.7
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            ENV_FILE: install/envs/mac.yml
+          - os: ubuntu-latest
+            ENV_FILE: install/envs/ubuntu.yml
+      fail-fast: false
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          python-version: 3.7
+          activate-environment: donkey
+          environment-file: ${{matrix.ENV_FILE}}
+          auto-activate-base: false
+          channels: conda-forge, pytorch
+      - run: |
+          conda info
+          conda list
+          echo Environment file ${{matrix.ENV_FILE}}
+          pip install -e .[pc]
+          pytest

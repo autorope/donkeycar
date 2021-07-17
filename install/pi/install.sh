@@ -40,8 +40,8 @@ source ~/env/bin/activate
 #make sure the virtual environment is active
 source ~/env/bin/activate
 
-# install pandas and numpy
+# install pandas and numpy and Adafruit CircuitPython
 pip install pandas #also installs numpy
-
+pip install adafruit-circuitpython-lis3dh
 
 pip install tensorflow==1.9
