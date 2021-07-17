@@ -1,6 +1,7 @@
 import os
 
 from setuptools import find_packages, setup
+from donkeycar import __version__
 
 
 # include the non python files
@@ -24,7 +25,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version='4.2.0',
+      version=__version__,
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
