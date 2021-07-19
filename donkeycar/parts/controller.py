@@ -346,6 +346,44 @@ class JoystickCreator(Joystick):
 
         return button, button_state, axis, axis_val
 
+class PS3JoystickSixAd(Joystick):
+    '''
+    An interface to a physical PS3 joystick available at /dev/input/js0
+    Contains mapping that worked for Jetson Nano using sixad for PS3 controller's connection 
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3JoystickSixAd, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x03 : 'right_stick_vert',
+        }
+
+        self.button_names = {
+            0x120 : 'select',
+            0x123 : 'start',
+            0x130 : 'PS',
+
+            0x12a : 'L1',
+            0x12b : 'R1',
+            0x128 : 'L2',
+            0x129 : 'R2',
+            0x121 : 'L3',
+            0x122 : 'R3',
+
+            0x12c : "triangle", 
+            0x12d : "circle",
+            0x12e : "cross",
+            0x12f : 'square',
+
+            0x124 : 'dpad_up',
+            0x126 : 'dpad_down',
+            0x127 : 'dpad_left',
+            0x125 : 'dpad_right',
+        }
+
 
 class PS3JoystickOld(Joystick):
     '''
