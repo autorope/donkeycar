@@ -50,7 +50,9 @@ setup(name='donkeycar',
           'progress',
           'typing_extensions',
           'pyfiglet',
-          'psutil'
+          'psutil',
+          'requests_toolbelt', 
+          'netifaces'
       ],
       extras_require={
           'pi': [

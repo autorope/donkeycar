@@ -33,6 +33,9 @@ dependencies:
   - psutil
   - kivy=2.0.0
   - plotly
+  - requests
+  - requests_toolbelt
+  - netifaces
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git
