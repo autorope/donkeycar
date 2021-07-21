@@ -52,6 +52,7 @@ class MakeMovie(object):
                 parser.print_help()
                 return
 
+        self.model_type = args.type
         self.tub = Tub(args.tub)
 
         start = args.start
@@ -73,7 +74,7 @@ class MakeMovie(object):
             self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
             if args.salient:
-                self.do_salient = self.init_salient(self.keras_part.model)
+                self.do_salient = self.init_salient(self.keras_part.interpreter.model)
 
         print('making movie', args.out, 'from', num_frames, 'images')
         clip = mpy.VideoClip(self.make_frame, duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
@@ -95,16 +96,16 @@ class MakeMovie(object):
 
         cv2.line(img, p1, p11, color, 2)
 
-    def draw_user_input(self, record, img):
+    def draw_user_input(self, record, img, img_drawon):
         """
         Draw the user input as a green line on the image
         """
         user_angle = float(record["user/angle"])
         user_throttle = float(record["user/throttle"])
         green = (0, 255, 0)
-        self.draw_line_into_image(user_angle, user_throttle, False, img, green)
-          
-    def draw_model_prediction(self, img):
+        self.draw_line_into_image(user_angle, user_throttle, False, img_drawon, green)
+
+    def draw_model_prediction(self, img, img_drawon):
         """
         query the model for it's prediction, draw the predictions
         as a blue line on the image
@@ -129,23 +130,19 @@ class MakeMovie(object):
 
         blue = (0, 0, 255)
         pilot_angle, pilot_throttle = self.keras_part.run(img)
-        self.draw_line_into_image(pilot_angle, pilot_throttle, True, img, blue)
+        self.draw_line_into_image(pilot_angle, pilot_throttle, True, img_drawon, blue)
 
-    def draw_steering_distribution(self, img):
+    def draw_steering_distribution(self, img, img_drawon):
         """
         query the model for it's prediction, draw the distribution of
-        steering choices
+        steering choices, only for model type of Keras Categorical
         """
         from donkeycar.parts.keras import KerasCategorical
 
         if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
-            return
-
-        import cv2
-
+            return        
         pred_img = normalize_image(img)
-        pred_img = pred_img.reshape((1,) + pred_img.shape)
-        angle_binned, _ = self.keras_part.model.interpreter.predict(pred_img)
+        angle_binned, _ = self.keras_part.interpreter.predict(pred_img, other_arr=None)
 
         x = 4
         dx = 4
@@ -153,32 +150,34 @@ class MakeMovie(object):
         iArgMax = np.argmax(angle_binned)
         for i in range(15):
             p1 = (x, y)
-            p2 = (x, y - int(angle_binned[0][i] * 100.0))
+            p2 = (x, y - int(angle_binned[i] * 100.0))
             if i == iArgMax:
-                cv2.line(img, p1, p2, (255, 0, 0), 2)
+                cv2.line(img_drawon, p1, p2, (255, 0, 0), 2)
             else:
-                cv2.line(img, p1, p2, (200, 200, 200), 2)
+                cv2.line(img_drawon, p1, p2, (200, 200, 200), 2)
             x += dx
 
     def init_salient(self, model):
         # Utility to search for layer index by name. 
         # Alternatively we can specify this as -1 since it corresponds to the last layer.
-        first_output_name = None
+        output_name = []
+        layer_idx = []
         for i, layer in enumerate(model.layers):
-            if first_output_name is None and "dropout" not in layer.name.lower() and "out" in layer.name.lower():
-                first_output_name = layer.name
-                layer_idx = i
+            if "dropout" not in layer.name.lower() and "out" in layer.name.lower():
+                output_name.append(layer.name)
+                layer_idx.append(i)
 
-        if first_output_name is None:
+        if output_name is []:
             print("Failed to find the model layer named with 'out'. Skipping salient.")
             return False
 
         print("####################")
-        print("Visualizing activations on layer:", first_output_name)
+        print("Visualizing activations on layer:", output_name)
         print("####################")
         
         # ensure we have linear activation
-        model.layers[layer_idx].activation = activations.linear
+        for li in layer_idx:
+            model.layers[li].activation = activations.linear
         # build salient model and optimizer
         sal_model = utils.apply_modifications(model)
         self.sal_model = sal_model
@@ -187,13 +186,25 @@ class MakeMovie(object):
     def compute_visualisation_mask(self, img):
         img = img.reshape((1,) + img.shape)
         images = tf.Variable(img, dtype=float)
-        with tf.GradientTape() as tape:
-            pred = self.sal_model(images, training=False)
-            loss = 0
-            for p in pred:
-                loss = loss + p
-        grads = tape.gradient(loss, images)
-        grads = tf.math.abs(grads)
+
+        if self.model_type == 'linear':
+            with tf.GradientTape(persistent=True) as tape:
+                tape.watch(images)
+                pred_list = self.sal_model(images, training=False)
+        elif self.model_type == 'categorical':
+            with tf.GradientTape(persistent=True) as tape:
+                tape.watch(images)
+                pred = self.sal_model(images, training=False)
+                pred_list = []
+                for p in pred:
+                    maxindex = tf.math.argmax(p[0])
+                    pred_list.append(p[0][maxindex])
+                    
+        grads = 0
+        for p in pred_list:
+            grad = tape.gradient(p, images)
+            grads += tf.math.square(grad)
+        grads = tf.math.sqrt(grads)
 
         channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
         grads = np.sum(grads, axis=channel_idx)
@@ -204,7 +215,7 @@ class MakeMovie(object):
 
         alpha = 0.004
         beta = 1.0 - alpha
-        expected = self.keras_part.model.inputs[0].shape[1:]
+        expected = self.keras_part.interpreter.model.inputs[0].shape[1:]
         actual = img.shape
 
         # check input depth and convert to grey to match expected model input
@@ -232,16 +243,17 @@ class MakeMovie(object):
 
         rec = self.iterator.next()
         img_path = os.path.join(self.tub.images_base_path, rec['cam/image_array'])
-        image = img_to_arr(Image.open(img_path))
-
+        image_input = img_to_arr(Image.open(img_path))
+        image = image_input
+        
         if self.do_salient:
-            image = self.draw_salient(image)
+            image = self.draw_salient(image_input)
             image = cv2.normalize(src=image, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-
-        if self.user: self.draw_user_input(rec, image)
+        
+        if self.user: self.draw_user_input(rec, image_input, image)
         if self.keras_part is not None:
-            self.draw_model_prediction(image)
-            self.draw_steering_distribution(image)
+            self.draw_model_prediction(image_input, image)
+            self.draw_steering_distribution(image_input, image)
 
         if self.scale != 1:
             h, w, d = image.shape
