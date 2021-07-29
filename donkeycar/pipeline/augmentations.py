@@ -78,8 +78,8 @@ class ImageAugmentation:
     @classmethod
     def create(cls, aug_type: str, config: Config) -> iaa.meta.Augmenter:
         if aug_type == 'CROP':
-            return Augmentations.crop(left=config.ROI_CROP_TOP,
-                                      right=config.ROI_CROP_TOP,
+            return Augmentations.crop(left=config.ROI_CROP_LEFT,
+                                      right=config.ROI_CROP_RIGHT,
                                       bottom=config.ROI_CROP_BOTTOM,
                                       top=config.ROI_CROP_TOP)
         elif aug_type == 'TRAPEZE':
