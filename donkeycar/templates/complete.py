@@ -163,16 +163,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
 
-        # add lidar
-        if cfg.USE_LIDAR:
-            from donkeycar.parts.lidar import RPLidar
-            if cfg.LIDAR_TYPE == 'RP':
-                print("adding RP lidar part")
-                lidar = RPLidar(lower_limit = cfg.LIDAR_LOWER_LIMIT, upper_limit = cfg.LIDAR_UPPER_LIMIT)
-                V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
-            if cfg.LIDAR_TYPE == 'YD':
-                print("YD Lidar not yet supported")
-
+        
         # Donkey gym part will output position information if it is configured
         if cfg.DONKEY_GYM:
             if cfg.SIM_RECORD_LOCATION:
@@ -186,6 +177,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
+    # add lidar
+    if cfg.USE_LIDAR:
+        from donkeycar.parts.lidar import RPLidar
+        if cfg.LIDAR_TYPE == 'RP':
+            print("adding RP lidar part")
+            lidar = RPLidar(lower_limit = cfg.LIDAR_LOWER_LIMIT, upper_limit = cfg.LIDAR_UPPER_LIMIT)
+            V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
+        if cfg.LIDAR_TYPE == 'YD':
+            print("YD Lidar not yet supported")
+    
 #This web controller will create a web server that is capable
     #of managing steering, throttle, and modes, and more.
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
