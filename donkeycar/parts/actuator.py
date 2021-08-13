@@ -8,6 +8,7 @@ import time
 
 import donkeycar as dk
 
+import serial
         
 class PCA9685:
     ''' 
@@ -805,3 +806,107 @@ class ArdPWMThrottle:
         # stop vehicle
         self.run(0)
         self.running = False
+
+
+
+
+class Serial_Arduino_Controller(object):
+    def __init__(self,serialpath='/dev/serial0'):
+        self.sentcount = 0
+        self.lasttime = time.time() 
+        self.moving = True
+        try:
+            self.ser = serial.Serial(serialpath,115200)
+        except FileNotFoundError:
+            print("Serial connection has not been started.")
+            
+    def convert(self,throttle,angle):#both are -1 to 1
+        throttle = throttle * 100
+        angle = angle * 100
+        throttle+=200
+        angle+=200
+        return int(throttle), int(angle)
+
+    def send(self,newthrottle,newangle):#Write the data, formatted as a byte array, into a file which is really the rover over serial
+        arr = bytearray()
+        stx = bytes('\x02','utf-8')  # STX
+        etx = bytes('\x03','utf-8')  # ETX
+        strthrottle = str(newthrottle)
+        strangle = str(newangle)
+        #print(strthrottle, strangle)  
+        b = bytes(strangle, 'utf-8') + bytes(strthrottle,'utf-8')   # rover expect x(angle), y(throttle)
+        arr = stx + b + etx
+        try:
+            self.ser.write(arr)
+            self.ser.flush()
+        except: 
+            print("Serial error.")
+
+    def run(self, throttle, angle):    
+	# code to not send anything if throttle and angle are too low
+        if abs(throttle) < 2 or abs(angle) < 2:
+            newtime = time.time()
+            if newtime - self.lasttime < 0.05:
+                self.moving = False   
+        newthrot,newang = self.convert(throttle,angle)
+        if self.moving:
+            self.lasttime = newtime
+            self.send(newthrot,newang)
+            # print(f"Sent {newthrot},{newang}. Time delta is {newtime - self.lasttime}. Current time is {newtime}")
+        self.moving = True
+
+    def shutdown(self):
+        try:
+           self.ser.close()
+        except:
+           print('Tried to close serial connection, error.')
+
+class BT_Arduino_Controller(object):
+    def __init__(self,btpath='/dev/rfcomm0'):
+        self.sentcount = 0
+        self.lasttime = time.time() 
+        try:
+            self.fp = open(btpath,'wb')
+        except FileNotFoundError:
+            print("Bluetooth connection has not been started.")
+            
+    def convert(self,throttle,angle):#both are -1 to 1
+        throttle = throttle * 100
+        angle = angle * 100
+        throttle+=200
+        angle+=200
+        return int(throttle), int(angle)
+
+    def send(self,newthrottle,newangle):#Write the data, formatted as a byte array, into a file which is really the rover over BT
+        arr = bytearray()
+        stx = bytes('\x02','ascii')  # STX
+        etx = bytes('\x03','ascii')  # ETX
+        strthrottle = str(newthrottle)
+        strangle = str(newangle)
+        print(strthrottle, strangle)  
+        b = bytes(strangle, 'ascii') + bytes(strthrottle,'ascii')   # rover expect x(angle), y(throttle)
+        arr = stx + b + etx
+        try:
+            self.fp.write(arr)
+            self.fp.flush()
+        except FileNotFoundError:
+            print("File does not exist.")
+
+    def run(self, throttle, angle):    
+        newthrot,newang = self.convert(throttle,angle)
+        newtime = time.time()
+        if newtime - self.lasttime < 0.05 :
+            return
+        self.lasttime = newtime
+        self.send(newthrot,newang)
+        #print(f"Sent {newthrot},{newang}")
+
+    def shutdown(self):
+        try:
+           self.fp.close()
+        except:
+           print('Tried to shutdown, bluetooth connection already closed.')
+
+
+
+

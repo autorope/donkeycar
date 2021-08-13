@@ -11,7 +11,7 @@ Options:
     --js                    Use physical joystick.
     -f --file=<file>        A text file containing paths to tub files, one per line. Option may be used more than once.
     --meta=<key:value>      Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
-    --myconfig=filename     Specify myconfig file to use. 
+    --myconfig=filename     Specify myconfig file to use.
                             [default: myconfig.py]
 """
 import os
@@ -121,6 +121,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
               threaded=True)
+    elif cfg.CAMERA_TYPE == "L515":
+        from donkeycar.parts.realsensel515 import RealSensel515
+        cam = RealSensel515()
+        V.add(cam, inputs=[],
+                outputs=["cam/image_array", "cam/depth_array"],
+                threaded=True)
 
     else:
         if cfg.DONKEY_GYM:
@@ -130,7 +136,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         outputs = ['cam/image_array']
         threaded = True
         if cfg.DONKEY_GYM:
-            from donkeycar.parts.dgym import DonkeyGymEnv 
+            from donkeycar.parts.dgym import DonkeyGymEnv
             #rbx
             cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, delay=cfg.SIM_ARTIFICIAL_LATENCY)
             threaded = True
@@ -180,23 +186,23 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
             if cfg.SIM_RECORD_VELOCITY:
                 outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
-            
+
         V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
     #This web controller will create a web server that is capable
     #of managing steering, throttle, and modes, and more.
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-    
+
     V.add(ctr,
         inputs=['cam/image_array', 'tub/num_records'],
         outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
         threaded=True)
-        
+
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.CONTROLLER_TYPE == "MM1":
-            from donkeycar.parts.robohat import RoboHATController            
+            from donkeycar.parts.robohat import RoboHATController
             ctr = RoboHATController(cfg)
         elif "custom" == cfg.CONTROLLER_TYPE:
             #
@@ -219,8 +225,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
-        
-        V.add(ctr, 
+
+        V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
@@ -456,7 +462,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(kl, inputs=inputs,
               outputs=outputs,
               run_condition='run_pilot')
-    
+
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector import StopSignDetector
         V.add(StopSignDetector(cfg.STOP_SIGN_MIN_SCORE, cfg.STOP_SIGN_SHOW_BOUNDING_BOX), inputs=['cam/image_array', 'pilot/throttle'], outputs=['pilot/throttle', 'cam/image_array'])
@@ -592,22 +598,22 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
-        
+
     elif cfg.DRIVE_TRAIN_TYPE == "MM1":
         from donkeycar.parts.robohat import RoboHATDriver
         V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
-    
+
     elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
         from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PiGPIO_PWM
         steering_controller = PiGPIO_PWM(cfg.STEERING_PWM_PIN, freq=cfg.STEERING_PWM_FREQ, inverted=cfg.STEERING_PWM_INVERTED)
         steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
+                                        left_pulse=cfg.STEERING_LEFT_PWM,
                                         right_pulse=cfg.STEERING_RIGHT_PWM)
-        
+
         throttle_controller = PiGPIO_PWM(cfg.THROTTLE_PWM_PIN, freq=cfg.THROTTLE_PWM_FREQ, inverted=cfg.THROTTLE_PWM_INVERTED)
         throttle = PWMThrottle(controller=throttle_controller,
                                             max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                                             min_pulse=cfg.THROTTLE_REVERSE_PWM)
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(throttle, inputs=['throttle'], threaded=True)
@@ -653,13 +659,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     # rbx
     if cfg.DONKEY_GYM:
-        if cfg.SIM_RECORD_LOCATION:  
+        if cfg.SIM_RECORD_LOCATION:
             inputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
             types  += ['float', 'float', 'float', 'float', 'float']
-        if cfg.SIM_RECORD_GYROACCEL: 
+        if cfg.SIM_RECORD_GYROACCEL:
             inputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
             types  += ['float', 'float', 'float', 'float', 'float', 'float']
-        if cfg.SIM_RECORD_VELOCITY:  
+        if cfg.SIM_RECORD_VELOCITY:
             inputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
             types  += ['float', 'float', 'float']
 
