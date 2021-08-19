@@ -378,8 +378,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs = ['cam/image_array',
                   'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                   'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
-    elif cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array']
+
     else:
         inputs = ['cam/image_array']
 
@@ -470,7 +469,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             inputs = ['cam/image_array_trans'] + inputs[1:]
 
         V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
-    
+
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector \
             import StopSignDetector
