@@ -18,6 +18,30 @@ from PIL import Image, ImageDraw
 CLOCKWISE = 1
 COUNTER_CLOCKWISE = -1
 
+def limit_angle(angle):
+    """
+    make sure angle is 0 <= angle <= 360
+    """
+    while angle < 0:
+        angle += 360
+    while angle > 360:
+        angle -= 360
+    return angle
+
+def angle_in_bounds(angle, min_angle, max_angle):
+    """
+    Determine if an angle is between two other angles.
+    """
+    angle = angle
+    min_angle = min_angle
+    max_angle = max_angle
+    if min_angle <= max_angle:
+        return min_angle <= angle <= max_angle
+    else:
+        # If min_angle < max_angle then range crosses
+        # zero degrees, so break up test
+        # into two ranges
+        return (min_angle <= angle <= 360) or (max_angle >= angle >= 0)
 
 class RPLidar2(object):
     '''
@@ -131,7 +155,7 @@ class RPLidar2(object):
                     angle = (angle - self.forward_angle + 360.0) % 360.0
                 
                     # filter the measurement by angle and distance
-                    if angle >= self.min_angle and angle <= self.max_angle:
+                    if angle_in_bounds(angle, self.min_angle, self.max_angle):
                         if distance >= self.min_distance and distance <= self.max_distance:
                             #
                             # A measurement is a tuple of (angle, distance, time, scan, index).
