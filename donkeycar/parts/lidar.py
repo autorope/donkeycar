@@ -52,6 +52,10 @@ def angle_in_bounds(angle, min_angle, max_angle):
 class RPLidar2(object):
     '''
     Adapted from https://github.com/Ezward/rplidar
+    NOTES
+    - empirical measurements show
+      scan rate is 7 scans per second
+      and 1846 measurements per second.
     '''
     def __init__(self,
                  min_angle = 0.0, max_angle = 360.0,
@@ -59,6 +63,7 @@ class RPLidar2(object):
                  max_distance = sys.float_info.max,
                  forward_angle = 0.0,
                  angle_direction=CLOCKWISE,
+                 batch_size=int(1846 / 20),
                  debug=False):
         
         self.lidar = None
@@ -115,7 +120,7 @@ class RPLidar2(object):
             except serial.SerialException:
                 pass
         if not port_found:
-            raise Error("No RPLidar is connected.")
+            raise RuntimeError("No RPLidar is connected.")
 
         # initialize
         self.port = result[0]
@@ -123,98 +128,114 @@ class RPLidar2(object):
         self.lidar.clear_input()
         time.sleep(1)
 
+        self.measurement_count = 0  # number of measurements in the scan
+        self.measurement_index = 0  # index of next measurement in the scan
+        self.full_scan_count = 0
+        self.full_scan_index = 0
+        self.total_measurements = 0
+        self.iter_measurements = self.lidar.iter_measurements()
+        self.measurement_batch_size = batch_size
+
         self.running = True
 
-    def update(self):
-        measurement_count = 0  # number of measurements in the scan
-        measurement_index = 0  # index of next measurement in the scan
-        full_scan_count = 0
-        full_scan_index = 0
-
+    def poll(self):
         if self.running:
             try:
-                for new_scan, quality, angle, distance in self.lidar.iter_measurements():  # noqa
-                    if not self.running:
-                        break
+                #
+                # read one measurement
+                #
+                new_scan, quality, angle, distance = next(self.iter_measurements)  # noqa
                                         
-                    now = time.time()
+                now = time.time()
+                self.total_measurements += 1
 
-                    # check for start of new scan
-                    if new_scan:
-                        full_scan_count += 1
-                        full_scan_index = 0
-                        measurement_count = measurement_index  # this full scan
-                        measurement_index = 0   # start filling in next scan
-                        
-                    #
-                    # rplidar spins clockwise,
-                    # but we want angles to increase counter-clockwise
-                    #
-                    if self.spin_reverse:
-                        angle = (360.0 - (angle % 360.0)) % 360.0
+                # check for start of new scan
+                if new_scan:
+                    self.full_scan_count += 1
+                    self.full_scan_index = 0
+                    self.measurement_count = self.measurement_index  # this full scan
+                    self.measurement_index = 0   # start filling in next scan
                     
-                    # adjust so zero degrees is 'forward'
-                    angle = (angle - self.forward_angle + 360.0) % 360.0
+                #
+                # rplidar spins clockwise,
+                # but we want angles to increase counter-clockwise
+                #
+                if self.spin_reverse:
+                    angle = (360.0 - (angle % 360.0)) % 360.0
                 
-                    # filter the measurement by angle and distance
-                    if angle_in_bounds(angle, self.min_angle, self.max_angle):
-                        if distance >= self.min_distance and distance <= self.max_distance:
-                            #
-                            # A measurement is a tuple of
-                            #    (angle, distance, time, scan, index).
-                            #
-                            # distance = distance in millimeters as a float;
-                            #            zero indicates invalid measurement
-                            # angle: angle of measurement as a float
-                            # time: time in seconds as a float
-                            # scan:  full scan this measurement belongs to
-                            #        as an integer
-                            # index: index within full scan as an integer
-                            #
-                            # Note: The scan:index pair represents a natural key
-                            #       identifying the measurement. This driver
-                            #       maintains a circular buffer of measurements
-                            #       that represent the most recent 360 degrees
-                            #       of measurements.  This list may include
-                            #       measurements from the current full scan and
-                            #       from the previous full scan.  So if
-                            #       run_threaded() is called rapidly
-                            #       (faster than the scan rate of the lidar),
-                            #       then the returned scans will have some new
-                            #       values and some values that may have been
-                            #       seen in the previous scan.  The scan:index
-                            #       pair can be used to
-                            #       to 'diff' scans to see which measurements
-                            #       are are 'new' and which measurements are
-                            #       shared between scans.
-                            #
-                            #       The time at which the measurement was
-                            #       aquired is also included. In a moving
-                            #       vehicle older measurements are less
-                            #       relevant; the time field can be used to
-                            #       filter out older measurements or to
-                            #       visualize them differently (fading them out
-                            #       perhaps). It may also help when using a
-                            #       kinematic model to adjust for movement
-                            #       of the lidar when attached to a vehicle.
-                            #
-                            measurement = (distance, angle, now,
-                                           full_scan_count, full_scan_index)
-                            
-                            # grow buffer if necessary, otherwise overwrite
-                            if measurement_index >= len(self.measurements):
-                                self.measurements.append(measurement)
-                                measurement_count = measurement_index + 1
-                            else:
-                                self.measurements[measurement_index] = measurement  # noqa
-                            measurement_index += 1
-                            full_scan_index += 1
-                            
-                    time.sleep(0)  # yield time to other threads
-
+                # adjust so zero degrees is 'forward'
+                angle = (angle - self.forward_angle + 360.0) % 360.0
+            
+                # filter the measurement by angle and distance
+                if angle_in_bounds(angle, self.min_angle, self.max_angle):
+                    if distance >= self.min_distance and distance <= self.max_distance:
+                        #
+                        # A measurement is a tuple of
+                        #    (angle, distance, time, scan, index).
+                        #
+                        # distance = distance in millimeters as a float;
+                        #            zero indicates invalid measurement
+                        # angle: angle of measurement as a float
+                        # time: time in seconds as a float
+                        # scan:  full scan this measurement belongs to
+                        #        as an integer
+                        # index: index within full scan as an integer
+                        #
+                        # Note: The scan:index pair represents a natural key
+                        #       identifying the measurement. This driver
+                        #       maintains a circular buffer of measurements
+                        #       that represent the most recent 360 degrees
+                        #       of measurements.  This list may include
+                        #       measurements from the current full scan and
+                        #       from the previous full scan.  So if
+                        #       run_threaded() is called rapidly
+                        #       (faster than the scan rate of the lidar),
+                        #       then the returned scans will have some new
+                        #       values and some values that may have been
+                        #       seen in the previous scan.  The scan:index
+                        #       pair can be used to
+                        #       to 'diff' scans to see which measurements
+                        #       are are 'new' and which measurements are
+                        #       shared between scans.
+                        #
+                        #       The time at which the measurement was
+                        #       aquired is also included. In a moving
+                        #       vehicle older measurements are less
+                        #       relevant; the time field can be used to
+                        #       filter out older measurements or to
+                        #       visualize them differently (fading them out
+                        #       perhaps). It may also help when using a
+                        #       kinematic model to adjust for movement
+                        #       of the lidar when attached to a vehicle.
+                        #
+                        measurement = (distance, angle, now,
+                                        self.full_scan_count, self.full_scan_index)
+                        
+                        # grow buffer if necessary, otherwise overwrite
+                        if self.measurement_index >= len(self.measurements):
+                            self.measurements.append(measurement)
+                            self.measurement_count = self.measurement_index + 1
+                        else:
+                            self.measurements[self.measurement_index] = measurement  # noqa
+                        self.measurement_index += 1
+                        self.full_scan_index += 1
                             
             except serial.serialutil.SerialException:
-                logger.info('SerialException from Lidar when shutting down.')
+                logger.info('SerialException from RPLidar.')
+
+    def update(self):
+        start_time = time.time()
+        while self.running:
+            self.poll()
+            time.sleep(0)  # yield time to other threads
+        total_time = time.time() - start_time
+        scan_rate = self.full_scan_count / total_time
+        measurement_rate = self.total_measurements / total_time
+        logger.info("RPLidar total scan time = {time} seconds".format(time=total_time))
+        logger.info("RPLidar total scan count = {count} scans".format(count=self.full_scan_count))
+        logger.info("RPLidar total measurement count = {count} measurements".format(count=self.total_measurements))
+        logger.info("RPLidar rate = {rate} scans per second".format(rate=scan_rate))
+        logger.info("RPLidar rate = {rate} measurements per second".format(rate=measurement_rate))
 
     def run_threaded(self):
         if self.running:
@@ -222,6 +243,8 @@ class RPLidar2(object):
         return []
     
     def run(self):
+        for i in range(self.measurement_batch_size):
+            self.poll()
         return self.run_threaded()
 
     def shutdown(self):
@@ -268,7 +291,7 @@ class RPLidar(object):
             self.on = True
         else:
             logger.error("No RPLidar connected")
-            raise Error("No RPLidar connected")
+            raise RuntimeError("No RPLidar connected")
 
     def update(self):
         scans = self.lidar.iter_scans(550)
@@ -317,7 +340,7 @@ class YDLidar(object):
             self.gen = self.lidar.StartScanning()
         else:
             logger.error("Error connecting to YDLidar")
-            raise Error("Error connecting to YDLidar")
+            raise RuntimeError("Error connecting to YDLidar")
         self.on = True
 
 
@@ -334,7 +357,7 @@ class YDLidar(object):
             return gen
         else:
             logger.error("Error connecting to YDLidar")
-            raise Error("Error connecting to YDLidar")
+            raise RuntimeError("Error connecting to YDLidar")
         self.on = True
 
     def update(self, lidar, debug = False):
@@ -771,6 +794,7 @@ if __name__ == "__main__":
                         help="direction of increasing angles (1 is clockwise, -1 is counter-clockwise)")  # noqa
     parser.add_argument("-p", "--rotate-plot", type=float, default=0.0,
                         help="Angle in degrees to rotate plot on cartesian plane")  # noqa
+    parser.add_argument("-t", "--threaded", action='store_true', help = "run in threaded mode")
 
     # Read arguments from command line
     args = parser.parse_args()
@@ -825,7 +849,9 @@ if __name__ == "__main__":
             min_angle=args.min_angle, max_angle=args.max_angle,
             min_distance=args.min_distance, max_distance=args.max_distance,
             forward_angle=args.forward_angle,
-            angle_direction=args.angle_direction)
+            angle_direction=args.angle_direction,
+            batch_size=int(1846/args.rate)) # based on empirical measurements
+                                            # for A1M8-r6 model
         
         #
         # construct a lidar plotter
@@ -841,10 +867,11 @@ if __name__ == "__main__":
         # start the threaded part
         # and a threaded window to show plot
         #
-        lidar_thread = Thread(target=lidar.update, args=())
-        lidar_thread.start()
         cv2.namedWindow("lidar")
-        cv2.startWindowThread()
+        if args.threaded:
+            lidar_thread = Thread(target=lidar.update, args=())
+            lidar_thread.start()
+            cv2.startWindowThread()
         
         while scan_count < args.number:
             start_time = time.time()
@@ -853,13 +880,22 @@ if __name__ == "__main__":
             scan_count += 1
 
             # get most recent scan and plot it
-            measurements = lidar.run_threaded()
+            if args.threaded:
+                measurements = lidar.run_threaded()
+            else:
+                measurements = lidar.run()
+            
             img = plotter.run(measurements)
             
             # show the image in the window
             cv2img = convert_from_image_to_cv2(img)
             cv2.imshow("lidar", cv2img)
             
+            if not args.threaded:
+                key = cv2.waitKey(1) & 0xFF
+                if 27 == key or key == ord('q') or key == ord('Q'):
+                    break
+
             # yield time to background threads
             sleep_time = seconds_per_scan - (time.time() - start_time)
             if sleep_time > 0.0:
