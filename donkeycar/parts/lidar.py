@@ -1,10 +1,12 @@
 """
 Lidar
 """
-
+#
 # requies glob to be installed: "pip3 install glob2"
-# requires Adafruit RPLidar driver to be installed: pip install Adafruit_CircuitPython_RPLIDAR
-
+# requires Adafruit RPLidar driver to be installed:
+#   pip install Adafruit_CircuitPython_RPLIDAR
+#
+import logging
 import sys
 import time
 import math
@@ -14,9 +16,11 @@ import numpy as np
 from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img
 from PIL import Image, ImageDraw
 
+logger = logging.getLogger("donkeycar.parts.lidar")
 
 CLOCKWISE = 1
 COUNTER_CLOCKWISE = -1
+
 
 def limit_angle(angle):
     """
@@ -27,6 +31,7 @@ def limit_angle(angle):
     while angle > 360:
         angle -= 360
     return angle
+
 
 def angle_in_bounds(angle, min_angle, max_angle):
     """
@@ -43,13 +48,15 @@ def angle_in_bounds(angle, min_angle, max_angle):
         # into two ranges
         return (min_angle <= angle <= 360) or (max_angle >= angle >= 0)
 
+
 class RPLidar2(object):
     '''
     Adapted from https://github.com/Ezward/rplidar
     '''
     def __init__(self,
                  min_angle = 0.0, max_angle = 360.0,
-                 min_distance = sys.float_info.min, max_distance = sys.float_info.max,
+                 min_distance = sys.float_info.min,
+                 max_distance = sys.float_info.max,
                  forward_angle = 0.0,
                  angle_direction=CLOCKWISE,
                  debug=False):
@@ -57,7 +64,6 @@ class RPLidar2(object):
         self.lidar = None
         self.port = None
         self.on = False
-        
 
         help = []
         if min_distance < 0:
@@ -75,15 +81,13 @@ class RPLidar2(object):
         if forward_angle < 0 or forward_angle > 360:
             help.append("forward_angle must be 0 <= forward_angle <= 360")
             
-        if angle_direction != CLOCKWISE and angle_direction != COUNTER_CLOCKWISE:
-            help.append("angle-direction must be 1 (clockwise) or -1 (counter-clockwise)")
+        if angle_direction != CLOCKWISE and \
+           angle_direction != COUNTER_CLOCKWISE:
+            help.append("angle-direction must be 1 (clockwise) or -1 (counter-clockwise)")  # noqa
 
         if len(help) > 0:
             msg = "Could not start RPLidar; bad parameters passed to constructor"
-            print(msg)
-            for h in help:
-                print("  " + h)
-            raise ValueError(msg)
+            raise ValueError(msg + ": ".join(help))
 
         self.min_angle = min_angle
         self.max_angle = max_angle
@@ -91,7 +95,7 @@ class RPLidar2(object):
         self.max_distance = max_distance
         self.forward_angle = forward_angle
         self.spin_reverse = (args.angle_direction != CLOCKWISE)
-        self.measurements = [] #a list of (angle, distance, time, scan, index) measurements
+        self.measurements = [] # list of (distance, angle, time, scan, index) 
 
         from adafruit_rplidar import RPLidar
         import glob
@@ -111,17 +115,13 @@ class RPLidar2(object):
             except serial.SerialException:
                 pass
         if not port_found:
-            print("No RPLidar is connected.")
             raise Error("No RPLidar is connected.")
-        
+
         # initialize
         self.port = result[0]
         self.lidar = RPLidar(None, self.port, timeout=3)
         self.lidar.clear_input()
         time.sleep(1)
-        
-        print(self.lidar.info)
-        print(self.lidar.health)
 
         self.running = True
 
@@ -133,7 +133,7 @@ class RPLidar2(object):
 
         if self.running:
             try:
-                for new_scan, quality, angle, distance in self.lidar.iter_measurements():
+                for new_scan, quality, angle, distance in self.lidar.iter_measurements():  # noqa
                     if not self.running:
                         break
                                         
@@ -143,13 +143,15 @@ class RPLidar2(object):
                     if new_scan:
                         full_scan_count += 1
                         full_scan_index = 0
-                        measurement_count = measurement_index  # number of points in this full scan
+                        measurement_count = measurement_index  # this full scan
                         measurement_index = 0   # start filling in next scan
                         
-                    # rplidar spins clockwise, but we want angles to increase counter-clockwise
+                    #
+                    # rplidar spins clockwise,
+                    # but we want angles to increase counter-clockwise
+                    #
                     if self.spin_reverse:
                         angle = (360.0 - (angle % 360.0)) % 360.0
-                        pass
                     
                     # adjust so zero degrees is 'forward'
                     angle = (angle - self.forward_angle + 360.0) % 360.0
@@ -158,40 +160,53 @@ class RPLidar2(object):
                     if angle_in_bounds(angle, self.min_angle, self.max_angle):
                         if distance >= self.min_distance and distance <= self.max_distance:
                             #
-                            # A measurement is a tuple of (angle, distance, time, scan, index).
+                            # A measurement is a tuple of
+                            #    (angle, distance, time, scan, index).
                             #
-                            # distance = distance in millimeters as a float; zero indicates invalid measurement
+                            # distance = distance in millimeters as a float;
+                            #            zero indicates invalid measurement
                             # angle: angle of measurement as a float
                             # time: time in seconds as a float
-                            # scan:  full scan this measurement belongs to as an integer
+                            # scan:  full scan this measurement belongs to
+                            #        as an integer
                             # index: index within full scan as an integer
                             #
-                            # Note: The scan:index pair represents a natural key identifying the
-                            #       measurement. This driver maintains a circular buffer of measurements
-                            #       that represent the most recent 360 degrees of measurements.  This
-                            #       list may include measurements from the current full scan and from
-                            #       the previous full scan.  So if run_threaded() is called rapidly
-                            #       (faster than the scan rate of the lidar), then the returned scans
-                            #       will have some new values and some values that may have been
-                            #       seen in the previous scan.  The scan:index pair can be used to
-                            #       to 'diff' scans to see which measurements are are 'new' and
-                            #       which measurements are shared between scans.
+                            # Note: The scan:index pair represents a natural key
+                            #       identifying the measurement. This driver
+                            #       maintains a circular buffer of measurements
+                            #       that represent the most recent 360 degrees
+                            #       of measurements.  This list may include
+                            #       measurements from the current full scan and
+                            #       from the previous full scan.  So if
+                            #       run_threaded() is called rapidly
+                            #       (faster than the scan rate of the lidar),
+                            #       then the returned scans will have some new
+                            #       values and some values that may have been
+                            #       seen in the previous scan.  The scan:index
+                            #       pair can be used to
+                            #       to 'diff' scans to see which measurements
+                            #       are are 'new' and which measurements are
+                            #       shared between scans.
                             #
-                            #       The time at which the measurement was aquired is also included.
-                            #       In a moving vehicle older measurements are less relevant; the
-                            #       time field can be used to filter out older measurements or to
-                            #       visualize them differently (fading them out perhaps). It may
-                            #       also help when using a kinematic model to adjust for movement
+                            #       The time at which the measurement was
+                            #       aquired is also included. In a moving
+                            #       vehicle older measurements are less
+                            #       relevant; the time field can be used to
+                            #       filter out older measurements or to
+                            #       visualize them differently (fading them out
+                            #       perhaps). It may also help when using a
+                            #       kinematic model to adjust for movement
                             #       of the lidar when attached to a vehicle.
                             #
-                            measurement = (distance, angle, now, full_scan_count, full_scan_index)
+                            measurement = (distance, angle, now,
+                                           full_scan_count, full_scan_index)
                             
                             # grow buffer if necessary, otherwise overwrite
                             if measurement_index >= len(self.measurements):
                                 self.measurements.append(measurement)
                                 measurement_count = measurement_index + 1
                             else:
-                                self.measurements[measurement_index] = measurement
+                                self.measurements[measurement_index] = measurement  # noqa
                             measurement_index += 1
                             full_scan_index += 1
                             
@@ -199,7 +214,7 @@ class RPLidar2(object):
 
                             
             except serial.serialutil.SerialException:
-                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
+                logger.info('SerialException from Lidar when shutting down.')
 
     def run_threaded(self):
         if self.running:
@@ -251,12 +266,9 @@ class RPLidar(object):
             self.lidar.clear_input()
             time.sleep(1)
             self.on = True
-            #print(self.lidar.get_info())
-            #print(self.lidar.get_health())
         else:
-            print("No Lidar found")
-
-
+            logger.error("No RPLidar connected")
+            raise Error("No RPLidar connected")
 
     def update(self):
         scans = self.lidar.iter_scans(550)
@@ -266,7 +278,7 @@ class RPLidar(object):
                     self.distances = [item[2] for item in scan]
                     self.angles = [item[1] for item in scan]
             except serial.serialutil.SerialException:
-                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
+                logger.error('SerialException from Lidar')
 
     def run_threaded(self):
         sorted_distances = []
@@ -282,13 +294,13 @@ class RPLidar(object):
                 sorted_distances = np.argsort(filter_dist) # sorts distances based on angle indexes
         return sorted_distances
 
-
     def shutdown(self):
         self.on = False
         time.sleep(2)
         self.lidar.stop()
         self.lidar.stop_motor()
         self.lidar.disconnect()
+
 
 class YDLidar(object):
     '''
@@ -301,29 +313,29 @@ class YDLidar(object):
         self.angles = [] # a list of angles corresponding to dist meas above
         self.lidar = PyLidar3.YdLidarX4(port)
         if(self.lidar.Connect()):
-            print(self.lidar.GetDeviceInfo())
+            logger.debug(self.lidar.GetDeviceInfo())
             self.gen = self.lidar.StartScanning()
         else:
-            print("Error connecting to lidar")
+            logger.error("Error connecting to YDLidar")
+            raise Error("Error connecting to YDLidar")
         self.on = True
 
 
     def init(self, port='/dev/ttyUSB0'):
         import PyLidar3
-        print("Starting lidar...")
+        logger.debug("Starting lidar...")
         self.port = port
         self.distances = [] #a list of distance measurements
         self.angles = [] # a list of angles corresponding to dist meas above
         self.lidar = PyLidar3.YdLidarX4(port)
         if(self.lidar.Connect()):
-            print(self.lidar.GetDeviceInfo())
+            logger.debug(self.lidar.GetDeviceInfo())
             gen = self.lidar.StartScanning()
             return gen
         else:
-            print("Error connecting to lidar")
+            logger.error("Error connecting to YDLidar")
+            raise Error("Error connecting to YDLidar")
         self.on = True
-        #print(self.lidar.get_info())
-        #print(self.lidar.get_health())
 
     def update(self, lidar, debug = False):
         while self.on:
@@ -336,7 +348,7 @@ class YDLidar(object):
                 if debug:
                     return self.distances, self.angles
             except serial.serialutil.SerialException:
-                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
+                logger.error('SerialException from Lidar.')
 
     def run_threaded(self):
         return self.distances, self.angles
@@ -367,7 +379,6 @@ class LidarPlot(object):
         else:
             self.plot_fn = self.plot_line
             
-
     def plot_line(self, img, dist, theta, max_dist, draw):
         '''
         scale dist so that max_dist is edge of img (mm)
@@ -407,7 +418,8 @@ class LidarPlot(object):
         ey = int(math.sin(theta) * (dist + 2 * self.rad) + center[1])
         fill = 128
 
-        draw.ellipse((min(sx, ex), min(sy, ey), max(sx, ex), max(sy, ey)), fill=(fill, fill, fill))
+        draw.ellipse((min(sx, ex), min(sy, ey), max(sx, ex), max(sy, ey)),
+                     fill=(fill, fill, fill))
 
     def plot_scan(self, img, distances, angles, max_dist, draw):
         for dist, angle in zip(distances, angles):
@@ -415,7 +427,8 @@ class LidarPlot(object):
             
     def run(self, distances, angles):
         '''
-        takes two lists of equal length, one of distance values, the other of angles corresponding to the dist meas 
+        takes two lists of equal length, one of distance values,
+        the other of angles corresponding to the dist meas 
         '''
         self.frame = Image.new('RGB', self.resolution, (255, 255, 255))
         draw = ImageDraw.Draw(self.frame)
@@ -426,7 +439,9 @@ class LidarPlot(object):
         pass
 
 
-def mark_line(draw_context, cx, cy, distance_px, theta_degrees, mark_color, mark_px):
+def mark_line(draw_context, cx, cy,
+              distance_px, theta_degrees,
+              mark_color, mark_px):
     theta = np.radians(theta_degrees)
     sx = cx + math.cos(theta) * distance_px
     sy = cy - math.sin(theta) * distance_px
@@ -435,11 +450,15 @@ def mark_line(draw_context, cx, cy, distance_px, theta_degrees, mark_color, mark
     draw_context.line((sx, sy, ex, ey), fill=mark_color, width=1)
 
 
-def mark_circle(draw_context, cx, cy, distance_px, theta_degrees, mark_color, mark_px):
+def mark_circle(draw_context, cx, cy,
+                distance_px, theta_degrees,
+                mark_color, mark_px):
     theta = np.radians(theta_degrees)
     sx = int(cx + math.cos(theta) * (distance_px + mark_px))
     sy = int(cy - math.sin(theta) * (distance_px + mark_px))
-    draw_context.ellipse((sx - mark_px, sy - mark_px, sx + mark_px, sy + mark_px), fill=mark_color)
+    draw_context.ellipse(
+        (sx - mark_px, sy - mark_px, sx + mark_px, sy + mark_px),
+        fill=mark_color)
 
 
 def plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
@@ -452,13 +471,16 @@ def plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
     draw_context: PIL draw context
     bounds: tuple (left, top, right, bottom) indicating bounds within which the
             plot should be drawn.
-    mark_fn: mark drawing function func(draw_context, cx, cy, distance, theta_degrees, mark_px)
+    mark_fn: mark drawing function
+             func(draw_context, cx, cy, distance, theta_degrees, mark_px)
     mark_color: PIL color; scalar for monochrome, RGB tuplet for color.
     mark_px: size of mark in pixels
     distance: distance in mm
     theta: angle in degrees
-    max_distance: largest distance that we will plot, outside of this bound will be clipped
-    angle_direction: direction in which angles increase; CLOCKWISE or COUNTER_CLOCKWISE
+    max_distance: largest distance that we will plot,
+                  outside of this bound will be clipped
+    angle_direction: direction in which angles increase;
+                     CLOCKWISE or COUNTER_CLOCKWISE
     rotate_plot: degrees to rotate the plot (zero degrees is on positive x axis)
     '''
 
@@ -478,7 +500,7 @@ def plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
         
     mark_fn(draw_context, cx, cy, distance_px, theta, mark_color, mark_px)
 
-        
+
 def plot_polar_points(draw_context, bounds, mark_fn, mark_color, mark_px,
                     measurements, max_distance,
                     angle_direction=COUNTER_CLOCKWISE, rotate_plot=0):
@@ -489,11 +511,13 @@ def plot_polar_points(draw_context, bounds, mark_fn, mark_color, mark_px,
     draw_context: PIL draw context
     bounds: tuple (left, top, right, bottom) indicating bounds within which the
             plot should be drawn.
-    mark_fn: function to draw point func(draw_context, cx, cy, distance_px, theta_degrees, mark_px)
+    mark_fn: function to draw point
+             func(draw_context, cx, cy, distance_px, theta_degrees, mark_px)
     mark_color: PIL color; scalar for monochrome, RGB tuplet for color.
     mark_px: size of mark in pixels
     measurements: list of polar coordinates as (distance, angle) tuples
-    max_distance: largest distance that we will plot, outside of this bound will be clipped
+    max_distance: largest distance that we will plot,
+                  outside of this bound will be clipped
     angle_direction: direction of increasing angles in the data;
                      CLOCKWISE or COUNTER_CLOCKWISE
     rotate_plot: angle in positive degrees to rotate the measurement mark.
@@ -542,7 +566,10 @@ def plot_polar_bounds(draw_context, bounds, color,
     theta = np.radians(theta)
     sx = cx + math.cos(theta) * max_pixel
     sy = cy - math.sin(theta) * max_pixel
-    draw_context.ellipse((cx - max_pixel, cy - max_pixel, cx + max_pixel, cy + max_pixel), outline=color)
+    draw_context.ellipse(
+        (cx - max_pixel, cy - max_pixel, cx + max_pixel, cy + max_pixel),
+        outline=color)
+
 
 def plot_polar_angle(draw_context, bounds, color, theta,
                      angle_direction=COUNTER_CLOCKWISE, rotate_plot=0):
@@ -605,7 +632,7 @@ class LidarPlot2(object):
                  plot_type=PLOT_TYPE_CIRCLE,
                  mark_px=3,
                  max_dist=4000, #mm
-                 angle_direction=COUNTER_CLOCKWISE, # direction of increasing angles in the data
+                 angle_direction=COUNTER_CLOCKWISE, 
                  rotate_plot=0,
                  background_color=(224, 224, 224),
                  border_color=(128, 128, 128),
@@ -641,13 +668,17 @@ class LidarPlot2(object):
         
         
         # bounding perimeter and zero heading
-        plot_polar_bounds(draw, bounds, self.border_color, self.angle_direction, self.rotate_plot)
-        plot_polar_angle(draw, bounds, self.border_color, 0, self.angle_direction, self.rotate_plot)
+        plot_polar_bounds(draw, bounds, self.border_color,
+                          self.angle_direction, self.rotate_plot)
+        plot_polar_angle(draw, bounds, self.border_color, 0,
+                         self.angle_direction, self.rotate_plot)
         
         # data points
-        plot_polar_points(draw, bounds, self.mark_fn, self.point_color, self.mark_px,
-                          [(distance, angle) for distance, angle, _, _, _ in measurements],
-                          self.max_distance, self.angle_direction, self.rotate_plot)
+        plot_polar_points(
+            draw, bounds, self.mark_fn, self.point_color, self.mark_px,
+            [(distance, angle) for distance, angle, _, _, _ in measurements],
+            self.max_distance, self.angle_direction, self.rotate_plot)
+        
         return self.frame
 
     def shutdown(self):
@@ -662,9 +693,12 @@ class BreezySLAM(object):
         from breezyslam.algorithms import RMHC_SLAM
         from breezyslam.sensors import Laser
 
-        laser_model = Laser(scan_size=360, scan_rate_hz=10., detection_angle_degrees=360, distance_no_detection_mm=12000)
+        laser_model = Laser(scan_size=360, scan_rate_hz=10.,
+                            detection_angle_degrees=360,
+                            distance_no_detection_mm=12000)
         MAP_QUALITY=5
-        self.slam = RMHC_SLAM(laser_model, MAP_SIZE_PIXELS, MAP_SIZE_METERS, MAP_QUALITY)
+        self.slam = RMHC_SLAM(laser_model,
+                              MAP_SIZE_PIXELS, MAP_SIZE_METERS, MAP_QUALITY)
     
     def run(self, distances, angles, map_bytes):
         
@@ -674,12 +708,10 @@ class BreezySLAM(object):
         if map_bytes is not None:
             self.slam.getmap(map_bytes)
 
-        #print('x', x, 'y', y, 'theta', norm_deg(theta))
         return x, y, deg2rad(norm_deg(theta))
 
     def shutdown(self):
         pass
-
 
 
 class BreezyMap(object):
@@ -721,15 +753,24 @@ if __name__ == "__main__":
     
     # parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("-r", "--rate", type=float, default=20, help = "Number of scans per second")
-    parser.add_argument("-n", "--number", type=int, default=40, help = "Number of scans to collect")
-    parser.add_argument("-a", "--min-angle", type=float, default=0, help="Minimum angle in degress (inclusive) to save")
-    parser.add_argument("-A", "--max-angle", type=float, default=360, help="Maximum angle in degrees (inclusive) to save")
-    parser.add_argument("-d", "--min-distance", type=float, default=sys.float_info.min, help="Minimum distance (inclusive) to save")
-    parser.add_argument("-D", "--max-distance", type=float, default=4000, help="Maximum distance (inclusive) to save")
-    parser.add_argument("-f", "--forward-angle", type=float, default=0.0, help="Forward angle - the angle facing 'forward'")
-    parser.add_argument("-s", "--angle-direction", type=int, default=COUNTER_CLOCKWISE, help="direction of increasing angles (1 is clockwise, -1 is counter-clockwise)")
-    parser.add_argument("-p", "--rotate-plot", type=float, default=0.0, help="Angle in degrees to rotate plot on cartesian plane")
+    parser.add_argument("-r", "--rate", type=float, default=20,
+                        help = "Number of scans per second")
+    parser.add_argument("-n", "--number", type=int, default=40,
+                        help = "Number of scans to collect")
+    parser.add_argument("-a", "--min-angle", type=float, default=0,
+                        help="Minimum angle in degress (inclusive) to save")
+    parser.add_argument("-A", "--max-angle", type=float, default=360,
+                        help="Maximum angle in degrees (inclusive) to save")
+    parser.add_argument("-d", "--min-distance", type=float, default=sys.float_info.min,  # noqa
+                        help="Minimum distance (inclusive) to save")
+    parser.add_argument("-D", "--max-distance", type=float, default=4000,
+                        help="Maximum distance (inclusive) to save")
+    parser.add_argument("-f", "--forward-angle", type=float, default=0.0,
+                        help="Forward angle - the angle facing 'forward'")
+    parser.add_argument("-s", "--angle-direction", type=int, default=COUNTER_CLOCKWISE,  # noqa
+                        help="direction of increasing angles (1 is clockwise, -1 is counter-clockwise)")  # noqa
+    parser.add_argument("-p", "--rotate-plot", type=float, default=0.0,
+                        help="Angle in degrees to rotate plot on cartesian plane")  # noqa
 
     # Read arguments from command line
     args = parser.parse_args()
@@ -756,13 +797,13 @@ if __name__ == "__main__":
     if args.forward_angle < 0 or args.forward_angle > 360:
         help.append("-f/--forward-angle must be 0 <= forward-angle <= 360")
         
-    if args.angle_direction != CLOCKWISE and args.angle_direction != COUNTER_CLOCKWISE:
-        help.append("-s/--angle-direction must be 1 (clockwise) or -1 (counter-clockwise)")
+    if args.angle_direction != CLOCKWISE and \
+       args.angle_direction != COUNTER_CLOCKWISE:
+        help.append("-s/--angle-direction must be 1 (clockwise) or -1 (counter-clockwise)")  # noqa
         
     if args.rotate_plot < 0 or args.rotate_plot > 360:
         help.append("-p/--rotate-plot must be 0 <= min-angle <= 360")
         
-
     if len(help) > 0:
         parser.print_help()
         for h in help:
@@ -810,7 +851,7 @@ if __name__ == "__main__":
 
             # emit the scan
             scan_count += 1
-            
+
             # get most recent scan and plot it
             measurements = lidar.run_threaded()
             img = plotter.run(measurements)
@@ -825,7 +866,7 @@ if __name__ == "__main__":
                 time.sleep(sleep_time)
             else:
                 time.sleep(0)  # yield time to other threads
-                                
+
     except KeyboardInterrupt:
         print('Stopping early.')
     except Exception as e:
@@ -838,4 +879,3 @@ if __name__ == "__main__":
             cv2.destroyAllWindows()
         if lidar_thread is not None:
             lidar_thread.join()  # wait for thread to end
-
