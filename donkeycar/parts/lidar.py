@@ -136,8 +136,8 @@ class RPLidar2(object):
                             #
                             # A measurement is a tuple of (angle, distance, time, scan, index).
                             #
-                            # angle: angle of measurement as a float
                             # distance = distance in millimeters as a float; zero indicates invalid measurement
+                            # angle: angle of measurement as a float
                             # time: time in seconds as a float
                             # scan:  full scan this measurement belongs to as an integer
                             # index: index within full scan as an integer
@@ -160,7 +160,7 @@ class RPLidar2(object):
                             #       also help when using a kinematic model to adjust for movement
                             #       of the lidar when attached to a vehicle.
                             #
-                            measurement = (angle, distance, now, full_scan_count, full_scan_index)
+                            measurement = (distance, angle, now, full_scan_count, full_scan_index)
                             
                             # grow buffer if necessary, otherwise overwrite
                             if measurement_index >= len(self.measurements):
@@ -331,9 +331,9 @@ class LidarPlot(object):
     PLOT_TYPE_LINE = 0
     PLOT_TYPE_CIRC = 1
     def __init__(self, resolution=(500,500),
-                 max_dist=1000, #mm
-                 radius_plot=3,
-                 plot_type=PLOT_TYPE_CIRC):
+        max_dist=1000, #mm
+        radius_plot=3,
+        plot_type=PLOT_TYPE_CIRC):
         self.frame = Image.new('RGB', resolution)
         self.max_dist = max_dist
         self.rad = radius_plot
@@ -401,109 +401,229 @@ class LidarPlot(object):
     def shutdown(self):
         pass
 
+
+def mark_line(draw_context, cx, cy, distance_px, theta_degrees, mark_color, mark_px):
+    theta = np.radians(theta_degrees)
+    sx = cx + math.cos(theta) * distance_px
+    sy = cy - math.sin(theta) * distance_px
+    ex = cx + math.cos(theta) * (distance_px + mark_px)
+    ey = cy - math.sin(theta) * (distance_px + mark_px)
+    draw_context.line((sx, sy, ex, ey), fill=mark_color, width=1)
+
+
+def mark_circle(draw_context, cx, cy, distance_px, theta_degrees, mark_color, mark_px):
+    theta = np.radians(theta_degrees)
+    sx = int(cx + math.cos(theta) * (distance_px + mark_px))
+    sy = int(cy - math.sin(theta) * (distance_px + mark_px))
+    draw_context.ellipse((sx - mark_px, sy - mark_px, sx + mark_px, sy + mark_px), fill=mark_color)
+
+
+def plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
+                     distance, theta, max_distance,
+                     angle_direction=COUNTER_CLOCKWISE, rotate_plot=0):
+    '''
+    draw a 2d polar point to the given PIL image
+    assuming the polar origin is at the center of bounding box
+    
+    draw_context: PIL draw context
+    bounds: tuple (left, top, right, bottom) indicating bounds within which the
+            plot should be drawn.
+    mark_fn: mark drawing function func(draw_context, cx, cy, distance, theta_degrees, mark_px)
+    mark_color: PIL color; scalar for monochrome, RGB tuplet for color.
+    mark_px: size of mark in pixels
+    distance: distance in mm
+    theta: angle in degrees
+    max_distance: largest distance that we will plot, outside of this bound will be clipped
+    angle_direction: direction in which angles increase; CLOCKWISE or COUNTER_CLOCKWISE
+    rotate_plot: degrees to rotate the plot (zero degrees is on positive x axis)
+    '''
+
+    if distance < 0 or distance > max_distance:
+        return  # don't print out of range pixels
+
+    left, top, right, bottom = bounds
+    cx = (left + right) / 2
+    cy = (top + bottom) / 2
+    max_pixel = min(cx, cy)
+    distance_px = distance / max_distance * max_pixel
+    
+    theta = (theta + rotate_plot) % 360.0
+        
+    if angle_direction != COUNTER_CLOCKWISE:
+        theta = (360.0 - (theta % 360.0)) % 360.0
+        
+    mark_fn(draw_context, cx, cy, distance_px, theta, mark_color, mark_px)
+
+        
+def plot_polar_points(draw_context, bounds, mark_fn, mark_color, mark_px,
+                    measurements, max_distance,
+                    angle_direction=COUNTER_CLOCKWISE, rotate_plot=0):
+    """
+    draw list of 2d polar points to given PIL image
+    assuming the polar origin is at the center of bounding box
+    
+    draw_context: PIL draw context
+    bounds: tuple (left, top, right, bottom) indicating bounds within which the
+            plot should be drawn.
+    mark_fn: function to draw point func(draw_context, cx, cy, distance_px, theta_degrees, mark_px)
+    mark_color: PIL color; scalar for monochrome, RGB tuplet for color.
+    mark_px: size of mark in pixels
+    measurements: list of polar coordinates as (distance, angle) tuples
+    max_distance: largest distance that we will plot, outside of this bound will be clipped
+    angle_direction: direction of increasing angles in the data;
+                     CLOCKWISE or COUNTER_CLOCKWISE
+    rotate_plot: angle in positive degrees to rotate the measurement mark.
+                 this can be used to match the direction of the robot
+                 when it is plotted in world coordinates.
+    """    
+    # plot each measurement
+    for distance, angle in measurements:
+        plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
+                              distance, angle, max_distance,
+                              angle_direction, rotate_plot)
+
+
+def plot_polar_bounds(draw_context, bounds, color,
+                      angle_direction=COUNTER_CLOCKWISE, rotate_plot=0):
+    """
+    draw 2d polar bounds to given PIL image
+    assuming the polar origin is at the center of bounding box
+    and the bounding distance is the minimum of the
+    width and height of the bounding box
+    
+    draw_context: PIL draw context
+    bounds: tuple (left, top, right, bottom) indicating bounds within which the
+            plot should be drawn.
+    color: PIL color; scalar for monochrome, RGB tuplet for color.
+    angle_direction: direction of increasing angles in the data;
+                     CLOCKWISE or COUNTER_CLOCKWISE
+    rotate_plot: angle in positive degrees to rotate the measurement mark.
+                 this can be used to match the direction of the robot
+                 when it is plotted in world coordinates.
+    """
+
+    left, top, right, bottom = bounds
+    cx = (left + right) / 2
+    cy = (top + bottom) / 2
+    max_pixel = min(cx, cy)
+    
+    #
+    # draw the zero heading axis
+    #
+    # correct the angle for direction of scan
+    theta = rotate_plot
+    if angle_direction != COUNTER_CLOCKWISE:
+        theta = (360.0 - (theta % 360.0)) % 360.0
+    # draw the axis line
+    theta = np.radians(theta)
+    sx = cx + math.cos(theta) * max_pixel
+    sy = cy - math.sin(theta) * max_pixel
+    draw_context.ellipse((cx - max_pixel, cy - max_pixel, cx + max_pixel, cy + max_pixel), outline=color)
+
+def plot_polar_angle(draw_context, bounds, color, theta,
+                     angle_direction=COUNTER_CLOCKWISE, rotate_plot=0):
+    """
+    draw 2d polar bounds to given PIL image
+    assuming the polar origin is at the center of bounding box
+    and the bounding distance is the minimum of the
+    width and height of the bounding box
+    
+    draw_context: PIL draw context
+    bounds: tuple (left, top, right, bottom) indicating bounds within which the
+            plot should be drawn.
+    color: PIL color; scalar for monochrome, RGB tuplet for color.
+    angle_direction: direction of increasing angles in the data;
+                     CLOCKWISE or COUNTER_CLOCKWISE
+    rotate_plot: angle in positive degrees to rotate the measurement mark.
+                 this can be used to match the direction of the robot
+                 when it is plotted in world coordinates.
+    """
+
+    left, top, right, bottom = bounds
+    cx = (left + right) / 2
+    cy = (top + bottom) / 2
+    max_pixel = min(cx, cy)
+    
+    #
+    # draw the zero heading axis
+    #
+    # correct the angle for direction of scan
+    theta += rotate_plot
+    if angle_direction != COUNTER_CLOCKWISE:
+        theta = (360.0 - (theta % 360.0)) % 360.0
+        
+    # draw the angle line
+    theta = np.radians(theta)
+    sx = cx + math.cos(theta) * max_pixel
+    sy = cy - math.sin(theta) * max_pixel
+    draw_context.line((cx, cy, sx, sy), fill=color, width=1)
+
+
 class LidarPlot2(object):
     '''
-    takes the raw lidar measurements and plots it to an image
+    takes the lidar measurements as a list of (distance, angle) tuples
+    and plots them to a PIL image which it outputs
+    
+    resolution: dimensions of image in pixels as tuple (width, height)
+    plot_type: PLOT_TYPE_CIRC or PLOT_TYPE_LINE
+    mark_px: size of data measurement marks in pixels
+    max_dist: polar bounds; clip measures whose distance > max_dist
+    angle_direction: direction of increasing angles in the data;
+                     CLOCKWISE or COUNTER_CLOCKWISE
+    rotate_plot: angle in positive degrees to rotate the measurement mark.
+                 this can be used to match the direction of the robot
+                 when it is plotted in world coordinates.
     '''
     PLOT_TYPE_LINE = 0
-    PLOT_TYPE_CIRC = 1
-    def __init__(self, resolution=(500,500),
-                 max_dist=1000, #mm
-                 radius_plot=3,
-                 plot_type=PLOT_TYPE_CIRC,
+    PLOT_TYPE_CIRCLE = 1
+    def __init__(self,
+                 resolution=(500,500),
+                 plot_type=PLOT_TYPE_CIRCLE,
+                 mark_px=3,
+                 max_dist=4000, #mm
+                 angle_direction=COUNTER_CLOCKWISE, # direction of increasing angles in the data
                  rotate_plot=0,
-                 angle_direction=COUNTER_CLOCKWISE):  # direction of increasing angles in the data
+                 background_color=(224, 224, 224),
+                 border_color=(128, 128, 128),
+                 point_color=(255, 64, 64)):
+        
         self.frame = Image.new('RGB', resolution)
-        self.max_dist = max_dist
-        self.rad = radius_plot
+        self.mark_px = mark_px
+        self.max_distance = max_dist
         self.resolution = resolution
-        if plot_type == self.PLOT_TYPE_CIRC:
-            self.plot_fn = self.plot_circ
+        if plot_type == self.PLOT_TYPE_CIRCLE:
+            self.mark_fn = mark_circle
         else:
-            self.plot_fn = self.plot_line
+            self.mark_fn = mark_line
         self.angle_direction = angle_direction
         self.rotate_plot = rotate_plot
-
-    def plot_line(self, img, dist, theta, max_dist, draw):
-        '''
-        scale dist so that max_dist is edge of img (mm)
-        and img is PIL Image, draw the line using the draw ImageDraw object
-        '''
-        if dist < 0 or dist > max_dist:
-            return  # don't print out of range pixels
-
-        cx = img.width / 2
-        cy = img.height / 2
-        max_pixel = min(cx, cy)
-        dist = dist / max_dist * max_pixel
         
-        theta = (theta + self.rotate_plot) % 360.0
-            
-        if self.angle_direction != COUNTER_CLOCKWISE:
-            theta = (360.0 - (theta % 360.0)) % 360.0
-            
-        theta = np.radians(theta)
-        sx = cx + math.cos(theta) * dist
-        sy = cy - math.sin(theta) * dist
-        ex = cx + math.cos(theta) * (dist + self.rad)
-        ey = cy - math.sin(theta) * (dist + self.rad)
-        fill = 128
-        draw.line((sx,sy, ex, ey), fill=(fill, fill, fill), width=1)
-        
-    def plot_circ(self, img, dist, theta, max_dist, draw):
-        '''
-        scale dist so that max_dist is edge of img (mm)
-        and img is PIL Image, draw the circle using the draw ImageDraw object
-        '''
-        if dist < 0 or dist > max_dist:
-            return  # don't print out of range pixels
+        self.background_color = background_color
+        self.border_color = border_color
+        self.point_color = point_color
 
-        cx = img.width / 2
-        cy = img.height / 2
-        max_pixel = min(cx, cy)
-        dist = dist / max_dist * max_pixel
-
-        theta = (theta + self.rotate_plot) % 360.0
-
-        if self.angle_direction != COUNTER_CLOCKWISE:
-            theta = (360.0 - (theta % 360.0)) % 360.0
-            
-        theta = np.radians(theta)
-        sx = int(cx + math.cos(theta) * dist)
-        sy = int(cy - math.sin(theta) * dist)
-        ex = int(cx + math.cos(theta) * (dist + 2 * self.rad))
-        ey = int(cy - math.sin(theta) * (dist + 2 * self.rad))
-        fill = 128
-
-        draw.ellipse((min(sx, ex), min(sy, ey), max(sx, ex), max(sy, ey)), fill=(fill, fill, fill))
-
-    def plot_scan(self, img, measurements, max_dist, draw):
-        # plot line (0,0) to (max_dist, 0)
-        cx = img.width / 2
-        cy = img.height / 2
-        max_pixel = min(cx, cy)
-        
-        theta = self.rotate_plot
-        if self.angle_direction != COUNTER_CLOCKWISE:
-            theta = (360.0 - (theta % 360.0)) % 360.0
-
-        theta = np.radians(theta)
-        sx = cx + math.cos(theta) * max_pixel
-        sy = cy - math.sin(theta) * max_pixel
-        fill = 128
-        draw.line((cx, cy, sx, sy), fill=(fill, fill, fill), width=1)
-        
-        # plot each measurement
-        for angle, distance, time, scan, index in measurements:
-            self.plot_fn(img, distance, angle, max_dist, draw)
-            
     def run(self, measurements):
         '''
-        takes two lists of equal length, one of distance values, the other of angles corresponding to the dist meas 
+        draw measurements to a PIL image and output the pil image
+        measurements: list of polar coordinates as (distance, angle) tuples
         '''
+            
         self.frame = Image.new('RGB', self.resolution, (255, 255, 255))
+        bounds = (0, 0, self.frame.width, self.frame.height)
         draw = ImageDraw.Draw(self.frame)
-        self.plot_scan(self.frame, measurements, self.max_dist, draw)
+        
+        # background
+        draw.rectangle(bounds, fill=self.background_color)
+        
+        
+        # bounding perimeter and zero heading
+        plot_polar_bounds(draw, bounds, self.border_color, self.angle_direction, self.rotate_plot)
+        plot_polar_angle(draw, bounds, self.border_color, 0, self.angle_direction, self.rotate_plot)
+        
+        # data points
+        plot_polar_points(draw, bounds, self.mark_fn, self.point_color, self.mark_px,
+                          [(distance, angle) for distance, angle, _, _, _ in measurements],
+                          self.max_distance, self.angle_direction, self.rotate_plot)
         return self.frame
 
     def shutdown(self):
@@ -550,6 +670,7 @@ class BreezyMap(object):
 
     def shutdown(self):
         pass
+
 
 class MapToImage(object):
 
@@ -632,16 +753,29 @@ if __name__ == "__main__":
         seconds_per_scan = 1.0 / args.rate
         scan_time = time.time() + seconds_per_scan
 
+        #
+        # construct a lidar part
+        #
         lidar = RPLidar2(
             min_angle=args.min_angle, max_angle=args.max_angle,
             min_distance=args.min_distance, max_distance=args.max_distance,
             forward_angle=args.forward_angle,
             angle_direction=args.angle_direction)
-        plotter = LidarPlot2(max_dist=args.max_distance,
-                             angle_direction=args.angle_direction,
-                             plot_type=LidarPlot2.PLOT_TYPE_LINE,
-                             rotate_plot=args.rotate_plot)
         
+        #
+        # construct a lidar plotter
+        #
+        plotter = LidarPlot2(plot_type=LidarPlot2.PLOT_TYPE_CIRCLE,
+                             max_dist=args.max_distance,
+                             angle_direction=args.angle_direction,
+                             rotate_plot=args.rotate_plot,
+                             background_color=(32, 32, 32),
+                             border_color=(128, 128, 128),
+                             point_color=(64, 255, 64))        
+        #
+        # start the threaded part
+        # and a threaded window to show plot
+        #
         lidar_thread = Thread(target=lidar.update, args=())
         lidar_thread.start()
         cv2.namedWindow("lidar")
@@ -657,7 +791,7 @@ if __name__ == "__main__":
             measurements = lidar.run_threaded()
             img = plotter.run(measurements)
             
-            # show the image
+            # show the image in the window
             cv2img = convert_from_image_to_cv2(img)
             cv2.imshow("lidar", cv2img)
             
