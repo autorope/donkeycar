@@ -713,7 +713,6 @@ class OverlayImage(FullImage):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.last_output = (0, 0)
 
     def augment(self, img_arr):
         if pilot_screen().trans_list:
@@ -737,16 +736,13 @@ class OverlayImage(FullImage):
         if not self.pilot:
             return img_arr
 
-        args = (aug_img_arr, np.array(self.last_output)) \
-            if type(self.pilot) is KerasMemory else (aug_img_arr,)
         output = (0, 0)
         try:
             # Not each model is supported in each interpreter
-            output = self.pilot.run(*args)
+            output = self.pilot.run(aug_img_arr)
         except Exception as e:
             Logger.error(e)
 
-        self.last_output = output
         rgb = (0, 0, 255)
         MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
         out_record = copy(record)
