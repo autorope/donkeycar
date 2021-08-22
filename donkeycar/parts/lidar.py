@@ -63,7 +63,7 @@ class RPLidar2(object):
                  max_distance = sys.float_info.max,
                  forward_angle = 0.0,
                  angle_direction=CLOCKWISE,
-                 batch_size=int(1846 / 20),
+                 batch_ms=50,  # how long to loop in run()
                  debug=False):
         
         self.lidar = None
@@ -134,7 +134,7 @@ class RPLidar2(object):
         self.full_scan_index = 0
         self.total_measurements = 0
         self.iter_measurements = self.lidar.iter_measurements()
-        self.measurement_batch_size = batch_size
+        self.measurement_batch_ms = batch_ms
 
         self.running = True
 
@@ -243,9 +243,19 @@ class RPLidar2(object):
         return []
     
     def run(self):
-        for i in range(self.measurement_batch_size):
+        if not self.running:
+            return []
+        #
+        # poll for 'batch' and return it
+        # poll for time provided in constructor
+        #
+        batch_time = time.time() + self.measurement_batch_ms / 1000.0
+        while True:
             self.poll()
-        return self.run_threaded()
+            time.sleep(0)  # yield time to other threads
+            if time.time() >= batch_time:
+                break
+        return self.measurements
 
     def shutdown(self):
         self.running = False
@@ -850,8 +860,7 @@ if __name__ == "__main__":
             min_distance=args.min_distance, max_distance=args.max_distance,
             forward_angle=args.forward_angle,
             angle_direction=args.angle_direction,
-            batch_size=int(1846/args.rate)) # based on empirical measurements
-                                            # for A1M8-r6 model
+            batch_ms=1000.0/args.rate)
         
         #
         # construct a lidar plotter
