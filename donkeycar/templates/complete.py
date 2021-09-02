@@ -78,11 +78,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.HAVE_ODOM:
         if cfg.ENCODER_TYPE == "GPIO":
             from donkeycar.parts.encoder import RotaryEncoder
-            enc = RotaryEncoder(mm_per_tick=0.306096, pin = cfg.ODOM_PIN, debug = cfg.ODOM_DEBUG)
+            enc = RotaryEncoder(mm_per_tick=cfg.MM_PER_TICK, pin=cfg.ODOM_PIN, poll_delay=1.0/(cfg.DRIVE_LOOP_HZ*3), debug=cfg.ODOM_DEBUG)
             V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
         elif cfg.ENCODER_TYPE == "arduino":
             from donkeycar.parts.encoder import ArduinoEncoder
-            enc = ArduinoEncoder()
+            enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
             V.add(enc, outputs=['enc/speed'], threaded=True)
         else:
             print("No supported encoder found")
