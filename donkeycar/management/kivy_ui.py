@@ -713,11 +713,12 @@ class OverlayImage(FullImage):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.last_output = (0, 0)
 
     def augment(self, img_arr):
-        if pilot_screen().auglist:
-            img_arr = pilot_screen().augmentation.augment(img_arr)
+        if pilot_screen().trans_list:
+            img_arr = pilot_screen().transformation.run(img_arr)
+        if pilot_screen().aug_list:
+            img_arr = pilot_screen().augmentation.run(img_arr)
         return img_arr
 
     def get_image(self, record):
@@ -735,16 +736,13 @@ class OverlayImage(FullImage):
         if not self.pilot:
             return img_arr
 
-        args = (aug_img_arr, np.array(self.last_output)) \
-            if type(self.pilot) is KerasMemory else (aug_img_arr,)
         output = (0, 0)
         try:
             # Not each model is supported in each interpreter
-            output = self.pilot.run(*args)
+            output = self.pilot.run(aug_img_arr)
         except Exception as e:
             Logger.error(e)
 
-        self.last_output = output
         rgb = (0, 0, 255)
         MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
         out_record = copy(record)
@@ -765,8 +763,10 @@ class PilotScreen(Screen):
     index = NumericProperty(None, force_dispatch=True)
     current_record = ObjectProperty(None)
     keys_enabled = BooleanProperty(False)
-    auglist = ListProperty(force_dispatch=True)
+    aug_list = ListProperty(force_dispatch=True)
     augmentation = ObjectProperty()
+    trans_list = ListProperty(force_dispatch=True)
+    transformation = ObjectProperty()
     config = ObjectProperty()
 
     def on_index(self, obj, index):
@@ -806,30 +806,50 @@ class PilotScreen(Screen):
     def set_brightness(self, val=None):
         if self.ids.button_bright.state == 'down':
             self.config.AUG_MULTIPLY_RANGE = (val, val)
-            if self.ids.button_blur.state == 'down':
-                self.auglist = ['MULTIPLY', 'BLUR']
-            else:
-                self.auglist = ['MULTIPLY']
-
-    def remove_brightness(self):
-        self.auglist = ['BLUR'] if self.ids.button_blur.state == 'down' else[]
+            if 'MULTIPLY' not in self.aug_list:
+                self.aug_list.append('MULTIPLY')
+        elif 'MULTIPLY' in self.aug_list:
+            self.aug_list.remove('MULTIPLY')
+        # update dependency
+        self.on_aug_list(None, None)
 
     def set_blur(self, val=None):
         if self.ids.button_blur.state == 'down':
             self.config.AUG_BLUR_RANGE = (val, val)
-            if self.ids.button_bright.state == 'down':
-                self.auglist = ['MULTIPLY', 'BLUR']
-            else:
-                self.auglist = ['BLUR']
+            if 'BLUR' not in self.aug_list:
+                self.aug_list.append('BLUR')
+        elif 'BLUR' in self.aug_list:
+            self.aug_list.remove('BLUR')
+        # update dependency
+        self.on_aug_list(None, None)
 
-    def remove_blur(self):
-        self.auglist = ['MULTIPLY'] if self.ids.button_bright.state == 'down' \
-            else []
-
-    def on_auglist(self, obj, auglist):
-        self.config.AUGMENTATIONS = self.auglist
-        self.augmentation = ImageAugmentation(self.config)
+    def on_aug_list(self, obj, aug_list):
+        self.config.AUGMENTATIONS = self.aug_list
+        self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS')
         self.on_current_record(None, self.current_record)
+
+    def on_trans_list(self, obj, trans_list):
+        self.config.TRANSFORMATIONS = self.trans_list
+        self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS')
+        self.on_current_record(None, self.current_record)
+
+    def set_mask(self, state):
+        if state == 'down':
+            self.ids.status.text = 'Trapezoidal mask on'
+            self.trans_list.append('TRAPEZE')
+        else:
+            self.ids.status.text = 'Trapezoidal mask off'
+            if 'TRAPEZE' in self.trans_list:
+                self.trans_list.remove('TRAPEZE')
+
+    def set_crop(self, state):
+        if state == 'down':
+            self.ids.status.text = 'Crop on'
+            self.trans_list.append('CROP')
+        else:
+            self.ids.status.text = 'Crop off'
+            if 'CROP' in self.trans_list:
+                self.trans_list.remove('CROP')
 
     def status(self, msg):
         self.ids.status.text = msg

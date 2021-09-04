@@ -9,6 +9,8 @@ include one or more models to help direct the vehicles motion.
 """
 
 from abc import ABC, abstractmethod
+from collections import deque
+
 import numpy as np
 from typing import Dict, Tuple, Optional, Union, List, Sequence, Callable
 from logging import getLogger
@@ -380,9 +382,11 @@ class KerasMemory(KerasLinear):
                  interpreter: Interpreter = KerasInterpreter(),
                  input_shape: Tuple[int, ...] = (120, 160, 3),
                  mem_length: int = 3,
-                 mem_depth: int = 0):
+                 mem_depth: int = 0,
+                 mem_start_speed: float = 0.0):
         self.mem_length = mem_length
-        self.mem_seq: List[np.array] = []
+        self.mem_start_speed = mem_start_speed
+        self.mem_seq = deque([[0, mem_start_speed]] * mem_length)
         self.mem_depth = mem_depth
         super().__init__(interpreter, input_shape)
 
@@ -396,18 +400,20 @@ class KerasMemory(KerasLinear):
     def load(self, model_path: str) -> None:
         super().load(model_path)
         self.mem_length = self.interpreter.get_input_shapes()[1][1] // 2
-        logger.info(f'Loaded mem length {self.mem_length}')
+        self.mem_seq = deque([[0, self.mem_start_speed]] * self.mem_length)
+        logger.info(f'Loaded memory model with mem length {self.mem_length}')
 
     def run(self, img_arr: np.ndarray, other_arr: List[float] = None) -> \
             Tuple[Union[float, np.ndarray], ...]:
-        while len(self.mem_seq) < self.mem_length:
-            self.mem_seq.append(other_arr)
+        # Only called at start to fill the previous values
 
-        self.mem_seq = self.mem_seq[1:]
-        self.mem_seq.append(other_arr)
         np_mem_arr = np.array(self.mem_seq).reshape((2 * self.mem_length,))
         img_arr_norm = normalize_image(img_arr)
-        return super().inference(img_arr_norm, np_mem_arr)
+        angle, throttle = super().inference(img_arr_norm, np_mem_arr)
+        # fill new values into back of history list for next call
+        self.mem_seq.popleft()
+        self.mem_seq.append([angle, throttle])
+        return angle, throttle
 
     def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
         """ Return x from record, here x = image, previous angle/throttle
@@ -701,7 +707,7 @@ class KerasLSTM(KerasPilot):
         self.num_outputs = num_outputs
         self.seq_length = seq_length
         super().__init__(interpreter, input_shape)
-        self.img_seq: List[np.ndarray] = []
+        self.img_seq = deque()
         self.optimizer = "rmsprop"
 
     def seq_size(self) -> int:
@@ -760,7 +766,7 @@ class KerasLSTM(KerasPilot):
         while len(self.img_seq) < self.seq_length:
             self.img_seq.append(img_arr)
 
-        self.img_seq = self.img_seq[1:]
+        self.img_seq.popleft()
         self.img_seq.append(img_arr)
         new_shape = (self.seq_length, *self.input_shape)
         img_arr = np.array(self.img_seq).reshape(new_shape)
@@ -795,7 +801,7 @@ class Keras3D_CNN(KerasPilot):
         self.num_outputs = num_outputs
         self.seq_length = seq_length
         super().__init__(interpreter, input_shape)
-        self.img_seq: List[np.ndarray] = []
+        self.img_seq = deque()
 
     def seq_size(self) -> int:
         return self.seq_length
@@ -852,7 +858,7 @@ class Keras3D_CNN(KerasPilot):
         while len(self.img_seq) < self.seq_length:
             self.img_seq.append(img_arr)
 
-        self.img_seq = self.img_seq[1:]
+        self.img_seq.popleft()
         self.img_seq.append(img_arr)
         new_shape = (self.seq_length, *self.input_shape)
         img_arr = np.array(self.img_seq).reshape(new_shape)

@@ -23,7 +23,8 @@ class DonkeyGymEnv(object):
         conf["exe_path"] = sim_path
         conf["host"] = host
         conf["port"] = port
-        conf['guid'] = 0
+        conf["guid"] = 0
+        conf["frame_skip"] = 1
         self.env = gym.make(env_name, conf=conf)
         self.frame = self.env.reset()
         self.action = [0.0, 0.0, 0.0]
@@ -34,15 +35,38 @@ class DonkeyGymEnv(object):
                      'gyro': (0., 0., 0.),
                      'accel': (0., 0., 0.),
                      'vel': (0., 0., 0.)}
-        self.delay = float(delay)
+        self.delay = float(delay) / 1000
         self.record_location = record_location
         self.record_gyroaccel = record_gyroaccel
         self.record_velocity = record_velocity
         self.record_lidar = record_lidar
 
+        self.buffer = []
+
+    def delay_buffer(self, frame, info):
+        now = time.time()
+        buffer_tuple = (now, frame, info)
+        self.buffer.append(buffer_tuple)
+
+        # go through the buffer
+        num_to_remove = 0
+        for buf in self.buffer:
+            if now - buf[0] >= self.delay:
+                num_to_remove += 1
+                self.frame = buf[1]
+            else:
+                break
+
+        # clear the buffer
+        del self.buffer[:num_to_remove]
+
     def update(self):
         while self.running:
-            self.frame, _, _, self.info = self.env.step(self.action)
+            if self.delay > 0.0:
+                current_frame, _, _, current_info = self.env.step(self.action)
+                self.delay_buffer(current_frame, current_info)
+            else:
+                self.frame, _, _, self.info = self.env.step(self.action)
 
     def run_threaded(self, steering, throttle, brake=None):
         if steering is None or throttle is None:
@@ -50,8 +74,7 @@ class DonkeyGymEnv(object):
             throttle = 0.0
         if brake is None:
             brake = 0.0
-        if self.delay > 0.0:
-            time.sleep(self.delay / 1000.0)
+
         self.action = [steering, throttle, brake]
 
         # Output Sim-car position information if configured
