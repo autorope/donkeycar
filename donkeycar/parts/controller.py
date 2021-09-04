@@ -346,6 +346,44 @@ class JoystickCreator(Joystick):
 
         return button, button_state, axis, axis_val
 
+class PS3JoystickSixAd(Joystick):
+    '''
+    An interface to a physical PS3 joystick available at /dev/input/js0
+    Contains mapping that worked for Jetson Nano using sixad for PS3 controller's connection 
+    '''
+    def __init__(self, *args, **kwargs):
+        super(PS3JoystickSixAd, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00 : 'left_stick_horz',
+            0x01 : 'left_stick_vert',
+            0x02 : 'right_stick_horz',
+            0x03 : 'right_stick_vert',
+        }
+
+        self.button_names = {
+            0x120 : 'select',
+            0x123 : 'start',
+            0x130 : 'PS',
+
+            0x12a : 'L1',
+            0x12b : 'R1',
+            0x128 : 'L2',
+            0x129 : 'R2',
+            0x121 : 'L3',
+            0x122 : 'R3',
+
+            0x12c : "triangle", 
+            0x12d : "circle",
+            0x12e : "cross",
+            0x12f : 'square',
+
+            0x124 : 'dpad_up',
+            0x126 : 'dpad_down',
+            0x127 : 'dpad_left',
+            0x125 : 'dpad_right',
+        }
+
 
 class PS3JoystickOld(Joystick):
     '''
@@ -1171,6 +1209,34 @@ class PS3JoystickController(JoystickController):
         }
 
 
+class PS3JoystickSixAdController(PS3JoystickController):
+    '''
+    PS3 controller via sixad
+    '''
+    def init_js(self):
+        '''
+        attempt to init joystick
+        '''
+        try:
+            self.js = PS3JoystickSixAd(self.dev_fn)
+            if not self.js.init():
+                self.js = None
+        except FileNotFoundError:
+            print(self.dev_fn, "not found.")
+            self.js = None
+        return self.js is not None
+
+    def init_trigger_maps(self):
+        '''
+        init set of mapping from buttons to function calls
+        '''
+        super(PS3JoystickSixAdController, self).init_trigger_maps()
+
+        self.axis_trigger_map = {
+            'right_stick_horz' : self.set_steering,
+            'left_stick_vert' : self.set_throttle,
+        }
+
 class PS4JoystickController(JoystickController):
     '''
     A Controller object that maps inputs to actions
@@ -1591,6 +1657,8 @@ def get_js_controller(cfg):
     cont_class = None
     if cfg.CONTROLLER_TYPE == "ps3":
         cont_class = PS3JoystickController
+    elif cfg.CONTROLLER_TYPE == "ps3sixad":
+        cont_class = PS3JoystickSixAdController
     elif cfg.CONTROLLER_TYPE == "ps4":
         cont_class = PS4JoystickController
     elif cfg.CONTROLLER_TYPE == "nimbus":
