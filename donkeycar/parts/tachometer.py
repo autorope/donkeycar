@@ -177,10 +177,6 @@ class SerialTachometer(Tachometer):
     encoder (so ticks only increase) or a quarature encoder
     (so ticks may increment or decrement).
 
-    The parts sends a 'p' to serial port to request the
-    current tick count, the other end responds with 
-    an integer number (in ascii) followed by a newline.
-
     Quadrature encoders can detect when the 
     encoder is going forward, backward or stopped.
     For such encoders, use the default direction mode, 
@@ -199,9 +195,35 @@ class SerialTachometer(Tachometer):
     choose FORWARD_BACKWARD_STOP direction mode 
     so encoder noise is not integrated while stopped.
 
-    Here is an example arduino sketch that implements the
-    'p' protocol using the teensy encoder library.
-    https://github.com/zlite/donkeycar/tree/master/donkeycar/parts/encoder/encoder
+    This part assumes a microcontroller connected via
+    serial port that implements the following 
+    'r/p/c' protocol:
+
+    Commands are sent to the microcontroller 
+    one per line (ending in '\n'):
+    'r' command resets position to zero
+    'p' command sends position immediately
+    'c' command starts/stops continuous mode
+        - if it is followed by an integer,
+          then use this as the delay in ms
+          between readings.
+        - if it is not followed by an integer
+          then stop continuous mode
+    
+    The microcontroller sends one reading per line.
+    Each reading includes the tick count and the time
+    that the reading was taken, separated by a comma
+    and ending in a newline.
+    
+        {ticks},{milliseconds}\n
+
+    There is an example arduino sketch that implements the
+    'r/p/c' protocol using the teensy encoder library at 
+    donkeycar/arduino/encoder/encoder.ino  The sketch
+    presumes a quadrature encoder connect to pins 2 & 3
+    of an arduino.  If you have a different microcontroller
+    or want to use different pins or if you want to
+    use a single-channel encoder, then modify that sketch.
 
     """
     def __init__(self, ticks_per_revolution:float, direction_mode:int=Tachometer.FORWARD_ONLY, poll_delay_secs:float=0.01, serial_port:SerialPort=None):
