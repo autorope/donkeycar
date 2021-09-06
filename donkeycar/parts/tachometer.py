@@ -6,6 +6,8 @@ from typing import Tuple
 from donkeycar.utilities.platform import is_jetson
 from donkeycar.utilities.serial_port import SerialPort
 
+from donkeycar.utilities.platform import is_jetson
+
 # import correct GPIO library
 if is_jetson():
     import Jetson.GPIO as GPIO
