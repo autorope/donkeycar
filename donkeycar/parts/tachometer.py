@@ -1,10 +1,17 @@
 import logging
+import os
 import time
 from typing import Tuple
 
 from numpy import float32
+from pigpio import PUD_UP
 
-from donkeycar.utilities.circular_buffer import CircularBuffer
+# import correct GPIO library
+JETSON_TYPE = os.getenv('JETSON_TYPE', "unknown")
+if JETSON_TYPE != "unknown":
+    import Jetson.GPIO as GPIO
+else:
+    import RPi.GPIO as GPIO
 
 logger = logging.getLogger("donkeycar.parts.tachometer")
 
@@ -214,7 +221,7 @@ class SerialTachometer(Tachometer):
     Each reading includes the tick count and the time
     that the reading was taken, separated by a comma
     and ending in a newline.
-    
+
         {ticks},{milliseconds}\n
 
     There is an example arduino sketch that implements the
@@ -283,8 +290,11 @@ class SerialTachometer(Tachometer):
 
 
 class GpioTachometer(Tachometer):
-
     def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=Tachometer.FORWARD_ONLY, debounce_ns:int=0):
+        # validate gpio_pin
+        if not 1 <= gpio_pin <= 40:
+            raise ValueError('The pin number must be BCM (Broadcom) pin within the range [1, 40].')
+
         self.counter = 0
         self.pin = gpio_pin
         self.pi = None
@@ -293,7 +303,7 @@ class GpioTachometer(Tachometer):
         self.debounce_time:int = 0
         Tachometer.__init__(self, ticks_per_revolution, direction_mode)
 
-    def _cb(self, pin, level, tick):
+    def _cb(self, _):
         """
         Callback routine called by pigpio when a tick is detected
         """
@@ -303,24 +313,17 @@ class GpioTachometer(Tachometer):
             self.debounce_time = now + self.debounce_ns
             
     def start_ticks(self):
-        # initialize io
-        import pigpio
-        self.pi = pigpio.pi()
-        self.pi.set_mode(self.pin, pigpio.INPUT)
-        self.pi.set_pull_up_down(self.pin, pigpio.PUD_DOWN)
-        self.cb = self.pi.callback(self.pin, pigpio.FALLING_EDGE, self._cb)
+        # configure GPIO pin
+        GPIO.setmode(GPIO.BCM)  # use broadcom numbering
+        GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        GPIO.add_event_detect(self.pin, GPIO.RISING, callback=self._cb)        
         Tachometer.start_ticks(self)     # set runnng to True
 
     def poll_ticks(self) -> int:                
         return self.counter
 
     def shutdown(self):
-        if self.cb is not None:
-            self.cb.cancel()
-            self.cb = None
-        if self.pi is not None:
-            self.pi.stop()
-            self.pi = None
+        GPIO.remove_event_detect(self.pin)           
         Tachometer.shutdown(self)
 
 
