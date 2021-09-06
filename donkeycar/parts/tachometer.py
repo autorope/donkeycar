@@ -6,9 +6,10 @@ from typing import Tuple
 from numpy import float32
 from pigpio import PUD_UP
 
+from donkeycar.utilities.platform import is_jetson
+
 # import correct GPIO library
-JETSON_TYPE = os.getenv('JETSON_TYPE', "unknown")
-if JETSON_TYPE != "unknown":
+if is_jetson():
     import Jetson.GPIO as GPIO
 else:
     import RPi.GPIO as GPIO
