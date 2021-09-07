@@ -4,7 +4,6 @@ import time
 from typing import Tuple
 
 from numpy import float32
-from pigpio import PUD_UP
 
 from donkeycar.utilities.platform import is_jetson
 
@@ -116,7 +115,9 @@ class SerialPort:
         self.ser = serial.Serial(self.port, self.baudrate, 8, 'N', 1, timeout=0.1)
 
     def stop(self):
-        pass
+        if self.ser:
+            self.ser.close()
+        self.ser = None
 
     def buffered(self) -> int:
         """
@@ -306,7 +307,7 @@ class GpioTachometer(Tachometer):
 
     def _cb(self, _):
         """
-        Callback routine called by pigpio when a tick is detected
+        Callback routine called by GPIO when a tick is detected
         """
         now = time.time_ns()
         if now > self.debounce_time:
