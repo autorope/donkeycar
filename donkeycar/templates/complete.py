@@ -14,6 +14,7 @@ Options:
     --myconfig=filename     Specify myconfig file to use. 
                             [default: myconfig.py]
 """
+from donkeycar.parts import tachometer
 import os
 import time
 import logging
@@ -76,16 +77,27 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         tel = MqttTelemetry(cfg)
         
     if cfg.HAVE_ODOM:
+        from donkeycar.parts.odometer import Odometer
+        tachometer = None
         if cfg.ENCODER_TYPE == "GPIO":
-            from donkeycar.parts.encoder import RotaryEncoder
-            enc = RotaryEncoder(mm_per_tick=cfg.MM_PER_TICK, pin=cfg.ODOM_PIN, poll_delay=1.0/(cfg.DRIVE_LOOP_HZ*3), debug=cfg.ODOM_DEBUG)
-            V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
+            from donkeycar.parts.tachometer import GpioTachometer
+            tachometer = GpioTachometer(gpio_pin=cfg.ODOM_PIN, 
+                                        ticks_per_revolution=cfg.ENCODER_PPR, 
+                                        direction_mode=cfg.TACHOMETER_MODE, 
+                                        debounce_ns=cfg.ENCODER_DEBOUNCE_NS)
         elif cfg.ENCODER_TYPE == "arduino":
-            from donkeycar.parts.encoder import ArduinoEncoder
-            enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
-            V.add(enc, outputs=['enc/speed'], threaded=True)
+            from donkeycar.parts.tachometer import SerialTachometer
+            tachometer = SerialTachometer(ticks_per_revolution=cfg.ENCODER_PPR, 
+                                          direction_mode=cfg.TACHOMETER_MODE,
+                                          poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                                          serial_port=cfg.ODOM_SERIAL)
         else:
             print("No supported encoder found")
+
+        if tachometer:
+            odometer = Odometer(distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK, smoothing_count=cfg.ODOM_SMOOTHING)
+            V.add(tachometer, inputs=['throttle'], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
+            V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=True)
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":

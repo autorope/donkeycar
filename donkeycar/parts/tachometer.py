@@ -21,6 +21,12 @@ def sign(value) -> int:
     return 0
 
 
+class TachometerMode:
+    FORWARD_ONLY = 1          # only sum ticks (ticks may be signed)
+    FORWARD_REVERSE = 2       # subtract ticks if throttle is negative
+    FORWARD_REVERSE_STOP = 3  # ignore ticks if throttle is zero
+    
+
 class Tachometer:
     """
     Base class for encoders
@@ -29,12 +35,7 @@ class Tachometer:
     output is current number of revolutions and timestamp
     """
 
-    # how to process ticks
-    FORWARD_ONLY = 1          # only sum ticks (ticks may be signed)
-    FORWARD_REVERSE = 2       # subtract ticks if direction is negative
-    FORWARD_REVERSE_STOP = 3  # ignore ticks if throttle is zero
-
-    def __init__(self, ticks_per_revolution:float, direction_mode=FORWARD_ONLY):
+    def __init__(self, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY):
         self.ticks_per_revolution:float = ticks_per_revolution
         self.direction_mode = direction_mode
         self.ticks:int = 0
@@ -64,11 +65,11 @@ class Tachometer:
             self.timestamp = timestamp if timestamp is not None else time.time()
 
             # set direction flag based on direction mode
-            if Tachometer.FORWARD_REVERSE == self.direction_mode:
-                # if throttle is zero, leave direction alone
+            if TachometerMode.FORWARD_REVERSE == self.direction_mode:
+                # if throttle is zero, leave direction alone to model 'coasting'
                 if throttle != 0:
                     self.direction = sign(throttle)
-            elif Tachometer.FORWARD_REVERSE_STOP == self.direction_mode:
+            elif TachometerMode.FORWARD_REVERSE_STOP == self.direction_mode:
                 self.direction = sign(throttle)
 
             self.ticks = self.poll_ticks()
@@ -235,7 +236,7 @@ class SerialTachometer(Tachometer):
     use a single-channel encoder, then modify that sketch.
 
     """
-    def __init__(self, ticks_per_revolution:float, direction_mode:int=Tachometer.FORWARD_ONLY, poll_delay_secs:float=0.01, serial_port:SerialPort=None):
+    def __init__(self, ticks_per_revolution:float, direction_mode:int=TachometerMode.FORWARD_ONLY, poll_delay_secs:float=0.01, serial_port:SerialPort=None):
         self.ser = serial_port
         self.lasttick = 0
         self.poll_delay_secs = poll_delay_secs
@@ -292,7 +293,7 @@ class SerialTachometer(Tachometer):
 
 
 class GpioTachometer(Tachometer):
-    def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=Tachometer.FORWARD_ONLY, debounce_ns:int=0):
+    def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, debounce_ns:int=0):
         # validate gpio_pin
         if not 1 <= gpio_pin <= 40:
             raise ValueError('The pin number must be BCM (Broadcom) pin within the range [1, 40].')
