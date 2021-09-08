@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Scripts to record a path by driving a donkey car 
+Scripts to record a path by driving a donkey car
 and using an autopilot to drive the recoded path.
 Works with wheel encoders and/or Intel T265
 
@@ -79,10 +79,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                 return 0.0
 
         V.add(NoOdom(), outputs=['enc/vel_m_s'])
-   
-    #
-    # TODO: once we have Unicycle kinematics to provide pose, make T265 optional.
-    #
 
     if cfg.CAMERA_TYPE == "T265":
         from donkeycar.parts.realsense2 import RS_T265
@@ -143,8 +139,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                 return True
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
-
-
 
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
@@ -211,10 +205,10 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         # this process. Restart and the path will be loaded.
         ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
 
-        # Here's a trigger to erase a previously saved path. 
+        # Here's a trigger to erase a previously saved path.
         ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
 
-        # Here's a trigger to reset the origin. 
+        # Here's a trigger to reset the origin.
         ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
 
         # Buttons to tune PID constants
@@ -244,7 +238,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     
 
     #
-    # To make differential drive steer, 
+    # To make differential drive steer,
     # divide throttle between motors based on the steering value
     #
     if is_differential_drive:
