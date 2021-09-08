@@ -59,12 +59,27 @@ def drive(cfg):
             threaded=True)
 
     if cfg.HAVE_ODOM:
-        pi = pigpio.pi()
-        enc = PiPGIOEncoder(cfg.ODOM_PIN, pi)
-        V.add(enc, outputs=['enc/ticks'])
+        from donkeycar.parts.odometer import Odometer
+        tachometer = None
+        if cfg.ENCODER_TYPE == "GPIO":
+            from donkeycar.parts.tachometer import GpioTachometer
+            tachometer = GpioTachometer(gpio_pin=cfg.ODOM_PIN, 
+                                        ticks_per_revolution=cfg.ENCODER_PPR, 
+                                        direction_mode=cfg.TACHOMETER_MODE, 
+                                        debounce_ns=cfg.ENCODER_DEBOUNCE_NS)
+        elif cfg.ENCODER_TYPE == "arduino":
+            from donkeycar.parts.tachometer import SerialTachometer
+            tachometer = SerialTachometer(ticks_per_revolution=cfg.ENCODER_PPR, 
+                                          direction_mode=cfg.TACHOMETER_MODE,
+                                          poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                                          serial_port=cfg.ODOM_SERIAL)
+        else:
+            print("No supported encoder found")
 
-        odom = OdomDist(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
-        V.add(odom, inputs=['enc/ticks', 'user/throttle'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/delta_vel_m_s'])
+        if tachometer:
+            odometer = Odometer(distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK, smoothing_count=cfg.ODOM_SMOOTHING)
+            V.add(tachometer, inputs=['user/throttle'], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
+            V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=True)
 
         if not os.path.exists(cfg.WHEEL_ODOM_CALIB):
             print("You must supply a json file when using odom with T265. There is a sample file in templates.")
