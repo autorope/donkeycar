@@ -14,7 +14,7 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
-# 
+#
 # FILE PATHS
 #
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -29,7 +29,7 @@ DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 
-# 
+#
 # CAMERA configuration
 #
 CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -47,7 +47,7 @@ CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Fli
 PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 
 
-# 
+#
 # PCA9685, over rides only if needed, ie. TX2..
 #
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
@@ -62,7 +62,7 @@ SSD1306_128_32_I2C_ROTATION = 0 # 0 = text is right-side up, 1 = rotated 90 degr
 SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 
 
-# 
+#
 # MEASURED ROBOT PROPERTIES
 #
 AXLE_LENGTH = 0.03     # length of axle; distance between left and right wheels in meters
@@ -376,7 +376,7 @@ ENCODER_DEBOUNCE_NS = 0         # nanoseconds to wait before integrating subsequ
 FORWARD_ONLY = 1
 FORWARD_REVERSE = 2
 FORWARD_REVERSE_STOP = 3
-TACHOMETER_MODE=FORWARD_ONLY    # FORWARD_ONLY, FORWARD_REVERSE or FORWARD_REVERSE_STOP
+TACHOMETER_MODE=FORWARD_REVERSE # FORWARD_ONLY, FORWARD_REVERSE or FORWARD_REVERSE_STOP
                                 # For dual channel quadrature encoders, 'FORWARD_ONLY' is always the correct mode.
                                 # For single-channel encoders, the tachometer mode depends upon the application.
                                 # - FORWARD_ONLY always increments ticks; effectively assuming the car is always moving forward
@@ -400,7 +400,7 @@ ODOM_SMOOTHING = 1              # number of odometer readings to use when calcul
 ODOM_DEBUG = False              # Write out values on vel and distance as it runs
 
 
-# 
+#
 # LIDAR
 #
 USE_LIDAR = False
@@ -410,7 +410,7 @@ LIDAR_UPPER_LIMIT = 270
 
 
 #
-# CNN Deep Learning 
+# CNN Deep Learning
 #
 # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_AI_FRAMEWORK = 'tensorflow'
@@ -547,7 +547,7 @@ LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'I
 LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 
 
-# 
+#
 # MQTT TELEMETRY
 #
 HAVE_MQTT_TELEMETRY = False
@@ -564,20 +564,20 @@ TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle,recording'
 TELEMETRY_DEFAULT_TYPES = 'float,float'
 
 
-# 
+#
 # PERFORMANCE MONITOR
 #
 HAVE_PERFMON = False
 
 
-# 
+#
 # RECORD OPTIONS
 #
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
 AUTO_CREATE_NEW_TUB = False     #create a new tub (tub_YY_MM_DD) directory when recording or append records to data directory directly
 
 
-# 
+#
 # LED
 #
 HAVE_RGB_LED = False            #do you have an RGB LED like https://www.amazon.com/dp/B07BNRZWNF
@@ -614,9 +614,9 @@ MODEL_RELOADED_LED_G = 0
 MODEL_RELOADED_LED_B = 0
 
 
-# 
+#
 # BEHAVIORS
-# 
+#
 #When training the Behavioral Neural Network model, make a list of the behaviors,
 #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
 TRAIN_BEHAVIORS = False
@@ -624,9 +624,9 @@ BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 
 
-# 
+#
 # Localizer
-# 
+#
 #The localizer is a neural network that can learn to predict its location on the track.
 #This is an experimental feature that needs more developement. But it can currently be used
 #to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
@@ -635,9 +635,9 @@ NUM_LOCATIONS = 10
 BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
 
 
-# 
+#
 # DonkeyGym
-# 
+#
 # Only on Ubuntu linux, you can use the simulator as a virtual donkey and
 # issue the same python manage.py drive command as usual, but have them control a virtual car.
 # This enables that, and sets the path to the simualator and the environment.
@@ -665,9 +665,9 @@ SIM_RECORD_LIDAR = False
 PUB_CAMERA_IMAGES = False
 
 
-# 
+#
 # AI Overrides
-# 
+#
 # Launch mode: override AI at launch time (transition from user to Auto pilot).
 AI_LAUNCH_DURATION = 0.0            # the ai will output throttle for this many seconds
 AI_LAUNCH_THROTTLE = 0.0            # the ai will output this throttle value
@@ -678,7 +678,7 @@ AI_LAUNCH_KEEP_ENABLED = False      # when False ( default) you will need to hit
 AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
 
 
-# 
+#
 # Intel Realsense D435 and D435i depth sensing camera
 #
 REALSENSE_D435_RGB = True       # True to capture RGB image
@@ -687,7 +687,7 @@ REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
 
-# 
+#
 # Stop Sign Detector
 #
 STOP_SIGN_DETECTOR = False
@@ -697,7 +697,7 @@ STOP_SIGN_MAX_REVERSE_COUNT = 10    # How many times should the car reverse when
 STOP_SIGN_REVERSE_THROTTLE = -0.5     # Throttle during reversing when detected a stop sign
 
 
-# 
+#
 # Frames/Second counter
 #
 SHOW_FPS = False
