@@ -62,19 +62,19 @@ def load_config(config_path=None, myconfig="myconfig.py"):
                 config_path = local_config
     
     logger = getLogger()
-    logger.info('loading config file: {}'.format(config_path))
+    logger.info('loading config file: {}' . format(config_path))
     cfg = Config()
     cfg.from_pyfile(config_path)
 
     # look for the optional myconfig.py in the same path.
     personal_cfg_path = config_path.replace("config.py", myconfig)
     if os.path.exists(personal_cfg_path):
-        logger.info("loading personal config over-rides from", myconfig)
+        logger.info(f"loading personal config over-rides from {myconfig}")
         personal_cfg = Config()
         personal_cfg.from_pyfile(personal_cfg_path)
         cfg.from_object(personal_cfg)
     else:
-        logger.info("personal config: file not found ", personal_cfg_path)
+        logger.info(f"personal config: file not found {personal_cfg_path}")
 
     # derived settings
     if hasattr(cfg, 'IMAGE_H') and hasattr(cfg, 'IMAGE_W'): 
