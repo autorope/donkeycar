@@ -29,9 +29,10 @@ from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebContro
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
-from donkeycar.parts.pigpio_enc import PiPGIOEncoder, OdomDist
 from donkeycar.parts.realsense2 import RS_T265
-        
+from donkeycar.parts.tachometer import (SerialTachometer, GpioTachometer, TachometerMode)
+from donkeycar.parts.odometer import Odometer
+
 
 def drive(cfg):
     '''
@@ -59,20 +60,19 @@ def drive(cfg):
             threaded=True)
 
     if cfg.HAVE_ODOM:
-        from donkeycar.parts.odometer import Odometer
         tachometer = None
         if cfg.ENCODER_TYPE == "GPIO":
-            from donkeycar.parts.tachometer import GpioTachometer
-            tachometer = GpioTachometer(gpio_pin=cfg.ODOM_PIN, 
-                                        ticks_per_revolution=cfg.ENCODER_PPR, 
-                                        direction_mode=cfg.TACHOMETER_MODE, 
-                                        debounce_ns=cfg.ENCODER_DEBOUNCE_NS)
+            tachometer = GpioTachometer(
+                gpio_pin=cfg.ODOM_PIN, 
+                ticks_per_revolution=cfg.ENCODER_PPR, 
+                direction_mode=cfg.TACHOMETER_MODE, 
+                debounce_ns=cfg.ENCODER_DEBOUNCE_NS)
         elif cfg.ENCODER_TYPE == "arduino":
-            from donkeycar.parts.tachometer import SerialTachometer
-            tachometer = SerialTachometer(ticks_per_revolution=cfg.ENCODER_PPR, 
-                                          direction_mode=cfg.TACHOMETER_MODE,
-                                          poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                                          serial_port=cfg.ODOM_SERIAL)
+            tachometer = SerialTachometer(
+                ticks_per_revolution=cfg.ENCODER_PPR, 
+                direction_mode=cfg.TACHOMETER_MODE,
+                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                serial_port=cfg.ODOM_SERIAL)
         else:
             print("No supported encoder found")
 

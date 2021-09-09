@@ -160,7 +160,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam=cfg.CAMERA_INDEX)
         elif cfg.CAMERA_TYPE == "CSIC":
             from donkeycar.parts.camera import CSICamera
-            cam = CSICamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE, 
+            cam = CSICamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE,
                             capture_width=cfg.IMAGE_W, capture_height=cfg.IMAGE_H, gstreamer_flip=cfg.CSIC_CAM_GSTREAMER_FLIP_PARM)
         elif cfg.CAMERA_TYPE == "V4L":
             from donkeycar.parts.camera import V4LCamera
@@ -222,7 +222,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             ctr = RCReceiver(cfg)
             V.add(
                 ctr,
-                inputs=['user/mode', 'recording'], 
+                inputs=['user/mode', 'recording'],
                 outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
                 threaded=False)
         else:
@@ -246,8 +246,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                     V.add(netwkJs, threaded=True)
                     ctr.js = netwkJs
             V.add(
-                ctr, 
-                inputs=['cam/image_array', 'user/mode', 'recording'], 
+                ctr,
+                inputs=['cam/image_array', 'user/mode', 'recording'],
                 outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
                 threaded=True)
         
@@ -505,7 +505,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                                cfg.STOP_SIGN_REVERSE_THROTTLE),
               inputs=['cam/image_array', 'pilot/throttle'],
               outputs=['pilot/throttle', 'cam/image_array'])
-        V.add(ThrottleFilter(), 
+        V.add(ThrottleFilter(),
               inputs=['pilot/throttle'],
               outputs=['pilot/throttle'])
 
@@ -689,7 +689,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
-        
+
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_3PIN":
         #
         # Servo for steering and HBridge motor driver in 3pin mode for motor
@@ -712,7 +712,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
-        
+
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
         #
         # Thi driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_2PIN"'
