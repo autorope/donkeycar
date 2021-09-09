@@ -72,4 +72,18 @@ def load_config(config_path=None, myconfig="myconfig.py"):
         if hasattr(cfg, 'IMAGE_DEPTH'):
             cfg.TARGET_D = cfg.IMAGE_DEPTH
 
+    # from env
+    import ast
+
+    for attr in dir(cfg):
+        if attr.isupper():
+            cfg_name = f'DONKEYCAR_CFG_{attr}'
+            new_value = os.getenv(cfg_name)
+            if new_value is not None:
+                old_val = getattr(cfg, attr)
+                new_value_casted = ast.literal_eval(new_value)
+                attr_type = type(new_value_casted)
+                setattr(cfg, attr, new_value_casted)
+                print(f'Set cfg var from env: {attr}={new_value} (type={attr_type} old_val={old_val})')
+
     return cfg
