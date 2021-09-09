@@ -98,19 +98,19 @@ ENCODER_DEBOUNCE_NS = 0         # nanoseconds to wait before integrating subsequ
                                 # For encoders with noisy transitions, this can be used to reject extra interrupts caused by noise.
                                 # If necessary, the exact value can be determined using an oscilliscope or logic analyzer or 
                                 # simply by experimenting with various values.
-TACHOMETER_MODE=TachometerMode.FORWARD_REVERSE  # TachometerMode.FORWARD_ONLY, TachometerMode.FORWARD_BACKWARD or TachometerMode.FORWARD_BACKWARD_STOP
+TACHOMETER_MODE=TachometerMode.FORWARD_REVERSE  # TachometerMode.FORWARD_ONLY, TachometerMode.FORWARD_REVERSE or TachometerMode.FORWARD_REVERSE_STOP
                                 # For dual channel quadrature encoders, 'FORWARD_ONLY' is always the correct mode.
                                 # For single-channel encoders, the tachometer mode depends upon the application.
                                 # - FORWARD_ONLY always increments ticks; effectively assuming the car is always moving forward
                                 #   and always has a positive throttle. This is best for racing on wide open circuits where 
                                 #   the car is always under throttle and where we are not trying to model driving backwards or stopping.
-                                # - FORWARD_BACKWARD uses the throttle value to decide if the car is moving forward or reverse
+                                # - FORWARD_REVERSE uses the throttle value to decide if the car is moving forward or reverse
                                 #   increments or decrements ticks accordingly.  In the case of a zero throttle, ticks will be 
                                 #   incremented or decremented based on the last non-zero throttle; effectively modelling 'coasting'.
                                 #   This can work well in situations where the car will be making progress even when the throttle 
                                 #   drops to zero.  For instance, in a race situatino where the car may coast to slow down but not 
                                 #   actually stop.
-                                # - FORWARD_BACKWARD_STOP uses the throttle value to decide if the car is moving forward or reverse or stopped.
+                                # - FORWARD_REVERSE_STOP uses the throttle value to decide if the car is moving forward or reverse or stopped.
                                 #   This works well for a slower moving robot in situations where the robot is changing direction; for instance4
                                 #   when doing SLAM, the robot will explore the room slowly and may need to backup.
 MM_PER_TICK = 12.7625           # How much travel with a single encoder tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
