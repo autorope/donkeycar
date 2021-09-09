@@ -6,7 +6,8 @@ Created on Wed Sep 13 21:27:44 2017
 """
 import os
 import types
-
+import ast
+from logging import getLogger
 
 class Config:
     
@@ -39,9 +40,18 @@ class Config:
             if attr.isupper():
                 print(attr, ":", getattr(self, attr))
 
-
 def load_config(config_path=None, myconfig="myconfig.py"):
-    
+    """
+    There's an ability to read config variables from env
+
+    Usage example:
+
+    `DONKEYCAR_CFG_MAX_LOOPS=2000 python manage.py drive`
+
+    this command will override config variable MAX_LOOPS and set it to 2000
+    this is the equivalent of having MAX_LOOPS=2000 in the myconfig.py
+    """
+
     if config_path is None:
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
@@ -51,19 +61,20 @@ def load_config(config_path=None, myconfig="myconfig.py"):
             if os.path.exists(local_config):
                 config_path = local_config
     
-    print('loading config file: {}'.format(config_path))
+    logger = getLogger()
+    logger.info('loading config file: {}'.format(config_path))
     cfg = Config()
     cfg.from_pyfile(config_path)
 
     # look for the optional myconfig.py in the same path.
     personal_cfg_path = config_path.replace("config.py", myconfig)
     if os.path.exists(personal_cfg_path):
-        print("loading personal config over-rides from", myconfig)
+        logger.info("loading personal config over-rides from", myconfig)
         personal_cfg = Config()
         personal_cfg.from_pyfile(personal_cfg_path)
         cfg.from_object(personal_cfg)
     else:
-        print("personal config: file not found ", personal_cfg_path)
+        logger.info("personal config: file not found ", personal_cfg_path)
 
     # derived settings
     if hasattr(cfg, 'IMAGE_H') and hasattr(cfg, 'IMAGE_W'): 
@@ -73,8 +84,6 @@ def load_config(config_path=None, myconfig="myconfig.py"):
             cfg.TARGET_D = cfg.IMAGE_DEPTH
 
     # from env
-    import ast
-
     for attr in dir(cfg):
         if attr.isupper():
             cfg_name = f'DONKEYCAR_CFG_{attr}'
@@ -84,6 +93,6 @@ def load_config(config_path=None, myconfig="myconfig.py"):
                 new_value_casted = ast.literal_eval(new_value)
                 attr_type = type(new_value_casted)
                 setattr(cfg, attr, new_value_casted)
-                print(f'Set cfg var from env: {attr}={new_value} (type={attr_type} old_val={old_val})')
+                logger.info(f'Set cfg var from env: {attr}={new_value} (type={attr_type} old_val={old_val})')
 
     return cfg
