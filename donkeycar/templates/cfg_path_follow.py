@@ -10,8 +10,6 @@
 
 import os
 
-from donkeycar.parts.tachometer import TachometerMode
-
 # 
 # #PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -98,7 +96,10 @@ ENCODER_DEBOUNCE_NS = 0         # nanoseconds to wait before integrating subsequ
                                 # For encoders with noisy transitions, this can be used to reject extra interrupts caused by noise.
                                 # If necessary, the exact value can be determined using an oscilliscope or logic analyzer or 
                                 # simply by experimenting with various values.
-TACHOMETER_MODE=TachometerMode.FORWARD_REVERSE  # TachometerMode.FORWARD_ONLY, TachometerMode.FORWARD_REVERSE or TachometerMode.FORWARD_REVERSE_STOP
+FORWARD_ONLY = 1
+FORWARD_REVERSE = 2
+FORWARD_REVERSE_STOP = 3
+TACHOMETER_MODE=FORWARD_REVERSE # FORWARD_ONLY, FORWARD_REVERSE or FORWARD_REVERSE_STOP
                                 # For dual channel quadrature encoders, 'FORWARD_ONLY' is always the correct mode.
                                 # For single-channel encoders, the tachometer mode depends upon the application.
                                 # - FORWARD_ONLY always increments ticks; effectively assuming the car is always moving forward
