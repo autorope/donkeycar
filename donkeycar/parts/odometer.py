@@ -18,7 +18,7 @@ class Odometer:
         self.queue = CircularBuffer(smoothing_count if smoothing_count >= 1 else 1)
         self.debug = debug
 
-    def poll(self, revolutions, timestamp):
+    def poll(self, revolutions:int, timestamp:float=None):
         if self.running:
             if timestamp is None:
                 timestamp = time.time()
