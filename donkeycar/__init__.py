@@ -1,10 +1,12 @@
 import sys
 from pyfiglet import Figlet
 import logging
+from pkg_resources import get_distribution
+
+__version__ = get_distribution('donkeycar').version
 
 logging.basicConfig(level=logging.INFO)
 f = Figlet(font='speed')
-__version__ = '4.3.0'
 
 
 print(f.renderText('Donkey Car'))
