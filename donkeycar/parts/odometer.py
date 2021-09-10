@@ -10,41 +10,51 @@ class Odometer:
     turns those into a distance and velocity.  Velocity can be
     optionally smoothed across a given number of readings.
     """
-    def __init__(self, distance_per_revolution:float, smoothing_count=1):
+    def __init__(self, distance_per_revolution:float, smoothing_count=1, debug=False):
         self.distance_per_revolution:float = distance_per_revolution
-        self.distance:float = 0
-        self.velocity:float = 0
         self.timestamp:float = 0
+        self.revolutions:int = 0
         self.running:bool = True
         self.queue = CircularBuffer(smoothing_count if smoothing_count >= 1 else 1)
+        self.debug = debug
 
-    def poll(self, revolutions:int, timestamp:float=None):
+    def poll(self, revolutions, timestamp):
         if self.running:
             if timestamp is None:
                 timestamp = time.time()
             distance = revolutions * self.distance_per_revolution
 
             # smooth velocity
+            velocity = 0
             if self.queue.count > 0:
-                lastDistance, lastTimestamp = self.queue.tail()
-                self.velocity = (distance - lastDistance) / (timestamp - lastTimestamp)
+                lastDistance, lastVelocity, lastTimestamp = self.queue.tail()
+                if timestamp > lastTimestamp:
+                    velocity = (distance - lastDistance) / (timestamp - lastTimestamp)
 
-            self.distance = distance
-            self.timestamp = timestamp
-            self.queue.enqueue((self.distance, self.timestamp))
+            self.queue.enqueue((distance, velocity, timestamp))
+            if self.debug and velocity != 0:
+                print("odometry: d = {}, v = {}, ts = {}".format(distance, velocity, timestamp))
 
-    def update(self, revolutions:int, timestamp:float=None):
+    def update(self):
         while(self.running):
+            self.poll(self.revolutions, self.timestamp)
+
+    def run_threaded(self, revolutions:int=0, timestamp:float=None) -> Tuple[float, float, float]:
+        if self.running:
+            self.revolutions = revolutions
+            self.timestamp = timestamp if timestamp is not None else time.time()
+
+            if self.queue.count > 0:
+                return self.queue.head()
+        return (0, 0, self.timestamp)
+
+    def run(self, revolutions:int=0, timestamp:float=None) -> Tuple[float, float, float]:
+        if self.running:
             self.poll(revolutions, timestamp)
 
-    def run_threaded(self) -> Tuple[float, float, float]:
-        if self.running:
-            return (self.distance, self.velocity, self.timestamp)
-        return 0
-
-    def run(self, revolutions:int, timestamp:float=None) -> Tuple[float, float, float]:
-        self.poll(revolutions, timestamp)
-        return self.run_threaded()
+            if self.queue.count > 0:
+                return self.queue.head()
+        return (0, 0, self.timestamp)
 
     def shutdown(self):
         self.running = False

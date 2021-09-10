@@ -2,8 +2,8 @@ import logging
 import os
 import time
 from typing import Tuple
-
-from numpy import float32
+import serial
+import serial.tools.list_ports
 
 from donkeycar.utilities.platform import is_jetson
 
@@ -35,24 +35,27 @@ class Tachometer:
     output is current number of revolutions and timestamp
     """
 
-    def __init__(self, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY):
+    def __init__(self, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, debug=False):
+        self.running:bool = False
         self.ticks_per_revolution:float = ticks_per_revolution
         self.direction_mode = direction_mode
         self.ticks:int = 0
         self.direction:int = 1  # default to forward ticks
         self.timestamp:float = 0
+        self.throttle = 0.0
         self.start_ticks()
+        self.debug = debug
 
     def start_ticks(self):
         # override in subclass to add your intialization code
         # can call super-class (to set running to True)
-        self.running:bool = True
+        self.running = True
 
     def poll_ticks(self) -> int:
         # override in subclass to add your code to read ticks
         return 0
 
-    def poll(self, throttle:float=1, timestamp:float=None):
+    def poll(self, throttle, timestamp):
         """
         throttle:  positive means forward
                    negative means backward
@@ -62,7 +65,8 @@ class Tachometer:
         """
         if self.running:
             # if a timestamp if provided, use it
-            self.timestamp = timestamp if timestamp is not None else time.time()
+            if timestamp is None:
+                timestamp = time.time()
 
             # set direction flag based on direction mode
             if TachometerMode.FORWARD_REVERSE == self.direction_mode:
@@ -72,26 +76,41 @@ class Tachometer:
             elif TachometerMode.FORWARD_REVERSE_STOP == self.direction_mode:
                 self.direction = sign(throttle)
 
+            lastTicks = self.ticks
+            self.timestamp = timestamp
             self.ticks = self.poll_ticks()
+            if self.debug and self.ticks != lastTicks:
+                print("tachometer: t = {}, r = {}, ts = {}".format(self.ticks, self.ticks / self.ticks_per_revolution, timestamp))
 
-    def update(self, throttle:float=1, timestamp:float=None):
+    def update(self):
         """
         throttle: sign of throttle is use used to determine direction.
         timestamp: timestamp for update or None to use current time.
                    This is useful for creating deterministic tests.
         """
         while(self.running):
+            self.poll(self.throttle, self.timestamp)
+
+    def run_threaded(self, throttle:float=0.0, timestamp:float=None) -> Tuple[float, float]:
+        if self.running:
+            thisTimestamp = self.timestamp
+            thisRevolutions = self.ticks / self.ticks_per_revolution
+
+            # update throttle for next poll()
+            self.throttle = throttle
+            self.timestamp = timestamp
+
+            # return (revolutions, timestamp)
+            return (thisRevolutions, thisTimestamp)
+        return (0, self.timestamp)
+
+    def run(self, throttle:float=1.0, timestamp:float=None) -> Tuple[float, float]:
+        if self.running:
             self.poll(throttle, timestamp)
 
-    def run_threaded(self) -> Tuple[float, float]:
-        if self.running:
-            # (revolutions, timestamp)
+            # return (revolutions, timestamp)
             return (self.ticks / self.ticks_per_revolution, self.timestamp)
-        return 0
-
-    def run(self, throttle:float=1, timestamp:float=None) -> Tuple[float, float]:
-        self.poll(throttle, timestamp)
-        return self.run_threaded()
+        return (0, self.timestamp)
 
     def shutdown(self):
         self.running = False
@@ -109,22 +128,29 @@ class SerialPort:
         self.ser = None
 
     def start(self):
-        import serial
-        import serial.tools.list_ports
         for item in serial.tools.list_ports.comports():
             logger.info(item)  # list all the serial ports
         self.ser = serial.Serial(self.port, self.baudrate, 8, 'N', 1, timeout=0.1)
+        print("Opened serial port " + self.ser.name)
 
     def stop(self):
-        if self.ser:
-            self.ser.close()
-        self.ser = None
+        if self.ser is not None:
+            sp = self.ser
+            self.ser = None
+            sp.close()
 
     def buffered(self) -> int:
         """
         return: the number of buffered characters
         """
-        return self.ser.in_waiting
+        if self.ser is None or not self.ser.is_open:
+            return 0
+
+        try:
+            return self.ser.in_waiting
+        except serial.serialutil.SerialException:
+            return 0
+
 
     def read(self, count:int=0) -> Tuple[bool, str]:
         """
@@ -137,12 +163,18 @@ class SerialPort:
                 str: ascii string if count bytes read (may be blank), 
                      blank if count bytes are not available
         """
-        input = ''
-        waiting = self.buffered()
-        if (waiting >= count):   # read the serial port and see if there's any data there
-            buffer = self.ser.read(count)
-            input = buffer.decode('ascii')
-        return ((waiting > 0), input)
+        if self.ser is None or not self.ser.is_open:
+            return (False, "")
+
+        try:
+            input = ''
+            waiting = self.buffered()
+            if (waiting >= count):   # read the serial port and see if there's any data there
+                buffer = self.ser.read(count)
+                input = buffer.decode('ascii')
+            return ((waiting > 0), input)
+        except serial.serialutil.SerialException:
+            return (False, "")
 
 
     def readln(self) -> Tuple[bool, str]:
@@ -156,26 +188,38 @@ class SerialPort:
                 str: line if read (may be blank), 
                      blank if not read
         """
-        #
-        #
-        input = ''
-        waiting = self.buffered()
-        if (waiting > 0):   # read the serial port and see if there's any data there
-            buffer = self.ser.readline()
-            input = buffer.decode('ascii')
-        return ((waiting > 0), input)
-        
+        if self.ser is None or not self.ser.is_open:
+            return (False, "")
+
+        try:
+            input = ''
+            waiting = self.buffered()
+            if (waiting > 0):   # read the serial port and see if there's any data there
+                buffer = self.ser.readline()
+                input = buffer.decode('ascii')
+            return ((waiting > 0), input)
+        except serial.serialutil.SerialException:
+            return (False, "")
+
     def write(self, value:str):
         """
         write string to serial port
         """
-        self.ser.write(str.encode(value))  
+        if self.ser is not None and self.ser.is_open:
+            try:
+                self.ser.write(str.encode(value))  
+            except serial.serialutil.SerialException:
+                logger.error("Can't write to serial port")
 
     def writeln(self, value:str):
         """
         write line to serial port
         """
-        self.ser.write(str.encode(value + '\n'))  
+        if self.ser is not None and self.ser.is_open:
+            try:
+                self.ser.write(str.encode(value + '\n'))  
+            except serial.serialutil.SerialException:
+                logger.error("Can't writeln to serial port")
 
 
 
@@ -236,13 +280,14 @@ class SerialTachometer(Tachometer):
     use a single-channel encoder, then modify that sketch.
 
     """
-    def __init__(self, ticks_per_revolution:float, direction_mode:int=TachometerMode.FORWARD_ONLY, poll_delay_secs:float=0.01, serial_port:SerialPort=None):
+    def __init__(self, ticks_per_revolution:float, direction_mode:int=TachometerMode.FORWARD_ONLY, poll_delay_secs:float=0.01, serial_port:SerialPort=None, debug=False):
         self.ser = serial_port
         self.lasttick = 0
         self.poll_delay_secs = poll_delay_secs
-        Tachometer.__init__(self, ticks_per_revolution, direction_mode)
+        Tachometer.__init__(self, ticks_per_revolution, direction_mode, debug)
     
     def shutdown(self):
+        self.running = False
         if self.ser is not None:
             self.ser.stop()
         return super().shutdown()
@@ -264,7 +309,7 @@ class SerialTachometer(Tachometer):
         # because it has the most recent reading
         #
         input = ''
-        while (self.ser.buffered() > 0):
+        while (self.running and (self.ser.buffered() > 0)):
             _, input = self.ser.readln()
 
         #
@@ -293,7 +338,7 @@ class SerialTachometer(Tachometer):
 
 
 class GpioTachometer(Tachometer):
-    def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, debounce_ns:int=0):
+    def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, debounce_ns:int=0, debug=False):
         # validate gpio_pin
         if not 1 <= gpio_pin <= 40:
             raise ValueError('The pin number must be BCM (Broadcom) pin within the range [1, 40].')
@@ -304,7 +349,7 @@ class GpioTachometer(Tachometer):
         self.cb = None
         self.debounce_ns:int = debounce_ns
         self.debounce_time:int = 0
-        Tachometer.__init__(self, ticks_per_revolution, direction_mode)
+        Tachometer.__init__(self, ticks_per_revolution, direction_mode, debug)
 
     def _cb(self, _):
         """

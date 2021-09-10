@@ -116,6 +116,7 @@ TACHOMETER_MODE=FORWARD_REVERSE # FORWARD_ONLY, FORWARD_REVERSE or FORWARD_REVER
                                 #   when doing SLAM, the robot will explore the room slowly and may need to backup.
 MM_PER_TICK = 12.7625           # How much travel with a single encoder tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
 ODOM_SERIAL = '/dev/ttyACM0'    # serial port when ENCODER_TYPE is 'arduino'
+ODOM_SERIAL_BAUDRATE = 115200   # baud rate for serial port encoder
 ODOM_PIN = 13                   # if using ENCODER_TYPE=GPIO, which GPIO board mode pin to use as input
 ODOM_SMOOTHING = 1              # number of odometer readings to use when calculating velocity
 ODOM_DEBUG = False              # Write out values on vel and distance as it runs

@@ -30,8 +30,6 @@ from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.realsense2 import RS_T265
-from donkeycar.parts.tachometer import (SerialTachometer, GpioTachometer, TachometerMode)
-from donkeycar.parts.odometer import Odometer
 
 
 def drive(cfg):
@@ -60,24 +58,31 @@ def drive(cfg):
             threaded=True)
 
     if cfg.HAVE_ODOM:
+        from donkeycar.parts.tachometer import (SerialPort, SerialTachometer, GpioTachometer, TachometerMode)
+        from donkeycar.parts.odometer import Odometer
         tachometer = None
         if cfg.ENCODER_TYPE == "GPIO":
             tachometer = GpioTachometer(
                 gpio_pin=cfg.ODOM_PIN, 
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE, 
-                debounce_ns=cfg.ENCODER_DEBOUNCE_NS)
+                debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
+                debug=cfg.ODOM_DEBUG)
         elif cfg.ENCODER_TYPE == "arduino":
             tachometer = SerialTachometer(
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE,
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                serial_port=cfg.ODOM_SERIAL)
+                serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),
+                debug=cfg.ODOM_DEBUG)
         else:
             print("No supported encoder found")
 
         if tachometer:
-            odometer = Odometer(distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK, smoothing_count=cfg.ODOM_SMOOTHING)
+            odometer = Odometer(
+                distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
+                smoothing_count=cfg.ODOM_SMOOTHING, 
+                debug=cfg.ODOM_DEBUG)
             V.add(tachometer, inputs=['user/throttle'], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
             V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=True)
 
