@@ -328,7 +328,7 @@ DC_TWO_WHEEL_L298N = {
 
 #ODOMETRY
 HAVE_ODOM = False               # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino|Astar.  
+ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino.  
                                 # - 'GPIO' refers to direct connect of a single-channel encoder to an RPi/Jetson GPIO header pin.  
                                 #   Set ODOM_PIN to the gpio pin, based on board numbering.
                                 # - 'arduino' generically refers to any microcontroller connected over a serial port.  

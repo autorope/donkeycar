@@ -35,7 +35,7 @@ class Tachometer:
     output is current number of revolutions and timestamp
     """
 
-    def __init__(self, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, debug=False):
+    def __init__(self, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, poll_delay_secs:float=0.01, debug=False):
         self.running:bool = False
         self.ticks_per_revolution:float = ticks_per_revolution
         self.direction_mode = direction_mode
@@ -45,6 +45,7 @@ class Tachometer:
         self.throttle = 0.0
         self.start_ticks()
         self.debug = debug
+        self.poll_delay_secs = poll_delay_secs
 
     def start_ticks(self):
         # override in subclass to add your intialization code
@@ -54,6 +55,11 @@ class Tachometer:
     def poll_ticks(self) -> int:
         # override in subclass to add your code to read ticks
         return 0
+
+    def stop_ticks(self):
+        # override in subclass to add your shutdown code
+        # can call super-class (to set running to True)
+        self.running = False
 
     def poll(self, throttle, timestamp):
         """
@@ -90,6 +96,7 @@ class Tachometer:
         """
         while(self.running):
             self.poll(self.throttle, self.timestamp)
+            time.sleep(self.poll_delay_secs)  # give other threads time
 
     def run_threaded(self, throttle:float=0.0, timestamp:float=None) -> Tuple[float, float]:
         if self.running:
@@ -113,6 +120,7 @@ class Tachometer:
         return (0, self.timestamp)
 
     def shutdown(self):
+        self.stop_ticks()
         self.running = False
 
 
@@ -173,7 +181,7 @@ class SerialPort:
                 buffer = self.ser.read(count)
                 input = buffer.decode('ascii')
             return ((waiting > 0), input)
-        except serial.serialutil.SerialException:
+        except (serial.serialutil.SerialException, TypeError):
             return (False, "")
 
 
@@ -198,7 +206,7 @@ class SerialPort:
                 buffer = self.ser.readline()
                 input = buffer.decode('ascii')
             return ((waiting > 0), input)
-        except serial.serialutil.SerialException:
+        except (serial.serialutil.SerialException, TypeError):
             return (False, "")
 
     def write(self, value:str):
@@ -208,7 +216,7 @@ class SerialPort:
         if self.ser is not None and self.ser.is_open:
             try:
                 self.ser.write(str.encode(value))  
-            except serial.serialutil.SerialException:
+            except (serial.serialutil.SerialException, TypeError):
                 logger.error("Can't write to serial port")
 
     def writeln(self, value:str):
@@ -218,9 +226,8 @@ class SerialPort:
         if self.ser is not None and self.ser.is_open:
             try:
                 self.ser.write(str.encode(value + '\n'))  
-            except serial.serialutil.SerialException:
+            except (serial.serialutil.SerialException, TypeError):
                 logger.error("Can't writeln to serial port")
-
 
 
 class SerialTachometer(Tachometer):
@@ -284,22 +291,22 @@ class SerialTachometer(Tachometer):
         self.ser = serial_port
         self.lasttick = 0
         self.poll_delay_secs = poll_delay_secs
-        Tachometer.__init__(self, ticks_per_revolution, direction_mode, debug)
+        Tachometer.__init__(self, ticks_per_revolution, direction_mode, poll_delay_secs, debug)
     
-    def shutdown(self):
-        self.running = False
-        if self.ser is not None:
-            self.ser.stop()
-        return super().shutdown()
-
     def start_ticks(self):
         self.ser.start()
         self.ser.writeln('r')  # restart the encoder to zero
-        if self.poll_delay_secs > 0:
-            # start continuous mode if given non-zero delay
-            self.ser.writeln("c" + str(int(self.poll_delay_secs * 1000)))
+        # if self.poll_delay_secs > 0:
+        #     # start continuous mode if given non-zero delay
+        #     self.ser.writeln("c" + str(int(self.poll_delay_secs * 1000)))
         self.ser.writeln('p')  # ask for the first ticks
-        Tachometer.start_ticks(self)       # set running to True
+        super().start_ticks()  # set running to True
+
+    def stop_ticks(self):
+        self.running = False
+        if self.ser is not None:
+            self.ser.stop()
+        return super().stop_ticks()
 
     def poll_ticks(self) -> int:
         #
@@ -338,7 +345,7 @@ class SerialTachometer(Tachometer):
 
 
 class GpioTachometer(Tachometer):
-    def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, debounce_ns:int=0, debug=False):
+    def __init__(self, gpio_pin, ticks_per_revolution:float, direction_mode=TachometerMode.FORWARD_ONLY, poll_delay_secs:float=0.01, debounce_ns:int=0, debug=False):
         # validate gpio_pin
         if not 1 <= gpio_pin <= 40:
             raise ValueError('The pin number must be BCM (Broadcom) pin within the range [1, 40].')
@@ -349,7 +356,7 @@ class GpioTachometer(Tachometer):
         self.cb = None
         self.debounce_ns:int = debounce_ns
         self.debounce_time:int = 0
-        Tachometer.__init__(self, ticks_per_revolution, direction_mode, debug)
+        Tachometer.__init__(self, ticks_per_revolution, direction_mode, poll_delay_secs, debug)
 
     def _cb(self, _):
         """
@@ -365,14 +372,14 @@ class GpioTachometer(Tachometer):
         GPIO.setmode(GPIO.BCM)  # use broadcom numbering
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.add_event_detect(self.pin, GPIO.RISING, callback=self._cb)        
-        Tachometer.start_ticks(self)     # set runnng to True
+        super().start_ticks()     # set runnng to True
 
     def poll_ticks(self) -> int:                
         return self.counter
 
-    def shutdown(self):
+    def stop_ticks(self):
         GPIO.remove_event_detect(self.pin)           
-        Tachometer.shutdown(self)
+        super().stop_ticks()
 
 
 if __name__ == "__main__":

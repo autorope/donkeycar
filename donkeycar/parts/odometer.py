@@ -38,6 +38,7 @@ class Odometer:
     def update(self):
         while(self.running):
             self.poll(self.revolutions, self.timestamp)
+            time.sleep(0)  # give other threads time
 
     def run_threaded(self, revolutions:int=0, timestamp:float=None) -> Tuple[float, float, float]:
         if self.running:

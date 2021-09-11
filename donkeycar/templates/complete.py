@@ -84,6 +84,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 gpio_pin=cfg.ODOM_PIN, 
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE, 
+                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
                 debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
                 debug=cfg.ODOM_DEBUG)
         elif cfg.ENCODER_TYPE == "arduino":

@@ -66,6 +66,7 @@ def drive(cfg):
                 gpio_pin=cfg.ODOM_PIN, 
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE, 
+                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
                 debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
                 debug=cfg.ODOM_DEBUG)
         elif cfg.ENCODER_TYPE == "arduino":
@@ -84,7 +85,7 @@ def drive(cfg):
                 smoothing_count=cfg.ODOM_SMOOTHING, 
                 debug=cfg.ODOM_DEBUG)
             V.add(tachometer, inputs=['user/throttle'], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
-            V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=True)
+            V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=False)
 
         if not os.path.exists(cfg.WHEEL_ODOM_CALIB):
             print("You must supply a json file when using odom with T265. There is a sample file in templates.")
