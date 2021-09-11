@@ -1,11 +1,9 @@
 import logging
-import os
 import time
 from typing import Tuple
-import serial
-import serial.tools.list_ports
 
 from donkeycar.utilities.platform import is_jetson
+from donkeycar.utilities.serial_port import SerialPort
 
 # import correct GPIO library
 if is_jetson():
@@ -124,111 +122,6 @@ class Tachometer:
         self.stop_ticks()
         self.running = False
 
-
-class SerialPort:
-    """
-    Wrapper for serial port connect/read/write.
-    Use this rather than raw pyserial api, so that
-    we can mock this for testing.
-    """
-    def __init__(self, port:str='/dev/ttyACM0', baudrate:int=115200):
-        self.port = port
-        self.baudrate = baudrate
-        self.ser = None
-
-    def start(self):
-        for item in serial.tools.list_ports.comports():
-            logger.info(item)  # list all the serial ports
-        self.ser = serial.Serial(self.port, self.baudrate, 8, 'N', 1, timeout=0.1)
-        print("Opened serial port " + self.ser.name)
-
-    def stop(self):
-        if self.ser is not None:
-            sp = self.ser
-            self.ser = None
-            sp.close()
-
-    def buffered(self) -> int:
-        """
-        return: the number of buffered characters
-        """
-        if self.ser is None or not self.ser.is_open:
-            return 0
-
-        try:
-            return self.ser.in_waiting
-        except serial.serialutil.SerialException:
-            return 0
-
-
-    def read(self, count:int=0) -> Tuple[bool, str]:
-        """
-        if there are characters waiting, 
-        then read them from the serial port
-        bytes: number of bytes to read 
-        return: tuple of
-                bool: True if count bytes were available to read, 
-                      false if not enough bytes were avaiable
-                str: ascii string if count bytes read (may be blank), 
-                     blank if count bytes are not available
-        """
-        if self.ser is None or not self.ser.is_open:
-            return (False, "")
-
-        try:
-            input = ''
-            waiting = self.buffered()
-            if (waiting >= count):   # read the serial port and see if there's any data there
-                buffer = self.ser.read(count)
-                input = buffer.decode('ascii')
-            return ((waiting > 0), input)
-        except (serial.serialutil.SerialException, TypeError):
-            return (False, "")
-
-
-    def readln(self) -> Tuple[bool, str]:
-        """
-        if there are characters waiting, 
-        then read a line from the serial port.
-        This will block until end-of-line can be read.
-        The end-of-line is included in the return value.
-        return: tuple of
-                bool: True if line was read, false if not
-                str: line if read (may be blank), 
-                     blank if not read
-        """
-        if self.ser is None or not self.ser.is_open:
-            return (False, "")
-
-        try:
-            input = ''
-            waiting = self.buffered()
-            if (waiting > 0):   # read the serial port and see if there's any data there
-                buffer = self.ser.readline()
-                input = buffer.decode('ascii')
-            return ((waiting > 0), input)
-        except (serial.serialutil.SerialException, TypeError):
-            return (False, "")
-
-    def write(self, value:str):
-        """
-        write string to serial port
-        """
-        if self.ser is not None and self.ser.is_open:
-            try:
-                self.ser.write(str.encode(value))  
-            except (serial.serialutil.SerialException, TypeError):
-                logger.error("Can't write to serial port")
-
-    def writeln(self, value:str):
-        """
-        write line to serial port
-        """
-        if self.ser is not None and self.ser.is_open:
-            try:
-                self.ser.write(str.encode(value + '\n'))  
-            except (serial.serialutil.SerialException, TypeError):
-                logger.error("Can't writeln to serial port")
 
 
 class SerialTachometer(Tachometer):

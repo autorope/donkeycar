@@ -58,7 +58,8 @@ def drive(cfg):
             threaded=True)
 
     if cfg.HAVE_ODOM:
-        from donkeycar.parts.tachometer import (SerialPort, SerialTachometer, GpioTachometer, TachometerMode)
+        from donkeycar.utilities.serial_port import SerialPort
+        from donkeycar.parts.tachometer import (SerialTachometer, GpioTachometer, TachometerMode)
         from donkeycar.parts.odometer import Odometer
         tachometer = None
         if cfg.ENCODER_TYPE == "GPIO":
