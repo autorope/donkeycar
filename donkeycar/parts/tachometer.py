@@ -75,12 +75,13 @@ class Tachometer:
                 timestamp = time.time()
 
             # set direction flag based on direction mode
-            if TachometerMode.FORWARD_REVERSE == self.direction_mode:
-                # if throttle is zero, leave direction alone to model 'coasting'
-                if throttle != 0:
+            if throttle is not None:
+                if TachometerMode.FORWARD_REVERSE == self.direction_mode:
+                    # if throttle is zero, leave direction alone to model 'coasting'
+                    if throttle != 0:
+                        self.direction = sign(throttle)
+                elif TachometerMode.FORWARD_REVERSE_STOP == self.direction_mode:
                     self.direction = sign(throttle)
-            elif TachometerMode.FORWARD_REVERSE_STOP == self.direction_mode:
-                self.direction = sign(throttle)
 
             lastTicks = self.ticks
             self.timestamp = timestamp
