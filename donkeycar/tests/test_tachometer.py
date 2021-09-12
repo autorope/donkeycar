@@ -3,82 +3,30 @@ from typing import Tuple
 import unittest
 
 from donkeycar.parts.tachometer import Tachometer
-from donkeycar.parts.tachometer import SerialPort
+from donkeycar.parts.tachometer import AbstractEncoder
+from donkeycar.parts.tachometer import TachometerMode
+from donkeycar.utilities.serial_port import SerialPort
 
-
-class MockTachometer(Tachometer):
-    def poll_ticks(self):
+class MockEncoder(AbstractEncoder):
+    def __init__(self) -> None:
+        self.ticks = 0
+        super().__init__()
+    def start_ticks(self):
+        pass
+    def stop_ticks(self):
+        pass
+    def poll_ticks(self, direction: int) -> int:
         """
         add a tick based on direction
         """
-        return self.ticks + self.direction
+        assert((1==direction) or (0==direction) or (-1==direction))
+        self.ticks += direction
+        return self.ticks
 
 
-class MockSerialPort(SerialPort):
-    def start(self, ):
-        self.input = ""
-        self.output = ""
-        SerialPort.start(self)
-
-    def stop(self):
-        pass
-
-    def buffered(self) -> int:
-        """
-        return: the number of buffered characters
-        """
-        return len(self.input)
-
-    def read(self, count:int=0) -> Tuple[bool, str]:
-        """
-        if there are characters waiting, 
-        then read them from the serial port
-        bytes: number of bytes to read 
-        return: tuple of
-                bool: True if count bytes were available to read, 
-                      false if not enough bytes were avaiable
-                str: ascii string if count bytes read (may be blank), 
-                     blank if count bytes are not available
-        """
-        input = ''
-        waiting = self.buffered()
-        if (waiting >= count):   # read the serial port and see if there's any data there
-            input = self.input[0:count]
-            self.buffer = self.input[count:]
-        return ((waiting > 0), input)
-
-
-    def readln(self) -> Tuple[bool, str]:
-        """
-        if there are characters waiting, 
-        then read a line from the serial port.
-        This will block until end-of-line can be read.
-        The end-of-line is included in the return value.
-        return: tuple of
-                bool: True if line was read, false if not
-                str: line if read (may be blank), 
-                     blank if not read
-        """
-        #
-        #
-        input = ''
-        waiting = self.buffered().find('\n"') + 1
-        if (waiting > 0):   # read the serial port and see if there's any data there
-            input = self.input[0:waiting]
-            self.output = self.input[waiting:]
-        return ((waiting > 0), input)
-        
-    def write(self, value:str):
-        """
-        write string to serial port
-        """
-        self.output = self.value
-
-    def writeln(self, value:str):
-        """
-        write line to serial port
-        """
-        self.output = value + '\n'
+class MockTachometer(Tachometer):
+    def __init__(self, ticks_per_revolution: float, direction_mode, debug=False):
+        super().__init__(MockEncoder(), ticks_per_revolution=ticks_per_revolution, direction_mode=direction_mode, poll_delay_secs=0, debug=debug)
 
 
 class TestTachometer(unittest.TestCase):
@@ -90,7 +38,7 @@ class TestTachometer(unittest.TestCase):
         #
         tachometer = MockTachometer(
             ticks_per_revolution=10, 
-            direction_mode=Tachometer.FORWARD_ONLY)
+            direction_mode=TachometerMode.FORWARD_ONLY)
 
         ts = time.time()
         revolutions, timestamp = tachometer.run(throttle=1, timestamp=ts)
@@ -129,7 +77,7 @@ class TestTachometer(unittest.TestCase):
         #
         tachometer = MockTachometer(
             ticks_per_revolution=10, 
-            direction_mode=Tachometer.FORWARD_REVERSE)
+            direction_mode=TachometerMode.FORWARD_REVERSE)
 
         ts = time.time()
         revolutions, timestamp = tachometer.run(throttle=1, timestamp=ts)
@@ -167,7 +115,7 @@ class TestTachometer(unittest.TestCase):
         #
         tachometer = MockTachometer(
             ticks_per_revolution=10, 
-            direction_mode=Tachometer.FORWARD_REVERSE_STOP)
+            direction_mode=TachometerMode.FORWARD_REVERSE_STOP)
 
         ts = time.time()
         revolutions, timestamp = tachometer.run(throttle=1, timestamp=ts)

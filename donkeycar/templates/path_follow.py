@@ -59,23 +59,22 @@ def drive(cfg):
 
     if cfg.HAVE_ODOM:
         from donkeycar.utilities.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (SerialTachometer, GpioTachometer, TachometerMode)
+        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder)
         from donkeycar.parts.odometer import Odometer
         tachometer = None
         if cfg.ENCODER_TYPE == "GPIO":
-            tachometer = GpioTachometer(
-                gpio_pin=cfg.ODOM_PIN, 
+            tachometer = Tachometer(
+                GpioEncoder(gpio_pin=cfg.ODOM_PIN, debounce_ns=cfg.ENCODER_DEBOUNCE_NS, debug=cfg.ODOM_DEBUG),
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE, 
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
                 debug=cfg.ODOM_DEBUG)
         elif cfg.ENCODER_TYPE == "arduino":
-            tachometer = SerialTachometer(
+            tachometer = Tachometer(
+                SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG),
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE,
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),
                 debug=cfg.ODOM_DEBUG)
         else:
             print("No supported encoder found")
