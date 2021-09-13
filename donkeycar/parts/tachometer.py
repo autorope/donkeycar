@@ -170,6 +170,7 @@ class GpioEncoder(AbstractEncoder):
             raise ValueError('The pin number must be BCM (Broadcom) pin within the range [1, 40].')
 
         self.counter = 0
+        self.direction = 0
         self.pin = gpio_pin
         self.pi = None
         self.cb = None
