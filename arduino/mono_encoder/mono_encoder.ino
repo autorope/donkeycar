@@ -1,4 +1,6 @@
 /* 
+ * mono_encoder.ino
+ * 
  * Read a single-channel encoder,
  * debounce the input.  Ticks 
  * are counted for each transition
@@ -16,16 +18,37 @@
  * as a comma delimited pair: ticks,timeMs
  *
  */
+#include <arduino.h>
+ 
+#define ENCODER_PIN  2             // input pin for first encoder
+#define ENCODER_2_PIN 3            // input pin for second encoder
+#define POLL_DELAY_MICROS (100UL)  // microseconds between polls
 
-#define ENCODER_PIN  2           // input pin
-#define POLL_DELAY_MICROS 100UL  // microseconds between polls
+//
+// state for an encoder pin
+//
+struct EncoderState {
+  int pin;                     // gpio pin number
+  long ticks;                  // current tick count
+  uint16_t readings;           // history of last 16 readings
+  uint16_t transition;         // value of last 16 readings for next stable state transition 
+  unsigned long pollAtMicros;  // time of next poll
+};
+
+// list of encoders
+EncoderState encoders[2] = {
+  {ENCODER_PIN, 0L, 0, 0x8000, 0UL},
+  #ifdef ENCODER_2_PIN
+    {ENCODER_2_PIN, 0L, 0, 0x8000, 0UL},
+  #endif
+};
+
+#define ENCODER_COUNT (sizeof(encoders) / sizeof(EncoderState))
 
 boolean continuous = false; // true to send continuously, false to only send on demand
 unsigned long sendAtMs = 0; // next send time in continuous mode
 unsigned long delayMs = 0;  // time between sends in continuous mode
 
-long ticks  = 0;            // current tick cound
-unsigned long ticksMs = 0;  // time of current tick count
 
 
 //
@@ -50,29 +73,39 @@ unsigned long ticksMs = 0;  // time of current tick count
 // In that case, reduce the POLL_DELAY_MICROS to 
 // suit your encoder and use case.
 //
-void pollEncoder() {
-  static uint16_t state=0;
-  static uint16_t transition=0x8000;
-  static unsigned long pollAtMicros = 0;             // time of next poll
-
+void pollEncoder(EncoderState &encoder) {
   unsigned long nowMicros = micros();
-  if (nowMicros >= pollAtMicros) {
+  if (nowMicros >= encoder.pollAtMicros) {
     //
     // shift state left and add new reading
     //
-    state = (state << 1) | digitalRead(ENCODER_PIN);
+    encoder.readings = (encoder.readings << 1) | digitalRead(encoder.pin);
 
     //
-    // if state is a stable transition
+    // if readings match target transition
     // then count the ticks and 
-    // start looking for the next transion
+    // start looking for the next target transion
     //
-    if (state == transition) {
-      ticks += 1;
-      transition = ~transition;  // invert transition
+    if (encoder.readings == encoder.transition) {
+      encoder.ticks += 1;
+      encoder.transition = ~encoder.transition;  // invert transition
     }
 
-    pollAtMicros = nowMicros + POLL_DELAY_MICROS;
+    encoder.pollAtMicros = nowMicros + POLL_DELAY_MICROS;
+  }
+}
+void pollEncoders() {
+  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+    pollEncoder(encoders[i]);
+  }
+}
+
+//
+// reset tick counters to zero
+//
+void resetEncoders() {
+  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+    encoders[i].ticks = 0;
   }
 }
 
@@ -83,25 +116,35 @@ void pollEncoder() {
 //
 //   "{ticks},{ticksMs}"
 //
-void writeTicks() {
-  Serial.print(ticks);
+void writeTicks(unsigned long ticksMs) {
+  Serial.print(encoders[0].ticks);
   Serial.print(',');
-  Serial.println(ticksMs);
+  Serial.print(ticksMs);
+  for(int i = 1; i < ENCODER_COUNT; i += 1) {
+    Serial.print(";");
+    Serial.print(encoders[i].ticks);
+    Serial.print(',');
+    Serial.print(ticksMs);
+  }
+  Serial.println("");
 }
 
 
 void setup() {
-  pinMode(ENCODER_PIN,INPUT);
+  // set all encoder pins to inputs
+  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+    pinMode(encoders[i].pin, INPUT);
+  }
   Serial.begin(115200);
 }
 
 
 void loop() {
   //
-  // poll encoder ticks
+  // poll each encoder's ticks
   //
-  pollEncoder();
-  ticksMs = millis();
+  pollEncoders();
+  unsigned long ticksMs = millis();
 
   //
   // commands are send one per line (ending in '\n')
@@ -120,15 +163,15 @@ void loop() {
 
     if (newcommand == "r") {
       //
-      // reset counter to zero
+      // reset tick counters to zero
       //
-      ticks = 0;
+      resetEncoders();
     }
     else if (newcommand == "p") {
       //
       // send current ticks immediately
       //
-      writeTicks();
+      writeTicks(ticksMs);
     }
     else if (newcommand.startsWith("c")) {
       //
@@ -163,7 +206,8 @@ void loop() {
   if (continuous) {
     if (ticksMs >= sendAtMs) {
       sendAtMs = ticksMs + delayMs;
-      writeTicks();
+      writeTicks(ticksMs);
     }
   }
 }
+
