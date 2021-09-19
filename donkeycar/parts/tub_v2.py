@@ -9,6 +9,11 @@ from PIL import Image
 
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
 
+from queue import Queue, Empty
+from threading import Lock
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Tub(object):
     """
@@ -31,7 +36,7 @@ class Tub(object):
         if not os.path.exists(self.images_base_path):
             os.makedirs(self.images_base_path, exist_ok=True)
 
-    def write_record(self, record=None):
+    def write_record_ts(self, record, timestamp_sec):
         """
         Can handle various data types including images.
         """
@@ -64,12 +69,20 @@ class Tub(object):
                     image.save(image_path)
                     contents[key] = name
 
-        # Private properties
-        contents['_timestamp_ms'] = int(round(time.time() * 1000))
+        # Private properties    
+        contents['_timestamp_ms'] = round(timestamp_sec * 1000)
         contents['_index'] = self.manifest.current_index
         contents['_session_id'] = self.manifest.session_id
 
         self.manifest.write_record(contents)
+
+    def write_record(self, record):
+        """
+        write_record should be only used in single threaded mode, as the timestamp 
+        will be generated on the current thread.
+        """
+        self.write_record_ts(record, time.time())
+
 
     def delete_records(self, record_indexes):
         self.manifest.delete_records(record_indexes)
@@ -109,9 +122,21 @@ class TubWriter(object):
     """
     A Donkey part, which can write records to the datastore.
     """
+
+    class TubRecordCached:
+        """
+        Simple helper for storeing record in a queue
+        """
+        def __init__(self, record, timestamp):
+            self.record = record
+            self.timestamp = timestamp
+
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
                  max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
+        self.record_queue = Queue()
+        self.mutex = Lock()
+        self.on = False
 
     def run(self, *args):
         assert len(self.tub.inputs) == len(args), \
@@ -120,13 +145,55 @@ class TubWriter(object):
         self.tub.write_record(record)
         return self.tub.manifest.current_index
 
-    def __iter__(self):
-        return self.tub.__iter__()
+    def run_threaded(self, *args):
+        assert len(self.tub.inputs) == len(args), \
+            f'Expected {len(self.tub.inputs)} inputs but received {len(args)}'
+        record = dict(zip(self.tub.inputs, args))
+        # push the (record, timestamp) tuple into queue
+        self.record_queue.put( (record, time.time()) )
+        self.mutex.acquire()
+        count = self.tub.manifest.current_index
+        self.mutex.release()
+        return count
+
+    def dequeue_and_process_record(self):
+        # pop a (record, timestamp) tuple
+        record, timestamp = self.record_queue.get()
+        # write the record to disk
+        self.mutex.acquire()
+        self.tub.write_record_ts(record, timestamp)
+        self.mutex.release()
+        # notify this task is done
+        self.record_queue.task_done()
+
+    def update(self):
+        self.on = True
+        # This loop runs like a 'normal' threaded loop 
+        while self.on:
+            if not self.record_queue.empty():
+                try:
+                    self.dequeue_and_process_record()
+                except Empty:
+                    logger.warn('Nothing to pop from record_queue. This should not be happening. Check if there is any other thread accessing record_queue.')
+
+        # Main thread triggered shutdown(), finish up everything in the queue
+        while not self.record_queue.empty():
+            try:
+                self.dequeue_and_process_record()
+            except Empty:
+                logger.warn('Nothing to pop from record_queue. This should not be happening. Check if there is any other thread accessing record_queue.')
 
     def close(self):
+        self.record_queue.join()
+        self.mutex.acquire()
         self.tub.close()
+        self.mutex.release()
+        # Force everything written to disk
+        os.sync()
 
     def shutdown(self):
+        self.on = False
+        self.record_queue.join()
         self.close()
 
 

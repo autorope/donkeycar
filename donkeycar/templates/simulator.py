@@ -399,7 +399,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
     tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
-    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording', threaded=True)
 
     if cfg.PUB_CAMERA_IMAGES:
         from donkeycar.parts.network import TCPServeValue
