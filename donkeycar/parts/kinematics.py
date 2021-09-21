@@ -2,8 +2,11 @@ import math
 import time
 from typing import Tuple
 
-from donkeycar.utilities.circular_buffer import CircularBuffer
-
+def limit_angle(angle:float):
+    """
+    limit angle between 0..2pi
+    """
+    return math.atan2(math.sin(angle), math.cos(angle));
 
 class Pose2D:
     def __init__(self, x:float=0.0, y:float=0.0, angle:float=0.0) -> None:
@@ -18,6 +21,9 @@ class Unicycle:
     left and right odometers 
     turns those forward distance and velocity,
     pose and pose velocity.
+    axle_length: distance between the two drive wheels
+    wheel_radius: radius of wheel; must be in same units as axle_length
+                  It is assumed that both wheels have the same radius
     """
     def __init__(self, axle_length:float, debug=False):
         self.axle_length:float = axle_length
@@ -60,7 +66,7 @@ class Unicycle:
                 self.pose = Pose2D()
                 self.pose_velocity = Pose2D()
                 self.timestamp = timestamp
-            else:
+            elif timestamp > self.timestamp:
                 #
                 # changes from last run
                 #
@@ -76,10 +82,10 @@ class Unicycle:
                 #
                 # new position and orientation
                 #
-                estimated_angle = self.pose.angle + delta_angle / 2
+                estimated_angle = limit_angle(self.pose.angle + delta_angle / 2)
                 x = self.pose.x + delta_distance * math.cos(estimated_angle)
                 y = self.pose.y + delta_distance * math.sin(estimated_angle)
-                angle = self.pose.angle + delta_angle
+                angle = limit_angle(self.pose.angle + delta_angle)
 
                 #
                 # new velocities
