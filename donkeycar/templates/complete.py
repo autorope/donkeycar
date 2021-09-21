@@ -74,19 +74,32 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.HAVE_MQTT_TELEMETRY:
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
-        
+
     if cfg.HAVE_ODOM:
         from donkeycar.utilities.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder)
+        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
         from donkeycar.parts.odometer import Odometer
         tachometer = None
+        tachometer2 = None
         if cfg.ENCODER_TYPE == "GPIO":
             tachometer = Tachometer(
-                GpioEncoder(gpio_pin=cfg.ODOM_PIN, debounce_ns=cfg.ENCODER_DEBOUNCE_NS, debug=cfg.ODOM_DEBUG),
-                ticks_per_revolution=cfg.ENCODER_PPR, 
-                direction_mode=cfg.TACHOMETER_MODE, 
+                GpioEncoder(gpio_pin=cfg.ODOM_PIN,
+                            debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
+                            debug=cfg.ODOM_DEBUG),
+                ticks_per_revolution=cfg.ENCODER_PPR,
+                direction_mode=cfg.TACHOMETER_MODE,
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
                 debug=cfg.ODOM_DEBUG)
+            if cfg.HAVE_ODOM_2:
+                tachometer2 = Tachometer(
+                    GpioEncoder(gpio_pin=cfg.ODOM_PIN_2,
+                                debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
+                                debug=cfg.ODOM_DEBUG),
+                    ticks_per_revolution=cfg.ENCODER_PPR,
+                    direction_mode=cfg.TACHOMETER_MODE,
+                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                    debug=cfg.ODOM_DEBUG)
+
         elif cfg.ENCODER_TYPE == "arduino":
             tachometer = Tachometer(
                 SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG),
@@ -94,16 +107,45 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 direction_mode=cfg.TACHOMETER_MODE,
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
                 debug=cfg.ODOM_DEBUG)
+            if cfg.HAVE_ODOM_2:
+                tachometer2 = Tachometer(
+                    EncoderChannel(encoder=tachometer.encoder, channel=1),
+                    ticks_per_revolution=cfg.ENCODER_PPR,
+                    direction_mode=cfg.TACHOMETER_MODE,
+                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                    debug=cfg.ODOM_DEBUG)
+
         else:
             print("No supported encoder found")
 
         if tachometer:
-            odometer = Odometer(
-                distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
-                smoothing_count=cfg.ODOM_SMOOTHING,
-                debug=cfg.ODOM_DEBUG)
-            V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
-            V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
+            if cfg.HAVE_ODOM_2:
+                from donkeycar.parts.kinematics import Unicycle
+                odometer1 = Odometer(
+                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
+                    smoothing_count=cfg.ODOM_SMOOTHING,
+                    debug=cfg.ODOM_DEBUG)
+                odometer2 = Odometer(
+                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
+                    smoothing_count=cfg.ODOM_SMOOTHING,
+                    debug=cfg.ODOM_DEBUG)
+                V.add(tachometer, inputs=['throttle', None], outputs=['left/revolutions', 'left/timestamp'], threaded=True)
+                V.add(odometer1, inputs=['left/revolutions', 'left/timestamp'], outputs=['left/distance', 'left/speed', 'left/timestamp'], threaded=False)
+                V.add(tachometer2, inputs=['throttle', None], outputs=['right/revolutions', 'right/timestamp'], threaded=True)
+                V.add(odometer2, inputs=['right/revolutions', 'right/timestamp'], outputs=['right/distance', 'right/speed', 'right/timestamp'], threaded=False)
+                V.add(
+                    Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG),
+                    inputs=['left/distance', 'right/distance', 'left/timestamp'],
+                    outputs=['enc/distance', 'enc/speed', 'pose/x', 'pose/y', 'pose/angle', 'velocity/x', 'velocity/y', 'velocity/angle', 'enc/timestamp'],
+                    threaded=False)
+
+            else:
+                odometer = Odometer(
+                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
+                    smoothing_count=cfg.ODOM_SMOOTHING,
+                    debug=cfg.ODOM_DEBUG)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
+                V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
 
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":

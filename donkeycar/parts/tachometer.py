@@ -34,14 +34,27 @@ class AbstractEncoder(ABC):
         pass
 
     @abstractmethod
-    def poll_ticks(self, direction:int) -> int:
+    def poll_ticks(self, direction:int):
         """
-        read the encoder ticks
+        Update the encoder ticks
         direction: 1 if forward, -1 if reverse, 0 if stopped.
-        return: updated encoder ticks
+
+        This will request a new value from the encoder.
+        """
+        pass
+
+    @abstractmethod
+    def get_ticks(self, encoder_index:int=0) -> int:
+        """
+        Get last polled encoder ticks
+        encoder_index: zero based index of encoder.
+        return: Most recently polled encoder ticks
+
+        This will return the value from the
+        most recent call to poll_ticks().  It 
+        will not request new values from the encoder.
         """
         return 0
-
 
 class SerialEncoder(AbstractEncoder):
     """
@@ -87,9 +100,10 @@ class SerialEncoder(AbstractEncoder):
     The microcontroller sends one reading per line.
     Each reading includes the tick count and the time
     that the reading was taken, separated by a comma
-    and ending in a newline.
+    and ending in a newline.  Readings for multiple
+    encoders are separated by colons.
 
-        {ticks},{milliseconds}\n
+        {ticks},{milliseconds};{ticks},{milliseconds}\n
 
     There is an example arduino sketch that implements the
     'r/p/c' protocol using the teensy encoder library at 
@@ -104,8 +118,8 @@ class SerialEncoder(AbstractEncoder):
         if serial_port is None:
             raise ValueError("serial_port must be an instance of SerialPort")
         self.ser = serial_port
-        self.ticks = 0
-        self.lasttick = 0
+        self.ticks = [0,0]
+        self.lasttick = [0,0]
         self.running = False
     
     def start_ticks(self):
@@ -122,7 +136,7 @@ class SerialEncoder(AbstractEncoder):
         if self.ser is not None:
             self.ser.stop()
 
-    def poll_ticks(self, direction:int) -> int:
+    def poll_ticks(self, direction:int):
         """
         read the encoder ticks
         direction: 1 if forward, -1 if reverse, 0 if stopped.
@@ -147,20 +161,72 @@ class SerialEncoder(AbstractEncoder):
         # if we got data, update the  ticks
         # if we got no data, then use last ticks we read
         #
-        # data is "ticks,ticksMs"
+        # data for encoders is separated by semicolon
+        # and ticks and time for single encoder
+        # is comma separated.
+        # 
+        #  "ticks,ticksMs;ticks,ticksMs"
         #
         if input != '':
             try:
-                values = [int(s.strip()) for s in input.split(',')]
+                # 
+                # split separate encoder outputs
+                # "ticks,time;ticks,time" -> ["ticks,time", "ticks,time"]
+                #
+                values = [s.strip() for s in input.split(';')]
+
+                #
+                # split tick/time pairs for each encoder
+                # ["ticks,time", "ticks,time"] -> [["ticks", "time"], ["ticks", "time"]]
+                #
+                values = [v.split(',') for v in values]
+                for i in range(len(values)):
+                    total_ticks = int((values[i][0]).strip())
+                    delta_ticks = total_ticks - self.lasttick[i]
+                    self.lasttick[i] = total_ticks
+                    self.ticks[i] += delta_ticks * direction
+                
             except ValueError:
                 logger.error("failure parsing encoder values from serial")
-            else:
-                if len(values) > 0:
-                    total_ticks = values[0]
-                    delta_ticks = total_ticks - self.lasttick
-                    self.lasttick = total_ticks
-                    self.ticks += delta_ticks * direction
-        return self.ticks  # no change
+
+    def get_ticks(self, encoder_index:int=0) -> int:
+        """
+        Get last polled encoder ticks
+        encoder_index: zero based index of encoder.
+        return: Most recently polled encoder ticks
+
+        This will return the same value as the
+        most recent call to poll_ticks().  It 
+        will not request new values from the encoder.
+        """
+        return self.ticks[encoder_index] if encoder_index < len(self.ticks) else 0
+
+
+class EncoderChannel(AbstractEncoder):
+    """
+    Wrapper around SerialEncoder to pull 
+    out channel 2 as separate encoder.
+
+    This MUST be added AFTER the parent SerialEncoder,
+    so that the parent encodere gets polled before 
+    we attempt to call get_ticks() for this encoder channel.
+    """
+    def __init__(self, encoder:SerialEncoder, channel:int) -> None:
+        self.encoder = encoder
+        self.channel = channel
+        super().__init__()
+
+    def start_ticks(self):
+        pass
+
+    def stop_ticks(self):
+        pass
+
+    def poll_ticks(self, direction:int):
+        pass
+
+    def get_ticks(self, encoder_index:int=0) -> int:
+        return self.encoder.get_ticks(encoder_index=self.channel)
 
 
 class GpioEncoder(AbstractEncoder):
@@ -192,18 +258,28 @@ class GpioEncoder(AbstractEncoder):
         GPIO.setup(self.pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
         GPIO.add_event_detect(self.pin, GPIO.RISING, callback=self._cb) 
 
-    def poll_ticks(self, direction:int) -> int:  
+    def poll_ticks(self, direction:int):  
         """
         read the encoder ticks
         direction: 1 if forward, -1 if reverse, 0 if stopped.
         return: updated encoder ticks
         """
         self.direction = direction              
-        return self.counter
 
     def stop_ticks(self):
         GPIO.remove_event_detect(self.pin)           
 
+    def get_ticks(self, encoder_index:int=0) -> int:
+        """
+        Get last polled encoder ticks
+        encoder_index: zero based index of encoder.
+        return: Most recently polled encoder ticks
+
+        This will return the same value as the
+        most recent call to poll_ticks().  It 
+        will not request new values from the encoder.
+        """
+        return self.counter if encoder_index == 0 else 0
 
 
 def sign(value) -> int:
@@ -278,7 +354,8 @@ class Tachometer:
 
             lastTicks = self.ticks
             self.timestamp = timestamp
-            self.ticks = self.encoder.poll_ticks(self.direction)
+            self.encoder.poll_ticks(self.direction)
+            self.ticks = self.encoder.get_ticks()
             if self.debug and self.ticks != lastTicks:
                 print("tachometer: t = {}, r = {}, ts = {}".format(self.ticks, self.ticks / self.ticks_per_revolution, timestamp))
 

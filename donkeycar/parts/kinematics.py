@@ -19,8 +19,8 @@ class Unicycle:
     turns those forward distance and velocity,
     pose and pose velocity.
     """
-    def __init__(self, wheelbase:float, debug=False):
-        self.wheelbase:float = wheelbase
+    def __init__(self, axle_length:float, debug=False):
+        self.axle_length:float = axle_length
         self.debug = debug
         self.timestamp:float = 0
         self.left_distance:float = 0
@@ -67,7 +67,7 @@ class Unicycle:
                 delta_left_distance = left_distance - self.left_distance
                 delta_right_distance = right_distance - self.right_distance
                 delta_distance = (delta_left_distance + delta_right_distance) / 2
-                delta_angle = (delta_right_distance - delta_left_distance) / self.wheelbase
+                delta_angle = (delta_right_distance - delta_left_distance) / self.axle_length
                 delta_time = timestamp - self.timestamp
 
                 forward_velocity = delta_distance / delta_time
@@ -101,6 +101,8 @@ class Unicycle:
                 self.left_distance = left_distance
                 self.right_distance = right_distance
                 self.velocity = forward_velocity
+
+                self.timestamp = timestamp
 
                 return (
                     (self.left_distance + self.right_distance) / 2,

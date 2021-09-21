@@ -13,7 +13,7 @@ class Odometer:
     def __init__(self, distance_per_revolution:float, smoothing_count=1, debug=False):
         self.distance_per_revolution:float = distance_per_revolution
         self.timestamp:float = 0
-        self.revolutions:int = 0
+        self.revolutions:float = 0
         self.running:bool = True
         self.queue = CircularBuffer(smoothing_count if smoothing_count >= 1 else 1)
         self.debug = debug
@@ -40,7 +40,7 @@ class Odometer:
             self.poll(self.revolutions, self.timestamp)
             time.sleep(0)  # give other threads time
 
-    def run_threaded(self, revolutions:int=0, timestamp:float=None) -> Tuple[float, float, float]:
+    def run_threaded(self, revolutions:float=0, timestamp:float=None) -> Tuple[float, float, float]:
         if self.running:
             self.revolutions = revolutions
             self.timestamp = timestamp if timestamp is not None else time.time()
@@ -49,7 +49,7 @@ class Odometer:
                 return self.queue.head()
         return (0, 0, self.timestamp)
 
-    def run(self, revolutions:int=0, timestamp:float=None) -> Tuple[float, float, float]:
+    def run(self, revolutions:float=0, timestamp:float=None) -> Tuple[float, float, float]:
         if self.running:
             self.poll(revolutions, timestamp)
 
