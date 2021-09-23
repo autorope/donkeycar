@@ -29,7 +29,6 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
-from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.utils import *
 
 logger = logging.getLogger(__name__)
@@ -464,6 +463,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             outputs.append("pilot/loc")
         # Add image transformations like crop or trapezoidal mask
         if hasattr(cfg, 'TRANSFORMATIONS') and cfg.TRANSFORMATIONS:
+            from donkeycar.pipeline.augmentations import ImageAugmentation
             V.add(ImageAugmentation(cfg, 'TRANSFORMATIONS'),
                   inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
             inputs = ['cam/image_array_trans'] + inputs[1:]
