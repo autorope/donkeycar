@@ -9,14 +9,17 @@ class ThrottleFilter(object):
         self.last_throttle = 0.0
 
     def run(self, throttle_in):
+        if throttle_in is None:
+            return throttle_in
+
         throttle_out = throttle_in
 
         if throttle_out < 0.0:
             if not self.reverse_triggered and self.last_throttle < 0.0:
                 throttle_out = 0.0
-                self.reverse_triggered = True                
+                self.reverse_triggered = True
         else:
-            self.reverse_triggered = False   
+            self.reverse_triggered = False
 
         self.last_throttle = throttle_out
         return throttle_out

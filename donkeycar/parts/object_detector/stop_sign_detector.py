@@ -23,7 +23,7 @@ class StopSignDetector(object):
         if not os.path.isfile(filename):
             urllib.request.urlretrieve(url, filename)
 
-    def __init__(self, min_score, show_bounding_box, debug=False):
+    def __init__(self, min_score, show_bounding_box, max_reverse_count=0, reverse_throttle=-0.5, debug=False):
         MODEL_FILE_NAME = "ssd_mobilenet_v2_coco_quant_postprocess_edgetpu.tflite"
         LABEL_FILE_NAME = "coco_labels.txt"
 
@@ -41,6 +41,12 @@ class StopSignDetector(object):
         self.min_score = min_score
         self.show_bounding_box = show_bounding_box
         self.debug = debug
+
+        # reverse throttle related
+        self.max_reverse_count = max_reverse_count
+        self.reverse_count = max_reverse_count
+        self.reverse_throttle = reverse_throttle
+        self.is_reversing = False
 
     def convertImageArrayToPILImage(self, img_arr):
         img = Image.fromarray(img_arr.astype('uint8'), 'RGB')
@@ -107,9 +113,19 @@ class StopSignDetector(object):
         # Detect traffic light object
         traffic_light_obj = self.detect_stop_sign(img_arr)
 
-        if traffic_light_obj:
-            if self.show_bounding_box:
+        if traffic_light_obj or self.is_reversing:
+            if self.show_bounding_box and traffic_light_obj != None:
                 self.draw_bounding_box(traffic_light_obj, img_arr)
-            return 0, img_arr
+            
+            # Set the throttle to reverse within the max reverse count when detected the traffic light object
+            if self.reverse_count < self.max_reverse_count:
+                self.is_reversing = True
+                self.reverse_count += 1
+                return self.reverse_throttle, img_arr
+            else:
+                self.is_reversing = False
+                return 0, img_arr
         else:
+            self.is_reversing = False
+            self.reverse_count = 0
             return throttle, img_arr
