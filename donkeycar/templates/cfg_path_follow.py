@@ -21,6 +21,9 @@ DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 # 
 
+#CAMERA
+CAMERA_TYPE = "T265"   # (T265|D435|MOCK)
+
 #WEB CONTROL
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
@@ -29,8 +32,18 @@ WEB_INIT_MODE = "user"              # which control mode to start in. one of use
 # #9865, over rides only if needed, ie. TX2..
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
+
+#
+# #DRIVETRAIN
+# #These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
+# #DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
+# #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
+# #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM|MOCK
+
+AXLE_LENGTH = 0.3  # length of axle; distance between wheels in meters
+
 # 
-# #DRIVETRAIN is I2C_SERVO; PCA9685 outputs PWM to steering servo and ESC
 # #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
 STEERING_LEFT_PWM = 460         #pwm value for full left steering
@@ -41,8 +54,21 @@ THROTTLE_CHANNEL = 0            #channel on the 9685 pwm board 0-15
 THROTTLE_FORWARD_PWM = 400       #pwm value for auto mode throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
 THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
-
-#
+# 
+# #DC_STEER_THROTTLE with one motor as steering, one as drive
+# #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
+HBRIDGE_PIN_LEFT = 18
+HBRIDGE_PIN_RIGHT = 16
+HBRIDGE_PIN_FWD = 15
+HBRIDGE_PIN_BWD = 13
+# 
+# #DC_TWO_WHEEL - with two wheels as drive, left and right.
+# #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL
+HBRIDGE_PIN_LEFT_FWD = 18
+HBRIDGE_PIN_LEFT_BWD = 16
+HBRIDGE_PIN_RIGHT_FWD = 15
+HBRIDGE_PIN_RIGHT_BWD = 13
+# 
 # 
 # 
 # #JOYSTICK
@@ -84,7 +110,10 @@ ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 # 
 #ODOMETRY
 HAVE_ODOM = False               # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino.  
+HAVE_ODOM_2 = False             # Do you have a second odometer/encoder as in a differential drive robot.
+                                # In this case, the 'first' encoder is the left wheel encoder and
+                                # the second encoder is the right wheel encoder.
+ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino.
                                 # - 'GPIO' refers to direct connect of a single-channel encoder to an RPi/Jetson GPIO header pin.  
                                 #   Set ODOM_PIN to the gpio pin, based on board numbering.
                                 # - 'arduino' generically refers to any microcontroller connected over a serial port.  
@@ -118,6 +147,7 @@ MM_PER_TICK = 12.7625           # How much travel with a single encoder tick, in
 ODOM_SERIAL = '/dev/ttyACM0'    # serial port when ENCODER_TYPE is 'arduino'
 ODOM_SERIAL_BAUDRATE = 115200   # baud rate for serial port encoder
 ODOM_PIN = 13                   # if using ENCODER_TYPE=GPIO, which GPIO board mode pin to use as input
+ODOM_PIN_2 = 14                 # GPIO for second encoder in differential drivetrains
 ODOM_SMOOTHING = 1              # number of odometer readings to use when calculating velocity
 ODOM_DEBUG = False              # Write out values on vel and distance as it runs
 
@@ -135,3 +165,8 @@ WHEEL_ODOM_CALIB = "calibration_odometry.json"
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64"
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
+
+
+# Intel Realsense D435 and D435i depth sensing camera
+REALSENSE_D435_IMU = True      # True to capture IMU data (D435i only)
+REALSENSE_D435_ID = None       # serial number of camera or None if you only have one camera (it will autodetect)

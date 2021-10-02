@@ -29,7 +29,6 @@ from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebContro
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
-from donkeycar.parts.realsense2 import RS_T265
 
 
 def drive(cfg):
@@ -59,16 +58,29 @@ def drive(cfg):
 
     if cfg.HAVE_ODOM:
         from donkeycar.utilities.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder)
+        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
         from donkeycar.parts.odometer import Odometer
         tachometer = None
+        tachometer2 = None
         if cfg.ENCODER_TYPE == "GPIO":
             tachometer = Tachometer(
-                GpioEncoder(gpio_pin=cfg.ODOM_PIN, debounce_ns=cfg.ENCODER_DEBOUNCE_NS, debug=cfg.ODOM_DEBUG),
+                GpioEncoder(gpio_pin=cfg.ODOM_PIN, 
+                            debounce_ns=cfg.ENCODER_DEBOUNCE_NS, 
+                            debug=cfg.ODOM_DEBUG),
                 ticks_per_revolution=cfg.ENCODER_PPR, 
                 direction_mode=cfg.TACHOMETER_MODE, 
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
                 debug=cfg.ODOM_DEBUG)
+            if cfg.HAVE_ODOM_2:
+                tachometer2 = Tachometer(
+                    GpioEncoder(gpio_pin=cfg.ODOM_PIN_2, 
+                                debounce_ns=cfg.ENCODER_DEBOUNCE_NS, 
+                                debug=cfg.ODOM_DEBUG),
+                    ticks_per_revolution=cfg.ENCODER_PPR, 
+                    direction_mode=cfg.TACHOMETER_MODE, 
+                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                    debug=cfg.ODOM_DEBUG)             
+
         elif cfg.ENCODER_TYPE == "arduino":
             tachometer = Tachometer(
                 SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG),
@@ -76,21 +88,55 @@ def drive(cfg):
                 direction_mode=cfg.TACHOMETER_MODE,
                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
                 debug=cfg.ODOM_DEBUG)
+            if cfg.HAVE_ODOM_2:
+                tachometer2 = Tachometer(
+                    EncoderChannel(encoder=tachometer.encoder, channel=1),
+                    ticks_per_revolution=cfg.ENCODER_PPR, 
+                    direction_mode=cfg.TACHOMETER_MODE,
+                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                    debug=cfg.ODOM_DEBUG)
+
         else:
             print("No supported encoder found")
 
         if tachometer:
-            odometer = Odometer(
-                distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
-                smoothing_count=cfg.ODOM_SMOOTHING, 
-                debug=cfg.ODOM_DEBUG)
-            V.add(tachometer, inputs=['user/throttle'], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
-            V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=False)
-
-        if not os.path.exists(cfg.WHEEL_ODOM_CALIB):
-            print("You must supply a json file when using odom with T265. There is a sample file in templates.")
-            print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
-            exit(1)
+            if cfg.HAVE_ODOM_2:
+                #
+                # A second odometer is configured; assume a 
+                # differential drivetrain.  Use Unicycle
+                # kinematics to synthesize a single distance
+                # and velocity from the two wheels.
+                #
+                from donkeycar.parts.kinematics import Unicycle
+                odometer1 = Odometer(
+                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
+                    smoothing_count=cfg.ODOM_SMOOTHING, 
+                    debug=cfg.ODOM_DEBUG)
+                odometer2 = Odometer(
+                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
+                    smoothing_count=cfg.ODOM_SMOOTHING, 
+                    debug=cfg.ODOM_DEBUG)
+                V.add(tachometer, inputs=['throttle', None], outputs=['left/revolutions', 'left/timestamp'], threaded=True)
+                V.add(odometer1, inputs=['left/revolutions', 'left/timestamp'], outputs=['left/distance', 'left/speed', 'left/timestamp'], threaded=False)
+                V.add(tachometer2, inputs=['throttle', None], outputs=['right/revolutions', 'right/timestamp'], threaded=True)
+                V.add(odometer2, inputs=['right/revolutions', 'right/timestamp'], outputs=['right/distance', 'right/speed', 'right/timestamp'], threaded=False)
+                V.add(
+                    Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG), 
+                    inputs=['left/distance', 'right/distance', 'left/timestamp'], 
+                    outputs=['enc/dist_m', 'enc/vel_m_s', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'enc/timestamp'],
+                    threaded=False)
+                
+            else:
+                # single odometer directly measures distance and velocity
+                odometer = Odometer(
+                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
+                    smoothing_count=cfg.ODOM_SMOOTHING, 
+                    debug=cfg.ODOM_DEBUG)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
+                V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=False)
+                #
+                # TODO: add Bicycle kinematics to calculate axis aligned pose and velocity components
+                #
 
     else:
         # we give the T265 no calib to indicated we don't have odom
@@ -103,17 +149,27 @@ def drive(cfg):
 
         V.add(NoOdom(), outputs=['enc/vel_m_s'])
    
-    # This requires use of the Intel Realsense T265
-    rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB)
-    V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array'], threaded=True)
+    #
+    # TODO: once we have Unicycle kinematics to provide pose, make T265 optional.
+    #
 
-    # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
-    class PosStream:
-        def run(self, pos):
-            #y is up, x is right, z is backwards/forwards
-            return pos.x, pos.z
+    if cfg.CAMERA_TYPE == "T265":
+        from donkeycar.parts.realsense2 import RS_T265
+        if cfg.USE_ODOM and not os.path.exists(cfg.WHEEL_ODOM_CALIB):
+            print("You must supply a json file when using odom with T265. There is a sample file in templates.")
+            print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
+            exit(1)
 
-    V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
+        rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB)
+        V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array'], threaded=True)
+
+        # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
+        class PosStream:
+            def run(self, pos):
+                #y is up, x is right, z is backwards/forwards
+                return pos.x, pos.z
+
+        V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
     # This part will reset the car back to the origin. You must put the car in the known origin
     # and push the cfg.RESET_ORIGIN_BTN on your controller. This will allow you to induce an offset
@@ -251,19 +307,23 @@ def drive(cfg):
     
 
     if not cfg.DONKEY_GYM:
-        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
-        
-        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle = PWMThrottle(controller=throttle_controller,
-                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
+        #
+        # TODO: expand drivetrain options; at least allow for differential drivetrains (with reverse Unicycle kinematics)
+        #
+        if cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
+            steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+            steering = PWMSteering(controller=steering_controller,
+                                            left_pulse=cfg.STEERING_LEFT_PWM, 
+                                            right_pulse=cfg.STEERING_RIGHT_PWM)
+            
+            throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+            throttle = PWMThrottle(controller=throttle_controller,
+                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-        V.add(steering, inputs=['angle'])
-        V.add(throttle, inputs=['throttle'])
+            V.add(steering, inputs=['angle'])
+            V.add(throttle, inputs=['throttle'])
 
     # Print Joystick controls
     ctr.print_controls()
