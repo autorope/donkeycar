@@ -155,7 +155,7 @@ def drive(cfg):
 
     if cfg.CAMERA_TYPE == "T265":
         from donkeycar.parts.realsense2 import RS_T265
-        if cfg.USE_ODOM and not os.path.exists(cfg.WHEEL_ODOM_CALIB):
+        if cfg.HAVE_ODOM and not os.path.exists(cfg.WHEEL_ODOM_CALIB):
             print("You must supply a json file when using odom with T265. There is a sample file in templates.")
             print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
             exit(1)
