@@ -18,6 +18,7 @@ import os
 import time
 import logging
 from docopt import docopt
+from tensorflow.python.ops.linalg_ops import norm
 
 
 import donkeycar as dk
@@ -30,6 +31,12 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
+from donkeycar.parts.velocity import StepSpeedController
+from donkeycar.parts.velocity import VelocityNormalize, VelocityUnnormalize
+from donkeycar.parts.kinematics import NormalizeSteeringAngle, UnnormalizeSteeringAngle, TwoWheelSteeringThrottle
+from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnormalizeAngularVelocity, UnicycleNormalizeAngularVelocity
+from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity, BicycleNormalizeAngularVelocity
+
 from donkeycar.utils import *
 
 logger = logging.getLogger(__name__)
@@ -61,6 +68,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         else:
             model_type = cfg.DEFAULT_MODEL_TYPE
 
+    is_velocity_model = model_type.endswith("velocity")
+    have_speed_control = cfg.HAVE_ODOM and is_velocity_model
+    is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startsWith("DC_TWO_WHEEL")
+
     #Initialize car
     V = dk.vehicle.Vehicle()
 
@@ -75,6 +86,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
 
+    #
+    # setup encoders, odometry and pose estimation
+    #
     if cfg.HAVE_ODOM:
         from donkeycar.utilities.serial_port import SerialPort
         from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
@@ -135,14 +149,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                     distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
                     smoothing_count=cfg.ODOM_SMOOTHING, 
                     debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['left/revolutions', 'left/timestamp'], threaded=True)
-                V.add(odometer1, inputs=['left/revolutions', 'left/timestamp'], outputs=['left/distance', 'left/speed', 'left/timestamp'], threaded=False)
-                V.add(tachometer2, inputs=['throttle', None], outputs=['right/revolutions', 'right/timestamp'], threaded=True)
-                V.add(odometer2, inputs=['right/revolutions', 'right/timestamp'], outputs=['right/distance', 'right/speed', 'right/timestamp'], threaded=False)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/left/revolutions', 'enc/left/timestamp'], threaded=True)
+                V.add(
+                    odometer1,
+                    inputs=['enc/left/revolutions', 'enc/left/timestamp'],
+                    outputs=['enc/left/distance', 'enc/left/speed', 'enc/left/timestamp'],
+                    threaded=False)
+                V.add(tachometer2, inputs=['throttle', None], outputs=['enc/right/revolutions', 'enc/right/timestamp'], threaded=True)
+                V.add(odometer2, inputs=['enc/right/revolutions', 'enc/right/timestamp'], outputs=['enc/right/distance', 'enc/right/speed', 'enc/right/timestamp'], threaded=False)
                 V.add(
                     Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG), 
-                    inputs=['left/distance', 'right/distance', 'left/timestamp'], 
-                    outputs=['enc/distance', 'enc/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'enc/timestamp'],
+                    inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp'],
+                    outputs=['enc/distance', 'enc/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'],
                     threaded=False)
                 
             else:
@@ -153,7 +171,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                     debug=cfg.ODOM_DEBUG)
                 V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
                 V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
+                V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE, inputs=["steering"], outputs=["steering_angle"]))
+                V.add(
+                    Bicycle(cfg.WHEEL_BASE, cfg.MAX_STEERING_ANGLE),
+                    inputs=["enc/distance", "steering_angle", "enc/timestamp"],
+                    outputs=["nul/distance, nul/speed", 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'])
 
+    #
+    # setup primary camera
+    #
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
 
@@ -260,7 +286,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         from donkeycar.parts.fps import FrequencyLogger
         V.add(FrequencyLogger(cfg.FPS_DEBUG_INTERVAL), outputs=["fps/current", "fps/fps_list"])
 
-#This web controller will create a web server that is capable
+    #This web controller will create a web server that is capable
     #of managing steering, throttle, and modes, and more.
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     
@@ -321,6 +347,22 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 return True
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
+
+    # determine if we should be using speed control
+    class SpeedControlCondition:
+        def __init__(self, have_speed_control) -> None:
+            self.have_speed_control = have_speed_control
+
+        def run(self, mode:str):
+            # if pilot is controlling both steering and speed
+            return self.have_speed_control and (mode == 'local')
+
+    class NotCondition:
+        def run(self, condition:bool) -> bool:
+            return not condition
+
+    V.add(SpeedControlCondition(have_speed_control), inputs=["user/mode"], outputs=["use_speed_control"])
+    V.add(NotCondition(), inputs=["use_speed_control"], outputs=["use_throttle_control"])
 
     class LedConditionLogic:
         def __init__(self, cfg):
@@ -416,7 +458,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             if isinstance(ctr, JoystickController):
                 ctr.set_button_down_trigger('circle', show_record_count_status) #then we are not using the circle button. hijack that to force a record count indication
         else:
-            
             show_record_count_status()
 
     #Sombrero
@@ -434,33 +475,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
         V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)
-
-    #Behavioral state
-    if cfg.TRAIN_BEHAVIORS:
-        bh = BehaviorPart(cfg.BEHAVIOR_LIST)
-        V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
-        try:
-            ctr.set_button_down_trigger('L1', bh.increment_state)
-        except:
-            pass
-
-        inputs = ['cam/image_array', "behavior/one_hot_state_array"]
-    #IMU
-    elif cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array']
-
-    elif cfg.HAVE_ODOM:
-        inputs = ['cam/image_array', 'enc/speed']
-
-    elif model_type == "imu":
-        assert cfg.HAVE_IMU, 'Missing imu parameter in config'
-        # Run the pilot if the mode is not user.
-        inputs = ['cam/image_array',
-                  'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                  'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
-
-    else:
-        inputs = ['cam/image_array']
 
     def load_model(kl, model_path):
         start = time.time()
@@ -491,12 +505,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             print(e)
             print("ERR>> problems loading model json", json_fnm)
 
+    #
+    # load and configure model for inference
+    #
     if model_path:
-        # When we have a model, first create an appropriate Keras part
+        # create an appropriate Keras part
         kl = dk.utils.get_model_by_type(model_type, cfg)
 
+        #
+        # get callback function to reload the model
+        # for the configured model format
+        #
         model_reload_cb = None
-
         if '.h5' in model_path or '.trt' in model_path or '.tflite' in \
                 model_path or '.savedmodel' in model_path or '.pth':
             # load the whole model with weigths, etc
@@ -538,11 +558,50 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(TriggeredCallback(model_path, model_reload_cb),
               inputs=["modelfile/reload"], run_condition="ai_running")
 
-        outputs = ['pilot/angle', 'pilot/throttle']
+        #
+        # collect inputs to model for inference
+        #
+        if cfg.TRAIN_BEHAVIORS:
+            bh = BehaviorPart(cfg.BEHAVIOR_LIST)
+            V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
+            try:
+                ctr.set_button_down_trigger('L1', bh.increment_state)
+            except:
+                pass
+
+            inputs = ['cam/image_array', "behavior/one_hot_state_array"]
+
+        elif cfg.USE_LIDAR:
+            inputs = ['cam/image_array', 'lidar/dist_array']
+
+        elif cfg.HAVE_ODOM:
+            inputs = ['cam/image_array', 'enc/speed']
+
+        elif model_type == "imu":
+            assert cfg.HAVE_IMU, 'Missing imu parameter in config'
+            # Run the pilot if the mode is not user.
+            inputs = ['cam/image_array',
+                    'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+                    'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
+        else:
+            inputs = ['cam/image_array']
+
+        #
+        # collect model inference outputs
+        # - velocity models output normalized forward and angular velocities
+        # - other models output normalize throttle and steering values
+        #
+        if is_velocity_model:
+            outputs = ('pilot/norm_angular_velocity', 'pilot/norm_forward_velocity')
+        else:
+            outputs = ['pilot/angle', 'pilot/throttle']
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
+
+        #
         # Add image transformations like crop or trapezoidal mask
+        #
         if hasattr(cfg, 'TRANSFORMATIONS') and cfg.TRANSFORMATIONS:
             from donkeycar.pipeline.augmentations import ImageAugmentation
             V.add(ImageAugmentation(cfg, 'TRANSFORMATIONS'),
@@ -551,6 +610,26 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
+        if have_speed_control:
+            #
+            # pilot outputs normalized velocities.
+            # speed control requires actual velocities.
+            # so scale normalized value into real range.
+            #
+            vpart = VelocityUnnormalize(cfg.MIN_SPEED, cfg.MAX_SPEED)
+            V.add(vpart, inputs=["pilot/norm_forward_velocity"], outputs=["pilot/speed"], run_condition='use_speed_control')
+
+            # model outputs normalized angular velocity; turn it into unnormalized (real) angular velocity
+            if is_differential_drive:
+                vpart = UnicycleUnnormalizeAngularVelocity(cfg.WHEEL_RADIUS, cfg.AXLE_LENGTH, cfg.MAX_SPEED)
+            else:
+                vpart = BicycleUnnormalizeAngularVelocity(cfg.WHEEL_BASE, cfg.MAX_SPEED, cfg.MAX_STEERING_ANGLE)
+            V.add(vpart, inputs=["pilot/norm_angular_velocity"], outputs=["pilot/angular_velocity"], run_condition='use_speed_control')
+
+
+    #
+    # stop at a stop sign
+    #
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector \
             import StopSignDetector
@@ -564,34 +643,150 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
               inputs=['pilot/throttle'],
               outputs=['pilot/throttle'])
 
+    #
+    # to give the car a boost when starting ai mode in a race.
+    # This will also override the stop sign detector so that
+    # you can start at a stop sign using launch mode, but
+    # will stop when it comes to the stop sign the next time.
+    #
+    # NOTE: when launch throttle is in effect, pilot speed is set to None
+    #
+    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED)
+    V.add(aiLauncher,
+          inputs=['user/mode', 'pilot/throttle', 'pilot/speed'],
+          outputs=['pilot/throttle', 'pilot/speed'])
+
     # Choose what inputs should change the car.
     class DriveMode:
         def run(self, mode,
                     user_angle, user_throttle,
-                    pilot_angle, pilot_throttle):
+                    pilot_angle, pilot_throttle, pilot_speed, pilot_angular_velocity):
             if mode == 'user':
-                return user_angle, user_throttle
+                return user_angle, user_throttle, None, None
 
             elif mode == 'local_angle':
-                return pilot_angle if pilot_angle else 0.0, user_throttle
+                return pilot_angle if pilot_angle else 0.0, user_throttle, None, None
 
             else:
                 return pilot_angle if pilot_angle else 0.0, \
-                       pilot_throttle * cfg.AI_THROTTLE_MULT \
-                           if pilot_throttle else 0.0
+                       pilot_throttle * cfg.AI_THROTTLE_MULT if pilot_throttle else 0.0, \
+                       pilot_speed, pilot_angular_velocity
+
 
     V.add(DriveMode(),
           inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
+                  'pilot/angle', 'pilot/throttle', 'pilot/speed', 'pilot/angular_velocity'],
+          outputs=['angle', 'throttle', 'speed', 'angular_velocity'])
+
+    #
+    # Problem: Our 'steering' values of -1 to 1 don't represent actual turn angles or turn rates.
+    #          This is fine within a given robot because it's max left and right turn angle
+    #          never changes.  However, if you try to share a model with a vehicle that has
+    #          different maximum turn angles, then the model will not work. Think about if the
+    #          model infers that the turn should be -1; max left turn.  If that model was
+    #          learning of a vehicle with a maximum turn angle of 30 degrees, but deployed
+    #          on a vehicle with a maximum turn angle of 45 degrees, then you will get very
+    #          different turning behavior from the same model.
+    #          This is particularly troublesome for a differential drive vehicle trying to
+    #          use a model from a car-like (Ackerman steering) vehicle.  Our differential
+    #          drive steering algorithm assumes that a steering value of -1, maximum left turn,
+    #          stops the left wheel and drives the right wheel at the requested throttle,
+    #          so the vehicle pivots around the left wheel in a circle. The actual effective
+    #          forward throttle is throttle/2 and the turn is much, much tighter than
+    #          would be accomplished in a car-like vehicle.  So our method for differential drive
+    #          steering produces very different outcomes that for a car-like vehicle.
+    #
+    #          I think that is fine in user mode, because the user is the 'controller' and so
+    #          the user is generating the forward speed and turn rate that they want.
+    #          The real forward velocity and turn rate are captured for differentical drive
+    #          vehicles by the Unicycle() part.  We have a similar part for the car-like
+    #          vehicles using Bicycle kinematics.  With those we can record real turn rates
+    #          in the velocity model.
+    #
+    #          Once we record real forward velocities and turn rates, then we change the
+    #          model to infer these.  Then we will need corresponding reverse kinematics
+    #          to take these values and turn them into usable values for the vehicle
+    #          running the pilot model.  For car-like vehicles, inverse Bicycle kinematics
+    #          produce real forward velocity and real front wheel turn angle.
+    #          For differential drive vehicles, inverse Unicycle kinematics produces
+    #          real linear velocities for the left and right wheels.
+    #
+    # TODO: with velocity models, use forward velocity (meters per second) and turn rate (radians per second) normalized,
+    #       rather than normalized throttle and steering
+    #       so that the velocity models can be interchanged between car-like and differential drive robots.
+    #
 
 
-    #to give the car a boost when starting ai mode in a race.
-    aiLauncher = AiLaunch(cfg.AI_LAUNCH_DURATION, cfg.AI_LAUNCH_THROTTLE, cfg.AI_LAUNCH_KEEP_ENABLED)
+    #
+    # generate final throttle
+    # based on model type and drivetrain
+    #
+    if have_speed_control:
+        #
+        # We are using a velocity model,
+        # so we use speed control to maintain the desired velocity.
+        # Add speed controller that takes a speed in meters per second
+        # and maintains that speed by modifying the throttle.
+        #
+        if is_differential_drive:
+            #
+            # Use inverse kinematics to convert steering angle and speed into
+            # individual wheel speeds.
+            #
+            kinematics = InverseUnicycle(cfg.AXLE_LENGTH, cfg.WHEEL_RADIUS, cfg.MIN_SPEED, cfg.MAX_SPEED)
+            V.add(kinematics,
+                inputs=["speed", "angular_velocity", "enc/timestamp"],
+                outputs=["left/speed", "right/speed", "nul"],
+                run_condition="use_speed_control")
 
-    V.add(aiLauncher,
-          inputs=['user/mode', 'throttle'],
-          outputs=['throttle'])
+            #
+            # Add a speed controller to each wheel to maintain the speed and turn angle.
+            # The speed controller takes measured speed and desired speed and modifies
+            # the throttle to achieve the desired speed.
+            #
+            speed_controller = StepSpeedController(cfg.MIN_SPEED, cfg.MAX_SPEED, (1.0 - cfg.MIN_THROTTLE) / 255, cfg.MIN_THROTTLE)
+            V.add(speed_controller,
+                inputs=["left/throttle", "enc/left/speed", "left/speed"],
+                outputs=["left/throttle"],
+                run_condition="use_speed_control")
+            speed_controller = StepSpeedController(cfg.MIN_SPEED, cfg.MAX_SPEED, (1.0 - cfg.MIN_THROTTLE) / 255, cfg.MIN_THROTTLE)
+            V.add(speed_controller,
+                inputs=["left/throttle", "enc/right/speed", "right/speed"],
+                outputs=["right/throttle"],
+                run_condition="use_speed_control")
+
+        else: # car-type vehicle
+            #
+            # use bicycle inverse kinematics to get steering angle
+            #
+            kinematics = InverseBicycle(cfg.WHEEL_BASE)
+            V.add(kinematics,
+                inputs=["speed", "angular_velocity", "enc/timestamp"],
+                outputs=["speed", "steering_angle", "nul"],
+                run_condition="use_speed_control")
+
+            # convert steering angle to normalized value that drivetrains expect
+            V.add(NormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE, cfg.STEERING_ZERO),
+                inputs=["steering_angle"], outputs=["angle"], run_condition="use_speed_control")
+
+            # add a speed controller to maintain the desired speed
+            speed_controller = StepSpeedController(cfg.MIN_SPEED, cfg.MAX_SPEED, (1.0 - cfg.MIN_THROTTLE) / 255, cfg.MIN_THROTTLE)
+            V.add(speed_controller,
+                inputs=["throttle", "enc/speed", "speed"],
+                outputs=["throttle"],
+                run_condition="use_speed_control")
+
+    #
+    # When not using speed control,
+    # To make differential drive steer,
+    # divide throttle between motors based on the steering value
+    #
+    if is_differential_drive:
+        V.add(TwoWheelSteeringThrottle(),
+            inputs=['throttle', 'angle'],
+            outputs=['left/throttle', 'right/throttle'],
+            run_condition="use_throttle_control")
+
 
     if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):

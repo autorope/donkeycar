@@ -106,9 +106,9 @@ class StopSignDetector(object):
         cv2.rectangle(img_arr, tuple(traffic_light_obj.bounding_box[0].astype(int)),
                         tuple(traffic_light_obj.bounding_box[1].astype(int)), (0, 255, 0), 2)
 
-    def run(self, img_arr, throttle, debug=False):
+    def run(self, img_arr, throttle, speed, debug=False):
         if img_arr is None:
-            return throttle, img_arr
+            return img_arr, throttle, speed
 
         # Detect traffic light object
         traffic_light_obj = self.detect_stop_sign(img_arr)
@@ -116,16 +116,20 @@ class StopSignDetector(object):
         if traffic_light_obj or self.is_reversing:
             if self.show_bounding_box and traffic_light_obj != None:
                 self.draw_bounding_box(traffic_light_obj, img_arr)
-            
+            # set speed to none so we enforce zero throttle immediately
+            return img_arr, 0, None
+
             # Set the throttle to reverse within the max reverse count when detected the traffic light object
             if self.reverse_count < self.max_reverse_count:
                 self.is_reversing = True
                 self.reverse_count += 1
-                return self.reverse_throttle, img_arr
+                return img_arr, self.reverse_throttle, speed
             else:
                 self.is_reversing = False
-                return 0, img_arr
+                return img_arr, 0, None
         else:
             self.is_reversing = False
             self.reverse_count = 0
-            return throttle, img_arr
+
+            # pass through throttle and speed
+            return img_arr, throttle, speed

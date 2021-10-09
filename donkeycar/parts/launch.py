@@ -20,9 +20,7 @@ class AiLaunch():
         self.enabled = True
         print('AiLauncher is enabled.')
 
-    def run(self, mode, ai_throttle):
-        new_throttle = ai_throttle
-
+    def run(self, mode, throttle, speed):
         if mode != self.prev_mode:
             self.prev_mode = mode
             if mode == "local" and self.trigger_on_switch:
@@ -42,7 +40,9 @@ class AiLaunch():
 
         if self.active:
             print('AiLauncher is active!!!')
-            new_throttle = self.launch_throttle
+            # override throttle and speed
+            return self.launch_throttle, None
 
-        return new_throttle
+        # pass through throttle and speed
+        return throttle, speed  
 
