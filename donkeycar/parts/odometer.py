@@ -59,4 +59,3 @@ class Odometer:
 
     def shutdown(self):
         self.running = False
-
