@@ -372,10 +372,32 @@ def throttle(input_value):
 OTHER
 '''
 
+def sign(x):
+    if x > 0:
+        return 1
+    if x < 0: 
+        return -1
+    return 0
+
+
+def compare_to(
+    value:float,      # IN : value to compare
+    toValue:float,    # IN : value to compare with tolerance
+    tolerance:float): # IN : non-negative tolerance
+                      # RET: 1 if value > toValue + tolerance
+                      #      -1 if value < toValue - tolerance
+                      #      otherwise zero
+    if (toValue - value) > tolerance: 
+        return -1
+    if (value - toValue) > tolerance: 
+        return 1
+    return 0
+
 
 def map_frange(x, X_min, X_max, Y_min, Y_max):
     '''
     Linear mapping between two ranges of values
+    map from x range to y range
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
@@ -433,7 +455,8 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
-    from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
+    from donkeycar.parts.keras import KerasCategorical, \
+        KerasLinear, KerasLinearVelocity, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
         KerasLSTM, Keras3D_CNN
     from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
@@ -462,6 +485,8 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     used_model_type = EqMemorizedString(used_model_type)
     if used_model_type == "linear":
         kl = KerasLinear(interpreter=interpreter, input_shape=input_shape)
+    if used_model_type == "linear_velocity":
+        kl = KerasLinearVelocity(interpreter=interpreter, input_shape=input_shape)
     elif used_model_type == "categorical":
         kl = KerasCategorical(
             interpreter=interpreter,

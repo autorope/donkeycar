@@ -372,6 +372,17 @@ class KerasLinear(KerasPilot):
         return shapes
 
 
+class KerasLinearVelocity(KerasLinear):
+    """
+    Linear model that uses velocity rather than throttle
+    """
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        angular_velocity: float = record.underlying['vel/angle']
+        forward_velocity: float = record.underlying['enc/speed']
+        return angular_velocity, forward_velocity
+
+
 class KerasMemory(KerasLinear):
     """
     The KerasLinearWithMemory is based on KerasLinear but uses the last n
