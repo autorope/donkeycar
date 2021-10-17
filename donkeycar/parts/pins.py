@@ -390,10 +390,10 @@ class PwmPinGpio(PwmPin):
     """
     PWM output pin using Rpi.GPIO/Jetson.GPIO
     """
-    def __init__(self, pin_number:int, pin_scheme:str, frequency_hz = 50) -> None:
+    def __init__(self, pin_number:int, pin_scheme:str, frequency_hz:float = 50) -> None:
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
-        self.frequency = frequency_hz
+        self.frequency = int(frequency_hz)
         self.pwm = None
         self._state = PinState.NOT_STARTED
 
@@ -404,7 +404,7 @@ class PwmPinGpio(PwmPin):
             raise ValueError("duty_cycle must be in range 0 to 1")
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.pwm = gpio_fn(self.pin_scheme, lambda: GPIO.PWM(self.pin_number, self.frequency))
-        self.duty_cycle(duty)
+        self.pwm.start(duty * 100)  # takes duty in range 0 to 100
         self._state = duty
 
     def stop(self) -> None:
@@ -419,7 +419,7 @@ class PwmPinGpio(PwmPin):
     def duty_cycle(self, duty: float) -> None:
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
-        self.pwm.ChangeDutyCycle(duty * 100)
+        self.pwm.ChangeDutyCycle(duty * 100)  # takes duty of 0 to 100
         self._state = duty
 
 
@@ -468,7 +468,7 @@ class OutputPinPCA9685(ABC):
         return self._state
 
     def output(self, state: int) -> None:
-        self.pca9685.set_pulse(1 if state == PinState.HIGH else 0)
+        self.pca9685.set_duty_cycle(1 if state == PinState.HIGH else 0)
         self._state = state
 
 
