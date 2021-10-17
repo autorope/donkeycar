@@ -58,15 +58,15 @@ class L298N_HBridge_3pin(object):
         self.speed = speed
         self.throttle = int(dk.utils.map_range(speed, -1, 1, -self.max_duty, self.max_duty))
         if self.throttle > self.zero_throttle:
-            self.pwm_pin.dutyCycle(self.throttle)
+            self.pwm_pin.duty_cycle(self.throttle)
             self.pin_backward.output(PinState.LOW)
             self.pin_forward.output(PinState.HIGH)
         elif self.throttle < -self.zero_throttle:
-            self.pwm_pin.dutyCycle(-self.throttle)
+            self.pwm_pin.duty_cycle(-self.throttle)
             self.pin_forward.output(PinState.LOW)
             self.pin_backward.output(PinState.HIGH)
         else:
-            self.pwm_pin.dutyCycle(0)
+            self.pwm_pin.duty_cycle(0)
             self.pin_forward.output(PinState.LOW)
             self.pin_backward.output(PinState.LOW)
 
@@ -128,14 +128,14 @@ class L298N_HBridge_2pin(object):
         self.throttle = int(dk.utils.map_range(throttle, -1, 1, -self.max_duty, self.max_duty))
         
         if self.throttle > self.zero_throttle:
-            self.pin_backward.dutyCycle(0)
-            self.pin_forward.dutyCycle(self.throttle)
+            self.pin_backward.duty_cycle(0)
+            self.pin_forward.duty_cycle(self.throttle)
         elif self.throttle < -self.zero_throttle:
-            self.pin_forward.dutyCycle(0)
-            self.pin_backward.dutyCycle(-self.throttle)
+            self.pin_forward.duty_cycle(0)
+            self.pin_backward.duty_cycle(-self.throttle)
         else:
-            self.pin_forward.dutyCycle(0)
-            self.pin_backward.dutyCycle(0)
+            self.pin_forward.duty_cycle(0)
+            self.pin_backward.duty_cycle(0)
 
     def shutdown(self):
         self.pin_forward.stop()

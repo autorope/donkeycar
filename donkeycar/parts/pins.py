@@ -28,7 +28,7 @@ TODO: implement PiGPIO pin provider
 """
 from abc import ABC, abstractmethod
 
-import donkeycar.parts.actuator as actuator
+from donkeycar.parts import  actuator
 import RPi.GPIO as GPIO
 
 
@@ -182,7 +182,7 @@ class PwmPin(ABC):
         return PinState.NOT_STARTED  # subclasses must override
 
     @abstractmethod
-    def dutyCycle(self, state:float) -> None:
+    def duty_cycle(self, state:float) -> None:
         """
         Set the output duty cycle of the pin 
         in range 0 to 1.0 (0% to 100%)
@@ -208,14 +208,14 @@ class PwmPin(ABC):
 # Use PCA9685 on bus 0 at address 0x40, channel 7
 # "PCA9685.0:40.7"
 #
-def output_pin_by_id(pin_id:str) -> OutputPin:
+def output_pin_by_id(pin_id:str, frequency_hz:int=60) -> OutputPin:
     """
     Select a ttl output pin given a pin id.
     """
     parts = pin_id.split(".")
     if parts[0] == PinProvider.PCA9685:
         pin_provider = parts[0]
-        i2c_bus, i2c_address, frequency_hz = parts[1].split(":")
+        i2c_bus, i2c_address = parts[1].split(":")
         i2c_bus = int(i2c_bus)
         i2c_address = int(i2c_address, base=16)
         frequency_hz = int(frequency_hz)
@@ -397,15 +397,15 @@ class PwmPinGpio(PwmPin):
         self.pwm = None
         self._state = PinState.NOT_STARTED
 
-    def start(self, duty_cycle:float=0) -> None:
+    def start(self, duty:float=0) -> None:
         if self.pwm is not None:
             raise RuntimeError("Attempt to start PwmPinGpio that is already started.")
-        if duty_cycle < 0 or duty_cycle > 1:
+        if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.pwm = gpio_fn(self.pin_scheme, lambda: GPIO.PWM(self.pin_number, self.frequency))
-        self.dutyCycle(duty_cycle)
-        self._state = duty_cycle
+        self.duty_cycle(duty)
+        self._state = duty
 
     def stop(self) -> None:
         if self.pwm is not None:
@@ -416,10 +416,10 @@ class PwmPinGpio(PwmPin):
     def state(self) -> float:
         return self._state
 
-    def dutyCycle(self, duty_cycle: float) -> None:
-        if duty_cycle < 0 or duty_cycle > 1:
+    def duty_cycle(self, duty: float) -> None:
+        if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
-        self.pwm.ChangeDutyCycle(duty_cycle * 100)
+        self.pwm.ChangeDutyCycle(duty * 100)
         self._state = duty_cycle
 
 
@@ -484,14 +484,14 @@ class PwmPinPCA9685(PwmPin):
         self.pca9685 = None
         self._state = PinState.NOT_STARTED
 
-    def start(self, duty_cycle:float=0) -> None:
+    def start(self, duty:float=0) -> None:
         if self.pca9685 is not None:
             raise RuntimeError("Attempt to start pin ({}) that is already started".format(self.pin_number))
-        if duty_cycle < 0 or duty_cycle > 1:
+        if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         self.pca9685 = actuator.PCA9685(self.pin_number, self.i2c_address, self.frequency_hz, self.i2c_bus)
-        self.duty_cycle(duty_cycle)
-        self._state = duty_cycle
+        self.duty_cycle(duty)
+        self._state = duty
 
     def stop(self) -> None:
         if self.pca9685 is not None:
