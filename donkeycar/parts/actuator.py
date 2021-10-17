@@ -169,7 +169,10 @@ class PCA9685:
         if duty_cycle < 0 or duty_cycle > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         # duty cycle is fraction of the 12 bits
-        self.pwm.set_pwm(self.channel, 0, int(4096 * duty_cycle))
+        try:
+            self.pwm.set_pwm(self.channel, 0, int(4095 * duty_cycle))
+        except:
+            self.pwm.set_pwm(self.channel, 0, int(4095 * duty_cycle))
 
     def set_pulse(self, pulse):
         try:
