@@ -21,6 +21,7 @@ from docopt import docopt
 
 
 import donkeycar as dk
+from donkeycar.parts import actuator
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
@@ -591,8 +592,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL_L298N":
         from donkeycar.parts.actuator import TwoWheelSteeringThrottle, L298N_HBridge_DC_Motor
 
-        left_motor = L298N_HBridge_DC_Motor(cfg.HBRIDGE_L298N_PIN_LEFT_FWD, cfg.HBRIDGE_L298N_PIN_LEFT_BWD, cfg.HBRIDGE_L298N_PIN_LEFT_EN)
-        right_motor = L298N_HBridge_DC_Motor(cfg.HBRIDGE_L298N_PIN_RIGHT_FWD, cfg.HBRIDGE_L298N_PIN_RIGHT_BWD, cfg.HBRIDGE_L298N_PIN_RIGHT_EN)
+        left_motor = actuator.L298N_HBridge_3pin(
+            actuator.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_LEFT_FWD), 
+            actuator.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_LEFT_BWD), 
+            actuator.pwm_pin_by_id(cfg.HBRIDGE_L298N_PIN_LEFT_EN))
+        right_motor = actuator.L298N_HBridge_3pin(
+            actuator.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_RIGHT_FWD), 
+            actuator.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_RIGHT_BWD), 
+            actuator.pwm_pin_by_id(cfg.HBRIDGE_L298N_PIN_RIGHT_EN))
         two_wheel_control = TwoWheelSteeringThrottle()
 
         V.add(two_wheel_control,
