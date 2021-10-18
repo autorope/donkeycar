@@ -468,7 +468,10 @@ class OutputPinPCA9685(ABC):
         return self._state
 
     def output(self, state: int) -> None:
-        self.pca9685.set_duty_cycle(1 if state == PinState.HIGH else 0)
+        if state == PinState.HIGH:
+            self.pca9685.set_high()
+        else:
+            self.pca9685.set_low()
         self._state = state
 
 
@@ -644,4 +647,5 @@ if __name__ == '__main__':
         if pwm_out_pin is not None:
             pwm_out_pin.stop()
         if ttl_out_pin is not None:
-            ttl_out_pin.stop() 
+            ttl_out_pin.stop()
+
