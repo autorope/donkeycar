@@ -595,9 +595,9 @@ if __name__ == '__main__':
 
     def on_input(state):
         if ttl_in_pin.input():
-            print("+") 
+            print("+", time.time()*1000) 
         else:
-            print("-")
+            print("-", time.time()*1000)
             
     pwm_out_pin:PwmPin = None
     ttl_out_pin:OutputPin = None
@@ -625,10 +625,12 @@ if __name__ == '__main__':
         end_time = start_time + args.time
         while start_time < end_time:
             if ttl_out_pin is not None:
-                ttl_out_pin.output(PinState.HIGH)
-                time.sleep(1 / args.hertz * args.duty)
-                ttl_out_pin.output(PinState.LOW)
-                time.sleep(1 / args.hertz * (1 - args.duty))
+                if args.duty > 0:
+                    ttl_out_pin.output(PinState.HIGH)
+                    time.sleep(1 / args.hertz * args.duty)
+                if args.duty < 1:
+                    ttl_out_pin.output(PinState.LOW)
+                    time.sleep(1 / args.hertz * (1 - args.duty))
             else:
                 # yield time to background threads
                 sleep_time = 1/args.hertz - (time.time() - start_time)
