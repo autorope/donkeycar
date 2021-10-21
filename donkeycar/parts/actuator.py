@@ -18,7 +18,8 @@ from donkeycar.parts.pins import OutputPin, PwmPin, PinState
 class L298N_HBridge_3pin(object):
     '''
     Motor controlled with an L298N hbridge
-    Uses two OutputPins and a PwmPin to control the L298N.
+    Uses two OutputPins to choose direction and 
+    a PwmPin to control the speed (enable) of the motor.
     See https://www.etechnophiles.com/l298n-motor-driver-pin-diagram/
 
     pin_forward:OutputPin when this is enabled the motor will turn clockwise 
@@ -37,7 +38,6 @@ class L298N_HBridge_3pin(object):
         
     '''
     def __init__(self, pin_forward:OutputPin, pin_backward:OutputPin, pwm_pin:PwmPin, zero_throttle:float=0, max_duty=0.9):
-        import RPi.GPIO as GPIO
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
         self.pwm_pin = pwm_pin
@@ -78,7 +78,8 @@ class L298N_HBridge_3pin(object):
 
 class L298N_HBridge_2pin(object):
     '''
-    Motor controlled with an 'mini' L298N hbridge using 2 PwmPins.
+    Motor controlled with an 'mini' L298N hbridge using 2 PwmPins,
+    one for forward pwm and for reverse pwm.
     See https://www.instructables.com/Tutorial-for-Dual-Channel-DC-Motor-Driver-Board-PW/
 
     pin_forward:PwmPin Takes a duty cycle in the range of 0 to 1, 
