@@ -70,7 +70,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     is_velocity_model = model_type.endswith("velocity")
     have_speed_control = cfg.HAVE_ODOM and is_velocity_model
-    is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startsWith("DC_TWO_WHEEL")
+    is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
 
     #Initialize car
     V = dk.vehicle.Vehicle()
