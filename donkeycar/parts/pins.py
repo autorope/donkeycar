@@ -228,6 +228,8 @@ def output_pin_by_id(pin_id:str, frequency_hz:int=60) -> OutputPin:
         pin_number = int(parts[2])
         return output_pin(pin_provider, pin_number, pin_scheme=pin_scheme)
 
+    raise ValueError("Unknown pin provider {}".format(parts[0]))
+
 
 def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
     """
@@ -248,6 +250,7 @@ def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
         pin_number = int(parts[2])
         return pwm_pin(pin_provider, pin_number, pin_scheme=pin_scheme, frequency_hz=frequency_hz)
 
+    raise ValueError("Unknown pin provider {}".format(parts[0]))
 
 def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
     """
@@ -262,6 +265,8 @@ def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
         pin_scheme = parts[1]
         pin_number = int(parts[2])
         return input_pin(pin_provider, pin_number, pin_scheme=pin_scheme, pull=pull)
+
+    raise ValueError("Unknown pin provider {}".format(parts[0]))
 
 
 def input_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, pull:int=PinPull.PULL_NONE) -> InputPin:

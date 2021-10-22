@@ -42,6 +42,7 @@ class L298N_HBridge_3pin(object):
         self.pin_backward = pin_backward
         self.pwm_pin = pwm_pin
         self.zero_throttle = zero_throttle
+        self.throttle = 0
         self.max_duty = max_duty
         self.pin_forward.start(PinState.LOW)
         self.pin_backward.start(PinState.LOW)
@@ -56,7 +57,7 @@ class L298N_HBridge_3pin(object):
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         
         self.speed = speed
-        self.throttle = int(dk.utils.map_range(speed, -1, 1, -self.max_duty, self.max_duty))
+        self.throttle = dk.utils.map_range_float(speed, -1, 1, -self.max_duty, self.max_duty)
         if self.throttle > self.zero_throttle:
             self.pwm_pin.duty_cycle(self.throttle)
             self.pin_backward.output(PinState.LOW)
@@ -187,7 +188,6 @@ class PCA9685:
                 self.pwm.set_pwm(self.channel, 0, pulse)
 
     def set_pulse(self, pulse):
-        print("pulse={}".format(pulse))
         try:
             self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
         except:
