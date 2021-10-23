@@ -84,12 +84,39 @@ HBRIDGE_PIN_RIGHT = 16
 HBRIDGE_PIN_FWD = 15
 HBRIDGE_PIN_BWD = 13
 
-#DC_TWO_WHEEL - with two wheels as drive, left and right.
-#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL
-HBRIDGE_PIN_LEFT_FWD = 18
-HBRIDGE_PIN_LEFT_BWD = 16
-HBRIDGE_PIN_RIGHT_FWD = 15
-HBRIDGE_PIN_RIGHT_BWD = 13
+#
+# DC_TWO_WHEEL pin configuration
+# - configures L298N_HBridge_2pin driver
+# - two wheels as differential drive, left and right.
+# - each wheel is controlled by two pwm pins, 
+#   one for forward and one for backward (reverse). 
+# - each pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and 
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+# GPIO pin configuration for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_PIN_LEFT_FWD = "RPI_GPIO.BOARD.18"
+HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"
+HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15"
+HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13"
 
 
 #ODOMETRY
@@ -105,8 +132,39 @@ LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
 
-#DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
-#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+#
+# DC_TWO_WHEEL_L298N pin configuration
+# - configures L298N_HBridge_3pin driver
+# - two wheels as differential drive, left and right.
+# - each wheel is controlled by three pins, 
+#   one ttl output for forward, one ttl output 
+#   for backward (reverse) enable and one pwm pin
+#   for motor power.
+# - the pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the forward pin  is HIGH and the
+#   backward pin is LOW,
+# - in backward mode, the forward pin is LOW and the 
+#   backward pin is HIGH.
+# - both forward and backward pins are LOW to 'detach' motor 
+#   and glide to a stop.
+# - both forward and backward pins are HIGH to brake
+#
+# GPIO pin configuration for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
 HBRIDGE_L298N_PIN_LEFT_FWD = "RPI_GPIO.BOARD.16"
 HBRIDGE_L298N_PIN_LEFT_BWD = "RPI_GPIO.BOARD.18"
 HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"
