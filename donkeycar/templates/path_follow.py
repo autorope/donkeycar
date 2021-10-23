@@ -166,8 +166,8 @@ def drive(cfg):
         # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
         class PosStream:
             def run(self, pos):
-                #y is up, x is right, z is backwards/forwards
-                return pos.x, pos.z
+                #y is up, x is right, z is backwards/forwards (negative going forwards)
+                return -pos.z, pos.x
 
         V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
