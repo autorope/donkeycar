@@ -167,7 +167,7 @@ def drive(cfg):
         class PosStream:
             def run(self, pos):
                 #y is up, x is right, z is backwards/forwards (negative going forwards)
-                return -pos.z, pos.x
+                return -pos.z, -pos.x
 
         V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
