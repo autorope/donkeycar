@@ -576,11 +576,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(throttle, inputs=['throttle'])
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
-        from donkeycar.parts.actuator import TwoWheelSteeringThrottle, Mini_HBridge_DC_Motor_PWM
+        left_motor = actuator.L298N_HBridge_2pin(
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_LEFT_FWD), 
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_LEFT_BWD))
+        right_motor = Mini_HBridge_DC_Motor_PWM(
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_FWD), 
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_BWD))
 
-        left_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT_FWD, cfg.HBRIDGE_PIN_LEFT_BWD)
-        right_motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_RIGHT_FWD, cfg.HBRIDGE_PIN_RIGHT_BWD)
-        two_wheel_control = TwoWheelSteeringThrottle()
+        two_wheel_control = actuator.TwoWheelSteeringThrottle()
 
         V.add(two_wheel_control,
                 inputs=['throttle', 'angle'],
@@ -590,8 +593,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(right_motor, inputs=['right_motor_speed'])
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL_L298N":
-        from donkeycar.parts.actuator import TwoWheelSteeringThrottle
-
         left_motor = actuator.L298N_HBridge_3pin(
             pins.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_LEFT_FWD), 
             pins.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_LEFT_BWD), 
@@ -601,7 +602,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             pins.output_pin_by_id(cfg.HBRIDGE_L298N_PIN_RIGHT_BWD), 
             pins.pwm_pin_by_id(cfg.HBRIDGE_L298N_PIN_RIGHT_EN))
 
-        two_wheel_control = TwoWheelSteeringThrottle()
+        two_wheel_control = actuator.TwoWheelSteeringThrottle()
 
         V.add(two_wheel_control,
                 inputs=['throttle', 'angle'],

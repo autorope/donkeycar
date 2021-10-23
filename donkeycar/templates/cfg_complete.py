@@ -77,12 +77,30 @@ THROTTLE_PWM_PIN = 18           #Pin numbering according to Broadcom numbers
 THROTTLE_PWM_FREQ = 50          #Frequency for PWM
 THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 
-#DC_STEER_THROTTLE with one motor as steering, one as drive
-#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
-HBRIDGE_PIN_LEFT = 18
-HBRIDGE_PIN_RIGHT = 16
-HBRIDGE_PIN_FWD = 15
-HBRIDGE_PIN_BWD = 13
+#
+# DC_STEER_THROTTLE with one motor as steering, one as drive
+# - uses L298N type motor controller in two pin wiring
+#   scheme utilizing two pwm pins per motor; one for 
+#   forward(or right) and one for reverse (or left)
+# 
+# GPIO pin configuration for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_PIN_LEFT = "RPI_GPIO.BOARD.18"
+HBRIDGE_PIN_RIGHT = "RPI_GPIO.BOARD.16"
+HBRIDGE_PIN_FWD = "RPI_GPIO.BOARD.15"
+HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"
 
 #
 # DC_TWO_WHEEL pin configuration
