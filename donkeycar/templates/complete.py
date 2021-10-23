@@ -567,10 +567,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(throttle, inputs=['throttle'], threaded=True)
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
-        from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-
-        steering = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_LEFT, cfg.HBRIDGE_PIN_RIGHT)
-        throttle = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
+        steering = actuator.L298N_HBridge_2pin(
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_LEFT), 
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_RIGHT))
+        throttle = Mini_HBridge_DC_Motor_PWM(
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_FWD), 
+            pins.output_pin_by_id(cfg.HBRIDGE_PIN_BWD))
 
         V.add(steering, inputs=['angle'])
         V.add(throttle, inputs=['throttle'])

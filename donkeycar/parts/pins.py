@@ -53,7 +53,7 @@ class PinPull:
 class PinProvider:
     RPI_GPIO = "RPI_GPIO"
     PCA9685 = "PCA9685"
-    # PIGPIO = "PIGPIO"
+    PIGPIO = "PIGPIO"
 
 
 class PinScheme:
@@ -228,6 +228,13 @@ def output_pin_by_id(pin_id:str, frequency_hz:int=60) -> OutputPin:
         pin_number = int(parts[2])
         return output_pin(pin_provider, pin_number, pin_scheme=pin_scheme)
 
+    if parts[0] == PinProvider.PIGPIO:
+        pin_provider = parts[0]
+        if PinScheme.BCM != parts[1]:
+            raise ValueError("Pin scheme must be BCM for PIGPIO")
+        pin_number = int(parts[2])
+        return output_pin(pin_provider, pin_number, pin_scheme=PinScheme.BCM)
+
     raise ValueError("Unknown pin provider {}".format(parts[0]))
 
 
@@ -250,7 +257,15 @@ def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
         pin_number = int(parts[2])
         return pwm_pin(pin_provider, pin_number, pin_scheme=pin_scheme, frequency_hz=frequency_hz)
 
+    if parts[0] == PinProvider.PIGPIO:
+        pin_provider = parts[0]
+        if PinScheme.BCM != parts[1]:
+            raise ValueError("Pin scheme must be BCM for PIGPIO")
+        pin_number = int(parts[2])
+        return pwm_pin(pin_provider, pin_number, pin_scheme=PinScheme.BCM, frequency_hz=frequency_hz)
+
     raise ValueError("Unknown pin provider {}".format(parts[0]))
+
 
 def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
     """
@@ -266,6 +281,13 @@ def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
         pin_number = int(parts[2])
         return input_pin(pin_provider, pin_number, pin_scheme=pin_scheme, pull=pull)
 
+    if parts[0] == PinProvider.PIGPIO:
+        pin_provider = parts[0]
+        if PinScheme.BCM != parts[1]:
+            raise ValueError("Pin scheme must be BCM for PIGPIO")
+        pin_number = int(parts[2])
+        return input_pin(pin_provider, pin_number, pin_scheme=PinScheme.BCM, pull=pull)
+
     raise ValueError("Unknown pin provider {}".format(parts[0]))
 
 
@@ -277,6 +299,10 @@ def input_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, 
         return InputPinGpio(pin_number, pin_scheme, pull)
     if pin_provider == PinProvider.PCA9685:
         raise RuntimeError("PinProvider.PCA9685 does not implement InputPin")
+    if pin_provider == PinProvider.PIGPIO:
+        if pin_scheme != PinScheme.BCM:
+            raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
+        return InputPinPigpio(pin_number, pull)
     raise RuntimeError("UnknownPinProvider ({})".format(pin_provider))
 
 
@@ -288,6 +314,10 @@ def output_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD,
         return OutputPinGpio(pin_number, pin_scheme)
     if pin_provider == PinProvider.PCA9685:
         return OutputPinPCA9685(pin_number, frequency_hz, i2c_bus, i2c_address)
+    if pin_provider == PinProvider.PIGPIO:
+        if pin_scheme != PinScheme.BCM:
+            raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
+        return OutputPinPigpio(pin_number)
     raise RuntimeError("UnknownPinProvider ({})".format(pin_provider))
 
 
@@ -299,6 +329,10 @@ def pwm_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, fr
         return PwmPinGpio(pin_number, pin_scheme, frequency_hz)
     if pin_provider == PinProvider.PCA9685:
         return PwmPinPCA9685(pin_number, frequency_hz, i2c_bus, i2c_address)
+    if pin_provider == PinProvider.PIGPIO:
+        if pin_scheme != PinScheme.BCM:
+            raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
+        return PwmPinPigpio(pin_number, frequency_hz)
     raise RuntimeError("UnknownPinProvider ({})".format(pin_provider))
 
 
@@ -335,8 +369,13 @@ class InputPinGpio(InputPin):
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self.pull = pull
+        self.on_input = None
         self._state = PinState.NOT_STARTED
         super().__init__()
+
+    def _callback(self, pin_number):
+        if self.on_input is not None:
+            self.on_input(self.pin_number, self.input())
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
@@ -347,7 +386,8 @@ class InputPinGpio(InputPin):
             raise RuntimeError("Attempt to start InputPin that is already started.")
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.IN, pull_up_down=gpio_pin_pull[self.pull]))
         if on_input is not None:
-            gpio_fn(self.pin_scheme, lambda: GPIO.add_event_detect(self.pin_number, gpio_pin_edge[edge], callback=on_input))
+            self.on_input = on_input
+            gpio_fn(self.pin_scheme, lambda: GPIO.add_event_detect(self.pin_number, gpio_pin_edge[edge], callback=self._callback))
         self.input()  # read first state
 
     def stop(self) -> None:
@@ -517,6 +557,146 @@ class PwmPinPCA9685(PwmPin):
         self._state = duty
 
 
+#
+# PIGPIO implementation
+#
+
+# pigpio is an optional install
+try:
+    import pigpio
+except ImportError:
+    print("pigpio was not imported.")
+    globals()["pigpio"] = None
+
+pigpio_pin_edge = [None, pigpio.RISING_EDGE, pigpio.FALLING_EDGE, pigpio.EITHER_EDGE]
+pigpio_pin_pull = [None, pigpio.PUD_OFF, pigpio.PUD_DOWN, pigpio.PUD_UP]
+
+
+class InputPinPigpio(InputPin):
+    def __init__(self, pin_number:int, pull=PinPull.PULL_NONE, pgpio=None) -> None:
+        """
+        Input pin ttl HIGH/LOW using PiGPIO library
+        pin_number: GPIO.BOARD mode point number
+        pull: enable a pull up or down resistor on pin.  Default is PinPull.PULL_NONE
+        """
+        self.pgpio = pgpio
+        self.pin_number = pin_number
+        self.pull = pigpio_pin_pull[pull]
+        self.on_input = None
+        self._state = PinState.NOT_STARTED
+
+    def __del__(self):
+        self.stop()
+
+    def _callback(self, gpio, level, tock):
+        if self.on_input is not None:
+            self.on_input(gpio, level)
+
+    def start(self, on_input=None, edge=PinEdge.RISING) -> None:
+        """
+        on_input: function to call when an edge is detected, or None to ignore
+        edge: type of edge(s) that trigger on_input; default is 
+        """
+        if self.state() != PinState.NOT_STARTED:
+            raise RuntimeError("Attempt to start InputPin that is already started.")
+
+        self.pgpio = self.pgpio or pigpio.pi()
+        self.pgpio.set_mode(self.pin_number, pigpio.INPUT)
+        self.pgpio.set_pull_up_down(self.pin_number, self.pull)
+
+        if on_input is not None:
+            self.on_input = on_input
+            self.pgpio.callback(self.pin_number, pigpio_pin_edge[edge], self._callback)
+        self._state = self.pgpio.read(self.pin_number) # read initial state
+
+    def stop(self) -> None:
+        if self.state() != PinState.NOT_STARTED:
+            self.pgpio.stop()
+            self.pgpio = None
+            self.on_input = None
+            self._state = PinState.NOT_STARTED
+
+    def state(self) -> int:
+        return self._state
+
+    def input(self) -> int:
+        if self.state() != PinState.NOT_STARTED:
+            self._state = self.pgpio.read(self.pin_number)
+        return self._state
+
+
+class OutputPinPigpio(OutputPin):
+    """
+    Output pin ttl HIGH/LOW using Rpi.GPIO/Jetson.GPIO
+    """
+    def __init__(self, pin_number:int, pgpio=None) -> None:
+        self.pgpio = pgpio
+        self.pin_number = pin_number
+        self._state = PinState.NOT_STARTED
+
+    def start(self, state:int=PinState.LOW) -> None:
+        if self.state() != PinState.NOT_STARTED:
+            raise RuntimeError("Attempt to start OutputPin that is already started.")
+
+        self.pgpio = self.pgpio or pigpio.pi()
+        self.pgpio.set_mode(self.pin_number, pigpio.OUTPUT)
+        self.pgpio.write(self.pin_number, state)  # set initial state
+        self._state = state
+
+    def stop(self) -> None:
+        if self.state() != PinState.NOT_STARTED:
+            self.pgpio.write(self.pin_number, PinState.LOW)
+            self.pgpio.stop()
+            self.pgpio = None
+            self._state = PinState.NOT_STARTED
+
+    def state(self) -> int:
+        return self._state
+
+    def output(self, state: int) -> None:
+        if self.state() != PinState.NOT_STARTED:
+            self.pgpio.write(self.pin_number, state)
+            self._state = state
+
+
+class PwmPinPigpio(PwmPin):
+    """
+    PWM output pin using Rpi.GPIO/Jetson.GPIO
+    """
+    def __init__(self, pin_number:int, frequency_hz:float = 50, pgpio=None) -> None:
+        self.pgpio = pgpio
+        self.pin_number:int = pin_number
+        self.frequency:int = int(frequency_hz)
+        self._state:int = PinState.NOT_STARTED
+
+    def start(self, duty:float=0) -> None:
+        if duty < 0 or duty > 1:
+            raise ValueError("duty_cycle must be in range 0 to 1")
+        self.pgpio = self.pgpio or pigpio.pi()
+        self.pgpio.set_mode(self.pin_number, pigpio.OUTPUT)
+        self.pgpio.set_PWM_frequency(self.pin_number, self.frequency)
+        self.pgpio.set_PWM_range(self.pin_number, 4095)  # 12 bits, same as PCA9685
+        self.pgpio.set_PWM_dutycycle(self.pin_number, int(duty * 4095))  # set initial state
+        self._state = duty
+
+    def stop(self) -> None:
+        if self.state() != PinState.NOT_STARTED:
+            self.pgpio.write(self.pin_number, PinState.LOW)
+            self.pgpio.stop()
+            self.pgpio = None
+        self._state = PinState.NOT_STARTED
+
+    def state(self) -> float:
+        return self._state
+
+    def duty_cycle(self, duty: float) -> None:
+        if duty < 0 or duty > 1:
+            raise ValueError("duty_cycle must be in range 0 to 1")
+        if self.state() != PinState.NOT_STARTED:
+            self.pgpio.set_PWM_dutycycle(self.pin_number, int(duty * 4095))
+            self._state = duty
+
+
 if __name__ == '__main__':
     import argparse
     from threading import Thread
@@ -598,11 +778,11 @@ if __name__ == '__main__':
         'both': PinEdge.BOTH
     }
 
-    def on_input(state):
-        if ttl_in_pin.input():
-            print("+", time.time()*1000) 
-        else:
-            print("-", time.time()*1000)
+    def on_input(pin_number, state):
+        if state == PinState.HIGH:
+            print("+", pin_number, time.time()*1000) 
+        elif state == PinState.LOW:
+            print("-", pin_number, time.time()*1000)
             
     pwm_out_pin:PwmPin = None
     ttl_out_pin:OutputPin = None
