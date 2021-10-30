@@ -9,7 +9,32 @@ import time
 
 import donkeycar as dk
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState
+from donkeycar.utilities import deprecated
 
+
+#
+# pwm/duty-cycle/pulse
+# - Standard RC servo pulses range from 1 millisecond (full reverse) 
+#   to 2 milliseconds (full forward) with 1.5 milliseconds being neutral (stopped).
+# - These pulses are typically send at 50 hertz (every 20 milliseconds).
+# - This means that, using the standard 50hz frequency, a 1 ms pulse 
+#   represents a 5% duty cycle and a 2 ms pulse represents a 10% duty cycle.
+# - The important part is the length of the pulse; 
+#   it must be in the range of 1 ms to 2ms.  
+# - So this means that if a different frequency is used, then the duty cycle 
+#   must be adjusted in order to get the 1ms to 2ms pulse.
+# - For instance, if a 60hz frequency is used, then a 1 ms pulse requires
+#   a duty cycle of 0.05 * 60 / 50 = 0.06 (6%) duty cycle
+# - We default the frequency of our PCA9685 to 60 hz, so pulses in 
+#   config are generally based on 60hz frequency and 12 bit values.
+#   So a 1 ms pulse is 0.06 * 4096 ~= 246, a neutral pulse of 0.09 duty cycle
+#   is 0.09 * 4096 ~= 367 and full forward pulse of 0.12 duty cycles
+#   is 0.12 * 4096 ~= 492
+# - These are generalizations that are useful for understanding the underlying
+#   api call arguments.  The final choice of duty-cycle/pulse length depends 
+#   on your hardware and perhaps your strategy (you may not want to go too fast, 
+#   and so you may choose is low max throttle pwm)
+#
 
 def duty_cycle(pulse_ms:float, frequency_hz:float) -> float:
     """
@@ -40,6 +65,42 @@ def pulse_ms(pulse_bits:int) -> float:
     return pulse_bits / 4095
 
 
+class PulseController:
+    """
+    Controller that provides a servo PWM pulse using the given PwmPin
+    See pins.py for pin provider implementations.
+
+    pwm_pin:PwnPin pin that will emit the pulse.
+    pwm_scale:float scaling the 12 bit pulse value to compensate
+                    for non-standard pwm frequencies.
+    pwm_inverted:bool True to invert the duty cycle
+    """
+    def __init__(self, pwm_pin:PwmPin, pwm_scale:float = 1.0, pwm_inverted:bool = False) -> None:
+        self.pwm_pin = pwm_pin
+        self.scale = pwm_scale
+        self.inverted = pwm_inverted
+
+    def set_pulse(self, pulse:int):
+        """
+        Set the length of the pulse using a 12 bit integer (0..4095)
+        pulse:int 12bit integer (0..4095)
+        """
+        if pulse < 0 or pulse > 4095:
+            raise ValueError("pulse must be in range 0 to 4095")
+
+        if self.inverted:
+            pulse = 4095 - pulse
+        self.pwm_pin.duty_cycle(int(pulse * self.scale) / 4095)
+
+    def run(self, pulse:int):
+        """
+        Set the length of the pulse using a 12 bit integer (0..4095)
+        pulse:int 12bit integer (0..4095)
+        """
+        self.set_pulse(pulse)
+
+
+@deprecated("Deprecated in favor or PulseController.  This will be removed in a future release")
 class PCA9685:
     ''' 
     PWM motor controler using PCA9685 boards. 
@@ -94,6 +155,7 @@ class PCA9685:
         self.set_pulse(pulse)
 
 
+@deprecated("Deprecated in favor or PulseController.  This will be removed in a future release")
 class PiGPIO_PWM():
     '''
     # Use the pigpio python module and daemon to get hardware pwm controls from
@@ -110,17 +172,6 @@ class PiGPIO_PWM():
     # If you use a control circuit that inverts the steering signal, set inverted to True
     # Default multipler for pulses from config etc is 100
     #
-    # Pulses
-    # - Standard RC servo pulses range from 1 millisecond (full reverse) 
-    #   to 2 milliseconds (full forward) with 1.5 milliseconds being neutral (stopped).
-    # - These pulses are typically send at 50 hertz (every 10 milliseconds).
-    # - This means that, using the standard 50hz frequency, a 1 ms pulse 
-    #   represents a 5% duty cycle and a 2 ms pulse represents a 10% duty cycle.
-    # - The important part is the length of the pulse; 
-    #   it must be in the range of 1 ms to 2ms.  
-    # - So this means that if a different frequency is used, then the duty cycle 
-    #   must be adjusted in order to get the 1ms to 2ms pulse.
-    # - For instance, if a 60hz frequency is used, the a 1 ms pulse 
     #   
     '''
 
@@ -146,17 +197,15 @@ class PiGPIO_PWM():
     def run(self, pulse):
         self.set_pulse(pulse)
 
+
 class PWMSteering:
     """
-    Wrapper over a PWM motor controller to convert angles to PWM pulses.
+    Wrapper over a PWM pulse controller to convert angles to PWM pulses.
     """
     LEFT_ANGLE = -1
     RIGHT_ANGLE = 1
 
-    def __init__(self,
-                 controller=None,
-                 left_pulse=290,
-                 right_pulse=490):
+    def __init__(self, controller, left_pulse, right_pulse):
 
         if controller is None:
             raise ValueError("PWMSteering requires a set_pulse controller to be passed")
@@ -195,17 +244,13 @@ class PWMSteering:
 
 class PWMThrottle:
     """
-    Wrapper over a PWM motor controller to convert -1 to 1 throttle
+    Wrapper over a PWM pulse controller to convert -1 to 1 throttle
     values to PWM pulses.
     """
     MIN_THROTTLE = -1
     MAX_THROTTLE = 1
 
-    def __init__(self,
-                 controller=None,
-                 max_pulse=300,
-                 min_pulse=490,
-                 zero_pulse=350):
+    def __init__(self, controller, max_pulse, min_pulse, zero_pulse):
 
         if controller is None:
             raise ValueError("PWMThrottle requires a set_pulse controller to be passed")
@@ -251,6 +296,18 @@ class PWMThrottle:
         self.run(0)
         self.running = False
 
+
+#
+# This seems redundant.  If it's really emulating and PCA9685, then
+# why don't we just use that code?
+# - this is not used in any templates
+# - this is not documented in docs or elsewhere
+# - this seems redundant; if it emultates a PCA9685 then we should be able to use that code. 
+# - there is an intention to implement a Firmata driver in pins.py.  
+#   Teensy can run Firmata, so that is a way to get Teensy support. 
+#   See https://www.pjrc.com/teensy/td_libs_Firmata.html
+#
+@deprecated("JHat is unsupported/undocumented in the framework.  It will be removed in a future release.")
 class JHat:
     ''' 
     PWM motor controller using Teensy emulating PCA9685. 
@@ -284,6 +341,17 @@ class JHat:
     def run(self, pulse):
         self.set_pulse(pulse)
 
+
+#
+# JHatReader is on the chopping block for removal
+# - it is not integrated into any templates
+# - it is not documented in docs or elsewhere
+# This appears to be a way to read RC receiving input.  As such
+# it would more appropriately be integrated into controllers.py.
+# If that can be addressed then we would keep this, 
+# otherwise this should be removed.
+#
+@deprecated("JHatReader is unsupported/undocumented in the framework.  It may be removed in a future release.")
 class JHatReader:
     ''' 
     Read RC controls from teensy 
@@ -338,6 +406,15 @@ class JHatReader:
         time.sleep(0.1)
 
 
+#
+# Adafruit_DCMotor_Hat support is on the block for removal
+# - it is not integrated into any templates
+# - It is not documented in the docs or otherwise
+# A path forward would be to add a drive train option
+# DRIVE_TRAIN_TYPE = "DC_TWO_WHEEL_ADAFRUIT" 
+# and integrate this into complete.py
+#
+@deprecated("This appears to be unsupported/undocumented in the framework. This may be removed in a future release")
 class Adafruit_DCMotor_Hat:
     ''' 
     Adafruit DC Motor Controller 
@@ -382,6 +459,17 @@ class Adafruit_DCMotor_Hat:
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
 
 
+#
+# Maestro Servo Controller support is on the block for removal
+# - it is not integrated into any templates
+# - It is not documented in the docs or otherwise
+# - It seems to require a separate AStar microcontroller for which there is no firmware included or referenced
+# If that can be addressed, then we can add Maestro support to the pin provide api in pins.py
+# so it can be used a source of TTL and PWM for the generalized motor drivers.
+# Perhaps the AStar controller is not integral to using this as a source of servo pulses in which
+# case it seems pretty straight forward to integrate this into pins.py and then delete this class.
+#
+@deprecated("This appears to be unsupported/undocumented in the framework. This may be removed in a future release")
 class Maestro:
     '''
     Pololu Maestro Servo controller
@@ -466,6 +554,17 @@ class Maestro:
         return ret
 
 
+#
+# Teensy support is on the chopping block.
+# - It is not integrated into any template
+# - It is not documented in the docs or otherwise
+# - It presumably requires a firmware to be uploaded to the teensy, but no firmware is referenced.
+# If that can be addressed, then we can add Teensy support to the pin provide api in pins.py
+# so it can be used a source of TTL and PWM for the generalized motor drivers.
+# Another route is to implement Firmata protocol (perhaps a version of the Arduino sketch,
+# see ArduinoFirmata below)
+#
+@deprecated("This appears to be unsupported/undocumented in the framework. This may be removed in a future release")
 class Teensy:
     '''
     Teensy Servo controller
@@ -573,6 +672,7 @@ class L298N_HBridge_3pin(object):
     chosen with configuration DRIVETRAIN_TYPE=DC_TWO_WHEEL_L298N
     Uses two OutputPins to select direction and 
     a PwmPin to control the power to the motor.
+    See pins.py for pin provider implementations.
 
     See https://www.etechnophiles.com/l298n-motor-driver-pin-diagram/
     for a discussion of how the L298N hbridge module is wired.
@@ -635,6 +735,10 @@ class L298N_HBridge_3pin(object):
 
 
 class TwoWheelSteeringThrottle(object):
+    """
+    Modify individual differential drive wheel throttles
+    in order to implemeht steering.
+    """
 
     def run(self, throttle, steering):
         if throttle > 1 or throttle < -1:
@@ -661,6 +765,7 @@ class L298N_HBridge_2pin(object):
     Motor controlled with an 'mini' L298N hbridge using 2 PwmPins,
     one for forward pwm and for reverse pwm.
     Chosen with configuration DRIVETRAIN_TYPE=DC_TWO_WHEEL
+    See pins.py for pin provider implementations.
 
     See https://www.instructables.com/Tutorial-for-Dual-Channel-DC-Motor-Driver-Board-PW/
     for how an L298N mini-hbridge modules is wired.  
@@ -728,6 +833,12 @@ class L298N_HBridge_2pin(object):
         self.pin_backward.stop()
 
     
+#
+# This is being replaced by pins.py and PulseController.  
+# GPIO pins can be configured using RPi.GPIO or PIGPIO, 
+# so this is redundant
+#
+@deprecated("This will be removed in a future release in favor of PulseController")
 class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
@@ -761,6 +872,11 @@ class RPi_GPIO_Servo(object):
         GPIO.cleanup()
 
 
+#
+# This is being replaced by pins.py.  GPIO pins can be 
+# configured using RPi.GPIO or PIGPIO, so ServoBlaster is redundant
+#
+@deprecated("This will be removed in a future release in favor of PulseController")
 class ServoBlaster(object):
     '''
     Servo controlled from the gpio pins on Rpi
@@ -799,7 +915,27 @@ class ServoBlaster(object):
         self.run((self.max + self.min) / 2)
         self.servoblaster.close()
 
-
+#
+# TODO: integrate ArduinoFirmata support into pin providers, then we can remove all of this code and use PulseController
+#
+# Arduino/Microcontroller PWM support. 
+# Firmata is a specification for configuring general purpose microcontrollers remotey.
+# The implementatino for Arduino is used here.
+#
+# See https://docs.donkeycar.com/parts/actuators/#arduino for how to set this up.
+# Firmata Protocol https://github.com/firmata/protocol
+# Arduino implementation https://github.com/firmata/arduino
+#
+# NOTE: to create a general purpose InputPin/OutputPin/PwmPin with support for servo pulses between 1ms and 2ms
+#       with good resolution, it is likely we will need to create our own sketch based on the Arduino Firmata
+#       examples.  By default, analog write is not adequate to support servos; it is good for motor duty cycles
+#       but is poor for servos because of the low resolution and poor control of frequency.  So we need to
+#       use the Servo.h library and dynamically add a Servo instance to a pin when it is configured for
+#       analog output.  Further, we should use writeMicroseconds for output and so interpret values
+#       to the pin as microseconds for the on part of the pulse.  See the various flavors of examples
+#       in the Arduino Firmata repo linked above.
+#
+@deprecated("This will be removed in a future release and Arduino support will be add to pins.py")
 class ArduinoFirmata:
     '''
     PWM controller using Arduino board.
@@ -830,7 +966,7 @@ class ArduinoFirmata:
         self.set_pulse(self.esc_pin, int(angle))
 
 
-
+@deprecated("This will be removed in a future release and Arduino PWM support will be add to pins.py")
 class ArdPWMSteering:
     """
     Wrapper over a Arduino Firmata controller to convert angles to PWM pulses.
@@ -866,6 +1002,7 @@ class ArdPWMSteering:
         self.running = False
 
 
+@deprecated("This will be removed in a future release and Arduino PWM support will be add to pins.py")
 class ArdPWMThrottle:
 
     """
