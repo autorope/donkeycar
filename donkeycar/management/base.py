@@ -185,9 +185,10 @@ class CalibrateCar(BaseCommand):
     
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='calibrate', usage='%(prog)s [options]')
-        parser.add_argument('--channel', help="The channel you'd like to calibrate [0-15]")
-        parser.add_argument('--address', default='0x40', help="The i2c address you'd like to calibrate [default 0x40]")
-        parser.add_argument('--bus', default=None, help="The i2c bus you'd like to calibrate [default autodetect]")
+        parser.add_argument('--pwm-pin', help="The PwmPin specifier of pin to calibrate, like 'RPI_GPIO.BOARD.33' or 'PCA9685.1:40.13'")
+        parser.add_argument('--channel', default=None, help="The PCA9685 channel you'd like to calibrate [0-15]")
+        parser.add_argument('--address', default='0x40', help="The i2c address of PCA9685 you'd like to calibrate [default 0x40]")
+        parser.add_argument('--bus', default=None, help="The i2c bus of PCA9685 you'd like to calibrate [default autodetect]")
         parser.add_argument('--pwmFreq', default=60, help="The frequency to use for the PWM")
         parser.add_argument('--arduino', dest='arduino', action='store_true', help='Use arduino pin for PWM (calibrate pin=<channel>)')
         parser.set_defaults(arduino=False)
@@ -196,20 +197,40 @@ class CalibrateCar(BaseCommand):
 
     def run(self, args):
         args = self.parse_args(args)
-        channel = int(args.channel)
 
         if args.arduino == True:
             from donkeycar.parts.actuator import ArduinoFirmata
 
+            channel = int(args.channel)
             arduino_controller = ArduinoFirmata(servo_pin=channel)
             print('init Arduino PWM on pin %d' %(channel))
             input_prompt = "Enter a PWM setting to test ('q' for quit) (0-180): "
+
+        elif args.pwm_pin is not None:
+            from donkeycar.parts.actuator import PulseController
+            from donkeycar.parts import pins
+
+            pwm_pin = None
+            try:
+                pwm_pin = pins.pwm_pin_by_id(args.pwm_pin)
+            except ValueError as e:
+                print(e)
+                print("See pins.py for a description of pin specification strings.")
+                exit(-1)
+            print('init pin {}'.format(args.pwm_pin))
+            freq = int(args.pwmFreq)
+            print("Using PWM freq: {}".format(freq))
+            c = PulseController(pwm_pin)
+            input_prompt = "Enter a PWM setting to test ('q' for quit) (0-1500): "
+            print()
+
         else:
             from donkeycar.parts.actuator import PCA9685
             from donkeycar.parts.sombrero import Sombrero
 
-            s = Sombrero()
+            s = Sombrero()  # setup pins for Sombrero hat
 
+            channel = int(args.channel)
             busnum = None
             if args.bus:
                 busnum = int(args.bus)
@@ -220,6 +241,7 @@ class CalibrateCar(BaseCommand):
             c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
             input_prompt = "Enter a PWM setting to test ('q' for quit) (0-1500): "
             print()
+
         while True:
             try:
                 val = input(input_prompt)

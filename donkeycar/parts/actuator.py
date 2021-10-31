@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 import time
 
 import donkeycar as dk
-from donkeycar.parts.pins import OutputPin, PwmPin, PinState
+from donkeycar.parts.pins import OutputPin, PwmPin, PinState, pwm_pin_by_id
 from donkeycar.utilities.deprecated import deprecated
 
 
@@ -79,7 +79,7 @@ class PulseController:
         self.pwm_pin = pwm_pin
         self.scale = pwm_scale
         self.inverted = pwm_inverted
-        self.started = False
+        self.started = pwm_pin.state() != PinState.NOT_STARTED
 
     def set_pulse(self, pulse:int):
         """
