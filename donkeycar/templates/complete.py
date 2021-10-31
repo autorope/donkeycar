@@ -549,7 +549,37 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # Drive train setup
     if cfg.DONKEY_GYM or cfg.DRIVE_TRAIN_TYPE == "MOCK":
         pass
+    elif cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":
+        #
+        # drivetrain for RC car with servo and ESC.
+        # using a PwmPin for steering (servo)
+        # and as second PwmPin for throttle (ESC)
+        #
+        from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PulseController
+        steering_controller = PulseController(
+            pwm_pin=pins.pwm_pin_by_id(cfg.PWM_STEERING_PIN),
+            pwm_scale=cfg.PWM_STEERING_SCALE, 
+            pwm_inverted=cfg.PWM_STEERING_INVERTED)
+        steering = PWMSteering(controller=steering_controller,
+                                        left_pulse=cfg.STEERING_LEFT_PWM, 
+                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+        
+        throttle_controller = PulseController(
+            pwm_pin=pins.pwm_pin_by_id(cfg.PWM_THROTTLE_PIN), 
+            pwm_scale=cfg.PWM_THROTTLE_SCALE, 
+            pwm_inverted=cfg.PWM_THROTTLE_INVERTED)
+        throttle = PWMThrottle(controller=throttle_controller,
+                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+        V.add(steering, inputs=['angle'], threaded=True)
+        V.add(throttle, inputs=['throttle'], threaded=True)
+
     elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
+        #
+        # Thi driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE"'
+        # This driver will be removed in a future release
+        #
         from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
         steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
@@ -568,22 +598,22 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
         steering = actuator.L298N_HBridge_2pin(
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_LEFT), 
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_RIGHT))
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_LEFT), 
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_RIGHT))
         throttle = Mini_HBridge_DC_Motor_PWM(
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_FWD), 
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_BWD))
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_FWD), 
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_BWD))
 
         V.add(steering, inputs=['angle'])
         V.add(throttle, inputs=['throttle'])
 
     elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
         left_motor = actuator.L298N_HBridge_2pin(
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_LEFT_FWD), 
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_LEFT_BWD))
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_LEFT_FWD), 
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_LEFT_BWD))
         right_motor = Mini_HBridge_DC_Motor_PWM(
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_FWD), 
-            pins.output_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_BWD))
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_FWD), 
+            pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_BWD))
 
         two_wheel_control = actuator.TwoWheelSteeringThrottle()
 
@@ -614,6 +644,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(right_motor, inputs=['right_motor_speed'])
 
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
+        #
+        # Thi driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE"'
+        # This driver will be removed in a future release
+        #
         from donkeycar.parts.actuator import ServoBlaster, PWMSteering
         steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
         # PWM pulse values should be in the range of 100 to 200
@@ -634,6 +668,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
     
     elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
+        #
+        # Thi driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE"'
+        # This driver will be removed in a future release
+        #
         from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PiGPIO_PWM
         steering_controller = PiGPIO_PWM(cfg.STEERING_PWM_PIN, freq=cfg.STEERING_PWM_FREQ, inverted=cfg.STEERING_PWM_INVERTED)
         steering = PWMSteering(controller=steering_controller,
