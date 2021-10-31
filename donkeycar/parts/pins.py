@@ -9,7 +9,7 @@ provide an interface for starting, using and cleaning up the pins.
 The factory functions input_pin_by_id(), output_pin_by_id()
 and pwm_pin_by_id() construct pins given a string id
 that specifies the underlying pin provider and it's attributes.
-There are implementations for the Rpi.GPIO library and
+There are implementations for the Rpi.GPIO library and 
 for the PCA9685.  
 
 Pin id allows pins to be selected using a single string to
@@ -24,7 +24,6 @@ Use Rpi.GPIO library, GPIO.BCM broadcom pin numbering scheme, gpio pin number 33
 Use PCA9685 on bus 0 at address 0x40, channel 7
  pin = pwm_pin_by_id("PCA9685.0:40.7")
 
-TODO: implement PiGPIO pin provider
 """
 from abc import ABC, abstractmethod
 
@@ -313,7 +312,7 @@ def output_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD,
     if pin_provider == PinProvider.RPI_GPIO:
         return OutputPinGpio(pin_number, pin_scheme)
     if pin_provider == PinProvider.PCA9685:
-        return OutputPinPCA9685(pin_number, frequency_hz, i2c_bus, i2c_address)
+        return OutputPinPCA9685(pin_number, pca9685(i2c_bus, i2c_address, frequency_hz))
     if pin_provider == PinProvider.PIGPIO:
         if pin_scheme != PinScheme.BCM:
             raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
@@ -328,7 +327,7 @@ def pwm_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, fr
     if pin_provider == PinProvider.RPI_GPIO:
         return PwmPinGpio(pin_number, pin_scheme, frequency_hz)
     if pin_provider == PinProvider.PCA9685:
-        return PwmPinPCA9685(pin_number, frequency_hz, i2c_bus, i2c_address)
+        return PwmPinPCA9685(pin_number, pca9685(i2c_bus, i2c_address, frequency_hz))
     if pin_provider == PinProvider.PIGPIO:
         if pin_scheme != PinScheme.BCM:
             raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
@@ -337,7 +336,7 @@ def pwm_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, fr
 
 
 #
-# RPi.GPIO/Jetson.GPIO implementations
+# ----- RPi.GPIO/Jetson.GPIO implementations -----
 #
 def gpio_fn(pin_scheme, fn):
     """
@@ -469,18 +468,92 @@ class PwmPinGpio(PwmPin):
 
 
 #
-# PCA9685 implementations
+# ----- PCA9685 implementations -----
 # 
+class PCA9685:
+    ''' 
+    Pin controller using PCA9685 boards. 
+    This is used for most RC Cars.  This
+    driver can output ttl HIGH or LOW or
+    produce a duty cycle at the given frequency.
+    '''
+    def __init__(self, busnum:int, address:int, frequency:int):
+
+        import Adafruit_PCA9685
+        if busnum is not None:
+            from Adafruit_GPIO import I2C
+            # monkey-patch I2C driver to use our bus number
+            def get_bus():
+                return busnum
+            I2C.get_default_bus = get_bus
+        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
+        self.pwm.set_pwm_freq(frequency)
+        self._frequency = frequency
+
+    def get_frequency(self):
+        return self._frequency
+
+    def set_high(self, channel:int):
+        self.pwm.set_pwm(channel, 4096, 0)
+
+    def set_low(self, channel:int):
+        self.pwm.set_pwm(channel, 0, 4096)
+
+    def set_duty_cycle(self, channel:int, duty_cycle:float):
+        if duty_cycle < 0 or duty_cycle > 1:
+            raise ValueError("duty_cycle must be in range 0 to 1")
+        if duty_cycle == 1:
+            self.set_high()
+        elif duty_cycle == 0:
+            self.set_low()
+        else:
+            # duty cycle is fraction of the 12 bits
+            pulse = int(4096 * duty_cycle)
+            try:
+                self.pwm.set_pwm(channel, 0, pulse)
+            except:
+                self.pwm.set_pwm(channel, 0, pulse)
+
+
+#
+# lookup map for PCA9685 singletons
+# key is "busnum:address"
+#
+_pca9685 = {}
+
+
+def pca9685(busnum, address, frequency=60):
+    """
+    pca9685 factory allocates driver for pca9685
+    at given bus number and i2c address.
+    If we have already created one for that bus/addr
+    pair then use that singleton.  If frequency is
+    not the same, then error.
+
+    NOTE: PCA9685 has a single frequency for all channels,
+          so attempts to allocate a controller at a
+          given bus number and address with different
+          frequencies will raise a ValueError
+    """
+    key = str(busnum) + ":" + hex(address)
+    pca = _pca9685.get(key)
+    if pca is None:
+        pca = PCA9685(busnum, address, frequency)
+    if pca.get_frequency() != frequency:
+        raise ValueError(
+            "Frequency {} conflicts with pca9685 at {} "
+            "with frequency {}".format(
+                frequency, key, pca.pwm.get_pwm_freq()))
+    return pca
+
+
 class OutputPinPCA9685(ABC):
     """
     Output pin ttl HIGH/LOW using PCA9685
     """
-    def __init__(self, pin_number:int, frequency_hz:int, i2c_bus:int, i2c_address:int) -> None:
+    def __init__(self, pin_number:int, pca9685:PCA9685) -> None:
         self.pin_number = pin_number
-        self.i2c_bus = i2c_bus
-        self.i2c_address = i2c_address
-        self.frequency_hz = frequency_hz
-        self.pca9685 = None
+        self.pca9685 = pca9685
         self._state = PinState.NOT_STARTED
 
     def start(self, state:int=PinState.LOW) -> None:
@@ -490,19 +563,18 @@ class OutputPinPCA9685(ABC):
         You can check to see if the pin is started by calling
         state() and checking for PinState.NOT_STARTED
         """
-        if self.pca9685 is not None:
+        if self.state() != PinState.NOT_STARTED:
             raise RuntimeError("Attempt to start pin ({}) that is already started".format(self.pin_number))
-        self.pca9685 = actuator.PCA9685(self.pin_number, self.i2c_address, self.frequency_hz, self.i2c_bus)
+        self._state = 0  # hack to allow first output to work
         self.output(state)
 
     def stop(self) -> None:
         """
         Stop the pin and return it to PinState.NOT_STARTED
         """
-        if self.pca9685 is not None:
+        if self.state() != PinState.NOT_STARTED:
             self.output(PinState.LOW)
-            self.pca9685 = None
-        self._state = PinState.NOT_STARTED
+            self._state = PinState.NOT_STARTED
 
     def state(self) -> int:
         """
@@ -513,10 +585,12 @@ class OutputPinPCA9685(ABC):
         return self._state
 
     def output(self, state: int) -> None:
+        if self.state() == PinState.NOT_STARTED:
+            raise RuntimeError("Attempt to use pin ({}) that is not started".format(self.pin_number))
         if state == PinState.HIGH:
-            self.pca9685.set_high()
+            self.pca9685.set_high(self.pin_number)
         else:
-            self.pca9685.set_low()
+            self.pca9685.set_low(self.pin_number)
         self._state = state
 
 
@@ -524,41 +598,39 @@ class PwmPinPCA9685(PwmPin):
     """
     PWM output pin using PCA9685
     """
-    def __init__(self, pin_number:int, frequency_hz:int, i2c_bus:int, i2c_address:int) -> None:
+    def __init__(self, pin_number:int, pca9685:PCA9685) -> None:
         self.pin_number = pin_number
-        self.i2c_bus = i2c_bus
-        self.i2c_address = i2c_address
-        self.frequency_hz = frequency_hz
-        self.pca9685 = None
+        self.pca9685 = pca9685
         self._state = PinState.NOT_STARTED
 
     def start(self, duty:float=0) -> None:
-        if self.pca9685 is not None:
+        if self.state() != PinState.NOT_STARTED:
             raise RuntimeError("Attempt to start pin ({}) that is already started".format(self.pin_number))
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
-        self.pca9685 = actuator.PCA9685(self.pin_number, self.i2c_address, self.frequency_hz, self.i2c_bus)
+        self._state = 0  # hack to allow first duty_cycle to work
         self.duty_cycle(duty)
         self._state = duty
 
     def stop(self) -> None:
-        if self.pca9685 is not None:
+        if self.state() != PinState.NOT_STARTED:
             self.duty_cycle(0)
-            self.pca9685 = None
-        self._state = PinState.NOT_STARTED
+            self._state = PinState.NOT_STARTED
 
     def state(self) -> float:
         return self._state
 
     def duty_cycle(self, duty: float) -> None:
+        if self.state() == PinState.NOT_STARTED:
+            raise RuntimeError("Attempt to use pin ({}) that is not started".format(self.pin_number))
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
-        self.pca9685.set_duty_cycle(duty)
+        self.pca9685.set_duty_cycle(self.pin_number, duty)
         self._state = duty
 
 
 #
-# PIGPIO implementation
+# ----- PIGPIO implementation -----
 #
 
 # pigpio is an optional install
@@ -567,6 +639,7 @@ try:
 except ImportError:
     print("pigpio was not imported.")
     globals()["pigpio"] = None
+
 
 pigpio_pin_edge = [None, pigpio.RISING_EDGE, pigpio.FALLING_EDGE, pigpio.EITHER_EDGE]
 pigpio_pin_pull = [None, pigpio.PUD_OFF, pigpio.PUD_DOWN, pigpio.PUD_UP]
