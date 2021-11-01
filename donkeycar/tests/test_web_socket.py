@@ -27,7 +27,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         return "ws://localhost:" + str(self.get_http_port()) + "/"
 
     @tornado.testing.gen_test
-    def test_calibrate_servo_esc_1(self):
+    def test_calibrate_servo_esc_1b(self):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
@@ -43,7 +43,23 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         assert isinstance(self.app.drive_train['steering'].right_pulse, Mock)
 
     @tornado.testing.gen_test
-    def test_calibrate_servo_esc_2(self):
+    def test_calibrate_servo_esc_1a(self):
+        ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
+
+        # Now we can run a test on the WebSocket.
+        self.app.drive_train = dict()
+        self.app.drive_train['steering'] = Mock()
+        self.app.drive_train_type = "PWM_STEERING_THROTTLE"
+
+        data = {"config": {"STEERING_LEFT_PWM": 444}}
+        yield ws_client.write_message(json.dumps(data))
+        yield ws_client.close()
+
+        assert self.app.drive_train['steering'].left_pulse == 444
+        assert isinstance(self.app.drive_train['steering'].right_pulse, Mock)
+
+    @tornado.testing.gen_test
+    def test_calibrate_servo_esc_2b(self):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
@@ -59,13 +75,45 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         assert isinstance(self.app.drive_train['steering'].left_pulse, Mock)
 
     @tornado.testing.gen_test
-    def test_calibrate_servo_esc_3(self):
+    def test_calibrate_servo_esc_2a(self):
+        ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
+
+        # Now we can run a test on the WebSocket.
+        self.app.drive_train = dict()
+        self.app.drive_train['steering'] = Mock()
+        self.app.drive_train_type = "PWM_STEERING_THROTTLE"
+
+        data = {"config": {"STEERING_RIGHT_PWM": 555}}
+        yield ws_client.write_message(json.dumps(data))
+        yield ws_client.close()
+
+        assert self.app.drive_train['steering'].right_pulse == 555
+        assert isinstance(self.app.drive_train['steering'].left_pulse, Mock)
+
+    @tornado.testing.gen_test
+    def test_calibrate_servo_esc_3b(self):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
         self.app.drive_train = dict()
         self.app.drive_train['throttle'] = Mock()
         self.app.drive_train_type = "I2C_SERVO"
+
+        data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
+        yield ws_client.write_message(json.dumps(data))
+        yield ws_client.close()
+
+        assert self.app.drive_train['throttle'].max_pulse == 666
+        assert isinstance(self.app.drive_train['throttle'].min_pulse, Mock)
+
+    @tornado.testing.gen_test
+    def test_calibrate_servo_esc_3a(self):
+        ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
+
+        # Now we can run a test on the WebSocket.
+        self.app.drive_train = dict()
+        self.app.drive_train['throttle'] = Mock()
+        self.app.drive_train_type = "PWM_STEERING_THROTTLE"
 
         data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
         yield ws_client.write_message(json.dumps(data))

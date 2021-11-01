@@ -23,7 +23,7 @@
             <div class="col">
                 <h2>Introduction</h2>
                 <p> This page allow you to dynamically re-adjust the calibration
-                    value of PCA9685 or MM1. Please note that after finding the
+                    value of PulseController, PCA9685 or MM1. Please note that after finding the
                     desire value, you need to update the value in myconfig.py manually </p>
                 <h2>Instruction</h2>
 
@@ -38,10 +38,10 @@
                 <form name="calibrate_form">
                     <fieldset>
 
-                        <legend>PCA9685</legend>
+                        <legend>Servo/ESC PWM Pulse Configuration</legend>
                         <div>
                             <label for="STEERING_LEFT_PWM">
-                                <span>STEERING_LEFT_PWM:</span>
+                                <span>Left Steering Pulse:</span>
                                 <input name="STEERING_LEFT_PWM" type="text" value="460"> </input>
                                 <input type="button" value="+">
                                 <input type="button" value="-">
@@ -49,7 +49,7 @@
                         </div>
                         <div>
                             <label for="STEERING_RIGHT_PWM">
-                                <span>STEERING_RIGHT_PWM:</span>
+                                <span>Right Steering Pulse:</span>
                                 <input name="STEERING_RIGHT_PWM" type="text" value="290"> </input>
                                 <input type="button" value="+">
                                 <input type="button" value="-">
@@ -57,7 +57,7 @@
                         </div>
                         <p>
                             <label for="THROTTLE_FORWARD_PWM">
-                                <span>THROTTLE_FORWARD_PWM:</span>
+                                <span>Forward Throttle Pulse:</span>
                                 <input name="THROTTLE_FORWARD_PWM" type="text" value="500"> </input>
                                 <input type="button" value="+">
                                 <input type="button" value="-">
