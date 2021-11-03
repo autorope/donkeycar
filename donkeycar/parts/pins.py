@@ -507,9 +507,9 @@ class PCA9685:
         if duty_cycle < 0 or duty_cycle > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         if duty_cycle == 1:
-            self.set_high()
+            self.set_high(channel)
         elif duty_cycle == 0:
-            self.set_low()
+            self.set_low(channel)
         else:
             # duty cycle is fraction of the 12 bits
             pulse = int(4096 * duty_cycle)
