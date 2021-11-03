@@ -78,6 +78,11 @@ def drive(cfg ):
                                             max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                             zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
                                             min_pulse=cfg.THROTTLE_REVERSE_PWM)
+
+        drive_train = dict()
+        drive_train['steering'] = steering
+        drive_train['throttle'] = throttle
+
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(throttle, inputs=['throttle'], threaded=True)
 
