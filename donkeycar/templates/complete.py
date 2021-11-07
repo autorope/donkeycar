@@ -611,7 +611,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         left_motor = actuator.L298N_HBridge_2pin(
             pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_LEFT_FWD), 
             pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_LEFT_BWD))
-        right_motor = Mini_HBridge_DC_Motor_PWM(
+        right_motor = actuator.L298N_HBridge_2pin(
             pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_FWD), 
             pins.pwm_pin_by_id(cfg.HBRIDGE_PIN_RIGHT_BWD))
 

@@ -820,7 +820,7 @@ class L298N_HBridge_2pin(object):
             raise ValueError( "Throttle must be between 1(forward) and -1(reverse)")
         
         self.speed = throttle
-        self.throttle = dk.utils.map_range_float(speed, -1, 1, -self.max_duty, self.max_duty)
+        self.throttle = dk.utils.map_range_float(throttle, -1, 1, -self.max_duty, self.max_duty)
         
         if self.throttle > self.zero_throttle:
             self.pin_backward.duty_cycle(0)
