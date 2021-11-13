@@ -93,6 +93,86 @@ THROTTLE_PWM_PIN = 18           #Pin numbering according to Broadcom numbers
 THROTTLE_PWM_FREQ = 50          #Frequency for PWM
 THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 
+#
+# SERVO_HBRIDGE_2PIN
+# - configures a steering servo and an HBridge in 2pin mode (2 pwm pins)
+# - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
+#   and 2 milliseconds (full forward) with 1.5ms being neutral.
+# - the motor is controlled by two pwm pins, 
+#   one for forward and one for backward (reverse). 
+# - the pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and 
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+# Pin specifier string format:
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_2PIN_DUTY_FWD = "RPI_GPIO.BOARD.18"  # provides forward duty cycle to motor
+HBRIDGE_2PIN_DUTY_BWD = "RPI_GPIO.BOARD.16"  # provides reverse duty cycle to motor
+PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"       # provides servo pulse to steering servo
+PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
+STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+
+#
+# SERVO_HBRIDGE_3PIN
+# - configures a steering servo and an HBridge in 3pin mode (2 ttl pins, 1 pwm pin)
+# - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
+#   and 2 milliseconds (full forward) with 1.5ms being neutral.
+# - the motor is controlled by three pins, 
+#   one ttl output for forward, one ttl output 
+#   for backward (reverse) enable and one pwm pin
+#   for motor power.
+# - the pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the forward pin  is HIGH and the
+#   backward pin is LOW,
+# - in backward mode, the forward pin is LOW and the 
+#   backward pin is HIGH.
+# - both forward and backward pins are LOW to 'detach' motor 
+#   and glide to a stop.
+# - both forward and backward pins are HIGH to brake
+#
+# Pin specifier string format:
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_3PIN_FWD = "RPI_GPIO.BOARD.18"   # ttl pin, high enables motor forward 
+HBRIDGE_3PIN_BWD = "RPI_GPIO.BOARD.16"   # ttl pin, highenables motor reverse
+HBRIDGE_3PIN_DUTY = "RPI_GPIO.BOARD.35"  # provides duty cycle to motor
+PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"   # provides servo pulse to steering servo
+PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
+STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
@@ -134,7 +214,7 @@ HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"
 #   and glide to a stop.
 # - both pwms are full duty cycle (100% HIGH) to brake
 #
-# GPIO pin configuration for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+# Pin specifier string format:
 # - use RPI_GPIO for RPi/Nano header pin output
 #   - use BOARD for board pin numbering
 #   - use BCM for Broadcom GPIO numbering
@@ -153,19 +233,6 @@ HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"
 HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15"
 HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13"
 
-
-#ODOMETRY
-HAVE_ODOM = False                   # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
-MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
-ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
-ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
-
-# #LIDAR
-USE_LIDAR = False
-LIDAR_TYPE = 'RP' #(RP|YD)
-LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
-LIDAR_UPPER_LIMIT = 270
 
 #
 # DC_TWO_WHEEL_L298N pin configuration
@@ -207,6 +274,19 @@ HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"
 HBRIDGE_L298N_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15"
 HBRIDGE_L298N_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13"
 HBRIDGE_L298N_PIN_RIGHT_EN = "RPI_GPIO.BOARD.11"
+
+#ODOMETRY
+HAVE_ODOM = False                   # Do you have an odometer/encoder 
+ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
+MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
+ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+
+# #LIDAR
+USE_LIDAR = False
+LIDAR_TYPE = 'RP' #(RP|YD)
+LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
+LIDAR_UPPER_LIMIT = 270
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
