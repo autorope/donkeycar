@@ -4,13 +4,13 @@ This is designed to allow drivers that use ttl and pwm
 pins to be reusable with different underlying libaries
 and techologies.
 
-The abstract classes InputPin, OutputPin and PwmPin 
+The abstract classes InputPin, OutputPin and PwmPin
 provide an interface for starting, using and cleaning up the pins.
 The factory functions input_pin_by_id(), output_pin_by_id()
 and pwm_pin_by_id() construct pins given a string id
 that specifies the underlying pin provider and it's attributes.
-There are implementations for the Rpi.GPIO library and 
-for the PCA9685.  
+There are implementations for the Rpi.GPIO library and
+for the PCA9685.
 
 Pin id allows pins to be selected using a single string to
 select from different underlying providers, numbering schemes and settings.
@@ -27,25 +27,23 @@ Use PCA9685 on bus 0 at address 0x40, channel 7
 """
 from abc import ABC, abstractmethod
 
-from donkeycar.parts import  actuator
-
 
 class PinState:
-    LOW:int = 0
-    HIGH:int = 1
-    NOT_STARTED:int = -1
+    LOW: int = 0
+    HIGH: int = 1
+    NOT_STARTED: int = -1
 
 
 class PinEdge:
-    RISING:int = 1
-    FALLING:int = 2
-    BOTH:int = 3
+    RISING: int = 1
+    FALLING: int = 2
+    BOTH: int = 3
 
 
 class PinPull:
-    PULL_NONE:int = 1
-    PULL_UP:int = 2
-    PULL_DOWN:int = 3
+    PULL_NONE: int = 1
+    PULL_UP: int = 2
+    PULL_DOWN: int = 3
 
 
 class PinProvider:
@@ -59,9 +57,9 @@ class PinScheme:
     BCM = "BCM"      # broadcom gpio numbering
 
 
-# 
-##### Base interface for input/output/pwm pins
-##### Implementations derive from these abstact classes
+#
+# #### Base interface for input/output/pwm pins
+# #### Implementations derive from these abstact classes
 #
 
 class InputPin(ABC):
@@ -93,7 +91,7 @@ class InputPin(ABC):
         """
         Return most recent input state.  This does not re-read the input pin,
         it just returns that last value read by the input() method.
-        If the pin is not started or has been stopped, 
+        If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
         """
         return PinState.NOT_STARTED  # subclasses must override
@@ -112,7 +110,7 @@ class OutputPin(ABC):
         super().__init__()
 
     @abstractmethod
-    def start(self, state:int=PinState.LOW) -> None:
+    def start(self, state: int = PinState.LOW) -> None:
         """
         Start the pin in output mode and with given starting state.
         This raises and RuntimeError if the pin is already started.
@@ -133,19 +131,19 @@ class OutputPin(ABC):
         """
         Return most recent output state.  This does not re-read the pin,
         It just returns that last value set by the output() method.
-        If the pin is not started or has been stopped, 
+        If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
         """
         return PinState.NOT_STARTED  # subclasses must override
 
     @abstractmethod
-    def output(self, state:int) -> None:
+    def output(self, state: int) -> None:
         """
         Set the output state of the pin to either
         PinState.LOW or PinState.HIGH
         """
         pass  # subclasses must override
-        
+
 
 class PwmPin(ABC):
 
@@ -153,7 +151,7 @@ class PwmPin(ABC):
         super().__init__()
 
     @abstractmethod
-    def start(self, state:float=0) -> None:
+    def start(self, state: float = 0) -> None:
         """
         Start the pin in output mode and with given starting state.
         This raises and RuntimeError if the pin is already started.
@@ -174,22 +172,22 @@ class PwmPin(ABC):
         """
         Return most recent output state.  This does not re-read the pin,
         It just returns that last value set by the output() method.
-        If the pin is not started or has been stopped, 
+        If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
         """
         return PinState.NOT_STARTED  # subclasses must override
 
     @abstractmethod
-    def duty_cycle(self, duty:float) -> None:
+    def duty_cycle(self, duty: float) -> None:
         """
-        Set the output duty cycle of the pin 
+        Set the output duty cycle of the pin
         in range 0 to 1.0 (0% to 100%)
         """
         pass  # subclasses must override
 
 
 #
-######## Factory Methods
+# ####### Factory Methods
 #
 
 
@@ -206,7 +204,7 @@ class PwmPin(ABC):
 # Use PCA9685 on bus 0 at address 0x40, channel 7
 # "PCA9685.0:40.7"
 #
-def output_pin_by_id(pin_id:str, frequency_hz:int=60) -> OutputPin:
+def output_pin_by_id(pin_id: str, frequency_hz: int = 60) -> OutputPin:
     """
     Select a ttl output pin given a pin id.
     """
@@ -236,7 +234,7 @@ def output_pin_by_id(pin_id:str, frequency_hz:int=60) -> OutputPin:
     raise ValueError(f"Unknown pin provider {parts[0]}")
 
 
-def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
+def pwm_pin_by_id(pin_id: str, frequency_hz: int = 60) -> PwmPin:
     """
     Select a pwm output pin given a pin id.
     """
@@ -265,7 +263,7 @@ def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
     raise ValueError(f"Unknown pin provider {parts[0]}")
 
 
-def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
+def input_pin_by_id(pin_id: str, pull: int = PinPull.PULL_NONE) -> InputPin:
     """
     Select a ttl input pin given a pin id.
     """
@@ -289,7 +287,11 @@ def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
     raise ValueError(f"Unknown pin provider {parts[0]}")
 
 
-def input_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, pull:int=PinPull.PULL_NONE) -> InputPin:
+def input_pin(
+        pin_provider: str,
+        pin_number: int,
+        pin_scheme: str = PinScheme.BOARD,
+        pull: int = PinPull.PULL_NONE) -> InputPin:
     """
     construct an InputPin using the given pin provider
     """
@@ -304,7 +306,13 @@ def input_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, 
     raise RuntimeError(f"UnknownPinProvider ({pin_provider})")
 
 
-def output_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, i2c_bus:int=0, i2c_address:int=40, frequency_hz:int=60) -> OutputPin:
+def output_pin(
+        pin_provider: str,
+        pin_number: int,
+        pin_scheme: str = PinScheme.BOARD,
+        i2c_bus: int = 0,
+        i2c_address: int = 40,
+        frequency_hz: int = 60) -> OutputPin:
     """
     construct an output pin using the given pin provider
     """
@@ -319,7 +327,13 @@ def output_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD,
     raise RuntimeError(f"UnknownPinProvider ({pin_provider})")
 
 
-def pwm_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, frequency_hz:int=60, i2c_bus:int=0, i2c_address:int=40) -> PwmPin:
+def pwm_pin(
+        pin_provider: str,
+        pin_number: int,
+        pin_scheme: str = PinScheme.BOARD,
+        frequency_hz: int = 60,
+        i2c_bus: int = 0,
+        i2c_address: int = 40) -> PwmPin:
     """
     construct a PwmPin using the given pin provider
     """
@@ -352,7 +366,7 @@ def gpio_fn(pin_scheme, fn):
     """
     Convenience method to call GPIO function
     using desired pin scheme.  This restores
-    the previous pin scheme, so it is safe to 
+    the previous pin scheme, so it is safe to
     mix pin schemes.
     """
     prev_scheme = GPIO.getmode() or pin_scheme
@@ -363,7 +377,7 @@ def gpio_fn(pin_scheme, fn):
 
 
 class InputPinGpio(InputPin):
-    def __init__(self, pin_number:int, pin_scheme:str, pull=PinPull.PULL_NONE) -> None:
+    def __init__(self, pin_number: int, pin_scheme: str, pull: int = PinPull.PULL_NONE) -> None:
         """
         Input pin ttl HIGH/LOW using RPi.GPIO/Jetson.GPIO
         pin_number: GPIO.BOARD mode point number
@@ -383,14 +397,16 @@ class InputPinGpio(InputPin):
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
         on_input: function to call when an edge is detected, or None to ignore
-        edge: type of edge(s) that trigger on_input; default is 
+        edge: type of edge(s) that trigger on_input; default is
         """
         if self.state() != PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to start InputPin that is already started.")
+            raise RuntimeError(f"Attempt to start InputPinGpio({self.pin_number}) that is already started.")
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.IN, pull_up_down=gpio_pin_pull[self.pull]))
         if on_input is not None:
             self.on_input = on_input
-            gpio_fn(self.pin_scheme, lambda: GPIO.add_event_detect(self.pin_number, gpio_pin_edge[edge], callback=self._callback))
+            gpio_fn(
+                self.pin_scheme,
+                lambda: GPIO.add_event_detect(self.pin_number, gpio_pin_edge[edge], callback=self._callback))
         self.input()  # read first state
 
     def stop(self) -> None:
@@ -410,14 +426,14 @@ class OutputPinGpio(OutputPin):
     """
     Output pin ttl HIGH/LOW using Rpi.GPIO/Jetson.GPIO
     """
-    def __init__(self, pin_number:int, pin_scheme:str) -> None:
+    def __init__(self, pin_number: int, pin_scheme: str) -> None:
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self._state = PinState.NOT_STARTED
 
-    def start(self, state:int=PinState.LOW) -> None:
+    def start(self, state: int = PinState.LOW) -> None:
         if self.state() != PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to start OutputPin that is already started.")
+            raise RuntimeError(f"Attempt to start OutputPinGpio({self.pin_number}) that is already started.")
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.output(state)
 
@@ -438,14 +454,14 @@ class PwmPinGpio(PwmPin):
     """
     PWM output pin using Rpi.GPIO/Jetson.GPIO
     """
-    def __init__(self, pin_number:int, pin_scheme:str, frequency_hz:float = 50) -> None:
+    def __init__(self, pin_number: int, pin_scheme: str, frequency_hz: float = 50) -> None:
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self.frequency = int(frequency_hz)
         self.pwm = None
         self._state = PinState.NOT_STARTED
 
-    def start(self, duty:float=0) -> None:
+    def start(self, duty: float = 0) -> None:
         if self.pwm is not None:
             raise RuntimeError("Attempt to start PwmPinGpio that is already started.")
         if duty < 0 or duty > 1:
@@ -473,22 +489,24 @@ class PwmPinGpio(PwmPin):
 
 #
 # ----- PCA9685 implementations -----
-# 
+#
 class PCA9685:
-    ''' 
-    Pin controller using PCA9685 boards. 
+    '''
+    Pin controller using PCA9685 boards.
     This is used for most RC Cars.  This
     driver can output ttl HIGH or LOW or
     produce a duty cycle at the given frequency.
     '''
-    def __init__(self, busnum:int, address:int, frequency:int):
+    def __init__(self, busnum: int, address: int, frequency: int):
 
         import Adafruit_PCA9685
         if busnum is not None:
             from Adafruit_GPIO import I2C
+
             # monkey-patch I2C driver to use our bus number
             def get_bus():
                 return busnum
+
             I2C.get_default_bus = get_bus
         self.pwm = Adafruit_PCA9685.PCA9685(address=address)
         self.pwm.set_pwm_freq(frequency)
@@ -497,13 +515,13 @@ class PCA9685:
     def get_frequency(self):
         return self._frequency
 
-    def set_high(self, channel:int):
+    def set_high(self, channel: int):
         self.pwm.set_pwm(channel, 4096, 0)
 
-    def set_low(self, channel:int):
+    def set_low(self, channel: int):
         self.pwm.set_pwm(channel, 0, 4096)
 
-    def set_duty_cycle(self, channel:int, duty_cycle:float):
+    def set_duty_cycle(self, channel: int, duty_cycle: float):
         if duty_cycle < 0 or duty_cycle > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         if duty_cycle == 1:
@@ -554,12 +572,12 @@ class OutputPinPCA9685(ABC):
     """
     Output pin ttl HIGH/LOW using PCA9685
     """
-    def __init__(self, pin_number:int, pca9685:PCA9685) -> None:
+    def __init__(self, pin_number: int, pca9685: PCA9685) -> None:
         self.pin_number = pin_number
         self.pca9685 = pca9685
         self._state = PinState.NOT_STARTED
 
-    def start(self, state:int=PinState.LOW) -> None:
+    def start(self, state: int = PinState.LOW) -> None:
         """
         Start the pin in output mode.
         This raises and RuntimeError if the pin is already started.
@@ -581,8 +599,8 @@ class OutputPinPCA9685(ABC):
 
     def state(self) -> int:
         """
-        Return most recent output state.  
-        If the pin is not started or has been stopped, 
+        Return most recent output state.
+        If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
         """
         return self._state
@@ -601,12 +619,12 @@ class PwmPinPCA9685(PwmPin):
     """
     PWM output pin using PCA9685
     """
-    def __init__(self, pin_number:int, pca9685:PCA9685) -> None:
+    def __init__(self, pin_number: int, pca9685: PCA9685) -> None:
         self.pin_number = pin_number
         self.pca9685 = pca9685
         self._state = PinState.NOT_STARTED
 
-    def start(self, duty:float=0) -> None:
+    def start(self, duty: float = 0) -> None:
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start pin ({self.pin_number}) that is already started")
         if duty < 0 or duty > 1:
@@ -647,7 +665,7 @@ except ImportError:
 
 
 class InputPinPigpio(InputPin):
-    def __init__(self, pin_number:int, pull=PinPull.PULL_NONE, pgpio=None) -> None:
+    def __init__(self, pin_number: int, pull: int = PinPull.PULL_NONE, pgpio=None) -> None:
         """
         Input pin ttl HIGH/LOW using PiGPIO library
         pin_number: GPIO.BOARD mode point number
@@ -669,7 +687,7 @@ class InputPinPigpio(InputPin):
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
         on_input: function to call when an edge is detected, or None to ignore
-        edge: type of edge(s) that trigger on_input; default is 
+        edge: type of edge(s) that trigger on_input; default is
         """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError("Attempt to start InputPin that is already started.")
@@ -681,7 +699,7 @@ class InputPinPigpio(InputPin):
         if on_input is not None:
             self.on_input = on_input
             self.pgpio.callback(self.pin_number, pigpio_pin_edge[edge], self._callback)
-        self._state = self.pgpio.read(self.pin_number) # read initial state
+        self._state = self.pgpio.read(self.pin_number)  # read initial state
 
     def stop(self) -> None:
         if self.state() != PinState.NOT_STARTED:
@@ -703,12 +721,12 @@ class OutputPinPigpio(OutputPin):
     """
     Output pin ttl HIGH/LOW using Rpi.GPIO/Jetson.GPIO
     """
-    def __init__(self, pin_number:int, pgpio=None) -> None:
+    def __init__(self, pin_number: int, pgpio=None) -> None:
         self.pgpio = pgpio
         self.pin_number = pin_number
         self._state = PinState.NOT_STARTED
 
-    def start(self, state:int=PinState.LOW) -> None:
+    def start(self, state: int = PinState.LOW) -> None:
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError("Attempt to start OutputPin that is already started.")
 
@@ -737,13 +755,13 @@ class PwmPinPigpio(PwmPin):
     """
     PWM output pin using Rpi.GPIO/Jetson.GPIO
     """
-    def __init__(self, pin_number:int, frequency_hz:float = 50, pgpio=None) -> None:
+    def __init__(self, pin_number: int, frequency_hz: float = 50, pgpio=None) -> None:
         self.pgpio = pgpio
-        self.pin_number:int = pin_number
-        self.frequency:int = int(frequency_hz)
-        self._state:int = PinState.NOT_STARTED
+        self.pin_number: int = pin_number
+        self.frequency: int = int(frequency_hz)
+        self._state: int = PinState.NOT_STARTED
 
-    def start(self, duty:float=0) -> None:
+    def start(self, duty: float = 0) -> None:
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         self.pgpio = self.pgpio or pigpio.pi()
@@ -773,7 +791,6 @@ class PwmPinPigpio(PwmPin):
 
 if __name__ == '__main__':
     import argparse
-    from threading import Thread
     import sys
     import time
 
@@ -790,15 +807,15 @@ if __name__ == '__main__':
     # output on Rpi board pin 33, input on Rpi board pin 35 using interrupt handler
     # python pins.py --out-pin=RPI_GPIO.BOARD.33 --duty=0.5 --in-pin=RPI_GPIO.BOARD.35 -int=rising --time=10
     #
-    #     
+    #
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--pwm-pin", type=str, default=None,
                         help="pwm pin id, like 'PCA9685:1:60.13' or 'RPI_GPIO.BCM.13")
-    parser.add_argument("-hz", "--hertz", type=int, default=60, 
+    parser.add_argument("-hz", "--hertz", type=int, default=60,
                         help="PWM signal frequence in hertz.  Default is 60hz")
     parser.add_argument("-d", "--duty", type=float, default=0.5,
-                        help = "duty cycle in range 0 to 1.  Default is 0.5")
+                        help="duty cycle in range 0 to 1.  Default is 0.5")
 
     parser.add_argument("-o", "--out-pin", type=str, default=None,
                         help="ttl output pin id, like 'PCA9685:1:60.13' or 'RPI_GPIO.BOARD.35' or 'RPI_GPIO.BCM.13'")
@@ -808,16 +825,14 @@ if __name__ == '__main__':
     parser.add_argument("-pu", "--pull", type=str, choices=['up', 'down', 'none'], default='none',
                         help="input pin pullup, one of 'up', 'down', 'none'")
     parser.add_argument("-int", "--interrupt", type=str, choices=['falling', 'rising', 'both', 'none'], default='none',
-                        help = "use interrupt routine on in-pin with given edge; 'falling', 'rising' or 'both'")
-
-
+                        help="use interrupt routine on in-pin with given edge; 'falling', 'rising' or 'both'")
     parser.add_argument("-tm", "--time", type=float, default=1, help="duration test in seconds")
-    parser.add_argument("-db", "--debug", action='store_true', help = "show debug output")
-    parser.add_argument("-th", "--threaded", action='store_true', help = "run in threaded mode")
+    parser.add_argument("-db", "--debug", action='store_true', help="show debug output")
+    parser.add_argument("-th", "--threaded", action='store_true', help="run in threaded mode")
 
     # Read arguments from command line
     args = parser.parse_args()
-    
+
     help = []
     if args.hertz < 1:
         help.append("-hz/--hertz: must be >= 1.")
@@ -833,7 +848,7 @@ if __name__ == '__main__':
 
     if args.time < 1:
         help.append("-tm/--time: must be > 0.")
-                        
+
     if len(help) > 0:
         parser.print_help()
         for h in help:
@@ -854,13 +869,13 @@ if __name__ == '__main__':
 
     def on_input(pin_number, state):
         if state == PinState.HIGH:
-            print("+", pin_number, time.time()*1000) 
+            print("+", pin_number, time.time()*1000)
         elif state == PinState.LOW:
             print("-", pin_number, time.time()*1000)
-            
-    pwm_out_pin:PwmPin = None
-    ttl_out_pin:OutputPin = None
-    ttl_in_pin:InputPin = None
+
+    pwm_out_pin: PwmPin = None
+    ttl_out_pin: OutputPin = None
+    ttl_in_pin: InputPin = None
     try:
         #
         # construct a pin of the correct type
@@ -879,7 +894,7 @@ if __name__ == '__main__':
         if args.out_pin is not None:
             ttl_out_pin = output_pin_by_id(args.out_pin, args.hertz)
             ttl_out_pin.start(PinState.LOW)
-        
+
         start_time = time.time()
         end_time = start_time + args.time
         while start_time < end_time:
@@ -909,4 +924,3 @@ if __name__ == '__main__':
             pwm_out_pin.stop()
         if ttl_out_pin is not None:
             ttl_out_pin.stop()
-
