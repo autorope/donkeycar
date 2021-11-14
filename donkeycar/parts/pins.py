@@ -233,7 +233,7 @@ def output_pin_by_id(pin_id:str, frequency_hz:int=60) -> OutputPin:
         pin_number = int(parts[2])
         return output_pin(pin_provider, pin_number, pin_scheme=PinScheme.BCM)
 
-    raise ValueError("Unknown pin provider {}".format(parts[0]))
+    raise ValueError(f"Unknown pin provider {parts[0]}")
 
 
 def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
@@ -262,7 +262,7 @@ def pwm_pin_by_id(pin_id:str, frequency_hz:int=60) -> PwmPin:
         pin_number = int(parts[2])
         return pwm_pin(pin_provider, pin_number, pin_scheme=PinScheme.BCM, frequency_hz=frequency_hz)
 
-    raise ValueError("Unknown pin provider {}".format(parts[0]))
+    raise ValueError(f"Unknown pin provider {parts[0]}")
 
 
 def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
@@ -286,7 +286,7 @@ def input_pin_by_id(pin_id:str, pull:int=PinPull.PULL_NONE) -> InputPin:
         pin_number = int(parts[2])
         return input_pin(pin_provider, pin_number, pin_scheme=PinScheme.BCM, pull=pull)
 
-    raise ValueError("Unknown pin provider {}".format(parts[0]))
+    raise ValueError(f"Unknown pin provider {parts[0]}")
 
 
 def input_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, pull:int=PinPull.PULL_NONE) -> InputPin:
@@ -301,7 +301,7 @@ def input_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, 
         if pin_scheme != PinScheme.BCM:
             raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
         return InputPinPigpio(pin_number, pull)
-    raise RuntimeError("UnknownPinProvider ({})".format(pin_provider))
+    raise RuntimeError(f"UnknownPinProvider ({pin_provider})")
 
 
 def output_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, i2c_bus:int=0, i2c_address:int=40, frequency_hz:int=60) -> OutputPin:
@@ -316,7 +316,7 @@ def output_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD,
         if pin_scheme != PinScheme.BCM:
             raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
         return OutputPinPigpio(pin_number)
-    raise RuntimeError("UnknownPinProvider ({})".format(pin_provider))
+    raise RuntimeError(f"UnknownPinProvider ({pin_provider})")
 
 
 def pwm_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, frequency_hz:int=60, i2c_bus:int=0, i2c_address:int=40) -> PwmPin:
@@ -331,7 +331,7 @@ def pwm_pin(pin_provider:str, pin_number:int, pin_scheme:str=PinScheme.BOARD, fr
         if pin_scheme != PinScheme.BCM:
             raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
         return PwmPinPigpio(pin_number, frequency_hz)
-    raise RuntimeError("UnknownPinProvider ({})".format(pin_provider))
+    raise RuntimeError(f"UnknownPinProvider ({pin_provider})")
 
 
 #
@@ -545,9 +545,8 @@ def pca9685(busnum, address, frequency=60):
         pca = PCA9685(busnum, address, frequency)
     if pca.get_frequency() != frequency:
         raise ValueError(
-            "Frequency {} conflicts with pca9685 at {} "
-            "with frequency {}".format(
-                frequency, key, pca.pwm.get_pwm_freq()))
+            f"Frequency {frequency} conflicts with pca9685 at {key} "
+            f"with frequency {pca.pwm.get_pwm_freq()}")
     return pca
 
 
@@ -568,7 +567,7 @@ class OutputPinPCA9685(ABC):
         state() and checking for PinState.NOT_STARTED
         """
         if self.state() != PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to start pin ({}) that is already started".format(self.pin_number))
+            raise RuntimeError(f"Attempt to start pin ({self.pin_number}) that is already started")
         self._state = 0  # hack to allow first output to work
         self.output(state)
 
@@ -590,7 +589,7 @@ class OutputPinPCA9685(ABC):
 
     def output(self, state: int) -> None:
         if self.state() == PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to use pin ({}) that is not started".format(self.pin_number))
+            raise RuntimeError(f"Attempt to use pin ({self.pin_number}) that is not started")
         if state == PinState.HIGH:
             self.pca9685.set_high(self.pin_number)
         else:
@@ -609,7 +608,7 @@ class PwmPinPCA9685(PwmPin):
 
     def start(self, duty:float=0) -> None:
         if self.state() != PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to start pin ({}) that is already started".format(self.pin_number))
+            raise RuntimeError(f"Attempt to start pin ({self.pin_number}) that is already started")
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         self._state = 0  # hack to allow first duty_cycle to work
@@ -626,7 +625,7 @@ class PwmPinPCA9685(PwmPin):
 
     def duty_cycle(self, duty: float) -> None:
         if self.state() == PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to use pin ({}) that is not started".format(self.pin_number))
+            raise RuntimeError(f"Attempt to use pin ({self.pin_number}) that is not started")
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         self.pca9685.set_duty_cycle(self.pin_number, duty)

@@ -8,7 +8,7 @@ string_types = (type(b''), type(u''))
 def deprecated(reason):
     """
     This is a decorator which can be used to mark functions
-    or classes as deprecated. It will result in a warning 
+    or classes as deprecated. It will result in a warning
     being emitted when the function is used.
     Taken from this fantastic answer by Laurent LaPorte:
     https://stackoverflow.com/a/40301488/1733315

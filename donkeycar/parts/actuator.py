@@ -6,10 +6,13 @@ are wrapped in a mixer class before being used in the drive loop.
 
 from abc import ABC, abstractmethod
 import time
+import logging
 
 import donkeycar as dk
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState, pwm_pin_by_id
 from donkeycar.utilities.deprecated import deprecated
+
+logger = logging.getLogger(__name__)
 
 
 #
@@ -223,7 +226,7 @@ class PWMSteering:
         self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                         self.left_pulse, self.right_pulse)
         self.running = True
-        print('PWM Steering created')
+        logger.debug('PWM Steering created')
 
     def update(self):
         while self.running:
@@ -269,7 +272,7 @@ class PWMThrottle:
         self.pulse = zero_pulse
 
         # send zero pulse to calibrate ESC
-        print("Init ESC")
+        logger.debug("Init ESC")
         self.controller.set_pulse(self.max_pulse)
         time.sleep(0.01)
         self.controller.set_pulse(self.min_pulse)
@@ -277,7 +280,7 @@ class PWMThrottle:
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
         self.running = True
-        print('PWM Throttle created')
+        logger.debug('PWM Throttle created')
 
     def update(self):
         while self.running:
@@ -317,7 +320,7 @@ class JHat:
     PWM motor controller using Teensy emulating PCA9685. 
     '''
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
-        print("Firing up the Hat")
+        logger.debug("Firing up the Hat")
         import Adafruit_PCA9685
         LED0_OFF_L = 0x08
         # Initialise the PCA9685 using the default address (0x40).
@@ -380,7 +383,7 @@ class JHatReader:
         # first byte of header must be 100, otherwize we might be reading
         # in the wrong byte offset
         while h1 != 100:
-            print("skipping to start of header")
+            logger.debug("skipping to start of header")
             h1 = self.pwm._device.readU8(self.register)
         
         h2 = self.pwm._device.readU8(self.register)
@@ -866,7 +869,7 @@ class RPi_GPIO_Servo(object):
         '''
         #I've read 90 is a good max
         self.throttle = dk.map_frange(pulse, -1.0, 1.0, self.min, self.max)
-        #print(pulse, self.throttle)
+        #logger.debug(pulse, self.throttle)
         self.pwm.ChangeDutyCycle(self.throttle)
 
 
@@ -989,7 +992,7 @@ class ArdPWMSteering:
         self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                         self.left_pulse, self.right_pulse)
         self.running = True
-        print('Arduino PWM Steering created')
+        logger.debug('Arduino PWM Steering created')
 
     def run(self, angle):
         # map absolute angle to angle that vehicle can implement.
@@ -1029,7 +1032,7 @@ class ArdPWMThrottle:
         self.pulse = zero_pulse
 
         # send zero pulse to calibrate ESC
-        print("Init ESC")
+        logger.debug("Init ESC")
         self.controller.set_esc_pulse(self.max_pulse)
         time.sleep(0.01)
         self.controller.set_esc_pulse(self.min_pulse)
@@ -1037,7 +1040,7 @@ class ArdPWMThrottle:
         self.controller.set_esc_pulse(self.zero_pulse)
         time.sleep(1)
         self.running = True
-        print('Arduino PWM Throttle created')
+        logger.debug('Arduino PWM Throttle created')
 
     def run(self, throttle):
         if throttle > 0:

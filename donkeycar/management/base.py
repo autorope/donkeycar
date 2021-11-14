@@ -77,7 +77,7 @@ class CreateCar(BaseCommand):
         # these are neeeded incase None is passed as path
         path = path or '~/mycar'
         template = template or 'complete'
-        print("Creating car folder: {}".format(path))
+        print(f"Creating car folder: {path}")
         path = make_dir(path)
         
         print("Creating data & model folders.")
@@ -101,7 +101,7 @@ class CreateCar(BaseCommand):
         if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
         else:
-            print("Copying car application template: {}".format(template))
+            print(f"Copying car application template: {template}")
             shutil.copyfile(app_template_path, car_app_path)
             os.chmod(car_app_path, stat.S_IRWXU)
 
@@ -217,9 +217,9 @@ class CalibrateCar(BaseCommand):
                 print(e)
                 print("See pins.py for a description of pin specification strings.")
                 exit(-1)
-            print('init pin {}'.format(args.pwm_pin))
+            print(f'init pin {args.pwm_pin}')
             freq = int(args.pwmFreq)
-            print("Using PWM freq: {}".format(freq))
+            print(f"Using PWM freq: {freq}")
             c = PulseController(pwm_pin)
             input_prompt = "Enter a PWM setting to test ('q' for quit) (0-1500): "
             print()
@@ -237,7 +237,7 @@ class CalibrateCar(BaseCommand):
             address = int(args.address, 16)
             print('init PCA9685 on channel %d address %s bus %s' %(channel, str(hex(address)), str(busnum)))
             freq = int(args.pwmFreq)
-            print("Using PWM freq: {}".format(freq))
+            print(f"Using PWM freq: {freq}")
             c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
             input_prompt = "Enter a PWM setting to test ('q' for quit) (0-1500): "
             print()
@@ -256,7 +256,7 @@ class CalibrateCar(BaseCommand):
                 print("\nKeyboardInterrupt received, exit.")
                 break
             except Exception as ex:
-                print("Oops, {}".format(ex))
+                print(f"Oops, {ex}")
 
 
 class MakeMovieShell(BaseCommand):
@@ -385,9 +385,9 @@ class ShowCnnActivations(BaseCommand):
 
         for i, layer in enumerate(activations):
             fig = self.plt.figure()
-            fig.suptitle('Layer {}'.format(i+1))
+            fig.suptitle(f'Layer {i+1}')
 
-            print('layer {} shape: {}'.format(i+1, layer.shape))
+            print(f'layer {i+1} shape: {layer.shape}')
             feature_maps = layer.shape[2]
             rows = math.ceil(feature_maps / cols)
 
