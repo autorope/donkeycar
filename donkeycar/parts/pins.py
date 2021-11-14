@@ -68,11 +68,11 @@ class InputPin(ABC):
         super().__init__()
 
     @abstractmethod
-    def start(self, on_input=None, edge=PinEdge.RISING) -> None:
+    def start(self, on_input=None, edge: int = PinEdge.RISING) -> None:
         """
         Start the pin in input mode.
-        on_input: function to call when an edge is detected, or None to ignore
-        edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
+        :param on_input: function to call when an edge is detected, or None to ignore
+        :param edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
         This raises a RuntimeError if the pin is already started.
         You can check to see if the pin is started by calling
         state() and checking for PinState.NOT_STARTED
@@ -100,6 +100,7 @@ class InputPin(ABC):
     def input(self) -> int:
         """
         Read the input state from the pin.
+        :return: PinState.LOW/HIGH or PinState.NOT_STARTED if pin not started
         """
         return PinState.NOT_STARTED  # subclasses must override
 
@@ -133,6 +134,7 @@ class OutputPin(ABC):
         It just returns that last value set by the output() method.
         If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
+        :return: most recent output state OR PinState.NOT_STARTED if pin not started.
         """
         return PinState.NOT_STARTED  # subclasses must override
 
@@ -140,7 +142,8 @@ class OutputPin(ABC):
     def output(self, state: int) -> None:
         """
         Set the output state of the pin to either
-        PinState.LOW or PinState.HIGH
+        :param state: PinState.LOW or PinState.HIGH
+        :except: RuntimeError if pin not stated.
         """
         pass  # subclasses must override
 
@@ -151,12 +154,13 @@ class PwmPin(ABC):
         super().__init__()
 
     @abstractmethod
-    def start(self, state: float = 0) -> None:
+    def start(self, duty: float = 0) -> None:
         """
         Start the pin in output mode and with given starting state.
         This raises and RuntimeError if the pin is already started.
         You can check to see if the pin is started by calling
         state() and checking for PinState.NOT_STARTED
+        :param duty: duty cycle in range 0 to 1
         """
         pass  # subclasses should override this
 
@@ -174,6 +178,7 @@ class PwmPin(ABC):
         It just returns that last value set by the output() method.
         If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
+        :return: most recent output duty_cycle
         """
         return PinState.NOT_STARTED  # subclasses must override
 
@@ -182,6 +187,8 @@ class PwmPin(ABC):
         """
         Set the output duty cycle of the pin
         in range 0 to 1.0 (0% to 100%)
+        :param duty: duty cycle in range 0 to 1
+        :except: RuntimeError is pin is not started
         """
         pass  # subclasses must override
 
@@ -207,6 +214,9 @@ class PwmPin(ABC):
 def output_pin_by_id(pin_id: str, frequency_hz: int = 60) -> OutputPin:
     """
     Select a ttl output pin given a pin id.
+    :param pin_id: pin specifier string
+    :param frequency_hz: duty cycle frequency in hertz (only necessary for PCA9685)
+    :return: OutputPin
     """
     parts = pin_id.split(".")
     if parts[0] == PinProvider.PCA9685:
@@ -237,6 +247,9 @@ def output_pin_by_id(pin_id: str, frequency_hz: int = 60) -> OutputPin:
 def pwm_pin_by_id(pin_id: str, frequency_hz: int = 60) -> PwmPin:
     """
     Select a pwm output pin given a pin id.
+    :param pin_id: pin specifier string
+    :param frequency_hz: duty cycle frequency in hertz
+    :return: PwmPin
     """
     parts = pin_id.split(".")
     if parts[0] == PinProvider.PCA9685:
@@ -293,7 +306,14 @@ def input_pin(
         pin_scheme: str = PinScheme.BOARD,
         pull: int = PinPull.PULL_NONE) -> InputPin:
     """
-    construct an InputPin using the given pin provider
+    construct an InputPin using the given pin provider.
+    Note that PCA9685 can NOT provide an InputPin.
+    :param pin_provider: PinProvider string
+    :param pin_number: zero based pin number
+    :param pin_scheme: PinScheme string
+    :param pull: PinPull value
+    :return: InputPin
+    :except: RuntimeError if pin_provider is not valid.
     """
     if pin_provider == PinProvider.RPI_GPIO:
         return InputPinGpio(pin_number, pin_scheme, pull)
@@ -314,7 +334,16 @@ def output_pin(
         i2c_address: int = 40,
         frequency_hz: int = 60) -> OutputPin:
     """
-    construct an output pin using the given pin provider
+    construct an OutputPin using the given pin provider
+    Note that PCA9685 can NOT provide an InputPin.
+    :param pin_provider: PinProvider string
+    :param pin_number: zero based pin number
+    :param pin_scheme: PinScheme string
+    :param i2c_bus: I2C bus number for I2C devices
+    :param i2c_address: I2C address for I2C devices
+    :param frequency_hz: duty cycle frequence in hertz (for PCA9685)
+    :return: InputPin
+    :except: RuntimeError if pin_provider is not valid.
     """
     if pin_provider == PinProvider.RPI_GPIO:
         return OutputPinGpio(pin_number, pin_scheme)
@@ -336,6 +365,14 @@ def pwm_pin(
         i2c_address: int = 40) -> PwmPin:
     """
     construct a PwmPin using the given pin provider
+    :param pin_provider: PinProvider string
+    :param pin_number: zero based pin number
+    :param pin_scheme: PinScheme string
+    :param i2c_bus: I2C bus number for I2C devices
+    :param i2c_address: I2C address for I2C devices
+    :param frequency_hz: duty cycle frequence in hertz
+    :return: PwmPin
+    :except: RuntimeError if pin_provider is not valid.
     """
     if pin_provider == PinProvider.RPI_GPIO:
         return PwmPinGpio(pin_number, pin_scheme, frequency_hz)
@@ -380,8 +417,8 @@ class InputPinGpio(InputPin):
     def __init__(self, pin_number: int, pin_scheme: str, pull: int = PinPull.PULL_NONE) -> None:
         """
         Input pin ttl HIGH/LOW using RPi.GPIO/Jetson.GPIO
-        pin_number: GPIO.BOARD mode point number
-        pull: enable a pull up or down resistor on pin.  Default is PinPull.PULL_NONE
+        :param pin_number: GPIO.BOARD mode point number
+        :param pull: enable a pull up or down resistor on pin.  Default is PinPull.PULL_NONE
         """
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
@@ -396,8 +433,8 @@ class InputPinGpio(InputPin):
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
-        on_input: function to call when an edge is detected, or None to ignore
-        edge: type of edge(s) that trigger on_input; default is
+        :param on_input: function to call when an edge is detected, or None to ignore
+        :param edge: type of edge(s) that trigger on_input; default is
         """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start InputPinGpio({self.pin_number}) that is already started.")
@@ -544,18 +581,20 @@ class PCA9685:
 _pca9685 = {}
 
 
-def pca9685(busnum, address, frequency=60):
+def pca9685(busnum: int, address: int, frequency: int = 60):
     """
     pca9685 factory allocates driver for pca9685
     at given bus number and i2c address.
     If we have already created one for that bus/addr
     pair then use that singleton.  If frequency is
     not the same, then error.
-
-    NOTE: PCA9685 has a single frequency for all channels,
-          so attempts to allocate a controller at a
-          given bus number and address with different
-          frequencies will raise a ValueError
+    :param busnum: I2C bus number of PCA9685
+    :param address: address of PCA9685 on I2C bus
+    :param frequency: frequency in hertz of duty cycle
+    :except: PCA9685 has a single frequency for all channels,
+             so attempts to allocate a controller at a
+             given bus number and address with different
+             frequencies will raise a ValueError
     """
     key = str(busnum) + ":" + hex(address)
     pca = _pca9685.get(key)
@@ -580,9 +619,11 @@ class OutputPinPCA9685(ABC):
     def start(self, state: int = PinState.LOW) -> None:
         """
         Start the pin in output mode.
-        This raises and RuntimeError if the pin is already started.
+        This raises a RuntimeError if the pin is already started.
         You can check to see if the pin is started by calling
         state() and checking for PinState.NOT_STARTED
+        :param state: PinState to start with
+        :except: RuntimeError if pin is already started.
         """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start pin ({self.pin_number}) that is already started")
@@ -602,10 +643,15 @@ class OutputPinPCA9685(ABC):
         Return most recent output state.
         If the pin is not started or has been stopped,
         this will return PinState:NOT_STARTED
+        :return: PinState
         """
         return self._state
 
     def output(self, state: int) -> None:
+        """
+        Write output state to the pin.
+        :param state: PinState.LOW or PinState.HIGH
+        """
         if self.state() == PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to use pin ({self.pin_number}) that is not started")
         if state == PinState.HIGH:
@@ -625,6 +671,11 @@ class PwmPinPCA9685(PwmPin):
         self._state = PinState.NOT_STARTED
 
     def start(self, duty: float = 0) -> None:
+        """
+        Start pin with given duty cycle
+        :param duty: duty cycle in range 0 to 1
+        :except: RuntimeError if pin is already started.
+        """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start pin ({self.pin_number}) that is already started")
         if duty < 0 or duty > 1:
@@ -639,9 +690,18 @@ class PwmPinPCA9685(PwmPin):
             self._state = PinState.NOT_STARTED
 
     def state(self) -> float:
+        """
+        This returns the last set duty cycle.
+        :return: duty cycle in range 0 to 1 OR PinState.NOT_STARTED in not started
+        """
         return self._state
 
     def duty_cycle(self, duty: float) -> None:
+        """
+        Write a duty cycle to the output pin
+        :param duty: duty cycle in range 0 to 1
+        :except: RuntimeError if not started
+        """
         if self.state() == PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to use pin ({self.pin_number}) that is not started")
         if duty < 0 or duty > 1:
@@ -668,8 +728,9 @@ class InputPinPigpio(InputPin):
     def __init__(self, pin_number: int, pull: int = PinPull.PULL_NONE, pgpio=None) -> None:
         """
         Input pin ttl HIGH/LOW using PiGPIO library
-        pin_number: GPIO.BOARD mode point number
-        pull: enable a pull up or down resistor on pin.  Default is PinPull.PULL_NONE
+        :param pin_number: GPIO.BOARD mode pin number
+        :param pull: enable a pull up or down resistor on pin.  Default is PinPull.PULL_NONE
+        :param pgpio: instance of pgpio to use or None to allocate a new one
         """
         self.pgpio = pgpio
         self.pin_number = pin_number
@@ -686,11 +747,12 @@ class InputPinPigpio(InputPin):
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
-        on_input: function to call when an edge is detected, or None to ignore
-        edge: type of edge(s) that trigger on_input; default is
+        Start the input pin and optionally set callback.
+        :param on_input: function to call when an edge is detected, or None to ignore
+        :param edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
         """
         if self.state() != PinState.NOT_STARTED:
-            raise RuntimeError("Attempt to start InputPin that is already started.")
+            raise RuntimeError(f"Attempt to start InputPinPigpio({self.pin_number}) that is already started.")
 
         self.pgpio = self.pgpio or pigpio.pi()
         self.pgpio.set_mode(self.pin_number, pigpio.INPUT)
@@ -709,9 +771,18 @@ class InputPinPigpio(InputPin):
             self._state = PinState.NOT_STARTED
 
     def state(self) -> int:
+        """
+        Return last input() value.  This does NOT read the input again;
+        it returns that last value that input() returned.
+        :return: PinState.LOW/HIGH OR PinState.NOT_STARTED if not started
+        """
         return self._state
 
     def input(self) -> int:
+        """
+        Read the input pins state.
+        :return: PinState.LOW/HIGH OR PinState.NOT_STARTED if not started
+        """
         if self.state() != PinState.NOT_STARTED:
             self._state = self.pgpio.read(self.pin_number)
         return self._state
@@ -727,6 +798,14 @@ class OutputPinPigpio(OutputPin):
         self._state = PinState.NOT_STARTED
 
     def start(self, state: int = PinState.LOW) -> None:
+        """
+        Start the pin in output mode.
+        This raises a RuntimeError if the pin is already started.
+        You can check to see if the pin is started by calling
+        state() and checking for PinState.NOT_STARTED
+        :param state: PinState to start with
+        :except: RuntimeError if pin is already started.
+        """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError("Attempt to start OutputPin that is already started.")
 
@@ -743,9 +822,17 @@ class OutputPinPigpio(OutputPin):
             self._state = PinState.NOT_STARTED
 
     def state(self) -> int:
+        """
+        Return last output state
+        :return: PinState.LOW/HIGH or PinState.NOT_STARTED if pin not started.
+        """
         return self._state
 
     def output(self, state: int) -> None:
+        """
+        Write output state to the pin.
+        :param state: PinState.LOW or PinState.HIGH
+        """
         if self.state() != PinState.NOT_STARTED:
             self.pgpio.write(self.pin_number, state)
             self._state = state
@@ -762,6 +849,13 @@ class PwmPinPigpio(PwmPin):
         self._state: int = PinState.NOT_STARTED
 
     def start(self, duty: float = 0) -> None:
+        """
+        Start pin with given duty cycle.
+        :param duty: duty cycle in range 0 to 1
+        :except: RuntimeError if pin is already started.
+        """
+        if self.state() != PinState.NOT_STARTED:
+            raise RuntimeError(f"Attempt to start InputPinPigpio({self.pin_number}) that is already started.")
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         self.pgpio = self.pgpio or pigpio.pi()
@@ -779,9 +873,18 @@ class PwmPinPigpio(PwmPin):
         self._state = PinState.NOT_STARTED
 
     def state(self) -> float:
+        """
+        This returns the last set duty cycle.
+        :return: duty cycle in range 0 to 1 OR PinState.NOT_STARTED in not started
+        """
         return self._state
 
     def duty_cycle(self, duty: float) -> None:
+        """
+        Write a duty cycle to the output pin
+        :param duty: duty cycle in range 0 to 1
+        :except: RuntimeError if not started
+        """
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         if self.state() != PinState.NOT_STARTED:
