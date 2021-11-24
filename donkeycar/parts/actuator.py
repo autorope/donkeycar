@@ -7,9 +7,10 @@ are wrapped in a mixer class before being used in the drive loop.
 from abc import ABC, abstractmethod
 import time
 import logging
+from typing import Tuple
 
 import donkeycar as dk
-from donkeycar.parts.pins import OutputPin, PwmPin, PinState, pwm_pin_by_id
+from donkeycar.parts.pins import OutputPin, PwmPin, PinState
 from donkeycar.utilities.deprecated import deprecated
 
 logger = logging.getLogger(__name__)
@@ -44,9 +45,9 @@ def duty_cycle(pulse_ms:float, frequency_hz:float) -> float:
     Calculate the duty cycle, 0 to 1, of a pulse given
     the frequency and the pulse length
 
-    pulse_ms:float the desired pulse length in milliseconds
-    frequency_hz:float the pwm frequency in hertz
-    return:float duty cycle in range 0 to 1
+    :param pulse_ms:float the desired pulse length in milliseconds
+    :param frequency_hz:float the pwm frequency in hertz
+    :return:float duty cycle in range 0 to 1
     """
     ms_per_cycle = 1000 / frequency_hz
     duty = pulse_ms / ms_per_cycle
@@ -61,7 +62,8 @@ def pulse_ms(pulse_bits:int) -> float:
     based on PCA9685 12bit pulse values, where
     0 is zero duty cycle and 4095 is 100% duty cycle.
 
-    pulse_bits:int 12bit integer in range 0 to 4095
+    :param pulse_bits:int 12bit integer in range 0 to 4095
+    :return:float pulse length in milliseconds
     """
     if pulse_bits < 0 or pulse_bits > 4095:
         raise ValueError("pulse_bits must be in range 0 to 4095 (12bit integer)")
@@ -72,22 +74,24 @@ class PulseController:
     """
     Controller that provides a servo PWM pulse using the given PwmPin
     See pins.py for pin provider implementations.
-
-    pwm_pin:PwnPin pin that will emit the pulse.
-    pwm_scale:float scaling the 12 bit pulse value to compensate
-                    for non-standard pwm frequencies.
-    pwm_inverted:bool True to invert the duty cycle
     """
+
     def __init__(self, pwm_pin:PwmPin, pwm_scale:float = 1.0, pwm_inverted:bool = False) -> None:
+        """
+        :param pwm_pin:PwnPin pin that will emit the pulse.
+        :param pwm_scale:float scaling the 12 bit pulse value to compensate
+                        for non-standard pwm frequencies.
+        :param pwm_inverted:bool True to invert the duty cycle
+        """
         self.pwm_pin = pwm_pin
         self.scale = pwm_scale
         self.inverted = pwm_inverted
         self.started = pwm_pin.state() != PinState.NOT_STARTED
 
-    def set_pulse(self, pulse:int):
+    def set_pulse(self, pulse:int) -> None:
         """
         Set the length of the pulse using a 12 bit integer (0..4095)
-        pulse:int 12bit integer (0..4095)
+        :param pulse:int 12bit integer (0..4095)
         """
         if pulse < 0 or pulse > 4095:
             raise ValueError("pulse must be in range 0 to 4095")
@@ -99,10 +103,10 @@ class PulseController:
             pulse = 4095 - pulse
         self.pwm_pin.duty_cycle(int(pulse * self.scale) / 4095)
 
-    def run(self, pulse:int):
+    def run(self, pulse:int) -> None:
         """
         Set the length of the pulse using a 12 bit integer (0..4095)
-        pulse:int 12bit integer (0..4095)
+        :param pulse:int 12bit integer (0..4095)
         """
         self.set_pulse(pulse)
 
@@ -674,7 +678,7 @@ class MockController(object):
 
 
 class L298N_HBridge_3pin(object):
-    '''
+    """
     Motor controlled with an L298N hbridge, 
     chosen with configuration DRIVETRAIN_TYPE=DC_TWO_WHEEL_L298N
     Uses two OutputPins to select direction and 
@@ -685,23 +689,24 @@ class L298N_HBridge_3pin(object):
     for a discussion of how the L298N hbridge module is wired.
     This also applies to the some other driver chips that emulate
     the L298N, such as the TB6612FNG motor driver.
+    """
 
-    pin_forward:OutputPin when HIGH the motor will turn clockwise 
-                          using the output of the pwm_pin as a duty_cycle
-    pin_backward:OutputPin when HIGH the motor will turn counter-clockwise
-                          using the output of the pwm_pin as a duty_cycle
-    pwm_pin:PwmPin takes a duty cycle in the range of 0 to 1, 
-                   where 0 is fully off and 1 is fully on.
-    zero_throttle: values at or below zero_throttle are treated as zero.
-    max_duty: the maximum duty cycle that will be send to the motors
-
-    NOTE: if pin_forward and pin_backward are both LOW, then the motor is
-          'detached' and will glide to a stop.
-          if pin_forward and pin_backward are both HIGH, then the motor 
-          will be forcibly stopped (can be used for braking)
-        
-    '''
     def __init__(self, pin_forward:OutputPin, pin_backward:OutputPin, pwm_pin:PwmPin, zero_throttle:float=0, max_duty=0.9):
+        """
+        :param pin_forward:OutputPin when HIGH the motor will turn clockwise 
+                        using the output of the pwm_pin as a duty_cycle
+        :param pin_backward:OutputPin when HIGH the motor will turn counter-clockwise
+                            using the output of the pwm_pin as a duty_cycle
+        :param pwm_pin:PwmPin takes a duty cycle in the range of 0 to 1, 
+                    where 0 is fully off and 1 is fully on.
+        :param zero_throttle: values at or below zero_throttle are treated as zero.
+        :param max_duty: the maximum duty cycle that will be send to the motors
+
+        NOTE: if pin_forward and pin_backward are both LOW, then the motor is
+            'detached' and will glide to a stop.
+            if pin_forward and pin_backward are both HIGH, then the motor 
+            will be forcibly stopped (can be used for braking)
+        """
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
         self.pwm_pin = pwm_pin
@@ -712,16 +717,17 @@ class L298N_HBridge_3pin(object):
         self.pin_backward.start(PinState.LOW)
         self.pwm_pin.start(0)
 
-    def run(self, speed):
-        '''
-        Update the speed of the motor where 1 is full forward and
-        -1 is full backwards.
-        '''
-        if speed > 1 or speed < -1:
+    def run(self, throttle:float) -> None:
+        """
+        Update the speed of the motor 
+        :param throttle:float throttle value in range -1 to 1,
+                        where 1 is full forward and -1 is full backwards.
+        """
+        if throttle > 1 or throttle < -1:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
         
-        self.speed = speed
-        self.throttle = dk.utils.map_range_float(speed, -1, 1, -self.max_duty, self.max_duty)
+        self.speed = throttle
+        self.throttle = dk.utils.map_range_float(throttle, -1, 1, -self.max_duty, self.max_duty)
         if self.throttle > self.zero_throttle:
             self.pwm_pin.duty_cycle(self.throttle)
             self.pin_backward.output(PinState.LOW)
@@ -747,7 +753,15 @@ class TwoWheelSteeringThrottle(object):
     in order to implemeht steering.
     """
 
-    def run(self, throttle, steering):
+    def run(self, throttle:float, steering:float) -> Tuple[float, float]:
+        """
+        :param throttle:float throttle value in range -1 to 1,
+                        where 1 is full forward and -1 is full backwards.
+        :param steering:float steering value in range -1 to 1,
+                        where -1 is full left and 1 is full right.
+        :return: tuple of left motor and right motor throttle values in range -1 to 1
+                 where 1 is full forward and -1 is full backwards.
+        """
         if throttle > 1 or throttle < -1:
             raise ValueError( "throttle must be between 1(forward) and -1(reverse)")
         if steering > 1 or steering < -1:
@@ -763,12 +777,12 @@ class TwoWheelSteeringThrottle(object):
 
         return left_motor_speed, right_motor_speed
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         pass
 
 
 class L298N_HBridge_2pin(object):
-    '''
+    """
     Motor controlled with an 'mini' L298N hbridge using 2 PwmPins,
     one for forward pwm and for reverse pwm.
     Chosen with configuration DRIVETRAIN_TYPE=DC_TWO_WHEEL
@@ -779,27 +793,27 @@ class L298N_HBridge_2pin(object):
     This driver can also be used for an L9110S/HG7881 motor driver.  See 
     https://electropeak.com/learn/interfacing-l9110s-dual-channel-h-bridge-motor-driver-module-with-arduino/
     for how an L9110S motor driver module is wired.
+    """
 
-    pin_forward:PwmPin Takes a duty cycle in the range of 0 to 1, 
-                       where 0 is fully off and 1 is fully on.
-                       When the duty_cycle > 0 the motor will turn clockwise 
-                       proportial to the duty_cycle
-    pin_backward:PwmPin Takes a duty cycle in the range of 0 to 1, 
-                        where 0 is fully off and 1 is fully on.
-                        When the duty_cycle > 0 the motor will turn counter-clockwise 
-                        proportial to the duty_cycle
-    zero_throttle: values at or below zero_throttle are treated as zero.
-    max_duty: the maximum duty cycle that will be send to the motors
-
-    NOTE: if pin_forward and pin_backward are both at duty_cycle == 0, 
-          then the motor is 'detached' and will glide to a stop.
-          if pin_forward and pin_backward are both at duty_cycle == 1, 
-          then the motor will be forcibly stopped (can be used for braking)
-    '''
     def __init__(self, pin_forward:PwmPin, pin_backward:PwmPin, zero_throttle:float=0, max_duty = 0.9):
-        '''
+        """
+        pin_forward:PwmPin Takes a duty cycle in the range of 0 to 1, 
+                        where 0 is fully off and 1 is fully on.
+                        When the duty_cycle > 0 the motor will turn clockwise 
+                        proportial to the duty_cycle
+        pin_backward:PwmPin Takes a duty cycle in the range of 0 to 1, 
+                            where 0 is fully off and 1 is fully on.
+                            When the duty_cycle > 0 the motor will turn counter-clockwise 
+                            proportial to the duty_cycle
+        zero_throttle: values at or below zero_throttle are treated as zero.
+        max_duty: the maximum duty cycle that will be send to the motors
+
+        NOTE: if pin_forward and pin_backward are both at duty_cycle == 0, 
+            then the motor is 'detached' and will glide to a stop.
+            if pin_forward and pin_backward are both at duty_cycle == 1, 
+            then the motor will be forcibly stopped (can be used for braking)
         max_duty is from 0 to 1 (fully off to fully on). I've read 0.9 is a good max.
-        '''
+        """
         self.pin_forward = pin_forward
         self.pin_backward = pin_backward
         self.zero_throttle = zero_throttle
@@ -811,11 +825,12 @@ class L298N_HBridge_2pin(object):
         self.pin_forward.start(0)
         self.pin_backward.start(0)
 
-    def run(self, throttle):
-        '''
-        Update the speed of the motor where 1 is full forward and
-        -1 is full backwards.
-        '''
+    def run(self, throttle:float) -> None:
+        """
+        Update the speed of the motor
+        :param throttle:float throttle value in range -1 to 1,
+                        where 1 is full forward and -1 is full backwards.
+        """
         if throttle is None:
             return
         
@@ -942,7 +957,7 @@ class ServoBlaster(object):
 #       to the pin as microseconds for the on part of the pulse.  See the various flavors of examples
 #       in the Arduino Firmata repo linked above.
 #
-@deprecated("This will be removed in a future release and Arduino support will be add to pins.py")
+@deprecated("This will be removed in a future release and Arduino support will be added to pins.py")
 class ArduinoFirmata:
     '''
     PWM controller using Arduino board.
