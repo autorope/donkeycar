@@ -26,6 +26,10 @@ Use PCA9685 on bus 0 at address 0x40, channel 7
 
 """
 from abc import ABC, abstractmethod
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class PinState:
@@ -395,7 +399,7 @@ try:
     gpio_pin_pull = [None, GPIO.PUD_OFF, GPIO.PUD_DOWN, GPIO.PUD_UP]
     gpio_pin_scheme = {PinScheme.BOARD: GPIO.BOARD, PinScheme.BCM: GPIO.BCM}
 except ImportError:
-    print("pigpio was not imported.")
+    logger.warn("pigpio was not imported.")
     globals()["GPIO"] = None
 
 
@@ -720,7 +724,7 @@ try:
     pigpio_pin_edge = [None, pigpio.RISING_EDGE, pigpio.FALLING_EDGE, pigpio.EITHER_EDGE]
     pigpio_pin_pull = [None, pigpio.PUD_OFF, pigpio.PUD_DOWN, pigpio.PUD_UP]
 except ImportError:
-    print("pigpio was not imported.")
+    logger.warn("pigpio was not imported.")
     globals()["pigpio"] = None
 
 
