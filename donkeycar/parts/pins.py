@@ -26,6 +26,7 @@ Use PCA9685 on bus 0 at address 0x40, channel 7
 
 """
 from abc import ABC, abstractmethod
+from typing import Any, Callable
 import logging
 
 
@@ -399,21 +400,30 @@ try:
     gpio_pin_pull = [None, GPIO.PUD_OFF, GPIO.PUD_DOWN, GPIO.PUD_UP]
     gpio_pin_scheme = {PinScheme.BOARD: GPIO.BOARD, PinScheme.BCM: GPIO.BCM}
 except ImportError:
-    logger.warn("pigpio was not imported.")
+    logger.warn("RPi.GPIO was not imported.")
     globals()["GPIO"] = None
 
 
-def gpio_fn(pin_scheme, fn):
+def gpio_fn(pin_scheme:int, fn:Callable[[], Any]):
     """
-    Convenience method to call GPIO function
-    using desired pin scheme.  This restores
-    the previous pin scheme, so it is safe to
-    mix pin schemes.
+    Convenience method to enforce the desired GPIO pin scheme
+    before calling a GPIO function.
+    RPi.GPIO allows only a single scheme to be set at runtime.
+    If the pin scheme is already set to a different scheme, then
+    this will raise a RuntimeError to prevent erroneous pin outputs.
+
+    :param pin_scheme:int GPIO.BOARD or GPIO.BCM
+    :param fn:Callable[[], Any] no-arg function to call after setting pin scheme.
+    :return:any return value from called function
+    :exception:RuntimeError if pin scheme is already set to a different scheme.
     """
-    prev_scheme = GPIO.getmode() or pin_scheme
-    GPIO.setmode(pin_scheme)
+    prev_scheme = GPIO.getmode()
+    if prev_scheme is None:
+        GPIO.setmode(pin_scheme)
+    elif prev_scheme != pin_scheme:
+        raise RuntimeError(f"Attempt to change GPIO pin scheme from ({prev_scheme}) to ({pin_scheme})"
+                           " after it has been set.  All RPi.GPIO user must use the same pin scheme.")
     val = fn()
-    GPIO.setmode(prev_scheme)
     return val
 
 
