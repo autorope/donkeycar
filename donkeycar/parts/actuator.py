@@ -230,7 +230,7 @@ class PWMSteering:
         self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                         self.left_pulse, self.right_pulse)
         self.running = True
-        logger.debug('PWM Steering created')
+        logger.info('PWM Steering created')
 
     def update(self):
         while self.running:
@@ -276,7 +276,7 @@ class PWMThrottle:
         self.pulse = zero_pulse
 
         # send zero pulse to calibrate ESC
-        logger.debug("Init ESC")
+        logger.info("Init ESC")
         self.controller.set_pulse(self.max_pulse)
         time.sleep(0.01)
         self.controller.set_pulse(self.min_pulse)
@@ -284,7 +284,7 @@ class PWMThrottle:
         self.controller.set_pulse(self.zero_pulse)
         time.sleep(1)
         self.running = True
-        logger.debug('PWM Throttle created')
+        logger.info('PWM Throttle created')
 
     def update(self):
         while self.running:
@@ -324,7 +324,7 @@ class JHat:
     PWM motor controller using Teensy emulating PCA9685. 
     '''
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
-        logger.debug("Firing up the Hat")
+        logger.info("Firing up the Hat")
         import Adafruit_PCA9685
         LED0_OFF_L = 0x08
         # Initialise the PCA9685 using the default address (0x40).
@@ -1007,7 +1007,7 @@ class ArdPWMSteering:
         self.pulse = dk.utils.map_range(0, self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                         self.left_pulse, self.right_pulse)
         self.running = True
-        logger.debug('Arduino PWM Steering created')
+        logger.info('Arduino PWM Steering created')
 
     def run(self, angle):
         # map absolute angle to angle that vehicle can implement.
@@ -1047,7 +1047,7 @@ class ArdPWMThrottle:
         self.pulse = zero_pulse
 
         # send zero pulse to calibrate ESC
-        logger.debug("Init ESC")
+        logger.info("Init ESC")
         self.controller.set_esc_pulse(self.max_pulse)
         time.sleep(0.01)
         self.controller.set_esc_pulse(self.min_pulse)
@@ -1055,7 +1055,7 @@ class ArdPWMThrottle:
         self.controller.set_esc_pulse(self.zero_pulse)
         time.sleep(1)
         self.running = True
-        logger.debug('Arduino PWM Throttle created')
+        logger.info('Arduino PWM Throttle created')
 
     def run(self, throttle):
         if throttle > 0:
