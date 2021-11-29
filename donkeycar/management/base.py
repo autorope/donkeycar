@@ -273,6 +273,60 @@ class MakeMovieShell(BaseCommand):
         mm.run(args, parser)
 
 
+class ShowHistogram(BaseCommand):
+
+    def parse_args(self, args):
+        parser = argparse.ArgumentParser(prog='tubhist',
+                                         usage='%(prog)s [options]')
+        parser.add_argument('--tub', nargs='+', help='paths to tubs')
+        parser.add_argument('--record', default=None,
+                            help='name of record to create histogram')
+        parser.add_argument('--out', default=None,
+                            help='path where to save histogram end with .png')
+        parsed_args = parser.parse_args(args)
+        return parsed_args
+
+    def show_histogram(self, tub_paths, record_name, out):
+        """
+        Produce a histogram of record type frequency in the given tub
+        """
+        import pandas as pd
+        from matplotlib import pyplot as plt
+        from donkeycar.parts.tub_v2 import Tub
+
+        output = out or os.path.basename(tub_paths)
+        path_list = tub_paths.split(",")
+        records = [record for path in path_list for record
+                   in Tub(path, read_only=True)]
+        df = pd.DataFrame(records)
+        df.drop(columns=["_index", "_timestamp_ms"], inplace=True)
+        # this prints it to screen
+        if record_name is not None:
+            df[record_name].hist(bins=50)
+        else:
+            df.hist(bins=50)
+
+        try:
+            if out is not None:
+                filename = output
+            else:
+                if record_name is not None:
+                    filename = f"{output}_hist_{record_name.replace('/', '_')}.png"
+                else:
+                    filename = f"{output}_hist.png"
+            plt.savefig(filename)
+            logger.info(f'saving image to: {filename}')
+        except Exception as e:
+            logger.error(str(e))
+        plt.show()
+
+    def run(self, args):
+        args = self.parse_args(args)
+        if isinstance(args.tub, list):
+            args.tub = ','.join(args.tub)
+        self.show_histogram(args.tub, args.record, args.out)
+
+
 class ShowCnnActivations(BaseCommand):
 
     def __init__(self):
@@ -481,6 +535,7 @@ def execute_from_command_line():
         'calibrate': CalibrateCar,
         'tubclean': TubManager,
         'tubplot': ShowPredictionPlots,
+        'tubhist': ShowHistogram,
         'makemovie': MakeMovieShell,
         'createjs': CreateJoystick,
         'cnnactivations': ShowCnnActivations,
