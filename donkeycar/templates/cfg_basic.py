@@ -100,7 +100,7 @@ NUM_LAST_LAYERS_TO_TRAIN = 7
 #For the categorical model, this limits the upper bound of the learned throttle
 #it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
 #and ideally wouldn't change once set.
-MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.5
+MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
 
 #RNN or 3D
 SEQUENCE_LENGTH = 3
@@ -110,7 +110,7 @@ AUGMENTATIONS = []
 TRANSFORMATIONS = []
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
 # AUGMENTATIONS
-AUG_MULTIPLY_RANGE = (0.5, 1.5)
+AUG_MULTIPLY_RANGE = (0.5, 3.0)
 AUG_BLUR_RANGE = (0.0, 3.0)
 # Number of pixels to crop, requires 'CROP' in TRANSFORMATIONS to be set
 ROI_CROP_TOP = 45
