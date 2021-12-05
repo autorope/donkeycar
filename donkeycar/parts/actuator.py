@@ -11,6 +11,7 @@ from typing import Tuple
 
 import donkeycar as dk
 from donkeycar.parts.kinematics import differential_steering
+import RPi.GPIO as GPIO
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState
 from donkeycar.utilities.deprecated import deprecated
 
@@ -871,10 +872,9 @@ class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
     '''
-    def __init__(self, pin, freq = 50, min=5.0, max=7.8):
-        import RPi.GPIO as GPIO
+    def __init__(self, pin, pin_scheme=GPIO.BCM, freq = 50, min=5.0, max=7.8):
         self.pin = pin
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(pin_scheme)
         GPIO.setup(self.pin, GPIO.OUT)
         
         self.pwm = GPIO.PWM(self.pin, freq)
@@ -883,7 +883,6 @@ class RPi_GPIO_Servo(object):
         self.max = max
 
     def run(self, pulse):
-        import RPi.GPIO as GPIO
         '''
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
@@ -895,7 +894,6 @@ class RPi_GPIO_Servo(object):
 
 
     def shutdown(self):
-        import RPi.GPIO as GPIO
         self.pwm.stop()
         GPIO.cleanup()
 
