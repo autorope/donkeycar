@@ -22,7 +22,18 @@ MAX_LOOPS = None        # the vehicle loop can abort after this many iterations,
 # 
 
 #CAMERA
-CAMERA_TYPE = "T265"   # (T265|D435|MOCK)
+CAMERA_TYPE = "MOCK"   # (T265|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+IMAGE_W = 160
+IMAGE_H = 120
+IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+CAMERA_FRAMERATE = DRIVE_LOOP_HZ
+CAMERA_VFLIP = False
+CAMERA_HFLIP = False
+# For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
+CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
+
+# For IMAGE_LIST camera
+PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 
 #WEB CONTROL
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
@@ -77,6 +88,15 @@ JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
 CONTROLLER_TYPE='ps4'               #(ps3|ps4|xbox|nimbus|wiiu|F710|rc3)
+                                    # to use xbox controller, disable_ertm=1 must be set.  
+                                    # - For Jetson Nano see https://www.roboticsbuildlog.com/hardware/xbox-one-controller-with-nvidia-jetson-nano
+                                    # - For Raspberry Pi:
+                                    #   - edit /etc/modprobe.d/xbox_bt.conf (creating it if necessary)
+                                    #   - add the line: options bluetooth disable_ertm=1
+                                    #   - reboot do thay this take affect.
+                                    #   - after reboot you can vertify that disable_ertm is set to true entering this
+                                    #     command in a terminal: cat /sys/module/bluetooth/parameters/disable_ertm
+                                    #   - the result should print 'Y'.  If not, make sure the above steps have been done corretly.
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = "192.168.0.1"#when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.0             # when non zero, this is the smallest throttle before recording triggered.

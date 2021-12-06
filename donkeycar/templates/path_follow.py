@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """
-Scripts to drive a donkey car using Intel T265
+Scripts to record a path by driving a donkey car 
+and using an autopilot to drive the recoded path.
+Works with wheel encoders and/or Intel T265
 
 Usage:
-    manage.py (drive) [--log=INFO]
+    manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)]
  
 
 Options:
@@ -20,18 +22,29 @@ import json
 from subprocess import Popen
 import shlex
 
+#
+# import cv2 early to avoid issue with importing after tensorflow
+# see https://github.com/opencv/opencv/issues/14884#issuecomment-599852128
+#
+try:
+    import cv2
+except:
+    pass
+
+
 from docopt import docopt
 import numpy as np
-import pigpio
 
 import donkeycar as dk
-from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebController
+from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebController, JoystickController
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
+from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
+from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain
 
 
-def drive(cfg):
+def drive(cfg, use_joystick=False, camera_type='single'):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -49,95 +62,13 @@ def drive(cfg):
         from donkeycar.utils import Sombrero
         s = Sombrero()
    
-    ctr = get_js_controller(cfg)
-
-    V.add(ctr,
-            inputs=['cam/image_array'],
-            outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-            threaded=True)
+    is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
 
     if cfg.HAVE_ODOM:
-        from donkeycar.utilities.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
-        from donkeycar.parts.odometer import Odometer
-        tachometer = None
-        tachometer2 = None
-        if cfg.ENCODER_TYPE == "GPIO":
-            tachometer = Tachometer(
-                GpioEncoder(gpio_pin=cfg.ODOM_PIN, 
-                            debounce_ns=cfg.ENCODER_DEBOUNCE_NS, 
-                            debug=cfg.ODOM_DEBUG),
-                ticks_per_revolution=cfg.ENCODER_PPR, 
-                direction_mode=cfg.TACHOMETER_MODE, 
-                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                debug=cfg.ODOM_DEBUG)
-            if cfg.HAVE_ODOM_2:
-                tachometer2 = Tachometer(
-                    GpioEncoder(gpio_pin=cfg.ODOM_PIN_2, 
-                                debounce_ns=cfg.ENCODER_DEBOUNCE_NS, 
-                                debug=cfg.ODOM_DEBUG),
-                    ticks_per_revolution=cfg.ENCODER_PPR, 
-                    direction_mode=cfg.TACHOMETER_MODE, 
-                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                    debug=cfg.ODOM_DEBUG)             
-
-        elif cfg.ENCODER_TYPE == "arduino":
-            tachometer = Tachometer(
-                SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG),
-                ticks_per_revolution=cfg.ENCODER_PPR, 
-                direction_mode=cfg.TACHOMETER_MODE,
-                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                debug=cfg.ODOM_DEBUG)
-            if cfg.HAVE_ODOM_2:
-                tachometer2 = Tachometer(
-                    EncoderChannel(encoder=tachometer.encoder, channel=1),
-                    ticks_per_revolution=cfg.ENCODER_PPR, 
-                    direction_mode=cfg.TACHOMETER_MODE,
-                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                    debug=cfg.ODOM_DEBUG)
-
-        else:
-            print("No supported encoder found")
-
-        if tachometer:
-            if cfg.HAVE_ODOM_2:
-                #
-                # A second odometer is configured; assume a 
-                # differential drivetrain.  Use Unicycle
-                # kinematics to synthesize a single distance
-                # and velocity from the two wheels.
-                #
-                from donkeycar.parts.kinematics import Unicycle
-                odometer1 = Odometer(
-                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
-                    smoothing_count=cfg.ODOM_SMOOTHING, 
-                    debug=cfg.ODOM_DEBUG)
-                odometer2 = Odometer(
-                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
-                    smoothing_count=cfg.ODOM_SMOOTHING, 
-                    debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['left/revolutions', 'left/timestamp'], threaded=True)
-                V.add(odometer1, inputs=['left/revolutions', 'left/timestamp'], outputs=['left/distance', 'left/speed', 'left/timestamp'], threaded=False)
-                V.add(tachometer2, inputs=['throttle', None], outputs=['right/revolutions', 'right/timestamp'], threaded=True)
-                V.add(odometer2, inputs=['right/revolutions', 'right/timestamp'], outputs=['right/distance', 'right/speed', 'right/timestamp'], threaded=False)
-                V.add(
-                    Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG), 
-                    inputs=['left/distance', 'right/distance', 'left/timestamp'], 
-                    outputs=['enc/dist_m', 'enc/vel_m_s', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'enc/timestamp'],
-                    threaded=False)
-                
-            else:
-                # single odometer directly measures distance and velocity
-                odometer = Odometer(
-                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000, 
-                    smoothing_count=cfg.ODOM_SMOOTHING, 
-                    debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
-                V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/dist_m', 'enc/vel_m_s', 'enc/timestamp'], threaded=False)
-                #
-                # TODO: add Bicycle kinematics to calculate axis aligned pose and velocity components
-                #
-
+        #
+        # setup encoders, odometry and pose estimation
+        #
+        add_odometry(V, cfg)
     else:
         # we give the T265 no calib to indicated we don't have odom
         cfg.WHEEL_ODOM_CALIB = None
@@ -170,12 +101,25 @@ def drive(cfg):
                 return -pos.z, -pos.x
 
         V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
+    else:
+        #
+        # setup primary camera
+        #
+        add_camera(V, cfg, camera_type)
 
+    #
+    # add the user input controller(s)
+    # - this will add the web controller
+    # - it will optionally add any configured 'joystick' controller
+    #
+    has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
+    ctr = add_user_controller(V, cfg, use_joystick)
+
+    #
     # This part will reset the car back to the origin. You must put the car in the known origin
     # and push the cfg.RESET_ORIGIN_BTN on your controller. This will allow you to induce an offset
     # in the mapping.
-
-
+    #
     origin_reset = OriginOffset()
     V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
 
@@ -199,6 +143,8 @@ def drive(cfg):
                 return True
 
     V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
+
+
 
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
@@ -230,20 +176,6 @@ def drive(cfg):
         origin_reset.init_to_last
 
 
-    
-    # Here's a trigger to save the path. Complete one circuit of your course, when you
-    # have exactly looped, or just shy of the loop, then save the path and shutdown
-    # this process. Restart and the path will be loaded.
-    ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
-
-    # Here's a trigger to erase a previously saved path. 
-
-    ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
-
-    # Here's a trigger to reset the origin. 
-
-    ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
-
     # Here's an image we can map to.
     img = PImage(clear_each_frame=True)
     V.add(img, outputs=['map/image'])
@@ -270,19 +202,24 @@ def drive(cfg):
         pid.Kd += 0.5
         logging.info("pid: d+ %f" % pid.Kd)
 
-    # Buttons to tune PID constants
-    ctr.set_button_down_trigger("L2", dec_pid_d)
-    ctr.set_button_down_trigger("R2", inc_pid_d)
+    #
+    # add controller buttons for saving path and modifying PID
+    #
+    if ctr is not None and isinstance(ctr, JoystickController):
+        # Here's a trigger to save the path. Complete one circuit of your course, when you
+        # have exactly looped, or just shy of the loop, then save the path and shutdown
+        # this process. Restart and the path will be loaded.
+        ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
 
-    # #This web controller will create a web server. We aren't using any controls, just for visualization.
+        # Here's a trigger to erase a previously saved path. 
+        ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
 
-    web_ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                 mode=cfg.WEB_INIT_MODE)
+        # Here's a trigger to reset the origin. 
+        ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
 
-    V.add(web_ctr,
-        inputs=['map/image'],
-        outputs=['web/angle', 'web/throttle', 'web/mode', 'web/recording'],
-        threaded=True)
+        # Buttons to tune PID constants
+        ctr.set_button_down_trigger("L2", dec_pid_d)
+        ctr.set_button_down_trigger("R2", inc_pid_d)
     
 
     #Choose what inputs should change the car.
@@ -306,27 +243,23 @@ def drive(cfg):
           outputs=['angle', 'throttle'])
     
 
-    if not cfg.DONKEY_GYM:
-        #
-        # TODO: expand drivetrain options; at least allow for differential drivetrains (with reverse Unicycle kinematics)
-        #
-        if cfg.DRIVE_TRAIN_TYPE == "SERVO_ESC":
-            steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-            steering = PWMSteering(controller=steering_controller,
-                                            left_pulse=cfg.STEERING_LEFT_PWM, 
-                                            right_pulse=cfg.STEERING_RIGHT_PWM)
-            
-            throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-            throttle = PWMThrottle(controller=throttle_controller,
-                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+    #
+    # To make differential drive steer, 
+    # divide throttle between motors based on the steering value
+    #
+    if is_differential_drive:
+        V.add(TwoWheelSteeringThrottle(),
+            inputs=['throttle', 'angle'],
+            outputs=['left/throttle', 'right/throttle'])
 
-            V.add(steering, inputs=['angle'])
-            V.add(throttle, inputs=['throttle'])
+    #
+    # Setup drivetrain
+    #
+    add_drivetrain(V, cfg)
 
     # Print Joystick controls
-    ctr.print_controls()
+    if ctr is not None and isinstance(ctr, JoystickController):
+        ctr.print_controls()
 
     if path_loaded:
         print("###############################################################################")
@@ -377,4 +310,5 @@ if __name__ == '__main__':
 
     
     if args['drive']:
-        drive(cfg)
+        drive(cfg, use_joystick=args['--js'], camera_type=args['--camera'])
+
