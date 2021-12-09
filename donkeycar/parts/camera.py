@@ -32,31 +32,38 @@ class PiCamera(BaseCamera):
         self.on = True
         self.image_d = image_d
 
-        print('PiCamera loaded.. .warming camera')
-        time.sleep(2)
+        # get the first frame or timeout
+        print('PiCamera loaded...')
+        if self.stream is not None:
+            print('PiCamera opened.. .warming camera')
+            warming_time = time.time() + 5  # quick after 5 seconds
+            while self.frame is None and time.time() < warming_time:
+                print(".", end="")
+                self.run()
+                time.sleep(0.2)
+            print("")
+
+            if self.frame is None:
+                raise RuntimeError("Unable to start PiCamera.")
+        else:
+            raise RuntimeError("Unable to open PiCamera.")
 
     def run(self):
-        f = next(self.stream)
-        frame = f.array
-        self.rawCapture.truncate(0)
-        if self.image_d == 1:
-            frame = rgb2gray(frame)
-        return frame
+        # grab the frame from the stream and clear the stream in
+        # preparation for the next frame
+        if self.stream:
+            f = next(self.stream)
+            frame = f.array
+            self.rawCapture.truncate(0)
+            if self.image_d == 1:
+                frame = rgb2gray(frame)
+            self.frame = frame
+        return self.frame
 
     def update(self):
         # keep looping infinitely until the thread is stopped
-        for f in self.stream:
-            # grab the frame from the stream and clear the stream in
-            # preparation for the next frame
-            self.frame = f.array
-            self.rawCapture.truncate(0)
-
-            if self.image_d == 1:
-                self.frame = rgb2gray(self.frame)
-
-            # if the thread indicator variable is set, stop the thread
-            if not self.on:
-                break
+        while self.on:
+            self.run()
 
     def shutdown(self):
         # indicate that the thread should be stopped
@@ -66,6 +73,9 @@ class PiCamera(BaseCamera):
         self.stream.close()
         self.rawCapture.close()
         self.camera.close()
+        self.stream = None
+        self.rawCapture = None
+        self.camera = None
 
 
 class Webcam(BaseCamera):
@@ -151,10 +161,9 @@ class CSICamera(BaseCamera):
         self.capture_width = capture_width
         self.capture_height = capture_height
         self.framerate = framerate
+        self.init_camera()
 
     def init_camera(self):
-        import cv2
-
         # initialize the camera and stream
         self.camera = cv2.VideoCapture(
             self.gstreamer_pipeline(
@@ -166,12 +175,21 @@ class CSICamera(BaseCamera):
                 flip_method=self.flip_method),
             cv2.CAP_GSTREAMER)
 
-        self.poll_camera()
-        print('CSICamera loaded.. .warming camera')
-        time.sleep(2)
+        if self.camera.isOpened():
+            print('CSICamera opened.. .warming camera')
+            warming_time = time.time() + 5  # quick after 5 seconds
+            while self.frame is None and time.time() < warming_time:
+                print(".", end="")
+                self.poll_camera()
+                time.sleep(0.2)
+            print("")
+
+            if self.frame is None:
+                raise RuntimeError("Unable to start CSICamera.")
+        else:
+            raise RuntimeError("Unable to open CSICamera.")
         
     def update(self):
-        self.init_camera()
         while self.running:
             self.poll_camera()
 
