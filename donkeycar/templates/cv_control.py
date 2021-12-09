@@ -53,7 +53,6 @@ class LineFollower:
         input: cam_image, an RGB numpy array
         output: index of max color, value of cumulative color at that index, and mask of pixels in range 
         '''
-
         # take a horizontal slice of the image
         iSlice = self.scan_y
         scan_line = cam_img[iSlice : iSlice + self.scan_height, :, :]
@@ -77,6 +76,9 @@ class LineFollower:
         input: cam_image, an RGB numpy array
         output: steering, throttle, and recording flag
         '''
+        if cam_img is None:
+            return 0, 0, False
+
         max_yellow, confidense, mask = self.get_i_color(cam_img)
         conf_thresh = 0.001
         
