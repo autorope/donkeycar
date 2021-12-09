@@ -11,7 +11,15 @@ from typing import Tuple
 
 import donkeycar as dk
 from donkeycar.parts.kinematics import differential_steering
-import RPi.GPIO as GPIO
+
+logger = logging.getLogger(__name__)
+
+try:
+    import RPi.GPIO as GPIO
+except ImportError as e:
+    logger.warn(f"RPi.GPIO was not imported. {e}")
+    globals()["GPIO"] = None
+
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState
 from donkeycar.utilities.deprecated import deprecated
 
