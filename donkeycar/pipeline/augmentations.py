@@ -78,8 +78,8 @@ class ImageAugmentation:
 
     @classmethod
     def create(cls, aug_type: str, config: Config) -> iaa.meta.Augmenter:
-        """ Augmenatition factory. Cropping and trapezoidal mask are
-            transfomations which should be applied in training, validation and
+        """ Augmentation factory. Cropping and trapezoidal mask are
+            transformations which should be applied in training, validation and
             inference. Multiply, Blur and similar are augmentations which should
             be used only in training. """
 
@@ -106,7 +106,7 @@ class ImageAugmentation:
                         max_y=config.ROI_TRAPEZE_MAX_Y)
 
         elif aug_type == 'MULTIPLY':
-            interval = getattr(config, 'AUG_MULTIPLY_RANGE', (0.5, 1.5))
+            interval = getattr(config, 'AUG_MULTIPLY_RANGE', (0.5, 3.0))
             logger.info(f'Creating augmentation {aug_type} {interval}')
             return iaa.Multiply(interval)
 

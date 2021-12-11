@@ -1,6 +1,9 @@
+from datetime import datetime
 import json
 import os
 import time
+import shutil
+import glob
 from typing import Dict, List, Tuple
 import pandas as pd
 import logging
@@ -19,10 +22,16 @@ class PilotDatabase:
 
     def read(self) -> List[Dict]:
         if os.path.exists(self.path):
-            with open(self.path, "r") as read_file:
-                data = json.load(read_file)
-                return data
+            try:
+                with open(self.path, "r") as read_file:
+                    data = json.load(read_file)
+                    logger.info(f'Found model database {self.path}')
+                    return data
+            except Exception as e:
+                logger.error(f"Could not open database file because: {e}")
+                return []
         else:
+            logger.warning(f'No model database found at {self.path}')
             return []
 
     def generate_model_name(self) -> Tuple[str, int]:
@@ -48,12 +57,31 @@ class PilotDatabase:
     def write(self):
         try:
             with open(self.path, "w") as data_file:
-                json.dump(self.entries, data_file)
+                json.dump(self.entries, data_file,
+                          default=lambda o: '<not serializable>')
+                logger.info(f'Writing database file: {self.path}')
         except Exception as e:
             logger.error(f'Failed writing database file: {e}')
 
     def add_entry(self, entry: Dict):
         self.entries.append(entry)
+
+    def delete_entry(self, pilot_name):
+        to_delete_entry = None
+        for entry in self.entries:
+            if entry['Name'] == pilot_name:
+                to_delete_entry = entry
+        if to_delete_entry:
+            full_path = os.path.join(self.cfg.MODELS_PATH, pilot_name)
+            model_versions = glob.glob(f'{full_path}.*')
+            logger.info(f'Deleting {",".join(model_versions)}')
+            for model_version in model_versions:
+                if os.path.isdir(model_version):
+                    shutil.rmtree(model_version, ignore_errors=True)
+                else:
+                    os.remove(model_version)
+            self.entries.remove(to_delete_entry)
+            self.write()
 
     def to_df_tubgrouped(self):
         def sorted_string(comma_separated_string):
@@ -82,3 +110,28 @@ class PilotDatabase:
             zip(d.values(), [k.split(',') for k in d.keys()]),
             columns=['TubGroup', 'Tubs']).explode('Tubs')
         return df_pilots, df_tubs
+
+    @staticmethod
+    def formatter():
+        def time_fmt(t):
+            fmt = '%Y-%m-%d %H:%M:%S'
+            return datetime.fromtimestamp(t).strftime(fmt)
+
+        def transfer_fmt(model_name):
+            return model_name.replace('.h5', '')
+
+        return {'Time': time_fmt, 'Transfer': transfer_fmt}
+
+    def pretty_print(self, group_tubs=False):
+        if group_tubs:
+            pilot_df, tub_df = self.to_df_tubgrouped()
+            tub_text = tub_df.to_string()
+        else:
+            pilot_df = self.to_df()
+            tub_text = ''
+
+        pilot_df.drop(columns=['History', 'Config'], errors='ignore',
+                      inplace=True)
+        pilot_text = pilot_df.to_string(formatters=self.formatter())
+        pilot_names = pilot_df['Name'].tolist() if not pilot_df.empty else []
+        return pilot_text, tub_text, pilot_names
