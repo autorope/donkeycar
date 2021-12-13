@@ -50,6 +50,7 @@ setup(name='donkeycar',
           'typing_extensions',
           'pyfiglet',
           'psutil',
+          'imgaug'
       ],
       extras_require={
           'pi': [
@@ -69,7 +70,6 @@ setup(name='donkeycar',
           ],
           'pc': [
               'matplotlib',
-              'imgaug',
               'kivy',
               'pandas',
               'pyyaml',
