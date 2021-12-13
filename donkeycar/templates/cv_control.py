@@ -2,7 +2,7 @@
 """
 
 Usage:
-    manage.py --name=your_name
+    manage.py --name=your_name [--debug]
 
 
 Options:
@@ -29,7 +29,8 @@ class LineFollower:
     to guid a PID controller which seeks to maintain the max yellow at the same point
     in the image.
     '''
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
         self.scan_y = 60   # num pixels from the top to start horiz scan
         self.scan_height = 10 # num pixels high to grab from horiz scan
         self.color_thr_low = np.asarray((0, 50, 50)) # hsv dark yellow
@@ -89,7 +90,7 @@ class LineFollower:
 
             # this is the target of our steering PID controller
             self.pid_st.setpoint = self.target_pixel
-
+	
         elif confidense > conf_thresh:
             # invoke the controller with the current yellow line position
             # get the new steering value as it chases the ideal
@@ -105,7 +106,8 @@ class LineFollower:
 
 
         # show some diagnostics
-        self.debug_display(cam_img, mask, max_yellow, confidense)
+        if self.debug:
+            self.debug_display(cam_img, mask, max_yellow, confidense)
 
         return self.steering, self.throttle, self.recording
 
@@ -171,7 +173,7 @@ def drive(cfg, args):
     V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
         
     #Controller
-    V.add(LineFollower(), 
+    V.add(LineFollower(bool(args['--debug'])), 
           inputs=['cam/image_array'],
           outputs=['steering', 'throttle', 'recording'])
 
