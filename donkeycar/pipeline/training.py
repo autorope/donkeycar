@@ -112,20 +112,35 @@ def train(cfg: Config, tub_paths: str, model: str = None,
 
     tubs = tub_paths.split(',')
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
+<<<<<<< Updated upstream
     dataset = TubDataset(config=cfg, tub_paths=all_tub_paths,
                          seq_size=kl.seq_size())
     training_records, validation_records \
         = train_test_split(dataset.get_records(), shuffle=True,
                            test_size=(1. - cfg.TRAIN_TEST_SPLIT))
+=======
+    dataset = TubDataset(cfg, all_tub_paths)
+
+    training_records, validation_records = dataset.train_test_split()
+>>>>>>> Stashed changes
     print(f'Records # Training {len(training_records)}')
     print(f'Records # Validation {len(validation_records)}')
 
     # We need augmentation in validation when using crop / trapeze
     training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
     validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
+<<<<<<< Updated upstream
     tune = tf.data.experimental.AUTOTUNE
     dataset_train = training_pipe.create_tf_data().prefetch(tune)
     dataset_validate = validation_pipe.create_tf_data().prefetch(tune)
+=======
+
+
+    dataset_train = training_pipe.create_tf_data().prefetch(
+        tf.data.experimental.AUTOTUNE)
+    dataset_validate = validation_pipe.create_tf_data().prefetch(
+        tf.data.experimental.AUTOTUNE)
+>>>>>>> Stashed changes
     train_size = len(training_pipe)
     val_size = len(validation_pipe)
 

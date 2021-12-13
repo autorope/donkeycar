@@ -1,4 +1,4 @@
-import sys
+'''import sys
 from pyfiglet import Figlet
 import logging
 from pkg_resources import get_distribution
@@ -25,3 +25,4 @@ from . import utils
 from . import config
 from . import contrib
 from .config import load_config
+'''

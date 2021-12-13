@@ -22,6 +22,7 @@ from typing import List, Any, Tuple
 from PIL import Image
 import numpy as np
 
+<<<<<<< Updated upstream
 logger = logging.getLogger(__name__)
 
 
@@ -42,6 +43,8 @@ class EqMemorizedString:
         return ', '.join(self.mem)
 
 
+=======
+>>>>>>> Stashed changes
 '''
 IMAGES
 '''
@@ -433,21 +436,48 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
+<<<<<<< Updated upstream
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
         KerasLSTM, Keras3D_CNN
     from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT
+=======
+    from donkeycar.parts.keras import KerasPilot, KerasCategorical, \
+        KerasLinear, KerasInferred, imageCroppingKerasLinear
+    from donkeycar.parts.tflite import TFLitePilot
+>>>>>>> Stashed changes
 
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
     logger.info(f'get_model_by_type: model type is: {model_type}')
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+<<<<<<< Updated upstream
     if 'tflite_' in model_type:
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
     elif 'tensorrt_' in model_type:
         interpreter = TensorRT()
         used_model_type = model_type.replace('tensorrt_', '')
+=======
+    kl: KerasPilot
+    if model_type == "linear":
+        kl = KerasLinear(input_shape=input_shape)
+    elif model_type == "categorical":
+        kl = KerasCategorical(input_shape=input_shape,
+                              throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+    elif model_type == 'inferred':
+        kl = KerasInferred(input_shape=input_shape)
+    elif model_type == "tflite_linear":
+        kl = TFLitePilot()
+    elif model_type == 'cropping_linear':
+        kl = imageCroppingKerasLinear(input_shape=(72,160,3))
+    elif model_type == "tensorrt_linear":
+        # Aggressively lazy load this. This module imports pycuda.autoinit
+        # which causes a lot of unexpected things to happen when using TF-GPU
+        # for training.
+        from donkeycar.parts.tensorrt import TensorRTLinear
+        kl = TensorRTLinear(cfg=cfg)
+>>>>>>> Stashed changes
     else:
         interpreter = KerasInterpreter()
         used_model_type = model_type
@@ -490,8 +520,12 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
                          f" { ', '.join(known)}")
     return kl
 
+<<<<<<< Updated upstream
 
 def get_test_img(keras_pilot):
+=======
+def get_test_img(model):
+>>>>>>> Stashed changes
     """
     query the input to see what it likes make an image capable of using with
     that test model

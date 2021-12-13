@@ -157,8 +157,13 @@ class KerasPilot(ABC):
         """
         trains the model
         """
+<<<<<<< Updated upstream
         assert isinstance(self.interpreter, KerasInterpreter)
         model = self.interpreter.model
+=======
+        model = self._get_train_model()
+        print()
+>>>>>>> Stashed changes
         self.compile()
 
         callbacks = [
@@ -222,6 +227,7 @@ class KerasPilot(ABC):
         """ Return x from record, default returns only image array"""
         assert isinstance(record, TubRecord), "TubRecord required"
         img_arr = record.image(cached=True)
+
         return img_arr
 
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
@@ -652,6 +658,7 @@ class KerasLocalizer(KerasPilot):
     A Keras part that take an image as input,
     outputs steering and throttle, and localisation category
     """
+<<<<<<< Updated upstream
     def __init__(self,
                  interpreter: Interpreter = KerasInterpreter(),
                  input_shape: Tuple[int, ...] = (120, 160, 3),
@@ -662,6 +669,13 @@ class KerasLocalizer(KerasPilot):
     def create_model(self):
         return default_loc(num_locations=self.num_locations,
                            input_shape=self.input_shape)
+=======
+    def __init__(self, num_locations=8, input_shape=(120, 160, 3)):
+        print("ASDKASDLKSAJDKLASJDLASKDJASLDASJDLKASJDLASKDJASLKDJ")
+        super().__init__()
+        self.model = default_loc(num_locations=num_locations,
+                                 input_shape=input_shape)
+>>>>>>> Stashed changes
 
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'],
@@ -948,19 +962,19 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     return x
 
 
-def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
+def default_n_linear(num_outputs, input_shape=(72, 160, 3)):
     drop = 0.2
-    img_in = Input(shape=input_shape, name='img_in')
+    img_in = Input(shape=(72, 160, 3), name='img_in')
     x = core_cnn_layers(img_in, drop)
     x = Dense(100, activation='relu', name='dense_1')(x)
     x = Dropout(drop)(x)
     x = Dense(50, activation='relu', name='dense_2')(x)
     x = Dropout(drop)(x)
-
     outputs = []
     for i in range(num_outputs):
         outputs.append(
             Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+<<<<<<< Updated upstream
 
     model = Model(inputs=[img_in], outputs=outputs, name='linear')
     return model
@@ -990,6 +1004,9 @@ def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
     outputs = [Dense(1, activation=activation[i], name='n_outputs' + str(i))(x)
                for i in range(2)]
     model = Model(inputs=[img_in, mem_in], outputs=outputs, name='memory')
+=======
+    model = Model(inputs=[img_in], outputs=outputs)
+>>>>>>> Stashed changes
     return model
 
 
@@ -1189,6 +1206,62 @@ def build_3d_cnn(input_shape, s, num_outputs):
     model = Model(inputs=[img_in], outputs=out, name='3dcnn')
     return model
 
+class imageCroppingKerasLinear(KerasPilot):
+    """
+    The KerasLinear pilot uses one neuron to output a continous value via the
+    Keras Dense layer with linear activation. One each for steering and
+    throttle. The output is not bounded.
+    """
+    def __init__(self, num_outputs=2, input_shape=(72, 160, 3)):
+        super().__init__()
+        self.model = default_n_linear(num_outputs, (72, 160, 3))
+
+
+    def compile(self):
+        self.model.compile(optimizer=self.optimizer, loss='mse')
+    def inference(self, img_arr, other_arr):
+        from PIL import Image
+        print(img_arr)
+        print(img_arr.shape)
+        im_trim = img_arr[48:120,...]
+
+        im_trim = im_trim.reshape((1,) + im_trim.shape)
+
+        outputs = self.model.predict(im_trim)
+        steering = outputs[0]
+        throttle = outputs[1]
+        Image.fromarray(im_trim).save("inside_inference.jpg", quality=100)
+        with open("steering_throttle", 'a') as outfile:
+            outfile.write("steering" + str(steering))
+            outfile.write("throttle" + str(throttle))
+        return steering[0][0], throttle[0][0]
+
+    def y_transform(self, record: TubRecord):
+        angle: float = record.underlying['user/angle']
+        throttle: float = record.underlying['user/throttle']
+        return angle, throttle
+
+    def y_translate(self, y: XY) -> Dict[str, Union[float, np.ndarray]]:
+        if isinstance(y, tuple):
+            angle, throttle = y
+            return {'n_outputs0': angle, 'n_outputs1': throttle}
+        else:
+            raise TypeError('Expected tuple')
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = (72,160,3)
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'n_outputs0': tf.TensorShape([]),
+                   'n_outputs1': tf.TensorShape([])})
+        return shapes
+
+    def x_transform(self, record: TubRecord) -> XY:
+        from PIL import Image
+        img_arr = record.image(cached=True)
+        im_trim = img_arr[48:120, ...]
+        Image.fromarray(im_trim).show()
+        return im_trim
 
 def default_latent(num_outputs, input_shape):
     # TODO: this auto-encoder should run the standard cnn in encoding and
