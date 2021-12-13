@@ -80,6 +80,13 @@ class PiCamera(BaseCamera):
 
 class Webcam(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, iCam = 0):
+        #
+        # pygame is not installed by default.  
+        # Installation on RaspberryPi (with env activated):
+        #
+        # sudo apt-get install libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0
+        # pip install pygame
+        #
         import pygame
         import pygame.camera
 
