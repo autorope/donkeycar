@@ -14,7 +14,7 @@ class PiCamera(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, vflip=False, hflip=False):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
-        
+
         resolution = (image_w, image_h)
         # initialize the camera and stream
         self.camera = PiCamera() #PiCamera gets resolution (height, width)
@@ -81,7 +81,7 @@ class PiCamera(BaseCamera):
 class Webcam(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, camera_index = 0):
         #
-        # pygame is not installed by default.  
+        # pygame is not installed by default.
         # Installation on RaspberryPi (with env activated):
         #
         # sudo apt-get install libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0
@@ -188,27 +188,29 @@ class CSICamera(BaseCamera):
         '''
         self.w = image_w
         self.h = image_h
-        self.running = True
-        self.frame = None
         self.flip_method = gstreamer_flip
         self.capture_width = capture_width
         self.capture_height = capture_height
         self.framerate = framerate
+        self.frame = None
         self.init_camera()
+        self.running = True
 
     def init_camera(self):
+        import cv2
+
         # initialize the camera and stream
         self.camera = cv2.VideoCapture(
             self.gstreamer_pipeline(
-                capture_width =self.capture_width,
-                capture_height =self.capture_height,
+                capture_width=self.capture_width,
+                capture_height=self.capture_height,
                 output_width=self.w,
                 output_height=self.h,
                 framerate=self.framerate,
                 flip_method=self.flip_method),
             cv2.CAP_GSTREAMER)
 
-        if self.camera.isOpened():
+        if self.camera and self.camera.isOpened():
             print('CSICamera opened.. .warming camera')
             warming_time = time.time() + 5  # quick after 5 seconds
             while self.frame is None and time.time() < warming_time:
@@ -221,7 +223,7 @@ class CSICamera(BaseCamera):
                 raise RuntimeError("Unable to start CSICamera.")
         else:
             raise RuntimeError("Unable to open CSICamera.")
-        
+
     def update(self):
         while self.running:
             self.poll_camera()
@@ -229,7 +231,8 @@ class CSICamera(BaseCamera):
     def poll_camera(self):
         import cv2
         self.ret , frame = self.camera.read()
-        self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if frame:
+            self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     def run(self):
         self.poll_camera()
