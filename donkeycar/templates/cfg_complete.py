@@ -32,6 +32,25 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 CAMERA_VFLIP = False
 CAMERA_HFLIP = False
+# PI Camera specitic options, for more details see https://picamera.readthedocs.io/en/release-1.13/api_camera.html
+PICAMERA_AWB_MODE = 'auto'  # set camera auto white balance mode, if supported
+PICAMERA_AWB_GAINS = (1.0, 1.0)  # set awb gains as tuple, works only if awb mode is set to 'off'
+PICAMERA_BRIGHTNESS = 50  # set camera brightness, from 0 to 100, defaul 50
+PICAMERA_COLOR_EFFECTS = None  # apply color effetcs, set to None or tupe (u,v) where u,v are from 0 to 255, default None
+PICAMERA_CONTRAST = 0  # apply contrast between -100 and 100 default 0
+PICAMERA_EXPOSURE_COMPENSATION = 0  # set exposure compensation, from -25 to 25, default 0, bigger value makes brighter images
+PICAMERA_EXPOSURE_MODE = 'auto'  # set exposure mode, notice that if you have NoIR camera and want to use 'greyworld' you may need to checkout picamera from git https://github.com/waveform80/picamera/pull/576
+PICAMERA_IMAGE_DENOISE = True  # apply image denoise, default True
+PICAMERA_IMAGE_EFFECT = 'none'  # apply effect to the image, notice not every mode is possible in realtime, some produce weird artifacts when using low resolution, see https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.camera.PiCamera.image_effect
+PICAMERA_IMAGE_EFFECT_PARAMS = None  # EXPERIMENTAL apply effect params to the image, notice not every mode is possible in realtime, some produce weird artifacts when using low resolution, see https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.camera.PiCamera.image_effect
+PICAMERA_ISO = 0  # EXPERIMENTAL set ISO param for camera, default 0,  read more at https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.camera.PiCamera.iso
+PICAMERA_METER_MODE = 'average'  # set meter_mode https://picamera.readthedocs.io/en/release-1.13/api_camera.html#picamera.camera.PiCamera.meter_mode
+PICAMERA_ROTATION = 0  # set image rotation, default 0, valid valies 0, 90, 180, 270
+PICAMERA_SATURATION = 0  # set image saturation, from -100 to 100, default 0
+PICAMERA_SHARPNESS = 0  # set image sharpness, from -100 to 100, default 0
+PICAMERA_VIDEO_DENOISE = True  # set video denoise, default True
+PICAMERA_VIDEO_STABILIZATION = False  # set video_stabilization, default False, works only for vertical/horizontal motion, not for rotation
+PICAMERA_ZOOM = (0.0, 0.0, 1.0, 1.0)  # set camera zoom, default (0.0, 0.0, 1.0, 1.0) which is full image (x,y,w,h)
 # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 

@@ -11,7 +11,7 @@ class BaseCamera:
         return self.frame
 
 class PiCamera(BaseCamera):
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, vflip=False, hflip=False):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, vflip=False, hflip=False, awb_mode='auto', awb_gains=(1.0, 1.0), brightness=50, color_effects=None, contrast=0, exposure_compensation=0, exposure_mode='auto', image_denoise=True, image_effect='none', image_effect_params=None, iso=0, meter_mode='average', rotation=0, saturation=0, sharpness=0, video_denoise=True, video_stabilization=False, zoom=(0.0, 0.0, 1.0, 1.0)):
         from picamera.array import PiRGBArray
         from picamera import PiCamera
         
@@ -22,6 +22,32 @@ class PiCamera(BaseCamera):
         self.camera.framerate = framerate
         self.camera.vflip = vflip
         self.camera.hflip = hflip
+        self.camera.awb_mode = awb_mode
+        self.camera.awb_gains = awb_gains
+
+        self.camera.brightness = brightness
+        self.camera.color_effects = color_effects
+        self.camera.contrast = contrast
+        self.camera.exposure_compensation = exposure_compensation
+        self.camera.exposure_mode = exposure_mode
+
+        self.camera.image_denoise = image_denoise
+        self.camera.image_effect = image_effect
+
+        # notice that some image effects_params CAN NOT be applied
+        if image_effect_params is not None:
+            self.camera.image_effect_params = image_effect_params
+
+        self.camera.exposure_mode = exposure_mode
+        self.camera.iso = iso
+        self.camera.meter_mode = meter_mode
+        self.camera.rotation = rotation
+        self.camera.saturation = saturation
+        self.camera.sharpness = sharpness
+        self.camera.video_denoise = video_denoise
+        self.camera.video_stabilization = video_stabilization
+        self.camera.zoom = zoom
+
         self.rawCapture = PiRGBArray(self.camera, size=resolution)
         self.stream = self.camera.capture_continuous(self.rawCapture,
             format="rgb", use_video_port=True)
