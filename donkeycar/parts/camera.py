@@ -51,13 +51,14 @@ class PiCamera(BaseCamera):
     def run(self):
         # grab the frame from the stream and clear the stream in
         # preparation for the next frame
-        if self.stream:
+        if self.stream is not None:
             f = next(self.stream)
-            frame = f.array
-            self.rawCapture.truncate(0)
-            if self.image_d == 1:
-                frame = rgb2gray(frame)
-            self.frame = frame
+            if f is not None:
+                self.frame = f.array
+                self.rawCapture.truncate(0)
+                if self.image_d == 1:
+                    self.frame = rgb2gray(self.frame)
+
         return self.frame
 
     def update(self):
@@ -139,10 +140,12 @@ class Webcam(BaseCamera):
         import pygame.image
         if self.cam.query_image():
             snapshot = self.cam.get_image()
-            snapshot1 = pygame.transform.scale(snapshot, self.resolution)
-            self.frame = pygame.surfarray.pixels3d(pygame.transform.rotate(pygame.transform.flip(snapshot1, True, False), 90))
-            if self.image_d == 1:
-                self.frame = rgb2gray(self.frame)
+            if snapshot is not None:
+                snapshot1 = pygame.transform.scale(snapshot, self.resolution)
+                self.frame = pygame.surfarray.pixels3d(pygame.transform.rotate(pygame.transform.flip(snapshot1, True, False), 90))
+                if self.image_d == 1:
+                    self.frame = rgb2gray(frame)
+
         return self.frame
 
     def update(self):
