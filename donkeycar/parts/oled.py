@@ -102,11 +102,11 @@ class OLEDPart(object):
         eth0 = OLEDPart.get_ip_address('eth0')
         wlan0 = OLEDPart.get_ip_address('wlan0')
         if eth0 is not None:
-            self.eth0 = 'eth0 : %s' % (eth0)
+            self.eth0 = 'eth0:%s' % (eth0)
         else:
             self.eth0 = None
         if wlan0 is not None:
-            self.wlan0 = 'wlan0 : %s' % (wlan0)
+            self.wlan0 = 'wlan0:%s' % (wlan0)
         else:
             self.wlan0 = None
 
