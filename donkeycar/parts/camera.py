@@ -1,9 +1,16 @@
+import logging
 import os
 import time
 import numpy as np
 from PIL import Image
 import glob
 from donkeycar.utils import rgb2gray
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
+class CameraError(Exception):
+    pass
 
 class BaseCamera:
 
@@ -33,20 +40,20 @@ class PiCamera(BaseCamera):
         self.image_d = image_d
 
         # get the first frame or timeout
-        print('PiCamera loaded...')
+        logger.info('PiCamera loaded...')
         if self.stream is not None:
-            print('PiCamera opened.. .warming camera')
+            logger.info('PiCamera opened...')
             warming_time = time.time() + 5  # quick after 5 seconds
             while self.frame is None and time.time() < warming_time:
-                print(".", end="")
+                logger.info("...warming camera")
                 self.run()
                 time.sleep(0.2)
-            print("")
 
             if self.frame is None:
-                raise RuntimeError("Unable to start PiCamera.")
+                raise CameraError("Unable to start PiCamera.")
         else:
-            raise RuntimeError("Unable to open PiCamera.")
+            raise CameraError("Unable to open PiCamera.")
+        logger.info("PiCamera ready.")
 
     def run(self):
         # grab the frame from the stream and clear the stream in
@@ -69,7 +76,7 @@ class PiCamera(BaseCamera):
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('Stopping PiCamera')
+        logger.info('Stopping PiCamera')
         time.sleep(.5)
         self.stream.close()
         self.rawCapture.close()
@@ -107,34 +114,49 @@ class Webcam(BaseCamera):
             import pygame
             import pygame.camera
         except ModuleNotFoundError as e:
-            print("Unabled to import pygame.  Try installing it:")
-            print("    sudo apt-get install libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0")
-            print("    pip install pygame")
+            logger.error("Unable to import pygame.  Try installing it:\n"
+                         "    sudo apt-get install libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0\n"
+                         "    pip install pygame")
             raise e
 
-        print('Opening Webcam...')
+        logger.info('Opening Webcam...')
 
         self.resolution = (image_w, image_h)
-        pygame.init()
-        pygame.camera.init()
-        l = pygame.camera.list_cameras()
-        print('cameras', l)
+
         try:
+            pygame.init()
+            pygame.camera.init()
+            l = pygame.camera.list_cameras()
+
+            if len(l) == 0:
+                raise CameraError("There are no cameras available")
+
+            logger.info(f'Available cameras {l}')
+            if camera_index < 0 or camera_index >= len(l):
+                raise CameraError(f"The 'CAMERA_INDEX={camera_index}' configuration in myconfig.py is out of range.")
+
             self.cam = pygame.camera.Camera(l[camera_index], self.resolution, "RGB")
             self.cam.start()
 
-            print('CSICamera opened.. .warming camera')
+            logger.info(f'Webcam opened at {l[camera_index]} ...')
             warming_time = time.time() + 5  # quick after 5 seconds
             while self.frame is None and time.time() < warming_time:
-                print(".", end="")
+                logger.info("...warming camera")
                 self.run()
                 time.sleep(0.2)
-            print("")
 
             if self.frame is None:
-                raise RuntimeError("Unable to start Webcam.")
-        except:
-            raise RuntimeError("Unable to open Webcam.")
+                raise CameraError("Unable to start Webcam.\n"
+                                   "If more than one camera is available then"
+                                   " make sure your 'CAMERA_INDEX' is correct in myconfig.py")
+
+        except CameraError:
+            raise
+        except Exception as e:
+            raise CameraError("Unable to open Webcam.\n"
+                               "If more than one camera is available then"
+                               " make sure your 'CAMERA_INDEX' is correct in myconfig.py") from e
+        logger.info("Webcam ready.")
 
     def run(self):
         import pygame.image
@@ -148,7 +170,7 @@ class Webcam(BaseCamera):
 
         return self.frame
 
-    def update(self):
+    def update(self):	
         from datetime import datetime, timedelta
         while self.on:
             start = datetime.now()
@@ -166,7 +188,7 @@ class Webcam(BaseCamera):
         # indicate that the thread should be stopped
         self.on = False
         if self.cam:
-            print('stopping Webcam')
+            logger.info('stopping Webcam')
             self.cam.stop()
             self.cam = None
         time.sleep(.5)
@@ -214,18 +236,18 @@ class CSICamera(BaseCamera):
             cv2.CAP_GSTREAMER)
 
         if self.camera and self.camera.isOpened():
-            print('CSICamera opened.. .warming camera')
+            logger.info('CSICamera opened...')
             warming_time = time.time() + 5  # quick after 5 seconds
             while self.frame is None and time.time() < warming_time:
-                print(".", end="")
+                logger.info("...warming camera")
                 self.poll_camera()
                 time.sleep(0.2)
-            print("")
 
             if self.frame is None:
                 raise RuntimeError("Unable to start CSICamera.")
         else:
             raise RuntimeError("Unable to open CSICamera.")
+        logger.info("CSICamera ready.")
 
     def update(self):
         while self.running:
@@ -246,7 +268,7 @@ class CSICamera(BaseCamera):
     
     def shutdown(self):
         self.running = False
-        print('stopping CSICamera')
+        logger.info('Stopping CSICamera')
         time.sleep(.5)
         del(self.camera)
 
@@ -277,7 +299,7 @@ class V4LCamera(BaseCamera):
         # return another size if it doesn't support the suggested one.
         self.size_x, self.size_y = self.video.set_format(self.image_w, self.image_h, fourcc=self.fourcc)
 
-        print("V4L camera granted %d, %d resolution." % (self.size_x, self.size_y))
+        logger.info("V4L camera granted %d, %d resolution." % (self.size_x, self.size_y))
 
         # Create a buffer to store image data in. This must be done before
         # calling 'start' if v4l2capture is compiled with libv4l2. Otherwise
@@ -346,8 +368,8 @@ class ImageListCamera(BaseCamera):
         self.image_filenames.sort(key=get_image_index)
         #self.image_filenames.sort(key=os.path.getmtime)
         self.num_images = len(self.image_filenames)
-        print('%d images loaded.' % self.num_images)
-        print( self.image_filenames[:10])
+        logger.info('%d images loaded.' % self.num_images)
+        logger.info( self.image_filenames[:10])
         self.i_frame = 0
         self.frame = None
         self.update()
