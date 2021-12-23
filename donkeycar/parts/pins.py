@@ -582,10 +582,7 @@ class PCA9685:
         else:
             # duty cycle is fraction of the 12 bits
             pulse = int(4096 * duty_cycle)
-            try:
-                self.pwm.set_pwm(channel, 0, pulse)
-            except:
-                self.pwm.set_pwm(channel, 0, pulse)
+            self.pwm.set_pwm(channel, 0, pulse)
 
 
 #
