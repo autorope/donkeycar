@@ -194,10 +194,10 @@ STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_PIN_LEFT = "RPI_GPIO.BOARD.18"
-HBRIDGE_PIN_RIGHT = "RPI_GPIO.BOARD.16"
-HBRIDGE_PIN_FWD = "RPI_GPIO.BOARD.15"
-HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"
+HBRIDGE_PIN_LEFT = "RPI_GPIO.BOARD.18"   # pwm pin produces duty cycle for steering left
+HBRIDGE_PIN_RIGHT = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for steering right
+HBRIDGE_PIN_FWD = "RPI_GPIO.BOARD.15"    # pwm pin produces duty cycle for forward drive
+HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"    # pwm pin produces duty cycle for reverse drive
 
 #
 # DC_TWO_WHEEL pin configuration
@@ -228,10 +228,10 @@ HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_PIN_LEFT_FWD = "RPI_GPIO.BOARD.18"
-HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"
-HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15"
-HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13"
+HBRIDGE_PIN_LEFT_FWD = "RPI_GPIO.BOARD.18"  # pwm pin produces duty cycle for left wheel forward 
+HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for left wheel reverse
+HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # pwm pin produces duty cycle for right wheel forward
+HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # pwm pin produces duty cycle for right wheel reverse
 
 
 #
@@ -267,13 +267,13 @@ HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13"
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_L298N_PIN_LEFT_FWD = "RPI_GPIO.BOARD.16"
-HBRIDGE_L298N_PIN_LEFT_BWD = "RPI_GPIO.BOARD.18"
-HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"
+HBRIDGE_L298N_PIN_LEFT_FWD = "RPI_GPIO.BOARD.16"  # TTL output pin enables left wheel forward
+HBRIDGE_L298N_PIN_LEFT_BWD = "RPI_GPIO.BOARD.18"  # TTL output pin enables left wheel reverse
+HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"   # PWM pin generates duty cycle for left motor speed
 
-HBRIDGE_L298N_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15"
-HBRIDGE_L298N_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13"
-HBRIDGE_L298N_PIN_RIGHT_EN = "RPI_GPIO.BOARD.11"
+HBRIDGE_L298N_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # TTL output pin enables right wheel forward
+HBRIDGE_L298N_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # TTL output pin enables right wheel reverse
+HBRIDGE_L298N_PIN_RIGHT_EN = "RPI_GPIO.BOARD.11"  # PWM pin generates duty cycle for right wheel speed
 
 #ODOMETRY
 HAVE_ODOM = False                   # Do you have an odometer/encoder 

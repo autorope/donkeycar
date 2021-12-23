@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 #   a duty cycle of 0.05 * 60 / 50 = 0.06 (6%) duty cycle
 # - We default the frequency of our PCA9685 to 60 hz, so pulses in 
 #   config are generally based on 60hz frequency and 12 bit values.
+#   We use 12 bit values because the PCA9685 has 12 bit resolution.
 #   So a 1 ms pulse is 0.06 * 4096 ~= 246, a neutral pulse of 0.09 duty cycle
 #   is 0.09 * 4096 ~= 367 and full forward pulse of 0.12 duty cycles
 #   is 0.12 * 4096 ~= 492
@@ -685,8 +686,8 @@ class L298N_HBridge_3pin(object):
     a PwmPin to control the power to the motor.
     See pins.py for pin provider implementations.
 
-    See https://www.etechnophiles.com/l298n-motor-driver-pin-diagram/
-    for a discussion of how the L298N hbridge module is wired.
+    See https://www.electronicshub.org/raspberry-pi-l298n-interface-tutorial-control-dc-motor-l298n-raspberry-pi/
+    for a discussion of how the L298N hbridge module is wired in 3-pin mode.
     This also applies to the some other driver chips that emulate
     the L298N, such as the TB6612FNG motor driver.
     """
