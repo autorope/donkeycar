@@ -33,6 +33,7 @@ dependencies:
   - psutil
   - kivy=2.0.0
   - plotly
+  - pyyaml
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git

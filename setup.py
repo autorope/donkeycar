@@ -70,7 +70,8 @@ setup(name='donkeycar',
               'matplotlib',
               'imgaug',
               'kivy',
-              'pandas'
+              'pandas',
+              'pyyaml'
           ],
           'dev': [
               'pytest',
