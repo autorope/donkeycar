@@ -4,8 +4,10 @@ File: realsense435i.py
 Date: April 14 2019
 Notes: Donkeycar part for the Intel Realsense depth cameras D435 and D435i.
 """
+import argparse
 import time
 import logging
+import sys
 
 import numpy as np
 import pyrealsense2 as rs
@@ -221,14 +223,28 @@ class RealSense435i(object):
 #
 if __name__ == "__main__":
 
-    show_opencv_window = False # True to show images in opencv window: note that default donkeycar environment is not configured for this.
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--rgb", default=False, action='store_true', help="Stream RGB camera")
+    parser.add_argument("--depth", default=False, action='store_true', help="Stream depth camera")
+    parser.add_argument("--imu", default=False, action='store_true', help="Stream IMU to console")
+    parser.add_argument("--device_id", help="Camera id (if more than one camera connected)")
+    args = parser.parse_args()
+
+    if not (args.rgb or args.depth or args.imu):
+        print("Must specify one or more of --rgb, --depth, --imu")
+        parser.print_help()
+        sys.exit(0)
+
+
+    show_opencv_window = args.rgb or args.depth # True to show images in opencv window: note that default donkeycar environment is not configured for this.
     if show_opencv_window:
         import cv2
 
-    enable_rgb = True
-    enable_depth = True
-    enable_imu = True
-    device_id = None
+    enable_rgb = args.rgb
+    enable_depth = args.depth
+    enable_imu = args.imu
+    device_id = args.device_id
 
     width = 212
     height = 120
