@@ -71,7 +71,8 @@ setup(name='donkeycar',
               'imgaug',
               'kivy',
               'pandas',
-              'pyyaml'
+              'pyyaml',
+              'plotly'
           ],
           'dev': [
               'pytest',
