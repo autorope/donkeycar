@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="4.3.1",
+      version="4.3.2",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
@@ -71,7 +71,8 @@ setup(name='donkeycar',
               'imgaug',
               'kivy',
               'pandas',
-              'pyyaml'
+              'pyyaml',
+              'plotly'
           ],
           'dev': [
               'pytest',
