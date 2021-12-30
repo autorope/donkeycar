@@ -6,7 +6,7 @@ from typing import Union, Sequence, List
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.python.compiler.tensorrt import trt_convert as trt
+
 from tensorflow.python.framework.convert_to_constants import \
     convert_variables_to_constants_v2 as convert_var_to_const
 from tensorflow.python.saved_model import tag_constants, signature_constants
@@ -56,6 +56,7 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str):
         within TF now. """
     logger.info(f'Converting SavedModel {saved_path} to TensorRT'
                 f' {tensor_rt_path}')
+    from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
     params = trt.DEFAULT_TRT_CONVERSION_PARAMS
     params = params._replace(max_workspace_size_bytes=(1 << 32))
