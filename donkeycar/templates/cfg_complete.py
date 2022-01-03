@@ -48,48 +48,52 @@ USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_ROTATION = 0 # 0 = text is right-side up, 1 = rotated 90 degrees clockwise, 2 = 180 degrees (flipped), 3 = 270 degrees
 SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 
-#DRIVETRAIN
-#These options specify which chasis and motor setup you are using. Most are using I2C_SERVO.
-#DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-#DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
-#SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
-#PIGPIO_PWM uses Raspberrys internal PWM
-DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE" # PWM_STEERING_THROTTLE|I2C_SERVO|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+#
+# DRIVE_TRAIN_TYPE
+# These options specify which chasis and motor setup you are using. Most are using I2C_SERVO.
+# PWM_STEERING_THROTTLE uses two PWM output pins to control a steering servo and an ESC, as in a standard RC car.
+# DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
+# DC_TWO_WHEEL uses HBridge in two-pin mode to control two drive motors, one on the left, and one on the right.
+# DC_TWO_WHEEL_L298N using HBridge in three-pin mode to control two drive motors, one of the left and one on the right.
+# (deprecated) SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+#( deprecated) PIGPIO_PWM uses Raspberrys internal PWM
+#( deprecated) I2C_SERVO uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
+#
+DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"  # PWM_STEERING_THROTTLE|MM1|SERVO_HBRIDGE_PWM|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|PIGPIO_PWM|I2C_SERVO|MOCK
 
 #
 # PWM_STEERING_THROTTLE
 #
-# drivetrain for RC car with servo and ESC.
-# using a PwmPin for steering (servo)
-# and as second PwmPin for throttle (ESC)
+# drivetrain for RC car with a steering servo and ESC.
+# Uses a PwmPin for steering (servo) and a second PwmPin for throttle (ESC)
 # Base PWM Frequence is presumed to be 60hz; use PWM_xxxx_SCALE to adjust pulse with for non-standard PWM frequencies
 #
-PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"
+PWM_STEERING_PIN = "PCA9685.1:40.1"  # PWM output pin for steering servo
 PWM_STEERING_SCALE = 1.0   # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
 PWM_STEERING_INVERTED = False  # True if hardware requires an inverted PWM pulse
-PWM_THROTTLE_PIN = "RPI_GPIO.BOARD.35"
+PWM_THROTTLE_PIN = "PCA9685.1:40.0"  # PWM output pin for ESC
 PWM_THROTTLE_SCALE = 1.0   # used to compensate for PWM frequence differences from 60hz; NOT for increasing/limiting speed
 PWM_THROTTLE_INVERTED = False  # True if hardware requires an inverted PWM pulse
 
 
-#STEERING FOR I2C_SERVO (Deprecated in favor of PWM_STEERING_THROTTLE; will be removed in a future release)
-STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
+#STEERING FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
+STEERING_CHANNEL = 1            #(deprecated) channel on the 9685 pwm board 0-15
 STEERING_LEFT_PWM = 460         #pwm value for full left steering
 STEERING_RIGHT_PWM = 290        #pwm value for full right steering
 
-#STEERING FOR PIGPIO_PWM OUTPUT (Deprecated in favor of PWM_STEERING_THROTTLE; will be removed in a future release)
-STEERING_PWM_PIN = 13           #Pin numbering according to Broadcom numbers
+#STEERING FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
+STEERING_PWM_PIN = 13           #(deprecated) Pin numbering according to Broadcom numbers
 STEERING_PWM_FREQ = 50          #Frequency for PWM
 STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
 
-#THROTTLE FOR I2C_SERVO (Deprecated in favor of PWM_STEERING_THROTTLE; will be removed in a future release)
-THROTTLE_CHANNEL = 0            #channel on the 9685 pwm board 0-15
+#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
+THROTTLE_CHANNEL = 0            #(deprecated) channel on the 9685 pwm board 0-15
 THROTTLE_FORWARD_PWM = 500      #pwm value for max forward throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
 THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
 
-#THROTTLE FOR PIGPIO_PWM OUTPUT (Deprecated in favor of PWM_STEERING_THROTTLE; will be removed in a future release)
-THROTTLE_PWM_PIN = 18           #Pin numbering according to Broadcom numbers
+#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
+THROTTLE_PWM_PIN = 18           #(deprecated) Pin numbering according to Broadcom numbers
 THROTTLE_PWM_FREQ = 50          #Frequency for PWM
 THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 
