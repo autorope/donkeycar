@@ -582,7 +582,10 @@ class PCA9685:
         else:
             # duty cycle is fraction of the 12 bits
             pulse = int(4096 * duty_cycle)
-            self.pwm.set_pwm(channel, 0, pulse)
+            try:
+                self.pwm.set_pwm(channel, 0, pulse)
+            except Exception as e:
+                logger.error(f'Error on PCA9685 channel {channel}: {str(e)}')
 
 
 #
