@@ -50,16 +50,22 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 
 #
 # DRIVE_TRAIN_TYPE
-# These options specify which chasis and motor setup you are using. Most are using I2C_SERVO.
-# PWM_STEERING_THROTTLE uses two PWM output pins to control a steering servo and an ESC, as in a standard RC car.
-# DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-# DC_TWO_WHEEL uses HBridge in two-pin mode to control two drive motors, one on the left, and one on the right.
-# DC_TWO_WHEEL_L298N using HBridge in three-pin mode to control two drive motors, one of the left and one on the right.
-# (deprecated) SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
-#( deprecated) PIGPIO_PWM uses Raspberrys internal PWM
-#( deprecated) I2C_SERVO uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
+# These options specify which chasis and motor setup you are using.
+# Choose one of the following and then update the related configuration section:
 #
-DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"  # PWM_STEERING_THROTTLE|MM1|SERVO_HBRIDGE_PWM|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|PIGPIO_PWM|I2C_SERVO|MOCK
+# "PWM_STEERING_THROTTLE" uses two PWM output pins to control a steering servo and an ESC, as in a standard RC car.
+# "MM1" Robo HAT MM1 board
+# "SERVO_HBRIDGE_2PIN" Servo for steering and HBridge motor driver in 2pin mode for motor
+# "SERVO_HBRIDGE_3PIN" Servo for steering and HBridge motor driver in 3pin mode for motor
+# "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
+# "DC_TWO_WHEEL" uses HBridge in two-pin mode to control two drive motors, one on the left, and one on the right.
+# "DC_TWO_WHEEL_L298N" using HBridge in three-pin mode to control two drive motors, one of the left and one on the right.
+# "MOCK" no drive train.  This can be used to test other features in a test rig.
+# (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+# (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
+# (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
+#
+DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 
 #
 # PWM_STEERING_THROTTLE
