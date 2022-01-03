@@ -51,6 +51,8 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 #
 # DRIVE_TRAIN_TYPE
 # These options specify which chasis and motor setup you are using.
+# See Actuators documentation https://docs.donkeycar.com/parts/actuators/
+# for a detailed explanation of each drive train type and it's configuration.
 # Choose one of the following and then update the related configuration section:
 #
 # "PWM_STEERING_THROTTLE" uses two PWM output pins to control a steering servo and an ESC, as in a standard RC car.
@@ -70,7 +72,7 @@ DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 #
 # PWM_STEERING_THROTTLE
 #
-# drivetrain for RC car with a steering servo and ESC.
+# Drive train for RC car with a steering servo and ESC.
 # Uses a PwmPin for steering (servo) and a second PwmPin for throttle (ESC)
 # Base PWM Frequence is presumed to be 60hz; use PWM_xxxx_SCALE to adjust pulse with for non-standard PWM frequencies
 #
