@@ -49,8 +49,7 @@ setup(name='donkeycar',
           'progress',
           'typing_extensions',
           'pyfiglet',
-          'psutil',
-          'imgaug'
+          'psutil'
       ],
       extras_require={
           'pi': [
@@ -60,6 +59,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'RPi.GPIO',
               'pyserial',
+              'imgaug'
           ],
           'nano': [
               'Adafruit_PCA9685',
@@ -73,7 +73,8 @@ setup(name='donkeycar',
               'kivy',
               'pandas',
               'pyyaml',
-              'plotly'
+              'plotly',
+              'imgaug'
           ],
           'dev': [
               'pytest',
