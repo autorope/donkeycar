@@ -48,49 +48,244 @@ USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_ROTATION = 0 # 0 = text is right-side up, 1 = rotated 90 degrees clockwise, 2 = 180 degrees (flipped), 3 = 270 degrees
 SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 
-#DRIVETRAIN
-#These options specify which chasis and motor setup you are using. Most are using I2C_SERVO.
-#DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-#DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
-#SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
-#PIGPIO_PWM uses Raspberrys internal PWM
-DRIVE_TRAIN_TYPE = "I2C_SERVO" # I2C_SERVO|DC_STEER_THROTTLE|DC_TWO_WHEEL|DC_TWO_WHEEL_L298N|SERVO_HBRIDGE_PWM|PIGPIO_PWM|MM1|MOCK
+#
+# DRIVE_TRAIN_TYPE
+# These options specify which chasis and motor setup you are using.
+# See Actuators documentation https://docs.donkeycar.com/parts/actuators/
+# for a detailed explanation of each drive train type and it's configuration.
+# Choose one of the following and then update the related configuration section:
+#
+# "PWM_STEERING_THROTTLE" uses two PWM output pins to control a steering servo and an ESC, as in a standard RC car.
+# "MM1" Robo HAT MM1 board
+# "SERVO_HBRIDGE_2PIN" Servo for steering and HBridge motor driver in 2pin mode for motor
+# "SERVO_HBRIDGE_3PIN" Servo for steering and HBridge motor driver in 3pin mode for motor
+# "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
+# "DC_TWO_WHEEL" uses HBridge in two-pin mode to control two drive motors, one on the left, and one on the right.
+# "DC_TWO_WHEEL_L298N" using HBridge in three-pin mode to control two drive motors, one of the left and one on the right.
+# "MOCK" no drive train.  This can be used to test other features in a test rig.
+# (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+# (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
+# (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
+#
+DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 
-#STEERING
-STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
+#
+# PWM_STEERING_THROTTLE
+#
+# Drive train for RC car with a steering servo and ESC.
+# Uses a PwmPin for steering (servo) and a second PwmPin for throttle (ESC)
+# Base PWM Frequence is presumed to be 60hz; use PWM_xxxx_SCALE to adjust pulse with for non-standard PWM frequencies
+#
+PWM_STEERING_PIN = "PCA9685.1:40.1"  # PWM output pin for steering servo
+PWM_STEERING_SCALE = 1.0   # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+PWM_STEERING_INVERTED = False  # True if hardware requires an inverted PWM pulse
+PWM_THROTTLE_PIN = "PCA9685.1:40.0"  # PWM output pin for ESC
+PWM_THROTTLE_SCALE = 1.0   # used to compensate for PWM frequence differences from 60hz; NOT for increasing/limiting speed
+PWM_THROTTLE_INVERTED = False  # True if hardware requires an inverted PWM pulse
+
+
+#STEERING FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
+STEERING_CHANNEL = 1            #(deprecated) channel on the 9685 pwm board 0-15
 STEERING_LEFT_PWM = 460         #pwm value for full left steering
 STEERING_RIGHT_PWM = 290        #pwm value for full right steering
 
-#STEERING FOR PIGPIO_PWM OUTPUT
-STEERING_PWM_PIN = 13           #Pin numbering according to Broadcom numbers
+#STEERING FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
+STEERING_PWM_PIN = 13           #(deprecated) Pin numbering according to Broadcom numbers
 STEERING_PWM_FREQ = 50          #Frequency for PWM
 STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
 
-#THROTTLE
-THROTTLE_CHANNEL = 0            #channel on the 9685 pwm board 0-15
+#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
+THROTTLE_CHANNEL = 0            #(deprecated) channel on the 9685 pwm board 0-15
 THROTTLE_FORWARD_PWM = 500      #pwm value for max forward throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
 THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
 
-#THROTTLE FOR PIGPIO_PWM OUTPUT
-THROTTLE_PWM_PIN = 18           #Pin numbering according to Broadcom numbers
+#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
+THROTTLE_PWM_PIN = 18           #(deprecated) Pin numbering according to Broadcom numbers
 THROTTLE_PWM_FREQ = 50          #Frequency for PWM
 THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 
-#DC_STEER_THROTTLE with one motor as steering, one as drive
-#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
-HBRIDGE_PIN_LEFT = 18
-HBRIDGE_PIN_RIGHT = 16
-HBRIDGE_PIN_FWD = 15
-HBRIDGE_PIN_BWD = 13
+#
+# SERVO_HBRIDGE_2PIN
+# - configures a steering servo and an HBridge in 2pin mode (2 pwm pins)
+# - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
+#   and 2 milliseconds (full forward) with 1.5ms being neutral.
+# - the motor is controlled by two pwm pins, 
+#   one for forward and one for backward (reverse). 
+# - the pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and 
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+# Pin specifier string format:
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_2PIN_DUTY_FWD = "RPI_GPIO.BOARD.18"  # provides forward duty cycle to motor
+HBRIDGE_2PIN_DUTY_BWD = "RPI_GPIO.BOARD.16"  # provides reverse duty cycle to motor
+PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"       # provides servo pulse to steering servo
+PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
+STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
-#DC_TWO_WHEEL - with two wheels as drive, left and right.
-#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL
-HBRIDGE_PIN_LEFT_FWD = 18
-HBRIDGE_PIN_LEFT_BWD = 16
-HBRIDGE_PIN_RIGHT_FWD = 15
-HBRIDGE_PIN_RIGHT_BWD = 13
+#
+# SERVO_HBRIDGE_3PIN
+# - configures a steering servo and an HBridge in 3pin mode (2 ttl pins, 1 pwm pin)
+# - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
+#   and 2 milliseconds (full forward) with 1.5ms being neutral.
+# - the motor is controlled by three pins, 
+#   one ttl output for forward, one ttl output 
+#   for backward (reverse) enable and one pwm pin
+#   for motor power.
+# - the pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the forward pin  is HIGH and the
+#   backward pin is LOW,
+# - in backward mode, the forward pin is LOW and the 
+#   backward pin is HIGH.
+# - both forward and backward pins are LOW to 'detach' motor 
+#   and glide to a stop.
+# - both forward and backward pins are HIGH to brake
+#
+# Pin specifier string format:
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_3PIN_FWD = "RPI_GPIO.BOARD.18"   # ttl pin, high enables motor forward 
+HBRIDGE_3PIN_BWD = "RPI_GPIO.BOARD.16"   # ttl pin, highenables motor reverse
+HBRIDGE_3PIN_DUTY = "RPI_GPIO.BOARD.35"  # provides duty cycle to motor
+PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"   # provides servo pulse to steering servo
+PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
+STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
+#
+# DC_STEER_THROTTLE with one motor as steering, one as drive
+# - uses L298N type motor controller in two pin wiring
+#   scheme utilizing two pwm pins per motor; one for 
+#   forward(or right) and one for reverse (or left)
+# 
+# GPIO pin configuration for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_PIN_LEFT = "RPI_GPIO.BOARD.18"   # pwm pin produces duty cycle for steering left
+HBRIDGE_PIN_RIGHT = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for steering right
+HBRIDGE_PIN_FWD = "RPI_GPIO.BOARD.15"    # pwm pin produces duty cycle for forward drive
+HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"    # pwm pin produces duty cycle for reverse drive
+
+#
+# DC_TWO_WHEEL pin configuration
+# - configures L298N_HBridge_2pin driver
+# - two wheels as differential drive, left and right.
+# - each wheel is controlled by two pwm pins, 
+#   one for forward and one for backward (reverse). 
+# - each pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and 
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+# Pin specifier string format:
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_PIN_LEFT_FWD = "RPI_GPIO.BOARD.18"  # pwm pin produces duty cycle for left wheel forward 
+HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for left wheel reverse
+HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # pwm pin produces duty cycle for right wheel forward
+HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # pwm pin produces duty cycle for right wheel reverse
+
+
+#
+# DC_TWO_WHEEL_L298N pin configuration
+# - configures L298N_HBridge_3pin driver
+# - two wheels as differential drive, left and right.
+# - each wheel is controlled by three pins, 
+#   one ttl output for forward, one ttl output 
+#   for backward (reverse) enable and one pwm pin
+#   for motor power.
+# - the pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the forward pin  is HIGH and the
+#   backward pin is LOW,
+# - in backward mode, the forward pin is LOW and the 
+#   backward pin is HIGH.
+# - both forward and backward pins are LOW to 'detach' motor 
+#   and glide to a stop.
+# - both forward and backward pins are HIGH to brake
+#
+# GPIO pin configuration for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+HBRIDGE_L298N_PIN_LEFT_FWD = "RPI_GPIO.BOARD.16"  # TTL output pin enables left wheel forward
+HBRIDGE_L298N_PIN_LEFT_BWD = "RPI_GPIO.BOARD.18"  # TTL output pin enables left wheel reverse
+HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"   # PWM pin generates duty cycle for left motor speed
+
+HBRIDGE_L298N_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # TTL output pin enables right wheel forward
+HBRIDGE_L298N_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # TTL output pin enables right wheel reverse
+HBRIDGE_L298N_PIN_RIGHT_EN = "RPI_GPIO.BOARD.11"  # PWM pin generates duty cycle for right wheel speed
 
 #ODOMETRY
 HAVE_ODOM = False                   # Do you have an odometer/encoder 
@@ -104,16 +299,6 @@ USE_LIDAR = False
 LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
-
-#DC_TWO_WHEEL_L298N - with two wheels as drive, left and right.
-#these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL_L298N
-HBRIDGE_L298N_PIN_LEFT_FWD = 16
-HBRIDGE_L298N_PIN_LEFT_BWD = 18
-HBRIDGE_L298N_PIN_LEFT_EN = 22
-
-HBRIDGE_L298N_PIN_RIGHT_FWD = 15
-HBRIDGE_L298N_PIN_RIGHT_BWD = 13
-HBRIDGE_L298N_PIN_RIGHT_EN = 11
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)

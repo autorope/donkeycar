@@ -246,7 +246,8 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
 
         if 'config' in data:
             config = data['config']
-            if self.application.drive_train_type == "I2C_SERVO":
+            if self.application.drive_train_type == "PWM_STEERING_THROTTLE" \
+                or self.application.drive_train_type == "I2C_SERVO":
                 if 'STEERING_LEFT_PWM' in config:
                     self.application.drive_train['steering'].left_pulse = config['STEERING_LEFT_PWM']
 

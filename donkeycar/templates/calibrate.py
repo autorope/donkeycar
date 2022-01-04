@@ -20,6 +20,7 @@ import donkeycar as dk
 from donkeycar.parts.controller import LocalWebController, \
     JoystickController, WebFpv
 from donkeycar.parts.throttle_filter import ThrottleFilter
+from donkeycar.parts import pins
 from donkeycar.utils import *
 
 from socket import gethostname
@@ -53,6 +54,37 @@ def drive(cfg ):
     #Drive train setup
     if cfg.DONKEY_GYM or cfg.DRIVE_TRAIN_TYPE == "MOCK":
         pass
+
+    elif cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":
+        #
+        # drivetrain for RC car with servo and ESC.
+        # using a PwmPin for steering (servo)
+        # and as second PwmPin for throttle (ESC)
+        #
+        from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PulseController
+        steering_controller = PulseController(
+            pwm_pin=pins.pwm_pin_by_id(cfg.PWM_STEERING_PIN),
+            pwm_scale=cfg.PWM_STEERING_SCALE, 
+            pwm_inverted=cfg.PWM_STEERING_INVERTED)
+        steering = PWMSteering(controller=steering_controller,
+                                        left_pulse=cfg.STEERING_LEFT_PWM, 
+                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+        
+        throttle_controller = PulseController(
+            pwm_pin=pins.pwm_pin_by_id(cfg.PWM_THROTTLE_PIN), 
+            pwm_scale=cfg.PWM_THROTTLE_SCALE, 
+            pwm_inverted=cfg.PWM_THROTTLE_INVERTED)
+        throttle = PWMThrottle(controller=throttle_controller,
+                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+
+        drive_train = dict()
+        drive_train['steering'] = steering
+        drive_train['throttle'] = throttle
+
+        V.add(steering, inputs=['angle'], threaded=True)
+        V.add(throttle, inputs=['throttle'], threaded=True)
 
     elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
 

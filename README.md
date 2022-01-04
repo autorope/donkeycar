@@ -21,7 +21,7 @@ community contributions.
 * Compete in self driving races like [DIY Robocars](http://diyrobocars.com)
 * Experiment with autopilots, mapping computer vision and neural networks.
 * Log sensor data. (images, user inputs, sensor readings)
-* Drive your car via a web or game controller.
+* Drive your car via a web or game controller or RC controller.
 * Leverage community contributed driving data.
 * Use existing CAD models for design upgrades.
 
