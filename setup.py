@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="4.3.3",
+      version="4.3.4",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
