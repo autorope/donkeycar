@@ -155,9 +155,23 @@ class LocalWebController(tornado.web.Application):
                 print(e)
                 pass
 
-    def run_threaded(self, img_arr=None, num_records=0):
+    def run_threaded(self, img_arr=None, num_records=0, mode=None, recording=None):
+        """
+        :param img_arr: current camera image or None
+        :param num_records: current number of data records
+        :param mode: default user/mode
+        :param recording: default recording mode
+        """
         self.img_arr = img_arr
         self.num_records = num_records
+
+        #
+        # enforce defaults if they are not none.
+        #
+        if mode is not None:
+            self.mode = mode
+        if recording is not None:
+            self.recording = recording
 
         # Send record count to websocket clients
         if (self.num_records is not None and self.recording is True):
@@ -167,9 +181,8 @@ class LocalWebController(tornado.web.Application):
 
         return self.angle, self.throttle, self.mode, self.recording
 
-    def run(self, img_arr=None):
-        self.img_arr = img_arr
-        return self.angle, self.throttle, self.mode, self.recording
+    def run(self, img_arr=None, num_records=0, mode=None, recording=None):
+        return self.run_threaded(img_arr, num_records, mode, recording)
 
     def shutdown(self):
         pass
