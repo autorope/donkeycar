@@ -10,6 +10,7 @@ The client and web server needed to control a car remotely.
 
 import os
 import json
+import logging
 import time
 import asyncio
 
@@ -23,6 +24,8 @@ import tornado.websocket
 from socket import gethostname
 
 from ... import utils
+
+logger = logging.getLogger(__name__)
 
 
 class RemoteWebServer():
@@ -143,17 +146,16 @@ class LocalWebController(tornado.web.Application):
         self.loop = IOLoop.instance()
         self.loop.start()
 
-    def update_wsclients(self):
-        for wsclient in self.wsclients:
-            try:
-                data = {
-                    'num_records': self.num_records
-                }
-                data_str = json.dumps(data)
-                wsclient.write_message(data_str)
-            except Exception as e:
-                print(e)
-                pass
+    def update_wsclients(self, data):
+        if data:
+            for wsclient in self.wsclients:
+                try:
+                    data_str = json.dumps(data)
+                    logger.debug(f"Updating web client: {data_str}")
+                    wsclient.write_message(data_str)
+                except Exception as e:
+                    print(e)
+                    pass
 
     def run_threaded(self, img_arr=None, num_records=0, mode=None, recording=None):
         """
@@ -168,16 +170,20 @@ class LocalWebController(tornado.web.Application):
         #
         # enforce defaults if they are not none.
         #
-        if mode is not None:
+        changes = {}
+        if mode is not None and self.mode != mode:
             self.mode = mode
-        if recording is not None:
+            changes["driveMode"] = mode
+        if recording is not None and self.recording != recording:
             self.recording = recording
+            changes["recording"] = recording
 
         # Send record count to websocket clients
         if (self.num_records is not None and self.recording is True):
             if self.num_records % 10 == 0:
+                changes['num_records'] = self.num_records
                 if self.loop is not None:
-                    self.loop.add_callback(self.update_wsclients)
+                    self.loop.add_callback(lambda: self.update_wsclients(changes))
 
         return self.angle, self.throttle, self.mode, self.recording
 

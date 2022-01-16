@@ -38,10 +38,6 @@ var driveHandler = new function() {
       driveURL = '/drive'
       socket = new WebSocket('ws://' + location.host + '/wsDrive');
       
-      socket.onmessage = function (event) {
-          console.log(event.data);
-      };
-
       setBindings()
 
       joystick_options = {
@@ -69,9 +65,50 @@ var driveHandler = new function() {
       }
     };
 
+    //
+    // Update a state object with the given data.
+    // This will only update existing fields in 
+    // the state; it will not add new fields that
+    // may exist in the data but not the state.
+    //
+    var updateState = function(state, data) {
+        let changed = false;
+        if(typeof data === 'object') {
+            const keys = Object.keys(data)
+            keys.forEach((key) => {
+                //
+                // state must already have the key;
+                // we are not adding new fields to the state,
+                // we are only updating existing fields.
+                //
+                if(state.hasOwnProperty(key) && state[key] !== data[key]) {
+                    if(typeof state[key] === 'object') {
+                        // recursively update the state's object field
+                        changed = updateState(state[key], data[key]) && changed;
+                    } else {
+                        state[key] = data[key];
+                        changed = true;
+                    }
+                }
+            });
+        }
+        return changed;
+    }
 
     var setBindings = function() {
-
+      //
+      // when server sends a message with state changes
+      // then update our local state and if there
+      // were any changes then redrawn the UI.
+      //
+      socket.onmessage = function (event) {
+        console.log(event.data);
+        const data = JSON.parse(event.data);
+        if(updateState(state, data)) {
+            updateUI();
+        }
+      };
+  
       $(document).keydown(function(e) {
           if(e.which == 32) { toggleBrake() }  // 'space'  brake
           if(e.which == 82) { toggleRecording() }  // 'r'  toggle recording
