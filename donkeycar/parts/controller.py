@@ -844,6 +844,7 @@ class JoystickController(object):
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = 'user'
+        self.mode_latch = None
         self.poll_delay = poll_delay
         self.running = True
         self.last_throttle_axis_val = 0
@@ -1089,6 +1090,7 @@ class JoystickController(object):
             self.mode = 'local'
         else:
             self.mode = 'user'
+        self.mode_latch = self.mode
         print('new mode:', self.mode)
 
 
@@ -1117,6 +1119,9 @@ class JoystickController(object):
         #
         if mode is not None:
             self.mode = mode
+        if self.mode_latch is not None:
+            self.mode = self.mode_latch
+            self.mode_latch = None
         if recording is not None:
             self.recording = recording
 
