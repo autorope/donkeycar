@@ -75,7 +75,7 @@ var driveHandler = new function() {
         let changed = false;
         if(typeof data === 'object') {
             const keys = Object.keys(data)
-            keys.forEach((key) => {
+            keys.forEach(key => {
                 //
                 // state must already have the key;
                 // we are not adding new fields to the state,
