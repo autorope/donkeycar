@@ -116,9 +116,9 @@ var driveHandler = new function() {
           if(e.which == 75) { throttleDown() } // 'k'  slow down
           if(e.which == 74) { angleLeft() } // 'j' turn left
           if(e.which == 76) { angleRight() } // 'l' turn right
-          if(e.which == 65) { updateDriveMode('auto') } // 'a' turn on auto mode
+          if(e.which == 65) { updateDriveMode('local') } // 'a' turn on local mode
           if(e.which == 68) { updateDriveMode('user') } // 'd' turn on manual mode
-          if(e.which == 83) { updateDriveMode('auto_angle') } // 'a' turn on auto mode
+          if(e.which == 83) { updateDriveMode('local_angle') } // 'a' turn on local mode
       });
 
       $('#mode_select').on('change', function () {

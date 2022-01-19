@@ -1147,9 +1147,8 @@ class JoystickController(object):
         return self.angle, self.throttle, self.mode, self.recording
 
 
-    def run(self, img_arr=None):
-        raise Exception("We expect for this part to be run with the threaded=True argument.")
-        return None, None, None, None
+    def run(self, img_arr=None, mode=None, recording=None):
+        return self.run_threaded(img_arr, mode, recording)
 
 
     def shutdown(self):

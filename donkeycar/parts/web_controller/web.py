@@ -183,10 +183,10 @@ class LocalWebController(tornado.web.Application):
             if self.num_records % 10 == 0:
                 changes['num_records'] = self.num_records
         
-        logger.info(str(changes))
 
         # if there were changes, then send to web client
         if changes and self.loop is not None:
+            logger.info(str(changes))
             self.loop.add_callback(lambda: self.update_wsclients(changes))
 
         return self.angle, self.throttle, self.mode, self.recording
