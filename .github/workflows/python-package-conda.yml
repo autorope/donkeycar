@@ -2,13 +2,11 @@ name: Python package and test
 
 on:
   push:
-    paths-ignore:
-      - 'docs/**'
   pull_request:
 
 jobs:
   checkout-test:
-    name: set up python 3.7
+    name: Checkout and test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -22,17 +20,24 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create python 3.7 conda env
+        uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.7
+          mamba-version: "*"
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
           auto-activate-base: false
-          channels: conda-forge, pytorch
-      - run: |
+          channels: default, conda-forge, pytorch
+          channel-priority: true
+      - name: Conda info and list
+        run: |
+          echo Environment file ${{matrix.ENV_FILE}}
           conda info
           conda list
-          echo Environment file ${{matrix.ENV_FILE}}
-          pip install -e .[pc]
-          pytest
+      - name: Install donkey
+        run: pip install -e .[pc]
+      - name: Run tests
+        run: pytest
