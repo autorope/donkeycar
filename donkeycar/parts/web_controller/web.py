@@ -41,6 +41,7 @@ class RemoteWebServer():
         self.angle = 0.
         self.throttle = 0.
         self.mode = 'user'
+        self.mode_latch = None
         self.recording = False
         # use one session for all requests
         self.session = requests.Session()
@@ -113,7 +114,9 @@ class LocalWebController(tornado.web.Application):
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = mode
+        self.mode_latch = None
         self.recording = False
+        self.recording_latch = None
         self.port = port
 
         self.num_records = 0
@@ -173,16 +176,23 @@ class LocalWebController(tornado.web.Application):
         changes = {}
         if mode is not None and self.mode != mode:
             self.mode = mode
-            changes["driveMode"] = mode
+            changes["driveMode"] = self.mode
+        if self.mode_latch is not None:
+            self.mode = self.mode_latch
+            self.mode_latch = None
+            changes["driveMode"] = self.mode
         if recording is not None and self.recording != recording:
             self.recording = recording
-            changes["recording"] = recording
+            changes["recording"] = self.recording
+        if self.recording_latch is not None:
+            self.recording = self.recording_latch;
+            self.recording_latch = None;
+            changes["recording"] = self.recording;
 
         # Send record count to websocket clients
         if (self.num_records is not None and self.recording is True):
             if self.num_records % 10 == 0:
                 changes['num_records'] = self.num_records
-        
 
         # if there were changes, then send to web client
         if changes and self.loop is not None:
@@ -210,6 +220,7 @@ class DriveAPI(RequestHandler):
         and throttle of the vehicle on a the index webpage
         '''
         data = tornado.escape.json_decode(self.request.body)
+
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
@@ -239,10 +250,12 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         data = json.loads(message)
 
-        self.application.angle = data['angle']
-        self.application.throttle = data['throttle']
-        self.application.mode = data['drive_mode']
-        self.application.recording = data['recording']
+        self.application.angle = data.get('angle', self.application.angle)
+        self.application.throttle = data.get('throttle', self.application.throttle)
+        if data.get('drive_mode') is not None:
+            self.application.mode = data['drive_mode']
+            self.application.mode_latch = self.application.mode
+        self.application.recording = data.get('recording', self.application.recording)
 
     def on_close(self):
         # print("Client disconnected")

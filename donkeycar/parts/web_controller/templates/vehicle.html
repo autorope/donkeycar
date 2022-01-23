@@ -10,7 +10,7 @@
         <div class="form-inline">
           <div class="form-group">
             <label class="group-label">
-              Control Mode
+              Control Mode Help
               <a data-toggle="modal" class="btn btn-primary btn-xs" data-target="#aboutControlModes">
                 <span class="glyphicon glyphicon-info-sign"></span>
               </a>
@@ -85,18 +85,18 @@
         </div>
 
         <form>
-          <label>Mode &amp; Pilot</label>
+          <label>Pilot Mode [m]</label>
           <div class="form-group">
             <select id="mode_select" class="form-control">
-              <option disabled selected> Select Mode </option>
-              <option value="user">User (d)</option>
-              <option value="local">Local Pilot (d)</option>
-              <option value="local_angle">Local Angle (d)</option>
+              <option disabled selected> Select Mode [m]</option>
+              <option value="user">User [u]</option>
+              <option value="local">Full Auto [a]</option>
+              <option value="local_angle">Auto Steering [s]</option>
             </select>
           </div>
           <div class="form-group">
             <button type="button" id="record_button" class="btn btn-info btn-block">
-              Start Recording (r)
+              Start Recording [r]
             </button>
           </div>
         </form>
@@ -155,8 +155,19 @@
           </p>
           <p>
             <strong>Device tilt</strong> control is enabled for devices with <a href="https://developer.mozilla.org/en-US/docs/Web/API/Detecting_device_orientation">device orientation sensors</a>, and should work with most modern smartphones. Hold your device in landscape mode, tilt  forward/backward for throttle and left/right for steering.
-          </p> 
-          
+          </p>
+          <p>
+            <strong>Pilot Mode</strong> can be toggled or chosen using the keyboard.
+            <ul>
+              <li>Toggle Pilot <b>M</b>ode: <code>M</code></li> 
+              <li><b>U</b>ser Mode: <code>U</code></li> 
+              <li>Auto <b>S</b>teering  Mode: <code>S</code></li> 
+              <li>Full <b>A</b>uto Mode: <code>A</code></li> 
+            </ul>
+          </p>
+          <p>
+            <strong>Recording</strong> can be toggled using the keyboard.
+            <ul><li>Toggle <b>R</b>ecording: <code>R</code></li></ul>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>

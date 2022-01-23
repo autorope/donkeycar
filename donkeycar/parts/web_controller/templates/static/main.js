@@ -37,7 +37,7 @@ var driveHandler = new function() {
     this.load = function() {
       driveURL = '/drive'
       socket = new WebSocket('ws://' + location.host + '/wsDrive');
-      
+
       setBindings()
 
       joystick_options = {
@@ -48,7 +48,7 @@ var driveHandler = new function() {
 
       var manager = nipplejs.create(joystick_options);
       bindNipple(manager)
-      
+
       if(!!navigator.getGamepads){
         console.log("Device has gamepad support.")
         hasGamepad = true;
@@ -98,8 +98,8 @@ var driveHandler = new function() {
     var setBindings = function() {
       //
       // when server sends a message with state changes
-      // then update our local state and if there
-      // were any changes then redrawn the UI.
+      // then update our local state and 
+      // if there were any changes then redraw the UI.
       //
       socket.onmessage = function (event) {
         console.log(event.data);
@@ -108,7 +108,7 @@ var driveHandler = new function() {
             updateUI();
         }
       };
-  
+
       $(document).keydown(function(e) {
           if(e.which == 32) { toggleBrake() }  // 'space'  brake
           if(e.which == 82) { toggleRecording() }  // 'r'  toggle recording
@@ -116,9 +116,10 @@ var driveHandler = new function() {
           if(e.which == 75) { throttleDown() } // 'k'  slow down
           if(e.which == 74) { angleLeft() } // 'j' turn left
           if(e.which == 76) { angleRight() } // 'l' turn right
-          if(e.which == 65) { updateDriveMode('local') } // 'a' turn on local mode
-          if(e.which == 68) { updateDriveMode('user') } // 'd' turn on manual mode
-          if(e.which == 83) { updateDriveMode('local_angle') } // 'a' turn on local mode
+          if(e.which == 65) { updateDriveMode('local') } // 'a' turn on local mode (full _A_uto)
+          if(e.which == 85) { updateDriveMode('user') } // 'u' turn on manual mode (_U_user)
+          if(e.which == 83) { updateDriveMode('local_angle') } // 's' turn on local mode (auto _S_teering)
+          if(e.which == 77) { toggleDriveMode() } // 'm' toggle drive mode (_M_ode)
       });
 
       $('#mode_select').on('change', function () {
@@ -287,17 +288,33 @@ var driveHandler = new function() {
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
-    var postDrive = function() {
+    const ALL_POST_FIELDS = ['angle', 'throttle', 'drive_mode', 'recording'];
 
-        //Send angle and throttle values
-        data = JSON.stringify({ 'angle': state.tele.user.angle,
-                                'throttle':state.tele.user.throttle,
-                                'drive_mode':state.driveMode,
-                                'recording': state.recording})
-        console.log(data)
-        // $.post(driveURL, data)
-        socket.send(data)
-        updateUI()
+    //
+    // Set any changed properties to the server
+    // via the websocket connection
+    //
+    var postDrive = function(fields=[]) {
+
+        if(fields.length === 0) {
+            fields = ALL_POST_FIELDS;
+        }
+
+        let data = {}
+        fields.forEach(field => {
+            switch (field) {
+                case 'angle': data['angle'] = state.tele.user.angle; break;
+                case 'throttle': data['throttle'] = state.tele.user.throttle; break;
+                case 'drive_mode': data['drive_mode'] = state.driveMode; break;
+                case 'recording': data['recording'] = state.recording; break;
+                default: console.log(`Unexpected post field: '${field}'`); break;
+            }
+        });
+        if(data) {
+            console.log(`Posting ${data}`);
+            socket.send(JSON.stringify(data))
+            updateUI()
+        }
     };
 
     var applyDeadzone = function(number, threshold){
@@ -442,18 +459,34 @@ var driveHandler = new function() {
 
     var updateDriveMode = function(mode){
       state.driveMode = mode;
-      postDrive()
+      postDrive(["drive_mode"])
     };
+
+    var toggleDriveMode = function() {
+      switch(state.driveMode) {
+        case "user": {
+            updateDriveMode("local_angle");
+            break;
+        }
+        case "local_angle": {
+            updateDriveMode("local");
+            break;
+        }
+        default: {
+            updateDriveMode("user");
+            break;
+        }
+      }
+    }
 
     var toggleRecording = function(){
       state.recording = !state.recording
-      postDrive()
+      postDrive(['recording']);
     };
 
     var toggleBrake = function(){
       state.brakeOn = !state.brakeOn;
       initialGamma = null;
-      
 
       if (state.brakeOn) {
         brake();
@@ -467,7 +500,6 @@ var driveHandler = new function() {
           state.recording = false
           state.driveMode = 'user';
           postDrive()
-
 
       i++
       if (i < 5) {
