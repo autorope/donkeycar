@@ -33,7 +33,6 @@ from tensorflow.python.ops.linalg_ops import norm
 
 
 import donkeycar as dk
-from donkeycar.parts import actuator, pins
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
