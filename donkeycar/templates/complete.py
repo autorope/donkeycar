@@ -101,6 +101,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     add_odometry(V, cfg)
 
+
     #
     # setup primary camera
     #
@@ -946,7 +947,8 @@ def add_odometry(V, cfg):
                     debug=cfg.ODOM_DEBUG)
                 V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
                 V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
-                V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE, inputs=["steering"], outputs=["steering_angle"]))
+                V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE),
+                      inputs=["steering"], outputs=["steering_angle"])
                 V.add(
                     Bicycle(cfg.WHEEL_BASE, cfg.MAX_STEERING_ANGLE),
                     inputs=["enc/distance", "steering_angle", "enc/timestamp"],
@@ -1015,6 +1017,7 @@ def add_speed_control(V, cfg, is_differential_drive):
 # Drive train setup
 #
 def add_drivetrain(V, cfg):
+    from donkeycar.parts import actuator, pins;
 
     if (not cfg.DONKEY_GYM) and cfg.DRIVE_TRAIN_TYPE != "MOCK":
         if cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":

@@ -1,10 +1,13 @@
+import logging
 import math
 import time
 from typing import Tuple
 from tensorflow.python.ops.linalg_ops import norm
 
 from tornado.web import _xsrf_form_html
-from donkeycar.utils import compare_to, sign
+from donkeycar.utils import compare_to, sign, is_number_type, clamp
+
+logger = logging.getLogger(__name__)
 
 
 def limit_angle(angle:float):
@@ -487,8 +490,12 @@ class UnnormalizeSteeringAngle:
         self.steering_zero = steering_zero
     
     def run(self, steering) -> float:
+        if not is_number_type(steering):
+            raise ValueError("steering must be a number")
         if steering > 1 or steering < -1:
-            raise ValueError( "steering must be between 1(right) and -1(left)")
+            logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
+
+        steering = clamp(steering, -1, 1)
         
         s = sign(steering)
         steering = abs(steering)
@@ -519,8 +526,17 @@ def differential_steering(throttle:float, steering:float, steering_zero:float=0.
         @Param throttle:float throttle or real speed; reverse < 0, 0 is stopped, forward > 0
         @Param steering_zero:float values abs(steering) <= steering_zero are considered zero.
         """
+        if not is_number_type(throttle):
+            raise ValueError("throttle must be a number")
+        if throttle > 1 or throttle < -1:
+            logger.warn(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
+        throttle = clamp(throttle, -1, 1)
+
+        if not is_number_type(steering):
+            raise ValueError("steering must be a number")
         if steering > 1 or steering < -1:
-            raise ValueError( "steering must be between 1(right) and -1(left)")
+            logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
+        steering = clamp(steering, -1, 1)
 
         #
         # if going straight, just return given speed
@@ -561,8 +577,19 @@ class TwoWheelSteeringThrottle:
         self.steering_zero = steering_zero
 
     def run(self, throttle, steering):
+        if not is_number_type(throttle):
+            logger.warn("throttle must be a number")
+            return 0, 0
         if throttle > 1 or throttle < -1:
-            raise ValueError( "throttle must be between 1(forward) and -1(reverse)")
+            logger.warn(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
+        throttle = clamp(throttle, -1, 1)
+
+        if not is_number_type(steering):
+            logger.warn("steering must be a number")
+            return 0, 0
+        if steering > 1 or steering < -1:
+            logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
+        steering = clamp(steering, -1, 1)
 
         return differential_steering(throttle, steering, self.steering_zero)
  
