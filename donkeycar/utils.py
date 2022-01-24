@@ -372,6 +372,10 @@ def throttle(input_value):
 OTHER
 '''
 
+def is_number_type(i):
+    return type(i) == int or type(i) == float;
+
+
 def sign(x):
     if x > 0:
         return 1
