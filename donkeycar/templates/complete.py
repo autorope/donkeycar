@@ -1090,12 +1090,6 @@ def add_drivetrain(V, cfg):
                 pins.pwm_pin_by_id(dt['RIGHT_FWD_DUTY_PIN']),
                 pins.pwm_pin_by_id(dt['RIGHT_BWD_DUTY_PIN']))
 
-            two_wheel_control = actuator.TwoWheelSteeringThrottle()
-
-            V.add(two_wheel_control,
-                    inputs=['throttle', 'angle'],
-                    outputs=['left_motor_speed', 'right_motor_speed'])
-
             V.add(left_motor, inputs=['left_motor_speed'])
             V.add(right_motor, inputs=['right_motor_speed'])
 
@@ -1109,12 +1103,6 @@ def add_drivetrain(V, cfg):
                 pins.output_pin_by_id(dt['RIGHT_FWD_PIN']),
                 pins.output_pin_by_id(dt['RIGHT_BWD_PIN']),
                 pins.pwm_pin_by_id(dt['RIGHT_EN_DUTY_PIN']))
-
-            two_wheel_control = actuator.TwoWheelSteeringThrottle()
-
-            V.add(two_wheel_control,
-                    inputs=['throttle', 'angle'],
-                    outputs=['left_motor_speed', 'right_motor_speed'])
 
             V.add(left_motor, inputs=['left_motor_speed'])
             V.add(right_motor, inputs=['right_motor_speed'])
