@@ -20,6 +20,7 @@ from donkeycar.utils import normalize_image, linear_bin
 from donkeycar.pipeline.types import TubRecord, TubDataset
 from donkeycar.pipeline.sequence import TubSequence
 from donkeycar.parts.interpreter import FastAIInterpreter, Interpreter, KerasInterpreter
+from donkeycar.parts.pytorch.torch_data import TorchTubDataset, get_default_transform
 
 from fastai.vision.all import *
 from fastai.data.transforms import *
@@ -34,87 +35,6 @@ ONE_BYTE_SCALE = 1.0 / 255.0
 XY = Union[float, np.ndarray, Tuple[Union[float, np.ndarray], ...]]
 
 logger = getLogger(__name__)
-#TODO change this to use fastai Transforms
-def get_default_transform():
-    """
-    Creates a default transform to work with torchvision models
-    We use this to transform it to match imagenet mean and std
-
-    Video transform:
-    All pre-trained models expect input images normalized in the same way,
-    i.e. mini-batches of 3-channel RGB videos of shape (3 x T x H x W),
-    where H and W are expected to be 112, and T is a number of video frames
-    in a clip. The images have to be loaded in to a range of [0, 1] and
-    then normalized using mean = [0.43216, 0.394666, 0.37645] and
-    std = [0.22803, 0.22145, 0.216989].
-    """
-
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
-    input_size = (224, 224)
-
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
-    ])
-
-    return transform
-
-class FastaAiTorchTubDataset(IterableDataset):
-    '''
-    Loads the dataset, and creates a train/test split.
-    '''
-
-    def __init__(self, config, records: List[TubRecord], transform=None):
-        """Create a FastaAi Tub Dataset
-
-        Args:
-            config (object): the configuration information
-            records (List[TubRecord]): a list of tub records
-            transform (function, optional): a transform to apply to the data
-        """
-        self.config = config
-
-        # Handle the transforms
-        if transform:
-            self.transform = transform
-        else:
-            self.transform = get_default_transform()
-
-        self.sequence = TubSequence(records)
-        self.pipeline = self._create_pipeline()
-        self.len = len(records)
-
-    def _create_pipeline(self):
-        """ This can be overridden if more complicated pipelines are
-            required """
-
-        def y_transform(record: TubRecord):
-            angle: float = record.underlying['user/angle']
-            throttle: float = record.underlying['user/throttle']
-            predictions = torch.tensor([angle, throttle], dtype=torch.float)
-
-            # Normalize to be between [0, 1]
-            # angle and throttle are originally between [-1, 1]
-            predictions = (predictions + 1) / 2
-            return predictions
-
-        def x_transform(record: TubRecord):
-            # Loads the result of Image.open()
-            img_arr = record.image(cached=True, as_nparray=False)
-            return self.transform(img_arr)
-
-        # Build pipeline using the transformations
-        pipeline = self.sequence.build_pipeline(x_transform=x_transform,
-                                                y_transform=y_transform)
-        return pipeline
-
-    def __len__(self):
-        return len(self.sequence)
-
-    def __iter__(self):
-        return iter(self.pipeline)
-
 
 class FastAiPilot(ABC):
     """
@@ -134,8 +54,6 @@ class FastAiPilot(ABC):
         logger.info(f'Created {self} with interpreter: {interpreter}')
 
     def load(self, model_path):
-
-
         logger.info(f'Loading model {model_path}')
         self.interpreter.load(model_path)
 
@@ -182,7 +100,7 @@ class FastAiPilot(ABC):
                             state vector in the Behavioural model
         :return:            tuple of (angle, throttle)
         """
-        transform = get_default_transform()
+        transform = get_default_transform(resize=False)
         norm_arr = transform(img_arr)
         tensor_other_array = torch.FloatTensor(other_arr) if other_arr else None
         return self.inference(norm_arr, tensor_other_array)
@@ -222,10 +140,10 @@ class FastAiPilot(ABC):
 
     def train(self,
               model_path: str,
-              train_data: FastaAiTorchTubDataset,
+              train_data: TorchTubDataset,
               train_steps: int,
               batch_size: int,
-              validation_data: FastaAiTorchTubDataset,
+              validation_data: TorchTubDataset,
               validation_steps: int,
               epochs: int,
               verbose: int = 1,

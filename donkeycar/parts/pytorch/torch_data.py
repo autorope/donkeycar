@@ -10,7 +10,7 @@ from donkeycar.pipeline.sequence import TubSequence
 import pytorch_lightning as pl
 
 
-def get_default_transform(for_video=False, for_inference=False):
+def get_default_transform(for_video=False, for_inference=False, resize=True):
     """
     Creates a default transform to work with torchvision models
 
@@ -32,13 +32,15 @@ def get_default_transform(for_video=False, for_inference=False):
         std = [0.22803, 0.22145, 0.216989]
         input_size = (112, 112)
 
-    transform = transforms.Compose([
-        transforms.Resize(input_size),
+    transform_items = [
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
-    ])
+    ]
 
-    return transform
+    if resize:
+        transform_items.insert(0, transforms.Resize(input_size))
+
+    return transforms.Compose(transform_items)
 
 
 class TorchTubDataset(IterableDataset):
@@ -64,6 +66,7 @@ class TorchTubDataset(IterableDataset):
 
         self.sequence = TubSequence(records)
         self.pipeline = self._create_pipeline()
+        self.len = len(records)
 
     def _create_pipeline(self):
         """ This can be overridden if more complicated pipelines are
@@ -87,12 +90,13 @@ class TorchTubDataset(IterableDataset):
         # Build pipeline using the transformations
         pipeline = self.sequence.build_pipeline(x_transform=x_transform,
                                                 y_transform=y_transform)
-
         return pipeline
+
+    def __len__(self):
+        return len(self.sequence)
 
     def __iter__(self):
         return iter(self.pipeline)
-
 
 class TorchTubDataModule(pl.LightningDataModule):
 
