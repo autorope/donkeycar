@@ -4,6 +4,7 @@ channels:
   - defaults
   - conda-forge
   - pytorch
+  - fastai
 
 dependencies:
   - python=3.7
@@ -34,6 +35,7 @@ dependencies:
   - kivy=2.0.0
   - plotly
   - pyyaml
+  - fastai
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git

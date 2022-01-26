@@ -81,6 +81,14 @@ class BatchSequence(object):
             output_shapes=self.model.output_shapes())
         return dataset.repeat().batch(self.batch_size)
 
+    def create_tf_data(self) -> tf.data.Dataset:
+        """ Assembles the tf data pipeline """
+        dataset = tf.data.Dataset.from_generator(
+            generator=lambda: self.pipeline,
+            output_types=self.model.output_types(),
+            output_shapes=self.model.output_shapes())
+        return dataset.repeat().batch(self.batch_size)        
+
 
 def get_model_train_details(database: PilotDatabase, model: str = None) \
         -> Tuple[str, int]:
@@ -108,7 +116,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     if transfer:
         kl.load(transfer)
     if cfg.PRINT_MODEL_SUMMARY:
-        print(kl.interpreter.model.summary())
+        print(kl.interpreter.summary())
 
     tubs = tub_paths.split(',')
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
@@ -121,13 +129,22 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     print(f'Records # Validation {len(validation_records)}')
 
     # We need augmentation in validation when using crop / trapeze
-    training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
-    validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
-    tune = tf.data.experimental.AUTOTUNE
-    dataset_train = training_pipe.create_tf_data().prefetch(tune)
-    dataset_validate = validation_pipe.create_tf_data().prefetch(tune)
-    train_size = len(training_pipe)
-    val_size = len(validation_pipe)
+
+    if 'fastai_' in model_type:
+        from donkeycar.parts.fastai import FastaAiTorchTubDataset
+        dataset_train = FastaAiTorchTubDataset(cfg, training_records)
+        dataset_validate = FastaAiTorchTubDataset(cfg, validation_records)
+        train_size = len(training_records)
+        val_size = len(validation_records)
+    else:
+        training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
+        validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
+        tune = tf.data.experimental.AUTOTUNE
+        dataset_train = training_pipe.create_tf_data().prefetch(tune)
+        dataset_validate = validation_pipe.create_tf_data().prefetch(tune)
+
+        train_size = len(training_pipe)
+        val_size = len(validation_pipe)
 
     assert val_size > 0, "Not enough validation data, decrease the batch " \
                          "size or add more data."
@@ -162,7 +179,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         'Type': str(kl),
         'Tubs': tub_paths,
         'Time': time(),
-        'History': history.history,
+        'History': history,
         'Transfer': os.path.basename(transfer) if transfer else None,
         'Comment': comment,
         'Config': str(cfg)
