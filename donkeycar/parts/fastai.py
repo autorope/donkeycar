@@ -60,7 +60,6 @@ def get_default_transform():
 
     return transform
 
-
 class FastaAiTorchTubDataset(IterableDataset):
     '''
     Loads the dataset, and creates a train/test split.
@@ -257,15 +256,15 @@ class FastAiPilot(ABC):
 
         self.learner = Learner(dataLoader, model, loss_func=self.loss, path=Path(model_path).parent)
 
-        print(self.learner.summary())
-        print(self.learner.loss_func)
+        logger.info(self.learner.summary())
+        logger.info(self.learner.loss_func)
 
         lr_result = self.learner.lr_find()
         suggestedLr = float(lr_result[0])
 
-        print(f"Suggested Learning Rate {suggestedLr}")
+        logger.info(f"Suggested Learning Rate {suggestedLr}")
 
-        self.learner.fit_one_cycle(epoch, suggestedLr, cbs=callbacks)
+        self.learner.fit_one_cycle(epochs, suggestedLr, cbs=callbacks)
 
         torch.save(self.learner.model, model_path)
 
@@ -276,47 +275,6 @@ class FastAiPilot(ABC):
         history = list(map((lambda x: x.item()), self.learner.recorder.losses))
 
         return history
-
-    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
-        """ Return x from record, default returns only image array"""
-        assert isinstance(record, TubRecord), "TubRecord required"
-        img_arr = record.image(cached=True)
-        return img_arr
-
-    def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
-        """ Translates x into dictionary where all model input layer's names
-            must be matched by dictionary keys. """
-        return {'img_in': x}
-
-    def x_transform_and_process(
-            self,
-            record: Union[TubRecord, List[TubRecord]],
-            img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
-        """ Transforms the record into x for training the model to x,y, and
-            applies an image augmentation. Here we assume the model only takes
-            the image as input. """
-        x_img = self.x_transform(record)
-        # apply augmentation / normalisation
-        x_process = img_processor(x_img)
-        return x_process
-
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
-        """ Return y from record, needs to be implemented"""
-        raise NotImplementedError(f'{self} not ready yet for new training '
-                                  f'pipeline')
-
-    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
-        """ Translates y into dictionary where all model output layer's names
-            must be matched by dictionary keys. """
-        raise NotImplementedError(f'{self} not ready yet for new training '
-                                  f'pipeline')
-
-    def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
-        """ Used in tf.data, assume all types are doubles"""
-        # shapes = self.output_shapes()
-        # types = tuple({k: tf.float64 for k in d} for d in shapes)
-        return types
-
 
     def __str__(self) -> str:
         """ For printing model initialisation """
@@ -349,7 +307,6 @@ class FastAILinear(FastAiPilot):
         interpreter_out = (interpreter_out * 2) - 1
         steering = interpreter_out[0]
         throttle = interpreter_out[1]
-        print(steering, throttle)
         return steering, throttle
 
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:

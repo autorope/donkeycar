@@ -17,7 +17,7 @@ import random
 import time
 import signal
 import logging
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Union
 
 from PIL import Image
 import numpy as np
@@ -428,7 +428,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def get_model_by_type(model_type: str, cfg: 'Config') -> 'ABC':
+def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'FastAiPilot']:
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
@@ -436,7 +436,8 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'ABC':
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
         KerasLSTM, Keras3D_CNN
-    from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, FastAIInterpreter
+    from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
+        FastAIInterpreter
 
     from donkeycar.parts.fastai import FastAILinear
 

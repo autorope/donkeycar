@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 import logging
 import numpy as np
 from typing import Union, Sequence, List
-from pathlib import Path
 
 import tensorflow as tf
 import torch
@@ -214,21 +213,16 @@ class FastAIInterpreter(Interpreter):
             inputs = [img_arr, other_arr]
         return self.invoke(inputs)
 
-    def predict_from_dict(self, input_dict):
-        for k, v in input_dict.items():
-            input_dict[k] = np.expand_dims(v, axis=0)
-        return self.invoke(input_dict)
-
     def load(self, model_path: str) -> None:
         logger.info(f'Loading model {model_path}')
         if torch.cuda.is_available():
-            print("using cuda for torch inference")
+            logger.info("using cuda for torch inference")
             self.model = torch.load(model_path)
         else:
-            print("cuda not available for torch inference")
+            logger.info("cuda not available for torch inference")
             self.model = torch.load(model_path, map_location=torch.device('cpu'))
 
-        print(self.model)
+        logger.info(self.model)
         self.model.eval()
 
     def summary(self) -> str:

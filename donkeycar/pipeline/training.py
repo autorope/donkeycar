@@ -81,15 +81,6 @@ class BatchSequence(object):
             output_shapes=self.model.output_shapes())
         return dataset.repeat().batch(self.batch_size)
 
-    def create_tf_data(self) -> tf.data.Dataset:
-        """ Assembles the tf data pipeline """
-        dataset = tf.data.Dataset.from_generator(
-            generator=lambda: self.pipeline,
-            output_types=self.model.output_types(),
-            output_shapes=self.model.output_shapes())
-        return dataset.repeat().batch(self.batch_size)        
-
-
 def get_model_train_details(database: PilotDatabase, model: str = None) \
         -> Tuple[str, int]:
     if not model:
