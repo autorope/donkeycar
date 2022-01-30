@@ -11,6 +11,7 @@ from typing import Tuple
 
 import donkeycar as dk
 from donkeycar.parts.kinematics import differential_steering
+from donkeycar.utils import clamp
 
 logger = logging.getLogger(__name__)
 
@@ -734,8 +735,12 @@ class L298N_HBridge_3pin(object):
         :param throttle:float throttle value in range -1 to 1,
                         where 1 is full forward and -1 is full backwards.
         """
+        if throttle is None:
+            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            return
         if throttle > 1 or throttle < -1:
-            raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
+            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            throttle = clamp(throttle, -1, 1)
         
         self.speed = throttle
         self.throttle = dk.utils.map_range_float(throttle, -1, 1, -self.max_duty, self.max_duty)
@@ -773,14 +778,18 @@ class TwoWheelSteeringThrottle(object):
         :return: tuple of left motor and right motor throttle values in range -1 to 1
                  where 1 is full forward and -1 is full backwards.
         """
+        if throttle is None:
+            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            return
+        if steering is None:
+            logger.warn("TwoWheelSteeringThrottle steering is None")
+            return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            throttle = clamp(throttle, -1, 1)
         if steering > 1 or steering < -1:
-            logger.warn( f"steering is {steering}, but it must be between 1(right) and -1(left)")
-
-        from donkeycar.utils import clamp
-        throttle = clamp(throttle, -1, 1)
-        steering = clamp(steering, -1, 1)
+            logger.warn( f"TwoWheelSteeringThrottle steering is {steering}, but it must be between 1(right) and -1(left)")
+            steering = clamp(steering, -1, 1)
 
         left_motor_speed = throttle
         right_motor_speed = throttle
@@ -847,11 +856,12 @@ class L298N_HBridge_2pin(object):
                         where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
+            logger.warn("TwoWheelSteeringThrottle throttle is None")
             return
-        
         if throttle > 1 or throttle < -1:
-            raise ValueError( "Throttle must be between 1(forward) and -1(reverse)")
-        
+            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            throttle = clamp(throttle, -1, 1)
+
         self.speed = throttle
         self.throttle = dk.utils.map_range_float(throttle, -1, 1, -self.max_duty, self.max_duty)
         
