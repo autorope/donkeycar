@@ -14,16 +14,24 @@ print(cfg.CAMERA_RESOLUTION)
 
 import os
 
-#PATHS
+# 
+# FILE PATHS
+#
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
-#VEHICLE
+
+#
+# VEHICLE loop
+#
 DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
-#CAMERA
+
+# 
+# CAMERA configuration
+#
 CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 IMAGE_W = 160
 IMAGE_H = 120
@@ -36,18 +44,27 @@ CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one ca
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 
 # For IMAGE_LIST camera
-# PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
+PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 
-#9865, over rides only if needed, ie. TX2..
+
+# 
+# PCA9685, over rides only if needed, ie. TX2..
+#
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 
-#SSD1306_128_32
+
+#
+# SSD1306_128_32
+#
 USE_SSD1306_128_32 = False    # Enable the SSD_1306 OLED Display
 SSD1306_128_32_I2C_ROTATION = 0 # 0 = text is right-side up, 1 = rotated 90 degrees clockwise, 2 = 180 degrees (flipped), 3 = 270 degrees
 SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 
+
+# 
 # MEASURED ROBOT PROPERTIES
+#
 AXLE_LENGTH = 0.03     # length of axle; distance between left and right wheels in meters
 WHEEL_BASE = 0.1       # distance between front and back wheels in meters
 WHEEL_RADIUS = 0.0315  # radius of wheel in meters
@@ -55,6 +72,7 @@ MIN_SPEED = 0.1        # minimum speed in meters per second; speed below which c
 MAX_SPEED = 3.0        # maximum speed in meters per second; speed at maximum throttle (1.0)
 MIN_THROTTLE = 0.1     # throttle (0 to 1.0) that corresponds to MIN_SPEED, throttle below which car stalls
 MAX_STEERING_ANGLE = math.pi / 4  # for car-like robot; maximum steering angle in radians (corresponding to tire angle at steering == -1)
+
 
 #
 # DRIVE_TRAIN_TYPE
@@ -79,7 +97,7 @@ MAX_STEERING_ANGLE = math.pi / 4  # for car-like robot; maximum steering angle i
 DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 
 #
-# PWM_STEERING_THROTTLE
+# PWM_STEERING_THROTTLE drivetrain configuration
 #
 # Drive train for RC car with a steering servo and ESC.
 # Uses a PwmPin for steering (servo) and a second PwmPin for throttle (ESC)
@@ -121,7 +139,7 @@ THROTTLE_PWM_FREQ = 50          #Frequency for PWM
 THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 
 #
-# SERVO_HBRIDGE_2PIN
+# SERVO_HBRIDGE_2PIN drivetrain configuration
 # - configures a steering servo and an HBridge in 2pin mode (2 pwm pins)
 # - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
 #   and 2 milliseconds (full forward) with 1.5ms being neutral.
@@ -161,7 +179,7 @@ SERVO_HBRIDGE_2PIN = {
 }
 
 #
-# SERVO_HBRIDGE_3PIN
+# SERVO_HBRIDGE_3PIN drivetrain configuration
 # - configures a steering servo and an HBridge in 3pin mode (2 ttl pins, 1 pwm pin)
 # - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
 #   and 2 milliseconds (full forward) with 1.5ms being neutral.
@@ -230,7 +248,7 @@ STEERING_LEFT_PWM = 460    # pwm value for full left steering (use `donkey calib
 STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
 #
-# DC_STEER_THROTTLE with one motor as steering, one as drive
+# DC_STEER_THROTTLE drivetrain with one motor as steering, one as drive
 # - uses L298N type motor controller in two pin wiring
 #   scheme utilizing two pwm pins per motor; one for
 #   forward(or right) and one for reverse (or left)
@@ -257,7 +275,7 @@ DC_STEER_THROTTLE = {
 }
 
 #
-# DC_TWO_WHEEL pin configuration
+# DC_TWO_WHEEL drivetrain pin configuration
 # - configures L298N_HBridge_2pin driver
 # - two wheels as differential drive, left and right.
 # - each wheel is controlled by two pwm pins,
@@ -293,7 +311,7 @@ DC_TWO_WHEEL = {
 }
 
 #
-# DC_TWO_WHEEL_L298N pin configuration
+# DC_TWO_WHEEL_L298N drivetrain pin configuration
 # - configures L298N_HBridge_3pin driver
 # - two wheels as differential drive, left and right.
 # - each wheel is controlled by three pins,
@@ -335,7 +353,10 @@ DC_TWO_WHEEL_L298N = {
     "RIGHT_EN_DUTY_PIN": "RPI_GPIO.BOARD.11",   # PWM pin generates duty cycle for right wheel speed
 }
 
-#ODOMETRY
+
+#
+# ODOMETRY
+#
 HAVE_ODOM = False               # Do you have an odometer/encoder
 HAVE_ODOM_2 = False             # Do you have a second odometer/encoder as in a differential drive robot.
                                 # In this case, the 'first' encoder is the left wheel encoder and
@@ -378,13 +399,19 @@ ODOM_PIN_2 = 14                 # GPIO for second encoder in differential drivet
 ODOM_SMOOTHING = 1              # number of odometer readings to use when calculating velocity
 ODOM_DEBUG = False              # Write out values on vel and distance as it runs
 
-# #LIDAR
+
+# 
+# LIDAR
+#
 USE_LIDAR = False
-LIDAR_TYPE = 'RP' #(RP|YD)
+LIDAR_TYPE = 'RP' #(RP) NOTE: YD lidar is not full implemented
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
 
-#TRAINING
+
+#
+# CNN Deep Learning 
+#
 # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_AI_FRAMEWORK = 'tensorflow'
 
@@ -446,6 +473,22 @@ ROI_TRAPEZE_MAX_Y = 120
 FREEZE_LAYERS = False               #default False will allow all layers to be modified by training
 NUM_LAST_LAYERS_TO_TRAIN = 7        #when freezing layers, how many layers from the last should be allowed to train?
 
+#For the categorical model, this limits the upper bound of the learned throttle
+#it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
+#and ideally wouldn't change once set.
+MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
+
+# RNN or 3D
+SEQUENCE_LENGTH = 3             #some models use a number of images over time. This controls how many.
+
+# IMU for imu model
+HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
+IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
+IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
+
+#
+# Input controllers
+#
 #WEB CONTROL
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))  # which port to listen on when making a web controller
 WEB_INIT_MODE = "user"              # which control mode to start in. one of user|local_angle|local. Setting local will start in ai mode.
@@ -463,18 +506,6 @@ JOYSTICK_THROTTLE_DIR = -1.0         # use -1.0 to flip forward/backward, use 1.
 USE_FPV = False                     # send camera data to FPV webserver
 JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access the joystick.
 
-#For the categorical model, this limits the upper bound of the learned throttle
-#it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
-#and ideally wouldn't change once set.
-MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
-
-#RNN or 3D
-SEQUENCE_LENGTH = 3             #some models use a number of images over time. This controls how many.
-
-#IMU
-HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
-IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
-IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
 
 #SOMBRERO
 HAVE_SOMBRERO = False           #set to true when using the sombrero hat from the Donkeycar store. This will enable pwm on the hat.
@@ -492,8 +523,7 @@ PIGPIO_INVERT = False
 PIGPIO_JITTER = 0.025   # threshold below which no signal is reported
 
 
-
-#ROBOHAT MM1
+# ROBOHAT MM1 controller
 MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
 MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
 MM1_STOPPED_PWM = 1500
@@ -508,12 +538,18 @@ MM1_SHOW_STEERING_VALUE = False
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
-#LOGGING
+
+#
+# LOGGING
+#
 HAVE_CONSOLE_LOGGING = True
 LOGGING_LEVEL = 'INFO'          # (Python logging level) 'NOTSET' / 'DEBUG' / 'INFO' / 'WARNING' / 'ERROR' / 'FATAL' / 'CRITICAL'
 LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://docs.python.org/3/library/logging.html#formatter-objects
 
-#TELEMETRY
+
+# 
+# MQTT TELEMETRY
+#
 HAVE_MQTT_TELEMETRY = False
 TELEMETRY_DONKEY_NAME = 'my_robot1234'
 TELEMETRY_MQTT_TOPIC_TEMPLATE = 'donkey/%s/telemetry'
@@ -527,14 +563,23 @@ TELEMETRY_LOGGING_FORMAT = '%(message)s'  # (Python logging format - https://doc
 TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle,recording'
 TELEMETRY_DEFAULT_TYPES = 'float,float'
 
-# PERF MONITOR
+
+# 
+# PERFORMANCE MONITOR
+#
 HAVE_PERFMON = False
 
-#RECORD OPTIONS
+
+# 
+# RECORD OPTIONS
+#
 RECORD_DURING_AI = False        #normally we do not record during ai mode. Set this to true to get image and steering records for your Ai. Be careful not to use them to train.
 AUTO_CREATE_NEW_TUB = False     #create a new tub (tub_YY_MM_DD) directory when recording or append records to data directory directly
 
-#LED
+
+# 
+# LED
+#
 HAVE_RGB_LED = False            #do you have an RGB LED like https://www.amazon.com/dp/B07BNRZWNF
 LED_INVERT = False              #COMMON ANODE? Some RGB LED use common anode. like https://www.amazon.com/Xia-Fly-Tri-Color-Emitting-Diffused/dp/B07MYJQP8B
 
@@ -563,21 +608,25 @@ RECORD_ALERT_COLOR_ARR = [ (0, (1, 1, 1)),
             (15000, (0, 5, 5)),
             (20000, (0, 0, 5)), ]
 
-
 #LED status color, 0-100, for model reloaded alert
 MODEL_RELOADED_LED_R = 100
 MODEL_RELOADED_LED_G = 0
 MODEL_RELOADED_LED_B = 0
 
 
-#BEHAVIORS
+# 
+# BEHAVIORS
+# 
 #When training the Behavioral Neural Network model, make a list of the behaviors,
 #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
 TRAIN_BEHAVIORS = False
 BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 
-#Localizer
+
+# 
+# Localizer
+# 
 #The localizer is a neural network that can learn to predict its location on the track.
 #This is an experimental feature that needs more developement. But it can currently be used
 #to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
@@ -585,12 +634,15 @@ TRAIN_LOCALIZER = False
 NUM_LOCATIONS = 10
 BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
 
-#DonkeyGym
-#Only on Ubuntu linux, you can use the simulator as a virtual donkey and
-#issue the same python manage.py drive command as usual, but have them control a virtual car.
-#This enables that, and sets the path to the simualator and the environment.
-#You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
-#then extract that and modify DONKEY_SIM_PATH.
+
+# 
+# DonkeyGym
+# 
+# Only on Ubuntu linux, you can use the simulator as a virtual donkey and
+# issue the same python manage.py drive command as usual, but have them control a virtual car.
+# This enables that, and sets the path to the simualator and the environment.
+# You will want to download the simulator binary from: https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip
+# then extract that and modify DONKEY_SIM_PATH.
 DONKEY_GYM = False
 DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
 DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
@@ -608,44 +660,45 @@ SIM_RECORD_GYROACCEL= False
 SIM_RECORD_VELOCITY = False
 SIM_RECORD_LIDAR = False
 
-#publish camera over network
-#This is used to create a tcp service to publish the camera feed
+# publish camera over network on TCP socket
+# This is used to create a tcp service to publish the camera feed
 PUB_CAMERA_IMAGES = False
 
-#When racing, to give the ai a boost, configure these values.
+
+# 
+# AI Overrides
+# 
+# Launch mode: override AI at launch time (transition from user to Auto pilot).
 AI_LAUNCH_DURATION = 0.0            # the ai will output throttle for this many seconds
 AI_LAUNCH_THROTTLE = 0.0            # the ai will output this throttle value
 AI_LAUNCH_ENABLE_BUTTON = 'R2'      # this keypress will enable this boost. It must be enabled before each use to prevent accidental trigger.
 AI_LAUNCH_KEEP_ENABLED = False      # when False ( default) you will need to hit the AI_LAUNCH_ENABLE_BUTTON for each use. This is safest. When this True, is active on each trip into "local" ai mode.
 
-#Scale the output of the throttle of the ai pilot for all model types.
+# throttle scaling: scale the output of the throttle of the ai pilot for all model types.
 AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
 
-#Path following
-PATH_FILENAME = "donkey_path.pkl"   # the path will be saved to this filename
-PATH_SCALE = 5.0                    # the path display will be scaled by this factor in the web page
-PATH_OFFSET = (0, 0)                # 255, 255 is the center of the map. This offset controls where the origin is displayed.
-PATH_MIN_DIST = 0.3                 # after travelling this distance (m), save a path point
-PID_P = -10.0                       # proportional mult for PID path follower
-PID_I = 0.000                       # integral mult for PID path follower
-PID_D = -0.2                        # differential mult for PID path follower
-PID_THROTTLE = 0.2                  # constant throttle value during path following
-SAVE_PATH_BTN = "cross"             # joystick button to save path
-RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 
+# 
 # Intel Realsense D435 and D435i depth sensing camera
+#
 REALSENSE_D435_RGB = True       # True to capture RGB image
 REALSENSE_D435_DEPTH = True     # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
+
+# 
 # Stop Sign Detector
+#
 STOP_SIGN_DETECTOR = False
 STOP_SIGN_MIN_SCORE = 0.2
 STOP_SIGN_SHOW_BOUNDING_BOX = True
 STOP_SIGN_MAX_REVERSE_COUNT = 10    # How many times should the car reverse when detected a stop sign, set to 0 to disable reversing
 STOP_SIGN_REVERSE_THROTTLE = -0.5     # Throttle during reversing when detected a stop sign
 
-# FPS counter
+
+# 
+# Frames/Second counter
+#
 SHOW_FPS = False
 FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency info into the shell
