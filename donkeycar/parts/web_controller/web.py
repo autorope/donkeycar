@@ -157,7 +157,7 @@ class LocalWebController(tornado.web.Application):
                     logger.debug(f"Updating web client: {data_str}")
                     wsclient.write_message(data_str)
                 except Exception as e:
-                    print(e)
+                    logger.warn("Error writing websocket message", exc_info=e)
                     pass
 
     def run_threaded(self, img_arr=None, num_records=0, mode=None, recording=None):
