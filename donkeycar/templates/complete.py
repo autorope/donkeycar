@@ -46,6 +46,7 @@ from donkeycar.parts.velocity import VelocityNormalize, VelocityUnnormalize
 from donkeycar.parts.kinematics import NormalizeSteeringAngle, UnnormalizeSteeringAngle, TwoWheelSteeringThrottle
 from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnormalizeAngularVelocity, UnicycleNormalizeAngularVelocity
 from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity, BicycleNormalizeAngularVelocity
+from donkeycar.parts import pins;
 
 from donkeycar.utils import *
 
@@ -870,11 +871,13 @@ def add_odometry(V, cfg):
         from donkeycar.utilities.serial_port import SerialPort
         from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
         from donkeycar.parts.odometer import Odometer
+        from donkeycar.parts import pins;
+
         tachometer = None
         tachometer2 = None
         if cfg.ENCODER_TYPE == "GPIO":
             tachometer = Tachometer(
-                GpioEncoder(gpio_pin=cfg.ODOM_PIN,
+                GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN),
                             debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
                             debug=cfg.ODOM_DEBUG),
                 ticks_per_revolution=cfg.ENCODER_PPR,
@@ -883,7 +886,7 @@ def add_odometry(V, cfg):
                 debug=cfg.ODOM_DEBUG)
             if cfg.HAVE_ODOM_2:
                 tachometer2 = Tachometer(
-                    GpioEncoder(gpio_pin=cfg.ODOM_PIN_2,
+                    GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN_2),
                                 debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
                                 debug=cfg.ODOM_DEBUG),
                     ticks_per_revolution=cfg.ENCODER_PPR,
