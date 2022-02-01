@@ -133,10 +133,30 @@ class RoboHATController:
                 print("MM1: Error reading serial input!")
                 break
 
-    def run(self, img_arr=None):
-        return self.run_threaded()
+    def run(self, img_arr=None, mode=None, recording=None):
+        """
+        :param img_arr: current camera image or None
+        :param mode: default user/mode
+        :param recording: default recording mode
+        """
+        return self.run_threaded(img_arr, mode, recording)
 
-    def run_threaded(self, img_arr=None):
+    def run_threaded(self, img_arr=None, mode=None, recording=None):
+        """
+        :param img_arr: current camera image
+        :param mode: default user/mode
+        :param recording: default recording mode
+        """
+        self.img_arr = img_arr
+
+        #
+        # enforce defaults if they are not none.
+        #
+        if mode is not None:
+            self.mode = mode
+        if recording is not None:
+            self.recording = recording
+
         return self.angle, self.throttle, self.mode, self.recording
 
 
