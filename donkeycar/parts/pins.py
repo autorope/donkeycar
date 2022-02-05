@@ -452,6 +452,9 @@ class InputPinGpio(InputPin):
         """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start InputPinGpio({self.pin_number}) that is already started.")
+
+        # stop the pin so it is not in use, then start it
+        gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.IN, pull_up_down=gpio_pin_pull[self.pull]))
         if on_input is not None:
             self.on_input = on_input
@@ -485,6 +488,8 @@ class OutputPinGpio(OutputPin):
     def start(self, state: int = PinState.LOW) -> None:
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start OutputPinGpio({self.pin_number}) that is already started.")
+        # first stop the pin so we know it is not in use, then start it.
+        gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.output(state)
 
@@ -517,6 +522,9 @@ class PwmPinGpio(PwmPin):
             raise RuntimeError("Attempt to start PwmPinGpio that is already started.")
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
+
+        # stop the pin so we know it is not in use, then start it
+        gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.pwm = gpio_fn(self.pin_scheme, lambda: GPIO.PWM(self.pin_number, self.frequency))
         self.pwm.start(duty * 100)  # takes duty in range 0 to 100
@@ -1041,3 +1049,5 @@ if __name__ == '__main__':
             pwm_out_pin.stop()
         if ttl_out_pin is not None:
             ttl_out_pin.stop()
+        if ttl_in_pin is not None:
+            ttl_in_pin.stop()
