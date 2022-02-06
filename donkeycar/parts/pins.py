@@ -422,7 +422,7 @@ def gpio_fn(pin_scheme:int, fn:Callable[[], Any]):
         GPIO.setmode(pin_scheme)
     elif prev_scheme != pin_scheme:
         raise RuntimeError(f"Attempt to change GPIO pin scheme from ({prev_scheme}) to ({pin_scheme})"
-                           " after it has been set.  All RPi.GPIO user must use the same pin scheme.")
+                           " after it has been set.  All RPi.GPIO pins must use the same pin scheme.")
     val = fn()
     return val
 
@@ -436,6 +436,7 @@ class InputPinGpio(InputPin):
         """
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
+        self.pin_scheme_str = pin_scheme
         self.pull = pull
         self.on_input = None
         self._state = PinState.NOT_STARTED
@@ -462,11 +463,14 @@ class InputPinGpio(InputPin):
                 self.pin_scheme,
                 lambda: GPIO.add_event_detect(self.pin_number, gpio_pin_edge[edge], callback=self._callback))
         self.input()  # read first state
+        logger.info(f"InputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' started.")
 
     def stop(self) -> None:
         if self.state() != PinState.NOT_STARTED:
+            self.on_input = None
             gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
             self._state = PinState.NOT_STARTED
+            logger.info(f"InputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' stopped.")
 
     def state(self) -> int:
         return self._state
@@ -482,6 +486,7 @@ class OutputPinGpio(OutputPin):
     """
     def __init__(self, pin_number: int, pin_scheme: str) -> None:
         self.pin_number = pin_number
+        self.pin_scheme_str = pin_scheme
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self._state = PinState.NOT_STARTED
 
@@ -492,11 +497,13 @@ class OutputPinGpio(OutputPin):
         gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.output(state)
+        logger.info(f"OutputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' started.")
 
     def stop(self) -> None:
         if self.state() != PinState.NOT_STARTED:
             gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
             self._state = PinState.NOT_STARTED
+            logger.info(f"OutputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' stopped.")
 
     def state(self) -> int:
         return self._state
@@ -512,6 +519,7 @@ class PwmPinGpio(PwmPin):
     """
     def __init__(self, pin_number: int, pin_scheme: str, frequency_hz: float = 50) -> None:
         self.pin_number = pin_number
+        self.pin_scheme_str = pin_scheme
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self.frequency = int(frequency_hz)
         self.pwm = None
@@ -529,12 +537,15 @@ class PwmPinGpio(PwmPin):
         self.pwm = gpio_fn(self.pin_scheme, lambda: GPIO.PWM(self.pin_number, self.frequency))
         self.pwm.start(duty * 100)  # takes duty in range 0 to 100
         self._state = duty
+        logger.info(f"PwmPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' started.")
 
     def stop(self) -> None:
         if self.pwm is not None:
             self.pwm.stop()
             gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
+            logger.info(f"PwmPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' stopped.")
         self._state = PinState.NOT_STARTED
+
 
     def state(self) -> float:
         return self._state
