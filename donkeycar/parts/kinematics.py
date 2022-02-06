@@ -466,6 +466,10 @@ class NormalizeSteeringAngle:
         self.steering_zero = steering_zero
     
     def run(self, steering_angle) -> float:
+        if not is_number_type(steering_angle):
+            logger.error("steering angle must be a number.")
+            return 0
+
         steering = steering_angle / self.max_steering_angle
         if abs(steering) <= self.steering_zero:
             return 0
@@ -491,7 +495,9 @@ class UnnormalizeSteeringAngle:
     
     def run(self, steering) -> float:
         if not is_number_type(steering):
-            raise ValueError("steering must be a number")
+            logger.error("steering must be a number")
+            return 0
+
         if steering > 1 or steering < -1:
             logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
 
@@ -527,13 +533,15 @@ def differential_steering(throttle:float, steering:float, steering_zero:float=0.
         @Param steering_zero:float values abs(steering) <= steering_zero are considered zero.
         """
         if not is_number_type(throttle):
-            raise ValueError("throttle must be a number")
+            logger.error("throttle must be a number")
+            return 0, 0
         if throttle > 1 or throttle < -1:
             logger.warn(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
         throttle = clamp(throttle, -1, 1)
 
         if not is_number_type(steering):
-            raise ValueError("steering must be a number")
+            logger.error("steering must be a number")
+            return 0, 0
         if steering > 1 or steering < -1:
             logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
         steering = clamp(steering, -1, 1)
@@ -578,7 +586,7 @@ class TwoWheelSteeringThrottle:
 
     def run(self, throttle, steering):
         if not is_number_type(throttle):
-            logger.warn("throttle must be a number")
+            logger.error("throttle must be a number")
             return 0, 0
         if throttle > 1 or throttle < -1:
             logger.warn(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
