@@ -1,6 +1,7 @@
 from abc import (ABC, abstractmethod)
 import logging
 import time
+import threading
 from typing import Tuple
 
 from donkeycar.utilities.platform import is_jetson
@@ -240,25 +241,33 @@ class GpioEncoder(AbstractEncoder):
 
         self.debug = debug
         self.counter = 0
+        self._cb_counter = 0
         self.direction = 0
         self.pin = gpio_pin
         self.debounce_ns:int = debounce_ns
         self.debounce_time:int = 0
         if self.debounce_ns > 0:
             logger.warn("GpioEncoder debounce_ns will be ignored.")
+        self.lock = threading.Lock()
 
-    def _cb(self, _):
+
+    def _cb(self):
         """
         Callback routine called by GPIO when a tick is detected
         :pin_number: int the pin number that generated the interrupt.
         :pin_state: int the state of the pin
         """
-        self.counter += self.direction
-
+        self._cb_counter += 1
+        if self.lock.acquire(blocking=False):
+            try:
+                self.counter += self._cb_counter * self.direction
+                self._cb_counter = 0
+            finally:
+                self.lock.release()
             
     def start_ticks(self):
         # configure GPIO pin
-        self.pin.start(on_input=self._cb, edge=PinEdge.RISING)
+        self.pin.start(on_input=lambda: self._cb(), edge=PinEdge.RISING)
         logger.info(f'GpioEncoder on InputPin "RPI_GPIO.{self.pin.pin_scheme_str}.{self.pin.pin_number}" started.')
 
 
@@ -268,7 +277,8 @@ class GpioEncoder(AbstractEncoder):
         direction: 1 if forward, -1 if reverse, 0 if stopped.
         return: updated encoder ticks
         """
-        self.direction = direction
+        with self.lock:
+            self.direction = direction
 
     def stop_ticks(self):
         self.pin.stop()
@@ -284,7 +294,8 @@ class GpioEncoder(AbstractEncoder):
         most recent call to poll_ticks().  It 
         will not request new values from the encoder.
         """
-        return self.counter if encoder_index == 0 else 0
+        with self.lock:
+            return self.counter if encoder_index == 0 else 0
 
 
 def sign(value) -> int:

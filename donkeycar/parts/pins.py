@@ -76,7 +76,7 @@ class InputPin(ABC):
     def start(self, on_input=None, edge: int = PinEdge.RISING) -> None:
         """
         Start the pin in input mode.
-        :param on_input: function to call when an edge is detected, or None to ignore
+        :param on_input: no-arg function to call when an edge is detected, or None to ignore
         :param edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
         This raises a RuntimeError if the pin is already started.
         You can check to see if the pin is started by calling
@@ -444,11 +444,11 @@ class InputPinGpio(InputPin):
 
     def _callback(self, pin_number):
         if self.on_input is not None:
-            self.on_input(self.pin_number, self.input())
+            self.on_input()
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
-        :param on_input: function to call when an edge is detected, or None to ignore
+        :param on_input: no-arg function to call when an edge is detected, or None to ignore
         :param edge: type of edge(s) that trigger on_input; default is
         """
         if self.state() != PinState.NOT_STARTED:
@@ -776,12 +776,12 @@ class InputPinPigpio(InputPin):
 
     def _callback(self, gpio, level, tock):
         if self.on_input is not None:
-            self.on_input(gpio, level)
+            self.on_input()
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
         Start the input pin and optionally set callback.
-        :param on_input: function to call when an edge is detected, or None to ignore
+        :param on_input: no-arg function to call when an edge is detected, or None to ignore
         :param edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
         """
         if self.state() != PinState.NOT_STARTED:
@@ -1003,11 +1003,12 @@ if __name__ == '__main__':
         'both': PinEdge.BOTH
     }
 
-    def on_input(pin_number, state):
+    def on_input():
+        state = ttl_in_pin.input()
         if state == PinState.HIGH:
-            print("+", pin_number, time.time()*1000)
+            print("+", ttl_in_pin.pin_number, time.time()*1000)
         elif state == PinState.LOW:
-            print("-", pin_number, time.time()*1000)
+            print("-", ttl_in_pin.pin_number, time.time()*1000)
 
     pwm_out_pin: PwmPin = None
     ttl_out_pin: OutputPin = None
