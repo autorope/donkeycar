@@ -928,13 +928,13 @@ def add_odometry(V, cfg):
                     distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
                     smoothing_count=cfg.ODOM_SMOOTHING,
                     debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['enc/left/revolutions', 'enc/left/timestamp'], threaded=True)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/left/revolutions', 'enc/left/timestamp'], threaded=False)
                 V.add(
                     odometer1,
                     inputs=['enc/left/revolutions', 'enc/left/timestamp'],
                     outputs=['enc/left/distance', 'enc/left/speed', 'enc/left/timestamp'],
                     threaded=False)
-                V.add(tachometer2, inputs=['throttle', None], outputs=['enc/right/revolutions', 'enc/right/timestamp'], threaded=True)
+                V.add(tachometer2, inputs=['throttle', None], outputs=['enc/right/revolutions', 'enc/right/timestamp'], threaded=False)
                 V.add(odometer2, inputs=['enc/right/revolutions', 'enc/right/timestamp'], outputs=['enc/right/distance', 'enc/right/speed', 'enc/right/timestamp'], threaded=False)
                 V.add(
                     Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG),
@@ -948,7 +948,7 @@ def add_odometry(V, cfg):
                     distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
                     smoothing_count=cfg.ODOM_SMOOTHING,
                     debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=True)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=False)
                 V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
                 V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE),
                       inputs=["steering"], outputs=["steering_angle"])
