@@ -5,7 +5,7 @@ import logging
 import numpy
 from PIL import Image, ImageDraw
 
-from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img
+from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img, is_number_type
 
 
 class Path(object):
@@ -17,12 +17,15 @@ class Path(object):
         self.recording = True
 
     def run(self, x, y):
-        d = dist(x, y, self.x, self.y)
-        if self.recording and d > self.min_dist:
-            self.path.append((x, y))
-            logging.info("path point (%f, %f)" % ( x, y))
-            self.x = x
-            self.y = y
+        if self.recording: 
+            if is_number_type(x) and is_number_type(y):
+                d = dist(x, y, self.x, self.y)
+                if d >= self.min_dist:
+                    self.path.append((x, y))
+                    self.x = x
+                    self.y = y
+                    logging.info("path point (%f, %f)" % ( x, y))
+
         return self.path
 
     def save(self, filename):
@@ -60,10 +63,11 @@ class OriginOffset(object):
         self.last_y = 0.
 
     def run(self, x, y):
-        self.last_x = x
-        self.last_y = y
+        if is_number_type(x) and is_number_type(y):
+            self.last_x = x
+            self.last_y = y
 
-        return x + self.ox, y + self.oy
+        return self.last_x + self.ox, self.last_y + self.oy
 
     def init_to_last(self):
         self.ox = -self.last_x
