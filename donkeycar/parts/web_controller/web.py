@@ -10,6 +10,7 @@ The client and web server needed to control a car remotely.
 
 import os
 import json
+import logging
 import time
 import asyncio
 
@@ -23,6 +24,8 @@ import tornado.websocket
 from socket import gethostname
 
 from ... import utils
+
+logger = logging.getLogger(__name__)
 
 
 class RemoteWebServer():
@@ -38,6 +41,7 @@ class RemoteWebServer():
         self.angle = 0.
         self.throttle = 0.
         self.mode = 'user'
+        self.mode_latch = None
         self.recording = False
         # use one session for all requests
         self.session = requests.Session()
@@ -110,7 +114,9 @@ class LocalWebController(tornado.web.Application):
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = mode
+        self.mode_latch = None
         self.recording = False
+        self.recording_latch = None
         self.port = port
 
         self.num_records = 0
@@ -143,33 +149,60 @@ class LocalWebController(tornado.web.Application):
         self.loop = IOLoop.instance()
         self.loop.start()
 
-    def update_wsclients(self):
-        for wsclient in self.wsclients:
-            try:
-                data = {
-                    'num_records': self.num_records
-                }
-                data_str = json.dumps(data)
-                wsclient.write_message(data_str)
-            except Exception as e:
-                print(e)
-                pass
+    def update_wsclients(self, data):
+        if data:
+            for wsclient in self.wsclients:
+                try:
+                    data_str = json.dumps(data)
+                    logger.debug(f"Updating web client: {data_str}")
+                    wsclient.write_message(data_str)
+                except Exception as e:
+                    logger.warn("Error writing websocket message", exc_info=e)
+                    pass
 
-    def run_threaded(self, img_arr=None, num_records=0):
+    def run_threaded(self, img_arr=None, num_records=0, mode=None, recording=None):
+        """
+        :param img_arr: current camera image or None
+        :param num_records: current number of data records
+        :param mode: default user/mode
+        :param recording: default recording mode
+        """
         self.img_arr = img_arr
         self.num_records = num_records
+
+        #
+        # enforce defaults if they are not none.
+        #
+        changes = {}
+        if mode is not None and self.mode != mode:
+            self.mode = mode
+            changes["driveMode"] = self.mode
+        if self.mode_latch is not None:
+            self.mode = self.mode_latch
+            self.mode_latch = None
+            changes["driveMode"] = self.mode
+        if recording is not None and self.recording != recording:
+            self.recording = recording
+            changes["recording"] = self.recording
+        if self.recording_latch is not None:
+            self.recording = self.recording_latch;
+            self.recording_latch = None;
+            changes["recording"] = self.recording;
 
         # Send record count to websocket clients
         if (self.num_records is not None and self.recording is True):
             if self.num_records % 10 == 0:
-                if self.loop is not None:
-                    self.loop.add_callback(self.update_wsclients)
+                changes['num_records'] = self.num_records
+
+        # if there were changes, then send to web client
+        if changes and self.loop is not None:
+            logger.info(str(changes))
+            self.loop.add_callback(lambda: self.update_wsclients(changes))
 
         return self.angle, self.throttle, self.mode, self.recording
 
-    def run(self, img_arr=None):
-        self.img_arr = img_arr
-        return self.angle, self.throttle, self.mode, self.recording
+    def run(self, img_arr=None, num_records=0, mode=None, recording=None):
+        return self.run_threaded(img_arr, num_records, mode, recording)
 
     def shutdown(self):
         pass
@@ -187,6 +220,7 @@ class DriveAPI(RequestHandler):
         and throttle of the vehicle on a the index webpage
         '''
         data = tornado.escape.json_decode(self.request.body)
+
         self.application.angle = data['angle']
         self.application.throttle = data['throttle']
         self.application.mode = data['drive_mode']
@@ -216,10 +250,12 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def on_message(self, message):
         data = json.loads(message)
 
-        self.application.angle = data['angle']
-        self.application.throttle = data['throttle']
-        self.application.mode = data['drive_mode']
-        self.application.recording = data['recording']
+        self.application.angle = data.get('angle', self.application.angle)
+        self.application.throttle = data.get('throttle', self.application.throttle)
+        if data.get('drive_mode') is not None:
+            self.application.mode = data['drive_mode']
+            self.application.mode_latch = self.application.mode
+        self.application.recording = data.get('recording', self.application.recording)
 
     def on_close(self):
         # print("Client disconnected")

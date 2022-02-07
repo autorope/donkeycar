@@ -764,9 +764,13 @@ class TwoWheelSteeringThrottle(object):
                  where 1 is full forward and -1 is full backwards.
         """
         if throttle > 1 or throttle < -1:
-            raise ValueError( "throttle must be between 1(forward) and -1(reverse)")
+            logger.warn( f"throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
         if steering > 1 or steering < -1:
-            raise ValueError( "steering must be between 1(right) and -1(left)")
+            logger.warn( f"steering is {steering}, but it must be between 1(right) and -1(left)")
+
+        from donkeycar.utils import clamp
+        throttle = clamp(throttle, -1, 1)
+        steering = clamp(steering, -1, 1)
 
         left_motor_speed = throttle
         right_motor_speed = throttle

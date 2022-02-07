@@ -198,7 +198,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     
     V.add(ctr,
-        inputs=['cam/image_array', 'tub/num_records'],
+        inputs=['cam/image_array', 'tub/num_records', 'user/mode', 'recording'],
         outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
         threaded=True)
         
@@ -208,7 +208,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.CONTROLLER_TYPE == "pigpio_rc":    # an RC controllers read by GPIO pins. They typically don't have buttons
             from donkeycar.parts.controller import RCReceiver
             ctr = RCReceiver(cfg)
-            V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
+            V.add(
+                ctr,
+                inputs=['user/mode', 'recording'], 
+                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+                threaded=False)
         else:
             if cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
                 from my_joystick import MyJoystickController
@@ -229,7 +233,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                     netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
                     V.add(netwkJs, threaded=True)
                     ctr.js = netwkJs
-            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=True)
+            V.add(
+                ctr, 
+                inputs=['cam/image_array', 'user/mode', 'recording'], 
+                outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+                threaded=True)
         
 
     #this throttle filter will allow one tap back for esc reverse
