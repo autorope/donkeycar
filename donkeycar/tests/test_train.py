@@ -114,8 +114,7 @@ d12 = Data(type='linear', name='lin2', convergence=0.7, preprocess='aug')
 d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
 d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6, pretrained=None)
 
-test_data = [d14]
-#test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12]
+test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
