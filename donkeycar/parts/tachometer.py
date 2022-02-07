@@ -133,6 +133,7 @@ class SerialEncoder(AbstractEncoder):
         if self.ser is not None:
             self.ser.stop()
 
+    # TODO: serious bug; we need to have independant directions for each encoder, either poll_ticks takes encoder index or we keep track of direction for each channel.
     def poll_ticks(self, direction:int):
         """
         read the encoder ticks
@@ -214,13 +215,18 @@ class EncoderChannel(AbstractEncoder):
         super().__init__()
 
     def start_ticks(self):
-        pass
+        if not self.encoder.running:
+            self.encoder.start_ticks()
+
 
     def stop_ticks(self):
-        pass
+        if self.encoder.running:
+            self.encoder.stop_ticks()
+
 
     def poll_ticks(self, direction:int):
-        pass
+        self.encoder.poll_ticks(direction)
+
 
     def get_ticks(self, encoder_index:int=0) -> int:
         return self.encoder.get_ticks(encoder_index=self.channel)
@@ -435,6 +441,8 @@ if __name__ == "__main__":
                         help="serial-port to open, like '/dev/ttyACM0'")
     parser.add_argument("-b", "--baud-rate", type=int, default=115200, 
                         help="Serial port baud rate")
+    parser.add_argument("-e", "--encoder-index", type=int, default=0,
+                        help="Serial encoder index (0 based) if more than one encoder")
     parser.add_argument("-p", "--pin", type=str, default=None,
                         help="pin specifier for encoder InputPin, like 'RPI_GPIO.BCM.22'")  # noqa
     parser.add_argument("-dbc", "--debounce-ns", type=int, default=100,
@@ -497,7 +505,7 @@ if __name__ == "__main__":
         if args.serial_port is not None:
             serial_port = SerialPort(args.serial_port, args.baud_rate)
             tachometer = Tachometer(
-                encoder=SerialEncoder(serial_port=serial_port, debug=args.debug),
+                encoder=EncoderChannel(SerialEncoder(serial_port=serial_port, debug=args.debug), args.encoder_index),
                 ticks_per_revolution=args.pulses_per_revolution, 
                 direction_mode=args.direction_mode, 
                 poll_delay_secs=1/(args.rate*2), 
