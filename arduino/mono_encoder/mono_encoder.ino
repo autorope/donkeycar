@@ -18,10 +18,10 @@
  * as a comma delimited pair: ticks,timeMs
  *
  */
-#include <arduino.h>
+#include <Arduino.h>
  
-#define ENCODER_PIN  2             // input pin for first encoder
-#define ENCODER_2_PIN 3            // input pin for second encoder
+#define ENCODER_PIN   (7)          // input pin for first encoder
+#define ENCODER_2_PIN (9)          // input pin for second encoder
 #define POLL_DELAY_MICROS (100UL)  // microseconds between polls
 
 //

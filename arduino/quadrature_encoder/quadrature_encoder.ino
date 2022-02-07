@@ -20,13 +20,13 @@
  * as a comma delimited pair: ticks,timeMs
  *
  */
-#include <arduino.h>
+#include <Arduino.h>
 #include <Encoder.h>
 
-#define ENCODER_CLK_PIN  2         // clock input pin for first encoder
-#define ENCODER_DT_PIN 3           // data input pin for first encoder
-#define ENCODER_2_CLK_PIN 4        // clock input pin for second encoder
-#define ENCODER_2_DT_PIN 5         // data input pin for second encoder
+#define ENCODER_CLK_PIN   (7)      // clock input pin for first encoder
+#define ENCODER_DT_PIN    (8)      // data input pin for first encoder
+#define ENCODER_2_CLK_PIN (9)      // clock input pin for second encoder
+#define ENCODER_2_DT_PIN  (10)     // data input pin for second encoder
 #define POLL_DELAY_MICROS (100UL)  // microseconds between polls
 
 //
@@ -191,4 +191,3 @@ void loop() {
     }
   }
 }
-
