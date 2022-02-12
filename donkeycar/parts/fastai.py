@@ -190,8 +190,7 @@ class FastAiPilot(ABC):
             self.learner.recorder.plot_loss()
             plt.savefig(Path(model_path).with_suffix('.png'))
 
-        history = list(map((lambda x: x.item()), self.learner.recorder.losses))
-
+        history = { "loss" : list(map((lambda x: x.item()), self.learner.recorder.losses)) }
         return history
 
     def __str__(self) -> str:

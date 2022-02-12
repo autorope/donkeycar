@@ -13,7 +13,7 @@ from donkeycar.pipeline.types import TubDataset, TubRecord
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 
 Data = namedtuple('Data',
-                  ['type', 'name', 'convergence', 'pretrained', 'preprocess'],
+                  ['type', 'name', 'convergence', 'pretrained', 'preprocess', 'tf_lite', 'tensor_rt'],
                   defaults=(None, ) * 5)
 
 
@@ -112,7 +112,7 @@ d10 = Data(type='rnn', name='rnn1', convergence=0.85, pretrained=None)
 d11 = Data(type='3d', name='3d1', convergence=0.6, pretrained=None)
 d12 = Data(type='linear', name='lin2', convergence=0.7, preprocess='aug')
 d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
-d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6, pretrained=None)
+d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6, pretrained=None, tf_lite=False, tensor_rt=False)
 
 test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
 full_tub = ['imu', 'behavior', 'localizer']
@@ -141,8 +141,15 @@ def test_train(config: Config, data: Data) -> None:
     elif data.preprocess == 'trans':
         add_transformation_to_config(config)
 
+    if data.tf_lite is not None:
+        config.CREATE_TF_LITE = data.tf_lite
+
+    if data.tensor_rt is not None:
+        config.CREATE_TENSOR_RT = data.tensor_rt
+
     history = train(config, tub_dir, pilot_path(data.name), data.type)
     loss = history['loss']
+
     # check loss is converging
     assert loss[-1] < loss[0] * data.convergence
 
