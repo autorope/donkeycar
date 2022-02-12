@@ -76,34 +76,44 @@ DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 # Uses a PwmPin for steering (servo) and a second PwmPin for throttle (ESC)
 # Base PWM Frequence is presumed to be 60hz; use PWM_xxxx_SCALE to adjust pulse with for non-standard PWM frequencies
 #
-PWM_STEERING_PIN = "PCA9685.1:40.1"  # PWM output pin for steering servo
-PWM_STEERING_SCALE = 1.0   # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
-PWM_STEERING_INVERTED = False  # True if hardware requires an inverted PWM pulse
-PWM_THROTTLE_PIN = "PCA9685.1:40.0"  # PWM output pin for ESC
-PWM_THROTTLE_SCALE = 1.0   # used to compensate for PWM frequence differences from 60hz; NOT for increasing/limiting speed
-PWM_THROTTLE_INVERTED = False  # True if hardware requires an inverted PWM pulse
+PWM_STEERING_THROTTLE = {
+    "PWM_STEERING_PIN": "PCA9685.1:40.1",   # PWM output pin for steering servo
+    "PWM_STEERING_SCALE": 1.0,              # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+    "PWM_STEERING_INVERTED": False,         # True if hardware requires an inverted PWM pulse
+    "PWM_THROTTLE_PIN": "PCA9685.1:40.0",   # PWM output pin for ESC
+    "PWM_THROTTLE_SCALE": 1.0,              # used to compensate for PWM frequence differences from 60hz; NOT for increasing/limiting speed
+    "PWM_THROTTLE_INVERTED": False,         # True if hardware requires an inverted PWM pulse
+    "STEERING_LEFT_PWM": 460,               #pwm value for full left steering
+    "STEERING_RIGHT_PWM": 290,              #pwm value for full right steering
+    "THROTTLE_FORWARD_PWM": 500,            #pwm value for max forward throttle
+    "THROTTLE_STOPPED_PWM": 370,            #pwm value for no movement
+    "THROTTLE_REVERSE_PWM": 220,            #pwm value for max reverse throttle
+}
 
+#
+# I2C_SERVO (deprecated in favor of PWM_STEERING_THROTTLE0
+#
+I2C_SERVO = {
+    "STEERING_CHANNEL": 1,            #(deprecated) channel on the 9685 pwm board 0-15
+    "STEERING_LEFT_PWM": 460,         #pwm value for full left steering
+    "STEERING_RIGHT_PWM": 290,        #pwm value for full right steering
+    "THROTTLE_CHANNEL": 0,            #(deprecated) channel on the 9685 pwm board 0-15
+    "THROTTLE_FORWARD_PWM": 500,      #pwm value for max forward throttle
+    "THROTTLE_STOPPED_PWM": 370,      #pwm value for no movement
+    "THROTTLE_REVERSE_PWM": 220,      #pwm value for max reverse throttle
+}
 
-#STEERING FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
-STEERING_CHANNEL = 1            #(deprecated) channel on the 9685 pwm board 0-15
-STEERING_LEFT_PWM = 460         #pwm value for full left steering
-STEERING_RIGHT_PWM = 290        #pwm value for full right steering
-
-#STEERING FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
-STEERING_PWM_PIN = 13           #(deprecated) Pin numbering according to Broadcom numbers
-STEERING_PWM_FREQ = 50          #Frequency for PWM
-STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
-
-#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
-THROTTLE_CHANNEL = 0            #(deprecated) channel on the 9685 pwm board 0-15
-THROTTLE_FORWARD_PWM = 500      #pwm value for max forward throttle
-THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
-THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
-
-#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
-THROTTLE_PWM_PIN = 18           #(deprecated) Pin numbering according to Broadcom numbers
-THROTTLE_PWM_FREQ = 50          #Frequency for PWM
-THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
+#
+# PIGPIO_PWM (deprecated in favor of PWM_STEERING_THROTTLE)
+#
+PIGPIO_PWM = {
+    "STEERING_PWM_PIN": 13,           #(deprecated) Pin numbering according to Broadcom numbers
+    "STEERING_PWM_FREQ": 50,          #Frequency for PWM
+    "STEERING_PWM_INVERTED": False,   #If PWM needs to be inverted
+    "THROTTLE_PWM_PIN": 18,           #(deprecated) Pin numbering according to Broadcom numbers
+    "THROTTLE_PWM_FREQ": 50,          #Frequency for PWM
+    "THROTTLE_PWM_INVERTED": False,   #If PWM needs to be inverted
+}
 
 #
 # SERVO_HBRIDGE_2PIN
@@ -135,13 +145,15 @@ THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_2PIN_DUTY_FWD = "RPI_GPIO.BOARD.18"  # provides forward duty cycle to motor
-HBRIDGE_2PIN_DUTY_BWD = "RPI_GPIO.BOARD.16"  # provides reverse duty cycle to motor
-PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"       # provides servo pulse to steering servo
-PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
-PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
-STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
-STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+SERVO_HBRIDGE_2PIN = {
+    "FWD_DUTY_PIN": "RPI_GPIO.BOARD.18",  # provides forward duty cycle to motor
+    "BWD_DUTY_PIN": "RPI_GPIO.BOARD.16",  # provides reverse duty cycle to motor
+    "PWM_STEERING_PIN": "RPI_GPIO.BOARD.33",       # provides servo pulse to steering servo
+    "PWM_STEERING_SCALE": 1.0,        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+    "PWM_STEERING_INVERTED": False,   # True if hardware requires an inverted PWM pulse
+    "STEERING_LEFT_PWM": 460,         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+    "STEERING_RIGHT_PWM": 290,        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+}
 
 #
 # SERVO_HBRIDGE_3PIN
@@ -177,14 +189,42 @@ STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_3PIN_FWD = "RPI_GPIO.BOARD.18"   # ttl pin, high enables motor forward 
-HBRIDGE_3PIN_BWD = "RPI_GPIO.BOARD.16"   # ttl pin, highenables motor reverse
-HBRIDGE_3PIN_DUTY = "RPI_GPIO.BOARD.35"  # provides duty cycle to motor
-PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"   # provides servo pulse to steering servo
-PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
-PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
-STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
-STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+SERVO_HBRIDGE_3PIN = {
+    "FWD_PIN": "RPI_GPIO.BOARD.18",   # ttl pin, high enables motor forward
+    "BWD_PIN": "RPI_GPIO.BOARD.16",   # ttl pin, high enables motor reverse
+    "DUTY_PIN": "RPI_GPIO.BOARD.35",  # provides duty cycle to motor
+    "PWM_STEERING_PIN": "RPI_GPIO.BOARD.33",   # provides servo pulse to steering servo
+    "PWM_STEERING_SCALE": 1.0,        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+    "PWM_STEERING_INVERTED": False,   # True if hardware requires an inverted PWM pulse
+    "STEERING_LEFT_PWM": 460,         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+    "STEERING_RIGHT_PWM": 290,        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+}
+
+#
+# DRIVETRAIN_TYPE == "SERVO_HBRIDGE_PWM" (deprecated in favor of SERVO_HBRIDGE_2PIN)
+# - configures a steering servo and an HBridge in 2pin mode (2 pwm pins)
+# - Uses ServoBlaster library, which is NOT installed by default, so
+#   you will need to install it to make this work.
+# - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
+#   and 2 milliseconds (full forward) with 1.5ms being neutral.
+# - the motor is controlled by two pwm pins,
+#   one for forward and one for backward (reverse).
+# - the pwm pins produce a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+SERVO_HBRIDGE_PWM = {
+    "HBRIDGE_PIN_FWD": 18,  # provides forward duty cycle to motor
+    "HBRIDGE_PIN_BWD": 16,  # provides reverse duty cycle to motor
+    "STEERING_CHANNEL": 0,  # PCA 9685 channel for steering control
+    "STEERING_LEFT_PWM": 460,         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+    "STEERING_RIGHT_PWM": 290,        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+}
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
@@ -206,10 +246,12 @@ STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_PIN_LEFT = "RPI_GPIO.BOARD.18"   # pwm pin produces duty cycle for steering left
-HBRIDGE_PIN_RIGHT = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for steering right
-HBRIDGE_PIN_FWD = "RPI_GPIO.BOARD.15"    # pwm pin produces duty cycle for forward drive
-HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"    # pwm pin produces duty cycle for reverse drive
+DC_STEER_THROTTLE = {
+    "LEFT_DUTY_PIN": "RPI_GPIO.BOARD.18",   # pwm pin produces duty cycle for steering left
+    "RIGHT_DUTY_PIN": "RPI_GPIO.BOARD.16",  # pwm pin produces duty cycle for steering right
+    "FWD_DUTY_PIN": "RPI_GPIO.BOARD.15",    # pwm pin produces duty cycle for forward drive
+    "BWD_DUTY_PIN": "RPI_GPIO.BOARD.13",    # pwm pin produces duty cycle for reverse drive
+}
 
 #
 # DC_TWO_WHEEL pin configuration
@@ -240,11 +282,12 @@ HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"    # pwm pin produces duty cycle for rever
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_PIN_LEFT_FWD = "RPI_GPIO.BOARD.18"  # pwm pin produces duty cycle for left wheel forward 
-HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for left wheel reverse
-HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # pwm pin produces duty cycle for right wheel forward
-HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # pwm pin produces duty cycle for right wheel reverse
-
+DC_TWO_WHEEL = {
+    "LEFT_FWD_DUTY_PIN": "RPI_GPIO.BOARD.18",  # pwm pin produces duty cycle for left wheel forward
+    "LEFT_BWD_DUTY_PIN": "RPI_GPIO.BOARD.16",  # pwm pin produces duty cycle for left wheel reverse
+    "RIGHT_FWD_DUTY_PIN": "RPI_GPIO.BOARD.15", # pwm pin produces duty cycle for right wheel forward
+    "RIGHT_BWD_DUTY_PIN": "RPI_GPIO.BOARD.13", # pwm pin produces duty cycle for right wheel reverse
+}
 
 #
 # DC_TWO_WHEEL_L298N pin configuration
@@ -279,13 +322,15 @@ HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # pwm pin produces duty cycle for ri
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_L298N_PIN_LEFT_FWD = "RPI_GPIO.BOARD.16"  # TTL output pin enables left wheel forward
-HBRIDGE_L298N_PIN_LEFT_BWD = "RPI_GPIO.BOARD.18"  # TTL output pin enables left wheel reverse
-HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"   # PWM pin generates duty cycle for left motor speed
+DC_TWO_WHEEL_L298N = {
+    "LEFT_FWD_PIN": "RPI_GPIO.BOARD.16",        # TTL output pin enables left wheel forward
+    "LEFT_BWD_PIN": "RPI_GPIO.BOARD.18",        # TTL output pin enables left wheel reverse
+    "LEFT_EN_DUTY_PIN": "RPI_GPIO.BOARD.22",    # PWM pin generates duty cycle for left motor speed
 
-HBRIDGE_L298N_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # TTL output pin enables right wheel forward
-HBRIDGE_L298N_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # TTL output pin enables right wheel reverse
-HBRIDGE_L298N_PIN_RIGHT_EN = "RPI_GPIO.BOARD.11"  # PWM pin generates duty cycle for right wheel speed
+    "RIGHT_FWD_PIN": "RPI_GPIO.BOARD.15",       # TTL output pin enables right wheel forward
+    "RIGHT_BWD_PIN": "RPI_GPIO.BOARD.13",       # TTL output pin enables right wheel reverse
+    "RIGHT_EN_DUTY_PIN": "RPI_GPIO.BOARD.11",   # PWM pin generates duty cycle for right wheel speed
+}
 
 #ODOMETRY
 HAVE_ODOM = False                   # Do you have an odometer/encoder 
