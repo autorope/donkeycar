@@ -42,6 +42,8 @@ from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PIm
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain
+from donkeycar.parts.logger import LoggerPart
+from donkeycar.parts.pipe import Pipe
 
 
 def drive(cfg, use_joystick=False, camera_type='single'):
@@ -87,8 +89,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
             exit(1)
 
-        rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB)
+        rs = RS_T265(image_output=True, calib_filename=cfg.WHEEL_ODOM_CALIB)
         V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array'], threaded=True)
+        V.add(Pipe(), inputs=['rs/camera/left/img_array'], outputs=['cam/image_array'])
 
         # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
         class PosStream:
@@ -144,6 +147,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
     path = Path(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
+
+    lpos = LoggerPart(inputs=['pos/x', 'pos/y'], level="DEBUG", logger="position")
+    V.add(lpos, inputs=lpos.inputs)
 
     # When a path is loaded, we will be in follow mode. We will not record.
     path_loaded = False
