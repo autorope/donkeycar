@@ -14,7 +14,7 @@ from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 
 Data = namedtuple('Data',
                   ['type', 'name', 'convergence', 'pretrained', 'preprocess', 'tf_lite', 'tensor_rt'],
-                  defaults=(None, ) * 5)
+                  defaults=(None, ) * 7)
 
 
 @pytest.fixture(scope='session')
