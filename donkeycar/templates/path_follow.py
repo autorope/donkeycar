@@ -36,9 +36,8 @@ from docopt import docopt
 import numpy as np
 
 import donkeycar as dk
-from donkeycar.parts.controller import WebFpv, get_js_controller, LocalWebController, JoystickController
-from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.path import Path, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
+from donkeycar.parts.controller import JoystickController
+from donkeycar.parts.path import CsvPath, RosPath, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain
@@ -145,7 +144,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
-    path = Path(min_dist=cfg.PATH_MIN_DIST)
+    path = CsvPath(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
 
     lpos = LoggerPart(inputs=['pos/x', 'pos/y'], level="DEBUG", logger="position")
