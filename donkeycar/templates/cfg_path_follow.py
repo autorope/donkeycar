@@ -605,6 +605,7 @@ PID_THROTTLE = 0.30                 # constant throttle value during path follow
 
 # the cross button is already reserved for the emergency stop
 SAVE_PATH_BTN = "circle"             # joystick button to save path
+LOAD_PATH_BTN = "x"             # joystick button (re)load path
 RESET_ORIGIN_BTN = "square"       # joystick button to press to move car back to origin
 ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 
