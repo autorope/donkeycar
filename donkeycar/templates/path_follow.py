@@ -13,6 +13,29 @@ Options:
     --js               Use physical joystick.
     -f --file=<file>   A text file containing paths to tub files, one per line. Option may be used more than once.
     --meta=<key:value> Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
+
+Starts in user mode.
+- The user flow to 'train' a path.   
+  - start "python manage.py drive" 
+  - This starts in user mode; so user is in manual drive mode 
+    driving records path waypoints.
+  - drive to record a path; make the start and end close to each other.
+  - if you don't like path, select the reset button and it will
+    reset the origin _AND_ erase the path from memory.  MOve the
+    vehicle back to where the physical origin is and start driving
+    again to record a new path.
+  - if you like the path, select the save button to save it. 
+- The user flow for autopilot:  
+  - record or load a path (select load button) 
+  - select auto-pilot mode using joystick or web ui.  The
+    vehicle will start trying to follow the recorded path.
+  - switch back user model to stop autopilot.
+  - to restart using the saved path; 
+    - select reset button; this will erase path and reset origin 
+    - select load button to load path
+    - put the car back at the physical origin.
+
+
 """
 import os
 import sys
