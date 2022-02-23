@@ -17,7 +17,7 @@ import random
 import time
 import signal
 import logging
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Union
 
 from PIL import Image
 import numpy as np
@@ -428,7 +428,7 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
+def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'FastAiPilot']:
     '''
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
@@ -436,7 +436,10 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
         KerasLSTM, Keras3D_CNN
-    from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT
+    from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
+        FastAIInterpreter
+
+    from donkeycar.parts.fastai import FastAILinear
 
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
@@ -448,9 +451,15 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> 'KerasPilot':
     elif 'tensorrt_' in model_type:
         interpreter = TensorRT()
         used_model_type = model_type.replace('tensorrt_', '')
+    elif 'fastai_' in model_type:
+        interpreter = FastAIInterpreter()
+        used_model_type = model_type.replace('fastai_', '')
+        if used_model_type == "linear":
+            return FastAILinear(interpreter=interpreter, input_shape=input_shape)
     else:
         interpreter = KerasInterpreter()
         used_model_type = model_type
+
     used_model_type = EqMemorizedString(used_model_type)
     if used_model_type == "linear":
         kl = KerasLinear(interpreter=interpreter, input_shape=input_shape)

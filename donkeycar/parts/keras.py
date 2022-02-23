@@ -216,7 +216,7 @@ class KerasPilot(ABC):
             except Exception as ex:
                 print(f"problems with loss graph: {ex}")
             
-        return history
+        return history.history
 
     def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
         """ Return x from record, default returns only image array"""

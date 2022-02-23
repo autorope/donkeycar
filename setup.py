@@ -87,7 +87,8 @@ setup(name='donkeycar',
           'torch': [
               'pytorch>=1.7.1',
               'torchvision',
-              'torchaudio'
+              'torchaudio',
+              'fastai'
           ],
           'mm1': ['pyserial']
       },
