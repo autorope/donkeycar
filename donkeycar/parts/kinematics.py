@@ -514,7 +514,20 @@ class UnnormalizeSteeringAngle:
         pass
 
 
-def differential_steering(throttle:float, steering:float, steering_zero:float=0.01) -> Tuple[float, float]:
+def wheel_rotational_velocity(wheel_radius:float, speed:float) -> float:
+    """
+    Convert a forward speed to wheel rotational speed in radians per second.
+    Units like wheel_radius in meters and speed in meters per second
+    results in radians per second rotational wheel speed.
+
+    @wheel_radius:float radius of wheel in same distance units as speed
+    @speed:float speed in distance units compatible with radius
+    @return:float wheel's rotational speed in radians per second
+    """
+    return speed / wheel_radius
+
+
+def differential_steering(throttle: float, steering: float, steering_zero: float = 0.01) -> Tuple[float, float]:
         """
         Turn steering angle and speed/throttle into 
         left and right wheel speeds/throttle.
@@ -528,8 +541,8 @@ def differential_steering(throttle:float, steering:float, steering_zero:float=0.
         when a user is driving the car (so the user is the controller)
         This is the algorithm used by TwoWheelSteeringThrottle.
 
-        @Param steering:float -1 to 1, -1 full left, 0 straight, 1 is full right
         @Param throttle:float throttle or real speed; reverse < 0, 0 is stopped, forward > 0
+        @Param steering:float -1 to 1, -1 full left, 0 straight, 1 is full right
         @Param steering_zero:float values abs(steering) <= steering_zero are considered zero.
         """
         if not is_number_type(throttle):
@@ -546,59 +559,35 @@ def differential_steering(throttle:float, steering:float, steering_zero:float=0.
             logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
         steering = clamp(steering, -1, 1)
 
-        #
-        # if going straight, just return given speed
-        #
-        if abs(steering) <= steering_zero:
-            return throttle, throttle
-
         left_throttle = throttle
         right_throttle = throttle
  
-        if steering < 0:
-            left_throttle *= (1.0 - (-steering))
-        elif steering > 0:
+        if steering < -steering_zero:
+            left_throttle *= (1.0 + steering)
+        elif steering > steering_zero:
             right_throttle *= (1.0 - steering)
 
         return left_throttle, right_throttle        
-
-
-def wheel_rotational_velocity(wheel_radius:float, speed:float) -> float:
-    """
-    Convert a forward speed to wheel rotational speed in radians per second.
-    Units like wheel_radius in meters and speed in meters per second
-    results in radians per second rotational wheel speed.
-
-    @wheel_radius:float radius of wheel in same distance units as speed
-    @speed:float speed in distance units compatible with radius
-    @return:float wheel's rotational speed in radians per second
-    """
-    return speed / wheel_radius
 
 
 class TwoWheelSteeringThrottle:
     """
     convert throttle and steering into individual
     wheel throttles in a differential drive robot
+    @Param steering_zero:float values abs(steering) <= steering_zero are considered zero.
     """
-    def __init__(self, steering_zero:float=0.01) -> None:
+    def __init__(self, steering_zero: float = 0.01) -> None:
+        if not is_number_type(steering_zero):
+            raise ValueError("steering_zero must be a number")
+        if steering_zero > 1 or steering_zero < 0:
+            raise ValueError(f"steering_zero  {steering_zero}, but must be be between 1 and zero.")
         self.steering_zero = steering_zero
 
     def run(self, throttle, steering):
-        if not is_number_type(throttle):
-            logger.error("throttle must be a number")
-            return 0, 0
-        if throttle > 1 or throttle < -1:
-            logger.warn(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
-        throttle = clamp(throttle, -1, 1)
-
-        if not is_number_type(steering):
-            logger.warn("steering must be a number")
-            return 0, 0
-        if steering > 1 or steering < -1:
-            logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
-        steering = clamp(steering, -1, 1)
-
+        """
+        @Param throttle:float throttle or real speed; reverse < 0, 0 is stopped, forward > 0
+        @Param steering:float -1 to 1, -1 full left, 0 straight, 1 is full right
+        """
         return differential_steering(throttle, steering, self.steering_zero)
  
     def shutdown(self):

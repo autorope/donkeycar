@@ -1,14 +1,17 @@
 import math
 import unittest
 
-from tornado.web import stream_request_body
 from donkeycar.parts.kinematics import Bicycle, InverseBicycle, InverseUnicycle, bicycle_angular_velocity, limit_angle
 from donkeycar.parts.kinematics import BicycleNormalizeAngularVelocity, BicycleUnnormalizeAngularVelocity
 from donkeycar.parts.kinematics import Unicycle, unicycle_angular_velocity, unicycle_max_angular_velocity
 from donkeycar.parts.kinematics import UnicycleNormalizeAngularVelocity, UnicycleUnnormalizeAngularVelocity
 from donkeycar.parts.kinematics import NormalizeSteeringAngle, UnnormalizeSteeringAngle
+from donkeycar.parts.kinematics import differential_steering
 from donkeycar.utils import sign
 
+#
+# python -m unittest donkeycar/tests/test_kinematics.py
+#
 class TestBicycle(unittest.TestCase):
 
     def test_forward(self):
@@ -402,3 +405,25 @@ class TestNormalizeSteeringAngle(unittest.TestCase):
         self.assertAlmostEqual(steering_angle, 0.5, 3)
         steering_angle = unnormalize.run(steering_angle)
         self.assertAlmostEqual(steering_angle, max_steering_angle / 2, 3)
+
+
+class TestTwoWheelSteeringThrottle(unittest.TestCase):
+    def test_differential_steering(self):
+        # Straight within steering_zero tolerance
+        self.assertEqual((1.0, 1.0), differential_steering(1.0, 0.0, 0.0))
+        self.assertEqual((1.0, 1.0), differential_steering(1.0, 0.05, 0.10))
+        self.assertEqual((1.0, 1.0), differential_steering(1.0, 0.10, 0.10))
+        self.assertEqual((1.0, 1.0), differential_steering(1.0, -0.05, 0.10))
+        self.assertEqual((1.0, 1.0), differential_steering(1.0, -0.10, 0.10))
+
+        # left
+        self.assertEqual((0.9, 1.0), differential_steering(1.0, -0.10, 0.0))
+        self.assertEqual((0.8, 1.0), differential_steering(1.0, -0.20, 0.0))
+        self.assertEqual((0.45, 0.5), differential_steering(0.5, -0.10, 0.0))
+        self.assertEqual((0.40, 0.5), differential_steering(0.5, -0.20, 0.0))
+
+        # right
+        self.assertEqual((1.0, 0.9), differential_steering(1.0, 0.10, 0.0))
+        self.assertEqual((1.0, 0.8), differential_steering(1.0, 0.20, 0.0))
+        self.assertEqual((0.5, 0.45), differential_steering(0.5, 0.10, 0.0))
+        self.assertEqual((0.5, 0.40), differential_steering(0.5, 0.20, 0.0))
