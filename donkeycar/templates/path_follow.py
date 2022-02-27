@@ -134,7 +134,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # - it will optionally add any configured 'joystick' controller
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
-    ctr = add_user_controller(V, cfg, use_joystick)
+    ctr = add_user_controller(V, cfg, use_joystick, input_image = 'map/image')
 
     #
     # This part will reset the car back to the origin. You must put the car in the known origin
@@ -180,34 +180,38 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         path_loaded = True
 
     def save_path():
-        path.save(cfg.PATH_FILENAME)
-        print("saved path:", cfg.PATH_FILENAME)
-
+        if path.length() > 0:
+            if path.save(cfg.PATH_FILENAME):
+                print("That path was saved to ", cfg.PATH_FILENAME)
+            else:
+                print("The path could NOT be saved; check the PATH_FILENAME in myconfig.py to make sure it is a legal path")
+        else:
+            print("There is no path to save; try recording the path.")
 
     def load_path():
-       path.load(cfg.PATH_FILENAME)
-       path_loaded = True
-       print("loaded path:", cfg.PATH_FILENAME)
-
+       if path.load(cfg.PATH_FILENAME):
+           path_loaded = True
+           mode = 'user'
+           print("The path was loaded was loaded from ", cfg.PATH_FILENAME)
+       else:
+           print("path _not_ loaded; make sure you have saved a path.")
 
     def erase_path():
         global mode, path_loaded
-        path.reset()
-        if os.path.exists(cfg.PATH_FILENAME):
-            os.remove(cfg.PATH_FILENAME)
+        origin_reset.init_to_last
+        if path.reset():
             mode = 'user'
             path_loaded = False
-            print("erased path", cfg.PATH_FILENAME)
+            print("The origin and the path were reset; you are ready to record a new path.")
         else:
-            print("no path found to erase")
-    
+            print("The origin was reset; you are ready to record a new path.")
+
     def reset_origin():
         """
         Reset effective pose to (0, 0)
         """
-        print("Resetting origin")
         origin_reset.init_to_last
-
+        print("The origin was reset to the current position.")
 
     # Here's an image we can map to.
     img = PImage(clear_each_frame=True)

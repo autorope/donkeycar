@@ -725,7 +725,7 @@ def get_user_controller(cfg):
     return ctr
 
 
-def add_user_controller(V, cfg, use_joystick):
+def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     """
     Add the web controller and any other
     configured user input controller.
@@ -739,7 +739,7 @@ def add_user_controller(V, cfg, use_joystick):
     # it will also show the camera feed
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
-        inputs=['cam/image_array', 'tub/num_records'],
+        inputs=[input_image, 'tub/num_records'],
         outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
         threaded=True)
 
