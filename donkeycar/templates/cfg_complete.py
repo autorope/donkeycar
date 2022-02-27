@@ -71,7 +71,7 @@ WHEEL_RADIUS = 0.0315  # radius of wheel in meters
 MIN_SPEED = 0.1        # minimum speed in meters per second; speed below which car stalls
 MAX_SPEED = 3.0        # maximum speed in meters per second; speed at maximum throttle (1.0)
 MIN_THROTTLE = 0.1     # throttle (0 to 1.0) that corresponds to MIN_SPEED, throttle below which car stalls
-MAX_STEERING_ANGLE = math.pi / 4  # for car-like robot; maximum steering angle in radians (corresponding to tire angle at steering == -1)
+MAX_STEERING_ANGLE = 3.141592653589793 / 4  # for car-like robot; maximum steering angle in radians (corresponding to tire angle at steering == -1)
 
 
 #
