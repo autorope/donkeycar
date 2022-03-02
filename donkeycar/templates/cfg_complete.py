@@ -60,10 +60,11 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 # "SERVO_HBRIDGE_2PIN" Servo for steering and HBridge motor driver in 2pin mode for motor
 # "SERVO_HBRIDGE_3PIN" Servo for steering and HBridge motor driver in 3pin mode for motor
 # "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-# "DC_TWO_WHEEL" uses HBridge in two-pin mode to control two drive motors, one on the left, and one on the right.
-# "DC_TWO_WHEEL_L298N" using HBridge in three-pin mode to control two drive motors, one of the left and one on the right.
+# "DC_TWO_WHEEL" uses HBridge in 2-pin mode to control two drive motors, one on the left, and one on the right.
+# "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
 # "MOCK" no drive train.  This can be used to test other features in a test rig.
-# (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+# (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering,
+#                                  and HBridge for a drive motor.
 # (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
 # (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
 #
@@ -91,29 +92,25 @@ PWM_STEERING_THROTTLE = {
 }
 
 #
-# I2C_SERVO (deprecated in favor of PWM_STEERING_THROTTLE0
+# I2C_SERVO (deprecated in favor of PWM_STEERING_THROTTLE)
 #
-I2C_SERVO = {
-    "STEERING_CHANNEL": 1,            #(deprecated) channel on the 9685 pwm board 0-15
-    "STEERING_LEFT_PWM": 460,         #pwm value for full left steering
-    "STEERING_RIGHT_PWM": 290,        #pwm value for full right steering
-    "THROTTLE_CHANNEL": 0,            #(deprecated) channel on the 9685 pwm board 0-15
-    "THROTTLE_FORWARD_PWM": 500,      #pwm value for max forward throttle
-    "THROTTLE_STOPPED_PWM": 370,      #pwm value for no movement
-    "THROTTLE_REVERSE_PWM": 220,      #pwm value for max reverse throttle
-}
+STEERING_CHANNEL = 1            #(deprecated) channel on the 9685 pwm board 0-15
+STEERING_LEFT_PWM = 460         #pwm value for full left steering
+STEERING_RIGHT_PWM = 290        #pwm value for full right steering
+THROTTLE_CHANNEL = 0            #(deprecated) channel on the 9685 pwm board 0-15
+THROTTLE_FORWARD_PWM = 500      #pwm value for max forward throttle
+THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
+THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
 
 #
 # PIGPIO_PWM (deprecated in favor of PWM_STEERING_THROTTLE)
 #
-PIGPIO_PWM = {
-    "STEERING_PWM_PIN": 13,           #(deprecated) Pin numbering according to Broadcom numbers
-    "STEERING_PWM_FREQ": 50,          #Frequency for PWM
-    "STEERING_PWM_INVERTED": False,   #If PWM needs to be inverted
-    "THROTTLE_PWM_PIN": 18,           #(deprecated) Pin numbering according to Broadcom numbers
-    "THROTTLE_PWM_FREQ": 50,          #Frequency for PWM
-    "THROTTLE_PWM_INVERTED": False,   #If PWM needs to be inverted
-}
+STEERING_PWM_PIN = 13           #(deprecated) Pin numbering according to Broadcom numbers
+STEERING_PWM_FREQ = 50          #Frequency for PWM
+STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
+THROTTLE_PWM_PIN = 18           #(deprecated) Pin numbering according to Broadcom numbers
+THROTTLE_PWM_FREQ = 50          #Frequency for PWM
+THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 
 #
 # SERVO_HBRIDGE_2PIN
@@ -218,13 +215,11 @@ SERVO_HBRIDGE_3PIN = {
 #   and glide to a stop.
 # - both pwms are full duty cycle (100% HIGH) to brake
 #
-SERVO_HBRIDGE_PWM = {
-    "HBRIDGE_PIN_FWD": 18,  # provides forward duty cycle to motor
-    "HBRIDGE_PIN_BWD": 16,  # provides reverse duty cycle to motor
-    "STEERING_CHANNEL": 0,  # PCA 9685 channel for steering control
-    "STEERING_LEFT_PWM": 460,         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
-    "STEERING_RIGHT_PWM": 290,        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
-}
+HBRIDGE_PIN_FWD = 18,       ß# provides forward duty cycle to motor
+HBRIDGE_PIN_BWD = 16,       # provides reverse duty cycle to motor
+STEERING_CHANNEL = 0,       # PCA 9685 channel for steering control
+STEERING_LEFT_PWM = 460,    # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290,   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive

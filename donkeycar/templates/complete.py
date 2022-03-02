@@ -587,22 +587,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
         #
-        # Thi driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE"'
+        # This driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE"'
         # This driver will be removed in a future release
         #
         from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 
-        dt = cfg.I2C_SERVO
-        steering_controller = PCA9685(dt["STEERING_CHANNEL"], cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
         steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=dt['STEERING_LEFT_PWM'],
-                                        right_pulse=dt['STEERING_RIGHT_PWM'])
+                                        left_pulse=cfg.STEERING_LEFT_PWM,
+                                        right_pulse=cfg.STEERING_RIGHT_PWM)
 
-        throttle_controller = PCA9685(dt['THROTTLE_CHANNEL'], cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
         throttle = PWMThrottle(controller=throttle_controller,
-                                        max_pulse=dt['THROTTLE_FORWARD_PWM'],
-                                        zero_pulse=dt['THROTTLE_STOPPED_PWM'],
-                                        min_pulse=dt['THROTTLE_REVERSE_PWM'])
+                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(throttle, inputs=['throttle'], threaded=True)
@@ -708,44 +707,42 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # This driver will be removed in a future release
         #
         from donkeycar.parts.actuator import ServoBlaster, PWMSteering
-
-        dt = cfg.SERVO_HBRIDGE_PWM
-        steering_controller = ServoBlaster(dt['STEERING_CHANNEL']) #really pin
+        steering_controller = ServoBlaster(cfg.STEERING_CHANNEL) #really pin
         # PWM pulse values should be in the range of 100 to 200
-        assert(dt['STEERING_LEFT_PWM'] <= 200)
-        assert(dt['STEERING_RIGHT_PWM'] <= 200)
+        assert(cfg.STEERING_LEFT_PWM <= 200)
+        assert(cfg.STEERING_RIGHT_PWM <= 200)
         steering = PWMSteering(controller=steering_controller,
-                               left_pulse=dt['STEERING_LEFT_PWM'],
-                               right_pulse=dt['STEERING_RIGHT_PWM'])
+                               left_pulse=cfg.STEERING_LEFT_PWM,
+                               right_pulse=cfg.STEERING_RIGHT_PWM)
 
         from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
-        motor = Mini_HBridge_DC_Motor_PWM(dt['HBRIDGE_PIN_FWD'], dt['HBRIDGE_PIN_BWD'])
+        motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(motor, inputs=["throttle"])
-        
+
     elif cfg.DRIVE_TRAIN_TYPE == "MM1":
         from donkeycar.parts.robohat import RoboHATDriver
         V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
-    
+
     elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
         #
         # Thi driver is DEPRECATED in favor of 'DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE"'
         # This driver will be removed in a future release
         #
         from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PiGPIO_PWM
-        
-        dt = cfg.PIGPIO_PWM
-        steering_controller = PiGPIO_PWM(dt['STEERING_PWM_PIN'], freq=dt['STEERING_PWM_FREQ'], inverted=dt['STEERING_PWM_INVERTED'])
+        steering_controller = PiGPIO_PWM(cfg.STEERING_PWM_PIN, freq=cfg.STEERING_PWM_FREQ,
+                                         inverted=cfg.STEERING_PWM_INVERTED)
         steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=dt['STEERING_LEFT_PWM'],
-                                        right_pulse=dt['STEERING_RIGHT_PWM'])
-        
-        throttle_controller = PiGPIO_PWM(dt['THROTTLE_PWM_PIN'], freq=dt['THROTTLE_PWM_FREQ'], inverted=dt['THROTTLE_PWM_INVERTED'])
+                               left_pulse=cfg.STEERING_LEFT_PWM,
+                               right_pulse=cfg.STEERING_RIGHT_PWM)
+
+        throttle_controller = PiGPIO_PWM(cfg.THROTTLE_PWM_PIN, freq=cfg.THROTTLE_PWM_FREQ,
+                                         inverted=cfg.THROTTLE_PWM_INVERTED)
         throttle = PWMThrottle(controller=throttle_controller,
-                                            max_pulse=dt['THROTTLE_FORWARD_PWM'],
-                                            zero_pulse=dt['THROTTLE_STOPPED_PWM'],
-                                            min_pulse=dt['THROTTLE_REVERSE_PWM'])
+                               max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                               zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                               min_pulse=cfg.THROTTLE_REVERSE_PWM)
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(throttle, inputs=['throttle'], threaded=True)
 
