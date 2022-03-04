@@ -610,6 +610,6 @@ RESET_ORIGIN_BTN = "square"       # joystick button to press to move car back to
 ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 
 # Intel Realsense T265 tracking camera
-REALSENSE_T265_ID = # serial number of camera or None if you only have one camera (it will autodetect)
+REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
 

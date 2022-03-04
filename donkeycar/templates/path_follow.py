@@ -111,7 +111,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
             exit(1)
 
-        rs = RS_T265(image_output=True, calib_filename=cfg.WHEEL_ODOM_CALIB, device_id=cfg.REALSENSE_T265_ID)
+        rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB, device_id=cfg.REALSENSE_T265_ID)
         V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array', 'rs/camera/right/img_array'], threaded=True)
         V.add(Pipe(), inputs=['rs/camera/left/img_array'], outputs=['cam/image_array'])
 
