@@ -9,7 +9,7 @@ class LoggerPart:
     def __init__(self, inputs: List[str], level: str="INFO", rate: int=1, logger=None):
         self.inputs = inputs
         self.rate = rate
-        self.level = logging._nameToLevel.get(self.level, "INFO")
+        self.level = logging._nameToLevel.get(level, logging.INFO)
         self.logger = logging.getLogger(logger if logger is not None else "LoggerPart")
 
         self.values = {}
@@ -19,7 +19,7 @@ class LoggerPart:
     def run(self, *args):
         if self.running:
             self.count = (self.count + 1) % (self.rate + 1)
-            for i in range(self.inputs.length):
+            for i in range(len(self.inputs)):
                 field = self.inputs[i]
                 value = args[i]
                 old_value = self.values.get(field)

@@ -6,7 +6,6 @@ class Pipe:
     Just pipe all inputs to the output, so they can be renames.
     """
     def __init__(self):
-        self.outputs = outputs
         self.running = True
 
     def run(self, *args):
