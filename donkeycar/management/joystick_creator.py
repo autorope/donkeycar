@@ -143,7 +143,7 @@ class CreateJoystick(object):
         while js_cr is None:
             print("Where can we find the device file for your joystick?")
             dev_fn = input("Hit Enter for default: /dev/input/js0 or type alternate path: ")
-            if len(dev_fn) is 0:
+            if len(dev_fn) == 0:
                 dev_fn = '/dev/input/js0'
 
             print()
