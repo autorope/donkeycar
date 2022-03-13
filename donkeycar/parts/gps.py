@@ -50,7 +50,8 @@ class gps:
         if self.gps is not None:
             if self.lock.acquire(blocking=False):
                 try:
-                    if self.gps is not None and self.gps.is_open:  # and self.gps.in_waiting:
+                    # TODO: Serial.in_waiting _always_ returns 0 in Macintosh
+                    if self.gps is not None and self.gps.is_open and self.gps.in_waiting:
                         return self.gps.readline().decode()
                 except serial.serialutil.SerialException:
                     pass
@@ -359,14 +360,25 @@ if __name__ == "__main__":
         like GPS, where x and y values may not be completely
         independent values.
         """
-        def __init__(self, samples, nstd = 0.5):
+        def __init__(self, samples, nstd = 1.0):
+            """
+            Fit an ellipsoid to the given samples at the
+            given multiple of the standard deviation of the samples.
+            """
+            
+            # separate out the points by axis
             self.x = [w[1] for w in samples]
             self.y = [w[2] for w in samples]
+            
+            # calculate the stats for each axis
             self.x_stats = stats(self.x)
             self.y_stats = stats(self.y)
-            print(self.x_stats.min, self.x_stats.max)
-            print(self.y_stats.min, self.y_stats.max)
 
+            #
+            # calculate a rotated ellipse that best fits the samples.
+            # We use a rotated ellipse because the x and y values 
+            # of each point are not independent.  
+            # 
             def eigsorted(cov):
                 """
                 Calculate eigenvalues and eigenvectors
@@ -388,7 +400,8 @@ if __name__ == "__main__":
 
         def is_inside(self, x, y):
             """
-            Determine if the given (x,y) point is within the waypoint
+            Determine if the given (x,y) point is within the waypoint's
+            fitted ellipsoid
             """
             # if (x >= self.x_stats.min) and (x <= self.x_stats.max):
             #     if (y >= self.y_stats.min) and (y <= self.y_stats.max):
@@ -411,6 +424,29 @@ if __name__ == "__main__":
             part2 = ((sin_theta * x_translated - cos_theta * y_translated) / self.height)**2
             return (part1 + part2) <= 1
 
+        def is_in_range(self, x, y):
+            """
+            Determine if the given (x,y) point is within the
+            range of the collected waypoint samples
+            """
+            return (x >= self.x_stats.min) and \
+                   (x <= self.x_stats.max) and \
+                   (y >= self.y_stats.min) and \
+                   (y <= self.y_stats.max)
+            
+        def is_in_std(self, x, y, std_multiple=1.0):
+            """
+            Determine if the given (x, y) point is within a given
+            multiple of the standard deviation of the samples
+            on each axis.
+            """
+            x_std = self.x_stats.std_deviation * std_multiple
+            y_std = self.y_stats.std_deviation * std_multiple
+            return (x >= (self.x_stats.mean - x_std)) and \
+                   (x <= (self.x_stats.mean + x_std)) and \
+                   (y >= (self.y_stats.mean - y_std)) and \
+                   (y <= (self.y_stats.mean + y_std))
+
         def show(self):
             """
             Draw the waypoint ellipsoid
@@ -418,13 +454,58 @@ if __name__ == "__main__":
             from matplotlib.patches import Ellipse
             import matplotlib.pyplot as plt
             ax = plt.subplot(111, aspect='equal')
-            ell = Ellipse(xy=(self.x_stats.mean, self.y_stats.mean),
+            self.plot()
+            plt.show()
+            
+        def plot(self):
+            """
+            Draw the waypoint ellipsoid
+            """
+            from matplotlib.patches import Ellipse, Rectangle
+            import matplotlib.pyplot as plt
+            #define Matplotlib figure and axis
+            ax = plt.subplot(111, aspect='equal')
+            
+            # plot the collected readings
+            plt.scatter(self.x, self.y)
+            
+            # plot the centroid
+            plt.plot(self.x_stats.mean, self.y_stats.mean, marker="+", markeredgecolor="green", markerfacecolor="green")
+            
+            # plot the range
+            bounds = Rectangle(
+                (self.x_stats.min, self.y_stats.min), 
+                self.x_stats.max - self.x_stats.min, 
+                self.y_stats.max - self.y_stats.min,
+                alpha=0.5,
+                edgecolor='red',
+                fill=False,
+                visible=True)
+            ax.add_artist(bounds)
+
+            # plot the ellipsoid 
+            ellipse = Ellipse(xy=(self.x_stats.mean, self.y_stats.mean),
                           width=self.width, height=self.height,
                           angle=self.theta)
-            ell.set_facecolor('none')
-            ax.add_artist(ell)
-            plt.scatter(self.x, self.y)
-            plt.show()
+            ellipse.set_alpha(0.25)
+            ellipse.set_facecolor('green')
+            ax.add_artist(ellipse)
+
+    def is_in_waypoint_range(waypoints, x, y):
+        i = 0
+        for waypoint in waypoints:
+            if waypoint.is_in_range(x, y):
+                return True, i
+            i += 1
+        return False, -1
+
+    def is_in_waypoint_std(waypoints, x, y, std):
+        i = 0
+        for waypoint in waypoints:
+            if waypoint.is_in_std(x, y, std):
+                return True, i
+            i += 1
+        return False, -1
 
     def is_in_waypoint(waypoints, x, y):
         i = 0
@@ -441,14 +522,9 @@ if __name__ == "__main__":
         """
         from matplotlib.patches import Ellipse
         import matplotlib.pyplot as plt
+        ax = plt.subplot(111, aspect='equal')
         for waypoint in waypoints:
-            ax = plt.subplot(111, aspect='equal')
-            ell = Ellipse(xy=(waypoint.x_stats.mean, waypoint.y_stats.mean),
-                          width=waypoint.width, height=waypoint.height,
-                          angle=waypoint.theta)
-            ell.set_facecolor('none')
-            ax.add_artist(ell)
-            plt.scatter(waypoint.x, waypoint.y)
+            waypoint.plot()
         plt.show()
 
 
@@ -523,11 +599,11 @@ if __name__ == "__main__":
                         # that encompasses the samples taken at the waypoint.
                         #
                         waypoint = Waypoint(waypoint_samples)
-                        # if args.debug:
-                        #     waypoint.show()
                         waypoints.append(waypoint)
                         if len(waypoints) < waypoint_count:
                             state = "prompt"
+                            # if args.debug:
+                            #     waypoint.show()
                         else:
                             state = "test_prompt"
                             if args.debug:
@@ -538,9 +614,16 @@ if __name__ == "__main__":
                 elif state == "test":
                     for ts, x, y in readings:
                         print(f"Your position is ({x}, {y})")
+                        hit, index = is_in_waypoint_range(waypoints, x, y)
+                        if hit:
+                            print(f"You are within the sample range of waypoint #{index + 1}")
+                        std_deviation = 1.0
+                        hit, index = is_in_waypoint_std(waypoints, x, y, std_deviation)
+                        if hit:
+                            print(f"You are within {std_deviation} standard deviations of the center of waypoint #{index + 1}")
                         hit, index = is_in_waypoint(waypoints, x, y)
                         if hit:
-                            print(f"You are at waypoint #{index + 1}")
+                            print(f"You are at waypoint's ellipse #{index + 1}")
                 else:
                     # just log the readings
                     for position in readings:
