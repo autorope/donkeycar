@@ -1,71 +1,99 @@
 import argparse
 from functools import reduce
+import logging
 import operator
 import threading
 import time
 
-# import pynmea2
+import pynmea2
 import serial
 import utm
 
+logger = logging.getLogger("gps")
+logger.setLevel(logging.DEBUG)
+
 class gps:
-    def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5):
+    def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
         self.serial = serial
         self.baudrate = baudrate
         self.timeout = timeout
+        self.debug = debug
         self.positions = []  # tuple of (timestamp, longitude, latitude)
-        self.threaded = None
         self.gps = None
         self.lock = threading.Lock()
         self.running = True
+        self._open()
+        self.clear()
+
+    def _open(self):
+        with self.lock:
+            self.gps = serial.Serial(self.serial, baudrate=self.baudrate, timeout=self.timeout)
 
     def clear(self):
         """
         Clear the positions buffer
         """
-        with self.lock:
-            self.positions = []
+        if self.gps is not None:
+            with self.lock:
+                try:
+                    if self.gps is not None and self.gps.is_open:
+                        self.positions = []
+                        self.gps.reset_input_buffer()
+                except serial.serialutil.SerialException:
+                    pass
 
-    def poll(self, gps, timestamp=None):
+    def _readline(self) -> str:
+        """
+        Read a line from the gps in a threadsafe manner
+        returns line if read and None if no line was read
+        """
+        if self.gps is not None:
+            if self.lock.acquire(blocking=False):
+                try:
+                    if self.gps is not None and self.gps.is_open:  # and self.gps.in_waiting:
+                        return self.gps.readline().decode()
+                except serial.serialutil.SerialException:
+                    pass
+                finally:
+                    self.lock.release()
+        return None
+
+    def poll(self, timestamp=None):
         #
         # read a line and convert to a position
+        # in a threadsafe manner
         #
-        if self.running and gps is not None:
+        # if there are characters waiting
+        # then read the line and parse it
+        #
+        if self.running:
             try:
                 if timestamp is None:
                     timestamp = time.time()
-                line = gps.readline().decode()
-                position = getGpsPosition(line)
-                if position:
-                    # (timestamp, longitude latitude)
-                    return (timestamp, position[0], position[1])
+                line = self._readline()
+                if line:
+                    if self.debug:
+                        logger.info(line)
+                    position = getGpsPosition(line, debug=self.debug)
+                    if position:
+                        # (timestamp, longitude latitude)
+                        return (timestamp, position[0], position[1])
             except KeyboardInterrupt as e:
                 self.running = False
-                print("User shutdown, gps closed!")
+                logger.info("User shutdown, gps closed!")
                 raise e
-            except pynmea2.ParseError as e:
-                print('Ignoring NMEA parse error: {}'.format(e))
             except Exception as e:
-                print("Application error:" + str(e))
+                logger.info("Application error:" + str(e))
                 self.running = False
         return None
 
     def run(self):
         if self.running:
-            if self.threaded:
-                return self.run_threaded()
-
-            #
-            # open the serial port in main thread
-            #
-            if not self.gps:
-                self.gps = serial.Serial(self.serial, baudrate=self.baudrate, timeout=self.timeout)
-
             #
             # in non-threaded mode, just read a single reading and return it
             #
-            if self.gps:
-                position = self.poll(self.gps, time.time())
+            if self.gps is not None:
+                position = self.poll(time.time())
                 if position:
                     # [(timestamp, longitude, latitude)]
                     return [position]
@@ -91,51 +119,42 @@ class gps:
         # open serial port and run an infinite loop.
         # NOTE: this is NOT compatible with non-threaded run()
         #
-        if self.running:
-            if self.gps is not None:
-                raise RuntimeError("Attempt to start threaded mode when non-threaded mode is in use.")
-            self.threaded = True
-
-            #
-            # open the serial port in the thread
-            # and read it continuously, moving
-            # readings into self.positions list.
-            # The last position in the list is the
-            # most recent reading
-            #
-            with serial.Serial(self.serial, baudrate=self.baudrate, timeout=self.timeout) as gps:
-                buffered_positions = []  # local read buffer
-                while self.running:
-                    position = self.poll(gps, time.time())
-                    if position:
-                        buffered_positions.append(position)
-                    if buffered_positions:
-                        #
-                        # make sure we access self.positions in
-                        # a threadsafe manner.
-                        # This will NOT block:
-                        # - If it can't write then it will leave
-                        #   readings in buffered_positions.
-                        # - If it can write then it will moved the
-                        #   buffered_positions into self.positions
-                        #   and clear the buffer.
-                        #
-                        if self.lock.acquire(blocking=False):
-                            try:
-                                self.positions += buffered_positions
-                                buffered_positions = []
-                            finally:
-                                self.lock.release()
-            self.threaded = False
+        buffered_positions = []  # local read buffer
+        while self.running:
+            position = self.poll(time.time())
+            if position:
+                buffered_positions.append(position)
+            if buffered_positions:
+                #
+                # make sure we access self.positions in
+                # a threadsafe manner.
+                # This will NOT block:
+                # - If it can't write then it will leave
+                #   readings in buffered_positions.
+                # - If it can write then it will moved the
+                #   buffered_positions into self.positions
+                #   and clear the buffer.
+                #
+                if self.lock.acquire(blocking=False):
+                    try:
+                        self.positions += buffered_positions
+                        buffered_positions = []
+                    finally:
+                        self.lock.release()
+            time.sleep(0)  # give other threads time
 
     def shutdown(self):
         self.running = False
-        if self.gps:
-            self.gps.close()
-            self.gps = None
+        with self.lock:
+            try:
+                if self.gps is not None and self.gps.is_open:
+                    self.gps.close()
+            except serial.serialutil.SerialException:
+                pass
+        self.gps = None
 
 
-def getGpsPosition(line):
+def getGpsPosition(line, debug=False):
     """
     Given a line emitted by a GPS module, 
     Parse out the position and return as a 
@@ -153,11 +172,13 @@ def getGpsPosition(line):
     # must start with $ and end with checksum
     #
     if '$' != line[0]:
-        print("Missing line start")
+        if debug:
+            logger.warning("NMEA Missing line start")
         return None
         
     if '*' != line[-3]:
-        print("Missing checksum")
+        if debug:
+            logger.warning("NMEA Missing checksum")
         return None
         
     nmea_checksum = parse_nmea_checksum(line) # ## checksum hex digits as int
@@ -173,7 +194,8 @@ def getGpsPosition(line):
         #
         calculated_checksum = calculate_nmea_checksum(line)
         if nmea_checksum != calculated_checksum:
-            print(f"checksum does not match: {nmea_checksum} != {calculated_checksum}")
+            if debug:
+                logger.warning(f"NMEA checksum does not match: {nmea_checksum} != {calculated_checksum}")
         
         #
         # parse against a known parser to check our parser
@@ -182,13 +204,17 @@ def getGpsPosition(line):
         #       Conversely, if our parser works then use it as
         #       it is very lightweight.
         #
-        # msg = pynmea2.parse(line)
-        # print(f"nmea.longitude({msg.longitude}, nmea.latitude({msg.latitude})")
-        
+        if debug:
+            try:
+                msg = pynmea2.parse(line)
+                logger.info(f"nmea.longitude({msg.longitude}, nmea.latitude({msg.latitude})")
+            except pynmea2.ParseError as e:
+                logger.info('Ignoring NMEA parse error: {}'.format(e))
+
         # Reading the GPS fix data is an alternative approach that also works
         if nmea_parts[2] == 'V':
             # V = Warning, most likely, there are no satellites in view...
-            print("GPS receiver warning")
+            logger.warning("GPS receiver warning; position not valid")
         else:
             #
             # Convert the textual nmea position into degrees
@@ -277,21 +303,186 @@ def nmea_to_degrees(gps_str, direction):
     return (degrees + minutes) * (-1 if direction in ['W', 'S'] else 1)
     
 
+#
+# The __main__ self test can log position or records a set of waypoints
+#
 if __name__ == "__main__":
+    import math
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Ellipse
+    import sys
+    import readchar
+
+
+    def stats(data):
+        """
+        Calculate (min, max, mean, std_deviation) of a list of floats
+        """
+        if data is None or len(data) == 0:
+            return None
+        count = len(data)
+        min = None
+        max = None
+        sum = 0
+        for x in data:
+            if min is None or x < min:
+                min = x
+            if max is None or x > max:
+                max = x
+            sum += x
+        mean = sum / count
+        sum_errors_squared = 0
+        for x in data:
+            error = x - mean
+            sum_errors_squared += (error * error)
+        std_deviation = math.sqrt(sum_errors_squared / count)
+        return Stats(count, sum, min, max, mean, std_deviation)
+
+    class Stats:
+        """
+        Statistics for a set of data
+        """
+        def __init__(self, count, sum, min, max, mean, std_deviation):
+            self.count = count
+            self.sum = sum
+            self.min = min
+            self.max = max
+            self.mean = mean
+            self.std_deviation = std_deviation
+
+    class Waypoint:
+        """
+        A waypoint created from multiple samples,
+        modelled as a non-axis-aligned (rotated) ellipsoid.
+        This models a waypoint based on a jittery source,
+        like GPS, where x and y values may not be completely
+        independent values.
+        """
+        def __init__(self, samples, nstd = 0.5):
+            self.x = [w[1] for w in samples]
+            self.y = [w[2] for w in samples]
+            self.x_stats = stats(self.x)
+            self.y_stats = stats(self.y)
+            print(self.x_stats.min, self.x_stats.max)
+            print(self.y_stats.min, self.y_stats.max)
+
+            def eigsorted(cov):
+                """
+                Calculate eigenvalues and eigenvectors
+                and return them sorted by eigenvalue.
+                """
+                eigenvalues, eigenvectors = np.linalg.eigh(cov)
+                order = eigenvalues.argsort()[::-1]
+                return eigenvalues[order], eigenvectors[:, order]
+
+            # calculate covariance matrix between x and y values
+            self.cov = np.cov(self.x, self.y)
+
+            # get eigenvalues and vectors from covariance matrix
+            self.eigenvalues, self.eigenvectors = eigsorted(self.cov)
+
+            # calculate the ellipsoid at the given multiple of the standard deviation.
+            self.theta = np.degrees(np.arctan2(*self.eigenvectors[:, 0][::-1]))
+            self.width, self.height = 2 * nstd * np.sqrt(self.eigenvalues)
+
+        def is_inside(self, x, y):
+            """
+            Determine if the given (x,y) point is within the waypoint
+            """
+            # if (x >= self.x_stats.min) and (x <= self.x_stats.max):
+            #     if (y >= self.y_stats.min) and (y <= self.y_stats.max):
+            #         return True
+            # return False
+            # if (x >= (self.x_stats.mean - self.x_stats.std_deviation)) and (x <= (self.x_stats.mean + self.x_stats.std_deviation)):
+            #     if (y >= (self.y_stats.mean - self.y_stats.std_deviation)) and (y <= (self.y_stats.mean + self.y_stats.std_deviation)):
+            #         return True
+            # return False
+            cos_theta = math.cos(self.theta)
+            sin_theta = math.sin(self.theta)
+            x_translated = x - self.x_stats.mean
+            y_translated = y - self.y_stats.mean
+            #
+            # basically translate the test point into the
+            # coordinate system of the ellipse (it's center)
+            # and then rotate the point and do a normal ellipse test
+            #
+            part1 = ((cos_theta * x_translated + sin_theta * y_translated) / self.width)**2
+            part2 = ((sin_theta * x_translated - cos_theta * y_translated) / self.height)**2
+            return (part1 + part2) <= 1
+
+        def show(self):
+            """
+            Draw the waypoint ellipsoid
+            """
+            from matplotlib.patches import Ellipse
+            import matplotlib.pyplot as plt
+            ax = plt.subplot(111, aspect='equal')
+            ell = Ellipse(xy=(self.x_stats.mean, self.y_stats.mean),
+                          width=self.width, height=self.height,
+                          angle=self.theta)
+            ell.set_facecolor('none')
+            ax.add_artist(ell)
+            plt.scatter(self.x, self.y)
+            plt.show()
+
+    def is_in_waypoint(waypoints, x, y):
+        i = 0
+        for waypoint in waypoints:
+            if waypoint.is_inside(x, y):
+                return True, i
+            i += 1
+        return False, -1
+
+
+    def plot(waypoints):
+        """
+        Draw the waypoint ellipsoid
+        """
+        from matplotlib.patches import Ellipse
+        import matplotlib.pyplot as plt
+        for waypoint in waypoints:
+            ax = plt.subplot(111, aspect='equal')
+            ell = Ellipse(xy=(waypoint.x_stats.mean, waypoint.y_stats.mean),
+                          width=waypoint.width, height=waypoint.height,
+                          angle=waypoint.theta)
+            ell.set_facecolor('none')
+            ax.add_artist(ell)
+            plt.scatter(waypoint.x, waypoint.y)
+        plt.show()
+
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--serial", type=str, required=True, help="Serial port address, like '/dev/tty.usbmodem1411'")
-    parser.add_argument("--baudrate", type=int, default=9600, help="Serial port baud rate")
-    parser.add_argument("--timeout", type=float, default=0.5, help="Serial port timeout in seconds")
-    parser.add_argument("-t", "--threaded", default=False, action='store_true', help = "run in threaded mode")
+    parser.add_argument("-s", "--serial", type=str, required=True, help="Serial port address, like '/dev/tty.usbmodem1411'")
+    parser.add_argument("-b", "--baudrate", type=int, default=9600, help="Serial port baud rate.")
+    parser.add_argument("-t", "--timeout", type=float, default=0.5, help="Serial port timeout in seconds.")
+    parser.add_argument("-sp", '--samples', type=int, default = 5, help = "Number of samples per waypoint.")
+    parser.add_argument("-wp", "--waypoints", type=int, default = 0, help = "Number of waypoints to collect; > 0 to collect waypoints, 0 to just log position")
+    parser.add_argument("-th", "--threaded", action='store_true', help = "run in threaded mode.")
+    parser.add_argument("-db", "--debug", action='store_true', help = "Enable extra logging")
     args = parser.parse_args()
+
+    if args.waypoints < 0:
+        print("Use waypoints > 0 to collect waypoints, use 0 waypoints to just log position")
+        parser.print_help()
+        sys.exit(0)
+
+    if args.samples < 0:
+        print("Samples per waypoint must be greater than zero")
+        parser.print_help()
+        sys.exit(0)
 
     update_thread = None
     gps_reader = None
 
+    waypoint_count = args.waypoints      # number of paypoints in the path
+    samples_per_waypoint = args.samples  # number of readings per waypoint
+    waypoints = []
+    waypoint_samples = []
+
     try:
-        gps_reader = gps(args.serial, args.baudrate, args.timeout)
+        gps_reader = gps(args.serial, baudrate=args.baudrate, timeout=args.timeout, debug=args.debug)
 
         #
         # start the threaded part
@@ -301,10 +492,64 @@ if __name__ == "__main__":
             update_thread = threading.Thread(target=gps_reader.update, args=())
             update_thread.start()
 
+        def read_gps():
+            return gps_reader.run_threaded() if args.threaded else gps_reader.run()
+
+        ts = time.time()
+        state = "prompt" if waypoint_count > 0 else ""
         while gps_reader.running:
-            readings = gps_reader.run_threaded() if args.threaded else gps_reader.run()
+            readings = read_gps()
             if readings:
-                print(readings)
+                print("")
+                if state == "prompt":
+                    print(f"Move to waypoint #{len(waypoints)+1} and press the space bar and enter to start sampling or any other key to just start logging.")
+                    state = "move"
+                elif state == "move":
+                    key_press = readchar.readchar()  # sys.stdin.read(1)
+                    if key_press == ' ':
+                        waypoint_samples = []
+                        gps_reader.clear()  # throw away buffered readings
+                        state = "sampling"
+                    else:
+                        state = ""  # just start logging
+                elif state == "sampling":
+                    waypoint_samples += readings
+                    count = len(waypoint_samples)
+                    print(f"Collected {count} so far...")
+                    if count > samples_per_waypoint:
+                        print(f"...done.  Collected {count} samples for waypoint #{len(waypoints)+1}")
+                        #
+                        # model a waypoint as a rotated ellipsoid
+                        # that encompasses the samples taken at the waypoint.
+                        #
+                        waypoint = Waypoint(waypoint_samples)
+                        # if args.debug:
+                        #     waypoint.show()
+                        waypoints.append(waypoint)
+                        if len(waypoints) < waypoint_count:
+                            state = "prompt"
+                        else:
+                            state = "test_prompt"
+                            if args.debug:
+                                plot(waypoints)
+                elif state == "test_prompt":
+                    print("Waypoints are recorded.  Now walk around and see when you are in a waypoint.")
+                    state = "test"
+                elif state == "test":
+                    for ts, x, y in readings:
+                        print(f"Your position is ({x}, {y})")
+                        hit, index = is_in_waypoint(waypoints, x, y)
+                        if hit:
+                            print(f"You are at waypoint #{index + 1}")
+                else:
+                    # just log the readings
+                    for position in readings:
+                        ts, x, y = position
+                        print(f"You are at ({x}, {y})")
+            else:
+                if time.time() > (ts + 0.5):
+                    print(".", end="")
+                    ts = time.time()
     finally:
         if gps_reader:
             gps_reader.shutdown()
