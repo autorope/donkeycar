@@ -305,7 +305,7 @@ def nmea_to_degrees(gps_str, direction):
     
 
 #
-# The __main__ self test can log position or records a set of waypoints
+# The __main__ self test can log position or optionally record a set of waypoints
 #
 if __name__ == "__main__":
     import math
