@@ -14,7 +14,7 @@ community contributions.
 * [Build instructions and Software documentation](http://docs.donkeycar.com)
 * [Discord / Chat](https://discord.gg/PN6kFeA)
 
-![donkeycar](./docs/assets/build_hardware/donkey2.png)
+![donkeycar](https://github.com/autorope/donkeydocs/blob/master/docs/assets/build_hardware/donkey2.png)
 
 #### Use Donkey if you want to:
 * Make an RC car drive its self.
