@@ -1,8 +1,19 @@
 # Donkeycar: a python self driving library
 
+
 ![Build Status](https://github.com/autorope/donkeycar/actions/workflows/python-package-conda.yml/badge.svg?branch=main)
 ![Lint Status](https://github.com/autorope/donkeycar/actions/workflows/superlinter.yml/badge.svg?branch=main)
 ![Release](https://img.shields.io/github/v/release/autorope/donkeycar)
+
+
+[![All Contributors](https://img.shields.io/github/contributors/autorope/donkeycar)](#contributors-)
+![Issues](https://img.shields.io/github/issues/autorope/donkeycar)
+![Pull Requests](https://img.shields.io/github/issues-pr/autorope/donkeycar?)
+![Forks](https://img.shields.io/github/forks/autorope/donkeycar)
+![Stars](https://img.shields.io/github/stars/autorope/donkeycar)
+![License](https://img.shields.io/github/license/autorope/donkeycar)
+
+![Discord](https://img.shields.io/discord/662098530411741184.svg?logo=discord&colorB=7289DA)
 
 Donkeycar is minimalist and modular self driving library for Python. It is
 developed for hobbyists and students with a focus on allowing fast experimentation and easy
