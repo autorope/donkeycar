@@ -21,7 +21,7 @@ def profile(model_path, model_type):
     model = dk.utils.get_model_by_type(model_type, cfg)
     model.load(model_path)
     
-    h, w, ch = cfg.TARGET_H, cfg.TARGET_W, cfg.TARGET_D
+    h, w, ch = cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH
 
     # generate random array in the right shape in [0,1)
     img = np.random.randint(0, 255, size=(h, w, ch))

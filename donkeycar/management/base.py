@@ -27,22 +27,20 @@ def make_dir(path):
     return real_path
 
 
-def load_config(config_path):
-
-    '''
+def load_config(config_path, myconfig='myconfig.py'):
+    """
     load a config from the given path
-    '''
+    """
     conf = os.path.expanduser(config_path)
-
     if not os.path.exists(conf):
-        print("No config file at location: %s. Add --config to specify\
-                location or run from dir containing config.py." % conf)
+        logger.error(f"No config file at location: {conf}. Add --config to "
+                     f"specify location or run from dir containing config.py.")
         return None
 
     try:
-        cfg = dk.load_config(conf)
-    except:
-        print("Exception while loading config from", conf)
+        cfg = dk.load_config(conf, myconfig)
+    except Exception as e:
+        logger.error(f"Exception {e} while loading config from {conf}")
         return None
 
     return cfg
@@ -541,7 +539,8 @@ class Train(BaseCommand):
     def run(self, args):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
-        cfg = load_config(args.config)
+        my_cfg = args.myconfig
+        cfg = load_config(args.config, my_cfg)
         framework = args.framework if args.framework \
             else getattr(cfg, 'DEFAULT_AI_FRAMEWORK', 'tensorflow')
 
@@ -554,8 +553,8 @@ class Train(BaseCommand):
             train(cfg, args.tub, args.model, args.type,
                   checkpoint_path=args.checkpoint)
         else:
-            print(f"Unrecognized framework: {framework}. Please specify one of "
-                  f"'tensorflow' or 'pytorch'")
+            logger.error(f"Unrecognized framework: {framework}. Please specify "
+                         f"one of 'tensorflow' or 'pytorch'")
 
 
 class ModelDatabase(BaseCommand):
