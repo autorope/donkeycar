@@ -215,11 +215,11 @@ SERVO_HBRIDGE_3PIN = {
 #   and glide to a stop.
 # - both pwms are full duty cycle (100% HIGH) to brake
 #
-HBRIDGE_PIN_FWD = 18,       ß# provides forward duty cycle to motor
-HBRIDGE_PIN_BWD = 16,       # provides reverse duty cycle to motor
-STEERING_CHANNEL = 0,       # PCA 9685 channel for steering control
-STEERING_LEFT_PWM = 460,    # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
-STEERING_RIGHT_PWM = 290,   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+HBRIDGE_PIN_FWD = 18       # provides forward duty cycle to motor
+HBRIDGE_PIN_BWD = 16       # provides reverse duty cycle to motor
+STEERING_CHANNEL = 0       # PCA 9685 channel for steering control
+STEERING_LEFT_PWM = 460    # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
