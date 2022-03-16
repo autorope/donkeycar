@@ -10,7 +10,6 @@ import serial
 import utm
 
 logger = logging.getLogger("gps")
-logger.setLevel(logging.DEBUG)
 
 class gps:
     def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
