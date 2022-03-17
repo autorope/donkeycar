@@ -29,13 +29,7 @@ WEB_INIT_MODE = "user"              # which control mode to start in. one of use
 PCA9685_I2C_ADDR = 0x40     #I2C address, use i2cdetect to validate this number
 PCA9685_I2C_BUSNUM = None   #None will auto detect, which is fine on the pi. But other platforms should specify the bus num.
 # 
-# #DRIVETRAIN
-# #These options specify which chasis and motor setup you are using. Most are using SERVO_ESC.
-# #DC_STEER_THROTTLE uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-# #DC_TWO_WHEEL uses HBridge pwm to control two drive motors, one on the left, and one on the right.
-# #SERVO_HBRIDGE_PWM use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
-DRIVE_TRAIN_TYPE = "SERVO_ESC" # SERVO_ESC|DC_STEER_THROTTLE|DC_TWO_WHEEL|SERVO_HBRIDGE_PWM
-# 
+# #DRIVETRAIN is I2C_SERVO; PCA9685 outputs PWM to steering servo and ESC
 # #STEERING
 STEERING_CHANNEL = 1            #channel on the 9685 pwm board 0-15
 STEERING_LEFT_PWM = 460         #pwm value for full left steering
@@ -46,21 +40,8 @@ THROTTLE_CHANNEL = 0            #channel on the 9685 pwm board 0-15
 THROTTLE_FORWARD_PWM = 400       #pwm value for auto mode throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
 THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
-# 
-# #DC_STEER_THROTTLE with one motor as steering, one as drive
-# #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_STEER_THROTTLE
-HBRIDGE_PIN_LEFT = 18
-HBRIDGE_PIN_RIGHT = 16
-HBRIDGE_PIN_FWD = 15
-HBRIDGE_PIN_BWD = 13
-# 
-# #DC_TWO_WHEEL - with two wheels as drive, left and right.
-# #these GPIO pinouts are only used for the DRIVE_TRAIN_TYPE=DC_TWO_WHEEL
-HBRIDGE_PIN_LEFT_FWD = 18
-HBRIDGE_PIN_LEFT_BWD = 16
-HBRIDGE_PIN_RIGHT_FWD = 15
-HBRIDGE_PIN_RIGHT_BWD = 13
-# 
+
+#
 # 
 # 
 # #JOYSTICK
