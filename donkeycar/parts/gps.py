@@ -32,30 +32,28 @@ class gps:
         """
         Clear the positions buffer
         """
-        if self.gps is not None:
-            with self.lock:
-                try:
-                    if self.gps is not None and self.gps.is_open:
-                        self.positions = []
-                        self.gps.reset_input_buffer()
-                except serial.serialutil.SerialException:
-                    pass
+        with self.lock:
+            try:
+                if self.gps is not None and self.gps.is_open:
+                    self.positions = []
+                    self.gps.reset_input_buffer()
+            except serial.serialutil.SerialException:
+                pass
 
     def _readline(self) -> str:
         """
         Read a line from the gps in a threadsafe manner
         returns line if read and None if no line was read
         """
-        if self.gps is not None:
-            if self.lock.acquire(blocking=False):
-                try:
-                    # TODO: Serial.in_waiting _always_ returns 0 in Macintosh
-                    if self.gps is not None and self.gps.is_open and self.gps.in_waiting:
-                        return self.gps.readline().decode()
-                except serial.serialutil.SerialException:
-                    pass
-                finally:
-                    self.lock.release()
+        if self.lock.acquire(blocking=False):
+            try:
+                # TODO: Serial.in_waiting _always_ returns 0 in Macintosh
+                if self.gps is not None and self.gps.is_open and self.gps.in_waiting:
+                    return self.gps.readline().decode()
+            except serial.serialutil.SerialException:
+                pass
+            finally:
+                self.lock.release()
         return None
 
     def poll(self, timestamp=None):
