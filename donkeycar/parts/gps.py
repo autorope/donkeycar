@@ -170,13 +170,11 @@ def getGpsPosition(line, debug=False):
     # must start with $ and end with checksum
     #
     if '$' != line[0]:
-        if debug:
-            logger.warning("NMEA Missing line start")
+        logger.info("NMEA Missing line start")
         return None
         
     if '*' != line[-3]:
-        if debug:
-            logger.warning("NMEA Missing checksum")
+        logger.info("NMEA Missing checksum")
         return None
         
     nmea_checksum = parse_nmea_checksum(line) # ## checksum hex digits as int
@@ -192,8 +190,7 @@ def getGpsPosition(line, debug=False):
         #
         calculated_checksum = calculate_nmea_checksum(line)
         if nmea_checksum != calculated_checksum:
-            if debug:
-                logger.warning(f"NMEA checksum does not match: {nmea_checksum} != {calculated_checksum}")
+            logger.info(f"NMEA checksum does not match: {nmea_checksum} != {calculated_checksum}")
         
         #
         # parse against a known parser to check our parser
@@ -212,7 +209,7 @@ def getGpsPosition(line, debug=False):
         # Reading the GPS fix data is an alternative approach that also works
         if nmea_parts[2] == 'V':
             # V = Warning, most likely, there are no satellites in view...
-            logger.warning("GPS receiver warning; position not valid")
+            logger.info("GPS receiver warning; position not valid")
         else:
             #
             # Convert the textual nmea position into degrees
@@ -317,7 +314,7 @@ if __name__ == "__main__":
         """
         Calculate (min, max, mean, std_deviation) of a list of floats
         """
-        if data is None or len(data) == 0:
+        if not data:
             return None
         count = len(data)
         min = None
@@ -599,8 +596,6 @@ if __name__ == "__main__":
                         waypoints.append(waypoint)
                         if len(waypoints) < waypoint_count:
                             state = "prompt"
-                            # if args.debug:
-                            #     waypoint.show()
                         else:
                             state = "test_prompt"
                             if args.debug:
