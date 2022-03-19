@@ -40,6 +40,6 @@ dependencies:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
     - moviepy
-    - install -U --no-deps numpy==1.19.4
-    - pip install opencv-python==4.4.0.46
+    - -U --no-deps numpy==1.19.4
+    - opencv-python==4.4.0.46
 
