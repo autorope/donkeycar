@@ -9,9 +9,9 @@ import pynmea2
 import serial
 import utm
 
-logger = logging.getLogger("gps")
+logger = logging.getLogger(__main__)
 
-class gps:
+class Gps:
     def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
         self.serial = serial
         self.baudrate = baudrate
@@ -262,7 +262,8 @@ def calculate_nmea_checksum(nmea_line):
 def nmea_to_degrees(gps_str, direction):
     """
     Convert a gps coordinate string formatted as:
-    DDMM.MMMMM, where DD denotes the degrees and MM.MMMMM denotes the minutes
+    DDDMM.MMMMM, where DDD denotes the degrees (which may have zero to 3 digits)
+    and MM.MMMMM denotes the minutes
     to a float in degrees.
     """
     if not gps_str or gps_str == "0":
@@ -273,10 +274,10 @@ def nmea_to_degrees(gps_str, direction):
     # and then combine the minutes
     #
     parts = gps_str.split(".")
-    degrees_str = parts[0][:-2]
-    minutes_str = parts[0][-2:]
+    degrees_str = parts[0][:-2]        # results in zero to 3 digits
+    minutes_str = parts[0][-2:]        # always results in 2 digits
     if 2 == len(parts):
-        minutes_str += "." + parts[1]
+        minutes_str += "." + parts[1]  # combine whole and fractional minutes
     
     #
     # convert degrees to a float
@@ -552,7 +553,7 @@ if __name__ == "__main__":
     waypoint_samples = []
 
     try:
-        gps_reader = gps(args.serial, baudrate=args.baudrate, timeout=args.timeout, debug=args.debug)
+        gps_reader = Gps(args.serial, baudrate=args.baudrate, timeout=args.timeout, debug=args.debug)
 
         #
         # start the threaded part
