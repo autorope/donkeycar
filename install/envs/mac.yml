@@ -10,11 +10,12 @@ dependencies:
   - python=3.7
   - h5py
   - pillow
+  - opencv
   - matplotlib
   - tornado
   - docopt
   - pandas
-  - pylint==2.8.3
+  - pylint
   - pytest
   - pytest-cov
   - codecov
@@ -29,17 +30,16 @@ dependencies:
   - torchvision
   - torchaudio
   - pytorch-lightning
+  - numpy
   - psutil
   - kivy=2.0.0
   - plotly
   - pyyaml
   - fastai
   - pip:
-    - --no-binary :h5py: h5py==3.1.0
-    - tensorflow==2.5.3
+    - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
+    - opencv-python-headless
     - moviepy
-    - -U --no-deps numpy==1.19.4
-    - opencv-python==4.4.0.46
 
