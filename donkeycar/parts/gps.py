@@ -2,6 +2,8 @@ import argparse
 from functools import reduce
 import logging
 import operator
+import os
+import platform
 import threading
 import time
 
@@ -9,7 +11,10 @@ import pynmea2
 import serial
 import utm
 
-logger = logging.getLogger(__main__)
+logger = logging.getLogger(__name__)
+
+def is_mac():
+    return "Darwin" == platform.system()
 
 class Gps:
     def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
@@ -48,7 +53,7 @@ class Gps:
         if self.lock.acquire(blocking=False):
             try:
                 # TODO: Serial.in_waiting _always_ returns 0 in Macintosh
-                if self.gps is not None and self.gps.is_open and self.gps.in_waiting:
+                if self.gps is not None and self.gps.is_open and (is_mac() or self.gps.in_waiting):
                     return self.gps.readline().decode()
             except serial.serialutil.SerialException:
                 pass
@@ -181,7 +186,7 @@ def getGpsPosition(line, debug=False):
     nmea_msg = line[1:-3]      # msg without $ and *## checksum
     nmea_parts = nmea_msg.split(",")
     message = nmea_parts[0]
-    if (message == "GPRMC"):   
+    if (message == "GPRMC") or (message == "GNRMC"):   
         #     
         # like '$GPRMC,003918.00,A,3806.92281,N,12235.64362,W,0.090,,060322,,,D*67'
         # GPRMC = Recommended minimum specific GPS/Transit data
