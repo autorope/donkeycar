@@ -70,24 +70,16 @@ class Gps:
         # then read the line and parse it
         #
         if self.running:
-            try:
-                if timestamp is None:
-                    timestamp = time.time()
-                line = self._readline()
-                if line:
-                    if self.debug:
-                        logger.info(line)
-                    position = getGpsPosition(line, debug=self.debug)
-                    if position:
-                        # (timestamp, longitude latitude)
-                        return (timestamp, position[0], position[1])
-            except KeyboardInterrupt as e:
-                self.running = False
-                logger.info("User shutdown, gps closed!")
-                raise e
-            except Exception as e:
-                logger.info("Application error:" + str(e))
-                self.running = False
+            if timestamp is None:
+                timestamp = time.time()
+            line = self._readline()
+            if line:
+                if self.debug:
+                    logger.info(line)
+                position = getGpsPosition(line, debug=self.debug)
+                if position:
+                    # (timestamp, longitude latitude)
+                    return (timestamp, position[0], position[1])
         return None
 
     def run(self):
