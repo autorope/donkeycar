@@ -527,17 +527,28 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--timeout", type=float, default=0.5, help="Serial port timeout in seconds.")
     parser.add_argument("-sp", '--samples', type=int, default = 5, help = "Number of samples per waypoint.")
     parser.add_argument("-wp", "--waypoints", type=int, default = 0, help = "Number of waypoints to collect; > 0 to collect waypoints, 0 to just log position")
+    parser.add_argument("-nstd", "--nstd", type=float, default=1.0, help="multiple of standard deviation for ellipse.")
     parser.add_argument("-th", "--threaded", action='store_true', help = "run in threaded mode.")
     parser.add_argument("-db", "--debug", action='store_true', help = "Enable extra logging")
     args = parser.parse_args()
 
-    if args.waypoints < 0:
+    if args.waypoints <= 0:
         print("Use waypoints > 0 to collect waypoints, use 0 waypoints to just log position")
         parser.print_help()
         sys.exit(0)
 
-    if args.samples < 0:
+    if args.samples <= 0:
         print("Samples per waypoint must be greater than zero")
+        parser.print_help()
+        sys.exit(0)
+
+    if args.nstd <= 0:
+        print("Waypoint multiplier must be greater than zero")
+        parser.print_help()
+        sys.exit(0)
+
+    if args.timeout <= 0:
+        print("Timeout must be greater than zero")
         parser.print_help()
         sys.exit(0)
 
@@ -588,9 +599,10 @@ if __name__ == "__main__":
                         print(f"...done.  Collected {count} samples for waypoint #{len(waypoints)+1}")
                         #
                         # model a waypoint as a rotated ellipsoid
-                        # that encompasses the samples taken at the waypoint.
+                        # that represents a 95% confidence interval 
+                        # around the points measured at the waypoint.
                         #
-                        waypoint = Waypoint(waypoint_samples)
+                        waypoint = Waypoint(waypoint_samples, nstd=args.nstd)
                         waypoints.append(waypoint)
                         if len(waypoints) < waypoint_count:
                             state = "prompt"
