@@ -748,44 +748,6 @@ class L298N_HBridge_3pin(object):
         self.pin_backward.stop()
 
 
-class TwoWheelSteeringThrottle(object):
-    """
-    Modify individual differential drive wheel throttles
-    in order to implemeht steering.
-    """
-
-    def run(self, throttle:float, steering:float) -> Tuple[float, float]:
-        """
-        :param throttle:float throttle value in range -1 to 1,
-                        where 1 is full forward and -1 is full backwards.
-        :param steering:float steering value in range -1 to 1,
-                        where -1 is full left and 1 is full right.
-        :return: tuple of left motor and right motor throttle values in range -1 to 1
-                 where 1 is full forward and -1 is full backwards.
-        """
-        if throttle > 1 or throttle < -1:
-            logger.warn( f"throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
-        if steering > 1 or steering < -1:
-            logger.warn( f"steering is {steering}, but it must be between 1(right) and -1(left)")
-
-        from donkeycar.utils import clamp
-        throttle = clamp(throttle, -1, 1)
-        steering = clamp(steering, -1, 1)
-
-        left_motor_speed = throttle
-        right_motor_speed = throttle
- 
-        if steering < 0:
-            left_motor_speed *= (1.0 - (-steering))
-        elif steering > 0:
-            right_motor_speed *= (1.0 - steering)
-
-        return left_motor_speed, right_motor_speed
-
-    def shutdown(self) -> None:
-        pass
-
-
 class L298N_HBridge_2pin(object):
     """
     Motor controlled with an 'mini' L298N hbridge using 2 PwmPins,
