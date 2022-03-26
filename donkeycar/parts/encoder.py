@@ -1,8 +1,11 @@
 """
+Deprecated in favor on donkeycar.parts.Tachometer and donkeycar.parts.Odometer.
+
 Encoders and odometry
 """
 
 from datetime import datetime
+from donkeycar.utilities.deprecated import deprecated
 import re
 import time
 
@@ -18,6 +21,7 @@ import time
 
 # This samples the odometer at 10HZ and does a moving average over the past ten readings to derive a velocity
 
+@deprecated("Deprecated in favor donkeycar.parts.tachometer.Tachometer(SerialEncoder)")
 class ArduinoEncoder(object):
     def __init__(self, mm_per_tick=0.0000599, debug=False):
         import serial
@@ -60,6 +64,8 @@ class ArduinoEncoder(object):
         self.on = False
         time.sleep(.5)
 
+
+@deprecated("Deprecated as unused")
 class AStarSpeed:
     def __init__(self):
         from donkeycar.parts.teensy import TeensyRCin
@@ -118,6 +124,7 @@ class AStarSpeed:
         time.sleep(.5)
 
 
+@deprecated("Deprecated in favor of donkeycar.parts.tachometer.Tachometer(GpioEncoder)")
 class RotaryEncoder():
     def __init__(self, mm_per_tick=0.306096, pin=13, poll_delay=0.0166, debug=False):
         import pigpio
