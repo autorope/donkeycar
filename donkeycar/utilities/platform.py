@@ -1,3 +1,4 @@
+import io
 import os
 import platform
 
@@ -27,8 +28,25 @@ def is_linux():
     return "Linux" == platform.system()
 
 
-# TODO: create is_raspberrypi() - true if running on raspberrypi
+_is_raspberrypi = None  # latch value
 
+
+def is_raspberrypi():
+    """
+    True if running on raspberry_pi hardware.
+    NOTE: this does not tell you anything about the operating system.
+          Use is_linux() and is_windows() to distinguish possible os
+          differences.
+    """
+    global _is_raspberrypi
+    if _is_raspberrypi is None:
+        _is_raspberrypi = False
+        try:
+            with io.open('/sys/firmware/devicetree/base/model', 'r') as m:
+                _is_raspberrypi = 'raspberry pi' in m.read().lower()
+        except Exception:
+            pass
+    return _is_raspberrypi
 
 #
 # read tegra chip id if it exists.
@@ -45,7 +63,9 @@ def _read_chip_id() -> str:
         pass
     return ""
 
+
 _chip_id = None
+
 
 def is_jetson() -> bool:
     """
