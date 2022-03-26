@@ -532,7 +532,7 @@ if __name__ == "__main__":
     parser.add_argument("-db", "--debug", action='store_true', help = "Enable extra logging")
     args = parser.parse_args()
 
-    if args.waypoints <= 0:
+    if args.waypoints < 0:
         print("Use waypoints > 0 to collect waypoints, use 0 waypoints to just log position")
         parser.print_help()
         sys.exit(0)
