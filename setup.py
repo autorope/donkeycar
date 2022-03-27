@@ -49,6 +49,7 @@ setup(name='donkeycar',
           'progress',
           'typing_extensions',
           'pyfiglet',
+          'pyserial',
           'psutil'
       ],
       extras_require={
@@ -58,7 +59,6 @@ setup(name='donkeycar',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
               'RPi.GPIO',
-              'pyserial',
               'imgaug'
           ],
           'nano': [
@@ -66,7 +66,6 @@ setup(name='donkeycar',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
               'Jetson.GPIO',
-              'pyserial',
           ],
           'pc': [
               'matplotlib',
