@@ -23,7 +23,8 @@ class MockEncoder(AbstractEncoder):
         assert((1==direction) or (0==direction) or (-1==direction))
         self.ticks += direction
         return self.ticks
-
+    def get_ticks(self, encoder_index:int=0) -> int:
+        return self.ticks
 
 class MockTachometer(Tachometer):
     def __init__(self, ticks_per_revolution: float, direction_mode, debug=False):
