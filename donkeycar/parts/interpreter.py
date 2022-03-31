@@ -5,7 +5,6 @@ import numpy as np
 from typing import Union, Sequence, List
 
 import tensorflow as tf
-import torch
 from tensorflow import keras
 
 from tensorflow.python.framework.convert_to_constants import \
@@ -171,6 +170,7 @@ class KerasInterpreter(Interpreter):
     def summary(self) -> str:
         return self.model.summary()
 
+
 class FastAIInterpreter(Interpreter):
 
     def __init__(self):
@@ -206,7 +206,7 @@ class FastAIInterpreter(Interpreter):
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
-
+        import torch
         inputs = torch.unsqueeze(img_arr, 0)
         if other_arr is not None:
             #other_arr = np.expand_dims(other_arr, axis=0)
@@ -214,6 +214,7 @@ class FastAIInterpreter(Interpreter):
         return self.invoke(inputs)
 
     def load(self, model_path: str) -> None:
+        import torch
         logger.info(f'Loading model {model_path}')
         if torch.cuda.is_available():
             logger.info("using cuda for torch inference")
@@ -227,6 +228,7 @@ class FastAIInterpreter(Interpreter):
 
     def summary(self) -> str:
         return self.model
+
 
 class TfLite(Interpreter):
     """
