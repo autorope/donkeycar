@@ -1,10 +1,30 @@
 #
+# This script will create an standard python environment
+# in the donkeycar project folder.  This is an alternative
+# to using conda, as the conda environment installation
+# may make many many hours to resolve on the Mac.
+#
+# After running this script you will have an environment
+# folder in the donkeycar project folder.  To activate the
+# environment from the donkeycar folder;
+# ```
+#   source env/bin/activate
+# ```
+#
+# to run donkey commands, you will need to run them from
+# the environment.  For instance, where docs.donkeycar indicates;
+# ```
+#   donkey createcar --path <dir> [--overwrite] [--template <donkey2>]
+# ```
+# you would instead, from the donkecar project folder;
+# ```
+#   python env/bin/donkey createcar --path <dir> [--overwrite] [--template <donkey2>]
+# ```
+#
 # dependencies:
 # - python=3.7
 # -  pip
 #
-# python3 -m venv env
-# . env/bin/activate
 
 #
 # must run from within donkey project folder
