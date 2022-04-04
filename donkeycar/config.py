@@ -6,6 +6,9 @@ Created on Wed Sep 13 21:27:44 2017
 """
 import os
 import types
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 class Config:
@@ -51,25 +54,18 @@ def load_config(config_path=None, myconfig="myconfig.py"):
             if os.path.exists(local_config):
                 config_path = local_config
     
-    print('loading config file: {}'.format(config_path))
+    logger.info(f'loading config file: {config_path}')
     cfg = Config()
     cfg.from_pyfile(config_path)
 
     # look for the optional myconfig.py in the same path.
     personal_cfg_path = config_path.replace("config.py", myconfig)
     if os.path.exists(personal_cfg_path):
-        print("loading personal config over-rides from", myconfig)
+        logger.info(f"loading personal config over-rides from {myconfig}")
         personal_cfg = Config()
         personal_cfg.from_pyfile(personal_cfg_path)
         cfg.from_object(personal_cfg)
     else:
-        print("personal config: file not found ", personal_cfg_path)
-
-    # derived settings
-    if hasattr(cfg, 'IMAGE_H') and hasattr(cfg, 'IMAGE_W'): 
-        cfg.TARGET_H = cfg.IMAGE_H
-        cfg.TARGET_W = cfg.IMAGE_W
-        if hasattr(cfg, 'IMAGE_DEPTH'):
-            cfg.TARGET_D = cfg.IMAGE_DEPTH
+        logger.warning(f"personal config: file not found {personal_cfg_path}")
 
     return cfg
