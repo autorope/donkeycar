@@ -249,13 +249,14 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         data = json.loads(message)
-
         self.application.angle = data.get('angle', self.application.angle)
         self.application.throttle = data.get('throttle', self.application.throttle)
         if data.get('drive_mode') is not None:
             self.application.mode = data['drive_mode']
             self.application.mode_latch = self.application.mode
-        self.application.recording = data.get('recording', self.application.recording)
+        if data.get('recording') is not None:
+            self.application.recording = data['recording']
+            self.application.recording_latch = self.application.recording
 
     def on_close(self):
         # print("Client disconnected")
