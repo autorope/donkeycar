@@ -852,6 +852,7 @@ class JoystickController(object):
         self.steering_scale = steering_scale
         self.throttle_dir = throttle_dir
         self.recording = False
+        self.recording_latch = None
         self.constant_throttle = False
         self.auto_record_on_throttle = auto_record_on_throttle
         self.dev_fn = dev_fn
@@ -953,6 +954,8 @@ class JoystickController(object):
         '''
         if self.auto_record_on_throttle:
             self.recording = (abs(self.throttle) > self.dead_zone and self.mode == 'user')
+            self.recording_latch = self.recording
+            print(f"JoystickController::on_throttle_changes() setting recording = ${self.recording}")
 
 
     def emergency_stop(self):
@@ -1025,12 +1028,16 @@ class JoystickController(object):
         toggle recording on/off
         '''
         if self.auto_record_on_throttle:
-            print('auto record on throttle is enabled.')
+            print('auto record on throttle is enabled; ignoring toggle of manual mode.')
         elif self.recording:
             self.recording = False
+            self.recording_latch = self.recording
+            print(f"JoystickController::toggle_manual_recording() setting recording and recording_latch = ${self.recording}")
         else:
             self.recording = True
-
+            self.recording_latch = self.recording
+            print(f"JoystickController::toggle_manual_recording() setting recording and recording_latch = ${self.recording}")
+            
         print('recording:', self.recording)
 
 
@@ -1123,7 +1130,12 @@ class JoystickController(object):
             self.mode = self.mode_latch
             self.mode_latch = None
         if recording is not None:
+            print(f"JoystickController::run_threaded() setting recording from default = ${recording}")
             self.recording = recording
+        if self.recording_latch is not None:
+            print(f"JoystickController::run_threaded() setting recording from latch = ${self.recording_latch}")
+            self.recording = self.recording_latch
+            self.recording_latch = None
 
         '''
         process E-Stop state machine
