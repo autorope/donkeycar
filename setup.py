@@ -57,19 +57,26 @@ setup(name='donkeycar',
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
+              'adafruit-circuitpython-rplidar',
               'RPi.GPIO',
               'pyserial',
+              'imgaug'
           ],
           'nano': [
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
-              'RPi.GPIO'
+              'adafruit-circuitpython-rplidar',
+              'Jetson.GPIO',
+              'pyserial',
           ],
           'pc': [
               'matplotlib',
-              'imgaug',
-              'kivy'
+              'kivy',
+              'pandas',
+              'pyyaml',
+              'plotly',
+              'imgaug'
           ],
           'dev': [
               'pytest',
@@ -82,7 +89,8 @@ setup(name='donkeycar',
           'torch': [
               'pytorch>=1.7.1',
               'torchvision',
-              'torchaudio'
+              'torchaudio',
+              'fastai'
           ],
           'mm1': ['pyserial']
       },
