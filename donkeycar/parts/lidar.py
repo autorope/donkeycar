@@ -37,9 +37,6 @@ def angle_in_bounds(angle, min_angle, max_angle):
     """
     Determine if an angle is between two other angles.
     """
-    angle = angle
-    min_angle = min_angle
-    max_angle = max_angle
     if min_angle <= max_angle:
         return min_angle <= angle <= max_angle
     else:
@@ -221,7 +218,7 @@ class RPLidar2(object):
                         self.full_scan_index += 1
                             
             except serial.serialutil.SerialException:
-                logger.info('SerialException from RPLidar.')
+                logger.error('SerialException from RPLidar.')
 
     def update(self):
         start_time = time.time()
@@ -698,8 +695,7 @@ class LidarPlot2(object):
         
         # background
         draw.rectangle(bounds, fill=self.background_color)
-        
-        
+
         # bounding perimeter and zero heading
         plot_polar_bounds(draw, bounds, self.border_color,
                           self.angle_direction, self.rotate_plot)
