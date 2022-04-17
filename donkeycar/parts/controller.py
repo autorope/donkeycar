@@ -12,6 +12,34 @@ from prettytable import PrettyTable
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
 
+class MockController:
+    """
+    Mock controller that outputs a constant steering and throttle
+    use cfg.MOCK_JOYSTICK_STEERING and cfg.MOCK_JOYSTICK_THROTTLE
+    to set the constant values.
+    """
+    def __init__(self, steering=0.0, throttle=0.0):
+        self.steering = steering
+        self.throttle = throttle
+        self.mode = None
+        self.recording = None
+
+    def update(self):
+        pass
+
+    def run(self, img_arr=None, mode=None, recording=None):
+        #
+        # enforce defaults if they are not none.
+        #
+        if mode is not None:
+            self.mode = mode
+        if recording is not None:
+            self.recording = recording
+
+        return self.steering, self.throttle, self.mode, self.recording
+
+    def run_threaded(self, img_arr=None, mode=None, recording=None):
+        return self.run(img_arr, mode, recording)
 
 class Joystick(object):
     '''
