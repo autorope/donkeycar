@@ -10,9 +10,15 @@ logger = logging.getLogger(__name__)
 
 def limit_angle(angle:float):
     """
-    limit angle between 0..2pi
+    limit angle to pi to -pi radians (one full circle)
     """
     return math.atan2(math.sin(angle), math.cos(angle));
+    # twopi = math.pi * 2
+    # while(angle > math.pi):
+    #     angle -= twopi
+    # while(angle < -math.pi):
+    #     angle += twopi
+    # return angle
 
 
 class Pose2D:

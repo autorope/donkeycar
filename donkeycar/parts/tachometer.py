@@ -53,6 +53,33 @@ class AbstractEncoder(ABC):
         """
         return 0
 
+
+class MockEncoder(AbstractEncoder):
+    """
+    Mock encoder always counts up based on time
+    """
+    def __init__(self, ticks_per_millis=1):
+        self.ticks_per_millis = ticks_per_millis
+        self.start_millis = 0
+        self.ticks = 0
+        self.running = False
+
+    def start_ticks(self):
+        self.start_millis = time.time()
+
+    def stop_ticks(self):
+        self.start_millis = 0
+
+    def poll_ticks(self, direction:int):
+        if self.start_millis:
+            now = time.time()
+            self.ticks += (now - self.start_millis) * self.ticks_per_millis * direction
+            self.start_millis = now
+
+    def get_ticks(self, encoder_index:int=0) -> int:
+        return self.ticks
+
+
 class SerialEncoder(AbstractEncoder):
     """
     Encoder that requests tick count over serial port.

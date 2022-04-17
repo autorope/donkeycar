@@ -86,6 +86,29 @@ class TestBicycle(unittest.TestCase):
         self.assertEqual(0, bicycle.pose_velocity.y)
         self.assertEqual(0, bicycle.pose_velocity.angle)
 
+        #
+        # drive 10 meters directly forward
+        #
+        steering_angle = 0.0
+        wheel_base = 1.0
+        bicycle = Bicycle(wheel_base)  # wheel base is 1/2 meter
+
+        drive_distance = 10  # drive the 10 meters
+        drive_steps = math.floor(drive_distance * 200)  # 200 odometry readings per meter
+        steps_per_second = 20
+        time_per_step = 1 / steps_per_second  # 20 odometry readings per second
+        print()
+        print("X,Y,A")
+        for i in range(drive_steps):
+            distance, velocity, pose_x, pose_y, pose_angle, pose_velocity_x, pose_velocity_y, pose_velocity_angle, timestamp = bicycle.run(drive_distance * (i+1) / drive_steps, steering_angle, 1 + time_per_step * (i + 1))
+            print(pose_x, pose_y, pose_angle, sep=",")
+        self.assertAlmostEqual(drive_distance, bicycle.forward_distance, 3)
+        self.assertAlmostEqual(1 + drive_steps * time_per_step, bicycle.timestamp, 3)
+        self.assertLessEqual(abs(drive_distance - distance) / drive_distance, 0.005)  # final error less than 0.5%
+        self.assertLessEqual(abs(drive_distance - pose_x) / drive_distance, 0.005)  # final error less than 0.5%
+        self.assertLessEqual(abs(pose_y), 0.005)  # final error less than 0.5%
+
+
     def test_forward_reverse(self):
         bicycle = Bicycle(1)
 
@@ -202,6 +225,30 @@ class TestUnicycle(unittest.TestCase):
         self.assertEqual(9, unicycle.pose_velocity.x)
         self.assertEqual(0, unicycle.pose_velocity.y)
         self.assertEqual(0, unicycle.pose_velocity.angle)
+
+        #
+        # drive 10 meters directly forward
+        #
+        steering_angle = 0.0
+        axle_length = 0.25
+        unicycle = Unicycle(axle_length)  # wheel base is 25 cm
+
+        drive_distance = 10  # drive the 10 meters
+        drive_steps = math.floor(drive_distance * 200)  # 200 odometry readings per meter
+        steps_per_second = 20
+        time_per_step = 1 / steps_per_second  # 20 odometry readings per second
+        print()
+        print("X,Y,A")
+        for i in range(drive_steps):
+            distance, velocity, pose_x, pose_y, pose_angle, pose_velocity_x, pose_velocity_y, pose_velocity_angle, timestamp = unicycle.run(drive_distance * (i+1) / drive_steps,
+                                                                                                                                            drive_distance * (i+1) / drive_steps,
+                                                                                                                                            1 + time_per_step * (i + 1))
+            print(pose_x, pose_y, pose_angle, sep=",")
+        self.assertAlmostEqual(1 + drive_steps * time_per_step, unicycle.timestamp, 3)
+        self.assertLessEqual(abs(drive_distance - distance) / drive_distance, 0.005)  # final error less than 0.5%
+        self.assertLessEqual(abs(drive_distance - pose_x) / drive_distance, 0.005)  # final error less than 0.5%
+        self.assertLessEqual(abs(pose_y), 0.005)  # final error less than 0.5%
+
 
     def test_reverse(self):
         unicycle = Unicycle(1)
@@ -344,14 +391,18 @@ class TestUnicycle(unittest.TestCase):
 
 
 class TestInverseBicycle(unittest.TestCase):
+    def test_bicycle_angular_velocity(self):
+        wheel_base = 0.1
+        self.assertEqual(0.0, bicycle_angular_velocity(wheel_base, 1, 0.0))
+
     def test_inverse_bicycle(self):
         wheel_base = 0.5
         steering_angle = math.pi / 8
         angular_velocity = bicycle_angular_velocity(wheel_base, 1, steering_angle)
         inverse = InverseBicycle(wheel_base)
         forward_velocity, inverse_steering_angle, _ = inverse.run(1, angular_velocity)
-        self.assertAlmostEqual(forward_velocity, 1, 3)
-        self.assertAlmostEqual(inverse_steering_angle, steering_angle, 3)
+        self.assertAlmostEqual(forward_velocity, 1, 6)
+        self.assertAlmostEqual(inverse_steering_angle, steering_angle, 6)
 
 
 class TestInverseUnicycle(unittest.TestCase):
@@ -361,8 +412,8 @@ class TestInverseUnicycle(unittest.TestCase):
         angular_velocity = unicycle_angular_velocity(wheel_radius, axle_length, 0.5, 1.5)
         inverse = InverseUnicycle(axle_length, wheel_radius, 0.01, 10, 0)
         left_velocity, right_velocity, _ = inverse.run(1, angular_velocity)
-        self.assertAlmostEqual(left_velocity, 0.5, 3)
-        self.assertAlmostEqual(right_velocity, 1.5, 3)
+        self.assertAlmostEqual(left_velocity, 0.5, 6)
+        self.assertAlmostEqual(right_velocity, 1.5, 6)
 
 
 class TestBicycleNormalizeAngularVelocity(unittest.TestCase):
@@ -375,9 +426,9 @@ class TestBicycleNormalizeAngularVelocity(unittest.TestCase):
         unnormalize = BicycleUnnormalizeAngularVelocity(wheel_base, max_forward_velocity, max_steering_angle)
 
         angular_velocity = normalize.run(max_angular_velocity / 2)
-        self.assertAlmostEqual(angular_velocity, 0.5, 3)
+        self.assertAlmostEqual(angular_velocity, 0.5, 6)
         angular_velocity = unnormalize.run(angular_velocity)
-        self.assertAlmostEqual(angular_velocity, max_angular_velocity / 2, 3)
+        self.assertAlmostEqual(angular_velocity, max_angular_velocity / 2, 6)
 
 
 class TestUnicycleNormalizeAngularVelocity(unittest.TestCase):
@@ -390,9 +441,9 @@ class TestUnicycleNormalizeAngularVelocity(unittest.TestCase):
         unnormalize = UnicycleUnnormalizeAngularVelocity(wheel_radius, axle_length, max_forward_velocity)
 
         angular_velocity = normalize.run(max_angular_velocity / 2)
-        self.assertAlmostEqual(angular_velocity, 0.5, 3)
+        self.assertAlmostEqual(angular_velocity, 0.5, 6)
         angular_velocity = unnormalize.run(angular_velocity)
-        self.assertAlmostEqual(angular_velocity, max_angular_velocity / 2, 3)
+        self.assertAlmostEqual(angular_velocity, max_angular_velocity / 2, 6)
 
 
 class TestNormalizeSteeringAngle(unittest.TestCase):
@@ -401,10 +452,35 @@ class TestNormalizeSteeringAngle(unittest.TestCase):
         normalize = NormalizeSteeringAngle(max_steering_angle)        
         unnormalize = UnnormalizeSteeringAngle(max_steering_angle)
 
-        steering_angle = normalize.run(max_steering_angle / 2)
-        self.assertAlmostEqual(steering_angle, 0.5, 3)
+        # straight ahead
+        steering_angle = normalize.run(0)
+        self.assertAlmostEqual(steering_angle, 0.0, 6)
         steering_angle = unnormalize.run(steering_angle)
-        self.assertAlmostEqual(steering_angle, max_steering_angle / 2, 3)
+        self.assertAlmostEqual(steering_angle, 0.0, 6)
+
+        # half left turn
+        steering_angle = normalize.run(max_steering_angle / 2)
+        self.assertAlmostEqual(steering_angle, 0.5, 6)
+        steering_angle = unnormalize.run(steering_angle)
+        self.assertAlmostEqual(steering_angle, max_steering_angle / 2, 6)
+
+        # full left turn
+        steering_angle = normalize.run(max_steering_angle)
+        self.assertAlmostEqual(steering_angle, 1.0, 6)
+        steering_angle = unnormalize.run(steering_angle)
+        self.assertAlmostEqual(steering_angle, max_steering_angle , 6)
+
+        # half right turn
+        steering_angle = normalize.run(-max_steering_angle / 2)
+        self.assertAlmostEqual(steering_angle, -0.5, 6)
+        steering_angle = unnormalize.run(steering_angle)
+        self.assertAlmostEqual(steering_angle, -max_steering_angle / 2, 6)
+
+        # full right turn
+        steering_angle = normalize.run(-max_steering_angle)
+        self.assertAlmostEqual(steering_angle, -1.0, 6)
+        steering_angle = unnormalize.run(steering_angle)
+        self.assertAlmostEqual(steering_angle, -max_steering_angle, 6)
 
 
 class TestTwoWheelSteeringThrottle(unittest.TestCase):
@@ -427,3 +503,29 @@ class TestTwoWheelSteeringThrottle(unittest.TestCase):
         self.assertEqual((1.0, 0.8), differential_steering(1.0, 0.20, 0.0))
         self.assertEqual((0.5, 0.45), differential_steering(0.5, 0.10, 0.0))
         self.assertEqual((0.5, 0.40), differential_steering(0.5, 0.20, 0.0))
+
+
+class TestLimitAngle(unittest.TestCase):
+    def test_limit_angle(self):
+        twopi = math.pi * 2
+
+        #
+        # angles that are mulitples of two*pi resolve to 0
+        #
+        self.assertEqual(0.0, limit_angle(0))
+        self.assertAlmostEqual(0.0, limit_angle(math.pi * 2), 10)
+        self.assertAlmostEqual(0.0, limit_angle(-math.pi * 2), 10)
+
+        #
+        # angles that resolve to pi
+        #
+        self.assertAlmostEqual(math.pi, limit_angle(math.pi))
+        self.assertAlmostEqual(math.pi, limit_angle(math.pi + twopi))
+        self.assertAlmostEqual(math.pi, limit_angle(math.pi + twopi * 2))
+
+        #
+        # angles that resolve to -pi
+        #
+        self.assertAlmostEqual(-math.pi, limit_angle(-math.pi))
+        self.assertAlmostEqual(-math.pi, limit_angle(-math.pi - twopi))
+        self.assertAlmostEqual(-math.pi, limit_angle(-math.pi - twopi * 2))
