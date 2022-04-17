@@ -97,6 +97,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     add_odometry(V, cfg)
 
+    # log output of pose estimation
+    if cfg.HAVE_ODOM:
+        from donkeycar.parts.logger import LoggerPart
+        V.add(dk.parts.logger.LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle']), inputs=['pos/x', 'pos/y', 'pos/angle'], outputs=[])
+
     logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
     if camera_type == "stereo":
 
@@ -235,6 +240,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             elif cfg.CONTROLLER_TYPE == "MM1":
                 from donkeycar.parts.robohat import RoboHATController            
                 ctr = RoboHATController(cfg)
+            elif cfg.CONTROLLER_TYPE == "mock":
+                from donkeycar.parts.controller import MockController
+                ctr = MockController(steering=cfg.MOCK_JOYSTICK_STEERING, throttle=cfg.MOCK_JOYSTICK_THROTTLE)
             else:
                 from donkeycar.parts.controller import get_js_controller
                 ctr = get_js_controller(cfg)
@@ -861,48 +869,48 @@ def add_odometry(V, cfg):
     """
     if cfg.HAVE_ODOM:
         from donkeycar.utilities.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
+        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, MockEncoder, EncoderChannel)
         from donkeycar.parts.odometer import Odometer
         from donkeycar.parts import pins
 
-        tachometer = None
-        tachometer2 = None
+        encoder = None
+        encoder2 = None
         if cfg.ENCODER_TYPE == "GPIO":
-            tachometer = Tachometer(
-                GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN),
-                            debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-                            debug=cfg.ODOM_DEBUG),
-                ticks_per_revolution=cfg.ENCODER_PPR,
-                direction_mode=cfg.TACHOMETER_MODE,
-                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                debug=cfg.ODOM_DEBUG)
+            encoder = GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN),
+                                  debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
+                                  debug=cfg.ODOM_DEBUG)
             if cfg.HAVE_ODOM_2:
-                tachometer2 = Tachometer(
-                    GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN_2),
-                                debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-                                debug=cfg.ODOM_DEBUG),
-                    ticks_per_revolution=cfg.ENCODER_PPR,
-                    direction_mode=cfg.TACHOMETER_MODE,
-                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                    debug=cfg.ODOM_DEBUG)
-
+                encoder2 = GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN_2),
+                                       debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
+                                       debug=cfg.ODOM_DEBUG)
         elif cfg.ENCODER_TYPE == "arduino":
-            tachometer = Tachometer(
-                SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG),
-                ticks_per_revolution=cfg.ENCODER_PPR,
-                direction_mode=cfg.TACHOMETER_MODE,
-                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                debug=cfg.ODOM_DEBUG)
+            encoder = SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG)
             if cfg.HAVE_ODOM_2:
-                tachometer2 = Tachometer(
-                    EncoderChannel(encoder=tachometer.encoder, channel=1),
-                    ticks_per_revolution=cfg.ENCODER_PPR,
-                    direction_mode=cfg.TACHOMETER_MODE,
-                    poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-                    debug=cfg.ODOM_DEBUG)
-
+                encoder2 = EncoderChannel(encoder=encoder, channel=1)
+        elif cfg.ENCODER_TYPE == "mock":
+            encoder = MockEncoder()
+            if cfg.HAVE_ODOM_2:
+                encoder2 = MockEncoder()
         else:
             print("No supported encoder found")
+
+
+        tachometer = None
+        tachometer2 = None
+        if encoder:
+            tachometer = Tachometer(
+                encoder,
+                ticks_per_revolution=cfg.ENCODER_PPR,
+                direction_mode=cfg.TACHOMETER_MODE,
+                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                debug=cfg.ODOM_DEBUG)
+        if encoder2:
+            tachometer2 = Tachometer(
+                encoder2,
+                ticks_per_revolution=cfg.ENCODER_PPR,
+                direction_mode=cfg.TACHOMETER_MODE,
+                poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
+                debug=cfg.ODOM_DEBUG)
 
         if tachometer:
             if cfg.HAVE_ODOM_2:
@@ -943,12 +951,11 @@ def add_odometry(V, cfg):
                 V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=False)
                 V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
                 V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE),
-                      inputs=["steering"], outputs=["steering_angle"])
+                      inputs=["angle"], outputs=["steering_angle"])
                 V.add(
                     Bicycle(cfg.WHEEL_BASE, cfg.MAX_STEERING_ANGLE),
                     inputs=["enc/distance", "steering_angle", "enc/timestamp"],
-                    outputs=["nul/distance, nul/speed", 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'])
-
+                    outputs=['nul/distance', 'nul/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'])
 
 
 if __name__ == '__main__':

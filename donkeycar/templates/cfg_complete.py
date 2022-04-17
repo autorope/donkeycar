@@ -347,7 +347,7 @@ HAVE_ODOM = False               # Do you have an odometer/encoder
 HAVE_ODOM_2 = False             # Do you have a second odometer/encoder as in a differential drive robot.
                                 # In this case, the 'first' encoder is the left wheel encoder and
                                 # the second encoder is the right wheel encoder.
-ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino.
+ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino|mock.
                                 # - 'GPIO' refers to direct connect of a single-channel encoder to an RPi/Jetson GPIO header pin.
                                 #   Set ODOM_PIN to the gpio pin, based on board numbering.
                                 # - 'arduino' generically refers to any microcontroller connected over a serial port.
@@ -463,13 +463,15 @@ USE_JOYSTICK_AS_DEFAULT = False      #when starting the manage.py, when True, wi
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|pigpio_rc|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
+CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|pigpio_rc|nimbus|wiiu|F710|rc3|MM1|custom|mock) custom will run the my_joystick.py controller written by the `donkey createjs` command
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.01            # when non zero, this is the smallest throttle before recording triggered.
 JOYSTICK_THROTTLE_DIR = -1.0         # use -1.0 to flip forward/backward, use 1.0 to use joystick's natural forward/backward
 USE_FPV = False                     # send camera data to FPV webserver
 JOYSTICK_DEVICE_FILE = "/dev/input/js0" # this is the unix file use to access the joystick.
+MOCK_JOYSTICK_STEERING = 0.0
+MOCK_JOYSTICK_THROTTLE = 0.0
 
 #For the categorical model, this limits the upper bound of the learned throttle
 #it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
