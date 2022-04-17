@@ -920,42 +920,55 @@ def add_odometry(V, cfg):
                 # kinematics to synthesize a single distance
                 # and velocity from the two wheels.
                 #
-                odometer1 = Odometer(
-                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
-                    smoothing_count=cfg.ODOM_SMOOTHING,
-                    debug=cfg.ODOM_DEBUG)
-                odometer2 = Odometer(
-                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
-                    smoothing_count=cfg.ODOM_SMOOTHING,
-                    debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['enc/left/revolutions', 'enc/left/timestamp'], threaded=False)
-                V.add(
-                    odometer1,
-                    inputs=['enc/left/revolutions', 'enc/left/timestamp'],
-                    outputs=['enc/left/distance', 'enc/left/speed', 'enc/left/timestamp'],
-                    threaded=False)
-                V.add(tachometer2, inputs=['throttle', None], outputs=['enc/right/revolutions', 'enc/right/timestamp'], threaded=False)
-                V.add(odometer2, inputs=['enc/right/revolutions', 'enc/right/timestamp'], outputs=['enc/right/distance', 'enc/right/speed', 'enc/right/timestamp'], threaded=False)
-                V.add(
-                    Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG),
-                    inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp'],
-                    outputs=['enc/distance', 'enc/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'],
-                    threaded=False)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/left/revolutions', 'enc/left/timestamp'])
+                V.add(tachometer2, inputs=['throttle', None], outputs=['enc/right/revolutions', 'enc/right/timestamp'])
 
+                odometer1 = Odometer(distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
+                                     smoothing_count=cfg.ODOM_SMOOTHING,
+                                     debug=cfg.ODOM_DEBUG)
+                odometer2 = Odometer(distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
+                                     smoothing_count=cfg.ODOM_SMOOTHING,
+                                     debug=cfg.ODOM_DEBUG)
+                V.add(odometer1,
+                      inputs=['enc/left/revolutions', 'enc/left/timestamp'],
+                      outputs=['enc/left/distance', 'enc/left/speed', 'enc/left/timestamp'])
+                V.add(odometer2,
+                      inputs=['enc/right/revolutions', 'enc/right/timestamp'],
+                      outputs=['enc/right/distance', 'enc/right/speed', 'enc/right/timestamp'])
+
+                #
+                # the kinematics part takes the output of the encoders and estimates pose
+                #
+                V.add(Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG),
+                      inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp'],
+                      outputs=['enc/distance', 'enc/speed',  # use averaged distance/speed as forward distance/speed
+                               'pos/x', 'pos/y', 'pos/angle',
+                               'vel/x', 'vel/y', 'vel/angle',
+                               'nul/timestamp'],
+                      threaded=False)
             else:
-                # single odometer directly measures distance and velocity
-                odometer = Odometer(
-                    distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
-                    smoothing_count=cfg.ODOM_SMOOTHING,
-                    debug=cfg.ODOM_DEBUG)
-                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'], threaded=False)
-                V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
-                V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE),
-                      inputs=["angle"], outputs=["steering_angle"])
-                V.add(
-                    Bicycle(cfg.WHEEL_BASE, cfg.MAX_STEERING_ANGLE),
-                    inputs=["enc/distance", "steering_angle", "enc/timestamp"],
-                    outputs=['nul/distance', 'nul/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'])
+                #
+                # a single odometer directly measures distance and velocity
+                #
+                odometer = Odometer(distance_per_revolution=cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000,
+                                    smoothing_count=cfg.ODOM_SMOOTHING,
+                                    debug=cfg.ODOM_DEBUG)
+                V.add(tachometer, inputs=['throttle', None], outputs=['enc/revolutions', 'enc/timestamp'])
+                V.add(odometer,
+                      inputs=['enc/revolutions', 'enc/timestamp'],
+                      outputs=['enc/distance', 'enc/speed', 'enc/timestamp'])
+
+                #
+                # the kinematics part takes the output of the encoder and estimates pose.
+                # it requires real steering angle, so turn our normalized angle into a real angle.
+                #
+                V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE), inputs=["angle"], outputs=["steering_angle"])
+                V.add(Bicycle(cfg.WHEEL_BASE, cfg.MAX_STEERING_ANGLE),
+                      inputs=["enc/distance", "steering_angle", "enc/timestamp"],
+                      outputs=['nul/distance', 'nul/speed',  # don't overwrite enc/distance, enc/speed
+                               'pos/x', 'pos/y', 'pos/angle',
+                               'vel/x', 'vel/y', 'vel/angle',
+                               'nul/timestamp'])
 
 
 if __name__ == '__main__':
