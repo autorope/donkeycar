@@ -12,6 +12,7 @@ from prettytable import PrettyTable
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
 
+logger = logging.getLogger(__name__)
 
 class Joystick(object):
     '''
@@ -41,25 +42,25 @@ class Joystick(object):
         except ModuleNotFoundError:
             self.num_axes = 0
             self.num_buttons = 0
-            print("no support for fnctl module. joystick not enabled.")
+            logger.warn("no support for fnctl module. joystick not enabled.")
             return False
 
         if not os.path.exists(self.dev_fn):
-            print(self.dev_fn, "is missing")
+            logger.warn(f"{self.dev_fn} is missing")
             return False
 
         '''
         call once to setup connection to device and map buttons
         '''
         # Open the joystick device.
-        print('Opening %s...' % self.dev_fn)
+        logger.info(f'Opening %s... {self.dev_fn}')
         self.jsdev = open(self.dev_fn, 'rb')
 
         # Get the device name.
         buf = array.array('B', [0] * 64)
         ioctl(self.jsdev, 0x80006a13 + (0x10000 * len(buf)), buf) # JSIOCGNAME(len)
         self.js_name = buf.tobytes().decode('utf-8')
-        print('Device name: %s' % self.js_name)
+        logger.info('Device name: %s' % self.js_name)
 
         # Get number of axes and buttons.
         buf = array.array('B', [0])
@@ -131,7 +132,7 @@ class Joystick(object):
                 if button:
                     self.button_states[button] = value
                     button_state = value
-                    logging.info("button: %s state: %d" % (button, value))
+                    logger.info("button: %s state: %d" % (button, value))
 
             if typev & 0x02:
                 axis = self.axis_map[number]
@@ -139,7 +140,7 @@ class Joystick(object):
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
                     axis_val = fvalue
-                    logging.debug("axis: %s val: %f" % (axis, fvalue))
+                    logger.debug("axis: %s val: %f" % (axis, fvalue))
 
         return button, button_state, axis, axis_val
 
@@ -164,7 +165,7 @@ class PyGameJoystick(object):
         self.joystick = pygame.joystick.Joystick(which_js)
         self.joystick.init()
         name = self.joystick.get_name()
-        print("detected joystick device:", name)
+        logger.info(f"detected joystick device: {name}")
 
         self.axis_states = [ 0.0 for i in range(self.joystick.get_numaxes())]
         self.button_states = [ 0 for i in range(self.joystick.get_numbuttons() + self.joystick.get_numhats() * 4)]
@@ -203,7 +204,7 @@ class PyGameJoystick(object):
             state = self.joystick.get_button( i )
             if self.button_states[i] != state:
                 if not i in self.button_names:
-                    print('button:', i)
+                    logger.info(f'button: {i}')
                     continue
                 button = self.button_names[i]
                 button_state = state
@@ -220,7 +221,7 @@ class PyGameJoystick(object):
                 state = int(state)
                 if self.button_states[iBtn] != state:
                     if not iBtn in self.button_names:
-                        print("button:", iBtn)
+                        logger.info(f"button: {iBtn}")
                         continue
                     button = self.button_names[iBtn]
                     button_state = state
@@ -271,7 +272,7 @@ class RCReceiver:
             self.pi.set_mode(channel.pin, pigpio.INPUT)
             self.cbs.append(self.pi.callback(channel.pin, pigpio.EITHER_EDGE, self.cbf))
             if self.debug:
-                print(f'RCReceiver gpio {channel.pin} created')
+                logger.info(f'RCReceiver gpio {channel.pin} created')
     
 
     def cbf(self, gpio, level, tick):
@@ -318,7 +319,7 @@ class RCReceiver:
                 self.signals[i] += self.MIN_OUT
             i += 1
         if self.debug:
-            print('RC CH1 signal:', round(self.signals[0], 3), 'RC CH2 signal:', round(self.signals[1], 3), 'RC CH3 signal:', round(self.signals[2], 3))
+            logger.info(f'RC CH1 signal:{round(self.signals[0], 3)}, RC CH2 signal:{round(self.signals[1], 3)}, RC CH3 signal:{round(self.signals[2], 3)}')
 
         # check mode channel if present
         if (self.signals[2] - self.jitter) > 0:  
@@ -852,6 +853,7 @@ class JoystickController(object):
         self.steering_scale = steering_scale
         self.throttle_dir = throttle_dir
         self.recording = False
+        self.recording_latch = None
         self.constant_throttle = False
         self.auto_record_on_throttle = auto_record_on_throttle
         self.dev_fn = dev_fn
@@ -942,9 +944,9 @@ class JoystickController(object):
         if self.tub is not None:
             try:
                 self.tub.delete_last_n_records(self.num_records_to_erase)
-                print('deleted last %d records.' % self.num_records_to_erase)
+                logger.info('deleted last %d records.' % self.num_records_to_erase)
             except:
-                print('failed to erase')
+                logger.info('failed to erase')
 
 
     def on_throttle_changes(self):
@@ -952,14 +954,18 @@ class JoystickController(object):
         turn on recording when non zero throttle in the user mode.
         '''
         if self.auto_record_on_throttle:
-            self.recording = (abs(self.throttle) > self.dead_zone and self.mode == 'user')
+            recording = (abs(self.throttle) > self.dead_zone and self.mode == 'user')
+            if recording != self.recording:
+                self.recording = recording
+                self.recording_latch = self.recording
+                logger.debug(f"JoystickController::on_throttle_changes() setting recording = {self.recording}")
 
 
     def emergency_stop(self):
         '''
         initiate a series of steps to try to stop the vehicle as quickly as possible
         '''
-        print('E-Stop!!!')
+        logger.warn('E-Stop!!!')
         self.mode = "user"
         self.recording = False
         self.constant_throttle = False
@@ -1025,13 +1031,17 @@ class JoystickController(object):
         toggle recording on/off
         '''
         if self.auto_record_on_throttle:
-            print('auto record on throttle is enabled.')
+            logger.info('auto record on throttle is enabled; ignoring toggle of manual mode.')
         elif self.recording:
             self.recording = False
+            self.recording_latch = self.recording
+            logger.debug(f"JoystickController::toggle_manual_recording() setting recording and recording_latch = {self.recording}")
         else:
             self.recording = True
+            self.recording_latch = self.recording
+            logger.debug(f"JoystickController::toggle_manual_recording() setting recording and recording_latch = {self.recording}")
 
-        print('recording:', self.recording)
+        logger.info(f'recording: {self.recording}')
 
 
     def increase_max_throttle(self):
@@ -1045,7 +1055,7 @@ class JoystickController(object):
         else:
             self.throttle = (self.throttle_dir * self.last_throttle_axis_val * self.throttle_scale)
 
-        print('throttle_scale:', self.throttle_scale)
+        logger.info(f'throttle_scale: {self.throttle_scale}')
 
 
     def decrease_max_throttle(self):
@@ -1059,7 +1069,7 @@ class JoystickController(object):
         else:
             self.throttle = (self.throttle_dir * self.last_throttle_axis_val * self.throttle_scale)
 
-        print('throttle_scale:', self.throttle_scale)
+        logger.info(f'throttle_scale: {self.throttle_scale}')
 
 
     def toggle_constant_throttle(self):
@@ -1074,7 +1084,7 @@ class JoystickController(object):
             self.constant_throttle = True
             self.throttle = self.throttle_scale
             self.on_throttle_changes()
-        print('constant_throttle:', self.constant_throttle)
+        logger.info(f'constant_throttle: {self.constant_throttle}')
 
 
     def toggle_mode(self):
@@ -1091,7 +1101,7 @@ class JoystickController(object):
         else:
             self.mode = 'user'
         self.mode_latch = self.mode
-        print('new mode:', self.mode)
+        logger.info(f'new mode: {self.mode}')
 
 
     def chaos_monkey_on_left(self):
@@ -1122,8 +1132,13 @@ class JoystickController(object):
         if self.mode_latch is not None:
             self.mode = self.mode_latch
             self.mode_latch = None
-        if recording is not None:
+        if recording is not None and recording != self.recording:
+            logger.debug(f"JoystickController::run_threaded() setting recording from default = {recording}")
             self.recording = recording
+        if self.recording_latch is not None:
+            logger.debug(f"JoystickController::run_threaded() setting recording from latch = {self.recording_latch}")
+            self.recording = self.recording_latch
+            self.recording_latch = None
 
         '''
         process E-Stop state machine
@@ -1181,7 +1196,7 @@ class JoystickCreatorController(JoystickController):
             if not self.js.init():
                 self.js = None
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
 
         return self.js is not None
@@ -1211,7 +1226,7 @@ class PS3JoystickController(JoystickController):
             if not self.js.init():
                 self.js = None
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1257,7 +1272,7 @@ class PS3JoystickSixAdController(PS3JoystickController):
             if not self.js.init():
                 self.js = None
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1289,7 +1304,7 @@ class PS4JoystickController(JoystickController):
             if not self.js.init():
                 self.js = None
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1331,7 +1346,7 @@ class PyGamePS4JoystickController(PS4JoystickController):
         try:
             self.js = PyGamePS4Joystick(which_js=self.which_js)
         except Exception as e:
-            print(e)
+            logger.error(e)
             self.js = None
         return self.js is not None
 
@@ -1355,7 +1370,7 @@ class XboxOneJoystickController(JoystickController):
             self.js = XboxOneJoystick(self.dev_fn)
             self.js.init()
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1439,7 +1454,7 @@ class LogitechJoystickController(JoystickController):
             self.js = LogitechJoystick(self.dev_fn)
             self.js.init()
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1490,10 +1505,10 @@ class LogitechJoystickController(JoystickController):
         self.decrease_max_throttle()
 
     def on_dpad_left(self):
-        print("dpad left un-mapped")
+        logger.error("dpad left un-mapped")
 
     def on_dpad_right(self):
-        print("dpad right un-mapped")
+        logger.error("dpad right un-mapped")
 
 
 class NimbusController(JoystickController):
@@ -1508,7 +1523,7 @@ class NimbusController(JoystickController):
             self.js = Nimbus(self.dev_fn)
             self.js.init()
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1540,7 +1555,7 @@ class WiiUController(JoystickController):
             self.js = WiiU(self.dev_fn)
             self.js.init()
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1573,7 +1588,7 @@ class RC3ChanJoystickController(JoystickController):
             self.js = RC3ChanJoystick(self.dev_fn)
             self.js.init()
         except FileNotFoundError:
-            print(self.dev_fn, "not found.")
+            logger.error(f"{self.dev_fn} not found.")
             self.js = None
         return self.js is not None
 
@@ -1637,7 +1652,7 @@ class JoyStickPub(object):
                     axis_val = 0
                 message_data = (button, button_state, axis, axis_val)
                 self.socket.send_string( "%s %d %s %f" % message_data)
-                print("SENT", message_data)
+                logger.info(f"SENT {message_data}")
 
 
 class JoyStickSub(object):
