@@ -37,6 +37,9 @@ dependencies:
   - pyyaml
   - psutil
   - fastai
+  - pynmea2
+  - pyserial
+  - utm
   - pip:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
