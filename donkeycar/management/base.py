@@ -525,6 +525,9 @@ class Train(BaseCommand):
         parser.add_argument('--model', default=None, help='output model name')
         parser.add_argument('--type', default=None, help='model type')
         parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
+        parser.add_argument('--myconfig', default='./myconfig.py',
+                            help='file name of myconfig file, defaults to '
+                                 'myconfig.py')
         parser.add_argument('--framework',
                             choices=['tensorflow', 'pytorch', None],
                             required=False,
