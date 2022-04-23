@@ -11,16 +11,6 @@
 #   source env/bin/activate
 # ```
 #
-# to run donkey commands, you will need to run them from
-# the environment.  For instance, where docs.donkeycar indicates;
-# ```
-#   donkey createcar --path <dir> [--overwrite] [--template <donkey2>]
-# ```
-# you would instead, from the donkecar project folder;
-# ```
-#   python env/bin/donkey createcar --path <dir> [--overwrite] [--template <donkey2>]
-# ```
-#
 # dependencies:
 # - python=3.7
 # -  pip
