@@ -116,9 +116,7 @@ pip install pyserial utm pynmea2
 pip install kivy==2.0.0
 
 #
-# create script to launch donkey command
+# install donkey command
 #
-echo '#!/bin/bash' > ./donkey
-echo 'source env/bin/activate' >> ./donkey
-echo 'python donkeycar/management/base.py "$@"' >> ./donkey
-chmod +x ./donkey
+pip install -e .[pc]
+
