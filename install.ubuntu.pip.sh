@@ -20,7 +20,7 @@
 # must run from within donkey project folder
 #
 if [ ! -d donkeycar ] || [ ! -f setup.py ]; then
-  echo "Error: install.mac.sh must be run in the donkeycar project folder."
+  echo "Error: $0 must be run in the donkeycar project folder."
   exit 255
 fi
 
@@ -112,5 +112,5 @@ pip3 install kivy==2.0.0
 #
 # install donkey command
 #
-pip install -e .[pc]
+pip3 install -e .[pc]
 
