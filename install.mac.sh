@@ -20,7 +20,7 @@
 # must run from within donkey project folder
 #
 if [ ! -d donkeycar ] || [ ! -f setup.py ]; then
-  echo "Error: install.mac.sh must be run in the donkeycar project folder."
+  echo "Error: $0 must be run in the donkeycar project folder."
   exit 255
 fi
 
@@ -31,82 +31,81 @@ python3 -m venv env
 source env/bin/activate
 
 # development tools
-pip install pylint==2.8.3
-pip install pytest pytest-cov codecov
+pip3 install pylint==2.8.3
+pip3 install pytest pytest-cov codecov
 
 #
 # data formats
 #
 pip3 install --no-binary :h5py:  h5py==3.1.0
-pip install pyyaml
+pip3 install pyyaml
 
 # 
 # telemetry
 #
-pip install paho-mqtt
+pip3 install paho-mqtt
 
 #
 # web server for client
 #
-pip install tornado requests
+pip3 install tornado requests
 
 #
 # console
 #
-pip install progress PrettyTable pyfiglet
-pip install docopt
-pip install readchar
+pip3 install progress PrettyTable pyfiglet
+pip3 install docopt
+pip3 install readchar
 
 #
 # python language utilities
 #
-pip install mypy==0.812
-pip install psutil
-pip install typing_extensions
+pip3 install mypy==0.812
+pip3 install psutil
+pip3 install typing_extensions
 
 # pip controller
-pip install simple-pid
+pip3 install simple-pid
 
 #
 # graphics
 #
-pip install imageio==2.10.5
-pip install opencv-python==4.4.0.46
-pip install pillow
-pip install imgaug
-pip install plotly
-pip install moviepy
+pip3 install imageio==2.10.5
+pip3 install opencv-python==4.4.0.46
+pip3 install pillow
+pip3 install imgaug
+pip3 install plotly
+pip3 install moviepy
 
 #
 # data science
 #
 pip3 install -U --no-deps numpy==1.19.4
-pip install matplotlib pandas
+pip3 install matplotlib pandas
 
 #
 # training models
 #
-pip install tensorflow==2.5.3
-pip install git+https://github.com/autorope/keras-vis.git
-pin install pytorch=1.7.1
-pip install torchvision
-pip install torchaudio
-pip install pytorch-lightning
-pip install fastai
+pip3 install tensorflow==2.5.3
+pip3 install git+https://github.com/autorope/keras-vis.git
+pip3 install pytorch=1.7.1
+pip3 install torchvision
+pip3 install torchaudio
+pip3 install pytorch-lightning
+pip3 install fastai
 
 
 #
 # gps
 #
-pip install pyserial utm pynmea2
+pip3 install pyserial utm pynmea2
 
 #
 # donkey ui
 #
-pip install kivy==2.0.0
+pip3 install kivy==2.0.0
 
 #
 # install donkey command
 #
-pip install -e .[pc]
-
+pip3 install -e .[pc]
