@@ -36,6 +36,9 @@ dependencies:
   - plotly
   - pyyaml
   - fastai
+  - pynmea2
+  - pyserial
+  - utm
   - pip:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git
