@@ -57,6 +57,9 @@ class Gps:
                     return self.gps.readline().decode()
             except serial.serialutil.SerialException:
                 pass
+            except UnicodeDecodeError:
+                # the first sentence often includes mis-framed garbase
+                pass  # ignore and keep going
             finally:
                 self.lock.release()
         return None
