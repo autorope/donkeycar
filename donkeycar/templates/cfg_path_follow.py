@@ -24,6 +24,10 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
+#
+# TRACKING camera
+#
+HAVE_T265 = False       # True to use Intel Realsense T265 as a source of pose
 
 #
 # CAMERA configuration

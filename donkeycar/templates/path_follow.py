@@ -122,29 +122,36 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
         V.add(NoOdom(), outputs=['enc/vel_m_s'])
 
-    if cfg.CAMERA_TYPE == "T265":
+    if cfg.HAVE_T265:
         from donkeycar.parts.realsense2 import RS_T265
         if cfg.HAVE_ODOM and not os.path.exists(cfg.WHEEL_ODOM_CALIB):
             print("You must supply a json file when using odom with T265. There is a sample file in templates.")
             print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
             exit(1)
 
+        #
+        # NOTE: image output on the T265 is broken in the python API and
+        #       will never get fixed, so not image output from T265
+        #
         rs = RS_T265(image_output=False, calib_filename=cfg.WHEEL_ODOM_CALIB, device_id=cfg.REALSENSE_T265_ID)
-        V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc', 'rs/camera/left/img_array', 'rs/camera/right/img_array'], threaded=True)
-        V.add(Pipe(), inputs=['rs/camera/left/img_array'], outputs=['cam/image_array'])
+        V.add(rs, inputs=['enc/vel_m_s'], outputs=['rs/pos', 'rs/vel', 'rs/acc'], threaded=True)
 
+        #
         # Pull out the realsense T265 position stream, output 2d coordinates we can use to map.
+        # Transform the T265 augmented reality coordinate system into a traditional
+        # top-down POSE coordinate system where east is positive-x and north is positive-y.
+        #
         class PosStream:
             def run(self, pos):
                 #y is up, x is right, z is backwards/forwards (negative going forwards)
                 return -pos.z, -pos.x
 
         V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
-    else:
-        #
-        # setup primary camera
-        #
-        add_camera(V, cfg, camera_type)
+
+    #
+    # setup primary camera
+    #
+    add_camera(V, cfg, camera_type)
 
     #
     # add the user input controller(s)
