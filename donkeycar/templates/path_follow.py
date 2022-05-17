@@ -63,10 +63,12 @@ from donkeycar.parts.controller import JoystickController
 from donkeycar.parts.path import CsvPath, RosPath, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
-from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain
+from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain, add_simulator
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.pipe import Pipe
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 def drive(cfg, use_joystick=False, camera_type='single'):
     '''
@@ -78,7 +80,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     '''
-    
+
+    is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
+
     #Initialize car
     V = dk.vehicle.Vehicle()
 
@@ -86,7 +90,21 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         from donkeycar.utils import Sombrero
         s = Sombrero()
    
-    is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
+    #Initialize logging before anything else to allow console logging
+    if cfg.HAVE_CONSOLE_LOGGING:
+        logger.setLevel(logging.getLevelName(cfg.LOGGING_LEVEL))
+        ch = logging.StreamHandler()
+        ch.setFormatter(logging.Formatter(cfg.LOGGING_FORMAT))
+        logger.addHandler(ch)
+
+    if cfg.HAVE_MQTT_TELEMETRY:
+        from donkeycar.parts.telemetry import MqttTelemetry
+        tel = MqttTelemetry(cfg)
+
+    #
+    # if we are using the simulator, set it up
+    #
+    add_simulator(V, cfg)
 
     if cfg.HAVE_ODOM:
         #

@@ -98,6 +98,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         tel = MqttTelemetry(cfg)
 
     #
+    # if we are using the simulator, set it up
+    #
+    add_simulator(V, cfg)
+
+
+    #
     # setup encoders, odometry and pose estimation
     #
     add_odometry(V, cfg)
@@ -750,46 +756,68 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     return ctr
 
 
+def add_simulator(V, cfg):
+    # Donkey gym part will output position information if it is configured
+    # TODO: the simulation outputs conflict with imu, odometry, kinematics pose estimation and T265 outputs; make them work together.
+    if cfg.DONKEY_GYM:
+        from donkeycar.parts.dgym import DonkeyGymEnv
+        # rbx
+        gym = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF,
+                           record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL,
+                           record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR,
+                           delay=cfg.SIM_ARTIFICIAL_LATENCY)
+        threaded = True
+        inputs = ['angle', 'throttle']
+        outputs = ['cam/image_array']
+
+        if cfg.SIM_RECORD_LOCATION:
+            outputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
+        if cfg.SIM_RECORD_GYROACCEL:
+            outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
+        if cfg.SIM_RECORD_VELOCITY:
+            outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+        if cfg.SIM_RECORD_LIDAR:
+            outputs += ['lidar/dist_array']
+
+        V.add(gym, inputs=inputs, outputs=outputs, threaded=threaded)
+
+
 def get_camera(cfg):
     """
     Get the configured camera part
     """
-    if cfg.DONKEY_GYM:
-        from donkeycar.parts.dgym import DonkeyGymEnv
-        #rbx
-        cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL, record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR, delay=cfg.SIM_ARTIFICIAL_LATENCY)
-        threaded = True
-        inputs = ['angle', 'throttle']
-    elif cfg.CAMERA_TYPE == "PICAM":
-        from donkeycar.parts.camera import PiCamera
-        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
-                       framerate=cfg.CAMERA_FRAMERATE,
-                       vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
-    elif cfg.CAMERA_TYPE == "WEBCAM":
-        from donkeycar.parts.camera import Webcam
-        cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-    elif cfg.CAMERA_TYPE == "CVCAM":
-        from donkeycar.parts.cv import CvCam
-        cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-    elif cfg.CAMERA_TYPE == "CSIC":
-        from donkeycar.parts.camera import CSICamera
-        cam = CSICamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
-                        capture_width=cfg.IMAGE_W, capture_height=cfg.IMAGE_H,
-                        framerate=cfg.CAMERA_FRAMERATE, gstreamer_flip=cfg.CSIC_CAM_GSTREAMER_FLIP_PARM)
-    elif cfg.CAMERA_TYPE == "V4L":
-        from donkeycar.parts.camera import V4LCamera
-        cam = V4LCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
-    elif cfg.CAMERA_TYPE == "MOCK":
-        from donkeycar.parts.camera import MockCamera
-        cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-    elif cfg.CAMERA_TYPE == "IMAGE_LIST":
-        from donkeycar.parts.camera import ImageListCamera
-        cam = ImageListCamera(path_mask=cfg.PATH_MASK)
-    elif cfg.CAMERA_TYPE == "LEOPARD":
-        from donkeycar.parts.leopard_imaging import LICamera
-        cam = LICamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, fps=cfg.CAMERA_FRAMERATE)
-    else:
-        raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
+    cam = None
+    if not cfg.DONKEY_GYM:
+        if cfg.CAMERA_TYPE == "PICAM":
+            from donkeycar.parts.camera import PiCamera
+            cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
+                           framerate=cfg.CAMERA_FRAMERATE,
+                           vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
+        elif cfg.CAMERA_TYPE == "WEBCAM":
+            from donkeycar.parts.camera import Webcam
+            cam = Webcam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "CVCAM":
+            from donkeycar.parts.cv import CvCam
+            cam = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "CSIC":
+            from donkeycar.parts.camera import CSICamera
+            cam = CSICamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
+                            capture_width=cfg.IMAGE_W, capture_height=cfg.IMAGE_H,
+                            framerate=cfg.CAMERA_FRAMERATE, gstreamer_flip=cfg.CSIC_CAM_GSTREAMER_FLIP_PARM)
+        elif cfg.CAMERA_TYPE == "V4L":
+            from donkeycar.parts.camera import V4LCamera
+            cam = V4LCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE)
+        elif cfg.CAMERA_TYPE == "IMAGE_LIST":
+            from donkeycar.parts.camera import ImageListCamera
+            cam = ImageListCamera(path_mask=cfg.PATH_MASK)
+        elif cfg.CAMERA_TYPE == "LEOPARD":
+            from donkeycar.parts.leopard_imaging import LICamera
+            cam = LICamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, fps=cfg.CAMERA_FRAMERATE)
+        elif cfg.CAMERA_TYPE == "MOCK":
+            from donkeycar.parts.camera import MockCamera
+            cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        else:
+            raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
 
 
@@ -843,20 +871,8 @@ def add_camera(V, cfg, camera_type):
         outputs = ['cam/image_array']
         threaded = True
         cam = get_camera(cfg)
-
-        # Donkey gym part will output position information if it is configured
-        # TODO: the simulation outputs conflict with imu, odometry, kinematics pose estimation and T265 outputs; make them work together.
-        if cfg.DONKEY_GYM:
-            if cfg.SIM_RECORD_LOCATION:
-                outputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
-            if cfg.SIM_RECORD_GYROACCEL:
-                outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
-            if cfg.SIM_RECORD_VELOCITY:
-                outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
-            if cfg.SIM_RECORD_LIDAR:
-                outputs += ['lidar/dist_array']
-
-        V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
+        if cam:
+            V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
 
 def add_odometry(V, cfg):
@@ -1020,9 +1036,10 @@ def add_speed_control(V, cfg, is_differential_drive):
 # Drive train setup
 #
 def add_drivetrain(V, cfg):
-    from donkeycar.parts import actuator, pins;
 
     if (not cfg.DONKEY_GYM) and cfg.DRIVE_TRAIN_TYPE != "MOCK":
+        from donkeycar.parts import actuator, pins;
+
         if cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":
             #
             # drivetrain for RC car with servo and ESC.

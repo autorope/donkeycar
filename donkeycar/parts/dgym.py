@@ -75,6 +75,9 @@ class DonkeyGymEnv(object):
         if brake is None:
             brake = 0.0
 
+        # print(self.frame)
+        # print(self.info)
+
         self.action = [steering, throttle, brake]
 
         # Output Sim-car position information if configured
