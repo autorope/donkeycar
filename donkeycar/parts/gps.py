@@ -183,10 +183,6 @@ def getGpsPosition(line, debug=False):
     message = nmea_parts[0]
 
     if (message == "GPRMC") or (message == "GNRMC"):
-        if True or debug:
-            print()
-            print(line)
-
         #     
         # like '$GPRMC,003918.00,A,3806.92281,N,12235.64362,W,0.090,,060322,,,D*67'
         # GPRMC = Recommended minimum specific GPS/Transit data
