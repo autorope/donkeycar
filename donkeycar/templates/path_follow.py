@@ -195,7 +195,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     path = CsvPath(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
 
-    lpos = LoggerPart(inputs=['pos/x', 'pos/y'], level="INFO", logger="position")
+    lpos = LoggerPart(inputs=['dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
+    V.add(lpos, inputs=lpos.inputs)
+    lpos = LoggerPart(inputs=['enc/distance', 'pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
     V.add(lpos, inputs=lpos.inputs)
 
     # When a path is loaded, we will be in follow mode. We will not record.
