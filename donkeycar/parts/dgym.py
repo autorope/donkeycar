@@ -10,7 +10,11 @@ def is_exe(fpath):
 
 class DonkeyGymEnv(object):
 
-    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, record_location=False, record_gyroaccel=False, record_velocity=False, record_lidar=False, delay=0):
+    def __init__(self, sim_path, host="127.0.0.1", port=9091,
+                 headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={},
+                 record_location=False, record_gyroaccel=False, record_velocity=False,
+                 record_lidar=False, record_distance=False, record_orientation=False,
+                 delay=0):
 
         if sim_path != "remote":
             if not os.path.exists(sim_path):
@@ -34,12 +38,16 @@ class DonkeyGymEnv(object):
                      'cte': 0,
                      'gyro': (0., 0., 0.),
                      'accel': (0., 0., 0.),
-                     'vel': (0., 0., 0.)}
+                     'vel': (0., 0., 0.),
+                     'car': (0.0, 0.0, 0.0),
+                     'distance': {'rear':{'left': 0.0, 'right': 0.0}}}
         self.delay = float(delay) / 1000
         self.record_location = record_location
         self.record_gyroaccel = record_gyroaccel
         self.record_velocity = record_velocity
         self.record_lidar = record_lidar
+        self.record_distance = record_distance
+        self.record_orientation = record_orientation
 
         self.buffer = []
 
@@ -60,40 +68,57 @@ class DonkeyGymEnv(object):
         # clear the buffer
         del self.buffer[:num_to_remove]
 
+    def poll(self):
+        if self.delay > 0.0:
+            current_frame, _, _, current_info = self.env.step(self.action)
+            self.delay_buffer(current_frame, current_info)
+        else:
+            self.frame, _, _, self.info = self.env.step(self.action)
+
     def update(self):
         while self.running:
-            if self.delay > 0.0:
-                current_frame, _, _, current_info = self.env.step(self.action)
-                self.delay_buffer(current_frame, current_info)
-            else:
-                self.frame, _, _, self.info = self.env.step(self.action)
+            self.poll()
+
+    def run(self, steering, throttle, brake=None):
+        if self.running:
+            self.poll();
+            return self.run_threaded(steering, throttle, brake)
 
     def run_threaded(self, steering, throttle, brake=None):
-        if steering is None or throttle is None:
-            steering = 0.0
-            throttle = 0.0
-        if brake is None:
-            brake = 0.0
+        if self.running:
+            if steering is None or throttle is None:
+                steering = 0.0
+                throttle = 0.0
+            if brake is None:
+                brake = 0.0
 
-        # print(self.frame)
-        # print(self.info)
+            self.action = [steering, throttle, brake]
 
-        self.action = [steering, throttle, brake]
+            # Output Sim-car position information if configured
+            outputs = [self.frame] # ['cam/image_array']
+            if self.record_location:
+                # ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
+                outputs += self.info['pos'][0],  self.info['pos'][1],  self.info['pos'][2],  self.info['speed'], self.info['cte']
+            if self.record_gyroaccel:
+                # ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
+                outputs += self.info['gyro'][0], self.info['gyro'][1], self.info['gyro'][2], self.info['accel'][0], self.info['accel'][1], self.info['accel'][2]
+            if self.record_velocity:
+                # ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
+                outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
+            if self.record_lidar:
+                #  ['lidar/dist_array']
+                outputs += self.info['lidar']
+            if self.record_distance:
+                # ['dist/left', 'dist/right']
+                outputs += self.info['distance']['rear']['left'],  self.info['distance']['rear']['right']
+            if self.record_orientation:
+                # ['roll', 'pitch', 'yaw']
+                outputs += self.info['car']
 
-        # Output Sim-car position information if configured
-        outputs = [self.frame]
-        if self.record_location:
-            outputs += self.info['pos'][0],  self.info['pos'][1],  self.info['pos'][2],  self.info['speed'], self.info['cte']
-        if self.record_gyroaccel:
-            outputs += self.info['gyro'][0], self.info['gyro'][1], self.info['gyro'][2], self.info['accel'][0], self.info['accel'][1], self.info['accel'][2]
-        if self.record_velocity:
-            outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
-        if self.record_lidar:
-            outputs += self.info['lidar']
-        if len(outputs) == 1:
-            return self.frame
-        else:
-            return outputs
+            if len(outputs) == 1:
+                return self.frame
+            else:
+                return outputs
 
     def shutdown(self):
         self.running = False
