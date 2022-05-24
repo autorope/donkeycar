@@ -5,6 +5,9 @@ class VelocityNormalize:
     """
     Normalize a velocity into to range 0..1.0
     given the measured minimum and maximum speeds.
+    @param min_speed: speed below which car stalls
+    @param max_speed: car's top speed (may be a target, not a limit)
+    @param min_normal_speed: the normalized throttle corresponding to min_speed
     """
     def __init__(self, min_speed:float, max_speed:float, min_normal_speed:float=0.1) -> None:
         self.min_speed = min_speed
@@ -13,7 +16,7 @@ class VelocityNormalize:
 
     def run(self, speed:float) -> float:
         s = sign(speed)
-        speed = math.abs(speed)
+        speed = abs(speed)
         if speed < self.min_speed:
             return 0.0
         if speed >= self.max_speed:
@@ -38,7 +41,7 @@ class VelocityUnnormalize:
 
     def run(self, speed:float) -> float:
         s = sign(speed)
-        speed = math.abs(speed)
+        speed = abs(speed)
         if speed < self.min_normal_speed:
             return 0.0
         if speed >= 1.0:
@@ -89,8 +92,8 @@ class StepSpeedController:
         target_direction = sign(target_speed)
         direction = sign(speed)
 
-        target_speed = math.abs(target_speed)
-        speed = math.abs(speed)
+        target_speed = abs(target_speed)
+        speed = abs(speed)
 
         # 
         # treat speed below minimum as zero
