@@ -2,9 +2,7 @@ import logging
 import math
 import time
 from typing import Tuple
-from tensorflow.python.ops.linalg_ops import norm
 
-from tornado.web import _xsrf_form_html
 from donkeycar.utils import compare_to, sign, is_number_type, clamp
 
 logger = logging.getLogger(__name__)
@@ -12,9 +10,15 @@ logger = logging.getLogger(__name__)
 
 def limit_angle(angle:float):
     """
-    limit angle between 0..2pi
+    limit angle to pi to -pi radians (one full circle)
     """
     return math.atan2(math.sin(angle), math.cos(angle));
+    # twopi = math.pi * 2
+    # while(angle > math.pi):
+    #     angle -= twopi
+    # while(angle < -math.pi):
+    #     angle += twopi
+    # return angle
 
 
 class Pose2D:
@@ -75,7 +79,6 @@ class Bicycle:
 
         if self.running:
             if 0 == self.timestamp:
-                self.timestamp = timestamp
                 self.forward_distance = forward_distance
                 self.forward_velocity=0
                 self.pose = Pose2D()
@@ -123,13 +126,16 @@ class Bicycle:
 
                 self.timestamp = timestamp
 
-                return (
-                    self.forward_distance,
-                    self.forward_velocity, 
-                    self.pose.x, self.pose.y, self.pose.angle, 
-                    self.pose_velocity.x, self.pose_velocity.y, self.pose_velocity.angle, 
-                    self.timestamp
-                )
+            result = (
+                self.forward_distance,
+                self.forward_velocity,
+                self.pose.x, self.pose.y, self.pose.angle,
+                self.pose_velocity.x, self.pose_velocity.y, self.pose_velocity.angle,
+                self.timestamp
+            )
+            if self.debug:
+                logger.info(result)
+            return result
 
         return (0, 0, 0, 0, 0, 0, 0, 0, self.timestamp)
 
@@ -201,10 +207,10 @@ def bicycle_angular_velocity(wheel_base:float, forward_velocity:float, steering_
     the bicycle model and the measured max forward velocity and max steering angle.
     """
     #
-    # for car-like (bicycle model) vehicle:
-    # angular_velocity = forward_velocity / wheel_base * math.tan(steering_angle)
+    # for car-like (bicycle model) vehicle, for the back axle:
+    # angular_velocity = forward_velocity * (math.tan(steering_angle) /  wheel_base)
     #
-    return forward_velocity / wheel_base * math.tan(steering_angle)
+    return forward_velocity * math.tan(steering_angle) / wheel_base
 
 
 class BicycleNormalizeAngularVelocity:
@@ -331,13 +337,13 @@ class Unicycle:
 
                 self.timestamp = timestamp
 
-                return (
-                    (self.left_distance + self.right_distance) / 2,
-                    self.velocity, 
-                    self.pose.x, self.pose.y, self.pose.angle, 
-                    self.pose_velocity.x, self.pose_velocity.y, self.pose_velocity.angle, 
-                    self.timestamp
-                )
+            return (
+                (self.left_distance + self.right_distance) / 2,
+                self.velocity,
+                self.pose.x, self.pose.y, self.pose.angle,
+                self.pose_velocity.x, self.pose_velocity.y, self.pose_velocity.angle,
+                self.timestamp
+            )
 
 
         return (0, 0, 0, 0, 0, 0, 0, 0, self.timestamp)
@@ -466,6 +472,14 @@ class NormalizeSteeringAngle:
         self.steering_zero = steering_zero
     
     def run(self, steering_angle) -> float:
+        """
+        @param steering angle in radians where
+               positive radians is a left turn,
+               negative radians is a right turn
+        @return a normalized steering value in range -1 to 1, where
+               -1 is full left, corresponding to positive max_steering_angle
+                1 is full right, corresponding to negative max_steering_angle
+        """
         if not is_number_type(steering_angle):
             logger.error("steering angle must be a number.")
             return 0
@@ -473,7 +487,7 @@ class NormalizeSteeringAngle:
         steering = steering_angle / self.max_steering_angle
         if abs(steering) <= self.steering_zero:
             return 0
-        return steering
+        return -steering # positive steering angle is negative normalized
 
     def shutdown():
         pass
@@ -494,6 +508,14 @@ class UnnormalizeSteeringAngle:
         self.steering_zero = steering_zero
     
     def run(self, steering) -> float:
+        """
+        @param a normalized steering value in range -1 to 1, where
+               -1 is full left, corresponding to positive max_steering_angle
+                1 is full right, corresponding to negative max_steering_angle
+        @return steering angle in radians where
+                positive radians is a left turn,
+                negative radians is a right turn
+        """
         if not is_number_type(steering):
             logger.error("steering must be a number")
             return 0
@@ -506,9 +528,9 @@ class UnnormalizeSteeringAngle:
         s = sign(steering)
         steering = abs(steering)
         if steering <= self.steering_zero:
-            return 0
+            return 0.0
 
-        return self.max_steering_angle * steering * s
+        return self.max_steering_angle * steering * -s
 
     def shutdown():
         pass
