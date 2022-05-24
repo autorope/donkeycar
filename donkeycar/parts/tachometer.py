@@ -4,6 +4,7 @@ import time
 import threading
 from typing import Tuple
 
+from donkeycar.utils import is_number_type
 from donkeycar.utilities.platform import is_jetson
 from donkeycar.utilities.serial_port import SerialPort
 from donkeycar.parts.pins import InputPin, PinEdge
@@ -52,6 +53,7 @@ class AbstractEncoder(ABC):
         will not request new values from the encoder.
         """
         return 0
+
 
 class SerialEncoder(AbstractEncoder):
     """
@@ -418,6 +420,27 @@ class Tachometer:
     def shutdown(self):
         self.running = False
         self.encoder.stop_ticks()
+
+
+class InverseTachometer:
+    """
+    Used by simulator: take distance and calculate revolutions
+    """
+    def __init__(self, meters_per_revolution:float):
+        self.meters_per_revolution = meters_per_revolution
+        self.revolutions = 0.0
+        self.timestamp = time.time()
+
+    def run(self, distance:float, timestamp=None):
+        # if a timestamp if provided, use it
+        if timestamp is None:
+            timestamp = time.time()
+        if is_number_type(distance):
+            self.timestamp = timestamp
+            self.revolutions = distance / self.meters_per_revolution
+        else:
+            logger.error("distance must be a float")
+        return self.revolutions, self.timestamp
 
 
 if __name__ == "__main__":

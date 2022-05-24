@@ -5,6 +5,7 @@ import unittest
 from donkeycar.parts.tachometer import Tachometer
 from donkeycar.parts.tachometer import AbstractEncoder
 from donkeycar.parts.tachometer import TachometerMode
+from donkeycar.parts.tachometer import InverseTachometer
 from donkeycar.utilities.serial_port import SerialPort
 
 class MockEncoder(AbstractEncoder):
@@ -22,7 +23,8 @@ class MockEncoder(AbstractEncoder):
         assert((1==direction) or (0==direction) or (-1==direction))
         self.ticks += direction
         return self.ticks
-
+    def get_ticks(self, encoder_index:int=0) -> int:
+        return self.ticks
 
 class MockTachometer(Tachometer):
     def __init__(self, ticks_per_revolution: float, direction_mode, debug=False):
@@ -142,3 +144,10 @@ class TestTachometer(unittest.TestCase):
         self.assertEqual(ts, timestamp)
         self.assertAlmostEqual(0.1, revolutions, 4)
 
+
+class TestInverseTachometer(unittest.TestCase):
+
+    def test_inverse_tachometer_forward(self):
+        tachometer = InverseTachometer(meters_per_revolution=0.25)
+        revolutions, _ = tachometer.run(distance=100)
+        self.assertEqual(400, revolutions)
