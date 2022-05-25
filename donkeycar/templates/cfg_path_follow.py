@@ -543,27 +543,6 @@ MODEL_RELOADED_LED_B = 0
 
 
 #
-# BEHAVIORS
-#
-#When training the Behavioral Neural Network model, make a list of the behaviors,
-#Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
-TRAIN_BEHAVIORS = False
-BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
-BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
-
-
-#
-# Localizer
-#
-#The localizer is a neural network that can learn to predict its location on the track.
-#This is an experimental feature that needs more developement. But it can currently be used
-#to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
-TRAIN_LOCALIZER = False
-NUM_LOCATIONS = 10
-BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
-
-
-#
 # DonkeyGym
 #
 # Only on Ubuntu linux, you can use the simulator as a virtual donkey and
@@ -639,7 +618,7 @@ HAVE_T265 = False       # True to use Intel Realsense T265 as a source of pose
 #
 # PATH FOLLOWING
 #
-PATH_FILENAME = "donkey_path.pkl"   # the path will be saved to this filename
+PATH_FILENAME = "donkey_path.csv"   # the path will be saved to this filename as comma separated x,y values
 PATH_SCALE = 10.0                   # the path display will be scaled by this factor in the web page
 PATH_OFFSET = (255, 255)            # 255, 255 is the center of the map. This offset controls where the origin is displayed.
 PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a path point
