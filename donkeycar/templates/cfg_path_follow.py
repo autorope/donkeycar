@@ -408,82 +408,11 @@ LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obs
 LIDAR_UPPER_LIMIT = 270
 
 
-#
-# CNN Deep Learning
-#
-# The default AI framework to use. Choose from (tensorflow|pytorch)
-DEFAULT_AI_FRAMEWORK = 'tensorflow'
-
-# The DEFAULT_MODEL_TYPE will choose which model will be created at training
-# time. This chooses between different neural network designs. You can
-# override this setting by passing the command line parameter --type to the
-# python manage.py train and drive commands.
-# tensorflow models: (linear|categorical|tflite_linear|tensorrt_linear|linear_velocity)
-# pytorch models: (resnet18)
-DEFAULT_MODEL_TYPE = 'linear'
-BATCH_SIZE = 128                #how many records to use when doing one pass of gradient decent. Use a smaller number if your gpu is running out of memory.
-TRAIN_TEST_SPLIT = 0.8          #what percent of records to use for training. the remaining used for validation.
-MAX_EPOCHS = 100                #how many times to visit all records of your data
-SHOW_PLOT = True                #would you like to see a pop up display of final loss?
-VERBOSE_TRAIN = True            #would you like to see a progress bar with text during training?
-USE_EARLY_STOP = True           #would you like to stop the training if we see it's not improving fit?
-EARLY_STOP_PATIENCE = 5         #how many epochs to wait before no improvement
-MIN_DELTA = .0005               #early stop will want this much loss change before calling it improved.
-PRINT_MODEL_SUMMARY = True      #print layers and weights to stdout
-OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
-LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
-LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
-SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
-CREATE_TF_LITE = True           # automatically create tflite model in training
-CREATE_TENSOR_RT = False        # automatically create tensorrt model in training
-
-PRUNE_CNN = False               #This will remove weights from your model. The primary goal is to increase performance.
-PRUNE_PERCENT_TARGET = 75       # The desired percentage of pruning.
-PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per iteration.
-PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
-PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
-
-# Augmentations and Transformations
-AUGMENTATIONS = []
-TRANSFORMATIONS = []
-# Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
-# AUGMENTATIONS
-AUG_MULTIPLY_RANGE = (0.5, 3.0)
-AUG_BLUR_RANGE = (0.0, 3.0)
-# Region of interest cropping, requires 'CROP' in TRANSFORMATIONS to be set
-# If these crops values are too large, they will cause the stride values to
-# become negative and the model with not be valid.
-ROI_CROP_TOP = 45               # the number of rows of pixels to ignore on the top of the image
-ROI_CROP_BOTTOM = 0             # the number of rows of pixels to ignore on the bottom of the image
-ROI_CROP_RIGHT = 0              # the number of rows of pixels to ignore on the right of the image
-ROI_CROP_LEFT = 0               # the number of rows of pixels to ignore on the left of the image
-# For trapezoidal see explanation in augmentations.py. Requires 'TRAPEZE' in
-# TRANSFORMATIONS to be set
-ROI_TRAPEZE_LL = 0
-ROI_TRAPEZE_LR = 160
-ROI_TRAPEZE_UL = 20
-ROI_TRAPEZE_UR = 140
-ROI_TRAPEZE_MIN_Y = 60
-ROI_TRAPEZE_MAX_Y = 120
-
-#Model transfer options
-#When copying weights during a model transfer operation, should we freeze a certain number of layers
-#to the incoming weights and not allow them to change during training?
-FREEZE_LAYERS = False               #default False will allow all layers to be modified by training
-NUM_LAST_LAYERS_TO_TRAIN = 7        #when freezing layers, how many layers from the last should be allowed to train?
-
-#For the categorical model, this limits the upper bound of the learned throttle
-#it's very IMPORTANT that this value is matched from the training PC config.py and the robot.py
-#and ideally wouldn't change once set.
-MODEL_CATEGORICAL_MAX_THROTTLE_RANGE = 0.8
-
-# RNN or 3D
-SEQUENCE_LENGTH = 3             #some models use a number of images over time. This controls how many.
-
 # IMU for imu model
 HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
 IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
 IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
+
 
 #
 # Input controllers
