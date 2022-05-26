@@ -886,6 +886,7 @@ class UnicycleDistance:
             logger.error("left and right must be floats")
         return 0.0
 
+
 def add_odometry(V, cfg):
     """
     If the configuration support odometry, then
