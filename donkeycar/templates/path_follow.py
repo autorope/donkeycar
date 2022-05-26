@@ -200,9 +200,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         V.add(lpos, inputs=lpos.inputs)
     if cfg.HAVE_ODOM:
         if cfg.HAVE_ODOM2:
-            lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance'], level="INFO", logger="odometer")
+            lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp', 'enc/right/timestamp'], level="INFO", logger="odometer")
             V.add(lpos, inputs=lpos.inputs)
-        lpos = LoggerPart(inputs=['enc/distance'], level="INFO", logger="odometer")
+        lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
         V.add(lpos, inputs=lpos.inputs)
         lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
         V.add(lpos, inputs=lpos.inputs)
