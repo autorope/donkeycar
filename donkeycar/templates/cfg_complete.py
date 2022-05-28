@@ -391,7 +391,7 @@ TACHOMETER_MODE=FORWARD_REVERSE # FORWARD_ONLY, FORWARD_REVERSE or FORWARD_REVER
                                 # - FORWARD_REVERSE_STOP uses the throttle value to decide if the car is moving forward or reverse or stopped.
                                 #   This works well for a slower moving robot in situations where the robot is changing direction; for instance4
                                 #   when doing SLAM, the robot will explore the room slowly and may need to backup.
-MM_PER_TICK = 12.7625           # How much travel with a single encoder tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+MM_PER_TICK = WHEEL_RADIUS * 2 * 3.141592653589793 * 1000 / ENCODER_PPR           # How much travel with a single encoder tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
 ODOM_SERIAL = '/dev/ttyACM0'    # serial port when ENCODER_TYPE is 'arduino'
 ODOM_SERIAL_BAUDRATE = 115200   # baud rate for serial port encoder
 ODOM_PIN = 13                   # if using ENCODER_TYPE=GPIO, which GPIO board mode pin to use as input

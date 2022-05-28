@@ -901,7 +901,8 @@ def add_odometry(V, cfg):
         from donkeycar.parts.odometer import Odometer
         from donkeycar.parts import pins;
 
-        distance_per_revolution = cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000
+        # distance_per_revolution = cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000
+        distance_per_revolution = cfg.WHEEL_RADIUS * 2 * 3.141592653589793
 
         tachometer = None
         tachometer2 = None
