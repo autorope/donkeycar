@@ -149,6 +149,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         V.add(PosStream(), inputs=['rs/pos'], outputs=['pos/x', 'pos/y'])
 
     #
+    # gps outputs ['pos/x', 'pos/y']
+    #
+    add_gps(V, cfg)
+
+    #
     # setup primary camera
     #
     add_camera(V, cfg, camera_type)
@@ -199,7 +204,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
         V.add(lpos, inputs=lpos.inputs)
     if cfg.HAVE_ODOM:
-        if cfg.HAVE_ODOM2:
+        if cfg.HAVE_ODOM_2:
             lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp', 'enc/right/timestamp'], level="INFO", logger="odometer")
             V.add(lpos, inputs=lpos.inputs)
         lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
@@ -342,6 +347,15 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
         max_loop_count=cfg.MAX_LOOPS)
+
+def add_gps(V, cfg):
+    if cfg.HAVE_GPS:
+        from donkeycar.parts.gps import Gps
+        from donkeycar.parts.pipe import Pipe
+        gps = Gps(cfg.GPS_SERIAL, cfg.GPS_BAUDRATE)
+        V.add(gps, outputs=['gps/utm/longitude', 'gps/utm/latitude'])
+        V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
+
 
 
 if __name__ == '__main__':

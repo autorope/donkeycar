@@ -616,6 +616,13 @@ FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency 
 HAVE_T265 = False       # True to use Intel Realsense T265 as a source of pose
 
 #
+# gps
+#
+HAVE_GPS = False            # True to read gps position
+GPS_SERIAL = None           # use default if None, otherwise use specified serial port
+GPS_SERIAL_BAUDRATE = 115200
+
+#
 # PATH FOLLOWING
 #
 PATH_FILENAME = "donkey_path.csv"   # the path will be saved to this filename as comma separated x,y values
