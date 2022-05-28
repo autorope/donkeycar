@@ -86,7 +86,7 @@ class DonkeyGymEnv(object):
         if self.record_velocity:
             outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
         if self.record_lidar:
-            outputs += self.info['lidar']
+            outputs += [self.info['lidar']]
         if len(outputs) == 1:
             return self.frame
         else:
