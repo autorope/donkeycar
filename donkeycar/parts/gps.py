@@ -86,6 +86,9 @@ class Gps:
                     return self.gps.readline().decode()
             except serial.serialutil.SerialException:
                 pass
+            except UnicodeDecodeError:
+                # the first sentence often includes mis-framed garbase
+                pass  # ignore and keep going
             finally:
                 self.lock.release()
         return None
@@ -108,7 +111,7 @@ class Gps:
                 position = getGpsPosition(line, debug=self.debug)
                 if position:
                     # (timestamp, longitude latitude)
-                    return (timestamp, float(position[0]), float(position[1]))
+                    return timestamp, position[0], position[1]
         return None
 
     def run(self):
@@ -243,7 +246,13 @@ def getGpsPosition(line, debug=False):
             longitude = nmea_to_degrees(nmea_parts[5], nmea_parts[6])
             latitude = nmea_to_degrees(nmea_parts[3], nmea_parts[4])
             # print(f"Your position: lon = ({longitude}), lat = ({latitude})")
-            
+
+            if debug:
+                if msg.longitude != longitude:
+                    print(f"Longitude mismatch {msg.longitude} != {longitude}")
+                if msg.latitude != latitude:
+                    print(f"Latitude mismatfh {msg.latitude} != {latitude}")
+
             #
             # convert position in degrees to local meters
             #
@@ -251,7 +260,7 @@ def getGpsPosition(line, debug=False):
             # print(f"Your utm position: lon - ({utm_position[1]:.6f}), lat = ({utm_position[0]:.6f})")
             
             # return (longitude, latitude) as float degrees
-            return(utm_position[1], utm_position[0])
+            return float(utm_position[1]), float(utm_position[0])
     else:
         # Non-position message OR invalid string
         # print(f"Ignoring line {line}")
