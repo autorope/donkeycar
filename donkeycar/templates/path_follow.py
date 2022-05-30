@@ -354,7 +354,7 @@ def add_gps(V, cfg):
         from donkeycar.parts.gps import GpsPosition
         from donkeycar.parts.pipe import Pipe
         gps = GpsPosition(cfg.GPS_SERIAL, cfg.GPS_BAUDRATE)
-        V.add(gps, outputs=['gps/utm/longitude', 'gps/utm/latitude'])
+        V.add(gps, outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
         V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
 
 
