@@ -15,7 +15,36 @@ logger = logging.getLogger(__name__)
 
 def is_mac():
     return "Darwin" == platform.system()
+class GpsPosition:
+    def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False) -> None:
+        self.gps = Gps(serial, baudrate, timeout, debug)
+        self.position = None
+        self._start()
 
+    def _start(self):
+        # wait until we get at least one gps position
+        while self.position is None:
+            print("Waiting for gps fix")
+            self.position = self.run()
+            
+    def run(self):
+        new_position = self.gps.run()
+        if new_position is not None and len(new_position) > 0:
+            self.position = new_position[-1]
+        return self.position
+
+    def run_theaded(self):
+        positions = self.gps.run_threaded()
+        if positions is not None and len(positions) > 0:
+            self.position = self.positions[-1]
+        return self.position
+
+    def update(self):
+        self.gps.update()
+
+    def shutdown(self):
+        return self.gps.shutdown()
+    
 class Gps:
     def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
         self.serial = serial
@@ -79,7 +108,7 @@ class Gps:
                 position = getGpsPosition(line, debug=self.debug)
                 if position:
                     # (timestamp, longitude latitude)
-                    return (timestamp, position[0], position[1])
+                    return (timestamp, float(position[0]), float(position[1]))
         return None
 
     def run(self):
@@ -88,8 +117,8 @@ class Gps:
             # in non-threaded mode, just read a single reading and return it
             #
             if self.gps is not None:
-                position = self.poll(time.time())
-                if position:
+                position  = self.poll(time.time())
+                if position is not None:
                     # [(timestamp, longitude, latitude)]
                     return [position]
 
