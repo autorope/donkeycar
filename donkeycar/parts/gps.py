@@ -57,6 +57,9 @@ class Gps:
                     return self.gps.readline().decode()
             except serial.serialutil.SerialException:
                 pass
+            except UnicodeDecodeError:
+                # the first sentence often includes mis-framed garbase
+                pass  # ignore and keep going
             finally:
                 self.lock.release()
         return None
@@ -178,7 +181,8 @@ def getGpsPosition(line, debug=False):
     nmea_msg = line[1:-3]      # msg without $ and *## checksum
     nmea_parts = nmea_msg.split(",")
     message = nmea_parts[0]
-    if (message == "GPRMC") or (message == "GNRMC"):   
+
+    if (message == "GPRMC") or (message == "GNRMC"):
         #     
         # like '$GPRMC,003918.00,A,3806.92281,N,12235.64362,W,0.090,,060322,,,D*67'
         # GPRMC = Recommended minimum specific GPS/Transit data
@@ -188,6 +192,7 @@ def getGpsPosition(line, debug=False):
         calculated_checksum = calculate_nmea_checksum(line)
         if nmea_checksum != calculated_checksum:
             logger.info(f"NMEA checksum does not match: {nmea_checksum} != {calculated_checksum}")
+            return None
         
         #
         # parse against a known parser to check our parser
