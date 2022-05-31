@@ -221,6 +221,14 @@ STEERING_CHANNEL = 0       # PCA 9685 channel for steering control
 STEERING_LEFT_PWM = 460    # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
 STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
+#VESC controller, primarily need to change VESC_SERIAL_PORT  and VESC_MAX_SPEED_PERCENT
+VESC_MAX_SPEED_PERCENT =.2
+VESC_SERIAL_PORT= "/dev/ttyACM1"
+VESC_HAS_SENSOR= False
+VESC_START_HEARTBEAT= True
+VESC_BAUDRATE= 115200
+VESC_TIMEOUT= 0.05
+
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
 # - uses L298N type motor controller in two pin wiring
