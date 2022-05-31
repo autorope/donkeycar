@@ -754,7 +754,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                       cfg.VESC_HAS_SENSOR,
                       cfg.VESC_START_HEARTBEAT,
                       cfg.VESC_BAUDRATE, 
-                      cfg.VESC_TIMEOUT
+                      cfg.VESC_TIMEOUT,
+                      cfg.VESC_STEERING_SCALE,
+                      cfg.VESC_STEERING_OFFSET
                     )
         V.add(vesc, inputs=['angle', 'throttle'])
 

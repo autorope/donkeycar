@@ -189,7 +189,7 @@ class VESC:
     pip install git+https://github.com/LiamBindle/PyVESC.git@master
     to install the pyvesc library
     '''
-    def __init__(self, serial_port, percent=.2, has_sensor=False, start_heartbeat=True, baudrate=115200, timeout=0.05 ):
+    def __init__(self, serial_port, percent=.2, has_sensor=False, start_heartbeat=True, baudrate=115200, timeout=0.05, steering_scale = 1.0, steering_offset = 0.0 ):
         
         try:
             import pyvesc
@@ -203,7 +203,8 @@ class VESC:
             raise
         
         assert percent <= 1 and percent >= -1,'\n\nOnly percentages are allowed for MAX_VESC_SPEED (we recommend a value of about .2) (negative values flip direction of motor)'
-        
+        self.steering_scale = steering_scale
+        self.steering_offset = steering_offset
         self.percent = percent
         
         try:
@@ -216,7 +217,7 @@ class VESC:
             raise
         
     def run(self, angle, throttle):
-        self.v.set_servo(angle)
+        self.v.set_servo((angle/self.steering_scale) + self.steering_offset)
         self.v.set_duty_cycle(throttle*self.percent)
 
 
