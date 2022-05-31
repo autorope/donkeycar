@@ -848,8 +848,9 @@ if __name__ == '__main__':
     if args['drive']:
         model_type = args['--type']
         camera_type = args['--camera']
+        meta_kv = [tuple(s.split(':')) for s in args['--meta']]
         drive(cfg, model_path=args['--model'], use_joystick=args['--js'],
               model_type=model_type, camera_type=camera_type,
-              meta=args['--meta'])
+              meta=meta_kv)
     elif args['train']:
         print('Use python train.py instead.\n')
