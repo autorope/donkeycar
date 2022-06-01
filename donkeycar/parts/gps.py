@@ -33,10 +33,10 @@ class GpsPosition:
             self.position = new_position[-1]
         return self.position
 
-    def run_theaded(self):
+    def run_threaded(self):
         positions = self.gps.run_threaded()
         if positions is not None and len(positions) > 0:
-            self.position = self.positions[-1]
+            self.position = positions[-1]
         return self.position
 
     def update(self):
@@ -95,7 +95,7 @@ class Gps:
 
     def poll(self, timestamp=None):
         #
-        # read a line and convert to a position
+        # read lines and convert to a position
         # in a threadsafe manner
         #
         # if there are characters waiting
@@ -105,13 +105,14 @@ class Gps:
             if timestamp is None:
                 timestamp = time.time()
             line = self._readline()
-            if line:
+            while line:
                 if self.debug:
                     logger.info(line)
                 position = getGpsPosition(line, debug=self.debug)
                 if position:
                     # (timestamp, longitude latitude)
                     return timestamp, position[0], position[1]
+                line = self._readline()
         return None
 
     def run(self):
@@ -220,7 +221,8 @@ def getGpsPosition(line, debug=False):
         calculated_checksum = calculate_nmea_checksum(line)
         if nmea_checksum != calculated_checksum:
             logger.info(f"NMEA checksum does not match: {nmea_checksum} != {calculated_checksum}")
-        
+            return None
+
         #
         # parse against a known parser to check our parser
         # TODO: if we hit a lot of corner cases that cause our
@@ -233,12 +235,13 @@ def getGpsPosition(line, debug=False):
                 msg = pynmea2.parse(line)
                 logger.info(f"nmea.longitude({msg.longitude}, nmea.latitude({msg.latitude})")
             except pynmea2.ParseError as e:
-                logger.info('Ignoring NMEA parse error: {}'.format(e))
+                logger.error('NMEA parse error detected: {}'.format(e))
+                return None
 
         # Reading the GPS fix data is an alternative approach that also works
         if nmea_parts[2] == 'V':
             # V = Warning, most likely, there are no satellites in view...
-            logger.info("GPS receiver warning; position not valid")
+            logger.info("GPS receiver warning; position not valid. Ignore invalid position.")
         else:
             #
             # Convert the textual nmea position into degrees
@@ -251,7 +254,7 @@ def getGpsPosition(line, debug=False):
                 if msg.longitude != longitude:
                     print(f"Longitude mismatch {msg.longitude} != {longitude}")
                 if msg.latitude != latitude:
-                    print(f"Latitude mismatfh {msg.latitude} != {latitude}")
+                    print(f"Latitude mismatch {msg.latitude} != {latitude}")
 
             #
             # convert position in degrees to local meters
