@@ -217,7 +217,7 @@ class VESC:
             raise
         
     def run(self, angle, throttle):
-        self.v.set_servo((angle/self.steering_scale) + self.steering_offset)
+        self.v.set_servo((angle * self.steering_scale) + self.steering_offset)
         self.v.set_duty_cycle(throttle*self.percent)
 
 

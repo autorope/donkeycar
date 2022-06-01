@@ -223,13 +223,13 @@ STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey cali
 
 #VESC controller, primarily need to change VESC_SERIAL_PORT  and VESC_MAX_SPEED_PERCENT
 VESC_MAX_SPEED_PERCENT =.2
-VESC_SERIAL_PORT= "/dev/ttyACM1"
-VESC_HAS_SENSOR= False
+VESC_SERIAL_PORT= "/dev/ttyACM0"
+VESC_HAS_SENSOR= True
 VESC_START_HEARTBEAT= True
 VESC_BAUDRATE= 115200
 VESC_TIMEOUT= 0.05
 VESC_STEERING_SCALE= 0.5
-VESC_STEERING_OFFSET = 2.0
+VESC_STEERING_OFFSET = 1.0
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
