@@ -432,6 +432,9 @@ class InverseTachometer:
         self.timestamp = time.time()
 
     def run(self, distance:float, timestamp=None):
+        return self.run_threaded(distance, timestamp)
+
+    def run_threaded(self, distance:float, timestamp=None):
         # if a timestamp if provided, use it
         if timestamp is None:
             timestamp = time.time()

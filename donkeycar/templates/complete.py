@@ -909,6 +909,11 @@ def add_odometry(V, cfg):
         if cfg.DONKEY_GYM:
             from donkeycar.parts.transform import Lambda
             from donkeycar.parts.tachometer import InverseTachometer
+
+            #
+            # use the inverse tachometer to turn the total distance
+            # provided by the simulator into wheel revolutions
+            #
             if cfg.HAVE_ODOM_2:
                 tachometer = InverseTachometer(distance_per_revolution)
                 tachometer2 = InverseTachometer(distance_per_revolution)
@@ -967,15 +972,17 @@ def add_odometry(V, cfg):
             if tachometer2:
                 V.add(tachometer,
                       inputs=['throttle', None],
-                      outputs=['enc/left/revolutions', 'enc/left/timestamp'])
+                      outputs=['enc/left/revolutions', 'enc/left/timestamp'],
+                      threaded=True)
                 V.add(tachometer2,
                       inputs=['throttle', None],
-                      outputs=['enc/right/revolutions', 'enc/right/timestamp'])
+                      outputs=['enc/right/revolutions', 'enc/right/timestamp'],
+                      threaded=True)
             else:
                 V.add(tachometer,
                       inputs=['throttle', None],
-                      outputs=['enc/revolutions', 'enc/timestamp'])
-
+                      outputs=['enc/revolutions', 'enc/timestamp'],
+                      threaded=True)
 
         if tachometer:
             if cfg.HAVE_ODOM_2:
