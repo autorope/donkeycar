@@ -212,12 +212,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
         V.add(lpos, inputs=lpos.inputs)
 
-    # When a path is loaded, we will be in follow mode. We will not record.
-    path_loaded = False
-    if os.path.exists(cfg.PATH_FILENAME):
-        path.load(cfg.PATH_FILENAME)
-        path_loaded = True
-
     def save_path():
         if path.length() > 0:
             if path.save(cfg.PATH_FILENAME):
@@ -228,7 +222,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             print("There is no path to save; try recording the path.")
 
     def load_path():
-       if path.load(cfg.PATH_FILENAME):
+       if os.path.exists(cfg.PATH_FILENAME) and path.load(cfg.PATH_FILENAME):
            path_loaded = True
            mode = 'user'
            print("The path was loaded was loaded from ", cfg.PATH_FILENAME)
@@ -237,7 +231,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     def erase_path():
         global mode, path_loaded
-        origin_reset.init_to_last
+        origin_reset.init_to_last()
         if path.reset():
             mode = 'user'
             path_loaded = False
@@ -249,8 +243,13 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         """
         Reset effective pose to (0, 0)
         """
-        origin_reset.init_to_last
+        origin_reset.init_to_last()
         print("The origin was reset to the current position.")
+
+    # When a path is loaded, we will be in follow mode. We will not record.
+    path_loaded = False
+    if os.path.exists(cfg.PATH_FILENAME):
+        load_path()
 
     # Here's an image we can map to.
     img = PImage(clear_each_frame=True)
@@ -354,9 +353,8 @@ def add_gps(V, cfg):
         from donkeycar.parts.gps import GpsPosition
         from donkeycar.parts.pipe import Pipe
         gps = GpsPosition(cfg.GPS_SERIAL, cfg.GPS_BAUDRATE)
-        V.add(gps, outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
+        V.add(gps, outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'], threaded=True)
         V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
-
 
 
 if __name__ == '__main__':
