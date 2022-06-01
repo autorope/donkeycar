@@ -127,6 +127,7 @@ class OriginOffset(object):
         return self.last_x + self.ox, self.last_y + self.oy
 
     def init_to_last(self):
+        logging.info(f"Resetting origin to ({self.last_x}, {self.last_y})")
         self.ox = -self.last_x
         self.oy = -self.last_y
 
