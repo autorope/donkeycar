@@ -222,19 +222,14 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             print("There is no path to save; try recording the path.")
 
     def load_path():
-       if os.path.exists(cfg.PATH_FILENAME) and path.load(cfg.PATH_FILENAME):
-           path_loaded = True
-           mode = 'user'
+        if os.path.exists(cfg.PATH_FILENAME) and path.load(cfg.PATH_FILENAME):
            print("The path was loaded was loaded from ", cfg.PATH_FILENAME)
-       else:
+        else:
            print("path _not_ loaded; make sure you have saved a path.")
 
     def erase_path():
-        global mode, path_loaded
         origin_reset.init_to_last()
         if path.reset():
-            mode = 'user'
-            path_loaded = False
             print("The origin and the path were reset; you are ready to record a new path.")
         else:
             print("The origin was reset; you are ready to record a new path.")
@@ -247,7 +242,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         print("The origin was reset to the current position.")
 
     # When a path is loaded, we will be in follow mode. We will not record.
-    path_loaded = False
     if os.path.exists(cfg.PATH_FILENAME):
         load_path()
 
