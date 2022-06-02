@@ -119,6 +119,8 @@ class SerialEncoder(AbstractEncoder):
         self.ser = serial_port
         self.ticks = [0,0]
         self.lasttick = [0,0]
+        self.lock = threading.Lock()
+        self.buffered_ticks = []
         self.running = False
     
     def start_ticks(self):
@@ -149,7 +151,7 @@ class SerialEncoder(AbstractEncoder):
         # because it has the most recent reading
         #
         input = ''
-        while (self.running and (self.ser.buffered() > 0)):
+        while (self.running and (self.ser.buffered() > 0) and (input == "")):
             _, input = self.ser.readln()
 
         #
@@ -158,7 +160,7 @@ class SerialEncoder(AbstractEncoder):
         self.ser.writeln('p')  
 
         #
-        # if we got data, update the  ticks
+        # if we got data, update the ticks
         # if we got no data, then use last ticks we read
         #
         # data for encoders is separated by semicolon
@@ -183,11 +185,42 @@ class SerialEncoder(AbstractEncoder):
                 for i in range(len(values)):
                     total_ticks = int((values[i][0]).strip())
                     delta_ticks = total_ticks - self.lasttick[i]
-                    self.lasttick[i] = total_ticks
-                    self.ticks[i] += delta_ticks * direction
-                
+
+                    #
+                    # save in our threadsafe buffers.
+                    # Grow buffers to handle the channels that
+                    # the microcontroller is returning so we
+                    # don't have to keep configuration sync'd.
+                    #
+                    if len(self.lasttick) <= 0:
+                        self.lasttick.append(total_ticks)
+                    else:
+                        self.lasttick[i] = total_ticks
+                    if len(self.buffered_ticks) <= i:
+                        self.buffered_ticks.append(delta_ticks * direction)
+                    else:
+                        self.buffered_ticks[i] += delta_ticks * direction
+
             except ValueError:
                 logger.error("failure parsing encoder values from serial")
+
+        #
+        # if we can get the lock,
+        # - then update the shared global
+        # - clear the buffered values
+        # if we can't get the lock, then just skip until next cycle
+        #
+        if self.lock.acquire(blocking=False):
+            for i in range(len(self.buffered_ticks)):
+                #
+                # grow array to handle the channels that
+                # the microcontroller is returning
+                #
+                if len(self.ticks) <= i:
+                    self.ticks.append(self.buffered_ticks[i])
+                else:
+                    self.ticks[i] += self.buffered_ticks[i]
+                self.buffered_ticks[i] = 0
 
     def get_ticks(self, encoder_index:int=0) -> int:
         """
@@ -199,7 +232,8 @@ class SerialEncoder(AbstractEncoder):
         most recent call to poll_ticks().  It 
         will not request new values from the encoder.
         """
-        return self.ticks[encoder_index] if encoder_index < len(self.ticks) else 0
+        with self.lock:
+            return self.ticks[encoder_index] if encoder_index < len(self.ticks) else 0
 
 
 class EncoderChannel(AbstractEncoder):
