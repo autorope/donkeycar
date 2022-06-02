@@ -184,7 +184,10 @@ class SerialEncoder(AbstractEncoder):
                 values = [v.split(',') for v in values]
                 for i in range(len(values)):
                     total_ticks = int((values[i][0]).strip())
-                    delta_ticks = total_ticks - self.lasttick[i]
+
+                    delta_ticks = 0
+                    if i < len(self.lasttick):
+                        delta_ticks = total_ticks - self.lasttick[i]
 
                     #
                     # save in our threadsafe buffers.
@@ -192,15 +195,15 @@ class SerialEncoder(AbstractEncoder):
                     # the microcontroller is returning so we
                     # don't have to keep configuration sync'd.
                     #
-                    if len(self.lasttick) <= 0:
-                        self.lasttick.append(total_ticks)
-                    else:
+                    if i < len(self.lasttick):
                         self.lasttick[i] = total_ticks
-                    if len(self.buffered_ticks) <= i:
-                        self.buffered_ticks.append(delta_ticks * direction)
                     else:
-                        self.buffered_ticks[i] += delta_ticks * direction
+                        self.lasttick.append(total_ticks)
 
+                    if i < len(self.buffered_ticks):
+                        self.buffered_ticks[i] += delta_ticks * direction
+                    else:
+                        self.buffered_ticks.append(delta_ticks * direction)
             except ValueError:
                 logger.error("failure parsing encoder values from serial")
 
@@ -211,16 +214,19 @@ class SerialEncoder(AbstractEncoder):
         # if we can't get the lock, then just skip until next cycle
         #
         if self.lock.acquire(blocking=False):
-            for i in range(len(self.buffered_ticks)):
-                #
-                # grow array to handle the channels that
-                # the microcontroller is returning
-                #
-                if len(self.ticks) <= i:
-                    self.ticks.append(self.buffered_ticks[i])
-                else:
-                    self.ticks[i] += self.buffered_ticks[i]
-                self.buffered_ticks[i] = 0
+            try:
+                for i in range(len(self.buffered_ticks)):
+                    #
+                    # grow array to handle the channels that
+                    # the microcontroller is returning
+                    #
+                    if i < len(self.ticks):
+                        self.ticks[i] += self.buffered_ticks[i]
+                    else:
+                        self.ticks.append(self.buffered_ticks[i])
+                    self.buffered_ticks[i] = 0
+            finally:
+                self.lock.release()
 
     def get_ticks(self, encoder_index:int=0) -> int:
         """
@@ -396,6 +402,7 @@ class Tachometer:
         timestamp: the timestamp to apply to the tick reading
                    or None to use the current time
         """
+
         if self.running:
             # if a timestamp if provided, use it
             if timestamp is None:
