@@ -973,16 +973,16 @@ def add_odometry(V, cfg):
                 V.add(tachometer,
                       inputs=['throttle', None],
                       outputs=['enc/left/revolutions', 'enc/left/timestamp'],
-                      threaded=True)
+                      threaded=False)
                 V.add(tachometer2,
                       inputs=['throttle', None],
                       outputs=['enc/right/revolutions', 'enc/right/timestamp'],
-                      threaded=True)
+                      threaded=False)
             else:
                 V.add(tachometer,
                       inputs=['throttle', None],
                       outputs=['enc/revolutions', 'enc/timestamp'],
-                      threaded=True)
+                      threaded=False)
 
         if tachometer:
             if cfg.HAVE_ODOM_2:
