@@ -222,14 +222,14 @@ STEERING_LEFT_PWM = 460    # pwm value for full left steering (use `donkey calib
 STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
 #VESC controller, primarily need to change VESC_SERIAL_PORT  and VESC_MAX_SPEED_PERCENT
-VESC_MAX_SPEED_PERCENT =.2
-VESC_SERIAL_PORT= "/dev/ttyACM0"
-VESC_HAS_SENSOR= True
-VESC_START_HEARTBEAT= True
-VESC_BAUDRATE= 115200
-VESC_TIMEOUT= 0.05
-VESC_STEERING_SCALE= 0.5
-VESC_STEERING_OFFSET = 1.0
+VESC_MAX_SPEED_PERCENT =.2  # Max speed as a percent of the actual speed
+VESC_SERIAL_PORT= "/dev/ttyACM0" # Serial device to use for communication. Can check with ls /dev/tty*
+VESC_HAS_SENSOR= True # Whether or not the bldc motor is using a hall effect sensor
+VESC_START_HEARTBEAT= True # Whether or not to automatically start the heartbeat thread that will keep commands alive.
+VESC_BAUDRATE= 115200 # baudrate for the serial communication. Shouldn't need to change this.
+VESC_TIMEOUT= 0.05 # timeout for the serial communication
+VESC_STEERING_SCALE= 0.5 # VESC accepts steering inputs from 0 to 1. Joystick is usually -1 to 1. This changes it to -0.5 to 0.5
+VESC_STEERING_OFFSET = 1.0 # VESC accepts steering inputs from 0 to 1. Coupled with above change we move Joystick to 0 to 1
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
