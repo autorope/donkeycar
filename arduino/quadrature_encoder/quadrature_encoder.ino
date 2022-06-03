@@ -1,5 +1,3 @@
-#include <Encoder.h>
-
 /* 
  * quadrature_encoder.ino
  * 
