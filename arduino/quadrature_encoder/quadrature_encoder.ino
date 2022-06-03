@@ -1,9 +1,8 @@
 #include <Encoder.h>
 
 /* 
- * mono_encoder.ino
+ * quadrature_encoder.ino
  * 
-/* 
  * Based on teensy Encoder Library Basic Example
  * http://www.pjrc.com/teensy/td_libs_Encoder.html
  * 
