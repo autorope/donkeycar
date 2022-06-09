@@ -656,6 +656,36 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(left_motor, inputs=['left_motor_speed'])
         V.add(right_motor, inputs=['right_motor_speed'])
 
+    elif cfg.DRIVE_TRAIN_TYPE == "DC_FOUR_WHEEL_L298N":
+        dt = cfg.DC_FOUR_WHEEL_L298N
+        left_back_motor = actuator.L298N_HBridge_3pin(
+            pins.output_pin_by_id(dt['LEFT_BACK_FWD_PIN']),
+            pins.output_pin_by_id(dt['LEFT_BACK_BWD_PIN']),
+            pins.pwm_pin_by_id(dt['LEFT_BACK_EN_DUTY_PIN']))
+        right_back_motor = actuator.L298N_HBridge_3pin(
+            pins.output_pin_by_id(dt['RIGHT_BACK_FWD_PIN']),
+            pins.output_pin_by_id(dt['RIGHT_BACK_BWD_PIN']),
+            pins.pwm_pin_by_id(dt['RIGHT_BACK_EN_DUTY_PIN']))
+        left_front_motor = actuator.L298N_HBridge_3pin(
+            pins.output_pin_by_id(dt['LEFT_FRONT_FWD_PIN']),
+            pins.output_pin_by_id(dt['LEFT_FRONT_BWD_PIN']),
+            pins.pwm_pin_by_id(dt['LEFT_FRONT_EN_DUTY_PIN']))
+        right_front_motor = actuator.L298N_HBridge_3pin(
+            pins.output_pin_by_id(dt['RIGHT_FRONT_FWD_PIN']),
+            pins.output_pin_by_id(dt['RIGHT_FRONT_BWD_PIN']),
+            pins.pwm_pin_by_id(dt['RIGHT_FRONT_EN_DUTY_PIN']))
+
+        two_wheel_control = actuator.TwoWheelSteeringThrottle()
+
+        V.add(two_wheel_control,
+                inputs=['throttle', 'angle'],
+                outputs=['left_motor_speed', 'right_motor_speed'])
+
+        V.add(left_back_motor, inputs=['left_motor_speed'])
+        V.add(left_front_motor, inputs=['left_motor_speed'])
+        V.add(right_back_motor, inputs=['right_motor_speed'])
+        V.add(right_front_motor, inputs=['right_motor_speed'])
+
     elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_2PIN":
         #
         # Servo for steering and HBridge motor driver in 2pin mode for motor
