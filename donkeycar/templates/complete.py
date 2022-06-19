@@ -697,7 +697,6 @@ def get_user_controller(cfg):
         if cfg.CONTROLLER_TYPE == "pigpio_rc":    # an RC controllers read by GPIO pins. They typically don't have buttons
             from donkeycar.parts.controller import RCReceiver
             ctr = RCReceiver(cfg)
-            V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
         elif cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
             from my_joystick import MyJoystickController
             ctr = MyJoystickController(
@@ -715,9 +714,7 @@ def get_user_controller(cfg):
             if ctr:
                 if cfg.USE_NETWORKED_JS:
                     from donkeycar.parts.controller import JoyStickSub
-                    netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-                    V.add(netwkJs, threaded=True)
-                    ctr.js = netwkJs
+                    ctr.js = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
             else:
                 raise ValueError(f"Unknown CONTROLLER_TYPE ({cfg.CONTROLLER_TYPE})")
     if ctr:
@@ -750,6 +747,8 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         ctr = get_user_controller(cfg)
         if ctr:
+            if cfg.USE_NETWORKED_JS and ctr.js:
+                V.add(ctr.js, threaded=True)
             V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=True)
     return ctr
 
