@@ -678,54 +678,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-def get_user_controller(cfg):
-    """
-    Get controller for user input.
-    The controller gets a camera image as input (in case
-    it is a remote controller and it shows that feed to the user)
-    The controller must output
-    - the steering value,
-    - the throttle value,
-    - the user mode (true or false) and
-    - the recording mode (true or false).
-    The controller must be thread enabled.
-    """
-    #modify max_throttle closer to 1.0 to have more power
-    #modify steering_scale lower than 1.0 to have less responsive steering
-    ctr = None
-    if hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock":
-        if cfg.CONTROLLER_TYPE == "pigpio_rc":    # an RC controllers read by GPIO pins. They typically don't have buttons
-            from donkeycar.parts.controller import RCReceiver
-            ctr = RCReceiver(cfg)
-        elif cfg.CONTROLLER_TYPE == "custom":  #custom controller created with `donkey createjs` command
-            from my_joystick import MyJoystickController
-            ctr = MyJoystickController(
-            throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
-            throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-            steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-            auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-            ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
-        elif cfg.CONTROLLER_TYPE == "MM1":
-            from donkeycar.parts.robohat import RoboHATController
-            ctr = RoboHATController(cfg)
-        else:
-            from donkeycar.parts.controller import get_js_controller
-            ctr = get_js_controller(cfg)
-            if ctr:
-                if cfg.USE_NETWORKED_JS:
-                    from donkeycar.parts.controller import JoyStickSub
-                    ctr.js = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-            else:
-                raise ValueError(f"Unknown CONTROLLER_TYPE ({cfg.CONTROLLER_TYPE})")
-    if ctr:
-        run_threaded = getattr(ctr, "run_threaded", None)
-        if run_threaded is None or not callable(run_threaded):
-            raise TypeError("The controller must support run_threaded()")
-    else:
-        logger.info("No user input controller configured")
-    return ctr
-
-
 def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     """
     Add the web controller and any other
@@ -735,21 +687,70 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     :param cfg: the configuration (from myconfig.py)
     :return: the controller
     """
+
+    #
     # This web controller will create a web server that is capable
     # of managing steering, throttle, and modes, and more.
-    # it will also show the camera feed
+    #
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
-        inputs=[input_image, 'tub/num_records'],
-        outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-        threaded=True)
+          inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          threaded=True)
 
+    #
+    # also add a physical controller if one is configured
+    #
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
-        ctr = get_user_controller(cfg)
-        if ctr:
-            if cfg.USE_NETWORKED_JS and ctr.js:
-                V.add(ctr.js, threaded=True)
-            V.add(ctr, inputs=['cam/image_array'], outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=True)
+        #
+        # RC controller
+        #
+        if cfg.CONTROLLER_TYPE == "pigpio_rc":  # an RC controllers read by GPIO pins. They typically don't have buttons
+            from donkeycar.parts.controller import RCReceiver
+            ctr = RCReceiver(cfg)
+            V.add(
+                ctr,
+                inputs=['user/mode', 'recording'],
+                outputs=['user/angle', 'user/throttle',
+                         'user/mode', 'recording'],
+                threaded=False)
+        else:
+            #
+            # custom game controller mapping created with
+            # `donkey createjs` command
+            #
+            if cfg.CONTROLLER_TYPE == "custom":  # custom controller created with `donkey createjs` command
+                from my_joystick import MyJoystickController
+                ctr = MyJoystickController(
+                    throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
+                    throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+                    steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                    auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
+                ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+            elif cfg.CONTROLLER_TYPE == "MM1":
+                from donkeycar.parts.robohat import RoboHATController
+                ctr = RoboHATController(cfg)
+            elif cfg.CONTROLLER_TYPE == "mock":
+                from donkeycar.parts.controller import MockController
+                ctr = MockController(steering=cfg.MOCK_JOYSTICK_STEERING,
+                                     throttle=cfg.MOCK_JOYSTICK_THROTTLE)
+            else:
+                #
+                # game controller
+                #
+                from donkeycar.parts.controller import get_js_controller
+                ctr = get_js_controller(cfg)
+                if cfg.USE_NETWORKED_JS:
+                    from donkeycar.parts.controller import JoyStickSub
+                    netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
+                    V.add(netwkJs, threaded=True)
+                    ctr.js = netwkJs
+            V.add(
+                ctr,
+                inputs=[input_image, 'user/mode', 'recording'],
+                outputs=['user/angle', 'user/throttle',
+                         'user/mode', 'recording'],
+                threaded=True)
     return ctr
 
 
