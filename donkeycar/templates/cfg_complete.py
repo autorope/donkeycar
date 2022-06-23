@@ -12,7 +12,6 @@ print(cfg.CAMERA_RESOLUTION)
 
 """
 
-
 import os
 
 #PATHS
@@ -57,6 +56,7 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 #
 # "PWM_STEERING_THROTTLE" uses two PWM output pins to control a steering servo and an ESC, as in a standard RC car.
 # "MM1" Robo HAT MM1 board
+# "PIXHAWK" Pixhawk (any kind) running ArduPilot or PX4 software. Can control RC, Servo/ESCs, GPS, battery monitoring, wheel encoders, IMU
 # "SERVO_HBRIDGE_2PIN" Servo for steering and HBridge motor driver in 2pin mode for motor
 # "SERVO_HBRIDGE_3PIN" Servo for steering and HBridge motor driver in 3pin mode for motor
 # "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
@@ -411,7 +411,7 @@ USE_JOYSTICK_AS_DEFAULT = False      #when starting the manage.py, when True, wi
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
 AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
-CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|pigpio_rc|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
+CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|pigpio_rc|nimbus|wiiu|F710|rc3|MM1|pixhawk|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
 JOYSTICK_DEADZONE = 0.01            # when non zero, this is the smallest throttle before recording triggered.
@@ -447,8 +447,6 @@ PIGPIO_SHOW_STEERING_VALUE = False
 PIGPIO_INVERT = False
 PIGPIO_JITTER = 0.025   # threshold below which no signal is reported
 
-
-
 #ROBOHAT MM1
 MM1_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
 MM1_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
@@ -463,6 +461,21 @@ MM1_SHOW_STEERING_VALUE = False
 # -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
+
+#PIXHAWK
+MAVLINK_STEERING_MID = 1500         # Adjust this value if your car cannot run in a straight line
+MAVLINK_MAX_FORWARD = 2000          # Max throttle to go fowrward. The bigger the faster
+MAVLINK_STOPPED_PWM = 1500
+MAVLINK_MAX_REVERSE = 1000          # Max throttle to go reverse. The smaller the faster
+MAVLINK_SHOW_STEERING_VALUE = False
+# Serial port 
+# -- Default Pi: '/dev/ttyS0'
+# -- Jetson Nano: '/dev/ttyTHS1'
+# -- Google coral: '/dev/ttymxc0'
+# -- Windows: 'COM3', Arduino: '/dev/ttyACM0'
+# -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
+#  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
+MAVLINK_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
 #LOGGING
 HAVE_CONSOLE_LOGGING = True
