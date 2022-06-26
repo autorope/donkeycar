@@ -40,10 +40,14 @@ var driveHandler = new function() {
 
       setBindings()
 
+      joystick_element = document.getElementById('joystick_container');
       joystick_options = {
-        zone: document.getElementById('joystick_container'),  // active zone
+        zone: joystick_element,  // active zone
+        mode: 'dynamic',
+        size: 200,
         color: '#668AED',
-        size: 350,
+        dynamicPage: true,
+        follow: true,
       };
 
       var manager = nipplejs.create(joystick_options);
@@ -272,17 +276,21 @@ var driveHandler = new function() {
       }
 
       if (state.controlMode == "joystick") {
-        $('#joystick-column').show();
-        $('#tilt-toggle').removeClass("active");
+        $('#joystick_outer').show();
         $('#joystick-toggle').addClass("active");
         $('#joystick').attr("checked", "checked")
-        $('#tilt').removeAttr("checked")
-      } else if (state.controlMode == "tilt") {
-        $('#joystick-column').hide();
+      } else {
+        $('#joystick_outer').hide();
         $('#joystick-toggle').removeClass("active");
-        $('#tilt-toggle').addClass("active");
         $('#joystick').removeAttr("checked");
+      }
+
+      if (state.controlMode == "tilt") {
+        $('#tilt-toggle').addClass("active");
         $('#tilt').attr("checked", "checked");
+      } else {
+        $('#tilt-toggle').removeClass("active");
+        $('#tilt').removeAttr("checked")
       }
 
       //drawLine(state.tele.user.angle, state.tele.user.throttle)

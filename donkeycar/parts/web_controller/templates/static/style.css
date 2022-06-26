@@ -5,13 +5,20 @@
 		bottom:100; 
 		right:0;*/
 		width:100%; 
-		height:40%;
+		height:0;
 		 
 	}
 	
 	#joystick-padding {
 		height:220px;
 	}
+}
+
+/* override bootstrap */
+.form-control {
+    display: inline;
+    width: auto;
+    padding: 0.25em 0.25em
 }
 
 #controls-column {
@@ -21,16 +28,21 @@
 	margin-top:10px;
 }
 .group-label {
-	width:100%;
+	width:auto;
+}
+
+#control-bars > div {
+    display: inline;
 }
 
 /* this setting is too large on iPhone5s */
 #control-bars .progress {
-	width: 40%;
+	width: 15%;
 }
 
 #control-bars .glyphicon {
-	margin-right: 3px;
+    margin-left: 1.5em;
+	margin-right: 0.5em;
 }
 
 #control-bars .progress.negative {
@@ -40,6 +52,7 @@
 }
 
 #control-bars .progress.positive {
+	float: left;
 	border-top-left-radius: 0px;
 	border-bottom-left-radius: 0px;
 }
@@ -54,8 +67,9 @@
 
 #joystick_container {
 	text-align: center;
-	height: 335px;
-	padding-top: 155px;
+	width: 100%;
+	height: 17em;
+	padding-top: 8em;
 	border-color: #bce8f1;
 	background-color: #d9edf7;
 }
