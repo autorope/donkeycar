@@ -3,13 +3,20 @@
 #
 
 
-class UnzipDict:
-    def __init__(self, prefix):
+class ExplodeDict:
+    def __init__(self, memory, output_prefix = ""):
         """
         Break a map into key/value pairs and write
-        them to the output memory
+        them to the output memory, optionally
+        prefixing the key on output.
+        Basically, take a dictionary and write
+        it to the output.
         """
+        self.memory = memory
+        self.prefix = output_prefix
+
     def run(self, key_values):
         if type(key_values) is dict:
-            return tuple(key_values.values())
-        return ()
+            for key in key_values:
+                self.memory[self.prefix + key] = key_values[key]
+        return None
