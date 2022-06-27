@@ -15,10 +15,19 @@
 }
 
 /* override bootstrap */
+form {
+    margin-bottom: 0.5em;
+}
 .form-control {
     display: inline;
     width: auto;
     padding: 0.25em 0.25em
+}
+
+#button_bar button {
+    display: inline-block;
+    padding-left: 1.5em;
+    padding-right: 1.5em;
 }
 
 #controls-column {
