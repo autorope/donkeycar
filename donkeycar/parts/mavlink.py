@@ -10,14 +10,11 @@ contrib: @sctse999 2020
 
 If you're getting a permissions error on the USB port: "sudo chmod 666 /dev/ttyACM0"
 
-MAVlink messages:
-read RC PWM: RC_CHANNELS
-read attitude: ATTITUDE
-read GPS: GLOBAL_POSITION_INT
-read battery: BATTERY_STATUS
-read encoder: WHEEL_DISTANCE
+requires: 
+--gcc (sudo apt install gcc)
+--pymavlink (pip install pymavlink)
+--docopt (pip install docopt)
 
-write RC PWM: MAV_CMD_DO_SET_SERVO
 
 """
 
@@ -37,11 +34,10 @@ try:
 except ImportError:
     print("Pymavlink not found.  Please install: pip install pymavlink")
 
-master = mavutil.mavlink_connection(cfg.MAVLINK_SERIAL_PORT, baud = 115200)
 
 class MavlinkController:
     '''
-    Driver to read MAVLink data from a Pixhawk
+    Driver to read MAVLink RC data from a Pixhawk, for manual control
     '''
 
     def __init__(self, cfg, debug=False):
@@ -57,6 +53,8 @@ class MavlinkController:
         self.SHOW_STEERING_VALUE = cfg.MAVLINK_SHOW_STEERING_VALUE
         self.DEAD_ZONE = cfg.JOYSTICK_DEADZONE
         self.debug = debug
+
+        master = mavutil.mavlink_connection(cfg.MAVLINK_SERIAL_PORT, baud = 115200)
 
     def read_serial(self):
         '''
@@ -165,7 +163,7 @@ class MavlinkController:
 
 class MavlinkDriver:
     """
-    PWM motor controller using Pixhawks.
+    PWM motor controller, for output to motors and servos.
     """
 
     def __init__(self, cfg, debug=False):
@@ -174,6 +172,7 @@ class MavlinkDriver:
         self.STOPPED_PWM = cfg.MAVLINK_STOPPED_PWM
         self.STEERING_MID = cfg.MAVLINK_STEERING_MID
         self.debug = debug
+        master = mavutil.mavlink_connection(cfg.MAVLINK_SERIAL_PORT, baud = 115200)
 
     """
     Steering and throttle should range between -1.0 to 1.0. This function will
