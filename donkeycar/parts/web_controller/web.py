@@ -117,6 +117,8 @@ class LocalWebController(tornado.web.Application):
         self.mode_latch = None
         self.recording = False
         self.recording_latch = None
+        self.buttons = {}  # latched button values for processing
+
         self.port = port
 
         self.num_records = 0
@@ -194,12 +196,22 @@ class LocalWebController(tornado.web.Application):
             if self.num_records % 10 == 0:
                 changes['num_records'] = self.num_records
 
+        #
+        # get latched button presses then clear button presses
+        # Next iteration will clear press in memory
+        #
+        buttons = self.buttons
+        self.buttons = {}
+        for button in buttons:
+            if buttons[button]:
+                self.buttons[button] = False
+
         # if there were changes, then send to web client
         if changes and self.loop is not None:
             logger.debug(str(changes))
             self.loop.add_callback(lambda: self.update_wsclients(changes))
 
-        return self.angle, self.throttle, self.mode, self.recording
+        return self.angle, self.throttle, self.mode, self.recording, buttons
 
     def run(self, img_arr=None, num_records=0, mode=None, recording=None):
         return self.run_threaded(img_arr, num_records, mode, recording)
@@ -221,10 +233,16 @@ class DriveAPI(RequestHandler):
         '''
         data = tornado.escape.json_decode(self.request.body)
 
-        self.application.angle = data['angle']
-        self.application.throttle = data['throttle']
-        self.application.mode = data['drive_mode']
-        self.application.recording = data['recording']
+        if data.get('angle') is not None:
+            self.application.angle = data['angle']
+        if data.get('throttle') is not None:
+            self.application.throttle = data['throttle']
+        if data.get('drive_mode') is not None:
+            self.application.mode = data['drive_mode']
+        if data.get('recording') is not None:
+            self.application.recording = data['recording']
+        if data.get('buttons') is not None:
+            latch_buttons(self.application.buttons, data['buttons'])
 
 
 class WsTest(RequestHandler):
@@ -237,6 +255,24 @@ class CalibrateHandler(RequestHandler):
     """ Serves the calibration web page"""
     async def get(self):
         await self.render("templates/calibrate.html")
+
+
+def latch_buttons(buttons, pushes):
+    """
+    Latch button pushes
+    buttons: the latched values
+    pushes: the update value
+    """
+    if pushes is not None:
+        #
+        # we got button pushes.
+        # - we latch the pushed buttons so we can process the push
+        # - after it is processed we clear it
+        #
+        for button in pushes:
+            # if pushed, then latch it
+            if pushes[button]:
+                buttons[button] = True
 
 
 class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
@@ -257,6 +293,8 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
         if data.get('recording') is not None:
             self.application.recording = data['recording']
             self.application.recording_latch = self.application.recording
+        if data.get('buttons') is not None:
+            latch_buttons(self.application.buttons, data['buttons'])
 
     def on_close(self):
         # print("Client disconnected")

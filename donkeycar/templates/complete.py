@@ -44,7 +44,8 @@ from donkeycar.parts.velocity import VelocityNormalize, VelocityUnnormalize
 from donkeycar.parts.kinematics import NormalizeSteeringAngle, UnnormalizeSteeringAngle, TwoWheelSteeringThrottle
 from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnormalizeAngularVelocity, UnicycleNormalizeAngularVelocity
 from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity, BicycleNormalizeAngularVelocity
-from donkeycar.parts import pins;
+from donkeycar.parts.explode import ExplodeDict
+from donkeycar.parts.transform import Lambda
 
 from donkeycar.utils import *
 
@@ -136,6 +137,17 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
     ctr = add_user_controller(V, cfg, use_joystick)
 
+    #
+    # There are 5 programmable webui buttons, "web/w1" to "web/w5"
+    # adding a button handler for a webui button
+    # is just adding a part with a run_condition set to
+    # the button's name, so it runs when button is pressed.
+    #
+    V.add(Lambda(lambda v: print(f"web/w1 clicked")), inputs=["web/w1"], run_condition="web/w1")
+    V.add(Lambda(lambda v: print(f"web/w2 clicked")), inputs=["web/w2"], run_condition="web/w2")
+    V.add(Lambda(lambda v: print(f"web/w3 clicked")), inputs=["web/w3"], run_condition="web/w3")
+    V.add(Lambda(lambda v: print(f"web/w4 clicked")), inputs=["web/w4"], run_condition="web/w4")
+    V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
 
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()
@@ -695,8 +707,13 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
           threaded=True)
+
+    #
+    # explode the buttons into their own key/values in memory
+    #
+    V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
 
     #
     # also add a physical controller if one is configured
@@ -1090,7 +1107,7 @@ def add_speed_control(V, cfg, is_differential_drive):
 def add_drivetrain(V, cfg):
 
     if (not cfg.DONKEY_GYM) and cfg.DRIVE_TRAIN_TYPE != "MOCK":
-        from donkeycar.parts import actuator, pins;
+        from donkeycar.parts import actuator, pins
 
         if cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":
             #
