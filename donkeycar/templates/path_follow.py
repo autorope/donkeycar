@@ -66,6 +66,7 @@ from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain, add_simulator
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.pipe import Pipe
+from donkeycar.parts.transform import Lambda
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -292,6 +293,28 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         # Buttons to tune PID constants
         ctr.set_button_down_trigger("L2", dec_pid_d)
         ctr.set_button_down_trigger("R2", inc_pid_d)
+
+    #
+    # There are 5 programmable webui buttons, "web/w1" to "web/w5"
+    # adding a button handler for a webui button
+    # is just adding a part with a run_condition set to
+    # the button's name, so it runs when button is pressed.
+    #
+    if cfg.SAVE_PATH_BTN.startswith("web/w"):
+        V.add(save_path, run_condition=cfg.SAVE_PATH_BTN)
+        print(f"Save path is ${cfg.SAVE_PATH_BTN}")
+    if cfg.LOAD_PATH_BTN.startswith("web/w"):
+        V.add(load_path, run_condition=cfg.LOAD_PATH_BTN)
+        print(f"Load path is ${cfg.LOAD_PATH_BTN}")
+    if cfg.ERASE_PATH_BTN.startswith("web/w"):
+        V.add(erase_path, run_condition=cfg.ERASE_PATH_BTN)
+        print(f"Erase path is ${cfg.ERASE_PATH_BTN}")
+    if cfg.RESET_ORIGIN_BTN.startswth("web/w"):
+        V.add(reset_origin, run_condition=cfg.RESET_ORIGIN_BTN)
+        print(f"Erase path is ${cfg.RESET_ORIGIN_BTN}")
+
+    V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
+
 
 
     #Choose what inputs should change the car.
