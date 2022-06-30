@@ -301,17 +301,17 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # the button's name, so it runs when button is pressed.
     #
     if cfg.SAVE_PATH_BTN.startswith("web/w"):
-        V.add(save_path, run_condition=cfg.SAVE_PATH_BTN)
+        V.add(Lambda(lambda: save_path()), run_condition=cfg.SAVE_PATH_BTN)
         print(f"Save path is ${cfg.SAVE_PATH_BTN}")
     if cfg.LOAD_PATH_BTN.startswith("web/w"):
-        V.add(load_path, run_condition=cfg.LOAD_PATH_BTN)
+        V.add(Lambda(lambda: load_path()), run_condition=cfg.LOAD_PATH_BTN)
         print(f"Load path is ${cfg.LOAD_PATH_BTN}")
     if cfg.ERASE_PATH_BTN.startswith("web/w"):
-        V.add(erase_path, run_condition=cfg.ERASE_PATH_BTN)
+        V.add(Lambda(lambda: erase_path()), run_condition=cfg.ERASE_PATH_BTN)
         print(f"Erase path is ${cfg.ERASE_PATH_BTN}")
-    if cfg.RESET_ORIGIN_BTN.startswth("web/w"):
-        V.add(reset_origin, run_condition=cfg.RESET_ORIGIN_BTN)
-        print(f"Erase path is ${cfg.RESET_ORIGIN_BTN}")
+    if cfg.RESET_ORIGIN_BTN.startswith("web/w"):
+        V.add(Lambda(lambda: reset_origin()), run_condition=cfg.RESET_ORIGIN_BTN)
+        print(f"Reset Origin is ${cfg.RESET_ORIGIN_BTN}")
 
     V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
 
