@@ -745,6 +745,20 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                                min_pulse=cfg.THROTTLE_REVERSE_PWM)
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(throttle, inputs=['throttle'], threaded=True)
+    
+    elif cfg.DRIVE_TRAIN_TYPE == "VESC":
+        from donkeycar.parts.actuator import VESC
+        logger.info("Creating VESC at port {}".format(cfg.VESC_SERIAL_PORT))
+        vesc = VESC(cfg.VESC_SERIAL_PORT,
+                      cfg.VESC_MAX_SPEED_PERCENT,
+                      cfg.VESC_HAS_SENSOR,
+                      cfg.VESC_START_HEARTBEAT,
+                      cfg.VESC_BAUDRATE, 
+                      cfg.VESC_TIMEOUT,
+                      cfg.VESC_STEERING_SCALE,
+                      cfg.VESC_STEERING_OFFSET
+                    )
+        V.add(vesc, inputs=['angle', 'throttle'])
 
     # OLED setup
     if cfg.USE_SSD1306_128_32:
