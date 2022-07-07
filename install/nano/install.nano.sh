@@ -24,7 +24,7 @@ CWD=$(pwd)
 
 # make sure we have xlocale.h to build h5py
 if [ ! -f /usr/include/xlocale.h ]; then
-  ln -s /usr/include/locale.h /usr/include/xlocale.h
+  sudo ln -s /usr/include/locale.h /usr/include/xlocale.h
 fi
 
 
