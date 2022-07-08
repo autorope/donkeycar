@@ -15,7 +15,6 @@ requires:
 --pymavlink (pip install pymavlink)
 --docopt (pip install docopt)
 
-
 """
 
 import time
