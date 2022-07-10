@@ -14,11 +14,7 @@ Options:
     --myconfig=filename     Specify myconfig file to use. 
                             [default: myconfig.py]
 """
-import os
-import time
-import logging
 from docopt import docopt
-from typing import Union, List
 
 #
 # import cv2 early to avoid issue with importing after tensorflow
@@ -40,10 +36,10 @@ from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
 from donkeycar.parts.velocity import StepSpeedController
-from donkeycar.parts.velocity import VelocityNormalize, VelocityUnnormalize
+from donkeycar.parts.velocity import VelocityUnnormalize
 from donkeycar.parts.kinematics import NormalizeSteeringAngle, UnnormalizeSteeringAngle, TwoWheelSteeringThrottle
-from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnormalizeAngularVelocity, UnicycleNormalizeAngularVelocity
-from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity, BicycleNormalizeAngularVelocity
+from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnormalizeAngularVelocity
+from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity
 from donkeycar.parts.explode import ExplodeDict
 from donkeycar.parts.transform import Lambda
 
@@ -913,7 +909,7 @@ def add_odometry(V, cfg):
     :param cfg: the configuration (from myconfig.py)
     """
     if cfg.HAVE_ODOM:
-        from donkeycar.utilities.serial_port import SerialPort
+        from donkeycar.parts.serial_port import SerialPort
         from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
         from donkeycar.parts.odometer import Odometer
         from donkeycar.parts import pins;

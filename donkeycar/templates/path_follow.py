@@ -38,12 +38,7 @@ Starts in user mode.
 
 """
 import os
-import sys
-import time
 import logging
-import json
-from subprocess import Popen
-import shlex
 
 #
 # import cv2 early to avoid issue with importing after tensorflow
@@ -56,16 +51,14 @@ except:
 
 
 from docopt import docopt
-import numpy as np
 
 import donkeycar as dk
 from donkeycar.parts.controller import JoystickController
-from donkeycar.parts.path import CsvPath, RosPath, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
+from donkeycar.parts.path import CsvPath, PathPlot, CTE, PID_Pilot, PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, add_user_controller, add_drivetrain, add_simulator
 from donkeycar.parts.logger import LoggerPart
-from donkeycar.parts.pipe import Pipe
 from donkeycar.parts.transform import Lambda
 
 logger = logging.getLogger(__name__)
@@ -367,7 +360,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
 def add_gps(V, cfg):
     if cfg.HAVE_GPS:
-        from donkeycar.utilities.serial_port import SerialPort
+        from donkeycar.parts.serial_port import SerialPort
         from donkeycar.parts.gps import GpsPosition
         from donkeycar.parts.pipe import Pipe
 

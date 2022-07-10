@@ -1,12 +1,11 @@
 import time
-from typing import Tuple
 import unittest
 
 from donkeycar.parts.tachometer import Tachometer
 from donkeycar.parts.tachometer import AbstractEncoder
 from donkeycar.parts.tachometer import TachometerMode
 from donkeycar.parts.tachometer import InverseTachometer
-from donkeycar.utilities.serial_port import SerialPort
+
 
 class MockEncoder(AbstractEncoder):
     def __init__(self) -> None:

@@ -9,15 +9,15 @@ import pynmea2
 import serial
 import utm
 
-from donkeycar.utilities.serial_port import SerialPort, SerialLineReader
+from donkeycar.parts.serial_port import SerialPort
 from donkeycar.utilities.dk_platform import is_mac
 
 logger = logging.getLogger(__name__)
 
 
-class GpsLineConverter:
+class GpsNmeaConverter:
     """
-    Convert array of test lines into array of positions
+    Donkeycar part to convert array of NMEA sentences into array of (x,y) positions
     """
     def __init__(self, debug=False):
         self.debug = debug
@@ -40,11 +40,11 @@ class GpsLineConverter:
 
 class GpsPosition:
     """
-    Read NMEA lines from serial port and convert a position
+    Donkeycar part to read NMEA lines from serial port and convert a position
     """
     def __init__(self, serial:SerialPort, debug = False) -> None:
         self.line_reader = SerialLineReader(serial)
-        self.position_reader = GpsLineConverter()
+        self.position_reader = GpsNmeaConverter()
         self.position = None
         self._start()
 
@@ -73,142 +73,6 @@ class GpsPosition:
 
     def shutdown(self):
         return self.line_reader.shutdown()
-    
-class Gps:
-    def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
-        self.serial = serial
-        self.baudrate = baudrate
-        self.timeout = timeout
-        self.debug = debug
-        self.positions = []  # tuple of (timestamp, longitude, latitude)
-        self.gps = None
-        self.lock = threading.Lock()
-        self.running = True
-        self._open()
-        self.clear()
-
-    def _open(self):
-        with self.lock:
-            self.gps = serial.Serial(self.serial, baudrate=self.baudrate, timeout=self.timeout)
-
-    def clear(self):
-        """
-        Clear the positions buffer
-        """
-        with self.lock:
-            try:
-                if self.gps is not None and self.gps.is_open:
-                    self.positions = []
-                    self.gps.reset_input_buffer()
-            except serial.serialutil.SerialException:
-                pass
-
-    def _readline(self) -> str:
-        """
-        Read a line from the gps in a threadsafe manner
-        returns line if read and None if no line was read
-        """
-        if self.lock.acquire(blocking=False):
-            try:
-                # TODO: Serial.in_waiting _always_ returns 0 in Macintosh
-                if self.gps is not None and self.gps.is_open and (is_mac() or self.gps.in_waiting):
-                    return self.gps.readline().decode()
-            except serial.serialutil.SerialException:
-                pass
-            except UnicodeDecodeError:
-                # the first sentence often includes mis-framed garbase
-                pass  # ignore and keep going
-            finally:
-                self.lock.release()
-        return None
-
-    def poll(self, timestamp=None):
-        #
-        # read lines and convert to a position
-        # in a threadsafe manner
-        #
-        # if there are characters waiting
-        # then read the line and parse it
-        #
-        if self.running:
-            if timestamp is None:
-                timestamp = time.time()
-            line = self._readline()
-            while line:
-                if self.debug:
-                    logger.info(line)
-                position = getGpsPosition(line, debug=self.debug)
-                if position:
-                    # (timestamp, longitude latitude)
-                    return timestamp, position[0], position[1]
-                line = self._readline()
-        return None
-
-    def run(self):
-        if self.running:
-            #
-            # in non-threaded mode, just read a single reading and return it
-            #
-            if self.gps is not None:
-                position  = self.poll(time.time())
-                if position is not None:
-                    # [(timestamp, longitude, latitude)]
-                    return [position]
-
-        return []
-
-
-    def run_threaded(self):
-        if not self.running:
-            return []
-
-        #
-        # return the accumulated readings
-        #
-        with self.lock:
-            positions = self.positions
-            self.positions = []
-            return positions
-
-
-    def update(self):
-        #
-        # open serial port and run an infinite loop.
-        # NOTE: this is NOT compatible with non-threaded run()
-        #
-        buffered_positions = []  # local read buffer
-        while self.running:
-            position = self.poll(time.time())
-            if position:
-                buffered_positions.append(position)
-            if buffered_positions:
-                #
-                # make sure we access self.positions in
-                # a threadsafe manner.
-                # This will NOT block:
-                # - If it can't write then it will leave
-                #   readings in buffered_positions.
-                # - If it can write then it will moved the
-                #   buffered_positions into self.positions
-                #   and clear the buffer.
-                #
-                if self.lock.acquire(blocking=False):
-                    try:
-                        self.positions += buffered_positions
-                        buffered_positions = []
-                    finally:
-                        self.lock.release()
-            time.sleep(0)  # give other threads time
-
-    def shutdown(self):
-        self.running = False
-        with self.lock:
-            try:
-                if self.gps is not None and self.gps.is_open:
-                    self.gps.close()
-            except serial.serialutil.SerialException:
-                pass
-        self.gps = None
 
 
 def getGpsPosition(line, debug=False):
@@ -376,7 +240,7 @@ if __name__ == "__main__":
     from matplotlib.patches import Ellipse
     import sys
     import readchar
-    from donkeycar.utilities.serial_port import SerialPort, SerialLineReader
+    from donkeycar.parts.serial_port import SerialPort, SerialLineReader
 
 
     def stats(data):
@@ -634,7 +498,7 @@ if __name__ == "__main__":
     try:
         serial_port = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
         line_reader = SerialLineReader(serial_port, max_lines=args.samples, debug=args.debug)
-        position_reader = GpsLineConverter(args.debug)
+        position_reader = GpsNmeaConverter(args.debug)
 
         #
         # start the threaded part
