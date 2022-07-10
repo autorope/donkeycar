@@ -2,8 +2,6 @@ import argparse
 from functools import reduce
 import logging
 import operator
-import os
-import platform
 import threading
 import time
 
@@ -11,14 +9,42 @@ import pynmea2
 import serial
 import utm
 
+from donkeycar.utilities.serial_port import SerialPort, SerialLineReader
+from donkeycar.utilities.dk_platform import is_mac
+
 logger = logging.getLogger(__name__)
 
-def is_mac():
-    return "Darwin" == platform.system()
+
+class GpsLineConverter:
+    """
+    Convert array of test lines into array of positions
+    """
+    def __init__(self, debug=False):
+        self.debug = debug
+
+    def run(self, lines):
+        positions = []
+        if lines:
+            for ts, nmea in lines:
+                position = getGpsPosition(nmea, self.debug)
+                if position:
+                    positions.append((ts, position[0], position[1]))
+        return positions
+
+    def update(self):
+        pass
+
+    def run_threaded(self, lines):
+        return self.run(lines)
+
 
 class GpsPosition:
-    def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False) -> None:
-        self.gps = Gps(serial, baudrate, timeout, debug)
+    """
+    Read NMEA lines from serial port and convert a position
+    """
+    def __init__(self, serial:SerialPort, debug = False) -> None:
+        self.line_reader = SerialLineReader(serial)
+        self.position_reader = GpsLineConverter()
         self.position = None
         self._start()
 
@@ -29,22 +55,24 @@ class GpsPosition:
             self.position = self.run()
             
     def run(self):
-        new_position = self.gps.run()
-        if new_position is not None and len(new_position) > 0:
-            self.position = new_position[-1]
+        lines = line_reader.run()
+        positions = self.GpsNmeaPositions.run(lines)
+        if positions is not None and len(positions) > 0:
+            self.position = positions[-1]
         return self.position
 
     def run_threaded(self):
-        positions = self.gps.run_threaded()
+        lines = line_reader.run_threaded()
+        positions = self.GpsNmeaPositions.run_threaded(lines)
         if positions is not None and len(positions) > 0:
             self.position = positions[-1]
         return self.position
 
     def update(self):
-        self.gps.update()
+        self.line_reader.update()
 
     def shutdown(self):
-        return self.gps.shutdown()
+        return self.line_reader.shutdown()
     
 class Gps:
     def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
@@ -348,6 +376,7 @@ if __name__ == "__main__":
     from matplotlib.patches import Ellipse
     import sys
     import readchar
+    from donkeycar.utilities.serial_port import SerialPort, SerialLineReader
 
 
     def stats(data):
@@ -595,7 +624,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     update_thread = None
-    gps_reader = None
+    line_reader = None
 
     waypoint_count = args.waypoints      # number of paypoints in the path
     samples_per_waypoint = args.samples  # number of readings per waypoint
@@ -603,22 +632,26 @@ if __name__ == "__main__":
     waypoint_samples = []
 
     try:
-        gps_reader = Gps(args.serial, baudrate=args.baudrate, timeout=args.timeout, debug=args.debug)
+        serial_port = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
+        line_reader = SerialLineReader(serial_port, max_lines=args.samples, debug=args.debug)
+        position_reader = GpsLineConverter(args.debug)
 
         #
         # start the threaded part
         # and a threaded window to show plot
         #
         if args.threaded:
-            update_thread = threading.Thread(target=gps_reader.update, args=())
+            update_thread = threading.Thread(target=line_reader.update, args=())
             update_thread.start()
 
         def read_gps():
-            return gps_reader.run_threaded() if args.threaded else gps_reader.run()
+            lines = line_reader.run_threaded() if args.threaded else line_reader.run()
+            positions = position_reader.run(lines)
+            return positions
 
         ts = time.time()
         state = "prompt" if waypoint_count > 0 else ""
-        while gps_reader.running:
+        while line_reader.running:
             readings = read_gps()
             if readings:
                 print("")
@@ -629,7 +662,7 @@ if __name__ == "__main__":
                     key_press = readchar.readchar()  # sys.stdin.read(1)
                     if key_press == ' ':
                         waypoint_samples = []
-                        gps_reader.clear()  # throw away buffered readings
+                        line_reader.clear()  # throw away buffered readings
                         state = "sampling"
                     else:
                         state = ""  # just start logging
@@ -678,8 +711,8 @@ if __name__ == "__main__":
                     print(".", end="")
                     ts = time.time()
     finally:
-        if gps_reader:
-            gps_reader.shutdown()
+        if line_reader:
+            line_reader.shutdown()
         if update_thread is not None:
             update_thread.join()  # wait for thread to end
 

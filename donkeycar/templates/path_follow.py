@@ -367,9 +367,12 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
 def add_gps(V, cfg):
     if cfg.HAVE_GPS:
+        from donkeycar.utilities.serial_port import SerialPort
         from donkeycar.parts.gps import GpsPosition
         from donkeycar.parts.pipe import Pipe
-        gps = GpsPosition(cfg.GPS_SERIAL, cfg.GPS_BAUDRATE)
+
+        serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL)
+        gps = GpsPosition(serial_port)
         V.add(gps, outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'], threaded=True)
         V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
 

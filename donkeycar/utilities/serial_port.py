@@ -1,10 +1,10 @@
 import logging
-import dk_platform
 from typing import Tuple
 import serial
 import serial.tools.list_ports
 import threading
 import time
+import donkeycar.utilities.dk_platform as dk_platform
 
 
 logger = logging.getLogger("donkeycar.utilities.serial_port")
@@ -162,7 +162,7 @@ class SerialLineReader:
     """
     Donkeycar part for reading lines from a serial port
     """
-    def __init__(self, serial:SerialPort, max_lines:int = 20, debug:bool = False):
+    def __init__(self, serial:SerialPort, max_lines:int = 0, debug:bool = False):
         self.serial = serial
         self.max_lines = max_lines  # max number of lines per read cycle
         self.debug = debug
@@ -208,7 +208,7 @@ class SerialLineReader:
             lines = []
             line = self._readline()
             while line is not None:
-                lines.append(line)
+                lines.append((time.time(), line))
                 line = None
                 if self.max_lines is None or self.max_lines == 0 or len(lines) < self.max_lines:
                     line = self._readline()
@@ -238,7 +238,7 @@ class SerialLineReader:
         while self.running:
             line = self._readline()
             if line:
-                buffered_lines.append(line)
+                buffered_lines.append((time.time(), line))
             if buffered_lines:
                 #
                 # make sure we access self.positions in
