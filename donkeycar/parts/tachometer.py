@@ -5,7 +5,7 @@ import threading
 from typing import Tuple
 
 from donkeycar.utils import is_number_type
-from donkeycar.utilities.platform import is_jetson
+from donkeycar.utilities.dk_platform import is_jetson
 from donkeycar.utilities.serial_port import SerialPort
 from donkeycar.parts.pins import InputPin, PinEdge
 

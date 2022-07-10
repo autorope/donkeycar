@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 def is_mac():
     return "Darwin" == platform.system()
+
 class GpsPosition:
     def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False) -> None:
         self.gps = Gps(serial, baudrate, timeout, debug)

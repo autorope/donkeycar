@@ -1,8 +1,11 @@
 import os
+import platform
 
 #
 # functions to query hardware and os 
 #
+def is_mac():
+    return "Darwin" == platform.system()
 
 #
 # read tegra chip id if it exists.
