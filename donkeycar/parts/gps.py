@@ -15,7 +15,7 @@ from donkeycar.utilities.dk_platform import is_mac
 logger = logging.getLogger(__name__)
 
 
-class GpsNmeaConverter:
+class GpsNmeaPositions:
     """
     Donkeycar part to convert array of NMEA sentences into array of (x,y) positions
     """
@@ -26,7 +26,7 @@ class GpsNmeaConverter:
         positions = []
         if lines:
             for ts, nmea in lines:
-                position = getGpsPosition(nmea, self.debug)
+                position = parseGpsPosition(nmea, self.debug)
                 if position:
                     positions.append((ts, position[0], position[1]))
         return positions
@@ -37,6 +37,17 @@ class GpsNmeaConverter:
     def run_threaded(self, lines):
         return self.run(lines)
 
+class GpsLatestPosition:
+    """
+    Return most recent valid GPS position
+    """
+    def __init__(self):
+        self.position = None
+
+    def run(self, positions):
+        if positions is not None and len(positions) > 0:
+            self.position = positions[-1]
+        return self.position
 
 class GpsPosition:
     """
@@ -44,7 +55,7 @@ class GpsPosition:
     """
     def __init__(self, serial:SerialPort, debug = False) -> None:
         self.line_reader = SerialLineReader(serial)
-        self.position_reader = GpsNmeaConverter()
+        self.position_reader = GpsNmeaPositions()
         self.position = None
         self._start()
 
@@ -75,7 +86,9 @@ class GpsPosition:
         return self.line_reader.shutdown()
 
 
-def getGpsPosition(line, debug=False):
+
+
+def parseGpsPosition(line, debug=False):
     """
     Given a line emitted by a GPS module, 
     Parse out the position and return as a 
@@ -498,7 +511,7 @@ if __name__ == "__main__":
     try:
         serial_port = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
         line_reader = SerialLineReader(serial_port, max_lines=args.samples, debug=args.debug)
-        position_reader = GpsNmeaConverter(args.debug)
+        position_reader = GpsNmeaPositions(args.debug)
 
         #
         # start the threaded part

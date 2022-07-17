@@ -44,6 +44,8 @@ import logging
 # import cv2 early to avoid issue with importing after tensorflow
 # see https://github.com/opencv/opencv/issues/14884#issuecomment-599852128
 #
+import time
+
 try:
     import cv2
 except:
@@ -145,7 +147,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     # gps outputs ['pos/x', 'pos/y']
     #
-    add_gps(V, cfg)
+    gps_player = add_gps(V, cfg)
 
     #
     # setup primary camera
@@ -192,7 +194,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
     path = CsvPath(min_dist=cfg.PATH_MIN_DIST)
-    V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='run_user')
+    V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='recording')
 
     if cfg.DONKEY_GYM:
         lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
@@ -210,6 +212,10 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         if path.length() > 0:
             if path.save(cfg.PATH_FILENAME):
                 print("That path was saved to ", cfg.PATH_FILENAME)
+
+                # save any recorded gps readings
+                if gps_player:
+                    gps_player.nmea.save()
             else:
                 print("The path could NOT be saved; check the PATH_FILENAME in myconfig.py to make sure it is a legal path")
         else:
@@ -218,6 +224,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     def load_path():
         if os.path.exists(cfg.PATH_FILENAME) and path.load(cfg.PATH_FILENAME):
            print("The path was loaded was loaded from ", cfg.PATH_FILENAME)
+
+           # we loaded the path; also load any recorded gps readings
+           if gps_player:
+               gps_player.stop().nmea.load()
+               gps_player.start()
         else:
            print("path _not_ loaded; make sure you have saved a path.")
 
@@ -225,6 +236,8 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         origin_reset.init_to_last()
         if path.reset():
             print("The origin and the path were reset; you are ready to record a new path.")
+            if gps_player:
+                gps_player.stop().nmea.reset()
         else:
             print("The origin was reset; you are ready to record a new path.")
 
@@ -232,8 +245,13 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         """
         Reset effective pose to (0, 0)
         """
-        origin_reset.init_to_last()
+        origin_reset.reset_origin()
         print("The origin was reset to the current position.")
+
+        # restart any recorded gps readings from the start.
+        if gps_player:
+            gps_player.start()
+
 
     # When a path is loaded, we will be in follow mode. We will not record.
     if os.path.exists(cfg.PATH_FILENAME):
@@ -295,16 +313,16 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     if cfg.SAVE_PATH_BTN.startswith("web/w"):
         V.add(Lambda(lambda: save_path()), run_condition=cfg.SAVE_PATH_BTN)
-        print(f"Save path is ${cfg.SAVE_PATH_BTN}")
+        print(f"Save path is {cfg.SAVE_PATH_BTN}")
     if cfg.LOAD_PATH_BTN.startswith("web/w"):
         V.add(Lambda(lambda: load_path()), run_condition=cfg.LOAD_PATH_BTN)
-        print(f"Load path is ${cfg.LOAD_PATH_BTN}")
+        print(f"Load path is {cfg.LOAD_PATH_BTN}")
     if cfg.ERASE_PATH_BTN.startswith("web/w"):
         V.add(Lambda(lambda: erase_path()), run_condition=cfg.ERASE_PATH_BTN)
-        print(f"Erase path is ${cfg.ERASE_PATH_BTN}")
+        print(f"Erase path is {cfg.ERASE_PATH_BTN}")
     if cfg.RESET_ORIGIN_BTN.startswith("web/w"):
         V.add(Lambda(lambda: reset_origin()), run_condition=cfg.RESET_ORIGIN_BTN)
-        print(f"Reset Origin is ${cfg.RESET_ORIGIN_BTN}")
+        print(f"Reset Origin is {cfg.RESET_ORIGIN_BTN}")
 
     V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
 
@@ -358,16 +376,139 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         max_loop_count=cfg.MAX_LOOPS)
 
 
+from donkeycar.parts.text_writer import CsvLogger
+
+
+class GpsStreaming:
+    def run(self, playing):
+        #
+        # if we are not playing, then we are streaming
+        #
+        if playing is not None and playing:
+            return False
+        return True
+
+class GpsPlayer:
+    """
+    Part that plays back the NMEA sentences that have been recorded
+    by the nmea logger that is passed to the constructor.
+    """
+    def __init__(self, nmea_logger:CsvLogger):
+        self.nmea = nmea_logger
+        self.index = -1
+        self.starttime = None
+        self.running = False
+
+    def start(self):
+        self.running = True
+        self.starttime = None  # will get set on first call to run()
+        self.index = -1
+        return self
+
+    def stop(self):
+        self.running = False
+        return self
+
+    def run(self, autopilot_mode, nmea_sentences):
+        """
+        Play NMEA if running and in autopilot mode.
+        Collect NMEA sentences within the time limit,
+        return the resulting sentences as a list
+        """
+        if self.running and autopilot_mode:
+            nmea_sentences = []
+            nmea = self.run_once(time.time())
+            nmea_sentences += nmea
+            return True, nmea_sentences
+        return False, nmea_sentences
+
+    def run_once(self, now):
+        """
+        Collect all nmea sentences up to and including the given time
+        """
+        nmea_sentences = []
+        if self.running:
+            # reset start time if None
+            if self.starttime is None:
+                print("Resetting gps player start time.")
+                self.starttime = now
+
+            # get first nmea sentence so we can get it's recorded time
+            start_nmea = self.nmea.get(0)
+            if start_nmea is not None:
+                #
+                # get next nmea sentence and play it if
+                # it is within time.
+                # if there is no next sentence, then wrap
+                # around back to first sentence
+                #
+                start_nmea_time = float(start_nmea[0])
+                offset_nmea_time = 0
+                within_time = True
+                while within_time:
+                    next_nmea = None
+                    if self.index >= self.nmea.length():
+                        self.index = 0
+                        self.starttime += offset_nmea_time
+                        next_nmea = self.nmea.get(0)
+                        print("******************* Wrapping gps player **********************")
+                    else:
+                        next_nmea = self.nmea.get(self.index + 1)
+
+                    if next_nmea is None:
+                        self.index += 1  # skip the invalid nmea sentence
+                    else:
+                        next_nmea_time = float(next_nmea[0])
+                        offset_nmea_time = (next_nmea_time - start_nmea_time)
+                        next_nmea_time = self.starttime + offset_nmea_time
+                        within_time = next_nmea_time <= now
+                        if within_time:
+                            nmea_sentences.append((next_nmea_time, next_nmea[1]))
+                            self.index += 1
+        return nmea_sentences
+
+
 def add_gps(V, cfg):
     if cfg.HAVE_GPS:
-        from donkeycar.parts.serial_port import SerialPort
-        from donkeycar.parts.gps import GpsPosition
+        from donkeycar.parts.serial_port import SerialPort, SerialLineReader
+        from donkeycar.parts.gps import GpsNmeaPositions, GpsLatestPosition
         from donkeycar.parts.pipe import Pipe
+        from donkeycar.parts.text_writer import CsvLogger
 
-        serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL)
-        gps = GpsPosition(serial_port)
-        V.add(gps, outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'], threaded=True)
+
+        #
+        # parts to
+        # - read nmea lines from serial port
+        # - OR play from recorded file
+        # - convert nmea lines to positions
+        # - retrieve the most recent position
+        #
+        serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
+        nmea_reader = SerialLineReader(serial_port, debug=cfg.GPS_DEBUG)
+        V.add(nmea_reader, outputs=['gps/nmea'], threaded=True)
+
+        # part to save nmea sentences for later playback
+        nmea_player = None
+        if cfg.GPS_NMEA_PATH:
+            nmea_writer = CsvLogger(cfg.GPS_NMEA_PATH, separator='\t', field_count=2)
+            V.add(nmea_writer, inputs=['gps/nmea'], run_condition='recording')  # only record nmea sentences in user mode
+            nmea_player = GpsPlayer(nmea_writer)
+            V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'], outputs=['gps/playing', 'gps/nmea'])  # only play nmea sentences in autopilot mode
+
+        # part switches between streaming and re-playing gps nmea sentences
+        V.add(GpsStreaming(), inputs=['gps/playing'], outputs=['gps/streaming'])
+
+        gps_positions = GpsNmeaPositions(debug=cfg.GPS_DEBUG)
+        V.add(gps_positions, inputs=['gps/nmea'], outputs=['gps/positions'])
+        gps_latest_position = GpsLatestPosition()
+        V.add(gps_latest_position, inputs=['gps/positions'], outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
+
+        V.add(LoggerPart(inputs=['gps/utm/longitude', 'gps/utm/latitude']))
+
+        # rename gps utm position to pose values
         V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
+
+        return nmea_player
 
 
 if __name__ == '__main__':
@@ -383,4 +524,3 @@ if __name__ == '__main__':
 
     if args['drive']:
         drive(cfg, use_joystick=args['--js'], camera_type=args['--camera'])
-
