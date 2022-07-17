@@ -35,12 +35,14 @@ class SerialPort:
             logger.info(item)  # list all the serial ports
         self.ser = serial.Serial(self.port, self.baudrate, self.bits, self.parity, self.stop_bits, timeout=self.timeout)
         logger.debug("Opened serial port " + self.ser.name)
+        return self
 
     def stop(self):
         if self.ser is not None:
             sp = self.ser
             self.ser = None
             sp.close()
+        return self
 
     def buffered(self) -> int:
         """
@@ -48,6 +50,10 @@ class SerialPort:
         """
         if self.ser is None or not self.ser.is_open:
             return 0
+
+        # ser.in_waiting is always zero on mac, so act like we are buffered
+        if dk_platform.is_mac():
+            return 1
 
         try:
             return self.ser.in_waiting
@@ -63,6 +69,7 @@ class SerialPort:
                 self.ser.reset_input_buffer()
         except serial.serialutil.SerialException:
             pass
+        return self
 
     def readBytes(self, count:int=0) -> Tuple[bool, bytes]:
         """
@@ -176,6 +183,10 @@ class SerialLineReader:
         with self.lock:
             self.serial.start()
 
+    def _close(self):
+        with self.lock:
+            self.serial.stop()
+
     def clear(self):
         """
         Clear the lines buffer and serial port input buffer
@@ -214,7 +225,6 @@ class SerialLineReader:
                     line = self._readline()
             return lines
         return []
-
 
     def run_threaded(self):
         if not self.running:
@@ -260,8 +270,7 @@ class SerialLineReader:
 
     def shutdown(self):
         self.running = False
-        with self.lock:
-            self.serial.stop()
+        self._close()
 
 
 if __name__ == "__main__":
