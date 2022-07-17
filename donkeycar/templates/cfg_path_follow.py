@@ -619,8 +619,17 @@ HAVE_T265 = False       # True to use Intel Realsense T265 as a source of pose
 # gps
 #
 HAVE_GPS = False            # True to read gps position
-GPS_SERIAL = None           # use default if None, otherwise use specified serial port
+GPS_SERIAL = '/dev/ttyUSB0' # serial device path, like '/dev/ttyAMA1' or '/dev/ttyUSB0'
 GPS_SERIAL_BAUDRATE = 115200
+GPS_NMEA_PATH = None        # File used to record gps, like "nmea.csv".
+                            # If this is set then when waypoints are recorded then
+                            # the underlying NMEA sentences will also be saved to
+                            # this file along with their time stamps.  Then when
+                            # the path is loaded and played in auto-pilot mode then
+                            # the NMEA sentences that were recorded will be played back.
+                            # This is for debugging and tuning the PID without having
+                            # to keep driving the car.
+
 
 #
 # PATH FOLLOWING
@@ -634,10 +643,14 @@ PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
 PID_THROTTLE = 0.30                 # constant throttle value during path following
 
-# the cross button is already reserved for the emergency stop
-SAVE_PATH_BTN = "circle"             # joystick button to save path
+#
+# Assign path follow functions to buttons.
+# You can use game pad buttons OR web ui buttons ('web/w1' to 'web/w5')
+# NOTE: the cross button is already reserved for the emergency stop
+#
+SAVE_PATH_BTN = "circle"        # joystick button to save path
 LOAD_PATH_BTN = "x"             # joystick button (re)load path
-RESET_ORIGIN_BTN = "square"       # joystick button to press to move car back to origin
+RESET_ORIGIN_BTN = "square"     # joystick button to press to move car back to origin
 ERASE_PATH_BTN = "triangle"     # joystick button to erase path
 
 # Intel Realsense T265 tracking camera
