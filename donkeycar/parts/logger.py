@@ -17,7 +17,7 @@ class LoggerPart:
         self.running = True
 
     def run(self, *args):
-        if self.running:
+        if self.running and args is not None and len(args) == len(self.inputs):
             self.count = (self.count + 1) % (self.rate + 1)
             for i in range(len(self.inputs)):
                 field = self.inputs[i]
