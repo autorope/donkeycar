@@ -112,24 +112,42 @@ class OriginOffset(object):
     '''
 
     def __init__(self):
-        self.ox = 0.0
-        self.oy = 0.0
+        self.ox = None
+        self.oy = None
         self.last_x = 0.0
         self.last_y = 0.0
 
     def run(self, x, y):
         if is_number_type(x) and is_number_type(y):
+            # if origin is None, set it to current position
+            if self.ox is None and self.oy is None:
+                self.ox = x
+                self.oy = y
+
             self.last_x = x
             self.last_y = y
         else:
-            logging.info("OriginOffset ignoring non-number")
+            logging.debug("OriginOffset ignoring non-number")
 
-        return self.last_x + self.ox, self.last_y + self.oy
+        # translate the given position by the origin
+        if self.last_x is None or self.last_y is None or self.ox is None or self.oy is None:
+            return 0, 0
+        return self.last_x - self.ox, self.last_y - self.oy
+
+    def set_origin(self, x, y):
+        logging.info(f"Resetting origin to ({x}, {y})")
+        self.ox = x
+        self.oy = y
+
+    def reset_origin(self):
+        """
+        Reset the origin with the next value that comes in
+        """
+        self.ox = None
+        self.oy = None
 
     def init_to_last(self):
-        logging.info(f"Resetting origin to ({self.last_x}, {self.last_y})")
-        self.ox = -self.last_x
-        self.oy = -self.last_y
+        self.set_origin(self.last_x, self.last_y)
 
 
 class PathPlot(object):
@@ -153,18 +171,18 @@ class PathPlot(object):
             stacked_img = numpy.stack((img,)*3, axis=-1)
             img = arr_to_img(stacked_img)
 
-        draw = ImageDraw.Draw(img)
-        color = (255, 0, 0)
-        for iP in range(0, len(path) - 1):
-            ax, ay = path[iP]
-            bx, by = path[iP + 1]
-            self.plot_line(ax * self.scale + self.offset[0],
-                        ay * self.scale + self.offset[1], 
-                        bx * self.scale + self.offset[0], 
-                        by * self.scale + self.offset[1], 
-                        draw, 
-                        color)
-
+        if path:
+            draw = ImageDraw.Draw(img)
+            color = (255, 0, 0)
+            for iP in range(0, len(path) - 1):
+                ax, ay = path[iP]
+                bx, by = path[iP + 1]
+                self.plot_line(ax * self.scale + self.offset[0],
+                            ay * self.scale + self.offset[1],
+                            bx * self.scale + self.offset[0],
+                            by * self.scale + self.offset[1],
+                            draw,
+                            color)
         return img
 
 
@@ -206,7 +224,7 @@ from donkeycar.la import Line3D, Vec3
 class CTE(object):
 
     def nearest_two_pts(self, path, x, y):
-        if len(path) < 2:
+        if path is None or len(path) < 2:
             return None, None
 
         distances = []
