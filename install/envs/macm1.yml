@@ -9,6 +9,9 @@
 # Does not include Pytorch, yet:
 # @see https://github.com/pytorch/pytorch/issues/47702#issuecomment-965625139
 
+# python -m pip install "kivy[base]" kivy_examples --no-binary kivy
+# pip install pygame
+
 name: donkey
 
 channels:
@@ -43,7 +46,7 @@ dependencies:
   - moviepy     # 1.0.1
   - simple-pid  # 1.0.1
   - pip:
-    - kivy==2.0.0
+#    - kivy==2.0.0 # Run install step above after.
     - tensorflow-macos
     - tensorflow-metal
     - git+https://github.com/autorope/keras-vis.git
