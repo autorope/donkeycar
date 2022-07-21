@@ -425,7 +425,7 @@ WEB_INIT_MODE = "user"              # which control mode to start in. one of use
 USE_JOYSTICK_AS_DEFAULT = False      #when starting the manage.py, when True, will not require a --js option to use the joystick
 JOYSTICK_MAX_THROTTLE = 0.5         #this scalar is multiplied with the -1 to 1 throttle value to limit the maximum throttle. This can help if you drop the controller or just don't need the full speed available.
 JOYSTICK_STEERING_SCALE = 1.0       #some people want a steering that is less sensitve. This scalar is multiplied with the steering -1 to 1. It can be negative to reverse dir.
-AUTO_RECORD_ON_THROTTLE = True      #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
+AUTO_RECORD_ON_THROTTLE = False     #if true, we will record whenever throttle is not zero. if false, you must manually toggle recording with some other trigger. Usually circle button on joystick.
 CONTROLLER_TYPE = 'xbox'            #(ps3|ps4|xbox|pigpio_rc|nimbus|wiiu|F710|rc3|MM1|custom) custom will run the my_joystick.py controller written by the `donkey createjs` command
 USE_NETWORKED_JS = False            #should we listen for remote joystick control over the network?
 NETWORK_JS_SERVER_IP = None         #when listening for network joystick control, which ip is serving this information
@@ -642,16 +642,24 @@ PID_P = -0.5                        # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
 PID_THROTTLE = 0.30                 # constant throttle value during path following
+PID_D_DELTA = 0.5                   # amount the inc/dec function will change the D value
+PID_P_DELTA = 0.5                   # amount the inc/dec function will change the P value
 
 #
 # Assign path follow functions to buttons.
 # You can use game pad buttons OR web ui buttons ('web/w1' to 'web/w5')
+# Use None use the game controller default
 # NOTE: the cross button is already reserved for the emergency stop
 #
-SAVE_PATH_BTN = "circle"        # joystick button to save path
-LOAD_PATH_BTN = "x"             # joystick button (re)load path
-RESET_ORIGIN_BTN = "square"     # joystick button to press to move car back to origin
-ERASE_PATH_BTN = "triangle"     # joystick button to erase path
+SAVE_PATH_BTN = "circle"        # button to save path
+LOAD_PATH_BTN = "x"             # button (re)load path
+RESET_ORIGIN_BTN = "square"     # button to press to move car back to origin
+ERASE_PATH_BTN = "triangle"     # button to erase path
+TOGGLE_RECORDING_BTN = "option" # button to toggle recording mode
+INC_PID_D_BTN = None            # button to change PID 'D' constant by PID_D_DELTA
+DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DELTA
+INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
+DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
 
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)

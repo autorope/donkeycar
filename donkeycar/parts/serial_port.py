@@ -181,7 +181,7 @@ class SerialLineReader:
 
     def _open(self):
         with self.lock:
-            self.serial.start()
+            self.serial.start().clear()
 
     def _close(self):
         with self.lock:

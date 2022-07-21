@@ -276,56 +276,137 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     V.add(pilot, inputs=['cte/error'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
 
     def dec_pid_d():
-        pid.Kd -= 0.5
+        pid.Kd -= cfg.PID_D_DELTA
         logging.info("pid: d- %f" % pid.Kd)
 
     def inc_pid_d():
-        pid.Kd += 0.5
+        pid.Kd += cfg.PID_D_DELTA
         logging.info("pid: d+ %f" % pid.Kd)
 
+    def dec_pid_p():
+        pid.Kp -= cfg.PID_P_DELTA
+        logging.info("pid: p- %f" % pid.Kp)
+
+    def inc_pid_p():
+        pid.Kp += cfg.PID_P_DELTA
+        logging.info("pid: p+ %f" % pid.Kp)
+
+
+    class ToggleRecording:
+        def __init__(self, auto_record_on_throttle):
+            self.auto_record_on_throttle = auto_record_on_throttle
+            self.recording_latch:bool = None
+            self.toggle_latch:bool = False
+
+        def set_recording(self, recording:bool):
+            self.recording_latch = recording
+
+        def toggle_recording(self):
+            self.toggle_latch = True
+
+        def run(self, mode:str, recording:bool):
+            if self.toggle_latch:
+                if self.auto_record_on_throttle:
+                    logger.info('auto record on throttle is enabled; ignoring toggle of manual mode.')
+                else:
+                    recording = not recording
+                self.toggle_latch = False
+
+            if self.recording_latch is not None:
+                recording = self.recording_latch
+                self.recording_latch = None
+
+            if recording and mode != 'user':
+                print("Ignoring recording in auto-pilot mode")
+                recording = False
+                
+            return recording
+
+
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
+    V.add(recording_control, inputs=["recording"], outputs=["recording"])
+
+
     #
-    # add controller buttons for saving path and modifying PID
-    #
-    if ctr is not None and isinstance(ctr, JoystickController):
-        # Here's a trigger to save the path. Complete one circuit of your course, when you
-        # have exactly looped, or just shy of the loop, then save the path and shutdown
-        # this process. Restart and the path will be loaded.
-        ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
-
-        # allow controller to (re)load the path
-        ctr.set_button_down_trigger(cfg.LOAD_PATH_BTN, load_path)
-
-        # Here's a trigger to erase a previously saved path.
-        ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
-
-        # Here's a trigger to reset the origin.
-        ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
-
-        # Buttons to tune PID constants
-        ctr.set_button_down_trigger("L2", dec_pid_d)
-        ctr.set_button_down_trigger("R2", inc_pid_d)
-
+    # Add buttons for handling various user actions
+    # The button names are in configuration.
+    # They may refer to game controller (joystick) buttons OR web ui buttons
     #
     # There are 5 programmable webui buttons, "web/w1" to "web/w5"
     # adding a button handler for a webui button
     # is just adding a part with a run_condition set to
     # the button's name, so it runs when button is pressed.
     #
-    if cfg.SAVE_PATH_BTN.startswith("web/w"):
-        V.add(Lambda(lambda: save_path()), run_condition=cfg.SAVE_PATH_BTN)
-        print(f"Save path is {cfg.SAVE_PATH_BTN}")
-    if cfg.LOAD_PATH_BTN.startswith("web/w"):
-        V.add(Lambda(lambda: load_path()), run_condition=cfg.LOAD_PATH_BTN)
-        print(f"Load path is {cfg.LOAD_PATH_BTN}")
-    if cfg.ERASE_PATH_BTN.startswith("web/w"):
-        V.add(Lambda(lambda: erase_path()), run_condition=cfg.ERASE_PATH_BTN)
-        print(f"Erase path is {cfg.ERASE_PATH_BTN}")
-    if cfg.RESET_ORIGIN_BTN.startswith("web/w"):
-        V.add(Lambda(lambda: reset_origin()), run_condition=cfg.RESET_ORIGIN_BTN)
-        print(f"Reset Origin is {cfg.RESET_ORIGIN_BTN}")
+    have_joystick = ctr is not None and isinstance(ctr, JoystickController)
 
-    V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
+    # Here's a trigger to save the path. Complete one circuit of your course, when you
+    # have exactly looped, or just shy of the loop, then save the path and shutdown
+    # this process. Restart and the path will be loaded.
+    if cfg.SAVE_PATH_BTN:
+        print(f"Save path button is {cfg.SAVE_PATH_BTN}")
+        if cfg.SAVE_PATH_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: save_path()), run_condition=cfg.SAVE_PATH_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
 
+    # allow controller to (re)load the path
+    if cfg.LOAD_PATH_BTN:
+        print(f"Load path button is {cfg.LOAD_PATH_BTN}")
+        if cfg.LOAD_PATH_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: load_path()), run_condition=cfg.LOAD_PATH_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.LOAD_PATH_BTN, load_path)
+
+    # Here's a trigger to erase a previously saved path.
+    # This erases the path in memory; it does NOT erase any saved path file
+    if cfg.ERASE_PATH_BTN:
+        print(f"Erase path button is {cfg.ERASE_PATH_BTN}")
+        if cfg.ERASE_PATH_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: erase_path()), run_condition=cfg.ERASE_PATH_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
+
+    # Here's a trigger to reset the origin based on the current position
+    if cfg.RESET_ORIGIN_BTN:
+        print(f"Reset origin button is {cfg.RESET_ORIGIN_BTN}")
+        if cfg.RESET_ORIGIN_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: reset_origin()), run_condition=cfg.RESET_ORIGIN_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
+
+    # button to toggle recording
+    if cfg.TOGGLE_RECORDING_BTN:
+        print(f"Toggle recording button is {cfg.TOGGLE_RECORDING_BTN}")
+        if cfg.TOGGLE_RECORDING_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: recording_control.toggle_recording()), run_condition=cfg.TOGGLE_RECORDING_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.TOGGLE_RECORDING_BTN, recording_control.toggle_recording)
+
+    # Buttons to tune PID constants
+    if cfg.DEC_PID_P_BTN and cfg.PID_P_DELTA:
+        print(f"Decrement PID P button is {cfg.DEC_PID_P_BTN}")
+        if cfg.DEC_PID_P_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: dec_pid_p()), run_condition=cfg.DEC_PID_P_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.DEC_PID_P_BTN, dec_pid_p)
+    if cfg.INC_PID_P_BTN and cfg.PID_P_DELTA:
+        print(f"Increment PID P button is {cfg.INC_PID_P_BTN}")
+        if cfg.INC_PID_P_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: inc_pid_p()), run_condition=cfg.INC_PID_P_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.INC_PID_P_BTN, inc_pid_p)
+    if cfg.DEC_PID_D_BTN and cfg.PID_D_DELTA:
+        print(f"Decrement PID D button is {cfg.DEC_PID_D_BTN}")
+        if cfg.DEC_PID_D_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: dec_pid_d()), run_condition=cfg.DEC_PID_D_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.DEC_PID_D_BTN, dec_pid_d)
+    if cfg.INC_PID_D_BTN and cfg.PID_D_DELTA:
+        print(f"Increment PID D button is {cfg.INC_PID_D_BTN}")
+        if cfg.INC_PID_D_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: inc_pid_d()), run_condition=cfg.INC_PID_D_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
 
 
     #Choose what inputs should change the car.
@@ -420,7 +501,7 @@ class GpsPlayer:
             nmea = self.run_once(time.time())
             nmea_sentences += nmea
             return True, nmea_sentences
-        return False, nmea_sentences
+        return False, []
 
     def run_once(self, now):
         """

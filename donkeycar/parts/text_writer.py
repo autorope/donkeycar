@@ -23,7 +23,6 @@ class TextLogger:
     def run(self, rows):
         if self.recording and len is not None and len(rows) > 0:
             self.rows += rows
-        return self.rows
 
     def length(self):
         return len(self.rows)
