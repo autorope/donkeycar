@@ -319,12 +319,12 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             if recording and mode != 'user':
                 print("Ignoring recording in auto-pilot mode")
                 recording = False
-                
+
             return recording
 
 
     recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
-    V.add(recording_control, inputs=["recording"], outputs=["recording"])
+    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
 
 
     #
