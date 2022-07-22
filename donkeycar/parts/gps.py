@@ -41,7 +41,8 @@ class GpsLatestPosition:
     """
     Return most recent valid GPS position
     """
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
         self.position = None
 
     def run(self, positions):
@@ -55,6 +56,7 @@ class GpsPosition:
     """
     def __init__(self, serial:SerialPort, debug = False) -> None:
         self.line_reader = SerialLineReader(serial)
+        self.debug = debug
         self.position_reader = GpsNmeaPositions()
         self.position = None
         self._start()
@@ -64,20 +66,22 @@ class GpsPosition:
         while self.position is None:
             print("Waiting for gps fix")
             self.position = self.run()
-            
-    def run(self):
-        lines = line_reader.run()
+
+    def run_once(self, lines):
         positions = self.GpsNmeaPositions.run(lines)
         if positions is not None and len(positions) > 0:
             self.position = positions[-1]
+            if self.debug:
+                logger.info(f"UTM long = {self.position[1]}, UTM lat = {self.position[0]}")
         return self.position
+
+    def run(self):
+        lines = line_reader.run()
+        return self.run_once(lines)
 
     def run_threaded(self):
         lines = line_reader.run_threaded()
-        positions = self.GpsNmeaPositions.run_threaded(lines)
-        if positions is not None and len(positions) > 0:
-            self.position = positions[-1]
-        return self.position
+        return self.run_once(lines)
 
     def update(self):
         self.line_reader.update()
@@ -139,7 +143,6 @@ def parseGpsPosition(line, debug=False):
         if debug:
             try:
                 msg = pynmea2.parse(line)
-                logger.info(f"nmea.longitude({msg.longitude}, nmea.latitude({msg.latitude})")
             except pynmea2.ParseError as e:
                 logger.error('NMEA parse error detected: {}'.format(e))
                 return None
@@ -154,7 +157,6 @@ def parseGpsPosition(line, debug=False):
             #
             longitude = nmea_to_degrees(nmea_parts[5], nmea_parts[6])
             latitude = nmea_to_degrees(nmea_parts[3], nmea_parts[4])
-            # print(f"Your position: lon = ({longitude}), lat = ({latitude})")
 
             if debug:
                 if msg.longitude != longitude:
@@ -166,7 +168,8 @@ def parseGpsPosition(line, debug=False):
             # convert position in degrees to local meters
             #
             utm_position = utm.from_latlon(latitude, longitude)
-            # print(f"Your utm position: lon - ({utm_position[1]:.6f}), lat = ({utm_position[0]:.6f})")
+            if debug:
+                logger.info(f"UTM long = {utm_position[1]}, UTM lat = {utm_position[0]}")
             
             # return (longitude, latitude) as float degrees
             return float(utm_position[1]), float(utm_position[0])

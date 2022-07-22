@@ -37,6 +37,7 @@ Starts in user mode.
 
 
 """
+from distutils.log import debug
 import os
 import logging
 
@@ -297,6 +298,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             self.auto_record_on_throttle = auto_record_on_throttle
             self.recording_latch:bool = None
             self.toggle_latch:bool = False
+            self.last_recording = None
 
         def set_recording(self, recording:bool):
             self.recording_latch = recording
@@ -305,6 +307,10 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             self.toggle_latch = True
 
         def run(self, mode:str, recording:bool):
+            recording_in = recording
+            if recording_in != self.last_recording:
+                logging.info(f"Recording Change = {recording_in}")
+
             if self.toggle_latch:
                 if self.auto_record_on_throttle:
                     logger.info('auto record on throttle is enabled; ignoring toggle of manual mode.')
@@ -317,8 +323,13 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                 self.recording_latch = None
 
             if recording and mode != 'user':
-                print("Ignoring recording in auto-pilot mode")
+                logging.info("Ignoring recording in auto-pilot mode")
                 recording = False
+
+            if recording_in != recording:
+                logging.info(f"Setting Recording = {recording}")
+
+            self.last_recording = recording
 
             return recording
 
@@ -565,7 +576,7 @@ def add_gps(V, cfg):
         # - retrieve the most recent position
         #
         serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
-        nmea_reader = SerialLineReader(serial_port, debug=cfg.GPS_DEBUG)
+        nmea_reader = SerialLineReader(serial_port)
         V.add(nmea_reader, outputs=['gps/nmea'], threaded=True)
 
         # part to save nmea sentences for later playback
@@ -581,7 +592,7 @@ def add_gps(V, cfg):
 
         gps_positions = GpsNmeaPositions(debug=cfg.GPS_DEBUG)
         V.add(gps_positions, inputs=['gps/nmea'], outputs=['gps/positions'])
-        gps_latest_position = GpsLatestPosition()
+        gps_latest_position = GpsLatestPosition(debug=cfg.GPS_DEBUG)
         V.add(gps_latest_position, inputs=['gps/positions'], outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
 
         V.add(LoggerPart(inputs=['gps/utm/longitude', 'gps/utm/latitude']))
