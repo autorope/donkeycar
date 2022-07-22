@@ -629,7 +629,7 @@ GPS_NMEA_PATH = None        # File used to record gps, like "nmea.csv".
                             # the NMEA sentences that were recorded will be played back.
                             # This is for debugging and tuning the PID without having
                             # to keep driving the car.
-
+GPS_DEBUG = False  # set to True to log UTM position (beware; lots of logging!)
 
 #
 # PATH FOLLOWING
@@ -641,9 +641,9 @@ PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a
 PID_P = -0.5                        # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
-PID_THROTTLE = 0.30                 # constant throttle value during path following
-PID_D_DELTA = 0.5                   # amount the inc/dec function will change the D value
-PID_P_DELTA = 0.5                   # amount the inc/dec function will change the P value
+PID_THROTTLE = 0.50                 # constant throttle value during path following
+PID_D_DELTA = 0.25                  # amount the inc/dec function will change the D value
+PID_P_DELTA = 0.25                  # amount the inc/dec function will change the P value
 
 #
 # Assign path follow functions to buttons.
