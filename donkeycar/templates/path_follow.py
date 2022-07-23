@@ -235,7 +235,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
            print("path _not_ loaded; make sure you have saved a path.")
 
     def erase_path():
-        origin_reset.init_to_last()
+        origin_reset.reset_origin()
         if path.reset():
             print("The origin and the path were reset; you are ready to record a new path.")
             if gps_player:
@@ -582,7 +582,7 @@ def add_gps(V, cfg):
         nmea_player = None
         if cfg.GPS_NMEA_PATH:
             nmea_writer = CsvLogger(cfg.GPS_NMEA_PATH, separator='\t', field_count=2)
-            V.add(nmea_writer, inputs=['recording', 'gps/nmea'])  # only record nmea sentences in user mode
+            V.add(nmea_writer, inputs=['recording', 'gps/nmea'], outputs=['gps/recorded/nmea'])  # only record nmea sentences in user mode
             nmea_player = GpsPlayer(nmea_writer)
             V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'], outputs=['gps/playing', 'gps/nmea'])  # only play nmea sentences in autopilot mode
 
