@@ -10,7 +10,7 @@ class TextLogger:
     A 'row' ends up as one line of text when transformed by row_to_line().
     The base implementation simply treats is as a text line, but subclasses
     an overwrite row_to_line() and line_to_row() to save structured data,
-    like tuples or arrays as CSV.ß
+    like tuples or arrays as CSV.
     """
     def __init__(self, file_path:str, append:bool=False, allow_empty_file:bool=False, allow_empty_line:bool=True):
         self.file_path = file_path
@@ -18,11 +18,11 @@ class TextLogger:
         self.allow_empty_file = allow_empty_file
         self.allow_empty_line = allow_empty_line
         self.rows = []
-        self.recording = True
 
-    def run(self, rows):
-        if self.recording and len is not None and len(rows) > 0:
+    def run(self, recording, rows):
+        if recording and len is not None and len(rows) > 0:
             self.rows += rows
+        return self.rows
 
     def length(self):
         return len(self.rows)

@@ -14,15 +14,15 @@ class AbstractPath:
         self.min_dist = min_dist
         self.x = math.inf
         self.y = math.inf
-        self.recording = True
 
-    def run(self, x, y):
-        d = dist(x, y, self.x, self.y)
-        if self.recording and d > self.min_dist:
-            self.path.append((x, y))
-            logging.info("path point (%f, %f)" % (x, y))
-            self.x = x
-            self.y = y
+    def run(self, recording, x, y):
+        if recording is not None and recording:
+            d = dist(x, y, self.x, self.y)
+            if d > self.min_dist:
+                logging.info(f"path point ({x},{y})")
+                self.path.append((x, y))
+                self.x = x
+                self.y = y
         return self.path
 
     def length(self):
@@ -225,6 +225,7 @@ class CTE(object):
 
     def nearest_two_pts(self, path, x, y):
         if path is None or len(path) < 2:
+            logging.error("path is none; cannot calculate nearest points")
             return None, None
 
         distances = []
@@ -246,7 +247,7 @@ class CTE(object):
         a, b = self.nearest_two_pts(path, x, y)
         
         if a and b:
-            #logging.info("nearest: (%f, %f) to (%f, %f)" % ( a[0], a[1], x, y))
+            logging.info("nearest: (%f, %f) to (%f, %f)" % ( a[0], a[1], x, y))
             a_v = Vec3(a[0], 0., a[1])
             b_v = Vec3(b[0], 0., b[1])
             p_v = Vec3(x, 0., y)
@@ -257,7 +258,8 @@ class CTE(object):
             if cp.y > 0.0 :
                 sign = -1.0
             cte = err.mag() * sign            
-
+        else:
+            logging.info(f"no nearest point to ({x},{y}))")
         return cte
 
 

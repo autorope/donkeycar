@@ -170,6 +170,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     origin_reset = OriginOffset()
     V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
+    V.add(LoggerPart(inputs=['pos/x', 'pos/y']), inputs=['pos/x', 'pos/y'])
 
 
     class UserCondition:
@@ -195,7 +196,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
     path = CsvPath(min_dist=cfg.PATH_MIN_DIST)
-    V.add(path, inputs=['pos/x', 'pos/y'], outputs=['path'], run_condition='recording')
+    V.add(path, inputs=['recording', 'pos/x', 'pos/y'], outputs=['path'])
 
     if cfg.DONKEY_GYM:
         lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
@@ -470,16 +471,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
 from donkeycar.parts.text_writer import CsvLogger
 
-
-class GpsStreaming:
-    def run(self, playing):
-        #
-        # if we are not playing, then we are streaming
-        #
-        if playing is not None and playing:
-            return False
-        return True
-
 class GpsPlayer:
     """
     Part that plays back the NMEA sentences that have been recorded
@@ -501,18 +492,26 @@ class GpsPlayer:
         self.running = False
         return self
 
-    def run(self, autopilot_mode, nmea_sentences):
+    def run(self, playing, nmea_sentences):
         """
         Play NMEA if running and in autopilot mode.
         Collect NMEA sentences within the time limit,
-        return the resulting sentences as a list
+        arguments:
+        - playing:bool True if we are to play recorded nmea, 
+                       False if we pass through given nmea
+        - nmea_sentences:[str] list of live nmea from gps module
+                                to pass through if not playing
+        returns:
+        - playing:bool True if playing, False if not
+        - nmea:[str] the resulting sentences as a list
         """
-        if self.running and autopilot_mode:
-            nmea_sentences = []
+        if self.running and playing:
+            # if playing, then return the recorded nmea
             nmea = self.run_once(time.time())
-            nmea_sentences += nmea
-            return True, nmea_sentences
-        return False, []
+            return True, nmea
+
+        # if not playing, pass through the given nmea
+        return False, nmea_sentences
 
     def run_once(self, now):
         """
@@ -583,19 +582,14 @@ def add_gps(V, cfg):
         nmea_player = None
         if cfg.GPS_NMEA_PATH:
             nmea_writer = CsvLogger(cfg.GPS_NMEA_PATH, separator='\t', field_count=2)
-            V.add(nmea_writer, inputs=['gps/nmea'], run_condition='recording')  # only record nmea sentences in user mode
+            V.add(nmea_writer, inputs=['recording', 'gps/nmea'])  # only record nmea sentences in user mode
             nmea_player = GpsPlayer(nmea_writer)
             V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'], outputs=['gps/playing', 'gps/nmea'])  # only play nmea sentences in autopilot mode
-
-        # part switches between streaming and re-playing gps nmea sentences
-        V.add(GpsStreaming(), inputs=['gps/playing'], outputs=['gps/streaming'])
 
         gps_positions = GpsNmeaPositions(debug=cfg.GPS_DEBUG)
         V.add(gps_positions, inputs=['gps/nmea'], outputs=['gps/positions'])
         gps_latest_position = GpsLatestPosition(debug=cfg.GPS_DEBUG)
         V.add(gps_latest_position, inputs=['gps/positions'], outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
-
-        V.add(LoggerPart(inputs=['gps/utm/longitude', 'gps/utm/latitude']))
 
         # rename gps utm position to pose values
         V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
