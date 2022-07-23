@@ -111,7 +111,8 @@ class OriginOffset(object):
     Use this to set the car back to the origin without restarting it.
     '''
 
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
         self.ox = None
         self.oy = None
         self.last_x = 0.0
@@ -130,9 +131,12 @@ class OriginOffset(object):
             logging.debug("OriginOffset ignoring non-number")
 
         # translate the given position by the origin
-        if self.last_x is None or self.last_y is None or self.ox is None or self.oy is None:
-            return 0, 0
-        return self.last_x - self.ox, self.last_y - self.oy
+        pos = (0, 0)
+        if self.last_x is not None and self.last_y is not None and self.ox is not None and self.oy is not None:
+            pos = (self.last_x - self.ox, self.last_y - self.oy)
+        if self.debug:
+            print(f"pos/x = {pos[0]}, pos/y = {pos[1]}")
+        return pos
 
     def set_origin(self, x, y):
         logging.info(f"Resetting origin to ({x}, {y})")

@@ -635,6 +635,7 @@ GPS_DEBUG = False  # set to True to log UTM position (beware; lots of logging!)
 # PATH FOLLOWING
 #
 PATH_FILENAME = "donkey_path.csv"   # the path will be saved to this filename as comma separated x,y values
+PATH_DEBUG = True                   # True to log x,y position
 PATH_SCALE = 10.0                   # the path display will be scaled by this factor in the web page
 PATH_OFFSET = (255, 255)            # 255, 255 is the center of the map. This offset controls where the origin is displayed.
 PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a path point

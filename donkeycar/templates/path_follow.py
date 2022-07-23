@@ -168,9 +168,8 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # and push the cfg.RESET_ORIGIN_BTN on your controller. This will allow you to induce an offset
     # in the mapping.
     #
-    origin_reset = OriginOffset()
+    origin_reset = OriginOffset(cfg.PATH_DEBUG)
     V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
-    V.add(LoggerPart(inputs=['pos/x', 'pos/y']), inputs=['pos/x', 'pos/y'])
 
 
     class UserCondition:
