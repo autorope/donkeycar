@@ -350,6 +350,10 @@ LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
 
+# TFMINI
+HAVE_TFMINI = True
+TFMINI_SERIAL_PORT = "/dev/serial0" # tfmini serial port, can be wired up or use usb/serial adapter
+
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_AI_FRAMEWORK = 'tensorflow'
