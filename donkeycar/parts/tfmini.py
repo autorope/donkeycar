@@ -5,6 +5,8 @@ class TFMini:
     """
     Class for TFMini and TFMini-Plus distance sensors.
     See wiring and installation instructions at https://github.com/TFmini/TFmini-RaspberryPi
+
+    Returns distance in centimeters. 
     """
 
     def __init__(self, port="/dev/serial0", baudrate=115200, poll_delay=0.01, init_delay=0.1):

@@ -192,7 +192,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.HAVE_TFMINI:
         from donkeycar.parts.tfmini import TFMini
         lidar = TFMini(port=cfg.TFMINI_SERIAL_PORT)
-        V.add(TFMini, inputs=[], outputs=['lidar/dist'], threaded=True)
+        V.add(lidar, inputs=[], outputs=['lidar/dist'], threaded=True)
     
     if cfg.SHOW_FPS:
         from donkeycar.parts.fps import FrequencyLogger
