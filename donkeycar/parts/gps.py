@@ -28,7 +28,8 @@ class GpsNmeaPositions:
             for ts, nmea in lines:
                 position = parseGpsPosition(nmea, self.debug)
                 if position:
-                    positions.append((ts, position[0], position[1]))
+                    # output (ts,x,y) - so long is x, lat is y
+                    positions.append((ts, position[1], position[0]))
         return positions
 
     def update(self):
