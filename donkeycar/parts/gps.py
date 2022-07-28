@@ -29,7 +29,7 @@ class GpsNmeaPositions:
                 position = parseGpsPosition(nmea, self.debug)
                 if position:
                     # output (ts,x,y) - so long is x, lat is y
-                    positions.append((ts, position[1], position[0]))
+                    positions.append((ts, position[0], position[1]))
         return positions
 
     def update(self):
@@ -73,7 +73,7 @@ class GpsPosition:
         if positions is not None and len(positions) > 0:
             self.position = positions[-1]
             if self.debug:
-                logger.info(f"UTM long = {self.position[1]}, UTM lat = {self.position[0]}")
+                logger.info(f"UTM long = {self.position[0]}, UTM lat = {self.position[1]}")
         return self.position
 
     def run(self):
@@ -97,9 +97,9 @@ def parseGpsPosition(line, debug=False):
     """
     Given a line emitted by a GPS module, 
     Parse out the position and return as a 
-    tuple of float (longitude, latitude) as meters.
-    If it cannot be parsed or is not a position message, 
-    then return None.
+    return: tuple of float (longitude, latitude) as meters.
+            If it cannot be parsed or is not a position message, 
+            then return None.
     """
     if not line:
         return None
@@ -170,10 +170,10 @@ def parseGpsPosition(line, debug=False):
             #
             utm_position = utm.from_latlon(latitude, longitude)
             if debug:
-                logger.info(f"UTM long = {utm_position[1]}, UTM lat = {utm_position[0]}")
+                logger.info(f"UTM easting = {utm_position[0]}, UTM northing = {utm_position[1]}")
             
             # return (longitude, latitude) as float degrees
-            return float(utm_position[1]), float(utm_position[0])
+            return float(utm_position[0]), float(utm_position[1])
     else:
         # Non-position message OR invalid string
         # print(f"Ignoring line {line}")
