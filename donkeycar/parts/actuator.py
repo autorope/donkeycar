@@ -10,6 +10,7 @@ import logging
 from typing import Tuple
 
 import donkeycar as dk
+from donkeycar import utils
 from donkeycar.parts.kinematics import differential_steering
 from donkeycar.utils import clamp
 
@@ -106,7 +107,8 @@ class PulseController:
         :param pulse:int 12bit integer (0..4095)
         """
         if pulse < 0 or pulse > 4095:
-            raise ValueError("pulse must be in range 0 to 4095")
+            logging.error("pulse must be in range 0 to 4095")
+            pulse = utils.clamp(pulse, 0, 4095)
 
         if not self.started:
             self.pwm_pin.start()
