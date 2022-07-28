@@ -249,6 +249,9 @@ functions to help converte between floating point numbers and categories.
 
 
 def clamp(n, min, max):
+    if min > max:
+        return clamp(n, max, min)
+
     if n < min:
         return min
     if n > max:

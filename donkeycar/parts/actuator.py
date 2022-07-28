@@ -108,7 +108,7 @@ class PulseController:
         """
         if pulse < 0 or pulse > 4095:
             logging.error("pulse must be in range 0 to 4095")
-            pulse = utils.clamp(pulse, 0, 4095)
+            pulse = clamp(pulse, 0, 4095)
 
         if not self.started:
             self.pwm_pin.start()
@@ -157,7 +157,9 @@ class PCA9685:
 
     def set_duty_cycle(self, duty_cycle):
         if duty_cycle < 0 or duty_cycle > 1:
-            raise ValueError("duty_cycle must be in range 0 to 1")
+            logging.error("duty_cycle must be in range 0 to 1")
+            duty_cycle = clamp(duty_cycle, 0, 1)
+            
         if duty_cycle == 1:
             self.set_high()
         elif duty_cycle == 0:
@@ -252,6 +254,7 @@ class PWMSteering:
 
     def run_threaded(self, angle):
         # map absolute angle to angle that vehicle can implement.
+        angle = utils.clamp(angle, self.LEFT_ANGLE, self.RIGHT_ANGLE)
         self.pulse = dk.utils.map_range(angle,
                                         self.LEFT_ANGLE, self.RIGHT_ANGLE,
                                         self.left_pulse, self.right_pulse)
@@ -305,6 +308,7 @@ class PWMThrottle:
             self.controller.set_pulse(self.pulse)
 
     def run_threaded(self, throttle):
+        throttle = utils.clamp(throttle, self.MIN_THROTTLE, self.MAX_THROTTLE)
         if throttle > 0:
             self.pulse = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
                                             self.zero_pulse, self.max_pulse)
