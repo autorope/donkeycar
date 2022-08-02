@@ -351,7 +351,7 @@ LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obs
 LIDAR_UPPER_LIMIT = 270
 
 # TFMINI
-HAVE_TFMINI = True
+HAVE_TFMINI = False
 TFMINI_SERIAL_PORT = "/dev/serial0" # tfmini serial port, can be wired up or use usb/serial adapter
 
 #TRAINING

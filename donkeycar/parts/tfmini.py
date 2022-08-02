@@ -1,5 +1,6 @@
 import time
 import serial
+import logging
 
 class TFMini:
     """
@@ -14,13 +15,14 @@ class TFMini:
         self.poll_delay = poll_delay
 
         self.dist = 0
-        self.strength = 0
 
-        if self.ser.is_open == False:
+        if not self.ser.is_open:
             self.ser.close() # in case it is still open, we do not want to open it twice
             self.ser.open()
 
-        print("Init TFMini")
+        self.logger = logging.Logger("TFMini Logger")
+
+        self.logger.info("Init TFMini")
         time.sleep(init_delay)
 
     def update(self):
@@ -42,12 +44,11 @@ class TFMini:
 
                     if strength > 0:
                         self.dist = dist
-                        self.strength = strength
 
                     self.ser.reset_input_buffer()
 
         except Exception as e:
-            print(e)
+            self.logger.error(e)
 
 
     def run_threaded(self):
@@ -68,3 +69,4 @@ if __name__ == "__main__":
         print(i, data)
 
     lidar.shutdown()
+    
