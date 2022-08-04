@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from donkeycar.parts.path import CsvPath, RosPath
+from donkeycar.parts.path import CsvPath, RosPath, nearest_pt_on_path
 
 
 class TestCsvPath(unittest.TestCase):
@@ -49,3 +49,17 @@ class TestCsvPath(unittest.TestCase):
             self.assertEqual((3, 4), xy[1])
 
 
+class TestNearestPtOnPath(unittest.TestCase):
+    def test_nearest_pt_on_path(self):
+        path = CsvPath()
+        path.append(0, 1)
+        path.append(1, 0)
+
+        self.assertEqual(0, path.nearest_point(0, 0.5))
+        self.assertEqual(1, path.nearest_point(0.5, 0))
+
+        #
+        # algorithm prefers the _first_ nearest point
+        #
+        self.assertEqual(0, path.nearest_point(0, 0, i=0))
+        self.assertEqual(1, path.nearest_point(0, 0, i=1))

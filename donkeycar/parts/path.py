@@ -2,6 +2,8 @@ import pickle
 import math
 import logging
 import pathlib
+from typing import Tuple, List
+
 import numpy
 from PIL import Image, ImageDraw
 
@@ -34,8 +36,29 @@ class AbstractPath:
     def is_loaded(self):
         return not self.is_empty()
 
+    def next_index(self, i:int, n:int = 1) -> int:
+        """
+        Given an index on the path, get the next index on the path.
+        This will handle wrapping around from end to start.
+        :param i:
+        :param n: number if indices to skip
+        :return:
+        """
+        i += n
+        if i >= self.length() or i < 0:
+            return 0
+        return i
+
+    def get(self, index:int) -> Tuple[float, float]:
+        if index >= 0 and index < self.length():
+            return self.path[index]
+        return None
+
     def get_xy(self):
         return self.path
+
+    def append(self, x:int, y:int):
+        self.path.append((x, y))
 
     def reset(self):
         self.path = []
@@ -46,6 +69,9 @@ class AbstractPath:
 
     def load(self, filename):
         return False
+
+    def nearest_point(self, x:float, y:float, i:int = 0):
+        return nearest_pt_on_path(self.get_xy(), i, x, y)
 
 
 class CsvPath(AbstractPath):
@@ -277,3 +303,67 @@ class PID_Pilot(object):
         steer = self.pid.run(cte)
         logging.info("CTE: %f steer: %f" % (cte, steer))
         return steer, self.throttle
+
+
+def nearest_pt_on_path(path: List[Tuple[float, float]], i:int, x:float, y:float) -> int:
+    """
+    Find the point of the path that is nearest the given point.
+    If there are points with the same distance, then
+    this prefers the first nearest point that is found.
+    :param path: path as a list of (x,y) tuples.
+    :param i: index to start search.
+    :param x: current horizontal position (east-west).
+    :param y: current vertical position (north-south).
+    :return: index of nearest point on the path.
+    """
+    if path is None or len(path) < 2:
+        logging.error("path is none; cannot calculate nearest points")
+        return None
+    if i is None or i < 0 or i >= len(path):
+        logging.error("starting index must be on the path")
+        return None
+
+    nearest_index = i
+    nearest_point = path[i]
+    nearest_distance = dist(nearest_point[0], nearest_point[1], x, y)
+    n = len(path)
+    while n > 0:
+        n -= 1
+        i = (i + 1) % len(path)
+        p = path[i]
+        d = dist(p[0], p[1], x, y)
+        if nearest_distance is None or d < nearest_distance:
+            nearest_index = i
+            nearest_distance = d
+
+    return nearest_index
+
+class Pursuit:
+    """
+    class that implements a hacky version of pure pursuit (impure pursuit?)
+    """
+    def __init__(self, path:AbstractPath, lookahead_n:int):
+        self.path = path
+        self.lookahead_n = lookahead_n
+        self.pose = None
+        self.steering_angle = None
+        self.gps_position:Tuple[float, float, float] = None  # (ts,x,y)
+
+    def get_target(self) -> Tuple[float, float]:
+        """
+        Get the target point to achieve.
+        :return: (x,y) of target point
+        """
+        pass
+
+    def update(self):
+        """
+        Update method runs on a thread.
+        - Update pose estimate using kinematics
+        - Update steering angle based on target and estimated pose
+        :return:
+        """
+        pass
+
+    def run_threaded(self):
+        pass

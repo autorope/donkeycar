@@ -40,7 +40,8 @@ class GpsNmeaPositions:
 
 class GpsLatestPosition:
     """
-    Return most recent valid GPS position
+    Return most recent valid GPS position as
+    a tuple (ts, x, y)
     """
     def __init__(self, debug=False):
         self.debug = debug
@@ -53,7 +54,8 @@ class GpsLatestPosition:
 
 class GpsPosition:
     """
-    Donkeycar part to read NMEA lines from serial port and convert a position
+    Donkeycar part to read NMEA lines from serial port and convert a positions.
+    Returns list of positions which are tuple (ts, x, y)
     """
     def __init__(self, serial:SerialPort, debug = False) -> None:
         self.line_reader = SerialLineReader(serial)

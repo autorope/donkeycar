@@ -645,6 +645,8 @@ PID_D = -0.3                        # differential mult for PID path follower
 PID_THROTTLE = 0.50                 # constant throttle value during path following
 PID_D_DELTA = 0.25                  # amount the inc/dec function will change the D value
 PID_P_DELTA = 0.25                  # amount the inc/dec function will change the P value
+PURSUIT_LOOKAHEAD = 3               # number of path points to look ahead when path following.
+                                    # This makes effect lookahead distance PURSUIT_LOOKAHEAD * PATH_MIN_DIST
 
 #
 # Assign path follow functions to buttons.
