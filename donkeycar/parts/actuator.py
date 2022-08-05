@@ -11,7 +11,6 @@ from typing import Tuple
 
 import donkeycar as dk
 from donkeycar import utils
-from donkeycar.parts.kinematics import differential_steering
 from donkeycar.utils import clamp
 
 logger = logging.getLogger(__name__)
