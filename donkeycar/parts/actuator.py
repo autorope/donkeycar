@@ -950,9 +950,9 @@ class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
     '''
-    def __init__(self, pin, pin_scheme=GPIO.BCM, freq = 50, min=5.0, max=7.8):
+    def __init__(self, pin, pin_scheme=None, freq = 50, min=5.0, max=7.8):
         self.pin = pin
-        GPIO.setmode(pin_scheme)
+        GPIO.setmode(GPIO.BCM if pin_scheme is None else pin_scheme)
         GPIO.setup(self.pin, GPIO.OUT)
         
         self.pwm = GPIO.PWM(self.pin, freq)
