@@ -2,6 +2,16 @@ import time
 import serial
 import logging
 
+'''
+Note about poll delay:
+
+Without poll delay the part only outputs a few values before failing.
+This is probably because the serial port's input buffer is not clearing fast enough to run
+without a poll delay. Calling self.ser.reset_input_buffer() (line 58) helps, but
+does not completely solve the issue. Keep in mind at a car speed of 4 m/s this introduces
+a systematic error of 4cm, using a poll delay of 10 ms. 
+'''
+
 class TFMini:
     """
     Class for TFMini and TFMini-Plus distance sensors.
@@ -20,7 +30,7 @@ class TFMini:
             self.ser.close() # in case it is still open, we do not want to open it twice
             self.ser.open()
 
-        self.logger = logging.Logger("TFMini Logger")
+        self.logger = logging.getLogger(__name__)
 
         self.logger.info("Init TFMini")
         time.sleep(init_delay)
