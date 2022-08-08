@@ -188,6 +188,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
         if cfg.LIDAR_TYPE == 'YD':
             print("YD Lidar not yet supported")
+
+    if cfg.HAVE_TFMINI:
+        from donkeycar.parts.tfmini import TFMini
+        lidar = TFMini(port=cfg.TFMINI_SERIAL_PORT)
+        V.add(lidar, inputs=[], outputs=['lidar/dist'], threaded=True)
     
     if cfg.SHOW_FPS:
         from donkeycar.parts.fps import FrequencyLogger
@@ -794,6 +799,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
+
+    if cfg.HAVE_TFMINI:
+        inputs += ['lidar/dist']
+        types += ['float']
 
     # rbx
     if cfg.DONKEY_GYM:
