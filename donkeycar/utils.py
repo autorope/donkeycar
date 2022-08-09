@@ -249,6 +249,9 @@ functions to help converte between floating point numbers and categories.
 
 
 def clamp(n, min, max):
+    if min > max:
+        return clamp(n, max, min)
+
     if n < min:
         return min
     if n > max:
@@ -372,10 +375,36 @@ def throttle(input_value):
 OTHER
 '''
 
+def is_number_type(i):
+    return type(i) == int or type(i) == float;
+
+
+def sign(x):
+    if x > 0:
+        return 1
+    if x < 0:
+        return -1
+    return 0
+
+
+def compare_to(
+    value:float,      # IN : value to compare
+    toValue:float,    # IN : value to compare with tolerance
+    tolerance:float): # IN : non-negative tolerance
+                      # RET: 1 if value > toValue + tolerance
+                      #      -1 if value < toValue - tolerance
+                      #      otherwise zero
+    if (toValue - value) > tolerance:
+        return -1
+    if (value - toValue) > tolerance:
+        return 1
+    return 0
+
 
 def map_frange(x, X_min, X_max, Y_min, Y_max):
     '''
     Linear mapping between two ranges of values
+    map from x range to y range
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
