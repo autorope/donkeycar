@@ -8,6 +8,8 @@ channels:
 
 dependencies:
   - python=3.7
+  - cudatoolkit=11.2
+  - cudnn=8.1.0
   - h5py
   - pillow
   - opencv
@@ -27,7 +29,7 @@ dependencies:
   - PrettyTable
   - pyfiglet
   - mypy
-  - pytorch=1.7.1
+  - pytorch
   - torchvision
   - torchaudio
   - pytorch-lightning
@@ -36,7 +38,6 @@ dependencies:
   - kivy=2.0.0
   - plotly
   - pyyaml
-  - tensorflow=2.2.0
   - fastai
   - pynmea2
   - pyserial
@@ -45,3 +46,4 @@ dependencies:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
     - opencv-python-headless
+    - tensorflow
