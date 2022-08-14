@@ -1,26 +1,34 @@
 var driveHandler = new function() {
     //functions used to drive the vehicle. 
 
-    var state = {'tele': {
-                          "user": {
-                                  'angle': 0,
-                                  'throttle': 0,
-                                  },
-                          "pilot": {
-                                  'angle': 0,
-                                  'throttle': 0,
-                                  }
-                          },
-                  'brakeOn': true,
-                  'recording': false,
-                  'driveMode': "user",
-                  'pilot': 'None',
-                  'session': 'None',
-                  'lag': 0,
-                  'controlMode': 'joystick',
-                  'maxThrottle' : 1,
-                  'throttleMode' : 'user',
-                  }
+    var state = {
+        'tele': {
+            "user": {
+                'angle': 0,
+                'throttle': 0,
+            },
+            "pilot": {
+                'angle': 0,
+                'throttle': 0,
+            }
+        },
+        'brakeOn': true,
+        'recording': false,
+        'driveMode': "user",
+        'pilot': 'None',
+        'session': 'None',
+        'lag': 0,
+        'controlMode': 'joystick',
+        'maxThrottle' : 1,
+        'throttleMode' : 'user',
+        'buttons': {
+            "w1": false,  // boolean; true is 'down' or pushed, false is 'up' or not pushed
+            "w2": false,
+            "w3": false,
+            "w4": false,
+            "w5": false,
+        }
+    }
 
     var joystick_options = {}
     var joystickLoopRunning=false;
@@ -40,10 +48,14 @@ var driveHandler = new function() {
 
       setBindings()
 
+      joystick_element = document.getElementById('joystick_container');
       joystick_options = {
-        zone: document.getElementById('joystick_container'),  // active zone
+        zone: joystick_element,  // active zone
+        mode: 'dynamic',
+        size: 200,
         color: '#668AED',
-        size: 350,
+        dynamicPage: true,
+        follow: true,
       };
 
       var manager = nipplejs.create(joystick_options);
@@ -148,12 +160,16 @@ var driveHandler = new function() {
           joystickLoopRunning = true;
           console.log('joystick mode');
           joystickLoop();
-        } else if (this.value == 'tilt' && deviceHasOrientation) {
+        } else {
           joystickLoopRunning = false;
+        }
+
+        if (deviceHasOrientation && this.value == 'tilt') {
           state.controlMode = "tilt";
           console.log('tilt mode')
-        } else if (this.value == 'gamepad' && hasGamepad) {
-          joystickLoopRunning = false;
+        }
+
+        if (hasGamepad && this.value == 'gamepad') {
           state.controlMode = "gamepad";
           console.log('gamepad mode')
           gamePadLoop();
@@ -161,6 +177,17 @@ var driveHandler = new function() {
         updateUI();
       });
 
+      // programmable buttons
+      $('#button_bar > button').mousedown(function() {
+        console.log(`${$(this).attr('id')} mousedown`);
+        state.buttons[$(this).attr('id')] = true;
+        postDrive(["buttons"]); // write it back to the server
+      });
+      $('#button_bar > button').mouseup(function() {
+        console.log(`${$(this).attr('id')} mouseup`);
+        state.buttons[$(this).attr('id')] = false;
+        postDrive(["buttons"]); // write it back to the server
+      });
     };
 
 
@@ -272,23 +299,27 @@ var driveHandler = new function() {
       }
 
       if (state.controlMode == "joystick") {
-        $('#joystick-column').show();
-        $('#tilt-toggle').removeClass("active");
+        $('#joystick_outer').show();
         $('#joystick-toggle').addClass("active");
         $('#joystick').attr("checked", "checked")
-        $('#tilt').removeAttr("checked")
-      } else if (state.controlMode == "tilt") {
-        $('#joystick-column').hide();
+      } else {
+        $('#joystick_outer').hide();
         $('#joystick-toggle').removeClass("active");
-        $('#tilt-toggle').addClass("active");
         $('#joystick').removeAttr("checked");
+      }
+
+      if (state.controlMode == "tilt") {
+        $('#tilt-toggle').addClass("active");
         $('#tilt').attr("checked", "checked");
+      } else {
+        $('#tilt-toggle').removeClass("active");
+        $('#tilt').removeAttr("checked")
       }
 
       //drawLine(state.tele.user.angle, state.tele.user.throttle)
     };
 
-    const ALL_POST_FIELDS = ['angle', 'throttle', 'drive_mode', 'recording'];
+    const ALL_POST_FIELDS = ['angle', 'throttle', 'drive_mode', 'recording', 'buttons'];
 
     //
     // Set any changed properties to the server
@@ -307,12 +338,14 @@ var driveHandler = new function() {
                 case 'throttle': data['throttle'] = state.tele.user.throttle; break;
                 case 'drive_mode': data['drive_mode'] = state.driveMode; break;
                 case 'recording': data['recording'] = state.recording; break;
+                case 'buttons': data['buttons'] = state.buttons; break;
                 default: console.log(`Unexpected post field: '${field}'`); break;
             }
         });
         if(data) {
-            console.log(`Posting ${data}`);
-            socket.send(JSON.stringify(data))
+            let json_data = JSON.stringify(data);
+            console.log(`Posting ${json_data}`);
+            socket.send(json_data)
             updateUI()
         }
     };

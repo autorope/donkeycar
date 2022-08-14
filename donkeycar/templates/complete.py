@@ -30,6 +30,8 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
+from donkeycar.parts.explode import ExplodeDict
+from donkeycar.parts.transform import Lambda
 from donkeycar.utils import *
 
 logger = logging.getLogger(__name__)
@@ -204,9 +206,24 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     
     V.add(ctr,
         inputs=['cam/image_array', 'tub/num_records', 'user/mode', 'recording'],
-        outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+        outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
         threaded=True)
-        
+
+    #
+    # explode the buttons into their own key/values in memory
+    #
+    V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
+
+    #
+    # adding a button handler is just adding a part with a run_condition
+    # set to the button's name, so it runs when button is pressed.
+    #
+    V.add(Lambda(lambda v: print(f"web/w1 clicked")), inputs=["web/w1"], run_condition="web/w1")
+    V.add(Lambda(lambda v: print(f"web/w2 clicked")), inputs=["web/w2"], run_condition="web/w2")
+    V.add(Lambda(lambda v: print(f"web/w3 clicked")), inputs=["web/w3"], run_condition="web/w3")
+    V.add(Lambda(lambda v: print(f"web/w4 clicked")), inputs=["web/w4"], run_condition="web/w4")
+    V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
+
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
