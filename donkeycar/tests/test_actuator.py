@@ -11,4 +11,4 @@ def test_PCA9685():
 @pytest.mark.skipif(on_pi() == False, reason='Not on RPi')
 def test_PWMSteering():
     c = PCA9685(0)
-    s = PWMSteering(c)
+    s = PWMSteering(c, 300, 440)
