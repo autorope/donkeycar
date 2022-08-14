@@ -17,6 +17,6 @@ class ExplodeDict:
 
     def run(self, key_values):
         if type(key_values) is dict:
-            for key in key_values:
-                self.memory[self.prefix + key] = key_values[key]
+            for key, value in key_values.items():
+                self.memory[self.prefix + key] = value
         return None

@@ -202,8 +202,8 @@ class LocalWebController(tornado.web.Application):
         #
         buttons = self.buttons
         self.buttons = {}
-        for button in buttons:
-            if buttons[button]:
+        for button, pressed in buttons.items():
+            if pressed:
                 self.buttons[button] = False
 
         # if there were changes, then send to web client
