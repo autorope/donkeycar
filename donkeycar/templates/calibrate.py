@@ -62,22 +62,23 @@ def drive(cfg ):
         # and as second PwmPin for throttle (ESC)
         #
         from donkeycar.parts.actuator import PWMSteering, PWMThrottle, PulseController
+        dt = cfg.PWM_STEERING_THROTTLE
         steering_controller = PulseController(
-            pwm_pin=pins.pwm_pin_by_id(cfg.PWM_STEERING_PIN),
-            pwm_scale=cfg.PWM_STEERING_SCALE, 
-            pwm_inverted=cfg.PWM_STEERING_INVERTED)
+            pwm_pin=pins.pwm_pin_by_id(dt["PWM_STEERING_PIN"]),
+            pwm_scale=dt["PWM_STEERING_SCALE"],
+            pwm_inverted=dt["PWM_STEERING_INVERTED"])
         steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
-        
+                               left_pulse=dt["STEERING_LEFT_PWM"],
+                               right_pulse=dt["STEERING_RIGHT_PWM"])
+
         throttle_controller = PulseController(
-            pwm_pin=pins.pwm_pin_by_id(cfg.PWM_THROTTLE_PIN), 
-            pwm_scale=cfg.PWM_THROTTLE_SCALE, 
-            pwm_inverted=cfg.PWM_THROTTLE_INVERTED)
+            pwm_pin=pins.pwm_pin_by_id(dt["PWM_THROTTLE_PIN"]),
+            pwm_scale=dt["PWM_THROTTLE_SCALE"],
+            pwm_inverted=dt['PWM_THROTTLE_INVERTED'])
         throttle = PWMThrottle(controller=throttle_controller,
-                                            max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                            zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                            min_pulse=cfg.THROTTLE_REVERSE_PWM)
+                               max_pulse=dt['THROTTLE_FORWARD_PWM'],
+                               zero_pulse=dt['THROTTLE_STOPPED_PWM'],
+                               min_pulse=dt['THROTTLE_REVERSE_PWM'])
 
         drive_train = dict()
         drive_train['steering'] = steering
@@ -87,24 +88,25 @@ def drive(cfg ):
         V.add(throttle, inputs=['throttle'], threaded=True)
 
     elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
-
         from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-
-        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        steering_controller = PCA9685(cfg.STEERING_CHANNEL,
+                                      cfg.PCA9685_I2C_ADDR,
+                                      busnum=cfg.PCA9685_I2C_BUSNUM)
         steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM,
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
+                               left_pulse=cfg.STEERING_LEFT_PWM,
+                               right_pulse=cfg.STEERING_RIGHT_PWM)
 
-        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
+        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL,
+                                      cfg.PCA9685_I2C_ADDR,
+                                      busnum=cfg.PCA9685_I2C_BUSNUM)
         throttle = PWMThrottle(controller=throttle_controller,
-                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM,
-                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
+                               max_pulse=cfg.THROTTLE_FORWARD_PWM,
+                               zero_pulse=cfg.THROTTLE_STOPPED_PWM,
+                               min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
         drive_train = dict()
         drive_train['steering'] = steering
         drive_train['throttle'] = throttle
-
         V.add(steering, inputs=['angle'], threaded=True)
         V.add(throttle, inputs=['throttle'], threaded=True)
 
@@ -113,22 +115,14 @@ def drive(cfg ):
         drive_train = RoboHATDriver(cfg)
         V.add(drive_train, inputs=['angle', 'throttle'])
 
-
+    # TODO: monkeypatching is bad!!!
     ctr.drive_train = drive_train
     ctr.drive_train_type = cfg.DRIVE_TRAIN_TYPE
-    
-    class ShowHowTo:
-        def __init__(self):
-            print(f"Go to http://{gethostname()}.local:{ctr.port}/calibrate to calibrate ")
-            
-        def run(self):
-            pass
-        
-    V.add(ShowHowTo())
 
-    #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
-            max_loop_count=cfg.MAX_LOOPS)
+    print(f"Go to http://{gethostname()}.local:{ctr.port}/calibrate to "
+          f"calibrate ")
+
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
