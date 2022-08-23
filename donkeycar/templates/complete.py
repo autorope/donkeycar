@@ -19,7 +19,6 @@ import time
 import logging
 from docopt import docopt
 
-
 import donkeycar as dk
 from donkeycar.parts import actuator, pins
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
@@ -247,6 +246,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             elif cfg.CONTROLLER_TYPE == "MM1":
                 from donkeycar.parts.robohat import RoboHATController            
                 ctr = RoboHATController(cfg)
+            elif cfg.CONTROLLER_TYPE == "pixhawk":
+                from donkeycar.parts.mavlink import MavlinkController            
+                ctr = MavlinkController(cfg)
             else:
                 from donkeycar.parts.controller import get_js_controller
                 ctr = get_js_controller(cfg)
@@ -746,6 +748,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     elif cfg.DRIVE_TRAIN_TYPE == "MM1":
         from donkeycar.parts.robohat import RoboHATDriver
         V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
+
+    elif cfg.DRIVE_TRAIN_TYPE == "PIXHAWK":
+        from donkeycar.parts.mavlink import MavlinkDriver
+        V.add(MavlinkDriver(cfg), inputs=['angle', 'throttle'])
 
     elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
         #
