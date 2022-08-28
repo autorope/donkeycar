@@ -242,6 +242,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
                 throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                ai_scale = cfg.AI_THROTTLE_MULT,
                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
                 ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)          
             elif cfg.CONTROLLER_TYPE == "MM1":
@@ -524,6 +525,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         def run(self, mode,
                     user_angle, user_throttle,
                     pilot_angle, pilot_throttle):
+
+            mul = ctr.ai_scale
+
             if mode == 'user':
                 return user_angle, user_throttle
 
@@ -532,7 +536,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
             else:
                 return pilot_angle if pilot_angle else 0.0, \
-                       pilot_throttle * cfg.AI_THROTTLE_MULT \
+                       pilot_throttle * mul \
                            if pilot_throttle else 0.0
 
     V.add(DriveMode(),

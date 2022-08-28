@@ -838,6 +838,7 @@ class JoystickController(object):
                  throttle_scale=1.0,
                  steering_scale=1.0,
                  throttle_dir=-1.0,
+                 ai_scale = 1.0,
                  dev_fn='/dev/input/js0',
                  auto_record_on_throttle=True):
 
@@ -851,6 +852,7 @@ class JoystickController(object):
         self.last_throttle_axis_val = 0
         self.throttle_scale = throttle_scale
         self.steering_scale = steering_scale
+        self.ai_scale = ai_scale
         self.throttle_dir = throttle_dir
         self.recording = False
         self.recording_latch = None
@@ -1071,6 +1073,22 @@ class JoystickController(object):
 
         logger.info(f'throttle_scale: {self.throttle_scale}')
 
+    def increase_ai_throttle(self):
+        '''
+        increase AI throttle scale setting
+        '''
+        self.ai_scale = round(min(2.0, self.ai_scale + 0.01), 3)
+
+        print('AI scale :', self.ai_scale)
+
+    def decrease_ai_throttle(self):
+        '''
+        decrrease AI throttle scale setting
+        '''
+        self.ai_scale =  round(max(0.0, self.ai_scale - 0.01), 2)
+
+        print('AI Scale:', self.ai_scale)
+
 
     def toggle_constant_throttle(self):
         '''
@@ -1243,6 +1261,8 @@ class PS3JoystickController(JoystickController):
             'cross' : self.emergency_stop,
             'dpad_up' : self.increase_max_throttle,
             'dpad_down' : self.decrease_max_throttle,
+            'dpad_left' : self.decrease_ai_throttle,
+            'dpad_right' : self.increase_ai_throttle,
             'start' : self.toggle_constant_throttle,
             "R1" : self.chaos_monkey_on_right,
             "L1" : self.chaos_monkey_on_left,
@@ -1731,6 +1751,7 @@ def get_js_controller(cfg):
     ctr = cont_class(throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
                                 throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
                                 steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+                                ai_scale = cfg.AI_THROTTLE_MULT,
                                 auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE,
                                 dev_fn=cfg.JOYSTICK_DEVICE_FILE)
 
