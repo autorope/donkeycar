@@ -2,8 +2,6 @@ import argparse
 from functools import reduce
 import logging
 import operator
-import os
-import platform
 import threading
 import time
 
@@ -11,154 +9,183 @@ import pynmea2
 import serial
 import utm
 
+from donkeycar.parts.serial_port import SerialPort
+from donkeycar.utilities.dk_platform import is_mac
+
 logger = logging.getLogger(__name__)
 
-def is_mac():
-    return "Darwin" == platform.system()
 
-class Gps:
-    def __init__(self, serial:str, baudrate:int = 9600, timeout:float = 0.5, debug = False):
-        self.serial = serial
-        self.baudrate = baudrate
-        self.timeout = timeout
+class GpsNmeaPositions:
+    """
+    Donkeycar part to convert array of NMEA sentences into array of (x,y) positions
+    """
+    def __init__(self, debug=False):
         self.debug = debug
-        self.positions = []  # tuple of (timestamp, longitude, latitude)
-        self.gps = None
-        self.lock = threading.Lock()
-        self.running = True
-        self._open()
-        self.clear()
 
-    def _open(self):
-        with self.lock:
-            self.gps = serial.Serial(self.serial, baudrate=self.baudrate, timeout=self.timeout)
-
-    def clear(self):
-        """
-        Clear the positions buffer
-        """
-        with self.lock:
-            try:
-                if self.gps is not None and self.gps.is_open:
-                    self.positions = []
-                    self.gps.reset_input_buffer()
-            except serial.serialutil.SerialException:
-                pass
-
-    def _readline(self) -> str:
-        """
-        Read a line from the gps in a threadsafe manner
-        returns line if read and None if no line was read
-        """
-        if self.lock.acquire(blocking=False):
-            try:
-                # TODO: Serial.in_waiting _always_ returns 0 in Macintosh
-                if self.gps is not None and self.gps.is_open and (is_mac() or self.gps.in_waiting):
-                    return self.gps.readline().decode()
-            except serial.serialutil.SerialException:
-                pass
-            except UnicodeDecodeError:
-                # the first sentence often includes mis-framed garbase
-                pass  # ignore and keep going
-            finally:
-                self.lock.release()
-        return None
-
-    def poll(self, timestamp=None):
-        #
-        # read a line and convert to a position
-        # in a threadsafe manner
-        #
-        # if there are characters waiting
-        # then read the line and parse it
-        #
-        if self.running:
-            if timestamp is None:
-                timestamp = time.time()
-            line = self._readline()
-            if line:
-                if self.debug:
-                    logger.info(line)
-                position = getGpsPosition(line, debug=self.debug)
+    def run(self, lines):
+        positions = []
+        if lines:
+            for ts, nmea in lines:
+                position = parseGpsPosition(nmea, self.debug)
                 if position:
-                    # (timestamp, longitude latitude)
-                    return (timestamp, position[0], position[1])
-        return None
-
-    def run(self):
-        if self.running:
-            #
-            # in non-threaded mode, just read a single reading and return it
-            #
-            if self.gps is not None:
-                position = self.poll(time.time())
-                if position:
-                    # [(timestamp, longitude, latitude)]
-                    return [position]
-
-        return []
-
-
-    def run_threaded(self):
-        if not self.running:
-            return []
-
-        #
-        # return the accumulated readings
-        #
-        with self.lock:
-            positions = self.positions
-            self.positions = []
-            return positions
-
+                    # output (ts,x,y) - so long is x, lat is y
+                    positions.append((ts, position[0], position[1]))
+        return positions
 
     def update(self):
-        #
-        # open serial port and run an infinite loop.
-        # NOTE: this is NOT compatible with non-threaded run()
-        #
-        buffered_positions = []  # local read buffer
-        while self.running:
-            position = self.poll(time.time())
-            if position:
-                buffered_positions.append(position)
-            if buffered_positions:
-                #
-                # make sure we access self.positions in
-                # a threadsafe manner.
-                # This will NOT block:
-                # - If it can't write then it will leave
-                #   readings in buffered_positions.
-                # - If it can write then it will moved the
-                #   buffered_positions into self.positions
-                #   and clear the buffer.
-                #
-                if self.lock.acquire(blocking=False):
-                    try:
-                        self.positions += buffered_positions
-                        buffered_positions = []
-                    finally:
-                        self.lock.release()
-            time.sleep(0)  # give other threads time
+        pass
+
+    def run_threaded(self, lines):
+        return self.run(lines)
+
+class GpsLatestPosition:
+    """
+    Return most recent valid GPS position
+    """
+    def __init__(self, debug=False):
+        self.debug = debug
+        self.position = None
+
+    def run(self, positions):
+        if positions is not None and len(positions) > 0:
+            self.position = positions[-1]
+        return self.position
+
+class GpsPosition:
+    """
+    Donkeycar part to read NMEA lines from serial port and convert a position
+    """
+    def __init__(self, serial:SerialPort, debug = False) -> None:
+        self.line_reader = SerialLineReader(serial)
+        self.debug = debug
+        self.position_reader = GpsNmeaPositions()
+        self.position = None
+        self._start()
+
+    def _start(self):
+        # wait until we get at least one gps position
+        while self.position is None:
+            print("Waiting for gps fix")
+            self.position = self.run()
+
+    def run_once(self, lines):
+        positions = self.GpsNmeaPositions.run(lines)
+        if positions is not None and len(positions) > 0:
+            self.position = positions[-1]
+            if self.debug:
+                logger.info(f"UTM long = {self.position[0]}, UTM lat = {self.position[1]}")
+        return self.position
+
+    def run(self):
+        lines = line_reader.run()
+        return self.run_once(lines)
+
+    def run_threaded(self):
+        lines = line_reader.run_threaded()
+        return self.run_once(lines)
+
+    def update(self):
+        self.line_reader.update()
 
     def shutdown(self):
+        return self.line_reader.shutdown()
+
+
+class GpsPlayer:
+    """
+    Part that plays back the NMEA sentences that have been recorded
+    by the nmea logger that is passed to the constructor.
+    """
+    def __init__(self, nmea_logger:CsvLogger):
+        self.nmea = nmea_logger
+        self.index = -1
+        self.starttime = None
         self.running = False
-        with self.lock:
-            try:
-                if self.gps is not None and self.gps.is_open:
-                    self.gps.close()
-            except serial.serialutil.SerialException:
-                pass
-        self.gps = None
+
+    def start(self):
+        self.running = True
+        self.starttime = None  # will get set on first call to run()
+        self.index = -1
+        return self
+
+    def stop(self):
+        self.running = False
+        return self
+
+    def run(self, playing, nmea_sentences):
+        """
+        Play NMEA if running and in autopilot mode.
+        Collect NMEA sentences within the time limit,
+        arguments:
+        - playing:bool True if we are to play recorded nmea,
+                       False if we pass through given nmea
+        - nmea_sentences:[str] list of live nmea from gps module
+                                to pass through if not playing
+        returns:
+        - playing:bool True if playing, False if not
+        - nmea:[str] the resulting sentences as a list
+        """
+        if self.running and playing:
+            # if playing, then return the recorded nmea
+            nmea = self.run_once(time.time())
+            return True, nmea
+
+        # if not playing, pass through the given nmea
+        return False, nmea_sentences
+
+    def run_once(self, now):
+        """
+        Collect all nmea sentences up to and including the given time
+        """
+        nmea_sentences = []
+        if self.running:
+            # reset start time if None
+            if self.starttime is None:
+                print("Resetting gps player start time.")
+                self.starttime = now
+
+            # get first nmea sentence so we can get it's recorded time
+            start_nmea = self.nmea.get(0)
+            if start_nmea is not None:
+                #
+                # get next nmea sentence and play it if
+                # it is within time.
+                # if there is no next sentence, then wrap
+                # around back to first sentence
+                #
+                start_nmea_time = float(start_nmea[0])
+                offset_nmea_time = 0
+                within_time = True
+                while within_time:
+                    next_nmea = None
+                    if self.index >= self.nmea.length():
+                        self.index = 0
+                        self.starttime += offset_nmea_time
+                        next_nmea = self.nmea.get(0)
+                        print("******************* Wrapping gps player **********************")
+                    else:
+                        next_nmea = self.nmea.get(self.index + 1)
+
+                    if next_nmea is None:
+                        self.index += 1  # skip the invalid nmea sentence
+                    else:
+                        next_nmea_time = float(next_nmea[0])
+                        offset_nmea_time = (next_nmea_time - start_nmea_time)
+                        next_nmea_time = self.starttime + offset_nmea_time
+                        within_time = next_nmea_time <= now
+                        if within_time:
+                            nmea_sentences.append((next_nmea_time, next_nmea[1]))
+                            self.index += 1
+        return nmea_sentences
 
 
-def getGpsPosition(line, debug=False):
+def parseGpsPosition(line, debug=False):
     """
     Given a line emitted by a GPS module, 
     Parse out the position and return as a 
-    tuple of float (longitude, latitude) as meters.
-    If it cannot be parsed or is not a position message, 
-    then return None.
+    return: tuple of float (longitude, latitude) as meters.
+            If it cannot be parsed or is not a position message, 
+            then return None.
     """
     if not line:
         return None
@@ -181,8 +208,7 @@ def getGpsPosition(line, debug=False):
     nmea_msg = line[1:-3]      # msg without $ and *## checksum
     nmea_parts = nmea_msg.split(",")
     message = nmea_parts[0]
-
-    if (message == "GPRMC") or (message == "GNRMC"):
+    if (message == "GPRMC") or (message == "GNRMC"):   
         #     
         # like '$GPRMC,003918.00,A,3806.92281,N,12235.64362,W,0.090,,060322,,,D*67'
         # GPRMC = Recommended minimum specific GPS/Transit data
@@ -193,7 +219,7 @@ def getGpsPosition(line, debug=False):
         if nmea_checksum != calculated_checksum:
             logger.info(f"NMEA checksum does not match: {nmea_checksum} != {calculated_checksum}")
             return None
-        
+
         #
         # parse against a known parser to check our parser
         # TODO: if we hit a lot of corner cases that cause our
@@ -204,30 +230,36 @@ def getGpsPosition(line, debug=False):
         if debug:
             try:
                 msg = pynmea2.parse(line)
-                logger.info(f"nmea.longitude({msg.longitude}, nmea.latitude({msg.latitude})")
             except pynmea2.ParseError as e:
-                logger.info('Ignoring NMEA parse error: {}'.format(e))
+                logger.error('NMEA parse error detected: {}'.format(e))
+                return None
 
         # Reading the GPS fix data is an alternative approach that also works
         if nmea_parts[2] == 'V':
             # V = Warning, most likely, there are no satellites in view...
-            logger.info("GPS receiver warning; position not valid")
+            logger.info("GPS receiver warning; position not valid. Ignore invalid position.")
         else:
             #
             # Convert the textual nmea position into degrees
             #
             longitude = nmea_to_degrees(nmea_parts[5], nmea_parts[6])
             latitude = nmea_to_degrees(nmea_parts[3], nmea_parts[4])
-            # print(f"Your position: lon = ({longitude}), lat = ({latitude})")
-            
+
+            if debug:
+                if msg.longitude != longitude:
+                    print(f"Longitude mismatch {msg.longitude} != {longitude}")
+                if msg.latitude != latitude:
+                    print(f"Latitude mismatch {msg.latitude} != {latitude}")
+
             #
             # convert position in degrees to local meters
             #
             utm_position = utm.from_latlon(latitude, longitude)
-            # print(f"Your utm position: lon - ({utm_position[1]:.6f}), lat = ({utm_position[0]:.6f})")
+            if debug:
+                logger.info(f"UTM easting = {utm_position[0]}, UTM northing = {utm_position[1]}")
             
             # return (longitude, latitude) as float degrees
-            return(utm_position[1], utm_position[0])
+            return float(utm_position[0]), float(utm_position[1])
     else:
         # Non-position message OR invalid string
         # print(f"Ignoring line {line}")
@@ -311,6 +343,7 @@ if __name__ == "__main__":
     from matplotlib.patches import Ellipse
     import sys
     import readchar
+    from donkeycar.parts.serial_port import SerialPort, SerialLineReader
 
 
     def stats(data):
@@ -558,7 +591,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     update_thread = None
-    gps_reader = None
+    line_reader = None
 
     waypoint_count = args.waypoints      # number of paypoints in the path
     samples_per_waypoint = args.samples  # number of readings per waypoint
@@ -566,22 +599,26 @@ if __name__ == "__main__":
     waypoint_samples = []
 
     try:
-        gps_reader = Gps(args.serial, baudrate=args.baudrate, timeout=args.timeout, debug=args.debug)
+        serial_port = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
+        line_reader = SerialLineReader(serial_port, max_lines=args.samples, debug=args.debug)
+        position_reader = GpsNmeaPositions(args.debug)
 
         #
         # start the threaded part
         # and a threaded window to show plot
         #
         if args.threaded:
-            update_thread = threading.Thread(target=gps_reader.update, args=())
+            update_thread = threading.Thread(target=line_reader.update, args=())
             update_thread.start()
 
         def read_gps():
-            return gps_reader.run_threaded() if args.threaded else gps_reader.run()
+            lines = line_reader.run_threaded() if args.threaded else line_reader.run()
+            positions = position_reader.run(lines)
+            return positions
 
         ts = time.time()
         state = "prompt" if waypoint_count > 0 else ""
-        while gps_reader.running:
+        while line_reader.running:
             readings = read_gps()
             if readings:
                 print("")
@@ -592,7 +629,7 @@ if __name__ == "__main__":
                     key_press = readchar.readchar()  # sys.stdin.read(1)
                     if key_press == ' ':
                         waypoint_samples = []
-                        gps_reader.clear()  # throw away buffered readings
+                        line_reader.clear()  # throw away buffered readings
                         state = "sampling"
                     else:
                         state = ""  # just start logging
@@ -641,8 +678,8 @@ if __name__ == "__main__":
                     print(".", end="")
                     ts = time.time()
     finally:
-        if gps_reader:
-            gps_reader.shutdown()
+        if line_reader:
+            line_reader.shutdown()
         if update_thread is not None:
             update_thread.join()  # wait for thread to end
 
