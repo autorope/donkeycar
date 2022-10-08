@@ -10,7 +10,7 @@ import serial
 import utm
 
 from donkeycar.parts.serial_port import SerialPort
-from donkeycar.utilities.dk_platform import is_mac
+from donkeycar.parts.text_writer import CsvLogger
 
 logger = logging.getLogger(__name__)
 
