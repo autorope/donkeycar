@@ -65,6 +65,7 @@ from donkeycar.templates.complete import add_odometry, add_camera, \
     add_user_controller, add_drivetrain, add_simulator
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
+from donkeycar.parts.explode import ExplodeDict
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -165,6 +166,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
     ctr = add_user_controller(V, cfg, use_joystick, input_image = 'map/image')
+
+    #
+    # explode the web buttons into their own key/values in memory
+    #
+    V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
 
     #
     # This part will reset the car back to the origin. You must put the car in the known origin
@@ -318,7 +324,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                 if self.auto_record_on_throttle:
                     logger.info('auto record on throttle is enabled; ignoring toggle of manual mode.')
                 else:
-                    recording = not recording
+                    recording = not self.last_recording
                 self.toggle_latch = False
 
             if self.recording_latch is not None:
@@ -329,7 +335,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                 logging.info("Ignoring recording in auto-pilot mode")
                 recording = False
 
-            if recording_in != recording:
+            if self.last_recording != recording:
                 logging.info(f"Setting Recording = {recording}")
 
             self.last_recording = recording
