@@ -81,6 +81,7 @@ class BatchSequence(object):
             output_shapes=self.model.output_shapes())
         return dataset.repeat().batch(self.batch_size)
 
+
 def get_model_train_details(database: PilotDatabase, model: str = None) \
         -> Tuple[str, int]:
     if not model:

@@ -10,7 +10,7 @@ from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
-from donkeycar.pipeline.types import TubDataset
+
 from donkeycar.utils import normalize_image, load_image, math
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -445,6 +445,7 @@ class ShowPredictionPlots(BaseCommand):
         import matplotlib.pyplot as plt
         import pandas as pd
         from pathlib import Path
+        from donkeycar.pipeline.types import TubDataset
 
         model_path = os.path.expanduser(model_path)
         model = dk.utils.get_model_by_type(model_type, cfg)
