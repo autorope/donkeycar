@@ -13,7 +13,8 @@ from donkeycar.pipeline.types import TubDataset, TubRecord
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 
 Data = namedtuple('Data',
-                  ['type', 'name', 'convergence', 'pretrained', 'preprocess', 'tf_lite', 'tensor_rt'],
+                  ['type', 'name', 'convergence', 'pretrained', 'preprocess',
+                   'tf_lite', 'tensor_rt'],
                   defaults=(None, ) * 7)
 
 
@@ -36,6 +37,12 @@ def base_config() -> Config:
     cfg.BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
     cfg.NUM_LOCATIONS = 3
     cfg.SEQUENCE_LENGTH = 3
+    cfg.AUGMENTATIONS = ['MULTIPLY', 'BLUR']
+    cfg.TRANSFORMATIONS = ['CROP']
+    cfg.ROI_CROP_TOP = 45
+    cfg.ROI_CROP_BOTTOM = 0
+    cfg.ROI_CROP_RIGHT = 0
+    cfg.ROI_CROP_LEFT = 0
     return cfg
 
 
@@ -112,7 +119,8 @@ d10 = Data(type='rnn', name='rnn1', convergence=0.85, pretrained=None)
 d11 = Data(type='3d', name='3d1', convergence=0.6, pretrained=None)
 d12 = Data(type='linear', name='lin2', convergence=0.7, preprocess='aug')
 d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
-d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6, pretrained=None, tf_lite=False, tensor_rt=False)
+d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6,
+           pretrained=None, tf_lite=False, tensor_rt=False)
 
 test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
 full_tub = ['imu', 'behavior', 'localizer']
