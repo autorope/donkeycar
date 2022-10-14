@@ -9,14 +9,21 @@ class TestCsvPath(unittest.TestCase):
 
     def test_csvpath_run(self):
         path = CsvPath()
-        self.assertListEqual([(1, 2)], path.run(1, 2))
-        self.assertListEqual([(1, 2), (3, 4)], path.run(3, 4))
+        self.assertListEqual([(1, 2)], path.run(True, 1, 2))
+        self.assertListEqual([(1, 2), (3, 4)], path.run(True, 3, 4))
+        self.assertEqual(2, len(path.get_xy()))
+
+    def test_csvpath_run_not_recording(self):
+        path = CsvPath()
+        self.assertListEqual([(1, 2)], path.run(True, 1, 2))
+        self.assertListEqual([(1, 2)], path.run(False, 3, 4))
+        self.assertListEqual([(1, 2), (3, 4)], path.run(True, 3, 4))
         self.assertEqual(2, len(path.get_xy()))
 
     def test_csvpath_save(self):
         path = CsvPath()
-        path.run(1, 2)
-        path.run(3, 4)
+        path.run(True, 1, 2)
+        path.run(True, 3, 4)
         with tempfile.TemporaryDirectory() as td:
             filename = os.path.join(td, "test.csv")
             path.save(filename)
@@ -28,16 +35,16 @@ class TestCsvPath(unittest.TestCase):
 
     def test_csvpath_reset(self):
         path = CsvPath()
-        path.run(1, 2)
-        path.run(3, 4)
+        path.run(True, 1, 2)
+        path.run(True, 3, 4)
         path.reset()
         self.assertEqual([], path.get_xy())
 
 
     def test_csvpath_load(self):
         path = CsvPath()
-        path.run(1, 2)
-        path.run(3, 4)
+        path.run(True, 1, 2)
+        path.run(True, 3, 4)
         with tempfile.TemporaryDirectory() as td:
             filename = os.path.join(td, "test.csv")
             path.save(filename)
