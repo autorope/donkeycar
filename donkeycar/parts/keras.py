@@ -231,10 +231,8 @@ class KerasPilot(ABC):
             applies an image augmentation. Here we assume the model only takes
             the image as input. """
         assert isinstance(record, TubRecord), "TubRecord required"
-        img_arr = record.image(cached=True)
-        # apply augmentation / normalisation
-        x_process = img_processor(img_arr)
-        return x_process
+        img_arr = record.image(processor=img_processor)
+        return img_arr
 
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
         """ Return y from record, needs to be implemented"""
@@ -431,12 +429,11 @@ class KerasMemory(KerasLinear):
         assert len(record) == self.mem_length + 1, \
             f"Record list of length {self.mem_length} required but " \
             f"{len(record)} was passed"
-        img_arr = record[-1].image(cached=True)
-        x_process = img_processor(img_arr)
+        img_arr = record[-1].image(processor=img_processor)
         mem = [[r.underlying['user/angle'], r.underlying['user/throttle']]
                for r in record[:-1]]
         np_mem = np.array(mem).reshape((2 * self.mem_length,))
-        return x_process, np_mem
+        return img_arr, np_mem
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
         assert isinstance(records, list), 'List[TubRecord] expected'
@@ -550,10 +547,9 @@ class KerasIMU(KerasPilot):
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
         # this transforms the record into x for training the model to x,y
         assert isinstance(record, TubRecord), 'TubRecord expected'
-        img_arr = record.image(cached=True)
-        x_img_process = img_processor(img_arr)
+        img_arr = record.image(processor=img_processor)
         imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
-        return x_img_process, imu_arr
+        return img_arr, imu_arr
 
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         assert isinstance(x, tuple), 'Tuple required'
@@ -604,10 +600,9 @@ class KerasBehavioral(KerasCategorical):
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
         assert isinstance(record, TubRecord), 'TubRecord expected'
         # this transforms the record into x for training the model to x,y
-        img_arr = record.image(cached=True)
-        x_img_process = img_processor(img_arr)
+        img_arr = record.image(processor=img_processor)
         bhv_arr = np.array(record.underlying['behavior/one_hot_state_array'])
-        return x_img_process, bhv_arr
+        return img_arr, bhv_arr
 
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         assert isinstance(x, tuple), 'Tuple required'
@@ -714,9 +709,8 @@ class KerasLSTM(KerasPilot):
         assert len(records) == self.seq_length, \
             f"Record list of length {self.seq_length} required but " \
             f"{len(records)} was passed"
-        img_arrays = np.array([rec.image(cached=True) for rec in records])
-        x_process = [img_processor(img) for img in img_arrays]
-        return np.array(x_process)
+        img_arrays = [rec.image(processor=img_processor) for rec in records]
+        return np.array(img_arrays)
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
         """ Only return the last entry of angle/throttle"""
@@ -799,10 +793,8 @@ class Keras3D_CNN(KerasPilot):
         assert len(records) == self.seq_length, \
             f"Record list of length {self.seq_length} required but " \
             f"{len(records)} was passed"
-        img_seq = np.array([rec.image(cached=True) for rec in records])
-        # apply augmentation / normalisation on sequence of images
-        x_process = [img_processor(img) for img in img_seq]
-        return np.array(x_process)
+        img_seq = [rec.image(processor=img_processor) for rec in records]
+        return np.array(img_seq)
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
         """ Only return the last entry of angle/throttle"""
