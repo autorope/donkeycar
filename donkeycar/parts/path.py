@@ -16,7 +16,7 @@ class AbstractPath:
         self.y = math.inf
 
     def run(self, recording, x, y):
-        if recording is not None and recording:
+        if recording:
             d = dist(x, y, self.x, self.y)
             if d > self.min_dist:
                 logging.info(f"path point ({x},{y})")
@@ -254,7 +254,7 @@ class CTE(object):
         a, b = self.nearest_two_pts(path, x, y)
         
         if a and b:
-            logging.info("nearest: (%f, %f) to (%f, %f)" % ( a[0], a[1], x, y))
+            logging.info(f"nearest: ({a[0]}, {a[1]}) to ({x}, {y})")
             a_v = Vec3(a[0], 0., a[1])
             b_v = Vec3(b[0], 0., b[1])
             p_v = Vec3(x, 0., y)

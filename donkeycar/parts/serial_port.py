@@ -7,7 +7,7 @@ import time
 import donkeycar.utilities.dk_platform as dk_platform
 
 
-logger = logging.getLogger("donkeycar.utilities.serial_port")
+logger = logging.getLogger(__name__)
 
 
 class SerialPort:

@@ -65,7 +65,7 @@ class GpsPosition:
     def _start(self):
         # wait until we get at least one gps position
         while self.position is None:
-            print("Waiting for gps fix")
+            logger.info("Waiting for gps fix")
             self.position = self.run()
 
     def run_once(self, lines):
@@ -159,10 +159,10 @@ class GpsPlayer:
                 while within_time:
                     next_nmea = None
                     if self.index >= self.nmea.length():
+                        # wrap around from end to start
                         self.index = 0
                         self.starttime += offset_nmea_time
                         next_nmea = self.nmea.get(0)
-                        print("******************* Wrapping gps player **********************")
                     else:
                         next_nmea = self.nmea.get(self.index + 1)
 

@@ -1,6 +1,3 @@
-from typing import List, Set, Dict, Tuple, Optional
-
-
 class Pipe:
     """
     Just pipe all inputs to the output, so they can be renamed.
