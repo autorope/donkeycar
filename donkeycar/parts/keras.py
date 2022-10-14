@@ -218,12 +218,6 @@ class KerasPilot(ABC):
             
         return history.history
 
-    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
-        """ Return x from record, default returns only image array"""
-        assert isinstance(record, TubRecord), "TubRecord required"
-        img_arr = record.image(cached=True)
-        return img_arr
-
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         """ Translates x into dictionary where all model input layer's names
             must be matched by dictionary keys. """
@@ -236,9 +230,10 @@ class KerasPilot(ABC):
         """ Transforms the record into x for training the model to x,y, and
             applies an image augmentation. Here we assume the model only takes
             the image as input. """
-        x_img = self.x_transform(record)
+        assert isinstance(record, TubRecord), "TubRecord required"
+        img_arr = record.image(cached=True)
         # apply augmentation / normalisation
-        x_process = img_processor(x_img)
+        x_process = img_processor(img_arr)
         return x_process
 
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
@@ -418,14 +413,6 @@ class KerasMemory(KerasLinear):
     def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
         """ Return x from record, here x = image, previous angle/throttle
             values """
-        assert isinstance(records, list), 'List[TubRecord] expected'
-        assert len(records) == self.mem_length + 1, \
-            f"Record list of length {self.mem_length} required but " \
-            f"{len(records)} was passed"
-        img_arr = records[-1].image(cached=True)
-        mem = [[r.underlying['user/angle'], r.underlying['user/throttle']]
-               for r in records[:-1]]
-        return img_arr, np.array(mem).reshape((2 * self.mem_length,))
 
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         """ Translates x into dictionary where all model input layer's names
@@ -440,12 +427,16 @@ class KerasMemory(KerasLinear):
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
         """ Transforms the record into x for training the model to x,y,
             here we assume the model only takes the image as input. """
-        xt = self.x_transform(record)
-        assert isinstance(xt, tuple), 'Tuple expected'
-        x_img, mem = xt
-        # apply augmentation / normalisation
-        x_process = img_processor(x_img)
-        return x_process, mem
+        assert isinstance(record, list), 'List[TubRecord] expected'
+        assert len(record) == self.mem_length + 1, \
+            f"Record list of length {self.mem_length} required but " \
+            f"{len(record)} was passed"
+        img_arr = record[-1].image(cached=True)
+        x_process = img_processor(img_arr)
+        mem = [[r.underlying['user/angle'], r.underlying['user/throttle']]
+               for r in record[:-1]]
+        np_mem = np.array(mem).reshape((2 * self.mem_length,))
+        return x_process, np_mem
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
         assert isinstance(records, list), 'List[TubRecord] expected'
@@ -553,23 +544,16 @@ class KerasIMU(KerasPilot):
         throttle = interpreter_out[1]
         return steering[0], throttle[0]
 
-    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
-        assert isinstance(record, TubRecord), 'TubRecord expected'
-        img_arr = record.image(cached=True)
-        imu_arr = [record.underlying[k] for k in self.imu_vec]
-        return img_arr, np.array(imu_arr)
-
     def x_transform_and_process(
             self,
             record: Union[TubRecord, List[TubRecord]],
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
         # this transforms the record into x for training the model to x,y
-        xt = self.x_transform(record)
-        assert isinstance(xt, tuple), 'Tuple expected'
-        x_img, x_imu = xt
-        # here the image is in first slot of the tuple
-        x_img_process = img_processor(x_img)
-        return x_img_process, x_imu
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        img_arr = record.image(cached=True)
+        x_img_process = img_processor(img_arr)
+        imu_arr = np.array([record.underlying[k] for k in self.imu_vec])
+        return x_img_process, imu_arr
 
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         assert isinstance(x, tuple), 'Tuple required'
@@ -614,22 +598,15 @@ class KerasBehavioral(KerasCategorical):
         return default_bhv(num_bvh_inputs=self.num_behavior_inputs,
                            input_shape=self.input_shape)
 
-    def x_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
-        assert isinstance(record, TubRecord), 'TubRecord expected'
-        img_arr = record.image(cached=True)
-        bhv_arr = record.underlying['behavior/one_hot_state_array']
-        return img_arr, np.array(bhv_arr)
-
     def x_transform_and_process(
             self,
             record: Union[TubRecord, List[TubRecord]],
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
         # this transforms the record into x for training the model to x,y
-        xt = self.x_transform(record)
-        assert isinstance(xt, tuple), 'Tuple expected'
-        x_img, bhv_arr = xt
-        # here the image is in first slot of the tuple
-        x_img_process = img_processor(x_img)
+        img_arr = record.image(cached=True)
+        x_img_process = img_processor(img_arr)
+        bhv_arr = np.array(record.underlying['behavior/one_hot_state_array'])
         return x_img_process, bhv_arr
 
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
@@ -721,15 +698,6 @@ class KerasLSTM(KerasPilot):
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, loss='mse')
 
-    def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
-        """ Return x from record, here x = stacked images """
-        assert isinstance(records, list), 'List[TubRecord] expected'
-        assert len(records) == self.seq_length, \
-            f"Record list of length {self.seq_length} required but " \
-            f"{len(records)} was passed"
-        img_arrays = [rec.image(cached=True) for rec in records]
-        return np.array(img_arrays)
-
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         """ Translates x into dictionary where all model input layer's names
             must be matched by dictionary keys. """
@@ -742,10 +710,12 @@ class KerasLSTM(KerasPilot):
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
         """ Transforms the record sequence into x for training the model to
             x, y. """
-        img_seq = self.x_transform(records)
-        assert isinstance(img_seq, np.ndarray)
-        # apply augmentation / normalisation on sequence of images
-        x_process = [img_processor(img) for img in img_seq]
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        assert len(records) == self.seq_length, \
+            f"Record list of length {self.seq_length} required but " \
+            f"{len(records)} was passed"
+        img_arrays = np.array([rec.image(cached=True) for rec in records])
+        x_process = [img_processor(img) for img in img_arrays]
         return np.array(x_process)
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
@@ -813,15 +783,6 @@ class Keras3D_CNN(KerasPilot):
     def compile(self):
         self.interpreter.compile(loss='mse', optimizer=self.optimizer)
 
-    def x_transform(self, records: Union[TubRecord, List[TubRecord]]) -> XY:
-        """ Return x from record, here x = stacked images """
-        assert isinstance(records, list), 'List[TubRecord] expected'
-        assert len(records) == self.seq_length, \
-            f"Record list of length {self.seq_length} required but " \
-            f"{len(records)} was passed"
-        img_arrays = [rec.image(cached=True) for rec in records]
-        return np.array(img_arrays)
-
     def x_translate(self, x: XY) -> Dict[str, Union[float, np.ndarray]]:
         """ Translates x into dictionary where all model input layer's names
             must be matched by dictionary keys. """
@@ -830,12 +791,15 @@ class Keras3D_CNN(KerasPilot):
 
     def x_transform_and_process(
             self,
-            record: Union[TubRecord, List[TubRecord]],
+            records: Union[TubRecord, List[TubRecord]],
             img_processor: Callable[[np.ndarray], np.ndarray]) -> XY:
         """ Transforms the record sequence into x for training the model to
             x, y. """
-        img_seq = self.x_transform(record)
-        assert isinstance(img_seq, np.ndarray), 'Expected np.ndarray'
+        assert isinstance(records, list), 'List[TubRecord] expected'
+        assert len(records) == self.seq_length, \
+            f"Record list of length {self.seq_length} required but " \
+            f"{len(records)} was passed"
+        img_seq = np.array([rec.image(cached=True) for rec in records])
         # apply augmentation / normalisation on sequence of images
         x_process = [img_processor(img) for img in img_seq]
         return np.array(x_process)
