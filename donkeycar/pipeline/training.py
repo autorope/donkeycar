@@ -60,19 +60,15 @@ class BatchSequence(object):
         # 1. Initialise TubRecord -> x, y transformations
         def get_x(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting x from record for training"""
-            out_tuple = self.model.x_transform_and_process(
-                record, self.image_processor)
-            # convert tuple to dictionary which is understood by tf.data
-            out_dict = self.model.x_translate(out_tuple)
+            out_dict = self.model.x_transform(record, self.image_processor)
             # apply the normalisation here on the fly to go from uint8 -> float
             out_dict['img_in'] = normalize_image(out_dict['img_in'])
             return out_dict
 
         def get_y(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting y from record for training """
-            y0 = self.model.y_transform(record)
-            y1 = self.model.y_translate(y0)
-            return y1
+            y = self.model.y_transform(record)
+            return y
 
         # 2. Build pipeline using the transformations
         pipeline = self.sequence.build_pipeline(x_transform=get_x,
@@ -129,7 +125,8 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     # We need augmentation in validation when using crop / trapeze
 
     if 'fastai_' in model_type:
-        from donkeycar.parts.pytorch.torch_data import TorchTubDataset, get_default_transform
+        from donkeycar.parts.pytorch.torch_data \
+            import TorchTubDataset, get_default_transform
         transform = get_default_transform(resize=False)
         dataset_train = TorchTubDataset(cfg, training_records, transform=transform)
         dataset_validate = TorchTubDataset(cfg, validation_records, transform=transform)
