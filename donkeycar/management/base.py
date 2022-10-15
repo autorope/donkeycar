@@ -465,13 +465,15 @@ class ShowPredictionPlots(BaseCommand):
         records = dataset.get_records()[:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
+        output_names = model.output_shapes()(1).keys()
         for tub_record in records:
-            inputs = model.x_transform_and_process(
+            input_dict = model.x_transform(
                 tub_record, lambda x: normalize_image(x))
-            input_dict = model.x_translate(inputs)
             pilot_angle, pilot_throttle = \
                 model.inference_from_dict(input_dict)
-            user_angle, user_throttle = model.y_transform(tub_record)
+            y_dict = model.y_transform(tub_record)
+            user_angle, user_throttle \
+                = y_dict[output_names[0]], y_dict[output_names[1]]
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
