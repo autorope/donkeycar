@@ -10,6 +10,7 @@ Note: To be used with code.py bundled in this repo. See donkeycar/contrib/roboha
 """
 
 import time
+import logging
 import donkeycar as dk
 
 try:
@@ -17,6 +18,7 @@ try:
 except ImportError:
     print("PySerial not found.  Please install: pip install pyserial")
 
+logger = logging.getLogger(__name__)
 
 class RoboHATController:
     '''
@@ -30,7 +32,9 @@ class RoboHATController:
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = 'user'
+        self.mode_latch = None
         self.recording = False
+        self.recording_latch = None
         self.STEERING_MID = cfg.MM1_STEERING_MID
         self.MAX_FORWARD = cfg.MM1_MAX_FORWARD
         self.STOPPED_PWM = cfg.MM1_STOPPED_PWM
@@ -152,10 +156,21 @@ class RoboHATController:
         #
         # enforce defaults if they are not none.
         #
+        #
+        # enforce defaults if they are not none.
+        #
         if mode is not None:
             self.mode = mode
-        if recording is not None:
+        if self.mode_latch is not None:
+            self.mode = self.mode_latch
+            self.mode_latch = None
+        if recording is not None and recording != self.recording:
+            logger.debug(f"RoboHATController::run_threaded() setting recording from default = {recording}")
             self.recording = recording
+        if self.recording_latch is not None:
+            logger.debug(f"RoboHATController::run_threaded() setting recording from latch = {self.recording_latch}")
+            self.recording = self.recording_latch
+            self.recording_latch = None
 
         return self.angle, self.throttle, self.mode, self.recording
 
