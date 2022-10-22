@@ -35,6 +35,7 @@ class RoboHATController:
         self.mode_latch = None
         self.recording = False
         self.recording_latch = None
+        self.auto_record_on_throttle = cfg.AUTO_RECORD_ON_THROTTLE
         self.STEERING_MID = cfg.MM1_STEERING_MID
         self.MAX_FORWARD = cfg.MM1_MAX_FORWARD
         self.STOPPED_PWM = cfg.MM1_STOPPED_PWM
@@ -118,11 +119,12 @@ class RoboHATController:
                 if self.debug:
                     print("angle = {}, throttle = {}".format(self.angle, self.throttle))
 
-                was_recording = self.recording
-                self.recording = self.throttle > self.DEAD_ZONE
-                if was_recording != self.recording:
-                    self.recording_latch = self.recording
-                    logger.debug(f"JoystickController::on_throttle_changes() setting recording = {self.recording}")
+                if self.auto_record_on_throttle:
+                    was_recording = self.recording
+                    self.recording = self.throttle > self.DEAD_ZONE
+                    if was_recording != self.recording:
+                        self.recording_latch = self.recording
+                        logger.debug(f"JoystickController::on_throttle_changes() setting recording = {self.recording}")
 
                 time.sleep(0.01)
 
