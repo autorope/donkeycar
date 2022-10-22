@@ -32,7 +32,6 @@ class RoboHATController:
         self.angle = 0.0
         self.throttle = 0.0
         self.mode = 'user'
-        self.mode_latch = None
         self.recording = False
         self.recording_latch = None
         self.auto_record_on_throttle = cfg.AUTO_RECORD_ON_THROTTLE
@@ -164,9 +163,6 @@ class RoboHATController:
         #
         if mode is not None:
             self.mode = mode
-        if self.mode_latch is not None:
-            self.mode = self.mode_latch
-            self.mode_latch = None
         if recording is not None and recording != self.recording:
             logger.debug(f"RoboHATController::run_threaded() setting recording from default = {recording}")
             self.recording = recording
