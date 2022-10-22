@@ -73,7 +73,26 @@ def car_dir(tmpdir_factory, base_config, imu_fields) -> str:
     # extract tub.tar.gz into car_dir/tub
     this_dir = os.path.dirname(os.path.abspath(__file__))
     with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
-        file.extractall(car_dir)
+        def is_within_directory(directory, target):
+            
+            abs_directory = os.path.abspath(directory)
+            abs_target = os.path.abspath(target)
+        
+            prefix = os.path.commonprefix([abs_directory, abs_target])
+            
+            return prefix == abs_directory
+        
+        def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+        
+            for member in tar.getmembers():
+                member_path = os.path.join(path, member.name)
+                if not is_within_directory(path, member_path):
+                    raise Exception("Attempted Path Traversal in Tar File")
+        
+            tar.extractall(path, members, numeric_owner=numeric_owner) 
+            
+        
+        safe_extract(file, car_dir)
     # now create a second tub with additonal imu data
     tub_dir = os.path.join(car_dir, 'tub')
     tub = Tub(base_path=tub_dir)
