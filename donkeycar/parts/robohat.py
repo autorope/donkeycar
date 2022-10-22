@@ -118,10 +118,11 @@ class RoboHATController:
                 if self.debug:
                     print("angle = {}, throttle = {}".format(self.angle, self.throttle))
 
-                if self.throttle > self.DEAD_ZONE:
-                    self.recording = True
-                else:
-                    self.recording = False
+                was_recording = self.recording
+                self.recording = self.throttle > self.DEAD_ZONE
+                if was_recording != self.recording:
+                    self.recording_latch = self.recording
+                    logger.debug(f"JoystickController::on_throttle_changes() setting recording = {self.recording}")
 
                 time.sleep(0.01)
 
