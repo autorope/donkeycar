@@ -77,4 +77,4 @@ def test_tubplot(cardir):
     for e in err:
         print(e.decode(), end='')
     # Check tubplot has successfully created file
-    assert any('Saving tubplot at' in e.decode() for e in err)
+    assert os.path.exists(model_path + '_pred.png')
