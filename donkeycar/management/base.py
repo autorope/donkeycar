@@ -465,7 +465,7 @@ class ShowPredictionPlots(BaseCommand):
         records = dataset.get_records()[:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
-        output_names = model.output_shapes()(1).keys()
+        output_names = list(model.output_shapes()[1].keys())
         for tub_record in records:
             input_dict = model.x_transform(
                 tub_record, lambda x: normalize_image(x))
@@ -496,7 +496,7 @@ class ShowPredictionPlots(BaseCommand):
         ax1.legend(loc=4)
         ax2.legend(loc=4)
         plt.savefig(model_path + '_pred.png')
-        logger.info(f'Saving model at {model_path}_pred.png')
+        logger.info(f'Saving tubplot at {model_path}_pred.png')
         plt.show()
 
     def parse_args(self, args):
