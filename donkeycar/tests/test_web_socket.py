@@ -1,14 +1,10 @@
-
-from donkeycar.parts.web_controller.web import WebSocketCalibrateAPI
-from functools import partial
-
 from tornado import testing
 import tornado.websocket
 import tornado.web
 import tornado.ioloop
 import json
 from unittest.mock import Mock
-from donkeycar.parts.actuator import PWMSteering, PWMThrottle
+from donkeycar.parts.web_controller.web import WebSocketCalibrateAPI
 
 
 class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
@@ -31,8 +27,9 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
+        mock = Mock()
         self.app.drive_train = dict()
-        self.app.drive_train['steering'] = Mock()
+        self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "I2C_SERVO"
 
         data = {"config": {"STEERING_LEFT_PWM": 444}}
@@ -47,8 +44,9 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
+        mock = Mock()
         self.app.drive_train = dict()
-        self.app.drive_train['steering'] = Mock()
+        self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "PWM_STEERING_THROTTLE"
 
         data = {"config": {"STEERING_LEFT_PWM": 444}}
@@ -63,8 +61,9 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
+        mock = Mock()
         self.app.drive_train = dict()
-        self.app.drive_train['steering'] = Mock()
+        self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "I2C_SERVO"
 
         data = {"config": {"STEERING_RIGHT_PWM": 555}}
@@ -79,8 +78,9 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
+        mock = Mock()
         self.app.drive_train = dict()
-        self.app.drive_train['steering'] = Mock()
+        self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "PWM_STEERING_THROTTLE"
 
         data = {"config": {"STEERING_RIGHT_PWM": 555}}
@@ -95,8 +95,9 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
+        mock = Mock()
         self.app.drive_train = dict()
-        self.app.drive_train['throttle'] = Mock()
+        self.app.drive_train['throttle'] = mock
         self.app.drive_train_type = "I2C_SERVO"
 
         data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
@@ -111,8 +112,9 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
+        mock = Mock()
         self.app.drive_train = dict()
-        self.app.drive_train['throttle'] = Mock()
+        self.app.drive_train['throttle'] = mock
         self.app.drive_train_type = "PWM_STEERING_THROTTLE"
 
         data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
@@ -127,7 +129,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         ws_client = yield tornado.websocket.websocket_connect(self.get_ws_url())
 
         # Now we can run a test on the WebSocket.
-        self.app.drive_train = Mock()
+        mock = Mock()
+        self.app.drive_train = mock
         self.app.drive_train_type = "MM1"
         data = {"config": {"MM1_STEERING_MID": 1234}}
         yield ws_client.write_message(json.dumps(data))
