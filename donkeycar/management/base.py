@@ -438,7 +438,8 @@ class ShowCnnActivations(BaseCommand):
 
 class ShowPredictionPlots(BaseCommand):
 
-    def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
+    def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type,
+                         noshow):
         """
         Plot model predictions for angle and throttle against data from tubs.
         """
@@ -479,6 +480,7 @@ class ShowPredictionPlots(BaseCommand):
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
             bar.next()
+        print()  # to break the line after progress bar finishes.
 
         angles_df = pd.DataFrame({'user_angle': user_angles,
                                   'pilot_angle': pilot_angles})
@@ -497,7 +499,8 @@ class ShowPredictionPlots(BaseCommand):
         ax2.legend(loc=4)
         plt.savefig(model_path + '_pred.png')
         logger.info(f'Saving tubplot at {model_path}_pred.png')
-        plt.show()
+        if not noshow:
+            plt.show()
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
@@ -505,7 +508,10 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--model', default=None, help='model for predictions')
         parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
+        parser.add_argument('--noshow', default=False, action="store_true",
+                            help='if plot is shown in window')
         parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
+
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -513,7 +519,8 @@ class ShowPredictionPlots(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
-        self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
+        self.plot_predictions(cfg, args.tub, args.model, args.limit,
+                              args.type, args.noshow)
 
 
 class Train(BaseCommand):

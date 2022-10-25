@@ -69,7 +69,7 @@ def test_tubplot(cardir):
         f.writelines(["# config file\n", "IMAGE_H = 120\n", "IMAGE_W = 160\n",
                       "IMAGE_DEPTH = 3\n", "\n"])
     cmd = ['donkey', 'tubplot', '--tub', tub_dir, '--model', model_path,
-           '--type', 'linear']
+           '--type', 'linear', '--noshow']
     out, err, proc_id = utils.run_shell_command(cmd, cwd=cardir)
     for o in out:
         print(o, end='')
