@@ -499,8 +499,8 @@ class ShowPredictionPlots(BaseCommand):
         ax2.legend(loc=4)
         plt.savefig(model_path + '_pred.png')
         logger.info(f'Saving tubplot at {model_path}_pred.png')
-        if not noshow:
-            plt.show()
+        # if not noshow:
+        #     plt.show()
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')

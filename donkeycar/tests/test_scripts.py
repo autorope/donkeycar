@@ -71,11 +71,13 @@ def test_tubplot(cardir):
     cmd = ['donkey', 'tubplot', '--tub', tub_dir, '--model', model_path,
            '--type', 'linear', '--noshow']
     out, err, proc_id = utils.run_shell_command(cmd, cwd=cardir)
+    print()
     for o in out:
         print(o, end='')
     print('err')
     for e in err:
         print(e.decode(), end='')
     # Check tubplot has successfully created file
-    # assert os.path.exists(model_path + '_pred.png')
-    os.listdir(model_dir)
+    print(os.listdir(model_dir))
+    assert os.path.exists(model_path + '_pred.png')
+
