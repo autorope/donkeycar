@@ -1,5 +1,7 @@
 import os
 import platform
+import subprocess
+import sys
 import tarfile
 
 from donkeycar import utils
@@ -50,8 +52,6 @@ def test_bad_command_fails():
     assert is_error(err) is True
 
 
-@pytest.mark.skipif(platform.system() == 'Darwin',
-                    reason='This command fails on OSX under run_shell_command')
 def test_tubplot(cardir):
     # create empy KerasLinear model in car directory
     model_dir = os.path.join(cardir, 'models')
@@ -73,14 +73,13 @@ def test_tubplot(cardir):
                       "IMAGE_DEPTH = 3\n", "\n"])
     cmd = ['donkey', 'tubplot', '--tub', tub_dir, '--model', model_path,
            '--type', 'linear', '--noshow']
-    out, err, proc_id = utils.run_shell_command(cmd, cwd=cardir)
-    print()
-    for o in out:
-        print(o, end='')
-    print('err')
-    for e in err:
-        print(e.decode(), end='')
-    # Check tubplot has successfully created file
-    print(os.listdir(model_dir))
+
+    # run donkey command in subprocess
+    with subprocess.Popen(cmd, cwd=cardir, stdout=subprocess.PIPE) as pipe:
+        line = '\nStart test: \n'
+        while line:
+            print(line, end='')
+            line = pipe.stdout.readline().decode()
+    print(f'List model dir: {os.listdir(model_dir)}')
     assert os.path.exists(model_path + '_pred.png')
 
