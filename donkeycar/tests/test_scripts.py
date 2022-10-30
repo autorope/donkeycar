@@ -1,4 +1,5 @@
 import os
+import platform
 import tarfile
 
 from donkeycar import utils
@@ -49,6 +50,8 @@ def test_bad_command_fails():
     assert is_error(err) is True
 
 
+@pytest.mark.skipif(platform.system() == 'Darwin',
+                    reason='This command fails on OSX under run_shell_command')
 def test_tubplot(cardir):
     # create empy KerasLinear model in car directory
     model_dir = os.path.join(cardir, 'models')
