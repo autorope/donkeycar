@@ -7,6 +7,8 @@ import json
 from unittest.mock import Mock
 from time import sleep
 
+SLEEP = 0.2
+
 
 class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
     """
@@ -35,7 +37,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"STEERING_LEFT_PWM": 444}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train['steering'].left_pulse == 444
         assert isinstance(self.app.drive_train['steering'].right_pulse, Mock)
 
@@ -51,7 +53,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"STEERING_LEFT_PWM": 444}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train['steering'].left_pulse == 444
         assert isinstance(self.app.drive_train['steering'].right_pulse, Mock)
 
@@ -67,7 +69,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"STEERING_RIGHT_PWM": 555}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train['steering'].right_pulse == 555
         assert isinstance(self.app.drive_train['steering'].left_pulse, Mock)
 
@@ -83,7 +85,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"STEERING_RIGHT_PWM": 555}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train['steering'].right_pulse == 555
         assert isinstance(self.app.drive_train['steering'].left_pulse, Mock)
 
@@ -99,7 +101,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train['throttle'].max_pulse == 666
         assert isinstance(self.app.drive_train['throttle'].min_pulse, Mock)
 
@@ -115,7 +117,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"THROTTLE_FORWARD_PWM": 666}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train['throttle'].max_pulse == 666
         assert isinstance(self.app.drive_train['throttle'].min_pulse, Mock)
 
@@ -129,5 +131,5 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         data = {"config": {"MM1_STEERING_MID": 1234}}
         yield ws_client.write_message(json.dumps(data))
         yield ws_client.close()
-        sleep(0.1)
+        sleep(SLEEP)
         assert self.app.drive_train.STEERING_MID == 1234
