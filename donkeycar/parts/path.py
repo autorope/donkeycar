@@ -10,7 +10,7 @@ from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img, is_number_type
 
 class AbstractPath:
     def __init__(self, min_dist=1.):
-        self.path = []
+        self.path = []  # list of (x,y) tuples
         self.min_dist = min_dist
         self.x = math.inf
         self.y = math.inf
@@ -227,6 +227,32 @@ from donkeycar.la import Line3D, Vec3
 
 class CTE(object):
 
+    #
+    # Find the index of the path element with minimal distance to (x,y).
+    # This prefers the first element with the minimum distance if there
+    # are more then one.
+    #
+    def nearest_pt(self, path, x, y, from_pt=0, num_pts=None):
+        num_pts = num_pts if num_pts is not None else len(path)
+        num_pts = num_pts if num_pts <= len(path) else len(path)
+        if num_pts < 0:
+            logging.error("num_pts must not be negative.")
+            return None, None, None
+
+        min_pt = None
+        min_dist = None
+        min_index = None
+        for j in range(num_pts):
+            i = (j + from_pt) % len(path)
+            p = path[i]
+            d = dist(p[0], p[1], x, y)
+            if min_dist is None or d < min_dist:
+                min_pt = p
+                min_dist = d
+                min_index = i
+        return min_pt, min_index, min_dist
+
+
     # TODO: update so that we look for nearest two points starting from a given point
     #       and up to a given number of points.  This will speed things up
     #       but more importantly it can be used to handle crossing paths.
@@ -240,13 +266,69 @@ class CTE(object):
             d = dist(p[0], p[1], x, y)
             distances.append((d, iP, p))
         distances.sort(key=lambda elem : elem[0])
+
+        # get the prior point as start of segment
         iA = (distances[0][1] - 1) % len(path)
         a = path[iA]
-        #iB is the next element in the path, wrapping around..
+
+        # get the next point in the path as the end of the segment
         iB = (iA + 2) % len(path)
         b = path[iB]
         
         return a, b
+
+    def nearest_waypoints(self, path, x, y, look_ahead=1, look_behind=1, from_pt=0, num_pts=None):
+        """
+        Get the path elements around the closest element to the given (x,y)
+        :param path: list of (x,y) points
+        :param x: horizontal coordinate of point to check
+        :param y: vertical coordinate of point to check
+        :param from_pt: index start start search within path
+        :param num_pts: maximum number of points to search in path
+        :param look_ahead: number waypoints to include ahead of nearest point.
+        :param look_behind: number of waypoints to include behind nearest point.
+        :return: index of first point and last point in nearest path segments
+        """
+        if path is None or len(path) < 2:
+            logging.error("path is none; cannot calculate nearest points")
+            return None, None
+
+        if look_ahead < 0:
+            logging.error("look_ahead must be a non-negative number")
+            return None, None
+        if look_behind < 0:
+            logging.error("look_behind must be a non-negative number")
+            return None, None
+        if (look_ahead + look_behind) > len(path):
+            logging.error("the path is not long enough to supply the waypoints")
+            return None, None
+
+        _pt, i, _distance = self.nearest_pt(path, x, y, from_pt, num_pts)
+
+        # get  start of segment
+        a = (i + len(path) - look_behind) % len(path)
+
+        # get the end of the segment
+        b = (i + look_ahead) % len(path)
+
+        return a, b
+
+    def nearest_track(self, path, x, y, look_ahead=1, look_behind=1, from_pt=0, num_pts=None):
+        """
+        Get the line segment around the closest point to the given (x,y)
+        :param path: list of (x,y) points
+        :param x: horizontal coordinate of point to check
+        :param y: vertical coordinate of point to check
+        :param from_pt: index start start search within path
+        :param num_pts: maximum number of points to search in path
+        :param look_ahead: number waypoints to include ahead of nearest point.
+        :param look_behind: number of waypoints to include behind nearest point.
+        :return: start and end points of the nearest track
+        """
+
+        a, b = self.nearest_waypoints(path, x, y, look_ahead, look_behind, from_pt, num_pts)
+
+        return (path[a], path[b]) if a is not None and b is not None else (None, None)
 
     def run(self, path, x, y):
         cte = 0.
