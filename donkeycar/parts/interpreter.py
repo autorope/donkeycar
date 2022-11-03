@@ -23,9 +23,6 @@ def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
 
 def keras_to_tflite(model, out_filename, data_gen=None):
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
-                                           tf.lite.OpsSet.SELECT_TF_OPS]
-    converter.allow_custom_ops = True
     if data_gen is not None:
         # when we have a data_gen that is the trigger to use it to create
         # integer weights and calibrate them. Warning: this model will no
@@ -238,9 +235,8 @@ class TfLite(Interpreter):
     def __init__(self):
         super().__init__()
         self.interpreter = None
-        self.input_shapes = None
-        self.input_details = None
-        self.output_details = None
+        self.runner = None
+        self.signatures = None
     
     def load(self, model_path):
         assert os.path.splitext(model_path)[1] == '.tflite', \
@@ -248,43 +244,23 @@ class TfLite(Interpreter):
         logger.info(f'Loading model {model_path}')
         # Load TFLite model and allocate tensors.
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
-        self.interpreter.allocate_tensors()
-
-        # Get input and output tensors.
-        self.input_details = self.interpreter.get_input_details()
-        self.output_details = self.interpreter.get_output_details()
-
-        # Get Input shape
-        self.input_shapes = []
-        logger.info('Load model with tflite input tensor details:')
-        for detail in self.input_details:
-            logger.debug(detail)
-            self.input_shapes.append(detail['shape'])
+        self.signatures = self.interpreter.get_signature_list()
+        self.runner = self.interpreter.get_signature_runner()
 
     def compile(self, **kwargs):
         pass
 
-    def invoke(self) -> Sequence[Union[float, np.ndarray]]:
-        self.interpreter.invoke()
-        outputs = []
-        for tensor in self.output_details:
-            output_data = self.interpreter.get_tensor(tensor['index'])
-            # as we invoke the interpreter with a batch size of one we remove
-            # the additional dimension here again
-            outputs.append(output_data[0])
-        # don't return list if output is 1d
-        return outputs if len(outputs) > 1 else outputs[0]
-
     def predict(self, img_arr, other_arr) \
             -> Sequence[Union[float, np.ndarray]]:
-        assert self.input_shapes and self.input_details, \
-            "Tflite model not loaded"
-        input_arrays = (img_arr, other_arr)
-        for arr, shape, detail \
-                in zip(input_arrays, self.input_shapes, self.input_details):
-            in_data = arr.reshape(shape).astype(np.float32)
-            self.interpreter.set_tensor(detail['index'], in_data)
-        return self.invoke()
+        img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
+        if other_arr is not None:
+            other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
+        input_keys = self.signatures['serving_default']['inputs']
+        input_dict = dict(zip(input_keys, (img_arr, other_arr)))
+        outputs = self.runner(**input_dict)
+        ret = list(outputs[k].squeeze() for k in
+                   self.signatures['serving_default']['outputs'])
+        return ret if len(ret) > 1 else ret[0]
 
     def predict_from_dict(self, input_dict):
         for detail in self.input_details:

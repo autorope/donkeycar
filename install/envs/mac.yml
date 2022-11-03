@@ -1,4 +1,4 @@
-name: donkey
+name: donkey_38
 
 channels:
   - defaults
@@ -7,7 +7,7 @@ channels:
   - fastai
 
 dependencies:
-  - python=3.7
+  - python=3.8
   - h5py
   - pillow
   - opencv
@@ -40,7 +40,7 @@ dependencies:
   - pyserial
   - utm
   - pip:
-    - tensorflow==2.2.0
+    - tensorflow==2.9
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
     - opencv-python-headless
