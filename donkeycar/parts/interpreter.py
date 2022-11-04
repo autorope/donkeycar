@@ -275,8 +275,9 @@ class TfLite(Interpreter):
         return self.invoke()
 
     def get_input_shapes(self):
-        assert self.input_shapes is not None, "Need to load model first"
-        return self.input_shapes
+        assert self.interpreter is not None, "Need to load tflite model first"
+        details = self.interpreter.get_input_details()
+        return list(d['shape'] for d in details)
 
 
 class TensorRT(Interpreter):
