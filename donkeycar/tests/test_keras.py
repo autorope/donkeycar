@@ -29,19 +29,17 @@ def create_models(keras_pilot, dir):
     # build with keras interpreter
     interpreter = KerasInterpreter()
     km = keras_pilot(interpreter=interpreter)
-
-    kl = krt = None
     # build tflite model from TfLite interpreter
     tflite_model_path = os.path.join(dir, 'model.tflite')
-    if keras_pilot is not Keras3D_CNN:
-        keras_to_tflite(interpreter.model, tflite_model_path)
-        kl = keras_pilot(interpreter=TfLite())
-        kl.load(tflite_model_path)
+    keras_to_tflite(interpreter.model, tflite_model_path)
+    kl = keras_pilot(interpreter=TfLite())
+    kl.load(tflite_model_path)
     # save model in savedmodel format
     savedmodel_path = os.path.join(dir, 'model.savedmodel')
     interpreter.model.save(savedmodel_path)
 
-    # do tensorrt only onl linux
+    # do tensorrt only on linux
+    krt = None
     if keras_pilot is not KerasLSTM and sys.platform == 'linux':
         # convert to tensorrt and load
         tensorrt_path = os.path.join(dir, 'model.trt')
@@ -86,7 +84,7 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
         # lstm cells are not yet supported in tensor RT
         out3 = k_trt.run(*args)
         assert out3 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
-    print(out1, out2, out3)
+    print(out1, out2, out3, "\n")
 
 
 

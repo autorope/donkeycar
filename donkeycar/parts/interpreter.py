@@ -23,6 +23,10 @@ def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
 
 def keras_to_tflite(model, out_filename, data_gen=None):
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
+                                           tf.lite.OpsSet.SELECT_TF_OPS]
+    converter.allow_custom_ops = True
+    #converter._experimental_lower_tensor_list_ops = False
     if data_gen is not None:
         # when we have a data_gen that is the trigger to use it to create
         # integer weights and calibrate them. Warning: this model will no
@@ -258,7 +262,7 @@ class TfLite(Interpreter):
         input_keys = self.signatures['serving_default']['inputs']
         input_dict = dict(zip(input_keys, (img_arr, other_arr)))
         outputs = self.runner(**input_dict)
-        ret = list(outputs[k].squeeze() for k in
+        ret = list(outputs[k][0] for k in
                    self.signatures['serving_default']['outputs'])
         return ret if len(ret) > 1 else ret[0]
 
