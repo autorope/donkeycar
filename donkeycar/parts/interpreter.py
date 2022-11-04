@@ -256,23 +256,19 @@ class TfLite(Interpreter):
 
     def predict(self, img_arr, other_arr) \
             -> Sequence[Union[float, np.ndarray]]:
-        img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
-        if other_arr is not None:
-            other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
         input_keys = self.signatures['serving_default']['inputs']
         input_dict = dict(zip(input_keys, (img_arr, other_arr)))
+        return self.predict_from_dict(input_dict)
+
+    def predict_from_dict(self, input_dict):
+        # expand each input to shape from [x, y, z] to [1, x, y, z] and
+        # convert to float32 for expression:
+        for k, v in input_dict.items():
+            input_dict[k] = np.expand_dims(v, axis=0).astype(np.float32)
         outputs = self.runner(**input_dict)
         ret = list(outputs[k][0] for k in
                    self.signatures['serving_default']['outputs'])
         return ret if len(ret) > 1 else ret[0]
-
-    def predict_from_dict(self, input_dict):
-        for detail in self.input_details:
-            k = detail['name']
-            inp_k = input_dict[k]
-            inp_k_res = inp_k.reshape(detail['shape']).astype(np.float32)
-            self.interpreter.set_tensor(detail['index'], inp_k_res)
-        return self.invoke()
 
     def get_input_shapes(self):
         assert self.interpreter is not None, "Need to load tflite model first"

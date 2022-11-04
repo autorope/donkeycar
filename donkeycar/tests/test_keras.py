@@ -84,7 +84,7 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
         # lstm cells are not yet supported in tensor RT
         out3 = k_trt.run(*args)
         assert out3 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
-    print(out1, out2, out3, "\n")
+    print("\n", out1, out2, out3)
 
 
 
