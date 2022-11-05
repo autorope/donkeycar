@@ -178,7 +178,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # in the mapping.
     #
     origin_reset = OriginOffset(cfg.PATH_DEBUG)
-    V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
+    V.add(origin_reset, inputs=['pos/x', 'pos/y', 'cte/closest_pt'], outputs=['pos/x', 'pos/y', 'cte/closest_pt'])
 
 
     class UserCondition:

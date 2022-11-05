@@ -117,11 +117,17 @@ class OriginOffset(object):
         self.oy = None
         self.last_x = 0.0
         self.last_y = 0.0
+        self.reset = None
 
-    def run(self, x, y):
+    def run(self, x, y, closest_pt):
+        """
+        :param:x is current horizontal position
+        :param:y is current vertical position
+        :param:closest_pt is current cte/closest_pt
+        """
         if is_number_type(x) and is_number_type(y):
             # if origin is None, set it to current position
-            if self.ox is None and self.oy is None:
+            if self.reset:
                 self.ox = x
                 self.oy = y
 
@@ -136,7 +142,16 @@ class OriginOffset(object):
             pos = (self.last_x - self.ox, self.last_y - self.oy)
         if self.debug:
             print(f"pos/x = {pos[0]}, pos/y = {pos[1]}")
-        return pos
+
+        # reset the starting search index for cte algorithm
+        if self.reset:
+            print(f"cte/closest_pt = {closest_pt} -> None")
+            closest_pt = None
+
+        # clear reset latch
+        self.reset = False
+
+        return pos[0], pos[1], closest_pt
 
     def set_origin(self, x, y):
         logging.info(f"Resetting origin to ({x}, {y})")
@@ -149,6 +164,7 @@ class OriginOffset(object):
         """
         self.ox = None
         self.oy = None
+        self.reset = True
 
     def init_to_last(self):
         self.set_origin(self.last_x, self.last_y)
