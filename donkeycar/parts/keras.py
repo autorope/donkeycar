@@ -24,16 +24,14 @@ from donkeycar.parts.interpreter import Interpreter, KerasInterpreter
 
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Input, Dense
-from tensorflow.keras.layers import Convolution2D, MaxPooling2D, \
-    BatchNormalization
-from tensorflow.keras.layers import Activation, Dropout, Flatten
-from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import (Dense, Input,Convolution2D,
+    MaxPooling2D, Activation, Dropout, Flatten, LSTM, BatchNormalization,
+    Conv3D, MaxPooling3D, Conv2DTranspose)
+
 from tensorflow.keras.layers import TimeDistributed as TD
-from tensorflow.keras.layers import Conv3D, MaxPooling3D, Conv2DTranspose
 from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model
-from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
