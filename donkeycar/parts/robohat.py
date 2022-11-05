@@ -10,6 +10,7 @@ Note: To be used with code.py bundled in this repo. See donkeycar/contrib/roboha
 """
 
 import time
+import logging
 import donkeycar as dk
 
 try:
@@ -17,6 +18,7 @@ try:
 except ImportError:
     print("PySerial not found.  Please install: pip install pyserial")
 
+logger = logging.getLogger(__name__)
 
 class RoboHATController:
     '''
@@ -31,6 +33,8 @@ class RoboHATController:
         self.throttle = 0.0
         self.mode = 'user'
         self.recording = False
+        self.recording_latch = None
+        self.auto_record_on_throttle = cfg.AUTO_RECORD_ON_THROTTLE
         self.STEERING_MID = cfg.MM1_STEERING_MID
         self.MAX_FORWARD = cfg.MM1_MAX_FORWARD
         self.STOPPED_PWM = cfg.MM1_STOPPED_PWM
@@ -114,10 +118,12 @@ class RoboHATController:
                 if self.debug:
                     print("angle = {}, throttle = {}".format(self.angle, self.throttle))
 
-                if self.throttle > self.DEAD_ZONE:
-                    self.recording = True
-                else:
-                    self.recording = False
+                if self.auto_record_on_throttle:
+                    was_recording = self.recording
+                    self.recording = self.throttle > self.DEAD_ZONE
+                    if was_recording != self.recording:
+                        self.recording_latch = self.recording
+                        logger.debug(f"JoystickController::on_throttle_changes() setting recording = {self.recording}")
 
                 time.sleep(0.01)
 
@@ -152,10 +158,18 @@ class RoboHATController:
         #
         # enforce defaults if they are not none.
         #
+        #
+        # enforce defaults if they are not none.
+        #
         if mode is not None:
             self.mode = mode
-        if recording is not None:
+        if recording is not None and recording != self.recording:
+            logger.debug(f"RoboHATController::run_threaded() setting recording from default = {recording}")
             self.recording = recording
+        if self.recording_latch is not None:
+            logger.debug(f"RoboHATController::run_threaded() setting recording from latch = {self.recording_latch}")
+            self.recording = self.recording_latch
+            self.recording_latch = None
 
         return self.angle, self.throttle, self.mode, self.recording
 
