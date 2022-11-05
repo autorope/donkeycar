@@ -227,12 +227,18 @@ from donkeycar.la import Line3D, Vec3
 
 class CTE(object):
 
+    def __init__(self, look_ahead=1, look_behind=1, num_pts=None) -> None:
+        self.num_pts = num_pts
+        self.look_ahead = look_ahead
+        self.look_behind = look_behind
+
     #
     # Find the index of the path element with minimal distance to (x,y).
     # This prefers the first element with the minimum distance if there
     # are more then one.
     #
     def nearest_pt(self, path, x, y, from_pt=0, num_pts=None):
+        from_pt = from_pt if from_pt is not None else 0
         num_pts = num_pts if num_pts is not None else len(path)
         num_pts = num_pts if num_pts <= len(path) else len(path)
         if num_pts < 0:
@@ -287,7 +293,7 @@ class CTE(object):
         :param num_pts: maximum number of points to search in path
         :param look_ahead: number waypoints to include ahead of nearest point.
         :param look_behind: number of waypoints to include behind nearest point.
-        :return: index of first point and last point in nearest path segments
+        :return: index of first point, nearest point and last point in nearest path segments
         """
         if path is None or len(path) < 2:
             logging.error("path is none; cannot calculate nearest points")
@@ -311,7 +317,7 @@ class CTE(object):
         # get the end of the segment
         b = (i + look_ahead) % len(path)
 
-        return a, b
+        return a, i, b
 
     def nearest_track(self, path, x, y, look_ahead=1, look_behind=1, from_pt=0, num_pts=None):
         """
@@ -323,17 +329,24 @@ class CTE(object):
         :param num_pts: maximum number of points to search in path
         :param look_ahead: number waypoints to include ahead of nearest point.
         :param look_behind: number of waypoints to include behind nearest point.
-        :return: start and end points of the nearest track
+        :return: start and end points of the nearest track and index of nearest point
         """
 
-        a, b = self.nearest_waypoints(path, x, y, look_ahead, look_behind, from_pt, num_pts)
+        a, i, b = self.nearest_waypoints(path, x, y, look_ahead, look_behind, from_pt, num_pts)
 
-        return (path[a], path[b]) if a is not None and b is not None else (None, None)
+        return (path[a], path[b], i) if a is not None and b is not None else (None, None, None)
 
-    def run(self, path, x, y):
+    def run(self, path, x, y, from_pt=None):
+        """
+        Run cross track error algorithm
+        :return: cross-track-error and index of nearest point on the path
+        """
         cte = 0.
+        i = from_pt
 
-        a, b = self.nearest_two_pts(path, x, y)
+        a, b, i = self.nearest_track(path, x, y, 
+                                     look_ahead=self.look_ahead, look_behind=self.look_behind, 
+                                     from_pt=from_pt, num_pts=self.num_pts)
         
         if a and b:
             logging.info(f"nearest: ({a[0]}, {a[1]}) to ({x}, {y})")
@@ -349,7 +362,7 @@ class CTE(object):
             cte = err.mag() * sign            
         else:
             logging.info(f"no nearest point to ({x},{y}))")
-        return cte
+        return cte, i
 
 
 class PID_Pilot(object):
