@@ -403,7 +403,7 @@ class FullImage(Image):
             Logger.error(f'Record: Bad record: {e}')
 
     def get_image(self, record):
-        return record.image(cached=False)
+        return record.image()
 
 
 class ControlPanel(BoxLayout):

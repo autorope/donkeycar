@@ -42,13 +42,17 @@ class BatchSequence(object):
         return math.ceil(len(self.pipeline) / self.batch_size)
 
     def image_processor(self, img_arr):
-        """ Transformes the images and augments if in training. Then
-            normalizes it. """
+        """ Transforms the image and augments it if in training. We are not
+        calling the normalisation here, because then the normalised images
+        would get cached in the TubRecord, and they are 8 times larger (as
+        they are 64bit floats and not uint8) """
+        assert img_arr.dtype == np.uint8, \
+            f"image_processor requires uint8 array but not {img_arr.dtype}"
         img_arr = self.transformation.run(img_arr)
         if self.is_train:
             img_arr = self.augmentation.run(img_arr)
-        norm_img = normalize_image(img_arr)
-        return norm_img
+
+        return img_arr
 
     def _create_pipeline(self) -> TfmIterator:
         """ This can be overridden if more complicated pipelines are
@@ -56,17 +60,15 @@ class BatchSequence(object):
         # 1. Initialise TubRecord -> x, y transformations
         def get_x(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting x from record for training"""
-            out_tuple = self.model.x_transform_and_process(
-                record, self.image_processor)
-            # convert tuple to dictionary which is understood by tf.data
-            out_dict = self.model.x_translate(out_tuple)
+            out_dict = self.model.x_transform(record, self.image_processor)
+            # apply the normalisation here on the fly to go from uint8 -> float
+            out_dict['img_in'] = normalize_image(out_dict['img_in'])
             return out_dict
 
         def get_y(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting y from record for training """
-            y0 = self.model.y_transform(record)
-            y1 = self.model.y_translate(y0)
-            return y1
+            y = self.model.y_transform(record)
+            return y
 
         # 2. Build pipeline using the transformations
         pipeline = self.sequence.build_pipeline(x_transform=get_x,
@@ -80,6 +82,7 @@ class BatchSequence(object):
             output_types=self.model.output_types(),
             output_shapes=self.model.output_shapes())
         return dataset.repeat().batch(self.batch_size)
+
 
 def get_model_train_details(database: PilotDatabase, model: str = None) \
         -> Tuple[str, int]:
@@ -122,7 +125,8 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     # We need augmentation in validation when using crop / trapeze
 
     if 'fastai_' in model_type:
-        from donkeycar.parts.pytorch.torch_data import TorchTubDataset, get_default_transform
+        from donkeycar.parts.pytorch.torch_data \
+            import TorchTubDataset, get_default_transform
         transform = get_default_transform(resize=False)
         dataset_train = TorchTubDataset(cfg, training_records, transform=transform)
         dataset_validate = TorchTubDataset(cfg, validation_records, transform=transform)
