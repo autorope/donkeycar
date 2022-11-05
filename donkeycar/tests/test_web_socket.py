@@ -7,7 +7,7 @@ from unittest.mock import Mock
 from donkeycar.parts.web_controller.web import WebSocketCalibrateAPI
 from time import sleep
 
-SLEEP = 0.2
+SLEEP = 0.5
 
 
 class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
