@@ -911,6 +911,8 @@ class TrainScreen(Screen):
 
     def train_call(self, model_type, *args):
         # remove car directory from path
+        import logging
+        logging.basicConfig(level=logging.INFO)
         tub_path = tub_screen().ids.tub_loader.tub.base_path
         transfer = self.ids.transfer_spinner.text
         if transfer != 'Choose transfer model':
@@ -922,20 +924,21 @@ class TrainScreen(Screen):
                             model_type=model_type,
                             transfer=transfer,
                             comment=self.ids.comment.text)
-            self.ids.status.text = f'Training completed.'
-            self.ids.comment.text = 'Comment'
-            self.ids.transfer_spinner.text = 'Choose transfer model'
-            self.reload_database()
         except Exception as e:
             Logger.error(e)
             self.ids.status.text = f'Train failed see console'
-        finally:
-            self.ids.train_button.state = 'normal'
 
     def train(self, model_type):
         self.config.SHOW_PLOT = False
-        Thread(target=self.train_call, args=(model_type,)).start()
+        t = Thread(target=self.train_call, args=(model_type,))
         self.ids.status.text = f'Training started.'
+        t.start()
+        t.join()
+        self.ids.comment.text = 'Comment'
+        self.ids.transfer_spinner.text = 'Choose transfer model'
+        self.ids.train_button.state = 'normal'
+        self.reload_database()
+        self.ids.status.text = f'Training completed.'
 
     def set_config_attribute(self, input):
         try:
