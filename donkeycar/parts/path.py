@@ -113,8 +113,8 @@ class OriginOffset(object):
 
     def __init__(self, debug=False):
         self.debug = debug
-        self.ox = None
-        self.oy = None
+        self.ox = 0.0
+        self.oy = 0.0
         self.last_x = 0.0
         self.last_y = 0.0
         self.reset = None

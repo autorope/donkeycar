@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from donkeycar.parts.path import CsvPath, RosPath, CTE
+from donkeycar.parts.path import CsvPath, CTE, OriginOffset
 
 
 class TestCsvPath(unittest.TestCase):
@@ -164,12 +164,12 @@ class TestCTE(unittest.TestCase):
         #
         # should work the same as defaults; find the fist instance.
         #
-        self.assertEqual((0, 1), cte.nearest_waypoints(path, 0, 1, look_ahead=1, look_behind=0))
-        self.assertEqual((0, 2), cte.nearest_waypoints(path, 0, 1, look_ahead=2, look_behind=0))
-        self.assertEqual((0, 3), cte.nearest_waypoints(path, 0, 1, look_ahead=3, look_behind=0))
-        self.assertEqual((199, 1), cte.nearest_waypoints(path, 0, 1, look_ahead=1, look_behind=1))
-        self.assertEqual((198, 2), cte.nearest_waypoints(path, 0, 1, look_ahead=2, look_behind=2))
-        self.assertEqual((197, 3), cte.nearest_waypoints(path, 0, 1, look_ahead=3, look_behind=3))
+        self.assertEqual((0, 0, 1), cte.nearest_waypoints(path, 0, 1, look_ahead=1, look_behind=0))
+        self.assertEqual((0, 0, 2), cte.nearest_waypoints(path, 0, 1, look_ahead=2, look_behind=0))
+        self.assertEqual((0, 0, 3), cte.nearest_waypoints(path, 0, 1, look_ahead=3, look_behind=0))
+        self.assertEqual((199, 0, 1), cte.nearest_waypoints(path, 0, 1, look_ahead=1, look_behind=1))
+        self.assertEqual((198, 0, 2), cte.nearest_waypoints(path, 0, 1, look_ahead=2, look_behind=2))
+        self.assertEqual((197, 0, 3), cte.nearest_waypoints(path, 0, 1, look_ahead=3, look_behind=3))
 
     def test_nearest_track(self):
         # path containing [(0,1)..(0,100),(0,1)..(0,100)]
@@ -184,10 +184,47 @@ class TestCTE(unittest.TestCase):
         #
         # should work the same as defaults; find the fist instance.
         #
-        self.assertEqual(((0,1), (0,2)), cte.nearest_track(path, 0, 1, look_ahead=1, look_behind=0))
-        self.assertEqual(((0,1), (0,3)), cte.nearest_track(path, 0, 1, look_ahead=2, look_behind=0))
-        self.assertEqual(((0,1), (0,4)), cte.nearest_track(path, 0, 1, look_ahead=3, look_behind=0))
-        self.assertEqual(((0,100), (0,2)), cte.nearest_track(path, 0, 1, look_ahead=1, look_behind=1))
-        self.assertEqual(((0,99), (0,3)), cte.nearest_track(path, 0, 1, look_ahead=2, look_behind=2))
-        self.assertEqual(((0,98), (0,4)), cte.nearest_track(path, 0, 1, look_ahead=3, look_behind=3))
+        self.assertEqual(((0,1), (0,2), 0), cte.nearest_track(path, 0, 1, look_ahead=1, look_behind=0))
+        self.assertEqual(((0,1), (0,3), 0), cte.nearest_track(path, 0, 1, look_ahead=2, look_behind=0))
+        self.assertEqual(((0,1), (0,4), 0), cte.nearest_track(path, 0, 1, look_ahead=3, look_behind=0))
+        self.assertEqual(((0,100), (0,2), 0), cte.nearest_track(path, 0, 1, look_ahead=1, look_behind=1))
+        self.assertEqual(((0,99), (0,3), 0), cte.nearest_track(path, 0, 1, look_ahead=2, look_behind=2))
+        self.assertEqual(((0,98), (0,4), 0), cte.nearest_track(path, 0, 1, look_ahead=3, look_behind=3))
 
+
+class TestOriginOffset(unittest.TestCase):
+    def test_reset(self):
+        oo = OriginOffset()
+
+        #
+        # origin starts at 0, 0 so point is not translated
+        # the closest point index is passed through
+        #
+        x, y, i = oo.run(1, 2, 3)
+        self.assertEqual(x, 1)
+        self.assertEqual(y, 2)
+        self.assertEqual(i, 3)
+
+        x, y, i = oo.run(2, 4, 6)
+        self.assertEqual(x, 2)
+        self.assertEqual(y, 4)
+        self.assertEqual(i, 6)
+
+        #
+        # reset the origin to (2,4)
+        # this changes closes point to None
+        # so that it set to default in CTE part
+        #
+        oo.reset_origin()
+        x, y, i = oo.run(2, 4, 6)
+        self.assertEqual(x, 0)
+        self.assertEqual(y, 0)
+        self.assertEqual(i, None)
+
+        #
+        # point should be offset by the origin of (2, 4)
+        #
+        x, y, i = oo.run(3, 6, 8)
+        self.assertEqual(x, 1)
+        self.assertEqual(y, 2)
+        self.assertEqual(i, 8)
