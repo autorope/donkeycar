@@ -70,6 +70,11 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
+              'matplotlib',
+              'kivy-jetson==2.1',
+              'pandas',
+              'pyyaml',
+              'plotly'
           ],
           'pc': [
               'matplotlib',
@@ -86,7 +91,7 @@ setup(name='donkeycar',
               'mypy'
           ],
           'ci': ['codecov'],
-          'tf': ['tensorflow==2.2.0'],
+          'tf': ['tensorflow==2.9'],
           'torch': [
               'pytorch>=1.7.1',
               'torchvision',
