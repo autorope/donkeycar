@@ -3,7 +3,6 @@ name: donkey_jetson
 channels:
   - defaults
   - conda-forge
-  - pytorch
   - fastai
 
 dependencies:
@@ -26,10 +25,6 @@ dependencies:
   - PrettyTable
   - pyfiglet
   - mypy
-  - pytorch=1.7.1
-  - torchvision
-  - torchaudio
-  - pytorch-lightning
   - numpy
   - psutil
   - plotly
