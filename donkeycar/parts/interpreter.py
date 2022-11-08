@@ -50,7 +50,7 @@ def keras_to_tflite(model, out_filename, data_gen=None):
     open(out_filename, "wb").write(tflite_model)
 
 
-def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str):
+def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str) -> bool:
     """ Converts TF SavedModel format into TensorRT for cuda. Note,
         this works also without cuda as all GPU specific magic is handled
         within TF now. """
@@ -69,8 +69,10 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str):
         converter.convert()
         converter.save(tensor_rt_path)
         logger.info(f'TensorRT conversion done.')
+        return True
     except Exception as e:
         logger.error(f'TensorRT conversion failed because: {e}')
+        return False
 
 
 class Interpreter(ABC):

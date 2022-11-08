@@ -37,13 +37,10 @@ def create_models(keras_pilot, dir):
     # save model in savedmodel format
     savedmodel_path = os.path.join(dir, 'model.savedmodel')
     interpreter.model.save(savedmodel_path)
-
-    # do tensorrt only on linux
     krt = None
-    if keras_pilot is not KerasLSTM and sys.platform == 'linux':
-        # convert to tensorrt and load
-        tensorrt_path = os.path.join(dir, 'model.trt')
-        saved_model_to_tensor_rt(savedmodel_path, tensorrt_path)
+    # convert to tensorrt if supported and load
+    tensorrt_path = os.path.join(dir, 'model.trt')
+    if saved_model_to_tensor_rt(savedmodel_path, tensorrt_path):
         krt = keras_pilot(interpreter=TensorRT())
         krt.load(tensorrt_path)
 
