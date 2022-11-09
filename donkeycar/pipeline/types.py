@@ -39,18 +39,19 @@ class TubRecord(object):
         self.config = config
         self.base_path = base_path
         self.underlying = underlying
+        self._cache_images = getattr(self.config, 'CACHE_IMAGES', True)
         self._image: Optional[Any] = None
 
-    def image(self, cached=True, as_nparray=True) -> np.ndarray:
-        """Loads the image for you
+    def image(self, processor=None, as_nparray=True) -> np.ndarray:
+        """
+        Loads the image.
 
-        Args:
-            cached (bool, optional): whether to cache the image. Defaults to True.
-            as_nparray (bool, optional): whether to convert the image to a np array of uint8.
-                                         Defaults to True. If false, returns result of Image.open()
-
-        Returns:
-            np.ndarray: [description]
+        :param processor:   Image processing like augmentations or cropping, if
+                            not None. Defaults to None.
+        :param as_nparray:  Whether to convert the image to a np array of uint8.
+                            Defaults to True. If false, returns result of
+                            Image.open()
+        :return:            Image
         """
         if self._image is None:
             image_path = self.underlying['cam/image_array']
@@ -61,8 +62,10 @@ class TubRecord(object):
             else:
                 # If you just want the raw Image
                 _image = load_pil_image(full_path, cfg=self.config)
-
-            if cached:
+            if processor:
+                _image = processor(_image)
+            # only cache images if config does not forbid it
+            if self._cache_images:
                 self._image = _image
         else:
             _image = self._image
