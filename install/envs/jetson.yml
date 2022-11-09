@@ -1,4 +1,4 @@
-name: donkey_jetson
+name: donkey
 
 channels:
   - defaults
