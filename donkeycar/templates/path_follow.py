@@ -62,7 +62,7 @@ from donkeycar.parts.path import CsvPath, PathPlot, CTE, PID_Pilot, \
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_drivetrain, add_simulator
+    add_user_controller, add_drivetrain, add_simulator, add_imu
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
@@ -106,6 +106,14 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     add_simulator(V, cfg)
 
+    #
+    # IMU
+    #
+    add_imu(V, cfg)
+
+    #
+    # odometry/tachometer/speed control
+    #
     if cfg.HAVE_ODOM:
         #
         # setup encoders, odometry and pose estimation
