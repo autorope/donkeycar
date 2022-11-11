@@ -293,12 +293,17 @@ class TensorRT(Interpreter):
         pass
 
     def load(self, model_path: str) -> None:
-        saved_model_loaded = tf.saved_model.load(model_path,
-                                                 tags=[tag_constants.SERVING])
-        self.graph_func = saved_model_loaded.signatures[
-            signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-        #self.frozen_func = convert_var_to_const(graph_func)
-        self.input_shapes = [inp.shape for inp in self.graph_func.inputs]
+        logger.info(f'Loading TensrRT model {model_path}')
+        try:
+            saved_model_loaded = tf.saved_model.load(
+                model_path, tags=[tag_constants.SERVING])
+            self.graph_func = saved_model_loaded.signatures[
+                signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+            #self.frozen_func = convert_var_to_const(graph_func)
+            self.input_shapes = [inp.shape for inp in self.graph_func.inputs]
+            logger.info(f'Finished loading TensorRT model.')
+        except Exception as e:
+            logger.error(f'Could not load TensorRT model because: {e}')
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
@@ -319,13 +324,13 @@ class TensorRT(Interpreter):
 
     def predict_from_dict(self, input_dict):
         args = []
-        for inp in self.frozen_func.inputs:
+        for inp in self.graph_func.inputs:
             name = inp.name.split(':')[0]
             val = input_dict[name]
             val_res = np.expand_dims(val, axis=0).astype(np.float32)
             val_conv = self.convert(val_res)
             args.append(val_conv)
-        output_tensors = self.frozen_func(*args)
+        output_tensors = self.graph_func(*args)
         # because we send a batch of size one, pick first element
         outputs = [out.numpy().squeeze(axis=0) for out in output_tensors]
         # don't return list if output is 1d
