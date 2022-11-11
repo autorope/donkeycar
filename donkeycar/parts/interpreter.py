@@ -283,7 +283,7 @@ class TensorRT(Interpreter):
     Uses TensorRT to do the inference.
     """
     def __init__(self):
-        self.frozen_func = None
+        self.graph_func = None
         self.input_shapes = None
 
     def get_input_shapes(self) -> List[tf.TensorShape]:
@@ -295,10 +295,10 @@ class TensorRT(Interpreter):
     def load(self, model_path: str) -> None:
         saved_model_loaded = tf.saved_model.load(model_path,
                                                  tags=[tag_constants.SERVING])
-        graph_func = saved_model_loaded.signatures[
+        self.graph_func = saved_model_loaded.signatures[
             signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-        self.frozen_func = convert_var_to_const(graph_func)
-        self.input_shapes = [inp.shape for inp in graph_func.inputs]
+        #self.frozen_func = convert_var_to_const(graph_func)
+        self.input_shapes = [inp.shape for inp in self.graph_func.inputs]
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
@@ -308,9 +308,9 @@ class TensorRT(Interpreter):
         if other_arr is not None:
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
             other_tensor = self.convert(other_arr)
-            output_tensors = self.frozen_func(img_tensor, other_tensor)
+            output_tensors = self.graph_func(img_tensor, other_tensor)
         else:
-            output_tensors = self.frozen_func(img_tensor)
+            output_tensors = self.graph_func(img_tensor)
 
         # because we send a batch of size one, pick first element
         outputs = [out.numpy().squeeze(axis=0) for out in output_tensors]

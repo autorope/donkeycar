@@ -71,7 +71,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
               'matplotlib',
-              'kivy-jetson',
+              'kivy-jetson==2.1',
               'pandas',
               'pyyaml',
               'plotly'
