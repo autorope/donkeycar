@@ -26,7 +26,6 @@ def keras_to_tflite(model, out_filename, data_gen=None):
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
                                            tf.lite.OpsSet.SELECT_TF_OPS]
     converter.allow_custom_ops = True
-    #converter._experimental_lower_tensor_list_ops = False
     if data_gen is not None:
         # when we have a data_gen that is the trigger to use it to create
         # integer weights and calibrate them. Warning: this model will no
@@ -56,16 +55,9 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str) -> bool:
         within TF now. """
     logger.info(f'Converting SavedModel {saved_path} to TensorRT'
                 f' {tensor_rt_path}')
-    from tensorflow.python.compiler.tensorrt import trt_convert as trt
-
-    params = trt.DEFAULT_TRT_CONVERSION_PARAMS
-    params = params._replace(max_workspace_size_bytes=(1 << 32))
-    params = params._replace(precision_mode="FP16")
-    params = params._replace(maximum_cached_engines=100)
     try:
-        converter = trt.TrtGraphConverterV2(
-            input_saved_model_dir=saved_path,
-            conversion_params=params)
+        from tensorflow.python.compiler.tensorrt import trt_convert as trt
+        converter = trt.TrtGraphConverterV2(input_saved_model_dir=saved_path)
         converter.convert()
         converter.save(tensor_rt_path)
         logger.info(f'TensorRT conversion done.')
@@ -283,24 +275,35 @@ class TensorRT(Interpreter):
     Uses TensorRT to do the inference.
     """
     def __init__(self):
+        super().__init__()
         self.graph_func = None
-        self.input_shapes = None
+        self.pilot = None
+        self.outputs = None
+
+    def set_model(self, pilot: 'KerasPilot') -> None:
+        # We can't determine the output shape neither here, nor in the
+        # constructor, because calling output_shapes() on the model will call
+        # get_input_shape() from the interpreter which will fail at that
+        # state as the trt model hasn't been loaded yet
+        self.pilot = pilot
 
     def get_input_shapes(self) -> List[tf.TensorShape]:
-        return self.input_shapes
+        assert self.graph_func, "Requires loadin the tensorrt model first"
+        return [inp.shape for inp in self.graph_func.inputs]
 
     def compile(self, **kwargs):
         pass
 
     def load(self, model_path: str) -> None:
         logger.info(f'Loading TensrRT model {model_path}')
+        assert self.pilot, "Need to set pilot first"
         try:
             saved_model_loaded = tf.saved_model.load(
                 model_path, tags=[tag_constants.SERVING])
             self.graph_func = saved_model_loaded.signatures[
                 signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-            #self.frozen_func = convert_var_to_const(graph_func)
-            self.input_shapes = [inp.shape for inp in self.graph_func.inputs]
+            _, outputs = self.pilot.output_shapes()
+            self.outputs = list(outputs.keys())
             logger.info(f'Finished loading TensorRT model.')
         except Exception as e:
             logger.error(f'Could not load TensorRT model because: {e}')
@@ -313,12 +316,14 @@ class TensorRT(Interpreter):
         if other_arr is not None:
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
             other_tensor = self.convert(other_arr)
-            output_tensors = self.graph_func(img_tensor, other_tensor)
+            out_dict = self.graph_func(img_tensor, other_tensor)
         else:
-            output_tensors = self.graph_func(img_tensor)
+            out_dict = self.graph_func(img_tensor)
 
-        # because we send a batch of size one, pick first element
-        outputs = [out.numpy().squeeze(axis=0) for out in output_tensors]
+        # Squeeze here because we send a batch of size one, so pick first
+        # element. To return the order of outputs as defined in the model we
+        # need to iterate through the model's output shapes here
+        outputs = [out_dict[k].numpy().squeeze(axis=0) for k in self.outputs]
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 

@@ -74,10 +74,9 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
     out2 = out3 = None
     out1 = k_model.run(*args)
     if k_tflite:
-        # conv3d in tflite requires TF > 2.3.0
         out2 = k_tflite.run(*args)
         assert out2 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
-    if k_trt:
+    if k_trt and keras_pilot not in (KerasIMU, KerasMemory, KerasBehavioral):
         # lstm cells are not yet supported in tensor RT
         out3 = k_trt.run(*args)
         assert out3 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
