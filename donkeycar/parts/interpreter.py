@@ -278,6 +278,7 @@ class TensorRT(Interpreter):
         super().__init__()
         self.graph_func = None
         self.pilot = None
+        self.inputs = None
         self.outputs = None
 
     def set_model(self, pilot: 'KerasPilot') -> None:
@@ -302,8 +303,9 @@ class TensorRT(Interpreter):
                 model_path, tags=[tag_constants.SERVING])
             self.graph_func = saved_model_loaded.signatures[
                 signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-            _, outputs = self.pilot.output_shapes()
+            inputs, outputs = self.pilot.output_shapes()
             self.outputs = list(outputs.keys())
+            self.inputs = list(inputs.keys())
             logger.info(f'Finished loading TensorRT model.')
         except Exception as e:
             logger.error(f'Could not load TensorRT model because: {e}')
@@ -316,7 +318,8 @@ class TensorRT(Interpreter):
         if other_arr is not None:
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
             other_tensor = self.convert(other_arr)
-            out_dict = self.graph_func(img_tensor, other_tensor)
+            input_dict = dict(zip(self.inputs, (img_tensor, other_tensor)))
+            out_dict = self.graph_func(**input_dict)
         else:
             out_dict = self.graph_func(img_tensor)
 
