@@ -6,9 +6,6 @@ from typing import Union, Sequence, List
 
 import tensorflow as tf
 from tensorflow import keras
-
-from tensorflow.python.framework.convert_to_constants import \
-    convert_variables_to_constants_v2 as convert_var_to_const
 from tensorflow.python.saved_model import tag_constants, signature_constants
 
 logger = logging.getLogger(__name__)
@@ -171,8 +168,6 @@ class FastAIInterpreter(Interpreter):
     def __init__(self):
         super().__init__()
         self.model: None
-        from fastai import learner as fastai_learner
-        from fastai import optimizer as fastai_optimizer
 
     def set_model(self, pilot: 'FastAiPilot') -> None:
         self.model = pilot.create_model()
@@ -312,17 +307,13 @@ class TensorRT(Interpreter):
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
-        # first reshape as usual
-        img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
-        img_tensor = self.convert(img_arr)
-        if other_arr is not None:
-            other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
-            other_tensor = self.convert(other_arr)
-            input_dict = dict(zip(self.inputs, (img_tensor, other_tensor)))
-            out_dict = self.graph_func(**input_dict)
-        else:
-            out_dict = self.graph_func(img_tensor)
+        inputs = (img_arr, ) if other_arr is None else (img_arr, other_arr)
+        input_dict = dict(zip(self.inputs,
+                              (self.expand_and_convert(a) for a in inputs)))
+        return self.predict_from_dict(input_dict)
 
+    def predict_from_dict(self, input_dict):
+        out_dict = self.graph_func(**input_dict)
         # Squeeze here because we send a batch of size one, so pick first
         # element. To return the order of outputs as defined in the model we
         # need to iterate through the model's output shapes here
@@ -330,23 +321,8 @@ class TensorRT(Interpreter):
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 
-    def predict_from_dict(self, input_dict):
-        args = []
-        for inp in self.graph_func.inputs:
-            name = inp.name.split(':')[0]
-            val = input_dict[name]
-            val_res = np.expand_dims(val, axis=0).astype(np.float32)
-            val_conv = self.convert(val_res)
-            args.append(val_conv)
-        output_tensors = self.graph_func(*args)
-        # because we send a batch of size one, pick first element
-        outputs = [out.numpy().squeeze(axis=0) for out in output_tensors]
-        # don't return list if output is 1d
-        return outputs if len(outputs) > 1 else outputs[0]
-
     @staticmethod
-    def convert(arr):
+    def expand_and_convert(arr):
         """ Helper function. """
-        value = tf.compat.v1.get_variable("features", dtype=tf.float32,
-                                          initializer=tf.constant(arr))
-        return tf.convert_to_tensor(value=value)
+        arr_exp = np.expand_dims(arr, axis=0)
+        return tf.convert_to_tensor(value=arr_exp, dtype=tf.float32)
