@@ -1,7 +1,7 @@
 import pytest
 import tarfile
 import os
-import numpy as np
+import platform
 from collections import defaultdict, namedtuple
 
 import torch
@@ -13,6 +13,11 @@ from donkeycar.parts.pytorch.torch_utils import get_model_by_type
 from donkeycar.config import Config
 
 Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
+
+
+is_jetson = pytest.mark.skipif(
+    platform.machine() == 'aarch64',
+    reason="pytorch not yet supported on jetson")
 
 
 @pytest.fixture
@@ -50,6 +55,7 @@ d1 = Data(type='resnet18', name='resnet18a', convergence=1.0, pretrained=None)
 test_data = [d1]
 
 
+@is_jetson
 @pytest.mark.skipif("GITHUB_ACTIONS" in os.environ,
                     reason='Suppress training test in CI')
 @pytest.mark.parametrize('data', test_data)
@@ -74,6 +80,7 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     assert loss[-1] < loss[0] * data.convergence
 
 
+@is_jetson
 @pytest.mark.skipif("GITHUB_ACTIONS" in os.environ,
                     reason='Suppress training test in CI')
 @pytest.mark.parametrize('model_type', ['resnet18'])

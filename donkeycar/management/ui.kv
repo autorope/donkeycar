@@ -558,8 +558,9 @@
             ToggleButton:
                 id: train_button
                 text: 'Training running...' if self.state == 'down' else 'Train'
-                on_press: root.train(train_spinner.text)
-
+                on_press:
+                    root.train()
+                    self.disabled = True
         ScrollableLabel:
             DataFrameLabel:
                 id: scroll_pilots
@@ -574,7 +575,7 @@
             spacing: layout_pad_x
             MySpinner:
                 id: delete_spinner
-                text: 'Pilot'
+                text_autoupdate: True
             Button:
                 id: delete_btn
                 on_press:

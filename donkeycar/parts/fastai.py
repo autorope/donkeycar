@@ -36,6 +36,7 @@ XY = Union[float, np.ndarray, Tuple[Union[float, np.ndarray], ...]]
 
 logger = getLogger(__name__)
 
+
 class FastAiPilot(ABC):
     """
     Base class for Fast AI models that will provide steering and throttle to
@@ -197,6 +198,7 @@ class FastAiPilot(ABC):
         """ For printing model initialisation """
         return type(self).__name__
 
+
 class FastAILinear(FastAiPilot):
     """
     The KerasLinear pilot uses one neuron to output a continuous value via
@@ -226,15 +228,11 @@ class FastAILinear(FastAiPilot):
         throttle = interpreter_out[1]
         return steering, throttle
 
-    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) -> XY:
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
+            -> Dict[str, Union[float, List[float]]]:
         assert isinstance(record, TubRecord), 'TubRecord expected'
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
-        return angle, throttle
-
-    def y_translate(self, y: XY) -> Dict[str, Union[float, List[float]]]:
-        assert isinstance(y, tuple), 'Expected tuple'
-        angle, throttle = y
         return {'n_outputs0': angle, 'n_outputs1': throttle}
 
     def output_shapes(self):

@@ -37,13 +37,10 @@ def create_models(keras_pilot, dir):
     # save model in savedmodel format
     savedmodel_path = os.path.join(dir, 'model.savedmodel')
     interpreter.model.save(savedmodel_path)
-
-    # do tensorrt only on linux
     krt = None
-    if keras_pilot is not KerasLSTM and sys.platform == 'linux':
-        # convert to tensorrt and load
-        tensorrt_path = os.path.join(dir, 'model.trt')
-        saved_model_to_tensor_rt(savedmodel_path, tensorrt_path)
+    # convert to tensorrt if supported and load
+    tensorrt_path = os.path.join(dir, 'model.trt')
+    if saved_model_to_tensor_rt(savedmodel_path, tensorrt_path):
         krt = keras_pilot(interpreter=TensorRT())
         krt.load(tensorrt_path)
 
@@ -77,7 +74,6 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
     out2 = out3 = None
     out1 = k_model.run(*args)
     if k_tflite:
-        # conv3d in tflite requires TF > 2.3.0
         out2 = k_tflite.run(*args)
         assert out2 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
     if k_trt:

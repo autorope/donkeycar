@@ -6,9 +6,6 @@ from typing import Union, Sequence, List
 
 import tensorflow as tf
 from tensorflow import keras
-
-from tensorflow.python.framework.convert_to_constants import \
-    convert_variables_to_constants_v2 as convert_var_to_const
 from tensorflow.python.saved_model import tag_constants, signature_constants
 
 logger = logging.getLogger(__name__)
@@ -26,7 +23,6 @@ def keras_to_tflite(model, out_filename, data_gen=None):
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
                                            tf.lite.OpsSet.SELECT_TF_OPS]
     converter.allow_custom_ops = True
-    #converter._experimental_lower_tensor_list_ops = False
     if data_gen is not None:
         # when we have a data_gen that is the trigger to use it to create
         # integer weights and calibrate them. Warning: this model will no
@@ -50,27 +46,22 @@ def keras_to_tflite(model, out_filename, data_gen=None):
     open(out_filename, "wb").write(tflite_model)
 
 
-def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str):
+def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str) -> bool:
     """ Converts TF SavedModel format into TensorRT for cuda. Note,
         this works also without cuda as all GPU specific magic is handled
         within TF now. """
     logger.info(f'Converting SavedModel {saved_path} to TensorRT'
                 f' {tensor_rt_path}')
-    from tensorflow.python.compiler.tensorrt import trt_convert as trt
-
-    params = trt.DEFAULT_TRT_CONVERSION_PARAMS
-    params = params._replace(max_workspace_size_bytes=(1 << 32))
-    params = params._replace(precision_mode="FP16")
-    params = params._replace(maximum_cached_engines=100)
     try:
-        converter = trt.TrtGraphConverterV2(
-            input_saved_model_dir=saved_path,
-            conversion_params=params)
+        from tensorflow.python.compiler.tensorrt import trt_convert as trt
+        converter = trt.TrtGraphConverterV2(input_saved_model_dir=saved_path)
         converter.convert()
         converter.save(tensor_rt_path)
         logger.info(f'TensorRT conversion done.')
+        return True
     except Exception as e:
         logger.error(f'TensorRT conversion failed because: {e}')
+        return False
 
 
 class Interpreter(ABC):
@@ -177,8 +168,6 @@ class FastAIInterpreter(Interpreter):
     def __init__(self):
         super().__init__()
         self.model: None
-        from fastai import learner as fastai_learner
-        from fastai import optimizer as fastai_optimizer
 
     def set_model(self, pilot: 'FastAiPilot') -> None:
         self.model = pilot.create_model()
@@ -281,57 +270,59 @@ class TensorRT(Interpreter):
     Uses TensorRT to do the inference.
     """
     def __init__(self):
-        self.frozen_func = None
-        self.input_shapes = None
+        super().__init__()
+        self.graph_func = None
+        self.pilot = None
+        self.inputs = None
+        self.outputs = None
+
+    def set_model(self, pilot: 'KerasPilot') -> None:
+        # We can't determine the output shape neither here, nor in the
+        # constructor, because calling output_shapes() on the model will call
+        # get_input_shape() from the interpreter which will fail at that
+        # state as the trt model hasn't been loaded yet
+        self.pilot = pilot
 
     def get_input_shapes(self) -> List[tf.TensorShape]:
-        return self.input_shapes
+        assert self.graph_func, "Requires loadin the tensorrt model first"
+        return [inp.shape for inp in self.graph_func.inputs]
 
     def compile(self, **kwargs):
         pass
 
     def load(self, model_path: str) -> None:
-        saved_model_loaded = tf.saved_model.load(model_path,
-                                                 tags=[tag_constants.SERVING])
-        graph_func = saved_model_loaded.signatures[
-            signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-        self.frozen_func = convert_var_to_const(graph_func)
-        self.input_shapes = [inp.shape for inp in graph_func.inputs]
+        logger.info(f'Loading TensrRT model {model_path}')
+        assert self.pilot, "Need to set pilot first"
+        try:
+            saved_model_loaded = tf.saved_model.load(
+                model_path, tags=[tag_constants.SERVING])
+            self.graph_func = saved_model_loaded.signatures[
+                signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+            inputs, outputs = self.pilot.output_shapes()
+            self.outputs = list(outputs.keys())
+            self.inputs = list(inputs.keys())
+            logger.info(f'Finished loading TensorRT model.')
+        except Exception as e:
+            logger.error(f'Could not load TensorRT model because: {e}')
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
-        # first reshape as usual
-        img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
-        img_tensor = self.convert(img_arr)
-        if other_arr is not None:
-            other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
-            other_tensor = self.convert(other_arr)
-            output_tensors = self.frozen_func(img_tensor, other_tensor)
-        else:
-            output_tensors = self.frozen_func(img_tensor)
-
-        # because we send a batch of size one, pick first element
-        outputs = [out.numpy().squeeze(axis=0) for out in output_tensors]
-        # don't return list if output is 1d
-        return outputs if len(outputs) > 1 else outputs[0]
+        inputs = (img_arr, ) if other_arr is None else (img_arr, other_arr)
+        input_dict = dict(zip(self.inputs,
+                              (self.expand_and_convert(a) for a in inputs)))
+        return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
-        args = []
-        for inp in self.frozen_func.inputs:
-            name = inp.name.split(':')[0]
-            val = input_dict[name]
-            val_res = np.expand_dims(val, axis=0).astype(np.float32)
-            val_conv = self.convert(val_res)
-            args.append(val_conv)
-        output_tensors = self.frozen_func(*args)
-        # because we send a batch of size one, pick first element
-        outputs = [out.numpy().squeeze(axis=0) for out in output_tensors]
+        out_dict = self.graph_func(**input_dict)
+        # Squeeze here because we send a batch of size one, so pick first
+        # element. To return the order of outputs as defined in the model we
+        # need to iterate through the model's output shapes here
+        outputs = [out_dict[k].numpy().squeeze(axis=0) for k in self.outputs]
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 
     @staticmethod
-    def convert(arr):
+    def expand_and_convert(arr):
         """ Helper function. """
-        value = tf.compat.v1.get_variable("features", dtype=tf.float32,
-                                          initializer=tf.constant(arr))
-        return tf.convert_to_tensor(value=value)
+        arr_exp = np.expand_dims(arr, axis=0)
+        return tf.convert_to_tensor(value=arr_exp, dtype=tf.float32)

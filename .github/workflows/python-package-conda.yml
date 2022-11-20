@@ -21,11 +21,11 @@ jobs:
         shell: bash -l {0}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Create python 3.7 conda env
+        uses: actions/checkout@v3
+      - name: Create python 3.8 conda env
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.7
+          python-version: 3.8
           mamba-version: "*"
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
