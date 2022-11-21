@@ -42,6 +42,5 @@ source ~/env/bin/activate
 
 # install pandas and numpy and Adafruit CircuitPython
 pip install pandas #also installs numpy
-pip install adafruit-circuitpython-lis3dh
 
 pip install tensorflow==1.9
