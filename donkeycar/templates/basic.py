@@ -73,7 +73,7 @@ def drive(cfg, model_path=None, model_type=None):
     elif cfg.CAMERA_TYPE == "PICAM":
         from donkeycar.parts.camera import PiCamera
         cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H,
-                       image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE,
+                       image_d=cfg.IMAGE_DEPTH,
                        vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
     elif cfg.CAMERA_TYPE == "WEBCAM":
         from donkeycar.parts.camera import Webcam

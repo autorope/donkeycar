@@ -56,7 +56,7 @@ setup(name='donkeycar',
       ],
       extras_require={
           'pi': [
-              'picamera',
+              'picamera2',
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
