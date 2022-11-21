@@ -1,4 +1,4 @@
-name: donkey_38
+name: donkey
 
 channels:
   - defaults
@@ -7,7 +7,7 @@ channels:
   - fastai
 
 dependencies:
-  - python=3.8
+  - python=3.9
   - h5py
   - pillow
   - opencv

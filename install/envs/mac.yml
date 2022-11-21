@@ -1,4 +1,4 @@
-name: donkey_38
+name: donkey
 
 channels:
   - defaults
@@ -7,7 +7,7 @@ channels:
   - fastai
 
 dependencies:
-  - python=3.8
+  - python=3.9
   - h5py
   - pillow
   - opencv
@@ -32,7 +32,7 @@ dependencies:
   - pytorch-lightning
   - numpy
   - psutil
-  - kivy=2.0.0
+  - kivy=2.1
   - plotly
   - pyyaml
   - fastai

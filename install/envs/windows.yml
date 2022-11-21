@@ -7,7 +7,7 @@ channels:
   - fastai
 
 dependencies:
-  - python=3.7
+  - python=3.9
   - h5py
   - pillow
   - opencv
@@ -32,7 +32,7 @@ dependencies:
   - torchaudio
   - pytorch-lightning
   - numpy
-  - kivy=2.0.0
+  - kivy=2.1
   - plotly
   - pyyaml
   - psutil
