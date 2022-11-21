@@ -43,7 +43,10 @@ class PilotDatabase:
         else:
             this_num = 0
         date = time.strftime('%y-%m-%d')
-        name = f'pilot_{date}_{this_num}.h5'
+        ext = 'h5' if getattr(self.cfg, 'SAVE_MODEL_AS_H5', False) \
+            else 'savedmodel'
+        name = f'pilot_{date}_{this_num}.{ext}'
+
         return os.path.join(self.cfg.MODELS_PATH, name), this_num
 
     def to_df(self) -> pd.DataFrame:
@@ -118,7 +121,7 @@ class PilotDatabase:
             return datetime.fromtimestamp(t).strftime(fmt)
 
         def transfer_fmt(model_name):
-            return model_name.replace('.h5', '')
+            return model_name.replace('.h5', '').replace('.savedmodel', '')
 
         return {'Time': time_fmt, 'Transfer': transfer_fmt}
 

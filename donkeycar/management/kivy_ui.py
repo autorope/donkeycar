@@ -899,7 +899,7 @@ class DataFrameLabel(Label):
 
 class TransferSelector(BoxLayout, FileChooserBase):
     """ Class to select transfer model"""
-    filters = ['*.h5']
+    filters = ['*.h5', '*.savedmodel']
 
 
 class TrainScreen(Screen):
@@ -915,7 +915,17 @@ class TrainScreen(Screen):
         transfer = self.ids.transfer_spinner.text
         model_type = self.ids.train_spinner.text
         if transfer != 'Choose transfer model':
-            transfer = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
+            h5 = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
+            sm = os.path.join(self.config.MODELS_PATH, transfer + '.savedmodel')
+            if os.path.exists(sm):
+                transfer = sm
+            elif os.path.exists(h5):
+                transfer = h5
+            else:
+                transfer = None
+                self.ids.status.text = \
+                    f'Could find neither {sm} nor {trans_h5} - training ' \
+                    f'without transfer'
         else:
             transfer = None
         try:

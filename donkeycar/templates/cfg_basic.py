@@ -75,6 +75,7 @@ DEFAULT_AI_FRAMEWORK = 'tensorflow'  # The default AI framework to use. Choose f
 DEFAULT_MODEL_TYPE = 'linear' #(linear|categorical|rnn|imu|behavior|3d|localizer|latent)
 CREATE_TF_LITE = True  # automatically create tflite model in training
 CREATE_TENSOR_RT = False  # automatically create tensorrt model in training
+SAVE_MODEL_AS_H5 = False  # if old keras format should be used instead of savedmodel
 BATCH_SIZE = 128
 TRAIN_TEST_SPLIT = 0.8
 MAX_EPOCHS = 100

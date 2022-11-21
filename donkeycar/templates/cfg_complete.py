@@ -380,6 +380,7 @@ LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
 CREATE_TF_LITE = True           # automatically create tflite model in training
 CREATE_TENSOR_RT = False        # automatically create tensorrt model in training
+SAVE_MODEL_AS_H5 = False        # if old keras format should be used instead of savedmodel
 
 PRUNE_CNN = False               #This will remove weights from your model. The primary goal is to increase performance.
 PRUNE_PERCENT_TARGET = 75       # The desired percentage of pruning.
