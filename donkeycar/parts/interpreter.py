@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
     logger.info(f'Convert model {in_filename} to TFLite {out_filename}')
-    model = tf.keras.models.load_model(in_filename)
+    model = tf.keras.models.load_model(in_filename, compile=False)
     keras_to_tflite(model, out_filename, data_gen)
     logger.info('TFLite conversion done.')
 

@@ -157,13 +157,17 @@ def train(cfg: Config, tub_paths: str, model: str = None,
                        patience=cfg.EARLY_STOP_PATIENCE,
                        show_plot=cfg.SHOW_PLOT)
 
+    # We are doing the tflite/trt conversion here on a previously saved model
+    # and not on the kl.interpreter.model object directly. The reason is that
+    # we want to convert the best model which is not the model in its current
+    # state, but in the state it was saved the last time during training.
     if getattr(cfg, 'CREATE_TF_LITE', True):
         tf_lite_model_path = f'{base_path}.tflite'
         keras_model_to_tflite(model_path, tf_lite_model_path)
 
     if getattr(cfg, 'CREATE_TENSOR_RT', False):
-        # load h5 (ie. keras) model
-        model_rt = load_model(model_path)
+        # load .h5 (ie. keras) or .savedmodel (ie. tf) model
+        model_rt = load_model(model_path, compile=False)
         # save in tensorflow savedmodel format (i.e. directory)
         model_rt.save(f'{base_path}.savedmodel')
         # pass savedmodel to the rt converter
