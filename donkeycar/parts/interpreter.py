@@ -109,9 +109,14 @@ class KerasInterpreter(Interpreter):
     def __init__(self):
         super().__init__()
         self.model: tf.keras.Model = None
+        self.inputs = None
+        self.outputs = None
 
     def set_model(self, pilot: 'KerasPilot') -> None:
         self.model = pilot.create_model()
+        inputs, outputs = pilot.output_shapes()
+        self.outputs = list(outputs.keys())
+        self.inputs = list(inputs.keys())
 
     def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
         self.model.optimizer = optimizer
@@ -138,16 +143,12 @@ class KerasInterpreter(Interpreter):
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
-        img_arr = np.expand_dims(img_arr, axis=0)
-        inputs = img_arr
-        if other_arr is not None:
-            other_arr = np.expand_dims(other_arr, axis=0)
-            inputs = [img_arr, other_arr]
-        return self.invoke(inputs)
+        input_dict = dict(zip(self.inputs, (img_arr, other_arr)))
+        return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
-            input_dict[k] = np.expand_dims(v, axis=0)
+            input_dict[k] = self.expand_and_convert(v)
         return self.invoke(input_dict)
 
     def load(self, model_path: str) -> None:
@@ -161,6 +162,13 @@ class KerasInterpreter(Interpreter):
 
     def summary(self) -> str:
         return self.model.summary()
+
+    @staticmethod
+    def expand_and_convert(arr):
+        """ Helper function. """
+        # expand each input to shape from [x, y, z] to [1, x, y, z] and
+        arr_exp = np.expand_dims(arr, axis=0)
+        return arr_exp
 
 
 class FastAIInterpreter(Interpreter):
@@ -250,10 +258,8 @@ class TfLite(Interpreter):
         return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
-        # expand each input to shape from [x, y, z] to [1, x, y, z] and
-        # convert to float32 for expression:
         for k, v in input_dict.items():
-            input_dict[k] = np.expand_dims(v, axis=0).astype(np.float32)
+            input_dict[k] = self.expand_and_convert(v)
         outputs = self.runner(**input_dict)
         ret = list(outputs[k][0] for k in
                    self.signatures['serving_default']['outputs'])
@@ -263,6 +269,14 @@ class TfLite(Interpreter):
         assert self.interpreter is not None, "Need to load tflite model first"
         details = self.interpreter.get_input_details()
         return list(d['shape'] for d in details)
+
+    @staticmethod
+    def expand_and_convert(arr):
+        """ Helper function. """
+        # expand each input to shape from [x, y, z] to [1, x, y, z] and
+        # convert to float32 for expression:
+        arr_exp = np.expand_dims(arr, axis=0).astype(np.float32)
+        return arr_exp
 
 
 class TensorRT(Interpreter):
@@ -308,11 +322,12 @@ class TensorRT(Interpreter):
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
         inputs = (img_arr, ) if other_arr is None else (img_arr, other_arr)
-        input_dict = dict(zip(self.inputs,
-                              (self.expand_and_convert(a) for a in inputs)))
+        input_dict = dict(zip(self.inputs, inputs))
         return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
+        for k, v in input_dict.items():
+            input_dict[k] = self.expand_and_convert(v)
         out_dict = self.graph_func(**input_dict)
         # Squeeze here because we send a batch of size one, so pick first
         # element. To return the order of outputs as defined in the model we
@@ -324,5 +339,7 @@ class TensorRT(Interpreter):
     @staticmethod
     def expand_and_convert(arr):
         """ Helper function. """
+        # expand each input to shape from [x, y, z] to [1, x, y, z] and
+        # convert to float32 for expression:
         arr_exp = np.expand_dims(arr, axis=0)
         return tf.convert_to_tensor(value=arr_exp, dtype=tf.float32)

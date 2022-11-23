@@ -1,6 +1,5 @@
 import shutil
 import tempfile
-import sys
 from pytest import approx
 import pytest
 import os
