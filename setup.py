@@ -64,6 +64,13 @@ setup(name='donkeycar',
               'RPi.GPIO',
               'imgaug'
           ],
+          'opi': [
+              'Adafruit-Blinka',
+              'Adafruit_PCA9685',
+              'adafruit-circuitpython-lis3dh',
+              'adafruit-circuitpython-ssd1306',
+              'adafruit-circuitpython-rplidar',
+          ],
           'nano': [
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
