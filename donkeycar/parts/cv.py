@@ -168,17 +168,21 @@ class Pipeline():
         return val
     
 class CvCam(object):
-    def __init__(self, image_w=160, image_h=120, image_d=3, iCam=0):
+    def __init__(self, image_w=160, image_h=120, image_d=3, iCam=0, brg2rgb=True):
 
         self.frame = None
         self.cap = cv2.VideoCapture(iCam)
         self.running = True
         self.cap.set(3, image_w)
         self.cap.set(4, image_h)
+        self.brg2rgb = brg2rgb
 
     def poll(self):
         if self.cap.isOpened():
-            ret, self.frame = self.cap.read()
+            ret, frame  = self.cap.read()
+            if self.brg2rgb:
+                frame  = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            self.frame = frame
 
     def update(self):
         '''
