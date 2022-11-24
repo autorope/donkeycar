@@ -66,6 +66,9 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str) -> bool:
 
 class Interpreter(ABC):
     """ Base class to delegate between Keras, TFLite and TensorRT """
+    def __init__(self):
+        self.input_keys: list[str] = None
+        self.output_keys: list[str] = None
 
     @abstractmethod
     def load(self, model_path: str) -> None:
@@ -88,10 +91,16 @@ class Interpreter(ABC):
     def get_input_shapes(self) -> List[tf.TensorShape]:
         pass
 
-    @abstractmethod
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
-        pass
+        """
+        This inference interface just converts the inputs into a dictionary
+        :param img_arr:    input image array
+        :param other_arr:  second input array
+        :return:           model output, Iterable over scalar and/or vectors
+        """
+        input_dict = dict(zip(self.input_keys, (img_arr, other_arr)))
+        return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict) -> Sequence[Union[float, np.ndarray]]:
         pass
@@ -109,14 +118,12 @@ class KerasInterpreter(Interpreter):
     def __init__(self):
         super().__init__()
         self.model: tf.keras.Model = None
-        self.inputs = None
-        self.outputs = None
 
     def set_model(self, pilot: 'KerasPilot') -> None:
         self.model = pilot.create_model()
         inputs, outputs = pilot.output_shapes()
-        self.outputs = list(outputs.keys())
-        self.inputs = list(inputs.keys())
+        self.input_keys = list(inputs.keys())
+        self.output_keys = list(outputs.keys())
 
     def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
         self.model.optimizer = optimizer
@@ -140,11 +147,6 @@ class KerasInterpreter(Interpreter):
         # for sequential models the output shape is (1, n) with n = output dim
         else:
             return outputs.numpy().squeeze(axis=0)
-
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
-            -> Sequence[Union[float, np.ndarray]]:
-        input_dict = dict(zip(self.inputs, (img_arr, other_arr)))
-        return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
@@ -175,7 +177,7 @@ class FastAIInterpreter(Interpreter):
 
     def __init__(self):
         super().__init__()
-        self.model: None
+        self.model = None
 
     def set_model(self, pilot: 'FastAiPilot') -> None:
         self.model = pilot.create_model()
@@ -207,7 +209,6 @@ class FastAIInterpreter(Interpreter):
         import torch
         inputs = torch.unsqueeze(img_arr, 0)
         if other_arr is not None:
-            #other_arr = np.expand_dims(other_arr, axis=0)
             inputs = [img_arr, other_arr]
         return self.invoke(inputs)
 
@@ -243,26 +244,21 @@ class TfLite(Interpreter):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'
         logger.info(f'Loading model {model_path}')
-        # Load TFLite model and allocate tensors.
+        # Load TFLite model and extract input and output keys
         self.interpreter = tf.lite.Interpreter(model_path=model_path)
         self.signatures = self.interpreter.get_signature_list()
         self.runner = self.interpreter.get_signature_runner()
+        self.input_keys = self.signatures['serving_default']['inputs']
+        self.output_keys = self.signatures['serving_default']['outputs']
 
     def compile(self, **kwargs):
         pass
-
-    def predict(self, img_arr, other_arr) \
-            -> Sequence[Union[float, np.ndarray]]:
-        input_keys = self.signatures['serving_default']['inputs']
-        input_dict = dict(zip(input_keys, (img_arr, other_arr)))
-        return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
             input_dict[k] = self.expand_and_convert(v)
         outputs = self.runner(**input_dict)
-        ret = list(outputs[k][0] for k in
-                   self.signatures['serving_default']['outputs'])
+        ret = list(outputs[k][0] for k in self.output_keys)
         return ret if len(ret) > 1 else ret[0]
 
     def get_input_shapes(self):
@@ -287,8 +283,6 @@ class TensorRT(Interpreter):
         super().__init__()
         self.graph_func = None
         self.pilot = None
-        self.inputs = None
-        self.outputs = None
 
     def set_model(self, pilot: 'KerasPilot') -> None:
         # We can't determine the output shape neither here, nor in the
@@ -313,17 +307,11 @@ class TensorRT(Interpreter):
             self.graph_func = saved_model_loaded.signatures[
                 signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
             inputs, outputs = self.pilot.output_shapes()
-            self.outputs = list(outputs.keys())
-            self.inputs = list(inputs.keys())
+            self.input_keys = list(inputs.keys())
+            self.output_keys = list(outputs.keys())
             logger.info(f'Finished loading TensorRT model.')
         except Exception as e:
             logger.error(f'Could not load TensorRT model because: {e}')
-
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
-            -> Sequence[Union[float, np.ndarray]]:
-        inputs = (img_arr, ) if other_arr is None else (img_arr, other_arr)
-        input_dict = dict(zip(self.inputs, inputs))
-        return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
@@ -332,7 +320,8 @@ class TensorRT(Interpreter):
         # Squeeze here because we send a batch of size one, so pick first
         # element. To return the order of outputs as defined in the model we
         # need to iterate through the model's output shapes here
-        outputs = [out_dict[k].numpy().squeeze(axis=0) for k in self.outputs]
+        outputs = [out_dict[k].numpy().squeeze(axis=0) for k in
+                   self.output_keys]
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 
