@@ -7,8 +7,18 @@ from typing import Union, Sequence, List
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.python.saved_model import tag_constants, signature_constants
+from tensorflow.python.compiler.tensorrt import trt_convert as trt
 
 logger = logging.getLogger(__name__)
+
+
+def has_trt_support():
+    try:
+        converter = trt.TrtGraphConverterV2()
+        return True
+    except RuntimeError as e:
+        logger.warning(e)
+        return False
 
 
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
@@ -53,7 +63,6 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str) -> bool:
     logger.info(f'Converting SavedModel {saved_path} to TensorRT'
                 f' {tensor_rt_path}')
     try:
-        from tensorflow.python.compiler.tensorrt import trt_convert as trt
         converter = trt.TrtGraphConverterV2(input_saved_model_dir=saved_path)
         converter.convert()
         converter.save(tensor_rt_path)
@@ -299,16 +308,26 @@ class TensorRT(Interpreter):
         pass
 
     def load(self, model_path: str) -> None:
-        logger.info(f'Loading TensrRT model {model_path}')
+        logger.info(f'Loading TensorRT model {model_path}')
         assert self.pilot, "Need to set pilot first"
         try:
-            saved_model_loaded = tf.saved_model.load(
-                model_path, tags=[tag_constants.SERVING])
-            self.graph_func = saved_model_loaded.signatures[
-                signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-            inputs, outputs = self.pilot.output_shapes()
-            self.input_keys = list(inputs.keys())
-            self.output_keys = list(outputs.keys())
+            ext = os.path.splitext(model_path)[1]
+            if ext == '.savedmodel':
+                # first load tf model format to extract input and output keys
+                model = tf.keras.models.load_model(model_path, compile=False)
+                self.input_keys = model.input_names
+                self.output_keys = model.output_names
+                converter \
+                    = trt.TrtGraphConverterV2(input_saved_model_dir=model_path)
+                self.graph_func = converter.convert()
+            else:
+                trt_model_loaded = tf.saved_model.load(
+                    model_path, tags=[tag_constants.SERVING])
+                self.graph_func = trt_model_loaded.signatures[
+                    signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+                inputs, outputs = self.pilot.output_shapes()
+                self.input_keys = list(inputs.keys())
+                self.output_keys = list(outputs.keys())
             logger.info(f'Finished loading TensorRT model.')
         except Exception as e:
             logger.error(f'Could not load TensorRT model because: {e}')
