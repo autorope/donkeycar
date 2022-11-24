@@ -714,7 +714,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 if 'tflite' in self.model_type:
                     self.filters = ['*.tflite']
                 elif 'tensorrt' in self.model_type:
-                    self.filters = ['*.trt']
+                    self.filters = ['*.trt', '*.savedmodel']
                 else:
                     self.filters = ['*.h5', '*.savedmodel']
 
