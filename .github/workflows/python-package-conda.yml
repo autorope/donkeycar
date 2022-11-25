@@ -22,10 +22,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      - name: Create python 3.8 conda env
+      - name: Create python 3.9 conda env
         uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: 3.8
+          python-version: 3.9
           mamba-version: "*"
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
