@@ -260,11 +260,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         s = Sombrero()
 
     #IMU
-    if cfg.HAVE_IMU:
-        from donkeycar.parts.imu import IMU
-        imu = IMU(sensor=cfg.IMU_SENSOR, dlp_setting=cfg.IMU_DLP_CONFIG)
-        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
+    add_imu(V, cfg)
+
 
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
@@ -801,6 +798,20 @@ def add_odometry(V, cfg):
             V.add(enc, outputs=['enc/speed'], threaded=True)
         else:
             print("No supported encoder found")
+
+#
+# IMU setup
+#
+def add_imu(V, cfg):
+    imu = None
+    if cfg.HAVE_IMU:
+        from donkeycar.parts.imu import IMU
+
+        imu = IMU(sensor=cfg.IMU_SENSOR, addr=cfg.IMU_ADDRESS,
+                  dlp_setting=cfg.IMU_DLP_CONFIG)
+        V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+                            'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
+    return imu
 
 
 #
