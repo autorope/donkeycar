@@ -27,7 +27,8 @@ PROJECT_DIR=$(pwd)
 #
 sudo apt-get update
 sudo apt-get upgrade -y
-sudo apt-get install -y build-essential python3 python3-dev python3-pip python3-virtualenv python3-numpy python3-pandas i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev gfortran libatlas-base-dev libopenblas-dev libhdf5-serial-dev libgeos-dev git ntp
+sudo apt-get install -y build-essential cmake gcc g++ gfortran
+sudo apt-get install -y python3 python3-dev python3-pip python3-virtualenv python3-numpy python3-pandas i2c-tools avahi-utils joystick libopenjp2-7-dev libtiff5-dev libatlas-base-dev libopenblas-dev libhdf5-serial-dev libgeos-dev git ntp
 
 
 
