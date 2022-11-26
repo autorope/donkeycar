@@ -156,8 +156,7 @@ class TestCTE(unittest.TestCase):
         path = []
         for i in range(100):
             path.append((0, i+1))
-        for i in range(100):
-            path.append((0, i+1))
+        path += path
 
         cte = CTE()
 
@@ -176,8 +175,7 @@ class TestCTE(unittest.TestCase):
         path = []
         for i in range(100):
             path.append((0, i+1))
-        for i in range(100):
-            path.append((0, i+1))
+        path += path
 
         cte = CTE()
 

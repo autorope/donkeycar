@@ -121,9 +121,10 @@ class OriginOffset(object):
 
     def run(self, x, y, closest_pt):
         """
-        :param:x is current horizontal position
-        :param:y is current vertical position
-        :param:closest_pt is current cte/closest_pt
+        :param x: is current horizontal position
+        :param y: is current vertical position
+        :param closest_pt: is current cte/closest_pt
+        :return: translated x, y and new index of closest point in path.
         """
         if is_number_type(x) and is_number_type(y):
             # if origin is None, set it to current position
@@ -141,11 +142,12 @@ class OriginOffset(object):
         if self.last_x is not None and self.last_y is not None and self.ox is not None and self.oy is not None:
             pos = (self.last_x - self.ox, self.last_y - self.oy)
         if self.debug:
-            print(f"pos/x = {pos[0]}, pos/y = {pos[1]}")
+            logging.info(f"pos/x = {pos[0]}, pos/y = {pos[1]}")
 
         # reset the starting search index for cte algorithm
         if self.reset:
-            print(f"cte/closest_pt = {closest_pt} -> None")
+            if self.debug:
+                logging.info(f"cte/closest_pt = {closest_pt} -> None")
             closest_pt = None
 
         # clear reset latch
@@ -256,7 +258,7 @@ class CTE(object):
     def nearest_pt(self, path, x, y, from_pt=0, num_pts=None):
         from_pt = from_pt if from_pt is not None else 0
         num_pts = num_pts if num_pts is not None else len(path)
-        num_pts = num_pts if num_pts <= len(path) else len(path)
+        num_pts = min(num_pts, len(path))
         if num_pts < 0:
             logging.error("num_pts must not be negative.")
             return None, None, None
