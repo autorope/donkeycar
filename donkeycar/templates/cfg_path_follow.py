@@ -411,6 +411,7 @@ LIDAR_UPPER_LIMIT = 270
 # IMU for imu model
 HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
 IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
+IMU_ADDRESS = 0x68              # if AD0 pin is pulled high them address is 0x69, otherwise it is 0x68
 IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
 
 
@@ -639,6 +640,9 @@ PATH_DEBUG = True                   # True to log x,y position
 PATH_SCALE = 10.0                   # the path display will be scaled by this factor in the web page
 PATH_OFFSET = (255, 255)            # 255, 255 is the center of the map. This offset controls where the origin is displayed.
 PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a path point
+PATH_SEARCH_LENGTH = None           # number of points to search for closest point, None to search entire path
+PATH_LOOK_AHEAD = 1                 # number of points ahead of the closest point to include in cte track
+PATH_LOOK_BEHIND = 1                # number of points behind the closest point to include in cte track   
 PID_P = -0.5                        # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower

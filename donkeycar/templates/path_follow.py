@@ -62,7 +62,7 @@ from donkeycar.parts.path import CsvPath, PathPlot, CTE, PID_Pilot, \
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_drivetrain, add_simulator
+    add_user_controller, add_drivetrain, add_simulator, add_imu
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
@@ -106,6 +106,14 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     add_simulator(V, cfg)
 
+    #
+    # IMU
+    #
+    add_imu(V, cfg)
+
+    #
+    # odometry/tachometer/speed control
+    #
     if cfg.HAVE_ODOM:
         #
         # setup encoders, odometry and pose estimation
@@ -178,7 +186,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # in the mapping.
     #
     origin_reset = OriginOffset(cfg.PATH_DEBUG)
-    V.add(origin_reset, inputs=['pos/x', 'pos/y'], outputs=['pos/x', 'pos/y'] )
+    V.add(origin_reset, inputs=['pos/x', 'pos/y', 'cte/closest_pt'], outputs=['pos/x', 'pos/y', 'cte/closest_pt'])
 
 
     class UserCondition:
@@ -277,8 +285,8 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     V.add(plot, inputs=['map/image', 'path'], outputs=['map/image'])
 
     # This will use path and current position to output cross track error
-    cte = CTE()
-    V.add(cte, inputs=['path', 'pos/x', 'pos/y'], outputs=['cte/error'], run_condition='run_pilot')
+    cte = CTE(look_ahead=cfg.PATH_LOOK_AHEAD, look_behind=cfg.PATH_LOOK_BEHIND, num_pts=cfg.PATH_SEARCH_LENGTH)
+    V.add(cte, inputs=['path', 'pos/x', 'pos/y', 'cte/closest_pt'], outputs=['cte/error', 'cte/closest_pt'], run_condition='run_pilot')
 
     # This will use the cross track error and PID constants to try to steer back towards the path.
     pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
