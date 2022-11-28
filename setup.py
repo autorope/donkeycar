@@ -29,7 +29,7 @@ setup(name='donkeycar',
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
       author='Will Roscoe, Adam Conway, Tawn Kramer',
-      author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
+          author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
       license='MIT',
       entry_points={
           'console_scripts': [
@@ -55,13 +55,16 @@ setup(name='donkeycar',
           "utm",
       ],
       extras_require={
+          # if installing into a conda (i.e. miniforge) env on Pi we have to
+          # run 'sudo apt-get install libcap-dev' first.
           'pi': [
               'picamera2',
               'Adafruit_PCA9685',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'RPi.GPIO',
-              'imgaug'
+              'imgaug',
+              'tensorflow @ https://github.com/PINTO0309/Tensorflow-bin/releases/download/v2.9.0/tensorflow-2.9.0-cp39-none-linux_aarch64.whl'
           ],
           'nano': [
               'Adafruit_PCA9685',
