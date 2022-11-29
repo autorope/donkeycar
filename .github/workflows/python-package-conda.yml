@@ -21,7 +21,7 @@ jobs:
         shell: bash -l {0}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Create python 3.7 conda env
         uses: conda-incubator/setup-miniconda@v2
         with:
