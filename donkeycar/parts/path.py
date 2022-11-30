@@ -76,6 +76,45 @@ class CsvPath(AbstractPath):
 
         self.recording = False
 
+class CsvVelocityPath(AbstractPath):
+    def __init__(self, min_dist=1.):
+        super().__init__(min_dist)
+        self.velocities = []
+
+    def run(self, recording, x, y, velocity):
+        if recording:
+            d = dist(x, y, self.x, self.y)
+            if d > self.min_dist:
+                logging.info(f"path point ({x},{y})")
+                self.path.append((x, y))
+                self.velocities.append(velocity)
+                self.x = x
+                self.y = y
+        return self.path, self.velocities
+
+    def save(self, filename):
+        if self.length() > 0:
+            with open(filename, 'w') as outfile:
+                for (x, y), v in zip(self.path, self.velocities):
+                    outfile.write(f"{x}, {y}, {v}\n")
+            return True
+        else:
+            return False
+
+    def load(self, filename):
+        path = pathlib.Path(filename)
+        if path.is_file():
+            with open(filename, "r") as infile:
+                self.path = []
+                for line in infile:
+                    xy = [float(i.strip()) for i in line.strip().split(sep=",")]
+                    self.path.append((xy[0], xy[1]))
+                    self.velocities.append(xy[2])
+            return True
+        else:
+            logging.info(f"File '{filename}' does not exist")
+            return False
+
 
 class RosPath(AbstractPath):
     def __init__(self, min_dist=1.):
