@@ -424,11 +424,17 @@ class CTE(object):
 
 class PID_Pilot(object):
 
-    def __init__(self, pid, throttle):
+    def __init__(self, pid, throttle, use_constant_throttle: bool = False):
         self.pid = pid
         self.throttle = throttle
+        self.use_constant_throttle = use_constant_throttle
+        self.variable_speed_multiplier = 1.0
 
-    def run(self, cte):
+    def run(self, cte, velocities, closest_pt_idx):
         steer = self.pid.run(cte)
-        logging.info("CTE: %f steer: %f" % (cte, steer))
-        return steer, self.throttle
+        if self.use_constant_throttle or velocities is None or closest_pt_idx is None:
+            throttle = self.throttle
+        else:
+            throttle = velocities[closest_pt_idx] * self.variable_speed_multiplier
+        logging.info("CTE: %f steer: %f throttle: %f" % (cte, steer, throttle))
+        return steer, throttle
