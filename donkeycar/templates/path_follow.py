@@ -57,7 +57,7 @@ from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.controller import JoystickController
-from donkeycar.parts.path import CsvVelocityPath, PathPlot, CTE, PID_Pilot, \
+from donkeycar.parts.path import CsvThrottlePath, PathPlot, CTE, PID_Pilot, \
     PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
@@ -211,8 +211,8 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
-    path = CsvVelocityPath(min_dist=cfg.PATH_MIN_DIST)
-    V.add(path, inputs=['recording', 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'velocities'])
+    path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST)
+    V.add(path, inputs=['recording', 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
 
     if cfg.DONKEY_GYM:
         lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
@@ -291,7 +291,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # This will use the cross track error and PID constants to try to steer back towards the path.
     pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE, cfg.USE_CONSTANT_THROTTLE)
-    V.add(pilot, inputs=['cte/error', 'velocities', 'cte/closest_pt'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
+    V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
 
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
