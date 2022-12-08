@@ -76,26 +76,26 @@ class CsvPath(AbstractPath):
 
         self.recording = False
 
-class CsvVelocityPath(AbstractPath):
+class CsvThrottlePath(AbstractPath):
     def __init__(self, min_dist=1.):
         super().__init__(min_dist)
-        self.velocities = []
+        self.throttles = []
 
-    def run(self, recording, x, y, velocity):
+    def run(self, recording, x, y, throttle):
         if recording:
             d = dist(x, y, self.x, self.y)
             if d > self.min_dist:
                 logging.info(f"path point ({x},{y})")
                 self.path.append((x, y))
-                self.velocities.append(velocity)
+                self.throttles.append(throttle)
                 self.x = x
                 self.y = y
-        return self.path, self.velocities
+        return self.path, self.throttles
 
     def save(self, filename):
         if self.length() > 0:
             with open(filename, 'w') as outfile:
-                for (x, y), v in zip(self.path, self.velocities):
+                for (x, y), v in zip(self.path, self.throttles):
                     outfile.write(f"{x}, {y}, {v}\n")
             return True
         else:
@@ -109,7 +109,7 @@ class CsvVelocityPath(AbstractPath):
                 for line in infile:
                     xy = [float(i.strip()) for i in line.strip().split(sep=",")]
                     self.path.append((xy[0], xy[1]))
-                    self.velocities.append(xy[2])
+                    self.throttles.append(xy[2])
             return True
         else:
             logging.info(f"File '{filename}' does not exist")
@@ -430,11 +430,11 @@ class PID_Pilot(object):
         self.use_constant_throttle = use_constant_throttle
         self.variable_speed_multiplier = 1.0
 
-    def run(self, cte, velocities, closest_pt_idx):
+    def run(self, cte, throttles, closest_pt_idx):
         steer = self.pid.run(cte)
-        if self.use_constant_throttle or velocities is None or closest_pt_idx is None:
+        if self.use_constant_throttle or throttles is None or closest_pt_idx is None:
             throttle = self.throttle
         else:
-            throttle = velocities[closest_pt_idx] * self.variable_speed_multiplier
+            throttle = throttles[closest_pt_idx] * self.variable_speed_multiplier
         logging.info("CTE: %f steer: %f throttle: %f" % (cte, steer, throttle))
         return steer, throttle
