@@ -1,4 +1,4 @@
-name: donkey
+name: donkey-ubuntu
 
 channels:
   - defaults
@@ -27,7 +27,7 @@ dependencies:
   - PrettyTable
   - pyfiglet
   - mypy
-  - pytorch=1.7.1
+  - pytorch
   - torchvision
   - torchaudio
   - pytorch-lightning

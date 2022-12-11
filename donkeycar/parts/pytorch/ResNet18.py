@@ -11,7 +11,7 @@ from donkeycar.parts.pytorch.torch_data import get_default_transform
 
 def load_resnet18(num_classes=2):
     # Load the pre-trained model (on ImageNet)
-    model = models.resnet18(pretrained=True)
+    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
 
     # Don't allow model feature extraction layers to be modified
     for layer in model.parameters():
