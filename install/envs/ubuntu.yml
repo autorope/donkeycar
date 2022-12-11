@@ -8,6 +8,7 @@ channels:
 
 dependencies:
   - python=3.7
+  - numpy=1.19
   - h5py
   - pillow
   - opencv
@@ -31,7 +32,6 @@ dependencies:
   - torchvision
   - torchaudio
   - pytorch-lightning
-  - numpy
   - psutil
   - kivy=2.0.0
   - plotly
