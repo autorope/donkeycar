@@ -28,7 +28,7 @@ dependencies:
   - pyfiglet
   - mypy
   - pytorch
-  - torchvision
+  - torchvision=0.12
   - torchaudio
   - pytorch-lightning
   - psutil
