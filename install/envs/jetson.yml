@@ -38,4 +38,4 @@ dependencies:
     - tensorflow==2.9.1+nv22.09
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
-    - kivy-jetson==2.1
+    - kivy-jetson
