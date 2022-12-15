@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="4.4.1-main",
+      version="4.4.2-main",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
@@ -89,8 +89,8 @@ setup(name='donkeycar',
           'ci': ['codecov'],
           'tf': ['tensorflow==2.2.0'],
           'torch': [
-              'pytorch>=1.7.1',
-              'torchvision',
+              'pytorch',
+              'torchvision==0.12',
               'torchaudio',
               'fastai'
           ],
