@@ -143,8 +143,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
 
     #this throttle filter will allow one tap back for esc reverse
-    th_filter = ThrottleFilter()
-    V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
+    if cfg.THROTTLE_BRAKE_REV_FILTER == True:
+        #this throttle filter will allow one tap back for esc reverse
+        th_filter = ThrottleFilter()
+        V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
 
     #See if we should even run the pilot module.
     #This is only needed because the part run_condition only accepts boolean
@@ -654,6 +656,11 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
                 outputs=['user/angle', 'user/throttle',
                          'user/mode', 'recording'],
                 threaded=True)
+    if cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
+        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatIn
+        ctr = RobocarsHatIn(cfg)
+        V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'enc/speed'],threaded=False)
+
     return ctr
 
 
@@ -1023,6 +1030,10 @@ def add_drivetrain(V, cfg):
                           cfg.VESC_STEERING_OFFSET
                         )
             V.add(vesc, inputs=['angle', 'throttle'])
+        elif cfg.DRIVE_TRAIN_TYPE == "ROBOCARSHAT":
+            from donkeycar.parts.actuator import RobocarsHat
+            train_controller = RobocarsHat(cfg)
+            V.add(train_controller, inputs=['throttle','angle'], threaded=False)
 
 
 if __name__ == '__main__':
