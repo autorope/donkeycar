@@ -71,7 +71,7 @@ class OakDCamera:
 
         try:
             # Connect to device and start pipeline
-            logger.info('Starting OAK-D Wide camera')
+            logger.info('Starting OAK-D camera')
             self.device = dai.Device(self.pipeline)
             self.queue = self.device.getOutputQueue(name="xout", maxSize=1, blocking=False)
 
@@ -83,9 +83,9 @@ class OakDCamera:
                 time.sleep(0.2)
 
             if self.frame is None:
-                raise CameraError("Unable to start OAK-D Wide camera.")
+                raise CameraError("Unable to start OAK-D camera.")
 
-            logger.info("OAK-D Wide camera ready.")
+            logger.info("OAK-D camera ready.")
             self.on = True
         except:
             self.shutdown()
@@ -118,7 +118,7 @@ class OakDCamera:
     def shutdown(self):
         # Indicate that the thread should be stopped
         self.on = False
-        logger.info('Stopping OAK-D Wide camera')
+        logger.info('Stopping OAK-D camera')
         time.sleep(.5)
         if self.device is not None:
             self.device.close()
