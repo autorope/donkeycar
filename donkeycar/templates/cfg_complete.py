@@ -36,6 +36,18 @@ CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one ca
 # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 
+#CAMERA Settings Vivatech 2022 (nano)
+#CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+#IMAGE_W = 160
+#IMAGE_H = 120
+#IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+#CAMERA_FRAMERATE = 60
+#CAMERA_VFLIP = False
+#CAMERA_HFLIP = False
+#CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one camera connected 
+# For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
+#CSIC_CAM_GSTREAMER_FLIP_PARM = 2 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
+
 # For IMAGE_LIST camera
 # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 
@@ -68,7 +80,7 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 # (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
 # (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
 #
-DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
+DRIVE_TRAIN_TYPE = "ROBOCARSHAT"
 
 #
 # PWM_STEERING_THROTTLE
@@ -478,6 +490,70 @@ MM1_SHOW_STEERING_VALUE = False
 # -- MacOS/Linux:please use 'ls /dev/tty.*' to find the correct serial port for mm1 
 #  eg.'/dev/tty.usbmodemXXXXXX' and replace the port accordingly
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
+
+#ROBOCARSHAT
+USE_ROBOCARSHAT_AS_CONTROLLER  = True
+ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
+
+# Following values must be aligned with values in Hat !
+ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
+ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE   =   1500
+ROBOCARSHAT_PWM_OUT_THROTTLE_MAX    =   2000
+ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1000
+ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1500
+ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   2000
+
+# Folowing values can be ajusted to normalized btzeen -1 and 1.
+# # If  ROBOCARSHAT_USE_AUTOCALIBRATION is used, IDLE values are automatically identified by the Hat
+ROBOCARSHAT_PWM_IN_THROTTLE_MIN    =   1000
+ROBOCARSHAT_PWM_IN_THROTTLE_IDLE   =   1500
+ROBOCARSHAT_PWM_IN_THROTTLE_MAX    =   2000
+ROBOCARSHAT_PWM_IN_STEERING_MIN    =   1000
+ROBOCARSHAT_PWM_IN_STEERING_IDLE   =   1500
+ROBOCARSHAT_PWM_IN_STEERING_MAX    =   2000
+ROBOCARSHAT_PWM_IN_AUX_MIN    =   1000
+ROBOCARSHAT_PWM_IN_AUX_IDLE   =   1500
+ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
+
+#ODOM Sensor max value (max matching lowest speed)
+ROBOCARSHAT_ODOM_IN_MAX = 20000
+
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2
+ROBOCARSHAT_LOCAL_ANGLE_BRAKE_THROTTLE = -0.2
+
+THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
+
+#ROBOCARSHAT_CH3_FEATURE and ROBOCARSHAT_CH4_FEATURE controls the feature attached to radio ch3 and ch4
+# 'none' means aux ch is not used 
+# 'record/pilot' means aux ch is used to control either data recording (lower position), either to enable pilot mode (upper position)
+# 'record' means aux ch is used to control data recording 
+# 'pilot' means aux ch is used to control pilot mode
+# 'throttle_exploration' means special mode where aux ch is used to increment/decrement a fixed throttle value in user mode 
+# 'steering_exploration' means special mode where aux ch is used to increment/decrement a fixed steering value in user mode 
+# 'output_steering_trim' means special mode where aux ch is used to increment/decrement a steering idle output for triming direction in user mode, resulting value must be reported in  ROBOCARSHAT_PWM_OUT_STEERING_IDLE
+# 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
+ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
+ROBOCARSHAT_CH4_FEATURE = 'none' 
+ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
+ROBOCARSHAT_STEERING_EXP_INC = 0.05 
+ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10 
+
+#ROBOCARSHAT_STEERING_FIX used for steering calibration, enforce a fixed steering value (betzeen -1.0 and 1.0). None means no enforcment
+ROBOCARSHAT_STEERING_FIX = None 
+
+# ROBOCARSHAT_THROTTLE_DISCRET used to control throttle with discretes values (only in user mode, first value must be 0.0)
+# ROBOCARSHAT_THROTTLE_DISCRET has precedence over ROBOCARSHAT_THROTTLE_FLANGER
+#Example : ROBOCARSHAT_THROTTLE_DISCRET = [0.0, 0.1, 0.2], if not used, set to None 
+ROBOCARSHAT_THROTTLE_DISCRET = None 
+
+# ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange, giving a range betzeen -1 and 1, like [-0.1, 0.1]
+#Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
+#ROBOCARSHAT_THROTTLE_FLANGER = None 
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2] 
+
+# ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
+ROBOCARSHAT_USE_AUTOCALIBRATION = True
+
 
 #LOGGING
 HAVE_CONSOLE_LOGGING = True
