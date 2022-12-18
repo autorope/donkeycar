@@ -27,8 +27,8 @@ dependencies:
   - PrettyTable
   - pyfiglet
   - mypy
-  - pytorch=1.7.1
-  - torchvision
+  - pytorch
+  - torchvision=0.12
   - torchaudio
   - pytorch-lightning
   - numpy

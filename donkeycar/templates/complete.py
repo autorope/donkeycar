@@ -371,10 +371,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         elif model_type == "imu":
             assert cfg.HAVE_IMU, 'Missing imu parameter in config'
-            # Run the pilot if the mode is not user.
-            inputs = ['cam/image_array',
-                    'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                    'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
+
+            class Vectorizer:
+                def run(self, *components):
+                    return components
+
+            V.add(Vectorizer, inputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
+                                      'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+                  outputs=['imu_array'])
+
+            inputs = ['cam/image_array', 'imu_array']
         else:
             inputs = ['cam/image_array']
 

@@ -24,12 +24,12 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="4.4.2-main",
+      version="4.4.4-main",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
       author='Will Roscoe, Adam Conway, Tawn Kramer',
-          author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
+      author_email='wroscoe@gmail.com, adam@casaconway.com, tawnkramer@gmail.com',
       license='MIT',
       entry_points={
           'console_scripts': [
@@ -95,8 +95,8 @@ setup(name='donkeycar',
           'ci': ['codecov'],
           'tf': ['tensorflow==2.9'],
           'torch': [
-              'pytorch>=1.7.1',
-              'torchvision',
+              'pytorch',
+              'torchvision==0.12',
               'torchaudio',
               'fastai'
           ],
