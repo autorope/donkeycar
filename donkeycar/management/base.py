@@ -480,8 +480,8 @@ class ShowPredictionPlots(BaseCommand):
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
             bar.next()
-        print()  # to break the line after progress bar finishes.
 
+        bar.finish()
         angles_df = pd.DataFrame({'user_angle': user_angles,
                                   'pilot_angle': pilot_angles})
         throttles_df = pd.DataFrame({'user_throttle': user_throttles,
