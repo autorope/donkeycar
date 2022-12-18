@@ -78,6 +78,7 @@ class Interpreter(ABC):
     def __init__(self):
         self.input_keys: list[str] = None
         self.output_keys: list[str] = None
+        self.shapes: tuple[dict] = None
 
     @abstractmethod
     def load(self, model_path: str) -> None:
@@ -97,10 +98,10 @@ class Interpreter(ABC):
         raise NotImplementedError('Requires implementation')
 
     @abstractmethod
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shape(self, input_name) -> tf.TensorShape:
         pass
 
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
+    def predict(self, img_arr: np.ndarray, *other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
         """
         This inference interface just converts the inputs into a dictionary
@@ -108,7 +109,7 @@ class Interpreter(ABC):
         :param other_arr:  second input array
         :return:           model output, Iterable over scalar and/or vectors
         """
-        input_dict = dict(zip(self.input_keys, (img_arr, other_arr)))
+        input_dict = dict(zip(self.input_keys, (img_arr, *other_arr)))
         return self.predict_from_dict(input_dict)
 
     def predict_from_dict(self, input_dict) -> Sequence[Union[float, np.ndarray]]:
@@ -130,23 +131,36 @@ class KerasInterpreter(Interpreter):
 
     def set_model(self, pilot: 'KerasPilot') -> None:
         self.model = pilot.create_model()
-        inputs, outputs = pilot.output_shapes()
-        self.input_keys = list(inputs.keys())
-        self.output_keys = list(outputs.keys())
+        # input_shape and output_shape in keras are unfortunately not a list
+        # if there is only a single input / output. So pack them into a list
+        # if they are single:
+        input_shape = self.model.input_shape
+        if type(input_shape) is not list:
+            input_shape = [input_shape]
+        output_shape = self.model.output_shape
+        if type(output_shape) is not list:
+            output_shape = [output_shape]
+
+        self.input_keys = self.model.input_names
+        self.output_keys = self.model.output_names
+        self.shapes = (dict(zip(self.input_keys, input_shape)),
+                       dict(zip(self.output_keys, output_shape)))
 
     def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
         self.model.optimizer = optimizer
 
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shape(self, input_name) -> tf.TensorShape:
         assert self.model, 'Model not set'
-        return [inp.shape for inp in self.model.inputs]
+        return self.shapes[0][input_name]
 
     def compile(self, **kwargs):
         assert self.model, 'Model not set'
         self.model.compile(**kwargs)
 
-    def invoke(self, inputs):
-        outputs = self.model(inputs, training=False)
+    def predict_from_dict(self, input_dict):
+        for k, v in input_dict.items():
+            input_dict[k] = self.expand_and_convert(v)
+        outputs = self.model(input_dict, training=False)
         # for functional models the output here is a list
         if type(outputs) is list:
             # as we invoke the interpreter with a batch size of one we remove
@@ -156,11 +170,6 @@ class KerasInterpreter(Interpreter):
         # for sequential models the output shape is (1, n) with n = output dim
         else:
             return outputs.numpy().squeeze(axis=0)
-
-    def predict_from_dict(self, input_dict):
-        for k, v in input_dict.items():
-            input_dict[k] = self.expand_and_convert(v)
-        return self.invoke(input_dict)
 
     def load(self, model_path: str) -> None:
         logger.info(f'Loading model {model_path}')
@@ -194,9 +203,9 @@ class FastAIInterpreter(Interpreter):
     def set_optimizer(self, optimizer: 'fastai_optimizer') -> None:
         self.model.optimizer = optimizer
 
-    def get_input_shapes(self):
+    def get_input_shape(self, input_name):
         assert self.model, 'Model not set'
-        return [inp.shape for inp in self.model.inputs]
+        return self.model.inputs[0].shape
 
     def compile(self, **kwargs):
         pass
@@ -270,10 +279,13 @@ class TfLite(Interpreter):
         ret = list(outputs[k][0] for k in self.output_keys)
         return ret if len(ret) > 1 else ret[0]
 
-    def get_input_shapes(self):
+    def get_input_shape(self, input_name):
         assert self.interpreter is not None, "Need to load tflite model first"
         details = self.interpreter.get_input_details()
-        return list(d['shape'] for d in details)
+        for detail in details:
+            if detail['name'] == f"serving_default_{input_name}:0":
+                return detail['shape']
+        raise RuntimeError(f'{input_name} not found in TFlite model')
 
     @staticmethod
     def expand_and_convert(arr):
@@ -300,9 +312,9 @@ class TensorRT(Interpreter):
         # state as the trt model hasn't been loaded yet
         self.pilot = pilot
 
-    def get_input_shapes(self) -> List[tf.TensorShape]:
+    def get_input_shape(self, input_name) -> tf.TensorShape:
         assert self.graph_func, "Requires loadin the tensorrt model first"
-        return [inp.shape for inp in self.graph_func.inputs]
+        return self.graph_func.inputs[input_name]
 
     def compile(self, **kwargs):
         pass

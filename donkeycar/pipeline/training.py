@@ -124,6 +124,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
                            test_size=(1. - cfg.TRAIN_TEST_SPLIT))
     logger.info(f'Records # Training {len(training_records)}')
     logger.info(f'Records # Validation {len(validation_records)}')
+    dataset.close()
 
     # We need augmentation in validation when using crop / trapeze
 
@@ -147,7 +148,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
 
     assert val_size > 0, "Not enough validation data, decrease the batch " \
                          "size or add more data."
-
+    logger.info(f'Train with image caching: {cfg.CACHE_IMAGES}')
     history = kl.train(model_path=model_path,
                        train_data=dataset_train,
                        train_steps=train_size,
@@ -187,7 +188,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         'History': history,
         'Transfer': os.path.basename(transfer) if transfer else None,
         'Comment': comment,
-        'Config': str(cfg)
+        'Config': cfg.__dict__
     }
     database.add_entry(database_entry)
     database.write()

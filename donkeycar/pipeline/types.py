@@ -17,6 +17,7 @@ TubRecordDict = TypedDict(
     'TubRecordDict',
     {
         '_index': int,
+        '_session_id': str,
         'cam/image_array': str,
         'user/angle': float,
         'user/throttle': float,
@@ -102,6 +103,10 @@ class TubDataset(object):
                 seq = Collator(self.seq_size, self.records)
                 self.records = list(seq)
         return self.records
+
+    def close(self):
+        for tub in self.tubs:
+            tub.close()
 
 
 class Collator(Iterable[List[TubRecord]]):

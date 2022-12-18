@@ -53,6 +53,7 @@ setup(name='donkeycar',
           "pynmea2",
           'pyserial',
           "utm",
+          'pandas'
       ],
       extras_require={
           # if installing into a conda (i.e. miniforge) env on Pi we have to
@@ -73,7 +74,6 @@ setup(name='donkeycar',
               'Jetson.GPIO',
               'matplotlib',
               'kivy-jetson==2.1',
-              'pandas',
               'pyyaml',
               'plotly'
           ],
@@ -81,7 +81,6 @@ setup(name='donkeycar',
               'matplotlib',
               'kivy',
               'protobuf==3.20.3',
-              'pandas',
               'pyyaml',
               'plotly',
               'imgaug'

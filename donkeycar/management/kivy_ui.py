@@ -1148,19 +1148,19 @@ class CarScreen(Screen):
             self.is_connected = False
             if return_val is None:
                 # command still running, do nothing and check next time again
-                status = 'Awaiting connection...'
+                status = 'Awaiting connection to...'
                 self.ids.connected.color = 0.8, 0.8, 0.0, 1
             else:
                 # command finished, check if successful and reset connection
                 if return_val == 0:
-                    status = 'Connected'
+                    status = 'Connected to'
                     self.ids.connected.color = 0, 0.9, 0, 1
                     self.is_connected = True
                 else:
-                    status = 'Disconnected'
+                    status = 'Disconnected from'
                     self.ids.connected.color = 0.9, 0, 0, 1
                 self.connection = None
-            self.ids.connected.text = status
+            self.ids.connected.text = f'{status} {self.config.PI_HOSTNAME}'
 
     def drive(self):
         model_args = ''

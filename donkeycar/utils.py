@@ -536,10 +536,10 @@ def get_test_img(keras_pilot):
     :return np.ndarry(np.uint8):    numpy random img array
     """
     try:
-        count, h, w, ch = keras_pilot.get_input_shapes()[0]
+        count, h, w, ch = keras_pilot.get_input_shape('img_in')
         seq_len = 0
     except Exception as e:
-        count, seq_len, h, w, ch = keras_pilot.get_input_shapes()[0]
+        count, seq_len, h, w, ch = keras_pilot.get_input_shape('img_in')
 
     # generate random array in the right shape
     img = np.random.randint(0, 255, size=(h, w, ch))

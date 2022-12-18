@@ -267,18 +267,20 @@ class CSICamera(BaseCamera):
         self.running = False
         logger.info('Stopping CSICamera')
         time.sleep(.5)
-        del(self.camera)
+        del self.camera
 
 
 class V4LCamera(BaseCamera):
     '''
-    uses the v4l2capture library from this fork for python3 support: https://github.com/atareao/python3-v4l2capture
+    uses the v4l2capture library from this fork for python3 support:
+    https://github.com/atareao/python3-v4l2capture
     sudo apt-get install libv4l-dev
     cd python3-v4l2capture
     python setup.py build
     pip install -e .
     '''
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, dev_fn="/dev/video0", fourcc='MJPG'):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20,
+                 dev_fn="/dev/video0", fourcc='MJPG'):
 
         self.running = True
         self.frame = None
