@@ -1157,7 +1157,7 @@ class ArdPWMThrottle:
         self.run(0)
         self.running = False
 
-class RobocarsHat:
+class RobocarsHat (Singleton):
     '''
     Robocars Hat Servo controller
     '''
@@ -1269,10 +1269,9 @@ class RobocarsHat:
                         last_received.append(sensors[-1].rstrip())
                     if (len(battery)>0) :
                         last_received.append(battery[-1].rstrip())
-                    #If the Arduino sends lots of empty lines, you'll lose the
+                    #If the Ardulast_receivedino sends lots of empty lines, you'll lose the
                     #last filled line, so you could make the above statement conditional
                     #like so: if lines[-2]: last_received = lines[-2]
 
         return last_received
-
-
+ 

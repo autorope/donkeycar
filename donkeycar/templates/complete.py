@@ -657,9 +657,9 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
                          'user/mode', 'recording'],
                 threaded=True)
     if cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
-        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatIn
-        ctr = RobocarsHatIn(cfg)
-        V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'enc/speed'],threaded=False)
+        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInCtrl
+        ctr = RobocarsHatInCtrl(cfg)
+        V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
 
     return ctr
 
@@ -803,6 +803,12 @@ def add_odometry(V, cfg):
             from donkeycar.parts.encoder import ArduinoEncoder
             enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
             V.add(enc, outputs=['enc/speed'], threaded=True)
+        elif cfg.ENCODER_TYPE == "ROBOCARSHAT" and cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
+            from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInOdom
+            enc = RobocarsHatInOdom(cfg)
+            V.add(enc, outputs=['enc/speed'], threaded=True)
+
+            print("ODOM from Robocars Hat")
         else:
             print("No supported encoder found")
 
