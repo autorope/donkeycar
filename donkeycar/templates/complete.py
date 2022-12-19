@@ -735,6 +735,9 @@ def get_camera(cfg):
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "OAK":
+            from donkeycar.parts.oak_d_camera import OakDCamera
+            cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
