@@ -86,16 +86,6 @@ class RobocarsHatIn:
         self.sensor = RobocarsHat(self.cfg)
         self.on = True
 
-        if self.cfg.ROBOCARSHAT_EMERGENCY_STOP == True:
-            self.emergemcyPort=9111
-            self.stop=False
-            self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-            self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-            self.server.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            fcntl.fcntl(self.server, fcntl.F_SETFL, os.O_NONBLOCK)
-            self.server.bind(("", self.emergemcyPort))
-            print("Listening emergency on port {}".format(self.emergemcyPort))
-
     def map_range(self, x, X_min, X_max, Y_min, Y_max):
         '''
         Linear mapping between two ranges of values
