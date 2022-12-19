@@ -10,13 +10,19 @@ class OakDLiteCamera(BaseCamera):
     '''
     Camera for Oak-D-Lite based camera
     '''
-    def __init__(self, image_w=160, image_h=120):
+    def __init__(self, preview_image_width=240, preview_image_height=135, framerate=35, isp_scale_numerator=1, isp_scale_denominator=8):
     
-        self.w = image_w
-        self.h = image_h
+        self.isp_scale_numerator = isp_scale_numerator
+        self.isp_scale_denominator = isp_scale_denominator
+    
+        self.preview_image_width = preview_image_width
+        self.preview_image_height = preview_image_height
+        
         self.framerate = framerate
+        
         self.frame = None
         self.qRgb = None
+
         self.init_camera()
         self.running = True
 
@@ -34,9 +40,9 @@ class OakDLiteCamera(BaseCamera):
         camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
         camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
         camRgb.setInterleaved(False)
-        camRgb.setFps(35)
-        camRgb.setIspScale(1,8)
-        camRgb.setPreviewSize(240, 135) # 1/8
+        camRgb.setFps(self.framerate)
+        camRgb.setIspScale(self.isp_scale_numerator, self.isp_scale_denominator)
+        camRgb.setPreviewSize(self.preview_image_width, self.preview_image_height) 
         
         # Linking
         camRgb.preview.link(xoutRgb.input)
