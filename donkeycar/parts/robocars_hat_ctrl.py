@@ -148,49 +148,51 @@ class RobocarsHatInCtrl:
 
     def processRxCh(self):
         rxch_msg = self.hatInMsg.getRxCh()
-        params = rxch_msg.split(',')
-        if len(params) == 5 and int(params[0])==1 :
-            if params[1].isnumeric() and self.inThrottleIdle != -1:
-                if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
-                    self.inThrottle = dualMap(int(params[1]),
-                            self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.inThrottleIdle, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
-                        -1, 0, 1)
-                else :
-                    self.inThrottle = map_range(int(params[1]),
-                            self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
+        if rxch_msg:
+            params = rxch_msg.split(',')
+            if len(params) == 5 and int(params[0])==1 :
+                if params[1].isnumeric() and self.inThrottleIdle != -1:
+                    if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
+                        self.inThrottle = dualMap(int(params[1]),
+                                self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.inThrottleIdle, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
+                            -1, 0, 1)
+                    else :
+                        self.inThrottle = map_range(int(params[1]),
+                                self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
+                            -1, 1)
+
+                if params[2].isnumeric() and self.inSteeringIdle != -1:
+                    if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
+                        self.inSteering = dualMap(int(params[2]),
+                                self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.inSteeringIdle, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
+                            -1, 0, 1)
+                    else:
+                        self.inSteering = map_range(int(params[2]),
+                            self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
+                            -1, 1)
+
+                if params[3].isnumeric():
+                    self.inAux1 = map_range(int(params[3]),
+                        self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
+                        -1, 1)
+                if params[4].isnumeric():
+                    self.inAux2 = map_range(int(params[4]),
+                        self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
                         -1, 1)
 
-            if params[2].isnumeric() and self.inSteeringIdle != -1:
-                if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
-                    self.inSteering = dualMap(int(params[2]),
-                            self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.inSteeringIdle, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
-                        -1, 0, 1)
-                else:
-                    self.inSteering = map_range(int(params[2]),
-                        self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
-                        -1, 1)
-
-            if params[3].isnumeric():
-                self.inAux1 = map_range(int(params[3]),
-                    self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
-                    -1, 1)
-            if params[4].isnumeric():
-                self.inAux2 = map_range(int(params[4]),
-                    self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
-                    -1, 1)
-
-            mylogger.debug("CtrlIn PWM {} {} {} {}".format(int(params[1]), int(params[2]), int(params[3]), int(params[4])))
-            mylogger.debug("CtrlIn Std {} {} {} {}".format(self.inThrottle, self.inSteering, self.inAux1, self.inAux2))
+                mylogger.debug("CtrlIn PWM {} {} {} {}".format(int(params[1]), int(params[2]), int(params[3]), int(params[4])))
+                mylogger.debug("CtrlIn Std {} {} {} {}".format(self.inThrottle, self.inSteering, self.inAux1, self.inAux2))
 
     def processCalibration(self):
         cal_msg = self.hatInMsg.getCalibration()
-        params = cal_msg.split(',')
-        if len(params) == 3 and int(params[0])==3 :
-            if params[1].isnumeric():
-                self.inThrottleIdle = int(params[1])
-            if params[2].isnumeric():
-                self.inSteeringIdle = int(params[2])
-            mylogger.debug("CtrlIn Idle {} {} ".format(int(params[1]), int(params[2])))
+        if cal_msg:
+            params = cal_msg.split(',')
+            if len(params) == 3 and int(params[0])==3 :
+                if params[1].isnumeric():
+                    self.inThrottleIdle = int(params[1])
+                if params[2].isnumeric():
+                    self.inSteeringIdle = int(params[2])
+                mylogger.debug("CtrlIn Idle {} {} ".format(int(params[1]), int(params[2])))
 
     def getCommand(self):
         self.processRxCh()
@@ -381,14 +383,15 @@ class RobocarsHatInOdom:
         self.on = True
 
     def processSensors(self):
-        cal_msg = self.hatInMsg.getSensors()
-        params = cal_msg.split(',')
-        if len(params) == 3 and int(params[0])==2 :
-            mylogger.debug("CtrlIn Sensors {} {} ".format(int(params[1]), int(params[2])))
-            if params[2].isnumeric():
-                self.inSpeed = map_range(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
-                            0, self.cfg.ROBOCARSHAT_ODOM_IN_MAX,
-                        1, 0)
+        odom_msg = self.hatInMsg.getSensors()
+        if odom_msg:
+            params = odom_msg.split(',')
+            if len(params) == 3 and int(params[0])==2 :
+                mylogger.debug("CtrlIn Sensors {} {} ".format(int(params[1]), int(params[2])))
+                if params[2].isnumeric():
+                    self.inSpeed = map_range(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
+                                0, self.cfg.ROBOCARSHAT_ODOM_IN_MAX,
+                            1, 0)
 
     def getCommand(self):
         self.processSensors()
