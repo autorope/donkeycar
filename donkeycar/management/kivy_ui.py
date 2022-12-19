@@ -1160,7 +1160,8 @@ class CarScreen(Screen):
                     status = 'Disconnected from'
                     self.ids.connected.color = 0.9, 0, 0, 1
                 self.connection = None
-            self.ids.connected.text = f'{status} {self.config.PI_HOSTNAME}'
+            self.ids.connected.text \
+                = f'{status} {getattr(self.config, "PI_HOSTNAME")}'
 
     def drive(self):
         model_args = ''

@@ -314,7 +314,7 @@ class TensorRT(Interpreter):
 
     def get_input_shape(self, input_name) -> tf.TensorShape:
         assert self.graph_func, "Requires loadin the tensorrt model first"
-        return self.graph_func.inputs[input_name]
+        return self.graph_func.structured_input_signature[1][input_name].shape
 
     def compile(self, **kwargs):
         pass

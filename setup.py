@@ -80,7 +80,6 @@ setup(name='donkeycar',
           'pc': [
               'matplotlib',
               'kivy',
-              'protobuf==3.20.3',
               'pyyaml',
               'plotly',
               'imgaug'
