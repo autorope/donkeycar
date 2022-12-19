@@ -1157,7 +1157,7 @@ class ArdPWMThrottle:
         self.run(0)
         self.running = False
 
-class RobocarsHat (Singleton):
+class RobocarsHat (metaclass=Singleton):
     '''
     Robocars Hat Servo controller
     '''

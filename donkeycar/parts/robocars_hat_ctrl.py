@@ -34,7 +34,7 @@ def dualMap (self, input, input_min, input_idle, input_max, output_min, output_i
         output = output_idle
     return output
 
-class RobocarsHatIn(Singleton):
+class RobocarsHatIn(metaclass=Singleton):
 
     def __init__(self, cfg):
         self.cfg = cfg

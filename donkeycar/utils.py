@@ -597,10 +597,9 @@ class FPSTimer(object):
             self.t = time.time()
             self.iter = 0
 
-class Singleton:
-    __instance = None
-
-    def __new__(cls,*args, **kwargs):
-        if cls.__instance is None :
-            cls.__instance = super(Singleton, cls).__new__(cls, *args, **kwargs)
-        return cls.__instance
+class Singleton(type): #https://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
