@@ -15,7 +15,7 @@ import fcntl,os
 mylogger = init_special_logger ("Rx")
 mylogger.setLevel(logging.INFO)
 
-def map_range(self, x, X_min, X_max, Y_min, Y_max):
+def map_range(x, X_min, X_max, Y_min, Y_max):
     '''
     Linear mapping between two ranges of values
     '''
@@ -25,11 +25,11 @@ def map_range(self, x, X_min, X_max, Y_min, Y_max):
 
     return ((x-X_min) / XY_ratio + Y_min)
 
-def dualMap (self, input, input_min, input_idle, input_max, output_min, output_idle, output_max) :
+def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max) :
     if (input < input_idle) :
-        output = self.map_range (input, input_min, input_idle, output_min, output_idle)
+        output = map_range (input, input_min, input_idle, output_min, output_idle)
     elif (input>input_idle) :
-        output = self.map_range (input, input_idle, input_max, output_idle, output_max)
+        output = map_range (input, input_idle, input_max, output_idle, output_max)
     else:
         output = output_idle
     return output
