@@ -3,7 +3,7 @@ import donkeycar as dk
 import re
 import time
 import logging
-from donkeycar import utils
+from donkeycar.utils import Singleton
 import numpy as np
 from donkeycar.parts.actuator import RobocarsHat
 from donkeycar.utilities.logger import init_special_logger
