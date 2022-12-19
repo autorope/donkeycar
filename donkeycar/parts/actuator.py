@@ -11,7 +11,7 @@ from typing import Tuple
 
 import donkeycar as dk
 from donkeycar import utils
-from donkeycar.utils import clamp
+from donkeycar.utils import clamp, Singleton
 from donkeycar.utilities.logger import init_special_logger
 
 logger = logging.getLogger(__name__)
