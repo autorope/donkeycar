@@ -10,7 +10,7 @@ def is_exe(fpath):
 
 class DonkeyGymEnv(object):
 
-    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, record_location=False, record_gyroaccel=False, record_velocity=False, record_lidar=False, delay=0):
+    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, record_location=False, record_gyroaccel=False, record_velocity=False, record_lidar=False, have_odom=False, delay=0):
 
         if sim_path != "remote":
             if not os.path.exists(sim_path):
@@ -40,6 +40,7 @@ class DonkeyGymEnv(object):
         self.record_gyroaccel = record_gyroaccel
         self.record_velocity = record_velocity
         self.record_lidar = record_lidar
+        self.have_odom = have_odom
 
         self.buffer = []
 
@@ -87,6 +88,8 @@ class DonkeyGymEnv(object):
             outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
         if self.record_lidar:
             outputs += [self.info['lidar']]
+        if self.have_odom:
+            outputs += [self.info['speed']]
         if len(outputs) == 1:
             return self.frame
         else:

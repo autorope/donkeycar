@@ -11,7 +11,7 @@ from typing import Tuple
 
 import donkeycar as dk
 from donkeycar import utils
-from donkeycar.utils import clamp
+from donkeycar.utils import clamp, Singleton
 from donkeycar.utilities.logger import init_special_logger
 
 logger = logging.getLogger(__name__)
@@ -1157,7 +1157,7 @@ class ArdPWMThrottle:
         self.run(0)
         self.running = False
 
-class RobocarsHat:
+class RobocarsHat (metaclass=Singleton):
     '''
     Robocars Hat Servo controller
     '''
@@ -1274,5 +1274,4 @@ class RobocarsHat:
                     #like so: if lines[-2]: last_received = lines[-2]
 
         return last_received
-
-
+ 

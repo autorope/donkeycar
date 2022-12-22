@@ -490,7 +490,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
 
     used_model_type = EqMemorizedString(used_model_type)
     if used_model_type == "linear":
-        kl = KerasLinear(interpreter=interpreter, input_shape=input_shape)
+        kl = KerasLinear(interpreter=interpreter, input_shape=input_shape, have_odom=cfg.HAVE_ODOM)
     elif used_model_type == "categorical":
         kl = KerasCategorical(
             interpreter=interpreter,
@@ -596,3 +596,10 @@ class FPSTimer(object):
             print('fps', 100.0 / (e - self.t))
             self.t = time.time()
             self.iter = 0
+
+class Singleton(type): #https://stackoverflow.com/questions/6760685/creating-a-singleton-in-python
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]

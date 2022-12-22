@@ -352,7 +352,7 @@ DC_TWO_WHEEL_L298N = {
 
 #ODOMETRY
 HAVE_ODOM = False                   # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar 
+ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar|ROBOCARSHAT
 MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
 ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
 ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
@@ -518,8 +518,8 @@ ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 
 #ODOM Sensor max value (max matching lowest speed)
 ROBOCARSHAT_ODOM_IN_MAX = 20000
-
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2
+ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : local_angle or local
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle)
 ROBOCARSHAT_LOCAL_ANGLE_BRAKE_THROTTLE = -0.2
 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)

@@ -663,9 +663,9 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
                          'user/mode', 'recording'],
                 threaded=True)
     if cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
-        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatIn
-        ctr = RobocarsHatIn(cfg)
-        V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'enc/speed'],threaded=False)
+        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInCtrl
+        ctr = RobocarsHatInCtrl(cfg)
+        V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
 
     return ctr
 
@@ -678,7 +678,7 @@ def add_simulator(V, cfg):
         # rbx
         gym = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF,
                            record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL,
-                           record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR,
+                           record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR,have_odom=cfg.HAVE_ODOM,
                         #    record_distance=cfg.SIM_RECORD_DISTANCE, record_orientation=cfg.SIM_RECORD_ORIENTATION,
                            delay=cfg.SIM_ARTIFICIAL_LATENCY)
         threaded = True
@@ -693,6 +693,8 @@ def add_simulator(V, cfg):
             outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
         if cfg.SIM_RECORD_LIDAR:
             outputs += ['lidar/dist_array']
+        if (cfg.HAVE_ODOM):
+            outputs += ['enc/speed']
         # if cfg.SIM_RECORD_DISTANCE:
         #     outputs += ['dist/left', 'dist/right']
         # if cfg.SIM_RECORD_ORIENTATION:
@@ -812,6 +814,11 @@ def add_odometry(V, cfg):
             from donkeycar.parts.encoder import ArduinoEncoder
             enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
             V.add(enc, outputs=['enc/speed'], threaded=True)
+        elif cfg.ENCODER_TYPE == "ROBOCARSHAT" and cfg.USE_ROBOCARSHAT_AS_CONTROLLER and cfg.DONKEY_GYM==False:
+            from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInOdom
+            enc = RobocarsHatInOdom(cfg)
+            V.add(enc, outputs=['enc/speed'], threaded=True)
+            print("ODOM from Robocars Hat")
         else:
             print("No supported encoder found")
 
