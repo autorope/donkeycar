@@ -320,12 +320,16 @@ class KerasLinear(KerasPilot):
     def __init__(self,
                  interpreter: Interpreter = KerasInterpreter(),
                  input_shape: Tuple[int, ...] = (120, 160, 3),
-                 num_outputs: int = 2):
+                 num_outputs: int = 2, have_odom=False):
         self.num_outputs = num_outputs
+        self.have_odom=have_odom
         super().__init__(interpreter, input_shape)
 
     def create_model(self):
-        return default_n_linear(self.num_outputs, self.input_shape)
+        if self.have_odom:
+            return default_n_linear_odom(self.num_outputs, self.input_shape)
+        else:
+            return default_n_linear(self.num_outputs, self.input_shape)
 
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, loss='mse')
@@ -334,6 +338,20 @@ class KerasLinear(KerasPilot):
         steering = interpreter_out[0]
         throttle = interpreter_out[1]
         return steering[0], throttle[0]
+
+    def x_transform(
+            self,
+            record: Union[TubRecord, List[TubRecord]],
+            img_processor: Callable[[np.ndarray], np.ndarray]) \
+            -> Dict[str, Union[float, np.ndarray]]:
+        assert isinstance(record, TubRecord), 'TubRecord expected'
+        # this transforms the record into x for training the model to x,y
+        img_arr = record.image(processor=img_processor)
+        x_trans = {'img_in': img_arr}
+        if self.have_odom:
+            speed_arr = [np.array(record.underlying['enc/speed'])]
+            x_trans.update({'speed_in': speed_arr})
+        return x_trans
 
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
             -> Dict[str, Union[float, List[float]]]:
@@ -345,10 +363,12 @@ class KerasLinear(KerasPilot):
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shapes()[0][1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'n_outputs0': tf.TensorShape([]),
-                   'n_outputs1': tf.TensorShape([])})
-        return shapes
+        shapes_in = {'img_in': tf.TensorShape(img_shape)}
+        if self.have_odom:
+            shapes_in.update({'speed_in': tf.TensorShape([1])})
+        shapes_out={'n_outputs0': tf.TensorShape([]),
+                    'n_outputs1': tf.TensorShape([])}
+        return (shapes_in, shapes_out)
 
 
 class KerasMemory(KerasLinear):
@@ -841,6 +861,33 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3)):
     model = Model(inputs=[img_in], outputs=outputs, name='linear')
     return model
 
+def default_n_linear_odom(num_outputs, input_shape=(120, 160, 3)):
+    drop = 0.2
+    img_in = Input(shape=input_shape, name='img_in')
+    speed_in = Input(shape=(1,), name="speed_in")
+    x = core_cnn_layers(img_in, drop)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(.1)(x)
+
+    y = speed_in
+    y = Dense(2, activation='relu')(y)
+    y = Dense(2, activation='relu')(y)
+    y = Dense(2, activation='relu')(y)
+
+    z = concatenate([x, y])
+    z = Dense(50, activation='relu')(z)
+    z = Dropout(.1)(z)
+    z = Dense(50, activation='relu')(z)
+    z = Dropout(.1)(z)
+
+
+    outputs = []
+    for i in range(num_outputs):
+        outputs.append(
+            Dense(1, activation='linear', name='n_outputs' + str(i))(z))
+
+    model = Model(inputs=[img_in, speed_in], outputs=outputs, name='linear')
+    return model
 
 def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
     drop = 0.2

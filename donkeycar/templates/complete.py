@@ -807,7 +807,6 @@ def add_odometry(V, cfg):
             from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInOdom
             enc = RobocarsHatInOdom(cfg)
             V.add(enc, outputs=['enc/speed'], threaded=True)
-
             print("ODOM from Robocars Hat")
         else:
             print("No supported encoder found")
