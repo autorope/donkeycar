@@ -805,7 +805,7 @@ def add_odometry(V, cfg):
             from donkeycar.parts.encoder import ArduinoEncoder
             enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
             V.add(enc, outputs=['enc/speed'], threaded=True)
-        elif cfg.ENCODER_TYPE == "ROBOCARSHAT" and cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
+        elif cfg.ENCODER_TYPE == "ROBOCARSHAT" and cfg.USE_ROBOCARSHAT_AS_CONTROLLER and cfg.DONKEY_GYM==False:
             from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInOdom
             enc = RobocarsHatInOdom(cfg)
             V.add(enc, outputs=['enc/speed'], threaded=True)
