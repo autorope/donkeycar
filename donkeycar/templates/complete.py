@@ -672,7 +672,7 @@ def add_simulator(V, cfg):
         # rbx
         gym = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF,
                            record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL,
-                           record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR,
+                           record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR,have_odom=cfg.HAVE_ODOM,
                         #    record_distance=cfg.SIM_RECORD_DISTANCE, record_orientation=cfg.SIM_RECORD_ORIENTATION,
                            delay=cfg.SIM_ARTIFICIAL_LATENCY)
         threaded = True
@@ -687,6 +687,8 @@ def add_simulator(V, cfg):
             outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
         if cfg.SIM_RECORD_LIDAR:
             outputs += ['lidar/dist_array']
+        if (cfg.HAVE_ODOM):
+            outputs += ['enc/speed']
         # if cfg.SIM_RECORD_DISTANCE:
         #     outputs += ['dist/left', 'dist/right']
         # if cfg.SIM_RECORD_ORIENTATION:
