@@ -334,7 +334,7 @@ class RobocarsHatInCtrl:
             user_throttle = self.cfg.ROBOCARSHAT_THROTTLE_DISCRET[inds-1]
 
         #if switching back to user, then apply brake
-        if self.mode=='user' and self.lastMode != 'user' :
+        if self.mode=='user' and self.lastMode != 'user' and self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE != None:
             self.applyBrake=10 #brake duration
 
         self.lastMode = self.mode
@@ -342,7 +342,7 @@ class RobocarsHatInCtrl:
         self.lastAux2 = self.inAux2
         
         if self.applyBrake>0:
-            user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_BRAKE_THROTTLE
+            user_throttle = self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE
             self.applyBrake-=1
 
         return user_throttle, user_steering
