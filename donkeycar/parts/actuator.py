@@ -1269,7 +1269,7 @@ class RobocarsHat (metaclass=Singleton):
                         last_received.append(sensors[-1].rstrip())
                     if (len(battery)>0) :
                         last_received.append(battery[-1].rstrip())
-                    #If the Ardulast_receivedino sends lots of empty lines, you'll lose the
+                    #If the Arduino sends lots of empty lines, you'll lose the
                     #last filled line, so you could make the above statement conditional
                     #like so: if lines[-2]: last_received = lines[-2]
 
