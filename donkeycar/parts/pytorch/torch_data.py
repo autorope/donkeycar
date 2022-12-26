@@ -84,7 +84,7 @@ class TorchTubDataset(IterableDataset):
 
         def x_transform(record: TubRecord):
             # Loads the result of Image.open()
-            img_arr = record.image(cached=True, as_nparray=False)
+            img_arr = record.image(as_nparray=False)
             return self.transform(img_arr)
 
         # Build pipeline using the transformations
@@ -97,6 +97,7 @@ class TorchTubDataset(IterableDataset):
 
     def __iter__(self):
         return iter(self.pipeline)
+
 
 class TorchTubDataModule(pl.LightningDataModule):
 

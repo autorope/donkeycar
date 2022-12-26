@@ -102,8 +102,7 @@ def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
         gpus = 0
 
     # Overfit the data
-    trainer = pl.Trainer(gpus=gpus, overfit_batches=2,
-                         progress_bar_refresh_rate=30, max_epochs=30)
+    trainer = pl.Trainer(gpus=gpus, overfit_batches=2, max_epochs=30)
     trainer.fit(model, data_module)
     final_loss = model.loss_history[-1]
     assert final_loss < 0.35, \

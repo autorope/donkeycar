@@ -10,7 +10,7 @@ from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
 from donkeycar.management.tub import TubManager
-from donkeycar.pipeline.types import TubDataset
+
 from donkeycar.utils import normalize_image, load_image, math
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -438,13 +438,15 @@ class ShowCnnActivations(BaseCommand):
 
 class ShowPredictionPlots(BaseCommand):
 
-    def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type):
+    def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type,
+                         noshow):
         """
         Plot model predictions for angle and throttle against data from tubs.
         """
         import matplotlib.pyplot as plt
         import pandas as pd
         from pathlib import Path
+        from donkeycar.pipeline.types import TubDataset
 
         model_path = os.path.expanduser(model_path)
         model = dk.utils.get_model_by_type(model_type, cfg)
@@ -464,18 +466,21 @@ class ShowPredictionPlots(BaseCommand):
         records = dataset.get_records()[:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
+        output_names = list(model.output_shapes()[1].keys())
         for tub_record in records:
-            inputs = model.x_transform_and_process(
+            input_dict = model.x_transform(
                 tub_record, lambda x: normalize_image(x))
-            input_dict = model.x_translate(inputs)
             pilot_angle, pilot_throttle = \
                 model.inference_from_dict(input_dict)
-            user_angle, user_throttle = model.y_transform(tub_record)
+            y_dict = model.y_transform(tub_record)
+            user_angle, user_throttle \
+                = y_dict[output_names[0]], y_dict[output_names[1]]
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
             pilot_throttles.append(pilot_throttle)
             bar.next()
+        print()  # to break the line after progress bar finishes.
 
         angles_df = pd.DataFrame({'user_angle': user_angles,
                                   'pilot_angle': pilot_angles})
@@ -493,8 +498,9 @@ class ShowPredictionPlots(BaseCommand):
         ax1.legend(loc=4)
         ax2.legend(loc=4)
         plt.savefig(model_path + '_pred.png')
-        logger.info(f'Saving model at {model_path}_pred.png')
-        plt.show()
+        logger.info(f'Saving tubplot at {model_path}_pred.png')
+        if not noshow:
+            plt.show()
 
     def parse_args(self, args):
         parser = argparse.ArgumentParser(prog='tubplot', usage='%(prog)s [options]')
@@ -502,7 +508,10 @@ class ShowPredictionPlots(BaseCommand):
         parser.add_argument('--model', default=None, help='model for predictions')
         parser.add_argument('--limit', type=int, default=1000, help='how many records to process')
         parser.add_argument('--type', default=None, help='model type')
+        parser.add_argument('--noshow', default=False, action="store_true",
+                            help='if plot is shown in window')
         parser.add_argument('--config', default='./config.py', help=HELP_CONFIG)
+
         parsed_args = parser.parse_args(args)
         return parsed_args
 
@@ -510,7 +519,8 @@ class ShowPredictionPlots(BaseCommand):
         args = self.parse_args(args)
         args.tub = ','.join(args.tub)
         cfg = load_config(args.config)
-        self.plot_predictions(cfg, args.tub, args.model, args.limit, args.type)
+        self.plot_predictions(cfg, args.tub, args.model, args.limit,
+                              args.type, args.noshow)
 
 
 class Train(BaseCommand):

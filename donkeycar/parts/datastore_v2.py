@@ -2,7 +2,10 @@ import json
 import mmap
 import os
 import time
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 NEWLINE = '\n'
@@ -317,8 +320,13 @@ class Manifest(object):
 
     def _read_metadata(self, metadata=[]):
         self.metadata = dict()
-        for (key, value) in metadata:
-            self.metadata[key] = value
+        for kv in metadata:
+            kvs = kv.split(":")
+            if len(kvs) == 2:
+                self.metadata[kvs[0]] = kvs[1]
+            else:
+                logger.error(f'Metadata item needs to be a key value pair of '
+                             f'format key:value, ignore entry {kv}')
 
     def _read_contents(self):
         self.seekeable.seek_line_start(1)

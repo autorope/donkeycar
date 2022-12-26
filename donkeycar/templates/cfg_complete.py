@@ -221,6 +221,16 @@ STEERING_CHANNEL = 0       # PCA 9685 channel for steering control
 STEERING_LEFT_PWM = 460    # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
 STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
 
+#VESC controller, primarily need to change VESC_SERIAL_PORT  and VESC_MAX_SPEED_PERCENT
+VESC_MAX_SPEED_PERCENT =.2  # Max speed as a percent of the actual speed
+VESC_SERIAL_PORT= "/dev/ttyACM0" # Serial device to use for communication. Can check with ls /dev/tty*
+VESC_HAS_SENSOR= True # Whether or not the bldc motor is using a hall effect sensor
+VESC_START_HEARTBEAT= True # Whether or not to automatically start the heartbeat thread that will keep commands alive.
+VESC_BAUDRATE= 115200 # baudrate for the serial communication. Shouldn't need to change this.
+VESC_TIMEOUT= 0.05 # timeout for the serial communication
+VESC_STEERING_SCALE= 0.5 # VESC accepts steering inputs from 0 to 1. Joystick is usually -1 to 1. This changes it to -0.5 to 0.5
+VESC_STEERING_OFFSET = 0.5 # VESC accepts steering inputs from 0 to 1. Coupled with above change we move Joystick to 0 to 1
+
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
 # - uses L298N type motor controller in two pin wiring
@@ -340,6 +350,10 @@ LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
 
+# TFMINI
+HAVE_TFMINI = False
+TFMINI_SERIAL_PORT = "/dev/serial0" # tfmini serial port, can be wired up or use usb/serial adapter
+
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
 DEFAULT_AI_FRAMEWORK = 'tensorflow'
@@ -430,6 +444,7 @@ SEQUENCE_LENGTH = 3             #some models use a number of images over time. T
 #IMU
 HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
 IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
+IMU_ADDRESS = 0x68              # if AD0 pin is pulled high them address is 0x69, otherwise it is 0x68
 IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
 
 #SOMBRERO

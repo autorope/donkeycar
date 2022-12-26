@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 import torchvision.models as models
+import torchmetrics
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
@@ -33,8 +34,8 @@ class ResNet18(pl.LightningModule):
         self.example_input_array = torch.rand(input_shape)
 
         # Metrics
-        self.train_mse = pl.metrics.MeanSquaredError()
-        self.valid_mse = pl.metrics.MeanSquaredError()
+        self.train_mse = torchmetrics.MeanSquaredError()
+        self.valid_mse = torchmetrics.MeanSquaredError()
 
         self.model = load_resnet18(num_classes=output_size[0])
 

@@ -257,16 +257,17 @@ class TubLoader(BoxLayout, FileChooserBase):
             tub_screen().status(f'Failed loading tub: {str(e)}')
             return False
         # Check if filter is set in tub screen
-        expression = tub_screen().ids.tub_filter.filter_expression
+        # expression = tub_screen().ids.tub_filter.filter_expression
+        train_filter = getattr(cfg, 'TRAIN_FILTER', None)
 
         # Use filter, this defines the function
         def select(underlying):
-            if not expression:
+            if not train_filter:
                 return True
             else:
                 try:
                     record = TubRecord(cfg, self.tub.base_path, underlying)
-                    res = eval(expression)
+                    res = train_filter(record)
                     return res
                 except KeyError as err:
                     Logger.error(f'Filter: {err}')
@@ -281,8 +282,6 @@ class TubLoader(BoxLayout, FileChooserBase):
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
-        if expression:
-            msg += f' using filter {tub_screen().ids.tub_filter.record_filter}'
         tub_screen().status(msg)
         return True
 
@@ -399,12 +398,12 @@ class FullImage(Image):
             self.core_image = CoreImage(bytes_io, ext='png')
             self.texture = self.core_image.texture
         except KeyError as e:
-            Logger.error('Record: Missing key:', e)
+            Logger.error(f'Record: Missing key: {e}')
         except Exception as e:
-            Logger.error('Record: Bad record:', str(e))
+            Logger.error(f'Record: Bad record: {e}')
 
     def get_image(self, record):
-        return record.image(cached=False)
+        return record.image()
 
 
 class ControlPanel(BoxLayout):
@@ -423,11 +422,15 @@ class ControlPanel(BoxLayout):
         :param continuous:  If we do <<, >> or <, >
         :return:            None
         """
+        # this widget it used in two screens, so reference the original location
+        # of the config which is the config manager in the tub screen
+        cfg = tub_screen().ids.config_manager.config
+        hz = cfg.DRIVE_LOOP_HZ if cfg else 20
         time.sleep(0.1)
         call = partial(self.step, fwd, continuous)
         if continuous:
             self.fwd = fwd
-            s = float(self.speed) * tub_screen().ids.config_manager.config.DRIVE_LOOP_HZ
+            s = float(self.speed) * hz
             cycle_time = 1.0 / s
         else:
             cycle_time = 0.08
@@ -441,6 +444,9 @@ class ControlPanel(BoxLayout):
         :param largs:       dummy
         :return:            None
         """
+        if self.screen.index is None:
+            self.screen.status("No tub loaded")
+            return
         new_index = self.screen.index + (1 if fwd else -1)
         if new_index >= tub_screen().ids.tub_loader.len:
             new_index = 0
@@ -533,22 +539,33 @@ class TubFilter(PaddedBoxLayout):
 
     def update_filter(self):
         filter_text = self.ids.record_filter.text
+        config = tub_screen().ids.config_manager.config
         # empty string resets the filter
         if filter_text == '':
             self.record_filter = ''
             self.filter_expression = ''
             rc_handler.data['record_filter'] = self.record_filter
+            if hasattr(config, 'TRAIN_FILTER'):
+                delattr(config, 'TRAIN_FILTER')
             tub_screen().status(f'Filter cleared')
             return
         filter_expression = self.create_filter_string(filter_text)
         try:
             record = tub_screen().current_record
-            res = eval(filter_expression)
+            filter_func_text = f"""def filter_func(record): 
+                                       return {filter_expression}       
+                                """
+            # creates the function 'filter_func'
+            ldict = {}
+            exec(filter_func_text, globals(), ldict)
+            filter_func = ldict['filter_func']
+            res = filter_func(record)
             status = f'Filter result on current record: {res}'
             if isinstance(res, bool):
                 self.record_filter = filter_text
                 self.filter_expression = filter_expression
                 rc_handler.data['record_filter'] = self.record_filter
+                setattr(config, 'TRAIN_FILTER', filter_func)
             else:
                 status += ' - non bool expression can\'t be applied'
             status += ' - press <Reload tub> to see effect'
@@ -649,8 +666,9 @@ class TubScreen(Screen):
 
     def on_index(self, obj, index):
         """ Kivy method that is called if self.index changes"""
-        self.current_record = self.ids.tub_loader.records[index]
-        self.ids.slider.value = index
+        if index >= 0:
+            self.current_record = self.ids.tub_loader.records[index]
+            self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
         """ Kivy method that is called if self.current_record changes."""
@@ -747,7 +765,7 @@ class OverlayImage(FullImage):
 
         rgb = (0, 0, 255)
         MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
-        out_record = deepcopy(record)
+        out_record = copy(record)
         out_record.underlying['pilot/angle'] = output[0]
         # rename and denormalise the throttle output
         pilot_throttle_field \
@@ -781,6 +799,8 @@ class PilotScreen(Screen):
     def on_current_record(self, obj, record):
         """ Kivy method that is called when self.current_index changes. Here
             we update the images and the control panel entry."""
+        if not record:
+            return
         i = record.underlying['_index']
         self.ids.pilot_control.record_display = f"Record {i:06}"
         self.ids.img_1.update(record)
@@ -806,6 +826,8 @@ class PilotScreen(Screen):
         return rc_handler.data['user_pilot_map'][text]
 
     def set_brightness(self, val=None):
+        if not self.config:
+            return
         if self.ids.button_bright.state == 'down':
             self.config.AUG_MULTIPLY_RANGE = (val, val)
             if 'MULTIPLY' not in self.aug_list:
@@ -816,6 +838,8 @@ class PilotScreen(Screen):
         self.on_aug_list(None, None)
 
     def set_blur(self, val=None):
+        if not self.config:
+            return
         if self.ids.button_blur.state == 'down':
             self.config.AUG_BLUR_RANGE = (val, val)
             if 'BLUR' not in self.aug_list:
@@ -826,11 +850,15 @@ class PilotScreen(Screen):
         self.on_aug_list(None, None)
 
     def on_aug_list(self, obj, aug_list):
+        if not self.config:
+            return
         self.config.AUGMENTATIONS = self.aug_list
         self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS')
         self.on_current_record(None, self.current_record)
 
     def on_trans_list(self, obj, trans_list):
+        if not self.config:
+            return
         self.config.TRANSFORMATIONS = self.trans_list
         self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS')
         self.on_current_record(None, self.current_record)
@@ -1088,7 +1116,6 @@ class CarScreen(Screen):
                    '-o ConnectTimeout=3',
                    f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}',
                    'date']
-            # Logger.info('car check: ' + ' '.join(cmd))
             self.connection = Popen(cmd, shell=False, stdout=PIPE,
                                     stderr=STDOUT, text=True,
                                     encoding='utf-8', universal_newlines=True)
