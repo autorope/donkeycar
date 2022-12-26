@@ -86,6 +86,68 @@ class PiCamera(BaseCamera):
         self.camera = None
 
 
+class PiCamera2(BaseCamera):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, vflip=False, hflip=False):
+        from picamera2 import Picamera2
+        import libcamera
+
+        self.camera = Picamera2()
+        # create configuration
+        image_format = 'BGR888' if (image_d == 3 or image_d == 1) else 'XBGR8888'
+        config = self.camera.create_preview_configuration({
+            'format': image_format, 
+            'size': (image_w, image_h)
+        })
+        # set camera transformations
+        if vflip and hflip : 
+            config['transform'] = libcamera.Transform(hflip=1, vflip=1)
+        elif vflip: 
+            config['transform'] = libcamera.Transform(vflip=1)
+        elif hflip:
+            config['transform'] = libcamera.Transform(hflip=1)
+        
+        self.camera.configure(config)
+        self.camera.start()
+
+        # initialize the frame and the variable used to indicate
+        # if the thread should be stopped
+        self.frame = None
+        self.on = True
+        self.image_d = image_d
+
+        # get the first frame or timeout
+        logger.info('PiCamera2 loaded...')
+        logger.info('PiCamera2 opened...')
+        warming_time = time.time() + 5  # quick after 5 seconds
+        while self.frame is None and time.time() < warming_time:
+            logger.info("...warming camera")
+            self.run()
+            time.sleep(0.2)
+
+        if self.frame is None:
+            raise CameraError("Unable to start PiCamera2.")
+        logger.info("PiCamera2 ready.")
+
+    def run(self):
+        # grab the frame from the main stream
+        self.frame = self.camera.capture_array("main")
+        if self.image_d == 1: 
+            self.frame = rgb2gray(self.frame)
+        return self.frame
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        while self.on:
+            self.run()
+
+    def shutdown(self):
+        # indicate that the thread should be stopped
+        self.on = False
+        logger.info('Stopping PiCamera2')
+        time.sleep(.5)
+        self.camera.stop()
+        self.camera = None
+
 class Webcam(BaseCamera):
     def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, camera_index = 0):
         #
