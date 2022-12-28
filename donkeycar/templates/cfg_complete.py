@@ -21,21 +21,29 @@ DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
 #VEHICLE
-DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
+DRIVE_LOOP_HZ = 35      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 #CAMERA
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
-IMAGE_W = 160
-IMAGE_H = 120
+# CAMERA_TYPE = "PICAM"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+# IMAGE_W = 160
+# IMAGE_H = 120
+# IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+# CAMERA_FRAMERATE = DRIVE_LOOP_HZ
+# CAMERA_VFLIP = False
+# CAMERA_HFLIP = False
+# CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one camera connected 
+# # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
+# CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
+# OAK_D_ISP_SCALE = None
+
+#CAMERA OAK-D-LITE SETTINGS
+CAMERA_TYPE = "OAK"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+OAK_D_ISP_SCALE = (1,8) # outputs 1/8 of sensor size image in x and y
+IMAGE_W = 240 # color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
+IMAGE_H = 135 # color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
-CAMERA_FRAMERATE = DRIVE_LOOP_HZ
-CAMERA_VFLIP = False
-CAMERA_HFLIP = False
-CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one camera connected 
-# For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
-CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
-OAK_D_ISP_SCALE = None
+CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
