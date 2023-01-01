@@ -1,9 +1,13 @@
 #
-# part that executes a no-arg method when a button is clicked
+# part that explodes a dictionary argument into individually named arguments
 #
 
 
 class ExplodeDict:
+    """
+    part that expands a dictionary input argument
+    into individually named output arguments
+    """
     def __init__(self, memory, output_prefix = ""):
         """
         Break a map into key/value pairs and write

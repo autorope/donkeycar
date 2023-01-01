@@ -293,6 +293,10 @@ class PWMSteering:
         set_pulse = getattr(controller, "set_pulse", None)
         if set_pulse is None or not callable(set_pulse):
             raise ValueError("controller must have a set_pulse method")
+        if not utils.is_number_type(left_pulse):
+            raise ValueError("left_pulse must be a number")
+        if not utils.is_number_type(right_pulse):
+            raise ValueError("right_pulse must be a number")
 
         self.controller = controller
         self.left_pulse = left_pulse
@@ -950,11 +954,12 @@ class RPi_GPIO_Servo(object):
     '''
     Servo controlled from the gpio pins on Rpi
     '''
-    def __init__(self, pin, pin_scheme=None, freq = 50, min=5.0, max=7.8):
+    def __init__(self, pin, pin_scheme=GPIO.BCM, freq=50, min=5.0, max=7.8):
         self.pin = pin
-        GPIO.setmode(GPIO.BCM if pin_scheme is None else pin_scheme)
+        GPIO.setmode(pin_scheme)
         GPIO.setup(self.pin, GPIO.OUT)
-        
+
+        self.throttle = 0
         self.pwm = GPIO.PWM(self.pin, freq)
         self.pwm.start(0)
         self.min = min
@@ -965,11 +970,10 @@ class RPi_GPIO_Servo(object):
         Update the speed of the motor where 1 is full forward and
         -1 is full backwards.
         '''
-        #I've read 90 is a good max
+        # I've read 90 is a good max
         self.throttle = dk.map_frange(pulse, -1.0, 1.0, self.min, self.max)
-        #logger.debug(pulse, self.throttle)
+        # logger.debug(pulse, self.throttle)
         self.pwm.ChangeDutyCycle(self.throttle)
-
 
     def shutdown(self):
         self.pwm.stop()
