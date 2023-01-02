@@ -410,7 +410,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
 
     if cfg.OBSTACLE_AVOIDANCE_ENABLED:
-        inputs = ['user/angle', 'user/throttle', 'cam/depth_array']
+        inputs = ['cam/depth_array', 'user/angle', 'user/throttle']
         outputs = ['user/angle', 'user/throttle']
         from donkeycar.parts.depth_avoidance import DepthAvoidance
         V.add(DepthAvoidance, inputs=inputs, outputs=outputs)
