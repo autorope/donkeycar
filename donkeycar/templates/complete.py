@@ -406,6 +406,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
     #
+    # Obstacle avoidance based on depth map
+    #
+
+    if cfg.OBSTACLE_AVOIDANCE_ENABLED:
+        inputs = ['pilot/angle', 'pilot/throttle', 'cam/depth_array']
+        outputs = ['pilot/angle', 'pilot/throttle']
+        from donkeycar.parts.depth_avoidance import DepthAvoidance
+        V.add(DepthAvoidance, inputs=inputs, outputs=outputs)
+        # Should be run with following line only when autopilot is in charge
+        # V.add(DepthAvoidance, inputs=inputs, outputs=outputs, run_condition='run_pilot')
+
+
+    #
     # stop at a stop sign
     #
     if cfg.STOP_SIGN_DETECTOR:
@@ -525,6 +538,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
+
+    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH:
+        inputs += ['cam/depth_array']
+        types += ['gray16_array']
+
+
 
     # rbx
     if cfg.DONKEY_GYM:
@@ -739,7 +758,7 @@ def get_camera(cfg):
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         elif cfg.CAMERA_TYPE == "OAK":
             from donkeycar.parts.oak_d_camera import OakDCamera
-            cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE)
+            cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
@@ -787,6 +806,12 @@ def add_camera(V, cfg, camera_type):
               outputs=['cam/image_array', 'cam/depth_array',
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+              threaded=True)
+    elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
+        from donkeycar.parts.oak_d_camera import OakDCamera
+        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/depth_array'],
               threaded=True)
     else:
         inputs = []
