@@ -119,6 +119,8 @@ class DepthAvoidance:
 
         '''
 
+        logger.info("CROPPED steering={}, throttle={}, depth_frame_size={}".format(steering_angle,throttle,depth_frame.shape))
+        
         self.emergency_brake = False
         self.throttle = throttle
         obstacle_detected_in_PCLC = ((depth_frame[50:100,100:200] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
@@ -155,9 +157,9 @@ class DepthAvoidance:
         
         logger.debug("steering_angle = {} ; emergency_brake = {}".format(self.steering_angle, self.throttle))
    
-    def run(self,steering_angle, throttle, depth_frame):
+    def run(self, steering_angle, throttle, depth_frame):
         # H400 W640 np.uint16
-        
+        logger.info("RUN steering={}, throttle={}, depth_frame_size={}".format(steering_angle,throttle,depth_frame.shape))
         # , depth_image_arr: Tuple[int, ...] = (400, 640)
         self.detect_obstacle_cropped_frame(steering_angle, throttle, depth_frame)
         return self.steering_angle, self.throttle
