@@ -157,7 +157,7 @@ class DepthAvoidance:
         
         logger.debug("steering_angle = {} ; emergency_brake = {}".format(self.steering_angle, self.throttle))
    
-    def run(self, steering_angle, throttle, df):
+    def run(self, df, steering_angle, throttle):
         # H400 W640 np.uint16
         logger.info("RUN steering={}, throttle={}, depth_frame_size={}".format(steering_angle,throttle,depth_frame.shape))
         # , depth_image_arr: Tuple[int, ...] = (400, 640)
