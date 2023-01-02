@@ -19,7 +19,7 @@ class TestOakDCamera(unittest.TestCase):
         '''
         oak_D_Camera = OakDCamera(width=240, height=135, depth=3, isp_scale=(1,8), framerate=35, enable_depth= True)
         oak_D_Camera.run()
-        self.assertEqual((3, 135, 240),oak_D_Camera.frame_xout.shape)
+        self.assertEqual((135, 240, 3),oak_D_Camera.frame_xout.shape)
         self.assertEqual((100, 400),oak_D_Camera.frame_xout_depth.shape)
         
     

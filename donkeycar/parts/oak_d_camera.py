@@ -165,7 +165,8 @@ class OakDCamera:
         # Grab the frame from the stream 
         if self.queue_xout is not None:
             data_xout = self.queue_xout.get() # blocking
-            self.frame_xout = data_xout.getFrame()
+            image_data_xout = data_xout.getFrame()
+            self.frame_xout = np.moveaxis(image_data_xout,0,-1)
 
             if logger.isEnabledFor(logging.DEBUG):
                 # Latency in miliseconds 
