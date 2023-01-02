@@ -166,7 +166,7 @@ class DepthAvoidance:
         # H400 W640 np.uint16
         logger.info("RUN steering={}, throttle={}, depth_frame_size={}".format(steering_angle,throttle,depth_frame.shape))
         # , depth_image_arr: Tuple[int, ...] = (400, 640)
-        self.detect_obstacle_cropped_frame(steering_angle, throttle, df)
+        self.detect_obstacle_cropped_frame(steering_angle, throttle, depth_frame)
         return self.steering_angle, self.throttle
     
     def shutdown(self):
