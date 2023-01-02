@@ -181,7 +181,7 @@ class OakDCamera:
 
             if logger.isEnabledFor(logging.DEBUG):
                 # Latency in miliseconds 
-                self.latencies.append((dai.Clock.now() - data.getTimestamp()).total_seconds() * 1000)
+                self.latencies.append((dai.Clock.now() - data_xout.getTimestamp()).total_seconds() * 1000)
                 if len(self.latencies) >= self.latencies.maxlen:
                     logger.debug('Image latency: {:.2f} ms, Average latency: {:.2f} ms, Std: {:.2f}' \
                         .format(self.latencies[-1], np.average(self.latencies), np.std(self.latencies)))

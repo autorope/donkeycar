@@ -191,10 +191,14 @@ class Vehicle:
             if run:
                 # get part
                 p = entry['part']
+                logger.info("part={}".format(p))
                 # start timing part run
                 self.profiler.on_part_start(p)
                 # get inputs from memory
                 inputs = self.mem.get(entry['inputs'])
+                logger.info("entry['inputs']={}".format(entry['inputs']))
+                logger.info("inputs={}".format(inputs))
+                
                 # run the part
                 if entry.get('thread'):
                     outputs = p.run_threaded(*inputs)
