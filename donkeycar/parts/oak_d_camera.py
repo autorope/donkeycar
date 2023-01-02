@@ -94,22 +94,33 @@ class OakDCamera:
             logger.info('Starting OAK-D camera')
             self.device = dai.Device(self.pipeline)
 
+            warming_time = time.time() + 5  # seconds
+                
             if enable_depth:
                 self.queue_xout = self.device.getOutputQueue("xout", maxSize=1, blocking=False)
                 self.queue_xout_depth = self.device.getOutputQueue("xout_depth", maxSize=1, blocking=False)
+            
+                # Get the first frame or timeout
+                while (self.frame_xout is None or self.frame_xout_depth is None) and time.time() < warming_time:
+                    logger.info("...warming RGB and depth cameras")
+                    self.run()
+                    time.sleep(0.2)
+
+                if self.frame_xout is None:
+                    raise CameraError("Unable to start OAK-D RGB and Depth camera.")
+
             else:
                 self.queue_xout = self.device.getOutputQueue("xout", maxSize=1, blocking=False)
                 self.queue_xout_depth = None
 
-            # Get the first frame or timeout
-            warming_time = time.time() + 5  # seconds
-            while self.frame_xout is None and time.time() < warming_time:
-                logger.info("...warming camera")
-                self.run()
-                time.sleep(0.2)
+                # Get the first frame or timeout
+                while self.frame_xout is None and time.time() < warming_time:
+                    logger.info("...warming camera")
+                    self.run()
+                    time.sleep(0.2)
 
-            if self.frame_xout is None:
-                raise CameraError("Unable to start OAK-D camera.")
+                if self.frame_xout is None:
+                    raise CameraError("Unable to start OAK-D camera.")
 
             self.on = True
             logger.info("OAK-D camera ready.")
