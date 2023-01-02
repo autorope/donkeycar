@@ -159,8 +159,10 @@ class DepthAvoidance:
    
     def run(self, *args):
         logger.info("type={}".format(type(args)))
-        for i in args:
-            print(i)
+        print(args[0])
+        print(args[1])
+        print(args[2])
+        
         # H400 W640 np.uint16
         logger.info("RUN steering={}, throttle={}, depth_frame_size={}".format(steering_angle,throttle,depth_frame.shape))
         # , depth_image_arr: Tuple[int, ...] = (400, 640)
