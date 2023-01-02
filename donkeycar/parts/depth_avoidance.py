@@ -157,11 +157,11 @@ class DepthAvoidance:
         
         logger.debug("steering_angle = {} ; emergency_brake = {}".format(self.steering_angle, self.throttle))
    
-    def run(self, *args):
-        logger.info("type={}".format(type(args)))
-        print(args[0])
-        print(args[1])
-        print(args[2])
+    def run(self, steering_angle, throttle, depth_frame):
+        # logger.info("type={}".format(type(args)))
+        # print(args[0])
+        # print(args[1])
+        # print(args[2])
         
         # H400 W640 np.uint16
         logger.info("RUN steering={}, throttle={}, depth_frame_size={}".format(steering_angle,throttle,depth_frame.shape))
