@@ -539,7 +539,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         types +=['float', 'float', 'float',
            'float', 'float', 'float']
 
-    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH:
+    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
         inputs += ['cam/depth_array']
         types += ['gray16_array']
 
