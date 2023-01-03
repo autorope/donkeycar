@@ -159,7 +159,7 @@ class DepthAvoidance:
             self.steering_angle = steering_angle
         
         if self.emergency_brake:
-            self.throttle = -1
+            self.throttle = 0 # -1
         
         logger.debug("steering_angle = {} ; emergency_brake = {}".format(self.steering_angle, self.throttle))
    
