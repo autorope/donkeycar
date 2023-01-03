@@ -153,7 +153,10 @@ class OakDCamera:
         # Crop range
         topLeft = dai.Point2f(0.1875, 0.0)
         bottomRight = dai.Point2f(0.8125, 0.25)
-
+        #    - - > x 
+        #    |
+        #    y
+        
         # Properties
         monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
         monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
