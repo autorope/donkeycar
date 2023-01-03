@@ -65,10 +65,9 @@ class Tub(object):
                     contents[key] = name
                 elif input_type == 'gray16_array':
                     # Handle image array
-                    image = Image.fromarray(np.uint16(value))
                     name = Tub._image_file_name(self.manifest.current_index, key).replace("image","depth")
                     image_path = os.path.join(self.images_base_path.replace("images","depths"), name)
-                    image.save(image_path)
+                    np.savez_compressed(image_path, img=np.uint16(value))
                     contents[key] = name
 
         # Private properties
