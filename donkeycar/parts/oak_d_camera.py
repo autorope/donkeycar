@@ -151,8 +151,8 @@ class OakDCamera:
         xout_depth.setStreamName("xout_depth")
 
         # Crop range
-        topLeft = dai.Point2f(0.1875, 0.05)
-        bottomRight = dai.Point2f(0.8125, 0.3)
+        topLeft = dai.Point2f(0.1875, 0.0)
+        bottomRight = dai.Point2f(0.8125, 0.25)
 
         # Properties
         monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
