@@ -413,7 +413,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # inputs = ["cam/depth_array",user/angle', 'user/throttle']
         inputs = ["user/angle", "user/throttle", "cam/depth_array"]
         outputs = ['user/angle', 'user/throttle']
-        
+
         from donkeycar.parts.depth_avoidance import DepthAvoidance
         V.add(DepthAvoidance(), inputs=inputs, outputs=outputs)
         # Should be run with following line only when autopilot is in charge
