@@ -126,8 +126,8 @@ class DepthAvoidance:
 
         # obstacle_detected_in_PCLC = ((depth_frame[50:100,100:200] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
         # obstacle_detected_in_PCRC = ((depth_frame[50:100,200:300] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
-        obstacle_detected_in_PCLC = ((depth_frame[0:25,100:200] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
-        obstacle_detected_in_PCRC = ((depth_frame[0:25,200:300] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
+        obstacle_detected_in_PCLC = ((depth_frame[75:100,100:200] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
+        obstacle_detected_in_PCRC = ((depth_frame[75:100,200:300] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
         
         if obstacle_detected_in_PCLC or obstacle_detected_in_PCRC:
             self.emergency_brake = obstacle_detected_in_PCLC & obstacle_detected_in_PCRC
@@ -135,11 +135,11 @@ class DepthAvoidance:
             self.steering_angle += obstacle_detected_in_PCRC * self.FULL_LEFT_STEERING
         else:    
             # obstacle_detected_in_PCLL = ((depth_frame[50:100,0:100] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
-            obstacle_detected_in_PCLL = ((depth_frame[0:25,0:100] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
+            obstacle_detected_in_PCLL = ((depth_frame[75:100,0:100] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
             self.steering_angle += obstacle_detected_in_PCLL * self.THREE_QUARTER_RIGHT_STEERING
             
             # obstacle_detected_in_PCRR = ((depth_frame[50:100,300:400] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
-            obstacle_detected_in_PCRR = ((depth_frame[0:25,300:400] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
+            obstacle_detected_in_PCRR = ((depth_frame[75:100,300:400] < self.CLOSE_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
             self.steering_angle += obstacle_detected_in_PCRR * self.THREE_QUARTER_LEFT_STEERING
             
             # obstacle_detected_in_PFLC = ((depth_frame[0:50,100:200] < self.FAR_DISTANCE_MM).sum() > self.NB_PIXELS_IN_RANGE)
