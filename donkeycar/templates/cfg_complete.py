@@ -62,6 +62,7 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 # "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
 # "DC_TWO_WHEEL" uses HBridge in 2-pin mode to control two drive motors, one on the left, and one on the right.
 # "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
+# "DC_FOUR_WHEEL" uses HBridge in 2-pin mode to control four drive motors, two on the left (front/rear) and two on the right (front/rear).
 # "MOCK" no drive train.  This can be used to test other features in a test rig.
 # (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering,
 #                                  and HBridge for a drive motor.
@@ -335,6 +336,46 @@ DC_TWO_WHEEL_L298N = {
     "RIGHT_FWD_PIN": "RPI_GPIO.BOARD.15",       # TTL output pin enables right wheel forward
     "RIGHT_BWD_PIN": "RPI_GPIO.BOARD.13",       # TTL output pin enables right wheel reverse
     "RIGHT_EN_DUTY_PIN": "RPI_GPIO.BOARD.11",   # PWM pin generates duty cycle for right wheel speed
+}
+
+#
+# DC_FOUR_WHEEL pin configuration
+# - configures L298N_HBridge_2pin driver
+# - four wheels as differential drive, left front/rear and right front/rear.
+# - each wheel is controlled by two pwm pins, 
+#   one for forward and one for backward (reverse). 
+# - each pwm pin produces a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and 
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+# Pin specifier string format:
+# - use RPI_GPIO for RPi/Nano header pin output
+#   - use BOARD for board pin numbering
+#   - use BCM for Broadcom GPIO numbering
+#   - for example "RPI_GPIO.BOARD.18"
+# - use PIPGIO for RPi header pin output using pigpio server
+#   - must use BCM (broadcom) pin numbering scheme
+#   - for example, "PIGPIO.BCM.13"
+# - use PCA9685 for PCA9685 pin output
+#   - include colon separated I2C channel and address 
+#   - for example "PCA9685.1:40.13"
+# - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
+#   although it is discouraged to mix RPI_GPIO and PIGPIO.
+#
+DC_FOUR_WHEEL = {
+    "LEFT_FRONT_FWD_DUTY_PIN": "PCA9685.1:40.0",  # pwm pin produces duty cycle for left front wheel forward
+    "LEFT_FRONT_BWD_DUTY_PIN": "PCA9685.1:40.1",  # pwm pin produces duty cycle for left front wheel reverse
+    "LEFT_REAR_FWD_DUTY_PIN": "PCA9685.1:40.3",  # pwm pin produces duty cycle for left rear wheel forward
+    "LEFT_REAR_BWD_DUTY_PIN": "PCA9685.1:40.2",  # pwm pin produces duty cycle for left rear wheel reverse
+    "RIGHT_FRONT_FWD_DUTY_PIN": "PCA9685.1:40.6", # pwm pin produces duty cycle for right front wheel forward
+    "RIGHT_FRONT_BWD_DUTY_PIN": "PCA9685.1:40.7", # pwm pin produces duty cycle for right front wheel reverse
+    "RIGHT_REAR_FWD_DUTY_PIN": "PCA9685.1:40.4", # pwm pin produces duty cycle for right rear wheel forward
+    "RIGHT_REAR_BWD_DUTY_PIN": "PCA9685.1:40.5", # pwm pin produces duty cycle for right rear wheel reverse
 }
 
 #ODOMETRY

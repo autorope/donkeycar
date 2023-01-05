@@ -833,7 +833,7 @@ def add_drivetrain(V, cfg):
         # To make differential drive steer,
         # divide throttle between motors based on the steering value
         #
-        is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
+        is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL") or cfg.DRIVE_TRAIN_TYPE.startswith("DC_FOUR_WHEEL")
         if is_differential_drive:
             V.add(TwoWheelSteeringThrottle(),
                   inputs=['throttle', 'angle'],
@@ -925,6 +925,26 @@ def add_drivetrain(V, cfg):
 
             V.add(left_motor, inputs=['left/throttle'])
             V.add(right_motor, inputs=['right/throttle'])
+
+        elif cfg.DRIVE_TRAIN_TYPE == "DC_FOUR_WHEEL":
+            dt = cfg.DC_FOUR_WHEEL
+            left_front_motor = actuator.L298N_HBridge_2pin(
+                pins.pwm_pin_by_id(dt['LEFT_FRONT_FWD_DUTY_PIN']),
+                pins.pwm_pin_by_id(dt['LEFT_FRONT_BWD_DUTY_PIN']))
+            left_rear_motor = actuator.L298N_HBridge_2pin(
+                pins.pwm_pin_by_id(dt['LEFT_REAR_FWD_DUTY_PIN']),
+                pins.pwm_pin_by_id(dt['LEFT_REAR_BWD_DUTY_PIN']))
+            right_front_motor = actuator.L298N_HBridge_2pin(
+                pins.pwm_pin_by_id(dt['RIGHT_FRONT_FWD_DUTY_PIN']),
+                pins.pwm_pin_by_id(dt['RIGHT_FRONT_BWD_DUTY_PIN']))
+            right_rear_motor = actuator.L298N_HBridge_2pin(
+                pins.pwm_pin_by_id(dt['RIGHT_REAR_FWD_DUTY_PIN']),
+                pins.pwm_pin_by_id(dt['RIGHT_REAR_BWD_DUTY_PIN']))
+
+            V.add(left_front_motor, inputs=['left/throttle'])
+            V.add(left_rear_motor, inputs=['left/throttle'])
+            V.add(right_front_motor, inputs=['right/throttle'])
+            V.add(right_rear_motor, inputs=['right/throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_2PIN":
             #
