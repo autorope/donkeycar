@@ -214,17 +214,20 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['recording', 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
 
-    if cfg.DONKEY_GYM:
-        lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
-        V.add(lpos, inputs=lpos.inputs)
-    if cfg.HAVE_ODOM:
-        if cfg.HAVE_ODOM_2:
-            lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp', 'enc/right/timestamp'], level="INFO", logger="odometer")
-            V.add(lpos, inputs=lpos.inputs)
-        lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
-        V.add(lpos, inputs=lpos.inputs)
-        lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
-        V.add(lpos, inputs=lpos.inputs)
+    #
+    # log pose
+    #
+    # if cfg.DONKEY_GYM:
+    #     lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
+    #     V.add(lpos, inputs=lpos.inputs)
+    # if cfg.HAVE_ODOM:
+    #     if cfg.HAVE_ODOM_2:
+    #         lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp', 'enc/right/timestamp'], level="INFO", logger="odometer")
+    #         # V.add(lpos, inputs=lpos.inputs)
+    #     lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
+    #     V.add(lpos, inputs=lpos.inputs)
+    #     lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
+    #     V.add(lpos, inputs=lpos.inputs)
 
     def save_path():
         if path.length() > 0:
@@ -454,7 +457,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                   'pilot/steering', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
-    V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
+    # V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
 
     #
     # To make differential drive steer,
