@@ -440,19 +440,21 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #Choose what inputs should change the car.
     class DriveMode:
         def run(self, mode, 
-                user_angle, user_throttle,
-                pilot_angle, pilot_throttle):
+                user_steering, user_throttle,
+                pilot_steering, pilot_throttle):
             if mode == 'user':
-                return user_angle, user_throttle
+                return user_steering, user_throttle
             elif mode == 'local_angle':
-                return pilot_angle, user_throttle
+                return pilot_steering, user_throttle
             else:
-                return pilot_angle, pilot_throttle
+                return pilot_steering, pilot_throttle
 
     V.add(DriveMode(), 
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'], 
-          outputs=['angle', 'throttle'])
+          inputs=['user/mode', 'user/steering', 'user/throttle',
+                  'pilot/steering', 'pilot/throttle'],
+          outputs=['steering', 'throttle'])
+
+    V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
 
     #
     # To make differential drive steer,
@@ -460,7 +462,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     if is_differential_drive:
         V.add(TwoWheelSteeringThrottle(),
-            inputs=['throttle', 'angle'],
+            inputs=['throttle', 'steering'],
             outputs=['left/throttle', 'right/throttle'])
 
     #

@@ -137,7 +137,7 @@ class Bicycle:
                 logger.info(result)
             return result
 
-        return (0, 0, 0, 0, 0, 0, 0, 0, self.timestamp)
+        return 0, 0, 0, 0, 0, 0, 0, 0, self.timestamp
 
     def shutdown(self):
         self.running = False
@@ -182,7 +182,7 @@ class InverseBicycle:
         steering_angle = bicycle_steering_angle(self.wheel_base, forward_velocity, angular_velocity)        
         self.timestamp = timestamp
 
-        return (forward_velocity, steering_angle, timestamp)
+        return forward_velocity, steering_angle, timestamp
 
 
 def bicycle_steering_angle(wheel_base:float, forward_velocity:float, angular_velocity:float) -> float:
@@ -235,7 +235,7 @@ class BicycleUnnormalizeAngularVelocity:
 
     def run(self, normalized_angular_velocity:float) -> float:
         if abs(normalized_angular_velocity) > 1:
-            print("Warning: normalized_angular_velocity must be between -1 and 1")
+            logger.error("Warning: normalized_angular_velocity must be between -1 and 1")
         return normalized_angular_velocity * self.max_angular_velocity
 
 
@@ -345,8 +345,7 @@ class Unicycle:
                 self.timestamp
             )
 
-
-        return (0, 0, 0, 0, 0, 0, 0, 0, self.timestamp)
+        return 0, 0, 0, 0, 0, 0, 0, 0, self.timestamp
 
     def shutdown(self):
         self.running = False
@@ -369,6 +368,7 @@ class InverseUnicycle:
 
         self.wheel_diameter = 2 * wheel_radius
         self.wheel_circumference = math.pi * self.wheel_diameter
+
     def run(self, forward_velocity:float, angular_velocity:float, timestamp:float=None) -> Tuple[float, float, float]:
         """
         Convert turning velocity in radians and forward velocity (like meters per second)
@@ -393,7 +393,7 @@ class InverseUnicycle:
         self.timestamp = timestamp
 
         # left/right linear speeds and timestamp
-        return (left_linear_speed, right_linear_speed, timestamp)
+        return left_linear_speed, right_linear_speed, timestamp
 
     def shutdown(self):
         pass
@@ -453,7 +453,7 @@ class UnicycleUnnormalizeAngularVelocity:
 
     def run(self, normalized_angular_velocity:float) -> float:
         if abs(normalized_angular_velocity) > 1:
-            print("Warning: normalized_angular_velocity must be between -1 and 1")
+            logger.error("Warning: normalized_angular_velocity must be between -1 and 1")
         return normalized_angular_velocity * self.max_angular_velocity
 
 
@@ -489,7 +489,7 @@ class NormalizeSteeringAngle:
             return 0
         return -steering # positive steering angle is negative normalized
 
-    def shutdown():
+    def shutdown(self):
         pass
 
 
@@ -532,7 +532,7 @@ class UnnormalizeSteeringAngle:
 
         return self.max_steering_angle * steering * -s
 
-    def shutdown():
+    def shutdown(self):
         pass
 
 
@@ -549,7 +549,7 @@ def wheel_rotational_velocity(wheel_radius:float, speed:float) -> float:
     return speed / wheel_radius
 
 
-def differential_steering(throttle: float, steering: float, steering_zero: float = 0.01) -> Tuple[float, float]:
+def differential_steering(throttle: float, steering: float, steering_zero: float = 0) -> Tuple[float, float]:
         """
         Turn steering angle and speed/throttle into 
         left and right wheel speeds/throttle.

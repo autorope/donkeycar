@@ -20,6 +20,7 @@ from docopt import docopt
 # import cv2 early to avoid issue with importing after tensorflow
 # see https://github.com/opencv/opencv/issues/14884#issuecomment-599852128
 #
+
 try:
     import cv2
 except:
@@ -40,6 +41,7 @@ from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnorm
 from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity
 from donkeycar.parts.explode import ExplodeDict
 from donkeycar.parts.transform import Lambda
+from donkeycar.parts.logger import LoggerPart
 from donkeycar.utils import *
 
 logger = logging.getLogger(__name__)
@@ -390,7 +392,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         # collect model inference outputs
         #
-        outputs = ['pilot/angle', 'pilot/throttle']
+        outputs = ['pilot/steering', 'pilot/throttle']
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
@@ -438,23 +440,25 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # Choose what inputs should change the car.
     class DriveMode:
         def run(self, mode,
-                    user_angle, user_throttle,
-                    pilot_angle, pilot_throttle):
+                    user_steering, user_throttle,
+                    pilot_steering, pilot_throttle):
             if mode == 'user':
-                return user_angle, user_throttle
+                return user_steering, user_throttle
 
             elif mode == 'local_angle':
-                return pilot_angle if pilot_angle else 0.0, user_throttle
+                return pilot_steering if pilot_steering else 0.0, user_throttle
 
             else:
-                return pilot_angle if pilot_angle else 0.0, \
+                return pilot_steering if pilot_steering else 0.0, \
                        pilot_throttle * cfg.AI_THROTTLE_MULT \
                            if pilot_throttle else 0.0
 
     V.add(DriveMode(),
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
+          inputs=['user/mode', 'user/steering', 'user/throttle',
+                  'pilot/steering', 'pilot/throttle'],
+          outputs=['steering', 'throttle'])
+
+    V.add(LoggerPart(['steering', 'throttle']), inputs=['steering', 'throttle'])
 
     if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
@@ -499,10 +503,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # add tub to save data
 
     if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/steering', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:
-        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
+        inputs=['cam/image_array','user/steering', 'user/throttle', 'user/mode']
         types=['image_array','float', 'float','str']
 
     if cfg.HAVE_ODOM:
@@ -540,7 +544,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/angle', 'pilot/throttle']
+        inputs += ['pilot/steering', 'pilot/throttle']
         types += ['float', 'float']
 
     if cfg.HAVE_PERFMON:
@@ -604,7 +608,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
+          outputs=['user/steering', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
           threaded=True)
 
     #
@@ -620,7 +624,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
             V.add(
                 ctr,
                 inputs=['user/mode', 'recording'],
-                outputs=['user/angle', 'user/throttle',
+                outputs=['user/steering', 'user/throttle',
                          'user/mode', 'recording'],
                 threaded=False)
         else:
@@ -657,7 +661,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
             V.add(
                 ctr,
                 inputs=[input_image, 'user/mode', 'recording'],
-                outputs=['user/angle', 'user/throttle',
+                outputs=['user/steering', 'user/throttle',
                          'user/mode', 'recording'],
                 threaded=True)
     return ctr
@@ -675,7 +679,7 @@ def add_simulator(V, cfg):
                         #    record_distance=cfg.SIM_RECORD_DISTANCE, record_orientation=cfg.SIM_RECORD_ORIENTATION,
                            delay=cfg.SIM_ARTIFICIAL_LATENCY)
         threaded = True
-        inputs = ['angle', 'throttle']
+        inputs = ['steering', 'throttle']
         outputs = ['cam/image_array']
 
         if cfg.SIM_RECORD_LOCATION:
@@ -785,189 +789,6 @@ def add_camera(V, cfg, camera_type):
             V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
 
-class UnicycleDistance:
-    def run(self, left, right):
-        if is_number_type(left) and is_number_type(right):
-            return (left + right) / 2.0
-        else:
-            logger.error("left and right must be floats")
-        return 0.0
-
-
-class BicyclePose:
-    """
-    Part that integrates encoder+tachometer+odometer+kinematics
-    for the purposes of estimating the pose of a car-like vehicle over time.
-    """
-    def __init__(self, cfg, poll_delay_secs:float=0):
-        from donkeycar.parts.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder,
-                                                GpioEncoder, EncoderChannel)
-        from donkeycar.parts.odometer import Odometer
-        from donkeycar.parts import pins;
-
-        # distance_per_revolution = cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000
-        distance_per_revolution = cfg.WHEEL_RADIUS * 2 * 3.141592653589793
-
-        self.poll_delay_secs = poll_delay_secs
-        self.encoder = None
-        self.tachometer = None
-        self.odometer = None
-        self.steering = None
-        self.bicycle = None
-
-        if cfg.ENCODER_TYPE == "GPIO":
-            self.encoder = GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN),
-                        debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-                        debug=cfg.ODOM_DEBUG)
-        elif cfg.ENCODER_TYPE == "arduino":
-            self.encoder = SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE), debug=cfg.ODOM_DEBUG)
-        else:
-            print("No supported encoder found")
-
-        if self.encoder:
-            self.tachometer = Tachometer(
-                self.encoder,
-                ticks_per_revolution=cfg.ENCODER_PPR,
-                direction_mode=cfg.TACHOMETER_MODE,
-                poll_delay_secs=1.0 / (cfg.DRIVE_LOOP_HZ * 3),
-                debug=cfg.ODOM_DEBUG)
-
-        if self.tachometer:
-            self.odometer = Odometer(
-                distance_per_revolution=distance_per_revolution,
-                smoothing_count=cfg.ODOM_SMOOTHING,
-                debug=cfg.ODOM_DEBUG)
-
-            self.steering = UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE)
-            self.bicycle = Bicycle(cfg.WHEEL_BASE, cfg.ODOM_DEBUG)
-
-        self.running = True
-
-    def update(self):
-        """
-        This will get called on it's own thread.
-        throttle: sign of throttle is use used to determine direction.
-        timestamp: timestamp for update or None to use current time.
-                   This is useful for creating deterministic tests.
-        """
-        while self.running:
-            if self.tachometer:
-                self.tachometer.poll(self.tachometer.throttle, None)
-                self.odometer.poll(self.odometer.revolutions, self.tachometer.timestamp)
-            time.sleep(self.poll_delay_secs)  # give other threads time
-
-    def run_threaded(self, throttle:float=0.0, steering:float=0.0, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
-        if self.running and self.tachometer:
-            revolutions, _ = self.tachometer.run_threaded(throttle, timestamp)
-            distance, velocity, _ = self.odometer.run_threaded(revolutions, self.tachometer.timestamp)
-            steering_angle = self.steering.run(steering)
-            forward_distance, forward_velocity, pose_x, pose_y, pose_angle, pose_velocity_x, pose_velocity_y, pose_velocity_angle, timestamp = self.bicycle.run(distance, steering_angle, self.tachometer.timestamp)
-            return forward_distance, forward_velocity, pose_x, pose_y, pose_angle, pose_velocity_x, pose_velocity_y, pose_velocity_angle, timestamp
-
-        return 0, 0, 0, 0, 0, 0, 0, 0, timestamp
-
-
-class UnicyclePose:
-    """
-    Part that integrates encoders+tachometers+odometers+kinematics
-    for the purposes of estimating the pose of a
-    differential drive vehicle over time.
-    """
-    def __init__(self, cfg, poll_delay_secs:float=0):
-        from donkeycar.parts.serial_port import SerialPort
-        from donkeycar.parts.tachometer import (Tachometer, SerialEncoder,
-                                                GpioEncoder, EncoderChannel)
-        from donkeycar.parts.odometer import Odometer
-        from donkeycar.parts import pins;
-
-        # distance_per_revolution = cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000
-        distance_per_revolution = cfg.WHEEL_RADIUS * 2 * 3.141592653589793
-
-        self.poll_delay_secs = poll_delay_secs
-        self.encoder = None
-        self.tachometer = None
-        self.odometer = None
-        self.unicycle = None
-
-        if cfg.ENCODER_TYPE == "GPIO":
-            self.encoder = [
-                GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN),
-                        debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-                        debug=cfg.ODOM_DEBUG),
-                GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN_2),
-                            debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-                            debug=cfg.ODOM_DEBUG)
-            ]
-        elif cfg.ENCODER_TYPE == "arduino":
-            serial_encoder = SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE), debug=cfg.ODOM_DEBUG)
-            self.encoder = [
-                serial_encoder,
-                EncoderChannel(encoder=serial_encoder, channel=1)
-            ]
-        else:
-            print("No supported encoder found")
-
-        if self.encoder:
-            self.tachometer = [
-                Tachometer(
-                    self.encoder[0],
-                    ticks_per_revolution=cfg.ENCODER_PPR,
-                    direction_mode=cfg.TACHOMETER_MODE,
-                    poll_delay_secs=1.0 / (cfg.DRIVE_LOOP_HZ * 3),
-                    debug=cfg.ODOM_DEBUG),
-                Tachometer(
-                    self.encoder[1],
-                    ticks_per_revolution=cfg.ENCODER_PPR,
-                    direction_mode=cfg.TACHOMETER_MODE,
-                    poll_delay_secs=1.0 / (cfg.DRIVE_LOOP_HZ * 3),
-                    debug=cfg.ODOM_DEBUG)
-            ]
-
-        if self.tachometer:
-            self.odometer = [
-                Odometer(
-                    distance_per_revolution=distance_per_revolution,
-                    smoothing_count=cfg.ODOM_SMOOTHING,
-                    debug=cfg.ODOM_DEBUG),
-                Odometer(
-                    distance_per_revolution=distance_per_revolution,
-                    smoothing_count=cfg.ODOM_SMOOTHING,
-                    debug=cfg.ODOM_DEBUG)
-            ]
-            self.unicycle = Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG)
-
-    def update(self):
-        """
-        This will get called on it's own thread.
-        throttle: sign of throttle is use used to determine direction.
-        timestamp: timestamp for update or None to use current time.
-                   This is useful for creating deterministic tests.
-        """
-        while self.running:
-            if self.tachometer:
-                self.tachometer[0].poll(self.tachometer[0].throttle, None)
-                self.tachometer[1].poll(self.tachometer[1].throttle, None)
-                self.odometer[0].poll(self.odometer[0].revolutions, self.tachometer[0].timestamp)
-                self.odometer[1].poll(self.odometer[1].revolutions, self.tachometer[1].timestamp)
-            time.sleep(self.poll_delay_secs)  # give other threads time
-
-    def run_threaded(self, throttle:float=0.0, steering:float=0.0, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
-        if self.running and self.tachometer:
-            left_revolutions, _ = self.tachometer[0].run_threaded(throttle, timestamp)
-            right_revolutions, _ = self.tachometer[1].run_threaded(throttle, timestamp)
-            left_distance, left_velocity, _ = self.odometer[0].run_threaded(left_revolutions, self.tachometer[0].timestamp)
-            right_distance, right_velocity, _ = self.odometer[1].run_threaded(right_revolutions, self.tachometer[1].timestamp)
-            forward_distance, forward_velocity, pose_x, pose_y, pose_angle, pose_velocity_x, pose_velocity_y, pose_velocity_angle, timestamp = self.unicycle.run(left_distance, right_distance, self.tachometer[1].timestamp)
-            return forward_distance, forward_velocity, pose_x, pose_y, pose_angle, pose_velocity_x, pose_velocity_y, pose_velocity_angle, timestamp
-
-        return 0, 0, 0, 0, 0, 0, 0, 0, timestamp
-
-
-class SimulatorPose:
-    # TODO
-    pass
-
 def add_odometry(V, cfg):
     """
     If the configuration support odometry, then
@@ -976,142 +797,18 @@ def add_odometry(V, cfg):
               On output this may be modified.
     :param cfg: the configuration (from myconfig.py)
     """
+    from donkeycar.parts.pose import BicyclePose, UnicyclePose
+
     if cfg.HAVE_ODOM:
-        kinematics = UnicyclePose(cfg, 0) if cfg.HAVE_ODOM_2 else BicyclePose(cfg, 0)
+        poll_delay_secs = 0.01  # pose estimation runs at 100hz
+        kinematics = UnicyclePose(cfg, poll_delay_secs) if cfg.HAVE_ODOM_2 else BicyclePose(cfg, poll_delay_secs)
         V.add(kinematics,
             inputs = ["throttle", "steering", None],
             outputs = ['enc/distance', 'enc/speed', 'pos/x', 'pos/y',
                        'pos/angle', 'vel/x', 'vel/y', 'vel/angle',
-                       'nul/timestamp'])
-    # if cfg.HAVE_ODOM:
-    #     from donkeycar.parts.serial_port import SerialPort
-    #     from donkeycar.parts.tachometer import (Tachometer, SerialEncoder, GpioEncoder, EncoderChannel)
-    #     from donkeycar.parts.odometer import Odometer
-    #     from donkeycar.parts import pins;
-    #
-    #     # distance_per_revolution = cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000
-    #     distance_per_revolution = cfg.WHEEL_RADIUS * 2 * 3.141592653589793
-    #
-    #     tachometer = None
-    #     tachometer2 = None
-    #     if cfg.DONKEY_GYM:
-    #         from donkeycar.parts.transform import Lambda
-    #         from donkeycar.parts.tachometer import InverseTachometer
-    #
-    #         #
-    #         # use the inverse tachometer to turn the total distance
-    #         # provided by the simulator into wheel revolutions
-    #         #
-    #         if cfg.HAVE_ODOM_2:
-    #             tachometer = InverseTachometer(distance_per_revolution)
-    #             tachometer2 = InverseTachometer(distance_per_revolution)
-    #         else:
-    #             tachometer = InverseTachometer(distance_per_revolution)
-    #         if tachometer2:
-    #             V.add(tachometer,
-    #                   inputs=['dist/left'],
-    #                   outputs=['enc/left/revolutions', 'enc/left/timestamp'])
-    #             V.add(tachometer2,
-    #                   inputs=['dist/right'],
-    #                   outputs=['enc/right/revolutions', 'enc/right/timestamp'])
-    #         else:
-    #             # use average of left and right distance
-    #             V.add(UnicycleDistance(), inputs=['dist/left', 'dist/right'], outputs=['dist'])
-    #             V.add(tachometer,
-    #                   inputs=['dist'],
-    #                   outputs=['enc/revolutions', 'enc/timestamp'])
-    #     else:
-    #         if cfg.ENCODER_TYPE == "GPIO":
-    #             tachometer = Tachometer(
-    #                 GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN),
-    #                             debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-    #                             debug=cfg.ODOM_DEBUG),
-    #                 ticks_per_revolution=cfg.ENCODER_PPR,
-    #                 direction_mode=cfg.TACHOMETER_MODE,
-    #                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-    #                 debug=cfg.ODOM_DEBUG)
-    #             if cfg.HAVE_ODOM_2:
-    #                 tachometer2 = Tachometer(
-    #                     GpioEncoder(gpio_pin=pins.input_pin_by_id(cfg.ODOM_PIN_2),
-    #                                 debounce_ns=cfg.ENCODER_DEBOUNCE_NS,
-    #                                 debug=cfg.ODOM_DEBUG),
-    #                     ticks_per_revolution=cfg.ENCODER_PPR,
-    #                     direction_mode=cfg.TACHOMETER_MODE,
-    #                     poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-    #                     debug=cfg.ODOM_DEBUG)
-    #
-    #         elif cfg.ENCODER_TYPE == "arduino":
-    #             tachometer = Tachometer(
-    #                 SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE),debug=cfg.ODOM_DEBUG),
-    #                 ticks_per_revolution=cfg.ENCODER_PPR,
-    #                 direction_mode=cfg.TACHOMETER_MODE,
-    #                 poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-    #                 debug=cfg.ODOM_DEBUG)
-    #             if cfg.HAVE_ODOM_2:
-    #                 tachometer2 = Tachometer(
-    #                     EncoderChannel(encoder=tachometer.encoder, channel=1),
-    #                     ticks_per_revolution=cfg.ENCODER_PPR,
-    #                     direction_mode=cfg.TACHOMETER_MODE,
-    #                     poll_delay_secs=1.0/(cfg.DRIVE_LOOP_HZ*3),
-    #                     debug=cfg.ODOM_DEBUG)
-    #         else:
-    #             print("No supported encoder found")
-    #
-    #         if tachometer2:
-    #             V.add(tachometer,
-    #                   inputs=['throttle', None],
-    #                   outputs=['enc/left/revolutions', 'enc/left/timestamp'],
-    #                   threaded=False)
-    #             V.add(tachometer2,
-    #                   inputs=['throttle', None],
-    #                   outputs=['enc/right/revolutions', 'enc/right/timestamp'],
-    #                   threaded=False)
-    #         else:
-    #             V.add(tachometer,
-    #                   inputs=['throttle', None],
-    #                   outputs=['enc/revolutions', 'enc/timestamp'],
-    #                   threaded=False)
-    #
-    #     if tachometer:
-    #         if cfg.HAVE_ODOM_2:
-    #             #
-    #             # A second odometer is configured; assume a
-    #             # differential drivetrain.  Use Unicycle
-    #             # kinematics to synthesize a single distance
-    #             # and velocity from the two wheels.
-    #             #
-    #             odometer1 = Odometer(
-    #                 distance_per_revolution=distance_per_revolution,
-    #                 smoothing_count=cfg.ODOM_SMOOTHING,
-    #                 debug=cfg.ODOM_DEBUG)
-    #             odometer2 = Odometer(
-    #                 distance_per_revolution=distance_per_revolution,
-    #                 smoothing_count=cfg.ODOM_SMOOTHING,
-    #                 debug=cfg.ODOM_DEBUG)
-    #             V.add(
-    #                 odometer1,
-    #                 inputs=['enc/left/revolutions', 'enc/left/timestamp'],
-    #                 outputs=['enc/left/distance', 'enc/left/speed', 'enc/left/timestamp'],
-    #                 threaded=False)
-    #             V.add(odometer2, inputs=['enc/right/revolutions', 'enc/right/timestamp'], outputs=['enc/right/distance', 'enc/right/speed', 'enc/right/timestamp'], threaded=False)
-    #             V.add(
-    #                 Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG),
-    #                 inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp'],
-    #                 outputs=['enc/distance', 'enc/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'])
-    #
-    #         else:
-    #             # single odometer directly measures distance and velocity
-    #             odometer = Odometer(
-    #                 distance_per_revolution=distance_per_revolution,
-    #                 smoothing_count=cfg.ODOM_SMOOTHING,
-    #                 debug=cfg.ODOM_DEBUG)
-    #             V.add(odometer, inputs=['enc/revolutions', 'enc/timestamp'], outputs=['enc/distance', 'enc/speed', 'enc/timestamp'], threaded=False)
-    #             V.add(UnnormalizeSteeringAngle(cfg.MAX_STEERING_ANGLE),
-    #                   inputs=["angle"], outputs=["steering_angle"])
-    #             V.add(
-    #                 Bicycle(cfg.WHEEL_BASE, cfg.ODOM_DEBUG),
-    #                 inputs=["enc/distance", "steering_angle", "enc/timestamp"],
-    #                 outputs=['enc/distance', 'enc/speed', 'pos/x', 'pos/y', 'pos/angle', 'vel/x', 'vel/y', 'vel/angle', 'nul/timestamp'])
+                       'nul/timestamp'],
+            threaded = True)
+
 
 #
 # IMU setup
@@ -1144,7 +841,7 @@ def add_drivetrain(V, cfg):
         is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
         if is_differential_drive:
             V.add(TwoWheelSteeringThrottle(),
-                  inputs=['throttle', 'angle'],
+                  inputs=['throttle', 'steering'],
                   outputs=['left/throttle', 'right/throttle'])
 
         if cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":
@@ -1172,7 +869,7 @@ def add_drivetrain(V, cfg):
                                                 max_pulse=dt['THROTTLE_FORWARD_PWM'],
                                                 zero_pulse=dt['THROTTLE_STOPPED_PWM'],
                                                 min_pulse=dt['THROTTLE_REVERSE_PWM'])
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
 
         elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
@@ -1193,7 +890,7 @@ def add_drivetrain(V, cfg):
                                             zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                                             min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
 
         elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
@@ -1205,7 +902,7 @@ def add_drivetrain(V, cfg):
                 pins.pwm_pin_by_id(dt['FWD_DUTY_PIN']),
                 pins.pwm_pin_by_id(dt['BWD_DUTY_PIN']))
 
-            V.add(steering, inputs=['angle'])
+            V.add(steering, inputs=['steering'])
             V.add(throttle, inputs=['throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
@@ -1253,7 +950,7 @@ def add_drivetrain(V, cfg):
                 pins.pwm_pin_by_id(dt['FWD_DUTY_PIN']),
                 pins.pwm_pin_by_id(dt['BWD_DUTY_PIN']))
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(motor, inputs=["throttle"])
 
         elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_3PIN":
@@ -1276,7 +973,7 @@ def add_drivetrain(V, cfg):
                 pins.output_pin_by_id(dt['BWD_PIN']),
                 pins.pwm_pin_by_id(dt['DUTY_PIN']))
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(motor, inputs=["throttle"])
 
         elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
@@ -1296,12 +993,12 @@ def add_drivetrain(V, cfg):
             from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
             motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(motor, inputs=["throttle"])
 
         elif cfg.DRIVE_TRAIN_TYPE == "MM1":
             from donkeycar.parts.robohat import RoboHATDriver
-            V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
+            V.add(RoboHATDriver(cfg), inputs=['steering', 'throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
             #
@@ -1321,7 +1018,7 @@ def add_drivetrain(V, cfg):
                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
     
         elif cfg.DRIVE_TRAIN_TYPE == "VESC":
@@ -1336,7 +1033,7 @@ def add_drivetrain(V, cfg):
                           cfg.VESC_STEERING_SCALE,
                           cfg.VESC_STEERING_OFFSET
                         )
-            V.add(vesc, inputs=['angle', 'throttle'])
+            V.add(vesc, inputs=['steering', 'throttle'])
 
 
 if __name__ == '__main__':

@@ -12,6 +12,20 @@ from donkeycar.parts.pins import InputPin, PinEdge
 logger = logging.getLogger("donkeycar.parts.tachometer")
 
 
+def sign(value) -> int:
+    if value > 0:
+        return 1
+    if value < 0:
+        return -1
+    return 0
+
+
+class EncoderMode:
+    FORWARD_ONLY = 1  # only sum ticks (ticks may be signed)
+    FORWARD_REVERSE = 2  # subtract ticks if throttle is negative
+    FORWARD_REVERSE_STOP = 3  # ignore ticks if throttle is zero
+
+
 class AbstractEncoder(ABC):
     """
     Interface for an encoder.
@@ -260,15 +274,12 @@ class EncoderChannel(AbstractEncoder):
         if not self.encoder.running:
             self.encoder.start_ticks()
 
-
     def stop_ticks(self):
         if self.encoder.running:
             self.encoder.stop_ticks()
 
-
     def poll_ticks(self, direction:int):
         self.encoder.poll_ticks(direction)
-
 
     def get_ticks(self, encoder_index:int=0) -> int:
         return self.encoder.get_ticks(encoder_index=self.channel)
@@ -323,7 +334,6 @@ class GpioEncoder(AbstractEncoder):
         self.pin.start(on_input=lambda: self._cb(), edge=PinEdge.RISING)
         logger.info(f'GpioEncoder on InputPin "RPI_GPIO.{self.pin.pin_scheme_str}.{self.pin.pin_number}" started.')
 
-
     def poll_ticks(self, direction:int):  
         """
         read the encoder ticks
@@ -352,25 +362,60 @@ class GpioEncoder(AbstractEncoder):
             return self.counter if encoder_index == 0 else 0
 
 
-def sign(value) -> int:
-    if value > 0:
-        return 1
-    if value < 0:
-        return -1
-    return 0
+class MockEncoder(AbstractEncoder):
+    """
+    A mock encoder that turns throttle values into ticks.
+    It generates ENCODER_PPR ticks per second at full throttle.
+    The run() method must be called at the same rate as the
+    tachometer calls the poll() method.
+    """
+    def __init__(self, ticks_per_second: float):
+        self.ticks_per_second = ticks_per_second
+        self.throttle = 0
+        self.ticks = 0
+        self.timestamp = None
+        self.running = False
 
+    def run(self, throttle:float, timestamp: int = None):
+        if timestamp is None:
+            timestamp = time.time()
 
-class TachometerMode:
-    FORWARD_ONLY = 1          # only sum ticks (ticks may be signed)
-    FORWARD_REVERSE = 2       # subtract ticks if throttle is negative
-    FORWARD_REVERSE_STOP = 3  # ignore ticks if throttle is zero
-    
+        #
+        # poll() passed None for throttle and steering,
+        # so we use the last value passed to run()
+        #
+        if throttle is None:
+            throttle = self.throttle
+        else:
+            self.throttle = throttle
+
+    def start_ticks(self):
+        self.running = True
+
+    def stop_ticks(self):
+        self.running = False
+
+    def poll_ticks(self, direction: int):
+        timestamp = time.time()
+        last_time = self.timestamp if self.timestamp is not None else timestamp
+        self.timestamp = timestamp
+
+        if self.running:
+            delta_time = timestamp - last_time
+            self.ticks += int(abs(self.throttle) * direction * self.ticks_per_second * delta_time)
+
+    def get_ticks(self, encoder_index: int = 0) -> int:
+        return self.ticks
+
 
 class Tachometer:
     """
     Tachometer converts encoder ticks to revolutions
     and supports modifying direction based on
     throttle input.
+
+    Parameters
+    ----------
     encoder is an instance of an encoder class
     derived from AbstactEncoder.  
     config is ticks per revolution,
@@ -380,13 +425,30 @@ class Tachometer:
           ticks_per_revolution=1
     """
 
-    def __init__(self, 
-        encoder:AbstractEncoder, 
-        ticks_per_revolution:float=1, 
-        direction_mode=TachometerMode.FORWARD_ONLY, 
-        poll_delay_secs:float=0.01, 
-        debug=False):
-        
+    def __init__(self,
+                 encoder:AbstractEncoder,
+                 ticks_per_revolution:float=1,
+                 direction_mode=EncoderMode.FORWARD_ONLY,
+                 poll_delay_secs:float=0.01,
+                 debug=False):
+        """
+        Tachometer converts encoder ticks to revolutions
+        and supports modifying direction based on
+        throttle input.
+
+        Parameters
+        ----------
+        encoder: AbstractEncoder
+            an instance of an encoder class derived from AbstactEncoder.
+        ticks_per_revolution: int
+            The number of encoder ticks per wheel revolution.
+            If you just want raw encoder output, use ticks_per_revolution=1
+        direction_mode: EncoderMode
+            Determines how revolutions count up or down based on throttle
+        poll_delay_secs: float
+            seconds between polling of encoder value; should be low or zero.
+        """
+
         if encoder is None:
             raise ValueError("encoder must be an instance of AbstractEncoder")
         self.encoder = encoder
@@ -405,11 +467,15 @@ class Tachometer:
     # TODO: refactor tachometer so we don't pass throttle to poll()
     def poll(self, throttle, timestamp):
         """
-        throttle:  positive means forward
-                   negative means backward
-                   zero means stopped
-        timestamp: the timestamp to apply to the tick reading
-                   or None to use the current time
+        Parameters
+        ----------
+        throttle : float
+            positive means forward
+            negative means backward
+            zero means stopped
+        timestamp: int, optional
+            the timestamp to apply to the tick reading
+            or None to use the current time
         """
 
         if self.running:
@@ -419,11 +485,11 @@ class Tachometer:
 
             # set direction flag based on direction mode
             if throttle is not None:
-                if TachometerMode.FORWARD_REVERSE == self.direction_mode:
+                if EncoderMode.FORWARD_REVERSE == self.direction_mode:
                     # if throttle is zero, leave direction alone to model 'coasting'
                     if throttle != 0:
                         self.direction = sign(throttle)
-                elif TachometerMode.FORWARD_REVERSE_STOP == self.direction_mode:
+                elif EncoderMode.FORWARD_REVERSE_STOP == self.direction_mode:
                     self.direction = sign(throttle)
 
             lastTicks = self.ticks
@@ -434,38 +500,57 @@ class Tachometer:
                 logger.info("tachometer: t = {}, r = {}, ts = {}".format(self.ticks, self.ticks / self.ticks_per_revolution, timestamp))
 
     def update(self):
-        """
-        throttle: sign of throttle is use used to determine direction.
-        timestamp: timestamp for update or None to use current time.
-                   This is useful for creating deterministic tests.
-        """
         while(self.running):
             self.poll(self.throttle, None)
             time.sleep(self.poll_delay_secs)  # give other threads time
 
     def run_threaded(self, throttle:float=0.0, timestamp:float=None) -> Tuple[float, float]:
+        """
+        Parameters
+        ----------
+        throttle : float
+            positive means forward
+            negative means backward
+            zero means stopped
+        timestamp: int, optional
+            the timestamp to apply to the tick reading
+            or None to use the current time
+
+        Returns
+        -------
+        Tuple
+            revolutions: float
+                cummulative revolutions of wheel attached to encoder
+            timestamp: float
+                the time the encoder ticks were read
+        """
         if self.running:
             thisTimestamp = self.timestamp
             thisRevolutions = self.ticks / self.ticks_per_revolution
 
             # update throttle for next poll()
-            self.throttle = throttle
+            self.throttle = throttle if throttle is not None else 0
             self.timestamp = timestamp if timestamp is not None else time.time()
 
             # return (revolutions, timestamp)
-            return (thisRevolutions, thisTimestamp)
-        return (0, self.timestamp)
+            return thisRevolutions, thisTimestamp
+        return 0, self.timestamp
 
     def run(self, throttle:float=1.0, timestamp:float=None) -> Tuple[float, float]:
+        """
+        throttle: sign of throttle is use used to determine direction.
+        timestamp: timestamp for update or None to use current time.
+                   This is useful for creating deterministic tests.
+        """
         if self.running:
             # update throttle for next poll()
-            self.throttle = throttle
+            self.throttle = throttle if throttle is not None else 0
             self.timestamp = timestamp if timestamp is not None else time.time()
             self.poll(throttle, timestamp)
 
             # return (revolutions, timestamp)
-            return (self.ticks / self.ticks_per_revolution, self.timestamp)
-        return (0, self.timestamp)
+            return self.ticks / self.ticks_per_revolution, self.timestamp
+        return 0, self.timestamp
 
     def shutdown(self):
         self.running = False
@@ -494,6 +579,13 @@ class InverseTachometer:
         else:
             logger.error("distance must be a float")
         return self.revolutions, self.timestamp
+
+# TODO create MockThrottleEncoder that takes throttle and turns to ticks
+# TODO create MockInverseEncoder that takes distance and turns to ticks
+# TODO with those two we should be able to create mock pose estimation pipeline
+#      for the mock drivetrain and for the simulator respectively;
+#      The trick is feeding them the throttle or distance since they are
+#      not standard parts; perhaps we should make them parts.
 
 
 if __name__ == "__main__":
