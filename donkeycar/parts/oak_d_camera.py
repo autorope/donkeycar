@@ -21,7 +21,7 @@ class OakDCamera:
         self.queue_xout = None
         self.queue_xout_depth = None
         self.queue_xout_spatial_data = None
-        self.roi_distances = None
+        self.roi_distances = []
 
         self.frame_xout = None
         self.frame_xout_depth = None
@@ -254,30 +254,31 @@ class OakDCamera:
 
         if self.queue_xout_spatial_data is not None:
             xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
+            self.roi_distances = []
             for depthData in xout_spatial_data:
                 roi = depthData.config.roi
                 
-                xmin = int(roi.topLeft().x)
-                ymin = int(roi.topLeft().y)
-                xmax = int(roi.bottomRight().x)
-                ymax = int(roi.bottomRight().y)
+                # xmin = int(roi.topLeft().x)
+                # ymin = int(roi.topLeft().y)
+                # xmax = int(roi.bottomRight().x)
+                # ymax = int(roi.bottomRight().y)
 
                 coords = depthData.spatialCoordinates
                 
-                np.append(self.roi_distances,[[roi.topLeft().x, 
+                self.roi_distances.append([roi.topLeft().x, 
                 roi.topLeft().y, 
                 roi.bottomRight().x,
                 roi.bottomRight().y,
                 coords.x,
                 coords.y,
-                coords.z]])
+                coords.z])
         # return self.frame
 
     def run_threaded(self):
         if self.enable_depth:
             return self.frame_xout,self.frame_xout_depth
         elif self.enable_obstacle_dist:
-            return self.frame_xout,self.roi_distances
+            return self.frame_xout, self.roi_distances
         else:
             return self.frame_xout
 
