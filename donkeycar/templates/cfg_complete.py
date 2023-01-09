@@ -45,6 +45,7 @@ IMAGE_H = 135 # color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 OAK_ENABLE_DEPTH_MAP = False
+OAK_OBSTACLE_DETECTION_ENABLED = False
 OBSTACLE_AVOIDANCE_ENABLED = False
 
 #CAMERA Settings Vivatech 2022 (nano)

@@ -411,7 +411,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     if cfg.OBSTACLE_AVOIDANCE_ENABLED:
         # inputs = ["cam/depth_array",user/angle', 'user/throttle']
-        inputs = ["user/angle", "user/throttle", "cam/depth_array"]
+        #inputs = ["user/angle", "user/throttle", "cam/depth_array"]
+        inputs = ["user/angle", "user/throttle", "cam/obstacle_distances"]
         outputs = ['user/angle', 'user/throttle']
 
         from donkeycar.parts.depth_avoidance import DepthAvoidance
@@ -545,6 +546,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs += ['cam/depth_array']
         types += ['gray16_array']
 
+    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
+        inputs += ['cam/obstacle_distances']
+        types += ['nparray']
 
 
     # rbx
@@ -811,9 +815,15 @@ def add_camera(V, cfg, camera_type):
               threaded=True)
     elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
         from donkeycar.parts.oak_d_camera import OakDCamera
-        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP)
+        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED)
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/depth_array'],
+              threaded=True)
+    elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
+        from donkeycar.parts.oak_d_camera import OakDCamera
+        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/obstacle_distances'],
               threaded=True)
     else:
         inputs = []
