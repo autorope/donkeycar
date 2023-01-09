@@ -12,7 +12,7 @@ class CameraError(Exception):
     pass
 
 class OakDCamera:
-    def __init__(self, width, height, depth=3, isp_scale=None, framerate=30, enable_depth=False):
+    def __init__(self, width, height, depth=3, isp_scale=None, framerate=30, enable_depth=False, enable_obstacle_dist=False):
         
         self.on = False
         
@@ -20,7 +20,9 @@ class OakDCamera:
         
         self.queue_xout = None
         self.queue_xout_depth = None
-        
+        self.queue_xout_spatial_data = None
+        self.roi_distances = None
+
         self.frame_xout = None
         self.frame_xout_depth = None
         
@@ -34,6 +36,7 @@ class OakDCamera:
 
         self.latencies = deque([], maxlen=20)
         self.enable_depth = enable_depth
+        self.enable_obstacle_dist = enable_obstacle_dist
 
         # Create pipeline
         self.pipeline = dai.Pipeline()
@@ -41,6 +44,9 @@ class OakDCamera:
 
         if self.enable_depth:
             self.create_depth_pipeline()
+
+        if self.enable_obstacle_dist:
+            self.create_obstacle_dist_pipeline()
 
         # Define output
         xout = self.pipeline.create(dai.node.XLinkOut)
@@ -109,6 +115,10 @@ class OakDCamera:
                 if self.frame_xout is None:
                     raise CameraError("Unable to start OAK-D RGB and Depth camera.")
 
+            elif enable_obstacle_dist:
+                self.queue_xout = self.device.getOutputQueue("xout", maxSize=1, blocking=False)
+                self.queue_xout_spatial_data = self.device.getOutputQueue("spatialData", maxSize=1, blocking=False)
+            
             else:
                 self.queue_xout = self.device.getOutputQueue("xout", maxSize=1, blocking=False)
                 self.queue_xout_depth = None
@@ -134,7 +144,6 @@ class OakDCamera:
         # Create depth nodes
         monoRight = self.pipeline.create(dai.node.MonoCamera)
         monoLeft = self.pipeline.create(dai.node.MonoCamera)
-        
         stereo_manip = self.pipeline.create(dai.node.ImageManip)
         stereo = self.pipeline.create(dai.node.StereoDepth)
 
@@ -174,6 +183,55 @@ class OakDCamera:
         stereo.depth.link(stereo_manip.inputImage)
         stereo_manip.out.link(xout_depth.input)
 
+    def create_obstacle_dist_pipeline(self):
+
+        # Define sources and outputs
+        monoLeft = self.pipeline.create(dai.node.MonoCamera)
+        monoRight = self.pipeline.create(dai.node.MonoCamera)
+        stereo = self.pipeline.create(dai.node.StereoDepth)
+        spatialLocationCalculator = self.pipeline.create(dai.node.SpatialLocationCalculator)
+
+        # xoutDepth = self.pipeline.create(dai.node.XLinkOut)
+        xoutSpatialData = self.pipeline.create(dai.node.XLinkOut)
+        xinSpatialCalcConfig = self.pipeline.create(dai.node.XLinkIn)
+
+        # xoutDepth.setStreamName("depth")
+        xoutSpatialData.setStreamName("spatialData")
+        xinSpatialCalcConfig.setStreamName("spatialCalcConfig")
+
+        # Properties
+        monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+        monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
+        monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+        monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+
+        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
+        stereo.setLeftRightCheck(True)
+        stereo.setExtendedDisparity(True)
+        spatialLocationCalculator.inputConfig.setWaitForMessage(False)
+
+        for i in range(4):
+            config = dai.SpatialLocationCalculatorConfigData()
+            config.depthThresholds.lowerThreshold = 200
+            config.depthThresholds.upperThreshold = 10000
+            # 30 - 40 est le mieux
+            config.roi = dai.Rect(dai.Point2f(i*0.1+0.3, 0.35), dai.Point2f((i+1)*0.1+0.3, 0.43))
+            spatialLocationCalculator.initialConfig.addROI(config)
+            # 4 zones
+            # PCLL PCCL PCCR PCRR
+            # -.75 -.75 +.75 +.75
+            
+        # Linking
+        monoLeft.out.link(stereo.left)
+        monoRight.out.link(stereo.right)
+
+        # spatialLocationCalculator.passthroughDepth.link(xoutDepth.input)
+        stereo.depth.link(spatialLocationCalculator.inputDepth)
+
+        spatialLocationCalculator.out.link(xoutSpatialData.input)
+        xinSpatialCalcConfig.out.link(spatialLocationCalculator.inputConfig)
+
+
     def run(self):
 
         # Grab the frame from the stream 
@@ -194,12 +252,32 @@ class OakDCamera:
             data_xout_depth = self.queue_xout_depth.get()
             self.frame_xout_depth = data_xout_depth.getFrame()
 
+        if self.queue_xout_spatial_data is not None:
+            xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
+            for depthData in xout_spatial_data:
+                roi = depthData.config.roi
+                
+                xmin = int(roi.topLeft().x)
+                ymin = int(roi.topLeft().y)
+                xmax = int(roi.bottomRight().x)
+                ymax = int(roi.bottomRight().y)
 
+                coords = depthData.spatialCoordinates
+                
+                np.append(self.roi_distances,[[roi.topLeft().x, 
+                roi.topLeft().y, 
+                roi.bottomRight().x,
+                roi.bottomRight().y,
+                coords.x,
+                coords.y,
+                coords.z]])
         # return self.frame
 
     def run_threaded(self):
         if self.enable_depth:
             return self.frame_xout,self.frame_xout_depth
+        elif self.enable_obstacle_dist:
+            return self.frame_xout,self.roi_distances
         else:
             return self.frame_xout
 
