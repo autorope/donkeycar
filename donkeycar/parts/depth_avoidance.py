@@ -192,14 +192,12 @@ class DepthAvoidance:
 
         '''
         self.obstacle_distances = obstacle_distances
-        
-        PCLL_dist = self.obstacle_distances[0,6]
-        PCLC_dist = self.obstacle_distances[1,6]
-        PCRC_dist = self.obstacle_distances[2,6]
-        PCRR_dist = self.obstacle_distances[3,6]
-        
 
-
+        PCLL_dist = self.obstacle_distances[0][6]
+        PCLC_dist = self.obstacle_distances[1][6]
+        PCRC_dist = self.obstacle_distances[2][6]
+        PCRR_dist = self.obstacle_distances[3][6]
+        
         self.emergency_brake = False
         self.throttle = throttle
         self.steering_angle = 0
