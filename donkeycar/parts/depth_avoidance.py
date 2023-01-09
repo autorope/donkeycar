@@ -191,6 +191,8 @@ class DepthAvoidance:
         |      PCLL       |      PCLC       |      PCRC       |      PCRR       |
 
         '''
+        self.obstacle_distances = obstacle_distances
+        
         PCLL_dist = self.obstacle_distances[0,6]
         PCLC_dist = self.obstacle_distances[1,6]
         PCRC_dist = self.obstacle_distances[2,6]
