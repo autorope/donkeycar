@@ -412,11 +412,15 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.OBSTACLE_AVOIDANCE_ENABLED:
         # inputs = ["cam/depth_array",user/angle', 'user/throttle']
         #inputs = ["user/angle", "user/throttle", "cam/depth_array"]
-        inputs = ["user/angle", "user/throttle", "cam/obstacle_distances"]
-        outputs = ['user/angle', 'user/throttle']
+        if cfg.OBSTACLE_AVOIDANCE_FOR_AUTOPILOT:
+            inputs = ["pilot/angle", "pilot/throttle", "cam/obstacle_distances"]
+            outputs = ['pilot/angle', 'pilot/throttle']
+        else:
+            inputs = ["user/angle", "user/throttle", "cam/obstacle_distances"]
+            outputs = ['user/angle', 'user/throttle']
 
         from donkeycar.parts.depth_avoidance import DepthAvoidance
-        V.add(DepthAvoidance(), inputs=inputs, outputs=outputs)
+        V.add(DepthAvoidance(cfg.CLOSE_AVOIDANCE_DIST_MM), inputs=inputs, outputs=outputs)
         # Should be run with following line only when autopilot is in charge
         # V.add(DepthAvoidance, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 

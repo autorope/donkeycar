@@ -37,16 +37,20 @@ MAX_LOOPS = None        # the vehicle loop can abort after this many iterations,
 # CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 # OAK_D_ISP_SCALE = None
 
-#CAMERA OAK-D-LITE SETTINGS
+# OAK-D-LITE CAMERA SETTINGS
 CAMERA_TYPE = "OAK"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 OAK_D_ISP_SCALE = (1,8) # outputs 1/8 of sensor size image in x and y
 IMAGE_W = 240 # color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
 IMAGE_H = 135 # color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
-OAK_ENABLE_DEPTH_MAP = False
-OAK_OBSTACLE_DETECTION_ENABLED = False
+OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
+
+# OBSTACLE_AVOIDANCE SETTINGS
 OBSTACLE_AVOIDANCE_ENABLED = False
+OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
+CLOSE_AVOIDANCE_DIST_MM = 1000
 
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
