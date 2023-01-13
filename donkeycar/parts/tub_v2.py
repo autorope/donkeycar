@@ -63,6 +63,12 @@ class Tub(object):
                     image_path = os.path.join(self.images_base_path, name)
                     image.save(image_path)
                     contents[key] = name
+                elif input_type == 'gray16_array':
+                    # Handle image array
+                    name = Tub._image_file_name(self.manifest.current_index, key).replace("image","depth")
+                    image_path = os.path.join(self.images_base_path.replace("images","depths"), name)
+                    np.savez_compressed(image_path, img=np.uint16(value))
+                    contents[key] = name
 
         # Private properties
         contents['_timestamp_ms'] = int(round(time.time() * 1000))

@@ -191,10 +191,13 @@ class Vehicle:
             if run:
                 # get part
                 p = entry['part']
+                
                 # start timing part run
                 self.profiler.on_part_start(p)
+                
                 # get inputs from memory
                 inputs = self.mem.get(entry['inputs'])
+                
                 # run the part
                 if entry.get('thread'):
                     outputs = p.run_threaded(*inputs)
@@ -204,6 +207,7 @@ class Vehicle:
                 # save the output to memory
                 if outputs is not None:
                     self.mem.put(entry['outputs'], outputs)
+                
                 # finish timing part run
                 self.profiler.on_part_finished(p)
 
