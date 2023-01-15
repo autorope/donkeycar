@@ -53,7 +53,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # - it will optionally add any configured 'joystick' controller
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
-    ctr = add_user_controller(V, cfg, use_joystick, input_image = 'map/image')
+    ctr = add_user_controller(V, cfg, use_joystick, input_image = 'cam/image_array')
 
     #
     # explode the web buttons into their own key/values in memory
