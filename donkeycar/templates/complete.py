@@ -768,6 +768,11 @@ def add_camera(V, cfg, camera_type):
 
         V.add(StereoPair(), inputs=['cam/image_array_a', 'cam/image_array_b'],
             outputs=['cam/image_array'])
+        if cfg.BGR2RGB:
+            from donkeycar.parts.cv import ImgBGR2RGB
+            V.add(ImgBGR2RGB(), inputs=["cam/image_array_a"], outputs=["cam/image_array_a"])
+            V.add(ImgBGR2RGB(), inputs=["cam/image_array_b"], outputs=["cam/image_array_b"])
+
     elif cfg.CAMERA_TYPE == "D435":
         from donkeycar.parts.realsense435i import RealSense435i
         cam = RealSense435i(
@@ -787,6 +792,9 @@ def add_camera(V, cfg, camera_type):
         cam = get_camera(cfg)
         if cam:
             V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
+        if cfg.BGR2RGB:
+            from donkeycar.parts.cv import ImgBGR2RGB
+            V.add(ImgBGR2RGB(), inputs=["cam/image_array"], outputs=["cam/image_array"])
 
 
 def add_odometry(V, cfg, threaded=True):
