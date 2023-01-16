@@ -80,10 +80,34 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     V.add(LineFollower(cfg.OVERLAY_IMAGE, False),
           inputs=['cam/image_array'],
-          outputs=['steering', 'throttle', 'recording', 'cv/image_array'],
+          outputs=['pilot/steering', 'pilot/throttle', 'recording', 'cv/image_array'],
           run_condition="run_pilot")
 
-        
+    #
+    # Choose what inputs should change the car.
+    #
+    # TODO: when we merge pose estimate branch, update 'angle' to 'steering'
+    class DriveMode:
+        def run(self, mode,
+                    user_angle, user_throttle,
+                    pilot_angle, pilot_throttle):
+            if mode == 'user':
+                return user_angle, user_throttle
+
+            elif mode == 'local_angle':
+                return pilot_angle if pilot_angle else 0.0, user_throttle
+
+            else:
+                return pilot_angle if pilot_angle else 0.0, \
+                       pilot_throttle * cfg.AI_THROTTLE_MULT \
+                           if pilot_throttle else 0.0
+
+    V.add(DriveMode(),
+          inputs=['user/mode', 'user/angle', 'user/throttle',
+                  'pilot/steering', 'pilot/throttle'],
+          outputs=['angle', 'throttle'])
+
+
     #
     # Setup drivetrain
     #
@@ -98,7 +122,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # add tub to save data
     #
     inputs=['cam/image_array',
-            'steering', 'throttle']
+            'angle', 'throttle']
 
     types=['image_array',
            'float', 'float']
