@@ -671,3 +671,7 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
 
+#
+# computer vision template
+#
+OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image

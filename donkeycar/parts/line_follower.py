@@ -12,8 +12,9 @@ class LineFollower:
     to guid a PID controller which seeks to maintain the max yellow at the same point
     in the image.
     '''
-    def __init__(self, debug=False):
+    def __init__(self, overlay_image=True, debug=False):
         self.debug = debug
+        self.overlay_image = overlay_image
         self.scan_y = 60   # num pixels from the top to start horiz scan
         self.scan_height = 10 # num pixels high to grab from horiz scan
         self.color_thr_low = np.asarray((0, 50, 50)) # hsv dark yellow
@@ -61,7 +62,7 @@ class LineFollower:
         output: steering, throttle, and recording flag
         '''
         if cam_img is None:
-            return 0, 0, False
+            return 0, 0, False, None
 
         max_yellow, confidense, mask = self.get_i_color(cam_img)
         conf_thresh = 0.001
@@ -89,13 +90,12 @@ class LineFollower:
 
 
         # show some diagnostics
-        if self.debug:
-            self.debug_display(cam_img, mask, max_yellow, confidense)
+        if self.overlay_image:
+            cam_img = self.overlay_display(cam_img, mask, max_yellow, confidense)
 
-        return self.steering, self.throttle, self.recording
+        return self.steering, self.throttle, self.recording, cam_img
 
-
-    def debug_display(self, cam_img, mask, max_yellow, confidense):
+    def overlay_display(self, cam_img, mask, max_yellow, confidense):
         '''
         composite mask on top the original image.
         show some values we are using for control
@@ -117,11 +117,8 @@ class LineFollower:
         x = 10
 
         for s in display_str:
-            cv2.putText(img, s, color=(0 ,255 ,255), org=(x ,y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4)
+            cv2.putText(img, s, color=(0 ,0 ,0), org=(x ,y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4)
             y += 10
 
-        cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-        cv2.imshow("image", img)
-        cv2.resizeWindow('image', 300 ,300)
-        cv2.waitKey(1)
+        return img
 

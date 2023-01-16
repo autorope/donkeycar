@@ -53,7 +53,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # - it will optionally add any configured 'joystick' controller
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
-    ctr = add_user_controller(V, cfg, use_joystick, input_image = 'cam/image_array')
+    ctr = add_user_controller(V, cfg, use_joystick, input_image = 'ui/image_array')
 
     #
     # explode the web buttons into their own key/values in memory
@@ -63,32 +63,24 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     # track user vs autopilot condition
     #
-    class UserCondition:
-        def run(self, mode):
+    class UserPilotCondition:
+        def run(self, mode, user_image, pilot_image):
             if mode == 'user':
-                return True
+                return True, False, user_image
             else:
-                return False
-    V.add(UserCondition(), inputs=['user/mode'], outputs=['run_user'])
+                return False, True, pilot_image
+    V.add(UserPilotCondition(),
+          inputs=['user/mode', "cam/image_array", "cv/image_array"],
+          outputs=['run_user', "run_pilot", "ui/image_array"])
 
-    #See if we should even run the pilot module.
-    #This is only needed because the part run_condition only accepts boolean
-    class PilotCondition:
-        def run(self, mode):
-            if mode == 'user':
-                return False
-            else:
-                return True
-
-    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
 
 
     #
     # Computer Vision Controller
     #
-    V.add(LineFollower(False),
+    V.add(LineFollower(cfg.OVERLAY_IMAGE, False),
           inputs=['cam/image_array'],
-          outputs=['steering', 'throttle', 'recording'],
+          outputs=['steering', 'throttle', 'recording', 'cv/image_array'],
           run_condition="run_pilot")
 
         
