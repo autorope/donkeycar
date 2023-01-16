@@ -112,7 +112,7 @@ class CsvThrottlePath(AbstractPath):
                     self.throttles.append(xy[2])
             return True
         else:
-            logging.info(f"File '{filename}' does not exist")
+            logging.warning(f"File '{filename}' does not exist")
             return False
 
 
