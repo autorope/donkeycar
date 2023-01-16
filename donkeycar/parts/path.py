@@ -95,6 +95,11 @@ class CsvThrottlePath(AbstractPath):
                 self.y = y
         return self.path, self.throttles
 
+    def reset(self) -> bool:
+        super().reset()
+        self.throttles = []
+        return True
+
     def save(self, filename: str) -> bool:
         if self.length() > 0:
             with open(filename, 'w') as outfile:
@@ -427,6 +432,7 @@ class CTE(object):
 
 class PID_Pilot(object):
 
+    def __init__(
             self,
             pid: PIDController,
             throttle: float,
