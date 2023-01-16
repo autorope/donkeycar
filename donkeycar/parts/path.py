@@ -78,15 +78,17 @@ class CsvPath(AbstractPath):
         self.recording = False
 
 class CsvThrottlePath(AbstractPath):
-    def __init__(self, min_dist: float = 1.0):
+    def __init__(self, min_dist: float = 1.0, min_throttle: float = 0.2):
         super().__init__(min_dist)
         self.throttles = []
+        self.min_throttle = min_throttle
 
     def run(self, recording: bool, x: float, y: float, throttle: float):
         if recording:
             d = dist(x, y, self.x, self.y)
             if d > self.min_dist:
-                logging.info(f"path point ({x},{y})")
+                throttle = max(self.min_throttle, throttle)
+                logging.info(f"path point: ({x},{y}) throttle: {throttle}")
                 self.path.append((x, y))
                 self.throttles.append(throttle)
                 self.x = x
