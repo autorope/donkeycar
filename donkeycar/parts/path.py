@@ -436,5 +436,5 @@ class PID_Pilot(object):
             throttle = self.throttle
         else:
             throttle = throttles[closest_pt_idx] * self.variable_speed_multiplier
-        logging.info("CTE: %f steer: %f throttle: %f" % (cte, steer, throttle))
+        logging.info(f"CTE: {cte} steer: {steer} throttle: {throttle}")
         return steer, throttle
