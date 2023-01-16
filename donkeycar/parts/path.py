@@ -5,6 +5,7 @@ import pathlib
 import numpy
 from PIL import Image, ImageDraw
 
+from donkeycar.parts.transform import PIDController
 from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img, is_number_type
 
 
@@ -77,11 +78,11 @@ class CsvPath(AbstractPath):
         self.recording = False
 
 class CsvThrottlePath(AbstractPath):
-    def __init__(self, min_dist=1.):
+    def __init__(self, min_dist: float = 1.0):
         super().__init__(min_dist)
         self.throttles = []
 
-    def run(self, recording, x, y, throttle):
+    def run(self, recording: bool, x: float, y: float, throttle: float):
         if recording:
             d = dist(x, y, self.x, self.y)
             if d > self.min_dist:
@@ -92,7 +93,7 @@ class CsvThrottlePath(AbstractPath):
                 self.y = y
         return self.path, self.throttles
 
-    def save(self, filename):
+    def save(self, filename: str):
         if self.length() > 0:
             with open(filename, 'w') as outfile:
                 for (x, y), v in zip(self.path, self.throttles):
@@ -101,7 +102,7 @@ class CsvThrottlePath(AbstractPath):
         else:
             return False
 
-    def load(self, filename):
+    def load(self, filename: str):
         path = pathlib.Path(filename)
         if path.is_file():
             with open(filename, "r") as infile:
@@ -424,13 +425,13 @@ class CTE(object):
 
 class PID_Pilot(object):
 
-    def __init__(self, pid, throttle, use_constant_throttle: bool = False):
+    def __init__(self, pid: PIDController, throttle: float, use_constant_throttle: bool = False):
         self.pid = pid
         self.throttle = throttle
         self.use_constant_throttle = use_constant_throttle
         self.variable_speed_multiplier = 1.0
 
-    def run(self, cte, throttles, closest_pt_idx):
+    def run(self, cte: float, throttles: list, closest_pt_idx: int):
         steer = self.pid.run(cte)
         if self.use_constant_throttle or throttles is None or closest_pt_idx is None:
             throttle = self.throttle
