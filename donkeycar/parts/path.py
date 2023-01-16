@@ -78,12 +78,12 @@ class CsvPath(AbstractPath):
         self.recording = False
 
 class CsvThrottlePath(AbstractPath):
-    def __init__(self, min_dist: float = 1.0, min_throttle: float = 0.2):
+    def __init__(self, min_dist: float = 1.0, min_throttle: float = 0.2) -> None:
         super().__init__(min_dist)
         self.throttles = []
         self.min_throttle = min_throttle
 
-    def run(self, recording: bool, x: float, y: float, throttle: float):
+    def run(self, recording: bool, x: float, y: float, throttle: float) -> tuple:
         if recording:
             d = dist(x, y, self.x, self.y)
             if d > self.min_dist:
@@ -95,7 +95,7 @@ class CsvThrottlePath(AbstractPath):
                 self.y = y
         return self.path, self.throttles
 
-    def save(self, filename: str):
+    def save(self, filename: str) -> bool:
         if self.length() > 0:
             with open(filename, 'w') as outfile:
                 for (x, y), v in zip(self.path, self.throttles):
@@ -104,7 +104,7 @@ class CsvThrottlePath(AbstractPath):
         else:
             return False
 
-    def load(self, filename: str):
+    def load(self, filename: str) -> bool:
         path = pathlib.Path(filename)
         if path.is_file():
             with open(filename, "r") as infile:
@@ -427,13 +427,16 @@ class CTE(object):
 
 class PID_Pilot(object):
 
-    def __init__(self, pid: PIDController, throttle: float, use_constant_throttle: bool = False):
+            self,
+            pid: PIDController,
+            throttle: float,
+            use_constant_throttle: bool = False) -> None:
         self.pid = pid
         self.throttle = throttle
         self.use_constant_throttle = use_constant_throttle
         self.variable_speed_multiplier = 1.0
 
-    def run(self, cte: float, throttles: list, closest_pt_idx: int):
+    def run(self, cte: float, throttles: list, closest_pt_idx: int) -> tuple:
         steer = self.pid.run(cte)
         if self.use_constant_throttle or throttles is None or closest_pt_idx is None:
             throttle = self.throttle
