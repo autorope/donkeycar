@@ -2,7 +2,11 @@
  * quadrature_encoder.ino
  * 
  * Based on teensy Encoder Library Basic Example
- * http://www.pjrc.com/teensy/td_libs_Encoder.html
+ * http://www.pjrc.com/teensy/td_libs_Encoder.html,
+ * 
+ * In Arduino IDE, user the library manager to 
+ * choose Encoder by Paul Stoffregan v1.4.2
+ * 
  * Note that use of interrupt capable pins will increase
  * performance (see `Hardware Requirements` section in
  * the above link).  The Arduino Uno/Nano and other
@@ -33,7 +37,9 @@
 
 // This optional setting causes Encoder to use more optimized code,
 // It must be defined before Encoder.h is included.
-#define ENCODER_OPTIMIZE_INTERRUPTS
+
+#define ENCODER_OPTIMIZE_INTERRUPTSß
+
 #include <Encoder.h>
 
 #define DUAL_ENCODERS
