@@ -313,47 +313,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         logging.info("pid: p+ %f" % pid.Kp)
 
 
-    class ToggleRecording:
-        def __init__(self, auto_record_on_throttle):
-            self.auto_record_on_throttle = auto_record_on_throttle
-            self.recording_latch:bool = None
-            self.toggle_latch:bool = False
-            self.last_recording = None
-
-        def set_recording(self, recording:bool):
-            self.recording_latch = recording
-
-        def toggle_recording(self):
-            self.toggle_latch = True
-
-        def run(self, mode:str, recording:bool):
-            recording_in = recording
-            if recording_in != self.last_recording:
-                logging.info(f"Recording Change = {recording_in}")
-
-            if self.toggle_latch:
-                if self.auto_record_on_throttle:
-                    logger.info('auto record on throttle is enabled; ignoring toggle of manual mode.')
-                else:
-                    recording = not self.last_recording
-                self.toggle_latch = False
-
-            if self.recording_latch is not None:
-                recording = self.recording_latch
-                self.recording_latch = None
-
-            if recording and mode != 'user':
-                logging.info("Ignoring recording in auto-pilot mode")
-                recording = False
-
-            if self.last_recording != recording:
-                logging.info(f"Setting Recording = {recording}")
-
-            self.last_recording = recording
-
-            return recording
-
-
     recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
     V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
 
@@ -490,7 +449,46 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         max_loop_count=cfg.MAX_LOOPS)
 
 
-from donkeycar.parts.text_writer import CsvLogger
+class ToggleRecording:
+    def __init__(self, auto_record_on_throttle):
+        self.auto_record_on_throttle = auto_record_on_throttle
+        self.recording_latch: bool = None
+        self.toggle_latch: bool = False
+        self.last_recording = None
+
+    def set_recording(self, recording: bool):
+        self.recording_latch = recording
+
+    def toggle_recording(self):
+        self.toggle_latch = True
+
+    def run(self, mode: str, recording: bool):
+        recording_in = recording
+        if recording_in != self.last_recording:
+            logging.info(f"Recording Change = {recording_in}")
+
+        if self.toggle_latch:
+            if self.auto_record_on_throttle:
+                logger.info(
+                    'auto record on throttle is enabled; ignoring toggle of manual mode.')
+            else:
+                recording = not self.last_recording
+            self.toggle_latch = False
+
+        if self.recording_latch is not None:
+            recording = self.recording_latch
+            self.recording_latch = None
+
+        if recording and mode != 'user':
+            logging.info("Ignoring recording in auto-pilot mode")
+            recording = False
+
+        if self.last_recording != recording:
+            logging.info(f"Setting Recording = {recording}")
+
+        self.last_recording = recording
+
+        return recording
 
 
 def add_gps(V, cfg):
