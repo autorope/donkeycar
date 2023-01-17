@@ -16,16 +16,21 @@ Options:
 import logging
 
 from docopt import docopt
+from simple_pid import PID
 
 import donkeycar as dk
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.line_follower import LineFollower
 from donkeycar.templates.complete import add_odometry, add_camera, \
     add_user_controller, add_drivetrain, add_simulator, add_imu
+from donkeycar.templates.path_follow import ToggleRecording
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
 from donkeycar.parts.controller import JoystickController
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def drive(cfg, use_joystick=False, camera_type='single'):
@@ -41,6 +46,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     
     #Initialize car
     V = dk.vehicle.Vehicle()
+
+    #
+    # if we are using the simulator, set it up
+    #
+    add_simulator(V, cfg)
 
     #
     # setup primary camera
@@ -78,10 +88,78 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     # Computer Vision Controller
     #
-    V.add(LineFollower(cfg.OVERLAY_IMAGE, False),
+    pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
+    V.add(LineFollower(pid, cfg),
           inputs=['cam/image_array'],
           outputs=['pilot/steering', 'pilot/throttle', 'recording', 'cv/image_array'],
           run_condition="run_pilot")
+
+    def dec_pid_d():
+        pid.Kd -= cfg.PID_D_DELTA
+        logging.info("pid: d- %f" % pid.Kd)
+
+    def inc_pid_d():
+        pid.Kd += cfg.PID_D_DELTA
+        logging.info("pid: d+ %f" % pid.Kd)
+
+    def dec_pid_p():
+        pid.Kp -= cfg.PID_P_DELTA
+        logging.info("pid: p- %f" % pid.Kp)
+
+    def inc_pid_p():
+        pid.Kp += cfg.PID_P_DELTA
+        logging.info("pid: p+ %f" % pid.Kp)
+
+
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
+    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
+
+
+    #
+    # Add buttons for handling various user actions
+    # The button names are in configuration.
+    # They may refer to game controller (joystick) buttons OR web ui buttons
+    #
+    # There are 5 programmable webui buttons, "web/w1" to "web/w5"
+    # adding a button handler for a webui button
+    # is just adding a part with a run_condition set to
+    # the button's name, so it runs when button is pressed.
+    #
+    have_joystick = ctr is not None and isinstance(ctr, JoystickController)
+
+    # button to toggle recording
+    if cfg.TOGGLE_RECORDING_BTN:
+        print(f"Toggle recording button is {cfg.TOGGLE_RECORDING_BTN}")
+        if cfg.TOGGLE_RECORDING_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: recording_control.toggle_recording()), run_condition=cfg.TOGGLE_RECORDING_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.TOGGLE_RECORDING_BTN, recording_control.toggle_recording)
+
+    # Buttons to tune PID constants
+    if cfg.DEC_PID_P_BTN and cfg.PID_P_DELTA:
+        print(f"Decrement PID P button is {cfg.DEC_PID_P_BTN}")
+        if cfg.DEC_PID_P_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: dec_pid_p()), run_condition=cfg.DEC_PID_P_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.DEC_PID_P_BTN, dec_pid_p)
+    if cfg.INC_PID_P_BTN and cfg.PID_P_DELTA:
+        print(f"Increment PID P button is {cfg.INC_PID_P_BTN}")
+        if cfg.INC_PID_P_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: inc_pid_p()), run_condition=cfg.INC_PID_P_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.INC_PID_P_BTN, inc_pid_p)
+    if cfg.DEC_PID_D_BTN and cfg.PID_D_DELTA:
+        print(f"Decrement PID D button is {cfg.DEC_PID_D_BTN}")
+        if cfg.DEC_PID_D_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: dec_pid_d()), run_condition=cfg.DEC_PID_D_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.DEC_PID_D_BTN, dec_pid_d)
+    if cfg.INC_PID_D_BTN and cfg.PID_D_DELTA:
+        print(f"Increment PID D button is {cfg.INC_PID_D_BTN}")
+        if cfg.INC_PID_D_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: inc_pid_d()), run_condition=cfg.INC_PID_D_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
 
     #
     # Choose what inputs should change the car.

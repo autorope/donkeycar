@@ -12,24 +12,21 @@ class LineFollower:
     to guid a PID controller which seeks to maintain the max yellow at the same point
     in the image.
     '''
-    def __init__(self, overlay_image=True, debug=False):
-        self.debug = debug
-        self.overlay_image = overlay_image
-        self.scan_y = 60   # num pixels from the top to start horiz scan
-        self.scan_height = 10 # num pixels high to grab from horiz scan
-        self.color_thr_low = np.asarray((0, 50, 50)) # hsv dark yellow
-        self.color_thr_hi = np.asarray((50, 255, 255)) # hsv light yellow
-        self.target_pixel = None # of the N slots above, which is the ideal relationship target
+    def __init__(self, pid, cfg):
+        self.overlay_image = cfg.OVERLAY_IMAGE
+        self.scan_y = cfg.SCAN_Y   # num pixels from the top to start horiz scan
+        self.scan_height = cfg.SCAN_HEIGHT  # num pixels high to grab from horiz scan
+        self.color_thr_low = np.asarray(cfg.COLOR_THRESHOLD_LOW)  # hsv dark yellow
+        self.color_thr_hi = np.asarray(cfg.COLOR_THRESHOLD_HIGH)  # hsv light yellow
+        self.target_pixel = cfg.TARGET_PIXEL  # of the N slots above, which is the ideal relationship target
         self.steering = 0.0 # from -1 to 1
-        self.throttle = 0.15 # from -1 to 1
-        self.recording = False # Set to true if desired to save camera frames
-        self.delta_th = 0.1 # how much to change throttle when off
-        self.throttle_max = 0.3
-        self.throttle_min = 0.15
+        self.throttle = cfg.THROTTLE_INITIAL # from -1 to 1
+        self.recording = False  # Set to true if desired to save camera frames
+        self.delta_th = cfg.THROTTLE_STEP  # how much to change throttle when off
+        self.throttle_max = cfg.THROTTLE_MAX
+        self.throttle_min = cfg.THROTTLE_MIN
 
-        # These three PID constants are crucial to the way the car drives. If you are tuning them
-        # start by setting the others zero and focus on first Kp, then Kd, and then Ki.
-        self.pid_st = PID(Kp=-0.01, Ki=0.00, Kd=-0.001)
+        self.pid_st = pid
 
 
     def get_i_color(self, cam_img):

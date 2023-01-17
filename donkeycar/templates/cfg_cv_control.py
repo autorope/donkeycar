@@ -354,67 +354,6 @@ DC_TWO_WHEEL_L298N = {
 }
 
 
-#
-# ODOMETRY
-#
-HAVE_ODOM = False               # Do you have an odometer/encoder
-HAVE_ODOM_2 = False             # Do you have a second odometer/encoder as in a differential drive robot.
-                                # In this case, the 'first' encoder is the left wheel encoder and
-                                # the second encoder is the right wheel encoder.
-ENCODER_TYPE = 'GPIO'           # What kind of encoder? GPIO|arduino.
-                                # - 'GPIO' refers to direct connect of a single-channel encoder to an RPi/Jetson GPIO header pin.
-                                #   Set ODOM_PIN to the gpio pin, based on board numbering.
-                                # - 'arduino' generically refers to any microcontroller connected over a serial port.
-                                #   Set ODOM_SERIAL to the serial port that connects the microcontroller.
-                                #   See 'arduino/encoder/encoder.ino' for an Arduino sketch that implements both a continuous and
-                                #    on demand protocol for sending readings from the microcontroller to the host.
-ENCODER_PPR = 20                # encoder's pulses (ticks) per revolution of encoder shaft.
-ENCODER_DEBOUNCE_NS = 0         # nanoseconds to wait before integrating subsequence encoder pulses.
-                                # For encoders with noisy transitions, this can be used to reject extra interrupts caused by noise.
-                                # If necessary, the exact value can be determined using an oscilliscope or logic analyzer or
-                                # simply by experimenting with various values.
-FORWARD_ONLY = 1
-FORWARD_REVERSE = 2
-FORWARD_REVERSE_STOP = 3
-TACHOMETER_MODE=FORWARD_REVERSE # FORWARD_ONLY, FORWARD_REVERSE or FORWARD_REVERSE_STOP
-                                # For dual channel quadrature encoders, 'FORWARD_ONLY' is always the correct mode.
-                                # For single-channel encoders, the tachometer mode depends upon the application.
-                                # - FORWARD_ONLY always increments ticks; effectively assuming the car is always moving forward
-                                #   and always has a positive throttle. This is best for racing on wide open circuits where
-                                #   the car is always under throttle and where we are not trying to model driving backwards or stopping.
-                                # - FORWARD_REVERSE uses the throttle value to decide if the car is moving forward or reverse
-                                #   increments or decrements ticks accordingly.  In the case of a zero throttle, ticks will be
-                                #   incremented or decremented based on the last non-zero throttle; effectively modelling 'coasting'.
-                                #   This can work well in situations where the car will be making progress even when the throttle
-                                #   drops to zero.  For instance, in a race situatino where the car may coast to slow down but not
-                                #   actually stop.
-                                # - FORWARD_REVERSE_STOP uses the throttle value to decide if the car is moving forward or reverse or stopped.
-                                #   This works well for a slower moving robot in situations where the robot is changing direction; for instance4
-                                #   when doing SLAM, the robot will explore the room slowly and may need to backup.
-MM_PER_TICK = WHEEL_RADIUS * 2 * 3.141592653589793 * 1000 / ENCODER_PPR           # How much travel with a single encoder tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
-ODOM_SERIAL = '/dev/ttyACM0'    # serial port when ENCODER_TYPE is 'arduino'
-ODOM_SERIAL_BAUDRATE = 115200   # baud rate for serial port encoder
-ODOM_PIN = 13                   # if using ENCODER_TYPE=GPIO, which GPIO board mode pin to use as input
-ODOM_PIN_2 = 14                 # GPIO for second encoder in differential drivetrains
-ODOM_SMOOTHING = 1              # number of odometer readings to use when calculating velocity
-ODOM_DEBUG = False              # Write out values on vel and distance as it runs
-
-
-#
-# LIDAR
-#
-USE_LIDAR = False
-LIDAR_TYPE = 'RP' #(RP) NOTE: YD lidar is not full implemented
-LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
-LIDAR_UPPER_LIMIT = 270
-
-
-# IMU for imu model
-HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
-IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
-IMU_ADDRESS = 0x68              # if AD0 pin is pulled high them address is 0x69, otherwise it is 0x68
-IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
-
 
 #
 # Input controllers
@@ -591,7 +530,7 @@ AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle 
 # Intel Realsense D435 and D435i depth sensing camera
 #
 REALSENSE_D435_RGB = True       # True to capture RGB image
-REALSENSE_D435_DEPTH = True     # True to capture depth as image array
+REALSENSE_D435_DEPTH = False    # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
@@ -605,7 +544,6 @@ STOP_SIGN_SHOW_BOUNDING_BOX = True
 STOP_SIGN_MAX_REVERSE_COUNT = 10    # How many times should the car reverse when detected a stop sign, set to 0 to disable reversing
 STOP_SIGN_REVERSE_THROTTLE = -0.5     # Throttle during reversing when detected a stop sign
 
-
 #
 # Frames/Second counter
 #
@@ -613,43 +551,28 @@ SHOW_FPS = False
 FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency info into the shell
 
 #
-# TRACKING camera
+# computer vision template
 #
-HAVE_T265 = False       # True to use Intel Realsense T265 as a source of pose
+OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in web ui
+                      # NOTE: this does not affect what is saved to the data
+SCAN_Y = 60           # num pixels from the top to start horiz scan
+SCAN_HEIGHT = 10      # num pixels high to grab from horiz scan
+COLOR_THRESHOLD_LOW  = (0, 50, 50)    # hsv dark yellow
+COLOR_THRESHOLD_HIGH = (50, 255, 255) # hsv light yellow
+TARGET_PIXEL = None   # In note None, then of the N slots above, which is the ideal relationship target
+                      # if None, use the first run of get_i_color() to set the relationship with the yellow line
+THROTTLE_MAX = 0.3    # maximum throttle value the controller will produce
+THROTTLE_MIN = 0.15   # minimum throttle value the controller will produce
+THROTTLE_INITIAL = THROTTLE_MIN  # initial throttle value
+THROTTLE_STEP = 0.1   # how much to change throttle when off the line
 
-#
-# gps
-#
-HAVE_GPS = False            # True to read gps position
-GPS_SERIAL = '/dev/ttyUSB0' # serial device path, like '/dev/ttyAMA1' or '/dev/ttyUSB0'
-GPS_SERIAL_BAUDRATE = 115200
-GPS_NMEA_PATH = None        # File used to record gps, like "nmea.csv".
-                            # If this is set then when waypoints are recorded then
-                            # the underlying NMEA sentences will also be saved to
-                            # this file along with their time stamps.  Then when
-                            # the path is loaded and played in auto-pilot mode then
-                            # the NMEA sentences that were recorded will be played back.
-                            # This is for debugging and tuning the PID without having
-                            # to keep driving the car.
-GPS_DEBUG = False  # set to True to log UTM position (beware; lots of logging!)
-
-#
-# PATH FOLLOWING
-#
-PATH_FILENAME = "donkey_path.csv"   # the path will be saved to this filename as comma separated x,y values
-PATH_DEBUG = True                   # True to log x,y position
-PATH_SCALE = 10.0                   # the path display will be scaled by this factor in the web page
-PATH_OFFSET = (255, 255)            # 255, 255 is the center of the map. This offset controls where the origin is displayed.
-PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a path point
-PATH_SEARCH_LENGTH = None           # number of points to search for closest point, None to search entire path
-PATH_LOOK_AHEAD = 1                 # number of points ahead of the closest point to include in cte track
-PATH_LOOK_BEHIND = 1                # number of points behind the closest point to include in cte track   
-PID_P = -0.5                        # proportional mult for PID path follower
-PID_I = 0.000                       # integral mult for PID path follower
-PID_D = -0.3                        # differential mult for PID path follower
-PID_THROTTLE = 0.50                 # constant throttle value during path following
-PID_D_DELTA = 0.25                  # amount the inc/dec function will change the D value
-PID_P_DELTA = 0.25                  # amount the inc/dec function will change the P value
+# These three PID constants are crucial to the way the car drives. If you are tuning them
+# start by setting the others zero and focus on first Kp, then Kd, and then Ki.
+PID_P = -0.01         # proportional mult for PID path follower
+PID_I = 0.000         # integral mult for PID path follower
+PID_D = -0.0001       # differential mult for PID path follower
+PID_P_DELTA = 0.005   # amount the inc/dec function will change the P value
+PID_D_DELTA = 0.00005 # amount the inc/dec function will change the D value
 
 #
 # Assign path follow functions to buttons.
@@ -657,21 +580,9 @@ PID_P_DELTA = 0.25                  # amount the inc/dec function will change th
 # Use None use the game controller default
 # NOTE: the cross button is already reserved for the emergency stop
 #
-SAVE_PATH_BTN = "circle"        # button to save path
-LOAD_PATH_BTN = "x"             # button (re)load path
-RESET_ORIGIN_BTN = "square"     # button to press to move car back to origin
-ERASE_PATH_BTN = "triangle"     # button to erase path
 TOGGLE_RECORDING_BTN = "option" # button to toggle recording mode
 INC_PID_D_BTN = None            # button to change PID 'D' constant by PID_D_DELTA
 DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DELTA
 INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
 DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
 
-# Intel Realsense T265 tracking camera
-REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
-WHEEL_ODOM_CALIB = "calibration_odometry.json"
-
-#
-# computer vision template
-#
-OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image
