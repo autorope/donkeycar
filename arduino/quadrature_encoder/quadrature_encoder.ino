@@ -37,9 +37,9 @@
 
 // This optional setting causes Encoder to use more optimized code,
 // It must be defined before Encoder.h is included.
-
 #define ENCODER_OPTIMIZE_INTERRUPTSß
 
+// Encoder by Paul Stoffregan v1.4.2
 #include <Encoder.h>
 
 #define DUAL_ENCODERS
