@@ -19,18 +19,25 @@
  * If you have a different microcontroller
  * then see your datasheet for which pins are interrupt
  * capable.
- * 
- * Adds command for on-demand sending of encoder value
- * and continuous sending with provided delay.
- * Returns timestamp along with encoder ticks.
  *
- * Implements the r/p/c command protocol 
+ * The sketch implements the r/p/c command protocol
  * for on-demand sending of encoder value
  * and continuous sending with provided delay.
  * See the comment in the loop below for details.
+ * commands are send one per line (ending in '\n')
+ * 'r' command resets position to zero
+ * 'p' command sends position immediately
+ * 'c' command starts/stops continuous mode
+ *     - if it is followed by an integer,
+ *       then use this as the delay in ms
+ *       between readings.
+ *     - if it is not followed by an integer
+ *       then stop continuous mode
  * 
  * Sends the encoder ticks and a timestamp
  * as a comma delimited pair: ticks,timeMs
+ * In a dual encoder setup the second encoder values
+ * as separated from the first by a semicolon: ticks,timeMs;ticks,timeMs
  *
  */
 #include <Arduino.h>
@@ -45,10 +52,20 @@
 #define DUAL_ENCODERS
 
 #ifdef DUAL_ENCODERS
-    #define ENCODER_CLK_PIN   (2)      // clock input pin for first encoder
+    //
+    // Note that if this is for a differential drive configuration
+    // then the encoders are generally oriented oppositely, so when
+    // one is turning clockwise the other is turning counter-clockwise.
+    // Therefore we want the data and clock pins to be hooked up oppositely
+    // for each encoder.  This can be achieved by reversing the connections
+    // on the right encoder, so that the data pin of the encoder is
+    // assigned the ENCODER_2_CLK_PIN and the clock pin of the encoder
+    // is assigned to ENCODER_2_DT_PIN.
+    //
+    #define ENCODER_CLK_PIN   (2)      // clock input pin for first encoder (left wheel)
     #define ENCODER_DT_PIN    (4)      // data input pin for first encoder
-    #define ENCODER_2_CLK_PIN (3)      // clock input pin for second encoder
-    #define ENCODER_2_DT_PIN  (5)      // data input pin for second encoder
+    #define ENCODER_2_CLK_PIN (3)      // input pin for second encoder (right wheel, see above)
+    #define ENCODER_2_DT_PIN  (5)      // input pin for second encoder
 #else
     #define ENCODER_CLK_PIN   (2)      // clock input pin for first encoder
     #define ENCODER_DT_PIN    (3)      // data input pin for first encoder
