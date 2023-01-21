@@ -12,11 +12,13 @@ class CameraError(Exception):
     pass
 
 class OakDCamera:
-    def __init__(self, width, height, depth=3, isp_scale=None, framerate=30, enable_depth=False, enable_obstacle_dist=False):
+    def __init__(self, width, height, depth=3, isp_scale=None, framerate=30, enable_depth=False, enable_obstacle_dist=False, rgb_resolution="1080p"):
         
         self.on = False
         
         self.device = None
+
+        self.rgb_resolution = rgb_resolution
         
         self.queue_xout = None
         self.queue_xout_depth = None
@@ -56,7 +58,12 @@ class OakDCamera:
         if depth == 3:
             # Source
             camera = self.pipeline.create(dai.node.ColorCamera)
-            camera.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+            if self.rgb_resolution == "800p":
+                camera.setResolution(dai.ColorCameraProperties.SensorResolution.THE_800_P)
+            elif self.rgb_resolution == "1080p":
+                camera.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+            else:
+                camera.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
             camera.setInterleaved(False)
             camera.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
 
