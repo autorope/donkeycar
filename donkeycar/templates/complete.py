@@ -768,7 +768,7 @@ def get_camera(cfg):
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         elif cfg.CAMERA_TYPE == "OAK":
             from donkeycar.parts.oak_d_camera import OakDCamera
-            cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED)
+            cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
@@ -819,13 +819,13 @@ def add_camera(V, cfg, camera_type):
               threaded=True)
     elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
         from donkeycar.parts.oak_d_camera import OakDCamera
-        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED)
+        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/depth_array'],
               threaded=True)
     elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
         from donkeycar.parts.oak_d_camera import OakDCamera
-        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED)
+        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/obstacle_distances'],
               threaded=True)
