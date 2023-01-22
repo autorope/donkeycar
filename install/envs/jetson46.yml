@@ -9,7 +9,6 @@ dependencies:
   - python=3.9
   - h5py
   - pillow
-  - opencv
   - matplotlib
   - tornado
   - docopt
