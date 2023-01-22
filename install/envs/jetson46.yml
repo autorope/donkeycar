@@ -1,0 +1,40 @@
+name: donkey
+
+channels:
+  - defaults
+  - conda-forge
+  - fastai
+
+dependencies:
+  - python=3.9
+  - h5py
+  - pillow
+  - opencv
+  - matplotlib
+  - tornado
+  - docopt
+  - pandas
+  - pylint
+  - pytest
+  - pytest-cov
+  - codecov
+  - pip
+  - progress
+  - moviepy
+  - paho-mqtt
+  - PrettyTable
+  - pyfiglet
+  - mypy
+  - numpy
+  - psutil
+  - plotly
+  - pyyaml
+  - fastai
+  - pynmea2
+  - pyserial
+  - utm
+  - pip:
+    - git+https://github.com/autorope/jetson/blob/main/tensorflow-2.9.3-cp39-cp39-linux_aarch64.whl
+    - git+https://github.com/autorope/keras-vis.git
+    - simple-pid
+    - kivy-jetson

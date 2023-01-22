@@ -122,4 +122,4 @@ setup(name='donkeycar',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
       packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
-    )
+      )
