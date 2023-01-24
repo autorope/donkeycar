@@ -210,7 +210,6 @@ void setup() {
   for(int i = 0; i < ENCODER_COUNT; i += 1) {
     int pin = encoders[i].pin;
     pinMode(pin, INPUT);
-    digitalWrite(pin, HIGH);
     #ifdef USE_ENCODER_INTERRUPTS
       attachInterrupt(digitalPinToInterrupt(pin), _isr_routines[i], CHANGE);
     #endif
