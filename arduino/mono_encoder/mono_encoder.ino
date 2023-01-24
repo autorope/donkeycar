@@ -16,20 +16,46 @@
  * 
  * Sends the encoder ticks and a timestamp
  * as a comma delimited pair: ticks,timeMs
+ * 
+ * If USE_ENCODER_INTERRUPTS is defined then ticks
+ * will be maintained with an interrupt service routines.
+ * In this case the pins must be interrupt capabled.
+ * On the Arduino Uno/Nano pins 2 and 3 are interrupt
+ * capable, so the sketch uses those two pins by default.
+ * If your board uses different pins then modify the sketch
+ * before downloading to your microcontroller board.  
+ * The advantage of this mode is that is can a high rate
+ * of ticks as one would see with a high resolution encoder.
+ * The disadvantage is that is does a poor job of debouncing,
+ * so it is not appropriate for mechanical encoders.
+ *
+ * If USE_ENCODER_INTERRUPTS is NOT defined, then polling
+ * will be used to maintain the tick count.  The code 
+ * implements a robust debouncing technique.  
+ * The advantage of this mode is the debounce logic;
+ * it can robustly cound ticks even from a noisy
+ * mechanical encoder like a KY-040 rotary encoder.
+ * The disadvantage is that this cannot handle high rates
+ * of ticks as would be delivered by a high resolution optical
+ * encoder.  See the comments in the code below for how
+ * to determine the upper bound that this method can handle.
+ * 
  *
  */
 #include <Arduino.h>
- 
-#define ENCODER_PIN   (7)          // input pin for first encoder
-#define ENCODER_2_PIN (9)          // input pin for second encoder
+
+#define ENCODER_PIN   (2)          // input pin for first encoder
+#define ENCODER_2_PIN (3)          // input pin for second encoder
 #define POLL_DELAY_MICROS (100UL)  // microseconds between polls
+#define USE_ENCODER_INTERRUPTS (1) // if defined then use interrupts to read ticks
+                                   // otherwise use polling.
 
 //
 // state for an encoder pin
 //
 struct EncoderState {
   int pin;                     // gpio pin number
-  long ticks;                  // current tick count
+  volatile long ticks;                  // current tick count
   uint16_t readings;           // history of last 16 readings
   uint16_t transition;         // value of last 16 readings for next stable state transition 
   unsigned long pollAtMicros;  // time of next poll
@@ -48,6 +74,28 @@ EncoderState encoders[2] = {
 boolean continuous = false; // true to send continuously, false to only send on demand
 unsigned long sendAtMs = 0; // next send time in continuous mode
 unsigned long delayMs = 0;  // time between sends in continuous mode
+
+#ifdef USE_ENCODER_INTERRUPTS
+  typedef void (*gpio_isr_type)();
+
+  //
+  // count the interrupts
+  //
+  void encode_0() {
+    ++encoders[0].ticks;
+  }
+
+  #ifdef ENCODER_2_PIN
+    void encode_1() {
+      ++encoders[1].ticks;
+    }
+  #endif
+
+  gpio_isr_type _isr_routines[ENCODER_COUNT] = {
+      encode_0,
+      encode_1
+  };
+#endif
 
 
 
@@ -74,25 +122,27 @@ unsigned long delayMs = 0;  // time between sends in continuous mode
 // suit your encoder and use case.
 //
 void pollEncoder(EncoderState &encoder) {
-  unsigned long nowMicros = micros();
-  if (nowMicros >= encoder.pollAtMicros) {
-    //
-    // shift state left and add new reading
-    //
-    encoder.readings = (encoder.readings << 1) | digitalRead(encoder.pin);
+  #ifndef USE_ENCODER_INTERRUPTS
+    unsigned long nowMicros = micros();
+    if (nowMicros >= encoder.pollAtMicros) {
+      //
+      // shift state left and add new reading
+      //
+      encoder.readings = (encoder.readings << 1) | digitalRead(encoder.pin);
 
-    //
-    // if readings match target transition
-    // then count the ticks and 
-    // start looking for the next target transion
-    //
-    if (encoder.readings == encoder.transition) {
-      encoder.ticks += 1;
-      encoder.transition = ~encoder.transition;  // invert transition
+      //
+      // if readings match target transition
+      // then count the ticks and 
+      // start looking for the next target transion
+      //
+      if (encoder.readings == encoder.transition) {
+        encoder.ticks += 1;
+        encoder.transition = ~encoder.transition;  // invert transition
+      }
+
+      encoder.pollAtMicros = nowMicros + POLL_DELAY_MICROS;
     }
-
-    encoder.pollAtMicros = nowMicros + POLL_DELAY_MICROS;
-  }
+  #endif
 }
 void pollEncoders() {
   for(int i = 0; i < ENCODER_COUNT; i += 1) {
@@ -104,9 +154,31 @@ void pollEncoders() {
 // reset tick counters to zero
 //
 void resetEncoders() {
+  #ifdef USE_ENCODER_INTERRUPTS
+     noInterrupts();
+  #endif
+
   for(int i = 0; i < ENCODER_COUNT; i += 1) {
     encoders[i].ticks = 0;
   }
+  
+  #ifdef USE_ENCODER_INTERRUPTS
+    interrupts();
+  #endif
+}
+
+void readEncoders(long ticks[ENCODER_COUNT]) {
+  #ifdef USE_ENCODER_INTERRUPTS
+     noInterrupts();
+  #endif
+
+  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+    ticks[i] = encoders[i].ticks;
+  }
+
+  #ifdef USE_ENCODER_INTERRUPTS
+    interrupts();
+  #endif
 }
 
 
@@ -117,12 +189,15 @@ void resetEncoders() {
 //   "{ticks},{ticksMs}"
 //
 void writeTicks(unsigned long ticksMs) {
-  Serial.print(encoders[0].ticks);
+  long ticks[ENCODER_COUNT];
+  readEncoders(ticks);
+
+  Serial.print(ticks[0]);
   Serial.print(',');
   Serial.print(ticksMs);
   for(int i = 1; i < ENCODER_COUNT; i += 1) {
     Serial.print(";");
-    Serial.print(encoders[i].ticks);
+    Serial.print(ticks[i]);
     Serial.print(',');
     Serial.print(ticksMs);
   }
@@ -133,7 +208,12 @@ void writeTicks(unsigned long ticksMs) {
 void setup() {
   // set all encoder pins to inputs
   for(int i = 0; i < ENCODER_COUNT; i += 1) {
-    pinMode(encoders[i].pin, INPUT);
+    int pin = encoders[i].pin;
+    pinMode(pin, INPUT);
+    digitalWrite(pin, HIGH);
+    #ifdef USE_ENCODER_INTERRUPTS
+      attachInterrupt(digitalPinToInterrupt(pin), _isr_routines[i], CHANGE);
+    #endif
   }
   Serial.begin(115200);
 }
