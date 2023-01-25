@@ -60,28 +60,6 @@
   tags:
     - pigpio
     - never
-
-- name: install python essentials
-  pip:
-    name:
-      - virtualenv
-      - pip
-      - setuptools
-      - wheel
-    state: latest
-    executable: pip3
-  tags:
-    - python
-    - never
-
-- name: git clone car repo
-  become: false
-  git:
-    repo: git@github.com:rmarret/donkey.git
-    dest: "/home/{{ system_ssh_user }}/car"
-    version: main
-  tags:
-    - clone
     
 - name: install donkeycar dependencies
   become: false
@@ -110,27 +88,6 @@
     virtualenv: "/home/{{ system_ssh_user }}/env"
     virtualenv_python: python3
     virtualenv_site_packages: yes
-  tags:
-    - venv
-    - never
-
-- name: install donkeycar repo as python module
-  become: false
-  shell:
-    cmd: "source /home/{{ system_ssh_user }}/env/bin/activate && pip install -e .[pi]"
-    chdir: "/home/{{ system_ssh_user }}/donkeycar"
-    executable: /bin/bash
-  tags:
-    - venv
-    - never
-
-- name: activate venv in bashrc
-  lineinfile:
-    path: "/home/{{ system_ssh_user }}/.bashrc"
-    line: "source env/bin/activate"
-    owner: "{{ system_ssh_user }}"
-    group: "{{ system_ssh_user }}"
-    mode: '0644'
   tags:
     - venv
     - never

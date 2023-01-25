@@ -131,6 +131,7 @@ sudo apt-get install openssh-server python3 python3-pip
 # from controller node
 ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit donkey
 
+# -e "ansible_host=raspberrypi" for first run
 # -K to enter sudo password - or do any sudo command before in local
 # -k to enter ssh password
 # --key-file to specify ssh key file

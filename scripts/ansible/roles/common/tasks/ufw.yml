@@ -4,6 +4,12 @@
   apt:
     package: ufw
     state: present
+  register: ufw_install
+
+# reboot now to fix "ERROR: Couldn't determine iptables version"
+- name: reboot host for ufw
+  reboot:
+  when: ufw_install.changed
 
 - name: configure ufw defaults
   ufw:
@@ -41,7 +47,7 @@
   notify:
     - reload ufw
 
-- name: enable ufw
+- name: "{{ 'enable' if ufw_enabled else 'disable' }} ufw"
   ufw:
-    state: enabled
+    state: "{{ 'enabled' if ufw_enabled else 'disabled' }}"
   when: not ansible_raspbian_testing

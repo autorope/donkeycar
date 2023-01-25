@@ -1,49 +1,35 @@
 ---
 
-# see hannseman role https://github.com/hannseman/ansible-raspbian
-# apt
-# hostname
-# locale
-# mount
-# user
-# alternatives
-# tmpfiles
-# ssh
-# ufw
-# pi
-# postfix
-# unattended-upgrades
-# fail2ban
-# logwatch
+# see hannseman role https://github.com/hannseman/ansible-raspbian and https://github.com/gantsign/ansible-role-keyboard
 
-# init-user
-# ssh-user
-
-# TODO
-- import_tasks: pi-password.yml
+- import_tasks: ssh-user.yml
   tags:
-    - pi-password
-
-- import_tasks: apt.yml
-  tags:
-    - apt
+    - ssh-user
 
 - import_tasks: keyboard.yml
   tags:
     - keyboard
-
+    
+- import_tasks: pi-password.yml
+  tags:
+    - pi-password
+  
 - import_tasks: user-settings.yml
   tags:
     - user-settings
+
+- import_tasks: locale.yml
+  tags:
+    - locale
 
 - import_tasks: hostname.yml
   when: system_hostname is defined
   tags:
     - hostname
-
-- import_tasks: locale.yml
+    
+- import_tasks: apt.yml
   tags:
-    - locale
+    - apt
 
 - import_tasks: sshd.yml
   tags:
@@ -52,10 +38,6 @@
 - import_tasks: ufw.yml
   tags:
     - ufw
-
-- import_tasks: pi-config.yml
-  tags:
-    - pi-config
 
 - import_tasks: fail2ban.yml
   tags:

@@ -20,10 +20,3 @@
     key: "{{ item }}"
     state: present
   with_items: "{{ ssh_public_keys }}"
-
-# - name: upload authorized keys for user {{ ansible_ssh_user }}
-#   authorized_key:
-#     user: "{{ ansible_ssh_user }}"
-#     key: "{{ item }}"
-#     state: present
-#   with_items: "{{ ssh_public_keys }}"

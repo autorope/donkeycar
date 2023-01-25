@@ -1,30 +1,27 @@
 ---
+
 ufw_rules:
   - {rule: "allow", port: "22", proto: "tcp"}
   - {rule: "allow", port: "8887", proto: "tcp"}
 
-system_ssh_user_groups: "adm,dialout,cdrom,sudo,audio,video,plugdev,users,input,netdev,i2c,gpio"
+donkeycar_user: "{{ ansible_user }}"
+# additional groups for hardware access
+donkeycar_user_groups: "i2c,gpio,spi"
 
-system_tmpfs_mounts: []
+# Updates /boot/config.txt with `{{ key }}: {{ value }}`
+donkeycar_rpi_boot_config:
+  enable_uart: 1 # enable hw uart to have a power indicator led on txd pin
 
-system_packages:
-  - apt-transport-https
-  - vim
-  - libsasl2-modules
-  - git
-  - curl
-
-fail2ban_enabled: false
-
-# enable hw uart to have a power indicator led
-rpi_boot_config:
-  enable_uart: 1
-
+# run raspi-config -noint do_{{ key }} {{ value }]. Options: https://github.com/raspberrypi-ui/rc_gui/blob/master/src/rc_gui.c#L23-L70
 # 0 means enabled
-rpi_cmdline_config:
+donkeycar_rpi_cmdline_config:
   i2c: 0
   camera: 0
   #serial: 0
+  spi: 0
 
-rpi_shutdown_button_enabled: false
-#gpio_shutdown_pin: 17
+donkeycar_rpi_shutdown_button_enabled: false
+donkeycar_rpi_shtudown_button_gpio_pin: 17
+
+donkeycar_git_repo: "https://github.com/roboracingleague/donkeycar.git"
+donkeycar_git_repo_branch: "main"

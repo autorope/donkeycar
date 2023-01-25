@@ -1,0 +1,12 @@
+---
+
+donkeycar_user_groups: ""
+
+donkeycar_rpi_boot_config: {}
+donkeycar_rpi_cmdline_config: {}
+
+donkeycar_rpi_shutdown_button_enabled: false
+donkeycar_rpi_shtudown_button_gpio_pin: 3
+
+donkeycar_git_repo: "https://github.com/roboracingleague/donkeycar.git"
+donkeycar_git_repo_branch: "main"

@@ -1,20 +1,9 @@
 ---
 
-ansible_user: donkey
 ansible_python_interpreter: /usr/bin/python3
 
 # user to create in a new pi, to use later as ansible_user
-system_ssh_user: "{{ ansible_user }}"
-
-system_ssh_user_groups: "adm,dialout,cdrom,sudo,audio,video,plugdev,users,input,netdev"
+system_ssh_user: donkey
+ansible_user: "{{ system_ssh_user }}"
 
 ansible_become_password: "{{ vault_system_ssh_user_password }}"
-
-# setup gantsign.keyboard role
-keyboard_model: pc104
-keyboard_layout: fr
-
-system_generate_locales:
-  - "fr_FR.UTF-8"
-
-rpi_shutdown_button_enabled: false

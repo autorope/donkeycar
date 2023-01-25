@@ -1,0 +1,44 @@
+---
+
+- name: update user groups
+  user:
+    name: "{{ donkeycar_user }}"
+    groups: "{{ donkeycar_user_groups }}"
+    append: yes
+
+- name: check raspi-config values
+  command: "raspi-config nonint get_{{ item }}"
+  with_items: "{{ donkeycar_rpi_cmdline_config.keys()|list }}"
+  when: donkeycar_rpi_cmdline_config is defined
+  register: rpi_config_get_result
+  changed_when: false
+
+- name: configure raspi-config values
+  command: "raspi-config nonint do_{{ item.key }} {{ item.value }}"
+  with_dict: "{{ donkeycar_rpi_cmdline_config }}"
+  when: >
+    donkeycar_rpi_cmdline_config is defined and
+    rpi_config_get_result.results|map(attribute="stdout")|sort != donkeycar_rpi_cmdline_config.values()|list|map("string")|sort
+  notify:
+    - reboot host
+
+- name: update /boot/config.txt
+  lineinfile:
+    dest: /boot/config.txt
+    regexp: "^#?{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_dict: "{{ donkeycar_rpi_boot_config }}"
+  when: donkeycar_rpi_boot_config|length > 0
+  notify:
+    - reboot host
+
+# adding a led on txd pin require enable_uart=1 in /boot/config.txt
+- name: configure shutdown button
+  lineinfile:
+    dest: "/boot/config.txt"
+    regexp: "^dtoverlay=gpio-shutdown.*$"
+    line: "dtoverlay=gpio-shutdown,gpio_pin={{ donkeycar_rpi_shtudown_button_gpio_pin }}"
+    backup: false
+    state: "{{ 'present' if (donkeycar_rpi_shutdown_button_enabled is defined and rdonkeycar_pi_shtudown_button_gpio_pin is defined and (donkeycar_rpi_shutdown_button_enabled|bool)) else 'absent' }}"
+  notify:
+    - reboot host
