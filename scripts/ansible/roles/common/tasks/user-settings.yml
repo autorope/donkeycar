@@ -1,0 +1,23 @@
+---
+
+- name: enable user ll alias
+  lineinfile:
+    dest: "/home/{{ system_ssh_user }}/.bashrc"
+    regexp: "^#alias ll='ls -l'$"
+    line: "alias ll='ls -al'"
+    backup: true
+    state: present
+
+- name: enable root ll alias
+  lineinfile:
+    dest: "/root/.bashrc"
+    regexp: "^# alias ll='ls .*"
+    line: "alias ll='ls $LS_OPTIONS -al'"
+    backup: true
+    state: present
+
+- name: allow ssh user nopasswd commands
+  template:
+    src: "nopasswd.j2"
+    dest: "/etc/sudoers.d/010_{{ system_ssh_user }}-nopasswd"
+    mode: '0440'

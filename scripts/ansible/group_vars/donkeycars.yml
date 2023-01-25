@@ -1,0 +1,30 @@
+---
+ufw_rules:
+  - {rule: "allow", port: "22", proto: "tcp"}
+  - {rule: "allow", port: "8887", proto: "tcp"}
+
+system_ssh_user_groups: "adm,dialout,cdrom,sudo,audio,video,plugdev,users,input,netdev,i2c,gpio"
+
+system_tmpfs_mounts: []
+
+system_packages:
+  - apt-transport-https
+  - vim
+  - libsasl2-modules
+  - git
+  - curl
+
+fail2ban_enabled: false
+
+# enable hw uart to have a power indicator led
+rpi_boot_config:
+  enable_uart: 1
+
+# 0 means enabled
+rpi_cmdline_config:
+  i2c: 0
+  camera: 0
+  #serial: 0
+
+rpi_shutdown_button_enabled: false
+#gpio_shutdown_pin: 17

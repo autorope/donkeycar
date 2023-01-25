@@ -1,0 +1,23 @@
+---
+
+- name: set-up donkey cars
+  hosts: donkeycars
+  become: true
+  # gather_facts: no
+  # pre_tasks:
+  #   - name: create ssh user
+  #     import_role:
+  #       name: common
+  #       tasks_from: init-user
+  #   - setup:
+  #     tags:
+  #       - always
+  roles:
+    - role: common
+      become: yes
+    # - role: donkeycar
+    #   tags:
+    #     - donkeycar
+  vars:
+    # set to true does not enable ufw and does not reboot host
+    ansible_raspbian_testing: false

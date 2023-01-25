@@ -1,0 +1,47 @@
+---
+
+- name: install ufw
+  apt:
+    package: ufw
+    state: present
+
+- name: configure ufw defaults
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  with_items:
+    - { direction: "incoming", policy: "deny" }
+    - { direction: "outgoing", policy: "allow" }
+  when: ufw_rules|length > 0
+  notify:
+    - reload ufw
+
+- name: allow IGMP {{ ufw_allow_igmp }}
+  blockinfile:
+    dest: /etc/ufw/before.rules
+    insertbefore: ^# don't delete the 'COMMIT' line or these rules won't be processed
+    block: |
+      # allow IGMP
+      -A ufw-before-input -p igmp -d 224.0.0.0/4 -j ACCEPT
+      -A ufw-before-output -p igmp -d 224.0.0.0/4 -j ACCEPT
+    state: present
+  when: ufw_allow_igmp|bool
+  notify:
+    - reload ufw
+
+- name: configure ufw rules
+  ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    from_ip: "{{ item.from_ip|default('any') }}"
+  with_items:
+    - "{{ ufw_rules }}"
+  when: ufw_rules|length > 0
+  notify:
+    - reload ufw
+
+- name: enable ufw
+  ufw:
+    state: enabled
+  when: not ansible_raspbian_testing

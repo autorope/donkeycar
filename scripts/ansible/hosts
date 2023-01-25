@@ -1,0 +1,6 @@
+[rpis:children]
+donkeycars
+
+[donkeycars]
+donkey
+flower

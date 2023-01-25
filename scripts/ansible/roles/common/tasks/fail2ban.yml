@@ -1,0 +1,6 @@
+---
+
+- name: install fail2ban
+  apt:
+    package: fail2ban
+    state: "{{ 'present' if fail2ban_enabled else 'absent' }}"

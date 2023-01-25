@@ -1,0 +1,38 @@
+---
+
+- name: check raspi-config values
+  command: "raspi-config nonint get_{{ item }}"
+  with_items: "{{ rpi_cmdline_config.keys()|list }}"
+  when: rpi_cmdline_config is defined
+  register: rpi_config_get_result
+  changed_when: false
+
+- name: configure raspi-config values
+  command: "raspi-config nonint do_{{ item.key }} {{ item.value }}"
+  with_dict: "{{ rpi_cmdline_config }}"
+  when: >
+    rpi_cmdline_config is defined and
+    rpi_config_get_result.results|map(attribute="stdout")|sort != rpi_cmdline_config.values()|list|map("string")|sort
+  notify:
+    - reboot host
+
+- name: update /boot/config.txt
+  lineinfile:
+    dest: /boot/config.txt
+    regexp: "^#?{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_dict: "{{ rpi_boot_config }}"
+  when: rpi_boot_config|length > 0
+  notify:
+    - reboot host
+
+# adding a led on txd pin require enable_uart=1 in /boot/config.txt
+- name: configure shutdown button
+  lineinfile:
+    dest: "/boot/config.txt"
+    regexp: "^dtoverlay=gpio-shutdown.*$"
+    line: "dtoverlay=gpio-shutdown,gpio_pin={{ gpio_shutdown_pin if (gpio_shutdown_pin is defined) else '3' }}"
+    backup: false
+    state: "{{ 'present' if (rpi_shutdown_button_enabled is defined and (rpi_shutdown_button_enabled|bool)) else 'absent' }}"
+  notify:
+    - reboot host

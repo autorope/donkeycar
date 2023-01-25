@@ -1,0 +1,3 @@
+# requirements should also be in roles/desktop/tasks/dev-tools
+ansible
+passlib

@@ -14,6 +14,10 @@ lag_log.csv
 site/*
 build
 
+# ansible
+*.retry
+.vault_pass
+
 #IDE
 .idea
 .spyproject

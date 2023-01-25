@@ -1,0 +1,71 @@
+---
+
+- name: disable ssh remote root login
+  lineinfile:
+    dest: "{{ ssh_sshd_config }}"
+    regexp: "^#?PermitRootLogin"
+    line: "PermitRootLogin no"
+    state: present
+  notify:
+    - restart sshd
+
+- name: enable ssh strict mode
+  lineinfile:
+    dest: "{{ ssh_sshd_config }}"
+    regexp: "^#?StrictModes"
+    line: "StrictModes yes"
+    state: present
+  notify:
+    - restart sshd
+
+- name: disable X11 forwarding
+  lineinfile:
+    dest: "{{ ssh_sshd_config }}"
+    regexp: "^#?X11Forwarding"
+    line: "X11Forwarding no"
+    state: present
+  notify:
+    - restart sshd
+
+- name: disable ssh password login
+  lineinfile:
+    dest: "{{ ssh_sshd_config }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items:
+    - regexp: "^#?PasswordAuthentication"
+      line: "PasswordAuthentication no"
+    - regexp: "^#?ChallengeResponseAuthentication"
+      line: "ChallengeResponseAuthentication no"
+    - regexp: "^#?UsePAM"
+      line: "UsePAM no"
+    - regexp: "^#?PermitEmptyPasswords"
+      line: "PermitEmptyPasswords no"
+  notify:
+    - restart sshd
+
+- name: set ssh allowed users to {{ ansible_ssh_user }}
+  lineinfile:
+    dest: "{{ ssh_sshd_config }}"
+    regexp: "^#?AllowUsers"
+    line: "AllowUsers {{ ansible_ssh_user }}"
+  notify:
+    - restart sshd
+
+- name: add ssh banner info
+  lineinfile:
+    dest: "{{ ssh_sshd_config }}"
+    regexp: "^#?Banner"
+    line: "Banner /etc/issue.net"
+    state: present
+  notify:
+    - restart sshd
+
+- name: update ssh banner
+  copy:
+    content: "{{ ssh_banner }}"
+    dest: /etc/issue.net
+  when: ssh_banner != None
+  notify:
+    - restart sshd

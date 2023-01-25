@@ -1,0 +1,5 @@
+---
+
+- name: change keyboard layout
+  include_role:
+    name: gantsign.keyboard

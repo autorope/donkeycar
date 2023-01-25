@@ -1,0 +1,48 @@
+---
+
+system_hostname: "raspberrypi"
+system_ssh_user_password: "raspberry"
+system_ssh_user_salt: "salt"
+system_locale: "en_US.UTF-8"
+system_timezone: "Europe/Stockholm"
+system_tmpfs_mounts:
+  - { src: "/run", size: "10%", options: "nodev,noexec,nosuid" }
+  - { src: "/tmp", size: "10%", options: "nodev,nosuid" }
+  - { src: "/var/log", size: "10%", options: "nodev,noexec,nosuid" }
+
+system_packages: []
+system_default_editor_path: "/usr/bin/vi"
+logwatch_tmp_dir: /var/cache/logwatch
+logwatch_mailto: "root"
+logwatch_detail: "Low"
+logwatch_interval: "weekly"
+
+postfix_hostname: "{{ ansible_hostname }}"
+postfix_mailname: "{{ ansible_hostname }}"
+postfix_mydestination:
+  - "{{ postfix_hostname }}"
+  - localdomain
+  - localhost
+  - localhost.localdomain
+postfix_relayhost: smtp.gmail.com
+postfix_relayhost_port: 587
+postfix_sasl_user:
+postfix_sasl_password:
+postfix_smtp_tls_cafile: /etc/ssl/certs/ca-certificates.crt
+
+rpi_boot_config: {}
+rpi_cmdline_config: {}
+
+ssh_sshd_config: "/etc/ssh/sshd_config"
+ssh_public_keys: []
+ssh_banner:
+
+ufw_rules:
+  - {rule: "allow", port: "22", proto: "tcp"}
+
+ufw_allow_igmp: false
+
+unattended_upgrades_email_address: root
+unattended_upgrades_auto_reboot: false
+
+ansible_raspbian_testing: false

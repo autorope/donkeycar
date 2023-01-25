@@ -1,0 +1,47 @@
+---
+# Vars for hannseman.raspbian role
+
+# Sets the system hostname
+system_hostname: "raspberrypi"
+# The system password for ansible_user (may be configured as pi).
+# NOTE: Should be changed to something secure.
+system_ssh_user_password: "{{ vault_system_ssh_user_password }}"
+# The password salt to use.
+# NOTE: Should be changed to something secure and random.
+system_ssh_user_salt: "{{ vault_system_ssh_user_salt }}"
+system_ssh_user_sha512_rounds: 5000
+# The system locale
+system_locale: "en_US.UTF-8"
+# The system timezone
+system_timezone: "Europe/Paris"
+# apt-get installs listed packages
+system_packages:
+  - apt-transport-https
+  - vim
+  - libsasl2-modules
+# Path to default editor
+system_default_editor_path: "/usr/bin/vim.basic"
+
+# Updates /boot/config.txt with `{{ key }}: {{ value }}`
+rpi_boot_config: {}
+# run raspi-config -noint do_{{ key }} {{ value }]. Options: https://github.com/raspberrypi-ui/rc_gui/blob/master/src/rc_gui.c#L23-L70
+rpi_cmdline_config: {}
+
+ssh_sshd_config: "/etc/ssh/sshd_config"
+# Required field, list of ssh public keys to update ~/.authorized_keys.
+# Note: One of these keys needs to be one that Ansible is using.
+ssh_public_keys: "{{ vault_ssh_public_keys }}"
+# String to present when connecting to host over ssh
+ssh_banner:
+
+# UFW rules should always allow SSH to keep Ansible functioning
+# Define this in more specific groups
+ufw_rules:
+  - {rule: "allow", port: "22", proto: "tcp"}
+# Configures if igmp traffic should be allowed
+ufw_allow_igmp: true
+
+fail2ban_enabled: true
+
+# Internal variable used when running tests - should not be used.
+ansible_raspbian_testing: false
