@@ -8,13 +8,10 @@
   tags:
     - install
 
+- import_tasks: customize.yml
+  tags:
+    - customize
 
-
-# - name: create donkeycar project directory
-#   become: false
-#   file:
-#     path: "/home/{{ system_ssh_user }}/car"
-#     state: directory
-#     mode: '0755'
-#   tags:
-#     - project
+- import_tasks: createcar.yml
+  tags:
+    - createcar

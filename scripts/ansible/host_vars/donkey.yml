@@ -1,2 +1,4 @@
 ---
 system_hostname: donkey
+
+donkeycar_depthai_enabled: true

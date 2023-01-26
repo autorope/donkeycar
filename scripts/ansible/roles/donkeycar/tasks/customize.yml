@@ -1,0 +1,43 @@
+---
+
+- name: install pigpiod
+  apt:
+    name:
+      - pigpio
+      - python-pigpio
+      - python3-pigpio
+    state: present
+  tags:
+    - pigpiod
+    
+- name: "{{ 'enable and start' if donkeycar_pigpiod_enabled else 'disable and stop' }} pigpiod"
+  systemd:
+    state: "{{ 'started' if donkeycar_pigpiod_enabled else 'stopped' }}"
+    enabled: "{{ donkeycar_pigpiod_enabled }}"
+    name: pigpiod
+  tags:
+    - pigpiod
+
+- name: configure udev rules for depthai
+  copy:
+    src: depthai_udev.rules
+    dest: /etc/udev/rules.d/80-movidius.rules
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+  when: donkeycar_depthai_enabled
+  notify:
+    - reload udev rules
+  tags:
+    - depthai
+
+- name: install donkeycar as editable
+  become: false
+  pip:
+    name:
+      - depthai
+      - depthai-sdk
+    virtualenv: "/home/{{ donkeycar_user }}/env"
+  when: donkeycar_depthai_enabled
+  tags:
+    - depthai

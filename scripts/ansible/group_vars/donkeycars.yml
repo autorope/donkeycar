@@ -5,8 +5,6 @@ ufw_rules:
   - {rule: "allow", port: "8887", proto: "tcp"}
 
 donkeycar_user: "{{ ansible_user }}"
-# additional groups for hardware access
-donkeycar_user_groups: "i2c,gpio,spi"
 
 # Updates /boot/config.txt with `{{ key }}: {{ value }}`
 donkeycar_rpi_boot_config:
@@ -23,5 +21,4 @@ donkeycar_rpi_cmdline_config:
 donkeycar_rpi_shutdown_button_enabled: false
 donkeycar_rpi_shtudown_button_gpio_pin: 17
 
-donkeycar_git_repo: "https://github.com/roboracingleague/donkeycar.git"
-donkeycar_git_repo_branch: "main"
+donkeycar_git_branch: "main"
