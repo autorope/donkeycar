@@ -261,7 +261,7 @@ class OakDCamera:
 
         if self.queue_xout_spatial_data is not None:
             xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
-            self.roi_distances = np.array(dtype=int)
+            self.roi_distances = np.array([],dtype=int)
             for depthData in xout_spatial_data:
                 roi = depthData.config.roi
                 
