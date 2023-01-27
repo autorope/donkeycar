@@ -272,13 +272,13 @@ class OakDCamera:
 
                 coords = depthData.spatialCoordinates
                 
-                self.roi_distances.append([roi.topLeft().x, 
+                self.roi_distances.append(roi.topLeft().x, 
                 roi.topLeft().y, 
                 roi.bottomRight().x,
                 roi.bottomRight().y,
                 coords.x,
                 coords.y,
-                coords.z])
+                coords.z)
         # return self.frame
 
     def run_threaded(self):
