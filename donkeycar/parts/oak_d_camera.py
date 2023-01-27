@@ -272,20 +272,21 @@ class OakDCamera:
 
                 coords = depthData.spatialCoordinates
                 
-                self.roi_distances.append([roi.topLeft().x, 
-                roi.topLeft().y, 
-                roi.bottomRight().x,
-                roi.bottomRight().y,
-                coords.x,
-                coords.y,
-                coords.z])
+                self.roi_distances.append(round(roi.topLeft().x,2)) 
+                self.roi_distances.append(round(roi.topLeft().y,2))
+                self.roi_distances.append(round(roi.bottomRight().x,2))
+                self.roi_distances.append(round(roi.bottomRight().y,2))
+                self.roi_distances.append(int(coords.x))
+                self.roi_distances.append(int(coords.y))
+                self.roi_distances.append(int(coords.z))
+
         # return self.frame
 
     def run_threaded(self):
         if self.enable_depth:
             return self.frame_xout,self.frame_xout_depth
         elif self.enable_obstacle_dist:
-            return self.frame_xout, self.roi_distances
+            return self.frame_xout, np.array(self.roi_distances)
         else:
             return self.frame_xout
 
