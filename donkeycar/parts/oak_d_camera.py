@@ -272,13 +272,13 @@ class OakDCamera:
 
                 coords = depthData.spatialCoordinates
                 
-                self.roi_distances.append(roi.topLeft().x) 
-                self.roi_distances.append(roi.topLeft().y)
-                self.roi_distances.append(roi.bottomRight().x)
-                self.roi_distances.append(roi.bottomRight().y)
-                self.roi_distances.append(coords.x)
-                self.roi_distances.append(coords.y)
-                self.roi_distances.append(coords.z)
+                self.roi_distances.append(round(roi.topLeft().x,2)) 
+                self.roi_distances.append(round(roi.topLeft().y,2))
+                self.roi_distances.append(round(roi.bottomRight().x,2))
+                self.roi_distances.append(round(roi.bottomRight().y,2))
+                self.roi_distances.append(int(coords.x))
+                self.roi_distances.append(int(coords.y))
+                self.roi_distances.append(int(coords.z))
 
         # return self.frame
 

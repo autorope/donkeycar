@@ -550,9 +550,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs += ['cam/depth_array']
         types += ['gray16_array']
 
-    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
-        inputs += ['cam/obstacle_distances']
-        types += ['nparray']
+    # if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
+    #     inputs += ['cam/obstacle_distances']
+    #     types += ['nparray']
 
 
     # rbx
