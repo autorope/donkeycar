@@ -261,7 +261,7 @@ class OakDCamera:
 
         if self.queue_xout_spatial_data is not None:
             xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
-            self.roi_distances = np.array([],dtype=int)
+            self.roi_distances = []
             for depthData in xout_spatial_data:
                 roi = depthData.config.roi
                 
@@ -279,13 +279,14 @@ class OakDCamera:
                 self.roi_distances.append(coords.x)
                 self.roi_distances.append(coords.y)
                 self.roi_distances.append(coords.z)
+
         # return self.frame
 
     def run_threaded(self):
         if self.enable_depth:
             return self.frame_xout,self.frame_xout_depth
         elif self.enable_obstacle_dist:
-            return self.frame_xout, self.roi_distances
+            return self.frame_xout, np.array(self.roi_distances)
         else:
             return self.frame_xout
 
