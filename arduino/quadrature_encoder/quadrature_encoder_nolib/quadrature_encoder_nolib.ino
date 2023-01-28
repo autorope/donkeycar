@@ -107,7 +107,7 @@ unsigned long delayMs = 0;  // time between sends in continuous mode
     }
   }
 
-  #ifdef ENCODER_2_PIN
+  #ifdef ENCODER_2_PIN_A
     void encode_1() {
       if (digitalRead(encoders[1].pin_data)) {
         encoders[1].ticks += 1;
@@ -117,9 +117,9 @@ unsigned long delayMs = 0;  // time between sends in continuous mode
     }
   #endif
 
-  gpio_isr_type _isr_routines[ENCODER_COUNT] = {
+  gpio_isr_type _isr_routines[] = {
       encode_0,
-      #ifdef ENCODER_2_PIN
+      #ifdef ENCODER_2_PIN_A
         encode_1
       #endif
   };
@@ -230,7 +230,7 @@ void resetEncoders() {
   #endif
 }
 
-void readEncoders(long (&ticks)[ENCODER_COUNT]) {
+void readEncoders(long *ticks) {
   // turn off interrupts so we can
   // read mutable shared state atomically
   #ifdef USE_ENCODER_INTERRUPTS
