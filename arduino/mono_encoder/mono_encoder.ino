@@ -83,14 +83,14 @@
 //
 struct EncoderState {
   int pin;                     // gpio pin number
-  volatile long ticks;                  // current tick count
+  volatile long ticks;         // current tick count; do NOT read this directly, use readEncoders()
   uint16_t readings;           // history of last 16 readings
   uint16_t transition;         // value of last 16 readings for next stable state transition 
   unsigned long pollAtMicros;  // time of next poll
 };
 
 // list of encoders
-EncoderState encoders[2] = {
+static EncoderState encoders[] = {
   {ENCODER_PIN, 0L, 0, 0x8000, 0UL},
   #ifdef ENCODER_2_PIN
     {ENCODER_2_PIN, 0L, 0, 0x8000, 0UL},
@@ -134,7 +134,13 @@ unsigned long delayMs = 0;  // time between sends in continuous mode
 // on stable transitions.
 //
 void pollEncoder(EncoderState &encoder) {
-  #ifndef USE_ENCODER_INTERRUPTS
+  #ifdef USE_ENCODER_INTERRUPTS
+      if (NOT_AN_INTERRUPT == digitalPinToInterrupt(encoder.pin)) {
+        Serial.print("Pin ");
+        Serial.print(encoder.pin);
+        Serial.println(" must be an interrupt capable pin when compiled with USE_ENCODER_INTERRUPTS");
+      }
+  #else  
     unsigned long nowMicros = micros();
     if (nowMicros >= encoder.pollAtMicros) {
       //
@@ -156,8 +162,10 @@ void pollEncoder(EncoderState &encoder) {
     }
   #endif
 }
+
+
 void pollEncoders() {
-  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+  for(uint8_t i = 0; i < ENCODER_COUNT; i += 1) {
     pollEncoder(encoders[i]);
   }
 }
@@ -172,7 +180,7 @@ void resetEncoders() {
      noInterrupts();
   #endif
 
-  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+  for(uint8_t i = 0; i < ENCODER_COUNT; i += 1) {
     encoders[i].ticks = 0;
   }
 
@@ -182,14 +190,15 @@ void resetEncoders() {
   #endif
 }
 
-void readEncoders(long ticks[ENCODER_COUNT]) {
+
+void readEncoders(long (&ticks)[ENCODER_COUNT]) {
   // turn off interrupts so we can
   // read mutable shared state atomically
   #ifdef USE_ENCODER_INTERRUPTS
      noInterrupts();
   #endif
 
-  for(int i = 0; i < ENCODER_COUNT; i += 1) {
+  for(uint8_t i = 0; i < ENCODER_COUNT; i += 1) {
     ticks[i] = encoders[i].ticks;
   }
 
@@ -213,7 +222,7 @@ void writeTicks(unsigned long ticksMs) {
   Serial.print(ticks[0]);
   Serial.print(',');
   Serial.print(ticksMs);
-  for(int i = 1; i < ENCODER_COUNT; i += 1) {
+  for(uint8_t i = 1; i < ENCODER_COUNT; i += 1) {
     Serial.print(";");
     Serial.print(ticks[i]);
     Serial.print(',');
@@ -225,11 +234,10 @@ void writeTicks(unsigned long ticksMs) {
 
 void setup() {
   // set all encoder pins to inputs
-  for(int i = 0; i < ENCODER_COUNT; i += 1) {
-    int pin = encoders[i].pin;
-    pinMode(pin, INPUT);
+  for(uint8_t i = 0; i < ENCODER_COUNT; i += 1) {
+    pinMode(encoders[i].pin, INPUT);
     #ifdef USE_ENCODER_INTERRUPTS
-      attachInterrupt(digitalPinToInterrupt(pin), _isr_routines[i], FALLING);
+      attachInterrupt(digitalPinToInterrupt(encoders[i].pin), _isr_routines[i], FALLING);
     #endif
   }
   Serial.begin(115200);
