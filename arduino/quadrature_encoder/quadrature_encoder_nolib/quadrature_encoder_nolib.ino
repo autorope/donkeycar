@@ -230,7 +230,7 @@ void resetEncoders() {
   #endif
 }
 
-void readEncoders(long *ticks) {
+void readEncoders(long ticks[ENCODER_COUNT]) {
   // turn off interrupts so we can
   // read mutable shared state atomically
   #ifdef USE_ENCODER_INTERRUPTS
