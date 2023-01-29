@@ -76,7 +76,7 @@ setup(name='donkeycar',
               'kivy-jetson',
               'pyyaml',
               'plotly',
-              'keras-vis@https://github.com/autorope/keras-vis.git'
+              'keras-vis @ https://github.com/autorope/keras-vis.git',
           ],
           'pc': [
               'matplotlib',
