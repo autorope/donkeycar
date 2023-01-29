@@ -211,7 +211,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
-    path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST, default_throttle=cfg.PID_THROTTLE)
+    path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['recording', 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
 
     if cfg.DONKEY_GYM:
