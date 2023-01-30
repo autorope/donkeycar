@@ -46,11 +46,13 @@ pyenv virtualenv 3.8.15 donkeycar
 pyenv local donkeycar
 pip install .\[pc\]
 
-# MacOS: install tensorflow
+# MacOS: install tensorflow !!! NO : DOES NOT WORKS !!!
 # https://developer.apple.com/metal/tensorflow-plugin/
 # needs python 3.8 ; install tensorflow 2.11
-pip install tensorflow-macos
-pip install tensorflow-metal
+# pip install tensorflow-macos
+# pip install tensorflow-metal
+
+pip install tensorflow
 ```
 
 ### Install Ansible
@@ -84,14 +86,14 @@ chmod 600 ~/.donkey_vault_pass
 - Flash SD-card:
   - RPI: use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) to install [Raspberry Pi OS](https://www.raspberrypi.com/software/operating-systems/)
     - Open "Advanced options" in Raspberry Pi Imager and set
-      - hostname
+      - hostname ; if not set, for first install, use ansible option -e "ansible_host=your_hostname"
       - enable ssh
-      - public key
-      - set user / password (password will be overriden by ansible)
+      - public key ; if not set, will be done by ansible
+      - set user / password (password will be overriden by ansible) ; if not set, ansible will try a default login / password (ie pi/raspberry)
       - configure wireless LAN
 - If not done with Raspberry Pi Imager:
   - Add empty file named `ssh` in boot-partition of the flashed SD-card.
-  - To enable wifi create a file called `wpa_supplicant.conf` in the boot-partition of the flashed SD-card with the following content:
+  - To enable wifi create a file called `wpa_supplicant.conf` in the boot-partition of the flashed SD-card with the following content (multiple networks possible):
 
 ```conf
 country=FR # Your 2-digit country code
@@ -100,6 +102,19 @@ network={
     ssid="YOUR_NETWORK_NAME"
     psk="YOUR_PASSWORD"
     key_mgmt=WPA-PSK
+}
+
+network={
+    ssid="YOUR_NETWORK_NAME"
+    proto=RSN
+    key_mgmt=WPA-EAP
+    pairwise=CCMP
+    auth_alg=OPEN
+    eap=PEAP
+    identity="YOUR_USER"
+    password="YOUR_PASSWORD"
+    phase1="Peaplabel = 0"
+    phase2="auth = MSCHAPV2"
 }
 ```
 

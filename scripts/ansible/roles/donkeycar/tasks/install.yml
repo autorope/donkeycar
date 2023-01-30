@@ -60,8 +60,6 @@
     dest: "/home/{{ donkeycar_user }}/donkeycar"
     version: "{{ donkeycar_git_branch }}"
     force: yes
-    single_branch: yes
-    depth: 1
   tags:
     - clone
 

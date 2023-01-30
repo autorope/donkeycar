@@ -10,7 +10,7 @@
 
 
 # #VEHICLE
-DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
+DRIVE_LOOP_HZ = 35      # the vehicle loop will pause if faster than this speed.
 # MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 # #CAMERA
@@ -27,6 +27,32 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 # # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 # CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 OAK_SEGMENTATION_MODEL_BLOB_PATH = '~/car/models/road-segmentation-adas-0001_openvino_2021.4_6shave.blob'
+
+# OAK-D-LITE: "1080p" for rgb
+# OAK-D-WIDE: "800p" for rgb
+RGB_RESOLUTION = "1080p"
+
+# OAK-D-LITE: from 1920/1080 (1,8)>>240/135 
+# OAK-D-WIDE: from 1280/800  (1,8)>>160/100 (3,16)>>240/150 5/32>>200/125 
+# OAK_D_ISP_SCALE = (3,16)
+
+# OAK-D-LITE: color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
+# OAK-D-WIDE: 240 ou 200 ou 160
+# IMAGE_W = 240
+# OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
+# OAK-D-WIDE: 150 ou 125 ou 100
+# IMAGE_H = 150
+
+# IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+
+OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
+
+# OBSTACLE_AVOIDANCE SETTINGS
+OBSTACLE_AVOIDANCE_ENABLED = False
+OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
+CLOSE_AVOIDANCE_DIST_MM = 1000
+
 
 # # For IMAGE_LIST camera
 # # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
@@ -78,8 +104,13 @@ ROBOCARSHAT_SERIAL_PORT = '/dev/serial0'
 # ROBOCARSHAT_PWM_IN_AUX_IDLE   =   1500
 # ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.09 # 0.095
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.09 # For pilot_angle autonomous mode (aka constant throttle)
 ROBOCARSHAT_LOCAL_ANGLE_BRAKE_THROTTLE = -0.2
+
+#ODOM Sensor max value (max matching lowest speed)
+ROBOCARSHAT_ODOM_IN_MAX = 20000
+ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
+ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
 THROTTLE_BRAKE_REV_FILTER = True # False: ESC is configured in Fw/Rv mode (no braking)
 
@@ -91,6 +122,7 @@ THROTTLE_BRAKE_REV_FILTER = True # False: ESC is configured in Fw/Rv mode (no br
 # # 'output_steering_exp' means special mode where CH3 is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
 # ROBOCARSHAT_CH3_FEATURE = '' 
 ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
+ROBOCARSHAT_CH4_FEATURE = 'none' 
 # ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 # ROBOCARSHAT_STEERING_EXP_INC = 0.05 
 # ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10 
@@ -101,18 +133,17 @@ ROBOCARSHAT_CH3_FEATURE = 'record/pilot'
 # # ROBOCARSHAT_THROTTLE_DISCRET used to control throttle with discretes values (only in user mode, first value must be 0.0)
 # # ROBOCARSHAT_THROTTLE_DISCRET has precedence over ROBOCARSHAT_THROTTLE_FLANGER
 # #Example : ROBOCARSHAT_THROTTLE_DISCRET = [0.0, 0.1, 0.2], if not used, set to None 
-# ROBOCARSHAT_THROTTLE_DISCRET = None
-ROBOCARSHAT_THROTTLE_DISCRET = [0.0, ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE] 
+ROBOCARSHAT_THROTTLE_DISCRET = None
+# ROBOCARSHAT_THROTTLE_DISCRET = [0.0, ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE] 
 
 # # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange (map outputs to given range), ONLY in USER MODE
 # # giving a range between -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # ROBOCARSHAT_THROTTLE_FLANGER = None 
-# ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2] 
-ROBOCARSHAT_THROTTLE_FLANGER = [-0.6,0.6]
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2]
 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
-# ROBOCARSHAT_USE_AUTOCALIBRATION = True
+ROBOCARSHAT_USE_AUTOCALIBRATION = True
 
 ROBOCARSHAT_EMERGENCY_STOP=False
 
