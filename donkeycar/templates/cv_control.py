@@ -91,7 +91,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
     V.add(LineFollower(pid, cfg),
           inputs=['cam/image_array'],
-          outputs=['pilot/steering', 'pilot/throttle', 'recording', 'cv/image_array'],
+          outputs=['pilot/steering', 'pilot/throttle', 'cv/image_array'],
           run_condition="run_pilot")
 
     def dec_pid_d():

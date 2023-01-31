@@ -21,7 +21,6 @@ class LineFollower:
         self.target_pixel = cfg.TARGET_PIXEL  # of the N slots above, which is the ideal relationship target
         self.steering = 0.0 # from -1 to 1
         self.throttle = cfg.THROTTLE_INITIAL # from -1 to 1
-        self.recording = False  # Set to true if desired to save camera frames
         self.delta_th = cfg.THROTTLE_STEP  # how much to change throttle when off
         self.throttle_max = cfg.THROTTLE_MAX
         self.throttle_min = cfg.THROTTLE_MIN
@@ -56,7 +55,11 @@ class LineFollower:
         '''
         main runloop of the CV controller
         input: cam_image, an RGB numpy array
-        output: steering, throttle, and recording flag
+        output: steering, throttle, and the image.
+        If overlay_image is True, then the output image
+        includes and overlay that shows how the 
+        algorithm is working; otherwise the image
+        is just passed-through untouched. 
         '''
         if cam_img is None:
             return 0, 0, False, None
@@ -90,7 +93,7 @@ class LineFollower:
         if self.overlay_image:
             cam_img = self.overlay_display(cam_img, mask, max_yellow, confidense)
 
-        return self.steering, self.throttle, self.recording, cam_img
+        return self.steering, self.throttle, cam_img
 
     def overlay_display(self, cam_img, mask, max_yellow, confidense):
         '''
