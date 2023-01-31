@@ -313,7 +313,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         logging.info("pid: p+ %f" % pid.Kp)
 
 
-    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
     V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
 
 
@@ -432,6 +432,17 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     add_drivetrain(V, cfg)
 
+
+    #
+    # OLED display setup
+    #
+    if cfg.USE_SSD1306_128_32:
+        from donkeycar.parts.oled import OLEDPart
+        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_ROTATION, cfg.SSD1306_RESOLUTION, auto_record_on_throttle)
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+
+
     # Print Joystick controls
     if ctr is not None and isinstance(ctr, JoystickController):
         ctr.print_controls()
@@ -450,8 +461,12 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
 
 class ToggleRecording:
-    def __init__(self, auto_record_on_throttle):
+    def __init__(self, auto_record_on_throttle, record_in_autopilot):
+        """
+        Donkeycar Part that manages the recording state.
+        """
         self.auto_record_on_throttle = auto_record_on_throttle
+        self.record_in_autopilot = record_in_autopilot
         self.recording_latch: bool = None
         self.toggle_latch: bool = False
         self.last_recording = None
@@ -479,7 +494,7 @@ class ToggleRecording:
             recording = self.recording_latch
             self.recording_latch = None
 
-        if recording and mode != 'user':
+        if recording and mode != 'user' and not self.record_in_autopilot:
             logging.info("Ignoring recording in auto-pilot mode")
             recording = False
 

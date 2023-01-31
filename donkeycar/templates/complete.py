@@ -20,7 +20,6 @@ from docopt import docopt
 # import cv2 early to avoid issue with importing after tensorflow
 # see https://github.com/opencv/opencv/issues/14884#issuecomment-599852128
 #
-
 try:
     import cv2
 except:
@@ -493,15 +492,19 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     add_drivetrain(V, cfg)
 
-    # OLED setup
+
+    #
+    # OLED display setup
+    #
     if cfg.USE_SSD1306_128_32:
         from donkeycar.parts.oled import OLEDPart
         auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
         oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_ROTATION, cfg.SSD1306_RESOLUTION, auto_record_on_throttle)
         V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
+    #
     # add tub to save data
-
+    #
     if cfg.USE_LIDAR:
         inputs = ['cam/image_array', 'lidar/dist_array', 'user/steering', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']

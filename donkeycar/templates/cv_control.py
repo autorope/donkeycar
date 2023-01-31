@@ -111,7 +111,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         logging.info("pid: p+ %f" % pid.Kp)
 
 
-    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
     V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
 
 
@@ -190,6 +190,17 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # Setup drivetrain
     #
     add_drivetrain(V, cfg)
+
+
+    #
+    # OLED display setup
+    #
+    if cfg.USE_SSD1306_128_32:
+        from donkeycar.parts.oled import OLEDPart
+        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_ROTATION, cfg.SSD1306_RESOLUTION, auto_record_on_throttle)
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+
 
     # Print Joystick controls
     if ctr is not None and isinstance(ctr, JoystickController):
