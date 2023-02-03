@@ -201,6 +201,10 @@ class OakDCamera:
             camera.setPreviewKeepAspectRatio(False)
             camera.setPreviewSize(width, height) # wich means cropping if aspect ratio kept
             
+            camera.setIspNumFramesPool(1)
+            camera.setVideoNumFramesPool(1)
+            camera.setPreviewNumFramesPool(1)
+
             if rgb_apply_manual_conf:
                 camera.initialControl.setManualExposure(rgb_exposure_time, rgb_sensor_iso)
                 camera.initialControl.setManualWhiteBalance(rgb_wb_manual)
