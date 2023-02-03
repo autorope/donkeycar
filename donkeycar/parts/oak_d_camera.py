@@ -11,8 +11,128 @@ logger.setLevel(logging.INFO)
 class CameraError(Exception):
     pass
 
+class OakDCameraBuilder:
+    def __init__(self):
+        self.width = None
+        self.height = None
+        self.depth = 3
+        self.isp_scale = None
+        self.framerate = 30
+        self.enable_depth = False
+        self.enable_obstacle_dist = False
+        self.rgb_resolution = "1080p"
+        self.rgb_apply_cropping = False
+        self.rgb_sensor_crop_x = 0.0
+        self.rgb_sensor_crop_y = 0.125
+        self.rgb_video_size = (1280,600)
+        self.rgb_apply_manual_conf = False
+        self.rgb_exposure_time = 2000
+        self.rgb_sensor_iso = 1200
+        self.rgb_wb_manual = 2800
+
+    def with_width(self, width):
+        self.width = width
+        return self
+
+    def with_height(self, height):
+        self.height = height
+        return self
+
+    def with_depth(self, depth):
+        self.depth = depth
+        return self
+
+    def with_isp_scale(self, isp_scale):
+        self.isp_scale = isp_scale
+        return self
+
+    def with_framerate(self, framerate):
+        self.framerate = framerate
+        return self
+
+    def with_enable_depth(self, enable_depth):
+        self.enable_depth = enable_depth
+        return self
+
+    def with_enable_obstacle_dist(self, enable_obstacle_dist):
+        self.enable_obstacle_dist = enable_obstacle_dist
+        return self
+
+    def with_rgb_resolution(self, rgb_resolution):
+        self.rgb_resolution = rgb_resolution
+        return self
+
+    def with_rgb_apply_cropping(self, rgb_apply_cropping):
+        self.rgb_apply_cropping = rgb_apply_cropping
+        return self
+
+    def with_rgb_sensor_crop_x(self, rgb_sensor_crop_x):
+        self.rgb_sensor_crop_x = rgb_sensor_crop_x
+        return self
+
+    def with_rgb_sensor_crop_y(self, rgb_sensor_crop_y):
+        self.rgb_sensor_crop_y = rgb_sensor_crop_y
+        return self
+
+    def with_rgb_video_size(self, rgb_video_size):
+        self.rgb_video_size = rgb_video_size
+        return self
+
+    def with_rgb_apply_manual_conf(self, rgb_apply_manual_conf):
+        self.rgb_apply_manual_conf = rgb_apply_manual_conf
+        return self
+
+    def with_rgb_exposure_time(self, rgb_exposure_time):
+        self.rgb_exposure_time = rgb_exposure_time
+        return self
+
+    def with_rgb_sensor_iso(self, rgb_sensor_iso):
+        self.rgb_sensor_iso = rgb_sensor_iso
+        return self
+
+    def with_rgb_wb_manual(self, rgb_wb_manual):
+        self.rgb_wb_manual = rgb_wb_manual
+        return self
+
+    def build(self):
+        return OakDCamera(
+            width=self.width, 
+            height=self.height, 
+            depth=self.depth, 
+            isp_scale=self.isp_scale, 
+            framerate=self.framerate, 
+            enable_depth=self.enable_depth, 
+            enable_obstacle_dist=self.enable_obstacle_dist, 
+            rgb_resolution=self.rgb_resolution,
+            rgb_apply_cropping=self.rgb_apply_cropping,
+            rgb_sensor_crop_x=self.rgb_sensor_crop_x,
+            rgb_sensor_crop_y=self.rgb_sensor_crop_y,
+            rgb_video_size=self.rgb_video_size,
+            rgb_apply_manual_conf=self.rgb_apply_manual_conf,
+            rgb_exposure_time=self.rgb_exposure_time,
+            rgb_sensor_iso=self.rgb_sensor_iso,
+            rgb_wb_manual=self.rgb_wb_manual
+        )
+
 class OakDCamera:
-    def __init__(self, width, height, depth=3, isp_scale=None, framerate=30, enable_depth=False, enable_obstacle_dist=False, rgb_resolution="1080p"):
+    def __init__(self, 
+                 width, 
+                 height, 
+                 depth=3, 
+                 isp_scale=None, 
+                 framerate=30, 
+                 enable_depth=False, 
+                 enable_obstacle_dist=False, 
+                 rgb_resolution="1080p",
+                 rgb_apply_cropping=False,
+                 rgb_sensor_crop_x=0.0,
+                 rgb_sensor_crop_y=0.125,
+                 rgb_video_size=(1280,600),
+                 rgb_apply_manual_conf=False,
+                 rgb_exposure_time = 2000,
+                 rgb_sensor_iso = 1200,
+                 rgb_wb_manual= 2800):
+
         
         self.on = False
         
@@ -67,13 +187,36 @@ class OakDCamera:
             camera.setInterleaved(False)
             camera.setColorOrder(dai.ColorCameraProperties.ColorOrder.RGB)
 
-            # Resize image
-            camera.setPreviewKeepAspectRatio(False)
-            camera.setPreviewSize(width, height) # wich means cropping if aspect ratio kept
             if isp_scale:
                 # see https://docs.google.com/spreadsheets/d/153yTstShkJqsPbkPOQjsVRmM8ZO3A6sCqm7uayGF-EE/edit#gid=0
                 camera.setIspScale(isp_scale) # "scale" sensor size, (9,19) = 910x512 ; seems very slightly faster
             
+            if rgb_apply_cropping:
+                camera.setSensorCrop(rgb_sensor_crop_x, rgb_sensor_crop_y) # When croping to keep only smaller video
+
+                camera.setVideoSize(rgb_video_size) # Desired video size = ispscale result or smaller if croping
+
+
+            # Resize image
+            camera.setPreviewKeepAspectRatio(False)
+            camera.setPreviewSize(width, height) # wich means cropping if aspect ratio kept
+            
+            camera.setIspNumFramesPool(1)
+            camera.setVideoNumFramesPool(1)
+            camera.setPreviewNumFramesPool(1)
+
+            if rgb_apply_manual_conf:
+                camera.initialControl.setManualExposure(rgb_exposure_time, rgb_sensor_iso)
+                camera.initialControl.setManualWhiteBalance(rgb_wb_manual)
+            
+                # camRgb.initialControl.setSharpness(0) 
+                # camRgb.initialControl.setLumaDenoise(0)
+                # camRgb.initialControl.setChromaDenoise(4)
+            else:
+
+                camera.initialControl.SceneMode(dai.CameraControl.SceneMode.SPORTS)
+                camera.initialControl.setAutoWhiteBalanceMode(dai.CameraControl.AutoWhiteBalanceMode.AUTO)
+    
             # Link
             camera.preview.link(xout.input)
 
