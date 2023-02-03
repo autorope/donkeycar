@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from donkeycar.parts.path import CsvPath, CTE, OriginOffset
+from donkeycar.parts.path import CsvPath, CsvThrottlePath, CTE, OriginOffset
 
 
 class TestCsvPath(unittest.TestCase):
@@ -54,6 +54,68 @@ class TestCsvPath(unittest.TestCase):
             self.assertEqual(2, len(xy))
             self.assertEqual((1, 2), xy[0])
             self.assertEqual((3, 4), xy[1])
+
+
+class TestCsvThrottlePath(unittest.TestCase):
+    def test_csvthrottlepath_run(self) -> None:
+        path = CsvThrottlePath()
+        xy, throttles = path.run(True, 1, 2, 1.0)
+        self.assertListEqual([(1, 2)], xy)
+        self.assertListEqual([1.0], throttles)
+        xy, throttles = path.run(True, 3, 4, 0.5)
+        self.assertListEqual([(1, 2), (3, 4)], xy)
+        self.assertListEqual([1.0, 0.5], throttles)
+        self.assertEqual(2, len(path.get_xy()))
+        self.assertEqual(2, len(path.throttles))
+
+    def test_csvthrottlepath_run_not_recording(self) -> None:
+        path = CsvThrottlePath()
+        xy, throttles = path.run(True, 1, 2, 1.0)
+        self.assertListEqual([(1, 2)], xy)
+        self.assertListEqual([1.0], throttles)
+        xy, throttles = path.run(False, 3, 4, 2.0)
+        self.assertListEqual([(1, 2)], xy)
+        self.assertListEqual([1.0], throttles)
+        xy, throttles = path.run(True, 3, 4, 0.5)
+        self.assertListEqual([(1, 2), (3, 4)], xy)
+        self.assertListEqual([1.0, 0.5], throttles)
+        self.assertEqual(2, len(path.get_xy()))
+        self.assertEqual(2, len(path.throttles))
+
+    def test_csvthrottlepath_save(self) -> None:
+        path = CsvThrottlePath()
+        path.run(True, 1, 2, 1.0)
+        path.run(True, 3, 4, 0.5)
+        with tempfile.TemporaryDirectory() as td:
+            filename = os.path.join(td, "test.csv")
+            path.save(filename)
+            with open(filename, "r") as testfile:
+                lines = testfile.readlines()
+                self.assertEqual(2, len(lines))
+                self.assertEqual("1, 2, 1.0", lines[0].strip())
+                self.assertEqual("3, 4, 0.5", lines[1].strip())
+
+    def test_csvthrottlepath_reset(self) -> None:
+        path = CsvThrottlePath()
+        path.run(True, 1, 2, 1.0)
+        path.run(True, 3, 4, 0.5)
+        path.reset()
+        self.assertEqual([], path.get_xy())
+
+    def test_csvthrottlepath_load(self) -> None:
+        path = CsvThrottlePath()
+        path.run(True, 1, 2, 1.0)
+        path.run(True, 3, 4, 0.5)
+        with tempfile.TemporaryDirectory() as td:
+            filename = os.path.join(td, "test.csv")
+            path.save(filename)
+            path.reset()
+            path.load(filename)
+            xy = path.get_xy()
+            self.assertEqual(2, len(xy))
+            self.assertEqual((1, 2), xy[0])
+            self.assertEqual((3, 4), xy[1])
+            self.assertListEqual([1.0, 0.5], path.throttles)
 
 
 class TestCTE(unittest.TestCase):
