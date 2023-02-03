@@ -211,7 +211,7 @@ class OakDCamera:
             else:
 
                 camera.initialControl.SceneMode(dai.CameraControl.SceneMode.SPORTS)
-                camera.initialControl.setAutoWhiteBalanceMode(dai.CameraControl.AutoWhiteBalanceMode.FLUORESCENT)
+                camera.initialControl.setAutoWhiteBalanceMode(dai.CameraControl.AutoWhiteBalanceMode.AUTO)
     
             # Link
             camera.preview.link(xout.input)
