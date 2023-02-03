@@ -836,14 +836,50 @@ def add_camera(V, cfg, camera_type):
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
               threaded=True)
     elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
-        from donkeycar.parts.oak_d_camera import OakDCamera
-        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
+        from donkeycar.parts.oak_d_camera import OakDCameraBuilder
+        # cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
+        cam = OakDCameraBuilder() \
+                    .with_width(cfg.IMAGE_W) \
+                    .with_height(cfg.IMAGE_H) \
+                    .with_depth(cfg.IMAGE_DEPTH) \
+                    .with_isp_scale(cfg.OAK_D_ISP_SCALE) \
+                    .with_framerate(cfg.CAMERA_FRAMERATE) \
+                    .with_enable_depth(cfg.OAK_ENABLE_DEPTH_MAP) \
+                    .with_enable_obstacle_dist(cfg.OAK_OBSTACLE_DETECTION_ENABLED) \
+                    .with_rgb_resolution(cfg.RGB_RESOLUTION) \
+                    .with_rgb_apply_cropping(cfg.RGB_APPLY_CROPPING) \
+                    .with_rgb_sensor_crop_x(cfg.RGB_SENSOR_CROP_X) \
+                    .with_rgb_sensor_crop_y(cfg.RGB_SENSOR_CROP_Y) \
+                    .with_rgb_video_size(cfg.RGB_VIDEO_SIZE) \
+                    .with_rgb_apply_manual_conf(cfg.RGB_APPLY_MANUAL_CONF) \
+                    .with_rgb_exposure_time(cfg.RGB_EXPOSURE_TIME) \
+                    .with_rgb_sensor_iso(cfg.RGB_SENSOR_ISO) \
+                    .with_rgb_wb_manual(cfg.RGB_WB_MANUAL) \
+                    .build()
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/depth_array'],
               threaded=True)
     elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
-        from donkeycar.parts.oak_d_camera import OakDCamera
-        cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
+        from donkeycar.parts.oak_d_camera import OakDCameraBuilder
+        # cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
+        cam = OakDCameraBuilder() \
+                    .with_width(cfg.IMAGE_W) \
+                    .with_height(cfg.IMAGE_H) \
+                    .with_depth(cfg.IMAGE_DEPTH) \
+                    .with_isp_scale(cfg.OAK_D_ISP_SCALE) \
+                    .with_framerate(cfg.CAMERA_FRAMERATE) \
+                    .with_enable_depth(cfg.OAK_ENABLE_DEPTH_MAP) \
+                    .with_enable_obstacle_dist(cfg.OAK_OBSTACLE_DETECTION_ENABLED) \
+                    .with_rgb_resolution(cfg.RGB_RESOLUTION) \
+                    .with_rgb_apply_cropping(cfg.RGB_APPLY_CROPPING) \
+                    .with_rgb_sensor_crop_x(cfg.RGB_SENSOR_CROP_X) \
+                    .with_rgb_sensor_crop_y(cfg.RGB_SENSOR_CROP_Y) \
+                    .with_rgb_video_size(cfg.RGB_VIDEO_SIZE) \
+                    .with_rgb_apply_manual_conf(cfg.RGB_APPLY_MANUAL_CONF) \
+                    .with_rgb_exposure_time(cfg.RGB_EXPOSURE_TIME) \
+                    .with_rgb_sensor_iso(cfg.RGB_SENSOR_ISO) \
+                    .with_rgb_wb_manual(cfg.RGB_WB_MANUAL) \
+                    .build()
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/obstacle_distances'],
               threaded=True)
