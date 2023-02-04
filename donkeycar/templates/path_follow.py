@@ -226,7 +226,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #         # V.add(lpos, inputs=lpos.inputs)
     #     lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
     #     V.add(lpos, inputs=lpos.inputs)
-    #     lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
+    #     lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/steering'], level="INFO", logger="kinematics")
     #     V.add(lpos, inputs=lpos.inputs)
 
     def save_path():
@@ -294,7 +294,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # This will use the cross track error and PID constants to try to steer back towards the path.
     pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE, cfg.USE_CONSTANT_THROTTLE, min_throttle=cfg.PID_THROTTLE)
-    V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
+    V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/steering', 'pilot/throttle'], run_condition="run_pilot")
 
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
