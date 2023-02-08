@@ -150,7 +150,11 @@ class SerialEncoder(AbstractEncoder):
         if self.ser is not None:
             self.ser.stop()
 
-    # TODO: serious bug; we need to have independant directions for each encoder, either poll_ticks takes encoder index or we keep track of direction for each channel.
+    #
+    # TODO: serious bug; we need to have independant directions for each encoder;
+    #       either poll_ticks takes encoder index or we keep track of direction for each channel.
+    #       This is not an immediate problem because we never try to drive left and right wheels in the opposite direction.
+    #
     def poll_ticks(self, direction:int):
         """
         read the encoder ticks
@@ -373,6 +377,7 @@ class MockEncoder(AbstractEncoder):
         self.ticks_per_second = ticks_per_second
         self.throttle = 0
         self.ticks = 0
+        self.remainder_ticks = 0
         self.timestamp = None
         self.running = False
 
@@ -402,7 +407,10 @@ class MockEncoder(AbstractEncoder):
 
         if self.running:
             delta_time = timestamp - last_time
-            self.ticks += int(abs(self.throttle) * direction * self.ticks_per_second * delta_time)
+            delta_ticks = abs(self.throttle) * direction * self.ticks_per_second * delta_time + self.remainder_ticks
+            delta_int_ticks = int(delta_ticks)
+            self.ticks += delta_int_ticks
+            self.remainder_ticks = delta_ticks - delta_int_ticks
 
     def get_ticks(self, encoder_index: int = 0) -> int:
         return self.ticks
