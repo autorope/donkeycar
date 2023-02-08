@@ -33,7 +33,6 @@ class BicyclePose:
                                                 MockEncoder)
         from donkeycar.parts.odometer import Odometer
 
-        # distance_per_revolution = cfg.ENCODER_PPR * cfg.MM_PER_TICK / 1000
         distance_per_revolution = cfg.WHEEL_RADIUS * 2 * 3.141592653589793
 
         self.poll_delay_secs = poll_delay_secs
@@ -55,7 +54,7 @@ class BicyclePose:
         elif cfg.ENCODER_TYPE == "arduino":
             self.encoder = SerialEncoder(serial_port=SerialPort(cfg.ODOM_SERIAL, cfg.ODOM_SERIAL_BAUDRATE), debug=cfg.ODOM_DEBUG)
         elif cfg.ENCODER_TYPE.upper() == "MOCK":
-            self.encoder = MockEncoder(cfg.ENCODER_PPR * 10)  # max 10 revolutions per second
+            self.encoder = MockEncoder(cfg.MOCK_TICKS_PER_SECOND)
         else:
             print("No supported encoder found")
 
@@ -79,16 +78,9 @@ class BicyclePose:
         else:
             logger.error("Unable to initialize BicyclePose part")
 
-    def update(self):
-        """
-        This will get called on it's own thread.
-        throttle: sign of throttle is use used to determine direction.
-        timestamp: timestamp for update or None to use current time.
-                   This is useful for creating deterministic tests.
-        """
-        while self.running:
+    def poll(self, timestamp=None):
+        if self.running:
             if self.tachometer:
-                timestamp = None
                 throttle, steering = self.inputs
                 if isinstance(self.encoder, MockEncoder):
                     self.encoder.run(throttle, timestamp)
@@ -97,6 +89,15 @@ class BicyclePose:
                 steering_angle = self.steerer.run(steering)
                 self.reading = self.bicycle.run(distance, steering_angle, timestamp)
 
+    def update(self):
+        """
+        This will get called on it's own thread.
+        throttle: sign of throttle is use used to determine direction.
+        timestamp: timestamp for update or None to use current time.
+                   This is useful for creating deterministic tests.
+        """
+        while self.running:
+            self.poll()
             time.sleep(self.poll_delay_secs)  # give other threads time
 
     def run_threaded(self, throttle:float=0.0, steering:float=0.0, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
@@ -107,6 +108,20 @@ class BicyclePose:
                 steering = 0
 
             self.inputs = (throttle, steering)
+
+            return self.reading
+
+        return 0, 0, 0, 0, 0, 0, 0, 0, timestamp
+
+    def run(self, throttle:float=0.0, steering:float=0.0, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
+        if self.running and self.tachometer:
+            if throttle is None:
+                throttle = 0
+            if steering is None:
+                steering = 0
+
+            self.inputs = (throttle, steering)
+            self.poll(timestamp)
 
             return self.reading
 
@@ -157,8 +172,8 @@ class UnicyclePose:
             ]
         elif cfg.ENCODER_TYPE.upper() == "MOCK":
             self.encoder = [
-                MockEncoder(cfg.ENCODER_PPR * 10),
-                MockEncoder(cfg.ENCODER_PPR * 10)
+                MockEncoder(cfg.MOCK_TICKS_PER_SECOND),
+                MockEncoder(cfg.MOCK_TICKS_PER_SECOND),
             ]
         else:
             print("No supported encoder found")
@@ -193,17 +208,11 @@ class UnicyclePose:
             self.unicycle = Unicycle(cfg.AXLE_LENGTH, cfg.ODOM_DEBUG)
         self.running = True
 
-    def update(self):
-        """
-        This will get called on it's own thread.
-        throttle: sign of throttle is use used to determine direction.
-        timestamp: timestamp for update or None to use current time.
-                   This is useful for creating deterministic tests.
-        """
-        while self.running:
+    def poll(self, timestamp=None):
+        if self.running:
             if self.tachometer:
-                left_timestamp = None
-                right_timestamp = None
+                left_timestamp = timestamp
+                right_timestamp = timestamp
                 left_throttle, right_throttle = self.inputs
                 if isinstance(self.encoder[0], MockEncoder):
                     self.encoder[0].run(left_throttle, left_timestamp)
@@ -217,6 +226,15 @@ class UnicyclePose:
 
                 self.reading = self.unicycle.run(left_distance, right_distance, right_timestamp)
 
+    def update(self):
+        """
+        This will get called on it's own thread.
+        throttle: sign of throttle is use used to determine direction.
+        timestamp: timestamp for update or None to use current time.
+                   This is useful for creating deterministic tests.
+        """
+        while self.running:
+            self.poll()
             time.sleep(self.poll_delay_secs)  # give other threads time
 
     def run_threaded(self, throttle:float=0.0, steering:float=0.0, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
@@ -227,6 +245,19 @@ class UnicyclePose:
                 steering = 0
 
             self.inputs = differential_steering(throttle, steering)
+            return self.reading
+
+        return 0, 0, 0, 0, 0, 0, 0, 0, timestamp
+
+    def run(self, throttle:float=0.0, steering:float=0.0, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
+        if self.running and self.tachometer:
+            if throttle is None:
+                throttle = 0
+            if steering is None:
+                steering = 0
+
+            self.inputs = differential_steering(throttle, steering)
+            self.poll(timestamp)
             return self.reading
 
         return 0, 0, 0, 0, 0, 0, 0, 0, timestamp
