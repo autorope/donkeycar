@@ -486,8 +486,101 @@ class TestTwoWheelSteeringThrottle(unittest.TestCase):
 
 from donkeycar.templates.complete import add_odometry
 from donkeycar.vehicle import Vehicle
-from donkeycar.parts.velocity import VelocityNormalize
 from donkeycar.parts.kinematics import NormalizeSteeringAngle
+import math
+
+def calc_center_of_rotation(wheelbase, front_wheel, orientation, steering_angle):
+    """
+    Calculate the center of rotation for a bicycle turn.
+
+    Args:
+        wheelbase (float): The length of the bicycle wheelbase.
+        front_wheel (tuple): The x and y coordinates of the front wheel (x, y).
+        orientation (float): The orientation of the bicycle in radians.
+        steering_angle (float): The steering angle of the bicycle in radians.
+
+    Returns:
+        tuple: The x and y coordinates of the center of rotation
+               and the radius of the rotation (x, y, radius) .
+               if the steering_angle is zero, the function returns the position
+               of the front wheel as the center of rotation and a radius of zero,
+               since there is no turn in this case.
+    """
+    x, y = front_wheel
+    if steering_angle == 0:
+        return (x, y, 0)
+    else:
+        R = wheelbase / math.tan(steering_angle)
+        cx = x - R * math.sin(orientation)
+        cy = y + R * math.cos(orientation)
+        return (cx, cy, R)
+
+def calc_end_point(center, radius, point, radians):
+    """
+    Calculates the ending point on a circle given the center of the circle, the radius of the circle,
+    a point on the circle and a distance along the circle in radians from the given point.
+
+    Arguments:
+    center -- the center of the circle represented as a tuple (x, y) (tuple)
+    radius -- the radius of the circle (float)
+    point -- a point on the circle represented as a tuple (x, y) (tuple)
+    radians -- the distance along the circle in radians from the given point (float)
+
+    Returns:
+    end_point -- the ending point on the circle represented as a tuple (x, y) (tuple)
+    """
+    x = center[0] + radius * math.cos(math.atan2(point[1] - center[1], point[0] - center[0]) + radians)
+    y = center[1] + radius * math.sin(math.atan2(point[1] - center[1], point[0] - center[0]) + radians)
+    end_point = (x, y)
+    return end_point
+
+def calc_bicycle_pose(wheelbase, front_wheel, orientation, steering_angle, distance):
+    """
+    Calculate the ending pose for a bicycle with the given wheel base,
+    starting front wheel position, orientation, and steering angle that has
+    driven the given distance.
+    :param wheelbase:
+    :param front_wheel:
+    :param orientation:
+    :param steering_angle:
+    :return: ending pose as tuple of (x, y, orientation)
+    """
+
+    # - calculate the center and radius of the turn,
+    center_x, center_y, turn_radius = calc_center_of_rotation(wheelbase,
+                                                           front_wheel,
+                                                           orientation,
+                                                           steering_angle)
+    # - calculate the circumference of a full turn
+    turn_circumference = 2 * math.pi * turn_radius
+
+    # - calculate the angular distance travelled in radians
+    turn_radians = distance / turn_circumference * 2 * math.pi if turn_circumference > 0 else 0
+
+    # - calculate the end position on the arc
+    ending_x, ending_y = calc_end_point((center_x, center_y),
+                                        turn_radius, (0, 0), turn_radians)
+
+    # - calculate the end orientation
+    ending_angle = 0 + math.tan(steering_angle) * distance / wheelbase
+    return ending_x, ending_y, ending_angle
+
+
+def calc_line_length(p1, p2):
+    """
+    Calculate the length of a line segment given its endpoints.
+
+    Args:
+        p1 (tuple): The x and y coordinates of the first endpoint (x1, y1).
+        p2 (tuple): The x and y coordinates of the second endpoint (x2, y2).
+
+    Returns:
+        float: The length of the line segment.
+    """
+    x1, y1 = p1
+    x2, y2 = p2
+    return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+
 
 class TestVehicle(unittest.TestCase):
 
@@ -497,9 +590,13 @@ class TestVehicle(unittest.TestCase):
             pass
 
         cfg = Config()
-        cfg.DONKEY_GYM = True
+        # cfg.DONKEY_GYM = True
         # cfg.__setattr__('DONKEY_GYM', True)
-        cfg.SIM_RECORD_DISTANCE = True
+        # cfg.SIM_RECORD_DISTANCE = True
+
+        cfg.DRIVE_LOOP_HZ = 30
+
+        cfg.DRIVE_TRAIN_TYPE = "mock"
         cfg.AXLE_LENGTH = 0.175  # length of axle; distance between left and right wheels in meters
         cfg.WHEEL_BASE = 0.20  # distance between front and back wheels in meters
         cfg.WHEEL_RADIUS = 0.04  # radius of wheel in meters
@@ -509,38 +606,26 @@ class TestVehicle(unittest.TestCase):
         cfg.MIN_THROTTLE = 0.1  # throttle (0 to 1.0) that corresponds to MIN_SPEED, throttle below which car stalls
         cfg.HAVE_ODOM = True
         cfg.HAVE_ODOM_2 = False
-        cfg.ENCODER_PPR = 20
+        cfg.ENCODER_PPR = 600
         cfg.MM_PER_TICK = (
                                       cfg.WHEEL_RADIUS * 2 * 3.141592653589793) / cfg.ENCODER_PPR * 1000  # How much travel with a single encoder tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
         cfg.ODOM_SMOOTHING = 1  # number of odometer readings to use when calculating velocity
         cfg.ODOM_DEBUG = False  # Write out values on vel and distance as it runs
+        cfg.ENCODER_TYPE = "MOCK"
+        cfg.TACHOMETER_MODE = 1  # FORWARD_ONLY
+
+        cfg.ENCODER_TYPE = "MOCK"
+        cfg.MOCK_TICKS_PER_SECOND = cfg.ENCODER_PPR * 10
 
         return cfg
 
     def initialize_vehicle(self, cfg):
         # Initialize vehicle pipeline
         v = Vehicle()
-        add_odometry(v, cfg)
+        add_odometry(v, cfg, threaded=False)
         return v
 
-    def test_bicycle(self):
-
-        cfg = self.initialize_config()
-        v = self.initialize_vehicle(cfg)
-        v.update_parts()
-
-        # now feed it simulated values and step the vehicle loop
-        time.sleep(0.05)    # simulate 20 frames per second
-        v.mem.put(['dist/left', 'dist/right'], [0.05, 0.05])
-        v.update_parts()
-        distance, x, y, orientation = v.mem.get(['enc/distance', 'pos/x', 'pos/y', 'pos/angle'])
-        print(distance, x, y)
-        self.assertEqual(0.05, distance)
-        self.assertEqual(0.05, x)
-        self.assertEqual(0.00, y)
-        self.assertEqual(0.00, orientation)
-
-    def do_90degree_turn(self, vehicle, cfg, forward_velocity, steering_angle):
+    def do_drive(self, cfg, forward_velocity, steering_angle):
         steering_angle = limit_angle(steering_angle)
         turn_direction = sign(steering_angle)
 
@@ -563,64 +648,83 @@ class TestVehicle(unittest.TestCase):
             # going straight
             turn_distance = forward_velocity * 2 # just use 2 seconds of driving
 
+        #
+        # calculate a ticks_per_second value for the mock encoder
+        #
         turn_seconds = turn_distance / forward_velocity
-        steps_per_second = 20
-        turn_steps = math.floor(turn_seconds * steps_per_second)
-        time_per_step = 1 / steps_per_second  # 20 odometry readings per second
+        steps_per_second = cfg.DRIVE_LOOP_HZ
+        turn_steps = steps_per_second * turn_seconds
+
+        meters_per_revolution = cfg.WHEEL_RADIUS * 2 * math.pi
+        turn_revolutions = turn_distance / meters_per_revolution
+        turn_ticks = turn_revolutions * cfg.ENCODER_PPR
+        ticks_per_second = turn_ticks / turn_seconds
+
+        #
+        # set turns-per-tick for mock encoder into configuration
+        #
+        cfg.MOCK_TICKS_PER_SECOND = ticks_per_second
 
         # set throttle and steering angle
-        normalize_velocity = VelocityNormalize(min_speed=cfg.MIN_SPEED, max_speed=cfg.MAX_SPEED, min_normal_speed=cfg.MIN_THROTTLE)
-        throttle = normalize_velocity.run(forward_velocity)
+        # normalize_velocity = VelocityNormalize(min_speed=cfg.MIN_SPEED, max_speed=cfg.MAX_SPEED, min_normal_speed=cfg.MIN_THROTTLE)
+        # throttle = normalize_velocity.run(forward_velocity)
+        throttle = 1.0
         normalize_steering = NormalizeSteeringAngle(max_steering_angle=cfg.MAX_STEERING_ANGLE)
         steering = normalize_steering.run(steering_angle);
-        vehicle.mem.put(['throttle', 'angle'], [throttle, steering])
-
-        # add a part that updates the simulated distance
-        class mock_distance:
-            def __init__(self, forward_distance, time_seconds):
-                self.forward_distance = forward_distance
-                self.total_seconds = time_seconds
-                self.start_time = None
-                self.count = 0
-
-            def run(self):
-                self.count += 1
-                now = time.time()
-                if self.start_time is None:
-                    self.start_time = now
-                fraction = (now - self.start_time) / self.total_seconds
-                distance = self.forward_distance
-                if fraction <= 1.0:
-                    distance = (now - self.start_time) / self.total_seconds * self.forward_distance
-                return (distance, distance)
-
-        vehicle.add(mock_distance(forward_distance=turn_distance, time_seconds=turn_seconds), outputs=['dist/left', 'dist/right'])
 
         # run the vehicle and then stop it
-        vehicle.start(rate_hz=steps_per_second, max_loop_count=turn_steps)
+        vehicle = self.initialize_vehicle(cfg)
+        vehicle.mem.put(['throttle', 'steering'], [throttle, steering])
+
+        # run the vehicle loop and get how long it took
+        loop_count, loop_seconds = vehicle.start(rate_hz=steps_per_second, max_loop_count=int(turn_steps), verbose=True)
 
         # read the final values from vehicle memory
         distance, velocity, pose_x, pose_y, pose_angle = vehicle.mem.get(['enc/distance', 'enc/velocity', 'pos/x', 'pos/y', 'pos/angle', ])
-        self.assertAlmostEqual(turn_distance, distance, 3)
+
+        #
+        # use the actual loop time to determine the expected distance
+        #
+        loop_ticks = ticks_per_second * loop_seconds
+        loop_distance = loop_ticks / cfg.ENCODER_PPR * meters_per_revolution
+        self.assertAlmostEqual(loop_distance, distance, 2)
+        self.assertLessEqual(abs(loop_distance - distance) / distance, 0.005)  # final error less than 0.5%
+
+
+        #
+        # calculate the expected ending position using the center of the turn,
+        # the radius of the turn, the circumference of the turn
+        # and the distance travelled to get the point on the turn where
+        # the vehicle ends up
+        #
+        ending_x, ending_y, ending_angle = calc_bicycle_pose(cfg.WHEEL_BASE, (0, 0), 0, steering_angle, distance)
+
+
+        print(f"Expected Distance = {loop_distance}")
+        print(f"Calculated Pose = ({pose_x}, {pose_y}, {pose_angle})")
+        print(f"Expected ending Pose = ({ending_x}, {ending_y}, {ending_angle})")
+
+
+        #
+        # TODO: using loop_distance, calculate the point on the traversed
+        #       arc where the vehicle finished.
+        #
         if steering_angle != 0.0:
-            self.assertLessEqual((R - pose_x) / R, 0.005)  # final error less than 0.5%
-            self.assertLessEqual((turn_direction * R - pose_y) / R, 0.005)  # final error less than 0.5%
-            self.assertLessEqual(((turn_direction * math.pi / 2) - pose_angle) / (math.pi / 2), 0.005)
+            self.assertLessEqual(abs(ending_x - pose_x) / ending_x, 0.005)  # final error less than 0.5%
+            self.assertLessEqual(abs(ending_y - pose_y) / ending_y, 0.005)  # final error less than 0.5%
+            self.assertLessEqual(abs(ending_angle - pose_angle) / ending_angle, 0.005)
 
     def test_drive_straight(self):
         # 12.5 degrees steering angle
         cfg = self.initialize_config()
-        v = self.initialize_vehicle(cfg)
-        self.do_90degree_turn(v, cfg, forward_velocity=cfg.MAX_SPEED / 2, steering_angle = 0.0)
+        self.do_drive(cfg, forward_velocity=cfg.MAX_SPEED / 2, steering_angle = 0.0)
 
     def test_turn_left(self):
         # 12.5 degrees steering angle
         cfg = self.initialize_config()
-        v = self.initialize_vehicle(cfg)
-        self.do_90degree_turn(v, cfg, forward_velocity=cfg.MAX_SPEED / 2, steering_angle = cfg.MAX_STEERING_ANGLE / 2)
+        self.do_drive(cfg, forward_velocity=cfg.MAX_SPEED / 2, steering_angle =cfg.MAX_STEERING_ANGLE / 2)
 
     def test_turn_right(self):
         # -12.5 degrees steering angle
         cfg = self.initialize_config()
-        v = self.initialize_vehicle(cfg)
-        self.do_90degree_turn(v, cfg, forward_velocity=cfg.MAX_SPEED / 2, steering_angle = -cfg.MAX_STEERING_ANGLE / 2)
+        self.do_drive(cfg, forward_velocity=cfg.MAX_SPEED / 2, steering_angle =-cfg.MAX_STEERING_ANGLE / 2)

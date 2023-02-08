@@ -3,7 +3,7 @@ import unittest
 
 from donkeycar.parts.tachometer import Tachometer
 from donkeycar.parts.tachometer import AbstractEncoder
-from donkeycar.parts.tachometer import TachometerMode
+from donkeycar.parts.tachometer import EncoderMode
 from donkeycar.parts.tachometer import InverseTachometer
 
 
@@ -39,7 +39,7 @@ class TestTachometer(unittest.TestCase):
         #
         tachometer = MockTachometer(
             ticks_per_revolution=10, 
-            direction_mode=TachometerMode.FORWARD_ONLY)
+            direction_mode=EncoderMode.FORWARD_ONLY)
 
         ts = time.time()
         revolutions, timestamp = tachometer.run(throttle=1, timestamp=ts)
@@ -78,7 +78,7 @@ class TestTachometer(unittest.TestCase):
         #
         tachometer = MockTachometer(
             ticks_per_revolution=10, 
-            direction_mode=TachometerMode.FORWARD_REVERSE)
+            direction_mode=EncoderMode.FORWARD_REVERSE)
 
         ts = time.time()
         revolutions, timestamp = tachometer.run(throttle=1, timestamp=ts)
@@ -116,7 +116,7 @@ class TestTachometer(unittest.TestCase):
         #
         tachometer = MockTachometer(
             ticks_per_revolution=10, 
-            direction_mode=TachometerMode.FORWARD_REVERSE_STOP)
+            direction_mode=EncoderMode.FORWARD_REVERSE_STOP)
 
         ts = time.time()
         revolutions, timestamp = tachometer.run(throttle=1, timestamp=ts)
