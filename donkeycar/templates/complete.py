@@ -789,7 +789,7 @@ def add_camera(V, cfg, camera_type):
             V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
 
-def add_odometry(V, cfg):
+def add_odometry(V, cfg, threaded=True):
     """
     If the configuration support odometry, then
     add encoders, odometry and kinematics to the vehicle pipeline
@@ -807,7 +807,7 @@ def add_odometry(V, cfg):
             outputs = ['enc/distance', 'enc/speed', 'pos/x', 'pos/y',
                        'pos/angle', 'vel/x', 'vel/y', 'vel/angle',
                        'nul/timestamp'],
-            threaded = True)
+            threaded = threaded)
 
 
 #
