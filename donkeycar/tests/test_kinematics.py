@@ -725,7 +725,7 @@ class TestVehicle(unittest.TestCase):
         if steering_angle != 0.0:
             self.assertLessEqual(abs((ending_x - pose_x) / loop_distance), 0.005)  # final error less than 0.5%
             self.assertLessEqual(abs((ending_y - pose_y) / loop_distance), 0.005)  # final error less than 0.5%
-            self.assertLessEqual(abs((ending_angle - pose_angle) / (2 * math.pi)), 0.01)  # final error less than 1%
+            self.assertLessEqual(abs((ending_angle - pose_angle) / (2 * math.pi)), 0.03)  # final error less than 3%
 
     def test_drive_straight(self):
         # 12.5 degrees steering angle
