@@ -12,7 +12,7 @@ def limit_angle(angle:float):
     """
     limit angle to pi to -pi radians (one full circle)
     """
-    return math.atan2(math.sin(angle), math.cos(angle));
+    return math.atan2(math.sin(angle), math.cos(angle))
     # twopi = math.pi * 2
     # while(angle > math.pi):
     #     angle -= twopi
@@ -30,15 +30,16 @@ class Pose2D:
 
 class Bicycle:
     """
-    Bicycle forward kinematics for a car-like vehicle (Ackerman steering)
+    Bicycle forward kinematics for a car-like vehicle (Ackerman steering),
+    using the point midway between the front wheels as a reference point,
     takes the steering angle in radians and output of the odometer 
     and turns those into:
-    - forward distance and velocity,
+    - forward distance and velocity of the reference point between the front wheels,
     - pose; angle aligned (x,y) position and orientation in radians
     - pose velocity; change in angle aligned position and orientation per second
     @param wheel_base: distance between the front and back wheels
 
-    NOTE: this version uses the point midway between the rear wheels
+    NOTE: this version uses the point midway between the front wheels
           as the point of reference.
     see https://thef1clan.com/2020/09/21/vehicle-dynamics-the-kinematic-bicycle-model/
     """
@@ -48,6 +49,7 @@ class Bicycle:
         self.timestamp:float = 0
         self.forward_distance:float = 0
         self.forward_velocity:float = 0
+        self.steering_angle = None
         self.pose = Pose2D()
         self.pose_velocity = Pose2D()
         self.running:bool = True
@@ -55,7 +57,8 @@ class Bicycle:
     def run(self, forward_distance:float, steering_angle:float, timestamp:float=None) -> Tuple[float, float, float, float, float, float, float, float, float]:
         """
         params
-            forward_distance: distance the reference point has travelled
+            forward_distance: distance the reference point between the
+                              front wheels has travelled
             steering_angle: angle in radians of the front 'wheel' from forward.
                             In this case left is positive, right is negative,
                             and directly forward is zero.
@@ -63,12 +66,14 @@ class Bicycle:
         returns
             distance
             velocity
-            x is horizontal position of point midway between wheels
-            y is vertical position of point midway between wheels
-            angle is orientation in radians around point midway between wheels
-            x' is the horizontal velocity
-            y' is the vertical velocity
-            angle' is the angular velocity
+            x is horizontal position of reference point midway between front wheels
+            y is vertical position of reference point midway between front wheels
+            angle is orientation in radians of the vehicle along it's wheel base
+                  (along the line between the reference points midway between
+                   the front wheels and and midway between the back wheels)
+            x' is the horizontal velocity (rate of change of reference point along horizontal axis)
+            y' is the vertical velocity (rate of change of reference point along vertical axis)
+            angle' is the angular velocity (rate of change of orientation)
             timestamp
 
         """
@@ -79,8 +84,9 @@ class Bicycle:
 
         if self.running:
             if 0 == self.timestamp:
-                self.forward_distance = forward_distance
+                self.forward_distance = 0
                 self.forward_velocity=0
+                self.steering_angle = steering_angle
                 self.pose = Pose2D()
                 self.pose_velocity = Pose2D()
                 self.timestamp = timestamp
@@ -90,33 +96,50 @@ class Bicycle:
                 #
                 delta_time = timestamp - self.timestamp
                 delta_distance = forward_distance - self.forward_distance
-                forward_velocity = delta_distance / delta_time
+                delta_steering_angle = steering_angle - self.steering_angle
+
+                #
+                # new position and orientation
+                # assumes delta_time is small and so assumes movement is linear
+                #
+                # x, y, angle = update_bicycle_front_wheel_pose(
+                #     self.pose,
+                #     self.wheel_base,
+                #     self.steering_angle + delta_steering_angle / 2,
+                #     delta_distance)
+                #
+                # #
+                # # update velocities
+                # #
+                # forward_velocity = delta_distance / delta_time
+                # self.pose_velocity.angle = (angle - self.pose.angle) / delta_time
+                # self.pose_velocity.x = (x - self.pose.x) / delta_time
+                # self.pose_velocity.y = (y - self.pose.y) / delta_time
+                # #
+                # # update pose
+                # #
+                # self.pose.x = x
+                # self.pose.y = y
+                # self.pose.angle = angle
 
                 #
                 # new velocities
                 #
-                angle_velocity = bicycle_angular_velocity(self.wheel_base, forward_velocity, steering_angle)
-                delta_angle = angle_velocity * delta_time
+                forward_velocity = delta_distance / delta_time
+                self.pose_velocity.angle = bicycle_angular_velocity(self.wheel_base, forward_velocity, steering_angle)
+                delta_angle = self.pose_velocity.angle * delta_time
                 estimated_angle = limit_angle(self.pose.angle + delta_angle / 2)
-                x_velocity = forward_velocity * math.cos(estimated_angle)
-                y_velocity = forward_velocity * math.sin(estimated_angle)
+                self.pose_velocity.x = forward_velocity * math.cos(estimated_angle)
+                self.pose_velocity.y = forward_velocity * math.sin(estimated_angle)
 
                 #
-                # new position and orientation
+                # new pose
                 #
-                x = self.pose.x + x_velocity * delta_time
-                y = self.pose.y + y_velocity * delta_time
-                angle = limit_angle(self.pose.angle + delta_angle)
+                self.pose.x = self.pose.x + self.pose_velocity.x * delta_time
+                self.pose.y = self.pose.y + self.pose_velocity.y * delta_time
+                self.pose.angle = limit_angle(self.pose.angle + delta_angle)
 
-                #
-                # update pose and velocities
-                #
-                self.pose.x = x
-                self.pose.y = y
-                self.pose.angle = angle
-                self.pose_velocity.x = x_velocity
-                self.pose_velocity.y = y_velocity
-                self.pose_velocity.angle = angle_velocity
+                self.steering_angle = steering_angle
 
                 #
                 # update odometry
@@ -185,6 +208,41 @@ class InverseBicycle:
         return forward_velocity, steering_angle, timestamp
 
 
+def update_bicycle_front_wheel_pose(front_wheel, wheel_base, steering_angle, distance):
+    """
+    Calculates the ending position of the front wheel of a bicycle kinematics model.
+    This is expected to be called at a high rate such that we can model the
+    the travel as a line rather than an arc.
+
+    Arguments:
+    front_wheel -- starting pose at front wheel as tuple of (x, y, angle) where
+                x -- initial x-coordinate of the front wheel (float)
+                y -- initial y-coordinate of the front wheel (float)
+                angle -- initial orientation of the vehicle along it's wheel base (in radians) (float)
+    wheel_base -- length of the wheel base (float)
+    steering_angle -- steering angle (in radians) (float)
+    distance -- distance travelled by the vehicle (float)
+
+    Returns:
+    A tuple (x_f, y_f, theta_f) representing the ending position and orientation of the front wheel.
+    x_f -- ending x-coordinate of the front wheel (float)
+    y_f -- ending y-coordinate of the front wheel (float)
+    theta_f -- ending orientation of the vehicle (in radians) (float)
+    """
+    if distance == 0:
+        return front_wheel
+
+    if steering_angle == 0:
+        x = front_wheel.x + distance * math.cos(front_wheel.angle)
+        y = front_wheel.y + distance * math.sin(front_wheel.angle)
+        theta = front_wheel.angle
+    else:
+        theta = limit_angle(front_wheel.angle + math.tan(steering_angle) * distance / wheel_base)
+        x = front_wheel.x + distance * math.cos(theta)
+        y = front_wheel.y + distance * math.sin(theta)
+    return x, y, theta
+
+
 def bicycle_steering_angle(wheel_base:float, forward_velocity:float, angular_velocity:float) -> float:
     """
     Calculate bicycle steering for the vehicle from the angular velocity.
@@ -197,7 +255,8 @@ def bicycle_steering_angle(wheel_base:float, forward_velocity:float, angular_vel
     # math.tan(steering_angle) = angular_velocity * self.wheel_base / forward_velocity
     # steering_angle = math.atan(angular_velocity * self.wheel_base / forward_velocity)
     #
-    return math.atan(angular_velocity * wheel_base / forward_velocity)
+    # return math.atan(angular_velocity * wheel_base / forward_velocity)
+    return limit_angle(math.asin(angular_velocity * wheel_base / forward_velocity))
 
 
 def bicycle_angular_velocity(wheel_base:float, forward_velocity:float, steering_angle:float) -> float:
@@ -208,9 +267,11 @@ def bicycle_angular_velocity(wheel_base:float, forward_velocity:float, steering_
     """
     #
     # for car-like (bicycle model) vehicle, for the back axle:
-    # angular_velocity = forward_velocity * (math.tan(steering_angle) /  wheel_base)
+    # angular_velocity = forward_velocity * math.tan(steering_angle) /  wheel_base if velocity is from rear wheels
+    # angular_velocity = forward_velocity * math.tan(steering_angle) /  wheel_base if velocity is from front wheels
     #
-    return forward_velocity * math.tan(steering_angle) / wheel_base
+    # return forward_velocity * math.tan(steering_angle) / wheel_base # velocity for rear wheel
+    return forward_velocity * math.sin(steering_angle) / wheel_base  # velocity of front wheel
 
 
 class BicycleNormalizeAngularVelocity:

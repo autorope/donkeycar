@@ -138,7 +138,7 @@ class TestBicycle(unittest.TestCase):
         # calculate length of circle's perimeter
         # see [Rear-axle reference point](https://thef1clan.com/2020/09/21/vehicle-dynamics-the-kinematic-bicycle-model/)
         #
-        R = abs(wheel_base / math.tan(steering_angle))  # Radius of turn (radius to Instantaneous Center of Rotation)
+        R = abs(wheel_base / math.sin(steering_angle))  # Radius of turn (radius to Instantaneous Center of Rotation)
         C = 2 * math.pi * R                             # Circumference of turn
 
         turn_distance = C / 4  # drive the 90 degrees of perimeter
@@ -486,8 +486,9 @@ class TestTwoWheelSteeringThrottle(unittest.TestCase):
 
 from donkeycar.templates.complete import add_odometry
 from donkeycar.vehicle import Vehicle
-from donkeycar.parts.kinematics import NormalizeSteeringAngle
+from donkeycar.parts.kinematics import NormalizeSteeringAngle, limit_angle
 import math
+
 
 def calc_center_of_rotation(wheelbase, front_wheel, orientation, steering_angle):
     """
@@ -510,12 +511,13 @@ def calc_center_of_rotation(wheelbase, front_wheel, orientation, steering_angle)
     if steering_angle == 0:
         return (x, y, 0)
     else:
-        R = wheelbase / math.tan(steering_angle)
+        R = wheelbase / math.sin(steering_angle)
         cx = x - R * math.sin(orientation)
         cy = y + R * math.cos(orientation)
-        return (cx, cy, R)
+        return (cx, cy, abs(R))  # radius is always positive
 
-def calc_end_point(center, radius, point, radians):
+
+def calc_arc_end_point(center, radius, point, radians):
     """
     Calculates the ending point on a circle given the center of the circle, the radius of the circle,
     a point on the circle and a distance along the circle in radians from the given point.
@@ -529,10 +531,17 @@ def calc_end_point(center, radius, point, radians):
     Returns:
     end_point -- the ending point on the circle represented as a tuple (x, y) (tuple)
     """
-    x = center[0] + radius * math.cos(math.atan2(point[1] - center[1], point[0] - center[0]) + radians)
-    y = center[1] + radius * math.sin(math.atan2(point[1] - center[1], point[0] - center[0]) + radians)
+    center_x, center_y = center
+    point_x, point_y = point
+
+    theta = math.atan2(point_y - center_y, point_x - center_x)
+    theta_end = theta + radians
+
+    x = center_x + radius * math.cos(theta_end)
+    y = center_y + radius * math.sin(theta_end)
     end_point = (x, y)
     return end_point
+
 
 def calc_bicycle_pose(wheelbase, front_wheel, orientation, steering_angle, distance):
     """
@@ -546,23 +555,36 @@ def calc_bicycle_pose(wheelbase, front_wheel, orientation, steering_angle, dista
     :return: ending pose as tuple of (x, y, orientation)
     """
 
-    # - calculate the center and radius of the turn,
-    center_x, center_y, turn_radius = calc_center_of_rotation(wheelbase,
-                                                           front_wheel,
-                                                           orientation,
-                                                           steering_angle)
-    # - calculate the circumference of a full turn
-    turn_circumference = 2 * math.pi * turn_radius
+    if distance == 0:
+        return front_wheel.x, front_wheel.y, orientation
 
-    # - calculate the angular distance travelled in radians
-    turn_radians = distance / turn_circumference * 2 * math.pi if turn_circumference > 0 else 0
+    if steering_angle == 0:
+        ending_x = front_wheel[0] + distance * math.cos(orientation)
+        ending_y = front_wheel[1] + distance * math.sin(orientation)
+        ending_angle = orientation
+    else:
+        # - calculate the center and radius of the turn,
+        center_x, center_y, turn_radius = calc_center_of_rotation(wheelbase,
+                                                               front_wheel,
+                                                               orientation,
+                                                               steering_angle)
+        print(f"Center of rotation = ({center_x}, {center_y})")
+        print(f"Radius of turn = {turn_radius}")
 
-    # - calculate the end position on the arc
-    ending_x, ending_y = calc_end_point((center_x, center_y),
-                                        turn_radius, (0, 0), turn_radians)
+        # - calculate the circumference of a full turn
+        turn_circumference = 2 * math.pi * turn_radius
 
-    # - calculate the end orientation
-    ending_angle = 0 + math.tan(steering_angle) * distance / wheelbase
+        # - calculate the angular distance travelled in radians
+        turn_radians = (distance / turn_circumference) * 2 * math.pi
+        turn_radians *= sign(steering_angle)  # right turn is negative angle
+
+        # - calculate the end position on the arc
+        ending_x, ending_y = calc_arc_end_point((center_x, center_y),
+                                                turn_radius, front_wheel, turn_radians)
+
+        # - calculate the end orientation
+        ending_angle = limit_angle(orientation + math.tan(steering_angle) * distance / wheelbase)
+
     return ending_x, ending_y, ending_angle
 
 
@@ -594,7 +616,7 @@ class TestVehicle(unittest.TestCase):
         # cfg.__setattr__('DONKEY_GYM', True)
         # cfg.SIM_RECORD_DISTANCE = True
 
-        cfg.DRIVE_LOOP_HZ = 30
+        cfg.DRIVE_LOOP_HZ = 50
 
         cfg.DRIVE_TRAIN_TYPE = "mock"
         cfg.AXLE_LENGTH = 0.175  # length of axle; distance between left and right wheels in meters
@@ -641,9 +663,9 @@ class TestVehicle(unittest.TestCase):
         #
         turn_distance = None
         if steering_angle != 0.0:
-            R = abs(wheel_base / math.tan(steering_angle))  # Radius of turn (radius to Instantaneous Center of Rotation)
-            C = 2 * math.pi * R                             # Circumference of turn
-            turn_distance = C / 4  # drive the 90 degrees of perimeter
+            R = wheel_base / math.sin(steering_angle)  # Radius of turn (radius to Instantaneous Center of Rotation)
+            C = 2 * math.pi * R                        # Circumference of turn
+            turn_distance = abs(C / 4)  # drive the 90 degrees of perimeter
         else:
             # going straight
             turn_distance = forward_velocity * 2 # just use 2 seconds of driving
@@ -666,11 +688,9 @@ class TestVehicle(unittest.TestCase):
         cfg.MOCK_TICKS_PER_SECOND = ticks_per_second
 
         # set throttle and steering angle
-        # normalize_velocity = VelocityNormalize(min_speed=cfg.MIN_SPEED, max_speed=cfg.MAX_SPEED, min_normal_speed=cfg.MIN_THROTTLE)
-        # throttle = normalize_velocity.run(forward_velocity)
-        throttle = 1.0
+        throttle = 1.0  # full throttle, so we can use the cfg.MOCK_TICKS_PER_SECOND as the encoder rate
         normalize_steering = NormalizeSteeringAngle(max_steering_angle=cfg.MAX_STEERING_ANGLE)
-        steering = normalize_steering.run(steering_angle);
+        steering = normalize_steering.run(steering_angle)
 
         # run the vehicle and then stop it
         vehicle = self.initialize_vehicle(cfg)
@@ -690,7 +710,6 @@ class TestVehicle(unittest.TestCase):
         self.assertAlmostEqual(loop_distance, distance, 2)
         self.assertLessEqual(abs(loop_distance - distance) / distance, 0.005)  # final error less than 0.5%
 
-
         #
         # calculate the expected ending position using the center of the turn,
         # the radius of the turn, the circumference of the turn
@@ -699,20 +718,14 @@ class TestVehicle(unittest.TestCase):
         #
         ending_x, ending_y, ending_angle = calc_bicycle_pose(cfg.WHEEL_BASE, (0, 0), 0, steering_angle, distance)
 
-
         print(f"Expected Distance = {loop_distance}")
         print(f"Calculated Pose = ({pose_x}, {pose_y}, {pose_angle})")
         print(f"Expected ending Pose = ({ending_x}, {ending_y}, {ending_angle})")
 
-
-        #
-        # TODO: using loop_distance, calculate the point on the traversed
-        #       arc where the vehicle finished.
-        #
         if steering_angle != 0.0:
-            self.assertLessEqual(abs(ending_x - pose_x) / ending_x, 0.005)  # final error less than 0.5%
-            self.assertLessEqual(abs(ending_y - pose_y) / ending_y, 0.005)  # final error less than 0.5%
-            self.assertLessEqual(abs(ending_angle - pose_angle) / ending_angle, 0.005)
+            self.assertLessEqual(abs((ending_x - pose_x) / loop_distance), 0.005)  # final error less than 0.5%
+            self.assertLessEqual(abs((ending_y - pose_y) / loop_distance), 0.005)  # final error less than 0.5%
+            self.assertLessEqual(abs((ending_angle - pose_angle) / (2 * math.pi)), 0.01)  # final error less than 1%
 
     def test_drive_straight(self):
         # 12.5 degrees steering angle
