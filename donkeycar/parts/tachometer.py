@@ -313,7 +313,6 @@ class GpioEncoder(AbstractEncoder):
             logger.warn("GpioEncoder debounce_ns will be ignored.")
         self.lock = threading.Lock()
 
-
     def _cb(self):
         """
         Callback routine called by GPIO when a tick is detected
@@ -389,9 +388,7 @@ class MockEncoder(AbstractEncoder):
         # poll() passed None for throttle and steering,
         # so we use the last value passed to run()
         #
-        if throttle is None:
-            throttle = self.throttle
-        else:
+        if throttle is not None:
             self.throttle = throttle
 
     def start_ticks(self):
@@ -537,7 +534,8 @@ class Tachometer:
             thisRevolutions = self.ticks / self.ticks_per_revolution
 
             # update throttle for next poll()
-            self.throttle = throttle if throttle is not None else 0
+            if throttle is not None:
+                self.throttle = throttle
             self.timestamp = timestamp if timestamp is not None else time.time()
 
             # return (revolutions, timestamp)
