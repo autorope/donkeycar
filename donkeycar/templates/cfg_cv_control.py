@@ -552,6 +552,12 @@ FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency 
 #
 # computer vision template
 #
+CV_CONTROLLER_MODULE = "donkeycar.parts.line_follower"
+CV_CONTROLLER_CLASS = "LineFollower"
+CV_CONTROLLER_INPUTS = ['cam/image_array']
+CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array']
+CV_CONTROLLER_CONDITION = "run_pilot"
+
 OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in web ui
                       # NOTE: this does not affect what is saved to the data
 SCAN_Y = 60           # num pixels from the top to start horiz scan

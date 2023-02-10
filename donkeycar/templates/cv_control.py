@@ -84,16 +84,10 @@ def drive(cfg, use_joystick=False, camera_type='single'):
           outputs=['run_user', "run_pilot", "ui/image_array"])
 
 
-
     #
-    # Computer Vision Controller
+    # PID controller to be used with cv_controller
     #
     pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
-    V.add(LineFollower(pid, cfg),
-          inputs=['cam/image_array'],
-          outputs=['pilot/steering', 'pilot/throttle', 'cv/image_array'],
-          run_condition="run_pilot")
-
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
         logging.info("pid: d- %f" % pid.Kd)
@@ -110,6 +104,15 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         pid.Kp += cfg.PID_P_DELTA
         logging.info("pid: p+ %f" % pid.Kp)
 
+    #
+    # Computer Vision Controller
+    #
+    add_cv_controller(V, cfg, pid,
+                      cfg.CV_CONTROLLER_MODULE,
+                      cfg.CV_CONTROLLER_CLASS,
+                      cfg.CV_CONTROLLER_INPUTS,
+                      cfg.CV_CONTROLLER_OUTPUTS,
+                      cfg.CV_CONTROLLER_CONDITION)
 
     recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
     V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
@@ -225,6 +228,33 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
             max_loop_count=cfg.MAX_LOOPS)
+
+
+#
+# Computer Vision Controller
+#
+def add_cv_controller(
+        V, cfg, pid,
+        module_name="donkeycar.parts.line_follower",
+        class_name="LineFollower",
+        inputs=['cam/image_array'],
+        outputs=['pilot/steering', 'pilot/throttle', 'cv/image_array'],
+        run_condition="run_pilot"):
+
+        # __import__ the module
+        module = __import__(module_name)
+
+        # walk module path to get to module with class
+        for attr in module_name.split('.')[1:]:
+            module = getattr(module, attr)
+
+        my_class = getattr(module, class_name)
+
+        # add instance of class to vehicle
+        V.add(my_class(pid, cfg),
+              inputs=inputs,
+              outputs=outputs,
+              run_condition=run_condition)
 
 
 if __name__ == '__main__':
