@@ -1,0 +1,9 @@
+[donkeycars:children]
+rpis
+nanos
+
+[rpis]
+strada
+
+[nanos]
+pc12

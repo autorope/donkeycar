@@ -1,9 +1,0 @@
----
-
-ansible_python_interpreter: /usr/bin/python3
-
-# user to create in a new pi, to use later as ansible_user
-system_ssh_user: donkey
-ansible_user: "{{ system_ssh_user }}"
-
-ansible_become_password: "{{ vault_system_ssh_user_password }}"

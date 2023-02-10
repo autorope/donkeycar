@@ -1,0 +1,69 @@
+---
+
+# Sets the system hostname
+system_hostname: "donkey"
+
+# Default user, to use if system_ssh_user does not exists yet
+system_default_user: "pi"
+system_default_user_password: "raspberry"
+
+# The system user and password for ansible_user (may be configured as pi).
+system_ssh_user: "donkey" # user to use as ansible_user (created in a new pi)
+# NOTE: Should be changed to something secure.
+system_ssh_user_password: "donkeycar"
+# The password salt to use.
+# NOTE: Should be changed to something secure and random.
+system_ssh_user_salt: "salt"
+system_ssh_user_sha512_rounds: 5000
+system_ssh_user_groups: "adm,dialout,cdrom,sudo,audio,video,plugdev,users,input,netdev"
+
+# The system locale
+system_locale: "en_US.UTF-8"
+# Generate additionals locales, usefull for remote login with a different locale
+system_generate_locales:
+  - "fr_FR.UTF-8"
+# The system timezone
+system_timezone: "Europe/Paris"
+
+system_tmpfs_mounts:
+  - { src: "/run", size: "10%", options: "nodev,noexec,nosuid" }
+  - { src: "/tmp", size: "10%", options: "nodev,nosuid" }
+  - { src: "/var/log", size: "10%", options: "nodev,noexec,nosuid" }
+
+# apt-get installs listed packages
+system_packages:
+  - apt-transport-https
+  - vim
+  - libsasl2-modules
+  - git
+  - curl
+# Path to default editor
+system_default_editor_path: "/usr/bin/vi"
+
+# setup gantsign.keyboard role
+keyboard_model: pc104 # The XKB keyboard model name.
+keyboard_layout: fr # The XKB keyboard layout name.
+keyboard_variant: '' # The XKB keyboard variant components.
+keyboard_options: '' # The XKB keyboard option components.
+keyboard_backspace: guess # The behavior of <BackSpace> and <Delete> keys.
+
+ssh_sshd_config: "/etc/ssh/sshd_config"
+# Required field, list of ssh public keys to update ~/.authorized_keys.
+# Note: One of these keys needs to be one that Ansible is using.
+ssh_public_keys: []
+# String to present when connecting to host over ssh
+ssh_banner:
+
+# UFW rules should always allow SSH to keep Ansible functioning
+# Define this in more specific groups
+ufw_enabled: true
+ufw_rules:
+  - {rule: "allow", port: "22", proto: "tcp"}
+  - {rule: "allow", port: "8887", proto: "tcp"}
+# Configures if igmp traffic should be allowed
+ufw_allow_igmp: true
+
+fail2ban_enabled: false
+
+# Internal variable used when running tests - should not be used.
+ansible_raspbian_testing: false

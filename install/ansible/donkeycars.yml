@@ -1,0 +1,34 @@
+---
+
+- name: set-up system
+  hosts: donkeycars
+  become: true
+  gather_facts: no
+  pre_tasks:
+    - name: create ssh user
+      import_role:
+        name: system
+        tasks_from: init-user
+    - setup:
+      tags:
+        - always
+  roles:
+    - role: system
+      tags:
+        - system
+
+- name: set-up pi hardware
+  hosts: rpis
+  become: true
+  roles:
+    - role: hardware-pi
+      tags:
+        - hardware
+
+- name: set-up donkeycar
+  hosts: donkeycars
+  become: true
+  roles:
+    - role: donkeycar
+      tags:
+        - donkeycar
