@@ -411,6 +411,7 @@ class ControlPanel(BoxLayout):
     screen = ObjectProperty()
     speed = NumericProperty(1.0)
     record_display = StringProperty()
+    labels_display = StringProperty()
     clock = None
     fwd = None
 
@@ -530,6 +531,16 @@ class TubEditor(PaddedBoxLayout):
             selected = list(range(self.lr[0], last_id))
             selected += list(range(self.lr[1]))
         tub.delete_records(selected) if is_del else tub.restore_records(selected)
+
+    def apply_label_lr(self):
+        tub = tub_screen().ids.tub_loader.tub
+        if self.lr[1] >= self.lr[0]:
+            selected = list(range(*self.lr))
+        else:
+            last_id = tub.manifest.current_index
+            selected = list(range(self.lr[0], last_id))
+            selected += list(range(self.lr[1]))
+        tub.label_records(selected, self.ids.label_spinner.text)
 
 
 class TubFilter(PaddedBoxLayout):
@@ -664,6 +675,13 @@ class TubScreen(Screen):
         self.ids.config_manager.load_action()
         self.ids.tub_loader.update_tub()
 
+    def _get_label(self,index):
+        labels=[]
+        for aLabel in self.ids.tub_loader.tub.manifest.labeled_indexes:
+            if index in self.ids.tub_loader.tub.manifest.labeled_indexes[aLabel] :
+                labels.append(aLabel)
+        return labels
+
     def on_index(self, obj, index):
         """ Kivy method that is called if self.index changes"""
         if index >= 0:
@@ -675,6 +693,8 @@ class TubScreen(Screen):
         self.ids.img.update(record)
         i = record.underlying['_index']
         self.ids.control_panel.record_display = f"Record {i:06}"
+        self.ids.control_panel.labels_display = f"{self._get_label(i)}"
+
 
     def status(self, msg):
         self.ids.status.text = msg
