@@ -243,6 +243,7 @@ class Manifest(object):
         self.catalog_paths = list()
         self.catalog_metadata = dict()
         self.deleted_indexes = set()
+        self.labeled_indexes = dict()
         self._updated_session = False
         has_catalogs = False
 
@@ -304,6 +305,18 @@ class Manifest(object):
         self.deleted_indexes.difference_update(record_indexes)
         self._update_catalog_metadata(update=True)
 
+    def label_records(self, record_indexes, label):
+        # Does not actually delete the record, but marks it as deleted.
+        if isinstance(record_indexes, int):
+            record_indexes = {record_indexes}
+        if (label not in self.labeled_indexes.keys()):
+            self.labeled_indexes[label]=set()
+        to_reset = self.labeled_indexes[label].intersection(record_indexes)
+        to_set = set(record_indexes) - self.labeled_indexes[label]
+        self.labeled_indexes[label].difference_update(to_reset)
+        self.labeled_indexes[label].update(to_set)
+        self._update_catalog_metadata(update=True)
+
     def _add_catalog(self):
         current_length = len(self.catalog_paths)
         catalog_name = f'catalog_{current_length}.catalog'
@@ -340,6 +353,12 @@ class Manifest(object):
         self.current_index = catalog_metadata['current_index']
         self.max_len = catalog_metadata['max_len']
         self.deleted_indexes = set(catalog_metadata['deleted_indexes'])
+        if ('labeled_indexes' in catalog_metadata):
+            tmp = dict(catalog_metadata['labeled_indexes'])
+            for aLabel in tmp:
+                self.labeled_indexes[aLabel]=set()
+                for idx in tmp[aLabel]:
+                    self.labeled_indexes[aLabel].add(idx)
 
     def _write_contents(self):
         self.seekeable.truncate_until_end(0)
@@ -358,6 +377,9 @@ class Manifest(object):
         catalog_metadata['current_index'] = self.current_index
         catalog_metadata['max_len'] = self.max_len
         catalog_metadata['deleted_indexes'] = list(self.deleted_indexes)
+        catalog_metadata['labeled_indexes'] = dict()
+        for label in self.labeled_indexes:
+            catalog_metadata['labeled_indexes'][label]=list(self.labeled_indexes[label])
         self.catalog_metadata = catalog_metadata
         self.seekeable.writeline(json.dumps(catalog_metadata))
 

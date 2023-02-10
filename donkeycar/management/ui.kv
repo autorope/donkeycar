@@ -10,6 +10,7 @@
 #:set layout_pad_xy [layout_pad_x, layout_pad_x // 2]
 #:set supported_models ['linear', 'categorical', 'inferred', 'memory', 'behavior', 'localizer', 'rnn', '3d']
 #:set drive_models [pre + t for pre in['', 'tflite_', 'tensorrt_'] for t in supported_models ]
+#:set labels ['NA','left', 'right', 'middle']
 
 <PaddedBoxLayout>:
     size_hint_y: None
@@ -151,6 +152,9 @@
         Label:
             id: record_num
             text: root.record_display
+        Label:
+            id: labels
+            text: root.labels_display
         MySpinner:
             id: control_spinner
             pos_hint: {'center': (.5, .5)}
@@ -211,6 +215,19 @@
     Label:
         text: '[' + str(root.lr[0]) + ', ' + str(root.lr[1]) + ')'
         # text: f'Index range [{root.lr[0]}, {root.lr[1]})'
+    MySpinner:
+        id: label_spinner
+        pos_hint: {'center': (.5, .5)}
+        size_hint_x: 0.5
+        text: 'Label'
+        values: labels
+    Button:
+        text: 'Apply Label'
+        on_press:
+            root.apply_label_lr()
+            msg = f'Labeled records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can delete multiple ranges before doing so.'
+            app.tub_screen.ids.status.text = msg
     Button:
         text: 'Delete'
         on_press:

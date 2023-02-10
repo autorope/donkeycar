@@ -80,6 +80,9 @@ class Tub(object):
     def delete_records(self, record_indexes):
         self.manifest.delete_records(record_indexes)
 
+    def label_records(self, record_indexes, label):
+        self.manifest.label_records(record_indexes, label)
+
     def delete_last_n_records(self, n):
         # build ordered list of non-deleted indexes
         all_alive_indexes = sorted(set(range(self.manifest.current_index))
