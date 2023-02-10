@@ -2,7 +2,7 @@
 
 ## Principle 
 To avoid breaking `donkey ui` a lot, idea is the following :
-- in `donkey ui` we can assign each images to one of the possible label class defined in ui.kv :
+- in `donkey ui` we can assign each images to one of the possible label class defined in `/donkeycar/management/ui.kv` :
 ```
 #:set labels ['NA','left', 'right', 'middle']
 ``` 
