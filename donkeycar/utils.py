@@ -190,7 +190,7 @@ def load_image(filename, cfg):
     :param cfg:                 donkey config
     :return np.ndarray:         numpy uint8 image array
     """
-    img_arr = load_image_resize(filename, cfg.IMAGE_W, cfg.IMAGE_H, cfg.IMAGE_DEPTH)
+    img_arr = load_image_sized(filename, cfg.IMAGE_W, cfg.IMAGE_H, cfg.IMAGE_DEPTH)
 
     return img_arr
 
