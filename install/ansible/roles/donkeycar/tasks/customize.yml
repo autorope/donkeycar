@@ -1,6 +1,6 @@
 ---
 
-- name: install pigpiod
+- name: "{{ 'install' if donkeycar_pigpiod_enabled else 'uninstall' }} pigpiod"
   apt:
     name:
       - pigpio
