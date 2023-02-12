@@ -31,8 +31,8 @@ MAX_LOOPS = None        # the vehicle loop can abort after this many iterations,
 # CAMERA configuration
 #
 CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
-IMAGE_W = 160
-IMAGE_H = 120
+IMAGE_W = 320
+IMAGE_H = 240
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 CAMERA_VFLIP = False
@@ -560,8 +560,8 @@ CV_CONTROLLER_CONDITION = "run_pilot"
 
 OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in web ui
                       # NOTE: this does not affect what is saved to the data
-SCAN_Y = 60           # num pixels from the top to start horiz scan
-SCAN_HEIGHT = 10      # num pixels high to grab from horiz scan
+SCAN_Y = 120          # num pixels from the top to start horiz scan
+SCAN_HEIGHT = 20      # num pixels high to grab from horiz scan
 COLOR_THRESHOLD_LOW  = (0, 50, 50)    # hsv dark yellow
 COLOR_THRESHOLD_HIGH = (50, 255, 255) # hsv light yellow
 TARGET_PIXEL = None   # In note None, then of the N slots above, which is the ideal relationship target
