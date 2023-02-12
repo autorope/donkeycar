@@ -138,9 +138,13 @@ class ImgCanny:
         if img_arr is None:
             return None
 
-        return cv2.Canny(img_arr, 
-                         self.low_threshold, 
-                         self.high_threshold)
+        try:
+            return cv2.Canny(img_arr,
+                             self.low_threshold,
+                             self.high_threshold)
+        except:
+            logger.error("Unable to apply canny edge detection to image.")
+            return None
 
     def shutdown(self):
         pass
@@ -155,8 +159,12 @@ class ImgGaussianBlur:
         if img_arr is None:
             return None
 
-        return cv2.GaussianBlur(img_arr, 
-                                (self.kernel_size, self.kernel_size), 0)
+        try:
+            return cv2.GaussianBlur(img_arr,
+                                    (self.kernel_size, self.kernel_size), 0)
+        except:
+            logger.error("Unable to apply gaussian blur to image.")
+            return None
 
     def shutdown(self):
         pass
@@ -241,7 +249,7 @@ class CvImageView(object):
             cv2.imshow('frame', image)
             cv2.waitKey(1)
         except:
-            pass
+            logger.error("Unable to open image window.")
 
     def shutdown(self):
         cv2.destroyAllWindows()
