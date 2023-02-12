@@ -10,7 +10,6 @@ from donkeycar.parts.kinematics import differential_steering
 from donkeycar.parts.tachometer import Tachometer, MockEncoder
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 class UnicycleDistance:
     def run(self, left, right):
