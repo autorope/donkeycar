@@ -2,4 +2,4 @@
 
 ## Ansible
 
-See `scripts/ansible/README.md`
+See `install/ansible/README.md`
