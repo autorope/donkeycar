@@ -2,10 +2,7 @@
 
 - name: create car - overwrite if it exists
   become: false
-  shell:
-    cmd: "source env/bin/activate && donkey createcar --path car --overwrite"
-    executable: /bin/bash
-    chdir: "/home/{{ donkeycar_user }}/"
+  command: "/home/{{ donkeycar_user }}/env/bin/donkey createcar --path /home/{{ donkeycar_user }}/car --overwrite"
 
 - name: copy car config
   copy:

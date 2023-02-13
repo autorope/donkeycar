@@ -10,6 +10,7 @@
 - createcar on NANO does not works
 - review all code, remove TODOs
 - sync script with host param
+- check roles independently for vars deps
 
 ## Versions constaints
 
