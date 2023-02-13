@@ -172,7 +172,7 @@ class Vehicle:
 
 
             loop_total_time = time.time() - loop_start_time
-            print(f"Vehicle executed {loop_count} steps in {loop_total_time} seconds.")
+            logger.info(f"Vehicle executed {loop_count} steps in {loop_total_time} seconds.")
 
             return loop_count, loop_total_time
 
