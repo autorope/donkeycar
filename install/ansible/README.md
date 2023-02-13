@@ -221,8 +221,8 @@ RPis:
 
 ```bash
 ansible-vault view vault.yml --vault-password-file ~/.donkey_vault_pass
-ansible-vault encrypt vault.yml --vault-password-file ~/.donkey_vault_pass
 ansible-vault decrypt vault.yml --vault-password-file ~/.donkey_vault_pass
+ansible-vault encrypt vault.yml --vault-password-file ~/.donkey_vault_pass
 ```
 
 ## Links
