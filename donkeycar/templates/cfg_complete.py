@@ -63,6 +63,7 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 # "DC_TWO_WHEEL" uses HBridge in 2-pin mode to control two drive motors, one on the left, and one on the right.
 # "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
 # "MOCK" no drive train.  This can be used to test other features in a test rig.
+# "VESC" VESC Motor controller to set servo angle and duty cycle
 # (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering,
 #                                  and HBridge for a drive motor.
 # (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
