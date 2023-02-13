@@ -22,14 +22,3 @@
   become: yes
   command: /usr/sbin/dpkg-reconfigure -f noninteractive keyboard-configuration
   when: ansible_os_family == 'Debian'
-
-# - name: reboot host for keyboard
-#   listen: "dpkg-reconfigure keyboard-configuration"
-#   reboot:
-#     msg: "Reboot initiated by Ansible"
-#     connect_timeout: 5
-#     reboot_timeout: 300
-#     pre_reboot_delay: 1
-#     post_reboot_delay: 20
-#     test_command: whoami
-#   when: not ansible_raspbian_testing
