@@ -1,0 +1,7 @@
+---
+
+- name: reboot host
+  reboot:
+
+- name: reload udev rules
+  shell: udevadm control --reload-rules && udevadm trigger

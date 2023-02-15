@@ -1,0 +1,44 @@
+---
+
+# see hannseman role https://github.com/hannseman/ansible-raspbian and https://github.com/gantsign/ansible-role-keyboard
+
+- import_tasks: ssh-user.yml
+  tags:
+    - ssh-user
+
+- import_tasks: keyboard.yml
+  tags:
+    - keyboard
+    
+- import_tasks: pi-password.yml
+  tags:
+    - pi-password
+  
+- import_tasks: user-settings.yml
+  tags:
+    - user-settings
+
+- import_tasks: locale.yml
+  tags:
+    - locale
+
+- import_tasks: hostname.yml
+  when: system_hostname is defined
+  tags:
+    - hostname
+    
+- import_tasks: apt.yml
+  tags:
+    - apt
+
+- import_tasks: sshd.yml
+  tags:
+    - sshd
+
+- import_tasks: ufw.yml
+  tags:
+    - ufw
+
+- import_tasks: fail2ban.yml
+  tags:
+    - fail2ban

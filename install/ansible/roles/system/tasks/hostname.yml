@@ -1,0 +1,36 @@
+
+---
+
+- name: updating hostname {{ system_hostname }} (1/2)
+  hostname:
+    name: "{{ system_hostname }}"
+  register: hostname_change
+  notify: reboot host
+
+- name: updating hostname {{ system_hostname }} (2/2)
+  copy:
+    content: "{{ system_hostname }}{{'\n'}}"
+    dest: /etc/hostname
+    backup: true
+  register: hostname_change
+  notify: reboot host
+
+# add localhost and hostname to 127.0.0.1 ; localhost is missing in hannseman role
+- name: update /etc/hosts (1/2)
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.0\.1'
+    line: "127.0.0.1{{'\t'}}localhost"
+    backup: true
+    state: present
+  notify: reboot host
+
+# update "127.0.1.1 rapsberrypi" line
+- name: update /etc/hosts (1/2)
+  lineinfile:
+    dest: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1{{'\t'}}{{ system_hostname }}"
+    backup: true
+    state: present
+  notify: reboot host

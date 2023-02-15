@@ -1,0 +1,80 @@
+---
+
+# TODO python version ?
+
+- name: install system packages
+  apt:
+    name: "{{ donkeycar_system_packages }}"
+    state: present
+  tags:
+    - apt
+
+- name: install virtualenv python package for ansible
+  pip:
+    name: virtualenv # prefer pip version over python3-virtualenv
+    state: latest
+    executable: pip3
+  tags:
+    - pip
+
+# specific task to force pip upgrade
+- name: create or update python virtualenv
+  become: false
+  pip:
+    name:
+      - pip
+      - setuptools
+      - wheel
+    state: latest
+    virtualenv: "/home/{{ donkeycar_user }}/env"
+    virtualenv_python: python3
+    virtualenv_site_packages: yes
+  tags:
+    - venv
+
+- name: activate venv in bashrc
+  lineinfile:
+    path: "/home/{{ donkeycar_user }}/.bashrc"
+    line: "source env/bin/activate"
+    owner: "{{ donkeycar_user }}"
+    group: "{{ donkeycar_user }}"
+    mode: '0644'
+  tags:
+    - venv
+
+- name: create xlocale.h link for tensorflow install on nano
+  file:
+    src: /usr/include/locale.h
+    dest: /usr/include/xlocale.h
+    state: link
+  tags:
+    - pip
+
+- name: install python requirements
+  become: false
+  pip:
+    name: "{{ donkeycar_pip_packages }}"
+    virtualenv: "/home/{{ donkeycar_user }}/env"
+    extra_args: "--prefer-binary"
+  tags:
+    - pip
+
+- name: git clone donkeycar
+  become: false
+  git:
+    repo: "{{ donkeycar_git_repo }}"
+    dest: "/home/{{ donkeycar_user }}/donkeycar"
+    version: "{{ donkeycar_git_branch }}"
+    force: true
+  tags:
+    - clone
+
+- name: install donkeycar as editable
+  become: false
+  pip:
+    chdir: "/home/{{ donkeycar_user }}/donkeycar"
+    name: ".[{{ donkeycar_flavor }}]"
+    extra_args: '-e'
+    virtualenv: "/home/{{ donkeycar_user }}/env"
+  tags:
+    - editable

@@ -2,6 +2,9 @@
 env/*
 data/*
 dist/*
+car_configs/**/data
+car_configs/**/logs
+car_configs/**/models
 
 *.pyc
 .ipynb_checkpoints
@@ -13,6 +16,11 @@ lag_log.csv
 .cache
 site/*
 build
+
+# ansible
+*.retry
+.vault_pass
+.donkey_vault_pass
 
 #IDE
 .idea

@@ -1,0 +1,24 @@
+---
+
+- name: update-locale
+  command: "update-locale LANG={{ system_locale }}"
+
+- name: restart sshd
+  service:
+    name: ssh
+    state: restarted
+
+- name: reload ufw
+  ufw:
+    state: reloaded
+  when: not ansible_raspbian_testing
+
+- name: reboot host
+  listen: "dpkg-reconfigure keyboard-configuration"
+  reboot:
+  when: not ansible_raspbian_testing
+
+- name: dpkg-reconfigure keyboard-configuration
+  become: yes
+  command: /usr/sbin/dpkg-reconfigure -f noninteractive keyboard-configuration
+  when: ansible_os_family == 'Debian'

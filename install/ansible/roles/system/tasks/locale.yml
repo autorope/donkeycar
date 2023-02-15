@@ -1,0 +1,31 @@
+---
+
+- name: set timezone to {{ system_timezone }}
+  timezone:
+    name: "{{ system_timezone }}"
+  when: system_timezone is defined
+
+- name: ensure locale {{ system_locale }} exists
+  locale_gen:
+    name: "{{ system_locale }}"
+    state: present
+  when: system_locale is defined
+  notify:
+    - update-locale
+
+- name: generate additional locales
+  locale_gen:
+    name: "{{ item }}"
+    state: present
+  when: system_generate_locales is defined
+  with_items: "{{ system_generate_locales }}"
+
+- name: set default system locale
+  debconf:
+    name: 'locales'
+    question: 'locales/default_environment_locale'
+    vtype: 'string' # 'select' ??
+    value: '{{ system_locale }}'
+  when: system_locale is defined
+  notify:
+    - update-locale

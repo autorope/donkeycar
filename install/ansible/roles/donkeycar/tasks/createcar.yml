@@ -1,0 +1,17 @@
+---
+
+- name: create car - overwrite if it exists
+  become: false
+  command: "/home/{{ donkeycar_user }}/env/bin/donkey createcar --path /home/{{ donkeycar_user }}/car --overwrite"
+
+- name: copy car config
+  copy:
+    remote_src: true
+    src: "/home/{{ donkeycar_user }}/donkeycar/car_configs/{{ inventory_hostname }}/myconfig.py"
+    dest: "/home/{{ donkeycar_user }}/car/myconfig.py"
+    owner: "{{ donkeycar_user }}"
+    group: "{{ donkeycar_user }}"
+    mode: u=rw,g=r,o=r
+  ignore_errors: true
+  tags:
+    - car-config

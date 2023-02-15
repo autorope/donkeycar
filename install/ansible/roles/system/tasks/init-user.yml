@@ -1,0 +1,25 @@
+---
+
+- name: list all known variables and facts
+  debug:
+    var: hostvars[inventory_hostname]
+  tags:
+    - never
+    - debug
+
+- name: check if host is reachable with user and key
+  command: /bin/true
+  ignore_unreachable: true
+  register: command_result
+  changed_when: False
+  tags:
+    - init-user
+
+- name: connect with default pi user
+  import_tasks: ssh-user.yml
+  when: command_result.stdout is undefined
+  vars:
+    ansible_user: "{{ system_default_user }}"
+    ansible_ssh_pass: "{{ system_default_user_password }}"
+  tags:
+    - init-user

@@ -1,0 +1,77 @@
+---
+
+- name: "{{ 'install' if donkeycar_pigpiod_enabled else 'uninstall' }} pigpiod"
+  apt:
+    name:
+      - pigpio
+      - python-pigpio
+      - python3-pigpio
+    state: "{{ 'present' if donkeycar_pigpiod_enabled else 'absent' }}"
+  tags:
+    - pigpiod
+    
+- name: enable and start pigpiod
+  systemd:
+    state: started
+    enabled: true
+    name: pigpiod
+  when: donkeycar_pigpiod_enabled
+  tags:
+    - pigpiod
+
+- name: configure udev rules for depthai
+  copy:
+    src: depthai_udev.rules
+    dest: /etc/udev/rules.d/80-movidius.rules
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+  when: donkeycar_depthai_enabled
+  notify:
+    - reload udev rules
+  tags:
+    - depthai
+
+- name: install depthai
+  become: false
+  pip:
+    name:
+      - depthai
+      - depthai-sdk
+    virtualenv: "/home/{{ donkeycar_user }}/env"
+  when: donkeycar_depthai_enabled
+  tags:
+    - depthai
+
+- name: populate service facts
+  service_facts:
+  tags:
+    - nvgetty
+
+- name: disable and stop nvgetty on jetson nano
+  systemd:
+    state: stopped
+    enabled: false
+    name: nvgetty
+  when: "'nvgetty.service' in services"
+  tags:
+    - nvgetty
+
+- name: export OPENBLAS_CORETYPE ARMV8 for opencv on jetson nano
+  lineinfile:
+    path: "/home/{{ donkeycar_user }}/.bashrc"
+    line: "export OPENBLAS_CORETYPE=ARMV8"
+    state: "{{ 'present' if donkeycar_export_openblas_coretype_armv8 else 'absent' }}"
+  when: donkeycar_export_openblas_coretype_armv8
+  tags:
+    - openblas
+
+# https://github.com/keras-team/keras-tuner/issues/317
+- name: export kerastuner fix on jetson nano
+  lineinfile:
+    path: "/home/{{ donkeycar_user }}/.bashrc"
+    line: "export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1"
+    state: "{{ 'present' if donkeycar_export_kerastuner_fix else 'absent' }}"
+  when: donkeycar_export_kerastuner_fix
+  tags:
+    - kerastuner

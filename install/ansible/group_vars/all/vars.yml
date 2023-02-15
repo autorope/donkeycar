@@ -1,0 +1,23 @@
+---
+
+############
+# Donkeycar
+############
+donkeycar_depthai_enabled: true
+
+#########
+# System
+#########
+system_ssh_user: "donkey"
+system_ssh_user_password: "{{ vault_system_ssh_user_password }}"
+system_ssh_user_salt: "{{ vault_system_ssh_user_salt }}"
+# Note: One of these keys needs to be one that Ansible is using.
+ssh_public_keys: "{{ vault_ssh_public_keys }}"
+system_default_editor_path: "/usr/bin/vim.basic"
+
+##########
+# Ansible
+##########
+ansible_user: "{{ system_ssh_user }}" # different from system_ssh_user because may be temporarily overriden during install for new pi
+ansible_become_password: "{{ vault_system_ssh_user_password }}"
+ansible_python_interpreter: /usr/bin/python3

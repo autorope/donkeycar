@@ -1,0 +1,22 @@
+---
+
+- name: create ssh user
+  user:
+    name: "{{ system_ssh_user }}"
+    groups: "{{ system_ssh_user_groups }}"
+    append: yes
+
+- name: change ssh user password
+  user:
+    name: "{{ system_ssh_user }}"
+    password: "{{ system_ssh_user_password|password_hash('sha512', system_ssh_user_salt, rounds=system_ssh_user_sha512_rounds) }}"
+    update_password: always
+    state: present
+  when: system_ssh_user_password is defined and system_ssh_user_salt is defined and system_ssh_user_sha512_rounds is defined
+
+- name: upload authorized keys for ssh user
+  authorized_key:
+    user: "{{ system_ssh_user }}"
+    key: "{{ item }}"
+    state: present
+  with_items: "{{ ssh_public_keys }}"

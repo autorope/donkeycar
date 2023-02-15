@@ -1,0 +1,17 @@
+---
+
+- import_tasks: install.yml
+  tags:
+    - install
+
+- import_tasks: customize.yml
+  tags:
+    - customize
+
+- import_tasks: createcar.yml
+  tags:
+    - createcar
+
+- import_tasks: tests.yml
+  tags:
+    - tests
