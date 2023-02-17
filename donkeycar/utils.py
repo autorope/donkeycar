@@ -464,7 +464,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     '''
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
-        KerasLSTM, Keras3D_CNN
+        KerasLSTM, Keras3D_CNN, KerasDetector
     from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
         FastAIInterpreter
 
@@ -511,6 +511,11 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
             input_shape=input_shape,
             throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE,
             num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
+    elif used_model_type == "obstacle_detector":
+        kl = KerasDetector(
+            interpreter=interpreter, 
+            input_shape = input_shape,
+            num_locations=cfg.OBSTACLE_DETECTOR_NUM_LOCATIONS)
     elif used_model_type == 'localizer':
         kl = KerasLocalizer(interpreter=interpreter, input_shape=input_shape,
                             num_locations=cfg.NUM_LOCATIONS)
