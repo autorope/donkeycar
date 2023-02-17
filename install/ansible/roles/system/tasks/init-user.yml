@@ -21,5 +21,6 @@
   vars:
     ansible_user: "{{ system_default_user }}"
     ansible_ssh_pass: "{{ system_default_user_password }}"
+    ansible_become_password: "{{ system_default_user_password }}"
   tags:
     - init-user

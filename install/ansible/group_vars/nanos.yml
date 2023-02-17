@@ -1,5 +1,8 @@
 ---
 
+system_default_user: "donkey"
+system_default_user_password: "donkeycar"
+
 # TODO system_ssh_user_groups
 ufw_enabled: false # need different kernel
 donkeycar_flavor: "nano"
@@ -7,7 +10,7 @@ donkeycar_export_openblas_coretype_armv8: true
 donkeycar_export_kerastuner_fix: true
 
 donkeycar_system_packages:
-  # nano
+  # jetson nano
   - libhdf5-serial-dev
   - hdf5-tools
   - libhdf5-dev
@@ -62,27 +65,26 @@ donkeycar_pip_packages:
   - portpicker
   - astor
   - gdown
-  - keras_applications # 1.0.8
-  # allready in tensorflow 2.7.0 install
-  #- protobuf==3.19.6 # 3.12.2
-  #- h5py==2.10.0 # no wheel ...
-  #- gast==0.4.0 # version for tensorflow-2.7.0
-  #- absl-py # 0.9.0
-  #- six
-  #- requests # 2.24.0
-  #- termcolor # 1.1.0
-  #- wrapt # 1.12.1
-  #- google-pasta # 0.2.0
-  #- keras_preprocessing # 1.1.2
-  # more from install script
+  - keras_applications
+  # more from install-jp461.sh script
   - numpy==1.19.5
   - scipy
   - pandas
   - pkgconfig
   - packaging
-  # tensorflow and torch
+  - grpcio
+  # tenorflow
   - https://developer.download.nvidia.com/compute/redist/jp/v461/tensorflow/tensorflow-2.7.0+nv22.1-cp36-cp36m-linux_aarch64.whl
-  #- https://developer.download.nvidia.com/compute/redist/jp/v461/pytorch/torch-1.11.0a0+17540c5+nv22.01-cp36-cp36m-linux_aarch64.whl
-  - torch
   # opencv
   - opencv-python
+  # allready in tensorflow 2.7.0 install
+  #- protobuf==3.19.6
+  #- h5py
+  #- gast # 0.4.0 in tensorflow-2.7.0 vs 0.2.1 in install-jp461.sh script
+  #- absl-py
+  #- six
+  #- requests
+  #- termcolor
+  #- wrapt # 1.14.1 in tensorflow-2.7.0 vs 1.12.1 in install-jp461.sh script
+  #- google-pasta
+  #- keras_preprocessing

@@ -6,6 +6,13 @@
     groups: "{{ system_ssh_user_groups }}"
     append: yes
 
+- name: upload authorized keys for ssh user
+  authorized_key:
+    user: "{{ system_ssh_user }}"
+    key: "{{ item }}"
+    state: present
+  with_items: "{{ ssh_public_keys }}"
+
 - name: change ssh user password
   user:
     name: "{{ system_ssh_user }}"
@@ -13,10 +20,3 @@
     update_password: always
     state: present
   when: system_ssh_user_password is defined and system_ssh_user_salt is defined and system_ssh_user_sha512_rounds is defined
-
-- name: upload authorized keys for ssh user
-  authorized_key:
-    user: "{{ system_ssh_user }}"
-    key: "{{ item }}"
-    state: present
-  with_items: "{{ ssh_public_keys }}"

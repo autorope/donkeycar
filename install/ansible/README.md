@@ -5,7 +5,6 @@
 - more opencv deps on buster ?! libgtk-3-0
 - test PiCamera
 - test Pi user password on RPi
-- install torch vision on NANO ?
 - activate FAN on NANO
 - createcar on NANO does not works
 - review all code, remove TODOs
@@ -14,9 +13,14 @@
 
 ## Versions constaints
 
-Jetson Nano : JetPack 4.6.1 and Tensorflow 2.7.0
+Jetson Nano
 
 RPi
+
+- JetPack 4.6.1 (JetPack 5.1 is not compatible with Nano)
+- Tensorflow 2.7.0
+
+RPi (WIP)
 
 - Buster for PiCamera or activate legacy (?)
 - Buster only in 32b (Raspi OS)
@@ -142,27 +146,27 @@ sudo screen /dev/cu.usbmodemXXX
 nmcli dev wifi list
 
 # Interface doesn't support scanning, network may be down. Activate with:
-ifconfig wlan0 up
+sudo ifconfig wlan0 up
 
 # Add a WPA-EAP connection
-nmcli connection add type wifi con-name "xxx" ifname wlan0 \
+sudo nmcli connection add type wifi con-name "xxx" ifname wlan0 \
  ssid "xxx" -- \
  ipv4.method auto \
  wifi-sec.key-mgmt wpa-eap \
  802-1x.eap peap \
  802-1x.phase2-auth mschapv2 \
  802-1x.identity "xxx" \
- 802-1x.password "xxx" \
+ 802-1x.password "xxx"
 
 
 # Add a WPA-PSK connection
-nmcli connection add type wifi con-name "xxx" ifname wlan0 \
+sudo nmcli connection add type wifi con-name "xxx" ifname wlan0 \
  ssid "xxx" -- \
  ipv4.method auto \
  wifi-sec.key-mgmt wpa-psk \
  wifi-sec.psk "xxx"
 
-# Maybe useful:
+# May be useful:
 # nmcli dev status
 # nmcli radio wifi
 # nmcli radio wifi on
@@ -196,7 +200,7 @@ sudo apt-get install openssh-server python3 python3-pip
 
 ```bash
 # from controller node
-ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit donkey
+ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit hostname
 
 # -e "ansible_host=raspberrypi" for first run
 # -K to enter sudo password - or do any sudo command before in local

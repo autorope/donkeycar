@@ -1,9 +1,9 @@
 ---
 
-- name: install ufw
+- name: "{{ 'install' if ufw_enabled else 'uninstall' }} ufw"
   apt:
     package: ufw
-    state: present
+    state: "{{ 'present' if ufw_enabled else 'absent' }}"
   register: ufw_install
 
 # reboot now to fix "ERROR: Couldn't determine iptables version"
@@ -18,7 +18,7 @@
   with_items:
     - { direction: "incoming", policy: "deny" }
     - { direction: "outgoing", policy: "allow" }
-  when: ufw_rules|length > 0
+  when: ufw_enabled and ufw_rules|length > 0
   notify:
     - reload ufw
 
@@ -31,7 +31,7 @@
       -A ufw-before-input -p igmp -d 224.0.0.0/4 -j ACCEPT
       -A ufw-before-output -p igmp -d 224.0.0.0/4 -j ACCEPT
     state: present
-  when: ufw_allow_igmp|bool
+  when: ufw_enabled and ufw_allow_igmp|bool
   notify:
     - reload ufw
 
@@ -43,11 +43,11 @@
     from_ip: "{{ item.from_ip|default('any') }}"
   with_items:
     - "{{ ufw_rules }}"
-  when: ufw_rules|length > 0
+  when: ufw_enabled and ufw_rules|length > 0
   notify:
     - reload ufw
 
-- name: "{{ 'enable' if ufw_enabled else 'disable' }} ufw"
+- name: enable ufw
   ufw:
-    state: "{{ 'enabled' if ufw_enabled else 'disabled' }}"
-  when: not ansible_raspbian_testing
+    state: enabled
+  when: ufw_enabled and not ansible_raspbian_testing
