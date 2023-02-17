@@ -19,11 +19,12 @@ from docopt import docopt
 from simple_pid import PID
 
 import donkeycar as dk
+from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.line_follower import LineFollower
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_drivetrain, add_simulator, add_imu
-from donkeycar.templates.path_follow import ToggleRecording
+    add_user_controller, add_drivetrain, add_simulator, add_imu, DriveMode, \
+    UserPilotCondition, ToggleRecording
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
@@ -33,7 +34,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def drive(cfg, use_joystick=False, camera_type='single'):
+def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -73,16 +74,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     # track user vs autopilot condition
     #
-    class UserPilotCondition:
-        def run(self, mode, user_image, pilot_image):
-            if mode == 'user':
-                return True, False, user_image
-            else:
-                return False, True, pilot_image
     V.add(UserPilotCondition(),
           inputs=['user/mode', "cam/image_array", "cv/image_array"],
           outputs=['run_user', "run_pilot", "ui/image_array"])
-
 
     #
     # PID controller to be used with cv_controller
@@ -165,28 +159,13 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
 
     #
-    # Choose what inputs should change the car.
+    # Decide what inputs should change the car's steering and throttle
+    # based on the choice of user or autopilot drive mode
     #
-    # TODO: when we merge pose estimate branch, update 'angle' to 'steering'
-    class DriveMode:
-        def run(self, mode,
-                    user_angle, user_throttle,
-                    pilot_angle, pilot_throttle):
-            if mode == 'user':
-                return user_angle, user_throttle
-
-            elif mode == 'local_angle':
-                return pilot_angle if pilot_angle else 0.0, user_throttle
-
-            else:
-                return pilot_angle if pilot_angle else 0.0, \
-                       pilot_throttle * cfg.AI_THROTTLE_MULT \
-                           if pilot_throttle else 0.0
-
-    V.add(DriveMode(),
-          inputs=['user/mode', 'user/angle', 'user/throttle',
+    V.add(DriveMode(cfg.AI_THROTTLE_MULT),
+          inputs=['user/mode', 'user/steering', 'user/throttle',
                   'pilot/steering', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
+          outputs=['steering', 'throttle'])
 
 
     #
@@ -205,23 +184,33 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
 
-    # Print Joystick controls
-    if ctr is not None and isinstance(ctr, JoystickController):
-        ctr.print_controls()
-
-
     #
     # add tub to save data
     #
     inputs=['cam/image_array',
-            'angle', 'throttle']
+            'steering', 'throttle']
 
     types=['image_array',
            'float', 'float']
 
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition="recording")
+    #
+    # Create data storage part
+    #
+    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
+        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+    meta += getattr(cfg, 'METADATA', [])
+    tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
+    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
+
+    if cfg.DONKEY_GYM:
+        print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+    else:
+        print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+    if has_input_controller:
+        print("You can now move your controller to drive your car.")
+        if isinstance(ctr, JoystickController):
+            ctr.set_tub(tub_writer.tub)
+            ctr.print_controls()
 
     #
     # run the vehicle

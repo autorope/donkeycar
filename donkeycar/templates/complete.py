@@ -151,16 +151,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     th_filter = ThrottleFilter()
     V.add(th_filter, inputs=['user/throttle'], outputs=['user/throttle'])
 
-    #See if we should even run the pilot module.
-    #This is only needed because the part run_condition only accepts boolean
-    class PilotCondition:
-        def run(self, mode):
-            if mode == 'user':
-                return False
-            else:
-                return True
-
-    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
+    #
+    # maintain run conditions for user mode and autopilot mode parts.
+    #
+    V.add(UserPilotCondition(),
+          inputs=['user/mode', "cam/image_array", "cam/image_array"],
+          outputs=['run_user', "run_pilot", "ui/image_array"])
 
     class LedConditionLogic:
         def __init__(self, cfg):
@@ -348,11 +344,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # these parts will reload the model file, but only when ai is running
         # so we don't interrupt user driving
         V.add(FileWatcher(model_path), outputs=['modelfile/dirty'],
-              run_condition="ai_running")
+              run_condition="run_pilot")
         V.add(DelayedTrigger(100), inputs=['modelfile/dirty'],
-              outputs=['modelfile/reload'], run_condition="ai_running")
+              outputs=['modelfile/reload'], run_condition="run_pilot")
         V.add(TriggeredCallback(model_path, model_reload_cb),
-              inputs=["modelfile/reload"], run_condition="ai_running")
+              inputs=["modelfile/reload"], run_condition="run_pilot")
 
         #
         # collect inputs to model for inference
@@ -436,23 +432,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
           inputs=['user/mode', 'pilot/throttle'],
           outputs=['pilot/throttle'])
 
-    # Choose what inputs should change the car.
-    class DriveMode:
-        def run(self, mode,
-                    user_steering, user_throttle,
-                    pilot_steering, pilot_throttle):
-            if mode == 'user':
-                return user_steering, user_throttle
-
-            elif mode == 'local_angle':
-                return pilot_steering if pilot_steering else 0.0, user_throttle
-
-            else:
-                return pilot_steering if pilot_steering else 0.0, \
-                       pilot_throttle * cfg.AI_THROTTLE_MULT \
-                           if pilot_throttle else 0.0
-
-    V.add(DriveMode(),
+    #
+    # Decide what inputs should change the car's steering and throttle
+    # based on the choice of user or autopilot drive mode
+    #
+    V.add(DriveMode(cfg.AI_THROTTLE_MULT),
           inputs=['user/mode', 'user/steering', 'user/throttle',
                   'pilot/steering', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
@@ -463,29 +447,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if isinstance(ctr, JoystickController):
             ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
-    class AiRunCondition:
-        '''
-        A bool part to let us know when ai is running.
-        '''
-        def run(self, mode):
-            if mode == "user":
-                return False
-            return True
-
-    V.add(AiRunCondition(), inputs=['user/mode'], outputs=['ai_running'])
 
     # Ai Recording
-    class AiRecordingCondition:
-        '''
-        return True when ai mode, otherwize respect user mode recording flag
-        '''
-        def run(self, mode, recording):
-            if mode == 'user':
-                return recording
-            return True
-
-    if cfg.RECORD_DURING_AI:
-        V.add(AiRecordingCondition(), inputs=['user/mode', 'recording'], outputs=['recording'])
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
+    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
 
     #
     # Setup drivetrain
@@ -558,7 +523,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         types += ['float', 'float', 'float']
         V.add(mon, inputs=[], outputs=perfmon_outputs, threaded=True)
 
-    # do we want to store new records into own dir or append to existing
+    #
+    # Create data storage part
+    #
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
     meta += getattr(cfg, 'METADATA', [])
@@ -594,7 +561,109 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
 
 
-def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
+class ToggleRecording:
+    def __init__(self, auto_record_on_throttle, record_in_autopilot):
+        """
+        Donkeycar Part that manages the recording state.
+        """
+        self.auto_record_on_throttle = auto_record_on_throttle
+        self.record_in_autopilot = record_in_autopilot
+        self.recording_latch: bool = None
+        self.toggle_latch: bool = False
+        self.last_recording = None
+
+    def set_recording(self, recording: bool):
+        """
+        Set latched recording value to be applied on next call to run()
+        :param recording: True to record, False to not record
+        """
+        self.recording_latch = recording
+
+    def toggle_recording(self):
+        """
+        Force toggle of recording state on next call to run()
+        """
+        self.toggle_latch = True
+
+    def run(self, mode: str, recording: bool):
+        """
+        Set recording based on user/autopilot mode
+        :param mode: 'user'|'local_angle'|'local_pilot'
+        :param recording: current recording flag
+        :return: updated recording flag
+        """
+        recording_in = recording
+        if recording_in != self.last_recording:
+            logging.info(f"Recording Change = {recording_in}")
+
+        if self.toggle_latch:
+            if self.auto_record_on_throttle:
+                logger.info(
+                    'auto record on throttle is enabled; ignoring toggle of manual mode.')
+            else:
+                recording = not self.last_recording
+            self.toggle_latch = False
+
+        if self.recording_latch is not None:
+            recording = self.recording_latch
+            self.recording_latch = None
+
+        if recording and mode != 'user' and not self.record_in_autopilot:
+            logging.info("Ignoring recording in auto-pilot mode")
+            recording = False
+
+        if self.last_recording != recording:
+            logging.info(f"Setting Recording = {recording}")
+
+        self.last_recording = recording
+
+        return recording
+
+
+class DriveMode:
+    def __init__(self, ai_throttle_mult=1.0):
+        """
+        :param ai_throttle_mult: scale throttle in autopilot mode
+        """
+        self.ai_throttle_mult = ai_throttle_mult
+
+    def run(self, mode,
+            user_steering, user_throttle,
+            pilot_steering, pilot_throttle):
+        """
+        Main final steering and throttle values based on user mode
+        :param mode: 'user'|'local_angle'|'local_pilot'
+        :param user_steering: steering value in user (manual) mode
+        :param user_throttle: throttle value in user (manual) mode
+        :param pilot_steering: steering value in autopilot mode
+        :param pilot_throttle: throttle value in autopilot mode
+        :return: tuple of (steering, throttle) where throttle is
+                 scaled by ai_throttle_mult in autopilot mode
+        """
+        if mode == 'user':
+            return user_steering, user_throttle
+        elif mode == 'local_angle':
+            return pilot_steering if pilot_steering else 0.0, user_throttle
+        return (pilot_steering if pilot_steering else 0.0,
+               pilot_throttle * self.ai_throttle_mult if pilot_throttle else 0.0)
+
+
+class UserPilotCondition:
+    def run(self, mode, user_image, pilot_image):
+        """
+        Maintain run condition and which image to show in web ui
+        :param mode: 'user'|'local_angle'|'local_pilot'
+        :param user_image: image to show in manual (user) pilot
+        :param pilot_image: image to show in auto pilot
+        :return: tuple of (user-condition, autopilot-condition, web image)
+        """
+        if mode == 'user':
+            return True, False, user_image
+        else:
+            return False, True, pilot_image
+
+
+def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     """
     Add the web controller and any other
     configured user input controller.
