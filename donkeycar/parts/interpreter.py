@@ -280,6 +280,7 @@ class TfLite(Interpreter):
         assert self.input_shapes and self.input_details, \
             "Tflite model not loaded"
         input_arrays = (img_arr, other_arr)
+        print("other_arr={}".format(other_arr))
         for arr, shape, detail \
                 in zip(input_arrays, self.input_shapes, self.input_details):
             print("arr={}, shape={}".format(arr,shape))
