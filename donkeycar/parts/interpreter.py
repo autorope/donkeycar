@@ -283,7 +283,7 @@ class TfLite(Interpreter):
         if other_arr is not None:
             input_arrays = (other_arr,img_arr)
         else:
-            input_arrays = (img_arr, other_arr)
+            input_arrays = (img_arr)
             
         # print("other_arr={}".format(other_arr))
         # print("inputs_arrays={}".format(input_arrays))
