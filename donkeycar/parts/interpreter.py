@@ -282,6 +282,7 @@ class TfLite(Interpreter):
         input_arrays = (img_arr, other_arr)
         print("other_arr={}".format(other_arr))
         print("inputs_arrays={}".format(input_arrays))
+        print("self.input_shapes={}".format(self.input_shapes))
         for arr, shape, detail \
                 in zip(input_arrays, self.input_shapes, self.input_details):
             print("arr={}, shape={}".format(arr,shape))
