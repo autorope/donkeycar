@@ -282,6 +282,7 @@ class TfLite(Interpreter):
         input_arrays = (img_arr, other_arr)
         for arr, shape, detail \
                 in zip(input_arrays, self.input_shapes, self.input_details):
+            print("arr={}, shape={}".format(arr,shape))
             in_data = arr.reshape(shape).astype(np.float32)
             self.interpreter.set_tensor(detail['index'], in_data)
         return self.invoke()
