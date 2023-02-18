@@ -257,7 +257,7 @@ class TfLite(Interpreter):
         # Get Input shape
         self.input_shapes = []
         logger.info('Load model with tflite input tensor details:')
-        print("self.input_details={}".format(self.input_details))
+        # print("self.input_details={}".format(self.input_details))
         for detail in self.input_details:
             logger.debug(detail)
             self.input_shapes.append(detail['shape'])
@@ -281,14 +281,22 @@ class TfLite(Interpreter):
         assert self.input_shapes and self.input_details, \
             "Tflite model not loaded"
         input_arrays = (img_arr, other_arr)
-        print("other_arr={}".format(other_arr))
-        print("inputs_arrays={}".format(input_arrays))
-        print("self.input_shapes={}".format(self.input_shapes))
+        if len(input_arrays) > 1:
+            input_arrays = (other_arr,img_arr)
+        # print("other_arr={}".format(other_arr))
+        # print("inputs_arrays={}".format(input_arrays))
+        # print("self.input_shapes={}".format(self.input_shapes))
         for arr, shape, detail \
                 in zip(input_arrays, self.input_shapes, self.input_details):
-            print("arr={}, shape={}".format(arr,shape))
+            # print("arr={}, shape={}".format(arr,shape))
             in_data = arr.reshape(shape).astype(np.float32)
             self.interpreter.set_tensor(detail['index'], in_data)
+
+        ###
+        # for input_details in self.input_details:
+        #     for input_array in input_arrays:
+        #         if  
+        ###
         return self.invoke()
 
     def predict_from_dict(self, input_dict):
