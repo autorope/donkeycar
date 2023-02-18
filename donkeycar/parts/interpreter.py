@@ -257,6 +257,7 @@ class TfLite(Interpreter):
         # Get Input shape
         self.input_shapes = []
         logger.info('Load model with tflite input tensor details:')
+        print("self.input_details={}".format(self.input_details))
         for detail in self.input_details:
             logger.debug(detail)
             self.input_shapes.append(detail['shape'])
