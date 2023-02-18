@@ -12,6 +12,7 @@ class AvoidanceBehaviorPart(object):
         # print("bvh states:", states)
         self.obstacle_states = obstacle_states
         self.lane_options_size = len(lane_options)
+        self.lane_options = lane_options
         self.lane_behavior_left_index = self.lane_options.index("left")
         self.lane_behavior_right_index = self.lane_options.index('right')
 
