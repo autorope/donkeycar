@@ -257,7 +257,7 @@ class TfLite(Interpreter):
         # Get Input shape
         self.input_shapes = []
         logger.info('Load model with tflite input tensor details:')
-        # print("self.input_details={}".format(self.input_details))
+        print("load self.input_details={}".format(self.input_details))
         for detail in self.input_details:
             logger.debug(detail)
             self.input_shapes.append(detail['shape'])
@@ -285,12 +285,12 @@ class TfLite(Interpreter):
         else:
             input_arrays = (img_arr)
             
-        # print("other_arr={}".format(other_arr))
-        # print("inputs_arrays={}".format(input_arrays))
-        # print("self.input_shapes={}".format(self.input_shapes))
+        print("other_arr={}".format(other_arr))
+        print("inputs_arrays={}".format(input_arrays))
+        print("self.input_shapes={}".format(self.input_shapes))
         for arr, shape, detail \
                 in zip(input_arrays, self.input_shapes, self.input_details):
-            # print("arr={}, shape={}".format(arr,shape))
+            print("arr={}, shape={}".format(arr,shape))
             in_data = arr.reshape(shape).astype(np.float32)
             self.interpreter.set_tensor(detail['index'], in_data)
 
