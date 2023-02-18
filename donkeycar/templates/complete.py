@@ -356,7 +356,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # outputs value from 0..3 ['NA', left', 'middle', 'right']
         # 
         if cfg.OBSTACLE_DETECTOR_ENABLED:
-            kd = dk.utils.get_model_by_type('tflite_obstacle_detector', cfg)
+            kd = dk.utils.get_model_by_type('tensorrt_obstacle_detector', cfg)
             load_model(kd, cfg.OBSTACLE_DETECTOR_MODEL_PATH)
 
             V.add(kd, inputs=['cam/image_array'], outputs=['detector/obstacle_lane'], run_condition='run_pilot')
