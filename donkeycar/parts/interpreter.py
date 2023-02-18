@@ -280,9 +280,11 @@ class TfLite(Interpreter):
             -> Sequence[Union[float, np.ndarray]]:
         assert self.input_shapes and self.input_details, \
             "Tflite model not loaded"
-        input_arrays = (img_arr, other_arr)
-        if len(input_arrays) > 1:
+        if other_arr is not None:
             input_arrays = (other_arr,img_arr)
+        else:
+            input_arrays = (img_arr, other_arr)
+            
         # print("other_arr={}".format(other_arr))
         # print("inputs_arrays={}".format(input_arrays))
         # print("self.input_shapes={}".format(self.input_shapes))
