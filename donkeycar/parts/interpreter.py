@@ -257,7 +257,7 @@ class TfLite(Interpreter):
         # Get Input shape
         self.input_shapes = []
         logger.info('Load model with tflite input tensor details:')
-        print("load self.input_details={}".format(self.input_details))
+        # print("load self.input_details={}".format(self.input_details))
         for detail in self.input_details:
             logger.debug(detail)
             self.input_shapes.append(detail['shape'])
@@ -280,11 +280,13 @@ class TfLite(Interpreter):
             -> Sequence[Union[float, np.ndarray]]:
         assert self.input_shapes and self.input_details, \
             "Tflite model not loaded"
-        if other_arr is not None:
-            input_arrays = (other_arr,img_arr)
-        else:
-            input_arrays = (img_arr)
-            
+        # if other_arr is not None:
+        # input_arrays = (other_arr,img_arr)
+        # # else:
+            # input_arrays = (img_arr)
+
+        input_arrays = (img_arr,other_arr)
+          
         print("other_arr={}".format(other_arr))
         print("inputs_arrays={}".format(input_arrays))
         print("self.input_shapes={}".format(self.input_shapes))

@@ -366,7 +366,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST)
             V.add(abh, inputs=['detector/obstacle_lane'], outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
             
-            inputs = ['cam/image_array', "behavior/one_hot_state_array"]
+            inputs = ["behavior/one_hot_state_array",'cam/image_array']
 
         #
         # collect inputs to model for inference
