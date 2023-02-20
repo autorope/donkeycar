@@ -143,7 +143,8 @@ class Vec3(object):
     def normalized(self):
         m = self.mag()
         v = Vec3(self.x, self.y, self.z)
-        v.scale(1.0 / m)
+        if m > 0:
+            v.scale(1.0 / m)
         return v
 
     def subtract(self, v):

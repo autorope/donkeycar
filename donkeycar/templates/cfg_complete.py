@@ -64,6 +64,7 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 # "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
 # "DC_FOUR_WHEEL" uses HBridge in 2-pin mode to control four drive motors, two on the left (front/rear) and two on the right (front/rear).
 # "MOCK" no drive train.  This can be used to test other features in a test rig.
+# "VESC" VESC Motor controller to set servo angle and duty cycle
 # (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering,
 #                                  and HBridge for a drive motor.
 # (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
@@ -642,6 +643,7 @@ PID_P = -10.0                       # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.2                  # constant throttle value during path following
+USE_CONSTANT_THROTTLE = False       # whether or not to use the constant throttle or variable throttle captured during path recording
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 

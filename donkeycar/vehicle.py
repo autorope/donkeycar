@@ -146,6 +146,7 @@ class Vehicle:
             # wait until the parts warm up.
             logger.info('Starting vehicle at {} Hz'.format(rate_hz))
 
+            loop_start_time = time.time()
             loop_count = 0
             while self.on:
                 start_time = time.time()
@@ -154,20 +155,26 @@ class Vehicle:
                 self.update_parts()
 
                 # stop drive loop if loop_count exceeds max_loopcount
-                if max_loop_count and loop_count > max_loop_count:
+                if max_loop_count and loop_count >= max_loop_count:
                     self.on = False
-
-                sleep_time = 1.0 / rate_hz - (time.time() - start_time)
-                if sleep_time > 0.0:
-                    time.sleep(sleep_time)
                 else:
-                    # print a message when could not maintain loop rate.
-                    if verbose:
-                        logger.info('WARN::Vehicle: jitter violation in vehicle loop '
-                              'with {0:4.0f}ms'.format(abs(1000 * sleep_time)))
+                    sleep_time = 1.0 / rate_hz - (time.time() - start_time)
+                    if sleep_time > 0.0:
+                        time.sleep(sleep_time)
+                    else:
+                        # print a message when could not maintain loop rate.
+                        if verbose:
+                            logger.info('WARN::Vehicle: jitter violation in vehicle loop '
+                                  'with {0:4.0f}ms'.format(abs(1000 * sleep_time)))
 
-                if verbose and loop_count % 200 == 0:
-                    self.profiler.report()
+                    if verbose and loop_count % 200 == 0:
+                        self.profiler.report()
+
+
+            loop_total_time = time.time() - loop_start_time
+            logger.info(f"Vehicle executed {loop_count} steps in {loop_total_time} seconds.")
+
+            return loop_count, loop_total_time
 
         except KeyboardInterrupt:
             pass
