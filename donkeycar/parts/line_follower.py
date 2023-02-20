@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 from simple_pid import PID
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LineFollower:
@@ -19,6 +22,8 @@ class LineFollower:
         self.color_thr_low = np.asarray(cfg.COLOR_THRESHOLD_LOW)  # hsv dark yellow
         self.color_thr_hi = np.asarray(cfg.COLOR_THRESHOLD_HIGH)  # hsv light yellow
         self.target_pixel = cfg.TARGET_PIXEL  # of the N slots above, which is the ideal relationship target
+        self.target_threshold = cfg.TARGET_THRESHOLD # minimum distance from target_pixel before a steering change is made.
+        self.confidence_threshold = cfg.CONFIDENCE_THRESHOLD  # percentage of yellow pixels that must be in target_pixel slice
         self.steering = 0.0 # from -1 to 1
         self.throttle = cfg.THROTTLE_INITIAL # from -1 to 1
         self.delta_th = cfg.THROTTLE_STEP  # how much to change throttle when off
@@ -64,34 +69,43 @@ class LineFollower:
         if cam_img is None:
             return 0, 0, False, None
 
-        max_yellow, confidense, mask = self.get_i_color(cam_img)
+        max_yellow, confidence, mask = self.get_i_color(cam_img)
         conf_thresh = 0.001
 
         if self.target_pixel is None:
             # Use the first run of get_i_color to set our relationship with the yellow line.
             # You could optionally init the target_pixel with the desired value.
             self.target_pixel = max_yellow
+            logger.info(f"Automatically chosen line position = {self.target_pixel}")
 
+        if self.pid_st.setpoint != self.target_pixel:
             # this is the target of our steering PID controller
             self.pid_st.setpoint = self.target_pixel
 
-        elif confidense > conf_thresh:
+        if confidence >= self.confidence_threshold:
             # invoke the controller with the current yellow line position
             # get the new steering value as it chases the ideal
             self.steering = self.pid_st(max_yellow)
 
             # slow down linearly when away from ideal, and speed up when close
-            if abs(max_yellow - self.target_pixel) > 10:
+            if abs(max_yellow - self.target_pixel) > self.target_threshold:
+                # we will be turning, so slow down
                 if self.throttle > self.throttle_min:
                     self.throttle -= self.delta_th
+                if self.throttle < self.throttle_min:
+                    self.throttle = self.throttle_min
             else:
+                # we are going straight, so speed up
                 if self.throttle < self.throttle_max:
                     self.throttle += self.delta_th
-
+                if self.throttle > self.throttle_max:
+                    self.throttle = self.throttle_max
+        else:
+            logger.info(f"No line detected: confidence {confidence} < {self.confidence_threshold}")
 
         # show some diagnostics
         if self.overlay_image:
-            cam_img = self.overlay_display(cam_img, mask, max_yellow, confidense)
+            cam_img = self.overlay_display(cam_img, mask, max_yellow, confidence)
 
         return self.steering, self.throttle, cam_img
 
@@ -101,11 +115,11 @@ class LineFollower:
         show some values we are using for control
         '''
 
-        mask_exp = np.stack((mask, ) *3, axis=-1)
+        mask_exp = np.stack((mask, ) * 3, axis=-1)
         iSlice = self.scan_y
         img = np.copy(cam_img)
         img[iSlice : iSlice + self.scan_height, :, :] = mask_exp
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
         display_str = []
         display_str.append("STEERING:{:.1f}".format(self.steering))
@@ -117,7 +131,7 @@ class LineFollower:
         x = 10
 
         for s in display_str:
-            cv2.putText(img, s, color=(0 ,0 ,0), org=(x ,y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4)
+            cv2.putText(img, s, color=(0, 0, 0), org=(x ,y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4)
             y += 10
 
         return img

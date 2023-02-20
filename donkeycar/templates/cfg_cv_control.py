@@ -552,32 +552,49 @@ FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency 
 #
 # computer vision template
 #
+# configure which part is used as the autopilot - change to use your own autopilot
 CV_CONTROLLER_MODULE = "donkeycar.parts.line_follower"
 CV_CONTROLLER_CLASS = "LineFollower"
 CV_CONTROLLER_INPUTS = ['cam/image_array']
 CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array']
 CV_CONTROLLER_CONDITION = "run_pilot"
 
-OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in web ui
-                      # NOTE: this does not affect what is saved to the data
+# LineFollower - line color and detection area
 SCAN_Y = 120          # num pixels from the top to start horiz scan
 SCAN_HEIGHT = 20      # num pixels high to grab from horiz scan
-COLOR_THRESHOLD_LOW  = (0, 50, 50)    # hsv dark yellow
-COLOR_THRESHOLD_HIGH = (50, 255, 255) # hsv light yellow
-TARGET_PIXEL = None   # In note None, then of the N slots above, which is the ideal relationship target
-                      # if None, use the first run of get_i_color() to set the relationship with the yellow line
+COLOR_THRESHOLD_LOW  = (0, 50, 50)    # HSV dark yellow (opencv HSV hue value is 0..179, saturation and value are both 0..255)
+COLOR_THRESHOLD_HIGH = (50, 255, 255) # HSV light yellow (opencv HSV hue value is 0..179, saturation and value are both 0..255)
+
+# LineFollower - target (expected) line position and detection thresholds
+TARGET_PIXEL = None   # In not None, then this is the expected horizontal position in pixels of the yellow line.
+                      # If None, then detect the position yellow line at startup;
+                      # so this assumes you have positioned the car prior to starting.
+TARGET_THRESHOLD = 10 # number of pixels from TARGET_PIXEL that vehicle must be pointing
+                      # before a steering change will be made; this prevents algorithm
+                      # from being too twitchy when it is on or near the line.
+CONFIDENCE_THRESHOLD = (1 / IMAGE_W) / 3  # The fraction of total sampled pixels that must be yellow in the sample slice.
+                                          # The sample slice will have SCAN_HEIGHT pixels and the total number
+                                          # of sampled pixels is IMAGE_W x SCAN_HEIGHT, so if you want to make sure
+                                          # that all the pixels in the sample slice are yellow, then the confidence
+                                          # threshold should be SCAN_HEIGHT / (IMAGE_W x SCAN_HEIGHT) or (1 / IMAGE_W).
+                                          # If you keep getting `No line detected` logs in the console then you
+                                          # may want to lower the threshold.
+
+# LineFollower - throttle step controller; increase throttle on straights, descrease on turns
 THROTTLE_MAX = 0.3    # maximum throttle value the controller will produce
 THROTTLE_MIN = 0.15   # minimum throttle value the controller will produce
 THROTTLE_INITIAL = THROTTLE_MIN  # initial throttle value
-THROTTLE_STEP = 0.1   # how much to change throttle when off the line
+THROTTLE_STEP = 0.05  # how much to change throttle when off the line
 
 # These three PID constants are crucial to the way the car drives. If you are tuning them
 # start by setting the others zero and focus on first Kp, then Kd, and then Ki.
 PID_P = -0.01         # proportional mult for PID path follower
 PID_I = 0.000         # integral mult for PID path follower
 PID_D = -0.0001       # differential mult for PID path follower
-PID_P_DELTA = 0.005   # amount the inc/dec function will change the P value
-PID_D_DELTA = 0.00005 # amount the inc/dec function will change the D value
+
+OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in web ui
+                      # NOTE: this does not affect what is saved to the data
+
 
 #
 # Assign path follow functions to buttons.
