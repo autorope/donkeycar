@@ -20,6 +20,7 @@ from docopt import docopt
 # import cv2 early to avoid issue with importing after tensorflow
 # see https://github.com/opencv/opencv/issues/14884#issuecomment-599852128
 #
+
 try:
     import cv2
 except:
@@ -35,8 +36,12 @@ from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
 from donkeycar.parts.launch import AiLaunch
+from donkeycar.parts.kinematics import NormalizeSteeringAngle, UnnormalizeSteeringAngle, TwoWheelSteeringThrottle
+from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnormalizeAngularVelocity
+from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity
 from donkeycar.parts.explode import ExplodeDict
 from donkeycar.parts.transform import Lambda
+from donkeycar.parts.logger import LoggerPart
 from donkeycar.utils import *
 
 logger = logging.getLogger(__name__)
@@ -68,10 +73,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         else:
             model_type = cfg.DEFAULT_MODEL_TYPE
 
-    #Initialize car
+    # Initialize car
     V = dk.vehicle.Vehicle()
 
-    #Initialize logging before anything else to allow console logging
+    # Initialize logging before anything else to allow console logging
     if cfg.HAVE_CONSOLE_LOGGING:
         logger.setLevel(logging.getLevelName(cfg.LOGGING_LEVEL))
         ch = logging.StreamHandler()
@@ -117,7 +122,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     if cfg.SHOW_FPS:
         from donkeycar.parts.fps import FrequencyLogger
-        V.add(FrequencyLogger(cfg.FPS_DEBUG_INTERVAL), outputs=["fps/current", "fps/fps_list"])
+        V.add(FrequencyLogger(cfg.FPS_DEBUG_INTERVAL),
+              outputs=["fps/current", "fps/fps_list"])
 
     #
     # add the user input controller(s)
@@ -128,12 +134,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     ctr = add_user_controller(V, cfg, use_joystick)
 
     #
-    # explode the buttons into their own key/values in memory
+    # explode the buttons input map into individual output key/values in memory
     #
     V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
 
     #
-    # adding a button handler is just adding a part with a run_condition
+    # For example: adding a button handler is just adding a part with a run_condition
     # set to the button's name, so it runs when button is pressed.
     #
     V.add(Lambda(lambda v: print(f"web/w1 clicked")), inputs=["web/w1"], run_condition="web/w1")
@@ -308,7 +314,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # for the configured model format
         #
         model_reload_cb = None
-
         if '.h5' in model_path or '.trt' in model_path or '.tflite' in \
                 model_path or '.savedmodel' in model_path or '.pth':
             # load the whole model with weigths, etc
@@ -387,7 +392,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         # collect model inference outputs
         #
-        outputs = ['pilot/angle', 'pilot/throttle']
+        outputs = ['pilot/steering', 'pilot/throttle']
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
@@ -435,25 +440,25 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # Choose what inputs should change the car.
     class DriveMode:
         def run(self, mode,
-                    user_angle, user_throttle,
-                    pilot_angle, pilot_throttle):
+                    user_steering, user_throttle,
+                    pilot_steering, pilot_throttle):
             if mode == 'user':
-                return user_angle, user_throttle
+                return user_steering, user_throttle
 
             elif mode == 'local_angle':
-                return pilot_angle if pilot_angle else 0.0, user_throttle
+                return pilot_steering if pilot_steering else 0.0, user_throttle
 
             else:
-                return pilot_angle if pilot_angle else 0.0, \
+                return pilot_steering if pilot_steering else 0.0, \
                        pilot_throttle * cfg.AI_THROTTLE_MULT \
                            if pilot_throttle else 0.0
 
     V.add(DriveMode(),
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'],
-          outputs=['angle', 'throttle'])
+          inputs=['user/mode', 'user/steering', 'user/throttle',
+                  'pilot/steering', 'pilot/throttle'],
+          outputs=['steering', 'throttle'])
 
-
+    V.add(LoggerPart(['steering', 'throttle']), inputs=['steering', 'throttle'])
 
     if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
@@ -488,7 +493,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     add_drivetrain(V, cfg)
 
-
     # OLED setup
     if cfg.USE_SSD1306_128_32:
         from donkeycar.parts.oled import OLEDPart
@@ -499,10 +503,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # add tub to save data
 
     if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/steering', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:
-        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
+        inputs=['cam/image_array','user/steering', 'user/throttle', 'user/mode']
         types=['image_array','float', 'float','str']
 
     if cfg.HAVE_ODOM:
@@ -540,7 +544,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/angle', 'pilot/throttle']
+        inputs += ['pilot/steering', 'pilot/throttle']
         types += ['float', 'float']
 
     if cfg.HAVE_PERFMON:
@@ -604,7 +608,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
+          outputs=['user/steering', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
           threaded=True)
 
     #
@@ -620,7 +624,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
             V.add(
                 ctr,
                 inputs=['user/mode', 'recording'],
-                outputs=['user/angle', 'user/throttle',
+                outputs=['user/steering', 'user/throttle',
                          'user/mode', 'recording'],
                 threaded=False)
         else:
@@ -657,7 +661,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
             V.add(
                 ctr,
                 inputs=[input_image, 'user/mode', 'recording'],
-                outputs=['user/angle', 'user/throttle',
+                outputs=['user/steering', 'user/throttle',
                          'user/mode', 'recording'],
                 threaded=True)
     return ctr
@@ -675,7 +679,7 @@ def add_simulator(V, cfg):
                         #    record_distance=cfg.SIM_RECORD_DISTANCE, record_orientation=cfg.SIM_RECORD_ORIENTATION,
                            delay=cfg.SIM_ARTIFICIAL_LATENCY)
         threaded = True
-        inputs = ['angle', 'throttle']
+        inputs = ['steering', 'throttle']
         outputs = ['cam/image_array']
 
         if cfg.SIM_RECORD_LOCATION:
@@ -785,7 +789,7 @@ def add_camera(V, cfg, camera_type):
             V.add(cam, inputs=inputs, outputs=outputs, threaded=threaded)
 
 
-def add_odometry(V, cfg):
+def add_odometry(V, cfg, threaded=True):
     """
     If the configuration support odometry, then
     add encoders, odometry and kinematics to the vehicle pipeline
@@ -793,17 +797,18 @@ def add_odometry(V, cfg):
               On output this may be modified.
     :param cfg: the configuration (from myconfig.py)
     """
+    from donkeycar.parts.pose import BicyclePose, UnicyclePose
+
     if cfg.HAVE_ODOM:
-        if cfg.ENCODER_TYPE == "GPIO":
-            from donkeycar.parts.encoder import RotaryEncoder
-            enc = RotaryEncoder(mm_per_tick=cfg.MM_PER_TICK, pin=cfg.ODOM_PIN, poll_delay=1.0/(cfg.DRIVE_LOOP_HZ*3), debug=cfg.ODOM_DEBUG)
-            V.add(enc, inputs=['throttle'], outputs=['enc/speed'], threaded=True)
-        elif cfg.ENCODER_TYPE == "arduino":
-            from donkeycar.parts.encoder import ArduinoEncoder
-            enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
-            V.add(enc, outputs=['enc/speed'], threaded=True)
-        else:
-            print("No supported encoder found")
+        poll_delay_secs = 0.01  # pose estimation runs at 100hz
+        kinematics = UnicyclePose(cfg, poll_delay_secs) if cfg.HAVE_ODOM_2 else BicyclePose(cfg, poll_delay_secs)
+        V.add(kinematics,
+            inputs = ["throttle", "steering", None],
+            outputs = ['enc/distance', 'enc/speed', 'pos/x', 'pos/y',
+                       'pos/angle', 'vel/x', 'vel/y', 'vel/angle',
+                       'nul/timestamp'],
+            threaded = threaded)
+
 
 #
 # IMU setup
@@ -836,7 +841,7 @@ def add_drivetrain(V, cfg):
         is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
         if is_differential_drive:
             V.add(TwoWheelSteeringThrottle(),
-                  inputs=['throttle', 'angle'],
+                  inputs=['throttle', 'steering'],
                   outputs=['left/throttle', 'right/throttle'])
 
         if cfg.DRIVE_TRAIN_TYPE == "PWM_STEERING_THROTTLE":
@@ -864,7 +869,7 @@ def add_drivetrain(V, cfg):
                                                 max_pulse=dt['THROTTLE_FORWARD_PWM'],
                                                 zero_pulse=dt['THROTTLE_STOPPED_PWM'],
                                                 min_pulse=dt['THROTTLE_REVERSE_PWM'])
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
 
         elif cfg.DRIVE_TRAIN_TYPE == "I2C_SERVO":
@@ -885,7 +890,7 @@ def add_drivetrain(V, cfg):
                                             zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                                             min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
 
         elif cfg.DRIVE_TRAIN_TYPE == "DC_STEER_THROTTLE":
@@ -897,7 +902,7 @@ def add_drivetrain(V, cfg):
                 pins.pwm_pin_by_id(dt['FWD_DUTY_PIN']),
                 pins.pwm_pin_by_id(dt['BWD_DUTY_PIN']))
 
-            V.add(steering, inputs=['angle'])
+            V.add(steering, inputs=['steering'])
             V.add(throttle, inputs=['throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "DC_TWO_WHEEL":
@@ -945,7 +950,7 @@ def add_drivetrain(V, cfg):
                 pins.pwm_pin_by_id(dt['FWD_DUTY_PIN']),
                 pins.pwm_pin_by_id(dt['BWD_DUTY_PIN']))
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(motor, inputs=["throttle"])
 
         elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_3PIN":
@@ -968,7 +973,7 @@ def add_drivetrain(V, cfg):
                 pins.output_pin_by_id(dt['BWD_PIN']),
                 pins.pwm_pin_by_id(dt['DUTY_PIN']))
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(motor, inputs=["throttle"])
 
         elif cfg.DRIVE_TRAIN_TYPE == "SERVO_HBRIDGE_PWM":
@@ -988,12 +993,12 @@ def add_drivetrain(V, cfg):
             from donkeycar.parts.actuator import Mini_HBridge_DC_Motor_PWM
             motor = Mini_HBridge_DC_Motor_PWM(cfg.HBRIDGE_PIN_FWD, cfg.HBRIDGE_PIN_BWD)
 
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(motor, inputs=["throttle"])
 
         elif cfg.DRIVE_TRAIN_TYPE == "MM1":
             from donkeycar.parts.robohat import RoboHATDriver
-            V.add(RoboHATDriver(cfg), inputs=['angle', 'throttle'])
+            V.add(RoboHATDriver(cfg), inputs=['steering', 'throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
             #
@@ -1013,7 +1018,7 @@ def add_drivetrain(V, cfg):
                                    max_pulse=cfg.THROTTLE_FORWARD_PWM,
                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
-            V.add(steering, inputs=['angle'], threaded=True)
+            V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
     
         elif cfg.DRIVE_TRAIN_TYPE == "VESC":
@@ -1028,7 +1033,7 @@ def add_drivetrain(V, cfg):
                           cfg.VESC_STEERING_SCALE,
                           cfg.VESC_STEERING_OFFSET
                         )
-            V.add(vesc, inputs=['angle', 'throttle'])
+            V.add(vesc, inputs=['steering', 'throttle'])
 
 
 if __name__ == '__main__':

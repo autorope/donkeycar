@@ -244,10 +244,14 @@ class PathPlot(object):
             for iP in range(0, len(path) - 1):
                 ax, ay = path[iP]
                 bx, by = path[iP + 1]
+
+                #
+                # y increases going north, so handle this with scale
+                #
                 self.plot_line(ax * self.scale + self.offset[0],
-                            ay * self.scale + self.offset[1],
+                            ay * -self.scale + self.offset[1],
                             bx * self.scale + self.offset[0],
-                            by * self.scale + self.offset[1],
+                            by * -self.scale + self.offset[1],
                             draw,
                             color)
         return img
@@ -279,7 +283,7 @@ class PlotCircle(object):
     def run(self, img, x, y):
         draw = ImageDraw.Draw(img)
         self.plot_circle(x * self.scale + self.offset[0],
-                        y * self.scale + self.offset[1], 
+                        y * -self.scale + self.offset[1],  # y increases going north
                         self.radius,
                         draw, 
                         self.color)

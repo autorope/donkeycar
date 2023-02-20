@@ -76,7 +76,7 @@ class InputPin(ABC):
     def start(self, on_input=None, edge: int = PinEdge.RISING) -> None:
         """
         Start the pin in input mode.
-        :param on_input: function to call when an edge is detected, or None to ignore
+        :param on_input: no-arg function to call when an edge is detected, or None to ignore
         :param edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
         This raises a RuntimeError if the pin is already started.
         You can check to see if the pin is started by calling
@@ -422,7 +422,7 @@ def gpio_fn(pin_scheme:int, fn:Callable[[], Any]):
         GPIO.setmode(pin_scheme)
     elif prev_scheme != pin_scheme:
         raise RuntimeError(f"Attempt to change GPIO pin scheme from ({prev_scheme}) to ({pin_scheme})"
-                           " after it has been set.  All RPi.GPIO user must use the same pin scheme.")
+                           " after it has been set.  All RPi.GPIO pins must use the same pin scheme.")
     val = fn()
     return val
 
@@ -436,6 +436,7 @@ class InputPinGpio(InputPin):
         """
         self.pin_number = pin_number
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
+        self.pin_scheme_str = pin_scheme
         self.pull = pull
         self.on_input = None
         self._state = PinState.NOT_STARTED
@@ -443,15 +444,18 @@ class InputPinGpio(InputPin):
 
     def _callback(self, pin_number):
         if self.on_input is not None:
-            self.on_input(self.pin_number, self.input())
+            self.on_input()
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
-        :param on_input: function to call when an edge is detected, or None to ignore
+        :param on_input: no-arg function to call when an edge is detected, or None to ignore
         :param edge: type of edge(s) that trigger on_input; default is
         """
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start InputPinGpio({self.pin_number}) that is already started.")
+
+        # stop the pin so it is not in use, then start it
+        gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.IN, pull_up_down=gpio_pin_pull[self.pull]))
         if on_input is not None:
             self.on_input = on_input
@@ -459,11 +463,14 @@ class InputPinGpio(InputPin):
                 self.pin_scheme,
                 lambda: GPIO.add_event_detect(self.pin_number, gpio_pin_edge[edge], callback=self._callback))
         self.input()  # read first state
+        logger.info(f"InputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' started.")
 
     def stop(self) -> None:
         if self.state() != PinState.NOT_STARTED:
+            self.on_input = None
             gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
             self._state = PinState.NOT_STARTED
+            logger.info(f"InputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' stopped.")
 
     def state(self) -> int:
         return self._state
@@ -479,19 +486,24 @@ class OutputPinGpio(OutputPin):
     """
     def __init__(self, pin_number: int, pin_scheme: str) -> None:
         self.pin_number = pin_number
+        self.pin_scheme_str = pin_scheme
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self._state = PinState.NOT_STARTED
 
     def start(self, state: int = PinState.LOW) -> None:
         if self.state() != PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to start OutputPinGpio({self.pin_number}) that is already started.")
+        # first stop the pin so we know it is not in use, then start it.
+        gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.output(state)
+        logger.info(f"OutputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' started.")
 
     def stop(self) -> None:
         if self.state() != PinState.NOT_STARTED:
             gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
             self._state = PinState.NOT_STARTED
+            logger.info(f"OutputPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' stopped.")
 
     def state(self) -> int:
         return self._state
@@ -507,6 +519,7 @@ class PwmPinGpio(PwmPin):
     """
     def __init__(self, pin_number: int, pin_scheme: str, frequency_hz: float = 50) -> None:
         self.pin_number = pin_number
+        self.pin_scheme_str = pin_scheme
         self.pin_scheme = gpio_pin_scheme[pin_scheme]
         self.frequency = int(frequency_hz)
         self.pwm = None
@@ -517,16 +530,22 @@ class PwmPinGpio(PwmPin):
             raise RuntimeError("Attempt to start PwmPinGpio that is already started.")
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
+
+        # stop the pin so we know it is not in use, then start it
+        gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
         gpio_fn(self.pin_scheme, lambda: GPIO.setup(self.pin_number, GPIO.OUT))
         self.pwm = gpio_fn(self.pin_scheme, lambda: GPIO.PWM(self.pin_number, self.frequency))
         self.pwm.start(duty * 100)  # takes duty in range 0 to 100
         self._state = duty
+        logger.info(f"PwmPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' started.")
 
     def stop(self) -> None:
         if self.pwm is not None:
             self.pwm.stop()
             gpio_fn(self.pin_scheme, lambda: GPIO.cleanup(self.pin_number))
+            logger.info(f"PwmPin 'RPI_GPIO.{self.pin_scheme_str}.{self.pin_number}' stopped.")
         self._state = PinState.NOT_STARTED
+
 
     def state(self) -> float:
         return self._state
@@ -757,12 +776,12 @@ class InputPinPigpio(InputPin):
 
     def _callback(self, gpio, level, tock):
         if self.on_input is not None:
-            self.on_input(gpio, level)
+            self.on_input()
 
     def start(self, on_input=None, edge=PinEdge.RISING) -> None:
         """
         Start the input pin and optionally set callback.
-        :param on_input: function to call when an edge is detected, or None to ignore
+        :param on_input: no-arg function to call when an edge is detected, or None to ignore
         :param edge: type of edge(s) that trigger on_input; default is PinEdge.RISING
         """
         if self.state() != PinState.NOT_STARTED:
@@ -984,11 +1003,12 @@ if __name__ == '__main__':
         'both': PinEdge.BOTH
     }
 
-    def on_input(pin_number, state):
+    def on_input():
+        state = ttl_in_pin.input()
         if state == PinState.HIGH:
-            print("+", pin_number, time.time()*1000)
+            print("+", ttl_in_pin.pin_number, time.time()*1000)
         elif state == PinState.LOW:
-            print("-", pin_number, time.time()*1000)
+            print("-", ttl_in_pin.pin_number, time.time()*1000)
 
     pwm_out_pin: PwmPin = None
     ttl_out_pin: OutputPin = None
@@ -1041,3 +1061,5 @@ if __name__ == '__main__':
             pwm_out_pin.stop()
         if ttl_out_pin is not None:
             ttl_out_pin.stop()
+        if ttl_in_pin is not None:
+            ttl_in_pin.stop()

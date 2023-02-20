@@ -214,17 +214,20 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST)
     V.add(path, inputs=['recording', 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
 
-    if cfg.DONKEY_GYM:
-        lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
-        V.add(lpos, inputs=lpos.inputs)
-    if cfg.HAVE_ODOM:
-        if cfg.HAVE_ODOM_2:
-            lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp', 'enc/right/timestamp'], level="INFO", logger="odometer")
-            V.add(lpos, inputs=lpos.inputs)
-        lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
-        V.add(lpos, inputs=lpos.inputs)
-        lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/angle'], level="INFO", logger="kinematics")
-        V.add(lpos, inputs=lpos.inputs)
+    #
+    # log pose
+    #
+    # if cfg.DONKEY_GYM:
+    #     lpos = LoggerPart(inputs=['dist/left', 'dist/right', 'dist', 'pos/pos_x', 'pos/pos_y', 'yaw'], level="INFO", logger="simulator")
+    #     V.add(lpos, inputs=lpos.inputs)
+    # if cfg.HAVE_ODOM:
+    #     if cfg.HAVE_ODOM_2:
+    #         lpos = LoggerPart(inputs=['enc/left/distance', 'enc/right/distance', 'enc/left/timestamp', 'enc/right/timestamp'], level="INFO", logger="odometer")
+    #         # V.add(lpos, inputs=lpos.inputs)
+    #     lpos = LoggerPart(inputs=['enc/distance', 'enc/timestamp'], level="INFO", logger="odometer")
+    #     V.add(lpos, inputs=lpos.inputs)
+    #     lpos = LoggerPart(inputs=['pos/x', 'pos/y', 'pos/steering'], level="INFO", logger="kinematics")
+    #     V.add(lpos, inputs=lpos.inputs)
 
     def save_path():
         if path.length() > 0:
@@ -291,7 +294,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # This will use the cross track error and PID constants to try to steer back towards the path.
     pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE, cfg.USE_CONSTANT_THROTTLE, min_throttle=cfg.PID_THROTTLE)
-    V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/angle', 'pilot/throttle'], run_condition="run_pilot")
+    V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/steering', 'pilot/throttle'], run_condition="run_pilot")
 
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
@@ -440,19 +443,21 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #Choose what inputs should change the car.
     class DriveMode:
         def run(self, mode, 
-                user_angle, user_throttle,
-                pilot_angle, pilot_throttle):
+                user_steering, user_throttle,
+                pilot_steering, pilot_throttle):
             if mode == 'user':
-                return user_angle, user_throttle
+                return user_steering, user_throttle
             elif mode == 'local_angle':
-                return pilot_angle, user_throttle
+                return pilot_steering, user_throttle
             else:
-                return pilot_angle, pilot_throttle
+                return pilot_steering, pilot_throttle
 
     V.add(DriveMode(), 
-          inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/angle', 'pilot/throttle'], 
-          outputs=['angle', 'throttle'])
+          inputs=['user/mode', 'user/steering', 'user/throttle',
+                  'pilot/steering', 'pilot/throttle'],
+          outputs=['steering', 'throttle'])
+
+    # V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
 
     #
     # To make differential drive steer,
@@ -460,7 +465,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     if is_differential_drive:
         V.add(TwoWheelSteeringThrottle(),
-            inputs=['throttle', 'angle'],
+            inputs=['throttle', 'steering'],
             outputs=['left/throttle', 'right/throttle'])
 
     #
