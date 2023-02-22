@@ -573,13 +573,14 @@ TARGET_PIXEL = None   # In not None, then this is the expected horizontal positi
 TARGET_THRESHOLD = 10 # number of pixels from TARGET_PIXEL that vehicle must be pointing
                       # before a steering change will be made; this prevents algorithm
                       # from being too twitchy when it is on or near the line.
-CONFIDENCE_THRESHOLD = (1 / IMAGE_W) / 3  # The fraction of total sampled pixels that must be yellow in the sample slice.
-                                          # The sample slice will have SCAN_HEIGHT pixels and the total number
-                                          # of sampled pixels is IMAGE_W x SCAN_HEIGHT, so if you want to make sure
-                                          # that all the pixels in the sample slice are yellow, then the confidence
-                                          # threshold should be SCAN_HEIGHT / (IMAGE_W x SCAN_HEIGHT) or (1 / IMAGE_W).
-                                          # If you keep getting `No line detected` logs in the console then you
-                                          # may want to lower the threshold.
+CONFIDENCE_THRESHOLD = 0.0015   # The fraction of total sampled pixels that must be yellow in the sample slice.
+                                # The sample slice will have SCAN_HEIGHT pixels and the total number
+                                # of sampled pixels is IMAGE_W x SCAN_HEIGHT, so if you want to make sure
+                                # that all the pixels in the sample slice are yellow, then the confidence
+                                # threshold should be SCAN_HEIGHT / (IMAGE_W x SCAN_HEIGHT) or (1 / IMAGE_W).
+                                # if you want half of the pixels in the slice to match hten (1 / IMAGE_W) / 2.
+                                # If you keep getting `No line detected` logs in the console then you
+                                # may want to lower the threshold.
 
 # LineFollower - throttle step controller; increase throttle on straights, descrease on turns
 THROTTLE_MAX = 0.3    # maximum throttle value the controller will produce
