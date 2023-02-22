@@ -560,7 +560,7 @@ CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array']
 CV_CONTROLLER_CONDITION = "run_pilot"
 
 # LineFollower - line color and detection area
-SCAN_Y = 120          # num pixels from the top to start horiz scan
+SCAN_Y = 100          # num pixels from the top to start horiz scan
 SCAN_HEIGHT = 20      # num pixels high to grab from horiz scan
 COLOR_THRESHOLD_LOW  = (0, 50, 50)    # HSV dark yellow (opencv HSV hue value is 0..179, saturation and value are both 0..255)
 COLOR_THRESHOLD_HIGH = (50, 255, 255) # HSV light yellow (opencv HSV hue value is 0..179, saturation and value are both 0..255)
@@ -569,6 +569,7 @@ COLOR_THRESHOLD_HIGH = (50, 255, 255) # HSV light yellow (opencv HSV hue value i
 TARGET_PIXEL = None   # In not None, then this is the expected horizontal position in pixels of the yellow line.
                       # If None, then detect the position yellow line at startup;
                       # so this assumes you have positioned the car prior to starting.
+                      # Alternatively set this to IMAGE_W / 2 to follow middle line
 TARGET_THRESHOLD = 10 # number of pixels from TARGET_PIXEL that vehicle must be pointing
                       # before a steering change will be made; this prevents algorithm
                       # from being too twitchy when it is on or near the line.
@@ -591,6 +592,9 @@ THROTTLE_STEP = 0.05  # how much to change throttle when off the line
 PID_P = -0.01         # proportional mult for PID path follower
 PID_I = 0.000         # integral mult for PID path follower
 PID_D = -0.0001       # differential mult for PID path follower
+
+PID_P_DELTA = 0.005   # amount the inc/dec function will change the P value
+PID_D_DELTA = 0.00005 # amount the inc/dec function will change the D value
 
 OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in web ui
                       # NOTE: this does not affect what is saved to the data
