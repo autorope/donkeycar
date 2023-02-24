@@ -65,6 +65,8 @@ donkeycar_system_packages:
   # more
   - python3-psutil # to fix donkeycar install
   - nano
+  # serial link debug
+  - tio
 
 # Packages to install with pip
 donkeycar_pip_packages:

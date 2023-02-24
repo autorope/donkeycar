@@ -1253,7 +1253,11 @@ class RobocarsHat (metaclass=Singleton):
         last_received = []
         with RobocarsHat.robocarshat_lock:
             while (RobocarsHat.robocarshat_device.inWaiting()>0):
-                self.buffer_string =  self.buffer_string + RobocarsHat.robocarshat_device.read(RobocarsHat.robocarshat_device.inWaiting()).decode('ascii')
+                try:
+                    self.buffer_string =  self.buffer_string + RobocarsHat.robocarshat_device.read(RobocarsHat.robocarshat_device.inWaiting()).decode('ascii')
+                except UnicodeDecodeError:
+                    pass
+
                 if '\n' in self.buffer_string:
                     lines = self.buffer_string.split('\n') # Guaranteed to have at least 2 entries
                     self.buffer_string = lines[-1]
