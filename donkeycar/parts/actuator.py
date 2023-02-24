@@ -1212,6 +1212,9 @@ class RobocarsHat (metaclass=Singleton):
         if (RobocarsHat.steeringTrim != None):
             steeringIdle = RobocarsHat.steeringTrim;
 
+        if (self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_INVERT):
+            steering = -steering
+
         if steering > 0:
             pulse_steering = dk.utils.map_range(steering, 0, self.MAX_STEERING,
                                             steeringIdle, self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_MAX)

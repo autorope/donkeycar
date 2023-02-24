@@ -542,6 +542,7 @@ ROBOCARSHAT_PWM_OUT_THROTTLE_MAX    =   2000
 ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1000
 ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1500
 ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   2000
+ROBOCARSHAT_PWM_OUT_STEERING_INVERT    =   False
 
 # Folowing values can be ajusted to normalized btzeen -1 and 1.
 # # If  ROBOCARSHAT_USE_AUTOCALIBRATION is used, IDLE values are automatically identified by the Hat
