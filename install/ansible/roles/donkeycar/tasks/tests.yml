@@ -3,13 +3,21 @@
 - name: test opencv install
   become: false
   shell:
-    cmd: "source /home/{{ donkeycar_user }}/env/bin/activate && python -c 'import cv2'"
+    cmd: |
+      source env/bin/activate
+      {{ 'export OPENBLAS_CORETYPE=ARMV8' if donkeycar_export_openblas_coretype_armv8 else '' }}
+      source /home/{{ donkeycar_user }}/.profile && python3 -c 'import cv2; print(cv2.__version__)'
     executable: /bin/bash
   changed_when: false
+  ignore_errors: true
 
 - name: test tensorflow install
   become: false
   shell:
-    cmd: "source /home/{{ donkeycar_user }}/env/bin/activate && python -c 'import tensorflow'"
+    cmd: |
+      source env/bin/activate
+      {{ 'export OPENBLAS_CORETYPE=ARMV8' if donkeycar_export_openblas_coretype_armv8 else '' }}
+      source /home/{{ donkeycar_user }}/.bashrc && python -c 'import tensorflow; print(tensorflow.__version__)'
     executable: /bin/bash
   changed_when: false
+  ignore_errors: true

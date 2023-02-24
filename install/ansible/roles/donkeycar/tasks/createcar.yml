@@ -2,8 +2,13 @@
 
 - name: create car - overwrite if it exists
   become: false
-  command: "/home/{{ donkeycar_user }}/env/bin/donkey createcar --path /home/{{ donkeycar_user }}/car --overwrite"
-
+  shell: 
+    cmd: |
+      source env/bin/activate
+      {{ 'export OPENBLAS_CORETYPE=ARMV8' if donkeycar_export_openblas_coretype_armv8 else '' }}
+      donkey createcar --path /home/{{ donkeycar_user }}/car --overwrite
+    executable: /bin/bash
+    
 - name: copy car config
   copy:
     remote_src: true

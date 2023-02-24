@@ -215,6 +215,7 @@ ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_p
 ```
 
 Example on WINET, overriding hostname with IP address (or .local) and specifying manually actual SSH and sudo password :
+
 ```bash
 ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit pc92 -e "ansible_host=172.32.65.167" --ask-pass -k -K
 ```
