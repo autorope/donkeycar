@@ -1265,6 +1265,8 @@ class RobocarsHat (metaclass=Singleton):
                     battery = list(filter(lambda line: line.startswith('0'), lines[:-1]))
                     sensors = list(filter(lambda line: line.startswith('2'), lines[:-1]))
                     calibration = list(filter(lambda line: line.startswith('3'), lines[:-1]))
+                    alarm = list(filter(lambda line: line.startswith('4'), lines[:-1]))
+                    debug = list(filter(lambda line: line.startswith('9'), lines[:-1]))
                     if (len(drive)>0) :
                         last_received.append(drive[-1].rstrip())
                     if (len(calibration)>0) :
@@ -1273,6 +1275,12 @@ class RobocarsHat (metaclass=Singleton):
                         last_received.append(sensors[-1].rstrip())
                     if (len(battery)>0) :
                         last_received.append(battery[-1].rstrip())
+                    if (len(alarm)>0) :
+                        actlogger.info(f"Rx Alarm :{alarm}")
+                        last_received.append(alarm[-1].rstrip())
+                    if (len(debug)>0) :
+                        actlogger.debug(f"Rx Debug :{debug}")
+
                     #If the Arduino sends lots of empty lines, you'll lose the
                     #last filled line, so you could make the above statement conditional
                     #like so: if lines[-2]: last_received = lines[-2]
