@@ -62,7 +62,8 @@ from donkeycar.parts.path import CsvThrottlePath, PathPlot, CTE, PID_Pilot, \
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_drivetrain, add_simulator, add_imu
+    add_user_controller, add_drivetrain, add_simulator, add_imu, DriveMode, \
+    UserPilotCondition, ToggleRecording
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
@@ -189,25 +190,13 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     V.add(origin_reset, inputs=['pos/x', 'pos/y', 'cte/closest_pt'], outputs=['pos/x', 'pos/y', 'cte/closest_pt'])
 
 
-    class UserCondition:
-        def run(self, mode):
-            if mode == 'user':
-                return True
-            else:
-                return False
+    #
+    # maintain run conditions for user mode and autopilot mode parts.
+    #
+    V.add(UserPilotCondition(),
+          inputs=['user/mode', "cam/image_array", "cam/image_array"],
+          outputs=['run_user', "run_pilot", "ui/image_array"])
 
-    V.add(UserCondition(), inputs=['user/mode'], outputs=['run_user'])
-
-    #See if we should even run the pilot module. 
-    #This is only needed because the part run_condition only accepts boolean
-    class PilotCondition:
-        def run(self, mode):
-            if mode == 'user':
-                return False
-            else:
-                return True
-
-    V.add(PilotCondition(), inputs=['user/mode'], outputs=['run_pilot'])
 
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
@@ -313,48 +302,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         logging.info("pid: p+ %f" % pid.Kp)
 
 
-    class ToggleRecording:
-        def __init__(self, auto_record_on_throttle):
-            self.auto_record_on_throttle = auto_record_on_throttle
-            self.recording_latch:bool = None
-            self.toggle_latch:bool = False
-            self.last_recording = None
-
-        def set_recording(self, recording:bool):
-            self.recording_latch = recording
-
-        def toggle_recording(self):
-            self.toggle_latch = True
-
-        def run(self, mode:str, recording:bool):
-            recording_in = recording
-            if recording_in != self.last_recording:
-                logging.info(f"Recording Change = {recording_in}")
-
-            if self.toggle_latch:
-                if self.auto_record_on_throttle:
-                    logger.info('auto record on throttle is enabled; ignoring toggle of manual mode.')
-                else:
-                    recording = not self.last_recording
-                self.toggle_latch = False
-
-            if self.recording_latch is not None:
-                recording = self.recording_latch
-                self.recording_latch = None
-
-            if recording and mode != 'user':
-                logging.info("Ignoring recording in auto-pilot mode")
-                recording = False
-
-            if self.last_recording != recording:
-                logging.info(f"Setting Recording = {recording}")
-
-            self.last_recording = recording
-
-            return recording
-
-
-    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE)
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
     V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
 
 
@@ -440,19 +388,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
 
 
-    #Choose what inputs should change the car.
-    class DriveMode:
-        def run(self, mode, 
-                user_steering, user_throttle,
-                pilot_steering, pilot_throttle):
-            if mode == 'user':
-                return user_steering, user_throttle
-            elif mode == 'local_angle':
-                return pilot_steering, user_throttle
-            else:
-                return pilot_steering, pilot_throttle
-
-    V.add(DriveMode(), 
+    #
+    # Decide what inputs should change the car's steering and throttle
+    # based on the choice of user or autopilot drive mode
+    #
+    V.add(DriveMode(cfg.AI_THROTTLE_MULT),
           inputs=['user/mode', 'user/steering', 'user/throttle',
                   'pilot/steering', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
@@ -473,6 +413,17 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     add_drivetrain(V, cfg)
 
+
+    #
+    # OLED display setup
+    #
+    if cfg.USE_SSD1306_128_32:
+        from donkeycar.parts.oled import OLEDPart
+        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_ROTATION, cfg.SSD1306_RESOLUTION, auto_record_on_throttle)
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+
+
     # Print Joystick controls
     if ctr is not None and isinstance(ctr, JoystickController):
         ctr.print_controls()
@@ -486,11 +437,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     loc_plot = PlotCircle(scale=cfg.PATH_SCALE, offset=cfg.PATH_OFFSET, color = "green")
     V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'], run_condition='run_user')
 
+
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
         max_loop_count=cfg.MAX_LOOPS)
-
-
-from donkeycar.parts.text_writer import CsvLogger
 
 
 def add_gps(V, cfg):

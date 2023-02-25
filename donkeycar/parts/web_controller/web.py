@@ -354,8 +354,10 @@ class VideoAPI(RequestHandler):
     '''
     Serves a MJPEG of the images posted from the vehicle.
     '''
-
     async def get(self):
+        placeholder_image = utils.load_image_sized(
+                        os.path.join(self.application.static_file_path,
+                                     "img_placeholder.jpg"), 160, 120, 3)
 
         self.set_header("Content-type",
                         "multipart/x-mixed-replace;boundary=--boundarydonotcross")
@@ -365,10 +367,16 @@ class VideoAPI(RequestHandler):
         while True:
 
             interval = .01
-            if served_image_timestamp + interval < time.time() and \
-                    hasattr(self.application, 'img_arr'):
+            if served_image_timestamp + interval < time.time():
+                #
+                # if we have an image, then use it.
+                # otherwise show placeholder
+                #
+                if hasattr(self.application, 'img_arr') and self.application.img_arr is not None:
+                    img = utils.arr_to_binary(self.application.img_arr)
+                else:
+                    img = utils.arr_to_binary(placeholder_image)
 
-                img = utils.arr_to_binary(self.application.img_arr)
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
                 self.write("Content-length: %s\r\n\r\n" % len(img))

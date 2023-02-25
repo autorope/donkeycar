@@ -179,8 +179,7 @@ def load_pil_image(filename, cfg):
         return img
 
     except Exception as e:
-        print(e)
-        print('failed to load image:', filename)
+        logger.error(f'failed to load image from {filename}: {e.message}')
         return None
 
 
@@ -190,20 +189,45 @@ def load_image(filename, cfg):
     :param cfg:                 donkey config
     :return np.ndarray:         numpy uint8 image array
     """
-    img = load_pil_image(filename, cfg)
-
-    if not img:
-        return None
-
-    img_arr = np.asarray(img)
-
-    # If the PIL image is greyscale, the np array will have shape (H, W)
-    # Need to add a depth channel by expanding to (H, W, 1)
-    if img.mode == 'L':
-        h, w = img_arr.shape[:2]
-        img_arr = img_arr.reshape(h, w, 1)
+    img_arr = load_image_sized(filename, cfg.IMAGE_W, cfg.IMAGE_H, cfg.IMAGE_DEPTH)
 
     return img_arr
+
+
+def load_image_sized(filename, image_width, image_height, image_depth):
+    """Loads an image from a file path as a PIL image. Also handles resizing.
+
+    Args:
+        filename (string): path to the image file
+        image_width: width in pixels of the output image
+        image_height: height in pixels of the output image
+        image_depth: depth of the output image (1 for greyscale)
+
+    Returns:
+        (np.ndarray):         numpy uint8 image array.
+    """
+    try:
+        img = Image.open(filename)
+        if img.height != image_height or img.width != image_width:
+            img = img.resize((image_width, image_height))
+
+        if image_depth == 1:
+            img = img.convert('L')
+
+        img_arr = np.asarray(img)
+
+        # If the PIL image is greyscale, the np array will have shape (H, W)
+        # Need to add a depth channel by expanding to (H, W, 1)
+        if img.mode == 'L':
+            h, w = img_arr.shape[:2]
+            img_arr = img_arr.reshape(h, w, 1)
+
+        return img_arr
+
+    except Exception as e:
+        logger.error(f'failed to load image from {filename}: {e.message}')
+        return None
+
 
 '''
 FILES
