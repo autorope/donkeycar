@@ -111,23 +111,25 @@ def mouse_callback(event, x, y, flags, param):
 
 
 def set_hsv_trackbars(hsv_low, hsv_high):
+    global window_name
     if hsv_low is not None and hsv_high is not None:
         cv2.setTrackbarPos("h-low", window_name, hsv_low[0])
         cv2.setTrackbarPos("s-low", window_name, hsv_low[1])
         cv2.setTrackbarPos("v-low", window_name, hsv_low[2])
         cv2.setTrackbarPos("h-high", window_name, hsv_high[0])
         cv2.setTrackbarPos("s-high", window_name, hsv_high[1])
-        cv2.setTrackbarPos("v-hign", window_name, hsv_high[2])
+        cv2.setTrackbarPos("v-high", window_name, hsv_high[2])
 
 
 def get_hsv_trackbars():
-     h_low = cv2.getTrackbarPos('h-low', window_name)
-     s_low = cv2.getTrackbarPos('s-low', window_name)
-     v_low = cv2.getTrackbarPos('v-low', window_name)
-     h_high = cv2.getTrackbarPos('h-high', window_name)
-     s_high = cv2.getTrackbarPos('s-high', window_name)
-     v_high = cv2.getTrackbarPos('v-high', window_name)
-     return [h_low, s_low, v_low], [h_high, s_high, v_high]
+    global window_name
+    h_low = cv2.getTrackbarPos('h-low', window_name)
+    s_low = cv2.getTrackbarPos('s-low', window_name)
+    v_low = cv2.getTrackbarPos('v-low', window_name)
+    h_high = cv2.getTrackbarPos('h-high', window_name)
+    s_high = cv2.getTrackbarPos('s-high', window_name)
+    v_high = cv2.getTrackbarPos('v-high', window_name)
+    return [h_low, s_low, v_low], [h_high, s_high, v_high]
 
 def print_hsv_trackbars():
     (h_low, s_low, v_low), (h_high, s_high, v_high) = get_hsv_trackbars()
@@ -146,12 +148,14 @@ def bgr_to_hsv(pixelRGB):
 # Creating a window for later use
 window_name = 'hsv_range_picker'
 
-def main(camera_index=0, width=640, height=480):
+def main(camera_index=0, width=640, height=480, file_image=None):
     global frame, drag_rect, text_lines
 
-    cap = cv2.VideoCapture(camera_index)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+    cap = None
+    if file_image is None:
+        cap = cv2.VideoCapture(camera_index)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     
     cv2.namedWindow(window_name)
 
@@ -172,9 +176,13 @@ def main(camera_index=0, width=640, height=480):
 
     while(1):
 
-        _, frame = cap.read()
-        if frame is None:
-            continue
+        frame = None
+        if file_image is not None:
+            frame = file_image.copy()
+        else: 
+            _, frame = cap.read()
+            if frame is None:
+                continue
         
         #
         # mask the image using the current HSV value
@@ -214,18 +222,19 @@ def main(camera_index=0, width=640, height=480):
         cv2.imshow(window_name, image)
 
         k = cv2.waitKey(5) & 0xFF
-        if k == 81 or k == 113:  # 'Q' or 'q'
+        if k == ord('q') or k == ord('Q'):  # 'Q' or 'q'
             break
         elif k == 27:  # escape
             set_hsv_trackbars((0,0,0), (179,255,255))
             text_lines = []  # clear text
-        elif k == 80 or k == 112:  # 'P' or 'p'
+        elif k == ord('p') or k == ord('P'):  # 'P' or 'p'
             # print current HSV range
             print_hsv_trackbars()
 
     print_hsv_trackbars()
     
-    cap.release()
+    if cap is not None:
+        cap.release()
 
     cv2.destroyAllWindows()
     
@@ -239,17 +248,25 @@ if __name__ == "__main__":
                         help = "width of image to capture")
     parser.add_argument("-ht", "--height", type=int, default=480,
                         help = "height of image to capture")
+    parser.add_argument("-f", "--file", type=str,
+                        help = "path to image file to user rather that a camera")
 
     # Read arguments from command line
     args = parser.parse_args()
     
+    image = None
     help = []
-    if args.camera < 0:
-        help.append("-c/--camera must be >= 0")
-    if args.width < 160:
-        help.append("-wd/--width must be >= 160")
-    if args.height < 120:
-        help.append("-ht/--height must be >= 120")
+    if args.file is not None:
+        image = cv2.imread(args.file)
+        if image is None:
+            help.append("-f/--file did not resolve to an image file.")
+    else:
+        if args.camera < 0:
+            help.append("-c/--camera must be >= 0")
+        if args.width < 160:
+            help.append("-wd/--width must be >= 160")
+        if args.height < 120:
+            help.append("-ht/--height must be >= 120")
         
     if len(help) > 0:
         parser.print_help()
@@ -263,4 +280,4 @@ if __name__ == "__main__":
     print("- press Escape to reset the low and high hsv value")
     print("- press 'q' to quit")
     
-    main(args.camera, args.width, args.height)
+    main(args.camera, args.width, args.height, image)
