@@ -393,7 +393,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         # collect model inference outputs
         #
-        outputs = ['pilot/steering', 'pilot/throttle']
+        outputs = ['pilot/angle', 'pilot/throttle']
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
@@ -444,7 +444,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     V.add(DriveMode(cfg.AI_THROTTLE_MULT),
           inputs=['user/mode', 'user/angle', 'user/throttle',
-                  'pilot/steering', 'pilot/throttle'],
+                  'pilot/angle', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
     V.add(LoggerPart(['steering', 'throttle']), inputs=['steering', 'throttle'])
@@ -518,7 +518,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/steering', 'pilot/throttle']
+        inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
 
     if cfg.HAVE_PERFMON:
