@@ -40,7 +40,6 @@ from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnorm
 from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity
 from donkeycar.parts.explode import ExplodeDict
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.pipe import Pipe
 from donkeycar.utils import *
 
@@ -136,7 +135,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     # convert 'user/steering' to 'user/angle' to be backward compatible with deep learning data
     #
-    V.add(Pipe(inputs='user/steering', outputs='user/angle'))
+    V.add(Pipe(), inputs=['user/steering'], outputs=['user/angle'])
 
     #
     # explode the buttons input map into individual output key/values in memory
@@ -447,7 +446,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                   'pilot/angle', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
-    V.add(LoggerPart(['steering', 'throttle']), inputs=['steering', 'throttle'])
 
     if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
