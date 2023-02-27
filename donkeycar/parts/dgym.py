@@ -20,7 +20,6 @@ class DonkeyGymEnv(object):
             if not is_exe(sim_path):
                 raise Exception("The path you provided is not an executable.")
 
-
         gym_conf = cfg.GYM_CONF
         gym_conf["exe_path"] = sim_path
         gym_conf["host"] = sim_host
@@ -65,7 +64,7 @@ class DonkeyGymEnv(object):
         }
 
         self.output_keys = {}
-        
+
         try:
             for key, val in cfg.SIM_RECORD.items():
                 if cfg.SIM_RECORD[key]:
@@ -75,8 +74,7 @@ class DonkeyGymEnv(object):
         except:
             raise Exception("SIM_RECORD could not be found in config.py. Please add it to your config.py file.")
 
-
-        self.delay = float(cfg.SIM_ARTIFICIAL_LATENCY) / 1000.0 
+        self.delay = float(cfg.SIM_ARTIFICIAL_LATENCY) / 1000.0
         self.buffer = []
 
     def delay_buffer(self, frame, info):
@@ -120,7 +118,7 @@ class DonkeyGymEnv(object):
                 outputs += self.info[key]
             else:
                 outputs += [self.info[key]]
-            
+
         if len(outputs) == 1:
             return self.frame
         else:
