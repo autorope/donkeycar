@@ -9,9 +9,9 @@ def is_exe(fpath):
 
 
 class DonkeyGymEnv(object):
-
-    def __init__(self, sim_path, host="127.0.0.1", port=9091, headless=0, env_name="donkey-generated-track-v0", sync="asynchronous", conf={}, record_location=False, record_gyroaccel=False, record_velocity=False, record_lidar=False, delay=0):
-
+    def __init__(self, cfg, outputs):
+        sim_path = cfg.DONKEY_SIM_PATH
+        sim_host = cfg.SIM_HOST
         if sim_path != "remote":
             if not os.path.exists(sim_path):
                 raise Exception(
@@ -20,28 +20,63 @@ class DonkeyGymEnv(object):
             if not is_exe(sim_path):
                 raise Exception("The path you provided is not an executable.")
 
-        conf["exe_path"] = sim_path
-        conf["host"] = host
-        conf["port"] = port
-        conf["guid"] = 0
-        conf["frame_skip"] = 1
-        self.env = gym.make(env_name, conf=conf)
+
+        gym_conf = cfg.GYM_CONF
+        gym_conf["exe_path"] = sim_path
+        gym_conf["host"] = sim_host
+        gym_conf["port"] = 9091
+        gym_conf["frame_skip"] = 1
+
+        self.env = gym.make(cfg.DONKEY_GYM_ENV_NAME, conf=gym_conf)
         self.frame = self.env.reset()
         self.action = [0.0, 0.0, 0.0]
         self.running = True
-        self.info = {'pos': (0., 0., 0.),
-                     'speed': 0,
-                     'cte': 0,
-                     'gyro': (0., 0., 0.),
-                     'accel': (0., 0., 0.),
-                     'vel': (0., 0., 0.),
-                     'lidar': []}
-        self.delay = float(delay) / 1000
-        self.record_location = record_location
-        self.record_gyroaccel = record_gyroaccel
-        self.record_velocity = record_velocity
-        self.record_lidar = record_lidar
+        self.info = {
+            'pos': (0., 0., 0.),
+            'cte': 0.0,
+            'speed': 0.0,
+            'forward_vel': 0.0,
+            'hit': False,
+            'gyro': (0., 0., 0.),
+            'accel': (0., 0., 0.),
+            'vel': (0., 0., 0.),
+            'odom': (0., 0., 0., 0.),
+            'lidar': [],
+            'orientation': (0., 0., 0.),
+            'last_lap_time': 0.0,
+            'lap_count': 0,
+        }
 
+        # output keys corresponding to info dict values
+        self.info_keys = {
+            'pos': ['pos/x', 'pos/y', 'pos/z'],
+            'cte': 'cte',
+            'speed': 'speed',
+            'forward_vel': 'forward_vel',
+            'hit': 'hit',
+            'gyro': ['gyro/x', 'gyro/y', 'gyro/z'],
+            'accel': ['accel/x', 'accel/y', 'accel/z'],
+            'vel': ['vel/x', 'vel/y', 'vel/z'],
+            'odom': ['odom/front_left', 'odom/front_right', 'odom/rear_left', 'odom/rear_right'],
+            'lidar': 'lidar',
+            'orientation': ['orientation/roll', 'orientation/pitch', 'orientation/yaw'],
+            'last_lap_time': 'last_lap_time',
+            'lap_count': 'lap_count',
+        }
+
+        self.output_keys = {}
+        
+        try:
+            for key, val in cfg.SIM_RECORD.items():
+                if cfg.SIM_RECORD[key]:
+                    outputs_key = self.info_keys[key]
+                    outputs += [outputs_key]
+                    self.output_keys[key] = outputs_key
+        except:
+            raise Exception("SIM_RECORD could not be found in config.py. Please add it to your config.py file.")
+
+
+        self.delay = float(cfg.SIM_ARTIFICIAL_LATENCY) / 1000.0 
         self.buffer = []
 
     def delay_buffer(self, frame, info):
@@ -77,17 +112,15 @@ class DonkeyGymEnv(object):
             brake = 0.0
 
         self.action = [steering, throttle, brake]
-
-        # Output Sim-car position information if configured
         outputs = [self.frame]
-        if self.record_location:
-            outputs += self.info['pos'][0],  self.info['pos'][1],  self.info['pos'][2],  self.info['speed'], self.info['cte']
-        if self.record_gyroaccel:
-            outputs += self.info['gyro'][0], self.info['gyro'][1], self.info['gyro'][2], self.info['accel'][0], self.info['accel'][1], self.info['accel'][2]
-        if self.record_velocity:
-            outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
-        if self.record_lidar:
-            outputs += [self.info['lidar']]
+
+        # fill in outputs according to required info
+        for key, val in self.output_keys.items():
+            if isinstance(val, list):
+                outputs += self.info[key]
+            else:
+                outputs += [self.info[key]]
+            
         if len(outputs) == 1:
             return self.frame
         else:
