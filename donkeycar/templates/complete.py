@@ -40,7 +40,7 @@ from donkeycar.parts.kinematics import Unicycle, InverseUnicycle, UnicycleUnnorm
 from donkeycar.parts.kinematics import Bicycle, InverseBicycle, BicycleUnnormalizeAngularVelocity
 from donkeycar.parts.explode import ExplodeDict
 from donkeycar.parts.transform import Lambda
-from donkeycar.parts.logger import LoggerPart
+from donkeycar.parts.pipe import Pipe
 from donkeycar.utils import *
 
 logger = logging.getLogger(__name__)
@@ -131,6 +131,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
     ctr = add_user_controller(V, cfg, use_joystick)
+
+    #
+    # convert 'user/steering' to 'user/angle' to be backward compatible with deep learning data
+    #
+    V.add(Pipe(), inputs=['user/steering'], outputs=['user/angle'])
 
     #
     # explode the buttons input map into individual output key/values in memory
@@ -387,7 +392,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         # collect model inference outputs
         #
-        outputs = ['pilot/steering', 'pilot/throttle']
+        outputs = ['pilot/angle', 'pilot/throttle']
 
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
@@ -437,11 +442,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # based on the choice of user or autopilot drive mode
     #
     V.add(DriveMode(cfg.AI_THROTTLE_MULT),
-          inputs=['user/mode', 'user/steering', 'user/throttle',
-                  'pilot/steering', 'pilot/throttle'],
+          inputs=['user/mode', 'user/angle', 'user/throttle',
+                  'pilot/angle', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
-    V.add(LoggerPart(['steering', 'throttle']), inputs=['steering', 'throttle'])
 
     if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
         if isinstance(ctr, JoystickController):
@@ -471,10 +475,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # add tub to save data
     #
     if cfg.USE_LIDAR:
-        inputs = ['cam/image_array', 'lidar/dist_array', 'user/steering', 'user/throttle', 'user/mode']
+        inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:
-        inputs=['cam/image_array','user/steering', 'user/throttle', 'user/mode']
+        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
         types=['image_array','float', 'float','str']
 
     if cfg.HAVE_ODOM:
@@ -512,7 +516,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/steering', 'pilot/throttle']
+        inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
 
     if cfg.HAVE_PERFMON:
