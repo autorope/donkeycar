@@ -486,6 +486,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
             return FastAILinear(interpreter=interpreter, input_shape=input_shape)
     elif 'onnx_' in model_type:
         interpreter = OnnxInterpreter()
+        used_model_type = model_type.replace('onnx_', '')
     else:
         interpreter = KerasInterpreter()
         used_model_type = model_type
