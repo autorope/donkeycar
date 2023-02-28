@@ -35,6 +35,9 @@ sudo systemctl stop nvgetty
 sudo systemctl disable nvgetty
 sudo usermod -aG dialout USER
 
+# configure jetson clocks in .bashrc
+sudo jetson_clocks
+
 ########################################
 # Install PyTorch v1.7 - torchvision v0.8.1
 # pytorch 1.6.0-rc2

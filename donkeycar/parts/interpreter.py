@@ -6,6 +6,7 @@ from typing import Union, Sequence, List
 
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.python.keras.models import load_model
 
 from tensorflow.python.framework.convert_to_constants import \
     convert_variables_to_constants_v2 as convert_var_to_const
@@ -70,6 +71,28 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str):
         logger.info(f'TensorRT conversion done.')
     except Exception as e:
         logger.error(f'TensorRT conversion failed because: {e}')
+
+def keras_model_to_onnx(keras_path: str, onnx_path: str):
+    """ Converts Keras Model into ONNX. """
+    logger.info(f'Converting Keras Model {keras_path} to ONNX'
+                f' {onnx_path}')
+
+    import tf2onnx
+
+    keras_model = load_model(keras_path)
+    
+    input_list = []
+    for input in keras_model.inputs:
+        input_list.append(tf.TensorSpec(input.shape.as_list(), input.dtype, input.name))
+
+    spec = tuple(input_list)
+
+    try:
+        tf2onnx.convert.from_keras(keras_model, input_signature=spec, opset=13, output_path=onnx_path)
+    
+    except Exception as e:
+        logger.error(f'TensorRT conversion failed because: {e}')
+
 
 
 class Interpreter(ABC):
@@ -361,3 +384,67 @@ class TensorRT(Interpreter):
         value = tf.compat.v1.get_variable("features", dtype=tf.float32,
                                           initializer=tf.constant(arr))
         return tf.convert_to_tensor(value=value)
+
+
+class OnnxInterpreter(Interpreter):
+    """
+    Uses Onnx to do the inference.
+    """
+    
+
+    def __init__(self):
+        self.ort_sess = None
+        self.in_names = None
+        self.out_name = None
+        
+    def get_input_shapes(self) -> List[tf.TensorShape]:
+        return self.input_shapes
+
+    def compile(self, **kwargs):
+        pass
+
+    def load(self, model_path: str) -> None:
+        import onnxruntime as ort 
+        import tensorrt as real_trt
+        
+        real_trt.init_libnvinfer_plugins(None,'')                                                        
+        
+        self.ort_sess = ort.InferenceSession(model_path, providers=['TensorrtExecutionProvider'])
+        self.in_names = [inp.name for inp in self.ort_sess.get_inputs()]
+        self.out_name = [output.name for output in self.ort_sess.get_outputs()]
+
+
+    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
+            -> Sequence[Union[float, np.ndarray]]:
+
+        img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
+
+        if other_arr is not None:
+            other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
+            outputs_inference = self.ort_sess.run(self.out_name, {self.in_names[0]: img_arr, self.in_names[1]: other_arr })
+        else:
+            outputs_inference = self.ort_sess.run(self.out_name, {self.in_names[0]: img_arr})
+
+        # because we send a batch of size one, pick first element
+        outputs = [out.numpy().squeeze(axis=0) for out in outputs_inference]
+        
+        # don't return list if output is 1d
+        return outputs if len(outputs) > 1 else outputs[0]
+
+    def predict_from_dict(self, input_dict):
+        # args = []
+        for inp in self.in_names:
+            # name = inp.name.split(':')[0]
+            # val = input_dict[name]
+            val = input_dict[inp]
+            val_res = np.expand_dims(val, axis=0).astype(np.float32)
+            input_dict[inp] = val_res
+            # args.append(val_res)
+        # output_tensors = self.frozen_func(*args)
+        outputs_inference = self.ort_sess.run(self.out_name, input_dict)
+        # because we send a batch of size one, pick first element
+        outputs = [out.numpy().squeeze(axis=0) for out in outputs_inference]
+        # don't return list if output is 1d
+        return outputs if len(outputs) > 1 else outputs[0]
+
+    
