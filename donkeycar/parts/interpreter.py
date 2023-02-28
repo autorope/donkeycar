@@ -420,6 +420,11 @@ class OnnxInterpreter(Interpreter):
         img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
 
         if other_arr is not None:
+            if np.any(other_arr):
+                print("contains values")
+            else:
+                print("contains NO values")
+
             print("val other_arr={}".format(other_arr))
             print("type other_arr={}".format(type(other_arr)))
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
