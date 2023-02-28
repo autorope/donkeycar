@@ -405,11 +405,14 @@ class OnnxInterpreter(Interpreter):
 
     def load(self, model_path: str) -> None:
         import onnxruntime as ort 
-        import tensorrt as real_trt
+        # import tensorrt as real_trt
         
-        real_trt.init_libnvinfer_plugins(None,'')                                                        
+        # real_trt.init_libnvinfer_plugins(None,'')                                                        
+        #define the priority order for the execution providers
+        # prefer CUDA Execution Provider over CPU Execution Provider
+        EP_list = ['TensorrtExecutionProvider', 'CPUExecutionProvider']
         
-        self.ort_sess = ort.InferenceSession(model_path, providers=['TensorrtExecutionProvider'])
+        self.ort_sess = ort.InferenceSession(model_path, providers=EP_list)
         self.in_names = [inp.name for inp in self.ort_sess.get_inputs()]
         self.out_name = [output.name for output in self.ort_sess.get_outputs()]
 
