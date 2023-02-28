@@ -426,7 +426,7 @@ class OnnxInterpreter(Interpreter):
             outputs_inference = self.ort_sess.run(self.out_name, {self.in_names[0]: img_arr})
 
         # because we send a batch of size one, pick first element
-        outputs = [out.numpy().squeeze(axis=0) for out in outputs_inference]
+        outputs = [out.squeeze(axis=0) for out in outputs_inference]
         
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
@@ -443,7 +443,7 @@ class OnnxInterpreter(Interpreter):
         # output_tensors = self.frozen_func(*args)
         outputs_inference = self.ort_sess.run(self.out_name, input_dict)
         # because we send a batch of size one, pick first element
-        outputs = [out.numpy().squeeze(axis=0) for out in outputs_inference]
+        outputs = [out.squeeze(axis=0) for out in outputs_inference]
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 
