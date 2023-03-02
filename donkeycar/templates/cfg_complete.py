@@ -76,6 +76,14 @@ OBSTACLE_AVOIDANCE_ENABLED = False
 OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
 CLOSE_AVOIDANCE_DIST_MM = 1000
 
+# OBSTACLE_DETECTOR
+OBSTACLE_DETECTOR_ENABLED = True
+OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
+OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
+OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
+OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
+BEHAVIOR_LIST = ['left', 'right']
+
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 #IMAGE_W = 160
@@ -430,8 +438,9 @@ OPTIMIZER = None                #adam, sgd, rmsprop, etc.. None accepts default
 LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
-CREATE_TF_LITE = True           # automatically create tflite model in training
+CREATE_TF_LITE = False           # automatically create tflite model in training
 CREATE_TENSOR_RT = False        # automatically create tensorrt model in training
+CREATE_ONNX_MODEL = True       # automatically create onnx model in training
 
 PRUNE_CNN = False               #This will remove weights from your model. The primary goal is to increase performance.
 PRUNE_PERCENT_TARGET = 75       # The desired percentage of pruning.
@@ -661,17 +670,17 @@ MODEL_RELOADED_LED_B = 0
 #BEHAVIORS
 #When training the Behavioral Neural Network model, make a list of the behaviors,
 #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
-TRAIN_BEHAVIORS = False
-BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
-BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
+# TRAIN_BEHAVIORS = False
+# BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
+# BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 
 #Localizer
 #The localizer is a neural network that can learn to predict its location on the track.
 #This is an experimental feature that needs more developement. But it can currently be used
 #to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
-TRAIN_LOCALIZER = False
-NUM_LOCATIONS = 10
-BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
+# TRAIN_LOCALIZER = False
+# NUM_LOCATIONS = 10
+# BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
 
 #DonkeyGym
 #Only on Ubuntu linux, you can use the simulator as a virtual donkey and

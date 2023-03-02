@@ -9,7 +9,7 @@
 #:set layout_height_double 2 * common_height + layout_pad_x
 #:set layout_pad_xy [layout_pad_x, layout_pad_x // 2]
 #:set supported_models ['linear', 'categorical', 'inferred', 'memory', 'behavior', 'localizer', 'rnn', '3d']
-#:set drive_models [pre + t for pre in['', 'tflite_', 'tensorrt_'] for t in supported_models ]
+#:set drive_models [pre + t for pre in['', 'tflite_', 'tensorrt_', 'onnx_'] for t in supported_models ]
 #:set labels ['NA','left', 'right', 'middle']
 
 <PaddedBoxLayout>:
@@ -700,6 +700,9 @@
             ToggleButton:
                 id: btn_trt
                 text: 'Sync tensorrt'
+            ToggleButton:
+                id: btn_onnx
+                text: 'Sync onnx'
         BoxLayout:
             size_hint_y: None
             height: layout_height

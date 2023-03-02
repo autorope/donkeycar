@@ -8,7 +8,7 @@ from tensorflow.python.keras.models import load_model
 from donkeycar.config import Config
 from donkeycar.parts.keras import KerasPilot
 from donkeycar.parts.interpreter import keras_model_to_tflite, \
-    saved_model_to_tensor_rt
+    saved_model_to_tensor_rt, keras_model_to_onnx
 from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
@@ -168,6 +168,16 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         model_rt.save(f'{base_path}.savedmodel')
         # pass savedmodel to the rt converter
         saved_model_to_tensor_rt(f'{base_path}.savedmodel', f'{base_path}.trt')
+
+    if getattr(cfg, 'CREATE_ONNX_MODEL', False):
+        # load h5 (ie. keras) model
+        # keras_model_h5 = load_model(model_path)
+        # save in tensorflow savedmodel format (i.e. directory)
+        # keras_model_h5.save(f'{base_path}.savedmodel')
+
+        # pass savedmodel to the rt converter
+        keras_model_to_onnx(model_path, f'{base_path}.onnx')
+
 
     database_entry = {
         'Number': model_num,

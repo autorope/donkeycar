@@ -31,6 +31,12 @@ sudo pip3 install -U astor termcolor google-pasta scipy pandas gdown pkgconfig p
 # Install tensorflow
 sudo pip3 install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 tensorflow
 
+sudo systemctl stop nvgetty
+sudo systemctl disable nvgetty
+sudo usermod -aG dialout USER
+
+# configure jetson clocks in .bashrc
+sudo jetson_clocks
 
 ########################################
 # Install PyTorch v1.7 - torchvision v0.8.1

@@ -106,7 +106,8 @@ class KerasPilot(ABC):
         :return:            tuple of (angle, throttle)
         """
         norm_arr = normalize_image(img_arr)
-        np_other_array = np.array(other_arr) if other_arr else None
+        if  type(other_arr) != 'NoneType':
+            np_other_array = np.array(other_arr)
         return self.inference(norm_arr, np_other_array)
 
     def inference(self, img_arr: np.ndarray, other_arr: Optional[np.ndarray]) \
@@ -565,8 +566,12 @@ class KerasBehavioral(KerasCategorical):
         assert isinstance(record, TubRecord), 'TubRecord expected'
         # this transforms the record into x for training the model to x,y
         img_arr = record.image(processor=img_processor)
-        bhv_arr = np.array(record.underlying['behavior/one_hot_state_array'])
-        return {'img_in': img_arr, 'xbehavior_in': bhv_arr}
+        bhv_arr = ['left','right']
+        bhv = bhv_arr.index(record.underlying['car_position'])
+        bhv_one_hot = np.zeros(self.num_behavior_inputs)
+        bhv_one_hot[bhv] = 1
+        # bhv_arr = np.array(record.underlying['behavior/one_hot_state_array'])
+        return {'img_in': img_arr, 'xbehavior_in': bhv_one_hot}
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
@@ -623,6 +628,55 @@ class KerasLocalizer(KerasPilot):
                   {'angle': tf.TensorShape([]),
                    'throttle': tf.TensorShape([]),
                    'zloc': tf.TensorShape([self.num_locations])})
+        return shapes
+
+
+class KerasDetector(KerasPilot):
+    """
+    A Keras part that take an image as input,
+    outputs steering and throttle, and localisation category
+    """
+    def __init__(self,
+                 interpreter: Interpreter = KerasInterpreter(),
+                 input_shape: Tuple[int, ...] = (120, 160, 3),
+                 num_locations: int = 8):
+        self.num_locations = num_locations
+        super().__init__(interpreter, input_shape)
+
+    def create_model(self):
+        # return default_loc(num_locations=self.num_locations,
+        #                    input_shape=self.input_shape)
+        return default_detector(num_locations=self.num_locations,
+                           input_shape=self.input_shape)
+
+    def compile(self):
+        self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'],
+                                 loss='categorical_crossentropy')
+
+    def interpreter_to_output(self, interpreter_out) \
+            -> Tuple[Union[float, np.ndarray], ...]:
+        track_loc = interpreter_out
+        loc = np.argmax(track_loc)
+        return loc
+
+    def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
+            -> Dict[str, Union[float, List[float]]]:
+        assert isinstance(record, TubRecord), "TubRecord expected"
+        # angle: float = record.underlying['user/angle']
+        # throttle: float = record.underlying['user/throttle']
+        # loc = record.underlying['localizer/location']
+        loc_arr = ['NA','left','middle','right']
+        loc = loc_arr.index(record.underlying['labeled_indexes'])
+        loc_one_hot = np.zeros(self.num_locations)
+        loc_one_hot[loc] = 1
+        return {'zloc': loc_one_hot}
+
+    def output_shapes(self):
+        # need to cut off None from [None, 120, 160, 3] tensor shape
+        img_shape = self.get_input_shapes()[0][1:]
+        # the keys need to match the models input/output layers
+        shapes = ({'img_in': tf.TensorShape(img_shape)},
+                  {'zloc': tf.TensorShape([self.num_locations])})
         return shapes
 
 
@@ -1016,6 +1070,32 @@ def default_loc(num_locations, input_shape):
     loc_out = Dense(num_locations, activation='softmax', name='zloc')(z)
 
     model = Model(inputs=[img_in], outputs=[angle_out, throttle_out, loc_out],
+                  name='localizer')
+    return model
+
+
+def default_detector(num_locations, input_shape):
+    drop = 0.2
+    img_in = Input(shape=input_shape, name='img_in')
+
+    x = core_cnn_layers(img_in, drop)
+    x = Dense(100, activation='relu')(x)
+    x = Dropout(drop)(x)
+
+    z = Dense(50, activation='relu')(x)
+    z = Dropout(drop)(z)
+
+    # linear output of the angle
+    # angle_out = Dense(1, activation='linear', name='angle')(z)
+    # linear output of throttle
+    # throttle_out = Dense(1, activation='linear', name='throttle')(z)
+    # Categorical output of location
+    # Here is a crazy detail b/c TF Lite has a bug and returns the outputs
+    # in the alphabetical order of the name of the layers, so make sure
+    # this output comes last
+    loc_out = Dense(num_locations, activation='softmax', name='zloc')(z)
+
+    model = Model(inputs=[img_in], outputs=[loc_out],
                   name='localizer')
     return model
 

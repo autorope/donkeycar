@@ -352,10 +352,26 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(TriggeredCallback(model_path, model_reload_cb),
               inputs=["modelfile/reload"], run_condition="ai_running")
 
+        # add obstacle detector model
+        # outputs value from 0..3 ['NA', left', 'middle', 'right']
+        # 
+        if cfg.OBSTACLE_DETECTOR_ENABLED:
+            kd = dk.utils.get_model_by_type(cfg.OBSTACLE_DETECTOR_MODEL_TYPE, cfg)
+            load_model(kd, cfg.OBSTACLE_DETECTOR_MODEL_PATH)
+
+            V.add(kd, inputs=['cam/image_array'], outputs=['detector/obstacle_lane'], run_condition='run_pilot')
+
+            # Avoidance logic between obstacle_detector and KerasBehavioral
+            from donkeycar.parts.avoidance_behavior import AvoidanceBehaviorPart
+            abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST)
+            V.add(abh, inputs=['detector/obstacle_lane'], outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
+            
+            inputs = ["cam/image_array", "behavior/one_hot_state_array"]
+
         #
         # collect inputs to model for inference
         #
-        if cfg.TRAIN_BEHAVIORS:
+        elif cfg.TRAIN_BEHAVIORS:
             bh = BehaviorPart(cfg.BEHAVIOR_LIST)
             V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
             try:
