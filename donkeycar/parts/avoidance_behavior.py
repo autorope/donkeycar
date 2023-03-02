@@ -33,6 +33,8 @@ class AvoidanceBehaviorPart(object):
         elif obstacle_position_text == "middle":
             one_hot_bhv_arr[self.lane_behavior_left_index] = 1.0
         elif obstacle_position_text == "NA":
+            # SET TO 0.0 WHEN MODEL CAN HANDLE [0.0,0.0], NO lane seletion = regular driving
+            # at the moment default driving is left lane driving
             one_hot_bhv_arr[self.lane_behavior_left_index] = 1.0
 
         return one_hot_bhv_arr

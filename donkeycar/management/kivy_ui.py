@@ -709,7 +709,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
     num = StringProperty()
     model_type = StringProperty()
     pilot = ObjectProperty(None)
-    filters = ['*.h5', '*.tflite', '*.savedmodel', '*.trt']
+    filters = ['*.h5', '*.tflite', '*.savedmodel', '*.trt', '*.onnx']
 
     def load_action(self):
         if self.file_path and self.pilot:
@@ -735,6 +735,8 @@ class PilotLoader(BoxLayout, FileChooserBase):
                     self.filters = ['*.tflite']
                 elif 'tensorrt' in self.model_type:
                     self.filters = ['*.trt']
+                elif 'onnx' in self.model_type:
+                    self.filters = ['*.onnx']
                 else:
                     self.filters = ['*.h5', '*.savedmodel']
 
@@ -1048,7 +1050,7 @@ class CarScreen(Screen):
         # add trailing '/'
         src = os.path.join(self.config.MODELS_PATH,'')
         # check if any sync buttons are pressed and update path accordingly
-        buttons = ['h5', 'savedmodel', 'tflite', 'trt']
+        buttons = ['h5', 'savedmodel', 'tflite', 'trt', 'onnx']
         select = [btn for btn in buttons if self.ids[f'btn_{btn}'].state
                   == 'down']
         # build filter: for example this rsyncs all .tfilte and .trt models
