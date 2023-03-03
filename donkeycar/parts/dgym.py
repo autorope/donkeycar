@@ -69,7 +69,10 @@ class DonkeyGymEnv(object):
             for key, val in cfg.SIM_RECORD.items():
                 if cfg.SIM_RECORD[key]:
                     outputs_key = self.info_keys[key]
-                    outputs += [outputs_key]
+                    if isinstance(outputs_key, list):
+                        outputs += outputs_key
+                    else:
+                        outputs += [outputs_key]
                     self.output_keys[key] = outputs_key
         except:
             raise Exception("SIM_RECORD could not be found in config.py. Please add it to your config.py file.")
