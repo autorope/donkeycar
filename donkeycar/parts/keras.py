@@ -567,9 +567,10 @@ class KerasBehavioral(KerasCategorical):
         # this transforms the record into x for training the model to x,y
         img_arr = record.image(processor=img_processor)
         bhv_arr = ['left','right']
-        bhv = bhv_arr.index(record.underlying['car_position'])
         bhv_one_hot = np.zeros(self.num_behavior_inputs)
-        bhv_one_hot[bhv] = 1
+        if 'car_position' in record.underlying:
+            bhv = bhv_arr.index(record.underlying['car_position'])
+            bhv_one_hot[bhv] = 1
         # bhv_arr = np.array(record.underlying['behavior/one_hot_state_array'])
         return {'img_in': img_arr, 'xbehavior_in': bhv_one_hot}
 
