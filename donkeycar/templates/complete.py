@@ -587,8 +587,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/angle', 'pilot/throttle']
-        types += ['float', 'float']
+        inputs += ['pilot/angle', 'pilot/throttle','behavior/one_hot_state_array']
+        types += ['float', 'float', 'list']
 
     if cfg.HAVE_PERFMON:
         from donkeycar.parts.perfmon import PerfMonitor
