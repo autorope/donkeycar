@@ -1,5 +1,39 @@
 # This document lists possible models by challenge
 
+## Detect obstacle lane and avoid obstacle by driving in the other lane
+### Description
+- KerasDetector model outputs obstacle's lane presence based solely on the camera image
+  - output can be 'left', 'right' or 'NA'
+- AvoidanceBehaviorPart will interpret KerasDetector ouput and build the behavior vector to input in KerasBehavior Model
+  - output can be 
+    - [1.,0.] to drive on left lane
+    - [0.,1.] to drive on right lane
+    - [0.,0.] to allow to use the whole track
+- KerasBehavior will use the camera image and the behavior vector as inputs
+  - output will be standard steering and throttle
+
+### Configuration
+- To activate these parts the following configuration is required
+  - ONNX Format
+  ```
+  CREATE_ONNX_MODEL = True      #This configuration is required to be able to run 2 models in every loop
+  ```
+  - OBSTACLE_DETECTOR 
+  ``` 
+  OBSTACLE_DETECTOR_ENABLED = True                                         # To activate/deactivate obsttacle detector
+  OBSTACLE_DETECTOR_NUM_LOCATIONS = 4                                      # Number of possible obstacle states
+  OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.onnx"   # Path of the obstacle detector model, extension must match model type 
+  OBSTACLE_DETECTOR_MODEL_TYPE = "onnx_obstacle_detector"                  # Model type
+  OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']      # Array of possible obstacle states
+  BEHAVIOR_LIST = ['left', 'right']                                        # used in avoidance_behavior
+  ```
+
+### Run
+```
+cd ~/mycar
+python manage.py drive --type=onnx_behavior --model=models/pilot_23-02-15_30.onnx 
+```
+
 ## Follow the track
 
 ### Donkey standard parts
