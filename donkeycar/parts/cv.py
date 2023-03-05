@@ -337,7 +337,7 @@ class Pipeline:
 
 
 class CvImgFromFile(object):
-    def __init__(self, file_path, image_w=None, image_h=None, image_d=None):
+    def __init__(self, file_path, image_w=None, image_h=None, image_d=None, copy=False):
         """
         Part to load image from file and output as RGB image
         """
@@ -373,8 +373,11 @@ class CvImgFromFile(object):
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         self.image = image
+        self.copy = copy
 
     def run(self):
+        if self.copy:
+            return self.image.copy()
         return self.image
 
 
@@ -611,19 +614,14 @@ if __name__ == "__main__":
     # Read arguments from command line
     args = parser.parse_args()
     
-    file_image = None
+    image_source = None
     help = []
-    if args.file is not None:
-        file_image = cv2.imread(args.file)
-        if file_image is None:
-            help.append(f"-f/--file did not resolve to a readable image file: {args.image}")
-        file_image = cv2.cvtColor(file_image, cv2.COLOR_BGR2RGB)
-    else:
+    if args.file is None:
         if args.camera < 0:
             help.append("-c/--camera must be >= 0")
-        if args.width < 160:
+        if args.width is None or args.width < 160:
             help.append("-wd/--width must be >= 160")
-        if args.height < 120:
+        if args.height is None or args.height < 120:
             help.append("-ht/--height must be >= 120")
 
     if len(help) > 0:
@@ -633,16 +631,20 @@ if __name__ == "__main__":
         sys.exit(1)
 
 
+    #
+    # load file OR setup camera
+    #
+    cap = None
     width = None
     height = None
     depth = 3
-    if file_image is not None:
-        print(str(file_image.shape))
-        height, width, depth = file_image.shape
+    if args.file is not None:
+        image_source = CvImgFromFile(args.file, image_w=args.width, image_h=args.height, copy=True)
+        height, width, depth = image_source.run().shape
     else:
         width = args.width
         height = args.height
-
+        image_source = CvCam(image_w=width, image_h=height, iCam=args.camera)
 
     #
     # setup augmentations
@@ -693,11 +695,6 @@ if __name__ == "__main__":
         print("-a/--aug is not a valid augmentation")
         exit()
 
-    cap = None
-    if file_image is None:
-        cap = cv2.VideoCapture(args.camera)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     
     # Creating a window for later use
     window_name = 'hsv_range_picker'
@@ -705,13 +702,7 @@ if __name__ == "__main__":
 
     while(1):
 
-        frame = None
-        if file_image is not None:
-            frame = file_image.copy()
-        else: 
-            _, frame = cap.read()
-            if frame is None:
-                continue
+        frame = image_source.run()
 
         #
         # apply the augmentation
