@@ -400,11 +400,17 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         # Add image transformations like crop or trapezoidal mask
         #
-        if hasattr(cfg, 'TRANSFORMATIONS') and cfg.TRANSFORMATIONS:
-            from donkeycar.pipeline.augmentations import ImageAugmentation
-            V.add(ImageAugmentation(cfg, 'TRANSFORMATIONS'),
-                  inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
-            inputs = ['cam/image_array_trans'] + inputs[1:]
+        if hasattr(cfg, 'TRANSFORMATIONS') or hasattr(cfg, 'POST_TRANSFORMATIONS'):
+            from donkeycar.parts.image_transformations import ImageTransformations
+            #
+            # add the complete set of pre and post augmentation transformations
+            #
+            transforms = getattr(cfg, 'TRANSFORMATIONS', []).append(getattr(cfg, 'POST_TRANSFORMATIONS', []))
+            logger.info(f"Adding inference transformations: {transforms}")
+            if transforms:
+                V.add(ImageTransformations(cfg, transforms),
+                    inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
+                inputs = ['cam/image_array_trans'] + inputs[1:]
 
         V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
