@@ -34,6 +34,13 @@ cd ~/mycar
 python manage.py drive --type=onnx_behavior --model=models/pilot_23-02-15_30.onnx 
 ```
 
+### Monitor
+```
+RECORD_DURING_AI = True 
+```
+Allows to track obstacle_detector behavior
+['pilot/angle', 'pilot/throttle','behavior/one_hot_state_array']
+
 ## Follow the track
 
 ### Donkey standard parts
