@@ -389,28 +389,104 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
+#
 # Augmentations and Transformations
-AUGMENTATIONS = []
-TRANSFORMATIONS = []
+#
+# - Augmentations are changes to the image that are only applied during
+#   training and are applied randomly to create more variety in the data.  
+#   Available augmentations are:
+#   - MULTIPLY    - modify the image lighting?  TODO: get a better explanation
+#   - BLUR        - blur the image.
+#
+# - Transformations are changes to the image that apply both in
+#   training and at inference.  They are always applied and in 
+#   the configured order.  Available image transformations are:
+#   - Apply a mask to the image:
+#     - 'CROP'      - apply rectangular mask to borders of image
+#     - 'TRAPEZE'   - apply a trapezoidal mask to image
+#   - Apply an enhancement to the image
+#     - 'CANNY'     - apply canny edge detection
+#     - 'BLUR'      - blur the image
+#   - resize the image
+#     - 'RESIZE'    - resize to given pixel width and height
+#     - 'SCALE'     - resize by given scale factor
+#   - change the color space of the image
+#     - 'RGB2BGR'   - change color model from RGB to BGR
+#     - 'BGR2RGB'   - change color model from BGR to RGB
+#     - 'RGB2HSV'   - change color model from RGB to HSV
+#     - 'HSV2RGB'   - change color model from HSV to RGB
+#     - 'BGR2HSV'   - change color model from BGR to HSV
+#     - 'HSV2BGR'   - change color model from HSV to BGR
+#     - 'RGB2GRAY'  - change color model from RGB to greyscale
+#     - 'BGR2GRAY'  - change color model from BGR to greyscale
+#     - 'HSV2GRAY'  - change color model from HSV to greyscale
+#
+AUGMENTATIONS = []         # changes to image only applied in training to create 
+                           # more variety in the data.
+TRANSFORMATIONS = []       # changes applied _before_ training augmentations, 
+                           # such that augmentations are applied to the transformed image,
+POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentations, 
+                           # such that changes are applied to the augmented image
+
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
 # AUGMENTATIONS
 AUG_MULTIPLY_RANGE = (0.5, 3.0)
 AUG_BLUR_RANGE = (0.0, 3.0)
-# Region of interest cropping, requires 'CROP' in TRANSFORMATIONS to be set
+
+# "CROP" Transformation
+# Apply mask to borders of the image
+# defined by a rectangle.
 # If these crops values are too large, they will cause the stride values to
 # become negative and the model with not be valid.
+# # # # # # # # # # # # #
+# xxxxxxxxxxxxxxxxxxxxx #
+# xxxxxxxxxxxxxxxxxxxxx #
+# xx                 xx # top
+# xx                 xx #
+# xx                 xx #
+# xxxxxxxxxxxxxxxxxxxxx # bottom
+# xxxxxxxxxxxxxxxxxxxxx #
+# # # # # # # # # # # # #
 ROI_CROP_TOP = 45               # the number of rows of pixels to ignore on the top of the image
 ROI_CROP_BOTTOM = 0             # the number of rows of pixels to ignore on the bottom of the image
 ROI_CROP_RIGHT = 0              # the number of rows of pixels to ignore on the right of the image
 ROI_CROP_LEFT = 0               # the number of rows of pixels to ignore on the left of the image
-# For trapezoidal see explanation in augmentations.py. Requires 'TRAPEZE' in
-# TRANSFORMATIONS to be set
+
+# "TRAPEZE" tranformation
+# Apply mask to borders of image
+# defined by a trapezoid.
+# # # # # # # # # # # # # #
+# xxxxxxxxxxxxxxxxxxxxxxx #
+# xxxx ul     ur xxxxxxxx # min_y
+# xxx             xxxxxxx #
+# xx               xxxxxx #
+# x                 xxxxx #
+# ll                lr xx # max_y
+# # # # # # # # # # # # # #
 ROI_TRAPEZE_LL = 0
 ROI_TRAPEZE_LR = 160
 ROI_TRAPEZE_UL = 20
 ROI_TRAPEZE_UR = 140
 ROI_TRAPEZE_MIN_Y = 60
 ROI_TRAPEZE_MAX_Y = 120
+
+# "CANNY" Canny Edge Detection tranformation
+CANNY_LOW_THRESHOLD = 60    # Canny edge detection low threshold value of intensity gradient
+CANNY_HIGH_THRESHOLD = 110  # Canny edge detection high threshold value of intensity gradient
+CANNY_APERTURE = 3          # Canny edge detect aperture in pixels, must be odd; choices=[3, 5, 7]
+
+# "BLUR" transformation (not this is SEPARATE from the blur augmentation)
+BLUR_KERNAL = 5        # blur kernal horizontal size in pixels
+BLUR_KERNAL_Y = None   # blur kernal vertical size in pixels or None for square kernal
+BLUR_GUASSIAN = True   # blur is gaussian if True, simple if False
+
+# "RESIZE" transformation
+RESIZE_WIDTH = 160     # horizontal size in pixels
+RESIZE_HEIGHT = 120    # vertical size in pixels
+
+# "SCALE" transformation
+SCALE_WIDTH = 1.0      # horizontal scale factor
+SCALE_HEIGHT = None    # vertical scale factor or None to maintain aspect ratio
 
 #Model transfer options
 #When copying weights during a model transfer operation, should we freeze a certain number of layers
