@@ -7,6 +7,13 @@ from donkeycar.parts.camera import CameraError
 
 logger = logging.getLogger(__name__)
 
+def image_shape(image):
+    if image is None:
+        return None
+    if 2 == len(image.shape):
+        height, width = image.shape
+        return (height, width, 1)
+    return image.shape
 
 class ImgGreyscale:
 
@@ -179,15 +186,43 @@ class ImgBGR2HSV:
 
 class ImageScale:
 
-    def __init__(self, scale):
+    def __init__(self, scale, scale_height=None):
+        if scale is None or scale <= 0:
+            raise ValueError("ImageScale: scale must be > 0")
+        if scale_height is not None and scale_height <= 0:
+            raise ValueError("ImageScale: scale_height must be > 0")
         self.scale = scale
+        self.scale_height = scale_height if scale_height is not None else scale
 
     def run(self, img_arr):
         if img_arr is None:
             return None
 
         try:
-            return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale)
+            return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale_height)
+        except:
+            logger.error("Unable to scale image")
+            return None
+
+    def shutdown(self):
+        pass
+
+
+class ImageResize:
+    def __init__(self, width:int, height:int) -> None:
+        if width is None or width <= 0:
+            raise ValueError("ImageResize: width must be > 0")
+        if height is None or height <= 0:
+            raise ValueError("ImageResize: height must be > 0")
+        self.width = width
+        self.height = height
+
+    def run(self, img_arr):
+        if img_arr is None:
+            return None
+
+        try:
+            return cv2.resize(img_arr, (self.width, self.height))
         except:
             logger.error("Unable to resize image")
             return None
@@ -383,7 +418,7 @@ class ImgCropMask:
             mask = None
             key = str(image.shape)
             if self.masks.get(key) is None:
-                height, width, depth = image.shape
+                height, width, depth = image_shape(image)
                 top = self.top if self.top is not None else 0
                 bottom = self.bottom if self.bottom is not None else height
                 mask = np.zeros(image.shape, dtype=np.int32)
@@ -459,13 +494,13 @@ class CvImgFromFile(object):
         #
         # resize if there are overrides
         #
-        height, width, depth = image.shape
+        height, width, depth = image_shape(image)
         if (image_h is not None and image_h != height) or (image_w is not None and image_w != width):
             if image_h is not None:
                 height = image_h
             if image_w is not None:
                 width = image_w
-            image = cv2.resize(image, (height, width))
+            image = cv2.resize(image, (width, height))
 
         #
         # change color depth if there are overrides.
@@ -575,7 +610,8 @@ if __name__ == "__main__":
                                  "RGB2HSV", "HSV2RGB", "RGB2BGR", "BGR2RGB", "BGR2HSV", "HSV2BRG",
                                  "RGB2GREY", "BGR2GREY", "HSV2GREY",
                                  "CANNY",
-                                 "BLUR", "GBLUR"],
+                                 "BLUR", "GBLUR",
+                                 "RESIZE", "SCALE"],
                         help = "augmentation to apply")
     parser.add_argument("-l", "--left", type=int, default=0,
                         help="top left horizontal pixel index, defaults to zero")
@@ -603,7 +639,10 @@ if __name__ == "__main__":
                         help="Guassian blue kernal size in pixels")
     parser.add_argument("-bky", "--blur-kernal-y", type=int, choices=[3, 5, 7, 9],
                         help="Simple blur kernal y size in pixels, defaults to a square kernal")
-
+    parser.add_argument("-sw", "--scale", type=float,
+                        help = "scale factor for image width")
+    parser.add_argument("-sh", "--scale-height", type=float, 
+                        help = "scale factor for image height.  Defaults to scale")
 
     #
     # setup augmentations
@@ -623,6 +662,19 @@ if __name__ == "__main__":
         if args.height is None or args.height < 120:
             help.append("-ht/--height must be >= 120")
 
+    if "SCALE" == args.aug:
+        if args.scale is None or args.scale <= 0:
+            help.append("-sw/--scale must be > 0")
+        elif args.scale_height is not None and args.scale_height <= 0:
+            help.append("-sh/--scale height must be > 0")
+
+    if "RESIZE" == args.aug:
+        if args.width is None or args.width < 160:
+            help.append("-wd/--width must be >= 160")
+        if args.height is None or args.height < 120:
+            help.append("-ht/--height must be >= 120")
+
+
     if len(help) > 0:
         parser.print_help()
         for h in help:
@@ -638,58 +690,80 @@ if __name__ == "__main__":
     depth = 3
     if args.file is not None:
         image_source = CvImgFromFile(args.file, image_w=args.width, image_h=args.height, copy=True)
-        height, width, depth = image_source.run().shape
+        height, width, depth = image_shape(image_source.run())
     else:
         width = args.width
         height = args.height
         image_source = CvCam(image_w=width, image_h=height, iCam=args.camera)
 
-    #
-    # setup augmentations
-    #
-    left = args.left
-    right = args.right if args.right is not None else width
-    top = args.top
-    bottom = args.bottom if args.bottom is not None else height
+    transformer = None
+    transformation = args.aug
 
     #
-    # masking transformations
+    # masking tranformations
     #
-    transformations["TRAPEZE"] = ImgTrapezoidalMask(
-        left,
-        right,
-        args.left_bottom if args.left_bottom is not None else 0,
-        args.right_bottom if args.right_bottom is not None else width,
-        args.top,
-        args.bottom if args.bottom is not None else height
-    )
-    transformations["CROP"] = ImgCropMask(top, bottom)
+    if "TRAPEZE" == transformation or "CROP" == transformation: 
+        #
+        # setup augmentations
+        #
+        left = args.left
+        right = args.right if args.right is not None else width
+        top = args.top
+        bottom = args.bottom if args.bottom is not None else height
 
+        #
+        # masking transformations
+        #
+        if "TRAPEZE" == transformation:
+            transformer = ImgTrapezoidalMask(
+                left,
+                right,
+                args.left_bottom if args.left_bottom is not None else 0,
+                args.right_bottom if args.right_bottom is not None else width,
+                args.top,
+                args.bottom if args.bottom is not None else height
+            )
+        else:
+            transformer = ImgCropMask(top, bottom)
     #
     # color space transformations
     #
-    transformations["RGB2BGR"] = ImgRGB2BGR()
-    transformations["BGR2RGB"] = ImgBGR2RGB()
-    transformations["RGB2HSV"] = ImgRGB2HSV()
-    transformations["HSV2RGB"] = ImgHSV2RGB()
-    transformations["BGR2HSV"] = ImgBGR2HSV()
-    transformations["HSV2BGR"] = ImgHSV2BGR()
-    transformations["RGB2GREY"] = ImgRGB2GREY()
-    transformations["BRG2GREY"] = ImgBGR2GREY()
-    transformations["HSV2GREY"] = ImgHSV2GREY()
-
-    # canny edge detection
-    transformations["CANNY"] = ImgCanny(args.canny_low, args.canny_high, args.canny_aperture)
-
-    # blur
-    transformations["GBLUR"] = ImgGaussianBlur(args.guassian_kernal, args.guassian_kernal_y)
-    transformations["BLUR"] = ImgSimpleBlur(args.blur_kernal, args.blur_kernal_y)
-
+    elif "RGB2BGR" == transformation:
+        transformer = ImgRGB2BGR()
+    elif "BGR2RGB" == transformation:
+        transformer = ImgBGR2RGB()
+    elif "RGB2HSV" == transformation:
+        transformer = ImgRGB2HSV()
+    elif "HSV2RGB" == transformation:
+        transformer = ImgHSV2RGB()
+    elif "BGR2HSV" == transformation:
+        transformer = ImgBGR2HSV()
+    elif "HSV2BGR" == transformation:
+        transformer = ImgHSV2BGR()
+    elif "RGB2GREY" == transformation:
+        transformer = ImgRGB2GREY()
+    elif "RBGR2GREY" == transformation:
+        transformer = ImgBGR2GREY()
+    elif "HSV2GREY" == transformation:
+        transformer = ImgHSV2GREY()
+    elif "CANNY" == transformation:
+        # canny edge detection
+        transformer = ImgCanny(args.canny_low, args.canny_high, args.canny_aperture)
+    # 
+    # blur transformations
     #
-    # lookup the transformation
+    elif "GBLUR" == transformation:
+        transformer = ImgGaussianBlur(args.guassian_kernal, args.guassian_kernal_y)
+    elif "BLUR" == transformation:
+        transformer = ImgSimpleBlur(args.blur_kernal, args.blur_kernal_y)
+    # 
+    # resize transformations
     #
-    transformer = transformations.get(args.aug)
-    if transformer is None:
+    elif "RESIZE" == transformation:
+        transformer = ImageResize(args.width, args.height)
+    elif "SCALE" == transformation:
+        transformer = ImageScale(args.scale, args.scale_height)
+    else:
         print("-a/--aug is not a valid augmentation")
         exit()
 
