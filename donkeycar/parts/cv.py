@@ -32,11 +32,11 @@ class ImgGreyscale:
         pass
 
 
-class ImgRGB2GREY(ImgGreyscale):
+class ImgRGB2GRAY(ImgGreyscale):
     pass
 
 
-class ImgBGR2GREY:
+class ImgBGR2GRAY:
 
     def run(self, img_arr):
         if img_arr is None:
@@ -53,7 +53,7 @@ class ImgBGR2GREY:
         pass
 
 
-class ImgHSV2GREY:
+class ImgHSV2GRAY:
 
     def run(self, img_arr):
         if img_arr is None:
@@ -402,15 +402,15 @@ class ImgCropMask:
 
     def run(self, image):
         """
-        Apply top and/or bottom mask
+        Apply border mask
         # # # # # # # # # # # # #
-        # xxxxxxxxxxxxxxxxxxxxxxx
-        # xxxxxxxxxxxxxxxxxxxxxxx
-        #                        top
-        #
-        #
-        # xxxxxxxxxxxxxxxxxxxxxx bottom
-        # xxxxxxxxxxxxxxxxxxxxxx
+        # xxxxxxxxxxxxxxxxxxxxx #
+        # xxxxxxxxxxxxxxxxxxxxx #
+        # xx                 xx # top
+        # xx                 xx #
+        # xx                 xx #
+        # xxxxxxxxxxxxxxxxxxxxx # bottom
+        # xxxxxxxxxxxxxxxxxxxxx #
         # # # # # # # # # # # # #
         """
         transformed = None
@@ -741,11 +741,11 @@ if __name__ == "__main__":
     elif "HSV2BGR" == transformation:
         transformer = ImgHSV2BGR()
     elif "RGB2GREY" == transformation:
-        transformer = ImgRGB2GREY()
+        transformer = ImgRGB2GRAY()
     elif "RBGR2GREY" == transformation:
-        transformer = ImgBGR2GREY()
+        transformer = ImgBGR2GRAY()
     elif "HSV2GREY" == transformation:
-        transformer = ImgHSV2GREY()
+        transformer = ImgHSV2GRAY()
     elif "CANNY" == transformation:
         # canny edge detection
         transformer = ImgCanny(args.canny_low, args.canny_high, args.canny_aperture)
