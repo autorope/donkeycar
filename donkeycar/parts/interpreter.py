@@ -157,6 +157,7 @@ class KerasInterpreter(Interpreter):
 
     def invoke(self, inputs):
         outputs = self.model(inputs, training=False)
+        
         # for functional models the output here is a list
         if type(outputs) is list:
             # as we invoke the interpreter with a batch size of one we remove
@@ -171,7 +172,8 @@ class KerasInterpreter(Interpreter):
             -> Sequence[Union[float, np.ndarray]]:
         img_arr = np.expand_dims(img_arr, axis=0)
         inputs = img_arr
-        if other_arr is not None:
+        
+        if type(other_arr) == 'numpy.ndarray':
             other_arr = np.expand_dims(other_arr, axis=0)
             inputs = [img_arr, other_arr]
         return self.invoke(inputs)
@@ -396,6 +398,7 @@ class OnnxInterpreter(Interpreter):
         self.ort_sess = None
         self.in_names = None
         self.out_name = None
+        self.input_shapes = None
         
     def get_input_shapes(self) -> List[tf.TensorShape]:
         return self.input_shapes
@@ -415,14 +418,14 @@ class OnnxInterpreter(Interpreter):
         self.ort_sess = ort.InferenceSession(model_path, providers=EP_list)
         self.in_names = [inp.name for inp in self.ort_sess.get_inputs()]
         self.out_name = [output.name for output in self.ort_sess.get_outputs()]
-
+        self.input_shapes = [inp.shape for inp in self.ort_sess.get_inputs()]
 
     def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
             -> Sequence[Union[float, np.ndarray]]:
 
         img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
 
-        if np.any(other_arr):
+        if type(other_arr) != 'NoneType':
             
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
             outputs_inference = self.ort_sess.run(self.out_name, {self.in_names[0]: img_arr, self.in_names[1]: other_arr })
