@@ -45,6 +45,7 @@ class ImgBGR2GREY:
     def shutdown(self):
         pass
 
+
 class ImgHSV2GREY:
 
     def run(self, img_arr):
@@ -140,6 +141,7 @@ class ImgRGB2HSV:
 
     def shutdown(self):
         pass
+
 
 class ImgHSV2BGR:
 
@@ -258,7 +260,7 @@ class ImgCanny:
 
     def shutdown(self):
         pass
-    
+
 
 class ImgGaussianBlur:
 
@@ -298,6 +300,112 @@ class ImgSimpleBlur:
 
     def shutdown(self):
         pass
+
+
+class ImgTrapezoidalMask:
+    def __init__(self, left, right, bottom_left, bottom_right, top, bottom, fill=[255,255,255]) -> None:
+        """
+        Apply a trapezoidal mask to an image, keeping image in
+        the trapezoid and turns everything else the fill color
+        """
+        self.bottom_left = bottom_left
+        self.bottom_right = bottom_right
+        self.top_left = left
+        self.top_right = right
+        self.top = top
+        self.bottom = bottom
+        self.fill = fill
+        self.masks = {}
+
+    def run(self, image):
+        """
+        Apply trapezoidal mask
+        # # # # # # # # # # # # #
+        # xxxxxxxxxxxxxxxxxxxxxxx
+        # xxxx ul     ur xxxxxxxx min_y
+        # xxx             xxxxxxx
+        # xx               xxxxxx
+        # x                 xxxxx
+        # ll                lr xx max_y
+        """
+        transformed = None
+        if image is not None:
+            mask = None
+            key = str(image.shape)
+            if self.masks.get(key) is None:
+                mask = np.zeros(image.shape, dtype=np.int32)
+                points = [
+                    [self.top_left, self.top],
+                    [self.top_right, self.top],
+                    [self.bottom_right, self.bottom],
+                    [self.bottom_left, self.bottom]
+                ]
+                cv2.fillConvexPoly(mask,
+                                    np.array(points, dtype=np.int32),
+                                    self.fill)
+                mask = np.asarray(mask, dtype='bool')
+                self.masks[key] = mask
+
+            mask = self.masks[key]
+            transformed = np.multiply(image, mask)
+
+        return transformed
+    
+    def shutdown(self):
+        self.masks = {}  # free cached masks
+
+
+class ImgCropMask:
+    def __init__(self, top=None, bottom=None, fill=[255, 255, 255]) -> None:
+        """
+        Apply a mask to top and/or bottom of image.
+        """
+        self.top = top
+        self.bottom = bottom
+        self.fill = fill
+        self.masks = {}
+
+    def run(self, image):
+        """
+        Apply top and/or bottom mask
+        # # # # # # # # # # # # #
+        # xxxxxxxxxxxxxxxxxxxxxxx
+        # xxxxxxxxxxxxxxxxxxxxxxx
+        #                        top
+        #
+        #
+        # xxxxxxxxxxxxxxxxxxxxxx bottom
+        # xxxxxxxxxxxxxxxxxxxxxx
+        # # # # # # # # # # # # #
+        """
+        transformed = None
+        if image is not None:
+            mask = None
+            key = str(image.shape)
+            if self.masks.get(key) is None:
+                height, width, depth = image.shape
+                top = self.top if self.top is not None else 0
+                bottom = self.bottom if self.bottom is not None else height
+                mask = np.zeros(image.shape, dtype=np.int32)
+                points = [
+                    [0, top],
+                    [width, top],
+                    [width, bottom],
+                    [0, bottom]
+                ]
+                cv2.fillConvexPoly(mask,
+                                    np.array(points, dtype=np.int32),
+                                    self.fill)
+                mask = np.asarray(mask, dtype='bool')
+                self.masks[key] = mask
+
+            mask = self.masks[key]
+            transformed = np.multiply(image, mask)
+
+        return transformed
+
+    def shutdown(self):
+        self.masks = {}  # free cached masks
 
 
 class ArrowKeyboardControls:
@@ -381,8 +489,6 @@ class CvImgFromFile(object):
         return self.image
 
 
-
-
 class CvCam(object):
     def __init__(self, image_w=160, image_h=120, image_d=3, iCam=0, warming_secs=5):
 
@@ -450,113 +556,6 @@ class CvImageView(object):
         cv2.destroyAllWindows()
 
 
-class ImgTrapezoidalMask:
-    def __init__(self, left, right, bottom_left, bottom_right, top, bottom, fill=[255,255,255]) -> None:
-        """
-        Apply a trapezoidal mask to an image, keeping image in
-        the trapezoid and turns everything else the fill color
-        """
-        self.bottom_left = bottom_left
-        self.bottom_right = bottom_right
-        self.top_left = left
-        self.top_right = right
-        self.top = top
-        self.bottom = bottom
-        self.fill = fill
-        self.masks = {}
-
-
-    def run(self, image):
-        """
-        Apply trapezoidal mask
-        # # # # # # # # # # # # #
-        # xxxxxxxxxxxxxxxxxxxxxxx
-        # xxxx ul     ur xxxxxxxx min_y
-        # xxx             xxxxxxx
-        # xx               xxxxxx
-        # x                 xxxxx
-        # ll                lr xx max_y
-        """
-        transformed = None
-        if image is not None:
-            mask = None
-            key = str(image.shape)
-            if self.masks.get(key) is None:
-                mask = np.zeros(image.shape, dtype=np.int32)
-                points = [
-                    [self.top_left, self.top],
-                    [self.top_right, self.top],
-                    [self.bottom_right, self.bottom],
-                    [self.bottom_left, self.bottom]
-                ]
-                cv2.fillConvexPoly(mask,
-                                    np.array(points, dtype=np.int32),
-                                    self.fill)
-                mask = np.asarray(mask, dtype='bool')
-                self.masks[key] = mask
-
-            mask = self.masks[key]
-            transformed = np.multiply(image, mask)
-
-        return transformed
-    
-    def shutdown(self):
-        self.masks = {}  # free cached masks
-
-
-class ImgCropMask:
-    def __init__(self, top=None, bottom=None, fill=[255, 255, 255]) -> None:
-        """
-        Apply a mask to top and/or bottom of image.
-        """
-        self.top = top
-        self.bottom = bottom
-        self.fill = fill
-        self.masks = {}
-
-    def run(self, image):
-        """
-        Apply top and/or bottom mask
-        # # # # # # # # # # # # #
-        # xxxxxxxxxxxxxxxxxxxxxxx       
-        # xxxxxxxxxxxxxxxxxxxxxxx       
-        #                        top
-        #
-        #
-        # xxxxxxxxxxxxxxxxxxxxxx bottom
-        # xxxxxxxxxxxxxxxxxxxxxx
-        # # # # # # # # # # # # #
-        """
-        transformed = None
-        if image is not None:
-            mask = None
-            key = str(image.shape)
-            if self.masks.get(key) is None:
-                height, width, depth = image.shape
-                top = self.top if self.top is not None else 0
-                bottom = self.bottom if self.bottom is not None else height
-                mask = np.zeros(image.shape, dtype=np.int32)
-                points = [
-                    [0, top],
-                    [width, top],
-                    [width, bottom],
-                    [0, bottom]
-                ]
-                cv2.fillConvexPoly(mask,
-                                    np.array(points, dtype=np.int32),
-                                    self.fill)
-                mask = np.asarray(mask, dtype='bool')
-                self.masks[key] = mask
-
-            mask = self.masks[key]
-            transformed = np.multiply(image, mask)
-
-        return transformed
-
-    def shutdown(self):
-        self.masks = {}  # free cached masks
-
-
 if __name__ == "__main__":
     import argparse
     import sys
@@ -572,9 +571,9 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--file", type=str,
                         help = "path to image file to user rather that a camera")
     parser.add_argument("-a", "--aug", required=True, type=str.upper, 
-                        choices=['CROP', 'TRAPEZE', 
-                                 "RGB2HSV", "HSV2RGB", "RGB2BGR", "BGR2RGB", "BGR2HSV", "HSV2BRG", 
-                                 "RGB2GREY", "BGR2GREY", "HSV2GREY", 
+                        choices=['CROP', 'TRAPEZE',
+                                 "RGB2HSV", "HSV2RGB", "RGB2BGR", "BGR2RGB", "BGR2HSV", "HSV2BRG",
+                                 "RGB2GREY", "BGR2GREY", "HSV2GREY",
                                  "CANNY",
                                  "BLUR", "GBLUR"],
                         help = "augmentation to apply")
@@ -602,7 +601,7 @@ if __name__ == "__main__":
                         help="Guassian blue kernal y size in pixels, defaults to a square kernal")
     parser.add_argument("-bk", "--blur-kernal", type=int, choices=[3, 5, 7, 9], default=3,
                         help="Guassian blue kernal size in pixels")
-    parser.add_argument("-bky", "--blur-kernal-y", type=int, choices=[3, 5, 7, 9], 
+    parser.add_argument("-bky", "--blur-kernal-y", type=int, choices=[3, 5, 7, 9],
                         help="Simple blur kernal y size in pixels, defaults to a square kernal")
 
 
@@ -629,7 +628,6 @@ if __name__ == "__main__":
         for h in help:
             print("  " + h)
         sys.exit(1)
-
 
     #
     # load file OR setup camera
@@ -695,7 +693,6 @@ if __name__ == "__main__":
         print("-a/--aug is not a valid augmentation")
         exit()
 
-    
     # Creating a window for later use
     window_name = 'hsv_range_picker'
     cv2.namedWindow(window_name)
@@ -722,4 +719,3 @@ if __name__ == "__main__":
         cap.release()
 
     cv2.destroyAllWindows()
-
