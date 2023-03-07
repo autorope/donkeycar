@@ -17,7 +17,6 @@ dependencies:
   - pytest
   - pytest-cov
   - codecov
-  - pip
   - progress
   - moviepy
   - paho-mqtt
