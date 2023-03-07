@@ -311,8 +311,13 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         model_reload_cb = None
 
-        if '.h5' in model_path or '.trt' in model_path or '.tflite' in \
-                model_path or '.savedmodel' in model_path or '.pth':
+        if '.h5' in model_path \
+            or '.trt' in model_path \
+            or '.tflite' in model_path \
+            or '.savedmodel' in model_path \
+            or '.pth' in model_path \
+            or '.onnx' in model_path:
+            
             # load the whole model with weigths, etc
             load_model(kl, model_path)
 

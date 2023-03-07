@@ -588,7 +588,6 @@ class KerasBehavioral(KerasCategorical):
                    'throttle_out': tf.TensorShape([20])})
         return shapes
 
-
 class KerasLocalizer(KerasPilot):
     """
     A Keras part that take an image as input,
