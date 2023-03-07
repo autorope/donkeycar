@@ -48,34 +48,33 @@ class DonkeyGymEnv(object):
 
         # output keys corresponding to info dict values
         self.info_keys = {
-            'pos': ['pos/x', 'pos/y', 'pos/z'],
+            'pos': 'pos',  # [x, y, z]
             'cte': 'cte',
             'speed': 'speed',
             'forward_vel': 'forward_vel',
             'hit': 'hit',
-            'gyro': ['gyro/x', 'gyro/y', 'gyro/z'],
-            'accel': ['accel/x', 'accel/y', 'accel/z'],
-            'vel': ['vel/x', 'vel/y', 'vel/z'],
-            'odom': ['odom/front_left', 'odom/front_right', 'odom/rear_left', 'odom/rear_right'],
+            'gyro': 'gyro',  # [x, y, z]
+            'accel': 'accel',  # [x, y, z]
+            'vel': 'vel',  # [x, y, z]
+            'odom': 'odom',  # [fl, fr, rl, rr]
             'lidar': 'lidar',
-            'orientation': ['orientation/roll', 'orientation/pitch', 'orientation/yaw'],
+            'orientation': "orientation",  # [roll, pitch, yaw]
             'last_lap_time': 'last_lap_time',
             'lap_count': 'lap_count',
         }
 
         self.output_keys = {}
-
+        
+        # fill in the output list according to the config
         try:
             for key, val in cfg.SIM_RECORD.items():
                 if cfg.SIM_RECORD[key]:
                     outputs_key = self.info_keys[key]
-                    if isinstance(outputs_key, list):
-                        outputs += outputs_key
-                    else:
-                        outputs += [outputs_key]
+                    outputs.append(outputs_key)
                     self.output_keys[key] = outputs_key
         except:
-            raise Exception("SIM_RECORD could not be found in config.py. Please add it to your config.py file.")
+            raise Exception(
+                "SIM_RECORD could not be found in config.py. Please add it to your config.py file.")
 
         self.delay = float(cfg.SIM_ARTIFICIAL_LATENCY) / 1000.0
         self.buffer = []
@@ -129,5 +128,4 @@ class DonkeyGymEnv(object):
 
     def shutdown(self):
         self.running = False
-        time.sleep(0.2)
         self.env.close()
