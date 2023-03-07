@@ -399,13 +399,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
         #
         # Add image transformations like crop or trapezoidal mask
+        # so they get applied at inference time in autopilot mode.
         #
         if hasattr(cfg, 'TRANSFORMATIONS') or hasattr(cfg, 'POST_TRANSFORMATIONS'):
             from donkeycar.parts.image_transformations import ImageTransformations
             #
             # add the complete set of pre and post augmentation transformations
             #
-            transforms = getattr(cfg, 'TRANSFORMATIONS', []).append(getattr(cfg, 'POST_TRANSFORMATIONS', []))
+            transforms = getattr(cfg, 'TRANSFORMATIONS', []) + getattr(cfg, 'POST_TRANSFORMATIONS', [])
             logger.info(f"Adding inference transformations: {transforms}")
             if transforms:
                 V.add(ImageTransformations(cfg, transforms),
