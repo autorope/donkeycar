@@ -70,6 +70,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
+              'albumentations'
           ],
           'pc': [
               'matplotlib',
@@ -78,7 +79,7 @@ setup(name='donkeycar',
               'pandas',
               'pyyaml',
               'plotly',
-              'imgaug'
+              'albumentations'
           ],
           'dev': [
               'pytest',

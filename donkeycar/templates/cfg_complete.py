@@ -395,8 +395,8 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 # - Augmentations are changes to the image that are only applied during
 #   training and are applied randomly to create more variety in the data.  
 #   Available augmentations are:
-#   - MULTIPLY    - modify the image lighting?  TODO: get a better explanation
-#   - BLUR        - blur the image.
+#   - BRIGHTNESS  - modify the image brightness. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/transforms/#albumentations.augmentations.transforms.RandomBrightnessContrast)
+#   - BLUR        - blur the image. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/blur/transforms/#albumentations.augmentations.blur.transforms.Blur)
 #
 # - Transformations are changes to the image that apply both in
 #   training and at inference.  They are always applied and in 
@@ -430,8 +430,8 @@ POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentati
 
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
 # AUGMENTATIONS
-AUG_MULTIPLY_RANGE = (0.5, 3.0)
-AUG_BLUR_RANGE = (0.0, 3.0)
+AUG_BRIGHTNESS_RANGE = 0.2  # this is interpreted as [-0.2, 0.2]
+AUG_BLUR_RANGE = (0, 3)
 
 # "CROP" Transformation
 # Apply mask to borders of the image
