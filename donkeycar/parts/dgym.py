@@ -47,6 +47,12 @@ class DonkeyGymEnv(object):
         }
 
         # output keys corresponding to info dict values
+        # used to map gym info names to donkeycar outputs
+        # 
+        # can also map an iterable value to multiple outputs
+        # e.g. 'odom': ['fl', 'fr', 'rl', 'rr'] 
+        # This will map the 'odom' key in the info dict to 4 different outputs with the names 'fl', 'fr', 'rl', 'rr'
+        #
         self.info_keys = {
             'pos': 'pos',  # [x, y, z]
             'cte': 'cte',
@@ -64,13 +70,18 @@ class DonkeyGymEnv(object):
         }
 
         self.output_keys = {}
-        
+
         # fill in the output list according to the config
         try:
             for key, val in cfg.SIM_RECORD.items():
                 if cfg.SIM_RECORD[key]:
                     outputs_key = self.info_keys[key]
-                    outputs.append(outputs_key)
+                    if isinstance(outputs_key, list):
+                        # if it's a list, add each element
+                        outputs += outputs_key
+                    else:
+                        # otherwise, add the key
+                        outputs.append(outputs_key)
                     self.output_keys[key] = outputs_key
         except:
             raise Exception(
