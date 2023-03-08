@@ -36,6 +36,7 @@ CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one ca
 # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 BGR2RGB = False  # true to convert from BRG format to RGB format; requires opencv
+SHOW_PILOT_IMAGE = False  # show the image used to do the inference when in autopilot mode
 
 # For IMAGE_LIST camera
 # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
@@ -420,6 +421,8 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #     - 'RGB2GRAY'  - change color model from RGB to greyscale
 #     - 'BGR2GRAY'  - change color model from BGR to greyscale
 #     - 'HSV2GRAY'  - change color model from HSV to greyscale
+#     - 'GRAY2RGB'  - change color model from greyscale to RGB
+#     - 'GRAY2BGR'  - change color model from greyscale to BGR
 #
 AUGMENTATIONS = []         # changes to image only applied in training to create 
                            # more variety in the data.

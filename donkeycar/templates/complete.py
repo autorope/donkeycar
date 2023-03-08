@@ -159,8 +159,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     #
     # maintain run conditions for user mode and autopilot mode parts.
     #
-    V.add(UserPilotCondition(),
-          inputs=['user/mode', "cam/image_array", "cam/image_array"],
+    V.add(UserPilotCondition(show_pilot_image=getattr(cfg, 'SHOW_PILOT_IMAGE', False)),
+          inputs=['user/mode', "cam/image_array", "cam/image_array_trans"],
           outputs=['run_user', "run_pilot", "ui/image_array"])
 
     class LedConditionLogic:
@@ -407,8 +407,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             # add the complete set of pre and post augmentation transformations
             #
             transforms = getattr(cfg, 'TRANSFORMATIONS', []) + getattr(cfg, 'POST_TRANSFORMATIONS', [])
-            logger.info(f"Adding inference transformations: {transforms}")
             if transforms:
+                logger.info(f"Adding inference transformations: {transforms}")
                 V.add(ImageTransformations(cfg, transforms),
                     inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
                 inputs = ['cam/image_array_trans'] + inputs[1:]
@@ -660,6 +660,13 @@ class DriveMode:
 
 
 class UserPilotCondition:
+    def __init__(self, show_pilot_image:bool = False) -> None:
+        """
+        :param show_pilot_image:bool True to show pilot image in pilot mode
+                                     False to show user image in pilot mode
+        """
+        self.show_pilot_image = show_pilot_image
+
     def run(self, mode, user_image, pilot_image):
         """
         Maintain run condition and which image to show in web ui
@@ -671,7 +678,7 @@ class UserPilotCondition:
         if mode == 'user':
             return True, False, user_image
         else:
-            return False, True, pilot_image
+            return False, True, pilot_image if self.show_pilot_image else user_image
 
 
 def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
