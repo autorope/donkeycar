@@ -12,7 +12,7 @@ def image_shape(image):
         return None
     if 2 == len(image.shape):
         height, width = image.shape
-        return (height, width, 1)
+        return height, width, 1
     return image.shape
 
 class ImgGreyscale:
@@ -26,6 +26,36 @@ class ImgGreyscale:
             return img_arr
         except:
             logger.error("Unable to convert RGB image to greyscale")
+            return None
+
+    def shutdown(self):
+        pass
+
+
+class ImgGRAY2RGB:
+    def run(self, img_arr):
+        if img_arr is None:
+            return None
+
+        try:
+            img_arr = cv2.cvtColor(img_arr, cv2.COLOR_GRAY2RGB)
+        except:
+            logger.error(F"Unable to convert greyscale image of shape {img_arr.shape} to RGB")
+            return None
+
+    def shutdown(self):
+        pass
+
+
+class ImgGRAY2BGR:
+    def run(self, img_arr):
+        if img_arr is None:
+            return None
+
+        try:
+            img_arr = cv2.cvtColor(img_arr, cv2.COLOR_GRAY2BGR)
+        except:
+            logger.error(F"Unable to convert greyscale image of shape {img_arr.shape} to RGB")
             return None
 
     def shutdown(self):
@@ -391,11 +421,13 @@ class ImgTrapezoidalMask:
 
 
 class ImgCropMask:
-    def __init__(self, top=None, bottom=None, fill=[255, 255, 255]) -> None:
+    def __init__(self, left=0, top=0, right=0, bottom=0, fill=[255, 255, 255]) -> None:
         """
         Apply a mask to top and/or bottom of image.
         """
+        self.left = left
         self.top = top
+        self.right = right
         self.bottom = bottom
         self.fill = fill
         self.masks = {}
@@ -409,9 +441,10 @@ class ImgCropMask:
         # xx                 xx # top
         # xx                 xx #
         # xx                 xx #
-        # xxxxxxxxxxxxxxxxxxxxx # bottom
+        # xxxxxxxxxxxxxxxxxxxxx # (height - bottom)
         # xxxxxxxxxxxxxxxxxxxxx #
         # # # # # # # # # # # # #
+          left                width - right
         """
         transformed = None
         if image is not None:
@@ -420,13 +453,15 @@ class ImgCropMask:
             if self.masks.get(key) is None:
                 height, width, depth = image_shape(image)
                 top = self.top if self.top is not None else 0
-                bottom = self.bottom if self.bottom is not None else height
+                bottom = (height - self.bottom) if self.bottom is not None else height
+                left = self.left if self.left is not None else 0
+                right = (width - self.right) if self.right is not None else width
                 mask = np.zeros(image.shape, dtype=np.int32)
                 points = [
-                    [0, top],
-                    [width, top],
-                    [width, bottom],
-                    [0, bottom]
+                    [left, top],
+                    [right, top],
+                    [right, bottom],
+                    [left, bottom]
                 ]
                 cv2.fillConvexPoly(mask,
                                     np.array(points, dtype=np.int32),
@@ -526,15 +561,19 @@ class CvImgFromFile(object):
 
 class CvCam(object):
     def __init__(self, image_w=160, image_h=120, image_d=3, iCam=0, warming_secs=5):
+        self.width = image_w
+        self.height = image_h
+        self.depth = image_d
 
         self.frame = None
         self.cap = cv2.VideoCapture(iCam)
 
         # warm up until we get a frame or we timeout
         if self.cap is not None:
-            self.cap.set(3, image_w)
-            self.cap.set(4, image_h)
-
+            # self.cap.set(3, image_w)
+            # self.cap.set(4, image_h)
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, image_w)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, image_h)
             logger.info('CvCam opened...')
             warming_time = time.time() + warming_secs  # quick after 5 seconds
             while self.frame is None and time.time() < warming_time:
@@ -554,6 +593,10 @@ class CvCam(object):
     def poll(self):
         if self.cap.isOpened():
             _, self.frame = self.cap.read()
+            if self.frame is not None:
+                width, height = self.frame.shape[:2]
+                if width != self.width or height != self.height:
+                    self.frame = cv2.resize(self.frame, (self.width, self.height))
 
     def update(self):
         '''
@@ -704,27 +747,23 @@ if __name__ == "__main__":
     #
     if "TRAPEZE" == transformation or "CROP" == transformation: 
         #
-        # setup augmentations
-        #
-        left = args.left
-        right = args.right if args.right is not None else width
-        top = args.top
-        bottom = args.bottom if args.bottom is not None else height
-
-        #
         # masking transformations
         #
         if "TRAPEZE" == transformation:
             transformer = ImgTrapezoidalMask(
-                left,
-                right,
+                args.left if args.left is not None else 0,
+                args.right if args.right is not None else width,
                 args.left_bottom if args.left_bottom is not None else 0,
                 args.right_bottom if args.right_bottom is not None else width,
-                args.top,
+                args.top if args.top is not None else 0,
                 args.bottom if args.bottom is not None else height
             )
         else:
-            transformer = ImgCropMask(top, bottom)
+            transformer = ImgCropMask(
+                args.left if args.left is not None else 0, 
+                args.top if args.top is not None else 0, 
+                args.right if args.right is not None else 0, 
+                args.bottom if args.bottom is not None else 0)
     #
     # color space transformations
     #
