@@ -1,5 +1,3 @@
-import cv2
-import numpy as np
 import logging
 from typing import List
 from donkeycar.config import Config
@@ -9,7 +7,7 @@ from donkeycar.parts import cv as cv_parts
 logger = logging.getLogger(__name__)
 
 class ImageTransformations:
-    def __init__(self, names: List[str], config: Config) -> object:
+    def __init__(self, config: Config, names: List[str]) -> object:
         """
         Part that constructs a list of image transformers
         and run them in sequence to produce a transformed image
@@ -47,12 +45,10 @@ def image_transformer(name:str, config):
         )
 
     elif "CROP" == name:
-        return cv_parts.ImgTrapezoidalMask(
+        return cv_parts.ImgCropMask(
             config.ROI_CROP_LEFT,
-            config.ROI_CROP_RIGHT,
-            config.ROI_CROP_LEFT,
-            config.ROI_CROP_RIGHT,
             config.ROI_CROP_TOP,
+            config.ROI_CROP_RIGHT,
             config.ROI_CROP_BOTTOM
         )
     #
@@ -76,6 +72,10 @@ def image_transformer(name:str, config):
         return cv_parts.ImgBGR2GRAY()
     elif "HSV2GRAY" == name:
         return cv_parts.ImgHSV2GRAY()
+    elif "GRAY2RGB" == name:
+        return cv_parts.ImgGRAY2RGB()
+    elif "GRAY2BGR" == name:
+        return cv_parts.ImgGRAY2BGR()
     elif "CANNY" == name:
         # canny edge detection
         return cv_parts.ImgCanny(config.CANNY_LOW_THRESHOLD, config.CANNY_HIGH_THRESHOLD, config.CANNY_APERTURE)
