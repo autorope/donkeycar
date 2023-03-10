@@ -424,6 +424,59 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #     - 'GRAY2RGB'  - change color model from greyscale to RGB
 #     - 'GRAY2BGR'  - change color model from greyscale to BGR
 #
+# You can create custom tranformations and inserted them into the pipeline.
+# - Use a tranformer label that beings with `CUSTOM`, like `CUSTOM_CROP` 
+#   and add that to the TRANSFORMATIONS or POST_TRANFORMATIONS list.
+#   So for the custom crop example, that might look like this;
+#   `POST_TRANSFORMATIONS = ['CUSTOM_CROP']`
+# - Set configuration properties for the module and class that 
+#   implement your custom transformation.  
+#   - The module config will begin with the transformer label
+#     and end with `_MODULE`, like `CUSTOM_CROP_MODULE`.  It's value is
+#     the module that has the transformer class.  For instance, if you called
+#     the file `my_custom_transformer.py` and put in in the root of
+#     your `mycar` folder, next to `myconfig.py`, then you would add 
+#     the following to your myconfig.py file (keeping with the crop example);
+#     `CUSTOM_CROP_MODULE = "my_custom_transformer"`
+#   - The class config will being with the transformer label and end with `_CLASS`,
+#     like `CUSTOM_CROP_CLASS`.  So if your class is called `CustomCropTransformer`
+#     the you would add the following property to you `myconfig.py` file:
+#     `CUSTOM_CROP_CLASS = "CustomCropTransformer"`
+# - Your custom class' constructor will take in the Config object to
+#   it it's constructor.  So you can add whatever configuration properties
+#   you need to your myconfig.py, then read them in the constructor.
+#   You can name the properties anything you want, but it is good practice
+#   to prefix them with the custom tranformer label so they don't conflict
+#   with any other config and so it is way to see what they go with.
+#   For instance, in the custom crop example, we would want the border
+#   values, so that could look like;
+#   ```
+#   CUSTOM_CROP_TOP = 45    # rows to ignore on the top of the image
+#   CUSTOM_CROP_BOTTOM = 5  # rows ignore on the bottom of the image
+#   CUSTOM_CROP_RIGHT = 10  # pixels to ignore on the right of the image
+#   CUSTOM_CROP_LEFT = 10   # pixels to ignore on the left of the image
+#   ```
+# - You custom class must have a `run` method that take a image and
+#   returns an image.  It is in the method where you will do your
+#   transformation logic.  
+# - for example, a custom crop that did a blur after the crop might look like;
+#   ```
+#   from donkeycar.parts.cv import ImgCropMask, ImgSimpleBlur
+#   
+#   class CustomCropTransformer:
+#       def __init__(self, config) -> None:
+#           self.top = config.CUSTOM_CROP_TOP
+#           self.bottom = config.CUSTOM_CROP_BOTTOM
+#           self.left = config.CUSTOM_CROP_LEFT
+#           self.right = config.CUSTOM_CROP_RIGHT
+#           self.crop = ImgCropMask(self.left, self.top, self.right, self.bottom)
+#           self.blur = ImgSimpleBlur()
+#   
+#       def run(self, image):
+#           image = self.crop.run(image)
+#           return self.blur.run(image)
+#   ```
+#
 AUGMENTATIONS = []         # changes to image only applied in training to create 
                            # more variety in the data.
 TRANSFORMATIONS = []       # changes applied _before_ training augmentations, 
