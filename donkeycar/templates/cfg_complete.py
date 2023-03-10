@@ -424,7 +424,7 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #     - 'GRAY2RGB'  - change color model from greyscale to RGB
 #     - 'GRAY2BGR'  - change color model from greyscale to BGR
 #
-# You can create custom tranformations and inserted them into the pipeline.
+# You can create custom tranformations and insert them into the pipeline.
 # - Use a tranformer label that beings with `CUSTOM`, like `CUSTOM_CROP` 
 #   and add that to the TRANSFORMATIONS or POST_TRANFORMATIONS list.
 #   So for the custom crop example, that might look like this;
@@ -438,9 +438,9 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #     your `mycar` folder, next to `myconfig.py`, then you would add 
 #     the following to your myconfig.py file (keeping with the crop example);
 #     `CUSTOM_CROP_MODULE = "my_custom_transformer"`
-#   - The class config will being with the transformer label and end with `_CLASS`,
+#   - The class config will begin with the transformer label and end with `_CLASS`,
 #     like `CUSTOM_CROP_CLASS`.  So if your class is called `CustomCropTransformer`
-#     the you would add the following property to you `myconfig.py` file:
+#     the you would add the following property to your `myconfig.py` file:
 #     `CUSTOM_CROP_CLASS = "CustomCropTransformer"`
 # - Your custom class' constructor will take in the Config object to
 #   it it's constructor.  So you can add whatever configuration properties
@@ -456,10 +456,10 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #   CUSTOM_CROP_RIGHT = 10  # pixels to ignore on the right of the image
 #   CUSTOM_CROP_LEFT = 10   # pixels to ignore on the left of the image
 #   ```
-# - You custom class must have a `run` method that take a image and
-#   returns an image.  It is in the method where you will do your
+# - Your custom class must have a `run` method that takes an image and
+#   returns an image.  It is in this method where you will implement your
 #   transformation logic.  
-# - for example, a custom crop that did a blur after the crop might look like;
+# - For example, a custom crop that did a blur after the crop might look like;
 #   ```
 #   from donkeycar.parts.cv import ImgCropMask, ImgSimpleBlur
 #   
