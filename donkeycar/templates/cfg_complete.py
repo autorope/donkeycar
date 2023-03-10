@@ -83,6 +83,7 @@ OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
 OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
 OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
 BEHAVIOR_LIST = ['left', 'right']
+OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
 
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)

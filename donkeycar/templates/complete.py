@@ -317,7 +317,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             or '.savedmodel' in model_path \
             or '.pth' in model_path \
             or '.onnx' in model_path:
-            
+
             # load the whole model with weigths, etc
             load_model(kl, model_path)
 
@@ -368,7 +368,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
             # Avoidance logic between obstacle_detector and KerasBehavioral
             from donkeycar.parts.avoidance_behavior import AvoidanceBehaviorPart
-            abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST)
+            abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST, cfg.OBSTACLE_DETECTOR_AVOIDANCE_ENABLED)
             V.add(abh, inputs=['detector/obstacle_lane'], outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
             
             inputs = ["cam/image_array", "behavior/one_hot_state_array"]
