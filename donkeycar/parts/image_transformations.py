@@ -94,7 +94,77 @@ def image_transformer(name:str, config):
         return cv_parts.ImageResize(config.RESIZE_WIDTH, config.RESIZE_HEIGHT)
     elif "SCALE" == name:
         return cv_parts.ImageScale(config.SCALE_WIDTH, config.SCALE_HEIGHT)
+    elif name.startswith("CUSTOM"):
+        return custom_transformer(name, config)
     else:
         msg = f"{name} is not a valid augmentation"
         logger.error(msg)
         raise ValueError(msg)
+
+
+def custom_transformer(name:str, 
+                       config:Config, 
+                       module_name:str=None, 
+                       class_name:str=None) -> object:
+    """
+    Instantiate a custome image transformer.  A customer transformer
+    is a class who's constructor takes a Config object to get it's 
+    configuratino and who's run() method gets an image as an argument
+    and returns a transformed image.  Like:
+    ```
+    class CustomImageTransformer:
+        def __init__(self, config:Config):
+            #
+            # save configuration in instance variables
+            #
+            self.foo = config.foo  # get configuration
+
+        def run(self, image):
+            # 
+            # operate on image, then return 
+            # the transformed image.
+            #
+            return image.copy()
+    ```
+
+    The name of transformer will begin with "CUSTOM", like "CUSTOM_BLUR".
+    There must also be config for the module and the class to instatiate;
+    - The name of the module that leads to the python file would be 
+      the tranformer name with a "_MODULE" suffix, like "CUSTOM_BLUR_MODULE".
+    - The name of the class to instatiate would be the transformer name 
+      with a "_CLASS" suffix, like "CUSTOM_BLUR_CLASS"
+
+    :param name:str name of transformer
+    :param config:Config configuration
+    :param module_name:str if not None then this is name of the module;
+                           otherwise look for the module name in the config
+    :param class_name:str if not None then this is the name of the class;
+                          otherwise look for the class name in the config
+    :return:object instance of the custom tranformer.  The run() methd
+            must take an image and return an image.
+    """
+    if module_name is None:
+        module_name = getattr(config, name + "_MODULE", None)
+    if module_name is None:
+        raise ValueError(f"No module declared for custom image transformer: {name}")
+    if class_name is None:
+        class_name = getattr(config, name + "_CLASS", None)
+    if class_name is None:
+        raise ValueError(f"No class declared for custom image transformer: {name}")
+    
+    # __import__ the module
+    module = __import__(module_name)
+
+    # walk module path to get to module with class
+    for attr in module_name.split('.')[1:]:
+        module = getattr(module, attr)
+
+    my_class = getattr(module, class_name, None)
+    if my_class is None:
+        raise ValueError(f"Cannot find class {class_name} in module {module_name}")
+
+    #
+    # instatiate the an instance of the class.
+    # the __init__() must take a Config object.
+    #
+    return my_class(config)
