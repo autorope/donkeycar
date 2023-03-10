@@ -443,9 +443,9 @@
                 on_press: root.set_brightness(slider_bright.value)
             Slider:
                 id: slider_bright
-                value: 1
-                min: 0
-                max: 3
+                value: 0
+                min: -0.5
+                max: 0.5
                 on_value: root.set_brightness(self.value)
             ToggleButton:
                 id: button_blur
@@ -455,8 +455,8 @@
             Slider:
                 id: slider_blur
                 value: 0
-                min: 0
-                max: 4
+                min: 0.001
+                max: 3
                 on_value: root.set_blur(self.value)
         PaddedBoxLayout:
             ToggleButton:

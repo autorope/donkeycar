@@ -8,7 +8,7 @@ channels:
 
 dependencies:
   - python=3.7
-  - numpy==1.23.4
+  - numpy
   - h5py
   - pillow
   - opencv
@@ -21,7 +21,6 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
-  - imgaug
   - progress
   - moviepy
   - paho-mqtt
@@ -45,4 +44,3 @@ dependencies:
   - pip:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
-    - opencv-python-headless

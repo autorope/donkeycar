@@ -829,13 +829,16 @@ class PilotScreen(Screen):
         if not self.config:
             return
         if self.ids.button_bright.state == 'down':
-            self.config.AUG_MULTIPLY_RANGE = (val, val)
-            if 'MULTIPLY' not in self.aug_list:
-                self.aug_list.append('MULTIPLY')
-        elif 'MULTIPLY' in self.aug_list:
-            self.aug_list.remove('MULTIPLY')
-        # update dependency
-        self.on_aug_list(None, None)
+            self.config.AUG_BRIGHTNESS_RANGE = (val, val)
+            if 'BRIGHTNESS' not in self.aug_list:
+                self.aug_list.append('BRIGHTNESS')
+            else:
+                # Since we only changed the content of the config here,
+                # self.on_aug_list() would not be called, but we want to update
+                # the augmentation. Hence, update the dependency manually here.
+                self.on_aug_list(None, None)
+        elif 'BRIGHTNESS' in self.aug_list:
+            self.aug_list.remove('BRIGHTNESS')
 
     def set_blur(self, val=None):
         if not self.config:
@@ -853,14 +856,16 @@ class PilotScreen(Screen):
         if not self.config:
             return
         self.config.AUGMENTATIONS = self.aug_list
-        self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS')
+        self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS',
+                                              always_apply=True)
         self.on_current_record(None, self.current_record)
 
     def on_trans_list(self, obj, trans_list):
         if not self.config:
             return
         self.config.TRANSFORMATIONS = self.trans_list
-        self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS')
+        self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS',
+                                                always_apply=True)
         self.on_current_record(None, self.current_record)
 
     def set_mask(self, state):
