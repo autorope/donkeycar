@@ -426,8 +426,7 @@ class OnnxInterpreter(Interpreter):
         img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
 
         # if type(other_arr) != 'NoneType':
-        print(other_arr)
-        if type(other_arr) == 'numpy.ndarray':  
+        if isinstance(other_arr, np.ndarray):  
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
             outputs_inference = self.ort_sess.run(self.out_name, {self.in_names[0]: img_arr, self.in_names[1]: other_arr })
         else:
