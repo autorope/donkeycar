@@ -197,7 +197,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                 return 0.1
             return 0
 
-    if cfg.HAVE_RGB_LED and not cfg.DONKEY_GYM:
+    if cfg.HAVE_RGB_LED and not cfg.DONKEY_GYM and not cfg.DONKEY_WEBOT:
         from donkeycar.parts.led_status import RGB_LED
         led = RGB_LED(cfg.LED_PIN_R, cfg.LED_PIN_G, cfg.LED_PIN_B, cfg.LED_INVERT)
         led.set_rgb(cfg.LED_R, cfg.LED_G, cfg.LED_B)
@@ -747,13 +747,22 @@ def add_simulator(V, cfg):
 
         V.add(gym, inputs=inputs, outputs=outputs, threaded=threaded)
 
+    if cfg.DONKEY_WEBOT:
+        from donkeycar.parts.webot import DonkeyWebotEnv
+
+        webot = DonkeyWebotEnv(host=cfg.SIM_HOST, world_name=cfg.DONKEY_WEBOT_WORLD_NAME, conf=cfg.WEBOT_CONF)
+        threaded = True
+        inputs = ['angle', 'throttle']
+        outputs = ['cam/image_array']
+
+        V.add(webot, inputs=inputs, outputs=outputs, threaded=threaded)
 
 def get_camera(cfg):
     """
     Get the configured camera part
     """
     cam = None
-    if not cfg.DONKEY_GYM:
+    if not cfg.DONKEY_GYM and not cfg.DONKEY_WEBOT:
         if cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
             cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
@@ -925,7 +934,7 @@ def add_odometry(V, cfg):
             from donkeycar.parts.encoder import ArduinoEncoder
             enc = ArduinoEncoder(mm_per_tick=cfg.MM_PER_TICK, debug=cfg.ODOM_DEBUG)
             V.add(enc, outputs=['enc/speed'], threaded=True)
-        elif cfg.ENCODER_TYPE == "ROBOCARSHAT" and cfg.USE_ROBOCARSHAT_AS_CONTROLLER and cfg.DONKEY_GYM==False:
+        elif cfg.ENCODER_TYPE == "ROBOCARSHAT" and cfg.USE_ROBOCARSHAT_AS_CONTROLLER and cfg.DONKEY_GYM==False and cfg.DONKEY_WEBOT==False:
             from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInOdom
             enc = RobocarsHatInOdom(cfg)
             V.add(enc, outputs=['enc/speed'], threaded=True)
@@ -953,7 +962,7 @@ def add_imu(V, cfg):
 #
 def add_drivetrain(V, cfg):
 
-    if (not cfg.DONKEY_GYM) and cfg.DRIVE_TRAIN_TYPE != "MOCK":
+    if (not cfg.DONKEY_GYM) and not cfg.DONKEY_WEBOT and cfg.DRIVE_TRAIN_TYPE != "MOCK":
         from donkeycar.parts import actuator, pins
         from donkeycar.parts.actuator import TwoWheelSteeringThrottle
 
