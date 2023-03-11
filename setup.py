@@ -80,7 +80,7 @@ setup(name='donkeycar',
               'plotly',
               'imgaug',
               'gym',
-              'gym-donkeycar @ git+ssh://git@github.com/tawnkramer/gym-donkeycar.git@master#egg=gym-donkeycar',
+              'gym-donkeycar @ git+ssh://git@github.com/tawnkramer/gym-donkeycar.git',
           ],
           'dev': [
               'pytest',

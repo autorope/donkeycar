@@ -20,8 +20,9 @@ class Config(object):
         self.DONKEY_GYM = True
         self.DONKEY_SIM_PATH = "remote"
         self.DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0"
+
         self.SIM_HOST = "127.0.0.1"
-        self.SIM_ARTIFICIAL_LATENCY = 9091
+        self.SIM_ARTIFICIAL_LATENCY = 0
         self.SIM_RECORD = {
             "pos": False,
             "vel": False,
@@ -175,7 +176,10 @@ class TestDgym(unittest.TestCase):
             "vel",
             "gyro",
             "accel",
-            "odom",
+            "front_left",
+            "front_right",
+            "rear_left",
+            "rear_right",
             "cte",
             "speed",
             "orientation",
@@ -212,7 +216,10 @@ class TestDgym(unittest.TestCase):
             "vel",
             "gyro",
             "accel",
-            "odom",
+            "front_left",
+            "front_right",
+            "rear_left",
+            "rear_right",
             "cte",
             "speed",
             "orientation",
@@ -228,14 +235,14 @@ class TestDgym(unittest.TestCase):
         output_image, output_info = output_data[0], output_data[1:]
 
         self.assertEqual(output_info, [
-            (0.1, 0.2, 0.3),  # pos
-            (0.4, 0.5, 0.6),  # vel
-            (0.7, 0.8, 0.9),  # gyro
-            (1.0, 1.1, 1.2),  # accel
-            (1.3, 1.4, 1.5, 1.6),  # odom
+            [0.1, 0.2, 0.3],  # pos
+            [0.4, 0.5, 0.6],  # vel
+            [0.7, 0.8, 0.9],  # gyro
+            [1.0, 1.1, 1.2],  # accel
+            1.3, 1.4, 1.5, 1.6,  # odom (front_left, front_right, rear_left and rear_right)
             1.7,  # cte
             1.8,  # speed
-            (1.9, 2.0, 2.1),  # orientation
+            [1.9, 2.0, 2.1],  # orientation
         ])
 
         self.assertEqual(output_image.shape, current_frame.shape)

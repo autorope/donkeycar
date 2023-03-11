@@ -62,7 +62,7 @@ class DonkeyGymEnv(object):
             'gyro': 'gyro',  # [x, y, z]
             'accel': 'accel',  # [x, y, z]
             'vel': 'vel',  # [x, y, z]
-            'odom': 'odom',  # [fl, fr, rl, rr]
+            'odom': ["front_left", "front_right", "rear_left", "rear_right"],
             'lidar': 'lidar',
             'orientation': "orientation",  # [roll, pitch, yaw]
             'last_lap_time': 'last_lap_time',
@@ -127,10 +127,18 @@ class DonkeyGymEnv(object):
 
         # fill in outputs according to required info
         for key, val in self.output_keys.items():
+            out = self.info[key]
+
+            # convert out to a list if it's not already
+            if isinstance(out, tuple):
+                out = list(out)
+
+            # if it's a list (multiple outputs from a single vector)
             if isinstance(val, list):
-                outputs += self.info[key]
+                outputs += out
+            # if it's a single value or vector
             else:
-                outputs += [self.info[key]]
+                outputs.append(out)
 
         if len(outputs) == 1:
             return self.frame

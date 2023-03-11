@@ -751,6 +751,8 @@ def add_simulator(V, cfg):
         
         inputs = ['steering', 'throttle']
         outputs = ['cam/image_array'] # modified in DonkeyGymEnv constructor according to the config
+
+        # the outputs list is modified in the constructor according to the SIM_RECORD config dict
         gym = DonkeyGymEnv(cfg, outputs)
 
         V.add(gym, inputs=inputs, outputs=outputs, threaded=True)
