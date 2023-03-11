@@ -8,7 +8,7 @@ channels:
 
 dependencies:
   - python=3.7
-  - numpy==1.23.4
+  - numpy
   - h5py
   - pillow
   - opencv
@@ -44,6 +44,5 @@ dependencies:
     - tensorflow==2.2.0
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
-    - opencv-python-headless
     - moviepy
 
