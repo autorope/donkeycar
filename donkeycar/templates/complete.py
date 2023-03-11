@@ -748,30 +748,14 @@ def add_simulator(V, cfg):
     # TODO: the simulation outputs conflict with imu, odometry, kinematics pose estimation and T265 outputs; make them work together.
     if cfg.DONKEY_GYM:
         from donkeycar.parts.dgym import DonkeyGymEnv
-        # rbx
-        gym = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF,
-                           record_location=cfg.SIM_RECORD_LOCATION, record_gyroaccel=cfg.SIM_RECORD_GYROACCEL,
-                           record_velocity=cfg.SIM_RECORD_VELOCITY, record_lidar=cfg.SIM_RECORD_LIDAR,
-                        #    record_distance=cfg.SIM_RECORD_DISTANCE, record_orientation=cfg.SIM_RECORD_ORIENTATION,
-                           delay=cfg.SIM_ARTIFICIAL_LATENCY)
-        threaded = True
+        
         inputs = ['steering', 'throttle']
-        outputs = ['cam/image_array']
+        outputs = ['cam/image_array'] # modified in DonkeyGymEnv constructor according to the config
 
-        if cfg.SIM_RECORD_LOCATION:
-            outputs += ['pos/pos_x', 'pos/pos_y', 'pos/pos_z', 'pos/speed', 'pos/cte']
-        if cfg.SIM_RECORD_GYROACCEL:
-            outputs += ['gyro/gyro_x', 'gyro/gyro_y', 'gyro/gyro_z', 'accel/accel_x', 'accel/accel_y', 'accel/accel_z']
-        if cfg.SIM_RECORD_VELOCITY:
-            outputs += ['vel/vel_x', 'vel/vel_y', 'vel/vel_z']
-        if cfg.SIM_RECORD_LIDAR:
-            outputs += ['lidar/dist_array']
-        # if cfg.SIM_RECORD_DISTANCE:
-        #     outputs += ['dist/left', 'dist/right']
-        # if cfg.SIM_RECORD_ORIENTATION:
-        #     outputs += ['roll', 'pitch', 'yaw']
+        # the outputs list is modified in the constructor according to the SIM_RECORD config dict
+        gym = DonkeyGymEnv(cfg, outputs)
 
-        V.add(gym, inputs=inputs, outputs=outputs, threaded=threaded)
+        V.add(gym, inputs=inputs, outputs=outputs, threaded=True)
 
 
 def get_camera(cfg):
