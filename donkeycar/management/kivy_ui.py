@@ -33,6 +33,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
+from donkeycar.parts.image_transformations import ImageTransformations
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.pipeline.database import PilotDatabase
@@ -739,6 +740,8 @@ class OverlayImage(FullImage):
             img_arr = pilot_screen().transformation.run(img_arr)
         if pilot_screen().aug_list:
             img_arr = pilot_screen().augmentation.run(img_arr)
+        if pilot_screen().post_trans_list:
+            img_arr = pilot_screen().post_transformation.run(img_arr)
         return img_arr
 
     def get_image(self, record):
@@ -787,6 +790,8 @@ class PilotScreen(Screen):
     augmentation = ObjectProperty()
     trans_list = ListProperty(force_dispatch=True)
     transformation = ObjectProperty()
+    post_trans_list = ListProperty(force_dispatch=True)
+    post_transformation = ObjectProperty()
     config = ObjectProperty()
 
     def on_index(self, obj, index):
@@ -856,16 +861,24 @@ class PilotScreen(Screen):
         if not self.config:
             return
         self.config.AUGMENTATIONS = self.aug_list
-        self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS',
-                                              always_apply=True)
+        self.augmentation = ImageAugmentation(
+            self.config, 'AUGMENTATIONS', always_apply=True)
         self.on_current_record(None, self.current_record)
 
     def on_trans_list(self, obj, trans_list):
         if not self.config:
             return
         self.config.TRANSFORMATIONS = self.trans_list
-        self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS',
-                                                always_apply=True)
+        self.transformation = ImageTransformations(
+            self.config, 'TRANSFORMATIONS')
+        self.on_current_record(None, self.current_record)
+
+    def on_post_trans_list(self, obj, trans_list):
+        if not self.config:
+            return
+        self.config.POST_TRANSFORMATIONS = self.post_trans_list
+        self.transformation = ImageTransformations(
+            self.config, 'POST_TRANSFORMATIONS')
         self.on_current_record(None, self.current_record)
 
     def set_mask(self, state):

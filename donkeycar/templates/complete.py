@@ -406,12 +406,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             #
             # add the complete set of pre and post augmentation transformations
             #
-            transforms = getattr(cfg, 'TRANSFORMATIONS', []) + getattr(cfg, 'POST_TRANSFORMATIONS', [])
-            if transforms:
-                logger.info(f"Adding inference transformations: {transforms}")
-                V.add(ImageTransformations(cfg, transforms),
-                    inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
-                inputs = ['cam/image_array_trans'] + inputs[1:]
+            logger.info(f"Adding inference transformations")
+            V.add(ImageTransformations(cfg, 'TRANSFORMATIONS',
+                                       'POST_TRANSFORMATIONS'),
+                  inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
+            inputs = ['cam/image_array_trans'] + inputs[1:]
 
         V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
 

@@ -36,8 +36,9 @@ class BatchSequence(object):
         self.batch_size = self.config.BATCH_SIZE
         self.is_train = is_train
         self.augmentation = ImageAugmentation(config, 'AUGMENTATIONS')
-        self.transformation = ImageTransformations(config, getattr(config, 'TRANSFORMATIONS', []))
-        self.post_transformation = ImageTransformations(config, getattr(config, 'POST_TRANSFORMATIONS', []))
+        self.transformation = ImageTransformations(config, 'TRANSFORMATIONS')
+        self.post_transformation = ImageTransformations(config,
+                                                        'POST_TRANSFORMATIONS')
         self.pipeline = self._create_pipeline()
 
     def __len__(self) -> int:
