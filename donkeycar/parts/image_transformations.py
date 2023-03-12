@@ -6,6 +6,7 @@ from donkeycar.parts import cv as cv_parts
 
 logger = logging.getLogger(__name__)
 
+
 class ImageTransformations:
     def __init__(self, config: Config, names: List[str]) -> object:
         """
@@ -24,7 +25,7 @@ class ImageTransformations:
         return image
 
 
-def image_transformer(name:str, config):
+def image_transformer(name: str, config):
     """
     Factory for cv image transformation parts.
     :param name: str, name of the transformation

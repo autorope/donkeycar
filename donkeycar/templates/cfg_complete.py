@@ -484,7 +484,7 @@ TRANSFORMATIONS = []       # changes applied _before_ training augmentations,
 POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentations, 
                            # such that changes are applied to the augmented image
 
-# Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
+# Settings for brightness and blur, use 'BRIGHTNESS' and/or 'BLUR' in
 # AUGMENTATIONS
 AUG_BRIGHTNESS_RANGE = 0.2  # this is interpreted as [-0.2, 0.2]
 AUG_BLUR_RANGE = (0, 3)

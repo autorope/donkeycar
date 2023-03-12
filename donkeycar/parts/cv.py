@@ -589,7 +589,6 @@ class CvCam(object):
         self.running = True
         logger.info("CvCam ready.")
 
-
     def poll(self):
         if self.cap.isOpened():
             _, self.frame = self.cap.read()
