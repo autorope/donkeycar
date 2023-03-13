@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 import logging
 import numpy as np
-from typing import Union, Sequence, List
+from typing import Union, Sequence, List, Optional
 
 import tensorflow as tf
 from tensorflow import keras
@@ -420,13 +420,12 @@ class OnnxInterpreter(Interpreter):
         self.out_name = [output.name for output in self.ort_sess.get_outputs()]
         self.input_shapes = [inp.shape for inp in self.ort_sess.get_inputs()]
 
-    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
+    def predict(self, img_arr: np.ndarray, other_arr: Optional[np.ndarray]) \
             -> Sequence[Union[float, np.ndarray]]:
 
         img_arr = np.expand_dims(img_arr, axis=0).astype(np.float32)
 
-        # if type(other_arr) != 'NoneType':
-        if isinstance(other_arr, np.ndarray):  
+        if (other_arr.shape != ()): 
             other_arr = np.expand_dims(other_arr, axis=0).astype(np.float32)
             outputs_inference = self.ort_sess.run(self.out_name, {self.in_names[0]: img_arr, self.in_names[1]: other_arr })
         else:
