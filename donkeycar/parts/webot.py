@@ -1,6 +1,7 @@
 import json
 import logging
 import socket
+import struct
 import time
 from threading import Thread
 from typing import Any, Dict
@@ -11,80 +12,107 @@ import base64
 import numpy as np
 from PIL import Image
 
-import tornado.ioloop
-import tornado.websocket
-from tornado import gen
 
-logger = logging.getLogger(__name__)
+mylogger = logging.getLogger(__name__)
+
+class MessageProtocol:
+    HEADER_FORMAT = '!I'  # 4-byte unsigned integer in network byte order
+    
+    @staticmethod
+    def receive_message(client_socket):
+        # Read the message header
+        header_data = b''
+        while len(header_data) < struct.calcsize(MessageProtocol.HEADER_FORMAT):
+            header_chunk = client_socket.recv(struct.calcsize(MessageProtocol.HEADER_FORMAT) - len(header_data))
+            if not header_chunk:
+                raise EOFError('unexpected end of message header')
+            header_data += header_chunk
+        message_length = struct.unpack(MessageProtocol.HEADER_FORMAT, header_data)[0]
+        
+        # Read the message payload
+        message_data = b''
+        while len(message_data) < message_length:
+            message_chunk = client_socket.recv(message_length - len(message_data))
+            if not message_chunk:
+                raise EOFError('unexpected end of message')
+            message_data += message_chunk
+        
+        return message_data
+    
+    @staticmethod
+    def send_message(client_socket, message):
+        # Encode the message as bytes
+        message_data = message.encode('utf-8')
+        
+        # Construct the message header
+        header_data = struct.pack(MessageProtocol.HEADER_FORMAT, len(message_data))
+        
+        # Send the message header and payload
+        client_socket.sendall(header_data)
+        return client_socket.sendall(message_data)
 
 class DonkeyWebotEnv(object):
+
+    RECONNECT_DELAY=3
 
     def __init__(self, host="127.0.0.1", port=9091, headless=0, world_name="donkey-generated-track-v0", sync="asynchronous", conf={}):
 
         self.host=host
         self.port=port
         self.running = True
-        self.aborted = False
-        self.do_process_msgs = False
-        self.connection = None
-        self.io_loop = tornado.ioloop.IOLoop.current()
-        self.io_loop.add_callback(self.start)
-        self.ws = None
-
+        self.flowOpen = False
         self.frame=None
+        self.connect()
 
-    def start(self):
-        self.connect_and_read()
+    def is_alive(self):
+        socket_status = self.client_socket.getsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE)
+        return socket_status
+    
+    def connect(self):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        mylogger.info(f"Connect to Webot {self.host}:{self.port}")
 
-    def stop(self):
-        self.io_loop.stop()
-
-    @gen.coroutine
-    def connect_and_read(self):
-        url=f"ws://{self.host}:{self.port}/websocket/"
-        print(f"Connect to {url}")
         try:
-            self.ws = yield tornado.websocket.websocket_connect(
-                url=url,
-                callback=self.maybe_retry_connection,
-                on_message_callback=self.on_message,
-                ping_interval=10,
-                ping_timeout=30,
-            )
-        except Exception:
-            print ("connection error")
-        else:
-            print ("connected")
+            self.client_socket.connect((self.host, self.port))
+        except ConnectionRefusedError:
+            self.handle_disconnect('connect')
+        self.flowOpen = True
+
+    def handle_disconnect (self, origin='unspecified'):
+        mylogger.info(f"Webot connection closed by server ({origin})")
+        self.flowOpen = False
+        self.client_socket.close()
+        time.sleep(DonkeyWebotEnv.RECONNECT_DELAY)
+        self.connect()
+
+    def handle_incoming_packets(self):
+        while True:
+            try:
+                message = MessageProtocol.receive_message(self.client_socket)
+                self.on_message(message)
+            except (OSError, EOFError, ConnectionResetError) as error:
+                self.handle_disconnect('recv')
 
     def send_driving(self, throttle, steering):
-        payload={'type':'driving', 'data':{'throttle':throttle, 'steering':steering}}
-        if self.ws:
-            msg = json.dumps(payload)
-            try:
-                self.ws.write_message(msg)
-            except tornado.websocket.StreamClosedError:
-                print ("Sending aborted")
-
-    def maybe_retry_connection(self, future) -> None:
-        try:
-            self.connection = future.result()
-        except:
-            print("Could not reconnect, retrying in 3 seconds...")
-            self.io_loop.call_later(3, self.connect_and_read)
+        if self.flowOpen:
+            payload={'type':'driving', 'data':{'throttle':throttle, 'steering':steering}}
+            if self.client_socket:
+                msg = json.dumps(payload)
+                try:
+                    if MessageProtocol.send_message(self.client_socket, msg)==0:
+                        self.handle_disconnect('send null')
+                except:
+                    self.handle_disconnect('send')
 
     def on_message(self, message):
-        if message is None:
-            print("Disconnected, reconnecting...")
-            self.connect_and_read()
-        else:
-            json_msg = json.loads(message)
-            if 'sensor' in json_msg:
-                if json_msg['sensor'] == 'cam':
-                    self.frame = np.asarray(Image.open(BytesIO(base64.b64decode(json_msg['data']))))
+        json_msg = json.loads(message)
+        if 'sensor' in json_msg:
+            if json_msg['sensor'] == 'cam':
+                self.frame = np.asarray(Image.open(BytesIO(base64.b64decode(json_msg['data']))))
 
     def update(self):
         while self.running:
-            self.io_loop.start()
+            self.handle_incoming_packets()
 
     def run_threaded(self, steering, throttle, brake=None):
 
