@@ -137,9 +137,12 @@ network={
 ```bash
 ls /dev/cu.usbmodem*
 sudo screen /dev/cu.usbmodemXXX
+# ctrl+a,ctrl+k to exit
 ```
 
-- Do initial config: select Fr and Eth network and Install without network
+- Do initial config:
+  - Select Fr and Eth network and Install without network
+  - Create user: donkey / donkeycar (will be changed by ansible)
 - Configure network:
 
 ```bash
@@ -157,7 +160,6 @@ sudo nmcli connection add type wifi con-name "xxx" ifname wlan0 \
  802-1x.phase2-auth mschapv2 \
  802-1x.identity "xxx" \
  802-1x.password "xxx"
-
 
 # Add a WPA-PSK connection
 sudo nmcli connection add type wifi con-name "xxx" ifname wlan0 \
@@ -181,7 +183,7 @@ sudo nmcli connection add type wifi con-name "xxx" ifname wlan0 \
 
 - Optional:
   - `ping raspberrypi` to get ip
-  - set 'ansible_host=IP' in hosts for first run if host is not reachable by hostname
+  - use -e 'ansible_host=IP' with ansible-playbook aommand for first run if host is not reachable by hostname
   - update known hosts
 
 ```bash
@@ -192,7 +194,7 @@ ssh < ip or hostnam >
 ```
 
 ```bash
-# on remote node
+# For RPi, on remote node
 sudo apt-get install openssh-server python3 python3-pip
 ```
 
@@ -202,10 +204,8 @@ sudo apt-get install openssh-server python3 python3-pip
 # from controller node
 ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit hostname
 
-# -e "ansible_host=raspberrypi" for first run
-# -K to enter sudo password - or do any sudo command before in local
-# -k to enter ssh password
-# --ask-pass
+# -e "ansible_host=raspberrypi" for first run if needed
+# -e "system_default_user_password=XXX" for first run if needed
 # --key-file to specify ssh key file
 # --tags tag1 / --skip-tags "tag1,tag2"
 # --limit HOST
@@ -214,16 +214,29 @@ ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_p
 # -vvvv / --step / --check / --diff / --start-at-task to troubleshoot
 ```
 
+**BEWARE for passwords:**
+
+- Ansible uses 'ansible_user' and 'ansible_ssh_pass' and 'ansible_become_password' to connect
+- 'ansible_user' and 'ansible_ssh_pass' and 'ansible_become_password' are overriden in group_vars (password comes from vault file): -k and -K command line options will not work
+- If host is unreachable with user/password, a fallback task will try to create user, connecting with 'system_default_user' / 'system_default_user_password'
+- Override 'system_default_user' / 'system_default_user_password' at command line (with -e option) if actual values are different from config ones
+- Defaults are: pi/raspberry for RPi and donkey/donkeycar for Nano
+
 Example on WINET, overriding hostname with IP address (or .local) and specifying manually actual SSH and sudo password :
 
 ```bash
-ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit pc92 -e "ansible_host=172.32.65.167" --ask-pass -k -K
+ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit pc92 -e "ansible_host=172.32.65.167" -e "system_default_user_password=XXX" 
 ```
 
 RPis:
 
-- 1st fails to connect: fallback to creating the ssh user using user pi/raspberry and then uses ssh user to do everything else
 - 1st run may fail with ufw could not determine version error: reboot and redo
+
+## Add a new car
+
+- Add hostname in `hosts` file under corresponding group (nanos or rpis)
+- Create `<hostname>.yml` file in `host_vars` directory, set `system_hostname` in it and eventually add some custom settings
+- Create `<hostname>` directory in `car_configs` and add `myconfig.py` in it
 
 ## Resources
 

@@ -1,27 +1,6 @@
 ---
 
-# user to install donkey
-donkeycar_user: donkey
-donkeycar_user_groups: "dialout,i2c,gpio,spi"
-
-# Clone donkeycar from here
-donkeycar_git_repo: "https://github.com/roboracingleague/donkeycar.git"
-donkeycar_git_branch: "main"
-
-# Install donkeycar with pip install -e .[{{ donkeycar_flavor }}]
-donkeycar_flavor: "pi"
-
-# Install depthai and depthai-sdk
-donkeycar_depthai_enabled: false
-# Install and enable pigpiod
-donkeycar_pigpiod_enabled: false
-# Fix for opencv on jetson nano
-donkeycar_export_openblas_coretype_armv8: false
-# Fix for kerastuner
-donkeycar_export_kerastuner_fix: false
-
-# Packages to install with apt
-donkeycar_system_packages:
+donkeycar_pi_system_packages:
   # pi settings
   # python requirements
   - build-essential
@@ -65,11 +44,10 @@ donkeycar_system_packages:
   # more
   - python3-psutil # to fix donkeycar install
   - nano
-  # serial link debug
-  - tio
+  - tio # serial link debug
 
 # Packages to install with pip
-donkeycar_pip_packages:
+donkeycar_pi_pip_packages:
   - tensorflow
   # more
   - tensorflow-io # to remove warning at tensorflow start on pi
