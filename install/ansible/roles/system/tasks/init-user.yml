@@ -15,7 +15,14 @@
   tags:
     - init-user
 
-- name: connect with default pi user
+- name: display help message for default user and password
+  debug:
+    msg: "host is unreachable with user and key ; trying to connect with 'system_default_user' and 'system_default_user_password' ; use -e 'system_default_user_password=XXX' to override if different from config"
+  when: command_result.stdout is undefined
+  tags:
+    - init-user
+
+- name: connect with default user
   import_tasks: ssh-user.yml
   when: command_result.stdout is undefined
   vars:

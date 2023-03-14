@@ -19,5 +19,6 @@ system_default_editor_path: "/usr/bin/vim.basic"
 # Ansible
 ##########
 ansible_user: "{{ system_ssh_user }}" # different from system_ssh_user because may be temporarily overriden during install for new pi
+ansible_ssh_pass: "{{ vault_system_ssh_user_password }}"
 ansible_become_password: "{{ vault_system_ssh_user_password }}"
 ansible_python_interpreter: /usr/bin/python3

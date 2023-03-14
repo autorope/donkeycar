@@ -1,5 +1,7 @@
 ---
 
+# Defaults are for RPi, change to Nano here
+
 system_default_user: "donkey"
 system_default_user_password: "donkeycar"
 
@@ -8,83 +10,5 @@ ufw_enabled: false # need different kernel
 donkeycar_flavor: "nano"
 donkeycar_export_openblas_coretype_armv8: true
 donkeycar_export_kerastuner_fix: true
-
-donkeycar_system_packages:
-  # jetson nano
-  - libhdf5-serial-dev
-  - hdf5-tools
-  - libhdf5-dev
-  - zlib1g-dev
-  - zip
-  - libjpeg8-dev
-  - liblapack-dev
-  - libblas-dev
-  - gfortran
-  - python3-dev
-  - python3-pip
-  - libxslt1-dev
-  - libxml2-dev
-  - libffi-dev
-  - libcurl4-openssl-dev
-  - libssl-dev
-  - libpng-dev
-  - libopenblas-dev
-  - git
-  - openmpi-doc
-  - openmpi-bin
-  - libopenmpi-dev
-  # opencv requirements 
-  - libilmbase-dev
-  - libopenexr-dev
-  - libgstreamer1.0-dev
-  - libwebp-dev
-  - libatlas-base-dev
-  - libavcodec-dev
-  - libavformat-dev
-  - libswscale-dev
-  # torch requirements
-  - libjpeg-dev
-  - zlib1g-dev
-  - libpython3-dev
-  - libavcodec-dev
-  - libavformat-dev
-  - libswscale-dev
-  # more
-  - python3-psutil # to fix donkeycar install
-  - nano
-
-donkeycar_pip_packages:
-  - testresources
-  - futures==2.2.0
-  - pybind11
-  - cython
-  - pyserial
-  - future==0.18.0 # version with a wheel instead of 0.18.2
-  - mock
-  - py-cpuinfo
-  - portpicker
-  - astor
-  - gdown
-  - keras_applications
-  # more from install-jp461.sh script
-  - numpy==1.19.5
-  - scipy
-  - pandas
-  - pkgconfig
-  - packaging
-  - grpcio
-  # tenorflow
-  - https://developer.download.nvidia.com/compute/redist/jp/v461/tensorflow/tensorflow-2.7.0+nv22.1-cp36-cp36m-linux_aarch64.whl
-  # opencv
-  - opencv-python
-  # allready in tensorflow 2.7.0 install
-  #- protobuf==3.19.6
-  #- h5py
-  #- gast # 0.4.0 in tensorflow-2.7.0 vs 0.2.1 in install-jp461.sh script
-  #- absl-py
-  #- six
-  #- requests
-  #- termcolor
-  #- wrapt # 1.14.1 in tensorflow-2.7.0 vs 1.12.1 in install-jp461.sh script
-  #- google-pasta
-  #- keras_preprocessing
+donkeycar_system_packages: "{{ donkeycar_nano_system_packages }}"
+donkeycar_pip_packages: "{{ donkeycar_nano_pip_packages }}"
