@@ -543,6 +543,7 @@ MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 #ROBOCARSHAT
 USE_ROBOCARSHAT_AS_CONTROLLER  = True
 ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
+ROBOCARSHAT_SERIAL_SPEED = 1000000
 
 # Following values must be aligned with values in Hat !
 ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
