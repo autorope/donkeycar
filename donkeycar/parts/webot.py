@@ -95,7 +95,7 @@ class DonkeyWebotEnv(object):
 
     def send_driving(self, throttle, steering):
         if self.flowOpen:
-            payload={'type':'driving', 'data':{'throttle':throttle, 'steering':steering}}
+            payload={'type':'driving', 'data':{'throttle':str(throttle), 'steering':str(steering)}}
             if self.client_socket:
                 try:
                     msg = json.dumps(payload)
