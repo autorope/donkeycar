@@ -97,7 +97,11 @@ class DonkeyWebotEnv(object):
         if self.flowOpen:
             payload={'type':'driving', 'data':{'throttle':throttle, 'steering':steering}}
             if self.client_socket:
-                msg = json.dumps(payload)
+                try:
+                    msg = json.dumps(payload)
+                except TypeError:
+                    print (msg)
+                    return
                 try:
                     if MessageProtocol.send_message(self.client_socket, msg)==0:
                         self.handle_disconnect('send null')
@@ -105,11 +109,14 @@ class DonkeyWebotEnv(object):
                     self.handle_disconnect('send')
 
     def on_message(self, message):
-        json_msg = json.loads(message)
-        if 'sensor' in json_msg:
-            if json_msg['sensor'] == 'cam':
-                self.frame = np.asarray(Image.open(BytesIO(base64.b64decode(json_msg['data']))))
-
+        try:
+            json_msg = json.loads(message)
+            if 'sensor' in json_msg:
+                if json_msg['sensor'] == 'cam':
+                    self.frame = np.asarray(Image.open(BytesIO(base64.b64decode(json_msg['data']))))
+        except TypeError:
+            print (message)
+            
     def update(self):
         while self.running:
             self.handle_incoming_packets()
