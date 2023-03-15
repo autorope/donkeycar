@@ -100,7 +100,7 @@ class DonkeyWebotEnv(object):
                 try:
                     msg = json.dumps(payload)
                 except TypeError:
-                    print (msg)
+                    print (payload)
                     return
                 try:
                     if MessageProtocol.send_message(self.client_socket, msg)==0:
