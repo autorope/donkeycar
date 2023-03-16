@@ -104,10 +104,10 @@ def image_transformer(name:str, config):
 
 def custom_transformer(name:str, 
                        config:Config, 
-                       module_name:str=None, 
+                       file_path:str=None, 
                        class_name:str=None) -> object:
     """
-    Instantiate a custome image transformer.  A customer transformer
+    Instantiate a custom image transformer.  A custom transformer
     is a class who's constructor takes a Config object to get it's 
     configuratino and who's run() method gets an image as an argument
     and returns a transformed image.  Like:
@@ -143,28 +143,62 @@ def custom_transformer(name:str,
     :return:object instance of the custom tranformer.  The run() methd
             must take an image and return an image.
     """
-    if module_name is None:
-        module_name = getattr(config, name + "_MODULE", None)
-    if module_name is None:
-        raise ValueError(f"No module declared for custom image transformer: {name}")
+    if file_path is None:
+        file_path = getattr(config, name + "_MODULE", None)
+    if file_path is None:
+        raise ValueError(f"No module file path declared for custom image transformer: {name}")
     if class_name is None:
         class_name = getattr(config, name + "_CLASS", None)
     if class_name is None:
         raise ValueError(f"No class declared for custom image transformer: {name}")
     
-    # __import__ the module
-    module = __import__(module_name)
-
-    # walk module path to get to module with class
-    for attr in module_name.split('.')[1:]:
-        module = getattr(module, attr)
-
-    my_class = getattr(module, class_name, None)
-    if my_class is None:
-        raise ValueError(f"Cannot find class {class_name} in module {module_name}")
+    import os
+    import sys
+    import importlib.util
+    # specify the module that needs to be
+    # imported relative to the path of the
+    # module
 
     #
-    # instatiate the an instance of the class.
-    # the __init__() must take a Config object.
+    # create a module name by pulling out base file name
+    # and appending to a custom namespace
     #
-    return my_class(config)
+    namespace = "custom.transformation." + os.path.split(file_path)[1].split('.')[0]
+    module = sys.modules.get(namespace)
+    if module:
+        # already loaded
+        logger.info(f"Found cached custom transformation module: {namespace}")
+    else:   
+        logger.info(f"Loading custom transformation module {namespace} at {file_path}")
+
+        # dynamically load from python file
+        spec=importlib.util.spec_from_file_location(namespace, file_path)
+        if spec:
+            # creates a new module based on spec
+            module = importlib.util.module_from_spec(spec)
+            if module:
+                logger.info(f"Caching custom transformation module {namespace}")
+                sys.modules[namespace] = module
+                
+                # executes the module in its own namespace
+                # when a module is imported or reloaded.
+                spec.loader.exec_module(module)
+            else:
+                logger.error(f"Failed to dynamically load custom transformation module {namespace} at {file_path} from spec")
+        else:
+            logger.error(f"Failed to dynamically load custom transformation spec {namespace} from {file_path}")
+
+    if module:
+        # get the class from the module
+        my_class = getattr(module, class_name, None)
+        if my_class is None:
+            raise ValueError(f"Cannot find class {class_name} in module {namespace} at {file_path}")
+
+        #
+        # instatiate the an instance of the class.
+        # the __init__() must take a Config object.
+        #
+        return my_class(config)
+    else:
+        raise ValueError(f"Unable to load custom tranformation module at {file_path}")
+
