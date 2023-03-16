@@ -544,6 +544,7 @@ MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 #ROBOCARSHAT
 USE_ROBOCARSHAT_AS_CONTROLLER  = True
 ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
+ROBOCARSHAT_SERIAL_SPEED = 1000000
 
 # Following values must be aligned with values in Hat !
 ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
@@ -671,7 +672,7 @@ MODEL_RELOADED_LED_B = 0
 #BEHAVIORS
 #When training the Behavioral Neural Network model, make a list of the behaviors,
 #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
-# TRAIN_BEHAVIORS = False
+TRAIN_BEHAVIORS = False
 # BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
 # BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 
@@ -679,7 +680,7 @@ MODEL_RELOADED_LED_B = 0
 #The localizer is a neural network that can learn to predict its location on the track.
 #This is an experimental feature that needs more developement. But it can currently be used
 #to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
-# TRAIN_LOCALIZER = False
+TRAIN_LOCALIZER = False
 # NUM_LOCATIONS = 10
 # BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
 
@@ -699,6 +700,11 @@ GYM_CONF["bio"] = "I race robots."
 
 SIM_HOST = "127.0.0.1"              # when racing on virtual-race-league use host "trainmydonkey.com"
 SIM_ARTIFICIAL_LATENCY = 0          # this is the millisecond latency in controls. Can use useful in emulating the delay when useing a remote server. values of 100 to 400 probably reasonable.
+
+#Donkey Webot
+DONKEY_WEBOT = False
+DONKEY_WEBOT_WORLD_NAME="vivatech_2023"
+WEBOT_CONF={}
 
 # Save info from Simulator (pln)
 SIM_RECORD_LOCATION = False

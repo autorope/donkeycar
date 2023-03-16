@@ -1183,7 +1183,7 @@ class RobocarsHat (metaclass=Singleton):
         self.steering = 0
         self.loc = 0
         if RobocarsHat.robocarshat_device == None:
-            RobocarsHat.robocarshat_device = serial.Serial(self.cfg.ROBOCARSHAT_SERIAL_PORT, 1000000, timeout = 0.01)
+            RobocarsHat.robocarshat_device = serial.Serial(self.cfg.ROBOCARSHAT_SERIAL_PORT, self.cfg.ROBOCARSHAT_SERIAL_SPEED, timeout = 0.01)
 
         self.running = True
         print('RobocarsHat drive train created')
