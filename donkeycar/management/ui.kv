@@ -381,6 +381,30 @@
         text: root.file_path
 
 
+<TransformationPopup>:
+    size_hint: 1.0, 1.0
+    auto_dismiss: False
+    pos_hint: {'center_x': .5, 'center_y': .5}
+
+    BoxLayout:
+        orientation: "horizontal"
+        BoxLayout:
+            orientation: 'vertical'
+            id: selected_list
+            spacing: 20
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: 20
+            BoxLayout:
+                orientation: 'vertical'
+                id: trafo_list
+            Button:
+                text: "Close"
+                size_hint_y: 0.1
+                on_release: root.dismiss()
+
+
 <PilotScreen>:
     config: app.tub_screen.ids.config_manager.config
     BoxLayout:
@@ -459,14 +483,20 @@
                 max: 3
                 on_value: root.set_blur(self.value)
         PaddedBoxLayout:
-            ToggleButton:
-                id: button_mask
-                text: 'Trapezoidal mask'
-                on_press: root.set_mask(self.state)
-            ToggleButton:
-                id: button_crop
-                text: 'Cropping mask'
-                on_press: root.set_crop(self.state)
+            Transformations:
+                id: pre_transformation
+                title: 'Pre-Augmentation Transformations'
+                text: 'Set pre transformation'
+                pilot_screen: root
+                is_post: False
+                on_press: self.open_popup()
+            Transformations:
+                id: post_transformation
+                title: 'Post-Augmentation Transformations'
+                text: 'Set post transformation'
+                pilot_screen: root
+                is_post: True
+                on_press: self.open_popup()
         PaddedBoxLayout:
             size_hint_y: 0.5
             ControlPanel:

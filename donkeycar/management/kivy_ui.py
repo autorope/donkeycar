@@ -25,6 +25,7 @@ from kivy.core.image import Image as CoreImage
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     ListProperty, BooleanProperty
 from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
@@ -781,6 +782,59 @@ class OverlayImage(FullImage):
         return img_arr
 
 
+class TransformationPopup(Popup):
+    """ Transformation popup window"""
+    title = StringProperty()
+    transformations = \
+        ["TRAPEZE", "CROP", "RGB2BGR", "BGR2RGB", "RGB2HSV", "HSV2RGB",
+         "BGR2HSV", "HSV2BGR", "RGB2GRAY", "RBGR2GRAY", "HSV2GRAY", "GRAY2RGB",
+         "GRAY2BGR", "CANNY", "BLUR", "RESIZE", "SCALE"]
+    transformations_obj = ObjectProperty()
+    selected = ListProperty()
+
+    def __init__(self, selected, **kwargs):
+        super().__init__(**kwargs)
+        for t in self.transformations:
+            btn = Button(text=t)
+            btn.bind(on_release=self.toggle_transformation)
+            self.ids.trafo_list.add_widget(btn)
+        self.selected = selected
+
+    def toggle_transformation(self, btn):
+        trafo = btn.text
+        if trafo in self.selected:
+            self.selected.remove(trafo)
+        else:
+            self.selected.append(trafo)
+
+    def on_selected(self, obj, select):
+        self.ids.selected_list.clear_widgets()
+        for l in self.selected:
+            lab = Label(text=l)
+            self.ids.selected_list.add_widget(lab)
+        self.transformations_obj.selected = self.selected
+
+
+class Transformations(Button):
+    """ Base class for transformation widgets"""
+    title = StringProperty(None)
+    pilot_screen = ObjectProperty()
+    is_post = False
+    selected = ListProperty()
+
+    def open_popup(self):
+        popup = TransformationPopup(title=self.title, transformations_obj=self,
+                                    selected=self.selected)
+        popup.open()
+
+    def on_selected(self, obj, select):
+        Logger.info(f"Selected {select}")
+        if self.is_post:
+            self.pilot_screen.post_trans_list = self.selected
+        else:
+            self.pilot_screen.trans_list = self.selected
+
+
 class PilotScreen(Screen):
     """ Screen to do the pilot vs pilot comparison ."""
     index = NumericProperty(None, force_dispatch=True)
@@ -877,7 +931,7 @@ class PilotScreen(Screen):
         if not self.config:
             return
         self.config.POST_TRANSFORMATIONS = self.post_trans_list
-        self.transformation = ImageTransformations(
+        self.post_transformation = ImageTransformations(
             self.config, 'POST_TRANSFORMATIONS')
         self.on_current_record(None, self.current_record)
 

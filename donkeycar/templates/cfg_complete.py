@@ -534,7 +534,7 @@ CANNY_APERTURE = 3          # Canny edge detect aperture in pixels, must be odd;
 # "BLUR" transformation (not this is SEPARATE from the blur augmentation)
 BLUR_KERNAL = 5        # blur kernal horizontal size in pixels
 BLUR_KERNAL_Y = None   # blur kernal vertical size in pixels or None for square kernal
-BLUR_GUASSIAN = True   # blur is gaussian if True, simple if False
+BLUR_GAUSSIAN = True   # blur is gaussian if True, simple if False
 
 # "RESIZE" transformation
 RESIZE_WIDTH = 160     # horizontal size in pixels
