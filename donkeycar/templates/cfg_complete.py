@@ -433,11 +433,14 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #   implement your custom transformation.
 #   - The module config will begin with the transformer label
 #     and end with `_MODULE`, like `CUSTOM_CROP_MODULE`.  It's value is
-#     the module that has the transformer class.  For instance, if you called
-#     the file `my_custom_transformer.py` and put in in the root of
-#     your `mycar` folder, next to `myconfig.py`, then you would add
+#     the absolute file path to the python file that has the transformer
+#     class.  For instance, if you called the file
+#     `my_custom_transformer.py` and put in in the root of
+#     your `mycar` folder, next to `myconfig.py`, then you would add 
 #     the following to your myconfig.py file (keeping with the crop example);
-#     `CUSTOM_CROP_MODULE = "my_custom_transformer"`
+#     `CUSTOM_CROP_MODULE = "/home/pi/mycar/my_custom_transformer.py"`
+#     The actual path will depend on what OS you are using and what
+#     your user name is.
 #   - The class config will begin with the transformer label and end with `_CLASS`,
 #     like `CUSTOM_CROP_CLASS`.  So if your class is called `CustomCropTransformer`
 #     the you would add the following property to your `myconfig.py` file:
