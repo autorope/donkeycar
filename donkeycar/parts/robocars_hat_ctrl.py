@@ -440,7 +440,7 @@ class RobocarsHatLedCtrl():
 
     def updateAnim(self):
         self.setLed(self.idx, 0, 0, 0, 0x0);
-        self.idx=(self.idx+1)%self.NUMLED
+        self.idx=(self.idx+1)%self.NUM_LED
         self.setLed(self.idx, 255, 0, 0, 0xffff);
     
     def update(self):
