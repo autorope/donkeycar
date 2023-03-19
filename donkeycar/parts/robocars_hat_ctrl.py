@@ -436,7 +436,7 @@ class RobocarsHatLedCtrl():
 
     def setLed(self, i, r, v, b, timing):
         cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
-        self.cmdinterface(cmd)
+        self.cmdinterface.sendCmd(cmd)
 
     def updateAnim(self):
         self.setLed(self, self.idx, 0, 0, 0, 0x0);
