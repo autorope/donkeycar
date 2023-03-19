@@ -439,9 +439,9 @@ class RobocarsHatLedCtrl():
         self.cmdinterface.sendCmd(cmd)
 
     def updateAnim(self):
-        self.setLed(self, self.idx, 0, 0, 0, 0x0);
+        self.setLed(self.idx, 0, 0, 0, 0x0);
         self.idx=(self.idx+1)%self.NUMLED
-        self.setLed(self, self.idx, 255, 0, 0, 0xffff);
+        self.setLed(self.idx, 255, 0, 0, 0xffff);
     
     def update(self):
         while self.on:
@@ -456,6 +456,7 @@ class RobocarsHatLedCtrl():
         return None
 
     def run (self, steering, throttle, mode):
+        self.updateAnim()
         return None
     
 
