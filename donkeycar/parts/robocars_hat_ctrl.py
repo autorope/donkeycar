@@ -439,9 +439,9 @@ class RobocarsHatLedCtrl():
         self.cmdinterface.sendCmd(cmd)
 
     def updateAnim(self):
-        self.setLed(int(self.idx/30), 0, 0, 0, 0x0);
-        self.idx=(self.idx+1)%(self.NUM_LED*30)
-        self.setLed(int(self.idx/30), 255, 0, 0, 0xffff);
+        self.setLed(int(self.idx/10), 0, 0, 0, 0x0);
+        self.idx=(self.idx+1)%(self.NUM_LED*10)
+        self.setLed(int(self.idx/10), 255, 0, 0, 0xffff);
     
     def update(self):
         while self.on:
