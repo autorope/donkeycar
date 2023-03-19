@@ -719,7 +719,7 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
 
         from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
         ctr = RobocarsHatLedCtrl(cfg)
-        V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode'],threaded=False)
+        V.add(ctr, inputs=['user/angle', 'user/throttle', 'user/mode'],threaded=False)
 
     return ctr
 

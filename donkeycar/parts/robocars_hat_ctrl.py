@@ -452,7 +452,7 @@ class RobocarsHatLedCtrl():
                 time.sleep(s)
 
     def run_threaded(self, steering, throttle, mode):
-        updateAnim()
+        self.updateAnim()
         return None
 
     def run (self, steering, throttle, mode):
