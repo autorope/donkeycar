@@ -420,6 +420,51 @@ class RobocarsHatInOdom:
         print('stopping Robocars Hat Controller')
         time.sleep(.5)
 
+class RobocarsHatLedCtrl():
+    NUM_LED=6
+    INDEX_LED_1=0
+    INDEX_LED_2=1
+    INDEX_LED_3=2
+    INDEX_LED_4=3
+    INDEX_LED_5=4
+    INDEX_LED_6=5
+
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.cmdinterface = RobocarsHat(self.cfg)
+        self.idx = 0
+
+    def setLed(self, i, r, v, b, timing):
+        cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
+        self.cmdinterface(cmd)
+
+    def updateAnim(self):
+        self.setLed(self, self.idx, 0, 0, 0, 0x0);
+        self.idx=(self.idx+1)%self.NUMLED
+        self.setLed(self, self.idx, 255, 0, 0, 0xffff);
+    
+    def update(self):
+        while self.on:
+            start = datetime.now()
+            stop = datetime.now()
+            s = 0.01 - (stop - start).total_seconds()
+            if s > 0:
+                time.sleep(s)
+
+    def run_threaded(self, steering, throttle, mode):
+        updateAnim()
+        return None
+
+    def run (self, steering, throttle, mode):
+        return None
+    
+
+    def shutdown(self):
+        # indicate that the thread should be stopped
+        self.on = False
+        print('stopping Robocars Hat Led Controller')
+        time.sleep(.5)
+
 #class RobocarsHatInBattery:
 
 
