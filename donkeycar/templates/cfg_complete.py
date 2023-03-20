@@ -535,8 +535,8 @@ CANNY_HIGH_THRESHOLD = 110  # Canny edge detection high threshold value of inten
 CANNY_APERTURE = 3          # Canny edge detect aperture in pixels, must be odd; choices=[3, 5, 7]
 
 # "BLUR" transformation (not this is SEPARATE from the blur augmentation)
-BLUR_KERNAL = 5        # blur kernal horizontal size in pixels
-BLUR_KERNAL_Y = None   # blur kernal vertical size in pixels or None for square kernal
+BLUR_KERNEL = 5        # blur kernel horizontal size in pixels
+BLUR_KERNEL_Y = None   # blur kernel vertical size in pixels or None for square kernel
 BLUR_GAUSSIAN = True   # blur is gaussian if True, simple if False
 
 # "RESIZE" transformation

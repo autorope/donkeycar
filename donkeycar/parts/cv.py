@@ -331,8 +331,8 @@ class ImgCanny:
 
 class ImgGaussianBlur:
 
-    def __init__(self, kernal_size=5, kernal_y=None):
-        self.kernal_size = (kernal_size, kernal_y if kernal_y is not None else kernal_size)
+    def __init__(self, kernel_size=5, kernel_y=None):
+        self.kernel_size = (kernel_size, kernel_y if kernel_y is not None else kernel_size)
         
     def run(self, img_arr):
         if img_arr is None:
@@ -340,7 +340,7 @@ class ImgGaussianBlur:
 
         try:
             return cv2.GaussianBlur(img_arr,
-                                    self.kernal_size, 
+                                    self.kernel_size, 
                                     0)
         except:
             logger.error("Unable to apply gaussian blur to image.")
@@ -352,15 +352,15 @@ class ImgGaussianBlur:
 
 class ImgSimpleBlur:
 
-    def __init__(self, kernal_size=5, kernal_y=None):
-        self.kernal_size = (kernal_size, kernal_y if kernal_y is not None else kernal_size)
+    def __init__(self, kernel_size=5, kernel_y=None):
+        self.kernel_size = (kernel_size, kernel_y if kernel_y is not None else kernel_size)
         
     def run(self, img_arr):
         if img_arr is None:
             return None
 
         try:
-            return cv2.blur(img_arr, self.kernal_size)
+            return cv2.blur(img_arr, self.kernel_size)
         except:
             logger.error("Unable to apply simple blur to image.")
             return None
@@ -675,14 +675,14 @@ if __name__ == "__main__":
                         help="Canny edge detection high threshold value of intensity gradient.")
     parser.add_argument("-ca", "--canny-aperture", type=int, choices=[3, 5, 7], default=3,
                         help="Canny edge detect aperture in pixels")
-    parser.add_argument("-gk", "--guassian-kernal", type=int, choices=[3, 5, 7, 9], default=3,
-                        help="Guassian blue kernal size in pixels")
-    parser.add_argument("-gky", "--guassian-kernal-y", type=int, choices=[3, 5, 7, 9],
-                        help="Guassian blue kernal y size in pixels, defaults to a square kernal")
-    parser.add_argument("-bk", "--blur-kernal", type=int, choices=[3, 5, 7, 9], default=3,
-                        help="Guassian blue kernal size in pixels")
-    parser.add_argument("-bky", "--blur-kernal-y", type=int, choices=[3, 5, 7, 9],
-                        help="Simple blur kernal y size in pixels, defaults to a square kernal")
+    parser.add_argument("-gk", "--guassian-kernel", type=int, choices=[3, 5, 7, 9], default=3,
+                        help="Guassian blue kernel size in pixels")
+    parser.add_argument("-gky", "--guassian-kernel-y", type=int, choices=[3, 5, 7, 9],
+                        help="Guassian blue kernel y size in pixels, defaults to a square kernel")
+    parser.add_argument("-bk", "--blur-kernel", type=int, choices=[3, 5, 7, 9], default=3,
+                        help="Guassian blue kernel size in pixels")
+    parser.add_argument("-bky", "--blur-kernel-y", type=int, choices=[3, 5, 7, 9],
+                        help="Simple blur kernel y size in pixels, defaults to a square kernel")
     parser.add_argument("-sw", "--scale", type=float,
                         help = "scale factor for image width")
     parser.add_argument("-sh", "--scale-height", type=float, 
@@ -793,9 +793,9 @@ if __name__ == "__main__":
     # blur transformations
     #
     elif "GBLUR" == transformation:
-        transformer = ImgGaussianBlur(args.guassian_kernal, args.guassian_kernal_y)
+        transformer = ImgGaussianBlur(args.guassian_kernel, args.guassian_kernel_y)
     elif "BLUR" == transformation:
-        transformer = ImgSimpleBlur(args.blur_kernal, args.blur_kernal_y)
+        transformer = ImgSimpleBlur(args.blur_kernel, args.blur_kernel_y)
     # 
     # resize transformations
     #

@@ -93,11 +93,11 @@ def image_transformer(name: str, config):
     #
     elif "BLUR" == name:
         if config.BLUR_GAUSSIAN:
-            return cv_parts.ImgGaussianBlur(config.BLUR_KERNAL,
-                                            config.BLUR_KERNAL_Y)
+            return cv_parts.ImgGaussianBlur(config.BLUR_KERNEL,
+                                            config.BLUR_KERNEL_Y)
         else:
-            return cv_parts.ImgSimpleBlur(config.BLUR_KERNAL,
-                                          config.BLUR_KERNAL_Y)
+            return cv_parts.ImgSimpleBlur(config.BLUR_KERNEL,
+                                          config.BLUR_KERNEL_Y)
     # 
     # resize transformations
     #
