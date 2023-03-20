@@ -21,7 +21,6 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
-  - imgaug
   - progress
   - moviepy
   - paho-mqtt
@@ -31,7 +30,7 @@ dependencies:
   - pytorch
   - torchvision=0.12
   - torchaudio
-  - pytorch-lightning
+  - pytorch-lightning>=1.9,<2.0
   - psutil
   - kivy=2.0.0
   - plotly

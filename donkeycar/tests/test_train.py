@@ -68,7 +68,7 @@ def add_transformation_to_config(cfg: Config):
 
 
 def add_augmentation_to_config(cfg: Config):
-    cfg.AUGMENTATIONS = ['MULTIPLY', 'BLUR']
+    cfg.AUGMENTATIONS = ['BRIGHTNESS', 'BLUR']
 
 
 @pytest.fixture(scope='session')

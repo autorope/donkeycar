@@ -394,13 +394,13 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 # Augmentations and Transformations
 #
 # - Augmentations are changes to the image that are only applied during
-#   training and are applied randomly to create more variety in the data.  
+#   training and are applied randomly to create more variety in the data.
 #   Available augmentations are:
 #   - BRIGHTNESS  - modify the image brightness. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/transforms/#albumentations.augmentations.transforms.RandomBrightnessContrast)
 #   - BLUR        - blur the image. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/blur/transforms/#albumentations.augmentations.blur.transforms.Blur)
 #
 # - Transformations are changes to the image that apply both in
-#   training and at inference.  They are always applied and in 
+#   training and at inference.  They are always applied and in
 #   the configured order.  Available image transformations are:
 #   - Apply a mask to the image:
 #     - 'CROP'      - apply rectangular mask to borders of image
@@ -425,15 +425,15 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #     - 'GRAY2BGR'  - change color model from greyscale to BGR
 #
 # You can create custom tranformations and insert them into the pipeline.
-# - Use a tranformer label that beings with `CUSTOM`, like `CUSTOM_CROP` 
+# - Use a tranformer label that beings with `CUSTOM`, like `CUSTOM_CROP`
 #   and add that to the TRANSFORMATIONS or POST_TRANFORMATIONS list.
 #   So for the custom crop example, that might look like this;
 #   `POST_TRANSFORMATIONS = ['CUSTOM_CROP']`
-# - Set configuration properties for the module and class that 
-#   implement your custom transformation.  
+# - Set configuration properties for the module and class that
+#   implement your custom transformation.
 #   - The module config will begin with the transformer label
 #     and end with `_MODULE`, like `CUSTOM_CROP_MODULE`.  It's value is
-#     the absolute file path to the python file that has the transformer 
+#     the absolute file path to the python file that has the transformer
 #     class.  For instance, if you called the file
 #     `my_custom_transformer.py` and put in in the root of
 #     your `mycar` folder, next to `myconfig.py`, then you would add 
@@ -461,11 +461,11 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #   ```
 # - Your custom class must have a `run` method that takes an image and
 #   returns an image.  It is in this method where you will implement your
-#   transformation logic.  
+#   transformation logic.
 # - For example, a custom crop that did a blur after the crop might look like;
 #   ```
 #   from donkeycar.parts.cv import ImgCropMask, ImgSimpleBlur
-#   
+#
 #   class CustomCropTransformer:
 #       def __init__(self, config) -> None:
 #           self.top = config.CUSTOM_CROP_TOP
@@ -474,17 +474,17 @@ PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evalua
 #           self.right = config.CUSTOM_CROP_RIGHT
 #           self.crop = ImgCropMask(self.left, self.top, self.right, self.bottom)
 #           self.blur = ImgSimpleBlur()
-#   
+#
 #       def run(self, image):
 #           image = self.crop.run(image)
 #           return self.blur.run(image)
 #   ```
 #
-AUGMENTATIONS = []         # changes to image only applied in training to create 
+AUGMENTATIONS = []         # changes to image only applied in training to create
                            # more variety in the data.
-TRANSFORMATIONS = []       # changes applied _before_ training augmentations, 
+TRANSFORMATIONS = []       # changes applied _before_ training augmentations,
                            # such that augmentations are applied to the transformed image,
-POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentations, 
+POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentations,
                            # such that changes are applied to the augmented image
 
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
@@ -537,7 +537,7 @@ CANNY_APERTURE = 3          # Canny edge detect aperture in pixels, must be odd;
 # "BLUR" transformation (not this is SEPARATE from the blur augmentation)
 BLUR_KERNAL = 5        # blur kernal horizontal size in pixels
 BLUR_KERNAL_Y = None   # blur kernal vertical size in pixels or None for square kernal
-BLUR_GUASSIAN = True   # blur is gaussian if True, simple if False
+BLUR_GAUSSIAN = True   # blur is gaussian if True, simple if False
 
 # "RESIZE" transformation
 RESIZE_WIDTH = 160     # horizontal size in pixels

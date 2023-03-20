@@ -6,13 +6,20 @@ from donkeycar.parts import cv as cv_parts
 
 logger = logging.getLogger(__name__)
 
+
 class ImageTransformations:
-    def __init__(self, config: Config, names: List[str]) -> object:
+    def __init__(self, config: Config, transformation: str,
+                 post_transformation: str = None) -> object:
         """
         Part that constructs a list of image transformers
         and run them in sequence to produce a transformed image
         """
-        self.transformations = [image_transformer(name, config) for name in names]
+        transformations = getattr(config, transformation, [])
+        if post_transformation:
+            transformations += getattr(config, post_transformation, [])
+        self.transformations = [image_transformer(name, config) for name in
+                                transformations]
+        logger.info(f'Creating ImageTransformations {transformations}')
     
     def run(self, image):
         """
@@ -24,7 +31,7 @@ class ImageTransformations:
         return image
 
 
-def image_transformer(name:str, config):
+def image_transformer(name: str, config):
     """
     Factory for cv image transformation parts.
     :param name: str, name of the transformation
@@ -78,15 +85,19 @@ def image_transformer(name:str, config):
         return cv_parts.ImgGRAY2BGR()
     elif "CANNY" == name:
         # canny edge detection
-        return cv_parts.ImgCanny(config.CANNY_LOW_THRESHOLD, config.CANNY_HIGH_THRESHOLD, config.CANNY_APERTURE)
+        return cv_parts.ImgCanny(config.CANNY_LOW_THRESHOLD,
+                                 config.CANNY_HIGH_THRESHOLD,
+                                 config.CANNY_APERTURE)
     # 
     # blur transformations
     #
     elif "BLUR" == name:
         if config.BLUR_GAUSSIAN:
-            return cv_parts.ImgGaussianBlur(config.BLUR_KERNAL, config.BLUR_KERNAL_Y)
+            return cv_parts.ImgGaussianBlur(config.BLUR_KERNAL,
+                                            config.BLUR_KERNAL_Y)
         else:
-            return cv_parts.ImgSimpleBlur(config.BLUR_KERNAL, config.BLUR_KERNAL_Y)
+            return cv_parts.ImgSimpleBlur(config.BLUR_KERNAL,
+                                          config.BLUR_KERNAL_Y)
     # 
     # resize transformations
     #
@@ -102,14 +113,14 @@ def image_transformer(name:str, config):
         raise ValueError(msg)
 
 
-def custom_transformer(name:str, 
-                       config:Config, 
-                       file_path:str=None, 
+def custom_transformer(name:str,
+                       config:Config,
+                       file_path:str=None,
                        class_name:str=None) -> object:
     """
-    Instantiate a custom image transformer.  A custom transformer
-    is a class who's constructor takes a Config object to get it's 
-    configuratino and who's run() method gets an image as an argument
+    Instantiate a custom image transformer.  A custome transformer
+    is a class whose constructor takes a Config object to get its
+    configuration and whose run() method gets an image as an argument
     and returns a transformed image.  Like:
     ```
     class CustomImageTransformer:
@@ -130,8 +141,8 @@ def custom_transformer(name:str,
     The name of transformer will begin with "CUSTOM", like "CUSTOM_BLUR".
     There must also be config for the module and the class to instatiate;
     - The name of the module that leads to the python file would be 
-      the tranformer name with a "_MODULE" suffix, like "CUSTOM_BLUR_MODULE".
-    - The name of the class to instatiate would be the transformer name 
+      the transformer name with a "_MODULE" suffix, like "CUSTOM_BLUR_MODULE".
+    - The name of the class to instantiate would be the transformer name
       with a "_CLASS" suffix, like "CUSTOM_BLUR_CLASS"
 
     :param name:str name of transformer
@@ -140,7 +151,7 @@ def custom_transformer(name:str,
                            otherwise look for the module name in the config
     :param class_name:str if not None then this is the name of the class;
                           otherwise look for the class name in the config
-    :return:object instance of the custom tranformer.  The run() methd
+    :return:object instance of the custom transformer.  The run() method
             must take an image and return an image.
     """
     if file_path is None:
@@ -168,7 +179,7 @@ def custom_transformer(name:str,
     if module:
         # already loaded
         logger.info(f"Found cached custom transformation module: {namespace}")
-    else:   
+    else:
         logger.info(f"Loading custom transformation module {namespace} at {file_path}")
 
         # dynamically load from python file
@@ -179,7 +190,7 @@ def custom_transformer(name:str,
             if module:
                 logger.info(f"Caching custom transformation module {namespace}")
                 sys.modules[namespace] = module
-                
+
                 # executes the module in its own namespace
                 # when a module is imported or reloaded.
                 spec.loader.exec_module(module)
@@ -195,7 +206,7 @@ def custom_transformer(name:str,
             raise ValueError(f"Cannot find class {class_name} in module {namespace} at {file_path}")
 
         #
-        # instatiate the an instance of the class.
+        # instantiate the an instance of the class.
         # the __init__() must take a Config object.
         #
         return my_class(config)

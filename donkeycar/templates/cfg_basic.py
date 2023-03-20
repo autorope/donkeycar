@@ -108,10 +108,10 @@ SEQUENCE_LENGTH = 3
 # Augmentations and Transformations
 AUGMENTATIONS = []
 TRANSFORMATIONS = []
-# Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
+# Settings for brightness and blur, use 'BRIGHTNESS' and/or 'BLUR' in
 # AUGMENTATIONS
-AUG_MULTIPLY_RANGE = (0.5, 3.0)
-AUG_BLUR_RANGE = (0.0, 3.0)
+AUG_BRIGHTNESS_RANGE = 0.2  # this is interpreted as [-0.2, 0.2]
+AUG_BLUR_RANGE = (0, 3)
 # Number of pixels to crop, requires 'CROP' in TRANSFORMATIONS to be set
 ROI_CROP_TOP = 45
 ROI_CROP_BOTTOM = 0

@@ -7,6 +7,7 @@ from donkeycar.parts.camera import CameraError
 
 logger = logging.getLogger(__name__)
 
+
 def image_shape(image):
     if image is None:
         return None
@@ -14,6 +15,7 @@ def image_shape(image):
         height, width = image.shape
         return height, width, 1
     return image.shape
+
 
 class ImgGreyscale:
 
@@ -588,7 +590,6 @@ class CvCam(object):
 
         self.running = True
         logger.info("CvCam ready.")
-
 
     def poll(self):
         if self.cap.isOpened():
