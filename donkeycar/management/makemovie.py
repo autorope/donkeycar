@@ -84,7 +84,8 @@ class MakeMovie(object):
     def draw_line_into_image(angle, throttle, is_left, img, color):
         import cv2
 
-        height, width, _ = img.shape
+        height = img.shape[0]
+        width = img.shape[1]
         length = height
         a1 = angle * 45.0
         l1 = throttle * length

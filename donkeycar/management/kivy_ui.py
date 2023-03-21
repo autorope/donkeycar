@@ -25,6 +25,7 @@ from kivy.core.image import Image as CoreImage
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     ListProperty, BooleanProperty
 from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
@@ -33,6 +34,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
+from donkeycar.parts.image_transformations import ImageTransformations
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.pipeline.database import PilotDatabase
@@ -739,6 +741,8 @@ class OverlayImage(FullImage):
             img_arr = pilot_screen().transformation.run(img_arr)
         if pilot_screen().aug_list:
             img_arr = pilot_screen().augmentation.run(img_arr)
+        if pilot_screen().post_trans_list:
+            img_arr = pilot_screen().post_transformation.run(img_arr)
         return img_arr
 
     def get_image(self, record):
@@ -778,6 +782,59 @@ class OverlayImage(FullImage):
         return img_arr
 
 
+class TransformationPopup(Popup):
+    """ Transformation popup window"""
+    title = StringProperty()
+    transformations = \
+        ["TRAPEZE", "CROP", "RGB2BGR", "BGR2RGB", "RGB2HSV", "HSV2RGB",
+         "BGR2HSV", "HSV2BGR", "RGB2GRAY", "RBGR2GRAY", "HSV2GRAY", "GRAY2RGB",
+         "GRAY2BGR", "CANNY", "BLUR", "RESIZE", "SCALE"]
+    transformations_obj = ObjectProperty()
+    selected = ListProperty()
+
+    def __init__(self, selected, **kwargs):
+        super().__init__(**kwargs)
+        for t in self.transformations:
+            btn = Button(text=t)
+            btn.bind(on_release=self.toggle_transformation)
+            self.ids.trafo_list.add_widget(btn)
+        self.selected = selected
+
+    def toggle_transformation(self, btn):
+        trafo = btn.text
+        if trafo in self.selected:
+            self.selected.remove(trafo)
+        else:
+            self.selected.append(trafo)
+
+    def on_selected(self, obj, select):
+        self.ids.selected_list.clear_widgets()
+        for l in self.selected:
+            lab = Label(text=l)
+            self.ids.selected_list.add_widget(lab)
+        self.transformations_obj.selected = self.selected
+
+
+class Transformations(Button):
+    """ Base class for transformation widgets"""
+    title = StringProperty(None)
+    pilot_screen = ObjectProperty()
+    is_post = False
+    selected = ListProperty()
+
+    def open_popup(self):
+        popup = TransformationPopup(title=self.title, transformations_obj=self,
+                                    selected=self.selected)
+        popup.open()
+
+    def on_selected(self, obj, select):
+        Logger.info(f"Selected {select}")
+        if self.is_post:
+            self.pilot_screen.post_trans_list = self.selected
+        else:
+            self.pilot_screen.trans_list = self.selected
+
+
 class PilotScreen(Screen):
     """ Screen to do the pilot vs pilot comparison ."""
     index = NumericProperty(None, force_dispatch=True)
@@ -787,6 +844,8 @@ class PilotScreen(Screen):
     augmentation = ObjectProperty()
     trans_list = ListProperty(force_dispatch=True)
     transformation = ObjectProperty()
+    post_trans_list = ListProperty(force_dispatch=True)
+    post_transformation = ObjectProperty()
     config = ObjectProperty()
 
     def on_index(self, obj, index):
@@ -829,13 +888,16 @@ class PilotScreen(Screen):
         if not self.config:
             return
         if self.ids.button_bright.state == 'down':
-            self.config.AUG_MULTIPLY_RANGE = (val, val)
-            if 'MULTIPLY' not in self.aug_list:
-                self.aug_list.append('MULTIPLY')
-        elif 'MULTIPLY' in self.aug_list:
-            self.aug_list.remove('MULTIPLY')
-        # update dependency
-        self.on_aug_list(None, None)
+            self.config.AUG_BRIGHTNESS_RANGE = (val, val)
+            if 'BRIGHTNESS' not in self.aug_list:
+                self.aug_list.append('BRIGHTNESS')
+            else:
+                # Since we only changed the content of the config here,
+                # self.on_aug_list() would not be called, but we want to update
+                # the augmentation. Hence, update the dependency manually here.
+                self.on_aug_list(None, None)
+        elif 'BRIGHTNESS' in self.aug_list:
+            self.aug_list.remove('BRIGHTNESS')
 
     def set_blur(self, val=None):
         if not self.config:
@@ -853,14 +915,24 @@ class PilotScreen(Screen):
         if not self.config:
             return
         self.config.AUGMENTATIONS = self.aug_list
-        self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS')
+        self.augmentation = ImageAugmentation(
+            self.config, 'AUGMENTATIONS', always_apply=True)
         self.on_current_record(None, self.current_record)
 
     def on_trans_list(self, obj, trans_list):
         if not self.config:
             return
         self.config.TRANSFORMATIONS = self.trans_list
-        self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS')
+        self.transformation = ImageTransformations(
+            self.config, 'TRANSFORMATIONS')
+        self.on_current_record(None, self.current_record)
+
+    def on_post_trans_list(self, obj, trans_list):
+        if not self.config:
+            return
+        self.config.POST_TRANSFORMATIONS = self.post_trans_list
+        self.post_transformation = ImageTransformations(
+            self.config, 'POST_TRANSFORMATIONS')
         self.on_current_record(None, self.current_record)
 
     def set_mask(self, state):

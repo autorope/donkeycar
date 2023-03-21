@@ -74,7 +74,7 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     #
     # track user vs autopilot condition
     #
-    V.add(UserPilotCondition(),
+    V.add(UserPilotCondition(show_pilot_image=getattr(cfg, 'OVERLAY_IMAGE', False)),
           inputs=['user/mode', "cam/image_array", "cv/image_array"],
           outputs=['run_user', "run_pilot", "ui/image_array"])
 

@@ -36,6 +36,7 @@ CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one ca
 # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 BGR2RGB = False  # true to convert from BRG format to RGB format; requires opencv
+SHOW_PILOT_IMAGE = False  # show the image used to do the inference when in autopilot mode
 
 # For IMAGE_LIST camera
 # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
@@ -389,28 +390,162 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
+#
 # Augmentations and Transformations
-AUGMENTATIONS = []
-TRANSFORMATIONS = []
+#
+# - Augmentations are changes to the image that are only applied during
+#   training and are applied randomly to create more variety in the data.
+#   Available augmentations are:
+#   - BRIGHTNESS  - modify the image brightness. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/transforms/#albumentations.augmentations.transforms.RandomBrightnessContrast)
+#   - BLUR        - blur the image. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/blur/transforms/#albumentations.augmentations.blur.transforms.Blur)
+#
+# - Transformations are changes to the image that apply both in
+#   training and at inference.  They are always applied and in
+#   the configured order.  Available image transformations are:
+#   - Apply a mask to the image:
+#     - 'CROP'      - apply rectangular mask to borders of image
+#     - 'TRAPEZE'   - apply a trapezoidal mask to image
+#   - Apply an enhancement to the image
+#     - 'CANNY'     - apply canny edge detection
+#     - 'BLUR'      - blur the image
+#   - resize the image
+#     - 'RESIZE'    - resize to given pixel width and height
+#     - 'SCALE'     - resize by given scale factor
+#   - change the color space of the image
+#     - 'RGB2BGR'   - change color model from RGB to BGR
+#     - 'BGR2RGB'   - change color model from BGR to RGB
+#     - 'RGB2HSV'   - change color model from RGB to HSV
+#     - 'HSV2RGB'   - change color model from HSV to RGB
+#     - 'BGR2HSV'   - change color model from BGR to HSV
+#     - 'HSV2BGR'   - change color model from HSV to BGR
+#     - 'RGB2GRAY'  - change color model from RGB to greyscale
+#     - 'BGR2GRAY'  - change color model from BGR to greyscale
+#     - 'HSV2GRAY'  - change color model from HSV to greyscale
+#     - 'GRAY2RGB'  - change color model from greyscale to RGB
+#     - 'GRAY2BGR'  - change color model from greyscale to BGR
+#
+# You can create custom tranformations and insert them into the pipeline.
+# - Use a tranformer label that beings with `CUSTOM`, like `CUSTOM_CROP`
+#   and add that to the TRANSFORMATIONS or POST_TRANFORMATIONS list.
+#   So for the custom crop example, that might look like this;
+#   `POST_TRANSFORMATIONS = ['CUSTOM_CROP']`
+# - Set configuration properties for the module and class that
+#   implement your custom transformation.
+#   - The module config will begin with the transformer label
+#     and end with `_MODULE`, like `CUSTOM_CROP_MODULE`.  It's value is
+#     the absolute file path to the python file that has the transformer
+#     class.  For instance, if you called the file
+#     `my_custom_transformer.py` and put in in the root of
+#     your `mycar` folder, next to `myconfig.py`, then you would add 
+#     the following to your myconfig.py file (keeping with the crop example);
+#     `CUSTOM_CROP_MODULE = "/home/pi/mycar/my_custom_transformer.py"`
+#     The actual path will depend on what OS you are using and what
+#     your user name is.
+#   - The class config will begin with the transformer label and end with `_CLASS`,
+#     like `CUSTOM_CROP_CLASS`.  So if your class is called `CustomCropTransformer`
+#     the you would add the following property to your `myconfig.py` file:
+#     `CUSTOM_CROP_CLASS = "CustomCropTransformer"`
+# - Your custom class' constructor will take in the Config object to
+#   it it's constructor.  So you can add whatever configuration properties
+#   you need to your myconfig.py, then read them in the constructor.
+#   You can name the properties anything you want, but it is good practice
+#   to prefix them with the custom tranformer label so they don't conflict
+#   with any other config and so it is way to see what they go with.
+#   For instance, in the custom crop example, we would want the border
+#   values, so that could look like;
+#   ```
+#   CUSTOM_CROP_TOP = 45    # rows to ignore on the top of the image
+#   CUSTOM_CROP_BOTTOM = 5  # rows ignore on the bottom of the image
+#   CUSTOM_CROP_RIGHT = 10  # pixels to ignore on the right of the image
+#   CUSTOM_CROP_LEFT = 10   # pixels to ignore on the left of the image
+#   ```
+# - Your custom class must have a `run` method that takes an image and
+#   returns an image.  It is in this method where you will implement your
+#   transformation logic.
+# - For example, a custom crop that did a blur after the crop might look like;
+#   ```
+#   from donkeycar.parts.cv import ImgCropMask, ImgSimpleBlur
+#
+#   class CustomCropTransformer:
+#       def __init__(self, config) -> None:
+#           self.top = config.CUSTOM_CROP_TOP
+#           self.bottom = config.CUSTOM_CROP_BOTTOM
+#           self.left = config.CUSTOM_CROP_LEFT
+#           self.right = config.CUSTOM_CROP_RIGHT
+#           self.crop = ImgCropMask(self.left, self.top, self.right, self.bottom)
+#           self.blur = ImgSimpleBlur()
+#
+#       def run(self, image):
+#           image = self.crop.run(image)
+#           return self.blur.run(image)
+#   ```
+#
+AUGMENTATIONS = []         # changes to image only applied in training to create
+                           # more variety in the data.
+TRANSFORMATIONS = []       # changes applied _before_ training augmentations,
+                           # such that augmentations are applied to the transformed image,
+POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentations,
+                           # such that changes are applied to the augmented image
+
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
 # AUGMENTATIONS
-AUG_MULTIPLY_RANGE = (0.5, 3.0)
-AUG_BLUR_RANGE = (0.0, 3.0)
-# Region of interest cropping, requires 'CROP' in TRANSFORMATIONS to be set
+AUG_BRIGHTNESS_RANGE = 0.2  # this is interpreted as [-0.2, 0.2]
+AUG_BLUR_RANGE = (0, 3)
+
+# "CROP" Transformation
+# Apply mask to borders of the image
+# defined by a rectangle.
 # If these crops values are too large, they will cause the stride values to
 # become negative and the model with not be valid.
+# # # # # # # # # # # # #
+# xxxxxxxxxxxxxxxxxxxxx #
+# xxxxxxxxxxxxxxxxxxxxx #
+# xx                 xx # top
+# xx                 xx #
+# xx                 xx #
+# xxxxxxxxxxxxxxxxxxxxx # bottom
+# xxxxxxxxxxxxxxxxxxxxx #
+# # # # # # # # # # # # #
 ROI_CROP_TOP = 45               # the number of rows of pixels to ignore on the top of the image
 ROI_CROP_BOTTOM = 0             # the number of rows of pixels to ignore on the bottom of the image
 ROI_CROP_RIGHT = 0              # the number of rows of pixels to ignore on the right of the image
 ROI_CROP_LEFT = 0               # the number of rows of pixels to ignore on the left of the image
-# For trapezoidal see explanation in augmentations.py. Requires 'TRAPEZE' in
-# TRANSFORMATIONS to be set
+
+# "TRAPEZE" tranformation
+# Apply mask to borders of image
+# defined by a trapezoid.
+# # # # # # # # # # # # # #
+# xxxxxxxxxxxxxxxxxxxxxxx #
+# xxxx ul     ur xxxxxxxx # min_y
+# xxx             xxxxxxx #
+# xx               xxxxxx #
+# x                 xxxxx #
+# ll                lr xx # max_y
+# # # # # # # # # # # # # #
 ROI_TRAPEZE_LL = 0
 ROI_TRAPEZE_LR = 160
 ROI_TRAPEZE_UL = 20
 ROI_TRAPEZE_UR = 140
 ROI_TRAPEZE_MIN_Y = 60
 ROI_TRAPEZE_MAX_Y = 120
+
+# "CANNY" Canny Edge Detection tranformation
+CANNY_LOW_THRESHOLD = 60    # Canny edge detection low threshold value of intensity gradient
+CANNY_HIGH_THRESHOLD = 110  # Canny edge detection high threshold value of intensity gradient
+CANNY_APERTURE = 3          # Canny edge detect aperture in pixels, must be odd; choices=[3, 5, 7]
+
+# "BLUR" transformation (not this is SEPARATE from the blur augmentation)
+BLUR_KERNEL = 5        # blur kernel horizontal size in pixels
+BLUR_KERNEL_Y = None   # blur kernel vertical size in pixels or None for square kernel
+BLUR_GAUSSIAN = True   # blur is gaussian if True, simple if False
+
+# "RESIZE" transformation
+RESIZE_WIDTH = 160     # horizontal size in pixels
+RESIZE_HEIGHT = 120    # vertical size in pixels
+
+# "SCALE" transformation
+SCALE_WIDTH = 1.0      # horizontal scale factor
+SCALE_HEIGHT = None    # vertical scale factor or None to maintain aspect ratio
 
 #Model transfer options
 #When copying weights during a model transfer operation, should we freeze a certain number of layers
