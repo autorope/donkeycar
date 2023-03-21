@@ -8,6 +8,7 @@ channels:
 
 dependencies:
   - python=3.9
+  - numpy=1.19
   - h5py
   - pillow
   - opencv
@@ -20,7 +21,6 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
-  - imgaug
   - progress
   - moviepy
   - paho-mqtt
@@ -30,8 +30,7 @@ dependencies:
   - pytorch
   - torchvision=0.12
   - torchaudio
-  - pytorch-lightning
-  - numpy
+  - pytorch-lightning>=1.9,<2.0
   - psutil
   - plotly
   - pyyaml
@@ -40,8 +39,8 @@ dependencies:
   - pynmea2
   - pyserial
   - utm
+  - albumentations
   - pip:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
-    - opencv-python-headless
     - kivy==2.1

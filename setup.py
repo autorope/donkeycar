@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="4.4.dev4",
+      version="4.4.dev8",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
@@ -37,7 +37,7 @@ setup(name='donkeycar',
           ],
       },
       install_requires=[
-          'numpy',
+          'numpy==1.19',
           'pillow',
           'docopt',
           'tornado',
@@ -64,7 +64,6 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'RPi.GPIO',
-              'imgaug',
               'tensorflow @ https://github.com/PINTO0309/Tensorflow-bin/releases/download/v2.9.0/tensorflow-2.9.0-cp39-none-linux_aarch64.whl'
           ],
           'nano': [
@@ -72,6 +71,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
+              'albumentations'
               'matplotlib',
               'kivy-jetson',
               'pyyaml',
@@ -81,9 +81,11 @@ setup(name='donkeycar',
           'pc': [
               'matplotlib',
               'kivy',
+              'protobuf==3.20.3',
+              'pandas',
               'pyyaml',
               'plotly',
-              'imgaug'
+              'albumentations'
           ],
           'dev': [
               'pytest',

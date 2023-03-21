@@ -14,6 +14,7 @@ from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
+from donkeycar.parts.image_transformations import ImageTransformations
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 import tensorflow as tf
 import numpy as np
@@ -38,7 +39,9 @@ class BatchSequence(object):
         self.batch_size = self.config.BATCH_SIZE
         self.is_train = is_train
         self.augmentation = ImageAugmentation(config, 'AUGMENTATIONS')
-        self.transformation = ImageAugmentation(config, 'TRANSFORMATIONS')
+        self.transformation = ImageTransformations(config, 'TRANSFORMATIONS')
+        self.post_transformation = ImageTransformations(config,
+                                                        'POST_TRANSFORMATIONS')
         self.pipeline = self._create_pipeline()
 
     def __len__(self) -> int:
@@ -54,6 +57,7 @@ class BatchSequence(object):
         img_arr = self.transformation.run(img_arr)
         if self.is_train:
             img_arr = self.augmentation.run(img_arr)
+        img_arr = self.post_transformation.run(img_arr)
 
         return img_arr
 

@@ -2,12 +2,7 @@ class Pipe:
     """
     Just pipe all inputs to the output, so they can be renamed.
     """
-    def __init__(self):
-        self.running = True
-
     def run(self, *args):
-        if self.running:
-            return args
-
-    def shutdown(self):
-        self.running = False
+        # seems to be a python bug that takes a single argument
+        # return makes it into two element tuple with empty last element.
+        return args if len(args) > 1 else args[0]

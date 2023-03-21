@@ -5,6 +5,7 @@ import pathlib
 import numpy
 from PIL import Image, ImageDraw
 
+from donkeycar.parts.transform import PIDController
 from donkeycar.utils import norm_deg, dist, deg2rad, arr_to_img, is_number_type
 
 
@@ -75,6 +76,50 @@ class CsvPath(AbstractPath):
             return False
 
         self.recording = False
+
+class CsvThrottlePath(AbstractPath):
+    def __init__(self, min_dist: float = 1.0) -> None:
+        super().__init__(min_dist)
+        self.throttles = []
+
+    def run(self, recording: bool, x: float, y: float, throttle: float) -> tuple:
+        if recording:
+            d = dist(x, y, self.x, self.y)
+            if d > self.min_dist:
+                logging.info(f"path point: ({x},{y}) throttle: {throttle}")
+                self.path.append((x, y))
+                self.throttles.append(throttle)
+                self.x = x
+                self.y = y
+        return self.path, self.throttles
+
+    def reset(self) -> bool:
+        super().reset()
+        self.throttles = []
+        return True
+
+    def save(self, filename: str) -> bool:
+        if self.length() > 0:
+            with open(filename, 'w') as outfile:
+                for (x, y), v in zip(self.path, self.throttles):
+                    outfile.write(f"{x}, {y}, {v}\n")
+            return True
+        else:
+            return False
+
+    def load(self, filename: str) -> bool:
+        path = pathlib.Path(filename)
+        if path.is_file():
+            with open(filename, "r") as infile:
+                self.path = []
+                for line in infile:
+                    xy = [float(i.strip()) for i in line.strip().split(sep=",")]
+                    self.path.append((xy[0], xy[1]))
+                    self.throttles.append(xy[2])
+            return True
+        else:
+            logging.warning(f"File '{filename}' does not exist")
+            return False
 
 
 class RosPath(AbstractPath):
@@ -199,10 +244,14 @@ class PathPlot(object):
             for iP in range(0, len(path) - 1):
                 ax, ay = path[iP]
                 bx, by = path[iP + 1]
+
+                #
+                # y increases going north, so handle this with scale
+                #
                 self.plot_line(ax * self.scale + self.offset[0],
-                            ay * self.scale + self.offset[1],
+                            ay * -self.scale + self.offset[1],
                             bx * self.scale + self.offset[0],
-                            by * self.scale + self.offset[1],
+                            by * -self.scale + self.offset[1],
                             draw,
                             color)
         return img
@@ -234,7 +283,7 @@ class PlotCircle(object):
     def run(self, img, x, y):
         draw = ImageDraw.Draw(img)
         self.plot_circle(x * self.scale + self.offset[0],
-                        y * self.scale + self.offset[1], 
+                        y * -self.scale + self.offset[1],  # y increases going north
                         self.radius,
                         draw, 
                         self.color)
@@ -385,11 +434,25 @@ class CTE(object):
 
 class PID_Pilot(object):
 
-    def __init__(self, pid, throttle):
+    def __init__(
+            self,
+            pid: PIDController,
+            throttle: float,
+            use_constant_throttle: bool = False,
+            min_throttle: float = None) -> None:
         self.pid = pid
         self.throttle = throttle
+        self.use_constant_throttle = use_constant_throttle
+        self.variable_speed_multiplier = 1.0
+        self.min_throttle = min_throttle if min_throttle is not None else throttle
 
-    def run(self, cte):
+    def run(self, cte: float, throttles: list, closest_pt_idx: int) -> tuple:
         steer = self.pid.run(cte)
-        logging.info("CTE: %f steer: %f" % (cte, steer))
-        return steer, self.throttle
+        if self.use_constant_throttle or throttles is None or closest_pt_idx is None:
+            throttle = self.throttle
+        elif throttles[closest_pt_idx] * self.variable_speed_multiplier < self.min_throttle:
+            throttle = self.min_throttle
+        else:
+            throttle = throttles[closest_pt_idx] * self.variable_speed_multiplier
+        logging.info(f"CTE: {cte} steer: {steer} throttle: {throttle}")
+        return steer, throttle

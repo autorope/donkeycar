@@ -41,6 +41,7 @@ CAMERA_HFLIP = False
 CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one camera connected
 # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
+BGR2RGB = False  # true to convert from BRG format to RGB format; requires opencv
 
 # For IMAGE_LIST camera
 PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
@@ -647,6 +648,7 @@ PID_P = -0.5                        # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
 PID_THROTTLE = 0.50                 # constant throttle value during path following
+USE_CONSTANT_THROTTLE = False       # whether or not to use the constant throttle or variable throttle captured during path recording
 PID_D_DELTA = 0.25                  # amount the inc/dec function will change the D value
 PID_P_DELTA = 0.25                  # amount the inc/dec function will change the P value
 
