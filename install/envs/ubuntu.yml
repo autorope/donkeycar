@@ -22,7 +22,6 @@ dependencies:
   - codecov
   - pip
   - progress
-  - moviepy
   - paho-mqtt
   - PrettyTable
   - pyfiglet
@@ -44,3 +43,4 @@ dependencies:
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
     - kivy==2.1
+    - moviepy
