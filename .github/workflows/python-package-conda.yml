@@ -26,18 +26,12 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.9
-          mamba-version: "*"
+          # mamba-version: "*"
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
           auto-activate-base: false
           channels: default, conda-forge, pytorch
           channel-priority: true
-      # Workaround for https://github.com/actions/runner-images/issues/6910 / https://github.com/conda/conda/issues/12303
-      - name: Downgrade conda
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          conda config --set allow_conda_downgrades true
-          conda install conda=4.12.0 -y
       - name: Conda info and list
         run: |
           echo Environment file ${{matrix.ENV_FILE}}
