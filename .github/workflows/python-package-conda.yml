@@ -26,6 +26,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           python-version: 3.9
+          #
           # mamba-version: "*"
           activate-environment: donkey
           environment-file: ${{matrix.ENV_FILE}}
