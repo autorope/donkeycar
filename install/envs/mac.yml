@@ -8,7 +8,7 @@ channels:
 
 dependencies:
   - python=3.9
-  - numpy=1.19
+  - numpy
   - h5py
   - pillow
   - opencv
