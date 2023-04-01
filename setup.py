@@ -71,7 +71,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
-              'albumentations'
+              'albumentations',
               'matplotlib',
               'kivy-jetson',
               'pyyaml',
