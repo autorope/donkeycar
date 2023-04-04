@@ -77,6 +77,17 @@ setup(name='donkeycar',
               'pyyaml',
               'plotly'
           ],
+          'xavier': [
+              'Adafruit_PCA9685',
+              'adafruit-circuitpython-ssd1306',
+              'adafruit-circuitpython-rplidar',
+              'Jetson.GPIO',
+              'albumentations',
+              'matplotlib',
+              'kivy',
+              'pyyaml',
+              'plotly'
+          ],
           'pc': [
               'matplotlib',
               'kivy',
