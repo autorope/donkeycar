@@ -66,7 +66,7 @@ setup(name='donkeycar',
               'RPi.GPIO',
               'tensorflow @ https://github.com/PINTO0309/Tensorflow-bin/releases/download/v2.9.0/tensorflow-2.9.0-cp39-none-linux_aarch64.whl'
           ],
-          'nano': [
+          'nano45': [
               'Adafruit_PCA9685',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
@@ -77,7 +77,7 @@ setup(name='donkeycar',
               'pyyaml',
               'plotly'
           ],
-          'xavier': [
+          'nano': [
               'Adafruit_PCA9685',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
