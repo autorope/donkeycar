@@ -12,10 +12,15 @@
 # python -m pip install "kivy[base]" kivy_examples --no-binary kivy
 # pip install pygame
 
+# TODO: try
+# pytorch-nightly
+# @see https://developer.apple.com/metal/pytorch/
+
 name: donkey
 
 channels:
   - conda-forge
+  - pytorch-nightly
 #  - pytorch
 
 dependencies:
