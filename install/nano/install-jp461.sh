@@ -1,5 +1,12 @@
 #!/bin/bash -e
 
+# to check jetpack version
+# sudo apt-cache show nvidia-jetpack
+# if not in latest 4.6.3 jetpack
+# edit etc/apt/sources.list.d/nvidia-l4t-apt-source.list to point to the 32.7 repo (just change the version to r32.7 in both lines)
+# sudo apt update
+# sudo apt dist-upgrade
+
 #password='jetson'
 # Get the full dir name of this script
 #DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -30,13 +37,20 @@ sudo pip3 install -U astor termcolor google-pasta scipy pandas gdown pkgconfig p
 
 # Install tensorflow
 sudo pip3 install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 tensorflow
+# or upgrade
+python3 -m pip install --upgrade --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 tensorflow
+
 
 sudo systemctl stop nvgetty
 sudo systemctl disable nvgetty
 sudo usermod -aG dialout USER
 
-# configure jetson clocks in .bashrc
-sudo jetson_clocks
+sudo nvpmodel -m 0
+
+# configure jetson clocks in a service
+sudo systemctl enable jetson-clocks.service
+sudo systemctl start jetson-clocks.service
+
 
 ########################################
 # Install PyTorch v1.7 - torchvision v0.8.1

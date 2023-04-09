@@ -1,0 +1,10 @@
+[Unit]
+Description=Jetson Clocks
+After=nvpmodel.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c /usr/bin/jetson_clocks
+
+[Install]
+WantedBy=multi-user.target
