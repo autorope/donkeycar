@@ -56,7 +56,7 @@ def test_tubplot(cardir):
     # create empy KerasLinear model in car directory
     model_dir = os.path.join(cardir, 'models')
     os.mkdir(model_dir)
-    model_path = os.path.join(model_dir, 'model.h5')
+    model_path = os.path.join(model_dir, 'model.savedmodel')
     from donkeycar.parts.keras import KerasLinear
     KerasLinear().interpreter.model.save(model_path)
 

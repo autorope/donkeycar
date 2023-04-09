@@ -73,7 +73,7 @@ def drive(cfg, model_path=None, model_type=None):
     elif cfg.CAMERA_TYPE == "PICAM":
         from donkeycar.parts.camera import PiCamera
         cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H,
-                       image_d=cfg.IMAGE_DEPTH, framerate=cfg.CAMERA_FRAMERATE,
+                       image_d=cfg.IMAGE_DEPTH,
                        vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
     elif cfg.CAMERA_TYPE == "WEBCAM":
         from donkeycar.parts.camera import Webcam
@@ -191,11 +191,12 @@ def drive(cfg, model_path=None, model_type=None):
     types = ['image_array', 'float', 'float', 'str']
 
     # do we want to store new records into own dir or append to existing
-    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
-        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
-    tub_writer = TubWriter(base_path=tub_path, inputs=inputs, types=types)
-    car.add(tub_writer, inputs=inputs, outputs=["tub/num_records"],
-            run_condition='recording')
+    if model_path is None or cfg.RECORD_DURING_AI:
+        tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
+            cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+        tub_writer = TubWriter(base_path=tub_path, inputs=inputs, types=types)
+        car.add(tub_writer, inputs=inputs, outputs=["tub/num_records"],
+                run_condition='recording')
     if not model_path and cfg.USE_RC:
         tub_wiper = TubWiper(tub_writer.tub, num_records=cfg.DRIVE_LOOP_HZ)
         car.add(tub_wiper, inputs=['user/wiper_on'])

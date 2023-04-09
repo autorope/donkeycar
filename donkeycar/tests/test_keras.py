@@ -1,12 +1,11 @@
 import shutil
 import tempfile
-import numpy as np
 from pytest import approx
 import pytest
 import os
 
 from donkeycar.parts.interpreter import keras_to_tflite, \
-    saved_model_to_tensor_rt, TfLite, TensorRT
+    saved_model_to_tensor_rt, TfLite, TensorRT, has_trt_support
 from donkeycar.parts.keras import *
 from donkeycar.utils import get_test_img
 
@@ -29,24 +28,19 @@ def create_models(keras_pilot, dir):
     # build with keras interpreter
     interpreter = KerasInterpreter()
     km = keras_pilot(interpreter=interpreter)
-
-    kl = krt = None
     # build tflite model from TfLite interpreter
     tflite_model_path = os.path.join(dir, 'model.tflite')
-    if keras_pilot is not Keras3D_CNN:
-        keras_to_tflite(interpreter.model, tflite_model_path)
-        kl = keras_pilot(interpreter=TfLite())
-        kl.load(tflite_model_path)
+    keras_to_tflite(interpreter.model, tflite_model_path)
+    kl = keras_pilot(interpreter=TfLite())
+    kl.load(tflite_model_path)
     # save model in savedmodel format
     savedmodel_path = os.path.join(dir, 'model.savedmodel')
     interpreter.model.save(savedmodel_path)
-
-    if keras_pilot is not KerasLSTM:
-        # convert to tensorrt and load
-        tensorrt_path = os.path.join(dir, 'model.trt')
-        saved_model_to_tensor_rt(savedmodel_path, tensorrt_path)
+    krt = None
+    # load tensorrt only if supported
+    if has_trt_support():
         krt = keras_pilot(interpreter=TensorRT())
-        krt.load(tensorrt_path)
+        krt.load(savedmodel_path)
 
     return km, kl, krt
 
@@ -55,10 +49,10 @@ def create_models(keras_pilot, dir):
 def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
     """ This test cannot run for the 3D CNN model in tflite and the LSTM
         model in """
-    km, kl, krt = create_models(keras_pilot, tmp_dir)
+    k_keras, k_tflite, k_trt = create_models(keras_pilot, tmp_dir)
 
     # prepare data
-    img = get_test_img(km)
+    img = get_test_img(k_keras)
     if keras_pilot is KerasIMU:
         # simulate 6 imu data in [0, 1]
         imu = np.random.rand(6).tolist()
@@ -76,16 +70,15 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
 
     # run all three interpreters and check results are numerically close
     out2 = out3 = None
-    out1 = km.run(*args)
-    if keras_pilot is not Keras3D_CNN:
-        # conv3d in tflite requires TF > 2.3.0
-        out2 = kl.run(*args)
+    out1 = k_keras.run(*args)
+    if k_tflite:
+        out2 = k_tflite.run(*args)
         assert out2 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
-    if keras_pilot is not KerasLSTM:
+    if k_trt:
         # lstm cells are not yet supported in tensor RT
-        out3 = krt.run(*args)
+        out3 = k_trt.run(*args)
         assert out3 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
-    print(out1, out2, out3)
+    print("\n", out1, out2, out3)
 
 
 
