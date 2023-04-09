@@ -264,6 +264,7 @@ PID_P = -10.0                       # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.2                  # constant throttle value during path following
+USE_CONSTANT_THROTTLE = False       # whether or not to use the constant throttle or variable throttle captured during path recording
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 

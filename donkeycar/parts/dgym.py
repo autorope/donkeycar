@@ -34,7 +34,8 @@ class DonkeyGymEnv(object):
                      'cte': 0,
                      'gyro': (0., 0., 0.),
                      'accel': (0., 0., 0.),
-                     'vel': (0., 0., 0.)}
+                     'vel': (0., 0., 0.),
+                     'lidar': []}
         self.delay = float(delay) / 1000
         self.record_location = record_location
         self.record_gyroaccel = record_gyroaccel
@@ -86,7 +87,7 @@ class DonkeyGymEnv(object):
         if self.record_velocity:
             outputs += self.info['vel'][0],  self.info['vel'][1],  self.info['vel'][2]
         if self.record_lidar:
-            outputs += self.info['lidar']
+            outputs += [self.info['lidar']]
         if len(outputs) == 1:
             return self.frame
         else:

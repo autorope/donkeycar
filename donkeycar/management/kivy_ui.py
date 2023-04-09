@@ -25,6 +25,7 @@ from kivy.core.image import Image as CoreImage
 from kivy.properties import NumericProperty, ObjectProperty, StringProperty, \
     ListProperty, BooleanProperty
 from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.lang.builder import Builder
 from kivy.core.window import Window
@@ -33,6 +34,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import SpinnerOption, Spinner
 
 from donkeycar import load_config
+from donkeycar.parts.image_transformations import ImageTransformations
 from donkeycar.parts.tub_v2 import Tub
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.pipeline.database import PilotDatabase
@@ -257,16 +259,17 @@ class TubLoader(BoxLayout, FileChooserBase):
             tub_screen().status(f'Failed loading tub: {str(e)}')
             return False
         # Check if filter is set in tub screen
-        expression = tub_screen().ids.tub_filter.filter_expression
+        # expression = tub_screen().ids.tub_filter.filter_expression
+        train_filter = getattr(cfg, 'TRAIN_FILTER', None)
 
         # Use filter, this defines the function
         def select(underlying):
-            if not expression:
+            if not train_filter:
                 return True
             else:
                 try:
                     record = TubRecord(cfg, self.tub.base_path, underlying)
-                    res = eval(expression)
+                    res = train_filter(record)
                     return res
                 except KeyError as err:
                     Logger.error(f'Filter: {err}')
@@ -281,8 +284,6 @@ class TubLoader(BoxLayout, FileChooserBase):
             msg = f'Loaded tub {self.file_path} with {self.len} records'
         else:
             msg = f'No records in tub {self.file_path}'
-        if expression:
-            msg += f' using filter {tub_screen().ids.tub_filter.record_filter}'
         tub_screen().status(msg)
         return True
 
@@ -399,12 +400,12 @@ class FullImage(Image):
             self.core_image = CoreImage(bytes_io, ext='png')
             self.texture = self.core_image.texture
         except KeyError as e:
-            Logger.error('Record: Missing key:', e)
+            Logger.error(f'Record: Missing key: {e}')
         except Exception as e:
-            Logger.error('Record: Bad record:', str(e))
+            Logger.error(f'Record: Bad record: {e}')
 
     def get_image(self, record):
-        return record.image(cached=False)
+        return record.image()
 
 
 class ControlPanel(BoxLayout):
@@ -423,11 +424,15 @@ class ControlPanel(BoxLayout):
         :param continuous:  If we do <<, >> or <, >
         :return:            None
         """
+        # this widget it used in two screens, so reference the original location
+        # of the config which is the config manager in the tub screen
+        cfg = tub_screen().ids.config_manager.config
+        hz = cfg.DRIVE_LOOP_HZ if cfg else 20
         time.sleep(0.1)
         call = partial(self.step, fwd, continuous)
         if continuous:
             self.fwd = fwd
-            s = float(self.speed) * tub_screen().ids.config_manager.config.DRIVE_LOOP_HZ
+            s = float(self.speed) * hz
             cycle_time = 1.0 / s
         else:
             cycle_time = 0.08
@@ -441,6 +446,9 @@ class ControlPanel(BoxLayout):
         :param largs:       dummy
         :return:            None
         """
+        if self.screen.index is None:
+            self.screen.status("No tub loaded")
+            return
         new_index = self.screen.index + (1 if fwd else -1)
         if new_index >= tub_screen().ids.tub_loader.len:
             new_index = 0
@@ -533,22 +541,33 @@ class TubFilter(PaddedBoxLayout):
 
     def update_filter(self):
         filter_text = self.ids.record_filter.text
+        config = tub_screen().ids.config_manager.config
         # empty string resets the filter
         if filter_text == '':
             self.record_filter = ''
             self.filter_expression = ''
             rc_handler.data['record_filter'] = self.record_filter
+            if hasattr(config, 'TRAIN_FILTER'):
+                delattr(config, 'TRAIN_FILTER')
             tub_screen().status(f'Filter cleared')
             return
         filter_expression = self.create_filter_string(filter_text)
         try:
             record = tub_screen().current_record
-            res = eval(filter_expression)
+            filter_func_text = f"""def filter_func(record): 
+                                       return {filter_expression}       
+                                """
+            # creates the function 'filter_func'
+            ldict = {}
+            exec(filter_func_text, globals(), ldict)
+            filter_func = ldict['filter_func']
+            res = filter_func(record)
             status = f'Filter result on current record: {res}'
             if isinstance(res, bool):
                 self.record_filter = filter_text
                 self.filter_expression = filter_expression
                 rc_handler.data['record_filter'] = self.record_filter
+                setattr(config, 'TRAIN_FILTER', filter_func)
             else:
                 status += ' - non bool expression can\'t be applied'
             status += ' - press <Reload tub> to see effect'
@@ -649,8 +668,9 @@ class TubScreen(Screen):
 
     def on_index(self, obj, index):
         """ Kivy method that is called if self.index changes"""
-        self.current_record = self.ids.tub_loader.records[index]
-        self.ids.slider.value = index
+        if index >= 0:
+            self.current_record = self.ids.tub_loader.records[index]
+            self.ids.slider.value = index
 
     def on_current_record(self, obj, record):
         """ Kivy method that is called if self.current_record changes."""
@@ -721,6 +741,8 @@ class OverlayImage(FullImage):
             img_arr = pilot_screen().transformation.run(img_arr)
         if pilot_screen().aug_list:
             img_arr = pilot_screen().augmentation.run(img_arr)
+        if pilot_screen().post_trans_list:
+            img_arr = pilot_screen().post_transformation.run(img_arr)
         return img_arr
 
     def get_image(self, record):
@@ -747,7 +769,7 @@ class OverlayImage(FullImage):
 
         rgb = (0, 0, 255)
         MakeMovie.draw_line_into_image(output[0], output[1], True, img_arr, rgb)
-        out_record = deepcopy(record)
+        out_record = copy(record)
         out_record.underlying['pilot/angle'] = output[0]
         # rename and denormalise the throttle output
         pilot_throttle_field \
@@ -760,6 +782,59 @@ class OverlayImage(FullImage):
         return img_arr
 
 
+class TransformationPopup(Popup):
+    """ Transformation popup window"""
+    title = StringProperty()
+    transformations = \
+        ["TRAPEZE", "CROP", "RGB2BGR", "BGR2RGB", "RGB2HSV", "HSV2RGB",
+         "BGR2HSV", "HSV2BGR", "RGB2GRAY", "RBGR2GRAY", "HSV2GRAY", "GRAY2RGB",
+         "GRAY2BGR", "CANNY", "BLUR", "RESIZE", "SCALE"]
+    transformations_obj = ObjectProperty()
+    selected = ListProperty()
+
+    def __init__(self, selected, **kwargs):
+        super().__init__(**kwargs)
+        for t in self.transformations:
+            btn = Button(text=t)
+            btn.bind(on_release=self.toggle_transformation)
+            self.ids.trafo_list.add_widget(btn)
+        self.selected = selected
+
+    def toggle_transformation(self, btn):
+        trafo = btn.text
+        if trafo in self.selected:
+            self.selected.remove(trafo)
+        else:
+            self.selected.append(trafo)
+
+    def on_selected(self, obj, select):
+        self.ids.selected_list.clear_widgets()
+        for l in self.selected:
+            lab = Label(text=l)
+            self.ids.selected_list.add_widget(lab)
+        self.transformations_obj.selected = self.selected
+
+
+class Transformations(Button):
+    """ Base class for transformation widgets"""
+    title = StringProperty(None)
+    pilot_screen = ObjectProperty()
+    is_post = False
+    selected = ListProperty()
+
+    def open_popup(self):
+        popup = TransformationPopup(title=self.title, transformations_obj=self,
+                                    selected=self.selected)
+        popup.open()
+
+    def on_selected(self, obj, select):
+        Logger.info(f"Selected {select}")
+        if self.is_post:
+            self.pilot_screen.post_trans_list = self.selected
+        else:
+            self.pilot_screen.trans_list = self.selected
+
+
 class PilotScreen(Screen):
     """ Screen to do the pilot vs pilot comparison ."""
     index = NumericProperty(None, force_dispatch=True)
@@ -769,6 +844,8 @@ class PilotScreen(Screen):
     augmentation = ObjectProperty()
     trans_list = ListProperty(force_dispatch=True)
     transformation = ObjectProperty()
+    post_trans_list = ListProperty(force_dispatch=True)
+    post_transformation = ObjectProperty()
     config = ObjectProperty()
 
     def on_index(self, obj, index):
@@ -781,6 +858,8 @@ class PilotScreen(Screen):
     def on_current_record(self, obj, record):
         """ Kivy method that is called when self.current_index changes. Here
             we update the images and the control panel entry."""
+        if not record:
+            return
         i = record.underlying['_index']
         self.ids.pilot_control.record_display = f"Record {i:06}"
         self.ids.img_1.update(record)
@@ -806,16 +885,23 @@ class PilotScreen(Screen):
         return rc_handler.data['user_pilot_map'][text]
 
     def set_brightness(self, val=None):
+        if not self.config:
+            return
         if self.ids.button_bright.state == 'down':
-            self.config.AUG_MULTIPLY_RANGE = (val, val)
-            if 'MULTIPLY' not in self.aug_list:
-                self.aug_list.append('MULTIPLY')
-        elif 'MULTIPLY' in self.aug_list:
-            self.aug_list.remove('MULTIPLY')
-        # update dependency
-        self.on_aug_list(None, None)
+            self.config.AUG_BRIGHTNESS_RANGE = (val, val)
+            if 'BRIGHTNESS' not in self.aug_list:
+                self.aug_list.append('BRIGHTNESS')
+            else:
+                # Since we only changed the content of the config here,
+                # self.on_aug_list() would not be called, but we want to update
+                # the augmentation. Hence, update the dependency manually here.
+                self.on_aug_list(None, None)
+        elif 'BRIGHTNESS' in self.aug_list:
+            self.aug_list.remove('BRIGHTNESS')
 
     def set_blur(self, val=None):
+        if not self.config:
+            return
         if self.ids.button_blur.state == 'down':
             self.config.AUG_BLUR_RANGE = (val, val)
             if 'BLUR' not in self.aug_list:
@@ -826,13 +912,27 @@ class PilotScreen(Screen):
         self.on_aug_list(None, None)
 
     def on_aug_list(self, obj, aug_list):
+        if not self.config:
+            return
         self.config.AUGMENTATIONS = self.aug_list
-        self.augmentation = ImageAugmentation(self.config, 'AUGMENTATIONS')
+        self.augmentation = ImageAugmentation(
+            self.config, 'AUGMENTATIONS', always_apply=True)
         self.on_current_record(None, self.current_record)
 
     def on_trans_list(self, obj, trans_list):
+        if not self.config:
+            return
         self.config.TRANSFORMATIONS = self.trans_list
-        self.transformation = ImageAugmentation(self.config, 'TRANSFORMATIONS')
+        self.transformation = ImageTransformations(
+            self.config, 'TRANSFORMATIONS')
+        self.on_current_record(None, self.current_record)
+
+    def on_post_trans_list(self, obj, trans_list):
+        if not self.config:
+            return
+        self.config.POST_TRANSFORMATIONS = self.post_trans_list
+        self.post_transformation = ImageTransformations(
+            self.config, 'POST_TRANSFORMATIONS')
         self.on_current_record(None, self.current_record)
 
     def set_mask(self, state):
@@ -1088,7 +1188,6 @@ class CarScreen(Screen):
                    '-o ConnectTimeout=3',
                    f'{self.config.PI_USERNAME}@{self.config.PI_HOSTNAME}',
                    'date']
-            # Logger.info('car check: ' + ' '.join(cmd))
             self.connection = Popen(cmd, shell=False, stdout=PIPE,
                                     stderr=STDOUT, text=True,
                                     encoding='utf-8', universal_newlines=True)

@@ -35,6 +35,8 @@ CAMERA_HFLIP = False
 CAMERA_INDEX = 0  # used for 'WEBCAM' and 'CVCAM' when there is more than one camera connected 
 # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
+BGR2RGB = False  # true to convert from BRG format to RGB format; requires opencv
+SHOW_PILOT_IMAGE = False  # show the image used to do the inference when in autopilot mode
 
 # For IMAGE_LIST camera
 # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
@@ -60,10 +62,12 @@ SSD1306_RESOLUTION = 1 # 1 = 128x32; 2 = 128x64
 # "SERVO_HBRIDGE_2PIN" Servo for steering and HBridge motor driver in 2pin mode for motor
 # "SERVO_HBRIDGE_3PIN" Servo for steering and HBridge motor driver in 3pin mode for motor
 # "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
-# "DC_TWO_WHEEL" uses HBridge in two-pin mode to control two drive motors, one on the left, and one on the right.
-# "DC_TWO_WHEEL_L298N" using HBridge in three-pin mode to control two drive motors, one of the left and one on the right.
+# "DC_TWO_WHEEL" uses HBridge in 2-pin mode to control two drive motors, one on the left, and one on the right.
+# "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
 # "MOCK" no drive train.  This can be used to test other features in a test rig.
-# (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering, and HBridge for a drive motor.
+# "VESC" VESC Motor controller to set servo angle and duty cycle
+# (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering,
+#                                  and HBridge for a drive motor.
 # (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
 # (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
 #
@@ -76,31 +80,37 @@ DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 # Uses a PwmPin for steering (servo) and a second PwmPin for throttle (ESC)
 # Base PWM Frequence is presumed to be 60hz; use PWM_xxxx_SCALE to adjust pulse with for non-standard PWM frequencies
 #
-PWM_STEERING_PIN = "PCA9685.1:40.1"  # PWM output pin for steering servo
-PWM_STEERING_SCALE = 1.0   # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
-PWM_STEERING_INVERTED = False  # True if hardware requires an inverted PWM pulse
-PWM_THROTTLE_PIN = "PCA9685.1:40.0"  # PWM output pin for ESC
-PWM_THROTTLE_SCALE = 1.0   # used to compensate for PWM frequence differences from 60hz; NOT for increasing/limiting speed
-PWM_THROTTLE_INVERTED = False  # True if hardware requires an inverted PWM pulse
+PWM_STEERING_THROTTLE = {
+    "PWM_STEERING_PIN": "PCA9685.1:40.1",   # PWM output pin for steering servo
+    "PWM_STEERING_SCALE": 1.0,              # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+    "PWM_STEERING_INVERTED": False,         # True if hardware requires an inverted PWM pulse
+    "PWM_THROTTLE_PIN": "PCA9685.1:40.0",   # PWM output pin for ESC
+    "PWM_THROTTLE_SCALE": 1.0,              # used to compensate for PWM frequence differences from 60hz; NOT for increasing/limiting speed
+    "PWM_THROTTLE_INVERTED": False,         # True if hardware requires an inverted PWM pulse
+    "STEERING_LEFT_PWM": 460,               #pwm value for full left steering
+    "STEERING_RIGHT_PWM": 290,              #pwm value for full right steering
+    "THROTTLE_FORWARD_PWM": 500,            #pwm value for max forward throttle
+    "THROTTLE_STOPPED_PWM": 370,            #pwm value for no movement
+    "THROTTLE_REVERSE_PWM": 220,            #pwm value for max reverse throttle
+}
 
-
-#STEERING FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
+#
+# I2C_SERVO (deprecated in favor of PWM_STEERING_THROTTLE)
+#
 STEERING_CHANNEL = 1            #(deprecated) channel on the 9685 pwm board 0-15
 STEERING_LEFT_PWM = 460         #pwm value for full left steering
 STEERING_RIGHT_PWM = 290        #pwm value for full right steering
-
-#STEERING FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
-STEERING_PWM_PIN = 13           #(deprecated) Pin numbering according to Broadcom numbers
-STEERING_PWM_FREQ = 50          #Frequency for PWM
-STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
-
-#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated I2C_SERVO)
 THROTTLE_CHANNEL = 0            #(deprecated) channel on the 9685 pwm board 0-15
 THROTTLE_FORWARD_PWM = 500      #pwm value for max forward throttle
 THROTTLE_STOPPED_PWM = 370      #pwm value for no movement
 THROTTLE_REVERSE_PWM = 220      #pwm value for max reverse throttle
 
-#THROTTLE FOR PWM_STEERING_THROTTLE (and deprecated PIGPIO_PWM OUTPUT)
+#
+# PIGPIO_PWM (deprecated in favor of PWM_STEERING_THROTTLE)
+#
+STEERING_PWM_PIN = 13           #(deprecated) Pin numbering according to Broadcom numbers
+STEERING_PWM_FREQ = 50          #Frequency for PWM
+STEERING_PWM_INVERTED = False   #If PWM needs to be inverted
 THROTTLE_PWM_PIN = 18           #(deprecated) Pin numbering according to Broadcom numbers
 THROTTLE_PWM_FREQ = 50          #Frequency for PWM
 THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
@@ -135,13 +145,15 @@ THROTTLE_PWM_INVERTED = False   #If PWM needs to be inverted
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_2PIN_DUTY_FWD = "RPI_GPIO.BOARD.18"  # provides forward duty cycle to motor
-HBRIDGE_2PIN_DUTY_BWD = "RPI_GPIO.BOARD.16"  # provides reverse duty cycle to motor
-PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"       # provides servo pulse to steering servo
-PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
-PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
-STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
-STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+SERVO_HBRIDGE_2PIN = {
+    "FWD_DUTY_PIN": "RPI_GPIO.BOARD.18",  # provides forward duty cycle to motor
+    "BWD_DUTY_PIN": "RPI_GPIO.BOARD.16",  # provides reverse duty cycle to motor
+    "PWM_STEERING_PIN": "RPI_GPIO.BOARD.33",       # provides servo pulse to steering servo
+    "PWM_STEERING_SCALE": 1.0,        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+    "PWM_STEERING_INVERTED": False,   # True if hardware requires an inverted PWM pulse
+    "STEERING_LEFT_PWM": 460,         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+    "STEERING_RIGHT_PWM": 290,        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+}
 
 #
 # SERVO_HBRIDGE_3PIN
@@ -177,14 +189,50 @@ STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_3PIN_FWD = "RPI_GPIO.BOARD.18"   # ttl pin, high enables motor forward 
-HBRIDGE_3PIN_BWD = "RPI_GPIO.BOARD.16"   # ttl pin, highenables motor reverse
-HBRIDGE_3PIN_DUTY = "RPI_GPIO.BOARD.35"  # provides duty cycle to motor
-PWM_STEERING_PIN = "RPI_GPIO.BOARD.33"   # provides servo pulse to steering servo
-PWM_STEERING_SCALE = 1.0        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
-PWM_STEERING_INVERTED = False   # True if hardware requires an inverted PWM pulse
-STEERING_LEFT_PWM = 460         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
-STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+SERVO_HBRIDGE_3PIN = {
+    "FWD_PIN": "RPI_GPIO.BOARD.18",   # ttl pin, high enables motor forward
+    "BWD_PIN": "RPI_GPIO.BOARD.16",   # ttl pin, high enables motor reverse
+    "DUTY_PIN": "RPI_GPIO.BOARD.35",  # provides duty cycle to motor
+    "PWM_STEERING_PIN": "RPI_GPIO.BOARD.33",   # provides servo pulse to steering servo
+    "PWM_STEERING_SCALE": 1.0,        # used to compensate for PWM frequency differents from 60hz; NOT for adjusting steering range
+    "PWM_STEERING_INVERTED": False,   # True if hardware requires an inverted PWM pulse
+    "STEERING_LEFT_PWM": 460,         # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+    "STEERING_RIGHT_PWM": 290,        # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+}
+
+#
+# DRIVETRAIN_TYPE == "SERVO_HBRIDGE_PWM" (deprecated in favor of SERVO_HBRIDGE_2PIN)
+# - configures a steering servo and an HBridge in 2pin mode (2 pwm pins)
+# - Uses ServoBlaster library, which is NOT installed by default, so
+#   you will need to install it to make this work.
+# - Servo takes a standard servo PWM pulse between 1 millisecond (fully reverse)
+#   and 2 milliseconds (full forward) with 1.5ms being neutral.
+# - the motor is controlled by two pwm pins,
+#   one for forward and one for backward (reverse).
+# - the pwm pins produce a duty cycle from 0 (completely LOW)
+#   to 1 (100% completely high), which is proportional to the
+#   amount of power delivered to the motor.
+# - in forward mode, the reverse pwm is 0 duty_cycle,
+#   in backward mode, the forward pwm is 0 duty cycle.
+# - both pwms are 0 duty cycle (LOW) to 'detach' motor and
+#   and glide to a stop.
+# - both pwms are full duty cycle (100% HIGH) to brake
+#
+HBRIDGE_PIN_FWD = 18       # provides forward duty cycle to motor
+HBRIDGE_PIN_BWD = 16       # provides reverse duty cycle to motor
+STEERING_CHANNEL = 0       # PCA 9685 channel for steering control
+STEERING_LEFT_PWM = 460    # pwm value for full left steering (use `donkey calibrate` to measure value for your car)
+STEERING_RIGHT_PWM = 290   # pwm value for full right steering (use `donkey calibrate` to measure value for your car)
+
+#VESC controller, primarily need to change VESC_SERIAL_PORT  and VESC_MAX_SPEED_PERCENT
+VESC_MAX_SPEED_PERCENT =.2  # Max speed as a percent of the actual speed
+VESC_SERIAL_PORT= "/dev/ttyACM0" # Serial device to use for communication. Can check with ls /dev/tty*
+VESC_HAS_SENSOR= True # Whether or not the bldc motor is using a hall effect sensor
+VESC_START_HEARTBEAT= True # Whether or not to automatically start the heartbeat thread that will keep commands alive.
+VESC_BAUDRATE= 115200 # baudrate for the serial communication. Shouldn't need to change this.
+VESC_TIMEOUT= 0.05 # timeout for the serial communication
+VESC_STEERING_SCALE= 0.5 # VESC accepts steering inputs from 0 to 1. Joystick is usually -1 to 1. This changes it to -0.5 to 0.5
+VESC_STEERING_OFFSET = 0.5 # VESC accepts steering inputs from 0 to 1. Coupled with above change we move Joystick to 0 to 1
 
 #
 # DC_STEER_THROTTLE with one motor as steering, one as drive
@@ -206,10 +254,12 @@ STEERING_RIGHT_PWM = 290        # pwm value for full right steering (use `donkey
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_PIN_LEFT = "RPI_GPIO.BOARD.18"   # pwm pin produces duty cycle for steering left
-HBRIDGE_PIN_RIGHT = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for steering right
-HBRIDGE_PIN_FWD = "RPI_GPIO.BOARD.15"    # pwm pin produces duty cycle for forward drive
-HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"    # pwm pin produces duty cycle for reverse drive
+DC_STEER_THROTTLE = {
+    "LEFT_DUTY_PIN": "RPI_GPIO.BOARD.18",   # pwm pin produces duty cycle for steering left
+    "RIGHT_DUTY_PIN": "RPI_GPIO.BOARD.16",  # pwm pin produces duty cycle for steering right
+    "FWD_DUTY_PIN": "RPI_GPIO.BOARD.15",    # pwm pin produces duty cycle for forward drive
+    "BWD_DUTY_PIN": "RPI_GPIO.BOARD.13",    # pwm pin produces duty cycle for reverse drive
+}
 
 #
 # DC_TWO_WHEEL pin configuration
@@ -240,11 +290,12 @@ HBRIDGE_PIN_BWD = "RPI_GPIO.BOARD.13"    # pwm pin produces duty cycle for rever
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_PIN_LEFT_FWD = "RPI_GPIO.BOARD.18"  # pwm pin produces duty cycle for left wheel forward 
-HBRIDGE_PIN_LEFT_BWD = "RPI_GPIO.BOARD.16"  # pwm pin produces duty cycle for left wheel reverse
-HBRIDGE_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # pwm pin produces duty cycle for right wheel forward
-HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # pwm pin produces duty cycle for right wheel reverse
-
+DC_TWO_WHEEL = {
+    "LEFT_FWD_DUTY_PIN": "RPI_GPIO.BOARD.18",  # pwm pin produces duty cycle for left wheel forward
+    "LEFT_BWD_DUTY_PIN": "RPI_GPIO.BOARD.16",  # pwm pin produces duty cycle for left wheel reverse
+    "RIGHT_FWD_DUTY_PIN": "RPI_GPIO.BOARD.15", # pwm pin produces duty cycle for right wheel forward
+    "RIGHT_BWD_DUTY_PIN": "RPI_GPIO.BOARD.13", # pwm pin produces duty cycle for right wheel reverse
+}
 
 #
 # DC_TWO_WHEEL_L298N pin configuration
@@ -279,13 +330,15 @@ HBRIDGE_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # pwm pin produces duty cycle for ri
 # - RPI_GPIO, PIGPIO and PCA9685 can be mixed arbitrarily,
 #   although it is discouraged to mix RPI_GPIO and PIGPIO.
 #
-HBRIDGE_L298N_PIN_LEFT_FWD = "RPI_GPIO.BOARD.16"  # TTL output pin enables left wheel forward
-HBRIDGE_L298N_PIN_LEFT_BWD = "RPI_GPIO.BOARD.18"  # TTL output pin enables left wheel reverse
-HBRIDGE_L298N_PIN_LEFT_EN = "RPI_GPIO.BOARD.22"   # PWM pin generates duty cycle for left motor speed
+DC_TWO_WHEEL_L298N = {
+    "LEFT_FWD_PIN": "RPI_GPIO.BOARD.16",        # TTL output pin enables left wheel forward
+    "LEFT_BWD_PIN": "RPI_GPIO.BOARD.18",        # TTL output pin enables left wheel reverse
+    "LEFT_EN_DUTY_PIN": "RPI_GPIO.BOARD.22",    # PWM pin generates duty cycle for left motor speed
 
-HBRIDGE_L298N_PIN_RIGHT_FWD = "RPI_GPIO.BOARD.15" # TTL output pin enables right wheel forward
-HBRIDGE_L298N_PIN_RIGHT_BWD = "RPI_GPIO.BOARD.13" # TTL output pin enables right wheel reverse
-HBRIDGE_L298N_PIN_RIGHT_EN = "RPI_GPIO.BOARD.11"  # PWM pin generates duty cycle for right wheel speed
+    "RIGHT_FWD_PIN": "RPI_GPIO.BOARD.15",       # TTL output pin enables right wheel forward
+    "RIGHT_BWD_PIN": "RPI_GPIO.BOARD.13",       # TTL output pin enables right wheel reverse
+    "RIGHT_EN_DUTY_PIN": "RPI_GPIO.BOARD.11",   # PWM pin generates duty cycle for right wheel speed
+}
 
 #ODOMETRY
 HAVE_ODOM = False                   # Do you have an odometer/encoder 
@@ -299,6 +352,10 @@ USE_LIDAR = False
 LIDAR_TYPE = 'RP' #(RP|YD)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
+
+# TFMINI
+HAVE_TFMINI = False
+TFMINI_SERIAL_PORT = "/dev/serial0" # tfmini serial port, can be wired up or use usb/serial adapter
 
 #TRAINING
 # The default AI framework to use. Choose from (tensorflow|pytorch)
@@ -333,28 +390,162 @@ PRUNE_PERCENT_PER_ITERATION = 20 # Percenge of pruning that is perform per itera
 PRUNE_VAL_LOSS_DEGRADATION_LIMIT = 0.2 # The max amout of validation loss that is permitted during pruning.
 PRUNE_EVAL_PERCENT_OF_DATASET = .05  # percent of dataset used to perform evaluation of model.
 
+#
 # Augmentations and Transformations
-AUGMENTATIONS = []
-TRANSFORMATIONS = []
+#
+# - Augmentations are changes to the image that are only applied during
+#   training and are applied randomly to create more variety in the data.
+#   Available augmentations are:
+#   - BRIGHTNESS  - modify the image brightness. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/transforms/#albumentations.augmentations.transforms.RandomBrightnessContrast)
+#   - BLUR        - blur the image. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/blur/transforms/#albumentations.augmentations.blur.transforms.Blur)
+#
+# - Transformations are changes to the image that apply both in
+#   training and at inference.  They are always applied and in
+#   the configured order.  Available image transformations are:
+#   - Apply a mask to the image:
+#     - 'CROP'      - apply rectangular mask to borders of image
+#     - 'TRAPEZE'   - apply a trapezoidal mask to image
+#   - Apply an enhancement to the image
+#     - 'CANNY'     - apply canny edge detection
+#     - 'BLUR'      - blur the image
+#   - resize the image
+#     - 'RESIZE'    - resize to given pixel width and height
+#     - 'SCALE'     - resize by given scale factor
+#   - change the color space of the image
+#     - 'RGB2BGR'   - change color model from RGB to BGR
+#     - 'BGR2RGB'   - change color model from BGR to RGB
+#     - 'RGB2HSV'   - change color model from RGB to HSV
+#     - 'HSV2RGB'   - change color model from HSV to RGB
+#     - 'BGR2HSV'   - change color model from BGR to HSV
+#     - 'HSV2BGR'   - change color model from HSV to BGR
+#     - 'RGB2GRAY'  - change color model from RGB to greyscale
+#     - 'BGR2GRAY'  - change color model from BGR to greyscale
+#     - 'HSV2GRAY'  - change color model from HSV to greyscale
+#     - 'GRAY2RGB'  - change color model from greyscale to RGB
+#     - 'GRAY2BGR'  - change color model from greyscale to BGR
+#
+# You can create custom tranformations and insert them into the pipeline.
+# - Use a tranformer label that beings with `CUSTOM`, like `CUSTOM_CROP`
+#   and add that to the TRANSFORMATIONS or POST_TRANFORMATIONS list.
+#   So for the custom crop example, that might look like this;
+#   `POST_TRANSFORMATIONS = ['CUSTOM_CROP']`
+# - Set configuration properties for the module and class that
+#   implement your custom transformation.
+#   - The module config will begin with the transformer label
+#     and end with `_MODULE`, like `CUSTOM_CROP_MODULE`.  It's value is
+#     the absolute file path to the python file that has the transformer
+#     class.  For instance, if you called the file
+#     `my_custom_transformer.py` and put in in the root of
+#     your `mycar` folder, next to `myconfig.py`, then you would add 
+#     the following to your myconfig.py file (keeping with the crop example);
+#     `CUSTOM_CROP_MODULE = "/home/pi/mycar/my_custom_transformer.py"`
+#     The actual path will depend on what OS you are using and what
+#     your user name is.
+#   - The class config will begin with the transformer label and end with `_CLASS`,
+#     like `CUSTOM_CROP_CLASS`.  So if your class is called `CustomCropTransformer`
+#     the you would add the following property to your `myconfig.py` file:
+#     `CUSTOM_CROP_CLASS = "CustomCropTransformer"`
+# - Your custom class' constructor will take in the Config object to
+#   it it's constructor.  So you can add whatever configuration properties
+#   you need to your myconfig.py, then read them in the constructor.
+#   You can name the properties anything you want, but it is good practice
+#   to prefix them with the custom tranformer label so they don't conflict
+#   with any other config and so it is way to see what they go with.
+#   For instance, in the custom crop example, we would want the border
+#   values, so that could look like;
+#   ```
+#   CUSTOM_CROP_TOP = 45    # rows to ignore on the top of the image
+#   CUSTOM_CROP_BOTTOM = 5  # rows ignore on the bottom of the image
+#   CUSTOM_CROP_RIGHT = 10  # pixels to ignore on the right of the image
+#   CUSTOM_CROP_LEFT = 10   # pixels to ignore on the left of the image
+#   ```
+# - Your custom class must have a `run` method that takes an image and
+#   returns an image.  It is in this method where you will implement your
+#   transformation logic.
+# - For example, a custom crop that did a blur after the crop might look like;
+#   ```
+#   from donkeycar.parts.cv import ImgCropMask, ImgSimpleBlur
+#
+#   class CustomCropTransformer:
+#       def __init__(self, config) -> None:
+#           self.top = config.CUSTOM_CROP_TOP
+#           self.bottom = config.CUSTOM_CROP_BOTTOM
+#           self.left = config.CUSTOM_CROP_LEFT
+#           self.right = config.CUSTOM_CROP_RIGHT
+#           self.crop = ImgCropMask(self.left, self.top, self.right, self.bottom)
+#           self.blur = ImgSimpleBlur()
+#
+#       def run(self, image):
+#           image = self.crop.run(image)
+#           return self.blur.run(image)
+#   ```
+#
+AUGMENTATIONS = []         # changes to image only applied in training to create
+                           # more variety in the data.
+TRANSFORMATIONS = []       # changes applied _before_ training augmentations,
+                           # such that augmentations are applied to the transformed image,
+POST_TRANSFORMATIONS = []  # transformations applied _after_ training augmentations,
+                           # such that changes are applied to the augmented image
+
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
 # AUGMENTATIONS
-AUG_MULTIPLY_RANGE = (0.5, 3.0)
-AUG_BLUR_RANGE = (0.0, 3.0)
-# Region of interest cropping, requires 'CROP' in TRANSFORMATIONS to be set
+AUG_BRIGHTNESS_RANGE = 0.2  # this is interpreted as [-0.2, 0.2]
+AUG_BLUR_RANGE = (0, 3)
+
+# "CROP" Transformation
+# Apply mask to borders of the image
+# defined by a rectangle.
 # If these crops values are too large, they will cause the stride values to
 # become negative and the model with not be valid.
+# # # # # # # # # # # # #
+# xxxxxxxxxxxxxxxxxxxxx #
+# xxxxxxxxxxxxxxxxxxxxx #
+# xx                 xx # top
+# xx                 xx #
+# xx                 xx #
+# xxxxxxxxxxxxxxxxxxxxx # bottom
+# xxxxxxxxxxxxxxxxxxxxx #
+# # # # # # # # # # # # #
 ROI_CROP_TOP = 45               # the number of rows of pixels to ignore on the top of the image
 ROI_CROP_BOTTOM = 0             # the number of rows of pixels to ignore on the bottom of the image
 ROI_CROP_RIGHT = 0              # the number of rows of pixels to ignore on the right of the image
 ROI_CROP_LEFT = 0               # the number of rows of pixels to ignore on the left of the image
-# For trapezoidal see explanation in augmentations.py. Requires 'TRAPEZE' in
-# TRANSFORMATIONS to be set
+
+# "TRAPEZE" tranformation
+# Apply mask to borders of image
+# defined by a trapezoid.
+# # # # # # # # # # # # # #
+# xxxxxxxxxxxxxxxxxxxxxxx #
+# xxxx ul     ur xxxxxxxx # min_y
+# xxx             xxxxxxx #
+# xx               xxxxxx #
+# x                 xxxxx #
+# ll                lr xx # max_y
+# # # # # # # # # # # # # #
 ROI_TRAPEZE_LL = 0
 ROI_TRAPEZE_LR = 160
 ROI_TRAPEZE_UL = 20
 ROI_TRAPEZE_UR = 140
 ROI_TRAPEZE_MIN_Y = 60
 ROI_TRAPEZE_MAX_Y = 120
+
+# "CANNY" Canny Edge Detection tranformation
+CANNY_LOW_THRESHOLD = 60    # Canny edge detection low threshold value of intensity gradient
+CANNY_HIGH_THRESHOLD = 110  # Canny edge detection high threshold value of intensity gradient
+CANNY_APERTURE = 3          # Canny edge detect aperture in pixels, must be odd; choices=[3, 5, 7]
+
+# "BLUR" transformation (not this is SEPARATE from the blur augmentation)
+BLUR_KERNEL = 5        # blur kernel horizontal size in pixels
+BLUR_KERNEL_Y = None   # blur kernel vertical size in pixels or None for square kernel
+BLUR_GAUSSIAN = True   # blur is gaussian if True, simple if False
+
+# "RESIZE" transformation
+RESIZE_WIDTH = 160     # horizontal size in pixels
+RESIZE_HEIGHT = 120    # vertical size in pixels
+
+# "SCALE" transformation
+SCALE_WIDTH = 1.0      # horizontal scale factor
+SCALE_HEIGHT = None    # vertical scale factor or None to maintain aspect ratio
 
 #Model transfer options
 #When copying weights during a model transfer operation, should we freeze a certain number of layers
@@ -390,6 +581,7 @@ SEQUENCE_LENGTH = 3             #some models use a number of images over time. T
 #IMU
 HAVE_IMU = False                #when true, this add a Mpu6050 part and records the data. Can be used with a
 IMU_SENSOR = 'mpu6050'          # (mpu6050|mpu9250)
+IMU_ADDRESS = 0x68              # if AD0 pin is pulled high them address is 0x69, otherwise it is 0x68
 IMU_DLP_CONFIG = 0              # Digital Lowpass Filter setting (0:250Hz, 1:184Hz, 2:92Hz, 3:41Hz, 4:20Hz, 5:10Hz, 6:5Hz)
 
 #SOMBRERO
@@ -546,6 +738,7 @@ PID_P = -10.0                       # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.2                  # constant throttle value during path following
+USE_CONSTANT_THROTTLE = False       # whether or not to use the constant throttle or variable throttle captured during path recording
 SAVE_PATH_BTN = "cross"             # joystick button to save path
 RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
 

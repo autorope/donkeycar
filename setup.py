@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="4.3.5",
+      version="5.0.dev0",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
@@ -37,7 +37,7 @@ setup(name='donkeycar',
           ],
       },
       install_requires=[
-          'numpy',
+          'numpy==1.19',
           'pillow',
           'docopt',
           'tornado',
@@ -49,7 +49,10 @@ setup(name='donkeycar',
           'progress',
           'typing_extensions',
           'pyfiglet',
-          'psutil'
+          'psutil',
+          "pynmea2",
+          'pyserial',
+          "utm",
       ],
       extras_require={
           'pi': [
@@ -57,24 +60,26 @@ setup(name='donkeycar',
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
+              'adafruit-circuitpython-rplidar',
               'RPi.GPIO',
-              'pyserial',
               'imgaug'
           ],
           'nano': [
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
+              'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
-              'pyserial',
+              'albumentations'
           ],
           'pc': [
               'matplotlib',
               'kivy',
+              'protobuf',
               'pandas',
               'pyyaml',
               'plotly',
-              'imgaug'
+              'albumentations'
           ],
           'dev': [
               'pytest',
@@ -85,9 +90,10 @@ setup(name='donkeycar',
           'ci': ['codecov'],
           'tf': ['tensorflow==2.2.0'],
           'torch': [
-              'pytorch>=1.7.1',
-              'torchvision',
-              'torchaudio'
+              'pytorch',
+              'torchvision==0.12',
+              'torchaudio',
+              'fastai'
           ],
           'mm1': ['pyserial']
       },

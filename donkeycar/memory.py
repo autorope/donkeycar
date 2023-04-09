@@ -14,13 +14,14 @@ class Memory:
         self.d = {}
     
     def __setitem__(self, key, value):
-        if type(key) is not tuple:
-            print('tuples')
-            key = (key,)
-            value=(value,)
-        
-        for i, k in enumerate(key):
-            self.d[k] = value[i]
+        if type(key) is str:
+            self.d[key] = value
+        else:
+            if type(key) is not tuple:
+                key = tuple(key)
+                value = tuple(key)
+            for i, k in enumerate(key):
+                self.d[k] = value[i]
         
     def __getitem__(self, key):
         if type(key) is tuple:

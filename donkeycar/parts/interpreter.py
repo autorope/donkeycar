@@ -11,7 +11,6 @@ from tensorflow.python.framework.convert_to_constants import \
     convert_variables_to_constants_v2 as convert_var_to_const
 from tensorflow.python.saved_model import tag_constants, signature_constants
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -105,6 +104,9 @@ class Interpreter(ABC):
     def predict_from_dict(self, input_dict) -> Sequence[Union[float, np.ndarray]]:
         pass
 
+    def summary(self) -> str:
+        pass
+
     def __str__(self) -> str:
         """ For printing interpreter """
         return type(self).__name__
@@ -164,6 +166,68 @@ class KerasInterpreter(Interpreter):
             None:
         assert self.model, 'Model not set'
         self.model.load_weights(model_path, by_name=by_name)
+
+    def summary(self) -> str:
+        return self.model.summary()
+
+
+class FastAIInterpreter(Interpreter):
+
+    def __init__(self):
+        super().__init__()
+        self.model: None
+        from fastai import learner as fastai_learner
+        from fastai import optimizer as fastai_optimizer
+
+    def set_model(self, pilot: 'FastAiPilot') -> None:
+        self.model = pilot.create_model()
+
+    def set_optimizer(self, optimizer: 'fastai_optimizer') -> None:
+        self.model.optimizer = optimizer
+
+    def get_input_shapes(self):
+        assert self.model, 'Model not set'
+        return [inp.shape for inp in self.model.inputs]
+
+    def compile(self, **kwargs):
+        pass
+
+    def invoke(self, inputs):
+        outputs = self.model(inputs)
+        # for functional models the output here is a list
+        if type(outputs) is list:
+            # as we invoke the interpreter with a batch size of one we remove
+            # the additional dimension here again
+            output = [output.numpy().squeeze(axis=0) for output in outputs]
+            return output
+        # for sequential models the output shape is (1, n) with n = output dim
+        else:
+            return outputs.detach().numpy().squeeze(axis=0)
+
+    def predict(self, img_arr: np.ndarray, other_arr: np.ndarray) \
+            -> Sequence[Union[float, np.ndarray]]:
+        import torch
+        inputs = torch.unsqueeze(img_arr, 0)
+        if other_arr is not None:
+            #other_arr = np.expand_dims(other_arr, axis=0)
+            inputs = [img_arr, other_arr]
+        return self.invoke(inputs)
+
+    def load(self, model_path: str) -> None:
+        import torch
+        logger.info(f'Loading model {model_path}')
+        if torch.cuda.is_available():
+            logger.info("using cuda for torch inference")
+            self.model = torch.load(model_path)
+        else:
+            logger.info("cuda not available for torch inference")
+            self.model = torch.load(model_path, map_location=torch.device('cpu'))
+
+        logger.info(self.model)
+        self.model.eval()
+
+    def summary(self) -> str:
+        return self.model
 
 
 class TfLite(Interpreter):

@@ -1,8 +1,11 @@
+from copy import copy
+
 import pytest
 import tarfile
 import os
 import numpy as np
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from dataclasses import dataclass
 from itertools import product
 from typing import Callable, List
 
@@ -12,9 +15,16 @@ from donkeycar.config import Config
 from donkeycar.pipeline.types import TubDataset, TubRecord
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 
-Data = namedtuple('Data',
-                  ['type', 'name', 'convergence', 'pretrained', 'preprocess'],
-                  defaults=(None, ) * 5)
+
+@dataclass
+class Data:
+    type: str = None
+    name: str = None
+    convergence: float = None
+    pretrained: str = ''
+    preprocess: str = ''
+    tf_lite: bool = False
+    tensor_rt: bool = False
 
 
 @pytest.fixture(scope='session')
@@ -36,6 +46,7 @@ def base_config() -> Config:
     cfg.BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
     cfg.NUM_LOCATIONS = 3
     cfg.SEQUENCE_LENGTH = 3
+    cfg.CACHE_IMAGES = False
     return cfg
 
 
@@ -48,16 +59,16 @@ def config(base_config, car_dir) -> Config:
     return cfg
 
 
-def add_transformation_to_config(config: Config):
-    config.TRANSFORMATIONS = ['CROP']
-    config.ROI_CROP_TOP = 45
-    config.ROI_CROP_BOTTOM = 0
-    config.ROI_CROP_RIGHT = 0
-    config.ROI_CROP_LEFT = 0
+def add_transformation_to_config(cfg: Config):
+    cfg.TRANSFORMATIONS = ['CROP']
+    cfg.ROI_CROP_TOP = 45
+    cfg.ROI_CROP_BOTTOM = 0
+    cfg.ROI_CROP_RIGHT = 0
+    cfg.ROI_CROP_LEFT = 0
 
 
-def add_augmentation_to_config(config: Config):
-    config.AUGMENTATIONS = ['MULTIPLY', 'BLUR']
+def add_augmentation_to_config(cfg: Config):
+    cfg.AUGMENTATIONS = ['BRIGHTNESS', 'BLUR']
 
 
 @pytest.fixture(scope='session')
@@ -99,21 +110,23 @@ def car_dir(tmpdir_factory, base_config, imu_fields) -> str:
 
 
 # define the test data
-d1 = Data(type='linear', name='lin1', convergence=0.6, pretrained=None)
-d2 = Data(type='categorical', name='cat1', convergence=0.9, pretrained=None)
-d3 = Data(type='inferred', name='inf1', convergence=0.9, pretrained=None)
-d4 = Data(type='latent', name='lat1', convergence=0.5, pretrained=None)
+d1 = Data(type='linear', name='lin1', convergence=0.6)
+d2 = Data(type='categorical', name='cat1', convergence=0.9)
+d3 = Data(type='inferred', name='inf1', convergence=0.9)
+d4 = Data(type='latent', name='lat1', convergence=0.5)
 d5 = Data(type='latent', name='lat2', convergence=0.5, pretrained='lat1')
-d6 = Data(type='imu', name='imu1', convergence=0.7, pretrained=None)
-d7 = Data(type='memory', name='mem1', convergence=0.6, pretrained=None)
-d8 = Data(type='behavior', name='bhv1', convergence=0.9, pretrained=None)
-d9 = Data(type='localizer', name='loc1', convergence=0.85, pretrained=None)
-d10 = Data(type='rnn', name='rnn1', convergence=0.85, pretrained=None)
-d11 = Data(type='3d', name='3d1', convergence=0.6, pretrained=None)
+d6 = Data(type='imu', name='imu1', convergence=0.7)
+d7 = Data(type='memory', name='mem1', convergence=0.8)
+d8 = Data(type='behavior', name='bhv1', convergence=0.9)
+d9 = Data(type='localizer', name='loc1', convergence=0.85)
+d10 = Data(type='rnn', name='rnn1', convergence=0.85)
+d11 = Data(type='3d', name='3d1', convergence=0.6)
 d12 = Data(type='linear', name='lin2', convergence=0.7, preprocess='aug')
 d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
+d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6,
+           tf_lite=False, tensor_rt=False)
 
-test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12]
+test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
@@ -131,17 +144,25 @@ def test_train(config: Config, data: Data) -> None:
         pilot_name = f'pilot_{name}.h5'
         return os.path.join(config.MODELS_PATH, pilot_name)
 
+    cfg = copy(config)
     if data.pretrained:
-        config.LATENT_TRAINED = pilot_path(data.pretrained)
-    tub_dir = config.DATA_PATH_ALL if data.type in full_tub else \
-        config.DATA_PATH
+        cfg.LATENT_TRAINED = pilot_path(data.pretrained)
+    tub_dir = cfg.DATA_PATH_ALL if data.type in full_tub else \
+        cfg.DATA_PATH
     if data.preprocess == 'aug':
-        add_augmentation_to_config(config)
+        add_augmentation_to_config(cfg)
     elif data.preprocess == 'trans':
-        add_transformation_to_config(config)
+        add_transformation_to_config(cfg)
 
-    history = train(config, tub_dir, pilot_path(data.name), data.type)
-    loss = history.history['loss']
+    if data.tf_lite is not None:
+        cfg.CREATE_TF_LITE = data.tf_lite
+
+    if data.tensor_rt is not None:
+        cfg.CREATE_TENSOR_RT = data.tensor_rt
+
+    history = train(cfg, tub_dir, pilot_path(data.name), data.type)
+    loss = history['loss']
+
     # check loss is converging
     assert loss[-1] < loss[0] * data.convergence
 
@@ -172,6 +193,7 @@ def test_training_pipeline(config: Config, model_type: str,
         config.DATA_PATH
     # don't shuffle so we can identify data for testing
     config.TRAIN_FILTER = train_filter
+
     dataset = TubDataset(config, [tub_dir], seq_size=kl.seq_size())
     training_records, validation_records = \
         train_test_split(dataset.get_records(), shuffle=False,
@@ -186,11 +208,11 @@ def test_training_pipeline(config: Config, model_type: str,
         # extract x and y values from records, asymmetric in x and y b/c x
         # requires image manipulations
         batch_records = [next(it) for _ in range(config.BATCH_SIZE)]
-        records_x = [kl.x_translate(
-            kl.x_transform_and_process(r, normalize_image)) for
-            r in batch_records]
-        records_y = [kl.y_translate(kl.y_transform(r)) for r in
-                     batch_records]
+        # if we cache images then the normalisation here would not work, because
+        # the tf batch might already have taken the images out and written
+        # the uint8 images into the cache.
+        records_x = [kl.x_transform(r, normalize_image) for r in batch_records]
+        records_y = [kl.y_transform(r) for r in batch_records]
         # from here all checks are symmetrical between x and y
         for batch, o_type, records \
                 in zip(xy_batch, kl.output_types(), (records_x, records_y)):

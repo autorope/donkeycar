@@ -117,6 +117,8 @@ class LocalWebController(tornado.web.Application):
         self.mode_latch = None
         self.recording = False
         self.recording_latch = None
+        self.buttons = {}  # latched button values for processing
+
         self.port = port
 
         self.num_records = 0
@@ -194,12 +196,22 @@ class LocalWebController(tornado.web.Application):
             if self.num_records % 10 == 0:
                 changes['num_records'] = self.num_records
 
+        #
+        # get latched button presses then clear button presses
+        # Next iteration will clear press in memory
+        #
+        buttons = self.buttons
+        self.buttons = {}
+        for button, pressed in buttons.items():
+            if pressed:
+                self.buttons[button] = False
+
         # if there were changes, then send to web client
         if changes and self.loop is not None:
-            logger.info(str(changes))
+            logger.debug(str(changes))
             self.loop.add_callback(lambda: self.update_wsclients(changes))
 
-        return self.angle, self.throttle, self.mode, self.recording
+        return self.angle, self.throttle, self.mode, self.recording, buttons
 
     def run(self, img_arr=None, num_records=0, mode=None, recording=None):
         return self.run_threaded(img_arr, num_records, mode, recording)
@@ -221,10 +233,16 @@ class DriveAPI(RequestHandler):
         '''
         data = tornado.escape.json_decode(self.request.body)
 
-        self.application.angle = data['angle']
-        self.application.throttle = data['throttle']
-        self.application.mode = data['drive_mode']
-        self.application.recording = data['recording']
+        if data.get('angle') is not None:
+            self.application.angle = data['angle']
+        if data.get('throttle') is not None:
+            self.application.throttle = data['throttle']
+        if data.get('drive_mode') is not None:
+            self.application.mode = data['drive_mode']
+        if data.get('recording') is not None:
+            self.application.recording = data['recording']
+        if data.get('buttons') is not None:
+            latch_buttons(self.application.buttons, data['buttons'])
 
 
 class WsTest(RequestHandler):
@@ -239,6 +257,24 @@ class CalibrateHandler(RequestHandler):
         await self.render("templates/calibrate.html")
 
 
+def latch_buttons(buttons, pushes):
+    """
+    Latch button pushes
+    buttons: the latched values
+    pushes: the update value
+    """
+    if pushes is not None:
+        #
+        # we got button pushes.
+        # - we latch the pushed buttons so we can process the push
+        # - after it is processed we clear it
+        #
+        for button in pushes:
+            # if pushed, then latch it
+            if pushes[button]:
+                buttons[button] = True
+
+
 class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def check_origin(self, origin):
         return True
@@ -249,13 +285,16 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
 
     def on_message(self, message):
         data = json.loads(message)
-
         self.application.angle = data.get('angle', self.application.angle)
         self.application.throttle = data.get('throttle', self.application.throttle)
         if data.get('drive_mode') is not None:
             self.application.mode = data['drive_mode']
             self.application.mode_latch = self.application.mode
-        self.application.recording = data.get('recording', self.application.recording)
+        if data.get('recording') is not None:
+            self.application.recording = data['recording']
+            self.application.recording_latch = self.application.recording
+        if data.get('buttons') is not None:
+            latch_buttons(self.application.buttons, data['buttons'])
 
     def on_close(self):
         # print("Client disconnected")
@@ -315,8 +354,10 @@ class VideoAPI(RequestHandler):
     '''
     Serves a MJPEG of the images posted from the vehicle.
     '''
-
     async def get(self):
+        placeholder_image = utils.load_image_sized(
+                        os.path.join(self.application.static_file_path,
+                                     "img_placeholder.jpg"), 160, 120, 3)
 
         self.set_header("Content-type",
                         "multipart/x-mixed-replace;boundary=--boundarydonotcross")
@@ -326,10 +367,16 @@ class VideoAPI(RequestHandler):
         while True:
 
             interval = .01
-            if served_image_timestamp + interval < time.time() and \
-                    hasattr(self.application, 'img_arr'):
+            if served_image_timestamp + interval < time.time():
+                #
+                # if we have an image, then use it.
+                # otherwise show placeholder
+                #
+                if hasattr(self.application, 'img_arr') and self.application.img_arr is not None:
+                    img = utils.arr_to_binary(self.application.img_arr)
+                else:
+                    img = utils.arr_to_binary(placeholder_image)
 
-                img = utils.arr_to_binary(self.application.img_arr)
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
                 self.write("Content-length: %s\r\n\r\n" % len(img))

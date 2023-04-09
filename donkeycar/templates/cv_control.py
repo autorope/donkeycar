@@ -1,150 +1,40 @@
 #!/usr/bin/env python3
 """
 
+Scripts to drive on autopilot using computer vision
+
 Usage:
-    manage.py --name=your_name [--debug]
+    manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)] [--myconfig=<filename>]
 
 
 Options:
-    -h --help          Show this screen.    
+    -h --help          Show this screen.
+    --js               Use physical joystick.
+    --myconfig=filename     Specify myconfig file to use.
+                            [default: myconfig.py]
 """
-import os
-import time
+import logging
 
 from docopt import docopt
-import numpy as np
-import cv2
 from simple_pid import PID
 
 import donkeycar as dk
+from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
+from donkeycar.parts.line_follower import LineFollower
+from donkeycar.templates.complete import add_odometry, add_camera, \
+    add_user_controller, add_drivetrain, add_simulator, add_imu, DriveMode, \
+    UserPilotCondition, ToggleRecording
+from donkeycar.parts.logger import LoggerPart
+from donkeycar.parts.transform import Lambda
+from donkeycar.parts.explode import ExplodeDict
+from donkeycar.parts.controller import JoystickController
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
-class LineFollower:
-    '''
-    OpenCV based controller
-    This controller takes a horizontal slice of the image at a set Y coordinate.
-    Then it converts to HSV and does a color thresh hold to find the yellow pixels.
-    It does a histogram to find the pixel of maximum yellow. Then is uses that iPxel
-    to guid a PID controller which seeks to maintain the max yellow at the same point
-    in the image.
-    '''
-    def __init__(self, debug=False):
-        self.debug = debug
-        self.scan_y = 60   # num pixels from the top to start horiz scan
-        self.scan_height = 10 # num pixels high to grab from horiz scan
-        self.color_thr_low = np.asarray((0, 50, 50)) # hsv dark yellow
-        self.color_thr_hi = np.asarray((50, 255, 255)) # hsv light yellow
-        self.target_pixel = None # of the N slots above, which is the ideal relationship target
-        self.steering = 0.0 # from -1 to 1
-        self.throttle = 0.15 # from -1 to 1
-        self.recording = False # Set to true if desired to save camera frames
-        self.delta_th = 0.1 # how much to change throttle when off
-        self.throttle_max = 0.3
-        self.throttle_min = 0.15
-        
-        # These three PID constants are crucial to the way the car drives. If you are tuning them
-        # start by setting the others zero and focus on first Kp, then Kd, and then Ki. 
-        self.pid_st = PID(Kp=-0.01, Ki=0.00, Kd=-0.001)
-
-    
-    def get_i_color(self, cam_img):
-        '''
-        get the horizontal index of the color at the given slice of the image
-        input: cam_image, an RGB numpy array
-        output: index of max color, value of cumulative color at that index, and mask of pixels in range 
-        '''
-        # take a horizontal slice of the image
-        iSlice = self.scan_y
-        scan_line = cam_img[iSlice : iSlice + self.scan_height, :, :]
-
-        # convert to HSV color space
-        img_hsv = cv2.cvtColor(scan_line, cv2.COLOR_RGB2HSV)
-
-        # make a mask of the colors in our range we are looking for
-        mask = cv2.inRange(img_hsv, self.color_thr_low, self.color_thr_hi)
-
-        # which index of the range has the highest amount of yellow?
-        hist = np.sum(mask, axis=0)
-        max_yellow = np.argmax(hist)
-
-        return max_yellow, hist[max_yellow], mask
-
-
-    def run(self, cam_img):
-        '''
-        main runloop of the CV controller
-        input: cam_image, an RGB numpy array
-        output: steering, throttle, and recording flag
-        '''
-        if cam_img is None:
-            return 0, 0, False
-
-        max_yellow, confidense, mask = self.get_i_color(cam_img)
-        conf_thresh = 0.001
-        
-        if self.target_pixel is None:
-            # Use the first run of get_i_color to set our relationship with the yellow line.
-            # You could optionally init the target_pixel with the desired value.
-            self.target_pixel = max_yellow
-
-            # this is the target of our steering PID controller
-            self.pid_st.setpoint = self.target_pixel
-	
-        elif confidense > conf_thresh:
-            # invoke the controller with the current yellow line position
-            # get the new steering value as it chases the ideal
-            self.steering = self.pid_st(max_yellow)
-        
-            # slow down linearly when away from ideal, and speed up when close
-            if abs(max_yellow - self.target_pixel) > 10:
-                if self.throttle > self.throttle_min:
-                    self.throttle -= self.delta_th
-            else:
-                if self.throttle < self.throttle_max:
-                    self.throttle += self.delta_th
-
-
-        # show some diagnostics
-        if self.debug:
-            self.debug_display(cam_img, mask, max_yellow, confidense)
-
-        return self.steering, self.throttle, self.recording
-
-
-    def debug_display(self, cam_img, mask, max_yellow, confidense):
-        '''
-        composite mask on top the original image.
-        show some values we are using for control
-        '''
-
-        mask_exp = np.stack((mask,)*3, axis=-1)
-        iSlice = self.scan_y
-        img = np.copy(cam_img)
-        img[iSlice : iSlice + self.scan_height, :, :] = mask_exp
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
-        display_str = []
-        display_str.append("STEERING:{:.1f}".format(self.steering))
-        display_str.append("THROTTLE:{:.2f}".format(self.throttle))
-        display_str.append("I YELLOW:{:d}".format(max_yellow))
-        display_str.append("CONF:{:.2f}".format(confidense))
-
-        y = 10
-        x = 10
-
-        for s in display_str:
-            cv2.putText(img, s, color=(0,255,255), org=(x,y), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=0.4)
-            y += 10
-
-        cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-        cv2.imshow("image", img)
-        cv2.resizeWindow('image', 300,300)
-        cv2.waitKey(1)
-
-
-
-def drive(cfg, args):
+def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     '''
     Construct a working robotic vehicle from many parts.
     Each part runs as a job in the Vehicle loop, calling either
@@ -158,63 +48,213 @@ def drive(cfg, args):
     #Initialize car
     V = dk.vehicle.Vehicle()
 
-    #Camera
-    if cfg.DONKEY_GYM:
-        from donkeycar.parts.dgym import DonkeyGymEnv
-        cfg.GYM_CONF['racer_name'] = args['--name']
-        cfg.GYM_CONF['car_name'] = args['--name']
-        cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST, env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF, delay=cfg.SIM_ARTIFICIAL_LATENCY)
-        inputs = ['steering', 'throttle']
-    else:
-        from donkeycar.parts.camera import PiCamera
-        cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
-        inputs = []
+    #
+    # if we are using the simulator, set it up
+    #
+    add_simulator(V, cfg)
 
-    V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
-        
-    #Controller
-    V.add(LineFollower(bool(args['--debug'])), 
-          inputs=['cam/image_array'],
-          outputs=['steering', 'throttle', 'recording'])
+    #
+    # setup primary camera
+    #
+    add_camera(V, cfg, camera_type)
 
-        
-    #Drive train setup
-    if not cfg.DONKEY_GYM:
-        from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
+    #
+    # add the user input controller(s)
+    # - this will add the web controller
+    # - it will optionally add any configured 'joystick' controller
+    #
+    has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
+    ctr = add_user_controller(V, cfg, use_joystick, input_image = 'ui/image_array')
 
-        steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        steering = PWMSteering(controller=steering_controller,
-                                        left_pulse=cfg.STEERING_LEFT_PWM, 
-                                        right_pulse=cfg.STEERING_RIGHT_PWM)
-        
-        throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
-        throttle = PWMThrottle(controller=throttle_controller,
-                                        max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                        zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
-                                        min_pulse=cfg.THROTTLE_REVERSE_PWM)
+    #
+    # explode the web buttons into their own key/values in memory
+    #
+    V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
 
-        V.add(steering, inputs=['steering'])
-        V.add(throttle, inputs=['throttle'])
-    
-    #add tub to save data
+    #
+    # track user vs autopilot condition
+    #
+    V.add(UserPilotCondition(show_pilot_image=getattr(cfg, 'OVERLAY_IMAGE', False)),
+          inputs=['user/mode', "cam/image_array", "cv/image_array"],
+          outputs=['run_user', "run_pilot", "ui/image_array"])
 
+    #
+    # PID controller to be used with cv_controller
+    #
+    pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
+    def dec_pid_d():
+        pid.Kd -= cfg.PID_D_DELTA
+        logging.info("pid: d- %f" % pid.Kd)
+
+    def inc_pid_d():
+        pid.Kd += cfg.PID_D_DELTA
+        logging.info("pid: d+ %f" % pid.Kd)
+
+    def dec_pid_p():
+        pid.Kp -= cfg.PID_P_DELTA
+        logging.info("pid: p- %f" % pid.Kp)
+
+    def inc_pid_p():
+        pid.Kp += cfg.PID_P_DELTA
+        logging.info("pid: p+ %f" % pid.Kp)
+
+    #
+    # Computer Vision Controller
+    #
+    add_cv_controller(V, cfg, pid,
+                      cfg.CV_CONTROLLER_MODULE,
+                      cfg.CV_CONTROLLER_CLASS,
+                      cfg.CV_CONTROLLER_INPUTS,
+                      cfg.CV_CONTROLLER_OUTPUTS,
+                      cfg.CV_CONTROLLER_CONDITION)
+
+    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
+    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
+
+
+    #
+    # Add buttons for handling various user actions
+    # The button names are in configuration.
+    # They may refer to game controller (joystick) buttons OR web ui buttons
+    #
+    # There are 5 programmable webui buttons, "web/w1" to "web/w5"
+    # adding a button handler for a webui button
+    # is just adding a part with a run_condition set to
+    # the button's name, so it runs when button is pressed.
+    #
+    have_joystick = ctr is not None and isinstance(ctr, JoystickController)
+
+    # button to toggle recording
+    if cfg.TOGGLE_RECORDING_BTN:
+        print(f"Toggle recording button is {cfg.TOGGLE_RECORDING_BTN}")
+        if cfg.TOGGLE_RECORDING_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: recording_control.toggle_recording()), run_condition=cfg.TOGGLE_RECORDING_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.TOGGLE_RECORDING_BTN, recording_control.toggle_recording)
+
+    # Buttons to tune PID constants
+    if cfg.DEC_PID_P_BTN and cfg.PID_P_DELTA:
+        print(f"Decrement PID P button is {cfg.DEC_PID_P_BTN}")
+        if cfg.DEC_PID_P_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: dec_pid_p()), run_condition=cfg.DEC_PID_P_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.DEC_PID_P_BTN, dec_pid_p)
+    if cfg.INC_PID_P_BTN and cfg.PID_P_DELTA:
+        print(f"Increment PID P button is {cfg.INC_PID_P_BTN}")
+        if cfg.INC_PID_P_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: inc_pid_p()), run_condition=cfg.INC_PID_P_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.INC_PID_P_BTN, inc_pid_p)
+    if cfg.DEC_PID_D_BTN and cfg.PID_D_DELTA:
+        print(f"Decrement PID D button is {cfg.DEC_PID_D_BTN}")
+        if cfg.DEC_PID_D_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: dec_pid_d()), run_condition=cfg.DEC_PID_D_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.DEC_PID_D_BTN, dec_pid_d)
+    if cfg.INC_PID_D_BTN and cfg.PID_D_DELTA:
+        print(f"Increment PID D button is {cfg.INC_PID_D_BTN}")
+        if cfg.INC_PID_D_BTN.startswith("web/w"):
+            V.add(Lambda(lambda: inc_pid_d()), run_condition=cfg.INC_PID_D_BTN)
+        elif have_joystick:
+            ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
+
+    #
+    # Decide what inputs should change the car's steering and throttle
+    # based on the choice of user or autopilot drive mode
+    #
+    V.add(DriveMode(cfg.AI_THROTTLE_MULT),
+          inputs=['user/mode', 'user/steering', 'user/throttle',
+                  'pilot/steering', 'pilot/throttle'],
+          outputs=['steering', 'throttle'])
+
+
+    #
+    # Setup drivetrain
+    #
+    add_drivetrain(V, cfg)
+
+
+    #
+    # OLED display setup
+    #
+    if cfg.USE_SSD1306_128_32:
+        from donkeycar.parts.oled import OLEDPart
+        auto_record_on_throttle = cfg.USE_JOYSTICK_AS_DEFAULT and cfg.AUTO_RECORD_ON_THROTTLE
+        oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_ROTATION, cfg.SSD1306_RESOLUTION, auto_record_on_throttle)
+        V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
+
+
+    #
+    # add tub to save data
+    #
     inputs=['cam/image_array',
             'steering', 'throttle']
 
     types=['image_array',
            'float', 'float']
 
-    th = TubHandler(path=cfg.DATA_PATH)
-    tub = th.new_tub_writer(inputs=inputs, types=types)
-    V.add(tub, inputs=inputs, outputs=["tub/num_records"], run_condition="recording")
+    #
+    # Create data storage part
+    #
+    tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
+        cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
+    meta += getattr(cfg, 'METADATA', [])
+    tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
+    V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
-    #run the vehicle
+    if cfg.DONKEY_GYM:
+        print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+    else:
+        print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+    if has_input_controller:
+        print("You can now move your controller to drive your car.")
+        if isinstance(ctr, JoystickController):
+            ctr.set_tub(tub_writer.tub)
+            ctr.print_controls()
+
+    #
+    # run the vehicle
+    #
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
             max_loop_count=cfg.MAX_LOOPS)
 
 
+#
+# Computer Vision Controller
+#
+def add_cv_controller(
+        V, cfg, pid,
+        module_name="donkeycar.parts.line_follower",
+        class_name="LineFollower",
+        inputs=['cam/image_array'],
+        outputs=['pilot/steering', 'pilot/throttle', 'cv/image_array'],
+        run_condition="run_pilot"):
+
+        # __import__ the module
+        module = __import__(module_name)
+
+        # walk module path to get to module with class
+        for attr in module_name.split('.')[1:]:
+            module = getattr(module, attr)
+
+        my_class = getattr(module, class_name)
+
+        # add instance of class to vehicle
+        V.add(my_class(pid, cfg),
+              inputs=inputs,
+              outputs=outputs,
+              run_condition=run_condition)
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
-    cfg = dk.load_config()
-    drive(cfg, args)
-    
+    cfg = dk.load_config(myconfig=args['--myconfig'])
+
+    log_level = args['--log'] or "INFO"
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % log_level)
+    logging.basicConfig(level=numeric_level)
+
+    if args['drive']:
+        drive(cfg, use_joystick=args['--js'], camera_type=args['--camera'])
