@@ -6,60 +6,52 @@
 # `export GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1`
 # @see https://github.com/grpc/grpc/issues/25082#issuecomment-988464912
 
-# Pytorch is not yet available for MacOS M1.
-# pytorch-nightly 2.1.dev is the earliest version available
-# @see https://developer.apple.com/metal/pytorch/
-# @see https://github.com/pytorch/pytorch/issues/47702#issuecomment-965625139
-
-# `pip install -e .\[pc\]` will fail due to numpy 1.19 requirement.
-# Remove it using:
-# `find setup.py -exec sed -i '' "s/numpy==1.19/numpy/g" {} +`
-
 name: donkey
 
 channels:
+  - defaults
   - conda-forge
-  - pytorch-nightly
+  - pytorch
+  - fastai
 
 dependencies:
-  - python=3.8         # 3.8         # =3.7 in macos.yml; 3.8 is the oldest version available; 3.11 is available.
-  - numpy              # 1.23.5      # =1.19 in macos.yml
-  - protobuf           # 4.21.12     # =3.20 in macos.yml
-  - pytorch            # 2.1.0.dev
-  - torchvision        # 0.16.0.dev  # =0.12 in macos.yml
-  - torchaudio         # 2.1.0.dev
-  - pytorch-lightning  # 2.0.1       # >=1.9,<2.0 in macos.yml
-  - typing_extensions  # 4.5.0
+  - python=3.9         # 3.9.15
+  - numpy              # 1.23.5
+  - h5py               # 3.7.0
+  - pillow             # 9.4.0
+  - opencv             # 4.6.0
+  - matplotlib         # 3.7.1
+  - tornado            # 6.2
+  - docopt             # 0.6.2
+  - pandas             # 1.5.3
+  - pylint             # 2.16.2
+  - pytest             # 7.1.2
+  - pytest-cov         # 4.0.0
+  - codecov            # 2.1.11
+  - pip                # 23.0.1
+  - progress           # 1.5
+  - paho-mqtt          # 1.6.1
+  - PrettyTable        # 3.5.0
+  - pyfiglet           # 0.8.post1
+  - mypy               # 0.981
+  - pytorch            # 1.12.1
+  - torchvision=0.12   # 0.12.0
+  - torchaudio         # 0.12.1
+  - pytorch-lightning>=1.9,<2.0  # 1.9.3
+  - psutil             # 5.9.0
+  - plotly             # 5.9.0
+  - pyyaml             # 6.0
+  - fastai             # 2.7.11
   - pynmea2            # 1.19.0
   - pyserial           # 3.5
   - utm                # 0.7.0
-  - matplotlib         # 3.7.1
-  - ffmpeg             # 5.1.2
-  - h5py               # 3.8.0
-  - pillow             # 9.4.0 (9.5.0 available)
-  - opencv             # 4.7.0
-  - tornado            # 6.2
-  - docopt             # 0.6.2
-  - pandas             # 2.0.0
-  - pylint             # 2.17.2
-  - pytest             # 7.3.0
-  - pytest-cov         # 4.0.0
-  - codecov            # 2.1.12
-  - pip                # 23.0.1
-  - imgaug             # 0.4.0
-  - progress           # 1.6
-  - paho-mqtt          # 1.6.1
-  - PrettyTable        # 3.6.0
-  - pyfiglet           # 0.8.post1
-  - mypy               # 1.2.0
-  - psutil             # 5.9.4
-  - plotly             # 5.14.1
-  - pyyaml             # 6.0
-  - moviepy            # 1.0.3
-  - simple-pid         # 1.0.1
+  - albumentations     # 1.3.0
+#  - imgaug             # 0.4.0 # This _was_ in mac.yml for an older Donkey version
   - pip:
-    - kivy             # 2.1.0       # =2.0.0 in macos.yml
-    - pygame           # 2.3.0
-    - tensorflow-macos # 2.12.0      # ==2.2.0 in macos.yml; 2.5.0 is the oldest version available
-    - tensorflow-metal # 0.8.0
+    - kivy==2.1.0       # 2.1.0 # Moved from macos.yml dependencies section.
+    - tensorflow-macos==2.9 # 2.9.0
+    - tensorflow-metal==0.5.0 # 0.5.0
     - git+https://github.com/autorope/keras-vis.git # 0.5.0
+    - simple-pid        # 1.0.1
+    - moviepy           # 1.0.3
+#    - pygame            # 2.3.0
