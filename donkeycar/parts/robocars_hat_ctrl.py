@@ -429,10 +429,15 @@ class RobocarsHatLedCtrl():
     INDEX_LED_5=4
     INDEX_LED_6=5
 
+    STEERING_HIGH = 0.4
+    STEERING_LOW = 0.2
+
     def __init__(self, cfg):
         self.cfg = cfg
         self.cmdinterface = RobocarsHat(self.cfg)
         self.idx = 0
+        self.last_mode = None
+        self.last_steering_state = 0
 
     def setLed(self, i, r, v, b, timing):
         cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
@@ -452,11 +457,32 @@ class RobocarsHatLedCtrl():
                 time.sleep(s)
 
     def run_threaded(self, steering, throttle, mode):
-        self.updateAnim()
+        #self.updateAnim()
         return None
 
     def run (self, steering, throttle, mode):
-        self.updateAnim()
+        if mode != self.last_mode:
+            if mode=='user' :
+                self.setLed(self.INDEX_LED_1, 127, 127, 127, 0xff);
+                self.setLed(self.INDEX_LED_2, 127, 127, 127, 0xff);
+            else:
+                self.setLed(self.INDEX_LED_1, 127, 127, 160, 0xff);
+                self.setLed(self.INDEX_LED_2, 127, 127, 160, 0xff);
+
+            self.last_mode = mode
+        if (abs(steering)>self.STEERING_HIGH and self.last_steering_state == 0):
+            if steering>0:
+                self.setLed(self.INDEX_LED_3, 127, 127, 127, 0x1);
+                self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xff);
+            else:
+                self.setLed(self.INDEX_LED_4, 127, 127, 127, 0x1);
+                self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xff);
+                self.last_steering_state = 1
+        if (abs(steering)<self.STEERING_LOW and self.last_steering_state == 1):
+                self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xff);
+                self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xff);
+                self.last_steering_state = 1
+        #self.updateAnim()
         return None
     
 
