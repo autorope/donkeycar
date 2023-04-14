@@ -461,26 +461,34 @@ class RobocarsHatLedCtrl():
         return None
 
     def run (self, steering, throttle, mode):
+        if self.last_mode == None:
+            self.setLed(self.INDEX_LED_1, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_2, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_5, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_6, 0, 0, 0, 0x0);
+
         if mode != self.last_mode:
             if mode=='user' :
-                self.setLed(self.INDEX_LED_1, 127, 127, 127, 0xff);
-                self.setLed(self.INDEX_LED_2, 127, 127, 127, 0xff);
+                self.setLed(self.INDEX_LED_1, 127, 127, 127, 0xffff);
+                self.setLed(self.INDEX_LED_2, 127, 127, 127, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_1, 127, 127, 160, 0xff);
-                self.setLed(self.INDEX_LED_2, 127, 127, 160, 0xff);
+                self.setLed(self.INDEX_LED_1, 127, 127, 160, 0xffff);
+                self.setLed(self.INDEX_LED_2, 127, 127, 160, 0xffff);
 
             self.last_mode = mode
         if (abs(steering)>self.STEERING_HIGH and self.last_steering_state == 0):
             if steering>0:
-                self.setLed(self.INDEX_LED_3, 127, 127, 127, 0x1);
-                self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xff);
+                self.setLed(self.INDEX_LED_3, 127, 127, 127, 0x3333);
+                self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_4, 127, 127, 127, 0x1);
-                self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xff);
+                self.setLed(self.INDEX_LED_4, 127, 127, 127, 0x3333);
+                self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff);
                 self.last_steering_state = 1
         if (abs(steering)<self.STEERING_LOW and self.last_steering_state == 1):
-                self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xff);
-                self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xff);
+                self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff);
+                self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff);
                 self.last_steering_state = 1
         #self.updateAnim()
         return None
