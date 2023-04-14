@@ -480,10 +480,10 @@ class RobocarsHatLedCtrl():
 
         if (abs(steering)>self.STEERING_HIGH and self.last_steering_state == 0):
             if steering>0:
-                self.setLed(self.INDEX_LED_3, 127, 127, 127, 0x3333);
+                self.setLed(self.INDEX_LED_3, 223, 154, 0, 0x3333);
                 self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_4, 127, 127, 127, 0x3333);
+                self.setLed(self.INDEX_LED_4, 223, 154, 0, 0x3333);
                 self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff);
             self.last_steering_state = 1
 
