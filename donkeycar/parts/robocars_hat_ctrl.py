@@ -475,20 +475,20 @@ class RobocarsHatLedCtrl():
 
         if mode != self.last_mode:
             if mode=='user' :
-                self.setLed(self.INDEX_LED_1, *USER_FRONT_LIGH, 0xffff);
-                self.setLed(self.INDEX_LED_2, *USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_1, *self.USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_2, *self.USER_FRONT_LIGH, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_1, *AUTO_FRONT_LIGH, 0xffff);
-                self.setLed(self.INDEX_LED_2, *AUTO_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_1, *self.AUTO_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_2, *self.AUTO_FRONT_LIGH, 0xffff);
 
             self.last_mode = mode
 
         if (abs(steering)>self.STEERING_HIGH and self.last_steering_state == 0):
             if steering>0:
-                self.setLed(self.INDEX_LED_3, *TURN_LIGH, 0x3333);
+                self.setLed(self.INDEX_LED_3, *self.TURN_LIGH, 0x3333);
                 self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_4, *TURN_LIGH, 0x3333);
+                self.setLed(self.INDEX_LED_4, *self.TURN_LIGH, 0x3333);
                 self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff);
             self.last_steering_state = 1
 
