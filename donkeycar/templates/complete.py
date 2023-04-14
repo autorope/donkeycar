@@ -717,10 +717,6 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
         ctr = RobocarsHatInCtrl(cfg)
         V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
 
-        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
-        ctr = RobocarsHatLedCtrl(cfg)
-        V.add(ctr, inputs=['user/angle', 'user/throttle', 'user/mode'],threaded=False)
-
     return ctr
 
 
@@ -1179,6 +1175,9 @@ def add_drivetrain(V, cfg):
             from donkeycar.parts.actuator import RobocarsHat
             train_controller = RobocarsHat(cfg)
             V.add(train_controller, inputs=['throttle','angle'], threaded=False)
+            from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
+            ctr = RobocarsHatLedCtrl(cfg)
+            V.add(ctr, inputs=['angle', 'throttle', 'user/mode'],threaded=False)
 
 
 if __name__ == '__main__':
