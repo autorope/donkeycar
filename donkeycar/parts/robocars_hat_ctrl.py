@@ -432,6 +432,10 @@ class RobocarsHatLedCtrl():
     STEERING_HIGH = 0.4
     STEERING_LOW = 0.2
 
+    TURN_LIGH=(223,254,0)
+    USER_FRONT_LIGH=(127,127,127)
+    AUTO_FRONT_LIGH=(127,127,160)
+
     def __init__(self, cfg):
         self.cfg = cfg
         self.cmdinterface = RobocarsHat(self.cfg)
@@ -471,19 +475,20 @@ class RobocarsHatLedCtrl():
 
         if mode != self.last_mode:
             if mode=='user' :
-                self.setLed(self.INDEX_LED_1, 127, 127, 127, 0xffff);
-                self.setLed(self.INDEX_LED_2, 127, 127, 127, 0xffff);
+                self.setLed(self.INDEX_LED_1, *USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_2, *USER_FRONT_LIGH, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_1, 127, 127, 160, 0xffff);
-                self.setLed(self.INDEX_LED_2, 127, 127, 160, 0xffff);
+                self.setLed(self.INDEX_LED_1, *AUTO_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_2, *AUTO_FRONT_LIGH, 0xffff);
+
             self.last_mode = mode
 
         if (abs(steering)>self.STEERING_HIGH and self.last_steering_state == 0):
             if steering>0:
-                self.setLed(self.INDEX_LED_3, 223, 154, 0, 0x3333);
+                self.setLed(self.INDEX_LED_3, *TURN_LIGH, 0x3333);
                 self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_4, 223, 154, 0, 0x3333);
+                self.setLed(self.INDEX_LED_4, *TURN_LIGH, 0x3333);
                 self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff);
             self.last_steering_state = 1
 
