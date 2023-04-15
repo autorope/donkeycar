@@ -15,8 +15,6 @@
 
 Jetson Nano
 
-RPi
-
 - JetPack 4.6.1 (JetPack 5.1 is not compatible with Nano)
 - Tensorflow 2.7.0
 
@@ -50,7 +48,7 @@ cd donkeycar
 pyenv install 3.8.15
 pyenv virtualenv 3.8.15 donkeycar
 pyenv local donkeycar
-pip install .\[pc\]
+pip install -e .\[pc\]
 
 # !!! NO : DOES NOT WORKS !!!
 # MacOS: install tensorflow, see https://developer.apple.com/metal/tensorflow-plugin/
@@ -237,6 +235,10 @@ RPis:
 - Add hostname in `hosts` file under corresponding group (nanos or rpis)
 - Create `<hostname>.yml` file in `host_vars` directory, set `system_hostname` in it and eventually add some custom settings
 - Create `<hostname>` directory in `car_configs` and add `myconfig.py` in it
+
+## Add a new User
+
+The file `donkeycar/install/ansible/group_vars/all/vault.yml` contains public ssh keys. Add your own public key to this file to deploy it during install with ansible. See `ansible-vault` command below.
 
 ## Resources
 
