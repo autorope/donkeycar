@@ -649,6 +649,7 @@ PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
 PID_THROTTLE = 0.50                 # constant throttle value during path following
 USE_CONSTANT_THROTTLE = False       # whether or not to use the constant throttle or variable throttle captured during path recording
+AI_THROTTLE_MULT = 1.0              # this multiplier will scale every throttle value for all output from NN models
 PID_D_DELTA = 0.25                  # amount the inc/dec function will change the D value
 PID_P_DELTA = 0.25                  # amount the inc/dec function will change the P value
 

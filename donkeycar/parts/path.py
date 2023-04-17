@@ -437,22 +437,23 @@ class PID_Pilot(object):
     def __init__(
             self,
             pid: PIDController,
-            throttle: float,
+            constant_throttle: float,
             use_constant_throttle: bool = False,
-            min_throttle: float = None) -> None:
+            min_throttle: float = None,
+            variable_throttle_multiplier: float = 1.0) -> None:
         self.pid = pid
-        self.throttle = throttle
+        self.constant_throttle = constant_throttle
         self.use_constant_throttle = use_constant_throttle
-        self.variable_speed_multiplier = 1.0
-        self.min_throttle = min_throttle if min_throttle is not None else throttle
+        self.variable_speed_multiplier = variable_throttle_multiplier
+        self.min_throttle = min_throttle if min_throttle is not None else constant_throttle
 
     def run(self, cte: float, throttles: list, closest_pt_idx: int) -> tuple:
         steer = self.pid.run(cte)
         if self.use_constant_throttle or throttles is None or closest_pt_idx is None:
-            throttle = self.throttle
-        elif throttles[closest_pt_idx] * self.variable_speed_multiplier < self.min_throttle:
-            throttle = self.min_throttle
+            throttle = self.constant_throttle
         else:
             throttle = throttles[closest_pt_idx] * self.variable_speed_multiplier
+        if throttle < self.min_throttle:
+            throttle = self.min_throttle
         logging.info(f"CTE: {cte} steer: {steer} throttle: {throttle}")
         return steer, throttle
