@@ -455,6 +455,7 @@ TRANSFORMATIONS = []
 # Settings for brightness and blur, use 'MULTIPLY' and/or 'BLUR' in
 # AUGMENTATIONS
 AUG_MULTIPLY_RANGE = (0.5, 3.0)
+AUG_WB_RANGE = (1100,10000)
 AUG_BLUR_RANGE = (0.0, 3.0)
 # Region of interest cropping, requires 'CROP' in TRANSFORMATIONS to be set
 # If these crops values are too large, they will cause the stride values to
