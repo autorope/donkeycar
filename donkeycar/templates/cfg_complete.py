@@ -585,11 +585,16 @@ THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # 'steering_exploration' means special mode where aux ch is used to increment/decrement a fixed steering value in user mode 
 # 'output_steering_trim' means special mode where aux ch is used to increment/decrement a steering idle output for triming direction in user mode, resulting value must be reported in  ROBOCARSHAT_PWM_OUT_STEERING_IDLE
 # 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
+# 'local_angle_fix_throttle' means special mode where aux ch is used to fix throttle to use when autopilot is engeged in local_angle mode
 ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
 ROBOCARSHAT_CH4_FEATURE = 'none' 
 ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 ROBOCARSHAT_STEERING_EXP_INC = 0.05 
 ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10 
+
+AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN = 0.17
+AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.24
+
 
 #ROBOCARSHAT_STEERING_FIX used for steering calibration, enforce a fixed steering value (betzeen -1.0 and 1.0). None means no enforcment
 ROBOCARSHAT_STEERING_FIX = None 

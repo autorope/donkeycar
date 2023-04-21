@@ -83,6 +83,7 @@ class RobocarsHatInCtrl:
     AUX_FEATURE_STEERINGEXP=5
     AUX_FEATURE_OUTPUT_STEERING_TRIM=6
     AUX_FEATURE_OUTPUT_STEERING_EXP=7
+    AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE=8
 
     def _map_aux_feature (self, feature):
         if feature == 'record/pilot':
@@ -99,6 +100,8 @@ class RobocarsHatInCtrl:
             return self.AUX_FEATURE_OUTPUT_STEERING_TRIM
         elif feature == 'output_steering_exp':
             return self.AUX_FEATURE_OUTPUT_STEERING_EXP
+        else feature == 'local_angle_fix_throttle':
+            return self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE
 
     def __init__(self, cfg):
 
@@ -262,6 +265,11 @@ class RobocarsHatInCtrl:
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
+        elif self.ch3Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE:
+            user_throttle =  map_range(self.inAux1,
+                        self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
+                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+
         # Process aux ch4
         if self.ch4Feature == self.AUX_FEATURE_RECORDandPILOT :
 
@@ -320,6 +328,11 @@ class RobocarsHatInCtrl:
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
+        elif self.ch4Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE:
+            user_throttle =  map_range(self.inAux2,
+                        self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
+                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+                        
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
             user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
