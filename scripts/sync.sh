@@ -3,10 +3,10 @@
 set -e
 
 USER=donkey
-SRV=donkey.local
+SRV=pc91.local
 
 # include trailing /
-REMOTE_PATH="/home/$USER/car/"
+REMOTE_PATH="/home/$USER/donkeycar/"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 LOCAL_PATH="$SCRIPT_DIR/../"
