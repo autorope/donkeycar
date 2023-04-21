@@ -1188,6 +1188,10 @@ class RobocarsHat (metaclass=Singleton):
         self.running = True
         print('RobocarsHat drive train created')
 
+    def sendCmd(self, cmd):
+        with RobocarsHat.robocarshat_lock:
+            RobocarsHat.robocarshat_device.write(cmd)
+
     def setSteeringTrim (self, steeringTrim) :
         RobocarsHat.steeringTrim=steeringTrim
         actlogger.info("Tx set Steering Trim to :{}".format(RobocarsHat.steeringTrim))
@@ -1227,10 +1231,9 @@ class RobocarsHat (metaclass=Singleton):
         if (RobocarsHat.fixSteering != None):
             pulse_steering = RobocarsHat.fixSteering
             
-        with RobocarsHat.robocarshat_lock:
-            cmd=("1,%d,%d\n" % (int(pulse_throttle), int(pulse_steering))).encode('ascii')
-            actlogger.debug("Tx CMD :{}".format(cmd))
-            RobocarsHat.robocarshat_device.write(cmd)
+        cmd=("1,%d,%d\n" % (int(pulse_throttle), int(pulse_steering))).encode('ascii')
+        actlogger.debug("Tx CMD :{}".format(cmd))
+        self.sendCmd(cmd)
 
     def run_threaded(self, throttle, steering):
         # not implemented

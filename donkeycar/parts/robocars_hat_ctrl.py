@@ -420,6 +420,95 @@ class RobocarsHatInOdom:
         print('stopping Robocars Hat Controller')
         time.sleep(.5)
 
+class RobocarsHatLedCtrl():
+    NUM_LED=6
+    INDEX_LED_1=0
+    INDEX_LED_2=1
+    INDEX_LED_3=2
+    INDEX_LED_4=3
+    INDEX_LED_5=4
+    INDEX_LED_6=5
+
+    STEERING_HIGH=0.4
+    STEERING_LOW=0.2
+    
+    STEERING_LEFT=1
+    STEERING_RIGHT=-1
+
+    TURN_LIGH=(223,128,0)
+    USER_FRONT_LIGH=(127,127,127)
+    AUTO_FRONT_LIGH=(127,127,160)
+
+
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.cmdinterface = RobocarsHat(self.cfg)
+        self.idx = 0
+        self.last_mode = None
+        self.last_steering_state = 0
+
+    def setLed(self, i, r, v, b, timing):
+        cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
+        self.cmdinterface.sendCmd(cmd)
+
+    def updateAnim(self):
+        self.setLed(int(self.idx/10), 0, 0, 0, 0x0);
+        self.idx=(self.idx+1)%(self.NUM_LED*10)
+        self.setLed(int(self.idx/10), 255, 0, 0, 0xffff);
+    
+    def update(self):
+        while self.on:
+            start = datetime.now()
+            stop = datetime.now()
+            s = 0.01 - (stop - start).total_seconds()
+            if s > 0:
+                time.sleep(s)
+
+    def run_threaded(self, steering, throttle, mode):
+        #self.updateAnim()
+        return None
+
+    def run (self, steering, throttle, mode):
+        if self.last_mode == None:
+            self.setLed(self.INDEX_LED_1, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_2, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_5, 0, 0, 0, 0x0);
+            self.setLed(self.INDEX_LED_6, 0, 0, 0, 0x0);
+
+        if mode != self.last_mode:
+            if mode=='user' :
+                self.setLed(self.INDEX_LED_1, *self.USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_2, *self.USER_FRONT_LIGH, 0xffff);
+            else:
+                self.setLed(self.INDEX_LED_1, *self.AUTO_FRONT_LIGH, 0xffff);
+                self.setLed(self.INDEX_LED_2, *self.AUTO_FRONT_LIGH, 0xffff);
+
+            self.last_mode = mode
+
+        if (abs(steering)>self.STEERING_HIGH and steering<0 and self.last_steering_state != self.STEERING_RIGHT):
+            self.setLed(self.INDEX_LED_3, *self.TURN_LIGH, 0x3333)
+            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff)
+            self.last_steering_state = self.STEERING_RIGHT
+        if (abs(steering)>self.STEERING_HIGH and steering>0 and self.last_steering_state != self.STEERING_LEFT):
+            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff)
+            self.setLed(self.INDEX_LED_4, *self.TURN_LIGH, 0x3333)
+            self.last_steering_state = self.STEERING_LEFT
+        if (abs(steering)<self.STEERING_LOW and self.last_steering_state != 0):
+            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff)
+            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff)
+            self.last_steering_state = 0
+        #self.updateAnim()
+        return None
+    
+
+    def shutdown(self):
+        # indicate that the thread should be stopped
+        self.on = False
+        print('stopping Robocars Hat Led Controller')
+        time.sleep(.5)
+
 #class RobocarsHatInBattery:
 
 
