@@ -25,6 +25,20 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
 
     return ((x-X_min) / XY_ratio + Y_min)
 
+def map_range_float(x, X_min, X_max, Y_min, Y_max):
+    '''
+    Same as map_range but supports floats return, rounded to 2 decimal places
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    # print("y= {}".format(y))
+
+    return round(y,2)
+
 def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max) :
     if (input < input_idle) :
         output = map_range (input, input_min, input_idle, output_min, output_idle)
@@ -266,8 +280,8 @@ class RobocarsHatInCtrl:
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
         elif self.ch3Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE:
-            user_throttle =  map_range(self.inAux1,
-                        self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
+            user_throttle =  map_range_float(self.inAux1,
+                        -1.0, 1.0,
                         self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
 
         # Process aux ch4
@@ -329,8 +343,8 @@ class RobocarsHatInCtrl:
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
         elif self.ch4Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE:
-            user_throttle =  map_range(self.inAux2,
-                        self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
+            user_throttle =  map_range_float(self.inAux2,
+                        -1.0, 1.0,
                         self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
                         
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
