@@ -100,7 +100,7 @@ class RobocarsHatInCtrl:
             return self.AUX_FEATURE_OUTPUT_STEERING_TRIM
         elif feature == 'output_steering_exp':
             return self.AUX_FEATURE_OUTPUT_STEERING_EXP
-        else feature == 'local_angle_fix_throttle':
+        elif feature == 'local_angle_fix_throttle':
             return self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE
 
     def __init__(self, cfg):
