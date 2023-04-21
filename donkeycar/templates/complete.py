@@ -1175,9 +1175,10 @@ def add_drivetrain(V, cfg):
             from donkeycar.parts.actuator import RobocarsHat
             train_controller = RobocarsHat(cfg)
             V.add(train_controller, inputs=['throttle','angle'], threaded=False)
-            from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
-            ctr = RobocarsHatLedCtrl(cfg)
-            V.add(ctr, inputs=['angle', 'throttle', 'user/mode'],threaded=False)
+            if cfg.ROBOCARSHAT_CONTROL_LED:
+                from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
+                ctr = RobocarsHatLedCtrl(cfg)
+                V.add(ctr, inputs=['angle', 'throttle', 'user/mode'],threaded=False)
 
 
 if __name__ == '__main__':
