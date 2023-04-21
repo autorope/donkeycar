@@ -1214,7 +1214,7 @@ class RobocarsHat (metaclass=Singleton):
         steeringIdle = self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_IDLE
         
         if (RobocarsHat.steeringTrim != None):
-            steeringIdle = RobocarsHat.steeringTrim;
+            steeringIdle = RobocarsHat.steeringTrim
 
         if (self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_INVERT):
             steering = -steering
@@ -1230,8 +1230,8 @@ class RobocarsHat (metaclass=Singleton):
 
         if (RobocarsHat.fixSteering != None):
             pulse_steering = RobocarsHat.fixSteering
-            
-        cmd=("1,%d,%d\n" % (int(pulse_throttle), int(pulse_steering))).encode('ascii')
+        
+        cmd=("1,%4d,%4d\n" % (int(pulse_throttle), int(pulse_steering))).encode('ascii')
         actlogger.debug("Tx CMD :{}".format(cmd))
         self.sendCmd(cmd)
 
