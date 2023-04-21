@@ -122,6 +122,11 @@ try:
                 logger.info(f'Creating augmentation {aug_type} {interval}')
                 return iaa.GaussianBlur(sigma=interval)
 
+            elif aug_type == 'WB':
+                interval = getattr(config, 'AUG_WB_RANGE', (1100, 10000))
+                logger.info(f'Creating augmentation {aug_type}')
+                return iaa.ChangeColorTemperature(interval)
+
         # Parts interface
         def run(self, img_arr):
             aug_img_arr = self.augmentations.augment_image(img_arr)
