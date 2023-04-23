@@ -28,18 +28,32 @@ sudo apt-get install -y git nano
 sudo apt-get install -y openmpi-doc openmpi-bin libopenmpi-dev libopenblas-dev
 
 # Install python modules
-sudo pip3 install -U pip testresources setuptools
+sudo pip3 install virtualenv
+python3 -m virtualenv venvs/donkeycar
+source ~/venvs/donkeycar/bin/activate
+python3 -m pip install pip testresources setuptools
 sudo ln -s /usr/include/locale.h /usr/include/xlocale.h
-sudo pip3 install -U futures protobuf==3.19.6 pybind11 cython pyserial 
-sudo pip3 install -U numpy==1.19.4 future mock h5py keras_preprocessing keras_applications gast==0.2.1 
-sudo pip3 install -U grpcio absl-py py-cpuinfo psutil portpicker wrapt==1.12.1 six requests 
-sudo pip3 install -U astor termcolor google-pasta scipy pandas gdown pkgconfig packaging
+python3 -m pip install cython-0.29.34 futures-2.2.0 protobuf-3.19.6 pybind11-2.10.4 pyserial-3.5 
+python3 -m pip install numpy==1.19.4 future mock h5py keras_preprocessing keras_applications gast==0.2.1 
+python3 -m pip install grpcio absl-py py-cpuinfo psutil portpicker wrapt==1.12.1 six requests 
+python3 -m pip install astor termcolor google-pasta scipy pandas gdown pkgconfig packaging
+# Change swap settings before install change divider to 1 instead of 2. Reset after build
+sudo vim /etc/systemd/nvzramconfig.sh 
+python3 -m pip install depthai depthai-sdk
+
+python3 -m pip install Jetson.GPIO
+cd ~
+sudo cp robocar/lib/python3.6/site-packages/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d/99-gpio.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo reboot now
 
 # Install tensorflow
-sudo pip3 install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 tensorflow
+python3 -m pip install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 tensorflow
 # or upgrade
 python3 -m pip install --upgrade --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v461 tensorflow
 
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/80-movidius.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
 
 sudo systemctl stop nvgetty
 sudo systemctl disable nvgetty
@@ -82,7 +96,7 @@ cd ~/github
 git clone https://github.com/roboracingleague/donkeycar
 cd donkeycar
 git checkout main
-pip install -e .[nano]
+python3 -m pip install -e .\[nano\]
 
 # https://github.com/keras-team/keras-tuner/issues/317
 echo "export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1" >> ~/.bashrc
