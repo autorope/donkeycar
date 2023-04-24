@@ -456,7 +456,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs = ["pilot/angle", "pilot/throttle"]
         outputs = ['pilot/angle', 'pilot/throttle']
         from donkeycar.parts.steering_throttle_scaler import SteeringThrottleScaler
-        V.add(SteeringThrottleScaler(cfg.STEERING_FACTOR, cfg.THROTTLE_FACTOR, cfg.STEERING_ON_THROTTLE_FACTOR), inputs=inputs, outputs=outputs)
+        V.add(SteeringThrottleScaler(cfg.STEERING_FACTOR, cfg.THROTTLE_FACTOR, cfg.STEERING_ON_THROTTLE_FACTOR), inputs=inputs, outputs=outputs, run_condition='run_pilot')
 
 
     #
