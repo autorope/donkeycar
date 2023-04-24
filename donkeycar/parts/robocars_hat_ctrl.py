@@ -462,7 +462,7 @@ class RobocarsHatLedCtrl():
     STEERING_LEFT=1
     STEERING_RIGHT=-1
 
-    TURN_LIGH=(223,128,0)
+    TURN_LIGHT=(223,128,0)
     USER_FRONT_LIGH=(127,127,127)
     AUTO_FRONT_LIGH=(127,127,160)
 
@@ -470,6 +470,23 @@ class RobocarsHatLedCtrl():
     def __init__(self, cfg):
         self.cfg = cfg
         self.cmdinterface = RobocarsHat(self.cfg)
+        if cfg.ROBOCARSHAT_LED_MODEL == 'Alpine':
+            self.LED_INDEX_FRONT_TURN_RIGHT = 3
+            self.LED_INDEX_FRONT_TURN_LEFT = 4
+            self.LED_INDEX_REAR_TURN_RIGHT = 1
+            self.LED_INDEX_REAR_TURN_LEFT = 0
+            self.LED_FRONT_LIGHT_RIGHT = 2
+            self.LED_FRONT_LIGHT_LEFT = 5
+
+        else: #default
+            self.LED_INDEX_FRONT_TURN_RIGHT = 0
+            self.LED_INDEX_FRONT_TURN_LEFT = 1
+            self.LED_INDEX_REAR_TURN_RIGHT = 2
+            self.LED_INDEX_REAR_TURN_LEFT = 3
+            self.LED_FRONT_LIGHT_RIGHT = 4
+            self.LED_FRONT_LIGHT_LEFT = 5
+
+
         self.idx = 0
         self.last_mode = None
         self.last_steering_state = 0
@@ -506,25 +523,31 @@ class RobocarsHatLedCtrl():
 
         if mode != self.last_mode:
             if mode=='user' :
-                self.setLed(self.INDEX_LED_1, *self.USER_FRONT_LIGH, 0xffff);
-                self.setLed(self.INDEX_LED_2, *self.USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.LED_FRONT_LIGHT_RIGHT, *self.USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.LED_FRONT_LIGHT_LEFT, *self.USER_FRONT_LIGH, 0xffff);
             else:
-                self.setLed(self.INDEX_LED_1, *self.AUTO_FRONT_LIGH, 0xffff);
-                self.setLed(self.INDEX_LED_2, *self.AUTO_FRONT_LIGH, 0xffff);
+                self.setLed(self.LED_FRONT_LIGHT_RIGHT, *self.AUTO_FRONT_LIGH, 0xffff);
+                self.setLed(self.LED_FRONT_LIGHT_LEFT, *self.AUTO_FRONT_LIGH, 0xffff);
 
             self.last_mode = mode
 
         if (abs(steering)>self.STEERING_HIGH and steering<0 and self.last_steering_state != self.STEERING_RIGHT):
-            self.setLed(self.INDEX_LED_3, *self.TURN_LIGH, 0x3333)
-            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.TURN_LIGHT, 0x3333)
+            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, *self.TURN_LIGHT, 0x3333)
+            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0xffff)
             self.last_steering_state = self.STEERING_RIGHT
         if (abs(steering)>self.STEERING_HIGH and steering>0 and self.last_steering_state != self.STEERING_LEFT):
-            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff)
-            self.setLed(self.INDEX_LED_4, *self.TURN_LIGH, 0x3333)
+            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.TURN_LIGHT, 0x3333)
+            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, *self.TURN_LIGHT, 0x3333)
             self.last_steering_state = self.STEERING_LEFT
         if (abs(steering)<self.STEERING_LOW and self.last_steering_state != 0):
-            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0xffff)
-            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0xffff)
+            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0xffff)
             self.last_steering_state = 0
         #self.updateAnim()
         return None
