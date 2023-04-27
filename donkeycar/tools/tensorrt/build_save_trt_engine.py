@@ -30,4 +30,4 @@ def build(onnx_path,engine_name):
 if __name__=='__main__':
     args = docopt(__doc__)
 
-    build(args['--onnx'],args['--savedtrt'])
+    build(args['<onnxfile>'],args['<trtfile>'])
