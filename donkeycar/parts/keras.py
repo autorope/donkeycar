@@ -106,7 +106,7 @@ class KerasPilot(ABC):
         :return:            tuple of (angle, throttle)
         """
         norm_arr = normalize_image(img_arr)
-
+        print("TRT ICIII")
         if  type(other_arr) != 'NoneType':
             np_other_array = np.array(other_arr)
             return self.inference(norm_arr, np_other_array)
