@@ -246,7 +246,7 @@ class TensorRTLinear(KerasPilot):
             # print(f"steering={steering} throttle={throttle}")
             # return -0.25, 0.3
             # return steering[0], throttle[0]
-            return steering[0], 0.28
+            return steering[0], throttle[0]
         else:
             [steering] = interpreter_out
             # print(f"steering={steering}")

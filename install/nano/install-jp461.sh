@@ -42,6 +42,10 @@ python3 -m pip install astor termcolor google-pasta scipy pandas gdown pkgconfig
 sudo vim /etc/systemd/nvzramconfig.sh 
 python3 -m pip install depthai depthai-sdk
 
+python3 -m pip install onnx==1.10.0
+python3 -m pip install onnxruntime==1.10.0
+
+
 python3 -m pip install Jetson.GPIO
 cd ~
 sudo cp robocar/lib/python3.6/site-packages/Jetson/GPIO/99-gpio.rules /etc/udev/rules.d/99-gpio.rules
@@ -107,3 +111,5 @@ echo "export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1" >> ~/.bashrc
 export PATH=/usr/local/cuda-10.2/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64:$LD_LIBRARY_PATH
 python3 -m pip install pycuda
+
+echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc
