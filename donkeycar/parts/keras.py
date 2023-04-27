@@ -107,9 +107,10 @@ class KerasPilot(ABC):
         """
         #norm_arr = normalize_image(img_arr)
         norm_arr = img_arr
-        if  type(other_arr) != 'NoneType':
-            print(type(other_arr))
-            print(other_arr)
+        #if  type(other_arr) != 'NoneType':
+        if other_arr is None:
+            #print(type(other_arr))
+            #print(other_arr)
             np_other_array = np.array(other_arr)
             return self.inference(norm_arr, np_other_array)
         else:
@@ -127,7 +128,7 @@ class KerasPilot(ABC):
                                 state vector in the Behavioural model
             :return:            tuple of (angle, throttle)
         """
-
+        print("FOLLOW")
         out = self.interpreter.predict(img_arr, other_arr)
         return self.interpreter_to_output(out)
 
