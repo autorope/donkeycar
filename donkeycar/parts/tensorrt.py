@@ -241,7 +241,7 @@ class TensorRTLinear(KerasPilot):
                                                 stream=self.stream)
         
         print(inference_output)
-        return inference_output
+        return self.interpreter_to_output(inference_output)
         
 
     def interpreter_to_output(self, interpreter_out):
