@@ -12,7 +12,8 @@ from donkeycar.tools.tensorrt import engine as eng
 import donkeycar as dk
 
 HostDeviceMemory = namedtuple('HostDeviceMemory', 'host_memory device_memory')
-
+ctx = pycuda.autoinit.context
+trt.init_libnvinfer_plugins(None, "")
 class TensorRTCategorical(KerasPilot):
     '''
     Uses TensorRT to do the inference.
@@ -159,7 +160,7 @@ class TensorRTCategorical(KerasPilot):
 class TensorRTLinear(KerasPilot):
     '''
     Uses TensorRT to do the inference.
-    '''
+    '''    
     def __init__(self, cfg):
         super().__init__()
         self.logger = trt.Logger(trt.Logger.WARNING)
@@ -174,6 +175,9 @@ class TensorRTLinear(KerasPilot):
 
     def compile(self):
         print('Nothing to compile')
+
+    def create_model(self):
+        print("should not creaate TensorRTLinear model, it is created using post processing")
 
     def load(self, model_path):
         # uff_model = Path(model_path)
@@ -232,14 +236,19 @@ class TensorRTLinear(KerasPilot):
                                                 inputs=self.inputs,
                                                 outputs=self.outputs,
                                                 stream=self.stream)
-        if len(inference_output) == 2:
-            [throttle, steering] = inference_output
+        
+        return inference_output
+        
+
+    def interpreter_to_output(self, interpreter_out):
+        if len(interpreter_out) == 2:
+            [throttle, steering] = interpreter_out
             # print(f"steering={steering} throttle={throttle}")
             # return -0.25, 0.3
             # return steering[0], throttle[0]
             return steering[0], 0.28
         else:
-            [steering] = inference_output
+            [steering] = interpreter_out
             # print(f"steering={steering}")
             return steering[0], calculate_throttle(steering[0])
 

@@ -465,6 +465,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
         KerasLSTM, Keras3D_CNN, KerasDetector
+    from donkeycar.parts.tensorrt import TensorRTLinear
     from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
         FastAIInterpreter, OnnxInterpreter
 
@@ -475,6 +476,8 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     if 'tflite_' in model_type:
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
+    elif 'trt_' in model_type:
+        used_model_type = model_type.replace('trt_', '')
     elif 'tensorrt_' in model_type:
         interpreter = TensorRT()
         used_model_type = model_type.replace('tensorrt_', '')
@@ -492,6 +495,8 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         used_model_type = model_type
 
     used_model_type = EqMemorizedString(used_model_type)
+    if used_model_type == "lineartrt":
+        kl = TensorRTLinear(cfg=cfg)
     if used_model_type == "linear":
         kl = KerasLinear(interpreter=interpreter, input_shape=input_shape, have_odom=cfg.HAVE_ODOM)
     elif used_model_type == "categorical":

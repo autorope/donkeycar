@@ -1,7 +1,12 @@
 import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit
 
 TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
 trt_runtime = trt.Runtime(TRT_LOGGER)
+ctx = pycuda.autoinit.context
+trt.init_libnvinfer_plugins(None, "")
+
 def build_engine(onnx_path, shape = [1,224,224,3]):
 
    """
@@ -37,3 +42,5 @@ def load_engine(trt_runtime, plan_path):
        engine_data = f.read()
    engine = trt_runtime.deserialize_cuda_engine(engine_data)
    return engine
+
+
