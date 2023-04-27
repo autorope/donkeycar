@@ -223,6 +223,7 @@ class TensorRTLinear(KerasPilot):
     def inference(self, image, other_arr=None):
         print("IN TENSORRT INFERENCE")
         print(image.shape)
+        print(image[0,0,0],image[0,0,1],image[0,0,2])
         # Channel first image format
         image = image.transpose((2,0,1)).ravel().astype(np.float32) * 1.0 / 255.0
         

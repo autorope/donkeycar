@@ -114,7 +114,7 @@ class KerasPilot(ABC):
             np_other_array = np.array(other_arr)
             return self.inference(norm_arr, np_other_array)
         else:
-            print("1 param")
+            # print("1 param")
             return self.inference(norm_arr)
             
 
