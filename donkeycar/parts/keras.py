@@ -128,7 +128,7 @@ class KerasPilot(ABC):
                                 state vector in the Behavioural model
             :return:            tuple of (angle, throttle)
         """
-        print("FOLLOW")
+        #print("FOLLOW")
         out = self.interpreter.predict(img_arr, other_arr)
         return self.interpreter_to_output(out)
 
