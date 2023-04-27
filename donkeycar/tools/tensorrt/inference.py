@@ -1,7 +1,7 @@
 import tensorrt as trt
 import pycuda.driver as cuda
 import numpy as np
-import pycuda.autoinit 
+#import pycuda.autoinit 
 
 def allocate_buffers(engine, batch_size, data_type):
 
