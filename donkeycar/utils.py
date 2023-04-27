@@ -495,6 +495,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         used_model_type = model_type
 
     used_model_type = EqMemorizedString(used_model_type)
+
     if used_model_type == "lineartrt":
         kl = TensorRTLinear(cfg=cfg)
     if used_model_type == "linear":
@@ -534,7 +535,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         kl = Keras3D_CNN(interpreter=interpreter, input_shape=input_shape,
                          seq_length=cfg.SEQUENCE_LENGTH)
     else:
-        known = [k + u for k in ('', 'tflite_', 'tensorrt_')
+        known = [k + u for k in ('', 'tflite_', 'tensorrt_', 'trt_')
                  for u in used_model_type.mem]
         raise ValueError(f"Unknown model type {model_type}, supported types are"
                          f" { ', '.join(known)}")
