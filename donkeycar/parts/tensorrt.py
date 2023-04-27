@@ -4,7 +4,7 @@ from donkeycar.utils import throttle as calculate_throttle
 import json
 import numpy as np
 import pycuda.driver as cuda
-import pycuda.autoinit
+#import pycuda.autoinit
 from pathlib import Path
 import tensorflow as tf
 import tensorrt as trt
@@ -12,8 +12,8 @@ from donkeycar.tools.tensorrt import engine as eng
 import donkeycar as dk
 
 HostDeviceMemory = namedtuple('HostDeviceMemory', 'host_memory device_memory')
-ctx = pycuda.autoinit.context
-trt.init_libnvinfer_plugins(None, "")
+#ctx = pycuda.autoinit.context
+#trt.init_libnvinfer_plugins(None, "")
 class TensorRTCategorical(KerasPilot):
     '''
     Uses TensorRT to do the inference.
