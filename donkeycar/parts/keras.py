@@ -108,10 +108,12 @@ class KerasPilot(ABC):
         #norm_arr = normalize_image(img_arr)
         norm_arr = img_arr
         if  type(other_arr) != 'NoneType':
+            print(type(other_arr))
+            print(other_arr)
             np_other_array = np.array(other_arr)
             return self.inference(norm_arr, np_other_array)
         else:
-            print("good")
+            print("1 param")
             return self.inference(norm_arr)
             
 
