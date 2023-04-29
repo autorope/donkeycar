@@ -32,7 +32,7 @@ def infer_onnx(model, img, config):
     onnx_model.load(model_path=model)
     
     # Pre-processing and inference
-    prediction_output = onnx_model.run(img)
+    prediction_output = onnx_model.run(img, None)
     print(prediction_output)
 
     #print(kl.inference(pix))
