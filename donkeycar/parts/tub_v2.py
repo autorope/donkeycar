@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
-
+from numpy import save
 
 class Tub(object):
     """
@@ -58,10 +58,12 @@ class Tub(object):
                     contents[key] = list(value)
                 elif input_type == 'image_array':
                     # Handle image array
-                    image = Image.fromarray(np.uint8(value))
+                    # image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
-                    image_path = os.path.join(self.images_base_path, name)
-                    image.save(image_path)
+                    # image_path = os.path.join(self.images_base_path, name)
+                    image_path = os.path.join(self.images_base_path, name,".npy")
+                    # image.save(image_path)
+                    save(image_path,value)
                     contents[key] = name
                 elif input_type == 'gray16_array':
                     # Handle image array
