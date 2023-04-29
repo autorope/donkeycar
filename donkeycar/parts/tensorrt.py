@@ -225,8 +225,11 @@ class TensorRTLinear(KerasPilot):
         #print(image.shape)
         #print(image[0,0,0],image[0,0,1],image[0,0,2])
         # Channel first image format
-        image = image.transpose((2,0,1)).ravel().astype(np.float32) * 1.0 / 255.0
         
+        #image = image.transpose((2,0,1)).ravel().astype(np.float32) * 1.0 / 255.0
+        # Since image already normalized np.float32
+        image = image.transpose((2,0,1)).ravel()
+
         # image = image.astype(np.float32) * 1.0 / 255.0
         # Flatten it to a 1D array.
         # image = image.ravel()

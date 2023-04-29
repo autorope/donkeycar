@@ -105,8 +105,8 @@ class KerasPilot(ABC):
                             state vector in the Behavioural model
         :return:            tuple of (angle, throttle)
         """
-        #norm_arr = normalize_image(img_arr)
-        norm_arr = img_arr
+        norm_arr = normalize_image(img_arr)
+        #norm_arr = img_arr
         #if  type(other_arr) != 'NoneType':
         if other_arr is not None:
             #print(type(other_arr))

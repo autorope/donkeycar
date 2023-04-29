@@ -148,7 +148,7 @@ def normalize_image(img_arr_uint):
     :param img_arr_uint:    [0,255]uint8 numpy image array
     :return:                [0,1] float32 numpy image array
     """
-    return img_arr_uint.astype(np.float64) * ONE_BYTE_SCALE
+    return img_arr_uint.astype(np.float32) * ONE_BYTE_SCALE
 
 
 def denormalize_image(img_arr_float):
@@ -465,7 +465,6 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
         KerasLSTM, Keras3D_CNN, KerasDetector
-    from donkeycar.parts.tensorrt import TensorRTLinear
     from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
         FastAIInterpreter, OnnxInterpreter
 
@@ -477,6 +476,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
     elif 'trt_' in model_type:
+        from donkeycar.parts.tensorrt import TensorRTLinear
         used_model_type = model_type.replace('trt_', '')
     elif 'tensorrt_' in model_type:
         interpreter = TensorRT()
