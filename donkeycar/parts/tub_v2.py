@@ -60,8 +60,8 @@ class Tub(object):
                     # Handle image array
                     # image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
-                    # image_path = os.path.join(self.images_base_path, name)
-                    image_path = os.path.join(self.images_base_path, name,".npy")
+                    name = name + ".npy"
+                    image_path = os.path.join(self.images_base_path, name)
                     # image.save(image_path)
                     save(image_path,value)
                     contents[key] = name
