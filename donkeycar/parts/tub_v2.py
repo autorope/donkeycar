@@ -62,6 +62,7 @@ class Tub(object):
                     ### name = Tub._image_file_name(self.manifest.current_index, key)
                     ### image_path = os.path.join(self.images_base_path, name)
                     ### image.save(image_path)
+                    name = "toi"
                     contents[key] = name
                 elif input_type == 'gray16_array':
                     # Handle image array
