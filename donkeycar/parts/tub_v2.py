@@ -65,10 +65,10 @@ class Tub(object):
                 elif input_type == 'image_array':
                     # Handle image array
                     # original version
-                    #image = Image.fromarray(np.uint8(value))
+                    image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
-                    #image.save(image_path)
+                    image.save(image_path)
                     
                     # zmq version
                     # key = image_path
@@ -83,10 +83,10 @@ class Tub(object):
                         # pass
 
                     # Bytesio
-                    write_byte = BytesIO(value.tobytes())
+                    # write_byte = BytesIO(value.tobytes())
  
-                    with open(image_path, "wb") as f:
-                        f.write(write_byte.getbuffer())
+                    # with open(image_path, "wb") as f:
+                        # f.write(write_byte.getbuffer())
                     
                     # common part
                     contents[key] = name
