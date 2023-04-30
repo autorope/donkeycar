@@ -9,6 +9,7 @@ from PIL import Image
 
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
 import zmq
+from io import BytesIO
 
 class Tub(object):
     """
@@ -77,11 +78,16 @@ class Tub(object):
                     # self.socket.send(message)
 
                     # Write binary
-                    with open(image_path, "wb") as binary_file:
+                    # with open(image_path, "wb") as binary_file:
                         # binary_file.write(value.tobytes())
-                        pass
+                        # pass
+
+                    # Bytesio
+                    write_byte = BytesIO(value)
+ 
+                    with open(image_path, "wb") as f:
+                        f.write(write_byte.getbuffer())
                     
-                    # Try fire and forget asyncio
                     # common part
                     contents[key] = name
 
