@@ -113,3 +113,5 @@ export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64:$LD_LIBRARY_PATH
 python3 -m pip install pycuda
 
 echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc
+
+pip install pyzmq-static
