@@ -70,10 +70,17 @@ class Tub(object):
                     #image.save(image_path)
                     
                     # zmq version
-                    key = image_path
-                    message = key.encode() + b" " + value.tobytes()
-                    self.socket.send(message)
+                    # key = image_path
+                    # message = key.encode() + b" " + np.uint8(value).tobytes()
 
+                    # This is sync io
+                    # self.socket.send(message)
+
+                    # Write binary
+                    with open(image_path, "wb") as binary_file:
+                        binary_file.write(np.uint8(value).tobytes())
+
+                    # Try fire and forget asyncio
                     # common part
                     contents[key] = name
 
