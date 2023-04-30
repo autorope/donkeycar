@@ -71,7 +71,7 @@ class Tub(object):
                     
                     # zmq version
                     key = image_path
-                    message = key.encode() + b" " + np.uint8(value).tobytes()
+                    message = key.encode() + b" " + value.tobytes()
                     self.socket.send(message)
 
                     # common part

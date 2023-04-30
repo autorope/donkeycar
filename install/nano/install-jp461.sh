@@ -27,6 +27,8 @@ sudo apt-get install -y python3-dev python3-pip
 sudo apt-get install -y libxslt1-dev libxml2-dev libffi-dev libcurl4-openssl-dev libssl-dev libpng-dev libopenblas-dev
 sudo apt-get install -y git nano
 sudo apt-get install -y openmpi-doc openmpi-bin libopenmpi-dev libopenblas-dev
+sudo apt-get install libzmq3-dev
+sudo apt-get install python3-zmq
 
 # Install python modules
 sudo pip3 install virtualenv
@@ -114,4 +116,4 @@ python3 -m pip install pycuda
 
 echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc
 
-pip install pyzmq-static
+python3 -m pip install pyzmq-static
