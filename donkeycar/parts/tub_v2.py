@@ -78,8 +78,9 @@ class Tub(object):
 
                     # Write binary
                     with open(image_path, "wb") as binary_file:
-                        binary_file.write(value)
-
+                        # binary_file.write(value.tobytes())
+                        pass
+                    
                     # Try fire and forget asyncio
                     # common part
                     contents[key] = name
