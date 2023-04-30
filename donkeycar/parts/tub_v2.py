@@ -83,7 +83,7 @@ class Tub(object):
                         # pass
 
                     # Bytesio
-                    write_byte = BytesIO(value)
+                    write_byte = BytesIO(value.tobytes())
  
                     with open(image_path, "wb") as f:
                         f.write(write_byte.getbuffer())
