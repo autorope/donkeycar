@@ -8,8 +8,9 @@ import numpy as np
 from PIL import Image
 
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
-import zmq
-from io import BytesIO
+# import zmq
+# from io import BytesIO
+# import cv2
 
 class Tub(object):
     """
@@ -66,7 +67,6 @@ class Tub(object):
                     # Handle image array
                     # original version
                     image = Image.fromarray(np.uint8(value))
-                    #image = Image.frombuffer()
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
                     image.save(image_path)
@@ -89,6 +89,9 @@ class Tub(object):
                     # with open(image_path, "wb") as f:
                         # f.write(write_byte.getbuffer())
                     
+                    # OpenCV
+                    # cv2.imwrite(image_path, value)
+
                     # common part
                     contents[key] = name
 
