@@ -34,9 +34,9 @@ class Tub(object):
             os.makedirs(self.images_base_path, exist_ok=True)
         
         # set up the publisher
-        self.context = zmq.Context()
-        self.socket = self.context.socket(zmq.PUB)
-        self.socket.bind("tcp://*:5555")
+        # self.context = zmq.Context()
+        # self.socket = self.context.socket(zmq.PUB)
+        # self.socket.bind("tcp://*:5555")
 
     def write_record(self, record=None):
         """
