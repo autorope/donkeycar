@@ -13,7 +13,7 @@ import donkeycar as dk
 
 HostDeviceMemory = namedtuple('HostDeviceMemory', 'host_memory device_memory')
 #ctx = pycuda.autoinit.context
-#trt.init_libnvinfer_plugins(None, "")
+
 
 
 class TensorRTCategorical(KerasPilot):
@@ -165,7 +165,7 @@ class TensorRTLinear(KerasPilot):
     '''    
     def __init__(self, cfg):
         super().__init__()
-        self.logger = trt.Logger(trt.Logger.WARNING)
+        self.logger = trt.Logger(trt.Logger.ERROR)
         self.trt_runtime = trt.Runtime(self.logger)
         self.cfg = cfg
         self.engine = None
