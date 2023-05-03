@@ -475,6 +475,9 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     if 'tflite_' in model_type:
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
+    elif 'trt_' in model_type:
+        from donkeycar.parts.tensorrt import TensorRTLinear
+        used_model_type = model_type.replace('trt_', '')
     elif 'tensorrt_' in model_type:
         interpreter = TensorRT()
         used_model_type = model_type.replace('tensorrt_', '')
@@ -492,7 +495,10 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         used_model_type = model_type
 
     used_model_type = EqMemorizedString(used_model_type)
-    if used_model_type == "linear":
+
+    if used_model_type == "lineartrt":
+        kl = TensorRTLinear(cfg=cfg)
+    elif used_model_type == "linear":
         kl = KerasLinear(interpreter=interpreter, input_shape=input_shape, have_odom=cfg.HAVE_ODOM)
     elif used_model_type == "categorical":
         kl = KerasCategorical(
@@ -529,7 +535,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         kl = Keras3D_CNN(interpreter=interpreter, input_shape=input_shape,
                          seq_length=cfg.SEQUENCE_LENGTH)
     else:
-        known = [k + u for k in ('', 'tflite_', 'tensorrt_')
+        known = [k + u for k in ('', 'tflite_', 'tensorrt_', 'trt_')
                  for u in used_model_type.mem]
         raise ValueError(f"Unknown model type {model_type}, supported types are"
                          f" { ', '.join(known)}")

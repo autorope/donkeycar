@@ -8,7 +8,9 @@ import numpy as np
 from PIL import Image
 
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
-
+# import zmq
+# from io import BytesIO
+# import cv2
 
 class Tub(object):
     """
@@ -30,6 +32,11 @@ class Tub(object):
         # Create images folder if necessary
         if not os.path.exists(self.images_base_path):
             os.makedirs(self.images_base_path, exist_ok=True)
+        
+        # set up the publisher
+        # self.context = zmq.Context()
+        # self.socket = self.context.socket(zmq.PUB)
+        # self.socket.bind("tcp://*:5555")
 
     def write_record(self, record=None):
         """
@@ -58,11 +65,36 @@ class Tub(object):
                     contents[key] = list(value)
                 elif input_type == 'image_array':
                     # Handle image array
+                    # original version
                     image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
                     image.save(image_path)
+                    
+                    # zmq version
+                    # key = image_path
+                    # message = key.encode() + b" " + np.uint8(value).tobytes()
+
+                    # This is sync io
+                    # self.socket.send(message)
+
+                    # Write binary
+                    # with open(image_path, "wb") as binary_file:
+                        # binary_file.write(value.tobytes())
+                        # pass
+
+                    # Bytesio
+                    # write_byte = BytesIO(value.tobytes())
+ 
+                    # with open(image_path, "wb") as f:
+                        # f.write(write_byte.getbuffer())
+                    
+                    # OpenCV
+                    # cv2.imwrite(image_path, value)
+
+                    # common part
                     contents[key] = name
+
                 elif input_type == 'gray16_array':
                     # Handle image array
                     name = Tub._image_file_name(self.manifest.current_index, key).replace("image","depth")

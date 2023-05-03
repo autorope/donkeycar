@@ -88,7 +88,8 @@ def keras_model_to_onnx(keras_path: str, onnx_path: str):
     spec = tuple(input_list)
 
     try:
-        tf2onnx.convert.from_keras(keras_model, input_signature=spec, opset=13, output_path=onnx_path)
+        # opset was 13, downgraded to 11 to match tensorrt 7.2 compatibility
+        tf2onnx.convert.from_keras(keras_model, input_signature=spec, opset=11, output_path=onnx_path)
     
     except Exception as e:
         logger.error(f'TensorRT conversion failed because: {e}')
