@@ -148,7 +148,7 @@ def normalize_image(img_arr_uint):
     :param img_arr_uint:    [0,255]uint8 numpy image array
     :return:                [0,1] float32 numpy image array
     """
-    return img_arr_uint.astype(np.float32) * ONE_BYTE_SCALE
+    return img_arr_uint.astype(np.float64) * ONE_BYTE_SCALE
 
 
 def denormalize_image(img_arr_float):
