@@ -66,11 +66,11 @@ class Tub(object):
                 elif input_type == 'image_array':
                     # Handle image array
                     # original version
-                    # image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
-                    # image.save(image_path)
-                    
+                    with Image.fromarray(np.uint8(value)) as image:
+                        image.save(image_path)
+
                     # zmq version
                     # key = image_path
                     # message = key.encode() + b" " + np.uint8(value).tobytes()
