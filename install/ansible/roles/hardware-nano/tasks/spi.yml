@@ -1,0 +1,21 @@
+---
+    
+# See [jetson-io doc](https://docs.nvidia.com/jetson/archives/r34.1/DeveloperGuide/text/HR/ConfiguringTheJetsonExpansionHeaders.html?highlight=jetson%20io#)
+
+- name: fix jetson-io
+  command: find /opt/nvidia/jetson-io/ -mindepth 1 -maxdepth 1 -type d -exec touch {}/__init__.py \;
+  when: donkeycar_nano_spi1_enabled
+
+- name: enable spi1
+  command: /opt/nvidia/jetson-io/config-by-function.py -o dtb 1="spi1"
+  when: donkeycar_nano_spi1_enabled
+
+- name: enable spidev module
+  lineinfile:
+    dest: "/etc/modules"
+    regexp: "^spidev$"
+    line: "spidev"
+    backup: false
+    state: "{{ 'present' if (donkeycar_nano_spi1_enabled is defined and (donkeycar_nano_spi1_enabled|bool)) else 'absent' }}"
+  notify:
+    - reboot host

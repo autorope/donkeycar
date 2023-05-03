@@ -56,7 +56,7 @@ pip install -e .\[pc\]
 # pip install tensorflow-macos
 # pip install tensorflow-metal
 
-pip install tensorflow
+pip install tensorflow==2.7.0
 ```
 
 ### Install Ansible

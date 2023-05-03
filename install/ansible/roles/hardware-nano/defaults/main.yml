@@ -1,0 +1,4 @@
+---
+
+donkeycar_nano_spi1_enabled: false
+donkeycar_nano_jetson_clocks_enabled: true

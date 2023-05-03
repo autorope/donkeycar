@@ -65,6 +65,7 @@ donkeycar_nano_pip_packages:
   - pkgconfig
   - packaging
   - grpcio
+  - keras==2.6.0
   - https://developer.download.nvidia.com/compute/redist/jp/v461/tensorflow/tensorflow-2.7.0+nv22.1-cp36-cp36m-linux_aarch64.whl
   # opencv
   - opencv-python

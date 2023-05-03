@@ -1,0 +1,17 @@
+---
+
+- name: configure jetson-clocks service
+  copy:
+    src: jetson-clocks.service
+    dest: /etc/systemd/system/jetson-clocks.service
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  when: donkeycar_nano_jetson_clocks_enabled
+
+- name: enable and start jetson-clocks service
+  systemd:
+    state: started
+    enabled: true
+    name: jetson-clocks.service
+  when: donkeycar_nano_jetson_clocks_enabled

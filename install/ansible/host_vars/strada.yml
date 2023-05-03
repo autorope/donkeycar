@@ -2,3 +2,4 @@
 
 system_hostname: strada
 donkeycar_git_branch: rma
+donkeycar_nano_spi1_enabled: true

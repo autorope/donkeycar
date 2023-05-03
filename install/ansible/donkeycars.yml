@@ -25,6 +25,14 @@
       tags:
         - hardware
 
+- name: set-up nano hardware
+  hosts: nanos
+  become: true
+  roles:
+    - role: hardware-nano
+      tags:
+        - hardware
+
 - name: set-up donkeycar
   hosts: donkeycars
   become: true

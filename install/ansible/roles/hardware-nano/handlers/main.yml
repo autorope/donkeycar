@@ -1,0 +1,4 @@
+---
+
+- name: reboot host
+  reboot:

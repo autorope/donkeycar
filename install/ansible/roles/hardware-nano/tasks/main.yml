@@ -1,0 +1,9 @@
+---
+
+- import_tasks: spi.yml
+  tags:
+    - spi
+
+- import_tasks: jetson-clocks.yml
+  tags:
+    - jetson-clocks
