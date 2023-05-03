@@ -14,6 +14,8 @@ import donkeycar as dk
 HostDeviceMemory = namedtuple('HostDeviceMemory', 'host_memory device_memory')
 #ctx = pycuda.autoinit.context
 #trt.init_libnvinfer_plugins(None, "")
+
+
 class TensorRTCategorical(KerasPilot):
     '''
     Uses TensorRT to do the inference.
@@ -164,6 +166,7 @@ class TensorRTLinear(KerasPilot):
     def __init__(self, cfg):
         super().__init__()
         self.logger = trt.Logger(trt.Logger.WARNING)
+        self.trt_runtime = trt.Runtime(self.logger)
         self.cfg = cfg
         self.engine = None
         self.inputs = None
@@ -211,8 +214,9 @@ class TensorRTLinear(KerasPilot):
         #     self.engine = builder.build_cuda_engine(network)
         # Allocate buffers
         print("load tensorrt engine")
-        self.engine = eng.load_engine(eng.trt_runtime, model_path)
-        
+        #self.engine = eng.load_engine(eng.trt_runtime, model_path)
+        self.engine = self.load_engine(self.trt_runtime, model_path)
+
         print('Allocating Buffers')
         self.inputs, self.outputs, self.bindings, self.stream \
             = TensorRTLinear.allocate_buffers(self.engine)
@@ -296,3 +300,11 @@ class TensorRTLinear(KerasPilot):
         stream.synchronize()
         # Return only the host outputs.
         return [out.host_memory for out in outputs]
+
+    @staticmethod
+    def load_engine(trt_runtime, plan_path):
+        trt.init_libnvinfer_plugins(None, "")
+        with open(plan_path, 'rb') as f:
+            engine_data = f.read()
+        engine = trt_runtime.deserialize_cuda_engine(engine_data)
+        return engine

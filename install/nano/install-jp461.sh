@@ -37,7 +37,7 @@ source ~/venvs/donkeycar/bin/activate
 python3 -m pip install pip testresources setuptools
 sudo ln -s /usr/include/locale.h /usr/include/xlocale.h
 python3 -m pip install cython-0.29.34 futures-2.2.0 protobuf-3.19.6 pybind11-2.10.4 pyserial-3.5 
-python3 -m pip install numpy==1.19.4 future mock h5py keras==2.6.0 keras_preprocessing keras_applications gast==0.2.1 
+python3 -m pip install numpy==1.19.5 future mock h5py keras==2.6.0 keras_preprocessing keras_applications gast==0.2.1 
 python3 -m pip install grpcio absl-py py-cpuinfo psutil portpicker wrapt==1.12.1 six requests 
 python3 -m pip install astor termcolor google-pasta scipy pandas gdown pkgconfig packaging
 # Change swap settings before install change divider to 1 instead of 2. Reset after build
@@ -47,6 +47,12 @@ python3 -m pip install depthai depthai-sdk
 python3 -m pip install onnx==1.10.0
 python3 -m pip install onnxruntime==1.10.0
 
+# upgrade default versions in 
+python3 -m pip install numpy --upgrade
+python3 -m pip install onnx
+python3 -m pip install onnxruntime
+python3 -m pip install scipy --upgrade
+python3 -m pip install pandas --upgrade
 
 python3 -m pip install Jetson.GPIO
 cd ~
@@ -122,6 +128,8 @@ python3 -m pip install pycuda
 
 echo "export OPENBLAS_CORETYPE=ARMV8" >> ~/.bashrc
 
+sudo apt-get install python3-libnvinfer python3-libnvinfer-dev
+
 python3 -m pip install pyzmq-static
 
 python3 -m pip install --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v502 tensorflow==2.10.1+nv22.12
@@ -130,3 +138,4 @@ https://developer.download.nvidia.com/compute/redist/jp/v502/tensorflow/tensorfl
 donkey createcar --template=complete --path ~/mycar
 cd ~/mycar
 python manage.py drive
+
