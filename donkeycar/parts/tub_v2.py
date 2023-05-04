@@ -10,7 +10,7 @@ from PIL import Image
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
 # import zmq
 # from io import BytesIO
-import cv2
+# import cv2
 
 class Tub(object):
     """
