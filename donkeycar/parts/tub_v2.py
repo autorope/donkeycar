@@ -70,8 +70,8 @@ class Tub(object):
                     image_path = os.path.join(self.images_base_path, name)
                     image = Image.fromarray(np.uint8(value))
                     image.save(image_path)
-                    image.close()
-                    del image
+                    # image.close()
+                    # del image
 
                     # cv2 version
                     #cv2.imwrite(image_path,np.uint8(value))
