@@ -10,7 +10,7 @@ from PIL import Image
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
 # import zmq
 # from io import BytesIO
-# import cv2
+import cv2
 
 class Tub(object):
     """
@@ -68,9 +68,14 @@ class Tub(object):
                     # original version
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
-                    with Image.fromarray(np.uint8(value)) as image:
-                        image.save(image_path)
+                    image = Image.fromarray(np.uint8(value))
+                    image.save(image_path)
+                    image.close()
+                    del image
 
+                    # cv2 version
+                    #cv2.imwrite(image_path,np.uint8(value))
+                    
                     # zmq version
                     # key = image_path
                     # message = key.encode() + b" " + np.uint8(value).tobytes()
