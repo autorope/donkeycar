@@ -66,10 +66,15 @@ class Tub(object):
                 elif input_type == 'image_array':
                     # Handle image array
                     # original version
-                    image = Image.fromarray(np.uint8(value))
                     name = Tub._image_file_name(self.manifest.current_index, key)
                     image_path = os.path.join(self.images_base_path, name)
+                    image = Image.fromarray(np.uint8(value))
                     image.save(image_path)
+                    image.close()
+                    del image
+
+                    # cv2 version
+                    #cv2.imwrite(image_path,np.uint8(value))
                     
                     # zmq version
                     # key = image_path

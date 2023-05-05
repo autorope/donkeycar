@@ -162,6 +162,7 @@ class OakDCamera:
 
         # Create pipeline
         self.pipeline = dai.Pipeline()
+        # self.pipeline.setCameraTuningBlobPath('/tuning_color_ov9782_wide_fov.bin')
         self.pipeline.setXLinkChunkSize(0) # This might improve reducing the latency on some systems
 
         if self.enable_depth:
