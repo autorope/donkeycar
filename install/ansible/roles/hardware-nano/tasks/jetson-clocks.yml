@@ -9,9 +9,12 @@
     mode: u=rw,g=r,o=r
   when: donkeycar_nano_jetson_clocks_enabled
 
+- name: populate service facts
+  service_facts:
+
 - name: enable and start jetson-clocks service
   systemd:
-    state: started
-    enabled: true
+    state: "{{ 'started' if (donkeycar_nano_jetson_clocks_enabled is defined and (donkeycar_nano_jetson_clocks_enabled|bool)) else 'stopped' }}"
+    enabled: "{{ 'true' if (donkeycar_nano_jetson_clocks_enabled is defined and (donkeycar_nano_jetson_clocks_enabled|bool)) else 'false' }}"
     name: jetson-clocks.service
-  when: donkeycar_nano_jetson_clocks_enabled
+  when: "'jetson-clocks.service' in services"
