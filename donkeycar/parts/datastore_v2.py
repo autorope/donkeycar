@@ -418,11 +418,14 @@ class ManifestIterator(object):
                 raise StopIteration('No more catalogs')
 
             if self.current_catalog is None:
-                current_catalog_path = os.path.join(
-                    self.manifest.base_path,
-                    self.manifest.catalog_paths[self.current_catalog_index])
+                catalog_path = self.manifest.catalog_paths[self.current_catalog_index]
+                current_catalog_path = os.path.join(self.manifest.base_path,catalog_path)
                 self.current_catalog = Catalog(current_catalog_path,
                                                read_only=self.manifest.read_only)
+                catalog_start_index = self.current_catalog.manifest.start_index()
+                if catalog_start_index is not None and self.current_index != catalog_start_index:
+                    logger.warning(f'Correcting current_index because Catalog [{catalog_path}] start_index [{catalog_start_index}] is not matching the current_index [{self.current_index}].')
+                    self.current_index = catalog_start_index
                 self.current_catalog.seekable.seek_line_start(1)
 
             contents = self.current_catalog.seekable.readline()
