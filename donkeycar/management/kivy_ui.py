@@ -393,6 +393,9 @@ class FullImage(Image):
         """ This method is called ever time a record gets updated. """
         try:
             img_arr = self.get_image(record)
+            if img_arr is None:
+                Logger.error(f'Record: Could not get any image data')
+                return
             pil_image = PilImage.fromarray(img_arr)
             bytes_io = io.BytesIO()
             pil_image.save(bytes_io, format='png')

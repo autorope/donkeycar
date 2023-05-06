@@ -177,9 +177,8 @@ def load_pil_image(filename, cfg):
             img = img.convert('L')
         
         return img
-
     except Exception as e:
-        logger.error(f'failed to load image from {filename}: {e.message}')
+        logger.error(f'failed to load image from {filename}: {e}')
         return None
 
 
@@ -225,7 +224,7 @@ def load_image_sized(filename, image_width, image_height, image_depth):
         return img_arr
 
     except Exception as e:
-        logger.error(f'failed to load image from {filename}: {e.message}')
+        logger.error(f'failed to load image from {filename}: {e}')
         return None
 
 
