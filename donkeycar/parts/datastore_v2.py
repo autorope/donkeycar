@@ -434,16 +434,20 @@ class ManifestIterator(object):
                 # underlying iterator.
                 current_index = self.current_index
                 self.current_index += 1
-                if current_index in self.manifest.deleted_indexes:
-                    # Skip over index, because it has been marked deleted
-                    continue
-                else:
-                    try:
-                        record = json.loads(contents)
-                        return record
-                    except Exception:
-                        print(f'Ignoring record at index {current_index}')
+                try:
+                    record = json.loads(contents)
+                    if record['_index'] != current_index:
+                        logger.warning(
+                            f'Correcting current_index because record index [{record["_index"]}] is not matching the current_index [{self.current_index}].')
+                        self.current_index = record['_index'] + 1
+                    if current_index in self.manifest.deleted_indexes:
+                        # Skip over index, because it has been marked deleted
                         continue
+                    else:
+                        return record
+                except Exception as e:
+                    logger.error(f'Failed loading record {current_index}: {e}')
+                    continue
             else:
                 self.current_catalog = None
                 self.current_catalog_index += 1
