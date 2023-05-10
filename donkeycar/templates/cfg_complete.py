@@ -582,6 +582,10 @@ ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : l
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle)
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
+# in local_angle, throttle command from user is used to dynamically adjust throttle, from CONTROL_LOCAL_ANGLE_THROTTLE up to ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
+ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE = False
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.35 # Maximum throttle applied when throttle user command is set to maximum position
+
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 
 #ROBOCARSHAT_CH3_FEATURE and ROBOCARSHAT_CH4_FEATURE controls the feature attached to radio ch3 and ch4
@@ -599,10 +603,6 @@ ROBOCARSHAT_CH4_FEATURE = 'none'
 ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 ROBOCARSHAT_STEERING_EXP_INC = 0.05 
 ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10 
-
-AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN = 0.17
-AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.24
-
 
 #ROBOCARSHAT_STEERING_FIX used for steering calibration, enforce a fixed steering value (betzeen -1.0 and 1.0). None means no enforcment
 ROBOCARSHAT_STEERING_FIX = None 
