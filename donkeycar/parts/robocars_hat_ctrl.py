@@ -160,6 +160,7 @@ class RobocarsHatInCtrl:
 
         if self.cfg.ROBOCARSHAT_THROTTLE_DISCRET != None:
             self.discretesThrottle = np.arange(0.0,1.0001,1.0/len(self.cfg.ROBOCARSHAT_THROTTLE_DISCRET))
+            self.discretesThrottle[1]=0.1 #fix first threshold 
             mylogger.info("CtrlIn Discrete throttle thresholds set to {}".format(self.discretesThrottle))
 
         self.hatInMsg = RobocarsHatIn(self.cfg)
