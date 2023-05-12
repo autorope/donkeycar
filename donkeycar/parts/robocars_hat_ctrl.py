@@ -136,6 +136,7 @@ class RobocarsHatInCtrl:
         self.mode = 'user'
         self.lastMode = self.mode
         self.applyBrake = 0
+        self.lastPilotThrottle = 0.0
 
         if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
             self.inThrottleIdle = -1
@@ -365,6 +366,9 @@ class RobocarsHatInCtrl:
                 pilot_throttle =  map_range_float(user_throttle,
                     0.0, 1.0,
                     self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+            if (abs(pilot_throttle - self.lastPilotThrottle)>0.01) :
+                mylogger.debug("CtrlIn user throttle in pilot mode set to {}".format(user_throttle))
+            self.lastPilotThrottle = pilot_throttle
             user_throttle = pilot_throttle
             mylogger.debug("CtrlIn user throttle in pilot mode set to {}".format(user_throttle))
 
