@@ -362,12 +362,11 @@ class RobocarsHatInCtrl:
         # when in pilot mode, if enabled, apply output throttle proportionnaly to current throttle value from controller
         if self.mode!='user': 
             if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE:
-                user_throttle =  map_range_float(pilot_throttle,
+                pilot_throttle =  map_range_float(user_throttle,
                     0.0, 1.0,
                     self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
-            else:
-                user_throttle = pilot_throttle
-            mylogger.debug("CtrlIn Pilot throttle set to {}".format(user_throttle))
+            user_throttle = pilot_throttle
+            mylogger.debug("CtrlIn user throttle in pilot mode set to {}".format(user_throttle))
 
         # Keep throttle in authorized range
         if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
