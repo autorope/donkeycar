@@ -156,18 +156,14 @@ class TubWriter(object):
     A Donkey part, which can write records to the datastore.
     """
     def __init__(self, base_path, inputs=[], types=[], metadata=[],
-                 max_catalog_len=1000, rate=0):
+                 max_catalog_len=1000):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
-        self.rate = rate
-        self.count = 0
 
     def run(self, *args):
-        if (self.count%self.rate)==0:
-            assert len(self.tub.inputs) == len(args), \
-                f'Expected {len(self.tub.inputs)} inputs but received {len(args)}'
-            record = dict(zip(self.tub.inputs, args))
-            self.tub.write_record(record)
-        self.count += 1
+        assert len(self.tub.inputs) == len(args), \
+            f'Expected {len(self.tub.inputs)} inputs but received {len(args)}'
+        record = dict(zip(self.tub.inputs, args))
+        self.tub.write_record(record)
         return self.tub.manifest.current_index
 
     def __iter__(self):

@@ -621,8 +621,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
     meta += getattr(cfg, 'METADATA', [])
 
-    logger.info("cfg.RECORD_RATE %s"%cfg.RECORD_RATE)
-    tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta, rate=(cfg.DRIVE_LOOP_HZ/cfg.RECORD_RATE))
+    tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
     V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
     # Telemetry (we add the same metrics added to the TubHandler
