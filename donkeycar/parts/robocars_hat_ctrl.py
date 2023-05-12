@@ -283,8 +283,9 @@ class RobocarsHatInCtrl:
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
-        elif self.ch3Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode=='local_angle':
-            user_throttle =  map_range_float(self.inAux1,
+        elif self.ch3Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode!='user':
+            # take precedence on pilot and record&pilot features
+            pilot_throttle =  map_range_float(self.inAux1,
                         -1.0, 1.0,
                         self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
 
@@ -346,8 +347,9 @@ class RobocarsHatInCtrl:
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
-        elif self.ch4Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode=='local_angle':
-            user_throttle =  map_range_float(self.inAux2,
+        elif self.ch4Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode!='user':
+            # take precedence on pilot and record&pilot features
+            pilot_throttle =  map_range_float(self.inAux2,
                         -1.0, 1.0,
                         self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
                         
