@@ -167,6 +167,7 @@ class TubWriter(object):
                 f'Expected {len(self.tub.inputs)} inputs but received {len(args)}'
             record = dict(zip(self.tub.inputs, args))
             self.tub.write_record(record)
+        self.count += 1
         return self.tub.manifest.current_index
 
     def __iter__(self):
