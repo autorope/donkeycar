@@ -23,6 +23,7 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
 
+    x=max(min(x,X_max),X_min)
     return ((x-X_min) / XY_ratio + Y_min)
 
 def map_range_float(x, X_min, X_max, Y_min, Y_max):
@@ -33,6 +34,7 @@ def map_range_float(x, X_min, X_max, Y_min, Y_max):
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
 
+    x=max(min(x,X_max),X_min)
     y = ((x-X_min) / XY_ratio + Y_min)
 
     # print("y= {}".format(y))
@@ -220,6 +222,7 @@ class RobocarsHatInCtrl:
         self.mode='user'
         user_throttle = self.inThrottle
         user_steering = self.inSteering
+        pilot_throttle = 0.0
 
         #Process Aux ch3
         if self.ch3Feature == self.AUX_FEATURE_RECORDandPILOT :
@@ -228,7 +231,7 @@ class RobocarsHatInCtrl:
                 self.recording=True
             if (self.inAux1>0.5):
                 self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         elif self.ch3Feature == self.AUX_FEATURE_RECORD :
             if self.inAux1 > 0.5:
@@ -237,7 +240,7 @@ class RobocarsHatInCtrl:
         elif self.ch3Feature == self.AUX_FEATURE_PILOT :
             if self.inAux1 > 0.5:
                 self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         elif self.ch3Feature == self.AUX_FEATURE_THROTTLEEXP :
             if (abs(self.lastAux1 - self.inAux1)>0.5) :
@@ -291,7 +294,7 @@ class RobocarsHatInCtrl:
                 self.recording=True
             if (self.inAux2>0.5):
                 self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         elif self.ch4Feature == self.AUX_FEATURE_RECORD :
             if self.inAux2 > 0.5:
@@ -300,7 +303,7 @@ class RobocarsHatInCtrl:
         elif self.ch4Feature == self.AUX_FEATURE_PILOT :
             if self.inAux2 > 0.5:
                 self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         elif self.ch4Feature == self.AUX_FEATURE_THROTTLEEXP :
             if (abs(self.lastAux2 - self.inAux2)>0.5) :
@@ -357,10 +360,14 @@ class RobocarsHatInCtrl:
             user_throttle = self.cfg.ROBOCARSHAT_THROTTLE_DISCRET[inds-1]
 
         # when in pilot mode, if enabled, apply output throttle proportionnaly to current throttle value from controller
-        if (self.mode=='user' and self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE):
-            user_throttle =  map_range_float(self.inAux1,
-                -1.0, 1.0,
-                self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+        if self.mode!='user': 
+            if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE:
+                user_throttle =  map_range_float(pilot_throttle,
+                    0.0, 1.0,
+                    self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+            else:
+                user_throttle = pilot_throttle
+            mylogger.info("CtrlIn Fixed throttle set to {}".format(self.fixThrottle))
 
         # Keep throttle in authorized range
         if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
