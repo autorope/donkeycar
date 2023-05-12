@@ -236,12 +236,8 @@ class RobocarsHatInCtrl:
 
         elif self.ch3Feature == self.AUX_FEATURE_PILOT :
             if self.inAux1 > 0.5:
-                self.mode='local_angle'
+                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
                 user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
-                if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE:
-                    user_throttle =  map_range_float(self.inAux1,
-                        -1.0, 1.0,
-                        self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
 
         elif self.ch3Feature == self.AUX_FEATURE_THROTTLEEXP :
             if (abs(self.lastAux1 - self.inAux1)>0.5) :
@@ -294,7 +290,7 @@ class RobocarsHatInCtrl:
             if (self.inAux2<-0.5):
                 self.recording=True
             if (self.inAux2>0.5):
-                self.mode='local_angle'
+                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
                 user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         elif self.ch4Feature == self.AUX_FEATURE_RECORD :
@@ -303,7 +299,7 @@ class RobocarsHatInCtrl:
 
         elif self.ch4Feature == self.AUX_FEATURE_PILOT :
             if self.inAux2 > 0.5:
-                self.mode='local_angle'
+                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
                 user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         elif self.ch4Feature == self.AUX_FEATURE_THROTTLEEXP :
@@ -354,15 +350,23 @@ class RobocarsHatInCtrl:
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
             user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
-        if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
-            user_throttle = dualMap(user_throttle,
-                -1, 0, 1,
-                self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[0], 0, self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[1])
-
+        # Discret throttle mode
         if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_DISCRET != None) :
             inds = np.digitize(user_throttle, self.discretesThrottle)
             inds = max(inds,1)
             user_throttle = self.cfg.ROBOCARSHAT_THROTTLE_DISCRET[inds-1]
+
+        # when in pilot mode, if enabled, apply output throttle proportionnaly to current throttle value from controller
+        if (self.mode=='user' and self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE):
+            user_throttle =  map_range_float(self.inAux1,
+                -1.0, 1.0,
+                self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+
+        # Keep throttle in authorized range
+        if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
+            user_throttle = dualMap(user_throttle,
+                -1, 0, 1,
+                self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[0], 0, self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[1])
 
         #if switching back to user, then apply brake
         if self.mode=='user' and self.lastMode != 'user' and self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE != None:
