@@ -160,6 +160,7 @@ class TubWriter(object):
         self.tub = Tub(base_path, inputs, types, metadata, max_catalog_len)
         self.rate = rate
         self.count = 0
+
     def run(self, *args):
         if (self.count%self.rate)==0:
             assert len(self.tub.inputs) == len(args), \
