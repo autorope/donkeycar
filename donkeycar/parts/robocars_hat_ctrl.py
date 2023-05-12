@@ -367,7 +367,7 @@ class RobocarsHatInCtrl:
                     self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
             else:
                 user_throttle = pilot_throttle
-            mylogger.info("CtrlIn Pilot throttle set to {}".format(self.fixThrottle))
+            mylogger.info("CtrlIn Pilot throttle set to {}".format(self.user_throttle))
 
         # Keep throttle in authorized range
         if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
