@@ -357,10 +357,18 @@ class RobocarsHatInCtrl:
             user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
         # Discret throttle mode
-        if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_DISCRET != None) :
-            inds = np.digitize(user_throttle, self.discretesThrottle)
-            inds = max(inds,1)
-            user_throttle = self.cfg.ROBOCARSHAT_THROTTLE_DISCRET[inds-1]
+        if self.mode=='user':
+            # Discret mode, apply profile
+            if self.cfg.ROBOCARSHAT_THROTTLE_DISCRET != None :
+                inds = np.digitize(user_throttle, self.discretesThrottle)
+                inds = min(max(inds,1), len(self.cfg.ROBOCARSHAT_THROTTLE_DISCRET))
+                user_throttle = self.cfg.ROBOCARSHAT_THROTTLE_DISCRET[inds-1]
+            else:
+                # direct throttle from remote control, Keep throttle in authorized range
+                if self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
+                    user_throttle = dualMap(user_throttle,
+                    -1, 0, 1,
+                    self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[0], 0, self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[1])
 
         # when in pilot mode, if enabled, apply output throttle proportionnaly to current throttle value from controller
         if self.mode!='user': 
@@ -374,11 +382,6 @@ class RobocarsHatInCtrl:
             user_throttle = pilot_throttle
             mylogger.debug("CtrlIn user throttle in pilot mode set to {}".format(user_throttle))
 
-        # Keep throttle in authorized range
-        if (self.mode=='user' and self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
-            user_throttle = dualMap(user_throttle,
-                -1, 0, 1,
-                self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[0], 0, self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[1])
 
         #if switching back to user, then apply brake
         if self.mode=='user' and self.lastMode != 'user' and self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE != None:
