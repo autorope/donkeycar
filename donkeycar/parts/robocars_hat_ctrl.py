@@ -365,7 +365,7 @@ class RobocarsHatInCtrl:
                 user_throttle = self.cfg.ROBOCARSHAT_THROTTLE_DISCRET[inds-1]
             else:
                 # direct throttle from remote control, Keep throttle in authorized range
-                if self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None) :
+                if self.cfg.ROBOCARSHAT_THROTTLE_FLANGER != None :
                     user_throttle = dualMap(user_throttle,
                     -1, 0, 1,
                     self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[0], 0, self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[1])
