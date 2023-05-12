@@ -238,7 +238,7 @@ class RobocarsHatInCtrl:
             if self.inAux1 > 0.5:
                 self.mode='local_angle'
                 user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
-                if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE
+                if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE:
                     user_throttle =  map_range_float(self.inAux1,
                         -1.0, 1.0,
                         self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
