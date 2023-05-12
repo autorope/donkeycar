@@ -584,6 +584,7 @@ ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
 # in local_angle, throttle command from user is used to dynamically adjust throttle, from CONTROL_LOCAL_ANGLE_THROTTLE up to ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
 ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE = False
+ROBOCARSHAT_ADAPTATIVE_STEERING_SCALER_ON_THROTTLE = False
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.35 # Maximum throttle applied when throttle user command is set to maximum position
 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
