@@ -10,7 +10,7 @@ class SteeringThrottleScaler:
         self.steering_on_throttle_factor = cfg.STEERING_ON_THROTTLE_FACTOR
         self.min_throttle = cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
         self.max_throttle = cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
-        self.adaptative_steering_scaler = cfg.ROBOCARSHAT_ADAPTATIVE_STEERING_SCALER_ON_THROTTLE
+        self.adaptative_steering_scaler = cfg.ADAPTATIVE_STEERING_SCALER_ON_THROTTLE
         self.running = True    
 
     def run(self, steering_angle, throttle):
