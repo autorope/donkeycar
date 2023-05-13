@@ -1204,10 +1204,10 @@ class RobocarsHat (metaclass=Singleton):
             
         if throttle > 0:
             pulse_throttle = dk.utils.map_range(throttle, 0, self.MAX_THROTTLE,
-                                            self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE, self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_MAX)
+                                            self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE, self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_MAX, enforce_input_in_range=True)
         elif throttle<0:
             pulse_throttle = dk.utils.map_range(throttle, self.MIN_THROTTLE, 0,
-                                            self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_MIN, self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE)
+                                            self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_MIN, self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE, enforce_input_in_range=True)
         else:
             pulse_throttle = self.cfg.ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE
 
@@ -1221,17 +1221,17 @@ class RobocarsHat (metaclass=Singleton):
 
         if steering > 0:
             pulse_steering = dk.utils.map_range(steering, 0, self.MAX_STEERING,
-                                            steeringIdle, self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_MAX)
+                                            steeringIdle, self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_MAX, enforce_input_in_range=True)
         elif steering<0 :
             pulse_steering = dk.utils.map_range(steering, self.MIN_STEERING, 0,
-                                            self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_MIN, steeringIdle)
+                                            self.cfg.ROBOCARSHAT_PWM_OUT_STEERING_MIN, steeringIdle, enforce_input_in_range=True)
         else:
             pulse_steering = steeringIdle
 
         if (RobocarsHat.fixSteering != None):
             pulse_steering = RobocarsHat.fixSteering
         
-        cmd=("1,%4d,%4d\n" % (int(pulse_throttle), int(pulse_steering))).encode('ascii')
+        cmd=("1,%04d,%04d\n" % (int(pulse_throttle), int(pulse_steering))).encode('ascii')
         actlogger.debug("Tx CMD :{}".format(cmd))
         self.sendCmd(cmd)
 
@@ -1285,7 +1285,7 @@ class RobocarsHat (metaclass=Singleton):
                         actlogger.info(f"Rx Alarm :{alarm}")
                         last_received.append(alarm[-1].rstrip())
                     if (len(debug)>0) :
-                        actlogger.debug(f"Rx Debug :{debug}")
+                        actlogger.info(f"Rx Debug :{debug}")
 
                     #If the Arduino sends lots of empty lines, you'll lose the
                     #last filled line, so you could make the above statement conditional

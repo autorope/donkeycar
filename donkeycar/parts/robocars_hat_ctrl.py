@@ -15,37 +15,11 @@ import fcntl,os
 mylogger = init_special_logger ("Rx")
 mylogger.setLevel(logging.INFO)
 
-def map_range(x, X_min, X_max, Y_min, Y_max):
-    '''
-    Linear mapping between two ranges of values
-    '''
-    X_range = X_max - X_min
-    Y_range = Y_max - Y_min
-    XY_ratio = X_range/Y_range
-
-    x=max(min(x,X_max),X_min)
-    return ((x-X_min) / XY_ratio + Y_min)
-
-def map_range_float(x, X_min, X_max, Y_min, Y_max):
-    '''
-    Same as map_range but supports floats return, rounded to 2 decimal places
-    '''
-    X_range = X_max - X_min
-    Y_range = Y_max - Y_min
-    XY_ratio = X_range/Y_range
-
-    x=max(min(x,X_max),X_min)
-    y = ((x-X_min) / XY_ratio + Y_min)
-
-    # print("y= {}".format(y))
-
-    return round(y,2)
-
-def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max) :
+def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max, enforce_input_in_range=False) :
     if (input < input_idle) :
-        output = map_range (input, input_min, input_idle, output_min, output_idle)
+        output = dk.utils.map_range (input, input_min, input_idle, output_min, output_idle, enforce_input_in_range)
     elif (input>input_idle) :
-        output = map_range (input, input_idle, input_max, output_idle, output_max)
+        output = dk.utils.map_range (input, input_idle, input_max, output_idle, output_max, enforce_input_in_range)
     else:
         output = output_idle
     return output
@@ -178,9 +152,9 @@ class RobocarsHatInCtrl:
                                 self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.inThrottleIdle, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
                             -1, 0, 1)
                     else :
-                        self.inThrottle = map_range(int(params[1]),
+                        self.inThrottle = dk.utils.map_range(int(params[1]),
                                 self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
-                            -1, 1)
+                            -1, 1, enforce_input_in_range=True)
 
                 if params[2].isnumeric() and self.inSteeringIdle != -1:
                     if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
@@ -188,16 +162,16 @@ class RobocarsHatInCtrl:
                                 self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.inSteeringIdle, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
                             -1, 0, 1)
                     else:
-                        self.inSteering = map_range(int(params[2]),
+                        self.inSteering = dk.utils.map_range(int(params[2]),
                             self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
-                            -1, 1)
+                            -1, 1, enforce_input_in_range=True)
 
                 if params[3].isnumeric():
-                    self.inAux1 = map_range(int(params[3]),
+                    self.inAux1 = dk.utils.map_range(int(params[3]),
                         self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
                         -1, 1)
                 if params[4].isnumeric():
-                    self.inAux2 = map_range(int(params[4]),
+                    self.inAux2 = dk.utils.map_range(int(params[4]),
                         self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
                         -1, 1)
 
@@ -286,9 +260,9 @@ class RobocarsHatInCtrl:
 
         elif self.ch3Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode!='user':
             # take precedence on pilot and record&pilot features
-            pilot_throttle =  map_range_float(self.inAux1,
+            pilot_throttle =  dk.utils.map_range_float(self.inAux1,
                         -1.0, 1.0,
-                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX, enforce_input_in_range=True)
 
         # Process aux ch4
         if self.ch4Feature == self.AUX_FEATURE_RECORDandPILOT :
@@ -350,9 +324,9 @@ class RobocarsHatInCtrl:
 
         elif self.ch4Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode!='user':
             # take precedence on pilot and record&pilot features
-            pilot_throttle =  map_range_float(self.inAux2,
+            pilot_throttle =  dk.utils.map_range_float(self.inAux2,
                         -1.0, 1.0,
-                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX, enforce_input_in_range=True)
                         
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
             user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
@@ -374,9 +348,9 @@ class RobocarsHatInCtrl:
         # when in pilot mode, if enabled, apply output throttle proportionnaly to current throttle value from controller
         if self.mode!='user': 
             if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE:
-                pilot_throttle =  map_range_float(user_throttle,
+                pilot_throttle =  dk.utils.map_range_float(user_throttle,
                     0.0, 1.0,
-                    self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX)
+                    self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX, enforce_input_in_range=True)
             if (abs(pilot_throttle - self.lastPilotThrottle)>0.01) :
                 mylogger.info("CtrlIn user throttle in pilot mode set to {}".format(pilot_throttle))
             self.lastPilotThrottle = pilot_throttle
@@ -440,7 +414,7 @@ class RobocarsHatInOdom:
             if len(params) == 3 and int(params[0])==2 :
                 mylogger.debug("CtrlIn Sensors {} {} ".format(int(params[1]), int(params[2])))
                 if params[2].isnumeric():
-                    self.inSpeed = map_range(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
+                    self.inSpeed = dk.utils.map_range(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
                                 0, self.cfg.ROBOCARSHAT_ODOM_IN_MAX,
                             1, 0)
 

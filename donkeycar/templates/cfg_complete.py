@@ -92,7 +92,7 @@ STEERING_THROTTLE_SCALER_ENABLED = False
 ADAPTATIVE_STEERING_SCALER_ON_THROTTLE = False
 STEERING_FACTOR = 1.0
 THROTTLE_FACTOR = 1.0
-STEERING_ON_THROTTLE_FACTOR = 1.0
+STEERING_ON_THROTTLE_FACTOR = 3.5
 
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -583,8 +583,10 @@ ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : l
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle)
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
-# in local_angle, throttle command from user is used to dynamically adjust throttle, from ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE up to ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
+# in local_angle, throttle command from user is used to dynamically adjust throttle, from ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN up to ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
+# this range is also used when adaptative compensation on steering feature is used (ADAPTATIVE_STEERING_SCALER_ON_THROTTLE)
 ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE = False
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN = 0.17 # Throttle value where no steering compensation is applied
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.35 # Maximum throttle applied when throttle user command is set to maximum position
 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)

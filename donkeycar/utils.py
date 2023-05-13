@@ -284,7 +284,7 @@ def linear_unbin(arr, N=15, offset=-1, R=2.0):
     return a
 
 
-def map_range(x, X_min, X_max, Y_min, Y_max):
+def map_range(x, X_min, X_max, Y_min, Y_max, enforce_input_in_range=False):
     '''
     Linear mapping between two ranges of values
     '''
@@ -292,18 +292,24 @@ def map_range(x, X_min, X_max, Y_min, Y_max):
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
 
+    if enforce_input_in_range:
+        x=max(min(x,X_max),X_min)
+
     y = ((x-X_min) / XY_ratio + Y_min) // 1
 
     return int(y)
 
 
-def map_range_float(x, X_min, X_max, Y_min, Y_max):
+def map_range_float(x, X_min, X_max, Y_min, Y_max, enforce_input_in_range=False):
     '''
     Same as map_range but supports floats return, rounded to 2 decimal places
     '''
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
+    
+    if enforce_input_in_range:
+        x=max(min(x,X_max),X_min)
 
     y = ((x-X_min) / XY_ratio + Y_min)
 
