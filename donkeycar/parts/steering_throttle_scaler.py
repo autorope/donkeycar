@@ -3,6 +3,21 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+def map_range_float(x, X_min, X_max, Y_min, Y_max):
+    '''
+    Same as map_range but supports floats return, rounded to 2 decimal places
+    '''
+    X_range = X_max - X_min
+    Y_range = Y_max - Y_min
+    XY_ratio = X_range/Y_range
+
+    x=max(min(x, X_max), X_min)
+    y = ((x-X_min) / XY_ratio + Y_min)
+
+    # print("y= {}".format(y))
+
+    return round(y,2)
+
 class SteeringThrottleScaler:
     def __init__(self, cfg):
         self.steering_factor = cfg.STEERING_FACTOR
