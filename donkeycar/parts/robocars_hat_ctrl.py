@@ -442,7 +442,55 @@ class RobocarsHatInOdom:
     def shutdown(self):
         # indicate that the thread should be stopped
         self.on = False
-        print('stopping Robocars Hat Controller')
+        print('stopping Robocars Hat Odom Controller')
+        time.sleep(.5)
+
+class RobocarsHatInBattery:
+
+    def __init__(self, cfg):
+
+        self.cfg = cfg
+        self.inBattery = 0
+        self.hatInMsg = RobocarsHatIn(self.cfg)
+        self.on = True
+
+    def processBattery(self):
+        battery_msg = self.hatInMsg.getBattery()
+        if battery_msg:
+            print (battery_msg)
+            # params = battery_msg.split(',')
+            # if len(params) == 3 and int(params[0])==2 :
+            #     mylogger.debug("CtrlIn Sensors {} {} ".format(int(params[1]), int(params[2])))
+            #     if params[2].isnumeric():
+            #         self.inSpeed = dk.utils.map_range_float(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
+            #                     0, self.cfg.ROBOCARSHAT_ODOM_IN_MAX,
+            #                 1, 0)
+
+    def getCommand(self):
+        self.processBattery()
+
+    def update(self):
+
+        while self.on:
+            start = datetime.now()
+            self.getCommand()
+            stop = datetime.now()
+            s = 0.01 - (stop - start).total_seconds()
+            if s > 0:
+                time.sleep(s)
+
+    def run_threaded(self):
+        return self.inBattery
+
+    def run (self):
+        self.getCommand()
+        return self.inBattery
+    
+
+    def shutdown(self):
+        # indicate that the thread should be stopped
+        self.on = False
+        print('stopping Robocars Hat Battery Controller')
         time.sleep(.5)
 
 class RobocarsHatLedCtrl():

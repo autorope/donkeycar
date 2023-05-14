@@ -727,6 +727,10 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
                          'user/mode', 'recording'],
                 threaded=True)
     if cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
+        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInBattery
+        batt = RobocarsHatInBattery(cfg)
+        V.add(batt, outputs=['battery'],threaded=False)
+
         from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInCtrl
         ctr = RobocarsHatInCtrl(cfg)
         V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
