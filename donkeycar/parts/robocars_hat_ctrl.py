@@ -17,9 +17,9 @@ mylogger.setLevel(logging.INFO)
 
 def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max, enforce_input_in_range=False) :
     if (input < input_idle) :
-        output = dk.utils.map_range (input, input_min, input_idle, output_min, output_idle, enforce_input_in_range)
+        output = dk.utils.map_range_float (input, input_min, input_idle, output_min, output_idle, enforce_input_in_range)
     elif (input>input_idle) :
-        output = dk.utils.map_range (input, input_idle, input_max, output_idle, output_max, enforce_input_in_range)
+        output = dk.utils.map_range_float (input, input_idle, input_max, output_idle, output_max, enforce_input_in_range)
     else:
         output = output_idle
     return output
@@ -152,7 +152,7 @@ class RobocarsHatInCtrl:
                                 self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.inThrottleIdle, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
                             -1, 0, 1)
                     else :
-                        self.inThrottle = dk.utils.map_range(int(params[1]),
+                        self.inThrottle = dk.utils.map_range_float(int(params[1]),
                                 self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MIN, self.cfg.ROBOCARSHAT_PWM_IN_THROTTLE_MAX,
                             -1, 1, enforce_input_in_range=True)
 
@@ -162,16 +162,16 @@ class RobocarsHatInCtrl:
                                 self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.inSteeringIdle, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
                             -1, 0, 1)
                     else:
-                        self.inSteering = dk.utils.map_range(int(params[2]),
+                        self.inSteering = dk.utils.map_range_float(int(params[2]),
                             self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MIN, self.cfg.ROBOCARSHAT_PWM_IN_STEERING_MAX,
                             -1, 1, enforce_input_in_range=True)
 
                 if params[3].isnumeric():
-                    self.inAux1 = dk.utils.map_range(int(params[3]),
+                    self.inAux1 = dk.utils.map_range_float(int(params[3]),
                         self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
                         -1, 1)
                 if params[4].isnumeric():
-                    self.inAux2 = dk.utils.map_range(int(params[4]),
+                    self.inAux2 = dk.utils.map_range_float(int(params[4]),
                         self.cfg.ROBOCARSHAT_PWM_IN_AUX_MIN, self.cfg.ROBOCARSHAT_PWM_IN_AUX_MAX,
                         -1, 1)
 
@@ -414,7 +414,7 @@ class RobocarsHatInOdom:
             if len(params) == 3 and int(params[0])==2 :
                 mylogger.debug("CtrlIn Sensors {} {} ".format(int(params[1]), int(params[2])))
                 if params[2].isnumeric():
-                    self.inSpeed = dk.utils.map_range(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
+                    self.inSpeed = dk.utils.map_range_float(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
                                 0, self.cfg.ROBOCARSHAT_ODOM_IN_MAX,
                             1, 0)
 
