@@ -457,14 +457,11 @@ class RobocarsHatInBattery:
     def processBattery(self):
         battery_msg = self.hatInMsg.getBattery()
         if battery_msg:
-            print (battery_msg)
-            # params = battery_msg.split(',')
-            # if len(params) == 3 and int(params[0])==2 :
-            #     mylogger.debug("CtrlIn Sensors {} {} ".format(int(params[1]), int(params[2])))
-            #     if params[2].isnumeric():
-            #         self.inSpeed = dk.utils.map_range_float(min(abs(int(params[2])),self.cfg.ROBOCARSHAT_ODOM_IN_MAX),
-            #                     0, self.cfg.ROBOCARSHAT_ODOM_IN_MAX,
-            #                 1, 0)
+            params = battery_msg.split(',')
+            if len(params) == 5 and int(params[0])==0 :
+                 mylogger.debug("CtrlIn SBattery {} mv".format(int(params[1])))
+                 if params[1].isnumeric():
+                     self.inBattery = int(params[1])
 
     def getCommand(self):
         self.processBattery()
