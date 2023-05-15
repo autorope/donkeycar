@@ -558,8 +558,8 @@ class RobocarsHatLedCtrl():
 
     def run (self, steering, throttle, mode):
 
-        refresh = (time.time_ns()-self.last_refresh) >= 1000000
-        self.last_refresh = time.time_ns()
+        refresh = (time.perf_counter()-self.last_refresh) >= 2.0
+        self.last_refresh = time.perf_counter()
         if self.last_mode == None or refresh:
             self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0x0);
             self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0x0);
