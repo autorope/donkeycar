@@ -533,6 +533,7 @@ class RobocarsHatLedCtrl():
         self.idx = 0
         self.last_mode = None
         self.last_steering_state = 0
+        self.last_refresh = 0
 
     def setLed(self, i, r, v, b, timing):
         cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
@@ -556,15 +557,18 @@ class RobocarsHatLedCtrl():
         return None
 
     def run (self, steering, throttle, mode):
-        if self.last_mode == None:
-            self.setLed(self.INDEX_LED_1, 0, 0, 0, 0x0);
-            self.setLed(self.INDEX_LED_2, 0, 0, 0, 0x0);
-            self.setLed(self.INDEX_LED_3, 0, 0, 0, 0x0);
-            self.setLed(self.INDEX_LED_4, 0, 0, 0, 0x0);
-            self.setLed(self.INDEX_LED_5, 0, 0, 0, 0x0);
-            self.setLed(self.INDEX_LED_6, 0, 0, 0, 0x0);
 
-        if mode != self.last_mode:
+        refresh = (time.time_ns()-self.last_refresh) >= 1000000
+        self.last_refresh = time.time_ns
+        if self.last_mode == None or refresh:
+            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_FRONT_LIGHT_RIGHT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_FRONT_LIGHT_LEFT, 0, 0, 0, 0x0);
+
+        if mode != self.last_mode or refresh:
             if mode=='user' :
                 self.setLed(self.LED_FRONT_LIGHT_RIGHT, *self.USER_FRONT_LIGH, 0xffff);
                 self.setLed(self.LED_FRONT_LIGHT_LEFT, *self.USER_FRONT_LIGH, 0xffff);
