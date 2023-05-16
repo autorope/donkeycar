@@ -10,7 +10,7 @@ import logging
 import numpy as np
 import pyrealsense2 as rs
 
-class RS_T265(object):
+class RS_T265():
     '''
     The Intel Realsense T265 camera is a device which uses an imu, twin fisheye cameras,
     and an Movidius chip to do sensor fusion and emit a world space coordinate frame that 
@@ -22,7 +22,7 @@ class RS_T265(object):
         # This can be a bit much for USB2, but you can try it. Docs recommend USB3 connection for this.
         self.image_output = image_output
 
-        # When we have and encoder, this will be the last vel measured. 
+        # When we have and encoder, this will be the last vel measured.
         self.enc_vel_ms = 0.0
         self.wheel_odometer = None
 
@@ -34,7 +34,7 @@ class RS_T265(object):
         profile = cfg.resolve(self.pipe)
         dev = profile.get_device()
         tm2 = dev.as_tm2()
-        
+
 
         if self.image_output:
             #right now it's required for both streams to be enabled
@@ -43,7 +43,7 @@ class RS_T265(object):
 
         if calib_filename is not None:
             pose_sensor = tm2.first_pose_sensor()
-            self.wheel_odometer = pose_sensor.as_wheel_odometer() 
+            self.wheel_odometer = pose_sensor.as_wheel_odometer()
 
             # calibration to list of uint8
             f = open(calib_filename)
@@ -54,14 +54,14 @@ class RS_T265(object):
 
             # load/configure wheel odometer
             print("loading wheel config", calib_filename)
-            self.wheel_odometer.load_wheel_odometery_config(chars)   
+            self.wheel_odometer.load_wheel_odometery_config(chars)
 
 
         # Start streaming with requested config
         self.pipe.start(cfg)
         self.running = True
         print("Warning: T265 needs a warmup period of a few seconds before it will emit tracking data.")
-        
+
         zero_vec = (0.0, 0.0, 0.0)
         self.pos = zero_vec
         self.vel = zero_vec
@@ -99,7 +99,7 @@ class RS_T265(object):
             self.pos = data.translation
             self.vel = data.velocity
             self.acc = data.acceleration
-            logging.debug('realsense pos(%f, %f, %f)' % (self.pos.x, self.pos.y, self.pos.z))
+            logging.debug(f'realsense pos({self.pos.x:f}, {self.pos.y:f}, {self.pos.z:f})')
 
 
     def update(self):

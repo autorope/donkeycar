@@ -2,7 +2,7 @@ import time
 import requests
 
 
-class AlexaController(object):
+class AlexaController():
     '''
     Accept simple command from alexa. For the command supported, please refer
     to the README.md
@@ -20,10 +20,10 @@ class AlexaController(object):
             raise Exception("Please set cfg.ALEXA_DEVICE_CODE in myconfig.py")
 
     def log(self, msg):
-        print("Voice control: {}".format(msg))
+        print(f"Voice control: {msg}")
 
     def get_command(self):
-        url = "{}/{}".format(self.API_ENDPOINT, 'command')
+        url = f"{self.API_ENDPOINT}/command"
 
         params = {
             'deviceCode': self.cfg.ALEXA_DEVICE_CODE
@@ -50,9 +50,9 @@ class AlexaController(object):
         while (self.running):
             command = self.get_command()
             if self.debug:
-                self.log("Command = {}".format(command))
+                self.log(f"Command = {command}")
             elif command is not None:
-                self.log("Command = {}".format(command))
+                self.log(f"Command = {command}")
 
             if command == "autopilot":
                 self.ctr.mode = "local"

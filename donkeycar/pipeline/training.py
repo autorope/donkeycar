@@ -19,7 +19,7 @@ import tensorflow as tf
 import numpy as np
 
 
-class BatchSequence(object):
+class BatchSequence():
     """
     The idea is to have a shallow sequence with types that can hydrate
     themselves to np.ndarray initially and later into the types required by

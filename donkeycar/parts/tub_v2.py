@@ -10,7 +10,7 @@ from PIL import Image
 from donkeycar.parts.datastore_v2 import Manifest, ManifestIterator
 
 
-class Tub(object):
+class Tub():
     """
     A datastore to store sensor data in a key, value format. \n
     Accepts str, int, float, image_array, image, and array data types.
@@ -112,7 +112,7 @@ class Tub(object):
         return name
 
 
-class TubWriter(object):
+class TubWriter():
     """
     A Donkey part, which can write records to the datastore.
     """

@@ -11,7 +11,7 @@ import os
 import urllib.request
 
 
-class StopSignDetector(object):
+class StopSignDetector():
     '''
     Requires an EdgeTPU for this part to work
 
@@ -70,7 +70,7 @@ class StopSignDetector(object):
             for obj in ans:
                 if (obj.label_id == self.STOP_SIGN_CLASS_ID):
                     if self.debug:
-                        print("stop sign detected, score = {}".format(obj.score))
+                        print(f"stop sign detected, score = {obj.score}")
                     if (obj.score > max_score):
                         print(obj.bounding_box)
                         traffic_light_obj = obj
@@ -116,7 +116,7 @@ class StopSignDetector(object):
         if traffic_light_obj or self.is_reversing:
             if self.show_bounding_box and traffic_light_obj != None:
                 self.draw_bounding_box(traffic_light_obj, img_arr)
-            
+
             # Set the throttle to reverse within the max reverse count when detected the traffic light object
             if self.reverse_count < self.max_reverse_count:
                 self.is_reversing = True

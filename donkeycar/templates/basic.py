@@ -65,7 +65,7 @@ def drive(cfg, model_path=None, model_type=None):
     # add camera
     inputs = []
     if cfg.DONKEY_GYM:
-        from donkeycar.parts.dgym import DonkeyGymEnv 
+        from donkeycar.parts.dgym import DonkeyGymEnv
         cam = DonkeyGymEnv(cfg.DONKEY_SIM_PATH, host=cfg.SIM_HOST,
                            env_name=cfg.DONKEY_GYM_ENV_NAME, conf=cfg.GYM_CONF,
                            delay=cfg.SIM_ARTIFICIAL_LATENCY)
@@ -100,7 +100,7 @@ def drive(cfg, model_path=None, model_type=None):
         from donkeycar.parts.camera import ImageListCamera
         cam = ImageListCamera(path_mask=cfg.PATH_MASK)
     else:
-        raise (Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
+        raise (Exception(f"Unkown camera type: {cfg.CAMERA_TYPE}"))
 
     car.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=True)
 

@@ -39,6 +39,7 @@ Starts in user mode.
 """
 from distutils.log import debug
 import os
+import sys
 import logging
 
 #
@@ -49,7 +50,7 @@ import time
 
 try:
     import cv2
-except:
+except Exception:
     pass
 
 
@@ -90,7 +91,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     if cfg.HAVE_SOMBRERO:
         from donkeycar.utils import Sombrero
         s = Sombrero()
-   
+
     #Initialize logging before anything else to allow console logging
     if cfg.HAVE_CONSOLE_LOGGING:
         logger.setLevel(logging.getLevelName(cfg.LOGGING_LEVEL))
@@ -137,7 +138,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             print("You must supply a json file when using odom with T265. "
                   "There is a sample file in templates.")
             print("cp donkeycar/donkeycar/templates/calibration_odometry.json .")
-            exit(1)
+            sys.exit(1)
 
         #
         # NOTE: image output on the T265 is broken in the python API and
@@ -233,14 +234,14 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     def load_path():
         if os.path.exists(cfg.PATH_FILENAME) and path.load(cfg.PATH_FILENAME):
-           print("The path was loaded was loaded from ", cfg.PATH_FILENAME)
+            print("The path was loaded was loaded from ", cfg.PATH_FILENAME)
 
-           # we loaded the path; also load any recorded gps readings
-           if gps_player:
-               gps_player.stop().nmea.load()
-               gps_player.start()
+            # we loaded the path; also load any recorded gps readings
+            if gps_player:
+                gps_player.stop().nmea.load()
+                gps_player.start()
         else:
-           print("path _not_ loaded; make sure you have saved a path.")
+            print("path _not_ loaded; make sure you have saved a path.")
 
     def erase_path():
         origin_reset.reset_origin()
@@ -287,19 +288,19 @@ def drive(cfg, use_joystick=False, camera_type='single'):
 
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
-        logging.info("pid: d- %f" % pid.Kd)
+        logging.info(f"pid: d- {pid.Kd:f}")
 
     def inc_pid_d():
         pid.Kd += cfg.PID_D_DELTA
-        logging.info("pid: d+ %f" % pid.Kd)
+        logging.info(f"pid: d+ {pid.Kd:f}")
 
     def dec_pid_p():
         pid.Kp -= cfg.PID_P_DELTA
-        logging.info("pid: p- %f" % pid.Kp)
+        logging.info(f"pid: p- {pid.Kp:f}")
 
     def inc_pid_p():
         pid.Kp += cfg.PID_P_DELTA
-        logging.info("pid: p+ %f" % pid.Kp)
+        logging.info(f"pid: p+ {pid.Kp:f}")
 
 
     recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
@@ -438,7 +439,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     V.add(loc_plot, inputs=['map/image', 'pos/x', 'pos/y'], outputs=['map/image'], run_condition='run_user')
 
 
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
         max_loop_count=cfg.MAX_LOOPS)
 
 
@@ -486,7 +487,7 @@ if __name__ == '__main__':
     log_level = args['--log'] or "INFO"
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % log_level)
+        raise ValueError(f'Invalid log level: {log_level}')
     logging.basicConfig(level=numeric_level)
 
 

@@ -1,11 +1,11 @@
 import pytorch_lightning as pl
-import torchvision.models as models
+from torchvision import models
 import torchmetrics
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 import torch
 import numpy as np
-import torch.optim as optim
+from torch import optim
 from donkeycar.parts.pytorch.torch_data import get_default_transform
 
 
@@ -101,5 +101,5 @@ class ResNet18(pl.LightningModule):
 
         # Convert from being normalized between [0, 1] to being between [-1, 1]
         result = result * 2 - 1
-        print("ResNet18 result: {}".format(result))
+        print(f"ResNet18 result: {result}")
         return result

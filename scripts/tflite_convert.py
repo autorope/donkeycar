@@ -14,6 +14,5 @@ from donkeycar.parts.interpreter import keras_model_to_tflite
 args = docopt(__doc__)
 
 in_model = os.path.expanduser(args['--model'])
-out_model = os.path.expanduser(args['--out']) 
+out_model = os.path.expanduser(args['--out'])
 keras_model_to_tflite(in_model, out_model)
-

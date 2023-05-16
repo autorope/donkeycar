@@ -82,4 +82,3 @@ class TeensyRCin:
         self.on = False
         print('stopping TeensyRCin')
         time.sleep(.5)
-

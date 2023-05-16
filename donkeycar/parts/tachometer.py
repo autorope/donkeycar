@@ -2,6 +2,7 @@ from abc import (ABC, abstractmethod)
 import logging
 import threading
 import time
+import sys
 from typing import Tuple
 
 from donkeycar.utils import is_number_type
@@ -135,7 +136,7 @@ class SerialEncoder(AbstractEncoder):
         self.lock = threading.Lock()
         self.buffered_ticks = []
         self.running = False
-    
+
     def start_ticks(self):
         self.ser.start()
         self.ser.writeln('r')  # restart the encoder to zero
@@ -162,7 +163,7 @@ class SerialEncoder(AbstractEncoder):
         return: updated encoder ticks
         """
         #
-        # If there are characters waiting, 
+        # If there are characters waiting,
         # then read from the serial port.
         # Read all lines and use the last one
         # because it has the most recent reading
@@ -174,7 +175,7 @@ class SerialEncoder(AbstractEncoder):
         #
         # queue up another reading by sending the "p" command to the Arduino
         #
-        self.ser.writeln('p')  
+        self.ser.writeln('p')
 
         #
         # if we got data, update the ticks
@@ -183,12 +184,12 @@ class SerialEncoder(AbstractEncoder):
         # data for encoders is separated by semicolon
         # and ticks and time for single encoder
         # is comma separated.
-        # 
+        #
         #  "ticks,ticksMs;ticks,ticksMs"
         #
         if input != '':
             try:
-                # 
+                #
                 # split separate encoder outputs
                 # "ticks,time;ticks,time" -> ["ticks,time", "ticks,time"]
                 #
@@ -310,7 +311,7 @@ class GpioEncoder(AbstractEncoder):
         self.debounce_ns:int = debounce_ns
         self.debounce_time:int = 0
         if self.debounce_ns > 0:
-            logger.warn("GpioEncoder debounce_ns will be ignored.")
+            logger.warning("GpioEncoder debounce_ns will be ignored.")
         self.lock = threading.Lock()
 
     def _cb(self):
@@ -331,13 +332,13 @@ class GpioEncoder(AbstractEncoder):
                 self._cb_counter = 0
             finally:
                 self.lock.release()
-            
+
     def start_ticks(self):
         # configure GPIO pin
         self.pin.start(on_input=lambda: self._cb(), edge=PinEdge.RISING)
         logger.info(f'GpioEncoder on InputPin "RPI_GPIO.{self.pin.pin_scheme_str}.{self.pin.pin_number}" started.')
 
-    def poll_ticks(self, direction:int):  
+    def poll_ticks(self, direction:int):
         """
         read the encoder ticks
         direction: 1 if forward, -1 if reverse, 0 if stopped.
@@ -502,7 +503,7 @@ class Tachometer:
             self.encoder.poll_ticks(self.direction)
             self.ticks = self.encoder.get_ticks()
             if self.debug and self.ticks != lastTicks:
-                logger.info("tachometer: t = {}, r = {}, ts = {}".format(self.ticks, self.ticks / self.ticks_per_revolution, timestamp))
+                logger.info(f"tachometer: t = {self.ticks}, r = {self.ticks / self.ticks_per_revolution}, ts = {timestamp}")
 
     def update(self):
         while(self.running):
@@ -607,13 +608,13 @@ if __name__ == "__main__":
                         help = "Number of readings per second")
     parser.add_argument("-n", "--number", type=int, default=40,
                         help = "Number of readings to collect")
-    parser.add_argument("-ppr", "--pulses-per-revolution", type=int, required=True, 
+    parser.add_argument("-ppr", "--pulses-per-revolution", type=int, required=True,
                         help="Pulses per revolution of output shaft")
-    parser.add_argument("-d", "--direction-mode", type=int, default=1, 
+    parser.add_argument("-d", "--direction-mode", type=int, default=1,
                         help="1=FORWARD_ONLY, 2=FORWARD_REVERSE, 3=FORWARD_REVERSE_STOP")
     parser.add_argument("-s", "--serial-port", type=str, default=None,
                         help="serial-port to open, like '/dev/ttyACM0'")
-    parser.add_argument("-b", "--baud-rate", type=int, default=115200, 
+    parser.add_argument("-b", "--baud-rate", type=int, default=115200,
                         help="Serial port baud rate")
     parser.add_argument("-e", "--encoder-index", type=int, default=0,
                         help="Serial encoder index (0 based) if more than one encoder")
@@ -626,20 +627,20 @@ if __name__ == "__main__":
 
     # Read arguments from command line
     args = parser.parse_args()
-    
+
     help = []
     if args.rate < 1:
         help.append("-r/--rate: must be >= 1.")
-        
+
     if args.number < 1:
         help.append("-n/--number: must be >= 1.")
-        
+
     if args.direction_mode < 1 and args.direction_mode > 3:
         help.append("-d/--direction-mode must be 1, 2, or")
 
     if args.pulses_per_revolution <= 0:
         help.append("-ppr/--pulses-per-revolution must be > 0")
-        
+
     if args.serial_port is None and args.pin is None:
         help.append("either -s/--serial_port or -p/--pin must be passed")
 
@@ -648,26 +649,26 @@ if __name__ == "__main__":
 
     if args.serial_port is not None and len(args.serial_port) == 0:
         help.append("-s/--serial-port not be empty if passed")
-      
+
     if args.baud_rate <= 0:
         help.append("-b/--baud-rate must be > 0")
-        
+
     if args.pin is not None and args.pin == "":
         help.append("-p/--pin must be non-empty if passed")
 
     if args.debounce_ns < 0:
         help.append("-dbc/--debounce-ns must be greater than zero")
-                
+
     if len(help) > 0:
         parser.print_help()
         for h in help:
             print("  " + h)
         sys.exit(1)
-        
+
     update_thread = None
     serial_port = None
     tachometer = None
-    
+
     try:
         scan_count = 0
         seconds_per_scan = 1.0 / args.rate
@@ -680,17 +681,17 @@ if __name__ == "__main__":
             serial_port = SerialPort(args.serial_port, args.baud_rate)
             tachometer = Tachometer(
                 encoder=EncoderChannel(SerialEncoder(serial_port=serial_port, debug=args.debug), args.encoder_index),
-                ticks_per_revolution=args.pulses_per_revolution, 
-                direction_mode=args.direction_mode, 
-                poll_delay_secs=1/(args.rate*2), 
+                ticks_per_revolution=args.pulses_per_revolution,
+                direction_mode=args.direction_mode,
+                poll_delay_secs=1/(args.rate*2),
                 debug=args.debug)
         if args.pin is not None:
             tachometer = Tachometer(
                 encoder=GpioEncoder(gpio_pin=input_pin_by_id(args.pin), debounce_ns=args.debounce_ns, debug=args.debug),
-                ticks_per_revolution=args.pulses_per_revolution, 
+                ticks_per_revolution=args.pulses_per_revolution,
                 direction_mode=args.direction_mode,
                 debug=args.debug)
-        
+
         #
         # start the threaded part
         # and a threaded window to show plot
@@ -698,7 +699,7 @@ if __name__ == "__main__":
         if args.threaded:
             update_thread = Thread(target=tachometer.update, args=())
             update_thread.start()
-        
+
         while scan_count < args.number:
             start_time = time.time()
 
@@ -712,7 +713,7 @@ if __name__ == "__main__":
                 measurements = tachometer.run()
 
             print(measurements)
-                                    
+
             # yield time to background threads
             sleep_time = seconds_per_scan - (time.time() - start_time)
             if sleep_time > 0.0:
@@ -724,7 +725,7 @@ if __name__ == "__main__":
         print('Stopping early.')
     except Exception as e:
         print(e)
-        exit(1)
+        sys.exit(1)
     finally:
         if tachometer is not None:
             tachometer.shutdown()

@@ -20,7 +20,7 @@ class ImageTransformations:
         self.transformations = [image_transformer(name, config) for name in
                                 transformations]
         logger.info(f'Creating ImageTransformations {transformations}')
-    
+
     def run(self, image):
         """
         Run the list of tranformers on the image
@@ -88,7 +88,7 @@ def image_transformer(name: str, config):
         return cv_parts.ImgCanny(config.CANNY_LOW_THRESHOLD,
                                  config.CANNY_HIGH_THRESHOLD,
                                  config.CANNY_APERTURE)
-    # 
+    #
     # blur transformations
     #
     elif "BLUR" == name:
@@ -98,7 +98,7 @@ def image_transformer(name: str, config):
         else:
             return cv_parts.ImgSimpleBlur(config.BLUR_KERNEL,
                                           config.BLUR_KERNEL_Y)
-    # 
+    #
     # resize transformations
     #
     elif "RESIZE" == name:
@@ -162,7 +162,7 @@ def custom_transformer(name:str,
         class_name = getattr(config, name + "_CLASS", None)
     if class_name is None:
         raise ValueError(f"No class declared for custom image transformer: {name}")
-    
+
     import os
     import sys
     import importlib.util
@@ -212,4 +212,3 @@ def custom_transformer(name:str,
         return my_class(config)
     else:
         raise ValueError(f"Unable to load custom tranformation module at {file_path}")
-

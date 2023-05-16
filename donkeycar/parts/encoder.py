@@ -11,18 +11,18 @@ import time
 
 
 # The Arduino class is for a quadrature wheel or motor encoder that is being read by an offboard microcontroller
-# such as an Arduino or Teensy that is feeding serial data to the RaspberryPy or Nano via USB serial. 
+# such as an Arduino or Teensy that is feeding serial data to the RaspberryPy or Nano via USB serial.
 # The microcontroller should be flashed with this sketch (use the Arduino IDE to do that): https://github.com/zlite/donkeycar/tree/master/donkeycar/parts/encoder/encoder
-# Make sure you check the sketch using the "test_encoder.py code in the Donkeycar tests folder to make sure you've got your 
+# Make sure you check the sketch using the "test_encoder.py code in the Donkeycar tests folder to make sure you've got your
 # encoder plugged into the right pins, or edit it to reflect the pins you are using.
 
 # You will need to calibrate the mm_per_tick line below to reflect your own car. Just measure out a meter and roll your car
-# along it. Change the number below until it the distance reads out almost exactly 1.0 
+# along it. Change the number below until it the distance reads out almost exactly 1.0
 
 # This samples the odometer at 10HZ and does a moving average over the past ten readings to derive a velocity
 
 @deprecated("Deprecated in favor donkeycar.parts.tachometer.Tachometer(SerialEncoder)")
-class ArduinoEncoder(object):
+class ArduinoEncoder():
     def __init__(self, mm_per_tick=0.0000599, debug=False):
         import serial
         import serial.tools.list_ports
@@ -54,8 +54,8 @@ class ArduinoEncoder(object):
             self.speed, self.distance = self.OdomDist(self.ticks, self.mm_per_tick)
 
     def run_threaded(self):
-        self.speed 
-        return self.speed 
+        self.speed
+        return self.speed
 
 
     def shutdown(self):
@@ -153,21 +153,21 @@ class RotaryEncoder():
     def update(self):
         # keep looping infinitely until the thread is stopped
         while(self.on):
-                
+
             #save the ticks and reset the counter
             ticks = self.counter
             self.counter = 0
-            
+
             #save off the last time interval and reset the timer
             start_time = self.last_time
             end_time = time.time()
             self.last_time = end_time
-            
+
             #calculate elapsed time and distance traveled
             seconds = end_time - start_time
             distance = ticks * self.m_per_tick
             velocity = distance / seconds
-            
+
             #update the odometer values
             self.meters += distance
             self.meters_per_second = velocity
@@ -193,8 +193,8 @@ class RotaryEncoder():
         # indicate that the thread should be stopped
         self.on = False
         print('Stopping Rotary Encoder')
-        print("\tDistance Travelled: {} meters".format(round(self.meters, 4)))
-        print("\tTop Speed: {} meters/second".format(round(self.top_speed, 4)))
+        print(f"\tDistance Travelled: {round(self.meters, 4)} meters")
+        print(f"\tTop Speed: {round(self.top_speed, 4)} meters/second")
         if self.cb != None:
             self.cb.cancel()
             self.cb = None

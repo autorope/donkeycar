@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image
 
 
-class Tub(object):
+class Tub():
     """
     A datastore to store sensor data in a key, value format.
 
@@ -87,7 +87,7 @@ class Tub(object):
                 json.dump(self.meta, f)
             self.current_ix = 0
             self.exclude = set()
-            print('New tub created at: {}'.format(self.path))
+            print(f'New tub created at: {self.path}')
         else:
             msg = "The tub path you provided doesn't exist and you didnt pass any meta info (inputs & types)" + \
                   "to create a new tub. Please check your tub path or provide meta info to create a new tub."
@@ -95,7 +95,7 @@ class Tub(object):
             raise AttributeError(msg)
 
     def get_last_ix(self):
-        index = self.get_index()           
+        index = self.get_index()
         return max(index)
 
     def update_df(self):
@@ -117,18 +117,18 @@ class Tub(object):
             try:
                 name = file_name.split('.')[0]
                 num = int(name.split('_')[1])
-            except:
+            except Exception:
                 num = 0
             return num
 
         nums = [get_file_ix(f) for f in record_files]
-        
+
         if shuffled:
             random.shuffle(nums)
         else:
             nums = sorted(nums)
-            
-        return nums 
+
+        return nums
 
     @property
     def inputs(self):
@@ -152,7 +152,7 @@ class Tub(object):
             print('troubles with record:', json_data)
         except FileNotFoundError:
             raise
-        except:
+        except Exception:
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
@@ -177,13 +177,13 @@ class Tub(object):
         Iterate over all records and make sure we can load them.
         Optionally remove records that cause a problem.
         """
-        print('Checking tub:%s.' % self.path)
+        print(f'Checking tub:{self.path}.')
         print('Found: %d records.' % self.get_num_records())
         problems = False
         for ix in self.get_index(shuffled=False):
             try:
                 self.get_record(ix)
-            except:
+            except Exception:
                 problems = True
                 if fix == False:
                     print('problems with record:', self.path, ix)
@@ -208,7 +208,7 @@ class Tub(object):
         """
         json_data = {}
         self.current_ix += 1
-        
+
         for key, val in data.items():
             typ = self.get_input_type(key)
 
@@ -236,13 +236,13 @@ class Tub(object):
                 name = self.make_file_name(key, ext='.png')
                 img.save(os.path.join(self.path, name))
                 json_data[key]=name
-                
+
             elif typ == 'nparray':
                 # convert np array to python so it is jsonable
                 json_data[key] = val.tolist()
 
             else:
-                msg = 'Tub does not know what to do with this type {}'.format(typ)
+                msg = f'Tub does not know what to do with this type {typ}'
                 raise TypeError(msg)
 
         json_data['milliseconds'] = int((time.time() - self.start_time) * 1000)
@@ -286,7 +286,7 @@ class Tub(object):
             raise Exception('bad record: %d. You may want to run `python manage.py check --fix`' % ix)
         except FileNotFoundError:
             raise
-        except:
+        except Exception:
             print("Unexpected error:", sys.exc_info()[0])
             raise
 
@@ -342,7 +342,7 @@ class Tub(object):
     def include_index(self, index):
         try:
             self.exclude.remove(index)
-        except:
+        except Exception:
             pass
 
     def write_exclude(self):
@@ -357,7 +357,7 @@ class Tub(object):
 
 class TubWriter(Tub):
     def __init__(self, *args, **kwargs):
-        super(TubWriter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def run(self, *args):
         """
@@ -372,7 +372,7 @@ class TubWriter(Tub):
 
 class TubReader(Tub):
     def __init__(self, path, *args, **kwargs):
-        super(TubReader, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def run(self, *args):
         """
@@ -396,7 +396,7 @@ class TubHandler:
         def get_tub_num(tub_name):
             try:
                 num = int(tub_name.split('_')[1])
-            except:
+            except Exception:
                 num = 0
             return num
 
@@ -426,7 +426,7 @@ class TubImageStacker(Tub):
     If you drive with the ImageFIFO part, then you don't need this.
     Just make sure your inference pass uses the ImageFIFO that the NN will now expect.
     '''
-    
+
     def rgb2gray(self, rgb):
         '''
         take a numpy rgb image return a new single channel image converted to greyscale
@@ -443,7 +443,7 @@ class TubImageStacker(Tub):
         gray_a = self.rgb2gray(img_a)
         gray_b = self.rgb2gray(img_b)
         gray_c = self.rgb2gray(img_c)
-        
+
         img_arr = np.zeros([width, height, 3], dtype=np.dtype('B'))
 
         img_arr[...,0] = np.reshape(gray_a, (width, height))
@@ -457,11 +457,11 @@ class TubImageStacker(Tub):
         get the current record and two previous.
         stack the 3 images into a single image.
         '''
-        data = super(TubImageStacker, self).get_record(ix)
+        data = super().get_record(ix)
 
         if ix > 1:
-            data_ch1 = super(TubImageStacker, self).get_record(ix - 1)
-            data_ch0 = super(TubImageStacker, self).get_record(ix - 2)
+            data_ch1 = super().get_record(ix - 1)
+            data_ch0 = super().get_record(ix - 2)
 
             json_data = self.get_json_record(ix)
             for key, val in json_data.items():
@@ -492,9 +492,9 @@ class TubTimeStacker(TubImageStacker):
         [5, 90, 200] would return 3 frames of records, ofset 5, 90, and 200 frames in the future.
 
         '''
-        super(TubTimeStacker, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.frame_list = frame_list
-  
+
     def get_record(self, ix):
         '''
         stack the N records into a single record.
@@ -504,12 +504,12 @@ class TubTimeStacker(TubImageStacker):
         data = {}
         for i, iOffset in enumerate(self.frame_list):
             iRec = ix + iOffset
-            
+
             try:
                 json_data = self.get_json_record(iRec)
             except FileNotFoundError:
                 pass
-            except:
+            except Exception:
                 pass
 
             for key, val in json_data.items():
@@ -518,9 +518,9 @@ class TubTimeStacker(TubImageStacker):
                 # load only the first image saved as separate files
                 if typ == 'image' and i == 0:
                     val = Image.open(os.path.join(self.path, val))
-                    data[key] = val                    
+                    data[key] = val
                 elif typ == 'image_array' and i == 0:
-                    d = super(TubTimeStacker, self).get_record(ix)
+                    d = super().get_record(ix)
                     data[key] = d[key]
                 else:
                     '''

@@ -30,7 +30,7 @@ WIDTH = 424
 HEIGHT = 240
 CHANNELS = 3
 
-class RealSense435i(object):
+class RealSense435i():
     """
     Donkeycar part for the Intel Realsense depth cameras D435 and D435i.
     The Intel Realsense D435i camera is a device which uses an imu, twin fisheye cameras,
@@ -52,7 +52,7 @@ class RealSense435i(object):
         self.channels = channels
         self.resize = (width != WIDTH) or (height != height) or (channels != CHANNELS)
         if self.resize:
-            print("The output images will be resized from {} to {}.  This requires opencv.".format((WIDTH, HEIGHT, CHANNELS), (self.width, self.height, self.channels)))
+            print(f"The output images will be resized from {WIDTH, HEIGHT, CHANNELS} to {self.width, self.height, self.channels}.  This requires opencv.")
 
         # Configure streams
         self.imu_pipeline = None
@@ -309,7 +309,7 @@ if __name__ == "__main__":
                     break
             if profile_frames > 0:
                 if frame_count == profile_frames:
-                    print("Aquired {} frames in {} seconds for {} fps".format(str(frame_count), str(frame_time - start_time), str(frame_count / (frame_time - start_time))))
+                    print(f"Aquired {str(frame_count)} frames in {str(frame_time - start_time)} seconds for {str(frame_count / (frame_time - start_time))} fps")
                     break
             else:
                 time.sleep(0.05)

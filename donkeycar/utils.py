@@ -109,7 +109,7 @@ def binary_to_img(binary):
     try:
         img = Image.open(img)
         return img
-    except:
+    except Exception:
         return None
 
 
@@ -175,7 +175,7 @@ def load_pil_image(filename, cfg):
 
         if cfg.IMAGE_DEPTH == 1:
             img = img.convert('L')
-        
+
         return img
 
     except Exception as e:
@@ -400,7 +400,7 @@ OTHER
 '''
 
 def is_number_type(i):
-    return type(i) == int or type(i) == float;
+    return type(i) == int or type(i) == float
 
 
 def sign(x):
@@ -604,7 +604,7 @@ Timers
 """
 
 
-class FPSTimer(object):
+class FPSTimer():
     def __init__(self):
         self.t = time.time()
         self.iter = 0

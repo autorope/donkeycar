@@ -128,7 +128,7 @@ def main():
 
         if DEBUG:
             logger.info("Get: steering=%i, throttle=%i" % (int(steering.value), int(throttle.value)))
-        
+
         if(USB_SERIAL):
             # simulator USB
             print("%i, %i" % (int(steering.value), int(throttle.value)))
@@ -146,7 +146,7 @@ def main():
             last_input = time.monotonic()
 
             if (DEBUG):
-                logger.debug("Read from UART: %s" % (byte))
+                logger.debug(f"Read from UART: {byte}")
 
             # if data is recieved, check if it is the end of a stream
             if(byte == b'\r'):

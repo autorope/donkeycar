@@ -5,7 +5,7 @@ Date: Nov 11, 2014
 '''
 import math
 
-class Vec2(object):
+class Vec2():
     def __init__(self, x=0.0, y=0.0):
         self.x = x
         self.y = y
@@ -34,7 +34,7 @@ class Vec2(object):
 
     def mag(self):
         return math.sqrt(self.x * self.x + self.y * self.y)
-        
+
     def scale(self, s):
         self.x *= s
         self.y *= s
@@ -45,36 +45,36 @@ class Vec2(object):
         r.x = self.x * s
         r.y = self.y * s
         return r
-        
+
     def normalize(self):
         m = self.mag()
         self.scale(1.0 / m)
         return self
-        
+
     def subtract(self, v):
         r = Vec2()
         r.x = self.x - v.x
         r.y = self.y - v.y
         return r
-        
+
     def add(self, v):
         r = Vec2()
         r.x = self.x + v.x
         r.y = self.y + v.y
         return r
-        
+
     def multiply(self, v):
         r = Vec2()
         r.x = self.x * v.x
         r.y = self.y * v.y
         return r
-        
+
     def dot(self, v):
         return self.x * v.x + self.y * v.y
-        
+
     def cross(self, v):
         #the sign tells you which side the other vector lies
-        return self.x * v.y - self.y * v.x	
+        return self.x * v.y - self.y * v.x
 
     def dist(self, v):
         r = self.subtract(v)
@@ -87,14 +87,14 @@ class Vec2(object):
         if(self.y != 0.0):
             r.y = 1.0 / self.y
         return r
-        
+
     def unit_angle(self, v):
         #note! requires normalized vectors as input
         #returns radian angle
         return math.acos(self.dot(v))
 
 
-class Vec3(object):
+class Vec3():
     def __init__(self, x=0.0, y=0.0, z=0.0):
         self.x = x
         self.y = y
@@ -121,7 +121,7 @@ class Vec3(object):
 
     def mag(self):
         return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
-        
+
     def scale(self, s):
         self.x *= s
         self.y *= s
@@ -134,7 +134,7 @@ class Vec3(object):
         r.y = self.y * s
         r.z = self.z * s
         return r
-        
+
     def normalize(self):
         m = self.mag()
         self.scale(1.0 / m)
@@ -153,31 +153,31 @@ class Vec3(object):
         r.y = self.y - v.y
         r.z = self.z - v.z
         return r
-        
+
     def add(self, v):
         r = Vec3()
         r.x = self.x + v.x
         r.y = self.y + v.y
         r.z = self.z + v.z
         return r
-        
+
     def multiply(self, v):
         r = Vec3()
         r.x = self.x * v.x
         r.y = self.y * v.y
         r.z = self.z * v.z
         return r
-        
+
     def dot(self, v):
         return (self.x * v.x + self.y * v.y + self.z * v.z)
-        
+
     def cross(self, v):
         r = Vec3()
         r.x = (self.y * v.z) - (self.z * v.y)
         r.y = (self.z * v.x) - (self.x * v.z)
         r.z = (self.x * v.y) - (self.y * v.x)
         return r
-    
+
     def dist(self, v):
         r = self.subtract(v)
         return r.mag()
@@ -191,18 +191,18 @@ class Vec3(object):
         if(self.z != 0.0):
             r.z = 1.0 / self.z
         return r
-        
+
     def unit_angle(self, v):
         #note! requires normalized vectors as input
         return math.acos(self.dot(v))
- 
+
 def Quat_RotY( radians ):
     halfAngle = radians * 0.5
     sinHalf = math.sin(halfAngle)
     cosHalf = math.cos(halfAngle)
     return Quat(0.0, sinHalf, 0.0, cosHalf)
 
-class Quat(object):
+class Quat():
     def __init__(self, x=0.0, y=0.0, z=0.0, w=1.0):
         self.x = x
         self.y = y
@@ -248,8 +248,8 @@ class Quat(object):
         return self
 
     def normalized(self):
-        return self.scaled(1.0 / self.mag())        
-    
+        return self.scaled(1.0 / self.mag())
+
     def scale(self, s):
         self.x *= s
         self.y *= s
@@ -271,13 +271,13 @@ class Quat(object):
     def inverse(self):
         q0 = self.normalized()
         return q0.scale(-1.0)
-        
+
     def multiply(self, q1, q2):
         self.x = q2.w * q1.x + q2.x * q1.w + q2.y * q1.z - q2.z * q1.y
         self.y = q2.w * q1.y + q2.y * q1.w + q2.z * q1.x - q2.x * q1.z
         self.z = q2.w * q1.z + q2.z * q1.w + q2.x * q1.y - q2.y * q1.x
         self.w = q2.w * q1.w - q2.x * q1.x - q2.y * q1.y - q2.z * q1.z
-        
+
     def vector_transform(self, v):
         qxyz = Vec3(self.x, self.y, self.z)
         cross_v = qxyz.cross(v)
@@ -302,7 +302,7 @@ class Quat(object):
         '''
         halfa = math.acos(self.w)
         sinha = math.sin(halfa)
-        axis = Vec3()        
+        axis = Vec3()
         if sinha != 0.0:
             axis.x = self.x / sinha
             axis.y = self.y / sinha
@@ -312,7 +312,7 @@ class Quat(object):
         angle = 2.0 * halfa
         return axis, angle
 
-        
+
     def getYAxisRot(self):
         c = Vec3()
         x2 = self.x + self.x
@@ -322,27 +322,27 @@ class Quat(object):
         xz = self.x * z2
         yy = self.y * y2
         wy = self.w * y2
-        
+
         c.x = xz + wy
         c.y = 0.0
         c.z = 1.0 - (xx + yy)
         cx2cz2 = c.x * c.x + c.z * c.z
-        
+
         if cx2cz2 > 0.0:
             factor = 1.0 / math.sqrt(cx2cz2)
             c.x = c.x * factor
             c.z = c.z * factor
         else:
             return 0.0
-        
+
         if c.z <= -0.9999999:
             return math.pi
-        
+
         if c.z >= 0.9999999:
             return 0.0
-        
+
         return math.atan2(c.x, c.z)
-        
+
     def slerp(self, tval, low, high):
         lHigh = Quat()
         cosom = low.x*high.x + low.y*high.y + low.z*high.z + low.w*high.w
@@ -357,7 +357,7 @@ class Quat(object):
             lHigh.y = high.y
             lHigh.z = high.z
             lHigh.w = high.w
-        
+
         FLOAT_EPSILON = 0.0000001
         if ( (1.0 - cosom) > FLOAT_EPSILON ):
             #standard case (slerp)
@@ -367,19 +367,19 @@ class Quat(object):
             scalar0 = math.sin( ((1.0 - tval) * omega) ) * fOneOverSinom
             scalar1 = math.sin( (tval * omega) ) * fOneOverSinom
         else:
-            # "from" and "to" Quaternions are very close 
+            # "from" and "to" Quaternions are very close
             #  ... so we can do a linear interpolation
             scalar0 = 1.0 - tval
             scalar1 = tval
-            
+
         # calculate final values
         self.x = scalar0 * low.x + scalar1 * lHigh.x
         self.y = scalar0 * low.y + scalar1 * lHigh.y
         self.z = scalar0 * low.z + scalar1 * lHigh.z
-        self.w = scalar0 * low.w + scalar1 * lHigh.w 
-        
+        self.w = scalar0 * low.w + scalar1 * lHigh.w
 
-class Vec4(object):
+
+class Vec4():
     def __init__(self, x=0.0, y=0.0, z=0.0, w=0.0):
         self.x = x
         self.y = y
@@ -407,7 +407,7 @@ class Vec4(object):
 
     def mag(self):
         return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w)
-        
+
     def scale(self, s):
         self.x *= s
         self.y *= s
@@ -422,7 +422,7 @@ class Vec4(object):
         r.z = self.z * s
         r.w = self.w * s
         return r
-        
+
     def normalize(self):
         m = self.mag()
         self.scale(1.0 / m)
@@ -430,8 +430,8 @@ class Vec4(object):
 
     def normalized(self):
         m = self.mag()
-        return self.scaled(1.0 / m)        
-        
+        return self.scaled(1.0 / m)
+
     def subtract(self, v):
         r = Vec4()
         r.x = self.x - v.x
@@ -439,7 +439,7 @@ class Vec4(object):
         r.z = self.z - v.z
         r.w = self.w - v.w
         return r
-        
+
     def add(self, v):
         r = Vec4()
         r.x = self.x + v.x
@@ -447,17 +447,17 @@ class Vec4(object):
         r.z = self.z + v.z
         r.w = self.w + v.w
         return r
-        
+
     def multiply(self, v):
         r = Vec4()
         r.x = self.x * v.x
         r.y = self.y * v.y
         r.z = self.z * v.z
         return r
-        
+
     def dot(self, v):
         return (self.x * v.x + self.y * v.y + self.z * v.z + self.w * v.w)
-           
+
     def dist(self, v):
         r = self.subtract(v)
         return r.mag()
@@ -483,7 +483,7 @@ def Det3x3(a1, a2, a3, b1, b2, b3, c1, c2, c3):
         b1 * Det2x2(a2, a3, c2, c3) +
         c1 * Det2x2(a2, a3, b2, b3))
 
-class Mat44(object):
+class Mat44():
     def __init__(self, a=Vec4(), b=Vec4(), c=Vec4(), d=Vec4()):
         self.a = a
         self.b = b
@@ -495,7 +495,7 @@ class Mat44(object):
         self.b = Vec4(0.0, 1.0, 0.0, 0.0)
         self.c = Vec4(0.0, 0.0, 1.0, 0.0)
         self.d = Vec4(0.0, 0.0, 0.0, 1.0)
-        
+
     def fromQuat(self, q):
         #calculate coefficients
         x2 = q.x + q.x
@@ -510,32 +510,32 @@ class Mat44(object):
         wx = q.w * x2
         wy = q.w * y2
         wz = q.w * z2
-        
+
         self.a.x = 1.0 - (yy + zz)
         self.a.y = xy + wz
         self.a.z = xz - wy
         self.a.w = 0.0
-        
+
         self.b.x = xy - wz
         self.b.y = 1.0 - (xx + zz)
         self.b.z = yz + wx
         self.b.w = 0.0
-        
+
         self.c.x = xz + wy
         self.c.y = yz - wx
         self.c.z = 1.0 - (xx + yy)
         self.c.w = 0.0
-        
-        self.d.x = 0.0 
+
+        self.d.x = 0.0
         self.d.y = 0.0
         self.d.z = 0.0
         self.d.w = 1.0
-        
+
     def setTranslation(self, trans):
         self.d.x = trans.x
         self.d.y = trans.y
         self.d.z = trans.z
-        
+
     def affineTransform(self, v):
         x = self.a.x*v.x + self.b.x*v.y + self.c.x*v.z + self.d.x
         y = self.a.y*v.x + self.b.y*v.y + self.c.y*v.z + self.d.y
@@ -558,25 +558,25 @@ class Mat44(object):
     def multiply_mat44(self, src2):
         mtxOut = Mat44()
 
-        mtxOut.a.x = self.a.x*src2.a.x + self.a.y*src2.b.x + self.a.z*src2.c.x + self.a.w*src2.d.x;
-        mtxOut.a.y = self.a.x*src2.a.y + self.a.y*src2.b.y + self.a.z*src2.c.y + self.a.w*src2.d.y;
-        mtxOut.a.z = self.a.x*src2.a.z + self.a.y*src2.b.z + self.a.z*src2.c.z + self.a.w*src2.d.z;
-        mtxOut.a.w = self.a.x*src2.a.w + self.a.y*src2.b.w + self.a.z*src2.c.w + self.a.w*src2.d.w;
-        
-        mtxOut.b.x = self.b.x*src2.a.x + self.b.y*src2.b.x + self.b.z*src2.c.x + self.b.w*src2.d.x;
-        mtxOut.b.y = self.b.x*src2.a.y + self.b.y*src2.b.y + self.b.z*src2.c.y + self.b.w*src2.d.y;
-        mtxOut.b.z = self.b.x*src2.a.z + self.b.y*src2.b.z + self.b.z*src2.c.z + self.b.w*src2.d.z;
-        mtxOut.b.w = self.b.x*src2.a.w + self.b.y*src2.b.w + self.b.z*src2.c.w + self.b.w*src2.d.w;
-        
-        mtxOut.c.x = self.c.x*src2.a.x + self.c.y*src2.b.x + self.c.z*src2.c.x + self.c.w*src2.d.x;
-        mtxOut.c.y = self.c.x*src2.a.y + self.c.y*src2.b.y + self.c.z*src2.c.y + self.c.w*src2.d.y;
-        mtxOut.c.z = self.c.x*src2.a.z + self.c.y*src2.b.z + self.c.z*src2.c.z + self.c.w*src2.d.z;
-        mtxOut.c.w = self.c.x*src2.a.w + self.c.y*src2.b.w + self.c.z*src2.c.w + self.c.w*src2.d.w;
-        
-        mtxOut.d.x = self.d.x*src2.a.x + self.d.y*src2.b.x + self.d.z*src2.c.x + self.d.w*src2.d.x;
-        mtxOut.d.y = self.d.x*src2.a.y + self.d.y*src2.b.y + self.d.z*src2.c.y + self.d.w*src2.d.y;
-        mtxOut.d.z = self.d.x*src2.a.z + self.d.y*src2.b.z + self.d.z*src2.c.z + self.d.w*src2.d.z;
-        mtxOut.d.w = self.d.x*src2.a.w + self.d.y*src2.b.w + self.d.z*src2.c.w + self.d.w*src2.d.w;
+        mtxOut.a.x = self.a.x*src2.a.x + self.a.y*src2.b.x + self.a.z*src2.c.x + self.a.w*src2.d.x
+        mtxOut.a.y = self.a.x*src2.a.y + self.a.y*src2.b.y + self.a.z*src2.c.y + self.a.w*src2.d.y
+        mtxOut.a.z = self.a.x*src2.a.z + self.a.y*src2.b.z + self.a.z*src2.c.z + self.a.w*src2.d.z
+        mtxOut.a.w = self.a.x*src2.a.w + self.a.y*src2.b.w + self.a.z*src2.c.w + self.a.w*src2.d.w
+
+        mtxOut.b.x = self.b.x*src2.a.x + self.b.y*src2.b.x + self.b.z*src2.c.x + self.b.w*src2.d.x
+        mtxOut.b.y = self.b.x*src2.a.y + self.b.y*src2.b.y + self.b.z*src2.c.y + self.b.w*src2.d.y
+        mtxOut.b.z = self.b.x*src2.a.z + self.b.y*src2.b.z + self.b.z*src2.c.z + self.b.w*src2.d.z
+        mtxOut.b.w = self.b.x*src2.a.w + self.b.y*src2.b.w + self.b.z*src2.c.w + self.b.w*src2.d.w
+
+        mtxOut.c.x = self.c.x*src2.a.x + self.c.y*src2.b.x + self.c.z*src2.c.x + self.c.w*src2.d.x
+        mtxOut.c.y = self.c.x*src2.a.y + self.c.y*src2.b.y + self.c.z*src2.c.y + self.c.w*src2.d.y
+        mtxOut.c.z = self.c.x*src2.a.z + self.c.y*src2.b.z + self.c.z*src2.c.z + self.c.w*src2.d.z
+        mtxOut.c.w = self.c.x*src2.a.w + self.c.y*src2.b.w + self.c.z*src2.c.w + self.c.w*src2.d.w
+
+        mtxOut.d.x = self.d.x*src2.a.x + self.d.y*src2.b.x + self.d.z*src2.c.x + self.d.w*src2.d.x
+        mtxOut.d.y = self.d.x*src2.a.y + self.d.y*src2.b.y + self.d.z*src2.c.y + self.d.w*src2.d.y
+        mtxOut.d.z = self.d.x*src2.a.z + self.d.y*src2.b.z + self.d.z*src2.c.z + self.d.w*src2.d.z
+        mtxOut.d.w = self.d.x*src2.a.w + self.d.y*src2.b.w + self.d.z*src2.c.w + self.d.w*src2.d.w
 
         return mtxOut
 
@@ -593,11 +593,11 @@ class Mat44(object):
         inv.a.x =  Det2x2(self.b.y, self.b.z, self.c.y, self.c.z) * oodet
         inv.b.x = -Det2x2(self.b.x, self.b.z, self.c.x, self.c.z) * oodet
         inv.c.x =  Det2x2(self.b.x, self.b.y, self.c.x, self.c.y) * oodet
-        
+
         inv.a.y = -Det2x2(self.a.y, self.a.z, self.c.y, self.c.z) * oodet
         inv.b.y =  Det2x2(self.a.x, self.a.z, self.c.x, self.c.z) * oodet
         inv.c.y = -Det2x2(self.a.x, self.a.y, self.c.x, self.c.y) * oodet
-        
+
         inv.a.z =  Det2x2(self.a.y, self.a.z, self.b.y, self.b.z) * oodet
         inv.b.z = -Det2x2(self.a.x, self.a.z, self.b.x, self.b.z) * oodet
         inv.c.z =  Det2x2(self.a.x, self.a.y, self.b.x, self.b.y) * oodet
@@ -610,7 +610,7 @@ class Mat44(object):
         return(inv)
 
 
-class Line3D(object):
+class Line3D():
 
     def __init__(self, a, b):
         self.origin = a

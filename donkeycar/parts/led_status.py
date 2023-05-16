@@ -19,7 +19,7 @@ class LED:
             self.on = True
         else:
             GPIO.output(self.pin, GPIO.LOW)
-            self.on = False            
+            self.on = False
 
     def blink(self, rate):
         if time.time() - self.blink_changed > rate:
@@ -35,7 +35,7 @@ class LED:
             self.toggle(True)
 
     def shutdown(self):
-        self.toggle(False)        
+        self.toggle(False)
         GPIO.cleanup()
 
 
@@ -120,13 +120,13 @@ if __name__ == "__main__":
     print('output pin', pin_r, pin_g, pin_b, 'rate', rate)
 
     p = RGB_LED(pin_r, pin_g, pin_b)
-    
+
     iter = 0
     while iter < 50:
         p.run(rate)
         time.sleep(0.1)
         iter += 1
-    
+
     delay = 0.1
 
     iter = 0
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         p.set_rgb(iter, 100-iter, 0)
         time.sleep(delay)
         iter += 1
-    
+
     iter = 0
     while iter < 100:
         p.set_rgb(100 - iter, 0, iter)
@@ -142,4 +142,3 @@ if __name__ == "__main__":
         iter += 1
 
     p.shutdown()
-

@@ -12,7 +12,7 @@ NEWLINE = '\n'
 NEWLINE_STRIP = '\r\n'
 
 
-class Seekable(object):
+class Seekable():
     """
     A seekable file reader, writer which deals with newline delimited
     records. \n
@@ -103,7 +103,7 @@ class Seekable(object):
             if len(self.cumulative_lengths) > 0 else 0
         self.seek_end_of_file()
         self.file.truncate()
-    
+
     def read_from(self, line_number):
         current_offset = self.file.tell()
         self.seek_line_start(line_number)
@@ -112,10 +112,10 @@ class Seekable(object):
         while len(contents) > 0:
             lines.append(contents)
             contents = self.readline()
-        
+
         self.file.seek(current_offset)
         return lines
-    
+
     def update_line(self, line_number, contents):
         lines = self.read_from(line_number)
         length = len(lines)
@@ -138,7 +138,7 @@ class Seekable(object):
         self.close()
 
 
-class Catalog(object):
+class Catalog():
     '''
     A new line delimited file that has records delimited by newlines. \n
 
@@ -170,7 +170,7 @@ class Catalog(object):
         self.seekable.close()
 
 
-class CatalogMetadata(object):
+class CatalogMetadata():
     '''
     Manifest for a Catalog
     '''
@@ -217,7 +217,7 @@ class CatalogMetadata(object):
         self.seekeable.close()
 
 
-class Manifest(object):
+class Manifest():
     '''
     A newline delimited file, with the following format.
 
@@ -396,7 +396,7 @@ class Manifest(object):
         return self.current_index - len(self.deleted_indexes)
 
 
-class ManifestIterator(object):
+class ManifestIterator():
     """
     An iterator for the Manifest type. \n
 

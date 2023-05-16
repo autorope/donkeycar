@@ -22,8 +22,8 @@ class VelocityNormalize:
         if speed >= self.max_speed:
             return s * 1.0
         return s * map_frange(
-            speed, 
-            self.min_speed, self.max_speed, 
+            speed,
+            self.min_speed, self.max_speed,
             self.min_normal_speed, 1.0)
 
     def shutdown(self):
@@ -47,7 +47,7 @@ class VelocityUnnormalize:
         if speed >= 1.0:
             return s * 1.0
         return s * map_frange(
-            speed, 
+            speed,
             self.min_normal_speed, 1.0,
             self.min_speed, self.max_speed)
 
@@ -74,10 +74,10 @@ class StepSpeedController:
         self.max_speed = max_speed
         self.min_throttle = min_throttle
         self.step_size = throttle_step
-    
+
     def run(self, throttle:float, speed:float, target_speed:float) -> float:
         """
-        Given current throttle and speed and a target speed, 
+        Given current throttle and speed and a target speed,
         calculate a new throttle to attain target speed
         @param throttle is current throttle (-1 to 1)
         @param speed is current speed where reverse speeds are negative
@@ -95,7 +95,7 @@ class StepSpeedController:
         target_speed = abs(target_speed)
         speed = abs(speed)
 
-        # 
+        #
         # treat speed below minimum as zero
         #
         if target_speed < self.min_speed:
@@ -103,18 +103,18 @@ class StepSpeedController:
 
         #
         # when changing direction or starting from stopped,
-        # calculate a feed-forward throttle estimate 
+        # calculate a feed-forward throttle estimate
         # so we jump into a working range quickly
         #
         if direction != target_direction:
             # if we are going too fast to just reverse, then slow down first
             if speed > self.min_speed:
                 return 0
-            
+
             # calculate first estimate of throttle to achieve target speed
             return target_direction * map_frange(target_speed, self.min_speed, self.max_speed, self.min_throttle, 1.0)
 
-        # 
+        #
         # modify throttle
         #
         if speed > target_speed:

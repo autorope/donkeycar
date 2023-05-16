@@ -184,7 +184,7 @@ def parseGpsPosition(line, debug=False):
     Given a line emitted by a GPS module, 
     Parse out the position and return as a 
     return: tuple of float (longitude, latitude) as meters.
-            If it cannot be parsed or is not a position message, 
+            If it cannot be parsed or is not a position message,
             then return None.
     """
     if not line:
@@ -192,24 +192,24 @@ def parseGpsPosition(line, debug=False):
     line = line.strip()
     if not line:
         return None
-        
+
     #
     # must start with $ and end with checksum
     #
     if '$' != line[0]:
         logger.info("NMEA Missing line start")
         return None
-        
+
     if '*' != line[-3]:
         logger.info("NMEA Missing checksum")
         return None
-        
+
     nmea_checksum = parse_nmea_checksum(line) # ## checksum hex digits as int
     nmea_msg = line[1:-3]      # msg without $ and *## checksum
     nmea_parts = nmea_msg.split(",")
     message = nmea_parts[0]
-    if (message == "GPRMC") or (message == "GNRMC"):   
-        #     
+    if (message == "GPRMC") or (message == "GNRMC"):
+        #
         # like '$GPRMC,003918.00,A,3806.92281,N,12235.64362,W,0.090,,060322,,,D*67'
         # GPRMC = Recommended minimum specific GPS/Transit data
         #
@@ -231,7 +231,7 @@ def parseGpsPosition(line, debug=False):
             try:
                 msg = pynmea2.parse(line)
             except pynmea2.ParseError as e:
-                logger.error('NMEA parse error detected: {}'.format(e))
+                logger.error(f'NMEA parse error detected: {e}')
                 return None
 
         # Reading the GPS fix data is an alternative approach that also works
@@ -257,7 +257,7 @@ def parseGpsPosition(line, debug=False):
             utm_position = utm.from_latlon(latitude, longitude)
             if debug:
                 logger.info(f"UTM easting = {utm_position[0]}, UTM northing = {utm_position[1]}")
-            
+
             # return (longitude, latitude) as float degrees
             return float(utm_position[0]), float(utm_position[1])
     else:
@@ -276,8 +276,8 @@ def parse_nmea_checksum(nmea_line):
           calling this function.
     """
     return int(nmea_line[-2:], 16) # checksum hex digits as int
-    
-    
+
+
 def calculate_nmea_checksum(nmea_line):
     """
     Given the complete nmea line (including starting '$' and ending checksum '*##')
@@ -286,7 +286,7 @@ def calculate_nmea_checksum(nmea_line):
           should check that '$' and '*##' checksum are present
           and that the checksum matches before calling this function.
     """
-    # 
+    #
     # xor all characters in the message to get a one byte checksum.
     # don't include starting '$' or trailing checksum '*##'
     #
@@ -302,7 +302,7 @@ def nmea_to_degrees(gps_str, direction):
     """
     if not gps_str or gps_str == "0":
         return 0
-        
+
     #
     # pull out the degrees and minutes
     # and then combine the minutes
@@ -312,26 +312,26 @@ def nmea_to_degrees(gps_str, direction):
     minutes_str = parts[0][-2:]        # always results in 2 digits
     if 2 == len(parts):
         minutes_str += "." + parts[1]  # combine whole and fractional minutes
-    
+
     #
     # convert degrees to a float
     #
     degrees = 0.0
     if len(degrees_str) > 0:
         degrees = float(degrees_str)
-    
+
     #
     # convert minutes a float in degrees
     #
     minutes = 0.0
     if len(minutes_str) > 0:
         minutes = float(minutes_str) / 60
-        
+
     #
     # sum up the degrees and apply the direction as a sign
     #
     return (degrees + minutes) * (-1 if direction in ['W', 'S'] else 1)
-    
+
 
 #
 # The __main__ self test can log position or optionally record a set of waypoints
@@ -395,20 +395,20 @@ if __name__ == "__main__":
             Fit an ellipsoid to the given samples at the
             given multiple of the standard deviation of the samples.
             """
-            
+
             # separate out the points by axis
             self.x = [w[1] for w in samples]
             self.y = [w[2] for w in samples]
-            
+
             # calculate the stats for each axis
             self.x_stats = stats(self.x)
             self.y_stats = stats(self.y)
 
             #
             # calculate a rotated ellipse that best fits the samples.
-            # We use a rotated ellipse because the x and y values 
-            # of each point are not independent.  
-            # 
+            # We use a rotated ellipse because the x and y values
+            # of each point are not independent.
+            #
             def eigsorted(cov):
                 """
                 Calculate eigenvalues and eigenvectors
@@ -463,7 +463,7 @@ if __name__ == "__main__":
                    (x <= self.x_stats.max) and \
                    (y >= self.y_stats.min) and \
                    (y <= self.y_stats.max)
-            
+
         def is_in_std(self, x, y, std_multiple=1.0):
             """
             Determine if the given (x, y) point is within a given
@@ -486,7 +486,7 @@ if __name__ == "__main__":
             ax = plt.subplot(111, aspect='equal')
             self.plot()
             plt.show()
-            
+
         def plot(self):
             """
             Draw the waypoint ellipsoid
@@ -495,17 +495,17 @@ if __name__ == "__main__":
             import matplotlib.pyplot as plt
             #define Matplotlib figure and axis
             ax = plt.subplot(111, aspect='equal')
-            
+
             # plot the collected readings
             plt.scatter(self.x, self.y)
-            
+
             # plot the centroid
             plt.plot(self.x_stats.mean, self.y_stats.mean, marker="+", markeredgecolor="green", markerfacecolor="green")
-            
+
             # plot the range
             bounds = Rectangle(
-                (self.x_stats.min, self.y_stats.min), 
-                self.x_stats.max - self.x_stats.min, 
+                (self.x_stats.min, self.y_stats.min),
+                self.x_stats.max - self.x_stats.min,
                 self.y_stats.max - self.y_stats.min,
                 alpha=0.5,
                 edgecolor='red',
@@ -513,7 +513,7 @@ if __name__ == "__main__":
                 visible=True)
             ax.add_artist(bounds)
 
-            # plot the ellipsoid 
+            # plot the ellipsoid
             ellipse = Ellipse(xy=(self.x_stats.mean, self.y_stats.mean),
                           width=self.width, height=self.height,
                           angle=self.theta)
@@ -641,7 +641,7 @@ if __name__ == "__main__":
                         print(f"...done.  Collected {count} samples for waypoint #{len(waypoints)+1}")
                         #
                         # model a waypoint as a rotated ellipsoid
-                        # that represents a 95% confidence interval 
+                        # that represents a 95% confidence interval
                         # around the points measured at the waypoint.
                         #
                         waypoint = Waypoint(waypoint_samples, nstd=args.nstd)
@@ -682,4 +682,3 @@ if __name__ == "__main__":
             line_reader.shutdown()
         if update_thread is not None:
             update_thread.join()  # wait for thread to end
-

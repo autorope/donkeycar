@@ -38,7 +38,7 @@ def test_should_raise_assertion_on_non_list_inputs_for_add_part():
     inputs = 'any'
     with pytest.raises(AssertionError):
         vehicle.add(_get_sample_lambda(), inputs=inputs)
-        pytest.fail("inputs is not a list: %r" % inputs)
+        pytest.fail(f"inputs is not a list: {inputs!r}")
 
 
 def test_should_raise_assertion_on_non_list_outputs_for_add_part():
@@ -46,7 +46,7 @@ def test_should_raise_assertion_on_non_list_outputs_for_add_part():
     outputs = 'any'
     with pytest.raises(AssertionError):
         vehicle.add(_get_sample_lambda(), outputs=outputs)
-        pytest.fail("outputs is not a list: %r" % outputs)
+        pytest.fail(f"outputs is not a list: {outputs!r}")
 
 
 def test_should_raise_assertion_on_non_boolean_threaded_for_add_part():
@@ -54,4 +54,4 @@ def test_should_raise_assertion_on_non_boolean_threaded_for_add_part():
     threaded = 'non_boolean'
     with pytest.raises(AssertionError):
         vehicle.add(_get_sample_lambda(), threaded=threaded)
-        pytest.fail("threaded is not a boolean: %r" % threaded)
+        pytest.fail(f"threaded is not a boolean: {threaded!r}")

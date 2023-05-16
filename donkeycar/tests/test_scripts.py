@@ -82,4 +82,3 @@ def test_tubplot(cardir):
             line = pipe.stdout.readline().decode()
     print(f'List model dir: {os.listdir(model_dir)}')
     assert os.path.exists(model_path + '_pred.png')
-

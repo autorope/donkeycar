@@ -1,6 +1,6 @@
 import os
 
-class FileWatcher(object):
+class FileWatcher():
     '''
     Watch a specific file and give a signal when it's modified
     '''
@@ -22,7 +22,5 @@ class FileWatcher(object):
             if self.verbose:
                 print(self.filename, "changed.")
             return True
-            
+
         return False
-
-

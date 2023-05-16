@@ -9,7 +9,7 @@ class LICamera(BaseCamera):
     The Leopard Imaging Camera with Fast-Stretch built in.
     '''
     def __init__(self, width=224, height=224, capture_width=1280, capture_height=720, fps=60):
-        super(LICamera, self).__init__()
+        super().__init__()
         self.width = width
         self.height = height
         self.capture_width = capture_width

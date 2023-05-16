@@ -14,7 +14,7 @@ from donkeycar.parts.web_controller.web import WebFpv
 
 logger = logging.getLogger(__name__)
 
-class Joystick(object):
+class Joystick():
     '''
     An interface to a physical joystick.
     The joystick holds available buttons
@@ -42,11 +42,11 @@ class Joystick(object):
         except ModuleNotFoundError:
             self.num_axes = 0
             self.num_buttons = 0
-            logger.warn("no support for fnctl module. joystick not enabled.")
+            logger.warning("no support for fnctl module. joystick not enabled.")
             return False
 
         if not os.path.exists(self.dev_fn):
-            logger.warn(f"{self.dev_fn} is missing")
+            logger.warning(f"{self.dev_fn} is missing")
             return False
 
         '''
@@ -60,7 +60,7 @@ class Joystick(object):
         buf = array.array('B', [0] * 64)
         ioctl(self.jsdev, 0x80006a13 + (0x10000 * len(buf)), buf) # JSIOCGNAME(len)
         self.js_name = buf.tobytes().decode('utf-8')
-        logger.info('Device name: %s' % self.js_name)
+        logger.info(f'Device name: {self.js_name}')
 
         # Get number of axes and buttons.
         buf = array.array('B', [0])
@@ -76,7 +76,7 @@ class Joystick(object):
         ioctl(self.jsdev, 0x80406a32, buf) # JSIOCGAXMAP
 
         for axis in buf[:self.num_axes]:
-            axis_name = self.axis_names.get(axis, 'unknown(0x%02x)' % axis)
+            axis_name = self.axis_names.get(axis, f'unknown(0x{axis:02x})')
             self.axis_map.append(axis_name)
             self.axis_states[axis_name] = 0.0
 
@@ -85,7 +85,7 @@ class Joystick(object):
         ioctl(self.jsdev, 0x80406a34, buf) # JSIOCGBTNMAP
 
         for btn in buf[:self.num_buttons]:
-            btn_name = self.button_names.get(btn, 'unknown(0x%03x)' % btn)
+            btn_name = self.button_names.get(btn, f'unknown(0x{btn:03x})')
             self.button_map.append(btn_name)
             self.button_states[btn_name] = 0
             #print('btn', '0x%03x' % btn, 'name', btn_name)
@@ -140,12 +140,12 @@ class Joystick(object):
                     fvalue = value / 32767.0
                     self.axis_states[axis] = fvalue
                     axis_val = fvalue
-                    logger.debug("axis: %s val: %f" % (axis, fvalue))
+                    logger.debug(f"axis: {axis} val: {fvalue:f}")
 
         return button, button_state, axis, axis_val
 
 
-class PyGameJoystick(object):
+class PyGameJoystick():
     def __init__( self,
                   poll_delay=0.0,
                   throttle_scale=1.0,
@@ -196,7 +196,7 @@ class PyGameJoystick(object):
                 axis = self.axis_names[i]
                 axis_val = val
                 self.axis_states[i] = val
-                logging.debug("axis: %s val: %f" % (axis, val))
+                logging.debug(f"axis: {axis} val: {val:f}")
                 #print("axis: %s val: %f" % (axis, val))
 
 
@@ -232,7 +232,7 @@ class PyGameJoystick(object):
                 iBtn += 1
 
         return button, button_state, axis, axis_val
-        
+
     def set_deadzone(self, val):
         self.dead_zone = val
 
@@ -273,7 +273,7 @@ class RCReceiver:
             self.cbs.append(self.pi.callback(channel.pin, pigpio.EITHER_EDGE, self.cbf))
             if self.debug:
                 logger.info(f'RCReceiver gpio {channel.pin} created')
-    
+
 
     def cbf(self, gpio, level, tick):
         import pigpio
@@ -286,11 +286,11 @@ class RCReceiver:
         :param tick: # of mu s since boot, 32 bit int
         """
         for channel in self.channels:
-            if gpio == channel.pin:            
-                if level == 1:                
-                    channel.high_tick = tick            
-                elif level == 0:                
-                    if channel.high_tick is not None:                    
+            if gpio == channel.pin:
+                if level == 1:
+                    channel.high_tick = tick
+                elif level == 0:
+                    if channel.high_tick is not None:
                         channel.tick = pigpio.tickDiff(channel.high_tick, tick)
 
     def pulse_width(self, high):
@@ -322,14 +322,14 @@ class RCReceiver:
             logger.info(f'RC CH1 signal:{round(self.signals[0], 3)}, RC CH2 signal:{round(self.signals[1], 3)}, RC CH3 signal:{round(self.signals[2], 3)}')
 
         # check mode channel if present
-        if (self.signals[2] - self.jitter) > 0:  
+        if (self.signals[2] - self.jitter) > 0:
             self.mode = 'local'
         else:
             # pass though value if provided
             self.mode = mode if mode is not None else 'user'
 
         # check throttle channel
-        if ((self.signals[1] - self.jitter) > 0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record 
+        if ((self.signals[1] - self.jitter) > 0) and self.RECORD: # is throttle above jitter level? If so, turn on auto-record
             is_action = True
         else:
             # pass through default value
@@ -350,14 +350,14 @@ class JoystickCreator(Joystick):
     A Helper class to create a new joystick mapping
     '''
     def __init__(self, *args, **kwargs):
-        super(JoystickCreator, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {}
         self.button_names = {}
 
     def poll(self):
 
-        button, button_state, axis, axis_val = super(JoystickCreator, self).poll()
+        button, button_state, axis, axis_val = super().poll()
 
         return button, button_state, axis, axis_val
 
@@ -367,7 +367,7 @@ class PS3JoystickSixAd(Joystick):
     Contains mapping that worked for Jetson Nano using sixad for PS3 controller's connection 
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3JoystickSixAd, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -388,7 +388,7 @@ class PS3JoystickSixAd(Joystick):
             0x121 : 'L3',
             0x122 : 'R3',
 
-            0x12c : "triangle", 
+            0x12c : "triangle",
             0x12d : "circle",
             0x12e : "cross",
             0x12f : 'square',
@@ -406,7 +406,7 @@ class PS3JoystickOld(Joystick):
     Contains mapping that worked for Raspian Jessie drivers
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3JoystickOld, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -446,7 +446,7 @@ class PS3JoystickOld(Joystick):
             0x121 : 'L3',
             0x122 : 'R3',
 
-            0x12c : "triangle", 
+            0x12c : "triangle",
             0x12d : "circle",
             0x12e : "cross",
             0x12f : 'square',
@@ -464,7 +464,7 @@ class PS3Joystick(Joystick):
     Contains mapping that work for Raspian Stretch drivers
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3Joystick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -505,7 +505,7 @@ class PS4Joystick(Joystick):
     An interface to a physical PS4 joystick available at /dev/input/js0
     '''
     def __init__(self, *args, **kwargs):
-        super(PS4Joystick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -558,7 +558,7 @@ class PS3JoystickPC(Joystick):
     It also wants /dev/input/js1 device filename, not js0
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3JoystickPC, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -616,7 +616,7 @@ class PyGamePS4Joystick(PyGameJoystick):
     Windows setup: https://github.com/nefarius/ScpToolkit/releases/tag/v1.6.238.16010
     '''
     def __init__(self, *args, **kwargs):
-        super(PyGamePS4Joystick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -668,7 +668,7 @@ class XboxOneJoystick(Joystick):
     https://github.com/Ezward/donkeypart_ps3_controller/blob/master/donkeypart_ps3_controller/part.py
     '''
     def __init__(self, *args, **kwargs):
-        super(XboxOneJoystick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00 : 'left_stick_horz',
@@ -701,7 +701,7 @@ class LogitechJoystick(Joystick):
     https://github.com/kevkruemp/donkeypart_logitech_controller/blob/master/donkeypart_logitech_controller/part.py
     '''
     def __init__(self, *args, **kwargs):
-        super(LogitechJoystick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.axis_names = {
             0x00: 'left_stick_horz',
@@ -739,7 +739,7 @@ class Nimbus(Joystick):
     #contains mappings that work for the SteelNimbus joystick
     #on Jetson TX2, JetPack 4.2, Ubuntu 18.04
     def __init__(self, *args, **kwargs):
-        super(Nimbus, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.button_names = {
             0x130 : 'a',
@@ -769,7 +769,7 @@ class WiiU(Joystick):
     #https://github.com/autorope/donkeypart_bluetooth_game_controller/blob/master/donkeypart_bluetooth_game_controller/wiiu_config.yml
     #and need testing!
     def __init__(self, *args, **kwargs):
-        super(WiiU, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.button_names = {
             305: 'A',
@@ -801,7 +801,7 @@ class WiiU(Joystick):
 class RC3ChanJoystick(Joystick):
     #An interface to a physical joystick available at /dev/input/js0
     def __init__(self, *args, **kwargs):
-        super(RC3ChanJoystick, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
         self.button_names = {
@@ -816,7 +816,7 @@ class RC3ChanJoystick(Joystick):
         }
 
 
-class JoystickController(object):
+class JoystickController():
     '''
     Class to map joystick buttons and axes to functions.
     JoystickController is a base class. You will not use this class directly,
@@ -945,7 +945,7 @@ class JoystickController(object):
             try:
                 self.tub.delete_last_n_records(self.num_records_to_erase)
                 logger.info('deleted last %d records.' % self.num_records_to_erase)
-            except:
+            except Exception:
                 logger.info('failed to erase')
 
 
@@ -965,7 +965,7 @@ class JoystickController(object):
         '''
         initiate a series of steps to try to stop the vehicle as quickly as possible
         '''
-        logger.warn('E-Stop!!!')
+        logger.warning('E-Stop!!!')
         self.mode = "user"
         self.recording = False
         self.constant_throttle = False
@@ -1184,7 +1184,7 @@ class JoystickCreatorController(JoystickController):
     a custom joystick.
     '''
     def __init__(self, *args, **kwargs):
-        super(JoystickCreatorController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1214,7 +1214,7 @@ class PS3JoystickController(JoystickController):
     A Controller object that maps inputs to actions
     '''
     def __init__(self, *args, **kwargs):
-        super(PS3JoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1280,7 +1280,7 @@ class PS3JoystickSixAdController(PS3JoystickController):
         '''
         init set of mapping from buttons to function calls
         '''
-        super(PS3JoystickSixAdController, self).init_trigger_maps()
+        super().init_trigger_maps()
 
         self.axis_trigger_map = {
             'right_stick_horz' : self.set_steering,
@@ -1292,7 +1292,7 @@ class PS4JoystickController(JoystickController):
     A Controller object that maps inputs to actions
     '''
     def __init__(self, *args, **kwargs):
-        super(PS4JoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1335,7 +1335,7 @@ class PyGamePS4JoystickController(PS4JoystickController):
     A Controller object that maps inputs to actions
     '''
     def __init__(self, which_js=0, *args, **kwargs):
-        super(PyGamePS4JoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.which_js=which_js
 
 
@@ -1359,7 +1359,7 @@ class XboxOneJoystickController(JoystickController):
     https://github.com/Ezward/donkeypart_ps3_controller/blob/master/donkeypart_ps3_controller/part.py
     '''
     def __init__(self, *args, **kwargs):
-        super(XboxOneJoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1419,13 +1419,13 @@ class XboxOneSwappedJoystickController(XboxOneJoystickController):
     Swap steering and throttle controls from std XBox one controller
     '''
     def __init__(self, *args, **kwargs):
-        super(XboxOneSwappedJoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def init_trigger_maps(self):
         '''
         init set of mapping from buttons to function calls
         '''
-        super(XboxOneSwappedJoystickController, self).init_trigger_maps()
+        super().init_trigger_maps()
 
         # make the actual swap of the sticks
         self.set_axis_trigger('right_stick_horz', self.set_steering)
@@ -1443,7 +1443,7 @@ class LogitechJoystickController(JoystickController):
     https://github.com/kevkruemp/donkeypart_logitech_controller/blob/master/donkeypart_logitech_controller/part.py
     '''
     def __init__(self, *args, **kwargs):
-        super(LogitechJoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1514,7 +1514,7 @@ class LogitechJoystickController(JoystickController):
 class NimbusController(JoystickController):
     #A Controller object that maps inputs to actions
     def __init__(self, *args, **kwargs):
-        super(NimbusController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1546,7 +1546,7 @@ class NimbusController(JoystickController):
 class WiiUController(JoystickController):
     #A Controller object that maps inputs to actions
     def __init__(self, *args, **kwargs):
-        super(WiiUController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1579,7 +1579,7 @@ class WiiUController(JoystickController):
 class RC3ChanJoystickController(JoystickController):
     #A Controller object that maps inputs to actions
     def __init__(self, *args, **kwargs):
-        super(RC3ChanJoystickController, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
     def init_js(self):
@@ -1626,7 +1626,7 @@ class RC3ChanJoystickController(JoystickController):
         }
 
 
-class JoyStickPub(object):
+class JoyStickPub():
     '''
     Use Zero Message Queue (zmq) to publish the control messages from a local joystick
     '''
@@ -1655,7 +1655,7 @@ class JoyStickPub(object):
                 logger.info(f"SENT {message_data}")
 
 
-class JoyStickSub(object):
+class JoyStickSub():
     '''
     Use Zero Message Queue (zmq) to subscribe to control messages from a remote joystick
     '''

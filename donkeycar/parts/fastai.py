@@ -242,7 +242,7 @@ class FastAILinear(FastAiPilot):
 
 class Linear(nn.Module):
     def __init__(self):
-        super(Linear, self).__init__()
+        super().__init__()
         self.dropout = 0.1
         # init the layers
         self.conv24 = nn.Conv2d(3, 24, kernel_size=(5, 5), stride=(2, 2))

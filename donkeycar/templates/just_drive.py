@@ -31,7 +31,7 @@ def drive(cfg):
 
     #Initialize car
     V = dk.vehicle.Vehicle()
-    
+
     class MyController:
         '''
         a simple controller class that outputs a constant steering and throttle.
@@ -46,26 +46,26 @@ def drive(cfg):
     #Drive train setup
     steering_controller = PCA9685(cfg.STEERING_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
     steering = PWMSteering(controller=steering_controller,
-                                    left_pulse=cfg.STEERING_LEFT_PWM, 
+                                    left_pulse=cfg.STEERING_LEFT_PWM,
                                     right_pulse=cfg.STEERING_RIGHT_PWM)
-    
+
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL, cfg.PCA9685_I2C_ADDR, busnum=cfg.PCA9685_I2C_BUSNUM)
     throttle = PWMThrottle(controller=throttle_controller,
                                     max_pulse=cfg.THROTTLE_FORWARD_PWM,
-                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM, 
+                                    zero_pulse=cfg.THROTTLE_STOPPED_PWM,
                                     min_pulse=cfg.THROTTLE_REVERSE_PWM)
 
     V.add(steering, inputs=['angle'])
     V.add(throttle, inputs=['throttle'])
-    
+
     #run the vehicle for 20 seconds
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
             max_loop_count=cfg.MAX_LOOPS)
 
 
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
-    
+
     if args['drive']:
         drive(cfg)

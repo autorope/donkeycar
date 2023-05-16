@@ -26,7 +26,7 @@ class WebServer(tornado.web.Application):
 
     def __init__(self, data_path):
         if not os.path.exists(data_path):
-            raise ValueError('The path {} does not exist.'.format(data_path))
+            raise ValueError(f'The path {data_path} does not exist.')
 
         this_dir = os.path.dirname(os.path.realpath(__file__))
         static_file_path = os.path.join(this_dir, 'tub_web', 'static')
@@ -47,7 +47,7 @@ class WebServer(tornado.web.Application):
     def start(self, port=8886):
         self.port = int(port)
         self.listen(self.port)
-        print('Listening on {}...'.format(port))
+        print(f'Listening on {port}...')
         tornado.ioloop.IOLoop.instance().start()
 
 

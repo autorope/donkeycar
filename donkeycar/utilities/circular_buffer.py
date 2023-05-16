@@ -46,7 +46,7 @@ class CircularBuffer:
             self.tailIndex = (self.tailIndex + 1) % self.capacity
 
         # write value at head
-        self.buffer[(self.tailIndex + self.count - 1) % self.capacity] = value    
+        self.buffer[(self.tailIndex + self.count - 1) % self.capacity] = value
 
     def dequeue(self):
         """
@@ -140,4 +140,3 @@ class CircularBuffer:
             raise ValueError("count is out of range")
         self.count = count
         self.tailIndex = (self.tailIndex + count) % self.capacity
-

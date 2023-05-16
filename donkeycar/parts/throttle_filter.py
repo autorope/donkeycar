@@ -1,5 +1,5 @@
 
-class ThrottleFilter(object):
+class ThrottleFilter():
     '''
     allow reverse to trigger automatic reverse throttle
     '''

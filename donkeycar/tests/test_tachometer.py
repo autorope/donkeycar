@@ -31,14 +31,14 @@ class MockTachometer(Tachometer):
 
 
 class TestTachometer(unittest.TestCase):
-    
+
     def test_tachometer_forward_only(self):
         #
         # FORWARD_ONLY mode will ignore throttle
         # and just increase revolutions
         #
         tachometer = MockTachometer(
-            ticks_per_revolution=10, 
+            ticks_per_revolution=10,
             direction_mode=EncoderMode.FORWARD_ONLY)
 
         ts = time.time()
@@ -59,7 +59,7 @@ class TestTachometer(unittest.TestCase):
         ts += 1  # add one second and reverse one revolution
         revolutions, timestamp = tachometer.run(throttle=-1, timestamp=ts)
         self.assertEqual(ts, timestamp)
-        self.assertAlmostEqual(0.4, revolutions, 4) 
+        self.assertAlmostEqual(0.4, revolutions, 4)
 
         ts += 1  # add one second, but stopped and coasting
         revolutions, timestamp = tachometer.run(throttle=0, timestamp=ts)
@@ -77,7 +77,7 @@ class TestTachometer(unittest.TestCase):
         # will continue in reverse.
         #
         tachometer = MockTachometer(
-            ticks_per_revolution=10, 
+            ticks_per_revolution=10,
             direction_mode=EncoderMode.FORWARD_REVERSE)
 
         ts = time.time()
@@ -98,7 +98,7 @@ class TestTachometer(unittest.TestCase):
         ts += 1  # add one second and reverse one revolution
         revolutions, timestamp = tachometer.run(throttle=-1, timestamp=ts)
         self.assertEqual(ts, timestamp)
-        self.assertAlmostEqual(0.2, revolutions, 4) 
+        self.assertAlmostEqual(0.2, revolutions, 4)
 
         ts += 1  # add one second, but stopped and coasting
         revolutions, timestamp = tachometer.run(throttle=0, timestamp=ts)
@@ -109,13 +109,13 @@ class TestTachometer(unittest.TestCase):
     def test_tachometer_forward_reverse_stop(self):
         #
         # FORWARD_REVERSE_STOP mode will honor the
-        # throttle completely; 
+        # throttle completely;
         # positive throttle being forward, increasing revolutions
         # negative throttle being reverse, decreasing revolutions
         # zero throttle being stopped; no change in revolutions
         #
         tachometer = MockTachometer(
-            ticks_per_revolution=10, 
+            ticks_per_revolution=10,
             direction_mode=EncoderMode.FORWARD_REVERSE_STOP)
 
         ts = time.time()
@@ -136,7 +136,7 @@ class TestTachometer(unittest.TestCase):
         ts += 1  # add one second and reverse one revolution
         revolutions, timestamp = tachometer.run(throttle=-1, timestamp=ts)
         self.assertEqual(ts, timestamp)
-        self.assertAlmostEqual(0.1, revolutions, 4) 
+        self.assertAlmostEqual(0.1, revolutions, 4)
 
         ts += 1  # add one second, but stopped
         revolutions, timestamp = tachometer.run(throttle=0, timestamp=ts)

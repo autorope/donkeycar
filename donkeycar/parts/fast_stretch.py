@@ -39,7 +39,7 @@ def fast_stretch(image, debug=False):
 
     if debug:
         time_taken = (time.time() - start) * 1000
-        print('Preprocessing time %s' % time_taken)
+        print(f'Preprocessing time {time_taken}')
         start = time.time()
 
     histogram = cv2.calcHist([input], [0], None, [256], [0, 256])
@@ -61,7 +61,7 @@ def fast_stretch(image, debug=False):
 
     if debug:
         time_taken = (time.time() - start) * 1000
-        print('Histogram Binning %s' % time_taken)
+        print(f'Histogram Binning {time_taken}')
         start = time.time()
 
     # Vectorized ops
@@ -77,7 +77,7 @@ def fast_stretch(image, debug=False):
 
     if debug:
         time_taken = (time.time() - start) * 1000
-        print('Vector Ops %s' % time_taken)
+        print(f'Vector Ops {time_taken}')
         start = time.time()
 
     return output

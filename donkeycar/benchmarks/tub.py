@@ -34,11 +34,11 @@ def benchmark():
         contents = record_file.read_text()
         if contents:
             contents = json.loads(contents)
-            print('Record %s' % contents)
+            print(f'Record {contents}')
 
 
 if __name__ == "__main__":
     timer = timeit.Timer(benchmark)
     time_taken = timer.timeit(number=1)
-    print('Time taken %s seconds' % time_taken)
+    print(f'Time taken {time_taken} seconds')
     print('\nDone.')

@@ -26,9 +26,9 @@ def benchmark():
 
     deletions = np.random.randint(0, write_count, 100)
     tub.delete_records(deletions)
- 
+
     for record in tub:
-        print('Record %s' % record)
+        print(f'Record {record}')
 
     tub.close()
 
@@ -36,5 +36,5 @@ def benchmark():
 if __name__ == "__main__":
     timer = timeit.Timer(benchmark)
     time_taken = timer.timeit(number=1)
-    print('Time taken %s seconds' % time_taken)
+    print(f'Time taken {time_taken} seconds')
     print('\nDone.')

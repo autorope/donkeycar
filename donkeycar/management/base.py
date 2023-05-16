@@ -46,7 +46,7 @@ def load_config(config_path, myconfig='myconfig.py'):
     return cfg
 
 
-class BaseCommand(object):
+class BaseCommand():
     pass
 
 
@@ -167,7 +167,7 @@ class FindCar(BaseCommand):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
-        print('Your IP address: %s ' % s.getsockname()[0])
+        print(f'Your IP address: {s.getsockname()[0]} ')
         s.close()
 
         print("Finding your car's IP address...")
@@ -225,7 +225,7 @@ class CalibrateCar(BaseCommand):
             except ValueError as e:
                 print(e)
                 print("See pins.py for a description of pin specification strings.")
-                exit(-1)
+                sys.exit(-1)
             print(f'init pin {args.pwm_pin}')
             freq = int(args.pwmFreq)
             print(f"Using PWM freq: {freq}")

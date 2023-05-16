@@ -16,9 +16,9 @@ from donkeycar.utils import clamp
 logger = logging.getLogger(__name__)
 
 try:
-    import RPi.GPIO as GPIO
+    from RPi import GPIO
 except ImportError as e:
-    logger.warn(f"RPi.GPIO was not imported. {e}")
+    logger.warning(f"RPi.GPIO was not imported. {e}")
     globals()["GPIO"] = None
 
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState
@@ -158,7 +158,7 @@ class PCA9685:
         if duty_cycle < 0 or duty_cycle > 1:
             logging.error("duty_cycle must be in range 0 to 1")
             duty_cycle = clamp(duty_cycle, 0, 1)
-            
+
         if duty_cycle == 1:
             self.set_high()
         elif duty_cycle == 0:
@@ -168,13 +168,13 @@ class PCA9685:
             pulse = int(4096 * duty_cycle)
             try:
                 self.pwm.set_pwm(self.channel, 0, pulse)
-            except:
+            except Exception:
                 self.pwm.set_pwm(self.channel, 0, pulse)
 
     def set_pulse(self, pulse):
         try:
             self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
-        except:
+        except Exception:
             self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
 
     def run(self, pulse):
@@ -185,27 +185,27 @@ class VESC:
     ''' 
     VESC Motor controler using pyvesc
     This is used for most electric scateboards.
-    
+
     inputs: serial_port---- port used communicate with vesc. for linux should be something like /dev/ttyACM1
     has_sensor=False------- default value from pyvesc
     start_heartbeat=True----default value from pyvesc (I believe this sets up a heartbeat and kills speed if lost)
     baudrate=115200--------- baudrate used for communication with VESC
     timeout=0.05-------------time it will try before giving up on establishing connection
-    
+
     percent=.2--------------max percentage of the dutycycle that the motor will be set to
     outputs: none
-    
+
     uses the pyvesc library to open communication with the VESC and sets the servo to the angle (0-1) and the duty_cycle(speed of the car) to the throttle (mapped so that percentage will be max/min speed)
-    
+
     Note that this depends on pyvesc, but using pip install pyvesc will create a pyvesc file that
     can only set the speed, but not set the servo angle. 
-    
+
     Instead please use:
     pip install git+https://github.com/LiamBindle/PyVESC.git@master
     to install the pyvesc library
     '''
     def __init__(self, serial_port, percent=.2, has_sensor=False, start_heartbeat=True, baudrate=115200, timeout=0.05, steering_scale = 1.0, steering_offset = 0.0 ):
-        
+
         try:
             import pyvesc
         except Exception as err:
@@ -216,21 +216,21 @@ class VESC:
             print("\n\n\n")
             time.sleep(1)
             raise
-        
+
         assert percent <= 1 and percent >= -1,'\n\nOnly percentages are allowed for MAX_VESC_SPEED (we recommend a value of about .2) (negative values flip direction of motor)'
         self.steering_scale = steering_scale
         self.steering_offset = steering_offset
         self.percent = percent
-        
+
         try:
             self.v = pyvesc.VESC(serial_port, has_sensor, start_heartbeat, baudrate, timeout)
         except Exception as err:
             print("\n\n\n\n", err)
             print("\n\nto fix permission denied errors, try running the following command:")
-            print("sudo chmod a+rw {}".format(serial_port), "\n\n\n\n")
+            print(f"sudo chmod a+rw {serial_port}", "\n\n\n\n")
             time.sleep(1)
             raise
-        
+
     def run(self, angle, throttle):
         self.v.set_servo((angle * self.steering_scale) + self.steering_offset)
         self.v.set_duty_cycle(throttle*self.percent)
@@ -417,14 +417,14 @@ class JHat:
 
         # we install our own write that is more efficient use of interrupts
         self.pwm.set_pwm = self.set_pwm
-        
+
     def set_pulse(self, pulse):
-        self.set_pwm(self.channel, 0, pulse) 
+        self.set_pwm(self.channel, 0, pulse)
 
     def set_pwm(self, channel, on, off):
         # sets a single PWM channel
         self.pwm._device.writeList(self.register, [off & 0xFF, off >> 8])
-        
+
     def run(self, pulse):
         self.set_pulse(pulse)
 
@@ -465,14 +465,14 @@ class JHatReader:
         while h1 != 100:
             logger.debug("skipping to start of header")
             h1 = self.pwm._device.readU8(self.register)
-        
+
         h2 = self.pwm._device.readU8(self.register)
         # h2 ignored now
 
         val_a = self.pwm._device.readU8(self.register)
         val_b = self.pwm._device.readU8(self.register)
         self.steering = (val_b << 8) + val_a
-        
+
         val_c = self.pwm._device.readU8(self.register)
         val_d = self.pwm._device.readU8(self.register)
         self.throttle = (val_d << 8) + val_c
@@ -484,7 +484,7 @@ class JHatReader:
     def update(self):
         while(self.running):
             self.read_pwm()
-        
+
     def run_threaded(self):
         return self.steering, self.throttle
 
@@ -510,19 +510,19 @@ class Adafruit_DCMotor_Hat:
     def __init__(self, motor_num):
         from Adafruit_MotorHAT import Adafruit_MotorHAT, Adafruit_DCMotor
         import atexit
-        
+
         self.FORWARD = Adafruit_MotorHAT.FORWARD
         self.BACKWARD = Adafruit_MotorHAT.BACKWARD
-        self.mh = Adafruit_MotorHAT(addr=0x60) 
-        
+        self.mh = Adafruit_MotorHAT(addr=0x60)
+
         self.motor = self.mh.getMotor(motor_num)
         self.motor_num = motor_num
-        
+
         atexit.register(self.turn_off_motors)
         self.speed = 0
         self.throttle = 0
-    
-        
+
+
     def run(self, speed):
         '''
         Update the speed of the motor where 1 is full forward and
@@ -530,17 +530,17 @@ class Adafruit_DCMotor_Hat:
         '''
         if speed > 1 or speed < -1:
             raise ValueError( "Speed must be between 1(forward) and -1(reverse)")
-        
+
         self.speed = speed
         self.throttle = int(dk.utils.map_range(abs(speed), -1, 1, -255, 255))
-        
-        if speed > 0:            
+
+        if speed > 0:
             self.motor.run(self.FORWARD)
         else:
             self.motor.run(self.BACKWARD)
-            
+
         self.motor.setSpeed(self.throttle)
-        
+
 
     def shutdown(self):
         self.mh.getMotor(self.motor_num).run(Adafruit_MotorHAT.RELEASE)
@@ -685,7 +685,7 @@ class Teensy:
         w *= 1000 * 1000  # in microseconds
 
         with Teensy.teensy_lock:
-            Teensy.teensy_device.write(("%c %.1f\n" % (self.channel, w)).encode('ascii'))
+            Teensy.teensy_device.write(f"{self.channel:c} {w:.1f}\n".encode('ascii'))
 
     def set_turn_left(self, v):
         if self.lturn != v:
@@ -742,7 +742,7 @@ class Teensy:
         return ret
 
 
-class MockController(object):
+class MockController():
     def __init__(self):
         pass
 
@@ -753,7 +753,7 @@ class MockController(object):
         pass
 
 
-class L298N_HBridge_3pin(object):
+class L298N_HBridge_3pin():
     """
     Motor controlled with an L298N hbridge,
     chosen with configuration DRIVETRAIN_TYPE=DC_TWO_WHEEL_L298N
@@ -800,12 +800,12 @@ class L298N_HBridge_3pin(object):
                         where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
-            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            logger.warning("TwoWheelSteeringThrottle throttle is None")
             return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warning( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
             throttle = clamp(throttle, -1, 1)
-        
+
         self.speed = throttle
         self.throttle = dk.utils.map_range_float(throttle, -1, 1, -self.max_duty, self.max_duty)
         if self.throttle > self.zero_throttle:
@@ -827,7 +827,7 @@ class L298N_HBridge_3pin(object):
         self.pin_backward.stop()
 
 
-class TwoWheelSteeringThrottle(object):
+class TwoWheelSteeringThrottle():
     """
     Modify individual differential drive wheel throttles
     in order to implemeht steering.
@@ -843,16 +843,16 @@ class TwoWheelSteeringThrottle(object):
                  where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
-            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            logger.warning("TwoWheelSteeringThrottle throttle is None")
             return
         if steering is None:
-            logger.warn("TwoWheelSteeringThrottle steering is None")
+            logger.warning("TwoWheelSteeringThrottle steering is None")
             return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warning( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
             throttle = clamp(throttle, -1, 1)
         if steering > 1 or steering < -1:
-            logger.warn( f"TwoWheelSteeringThrottle steering is {steering}, but it must be between 1(right) and -1(left)")
+            logger.warning( f"TwoWheelSteeringThrottle steering is {steering}, but it must be between 1(right) and -1(left)")
             steering = clamp(steering, -1, 1)
 
         left_motor_speed = throttle
@@ -869,7 +869,7 @@ class TwoWheelSteeringThrottle(object):
         pass
 
 
-class L298N_HBridge_2pin(object):
+class L298N_HBridge_2pin():
     """
     Motor controlled with an 'mini' L298N hbridge using 2 PwmPins,
     one for forward pwm and for reverse pwm.
@@ -909,7 +909,7 @@ class L298N_HBridge_2pin(object):
 
         self.throttle=0
         self.speed=0
-        
+
         self.pin_forward.start(0)
         self.pin_backward.start(0)
 
@@ -920,15 +920,15 @@ class L298N_HBridge_2pin(object):
                         where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
-            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            logger.warning("TwoWheelSteeringThrottle throttle is None")
             return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warning( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
             throttle = clamp(throttle, -1, 1)
 
         self.speed = throttle
         self.throttle = dk.utils.map_range_float(throttle, -1, 1, -self.max_duty, self.max_duty)
-        
+
         if self.throttle > self.zero_throttle:
             self.pin_backward.duty_cycle(0)
             self.pin_forward.duty_cycle(self.throttle)
@@ -943,14 +943,14 @@ class L298N_HBridge_2pin(object):
         self.pin_forward.stop()
         self.pin_backward.stop()
 
-    
+
 #
 # This is being replaced by pins.py and PulseController.
 # GPIO pins can be configured using RPi.GPIO or PIGPIO,
 # so this is redundant
 #
 @deprecated("This will be removed in a future release in favor of PulseController")
-class RPi_GPIO_Servo(object):
+class RPi_GPIO_Servo():
     '''
     Servo controlled from the gpio pins on Rpi
     '''
@@ -987,7 +987,7 @@ class RPi_GPIO_Servo(object):
 # configured using RPi.GPIO or PIGPIO, so ServoBlaster is redundant
 #
 @deprecated("This will be removed in a future release in favor of PulseController")
-class ServoBlaster(object):
+class ServoBlaster():
     '''
     Servo controlled from the gpio pins on Rpi
     This uses a user space service to generate more efficient PWM via DMA control blocks.
@@ -1066,7 +1066,7 @@ class ArduinoFirmata:
     def set_pulse(self, pin, angle):
         try:
             self.board.analog_write(pin, int(angle))
-        except:
+        except Exception:
             self.board.analog_write(pin, int(angle))
 
     def set_servo_pulse(self, angle):

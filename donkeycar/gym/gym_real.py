@@ -33,22 +33,22 @@ class DonkeyRealEnv(gym.Env):
     def __init__(self, time_step=0.05, frame_skip=2):
 
         print("starting DonkeyGym env")
-        
+
         try:
             donkey_name = str(os.environ['DONKEY_NAME'])
-        except:
+        except Exception:
             donkey_name = 'my_robot1234'
             print("No DONKEY_NAME environment var. Using default:", donkey_name)
 
         try:
             mqtt_broker = str(os.environ['DONKEY_MQTT_BROKER'])
-        except:
+        except Exception:
             mqtt_broker = "iot.eclipse.org"
             print("No DONKEY_MQTT_BROKER environment var. Using default:", mqtt_broker)
-            
+
         # start controller
         self.controller = DonkeyRemoteContoller(donkey_name=donkey_name, mqtt_broker=mqtt_broker)
-        
+
         # steering and throttle
         self.action_space = spaces.Box(low=np.array([self.STEER_LIMIT_LEFT, self.THROTTLE_MIN]),
             high=np.array([self.STEER_LIMIT_RIGHT, self.THROTTLE_MAX]), dtype=np.float32 )
@@ -61,10 +61,10 @@ class DonkeyRealEnv(gym.Env):
 
         # wait until loaded
         self.controller.wait_until_connected()
-        
+
 
     def close(self):
-        self.controller.quit()        
+        self.controller.quit()
 
     def step(self, action):
         for i in range(self.frame_skip):

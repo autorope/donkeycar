@@ -64,5 +64,5 @@ class TestMemory(unittest.TestCase):
     def test_get_iter(self):
         mem = Memory()
         mem.put(['myitem'], 888)
-        
+
         assert dict(mem.items()) == {'myitem': 888}

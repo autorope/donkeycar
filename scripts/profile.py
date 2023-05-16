@@ -4,7 +4,7 @@ Script to drive a TF model as fast as possible
 
 Usage:
     profile.py (--model=<model>) (--type=<linear|categorical|etc>)
-    
+
 Options:
     -h --help        Show this screen.
 """
@@ -20,7 +20,7 @@ def profile(model_path, model_type):
     model_path = os.path.expanduser(model_path)
     model = dk.utils.get_model_by_type(model_type, cfg)
     model.load(model_path)
-    
+
     h, w, ch = cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH
 
     # generate random array in the right shape in [0,1)

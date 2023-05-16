@@ -17,7 +17,7 @@ args = docopt(__doc__)
 in_model = os.path.expanduser(args['--model'])
 output = os.path.expanduser(args['--output'])
 output_path = Path(output)
-output_meta = Path('%s/%s.metadata' % (output_path.parent.as_posix(), output_path.stem))
+output_meta = Path(f'{output_path.parent.as_posix()}/{output_path.stem}.metadata')
 
 tf.compat.v1.disable_eager_execution()
 
@@ -46,7 +46,6 @@ with graph.as_default():
         output_file.write(graph_frozen.SerializeToString())
         meta_file.write(json.dumps(meta))
 
-    print ('Inputs = [%s], Outputs = [%s]' % (input_names, output_names))
-    print ('Writing metadata to %s' % output_meta.as_posix())
-    print ('To convert use: \n   `convert-to-uff %s`' % (output))
-
+    print (f'Inputs = [{input_names}], Outputs = [{output_names}]')
+    print (f'Writing metadata to {output_meta.as_posix()}')
+    print (f'To convert use: \n   `convert-to-uff {output}`')

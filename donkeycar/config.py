@@ -12,7 +12,7 @@ logger = getLogger(__name__)
 
 
 class Config:
-    
+
     def from_pyfile(self, filename):
         d = types.ModuleType('config')
         d.__file__ = filename
@@ -20,16 +20,16 @@ class Config:
             with open(filename, mode='rb') as config_file:
                 exec(compile(config_file.read(), filename, 'exec'), d.__dict__)
         except IOError as e:
-            e.strerror = 'Unable to load configuration file (%s)' % e.strerror
+            e.strerror = f'Unable to load configuration file ({e.strerror})'
             raise
         self.from_object(d)
         return True
-    
+
     def from_object(self, obj):
         for key in dir(obj):
             if key.isupper():
                 setattr(self, key, getattr(obj, key))
-                
+
     def __str__(self):
         result = []
         for key in dir(self):
@@ -44,7 +44,7 @@ class Config:
 
 
 def load_config(config_path=None, myconfig="myconfig.py"):
-    
+
     if config_path is None:
         import __main__ as main
         main_path = os.path.dirname(os.path.realpath(main.__file__))
@@ -53,7 +53,7 @@ def load_config(config_path=None, myconfig="myconfig.py"):
             local_config = os.path.join(os.path.curdir, 'config.py')
             if os.path.exists(local_config):
                 config_path = local_config
-    
+
     logger.info(f'loading config file: {config_path}')
     cfg = Config()
     cfg.from_pyfile(config_path)

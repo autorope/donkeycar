@@ -28,6 +28,7 @@ Use PCA9685 on bus 0 at address 0x40, channel 7
 from abc import ABC, abstractmethod
 from typing import Any, Callable
 import logging
+import sys
 
 
 logger = logging.getLogger(__name__)
@@ -394,13 +395,13 @@ def pwm_pin(
 # ----- RPi.GPIO/Jetson.GPIO implementations -----
 #
 try:
-    import RPi.GPIO as GPIO
+    from RPi import GPIO
     # lookups to convert abstact api to GPIO values
     gpio_pin_edge = [None, GPIO.RISING, GPIO.FALLING, GPIO.BOTH]
     gpio_pin_pull = [None, GPIO.PUD_OFF, GPIO.PUD_DOWN, GPIO.PUD_UP]
     gpio_pin_scheme = {PinScheme.BOARD: GPIO.BOARD, PinScheme.BCM: GPIO.BCM}
 except ImportError:
-    logger.warn("RPi.GPIO was not imported.")
+    logger.warning("RPi.GPIO was not imported.")
     globals()["GPIO"] = None
 
 
@@ -753,7 +754,7 @@ try:
     pigpio_pin_edge = [None, pigpio.RISING_EDGE, pigpio.FALLING_EDGE, pigpio.EITHER_EDGE]
     pigpio_pin_pull = [None, pigpio.PUD_OFF, pigpio.PUD_DOWN, pigpio.PUD_UP]
 except ImportError:
-    logger.warn("pigpio was not imported.")
+    logger.warning("pigpio was not imported.")
     globals()["pigpio"] = None
 
 
@@ -1055,7 +1056,7 @@ if __name__ == '__main__':
         print('Stopping early.')
     except Exception as e:
         print(e)
-        exit(1)
+        sys.exit(1)
     finally:
         if pwm_out_pin is not None:
             pwm_out_pin.stop()

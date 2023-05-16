@@ -137,7 +137,7 @@ class RosPath(AbstractPath):
         self.recording = False
         return True
 
-class PImage(object):
+class PImage():
     def __init__(self, resolution=(500, 500), color="white", clear_each_frame=False):
         self.resolution = resolution
         self.color = color
@@ -151,7 +151,7 @@ class PImage(object):
         return self.img
 
 
-class OriginOffset(object):
+class OriginOffset():
     '''
     Use this to set the car back to the origin without restarting it.
     '''
@@ -217,7 +217,7 @@ class OriginOffset(object):
         self.set_origin(self.last_x, self.last_y)
 
 
-class PathPlot(object):
+class PathPlot():
     '''
     draw a path plot to an image
     '''
@@ -233,7 +233,7 @@ class PathPlot(object):
         draw.line((sx,sy, ex, ey), fill=color, width=1)
 
     def run(self, img, path):
-        
+
         if type(img) is numpy.ndarray:
             stacked_img = numpy.stack((img,)*3, axis=-1)
             img = arr_to_img(stacked_img)
@@ -257,7 +257,7 @@ class PathPlot(object):
         return img
 
 
-class PlotCircle(object):
+class PlotCircle():
     '''
     draw a circle plot to an image
     '''
@@ -285,14 +285,14 @@ class PlotCircle(object):
         self.plot_circle(x * self.scale + self.offset[0],
                         y * -self.scale + self.offset[1],  # y increases going north
                         self.radius,
-                        draw, 
+                        draw,
                         self.color)
 
         return img
 
 from donkeycar.la import Line3D, Vec3
 
-class CTE(object):
+class CTE():
 
     def __init__(self, look_ahead=1, look_behind=1, num_pts=None) -> None:
         self.num_pts = num_pts
@@ -347,7 +347,7 @@ class CTE(object):
         # get the next point in the path as the end of the segment
         iB = (iA + 2) % len(path)
         b = path[iB]
-        
+
         return a, b
 
     def nearest_waypoints(self, path, x, y, look_ahead=1, look_behind=1, from_pt=0, num_pts=None):
@@ -411,10 +411,10 @@ class CTE(object):
         cte = 0.
         i = from_pt
 
-        a, b, i = self.nearest_track(path, x, y, 
-                                     look_ahead=self.look_ahead, look_behind=self.look_behind, 
+        a, b, i = self.nearest_track(path, x, y,
+                                     look_ahead=self.look_ahead, look_behind=self.look_behind,
                                      from_pt=from_pt, num_pts=self.num_pts)
-        
+
         if a and b:
             logging.info(f"nearest: ({a[0]}, {a[1]}) to ({x}, {y})")
             a_v = Vec3(a[0], 0., a[1])
@@ -426,13 +426,13 @@ class CTE(object):
             cp = line.dir.cross(err.normalized())
             if cp.y > 0.0 :
                 sign = -1.0
-            cte = err.mag() * sign            
+            cte = err.mag() * sign
         else:
             logging.info(f"no nearest point to ({x},{y}))")
         return cte, i
 
 
-class PID_Pilot(object):
+class PID_Pilot():
 
     def __init__(
             self,

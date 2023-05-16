@@ -1,9 +1,10 @@
 import socket
-import zlib, pickle
+import zlib
+import pickle
 import zmq
 import time
 
-class ZMQValuePub(object):
+class ZMQValuePub():
     '''
     Use Zero Message Queue (zmq) to publish values
     '''
@@ -13,7 +14,7 @@ class ZMQValuePub(object):
         self.socket = context.socket(zmq.PUB)
         self.socket.set_hwm(hwm)
         self.socket.bind("tcp://*:%d" % port)
-    
+
     def run(self, values):
         packet = { "name": self.name, "val" : values }
         p = pickle.dumps(packet)
@@ -26,7 +27,7 @@ class ZMQValuePub(object):
         context = zmq.Context()
         context.destroy()
 
-class ZMQValueSub(object):
+class ZMQValueSub():
     '''
     Use Zero Message Queue (zmq) to subscribe to value messages from a remote publisher
     '''
@@ -57,7 +58,7 @@ class ZMQValueSub(object):
         obj = pickle.loads(p)
 
         if self.name == obj['name']:
-            self.last = obj['val'] 
+            self.last = obj['val']
             return obj['val']
 
         if self.return_last:
@@ -69,7 +70,7 @@ class ZMQValueSub(object):
         context = zmq.Context()
         context.destroy()
 
-class UDPValuePub(object):
+class UDPValuePub():
     '''
     Use udp to broadcast values on local network
     '''
@@ -77,7 +78,7 @@ class UDPValuePub(object):
         self.name = name
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)    
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         self.sock.settimeout(0.2)
         self.sock.bind(("", 44444))
 
@@ -91,7 +92,7 @@ class UDPValuePub(object):
     def shutdown(self):
         self.sock.close()
 
-class UDPValueSub(object):
+class UDPValueSub():
     '''
     Use UDP to listen for broadcase packets
     '''
@@ -132,7 +133,7 @@ class UDPValueSub(object):
 
 import select
 
-class TCPServeValue(object):
+class TCPServeValue():
     '''
     Use tcp to serve values on local network
     '''
@@ -165,7 +166,7 @@ class TCPServeValue(object):
                   self.clients,
                   [],
                   timeout)
-            
+
         if len(ready_to_write) > 0:
             packet = { "name": self.name, "val" : values }
             p = pickle.dumps(packet)
@@ -176,7 +177,7 @@ class TCPServeValue(object):
                 except BrokenPipeError or ConnectionResetError:
                     print("client dropped connection")
                     self.clients.remove(client)
-        
+
         if self.sock in ready_to_read:
             client, addr = self.sock.accept()
             print("got connection from", addr)
@@ -191,7 +192,7 @@ class TCPServeValue(object):
         self.sock.close()
 
 
-class TCPClientValue(object):
+class TCPClientValue():
     '''
     Use tcp to get values on local network
     '''
@@ -250,16 +251,16 @@ class TCPClientValue(object):
         self.sock.close()
         self.sock = None
         self.lastread = time.time()
-            
- 
+
+
     def run(self):
 
         time_since_last_read = abs(time.time() - self.lastread)
-        
+
         if self.sock is None:
             if not self.connect():
                 return None
-        elif time_since_last_read > 5.0: 
+        elif time_since_last_read > 5.0:
             print("error: no data from server. may have died")
             self.reset()
             return None
@@ -290,7 +291,7 @@ class TCPClientValue(object):
                 return None
 
             if self.name == obj['name']:
-                self.last = obj['val'] 
+                self.last = obj['val']
                 return obj['val']
 
         if len(in_error) > 0:
@@ -302,7 +303,7 @@ class TCPClientValue(object):
     def shutdown(self):
         self.sock.close()
 
-class MQTTValuePub(object):
+class MQTTValuePub():
     '''
     Use MQTT to send values on network
     pip install paho-mqtt
@@ -329,7 +330,7 @@ class MQTTValuePub(object):
         self.client.loop_stop()
 
 
-class MQTTValueSub(object):
+class MQTTValueSub():
     '''
     Use MQTT to recv values on network
     pip install paho-mqtt
@@ -350,7 +351,7 @@ class MQTTValueSub(object):
 
     def on_message(self, client, userdata, message):
         self.data = message.payload
-        
+
     def run(self):
         if self.data is None:
             return self.def_value
@@ -362,7 +363,7 @@ class MQTTValueSub(object):
             self.last = obj['val']
             #print("steering, throttle", obj['val'])
             return obj['val']
-            
+
         return self.def_value
 
     def shutdown(self):
@@ -371,7 +372,7 @@ class MQTTValueSub(object):
 
 
 def test_pub_sub(ip):
-    
+
     if ip is None:
         print("publishing test..")
         p = ZMQValuePub('test')
@@ -395,7 +396,7 @@ def test_pub_sub(ip):
             time.sleep(1)
 
 def test_udp_broadcast(ip):
-    
+
     if ip is None:
         print("udp broadcast test..")
         p = UDPValuePub('camera')
@@ -404,7 +405,7 @@ def test_udp_broadcast(ip):
         cam = PiCamera(160, 120, 3, framerate=4)
         img_conv = ImgArrToJpg()
         time.sleep(1)
-        
+
         while True:
             cam_img = cam.run()
             jpg = img_conv.run(cam_img)
@@ -440,7 +441,7 @@ def test_tcp_client_server(ip):
             time.sleep(0.01)
 
 def test_mqtt_pub_sub(ip):
-    
+
     if ip is None:
         print("publishing test..")
         p = MQTTValuePub('donkey/camera')
@@ -484,5 +485,3 @@ if __name__ == "__main__":
     #test_udp_broadcast(ip)
     #test_mqtt_pub_sub(ip)
     test_tcp_client_server(ip)
-    
-

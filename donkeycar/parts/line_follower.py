@@ -122,10 +122,10 @@ class LineFollower:
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
         display_str = []
-        display_str.append("STEERING:{:.1f}".format(self.steering))
-        display_str.append("THROTTLE:{:.2f}".format(self.throttle))
-        display_str.append("I YELLOW:{:d}".format(max_yellow))
-        display_str.append("CONF:{:.2f}".format(confidense))
+        display_str.append(f"STEERING:{self.steering:.1f}")
+        display_str.append(f"THROTTLE:{self.throttle:.2f}")
+        display_str.append(f"I YELLOW:{max_yellow:d}")
+        display_str.append(f"CONF:{confidense:.2f}")
 
         y = 10
         x = 10
@@ -135,4 +135,3 @@ class LineFollower:
             y += 10
 
         return img
-
