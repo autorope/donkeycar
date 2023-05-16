@@ -30,7 +30,7 @@ def tub(tub_path):
 @pytest.fixture
 def tubs(tmpdir, tubs=5):
     tubs_dir = tmpdir.mkdir('tubs')
-    tub_paths = [str(tubs_dir.join('tub_{}'.format(i))) for i in range(tubs)]
+    tub_paths = [str(tubs_dir.join(f'tub_{i}')) for i in range(tubs)]
     tubs = [create_sample_tub(tub_path, records=5) for tub_path in tub_paths]
     return str(tubs_dir), tub_paths, tubs
 

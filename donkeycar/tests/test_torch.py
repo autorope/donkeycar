@@ -69,7 +69,7 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     tub_dir = os.path.join(car_dir, 'tub')
     loss = train(config, tub_dir, pilot_path(
         data.name), data.type, checkpoint_path=None)
-    
+
     # check loss is converging
     assert loss[-1] < loss[0] * data.convergence
 

@@ -27,7 +27,7 @@ class TestCatalog(unittest.TestCase):
         line = catalog_2.seekable.readline()
         count = 0
         while line is not None and len(line) > 0:
-            print('Contents %s' % (line))
+            print(f'Contents {line}')
             count += 1
             line = catalog_2.seekable.readline()
 

@@ -53,7 +53,7 @@ class RoboHATController:
     def shutdown(self):
         try:
             self.serial.close()
-        except:
+        except Exception:
             pass
 
     def read_serial(self):
@@ -68,14 +68,14 @@ class RoboHATController:
         output = line.split(", ")
         if len(output) == 2:
             if self.SHOW_STEERING_VALUE:
-                print("MM1: steering={}".format(output[0]))
+                print(f"MM1: steering={output[0]}")
 
             if output[0].isnumeric() and output[1].isnumeric():
                 angle_pwm = float(output[0])
                 throttle_pwm = float(output[1])
 
                 if self.debug:
-                    print("angle_pwm = {}, throttle_pwm= {}".format(angle_pwm, throttle_pwm))
+                    print(f"angle_pwm = {angle_pwm}, throttle_pwm= {throttle_pwm}")
 
 
                 if throttle_pwm >= self.STOPPED_PWM:
@@ -116,7 +116,7 @@ class RoboHATController:
                                                           0, 1)
 
                 if self.debug:
-                    print("angle = {}, throttle = {}".format(self.angle, self.throttle))
+                    print(f"angle = {self.angle}, throttle = {self.throttle}")
 
                 if self.auto_record_on_throttle:
                     was_recording = self.recording
@@ -135,7 +135,7 @@ class RoboHATController:
         while True:
             try:
                 self.read_serial()
-            except:
+            except Exception:
                 print("MM1: Error reading serial input!")
                 break
 
@@ -196,10 +196,10 @@ class RoboHATDriver:
 
     def trim_out_of_bound_value(self, value):
         if value > 1:
-            print("MM1: Warning, value out of bound. Value = {}".format(value))
+            print(f"MM1: Warning, value out of bound. Value = {value}")
             return 1.0
         elif value < -1:
-            print("MM1: Warning, value out of bound. Value = {}".format(value))
+            print(f"MM1: Warning, value out of bound. Value = {value}")
             return -1.0
         else:
             return value
@@ -238,13 +238,10 @@ class RoboHATDriver:
 
         except OSError as err:
             print(
-                "Unexpected issue setting PWM (check wires to motor board): {0}".format(err))
+                f"Unexpected issue setting PWM (check wires to motor board): {err}")
 
     def is_valid_pwm_value(self, value):
-        if 1000 <= value <= 2000:
-            return True
-        else:
-            return False
+        return 1000 <= value <= 2000
 
     def write_pwm(self, steering, throttle):
         self.pwm.write(b"%d, %d\r" % (steering, throttle))
@@ -255,5 +252,5 @@ class RoboHATDriver:
     def shutdown(self):
         try:
             self.serial.close()
-        except:
+        except Exception:
             pass

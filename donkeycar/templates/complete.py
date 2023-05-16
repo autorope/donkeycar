@@ -11,7 +11,7 @@ Options:
     --js                    Use physical joystick.
     -f --file=<file>        A text file containing paths to tub files, one per line. Option may be used more than once.
     --meta=<key:value>      Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
-    --myconfig=filename     Specify myconfig file to use. 
+    --myconfig=filename     Specify myconfig file to use.
                             [default: myconfig.py]
 """
 from docopt import docopt
@@ -22,7 +22,7 @@ from docopt import docopt
 #
 try:
     import cv2
-except:
+except Exception:
     pass
 
 
@@ -85,7 +85,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.HAVE_MQTT_TELEMETRY:
         from donkeycar.parts.telemetry import MqttTelemetry
         tel = MqttTelemetry(cfg)
-        
+
     #
     # if we are using the simulator, set it up
     #
@@ -146,11 +146,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # For example: adding a button handler is just adding a part with a run_condition
     # set to the button's name, so it runs when button is pressed.
     #
-    V.add(Lambda(lambda v: print(f"web/w1 clicked")), inputs=["web/w1"], run_condition="web/w1")
-    V.add(Lambda(lambda v: print(f"web/w2 clicked")), inputs=["web/w2"], run_condition="web/w2")
-    V.add(Lambda(lambda v: print(f"web/w3 clicked")), inputs=["web/w3"], run_condition="web/w3")
-    V.add(Lambda(lambda v: print(f"web/w4 clicked")), inputs=["web/w4"], run_condition="web/w4")
-    V.add(Lambda(lambda v: print(f"web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
+    V.add(Lambda(lambda v: print("web/w1 clicked")), inputs=["web/w1"], run_condition="web/w1")
+    V.add(Lambda(lambda v: print("web/w2 clicked")), inputs=["web/w2"], run_condition="web/w2")
+    V.add(Lambda(lambda v: print("web/w3 clicked")), inputs=["web/w3"], run_condition="web/w3")
+    V.add(Lambda(lambda v: print("web/w4 clicked")), inputs=["web/w4"], run_condition="web/w4")
+    V.add(Lambda(lambda v: print("web/w5 clicked")), inputs=["web/w5"], run_condition="web/w5")
 
     #this throttle filter will allow one tap back for esc reverse
     th_filter = ThrottleFilter()
@@ -257,7 +257,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             if isinstance(ctr, JoystickController):
                 ctr.set_button_down_trigger('circle', show_record_count_status) #then we are not using the circle button. hijack that to force a record count indication
         else:
-            
+
             show_record_count_status()
 
     #Sombrero
@@ -277,14 +277,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         start = time.time()
         print('loading model', model_path)
         kl.load(model_path)
-        print('finished loading in %s sec.' % (str(time.time() - start)) )
+        print(f'finished loading in {str(time.time() - start)} sec.' )
 
     def load_weights(kl, weights_path):
         start = time.time()
         try:
             print('loading model weights', weights_path)
             kl.model.load_weights(weights_path)
-            print('finished loading in %s sec.' % (str(time.time() - start)) )
+            print(f'finished loading in {str(time.time() - start)} sec.' )
         except Exception as e:
             print(e)
             print('ERR>> problems loading weights', weights_path)
@@ -297,7 +297,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             with open(json_fnm, 'r') as handle:
                 contents = handle.read()
                 kl.model = keras.models.model_from_json(contents)
-            print('finished loading json in %s sec.' % (str(time.time() - start)) )
+            print(f'finished loading json in {str(time.time() - start)} sec.' )
         except Exception as e:
             print(e)
             print("ERR>> problems loading model json", json_fnm)
@@ -363,7 +363,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
             try:
                 ctr.set_button_down_trigger('L1', bh.increment_state)
-            except:
+            except Exception:
                 pass
 
             inputs = ['cam/image_array', "behavior/one_hot_state_array"]
@@ -406,7 +406,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             #
             # add the complete set of pre and post augmentation transformations
             #
-            logger.info(f"Adding inference transformations")
+            logger.info("Adding inference transformations")
             V.add(ImageTransformations(cfg, 'TRANSFORMATIONS',
                                        'POST_TRANSFORMATIONS'),
                   inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
@@ -426,7 +426,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                                cfg.STOP_SIGN_REVERSE_THROTTLE),
               inputs=['cam/image_array', 'pilot/throttle'],
               outputs=['pilot/throttle', 'cam/image_array'])
-        V.add(ThrottleFilter(), 
+        V.add(ThrottleFilter(),
               inputs=['pilot/throttle'],
               outputs=['pilot/throttle'])
 
@@ -822,7 +822,7 @@ def get_camera(cfg):
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         else:
-            raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
+            raise(Exception(f"Unkown camera type: {cfg.CAMERA_TYPE}"))
     return cam
 
 
@@ -834,7 +834,7 @@ def add_camera(V, cfg, camera_type):
               On output this will be modified.
     :param cfg: the configuration (from myconfig.py)
     """
-    logger.info("cfg.CAMERA_TYPE %s"%cfg.CAMERA_TYPE)
+    logger.info(f"cfg.CAMERA_TYPE {cfg.CAMERA_TYPE}")
     if camera_type == "stereo":
         if cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam
@@ -848,7 +848,7 @@ def add_camera(V, cfg, camera_type):
             camA = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam = 0)
             camB = CvCam(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH, iCam = 1)
         else:
-            raise(Exception("Unsupported camera type: %s" % cfg.CAMERA_TYPE))
+            raise(Exception(f"Unsupported camera type: {cfg.CAMERA_TYPE}"))
 
         V.add(camA, outputs=['cam/image_array_a'], threaded=True)
         V.add(camB, outputs=['cam/image_array_b'], threaded=True)
@@ -1117,10 +1117,10 @@ def add_drivetrain(V, cfg):
                                    min_pulse=cfg.THROTTLE_REVERSE_PWM)
             V.add(steering, inputs=['steering'], threaded=True)
             V.add(throttle, inputs=['throttle'], threaded=True)
-    
+
         elif cfg.DRIVE_TRAIN_TYPE == "VESC":
             from donkeycar.parts.actuator import VESC
-            logger.info("Creating VESC at port {}".format(cfg.VESC_SERIAL_PORT))
+            logger.info(f"Creating VESC at port {cfg.VESC_SERIAL_PORT}")
             vesc = VESC(cfg.VESC_SERIAL_PORT,
                           cfg.VESC_MAX_SPEED_PERCENT,
                           cfg.VESC_HAS_SENSOR,

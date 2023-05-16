@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class FrequencyLogger(object):
+class FrequencyLogger():
     """
     Log current, min and max of frequency value
     """

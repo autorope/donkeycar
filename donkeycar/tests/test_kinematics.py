@@ -127,7 +127,7 @@ class TestBicycle(unittest.TestCase):
         turn_direction = sign(steering_angle)
         steering_angle = limit_angle(steering_angle)
 
-        wheel_base = 0.5  
+        wheel_base = 0.5
         bicycle = Bicycle(wheel_base)  # wheel base is 1/2 meter
 
 
@@ -372,7 +372,7 @@ class TestBicycleNormalizeAngularVelocity(unittest.TestCase):
         max_forward_velocity = 10
         max_steering_angle = math.pi / 6
         max_angular_velocity = bicycle_angular_velocity(wheel_base, max_forward_velocity, max_steering_angle)
-        normalize = BicycleNormalizeAngularVelocity(wheel_base, max_forward_velocity, max_steering_angle)        
+        normalize = BicycleNormalizeAngularVelocity(wheel_base, max_forward_velocity, max_steering_angle)
         unnormalize = BicycleUnnormalizeAngularVelocity(wheel_base, max_forward_velocity, max_steering_angle)
 
         angular_velocity = normalize.run(max_angular_velocity)
@@ -407,7 +407,7 @@ class TestUnicycleNormalizeAngularVelocity(unittest.TestCase):
         axle_length = 0.1
         max_forward_velocity = 10
         max_angular_velocity = unicycle_max_angular_velocity(wheel_radius, axle_length, max_forward_velocity)
-        normalize = UnicycleNormalizeAngularVelocity(wheel_radius, axle_length, max_forward_velocity)        
+        normalize = UnicycleNormalizeAngularVelocity(wheel_radius, axle_length, max_forward_velocity)
         unnormalize = UnicycleUnnormalizeAngularVelocity(wheel_radius, axle_length, max_forward_velocity)
 
         angular_velocity = normalize.run(max_angular_velocity / 2)
@@ -419,7 +419,7 @@ class TestUnicycleNormalizeAngularVelocity(unittest.TestCase):
 class TestNormalizeSteeringAngle(unittest.TestCase):
     def test_normalize(self):
         max_steering_angle = math.pi / 6
-        normalize = NormalizeSteeringAngle(max_steering_angle)        
+        normalize = NormalizeSteeringAngle(max_steering_angle)
         unnormalize = UnnormalizeSteeringAngle(max_steering_angle)
 
         #

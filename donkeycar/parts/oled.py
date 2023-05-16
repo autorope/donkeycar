@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 
 
-class OLEDDisplay(object):
+class OLEDDisplay():
     '''
     Manages drawing of text on the OLED display.
     '''
@@ -85,7 +85,7 @@ class OLEDDisplay(object):
         self.display.show()
 
 
-class OLEDPart(object):
+class OLEDPart():
     '''
     The part that updates status on the oled display.
     '''
@@ -102,11 +102,11 @@ class OLEDPart(object):
         eth0 = OLEDPart.get_ip_address('eth0')
         wlan0 = OLEDPart.get_ip_address('wlan0')
         if eth0 is not None:
-            self.eth0 = 'eth0:%s' % (eth0)
+            self.eth0 = f'eth0:{eth0}'
         else:
             self.eth0 = None
         if wlan0 is not None:
-            self.wlan0 = 'wlan0:%s' % (wlan0)
+            self.wlan0 = f'wlan0:{wlan0}'
         else:
             self.wlan0 = None
 
@@ -119,11 +119,11 @@ class OLEDPart(object):
             self.num_records = num_records
 
         if recording:
-            self.recording = 'YES (Records = %s)' % (self.num_records)
+            self.recording = f'YES (Records = {self.num_records})'
         else:
-            self.recording = 'NO (Records = %s)' % (self.num_records)
+            self.recording = f'NO (Records = {self.num_records})'
 
-        self.user_mode = 'User Mode (%s)' % (user_mode)
+        self.user_mode = f'User Mode ({user_mode})'
 
     def update_slots(self):
         updates = [self.eth0, self.wlan0, self.recording, self.user_mode]
@@ -158,4 +158,4 @@ class OLEDPart(object):
 
     @classmethod
     def get_network_interface_state(cls, interface):
-        return subprocess.check_output('cat /sys/class/net/%s/operstate' % interface, shell=True).decode('ascii')[:-1]
+        return subprocess.check_output(f'cat /sys/class/net/{interface}/operstate', shell=True).decode('ascii')[:-1]

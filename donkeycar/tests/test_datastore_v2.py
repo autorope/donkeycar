@@ -22,7 +22,7 @@ class TestDatastore(unittest.TestCase):
 
         read_records = 0
         for entry in manifest:
-            print('Entry %s' % (entry))
+            print(f'Entry {entry}')
             read_records += 1
 
         self.assertEqual(count, read_records)

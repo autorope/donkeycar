@@ -50,14 +50,14 @@ class MqttTelemetry(StreamHandler):
             logger.addHandler(self)
 
     def add_step_inputs(self, inputs, types):
-   
+
         # Add inputs if supported and not yet registered
         for ind in range(0, len(inputs or [])):
             if types[ind] in ['float', 'str', 'int'] and inputs[ind] not in self._step_inputs:
                 self._step_inputs.append(inputs[ind])
                 self._step_types.append(types[ind])
-                
-        return self._step_inputs, self._step_types        
+
+        return self._step_inputs, self._step_types
 
     @staticmethod
     def filter_supported_metrics(inputs, types):
@@ -104,7 +104,7 @@ class MqttTelemetry(StreamHandler):
 
         if not packet:
             return
-            
+
         if self._use_json_format:
             packet = [{'ts': k, 'values': v} for k, v in packet.items()]
             payload = json.dumps(packet)
@@ -119,7 +119,7 @@ class MqttTelemetry(StreamHandler):
             for k, v in last_sample.items():
                 if k in self._step_inputs:
                     topic = f'{self._topic}/{k}'
-                    
+
                     try:
                         # Convert unsupported numpy types to python standard
                         if isinstance(v, np.generic):
@@ -149,7 +149,7 @@ class MqttTelemetry(StreamHandler):
         pairs them with their inputs keys and saves them to disk.
         """
         assert len(self._step_inputs) == len(args)
-        
+
         # Add to queue
         record = dict(zip(self._step_inputs, args))
         self.report(record)

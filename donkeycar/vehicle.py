@@ -50,10 +50,10 @@ class PartProfiler:
             if len(arr) == 0:
                 continue
             row = [p.__class__.__name__,
-                   "%.2f" % (max(arr) * 1000),
-                   "%.2f" % (min(arr) * 1000),
-                   "%.2f" % (sum(arr) / len(arr) * 1000)]
-            row += ["%.2f" % (np.percentile(arr, p) * 1000) for p in pctile]
+                   f"{max(arr) * 1000:.2f}",
+                   f"{min(arr) * 1000:.2f}",
+                   f"{sum(arr) / len(arr) * 1000:.2f}"]
+            row += [f"{np.percentile(arr, p) * 1000:.2f}" for p in pctile]
             pt.add_row(row)
         logger.info('\n' + str(pt))
 
@@ -87,12 +87,12 @@ class Vehicle:
             run_condition : str
                 If a part should be run or not
         """
-        assert type(inputs) is list, "inputs is not a list: %r" % inputs
-        assert type(outputs) is list, "outputs is not a list: %r" % outputs
-        assert type(threaded) is bool, "threaded is not a boolean: %r" % threaded
+        assert type(inputs) is list, f"inputs is not a list: {inputs!r}"
+        assert type(outputs) is list, f"outputs is not a list: {outputs!r}"
+        assert type(threaded) is bool, f"threaded is not a boolean: {threaded!r}"
 
         p = part
-        logger.info('Adding part {}.'.format(p.__class__.__name__))
+        logger.info(f'Adding part {p.__class__.__name__}.')
         entry = {}
         entry['part'] = p
         entry['inputs'] = inputs
@@ -144,7 +144,7 @@ class Vehicle:
                     entry.get('thread').start()
 
             # wait until the parts warm up.
-            logger.info('Starting vehicle at {} Hz'.format(rate_hz))
+            logger.info(f'Starting vehicle at {rate_hz} Hz')
 
             loop_start_time = time.time()
             loop_count = 0
@@ -194,7 +194,7 @@ class Vehicle:
             if entry.get('run_condition'):
                 run_condition = entry.get('run_condition')
                 run = self.mem.get([run_condition])[0]
-            
+
             if run:
                 # get part
                 p = entry['part']
@@ -214,7 +214,7 @@ class Vehicle:
                 # finish timing part run
                 self.profiler.on_part_finished(p)
 
-    def stop(self):        
+    def stop(self):
         logger.info('Shutting down vehicle and its parts...')
         for entry in self.parts:
             try:

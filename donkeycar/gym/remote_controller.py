@@ -12,8 +12,8 @@ from donkeycar.parts.image import JpgToImgArr
 
 class DonkeyRemoteContoller:
     def __init__(self, donkey_name, mqtt_broker, sensor_size=(120, 160, 3)):
-        self.camera_sub = MQTTValueSub("donkey/%s/camera" % donkey_name, broker=mqtt_broker)
-        self.controller_pub = MQTTValuePub("donkey/%s/controls" % donkey_name, broker=mqtt_broker)
+        self.camera_sub = MQTTValueSub(f"donkey/{donkey_name}/camera", broker=mqtt_broker)
+        self.controller_pub = MQTTValuePub(f"donkey/{donkey_name}/controls", broker=mqtt_broker)
         self.jpgToImg = JpgToImgArr()
         self.sensor_size = sensor_size
 
@@ -37,6 +37,3 @@ class DonkeyRemoteContoller:
         jpg = self.camera_sub.run()
         self.img = self.jpgToImg.run(jpg)
         return self.img
-
-
-    

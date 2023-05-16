@@ -11,10 +11,10 @@ class Lambda:
         Accepts the function to use.
         """
         self.f = f
-        
+
     def run(self, *args, **kwargs):
         return self.f(*args, **kwargs)
-    
+
     def shutdown(self):
         return
 
@@ -140,7 +140,7 @@ def twiddle(evaluator, tol=0.001, params=3, error_cmp=None, initial_guess=None):
     def _error_cmp(a, b):
         # Returns true if a is closer to zero than b.
         return abs(a) < abs(b)
-        
+
     if error_cmp is None:
         error_cmp = _error_cmp
 
@@ -155,11 +155,11 @@ def twiddle(evaluator, tol=0.001, params=3, error_cmp=None, initial_guess=None):
         steps += 1
         print('steps:', steps, 'tol:', tol, 'best error:', best_err)
         for i, _ in enumerate(p):
-            
+
             # first try to increase param
             p[i] += dp[i]
             err = evaluator(*p)
-            
+
             if error_cmp(err, best_err):
                 # Increasing param reduced error, so record and continue to increase dp range.
                 best_err = err
@@ -168,15 +168,15 @@ def twiddle(evaluator, tol=0.001, params=3, error_cmp=None, initial_guess=None):
                 # Otherwise, increased error, so undo and try decreasing dp
                 p[i] -= 2.*dp[i]
                 err = evaluator(*p)
-                
+
                 if error_cmp(err, best_err):
                     # Decreasing param reduced error, so record and continue to increase dp range.
                     best_err = err
                     dp[i] *= 1.1
-                    
+
                 else:
                     # Otherwise, reset param and reduce dp range.
                     p[i] += dp[i]
                     dp[i] *= 0.9
-                
+
     return p

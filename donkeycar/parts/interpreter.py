@@ -34,12 +34,12 @@ def keras_to_tflite(model, out_filename, data_gen=None):
         converter.representative_dataset = data_gen
         try:
             converter.target_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-        except:
+        except Exception:
             pass
         try:
             converter.target_spec.supported_ops \
                 = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-        except:
+        except Exception:
             pass
         converter.inference_input_type = tf.uint8
         converter.inference_output_type = tf.uint8
@@ -67,7 +67,7 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str):
             conversion_params=params)
         converter.convert()
         converter.save(tensor_rt_path)
-        logger.info(f'TensorRT conversion done.')
+        logger.info('TensorRT conversion done.')
     except Exception as e:
         logger.error(f'TensorRT conversion failed because: {e}')
 
@@ -241,7 +241,7 @@ class TfLite(Interpreter):
         self.input_shapes = None
         self.input_details = None
         self.output_details = None
-    
+
     def load(self, model_path):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'

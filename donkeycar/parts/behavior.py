@@ -1,4 +1,4 @@
-class BehaviorPart(object):
+class BehaviorPart():
     '''
     Keep a list of states, and an active state. Keep track of switching.
     And return active state information.

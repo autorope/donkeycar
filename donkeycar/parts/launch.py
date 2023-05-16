@@ -15,7 +15,7 @@ class AiLaunch():
         self.launch_throttle = launch_throttle
         self.prev_mode = None
         self.trigger_on_switch = keep_enabled
-        
+
     def enable_ai_launch(self):
         self.enabled = True
         print('AiLauncher is enabled.')
@@ -45,4 +45,3 @@ class AiLaunch():
             new_throttle = self.launch_throttle
 
         return new_throttle
-

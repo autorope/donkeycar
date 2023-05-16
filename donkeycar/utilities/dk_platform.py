@@ -2,7 +2,7 @@ import os
 import platform
 
 #
-# functions to query hardware and os 
+# functions to query hardware and os
 #
 def is_mac():
     return "Darwin" == platform.system()

@@ -1,5 +1,5 @@
 #
-# Python/opencv script to show an image and then mask it 
+# Python/opencv script to show an image and then mask it
 # using  low and high HSV values chosen with trackbars
 # or sampled from a rectangular select.
 # - click on a pixel to show it's position, RGB and HSV values
@@ -20,11 +20,11 @@ def nothing(x):
     pass
 
 
-# 
+#
 # Text metrics
 #
 font = cv2.FONT_HERSHEY_SIMPLEX
-line_height = 25  
+line_height = 25
 fontScale = 0.4
 text_color = (0, 0, 0)
 text_lines = []
@@ -42,22 +42,22 @@ def show_pixel_values(image, x, y):
 
         colorsRGB = image[y,x]
         text.append(f"Pixel RGB = ({colorsRGB[0]}, {colorsRGB[1]}, {colorsRGB[2]})")
-    
+
         colorsHSV = bgr_to_hsv(colorsRGB)
         text.append(f"Pixel HSV = ({colorsHSV[0]}, {colorsHSV[1]}, {colorsHSV[2]})")
-        
+
         hsv_low, hsv_high = get_hsv_trackbars()
         if hsv_low is not None and hsv_high is not None:
             text.append(f"Mask HSV Low = ({hsv_low[0]}, {hsv_low[1]}, {hsv_low[2]})")
             text.append(f"Mask HSV High = ({hsv_high[0]}, {hsv_high[1]}, {hsv_high[2]})")
-            
+
     return text
 
 
 def get_hsv_range(image, left, top, right, bottom):
     if image is None:
         return ((0, 0, 0), (179, 255, 255   ))
-        
+
     min_pixel = None
     max_pixel = None
     width = abs(right - left)
@@ -70,14 +70,14 @@ def get_hsv_range(image, left, top, right, bottom):
         right = left + width
         top = min(top, bottom)
         bottom = top + height
-                
+
         for y in range(top, bottom):
             for x in range(left, right):
                 pixel = bgr_to_hsv(image[y, x])
                 if pixel[0] > 0:  # reject black noise pixels
                     min_pixel = pixel if min_pixel is None else np.minimum(pixel, min_pixel)
                     max_pixel = pixel if max_pixel is None else np.maximum(pixel, max_pixel)
-        
+
     return (min_pixel, max_pixel)
 
 
@@ -87,10 +87,10 @@ drag_rect = None
 # mouse callback function
 def mouse_callback(event, x, y, flags, param):
     global drag_rect, frame, text_lines
-    
+
     if frame is None:
         return
-    
+
     if event == cv2.EVENT_LBUTTONDOWN: #checks mouse left button down condition
         drag_rect = (x, y, x, y)
         text_lines = show_pixel_values(frame, x, y)
@@ -140,7 +140,7 @@ def bgr_to_hsv(pixelRGB):
     """
     Convert a single RGB pixel to HSV
     """
-    imgRGB = np.uint8([[pixelRGB]])  
+    imgRGB = np.uint8([[pixelRGB]])
     imgHSV = cv2.cvtColor(imgRGB, cv2.COLOR_BGR2HSV)
     pixelHSV = imgHSV[0][0]
     return pixelHSV
@@ -156,7 +156,7 @@ def main(camera_index=0, width=640, height=480, file_image=None):
         cap = cv2.VideoCapture(camera_index)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    
+
     cv2.namedWindow(window_name)
 
     # Starting with 100's to prevent error while masking
@@ -179,15 +179,15 @@ def main(camera_index=0, width=640, height=480, file_image=None):
         frame = None
         if file_image is not None:
             frame = file_image.copy()
-        else: 
+        else:
             _, frame = cap.read()
             if frame is None:
                 continue
-        
+
         #
         # mask the image using the current HSV value
         #
-    
+
         #converting to HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -199,16 +199,16 @@ def main(camera_index=0, width=640, height=480, file_image=None):
         hsv_high = np.array(hsv_high)
         mask = cv2.inRange(hsv, hsv_low, hsv_high)
         image = cv2.bitwise_and(frame, frame, mask = mask)
-        
+
         # draw drag rectangle
         if drag_rect is not None:
             top_left = (min(drag_rect[0], drag_rect[2]), min(drag_rect[1], drag_rect[3]))
             bottom_right = (max(drag_rect[0], drag_rect[2]), max(drag_rect[1], drag_rect[3]))
-            
+
             # white rectangle with black outline
             image = cv2.rectangle(image, (top_left[0] - 1, top_left[1] - 1), (bottom_right[0] + 1, bottom_right[1] + 1), (0, 0, 0), 1)
             image = cv2.rectangle(image, top_left, bottom_right, (255, 255, 255), 1)
-        
+
         # draw pixel value
         if text_lines:
             x = line_height
@@ -232,15 +232,15 @@ def main(camera_index=0, width=640, height=480, file_image=None):
             print_hsv_trackbars()
 
     print_hsv_trackbars()
-    
+
     if cap is not None:
         cap.release()
 
     cv2.destroyAllWindows()
-    
+
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--camera", type=int, default=0,
                         help = "index of camera if using multiple cameras")
@@ -253,7 +253,7 @@ if __name__ == "__main__":
 
     # Read arguments from command line
     args = parser.parse_args()
-    
+
     image = None
     help = []
     if args.file is not None:
@@ -267,17 +267,17 @@ if __name__ == "__main__":
             help.append("-wd/--width must be >= 160")
         if args.height < 120:
             help.append("-ht/--height must be >= 120")
-        
+
     if len(help) > 0:
         parser.print_help()
         for h in help:
             print("  " + h)
         sys.exit(1)
-        
+
     print("- click on a pixel to show it's position, RGB and HSV values")
     print("- select an area to sample low and high HSV value for an image mask OR")
     print("- adjust the trackbars to choose low and high HSV values for an image mask")
     print("- press Escape to reset the low and high hsv value")
     print("- press 'q' to quit")
-    
+
     main(args.camera, args.width, args.height, image)

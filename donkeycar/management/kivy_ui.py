@@ -549,13 +549,13 @@ class TubFilter(PaddedBoxLayout):
             rc_handler.data['record_filter'] = self.record_filter
             if hasattr(config, 'TRAIN_FILTER'):
                 delattr(config, 'TRAIN_FILTER')
-            tub_screen().status(f'Filter cleared')
+            tub_screen().status('Filter cleared')
             return
         filter_expression = self.create_filter_string(filter_text)
         try:
             record = tub_screen().current_record
-            filter_func_text = f"""def filter_func(record): 
-                                       return {filter_expression}       
+            filter_func_text = """def filter_func(record):
+                                       return {filter_expression}
                                 """
             # creates the function 'filter_func'
             ldict = {}
@@ -994,20 +994,20 @@ class TrainScreen(Screen):
                             model_type=model_type,
                             transfer=transfer,
                             comment=self.ids.comment.text)
-            self.ids.status.text = f'Training completed.'
+            self.ids.status.text = 'Training completed.'
             self.ids.comment.text = 'Comment'
             self.ids.transfer_spinner.text = 'Choose transfer model'
             self.reload_database()
         except Exception as e:
             Logger.error(e)
-            self.ids.status.text = f'Train failed see console'
+            self.ids.status.text = 'Train failed see console'
         finally:
             self.ids.train_button.state = 'normal'
 
     def train(self, model_type):
         self.config.SHOW_PLOT = False
         Thread(target=self.train_call, args=(model_type,)).start()
-        self.ids.status.text = f'Training started.'
+        self.ids.status.text = 'Training started.'
 
     def set_config_attribute(self, input):
         try:

@@ -612,4 +612,3 @@ INC_PID_D_BTN = None            # button to change PID 'D' constant by PID_D_DEL
 DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DELTA
 INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
 DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
-

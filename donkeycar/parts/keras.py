@@ -181,7 +181,7 @@ class KerasPilot(ABC):
             verbose=verbose,
             workers=1,
             use_multiprocessing=False)
-            
+
         if show_plot:
             try:
                 import matplotlib.pyplot as plt
@@ -215,7 +215,7 @@ class KerasPilot(ABC):
 
             except Exception as ex:
                 print(f"problems with loss graph: {ex}")
-            
+
         return history.history
 
     def x_transform(
@@ -578,7 +578,7 @@ class KerasLocalizer(KerasPilot):
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'],
                                  loss='mse')
-        
+
     def interpreter_to_output(self, interpreter_out) \
             -> Tuple[Union[float, np.ndarray], ...]:
         angle, throttle, track_loc = interpreter_out
@@ -895,12 +895,12 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     x = core_cnn_layers(img_in, drop)
     x = Dense(100, activation='relu')(x)
     x = Dropout(.1)(x)
-    
+
     y = imu_in
     y = Dense(14, activation='relu')(y)
     y = Dense(14, activation='relu')(y)
     y = Dense(14, activation='relu')(y)
-    
+
     z = concatenate([x, y])
     z = Dense(50, activation='relu')(z)
     z = Dropout(.1)(z)
@@ -910,7 +910,7 @@ def default_imu(num_outputs, num_imu_inputs, input_shape):
     outputs = []
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='out_' + str(i))(z))
-        
+
     model = Model(inputs=[img_in, imu_in], outputs=outputs, name='imu')
     return model
 
@@ -925,23 +925,23 @@ def default_bhv(num_bvh_inputs, input_shape):
     x = core_cnn_layers(img_in, drop)
     x = Dense(100, activation='relu')(x)
     x = Dropout(.1)(x)
-    
+
     y = bvh_in
     y = Dense(num_bvh_inputs * 2, activation='relu')(y)
     y = Dense(num_bvh_inputs * 2, activation='relu')(y)
     y = Dense(num_bvh_inputs * 2, activation='relu')(y)
-    
+
     z = concatenate([x, y])
     z = Dense(100, activation='relu')(z)
     z = Dropout(.1)(z)
     z = Dense(50, activation='relu')(z)
     z = Dropout(.1)(z)
-    
+
     # Categorical output of the angle into 15 bins
     angle_out = Dense(15, activation='softmax', name='angle_out')(z)
     # Categorical output of throttle into 20 bins
     throttle_out = Dense(20, activation='softmax', name='throttle_out')(z)
-        
+
     model = Model(inputs=[img_in, bvh_in], outputs=[angle_out, throttle_out],
                   name='behavioral')
     return model
@@ -954,7 +954,7 @@ def default_loc(num_locations, input_shape):
     x = core_cnn_layers(img_in, drop)
     x = Dense(100, activation='relu')(x)
     x = Dropout(drop)(x)
-    
+
     z = Dense(50, activation='relu')(x)
     z = Dropout(drop)(z)
 
@@ -1088,7 +1088,7 @@ def default_latent(num_outputs, input_shape):
     x = Convolution2D(64, 3, strides=2, activation='relu', name="conv2d_7")(x)
     x = Dropout(drop)(x)
     x = Convolution2D(64, 1, strides=2, activation='relu', name="latent")(x)
-    
+
     y = Conv2DTranspose(filters=64, kernel_size=3, strides=2,
                         name="deconv2d_1")(x)
     y = Conv2DTranspose(filters=64, kernel_size=3, strides=2,
@@ -1100,7 +1100,7 @@ def default_latent(num_outputs, input_shape):
     y = Conv2DTranspose(filters=32, kernel_size=3, strides=2,
                         name="deconv2d_5")(y)
     y = Conv2DTranspose(filters=1, kernel_size=3, strides=2, name="img_out")(y)
-    
+
     x = Flatten(name='flattened')(x)
     x = Dense(256, activation='relu')(x)
     x = Dropout(drop)(x)
@@ -1112,6 +1112,6 @@ def default_latent(num_outputs, input_shape):
     outputs = [y]
     for i in range(num_outputs):
         outputs.append(Dense(1, activation='linear', name='n_outputs' + str(i))(x))
-        
+
     model = Model(inputs=[img_in], outputs=outputs, name='latent')
     return model

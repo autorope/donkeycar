@@ -41,20 +41,20 @@ class SalientVis():
 
         for layer_num in ('1', '2', '3', '4', '5'):
             self.convolution_part.get_layer('conv' + layer_num).set_weights(model.get_layer('conv2d_' + layer_num).get_weights())
-        
+
         self.inp = self.convolution_part.input                                           # input placeholder
         self.outputs = [layer.output for layer in self.convolution_part.layers[1:]]          # all layer outputs
         self.functor = K.function([self.inp], self.outputs)
 
         kernel_3x3 = tf.constant(np.array([
-        [[[1]], [[1]], [[1]]], 
-        [[[1]], [[1]], [[1]]], 
+        [[[1]], [[1]], [[1]]],
+        [[[1]], [[1]], [[1]]],
         [[[1]], [[1]], [[1]]]
         ]), tf.float32)
 
         kernel_5x5 = tf.constant(np.array([
-                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
-                [[[1]], [[1]], [[1]], [[1]], [[1]]], 
+                [[[1]], [[1]], [[1]], [[1]], [[1]]],
+                [[[1]], [[1]], [[1]], [[1]], [[1]]],
                 [[[1]], [[1]], [[1]], [[1]], [[1]]],
                 [[[1]], [[1]], [[1]], [[1]], [[1]]],
                 [[[1]], [[1]], [[1]], [[1]], [[1]]]
@@ -64,10 +64,10 @@ class SalientVis():
 
         self.layers_strides = {5: [1, 1, 1, 1], 4: [1, 2, 2, 1], 3: [1, 2, 2, 1], 2: [1, 2, 2, 1], 1: [1, 2, 2, 1]}
 
-        
+
     def compute_visualisation_mask(self, img):
         #from https://github.com/ermolenkodev/keras-salient-object-visualisation
-        
+
         activations = self.functor([np.array([img])])
         activations = [np.reshape(img, (1, img.shape[0], img.shape[1], img.shape[2]))] + activations
         upscaled_activation = np.ones((3, 6))
@@ -80,8 +80,8 @@ class SalientVis():
             )
             conv = tf.nn.conv2d_transpose(
                 x, self.layers_kernels[layer],
-                output_shape=(1,output_shape[0],output_shape[1], 1), 
-                strides=self.layers_strides[layer], 
+                output_shape=(1,output_shape[0],output_shape[1], 1),
+                strides=self.layers_strides[layer],
                 padding='VALID'
             )
             with tf.Session() as session:
@@ -103,4 +103,3 @@ class SalientVis():
 
     def shutdown(self):
         pass
-        

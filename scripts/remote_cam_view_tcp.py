@@ -7,7 +7,7 @@ Usage:
 Options:
     -h --help     Show this screen.
     --record=<path>      If data should be recorded (locally) specify the path
-    
+
 """
 from docopt import docopt
 import donkeycar as dk
@@ -32,14 +32,14 @@ if record_path is not None:
         def __init__(self, path):
             self.index = 0
             self.path = path
-        
+
         def run(self, img_arr):
             if img_arr is None:
                 return
             dest_path = os.path.join(self.path, "img_%d.jpg" % self.index)
             self.index += 1
             cv2.imwrite(dest_path, img_arr)
-    
+
     V.add(ImageSaver(record_path), inputs=["rgb"])
-    
+
 V.start(rate_hz=20)

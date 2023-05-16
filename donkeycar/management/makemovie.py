@@ -6,7 +6,7 @@ import cv2
 from matplotlib import cm
 try:
     from vis.utils import utils
-except:
+except Exception:
     raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
 
 import donkeycar as dk
@@ -17,7 +17,7 @@ from donkeycar.utils import *
 DEG_TO_RAD = math.pi / 180.0
 
 
-class MakeMovie(object):
+class MakeMovie():
 
     def run(self, args, parser):
         '''
@@ -48,7 +48,7 @@ class MakeMovie(object):
                 parser.print_help()
 
             if args.type not in ['linear', 'categorical']:
-                print("Model type {} is not supported. Only linear or categorical is supported for salient visualization".format(args.type))
+                print(f"Model type {args.type} is not supported. Only linear or categorical is supported for salient visualization")
                 parser.print_help()
                 return
 
@@ -141,7 +141,7 @@ class MakeMovie(object):
         from donkeycar.parts.keras import KerasCategorical
 
         if self.keras_part is None or type(self.keras_part) is not KerasCategorical:
-            return        
+            return
         pred_img = normalize_image(img)
         angle_binned, _ = self.keras_part.interpreter.predict(pred_img, other_arr=None)
 
@@ -159,7 +159,7 @@ class MakeMovie(object):
             x += dx
 
     def init_salient(self, model):
-        # Utility to search for layer index by name. 
+        # Utility to search for layer index by name.
         # Alternatively we can specify this as -1 since it corresponds to the last layer.
         output_name = []
         layer_idx = []
@@ -175,7 +175,7 @@ class MakeMovie(object):
         print("####################")
         print("Visualizing activations on layer:", output_name)
         print("####################")
-        
+
         # ensure we have linear activation
         for li in layer_idx:
             model.layers[li].activation = activations.linear
@@ -200,7 +200,7 @@ class MakeMovie(object):
                 for p in pred:
                     maxindex = tf.math.argmax(p[0])
                     pred_list.append(p[0][maxindex])
-                    
+
         grads = 0
         for p in pred_list:
             grad = tape.gradient(p, images)
@@ -246,12 +246,13 @@ class MakeMovie(object):
         img_path = os.path.join(self.tub.images_base_path, rec['cam/image_array'])
         image_input = img_to_arr(Image.open(img_path))
         image = image_input
-        
+
         if self.do_salient:
             image = self.draw_salient(image_input)
             image = cv2.normalize(src=image, dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-        
-        if self.user: self.draw_user_input(rec, image_input, image)
+
+        if self.user:
+            self.draw_user_input(rec, image_input, image)
         if self.keras_part is not None:
             self.draw_model_prediction(image_input, image)
             self.draw_steering_distribution(image_input, image)

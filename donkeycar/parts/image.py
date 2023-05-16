@@ -14,7 +14,7 @@ class ImgArrToJpg():
             image = arr_to_img(img_arr)
             jpg = img_to_binary(image)
             return jpg
-        except:
+        except Exception:
             return None
 
 
@@ -42,7 +42,7 @@ class StereoPair:
             grey_a = dk.utils.rgb2gray(image_a)
             grey_b = dk.utils.rgb2gray(image_b)
             grey_c = grey_a - grey_b
-            
+
             stereo_image = np.zeros([width, height, 3], dtype=np.dtype('B'))
             stereo_image[...,0] = np.reshape(grey_a, (width, height))
             stereo_image[...,1] = np.reshape(grey_b, (width, height))
@@ -62,12 +62,12 @@ class ImgCrop:
         self.bottom = bottom
         self.left = left
         self.right = right
-        
+
     def run(self, img_arr):
         if img_arr is None:
             return None
         width, height, _ = img_arr.shape
-        img_arr = img_arr[self.top:height-self.bottom, 
+        img_arr = img_arr[self.top:height-self.bottom,
                           self.left: width-self.right]
         return img_arr
 
@@ -91,11 +91,11 @@ class ImgStack:
         greyscale
         '''
         return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
-        
+
     def run(self, img_arr):
-        width, height, _ = img_arr.shape        
+        width, height, _ = img_arr.shape
         gray = self.rgb2gray(img_arr)
-        
+
         if self.img_arr is None:
             self.img_arr = np.zeros([width, height, self.num_channels], dtype=np.dtype('B'))
 

@@ -1,4 +1,5 @@
 import time
+import sys
 import cv2
 import numpy as np
 import logging
@@ -26,7 +27,7 @@ class ImgGreyscale:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2GRAY)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert RGB image to greyscale")
             return None
 
@@ -41,7 +42,7 @@ class ImgGRAY2RGB:
 
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_GRAY2RGB)
-        except:
+        except Exception:
             logger.error(F"Unable to convert greyscale image of shape {img_arr.shape} to RGB")
             return None
 
@@ -56,7 +57,7 @@ class ImgGRAY2BGR:
 
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_GRAY2BGR)
-        except:
+        except Exception:
             logger.error(F"Unable to convert greyscale image of shape {img_arr.shape} to RGB")
             return None
 
@@ -77,7 +78,7 @@ class ImgBGR2GRAY:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2GRAY)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert BGR image to greyscale")
             return None
 
@@ -94,7 +95,7 @@ class ImgHSV2GRAY:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_HSV2GRAY)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert HSV image to greyscale")
             return None
 
@@ -123,7 +124,7 @@ class ImgBGR2RGB:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2RGB)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert BGR image to RGB")
             return None
 
@@ -140,7 +141,7 @@ class ImgRGB2BGR:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2BGR)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert RGB image to BRG")
             return None
 
@@ -157,7 +158,7 @@ class ImgHSV2RGB:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_HSV2RGB)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert HSV image to RGB")
             return None
 
@@ -174,7 +175,7 @@ class ImgRGB2HSV:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_RGB2HSV)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert RGB image to HSV")
             return None
 
@@ -191,7 +192,7 @@ class ImgHSV2BGR:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_HSV2BGR)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert HSV image to BGR")
             return None
 
@@ -208,7 +209,7 @@ class ImgBGR2HSV:
         try:
             img_arr = cv2.cvtColor(img_arr, cv2.COLOR_BGR2HSV)
             return img_arr
-        except:
+        except Exception:
             logger.error("Unable to convert BGR image to HSV")
             return None
 
@@ -232,7 +233,7 @@ class ImageScale:
 
         try:
             return cv2.resize(img_arr, (0,0), fx=self.scale, fy=self.scale_height)
-        except:
+        except Exception:
             logger.error("Unable to scale image")
             return None
 
@@ -255,7 +256,7 @@ class ImageResize:
 
         try:
             return cv2.resize(img_arr, (self.width, self.height))
-        except:
+        except Exception:
             logger.error("Unable to resize image")
             return None
 
@@ -280,22 +281,22 @@ class ImageRotateBound:
         # center
         (h, w) = image.shape[:2]
         (cX, cY) = (w // 2, h // 2)
-    
+
         # grab the rotation matrix (applying the negative of the
         # angle to rotate clockwise), then grab the sine and cosine
         # (i.e., the rotation components of the matrix)
         M = cv2.getRotationMatrix2D((cX, cY), -self.rot_deg, 1.0)
         cos = np.abs(M[0, 0])
         sin = np.abs(M[0, 1])
-    
+
         # compute the new bounding dimensions of the image
         nW = int((h * sin) + (w * cos))
         nH = int((h * cos) + (w * sin))
-    
+
         # adjust the rotation matrix to take into account translation
         M[0, 2] += (nW / 2) - cX
         M[1, 2] += (nH / 2) - cY
-    
+
         # perform the actual rotation and return the image
         return cv2.warpAffine(image, M, (nW, nH))
 
@@ -321,7 +322,7 @@ class ImgCanny:
                              self.high_threshold,
                              apertureSize=self.aperture_size,
                              L2gradient=self.l2gradient)
-        except:
+        except Exception:
             logger.error("Unable to apply canny edge detection to image.")
             return None
 
@@ -333,16 +334,16 @@ class ImgGaussianBlur:
 
     def __init__(self, kernel_size=5, kernel_y=None):
         self.kernel_size = (kernel_size, kernel_y if kernel_y is not None else kernel_size)
-        
+
     def run(self, img_arr):
         if img_arr is None:
             return None
 
         try:
             return cv2.GaussianBlur(img_arr,
-                                    self.kernel_size, 
+                                    self.kernel_size,
                                     0)
-        except:
+        except Exception:
             logger.error("Unable to apply gaussian blur to image.")
             return None
 
@@ -354,14 +355,14 @@ class ImgSimpleBlur:
 
     def __init__(self, kernel_size=5, kernel_y=None):
         self.kernel_size = (kernel_size, kernel_y if kernel_y is not None else kernel_size)
-        
+
     def run(self, img_arr):
         if img_arr is None:
             return None
 
         try:
             return cv2.blur(img_arr, self.kernel_size)
-        except:
+        except Exception:
             logger.error("Unable to apply simple blur to image.")
             return None
 
@@ -417,7 +418,7 @@ class ImgTrapezoidalMask:
             transformed = np.multiply(image, mask)
 
         return transformed
-    
+
     def shutdown(self):
         self.masks = {}  # free cached masks
 
@@ -505,18 +506,18 @@ class ArrowKeyboardControls:
 class Pipeline:
     def __init__(self, steps):
         self.steps = steps
-    
+
     def run(self, val):
         for step in self.steps:
             f = step['f']
             args = step['args']
             kwargs = step['kwargs']
-            
+
             val = f(val, *args, **kwargs)
         return val
 
 
-class CvImgFromFile(object):
+class CvImgFromFile():
     def __init__(self, file_path, image_w=None, image_h=None, image_d=None, copy=False):
         """
         Part to load image from file and output as RGB image
@@ -527,7 +528,7 @@ class CvImgFromFile(object):
         image = cv2.imread(file_path)
         if image is None:
             raise ValueError(f"CvImage file_path did not resolve to a readable image file: {file_path}")
-        
+
         #
         # resize if there are overrides
         #
@@ -561,7 +562,7 @@ class CvImgFromFile(object):
         return self.image
 
 
-class CvCam(object):
+class CvCam():
     def __init__(self, image_w=160, image_h=120, image_d=3, iCam=0, warming_secs=5):
         self.width = image_w
         self.height = image_h
@@ -619,7 +620,7 @@ class CvCam(object):
         self.cap.release()
 
 
-class CvImageView(object):
+class CvImageView():
 
     def run(self, image):
         if image is None:
@@ -628,7 +629,7 @@ class CvImageView(object):
         try:
             cv2.imshow('frame', image)
             cv2.waitKey(1)
-        except:
+        except Exception:
             logger.error("Unable to open image window.")
 
     def shutdown(self):
@@ -638,7 +639,7 @@ class CvImageView(object):
 if __name__ == "__main__":
     import argparse
     import sys
-    
+
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--camera", type=int, default=0,
@@ -649,7 +650,7 @@ if __name__ == "__main__":
                         help = "height of image to capture")
     parser.add_argument("-f", "--file", type=str,
                         help = "path to image file to user rather that a camera")
-    parser.add_argument("-a", "--aug", required=True, type=str.upper, 
+    parser.add_argument("-a", "--aug", required=True, type=str.upper,
                         choices=['CROP', 'TRAPEZE',
                                  "RGB2HSV", "HSV2RGB", "RGB2BGR", "BGR2RGB", "BGR2HSV", "HSV2BRG",
                                  "RGB2GREY", "BGR2GREY", "HSV2GREY",
@@ -685,7 +686,7 @@ if __name__ == "__main__":
                         help="Simple blur kernel y size in pixels, defaults to a square kernel")
     parser.add_argument("-sw", "--scale", type=float,
                         help = "scale factor for image width")
-    parser.add_argument("-sh", "--scale-height", type=float, 
+    parser.add_argument("-sh", "--scale-height", type=float,
                         help = "scale factor for image height.  Defaults to scale")
 
     #
@@ -695,7 +696,7 @@ if __name__ == "__main__":
 
     # Read arguments from command line
     args = parser.parse_args()
-    
+
     image_source = None
     help = []
     if args.file is None:
@@ -746,7 +747,7 @@ if __name__ == "__main__":
     #
     # masking tranformations
     #
-    if "TRAPEZE" == transformation or "CROP" == transformation: 
+    if "TRAPEZE" == transformation or "CROP" == transformation:
         #
         # masking transformations
         #
@@ -761,9 +762,9 @@ if __name__ == "__main__":
             )
         else:
             transformer = ImgCropMask(
-                args.left if args.left is not None else 0, 
-                args.top if args.top is not None else 0, 
-                args.right if args.right is not None else 0, 
+                args.left if args.left is not None else 0,
+                args.top if args.top is not None else 0,
+                args.right if args.right is not None else 0,
                 args.bottom if args.bottom is not None else 0)
     #
     # color space transformations
@@ -789,14 +790,14 @@ if __name__ == "__main__":
     elif "CANNY" == transformation:
         # canny edge detection
         transformer = ImgCanny(args.canny_low, args.canny_high, args.canny_aperture)
-    # 
+    #
     # blur transformations
     #
     elif "GBLUR" == transformation:
         transformer = ImgGaussianBlur(args.guassian_kernel, args.guassian_kernel_y)
     elif "BLUR" == transformation:
         transformer = ImgSimpleBlur(args.blur_kernel, args.blur_kernel_y)
-    # 
+    #
     # resize transformations
     #
     elif "RESIZE" == transformation:
@@ -805,7 +806,7 @@ if __name__ == "__main__":
         transformer = ImageScale(args.scale, args.scale_height)
     else:
         print("-a/--aug is not a valid augmentation")
-        exit()
+        sys.exit()
 
     # Creating a window for later use
     window_name = 'hsv_range_picker'
@@ -828,7 +829,7 @@ if __name__ == "__main__":
         k = cv2.waitKey(5) & 0xFF
         if k == ord('q') or k == ord('Q'):  # 'Q' or 'q'
             break
-    
+
     if cap is not None:
         cap.release()
 

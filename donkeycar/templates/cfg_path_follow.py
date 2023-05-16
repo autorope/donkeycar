@@ -643,7 +643,7 @@ PATH_OFFSET = (255, 255)            # 255, 255 is the center of the map. This of
 PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a path point
 PATH_SEARCH_LENGTH = None           # number of points to search for closest point, None to search entire path
 PATH_LOOK_AHEAD = 1                 # number of points ahead of the closest point to include in cte track
-PATH_LOOK_BEHIND = 1                # number of points behind the closest point to include in cte track   
+PATH_LOOK_BEHIND = 1                # number of points behind the closest point to include in cte track
 PID_P = -0.5                        # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
@@ -671,4 +671,3 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
-

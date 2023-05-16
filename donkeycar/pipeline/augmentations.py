@@ -42,4 +42,3 @@ class ImageAugmentation:
     def run(self, img_arr):
         aug_img_arr = self.augmentations(image=img_arr)["image"]
         return aug_img_arr
-

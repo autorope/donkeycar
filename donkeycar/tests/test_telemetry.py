@@ -12,7 +12,7 @@ from random import randint
 def test_mqtt_telemetry():
 
     cfg.TELEMETRY_DEFAULT_INPUTS = 'pilot/angle,pilot/throttle'
-    cfg.TELEMETRY_DONKEY_NAME = 'test{}'.format(randint(0, 1000))
+    cfg.TELEMETRY_DONKEY_NAME = f'test{randint(0, 1000)}'
     cfg.TELEMETRY_MQTT_JSON_ENABLE = True
 
     # Create receiver
@@ -26,7 +26,7 @@ def test_mqtt_telemetry():
     sub.on_message = on_message_mock
     sub.connect(cfg.TELEMETRY_MQTT_BROKER_HOST)
     sub.loop_start()
-    name = "donkey/%s/#" % cfg.TELEMETRY_DONKEY_NAME
+    name = f"donkey/{cfg.TELEMETRY_DONKEY_NAME}/#"
     sub.subscribe(name)
 
     t = MqttTelemetry(cfg)

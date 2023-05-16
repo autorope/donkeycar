@@ -14,7 +14,7 @@ class Sombrero:
             GPIO.setup(37, GPIO.OUT)
             GPIO.output(37, GPIO.LOW)
             print("sombrero enabled")
-        except:
+        except Exception:
             pass
 
     def __del__(self):
@@ -23,5 +23,5 @@ class Sombrero:
 
             GPIO.cleanup()
             print("sombrero disabled")
-        except:
+        except Exception:
             pass

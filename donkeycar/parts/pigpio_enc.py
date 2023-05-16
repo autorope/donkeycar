@@ -8,7 +8,7 @@ import time
 #
 
 @deprecated("Deprecated in favor of donkeycar.parts.odometer.Odometer")
-class OdomDist(object):
+class OdomDist():
     """
     Take a tick input from odometry and compute the distance travelled
     """
@@ -34,14 +34,14 @@ class OdomDist(object):
         start_time = self.last_time
         end_time = time.time()
         self.last_time = end_time
-        
+
         #calculate elapsed time and distance traveled
         seconds = end_time - start_time
         distance = new_ticks * self.m_per_tick
         if throttle < 0.0:
             distance = distance * -1.0
         velocity = distance / seconds
-        
+
         #update the odometer values
         self.meters += distance
         self.meters_per_second = velocity
@@ -88,5 +88,3 @@ if __name__ == "__main__":
     while True:
         time.sleep(0.1)
         e.run()
-
-

@@ -44,7 +44,7 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     Parts may have named outputs and inputs. The framework handles passing named outputs
     to parts requesting the same named input.
     '''
-    
+
     #Initialize car
     V = dk.vehicle.Vehicle()
 
@@ -84,19 +84,19 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
-        logging.info("pid: d- %f" % pid.Kd)
+        logging.info(f"pid: d- {pid.Kd:f}")
 
     def inc_pid_d():
         pid.Kd += cfg.PID_D_DELTA
-        logging.info("pid: d+ %f" % pid.Kd)
+        logging.info(f"pid: d+ {pid.Kd:f}")
 
     def dec_pid_p():
         pid.Kp -= cfg.PID_P_DELTA
-        logging.info("pid: p- %f" % pid.Kp)
+        logging.info(f"pid: p- {pid.Kp:f}")
 
     def inc_pid_p():
         pid.Kp += cfg.PID_P_DELTA
-        logging.info("pid: p+ %f" % pid.Kp)
+        logging.info(f"pid: p+ {pid.Kp:f}")
 
     #
     # Computer Vision Controller
@@ -215,7 +215,7 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     #
     # run the vehicle
     #
-    V.start(rate_hz=cfg.DRIVE_LOOP_HZ, 
+    V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
             max_loop_count=cfg.MAX_LOOPS)
 
 
@@ -223,27 +223,27 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
 # Computer Vision Controller
 #
 def add_cv_controller(
-        V, cfg, pid,
-        module_name="donkeycar.parts.line_follower",
-        class_name="LineFollower",
-        inputs=['cam/image_array'],
-        outputs=['pilot/steering', 'pilot/throttle', 'cv/image_array'],
-        run_condition="run_pilot"):
+    V, cfg, pid,
+    module_name="donkeycar.parts.line_follower",
+    class_name="LineFollower",
+    inputs=['cam/image_array'],
+    outputs=['pilot/steering', 'pilot/throttle', 'cv/image_array'],
+    run_condition="run_pilot"):
 
-        # __import__ the module
-        module = __import__(module_name)
+    # __import__ the module
+    module = __import__(module_name)
 
-        # walk module path to get to module with class
-        for attr in module_name.split('.')[1:]:
-            module = getattr(module, attr)
+    # walk module path to get to module with class
+    for attr in module_name.split('.')[1:]:
+        module = getattr(module, attr)
 
-        my_class = getattr(module, class_name)
+    my_class = getattr(module, class_name)
 
-        # add instance of class to vehicle
-        V.add(my_class(pid, cfg),
-              inputs=inputs,
-              outputs=outputs,
-              run_condition=run_condition)
+    # add instance of class to vehicle
+    V.add(my_class(pid, cfg),
+            inputs=inputs,
+            outputs=outputs,
+            run_condition=run_condition)
 
 
 if __name__ == '__main__':
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     log_level = args['--log'] or "INFO"
     numeric_level = getattr(logging, log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % log_level)
+        raise ValueError(f'Invalid log level: {log_level}')
     logging.basicConfig(level=numeric_level)
 
     if args['drive']:

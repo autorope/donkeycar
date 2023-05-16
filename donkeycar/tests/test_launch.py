@@ -88,4 +88,3 @@ def test_ai_launch_keep_enabled():
     new_throttle = ai_launch.run(mode, ai_throttle)
 
     assert(new_throttle == 0.0)
-

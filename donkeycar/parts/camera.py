@@ -170,7 +170,7 @@ class Webcam(BaseCamera):
 
         return self.frame
 
-    def update(self):	
+    def update(self):
         from datetime import datetime, timedelta
         while self.on:
             start = datetime.now()
@@ -200,10 +200,10 @@ class CSICamera(BaseCamera):
     Credit: https://github.com/feicccccccc/donkeycar/blob/dev/donkeycar/parts/camera.py
     gstreamer init string from https://github.com/NVIDIA-AI-IOT/jetbot/blob/master/jetbot/camera.py
     '''
-    def gstreamer_pipeline(self, capture_width=3280, capture_height=2464, output_width=224, output_height=224, framerate=21, flip_method=0) :   
+    def gstreamer_pipeline(self, capture_width=3280, capture_height=2464, output_width=224, output_height=224, framerate=21, flip_method=0) :
         return 'nvarguscamerasrc ! video/x-raw(memory:NVMM), width=%d, height=%d, format=(string)NV12, framerate=(fraction)%d/1 ! nvvidconv flip-method=%d ! nvvidconv ! video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! videoconvert ! appsink' % (
                 capture_width, capture_height, framerate, flip_method, output_width, output_height)
-    
+
     def __init__(self, image_w=160, image_h=120, image_d=3, capture_width=3280, capture_height=2464, framerate=60, gstreamer_flip=0):
         '''
         gstreamer_flip = 0 - no flip
@@ -265,7 +265,7 @@ class CSICamera(BaseCamera):
 
     def run_threaded(self):
         return self.frame
-    
+
     def shutdown(self):
         self.running = False
         logger.info('Stopping CSICamera')
@@ -354,7 +354,7 @@ class ImageListCamera(BaseCamera):
     '''
     def __init__(self, path_mask='~/mycar/data/**/images/*.jpg'):
         self.image_filenames = glob.glob(os.path.expanduser(path_mask), recursive=True)
-    
+
         def get_image_index(fnm):
             sl = os.path.basename(fnm).split('_')
             return int(sl[0])
@@ -377,10 +377,10 @@ class ImageListCamera(BaseCamera):
     def update(self):
         pass
 
-    def run_threaded(self):        
+    def run_threaded(self):
         if self.num_images > 0:
             self.i_frame = (self.i_frame + 1) % self.num_images
-            self.frame = Image.open(self.image_filenames[self.i_frame]) 
+            self.frame = Image.open(self.image_filenames[self.i_frame])
 
         return np.asarray(self.frame)
 

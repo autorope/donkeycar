@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 
 
-class Graph(object):
+class Graph():
     '''
     Take input values and plot them on an image.
     Takes a list of (x, y) (b, g, r) pairs and
@@ -36,7 +36,7 @@ class Graph(object):
             self.img = np.zeros_like(self.img)
 
         self.prev = x
-            
+
         return self.img
 
     def shutdown(self):

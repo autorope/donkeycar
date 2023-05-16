@@ -231,4 +231,3 @@ def test_training_pipeline(config: Config, model_type: str,
             # compare record values with values from tf.data
             for k, v in batch.items():
                 assert np.isclose(v, np_dict[k]).all()
-

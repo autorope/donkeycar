@@ -5,7 +5,7 @@ import time
 from donkeycar.parts.odometer import Odometer
 
 class TestOdometer(unittest.TestCase):
-    
+
     def test_odometer(self):
         odometer = Odometer(0.2)         # 0.2 meters per revolution
 
@@ -26,4 +26,3 @@ class TestOdometer(unittest.TestCase):
         self.assertEqual(ts, timestamp)
         self.assertEqual(0.4, distance)                      # still at 0.4 meters travelled
         self.assertEqual(0, velocity)                        # 0 meter per second in last interval
-

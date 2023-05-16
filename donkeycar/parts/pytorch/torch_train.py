@@ -55,6 +55,6 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
     if is_torch_model:
         checkpoint_model_path = f'{os.path.splitext(output_path)[0]}.ckpt'
         trainer.save_checkpoint(checkpoint_model_path)
-        print("Saved final model to {}".format(checkpoint_model_path))
+        print(f"Saved final model to {checkpoint_model_path}")
 
     return model.loss_history

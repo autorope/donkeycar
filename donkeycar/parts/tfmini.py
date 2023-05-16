@@ -45,10 +45,10 @@ class TFMini:
         try:
             count = self.ser.in_waiting
             if count > 8:
-                recv = self.ser.read(9)   
-                self.ser.reset_input_buffer() 
+                recv = self.ser.read(9)
+                self.ser.reset_input_buffer()
 
-                if recv[0] == 0x59 and recv[1] == 0x59:     
+                if recv[0] == 0x59 and recv[1] == 0x59:
                     dist = recv[2] + recv[3] * 256
                     strength = recv[4] + recv[5] * 256
 

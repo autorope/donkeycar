@@ -33,7 +33,7 @@ TubRecordDict = TypedDict(
 )
 
 
-class TubRecord(object):
+class TubRecord():
     def __init__(self, config: Config, base_path: str,
                  underlying: TubRecordDict) -> None:
         self.config = config
@@ -75,7 +75,7 @@ class TubRecord(object):
         return repr(self.underlying)
 
 
-class TubDataset(object):
+class TubDataset():
     """
     Loads the dataset and creates a TubRecord list (or list of lists).
     """
@@ -142,5 +142,3 @@ class Collator(Iterable[List[TubRecord]]):
                     break
             if len(seq) == self.seq_length:
                 yield seq
-
-

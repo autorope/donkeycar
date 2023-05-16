@@ -11,7 +11,7 @@ Options:
     --js                    Use physical joystick.
     -f --file=<file>        A text file containing paths to tub files, one per line. Option may be used more than once.
     --meta=<key:value>      Key/Value strings describing describing a piece of meta data about this drive. Option may be used more than once.
-    --myconfig=filename     Specify myconfig file to use. 
+    --myconfig=filename     Specify myconfig file to use.
                             [default: myconfig.py]
 """
 import os
@@ -74,7 +74,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #modify max_throttle closer to 1.0 to have more power
         #modify steering_scale lower than 1.0 to have less responsive steering
         if cfg.CONTROLLER_TYPE == "MM1":
-            from donkeycar.parts.robohat import RoboHATController            
+            from donkeycar.parts.robohat import RoboHATController
             ctr = RoboHATController(cfg)
         elif "custom" == cfg.CONTROLLER_TYPE:
             #
@@ -97,8 +97,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
                 netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
                 V.add(netwkJs, threaded=True)
                 ctr.js = netwkJs
-        
-        V.add(ctr, 
+
+        V.add(ctr,
           inputs=['cam/image_array'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
           threaded=True)
@@ -107,7 +107,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         #This web controller will create a web server that is capable
         #of managing steering, throttle, and modes, and more.
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
-        
+
         V.add(ctr,
           inputs=['cam/image_array', 'tub/num_records'],
           outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
@@ -231,7 +231,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
         try:
             ctr.set_button_down_trigger('L1', bh.increment_state)
-        except:
+        except Exception:
             pass
 
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]
@@ -242,14 +242,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         start = time.time()
         print('loading model', model_path)
         kl.load(model_path)
-        print('finished loading in %s sec.' % (str(time.time() - start)) )
+        print(f'finished loading in {str(time.time() - start)} sec.' )
 
     def load_weights(kl, weights_path):
         start = time.time()
         try:
             print('loading model weights', weights_path)
             kl.model.load_weights(weights_path)
-            print('finished loading in %s sec.' % (str(time.time() - start)) )
+            print(f'finished loading in {str(time.time() - start)} sec.' )
         except Exception as e:
             print(e)
             print('ERR>> problems loading weights', weights_path)
@@ -262,7 +262,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
             with open(json_fnm, 'r') as handle:
                 contents = handle.read()
                 kl.model = keras.models.model_from_json(contents)
-            print('finished loading json in %s sec.' % (str(time.time() - start)) )
+            print(f'finished loading json in {str(time.time() - start)} sec.' )
         except Exception as e:
             print(e)
             print("ERR>> problems loading model json", json_fnm)
@@ -317,7 +317,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(kl, inputs=inputs,
               outputs=outputs,
               run_condition='run_pilot')
-    
+
     if cfg.STOP_SIGN_DETECTOR:
         from donkeycar.parts.object_detector.stop_sign_detector import StopSignDetector
         V.add(StopSignDetector(cfg.STOP_SIGN_MIN_SCORE, cfg.STOP_SIGN_SHOW_BOUNDING_BOX), inputs=['cam/image_array', 'pilot/throttle'], outputs=['pilot/throttle', 'cam/image_array'])
@@ -434,4 +434,3 @@ if __name__ == '__main__':
               meta=args['--meta'])
     elif args['train']:
         print('Use python train.py instead.\n')
-

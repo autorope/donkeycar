@@ -141,8 +141,7 @@ class LocalWebController(tornado.web.Application):
 
         settings = {'debug': True}
         super().__init__(handlers, **settings)
-        print("... you can now go to {}.local:{} to drive "
-              "your car.".format(gethostname(), port))
+        print(f"... you can now go to {gethostname()}.local:{port} to drive your car.")
 
     def update(self):
         ''' Start the tornado webserver. '''
@@ -159,7 +158,7 @@ class LocalWebController(tornado.web.Application):
                     logger.debug(f"Updating web client: {data_str}")
                     wsclient.write_message(data_str)
                 except Exception as e:
-                    logger.warn("Error writing websocket message", exc_info=e)
+                    logger.warning("Error writing websocket message", exc_info=e)
                     pass
 
     def run_threaded(self, img_arr=None, num_records=0, mode=None, recording=None):
@@ -187,9 +186,9 @@ class LocalWebController(tornado.web.Application):
             self.recording = recording
             changes["recording"] = self.recording
         if self.recording_latch is not None:
-            self.recording = self.recording_latch;
-            self.recording_latch = None;
-            changes["recording"] = self.recording;
+            self.recording = self.recording_latch
+            self.recording_latch = None
+            changes["recording"] = self.recording
 
         # Send record count to websocket clients
         if (self.num_records is not None and self.recording is True):
@@ -340,9 +339,9 @@ class WebSocketCalibrateAPI(tornado.websocket.WebSocketHandler):
 
             elif self.application.drive_train_type == "MM1":
                 if ('MM1_STEERING_MID' in config) and (config['MM1_STEERING_MID'] != 0):
-                        self.application.drive_train.STEERING_MID = config['MM1_STEERING_MID']
+                    self.application.drive_train.STEERING_MID = config['MM1_STEERING_MID']
                 if ('MM1_MAX_FORWARD' in config) and (config['MM1_MAX_FORWARD'] != 0):
-                        self.application.drive_train.MAX_FORWARD = config['MM1_MAX_FORWARD']
+                    self.application.drive_train.MAX_FORWARD = config['MM1_MAX_FORWARD']
                 if ('MM1_MAX_REVERSE' in config) and (config['MM1_MAX_REVERSE'] != 0):
                     self.application.drive_train.MAX_REVERSE = config['MM1_MAX_REVERSE']
 
@@ -379,7 +378,7 @@ class VideoAPI(RequestHandler):
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
-                self.write("Content-length: %s\r\n\r\n" % len(img))
+                self.write(f"Content-length: {len(img)}\r\n\r\n")
                 self.write(img)
                 served_image_timestamp = time.time()
                 try:
@@ -438,5 +437,3 @@ class WebFpv(Application):
 
     def shutdown(self):
         pass
-
-

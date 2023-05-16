@@ -8,7 +8,7 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
     '''
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
-    print("\"get_model_by_type\" model Type is: {}".format(model_type))
+    print(f"\"get_model_by_type\" model Type is: {model_type}")
 
     input_shape = (cfg.BATCH_SIZE, cfg.IMAGE_DEPTH, cfg.IMAGE_H, cfg.IMAGE_W)
 
@@ -25,7 +25,7 @@ def get_model_by_type(model_type, cfg, checkpoint_path=None):
                         .format(model_type))
 
     if checkpoint_path:
-        print("Loading model from checkpoint {}".format(checkpoint_path))
+        print(f"Loading model from checkpoint {checkpoint_path}")
         model.load_from_checkpoint(checkpoint_path)
 
     return model

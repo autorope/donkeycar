@@ -45,4 +45,3 @@ while True:
     interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
     timer.on_frame()
-

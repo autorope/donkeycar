@@ -46,7 +46,7 @@ def angle_in_bounds(angle, min_angle, max_angle):
         return (min_angle <= angle <= 360) or (max_angle >= angle >= 0)
 
 
-class RPLidar2(object):
+class RPLidar2():
     '''
     Adapted from https://github.com/Ezward/rplidar
     NOTES
@@ -62,7 +62,7 @@ class RPLidar2(object):
                  angle_direction=CLOCKWISE,
                  batch_ms=50,  # how long to loop in run()
                  debug=False):
-        
+
         self.lidar = None
         self.port = None
         self.on = False
@@ -73,16 +73,16 @@ class RPLidar2(object):
 
         if max_distance <= 0:
             help.append("max_distance must be > 0")
-            
+
         if min_angle < 0 or min_angle > 360:
             help.append("min_angle must be 0 <= min_angle <= 360")
 
         if max_angle <= 0 or max_angle > 360:
             help.append("max_angle must be 0 < max_angle <= 360")
-          
+
         if forward_angle < 0 or forward_angle > 360:
             help.append("forward_angle must be 0 <= forward_angle <= 360")
-            
+
         if angle_direction != CLOCKWISE and \
            angle_direction != COUNTER_CLOCKWISE:
             help.append("angle-direction must be 1 (clockwise) or -1 (counter-clockwise)")  # noqa
@@ -97,11 +97,11 @@ class RPLidar2(object):
         self.max_distance = max_distance
         self.forward_angle = forward_angle
         self.spin_reverse = (args.angle_direction != CLOCKWISE)
-        self.measurements = [] # list of (distance, angle, time, scan, index) 
+        self.measurements = [] # list of (distance, angle, time, scan, index)
 
         from adafruit_rplidar import RPLidar
         import glob
-        
+
         #
         # find the serial port where the lidar is connected
         #
@@ -142,7 +142,7 @@ class RPLidar2(object):
                 # read one measurement
                 #
                 new_scan, quality, angle, distance = next(self.iter_measurements)  # noqa
-                                        
+
                 now = time.time()
                 self.total_measurements += 1
 
@@ -152,17 +152,17 @@ class RPLidar2(object):
                     self.full_scan_index = 0
                     self.measurement_count = self.measurement_index  # this full scan
                     self.measurement_index = 0   # start filling in next scan
-                    
+
                 #
                 # rplidar spins clockwise,
                 # but we want angles to increase counter-clockwise
                 #
                 if self.spin_reverse:
                     angle = (360.0 - (angle % 360.0)) % 360.0
-                
+
                 # adjust so zero degrees is 'forward'
                 angle = (angle - self.forward_angle + 360.0) % 360.0
-            
+
                 # filter the measurement by angle and distance
                 if angle_in_bounds(angle, self.min_angle, self.max_angle):
                     if distance >= self.min_distance and distance <= self.max_distance:
@@ -207,7 +207,7 @@ class RPLidar2(object):
                         #
                         measurement = (distance, angle, now,
                                         self.full_scan_count, self.full_scan_index)
-                        
+
                         # grow buffer if necessary, otherwise overwrite
                         if self.measurement_index >= len(self.measurements):
                             self.measurements.append(measurement)
@@ -216,7 +216,7 @@ class RPLidar2(object):
                             self.measurements[self.measurement_index] = measurement  # noqa
                         self.measurement_index += 1
                         self.full_scan_index += 1
-                            
+
             except serial.serialutil.SerialException:
                 logger.error('SerialException from RPLidar.')
 
@@ -228,17 +228,17 @@ class RPLidar2(object):
         total_time = time.time() - start_time
         scan_rate = self.full_scan_count / total_time
         measurement_rate = self.total_measurements / total_time
-        logger.info("RPLidar total scan time = {time} seconds".format(time=total_time))
-        logger.info("RPLidar total scan count = {count} scans".format(count=self.full_scan_count))
-        logger.info("RPLidar total measurement count = {count} measurements".format(count=self.total_measurements))
-        logger.info("RPLidar rate = {rate} scans per second".format(rate=scan_rate))
-        logger.info("RPLidar rate = {rate} measurements per second".format(rate=measurement_rate))
+        logger.info(f"RPLidar total scan time = {total_time} seconds")
+        logger.info(f"RPLidar total scan count = {self.full_scan_count} scans")
+        logger.info(f"RPLidar total measurement count = {self.total_measurements} measurements")
+        logger.info(f"RPLidar rate = {scan_rate} scans per second")
+        logger.info(f"RPLidar rate = {measurement_rate} measurements per second")
 
     def run_threaded(self):
         if self.running:
             return self.measurements
         return []
-    
+
     def run(self):
         if not self.running:
             return []
@@ -264,7 +264,7 @@ class RPLidar2(object):
             self.lidar = None
 
 
-class RPLidar(object):
+class RPLidar():
     '''
     https://github.com/adafruit/Adafruit_CircuitPython_RPLIDAR
     '''
@@ -332,7 +332,7 @@ class RPLidar(object):
         self.lidar.disconnect()
 
 
-class YDLidar(object):
+class YDLidar():
     '''
     https://pypi.org/project/PyLidar3/
     '''
@@ -390,7 +390,7 @@ class YDLidar(object):
         self.lidar.Disconnect()
 
 
-class LidarPlot(object):
+class LidarPlot():
     '''
     takes the raw lidar measurements and plots it to an image
     '''
@@ -408,7 +408,7 @@ class LidarPlot(object):
             self.plot_fn = self.plot_circ
         else:
             self.plot_fn = self.plot_line
-            
+
     def plot_line(self, img, dist, theta, max_dist, draw):
         '''
         scale dist so that max_dist is edge of img (mm)
@@ -428,7 +428,7 @@ class LidarPlot(object):
         ey = math.sin(theta) * (dist + self.rad) + center[1]
         fill = 128
         draw.line((sx,sy, ex, ey), fill=(fill, fill, fill), width=1)
-        
+
     def plot_circ(self, img, dist, theta, max_dist, draw):
         '''
         scale dist so that max_dist is edge of img (mm)
@@ -454,7 +454,7 @@ class LidarPlot(object):
     def plot_scan(self, img, distances, angles, max_dist, draw):
         for dist, angle in zip(distances, angles):
             self.plot_fn(img, dist, angle, max_dist, draw)
-            
+
     def run(self, distances, angles):
         '''
         takes two lists of equal length, one of distance values,
@@ -522,12 +522,12 @@ def plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
     cy = (top + bottom) / 2
     max_pixel = min(cx, cy)
     distance_px = distance / max_distance * max_pixel
-    
+
     theta = (theta + rotate_plot) % 360.0
-        
+
     if angle_direction != COUNTER_CLOCKWISE:
         theta = (360.0 - (theta % 360.0)) % 360.0
-        
+
     mark_fn(draw_context, cx, cy, distance_px, theta, mark_color, mark_px)
 
 
@@ -553,7 +553,7 @@ def plot_polar_points(draw_context, bounds, mark_fn, mark_color, mark_px,
     rotate_plot: angle in positive degrees to rotate the measurement mark.
                  this can be used to match the direction of the robot
                  when it is plotted in world coordinates.
-    """    
+    """
     # plot each measurement
     for distance, angle in measurements:
         plot_polar_point(draw_context, bounds, mark_fn, mark_color, mark_px,
@@ -584,7 +584,7 @@ def plot_polar_bounds(draw_context, bounds, color,
     cx = (left + right) / 2
     cy = (top + bottom) / 2
     max_pixel = min(cx, cy)
-    
+
     #
     # draw the zero heading axis
     #
@@ -608,7 +608,7 @@ def plot_polar_angle(draw_context, bounds, color, theta,
     assuming the polar origin is at the center of bounding box
     and the bounding distance is the minimum of the
     width and height of the bounding box
-    
+
     draw_context: PIL draw context
     bounds: tuple (left, top, right, bottom) indicating bounds within which the
             plot should be drawn.
@@ -624,7 +624,7 @@ def plot_polar_angle(draw_context, bounds, color, theta,
     cx = (left + right) / 2
     cy = (top + bottom) / 2
     max_pixel = min(cx, cy)
-    
+
     #
     # draw the zero heading axis
     #
@@ -632,7 +632,7 @@ def plot_polar_angle(draw_context, bounds, color, theta,
     theta += rotate_plot
     if angle_direction != COUNTER_CLOCKWISE:
         theta = (360.0 - (theta % 360.0)) % 360.0
-        
+
     # draw the angle line
     theta = np.radians(theta)
     sx = cx + math.cos(theta) * max_pixel
@@ -640,11 +640,11 @@ def plot_polar_angle(draw_context, bounds, color, theta,
     draw_context.line((cx, cy, sx, sy), fill=color, width=1)
 
 
-class LidarPlot2(object):
+class LidarPlot2():
     '''
     takes the lidar measurements as a list of (distance, angle) tuples
     and plots them to a PIL image which it outputs
-    
+
     resolution: dimensions of image in pixels as tuple (width, height)
     plot_type: PLOT_TYPE_CIRC or PLOT_TYPE_LINE
     mark_px: size of data measurement marks in pixels
@@ -662,12 +662,12 @@ class LidarPlot2(object):
                  plot_type=PLOT_TYPE_CIRCLE,
                  mark_px=3,
                  max_dist=4000, #mm
-                 angle_direction=COUNTER_CLOCKWISE, 
+                 angle_direction=COUNTER_CLOCKWISE,
                  rotate_plot=0,
                  background_color=(224, 224, 224),
                  border_color=(128, 128, 128),
                  point_color=(255, 64, 64)):
-        
+
         self.frame = Image.new('RGB', resolution)
         self.mark_px = mark_px
         self.max_distance = max_dist
@@ -678,7 +678,7 @@ class LidarPlot2(object):
             self.mark_fn = mark_line
         self.angle_direction = angle_direction
         self.rotate_plot = rotate_plot
-        
+
         self.background_color = background_color
         self.border_color = border_color
         self.point_color = point_color
@@ -688,11 +688,11 @@ class LidarPlot2(object):
         draw measurements to a PIL image and output the pil image
         measurements: list of polar coordinates as (distance, angle) tuples
         '''
-            
+
         self.frame = Image.new('RGB', self.resolution, (255, 255, 255))
         bounds = (0, 0, self.frame.width, self.frame.height)
         draw = ImageDraw.Draw(self.frame)
-        
+
         # background
         draw.rectangle(bounds, fill=self.background_color)
 
@@ -701,20 +701,20 @@ class LidarPlot2(object):
                           self.angle_direction, self.rotate_plot)
         plot_polar_angle(draw, bounds, self.border_color, 0,
                          self.angle_direction, self.rotate_plot)
-        
+
         # data points
         plot_polar_points(
             draw, bounds, self.mark_fn, self.point_color, self.mark_px,
             [(distance, angle) for distance, angle, _, _, _ in measurements],
             self.max_distance, self.angle_direction, self.rotate_plot)
-        
+
         return self.frame
 
     def shutdown(self):
         pass
 
 
-class BreezySLAM(object):
+class BreezySLAM():
     '''
     https://github.com/simondlevy/BreezySLAM
     '''
@@ -728,9 +728,9 @@ class BreezySLAM(object):
         MAP_QUALITY=5
         self.slam = RMHC_SLAM(laser_model,
                               MAP_SIZE_PIXELS, MAP_SIZE_METERS, MAP_QUALITY)
-    
+
     def run(self, distances, angles, map_bytes):
-        
+
         self.slam.update(distances, scan_angles_degrees=angles)
         x, y, theta = self.slam.getpos()
 
@@ -743,7 +743,7 @@ class BreezySLAM(object):
         pass
 
 
-class BreezyMap(object):
+class BreezyMap():
     '''
     bitmap that may optionally be constructed by BreezySLAM
     '''
@@ -757,7 +757,7 @@ class BreezyMap(object):
         pass
 
 
-class MapToImage(object):
+class MapToImage():
 
     def __init__(self, resolution=(500, 500)):
         self.resolution = resolution
@@ -775,11 +775,11 @@ if __name__ == "__main__":
     import cv2
     import json
     from threading import Thread
-    
+
     def convert_from_image_to_cv2(img: Image) -> np.ndarray:
         # return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         return np.asarray(img)
-    
+
     # parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--rate", type=float, default=20,
@@ -804,45 +804,45 @@ if __name__ == "__main__":
 
     # Read arguments from command line
     args = parser.parse_args()
-    
+
     help = []
     if args.rate < 1:
         help.append("-r/--rate: must be >= 1.")
-        
+
     if args.number < 1:
         help.append("-n/--number: must be >= 1.")
-        
+
     if args.min_distance < 0:
         help.append("-d/--min-distance must be >= 0")
 
     if args.max_distance <= 0:
         help.append("-D/--max-distance must be > 0")
-        
+
     if args.min_angle < 0 or args.min_angle > 360:
         help.append("-a/--min-angle must be 0 <= min-angle <= 360")
 
     if args.max_angle <= 0 or args.max_angle > 360:
         help.append("-A/--max-angle must be 0 < max-angle <= 360")
-      
+
     if args.forward_angle < 0 or args.forward_angle > 360:
         help.append("-f/--forward-angle must be 0 <= forward-angle <= 360")
-        
+
     if args.angle_direction != CLOCKWISE and \
        args.angle_direction != COUNTER_CLOCKWISE:
         help.append("-s/--angle-direction must be 1 (clockwise) or -1 (counter-clockwise)")  # noqa
-        
+
     if args.rotate_plot < 0 or args.rotate_plot > 360:
         help.append("-p/--rotate-plot must be 0 <= min-angle <= 360")
-        
+
     if len(help) > 0:
         parser.print_help()
         for h in help:
             print("  " + h)
         sys.exit(1)
-        
+
     lidar_thread = None
     lidar = None
-    
+
     try:
         scan_count = 0
         seconds_per_scan = 1.0 / args.rate
@@ -857,7 +857,7 @@ if __name__ == "__main__":
             forward_angle=args.forward_angle,
             angle_direction=args.angle_direction,
             batch_ms=1000.0/args.rate)
-        
+
         #
         # construct a lidar plotter
         #
@@ -867,7 +867,7 @@ if __name__ == "__main__":
                              rotate_plot=args.rotate_plot,
                              background_color=(32, 32, 32),
                              border_color=(128, 128, 128),
-                             point_color=(64, 255, 64))        
+                             point_color=(64, 255, 64))
         #
         # start the threaded part
         # and a threaded window to show plot
@@ -877,7 +877,7 @@ if __name__ == "__main__":
             lidar_thread = Thread(target=lidar.update, args=())
             lidar_thread.start()
             cv2.startWindowThread()
-        
+
         while scan_count < args.number:
             start_time = time.time()
 
@@ -889,13 +889,13 @@ if __name__ == "__main__":
                 measurements = lidar.run_threaded()
             else:
                 measurements = lidar.run()
-            
+
             img = plotter.run(measurements)
-            
+
             # show the image in the window
             cv2img = convert_from_image_to_cv2(img)
             cv2.imshow("lidar", cv2img)
-            
+
             if not args.threaded:
                 key = cv2.waitKey(1) & 0xFF
                 if 27 == key or key == ord('q') or key == ord('Q'):
@@ -912,7 +912,7 @@ if __name__ == "__main__":
         print('Stopping early.')
     except Exception as e:
         print(e)
-        exit(1)
+        sys.exit(1)
     finally:
         if lidar is not None:
             lidar.shutdown()

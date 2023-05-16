@@ -141,7 +141,7 @@ def main():
                 break
             last_input = time.monotonic()
 
-            logger.debug("Read from UART: %s" % (byte))
+            logger.debug(f"Read from UART: {byte}")
 
             # if data is recieved, check if it is the end of a stream
             if(byte == b'\r'):
