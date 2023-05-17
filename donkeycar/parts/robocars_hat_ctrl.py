@@ -512,11 +512,13 @@ class RobocarsHatLedCtrl():
 
     def __init__(self, cfg):
         self.cfg = cfg
+        self.reconnect=True
+        self.reconnectDelay=500
         if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
-            import serial
-            self.cmdinterface = serial.Serial(self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY, 250000, timeout = 0.01)
+            self.connectPort()
         else:
             self.cmdinterface = RobocarsHat(self.cfg)
+
         if cfg.ROBOCARSHAT_LED_MODEL == 'Alpine':
             self.LED_INDEX_FRONT_TURN_RIGHT = 3
             self.LED_INDEX_FRONT_TURN_LEFT = 4
@@ -539,10 +541,29 @@ class RobocarsHatLedCtrl():
         self.last_steering_state = 0
         self.last_refresh = 0
 
+    def connectPort(self):
+        import serial
+        self.reconnectDelay=100
+        try:
+            self.cmdinterface = serial.Serial(self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY, 250000, timeout = 0.01)
+            self.reconnect = False
+        except Exception as e:
+            mylogger.info(f"LED : Failed to connect to port {self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY}")
+        
     def setLed(self, i, r, v, b, timing):
+        from serial import SerialException
         cmd=("2,%01d,%03d,%03d,%03d,%05d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
-        if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
-            self.cmdinterface.write(cmd)
+        if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY:
+            if not self.reconnect:
+                try:
+                    self.cmdinterface.write(cmd)
+                except SerialException:
+                    mylogger.info("LED : Serial port issue")
+                    if self.cmdinterface:
+                        self.cmdinterface.close()
+                    self.reconnect=True
+                    self.reconnectDelay=500
+
         else:
             self.cmdinterface.sendCmd(cmd)
 
@@ -565,6 +586,11 @@ class RobocarsHatLedCtrl():
 
     def run (self, steering, throttle, mode):
 
+        if (self.reconnect):
+            if self.reconnectDelay==0:
+                self.connectPort()
+            else:
+                self.reconnectDelay-=1
         refresh = (time.perf_counter()-self.last_refresh) >= 2.0
         if refresh:
             self.last_refresh = time.perf_counter()
