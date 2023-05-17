@@ -512,7 +512,10 @@ class RobocarsHatLedCtrl():
 
     def __init__(self, cfg):
         self.cfg = cfg
-        self.cmdinterface = RobocarsHat(self.cfg)
+        if sef.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
+            self.cmdinterface = serial.Serial(self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY, 250000, timeout = 0.01)
+        else:
+            self.cmdinterface = RobocarsHat(self.cfg)
         if cfg.ROBOCARSHAT_LED_MODEL == 'Alpine':
             self.LED_INDEX_FRONT_TURN_RIGHT = 3
             self.LED_INDEX_FRONT_TURN_LEFT = 4
@@ -537,7 +540,10 @@ class RobocarsHatLedCtrl():
 
     def setLed(self, i, r, v, b, timing):
         cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
-        self.cmdinterface.sendCmd(cmd)
+        if sef.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
+            self.cmdinterface.write(cmd)
+        else:
+            self.cmdinterface.sendCmd(cmd)
 
     def updateAnim(self):
         self.setLed(int(self.idx/10), 0, 0, 0, 0x0);
