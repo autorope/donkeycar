@@ -540,7 +540,7 @@ class RobocarsHatLedCtrl():
         self.last_refresh = 0
 
     def setLed(self, i, r, v, b, timing):
-        cmd=("2,%d,%d,%d,%d,%d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
+        cmd=("2,%01d,%03d,%03d,%03d,%05d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
         if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
             self.cmdinterface.write(cmd)
         else:
