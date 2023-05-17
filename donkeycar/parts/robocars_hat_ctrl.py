@@ -512,7 +512,7 @@ class RobocarsHatLedCtrl():
 
     def __init__(self, cfg):
         self.cfg = cfg
-        if sef.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
+        if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
             self.cmdinterface = serial.Serial(self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY, 250000, timeout = 0.01)
         else:
             self.cmdinterface = RobocarsHat(self.cfg)
