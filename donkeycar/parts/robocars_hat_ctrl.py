@@ -11,6 +11,7 @@ import socket
 import errno
 import sys
 import fcntl,os
+from collections import deque
 
 mylogger = init_special_logger ("Rx")
 mylogger.setLevel(logging.INFO)
