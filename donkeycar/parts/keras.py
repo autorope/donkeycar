@@ -340,9 +340,9 @@ class KerasLinear(KerasPilot):
 
     def create_model(self):
         if self.have_odom:
-            return default_n_linear_odom(self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
+            return default_n_linear_odom(self.num_outputs+1 if self.have_acc_loc else self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
         else:
-            return default_n_linear(self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
+            return default_n_linear(self.num_outputs+1 if self.have_acc_loc else self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
 
     def compile(self):
         self.interpreter.compile(optimizer=self.optimizer, loss='mse')
