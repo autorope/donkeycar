@@ -345,8 +345,11 @@ class KerasLinear(KerasPilot):
             return default_n_linear(self.num_outputs+1 if self.have_acc_loc else self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
 
     def compile(self):
-        self.interpreter.compile(optimizer=self.optimizer, loss='mse')
-
+        if self.have_acc_loc:
+            self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'], loss='mse')
+        else:
+            self.interpreter.compile(optimizer=self.optimizer, loss='mse')
+            
     def interpreter_to_output(self, interpreter_out):
         steering = interpreter_out[0]
         throttle = interpreter_out[1]
