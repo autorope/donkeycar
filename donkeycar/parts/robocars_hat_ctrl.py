@@ -770,12 +770,12 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
         # not implemented
         pass
 
-    def run_threaded(self, throttle, angle, mode, lane, acc, obstacle_left, obstacle_right):
+    def run_threaded(self, throttle, angle, mode, acc):
         # not implemented
         pass
 
-    def run (self,throttle, angle, mode, lane, acc, obstacle_left, obstacle_right):
-        throttle, angle = self.processState (throttle, angle, mode, lane, acc, obstacle_left, obstacle_right)
+    def run (self,throttle, angle, mode, acc,):
+        throttle, angle = self.processState (throttle, angle, mode, acc)
         return throttle, angle
     
 
