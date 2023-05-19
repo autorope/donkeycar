@@ -524,16 +524,16 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_FRONT_TURN_LEFT = 4
             self.LED_INDEX_REAR_TURN_RIGHT = 1
             self.LED_INDEX_REAR_TURN_LEFT = 0
-            self.LED_FRONT_LIGHT_RIGHT = 2
-            self.LED_FRONT_LIGHT_LEFT = 5
+            self.LED_INDEX_FRONT_LIGHT_RIGHT = 2
+            self.LED_INDEX_FRONT_LIGHT_LEFT = 5
 
         else: #default
             self.LED_INDEX_FRONT_TURN_RIGHT = 0
             self.LED_INDEX_FRONT_TURN_LEFT = 1
             self.LED_INDEX_REAR_TURN_RIGHT = 2
             self.LED_INDEX_REAR_TURN_LEFT = 3
-            self.LED_FRONT_LIGHT_RIGHT = 4
-            self.LED_FRONT_LIGHT_LEFT = 5
+            self.LED_INDEX_FRONT_LIGHT_RIGHT = 4
+            self.LED_INDEX_FRONT_LIGHT_LEFT = 5
 
 
         self.idx = 0
@@ -564,6 +564,13 @@ class RobocarsHatLedCtrl():
                     self.reconnect=True
                     self.reconnectDelay=500
 
+        else:
+            self.cmdinterface.sendCmd(cmd)
+
+    def setAnim(self, n):
+        cmd=("3,%01d\n" % (int(n))).encode('ascii')
+        if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
+            self.cmdinterface.write(cmd)
         else:
             self.cmdinterface.sendCmd(cmd)
 
@@ -599,16 +606,19 @@ class RobocarsHatLedCtrl():
             self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0x0);
             self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0x0);
             self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0x0);
-            self.setLed(self.LED_FRONT_LIGHT_RIGHT, 0, 0, 0, 0x0);
-            self.setLed(self.LED_FRONT_LIGHT_LEFT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, 0, 0, 0, 0x0);
 
         if mode != self.last_mode or refresh:
             if mode=='user' :
-                self.setLed(self.LED_FRONT_LIGHT_RIGHT, *self.USER_FRONT_LIGH, 0xffff);
-                self.setLed(self.LED_FRONT_LIGHT_LEFT, *self.USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, *self.USER_FRONT_LIGH, 0xffff);
+                self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, *self.USER_FRONT_LIGH, 0xffff);
             else:
-                self.setLed(self.LED_FRONT_LIGHT_RIGHT, *self.AUTO_FRONT_LIGH, 0xffff);
-                self.setLed(self.LED_FRONT_LIGHT_LEFT, *self.AUTO_FRONT_LIGH, 0xffff);
+                if self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM:
+                    self.setAnim(self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM)
+                else:
+                    self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, *self.AUTO_FRONT_LIGH, 0xffff);
+                    self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, *self.AUTO_FRONT_LIGH, 0xffff);
 
             self.last_mode = mode
 
