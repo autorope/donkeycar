@@ -11,6 +11,7 @@ import socket
 import errno
 import sys
 import fcntl,os
+from transitions.extensions import HierarchicalMachine
 from collections import deque
 
 mylogger = init_special_logger ("Rx")
