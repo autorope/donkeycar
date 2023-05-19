@@ -733,7 +733,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
             return False
         return None
 
-    def processState(self, throttle, angle, mode, lane, acc, obstacle_left, obstacle_right):
+    def processState(self, throttle, angle, mode, acc):
             
         if self.is_stopped(allow_substates=True):
             if (mode != 'user') :
