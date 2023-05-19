@@ -938,7 +938,7 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), num_acc=0):
             Dense(1, activation='linear', name='n_outputs' + str(i))(x))
 
     if num_acc>0:
-        acc_out = Dense(num_acc, activation='softmax', name='n_outputs' + str(num_outputs))(z)
+        acc_out = Dense(num_acc, activation='softmax', name='n_outputs' + str(num_outputs))(x)
         outputs.append(acc_out)
 
     model = Model(inputs=[img_in], outputs=outputs, name='linear')
