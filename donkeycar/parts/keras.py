@@ -381,7 +381,7 @@ class KerasLinear(KerasPilot):
             acc: int = int(record.underlying['user/acc'])
             acc_one_hot = np.zeros(self.num_acc)
             acc_one_hot[acc] = 1
-            y_trans.update({'n_outputs3': acc_one_hot})
+            y_trans.update({'n_outputs2': acc_one_hot})
         return y_trans
 
     def output_shapes(self):
