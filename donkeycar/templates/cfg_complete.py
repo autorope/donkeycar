@@ -641,9 +641,9 @@ ROBOCARS_ACC_FILTER_TRESH_LOW=2
 # 
 USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
 ROBOCARS_THROTTLE_ON_ACC=False
-ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED = 0.2 # For pilot_angle autonomous mode, throttle for straight line parts 
-ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED = ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN # For pilot_angle autonomous mode, throttle for straight line parts 
-ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED = ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX # For pilot_angle autonomous mode, throttle for turn entry (brake)
+ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED = ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN # For pilot_angle autonomous mode, throttle for straight line parts 
+ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED = ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX # For pilot_angle autonomous mode, throttle for straight line parts 
+ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
 ROBOCARS_THROTTLE_ON_ACC_BRAKE_DURATION = 5
 
 
