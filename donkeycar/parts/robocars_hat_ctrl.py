@@ -699,9 +699,6 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
     def __init__(self, cfg):
         self.cfg = cfg
 
-        self.steering_on_throttle_factor = cfg.ROBOCARS_THROTTLE_ON_ACC_STEERING_ON_THROTTLE_FACTOR
-        self.adaptative_steering = cfg.ROBOCARS_THROTTLE_ON_ACC_ADAPTATIVE_STEERING
-
         self.hatInCtrl = None
         if (self.cfg.USE_ROBOCARSHAT_AS_CONTROLLER):
             self.hatInCtrl = RobocarsHatInCtrl(self.cfg)
@@ -759,10 +756,6 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
                 self.drive()
             else:
                 self.brake_cycle -=1
-
-        if self.adaptative_steering:
-            dyn_steering_factor = dk.utils.map_range_float(throttle, self.cfg.ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED, self.cfg.ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED, 1.0, self.steering_on_throttle_factor)
-            angle = max(min(angle * dyn_steering_factor,1.0),-1.0)
 
         return throttle, angle
  

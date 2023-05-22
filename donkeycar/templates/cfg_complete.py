@@ -92,7 +92,7 @@ STEERING_THROTTLE_SCALER_ENABLED = False
 ADAPTATIVE_STEERING_SCALER_ON_THROTTLE = False
 STEERING_FACTOR = 1.0
 THROTTLE_FACTOR = 1.0
-STEERING_ON_THROTTLE_FACTOR = 3.5
+STEERING_ON_THROTTLE_FACTOR = 2.5
 
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -590,7 +590,7 @@ ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # this range is also used when adaptative compensation on steering feature is used (ADAPTATIVE_STEERING_SCALER_ON_THROTTLE)
 ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE = False
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN = 0.17 # Throttle value where no steering compensation is applied
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.35 # Maximum throttle applied when throttle user command is set to maximum position
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.25 # Maximum throttle applied when throttle user command is set to maximum position
 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 
@@ -642,11 +642,9 @@ ROBOCARS_ACC_FILTER_TRESH_LOW=2
 USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
 ROBOCARS_THROTTLE_ON_ACC=False
 ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED = 0.2 # For pilot_angle autonomous mode, throttle for straight line parts 
-ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED = 0.4 # For pilot_angle autonomous mode, throttle for straight line parts 
-ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
+ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED = ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN # For pilot_angle autonomous mode, throttle for straight line parts 
+ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED = ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX # For pilot_angle autonomous mode, throttle for turn entry (brake)
 ROBOCARS_THROTTLE_ON_ACC_BRAKE_DURATION = 5
-ROBOCARS_THROTTLE_ON_ACC_ADAPTATIVE_STEERING = False
-ROBOCARS_THROTTLE_ON_ACC_STEERING_ON_THROTTLE_FACTOR = 3.5 # factor to apply full speed
 
 
 #LOGGING
