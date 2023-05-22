@@ -15,6 +15,8 @@ class SteeringThrottleScaler:
         self.running = True    
 
     def run(self, steering_angle, throttle):
+        scaled_steering = steering_angle
+        scaled_throttle = throttle
         if steering_angle and throttle:
             scaled_throttle = throttle * self.throttle_factor
             if self.adaptative_steering_scaler:
