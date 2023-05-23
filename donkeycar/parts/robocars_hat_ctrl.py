@@ -332,7 +332,7 @@ class RobocarsHatInCtrl:
         if mode=='user' and self.lastMode != 'user' and self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE != None:
             self.applyBrake=10 #brake duration
 
-        self.lastMode = self.mode
+        self.lastMode = mode
         self.lastAux1 = self.inAux1
         self.lastAux2 = self.inAux2
         
