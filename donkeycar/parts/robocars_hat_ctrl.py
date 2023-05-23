@@ -115,7 +115,7 @@ class RobocarsHatInCtrl:
         self.inAux2 = 0.0
         self.lastAux1 = -1.0
         self.lastAux2 = -1.0
-        self.lastMode = self.mode
+        self.lastMode = 'user'
         self.applyBrake = 0
 
         if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
