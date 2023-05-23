@@ -126,15 +126,15 @@ class RobocarsHatInCtrl:
             self.inSteeringIdle = 1500
 
         #Aux feature
-        self.ch3Feature = self.AUX_FEATURE_NONE
-        self.ch4Feature = self.AUX_FEATURE_NONE
+        self.aux1Feature = self.AUX_FEATURE_NONE
+        self.aux2Feature = self.AUX_FEATURE_NONE
 
-        self.ch3Feature = self._map_aux_feature (self.cfg.ROBOCARSHAT_CH3_FEATURE)
-        self.ch4Feature = self._map_aux_feature (self.cfg.ROBOCARSHAT_CH4_FEATURE)
+        self.aux1Feature = self._map_aux_feature (self.cfg.ROBOCARSHAT_CH3_FEATURE)
+        self.aux2Feature = self._map_aux_feature (self.cfg.ROBOCARSHAT_CH4_FEATURE)
 
-        if (self.ch3Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM) or (self.ch4Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM):
+        if (self.aux1Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM) or (self.aux2Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM):
             self.fixOutputSteeringTrim = 1500
-        if (self.ch3Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP) or (self.ch4Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP):
+        if (self.aux1Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP) or (self.aux2Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP):
             self.fixOutputSteering = 1500
 
         if self.cfg.ROBOCARSHAT_THROTTLE_DISCRET != None:
