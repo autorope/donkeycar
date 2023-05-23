@@ -694,11 +694,11 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
     def processState(self, throttle, angle, mode, sl):
             
         self.throttle_from_pilot = throttle
-        self.steering_from_pilot = steering
+        self.angle_from_pilot = angle
 
         # default output value from pilot 
         self.throttle_out = self.throttle_from_pilot
-        self.steering_out = self.steering_from_pilot
+        self.angle_out = self.angle_from_pilot
 
         # first, apply static scalar on throttle :
         self.throttle_out = self.throttle_from_pilot * self.cfg.ROBOCARS_THROTTLE_SCALER
@@ -740,9 +740,9 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
             # if feature to explore adaptative steering scalar is enabled, override scalar with current value beeing tested
             dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.hatInCtrl.getAdaptativeSteeringScalar())
 
-        self.steering_out = max(min(self.steering_from_pilot * dyn_steering_factor,1.0),-1.0)
+        self.angle_out = max(min(self.angle_from_pilot * dyn_steering_factor,1.0),-1.0)
 
-        return self.throttle_out, self.steering_out
+        return self.throttle_out, self.angle_out
  
     def update(self):
         # not implemented
