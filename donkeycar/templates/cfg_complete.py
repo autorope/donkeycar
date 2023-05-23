@@ -577,12 +577,6 @@ ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : l
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
-# in local_angle, throttle command from user is used to dynamically adjust throttle, from ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN up to ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
-# this range is also used when adaptative compensation on steering feature is used (ADAPTATIVE_STEERING_SCALER_ON_THROTTLE)
-ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE = False
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN = 0.17 # Throttle value where no steering compensation is applied
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.35 # Maximum throttle applied when throttle user command is set to maximum position
-
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 
 #ROBOCARSHAT_CH3_FEATURE and ROBOCARSHAT_CH4_FEATURE controls the feature attached to radio ch3 and ch4
@@ -605,6 +599,11 @@ ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10
 #ROBOCARSHAT_STEERING_FIX used for steering calibration, enforce a fixed steering value (betzeen -1.0 and 1.0). None means no enforcment
 ROBOCARSHAT_STEERING_FIX = None 
 
+# For 'throttle_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
+AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 2.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
+# For 'adaptative_steering_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
+AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
+
 # ROBOCARSHAT_THROTTLE_DISCRET used to control throttle with discretes values (only in user mode, first value must be 0.0)
 # ROBOCARSHAT_THROTTLE_DISCRET has precedence over ROBOCARSHAT_THROTTLE_FLANGER
 #Example : ROBOCARSHAT_THROTTLE_DISCRET = [0.0, 0.1, 0.2], if not used, set to None 
@@ -617,11 +616,6 @@ ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2]
 
 # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 ROBOCARSHAT_USE_AUTOCALIBRATION = True
-
-# For 'throttle_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
-AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 2.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
-# For 'adaptative_steering_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
-AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
 
 ROBOCARSHAT_CONTROL_LED = False
 ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = None
