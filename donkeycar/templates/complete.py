@@ -415,8 +415,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
 
-        if cfg.ROBOCARS_ACC_MODEL:
-            outputs.append("pilot/acc")
+        if cfg.ROBOCARS_ROBOCARS_SL_DETECTION_MODEL:
+            outputs.append("pilot/sl")
 
         #
         # Add image transformations like crop or trapezoidal mask
@@ -447,20 +447,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(DepthAvoidance(cfg.CLOSE_AVOIDANCE_DIST_MM), inputs=inputs, outputs=outputs)
         # Should be run with following line only when autopilot is in charge
         # V.add(DepthAvoidance, inputs=inputs, outputs=outputs, run_condition='run_pilot')
-
-    # 
-    # steering/throttle scaler
-    # enabled
-    # steering_factor
-    # throttle_factor
-    # steering_on_throttle_factor
-    # 
-    if cfg.STEERING_THROTTLE_SCALER_ENABLED:
-        inputs = ["pilot/angle", "pilot/throttle"]
-        outputs = ['pilot/angle', 'pilot/throttle']
-        from donkeycar.parts.steering_throttle_scaler import SteeringThrottleScaler
-        V.add(SteeringThrottleScaler(cfg), inputs=inputs, outputs=outputs, run_condition='run_pilot')
-
 
     #
     # stop at a stop sign
@@ -561,8 +547,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:
-        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
-        types=['image_array','float', 'float','str']
+        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode', "angle", "throttle"]
+        types=['image_array','float', 'float','str', 'float', 'float']
 
     if cfg.HAVE_ODOM:
         inputs += ['enc/speed']
@@ -619,10 +605,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         types += ['float', 'float', 'float']
         V.add(mon, inputs=[], outputs=perfmon_outputs, threaded=True)
 
-    if (cfg.ROBOCARS_ACC_MODEL):
-        inputs += ['user/acc']
+    if (cfg.ROBOCARS_SL_DETECTION_MODEL):
+        inputs += ['user/sl']
         types += ['int']
-        inputs += ['pilot/acc']
+        inputs += ['pilot/sl']
         types += ['int']
 
     # do we want to store new records into own dir or append to existing
@@ -998,7 +984,7 @@ def add_drivetrain(V, cfg):
     if cfg.USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER :
         from donkeycar.parts.robocars_hat_ctrl import RobocarsHatDriveCtrl
         drive_controller = RobocarsHatDriveCtrl(cfg)
-        V.add(drive_controller, inputs=['throttle','angle','user/mode', 'pilot/acc'], outputs=['throttle','angle'], threaded=False)
+        V.add(drive_controller, inputs=['throttle','angle','user/mode', 'pilot/sl'], outputs=['throttle','angle'], threaded=False)
 
     if (not cfg.DONKEY_GYM) and not cfg.DONKEY_WEBOT and cfg.DRIVE_TRAIN_TYPE != "MOCK":
         from donkeycar.parts import actuator, pins

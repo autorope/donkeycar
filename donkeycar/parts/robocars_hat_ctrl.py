@@ -75,7 +75,8 @@ class RobocarsHatInCtrl:
     AUX_FEATURE_STEERINGEXP=5
     AUX_FEATURE_OUTPUT_STEERING_TRIM=6
     AUX_FEATURE_OUTPUT_STEERING_EXP=7
-    AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE=8
+    AUX_FEATURE_THROTTLE_SCALAR_EXP=8
+    AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP = 9
 
     def _map_aux_feature (self, feature):
         if feature == 'record/pilot':
@@ -92,8 +93,12 @@ class RobocarsHatInCtrl:
             return self.AUX_FEATURE_OUTPUT_STEERING_TRIM
         elif feature == 'output_steering_exp':
             return self.AUX_FEATURE_OUTPUT_STEERING_EXP
-        elif feature == 'local_angle_fix_throttle':
-            return self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE
+        elif feature == 'throttle_scalar_exp':
+            return self.AUX_FEATURE_THROTTLE_SCALAR_EXP
+        elif feature == 'adaptative_steering_scalar_exp':
+            return self.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP
+        elif feature != 'none':
+            mylogger.info(f"CtrlIn : Unkown requested feature : {feature}")
 
     def __init__(self, cfg):
 
@@ -104,15 +109,14 @@ class RobocarsHatInCtrl:
         self.fixSteering = 0.0
         self.fixOutputSteeringTrim = None
         self.fixOutputSteering = None
+        self.fixThrottleScalar = 1.0
+        self.adaptativeSteeringScalar = 1.0
         self.inAux1 = 0.0
         self.inAux2 = 0.0
         self.lastAux1 = -1.0
         self.lastAux2 = -1.0
-        self.recording=False
-        self.mode = 'user'
         self.lastMode = self.mode
         self.applyBrake = 0
-        self.lastPilotThrottle = 0.0
 
         if (self.cfg.ROBOCARSHAT_USE_AUTOCALIBRATION==True) :
             self.inThrottleIdle = -1
@@ -121,14 +125,13 @@ class RobocarsHatInCtrl:
             self.inThrottleIdle = 1500
             self.inSteeringIdle = 1500
 
-        self.inSpeed = 0
-
         #Aux feature
         self.ch3Feature = self.AUX_FEATURE_NONE
         self.ch4Feature = self.AUX_FEATURE_NONE
 
         self.ch3Feature = self._map_aux_feature (self.cfg.ROBOCARSHAT_CH3_FEATURE)
         self.ch4Feature = self._map_aux_feature (self.cfg.ROBOCARSHAT_CH4_FEATURE)
+
         if (self.ch3Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM) or (self.ch4Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM):
             self.fixOutputSteeringTrim = 1500
         if (self.ch3Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP) or (self.ch4Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP):
@@ -191,150 +194,128 @@ class RobocarsHatInCtrl:
                     self.inSteeringIdle = int(params[2])
                 mylogger.debug("CtrlIn Idle {} {} ".format(int(params[1]), int(params[2])))
 
+    def getFixThrottleScalar(self):
+        return self.fixThrottleScalar
+
+    def getAdaptativeSteeringScalar(self):
+        return self.adaptativeSteeringScalar
+
     def getCommand(self):
         self.processRxCh()
         self.processCalibration()
 
+    def isFeatActive(self, feature):
+        # return actual value read from channel, and indication on whether value has changed or not since last check.
+        # has_changed information is for switch like feature
+        if (self.aux1Feature == feature or self.aux2Feature == feature):
+            return True
+        return False
+
+    def getAuxValuePerFeat(self, feature):
+        # return actual value read from channel, and indication on whether value has changed or not since last check.
+        # has_changed information is for switch like feature
+        if self.aux1Feature == feature:
+            return self.inAux1, abs(self.lastAux1 - self.inAux1)>0.1
+        elif self.aux2Feature == feature:
+            return self.inAux2, abs(self.lastAux2 - self.inAux2)>0.1
+        else:
+            return None,None
+
     def processAltModes(self):
-        self.recording=False
-        self.mode='user'
+        mode='user'
+        recording=False
         user_throttle = self.inThrottle
         user_steering = self.inSteering
-        pilot_throttle = 0.0
 
-        #Process Aux ch3
-        if self.ch3Feature == self.AUX_FEATURE_RECORDandPILOT :
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_RECORDandPILOT)
+        if command != None :
+            if (command<-0.5):
+                recording=True
+                mode='user'
+            elif (command>0.5):
+                mode=self.cfg.ROBOCARSHAT_PILOT_MODE
+            else:
+                mode='user'
 
-            if (self.inAux1<-0.5):
-                self.recording=True
-            if (self.inAux1>0.5):
-                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_RECORD)
+        if command != None :
+            if command > 0.5:
+                recording=True
 
-        elif self.ch3Feature == self.AUX_FEATURE_RECORD :
-            if self.inAux1 > 0.5:
-                self.recording=True
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_PILOT)
+        if command != None :
+            if command > 0.5:
+                mode=self.cfg.ROBOCARSHAT_PILOT_MODE
 
-        elif self.ch3Feature == self.AUX_FEATURE_PILOT :
-            if self.inAux1 > 0.5:
-                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
-
-        elif self.ch3Feature == self.AUX_FEATURE_THROTTLEEXP :
-            if (abs(self.lastAux1 - self.inAux1)>0.5) :
-                if self.inAux1 > 0.5:
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_THROTTLEEXP)
+        if command != None :
+            if has_changed :
+                if command > 0.5:
                     self.fixThrottle = min(self.fixThrottle+self.cfg.ROBOCARSHAT_THROTTLE_EXP_INC,1.0)
                     mylogger.info("CtrlIn Fixed throttle set to {}".format(self.fixThrottle))
-                if self.inAux1 < -0.5:
+                if command < -0.5:
                     self.fixThrottle = max(self.fixThrottle-self.cfg.ROBOCARSHAT_THROTTLE_EXP_INC,0.0)
                     mylogger.info("CtrlIn Fixed throttle set to {}".format(self.fixThrottle))
             user_throttle = self.fixThrottle
 
-        elif self.ch3Feature == self.AUX_FEATURE_STEERINGEXP :
-            if (abs(self.lastAux1 - self.inAux1)>0.5) :
-                if self.inAux1 > 0.5:
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_STEERINGEXP)
+        if command != None :
+            if has_changed :
+                if command > 0.5:
                     self.fixSteering = min(self.fixSteering+self.cfg.ROBOCARSHAT_STEERING_EXP_INC,1.0)
                     mylogger.info("CtrlIn Fixed steering set to {}".format(self.fixSteering))
-                if self.inAux1 < -0.5:
+                if command < -0.5:
                     self.fixSteering = max(self.fixSteering-self.cfg.ROBOCARSHAT_STEERING_EXP_INC,-1.0)
                     mylogger.info("CtrlIn Fixed steering set to {}".format(self.fixSteering))
-                user_steering = self.fixSteering            
+            user_steering = self.fixSteering            
 
-        elif self.ch3Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM :
-            if (abs(self.lastAux1 - self.inAux1)>0.5) :
-                if self.inAux1 > 0.5:
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_OUTPUT_STEERING_TRIM)
+        if command != None :
+            if has_changed :
+                if command > 0.5:
                     self.fixOutputSteeringTrim = min(self.fixOutputSteeringTrim+self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,2000)
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteeringTrim))
-                if self.inAux1 < -0.5:
+                if command < -0.5:
                     self.fixOutputSteeringTrim = max(self.fixOutputSteeringTrim-self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,1000)
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteeringTrim))
                 self.hatActuator.setSteeringTrim (self.fixOutputSteeringTrim)            
 
-        elif self.ch3Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP :
-            if (abs(self.lastAux1 - self.inAux1)>0.5) :
-                if self.inAux1 > 0.5:
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_OUTPUT_STEERING_EXP)
+        if command != None :
+            if has_changed :
+                if command > 0.5:
                     self.fixOutputSteering = min(self.fixOutputSteering+self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,2000)
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
-                if self.inAux1 < -0.5:
+                if command < -0.5:
                     self.fixOutputSteering = max(self.fixOutputSteering-self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,1000)
                     mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
                 self.hatActuator.setFixSteering (self.fixOutputSteering)            
 
-        elif self.ch3Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode!='user':
-            # take precedence on pilot and record&pilot features
-            pilot_throttle =  dk.utils.map_range_float(self.inAux1,
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_THROTTLE_SCALAR_EXP)
+        if command != None :
+            newScalar =  dk.utils.map_range_float(command,
                         -1.0, 1.0,
-                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX, enforce_input_in_range=True)
+                        1.0, self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE, enforce_input_in_range=True)
+            if (abs(newScalar - self.fixThrottleScalar)>0.01) :
+                 mylogger.info("CtrlIn fix throttle scalar set to {}".format(newScalar))
+            self.fixThrottleScalar = newScalar
 
-        # Process aux ch4
-        if self.ch4Feature == self.AUX_FEATURE_RECORDandPILOT :
-
-            if (self.inAux2<-0.5):
-                self.recording=True
-            if (self.inAux2>0.5):
-                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
-
-        elif self.ch4Feature == self.AUX_FEATURE_RECORD :
-            if self.inAux2 > 0.5:
-                self.recording=True
-
-        elif self.ch4Feature == self.AUX_FEATURE_PILOT :
-            if self.inAux2 > 0.5:
-                self.mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                pilot_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
-
-        elif self.ch4Feature == self.AUX_FEATURE_THROTTLEEXP :
-            if (abs(self.lastAux2 - self.inAux2)>0.5) :
-                if self.inAux2 > 0.5:
-                    self.fixThrottle = min(self.fixThrottle+self.cfg.ROBOCARSHAT_THROTTLE_EXP_INC,1.0)
-                    mylogger.info("CtrlIn Fixed throttle set to {}".format(self.fixThrottle))
-                if self.inAux2 < -0.5:
-                    self.fixThrottle = max(self.fixThrottle-self.cfg.ROBOCARSHAT_THROTTLE_EXP_INC,0.0)
-                    mylogger.info("CtrlIn Fixed throttle set to {}".format(self.fixThrottle))
-            user_throttle = self.fixThrottle
-
-        elif self.ch4Feature == self.AUX_FEATURE_STEERINGEXP :
-            if (abs(self.lastAux2 - self.inAux2)>0.5) :
-                if self.inAux2 > 0.5:
-                    self.fixSteering = min(self.fixSteering+self.cfg.ROBOCARSHAT_STEERING_EXP_INC,1.0)
-                    mylogger.info("CtrlIn Fixed steering set to {}".format(self.fixSteering))
-                if self.inAux2 < -0.5:
-                    self.fixSteering = max(self.fixSteering-self.cfg.ROBOCARSHAT_STEERING_EXP_INC,-1.0)
-                    mylogger.info("CtrlIn Fixed steering set to {}".format(self.fixSteering))
-                user_steering = self.fixSteering            
-
-        elif self.ch4Feature == self.AUX_FEATURE_OUTPUT_STEERING_TRIM :
-            if (abs(self.lastAux2 - self.inAux2)>0.5) :
-                if self.inAux2 > 0.5:
-                    self.fixOutputSteeringTrim = min(self.fixOutputSteeringTrim+self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,2000)
-                    mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteeringTrim))
-                if self.inAux2 < -0.5:
-                    self.fixOutputSteeringTrim = max(self.fixOutputSteeringTrim-self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,1000)
-                    mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteeringTrim))
-                self.hatActuator.setSteeringTrim (self.fixOutputSteeringTrim)            
-
-        elif self.ch4Feature == self.AUX_FEATURE_OUTPUT_STEERING_EXP :
-            if (abs(self.lastAux2 - self.inAux2)>0.5) :
-                if self.inAux2 > 0.5:
-                    self.fixOutputSteering = min(self.fixOutputSteering+self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,2000)
-                    mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
-                if self.inAux2 < -0.5:
-                    self.fixOutputSteering = max(self.fixOutputSteering-self.cfg.ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC,1000)
-                    mylogger.info("CtrlIn Fixed output steering set to {}".format(self.fixOutputSteering))
-                self.hatActuator.setFixSteering (self.fixOutputSteering)            
-
-        elif self.ch4Feature == self.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE and self.mode!='user':
-            # take precedence on pilot and record&pilot features
-            pilot_throttle =  dk.utils.map_range_float(self.inAux2,
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP)
+        if command != None :
+            newScalar =  dk.utils.map_range_float(command,
                         -1.0, 1.0,
-                        self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX, enforce_input_in_range=True)
-                        
+                        1.0, self.cfg.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE, enforce_input_in_range=True)
+            if (abs(newScalar - self.adaptativeSteeringScalar)>0.01) :
+                 mylogger.info("CtrlIn adaptative steering scalar set to {}".format(newScalar))
+            self.adaptativeSteeringScalar = newScalar
+
+        # Process other features 
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
+ 
             user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
         # Discret throttle mode
-        if self.mode=='user':
+        if mode=='user':
             # Discret mode, apply profile
             if self.cfg.ROBOCARSHAT_THROTTLE_DISCRET != None :
                 inds = np.digitize(user_throttle, self.discretesThrottle)
@@ -347,21 +328,8 @@ class RobocarsHatInCtrl:
                     -1, 0, 1,
                     self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[0], 0, self.cfg.ROBOCARSHAT_THROTTLE_FLANGER[1])
 
-        # when in pilot mode, if enabled, apply output throttle proportionnaly to current throttle value from controller
-        if self.mode!='user': 
-            if self.cfg.ROBOCARSHAT_USER_CONTROLED_LOCAL_ANGLE_THROTTLE:
-                pilot_throttle =  dk.utils.map_range_float(user_throttle,
-                    0.0, 1.0,
-                    self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN, self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX, enforce_input_in_range=True)
-            if (abs(pilot_throttle - self.lastPilotThrottle)>0.01) :
-                mylogger.info("CtrlIn user throttle in pilot mode set to {}".format(pilot_throttle))
-            self.lastPilotThrottle = pilot_throttle
-            user_throttle = pilot_throttle
-            mylogger.debug("CtrlIn user throttle in pilot mode set to {}".format(user_throttle))
-
-
         #if switching back to user, then apply brake
-        if self.mode=='user' and self.lastMode != 'user' and self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE != None:
+        if mode=='user' and self.lastMode != 'user' and self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE != None:
             self.applyBrake=10 #brake duration
 
         self.lastMode = self.mode
@@ -372,7 +340,7 @@ class RobocarsHatInCtrl:
             user_throttle = self.cfg.ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE
             self.applyBrake-=1
 
-        return user_throttle, user_steering
+        return user_throttle, user_steering, mode, recording
 
     def update(self):
 
@@ -385,13 +353,13 @@ class RobocarsHatInCtrl:
                 time.sleep(s)
 
     def run_threaded(self):
-        user_throttle, user_steering = self.processAltModes ()
-        return user_steering, user_throttle, self.mode, self.recording, self.inSpeed
+        user_throttle, user_steering, user_mode, recording = self.processAltModes ()
+        return user_steering, user_throttle, user_mode, recording
 
     def run (self):
         self.getCommand()
-        user_throttle, user_steering = self.processAltModes ()
-        return user_steering, user_throttle, self.mode, self.recording, self.inSpeed
+        user_throttle, user_steering, user_mode, recording = self.processAltModes ()
+        return user_steering, user_throttle, user_mode, recording
     
 
     def shutdown(self):
@@ -663,28 +631,19 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
     ACC_DEFAULT = 0
     ACC_STRAIGHT_LINE = 1
 
-    ACC_LABEL=["regular","stright line"]
+    ACC_LABEL=["regular","straight line"]
 
     states = [
             {'name':'stopped'}, 
             {'name':'driving','initial':'regularspeed', 'children':['regularspeed', 'fullspeed','braking']}
             ]
 
-    def set_regularspeed(self):
-        self.fix_throttle = self.cfg.ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED
-
-    def set_fullspeed(self):
-        if self.cfg.ROBOCARS_THROTTLE_ON_ACC:
-            self.fix_throttle = self.cfg.ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED
-        else:
-            self.fix_throttle = self.cfg.ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED
-
     def set_brakespeed(self):
-        if self.cfg.ROBOCARS_THROTTLE_ON_ACC:
-            self.fix_throttle = self.cfg.ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED
+        if self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL>1.0:
+            self.throttle_to out  = self.cfg.ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED
             self.brake_cycle = self.cfg.ROBOCARS_THROTTLE_ON_ACC_BRAKE_DURATION
         else:
-            self.fix_throttle = self.cfg.ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED
+            # no active brake
             self.brake_cycle = 0
 
 
@@ -699,83 +658,100 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
     def __init__(self, cfg):
         self.cfg = cfg
 
-        self.steering_on_throttle_factor = cfg.ROBOCARS_THROTTLE_ON_ACC_STEERING_ON_THROTTLE_FACTOR
-        self.adaptative_steering = cfg.ROBOCARS_THROTTLE_ON_ACC_ADAPTATIVE_STEERING
-
         self.hatInCtrl = None
         if (self.cfg.USE_ROBOCARSHAT_AS_CONTROLLER):
             self.hatInCtrl = RobocarsHatInCtrl(self.cfg)
         self.fix_throttle = 0
         self.brake_cycle = 0
-        self.last_acc=deque(maxlen=self.cfg.ROBOCARS_ACC_FILTER_SIZE)
+        self.last_sl=deque(maxlen=self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE)
         self.lane = 0
         self.on = True
 
         self.machine = HierarchicalMachine(self, states=self.states, initial='stopped', ignore_invalid_triggers=True)
-        self.machine.add_transition (trigger='drive', source='stopped', dest='driving', before='set_regularspeed')
+        self.machine.add_transition (trigger='drive', source='stopped', dest='driving')
         self.machine.add_transition (trigger='stop', source='driving', dest='stopped')
-        self.machine.add_transition (trigger='accelerate', source='driving_regularspeed', dest='driving_fullspeed', before='set_fullspeed')
+        self.machine.add_transition (trigger='accelerate', source='driving_regularspeed', dest='driving_fullspeed')
         self.machine.add_transition (trigger='brake', source='driving_fullspeed', dest='driving_braking', before='set_brakespeed')
-        self.machine.add_transition (trigger='drive', source='driving_braking', dest='driving_regularspeed', before='set_regularspeed')
+        self.machine.add_transition (trigger='drive', source='driving_braking', dest='driving_regularspeed')
 
         drivetrainlogger.info('starting RobocarsHatLaneCtrl Hat Controller')
 
-    def update_acc_filter (self,acc):
-        if (acc != None) :
-            self.last_acc.append(acc)
+    def update_sl_filter (self,sl):
+        if (sl != None) :
+            self.last_sl.append(sl)
 
-    def is_acc_confition(self):
-        acc_arr = list(self.last_acc)
-        acc_count = sum(acc_arr)
-        if acc_count >= self.cfg.ROBOCARS_ACC_FILTER_TRESH_HIGH:
+    def is_sl_confition(self):
+        sl_arr = list(self.last_sl)
+        sl_count = sum(sl_arr)
+        if sl_count >= self.cfg.ROBOCARS_SL_FILTER_TRESH_HIGH:
             return True
-        if acc_count <= self.cfg.ROBOCARS_ACC_FILTER_TRESH_LOW:
+        if sl_count <= self.cfg.ROBOCARS_SL_FILTER_TRESH_LOW:
             return False
         return None
 
-    def processState(self, throttle, angle, mode, acc):
+    def processState(self, throttle, angle, mode, sl):
             
+        self.throttle_from_pilot = throttle
+        self.steering_from_pilot = steering
+
+        # default output value from pilot 
+        self.throttle_out = self.throttle_from_pilot
+        self.steering_out = self.steering_from_pilot
+
+        # first, apply static scalar on throttle :
+        self.throttle_out = self.throttle_from_pilot * self.cfg.ROBOCARS_THROTTLE_SCALER
+        if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_THROTTLE_SCALAR_EXP):
+            # if feature to explore throttle scalar is enabled, override scalar with current value beeing tested
+            self.throttle_out = self.throttle_from_pilot * self.hatInCtrl.getFixThrottleScalar()
+
+        # second, if straight line detected, apply specific scalar
         if self.is_stopped(allow_substates=True):
             if (mode != 'user') :
-                self.drive()
+                self.drive() #engage autonomous mode
 
         if self.is_driving(allow_substates=True):
-            self.update_acc_filter (acc)
-            if self.cfg.ROBOCARS_THROTTLE_ON_ACC:
-                throttle=self.fix_throttle
+            self.update_sl_filter (sl)
             if (mode == 'user') :
-                self.stop()
+                self.stop() #disengage autonomous mode
 
         if self.is_driving_regularspeed(allow_substates=True):
-            if (self.is_acc_confition()==True) :
-                self.accelerate()
+            if (self.is_sl_confition()==True) :
+                self.accelerate() #sl detected and confirmed 
 
         if self.is_driving_fullspeed(allow_substates=True):
-            if (self.is_acc_confition()==False):
-                self.brake()
+            if (self.is_sl_confition()==False):
+                self.brake() # end of sl
+            else:
+                # apply extra scalar factor on throttle when in straight line
+                self.throttle_out = self.throttle_out * self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL
 
         if self.is_driving_braking(allow_substates=True):
             if self.brake_cycle == 0:
-                self.drive()
+                self.drive() # end of braking cycle
             else:
                 self.brake_cycle -=1
 
-        if self.adaptative_steering:
-            dyn_steering_factor = dk.utils.map_range_float(throttle, self.cfg.ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED, self.cfg.ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED, 1.0, self.steering_on_throttle_factor)
-            angle = max(min(angle * dyn_steering_factor,1.0),-1.0)
+        # then apply steering compensation based on targeted throttle
+        # compute the scalar to apply, proportionnaly to the targeted throttle comparted to throttle from model or from local_angle mode
+        dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER)
+        if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP):
+            # if feature to explore adaptative steering scalar is enabled, override scalar with current value beeing tested
+            dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.hatInCtrl.getAdaptativeSteeringScalar())
 
-        return throttle, angle
+        self.steering_out = max(min(self.steering_from_pilot * dyn_steering_factor,1.0),-1.0)
+
+        return self.throttle_out, self.steering_out
  
     def update(self):
         # not implemented
         pass
 
-    def run_threaded(self, throttle, angle, mode, acc):
+    def run_threaded(self, throttle, angle, mode, sl):
         # not implemented
         pass
 
-    def run (self,throttle, angle, mode, acc,):
-        throttle, angle = self.processState (throttle, angle, mode, acc)
+    def run (self,throttle, angle, mode, sl,):
+        throttle, angle = self.processState (throttle, angle, mode, sl)
         return throttle, angle
     
 

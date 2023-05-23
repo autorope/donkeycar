@@ -85,15 +85,6 @@ OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
 BEHAVIOR_LIST = ['left', 'right']
 OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
 
-# STEERING_THROTTLE_SCALER
-# scaled_throttle = throttle * THROTTLE_FACTOR
-# scaled_steering = steering_angle * STEERING_FACTOR * STEERING_ON_THROTTLE_FACTOR * THROTTLE_FACTOR
-STEERING_THROTTLE_SCALER_ENABLED = False
-ADAPTATIVE_STEERING_SCALER_ON_THROTTLE = False
-STEERING_FACTOR = 1.0
-THROTTLE_FACTOR = 1.0
-STEERING_ON_THROTTLE_FACTOR = 3.5
-
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 #IMAGE_W = 160
@@ -583,7 +574,7 @@ ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 #ODOM Sensor max value (max matching lowest speed)
 ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : local_angle or local
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle)
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
 # in local_angle, throttle command from user is used to dynamically adjust throttle, from ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MIN up to ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE_MAX
@@ -603,7 +594,8 @@ THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # 'steering_exploration' means special mode where aux ch is used to increment/decrement a fixed steering value in user mode 
 # 'output_steering_trim' means special mode where aux ch is used to increment/decrement a steering idle output for triming direction in user mode, resulting value must be reported in  ROBOCARSHAT_PWM_OUT_STEERING_IDLE
 # 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
-# 'local_angle_fix_throttle' means special mode where aux ch is used to fix throttle to use when autopilot is engeged in local_angle mode
+# 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged 
+# 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
 ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
 ROBOCARSHAT_CH4_FEATURE = 'none' 
 ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
@@ -626,27 +618,30 @@ ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2]
 # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 ROBOCARSHAT_USE_AUTOCALIBRATION = True
 
+# For 'throttle_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
+AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 2.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
+# For 'adaptative_steering_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
+AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
+
 ROBOCARSHAT_CONTROL_LED = False
 ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = None
 ROBOCARSHAT_LED_MODEL = 'Alpine' #Alpine, Duo, 
 ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
 
 # Acceleration model
-ROBOCARS_ACC_MODEL=False
+ROBOCARS_ROBOCARS_SL_DETECTION_MODEL=False
 ROBOCARS_NUM_ACC_CAT=2
-ROBOCARS_ACC_FILTER_SIZE=6
-ROBOCARS_ACC_FILTER_TRESH_HIGH=4
-ROBOCARS_ACC_FILTER_TRESH_LOW=2
 
 # 
 USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
-ROBOCARS_THROTTLE_ON_ACC=False
-ROBOCARS_THROTTLE_ON_ACC_REGULAR_SPEED = 0.2 # For pilot_angle autonomous mode, throttle for straight line parts 
-ROBOCARS_THROTTLE_ON_ACC_FULL_SPEED = 0.4 # For pilot_angle autonomous mode, throttle for straight line parts 
-ROBOCARS_THROTTLE_ON_ACC_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
-ROBOCARS_THROTTLE_ON_ACC_BRAKE_DURATION = 5
-ROBOCARS_THROTTLE_ON_ACC_ADAPTATIVE_STEERING = False
-ROBOCARS_THROTTLE_ON_ACC_STEERING_ON_THROTTLE_FACTOR = 3.5 # factor to apply full speed
+ROBOCARS_THROTTLE_SCALER = 1.0 # scalar to apply to throttle when straight line is detected 
+ROBOCARS_THROTTLE_SCALER_ON_SL = 1.0 # scalar to apply to throttle when straight line is detected 
+ROBOCARS_CTRL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
+ROBOCARS_CTRL_BRAKE_DURATION = 5
+ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 1.0 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle 
+ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
+ROBOCARS_SL_FILTER_TRESH_HIGH=4
+ROBOCARS_SL_FILTER_TRESH_LOW=2
 
 
 #LOGGING

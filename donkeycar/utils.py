@@ -288,12 +288,18 @@ def map_range(x, X_min, X_max, Y_min, Y_max, enforce_input_in_range=False):
     '''
     Linear mapping between two ranges of values
     '''
+    if enforce_input_in_range:
+        x=max(min(x,X_max),X_min)
+
+    if (X_min==X_max):
+        return Y_min
+    if (Y_min==Y_max):
+        return Y_min
+
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
 
-    if enforce_input_in_range:
-        x=max(min(x,X_max),X_min)
 
     y = ((x-X_min) / XY_ratio + Y_min) // 1
 
@@ -304,12 +310,19 @@ def map_range_float(x, X_min, X_max, Y_min, Y_max, enforce_input_in_range=False)
     '''
     Same as map_range but supports floats return, rounded to 2 decimal places
     '''
+
+    if enforce_input_in_range:
+        x=max(min(x,X_max),X_min)
+
+    if (X_min==X_max):
+        return Y_min
+    if (Y_min==Y_max):
+        return Y_min
+
     X_range = X_max - X_min
     Y_range = Y_max - Y_min
     XY_ratio = X_range/Y_range
     
-    if enforce_input_in_range:
-        x=max(min(x,X_max),X_min)
 
     y = ((x-X_min) / XY_ratio + Y_min)
 
@@ -505,7 +518,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     if used_model_type == "lineartrt":
         kl = TensorRTLinear(cfg=cfg)
     elif used_model_type == "linear":
-        kl = KerasLinear(interpreter=interpreter, input_shape=input_shape, have_odom=cfg.HAVE_ODOM, have_acc_loc=cfg.ROBOCARS_ACC_MODEL, num_acc_cat=cfg.ROBOCARS_NUM_ACC_CAT)
+        kl = KerasLinear(interpreter=interpreter, input_shape=input_shape, have_odom=cfg.HAVE_ODOM, have_acc_loc=cfg.ROBOCARS_SL_DETECTION_MODEL, num_acc_cat=cfg.ROBOCARS_NUM_ACC_CAT)
 
     elif used_model_type == "categorical":
         kl = KerasCategorical(

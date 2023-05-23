@@ -381,7 +381,7 @@ class KerasLinear(KerasPilot):
         throttle: float = record.underlying['user/throttle']
         y_trans = {'n_outputs0': angle, 'n_outputs1': throttle}
         if self.have_acc_loc:
-            acc: int = int(record.underlying['user/acc'])
+            acc: int = int(record.underlying['user/sl'])
             acc_one_hot = np.zeros(self.num_acc)
             acc_one_hot[acc] = 1
             y_trans.update({'n_outputs2': acc_one_hot})
