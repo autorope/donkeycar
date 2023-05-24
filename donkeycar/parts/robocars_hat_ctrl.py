@@ -719,10 +719,10 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
 
         # apply steering compensation based on targeted throttle
         # compute the scalar to apply, proportionnaly to the targeted throttle comparted to throttle from model or from local_angle mode
-        dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER)
+        dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, self.throttle_from_pilot, 1.0, 1.0, self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER)
         if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP):
             # if feature to explore adaptative steering scalar is enabled, override scalar with current value beeing tested
-            dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.hatInCtrl.getAdaptativeSteeringScalar())
+            dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, self.throttle_from_pilot, 1.0, 1.0, self.hatInCtrl.getAdaptativeSteeringScalar())
 
         # then, if straight line detected, apply specific scalar
         if self.is_stopped(allow_substates=True):
