@@ -713,7 +713,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
 
         # first, apply static scalar on throttle :
         self.throttle_out = self.throttle_from_pilot * self.cfg.ROBOCARS_THROTTLE_SCALER
-        if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_THROTTLE_SCALAR_EXP):
+        if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_THROTTLE_SCALAR_EXP) or self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL :
             # if feature to explore throttle scalar is enabled, override scalar with current value beeing tested
             self.throttle_out = self.throttle_from_pilot * self.hatInCtrl.getFixThrottleScalar()
 
