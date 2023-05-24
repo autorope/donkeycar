@@ -342,7 +342,7 @@ class KerasLinear(KerasPilot):
         if self.have_odom:
             return default_n_linear_odom(self.num_outputs, self.input_shape,num_scen=self.num_scen_cat if self.have_scen_cat else 0)
         else:
-            return default_n_linear(self.num_outputs, self.input_shape,num-scen=self.num_scen_cat if self.have_scen_cat else 0)
+            return default_n_linear(self.num_outputs, self.input_shape,num_scen=self.num_scen_cat if self.have_scen_cat else 0)
 
     def compile(self):
         if self.have_scen_cat:
