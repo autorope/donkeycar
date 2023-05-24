@@ -323,7 +323,7 @@ class RobocarsHatInCtrl:
                 if (abs(newScalar - self.fixThrottleScalar)>0.01) :
                     mylogger.info("CtrlIn fix throttle scalar set to {}".format(newScalar))
                 self.fixThrottleScalar = newScalar
-            if newScalar < -0.5:
+            if newScalar < 0.5:
                 mode = 'user'
                 user_throttle = 0
 
