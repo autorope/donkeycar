@@ -711,13 +711,20 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
         self.throttle_out = self.throttle_from_pilot
         self.angle_out = self.angle_from_pilot
 
-        # first, apply static scalar on throttle :
+        # apply static scalar on throttle :
         self.throttle_out = self.throttle_from_pilot * self.cfg.ROBOCARS_THROTTLE_SCALER
         if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_THROTTLE_SCALAR_EXP) or self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL :
             # if feature to explore throttle scalar is enabled, override scalar with current value beeing tested
             self.throttle_out = self.throttle_from_pilot * self.hatInCtrl.getFixThrottleScalar()
 
-        # second, if straight line detected, apply specific scalar
+        # apply steering compensation based on targeted throttle
+        # compute the scalar to apply, proportionnaly to the targeted throttle comparted to throttle from model or from local_angle mode
+        dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER)
+        if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP):
+            # if feature to explore adaptative steering scalar is enabled, override scalar with current value beeing tested
+            dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.hatInCtrl.getAdaptativeSteeringScalar())
+
+        # then, if straight line detected, apply specific scalar
         if self.is_stopped(allow_substates=True):
             if (mode != 'user') :
                 self.drive() #engage autonomous mode
@@ -728,30 +735,26 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
                 self.stop() #disengage autonomous mode
 
         if self.is_driving_regularspeed(allow_substates=True):
+            if not self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY:
+                # apply steering scaler even at low speed (turn)
+                self.throttle_out = self.throttle_out * self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL
             if (self.is_sl_confition()==True) :
                 self.accelerate() #sl detected and confirmed 
+                
 
         if self.is_driving_fullspeed(allow_substates=True):
+            # apply extra scalar factor on throttle when in straight line
+            self.throttle_out = self.throttle_out * self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL
+            # apply steering scaler
+            self.angle_out = max(min(self.angle_from_pilot * dyn_steering_factor,1.0),-1.0)
             if (self.is_sl_confition()==False):
                 self.brake() # end of sl
-            else:
-                # apply extra scalar factor on throttle when in straight line
-                self.throttle_out = self.throttle_out * self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL
 
         if self.is_driving_braking(allow_substates=True):
             if self.brake_cycle == 0:
                 self.drive() # end of braking cycle
             else:
                 self.brake_cycle -=1
-
-        # then apply steering compensation based on targeted throttle
-        # compute the scalar to apply, proportionnaly to the targeted throttle comparted to throttle from model or from local_angle mode
-        dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER)
-        if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP):
-            # if feature to explore adaptative steering scalar is enabled, override scalar with current value beeing tested
-            dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, throttle, 1.0, 1.0, self.hatInCtrl.getAdaptativeSteeringScalar())
-
-        self.angle_out = max(min(self.angle_from_pilot * dyn_steering_factor,1.0),-1.0)
 
         return self.throttle_out, self.angle_out
  

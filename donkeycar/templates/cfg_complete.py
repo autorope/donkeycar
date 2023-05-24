@@ -635,6 +635,7 @@ ROBOCARS_THROTTLE_SCALER_ON_SL = 1.0 # scalar to apply to throttle when straight
 ROBOCARS_CTRL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
 ROBOCARS_CTRL_BRAKE_DURATION = 5
 ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 1.0 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle 
+ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY = False
 ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 ROBOCARS_SL_FILTER_TRESH_HIGH=4
 ROBOCARS_SL_FILTER_TRESH_LOW=2
