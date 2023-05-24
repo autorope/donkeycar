@@ -630,7 +630,7 @@ ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
 
 # 
 USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
-ROBOCARS_THROTTLE_SCALER = 1.0 # scalar to apply to throttle when straight line is detected 
+ROBOCARS_THROTTLE_SCALER = 1.0 # scalar to apply by default 
 ROBOCARS_THROTTLE_SCALER_ON_SL = 1.0 # scalar to apply to throttle when straight line is detected 
 ROBOCARS_CTRL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
 ROBOCARS_CTRL_BRAKE_DURATION = 5
