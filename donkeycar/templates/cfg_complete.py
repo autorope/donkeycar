@@ -592,6 +592,8 @@ THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
 ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
 ROBOCARSHAT_CH4_FEATURE = 'none' 
+ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
+
 ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 ROBOCARSHAT_STEERING_EXP_INC = 0.05 
 ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10 
@@ -622,9 +624,9 @@ ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = None
 ROBOCARSHAT_LED_MODEL = 'Alpine' #Alpine, Duo, 
 ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
 
-# Acceleration model
+# straight line detection model
 ROBOCARS_SL_DETECTION_MODEL=False
-ROBOCARS_NUM_ACC_CAT=2
+ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
 
 # 
 USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False

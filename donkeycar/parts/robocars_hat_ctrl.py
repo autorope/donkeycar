@@ -313,9 +313,20 @@ class RobocarsHatInCtrl:
 
         # Process other features 
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
- 
-            user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
+             user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
+        if ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL and mode != 'user':
+            newScalar =  dualMap(self.inThrottle,
+                    -1.0, 0.0, 1.0,
+                    0.0, 1.0, self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE, enforce_input_in_range=True)
+            if newScalar >= 1.0:
+                if (abs(newScalar - self.fixThrottleScalar)>0.01) :
+                    mylogger.info("CtrlIn fix throttle scalar set to {}".format(newScalar))
+                self.fixThrottleScalar = newScalar
+            if newScalar < -0.5:
+                mode = 'user'
+                user_throttle = 0
+                
         # Discret throttle mode
         if mode=='user':
             # Discret mode, apply profile

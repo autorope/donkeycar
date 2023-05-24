@@ -330,22 +330,22 @@ class KerasLinear(KerasPilot):
     def __init__(self,
                  interpreter: Interpreter = KerasInterpreter(),
                  input_shape: Tuple[int, ...] = (120, 160, 3),
-                 num_outputs: int = 2, have_odom=False,have_acc_loc=False, num_acc_cat=0):
+                 num_outputs: int = 2, have_odom=False,have_scen_cat=False, num_scen_cat=0):
         self.num_outputs = num_outputs
         self.have_odom=have_odom
-        self.have_acc_loc=have_acc_loc
-        self.num_acc=num_acc_cat
+        self.have_scen_cat=have_scen_cat
+        self.num_scen_cat=num_scen_cat
         super().__init__(interpreter, input_shape)
-        logger.info(f'Created {self} with odom={have_odom}, acc={have_acc_loc}')
+        logger.info(f'Created {self} with odom={have_odom}, scene={have_scen_cat}')
 
     def create_model(self):
         if self.have_odom:
-            return default_n_linear_odom(self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
+            return default_n_linear_odom(self.num_outputs, self.input_shape,num_scen=self.num_scen_cat if self.have_scen_cat else 0)
         else:
-            return default_n_linear(self.num_outputs, self.input_shape,num_acc=self.num_acc if self.have_acc_loc else 0)
+            return default_n_linear(self.num_outputs, self.input_shape,num-scen=self.num_scen_cat if self.have_scen_cat else 0)
 
     def compile(self):
-        if self.have_acc_loc:
+        if self.have_scen_cat:
             self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'], loss='mse')
         else:
             self.interpreter.compile(optimizer=self.optimizer, loss='mse')
@@ -353,10 +353,10 @@ class KerasLinear(KerasPilot):
     def interpreter_to_output(self, interpreter_out):
         steering = interpreter_out[0]
         throttle = interpreter_out[1]
-        if self.have_acc_loc:
-            track_acc = interpreter_out[2]
-            acc = np.argmax(track_acc)
-            return steering[0], throttle[0], acc
+        if self.have_scen_cat:
+            track_scen = interpreter_out[2]
+            scen = np.argmax(track_scen)
+            return steering[0], throttle[0], scen
         else:
             return steering[0], throttle[0]
 
@@ -380,11 +380,11 @@ class KerasLinear(KerasPilot):
         angle: float = record.underlying['user/angle']
         throttle: float = record.underlying['user/throttle']
         y_trans = {'n_outputs0': angle, 'n_outputs1': throttle}
-        if self.have_acc_loc:
-            acc: int = int(record.underlying['user/sl'])
-            acc_one_hot = np.zeros(self.num_acc)
-            acc_one_hot[acc] = 1
-            y_trans.update({'n_outputs2': acc_one_hot})
+        if self.have_scen_cat:
+            scen: int = int(record.underlying['user/sl'])
+            scen_one_hot = np.zeros(self.num_scen_cat)
+            scen_one_hot[scen] = 1
+            y_trans.update({'n_outputs2': scen_one_hot})
         return y_trans
 
     def output_shapes(self):
@@ -395,8 +395,8 @@ class KerasLinear(KerasPilot):
             shapes_in.update({'speed_in': tf.TensorShape([1])})
         shapes_out={'n_outputs0': tf.TensorShape([]),
                     'n_outputs1': tf.TensorShape([])}
-        if self.have_acc_loc:
-            shapes_out.update({'n_outputs2': tf.TensorShape([self.num_acc])})
+        if self.have_scen_cat:
+            shapes_out.update({'n_outputs2': tf.TensorShape([self.num_scen_cat])})
         return (shapes_in, shapes_out)
 
 
@@ -926,7 +926,7 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     return x
 
 
-def default_n_linear(num_outputs, input_shape=(120, 160, 3), num_acc=0):
+def default_n_linear(num_outputs, input_shape=(120, 160, 3), num_scen=0):
     drop = 0.2
     img_in = Input(shape=input_shape, name='img_in')
     x = core_cnn_layers(img_in, drop)
@@ -940,14 +940,14 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), num_acc=0):
         outputs.append(
             Dense(1, activation='linear', name='n_outputs' + str(i))(x))
 
-    if num_acc>0:
-        acc_out = Dense(num_acc, activation='softmax', name='n_outputs' + str(num_outputs))(x)
-        outputs.append(acc_out)
+    if num_scen>0:
+        scen_out = Dense(num_scen, activation='softmax', name='n_outputs' + str(num_outputs))(x)
+        outputs.append(scen_out)
 
     model = Model(inputs=[img_in], outputs=outputs, name='linear')
     return model
 
-def default_n_linear_odom(num_outputs, input_shape=(120, 160, 3), num_acc=0):
+def default_n_linear_odom(num_outputs, input_shape=(120, 160, 3), num_scen=0):
     drop = 0.2
     img_in = Input(shape=input_shape, name='img_in')
     speed_in = Input(shape=(1,), name="speed_in")
@@ -972,9 +972,9 @@ def default_n_linear_odom(num_outputs, input_shape=(120, 160, 3), num_acc=0):
         outputs.append(
             Dense(1, activation='linear', name='n_outputs' + str(i))(z))
 
-    if num_acc>0:
-        acc_out = Dense(num_acc, activation='softmax', name='n_outputs' + str(num_outputs))(z)
-        outputs.append(acc_out)
+    if num_scen>0:
+        scen_out = Dense(num_scen, activation='softmax', name='n_outputs' + str(num_outputs))(z)
+        outputs.append(scen_out)
 
     model = Model(inputs=[img_in, speed_in], outputs=outputs, name='linear')
     return model
