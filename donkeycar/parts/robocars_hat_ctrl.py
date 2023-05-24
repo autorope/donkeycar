@@ -315,7 +315,7 @@ class RobocarsHatInCtrl:
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
              user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
-        if ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL and mode != 'user':
+        if self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL and mode != 'user':
             newScalar =  dualMap(self.inThrottle,
                     -1.0, 0.0, 1.0,
                     0.0, 1.0, self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE, enforce_input_in_range=True)
@@ -326,7 +326,7 @@ class RobocarsHatInCtrl:
             if newScalar < -0.5:
                 mode = 'user'
                 user_throttle = 0
-                
+
         # Discret throttle mode
         if mode=='user':
             # Discret mode, apply profile
