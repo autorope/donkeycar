@@ -737,7 +737,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
         if self.is_driving_regularspeed(allow_substates=True):
             if not self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY:
                 # apply steering scaler even at low speed (turn)
-                self.throttle_out = self.throttle_out * self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL
+                self.angle_out = max(min(self.angle_from_pilot * dyn_steering_factor,1.0),-1.0)
             if (self.is_sl_confition()==True) :
                 self.accelerate() #sl detected and confirmed 
                 
