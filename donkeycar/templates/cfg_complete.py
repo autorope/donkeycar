@@ -603,7 +603,7 @@ ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10
 ROBOCARSHAT_STEERING_FIX = None 
 
 # For 'throttle_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
-AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 2.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
+AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 1.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
 # For 'adaptative_steering_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
 AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
 
@@ -631,8 +631,8 @@ ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
 
 # 
 USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
-ROBOCARS_THROTTLE_SCALER = 1.0 # scalar to apply by default 
-ROBOCARS_THROTTLE_SCALER_ON_SL = 1.0 # scalar to apply to throttle when straight line is detected 
+ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default 
+ROBOCARS_THROTTLE_SCALER_ON_SL = 0.0 # extra scalar to apply to throttle when straight line is detected 
 ROBOCARS_CTRL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
 ROBOCARS_CTRL_BRAKE_DURATION = 5
 ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 1.0 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle 
