@@ -326,7 +326,7 @@ class RobocarsHatInCtrl(metaclass=Singleton):
                 elif self.inThrottle < -0.5:
                     self.fixThrottleExtraScalar = self.fixThrottleExtraScalar - self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC
                 self.fixThrottleExtraScalar = min(self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE,max(1.0, self.fixThrottleExtraScalar))
-                mylogger.info("CtrlIn fixed throttle scalar set to {}".format(elf.fixThrottleExtraScalar))
+                mylogger.info("CtrlIn fixed throttle scalar set to {}".format(self.fixThrottleExtraScalar))
             # Wait for trigger to be released, 
             if (abs(self.inThrottle) < 0.1) and (self.throttleTriggered == True):
                 self.throttleTriggered = False
