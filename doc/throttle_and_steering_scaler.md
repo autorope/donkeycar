@@ -39,11 +39,11 @@ This feature is controled thand an auxiliary channel, thanks to feature name 'ad
 
 ## Step by step
 ### Find Static throttle factor
-Using the ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL feature, the first step is to find a static throttle factor value that works anytime.
-Once a factor value for which pilot mode works on all parts of the circuit is identified, report this value to config key ROBOCARS_THROTTLE_SCALER as a baseline.
+Using the ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL feature, the first step is to find a static throttle factor value that works when applied continuously for a given track.
+Once a factor value for which pilot mode works on all parts of the track is identified, report this value to config key ROBOCARS_THROTTLE_SCALER as a baseline. This factor is then the maximal constant throttle factor applicable for that track.
 
 ### Find the Dynamic steering factor that allow to increase static throttle factor.
 Now, we can increase even more the static throttle factor by using dynamic steering factor to compensate for late decision done by the model in turn when throttle in increased thantks to scaler. 
-Use both ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL feature, and 'adaptative_steering_scalar_exp' to find at which extend you can inscrease again static trottle scalar factor by increaseing dapatative steering scalar factor, keeping the car on the circuit. When new values are identified for both factor, report throttle factor in key ROBOCARS_THROTTLE_SCALER and steering factor in key ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
+Use both ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL feature, and 'adaptative_steering_scalar_exp' to find at which extend you can inscrease again static trottle scalar factor by increaseing dapatative steering scalar factor, keeping the car on the track. When new values are identified for both factor, report throttle factor in key ROBOCARS_THROTTLE_SCALER and steering factor in key ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
 
 
