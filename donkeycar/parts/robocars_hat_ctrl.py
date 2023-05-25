@@ -319,7 +319,7 @@ class RobocarsHatInCtrl(metaclass=Singleton):
         if self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL and mode != 'user':
 
             # if throttle trigger is pushed forward or backward, incremet/decrement fixThrottleScalar
-            if (abs(self.InThrottle) > 0.5) and (self.throttleTriggered == False):
+            if (abs(self.inThrottle) > 0.5) and (self.throttleTriggered == False):
                 self.throttleTriggered = True
                 if self.inThrottle > 0.5:
                     self.fixThrottleScalar = self.fixThrottleScalar + self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC
@@ -724,7 +724,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
         self.throttle_out = self.throttle_from_pilot * self.cfg.ROBOCARS_THROTTLE_SCALER
         if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_THROTTLE_SCALAR_EXP) or self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL :
             # if feature to explore throttle scalar is enabled, override scalar with current value beeing tested
-            self.throttle_out = self.throttle_from_pilot * self.hatInCtrl.getFixThrottleScalar()
+            self.throttle_out = self.throttle_from_pilot * (self.cfg.ROBOCARS_THROTTLE_SCALER + self.hatInCtrl.getFixThrottleScalar())
 
         # apply steering compensation based on targeted throttle
         # compute the scalar to apply, proportionnaly to the targeted throttle comparted to throttle from model or from local_angle mode
