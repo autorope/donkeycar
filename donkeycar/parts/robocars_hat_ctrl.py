@@ -319,11 +319,11 @@ class RobocarsHatInCtrl(metaclass=Singleton):
         if self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL and mode != 'user':
 
             # if throttle trigger is pushed forward or backward, incremet/decrement fixThrottleExtraScalar
-            if (abs(self.inThrottle) > 0.5) and (self.throttleTriggered == False):
+            if (abs(self.inThrottle) > 0.3) and (self.throttleTriggered == False):
                 self.throttleTriggered = True
-                if self.inThrottle > 0.5:
+                if self.inThrottle > 0.3:
                     self.fixThrottleExtraScalar = self.fixThrottleExtraScalar + self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC
-                elif self.inThrottle < -0.5:
+                elif self.inThrottle < -0.3:
                     self.fixThrottleExtraScalar = self.fixThrottleExtraScalar - self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC
                 self.fixThrottleExtraScalar = min(self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE,max(0.0, self.fixThrottleExtraScalar))
                 mylogger.info("CtrlIn fixed throttle scalar set to {:.2f}".format(self.fixThrottleExtraScalar))
