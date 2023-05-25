@@ -106,6 +106,7 @@ class RobocarsHatInCtrl(metaclass=Singleton):
         self.inSteering = 0.0
         self.inThrottle = 0.0
         self.fixThrottle = 0.0
+        self.throttleTriggered = False
         self.fixSteering = 0.0
         self.fixOutputSteeringTrim = None
         self.fixOutputSteering = None
@@ -316,14 +317,22 @@ class RobocarsHatInCtrl(metaclass=Singleton):
              user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
 
         if self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL and mode != 'user':
-            newScalar =  dualMap(self.inThrottle,
-                    -1.0, 0.0, 1.0,
-                    0.0, 1.0, self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE, enforce_input_in_range=True)
-            if newScalar >= 1.0:
-                if (abs(newScalar - self.fixThrottleScalar)>0.01) :
-                    mylogger.info("CtrlIn fix throttle scalar set to {}".format(newScalar))
-                self.fixThrottleScalar = newScalar
-            if newScalar < 0.5:
+
+            # if throttle trigger is pushed forward or backward, incremet/decrement fixThrottleScalar
+            if (abs(self.InThrottle) > 0.5) and (self.throttleTriggered == False):
+                self.throttleTriggered = True
+                if self.inThrottle > 0.5:
+                    self.fixThrottleScalar = self.fixThrottleScalar + self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC
+                elif self.inThrottle < -0.5:
+                    self.fixThrottleScalar = self.fixThrottleScalar - self.cfg.ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC
+                self.fixThrottleScalar = min(self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE,max(1.0, self.fixThrottleScalar))
+                mylogger.info("CtrlIn fixed throttle scalar set to {}".format(elf.fixThrottleScalar))
+            # Wait for trigger to be released, 
+            if (abs(self.InThrottle) < 0.1) and (self.throttleTriggered == True):
+                self.throttleTriggered = False
+            
+            # Full Reverse trigger will stop the car as long as maintained 
+            if self.inThrottle < -0.9:
                 mode = 'user'
                 user_throttle = 0
 
