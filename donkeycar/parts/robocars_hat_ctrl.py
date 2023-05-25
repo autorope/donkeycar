@@ -328,7 +328,7 @@ class RobocarsHatInCtrl(metaclass=Singleton):
                 self.fixThrottleScalar = min(self.cfg.AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE,max(1.0, self.fixThrottleScalar))
                 mylogger.info("CtrlIn fixed throttle scalar set to {}".format(elf.fixThrottleScalar))
             # Wait for trigger to be released, 
-            if (abs(self.InThrottle) < 0.1) and (self.throttleTriggered == True):
+            if (abs(self.inThrottle) < 0.1) and (self.throttleTriggered == True):
                 self.throttleTriggered = False
             
             # Full Reverse trigger will stop the car as long as maintained 
