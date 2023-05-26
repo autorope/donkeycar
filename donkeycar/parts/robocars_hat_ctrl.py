@@ -662,7 +662,6 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
 
     def set_brakespeed(self):
         if self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL>0.0:
-            self.throttle_out  = self.cfg.ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED
             self.brake_cycle = self.cfg.ROBOCARS_THROTTLE_ON_SL_BRAKE_DURATION
         else:
             # no active brake
@@ -764,6 +763,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
             if self.brake_cycle == 0:
                 self.drive() # end of braking cycle
             else:
+                self.throttle_out  = self.cfg.ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED
                 self.brake_cycle -=1
 
         return self.throttle_out, self.angle_out
