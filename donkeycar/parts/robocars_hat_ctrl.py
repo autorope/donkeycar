@@ -754,7 +754,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
 
         if self.is_driving_fullspeed(allow_substates=True):
             # apply extra scalar factor on throttle when in straight line
-            self.throttle_out = self.throttle_out * self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL
+            self.throttle_out = self.throttle_out * (1+self.cfg.ROBOCARS_THROTTLE_SCALER_ON_SL)
             # apply steering scaler
             self.angle_out = max(min(self.angle_from_pilot * (1.0+dyn_steering_factor),1.0),-1.0)
             if (self.is_sl_confition()==False):
