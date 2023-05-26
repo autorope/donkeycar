@@ -103,7 +103,7 @@ class MakeMovie(object):
         user_angle = float(record["user/angle"])
         user_throttle = float(record["user/throttle"])
         green = (0, 255, 0)
-        self.draw_line_into_image(user_angle, user_throttle, False, img_drawon, green)
+        self.draw_line_into_image(user_angle, user_throttle, True, img_drawon, green)
 
     def draw_model_prediction(self, img, img_drawon):
         """
