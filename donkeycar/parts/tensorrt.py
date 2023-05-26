@@ -253,7 +253,13 @@ class TensorRTLinear(KerasPilot):
         
 
     def interpreter_to_output(self, interpreter_out):
-        if len(interpreter_out) == 2:
+        if len(interpreter_out) == 3:
+            [sl, throttle, steering] = interpreter_out
+            #print(f"steering={steering[0]} throttle={throttle[0]}")
+            # return -0.25, 0.3
+            # return steering[0], throttle[0]
+            return steering[0], throttle[0], sl[0]
+        elif len(interpreter_out) == 2:
             [throttle, steering] = interpreter_out
             #print(f"steering={steering[0]} throttle={throttle[0]}")
             # return -0.25, 0.3

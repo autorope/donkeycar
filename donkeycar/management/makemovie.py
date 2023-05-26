@@ -81,11 +81,13 @@ class MakeMovie(object):
         clip.write_videofile(args.out, fps=self.cfg.DRIVE_LOOP_HZ)
 
     @staticmethod
-    def draw_line_into_image(angle, throttle, is_left, img, color):
+    def draw_line_into_image(angle, throttle, is_left, img, color, revert_angle=True):
         import cv2
 
         height, width, _ = img.shape
         length = height
+        if revert_angle:
+            angle=-angle
         a1 = angle * 45.0
         l1 = throttle * length
         mid = width // 2 + (- 1 if is_left else +1)
