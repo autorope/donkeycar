@@ -415,7 +415,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
 
-        if cfg.ROBOCARS_ROBOCARS_SL_DETECTION_MODEL:
+        if cfg.ROBOCARS_SL_DETECTION_MODEL:
             outputs.append("pilot/sl")
 
         #
