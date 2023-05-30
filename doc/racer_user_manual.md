@@ -36,13 +36,9 @@ Donkeycar is made of :
 - https://github.com/roboracingleague/robocar-gcp-trainer.git , main branch is ```master``` 
     this repo contains donkey wrapper to submit train task to GCP, and some script
 - follow requirements provided in https://github.com/roboracingleague/robocar-gcp-trainer/blob/master/README.md
-- link some scripts to you car directory :
+- install some scripts to you car directory :
 ```sh
-cd ~/mycar
-ln -s <robocar-gcp-trainer direcrory>/make_tub_archive.sh .
-ln -s <robocar-gcp-trainer direcrory>/deflate_tub_archive.sh .
-ln -s <robocar-gcp-trainer direcrory>/upload_tub_archive.sh .
-ln -s <robocar-gcp-trainer direcrory>/download_model.sh .
+$TRAINER_DIR/install.sh
 ```
 
 # review donckeycar configuration
