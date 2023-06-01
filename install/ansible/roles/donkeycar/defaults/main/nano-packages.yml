@@ -58,6 +58,7 @@ donkeycar_nano_pip_packages:
   - astor
   - gdown
   - keras_applications
+  - transitions
   # more from install-jp461.sh script
   - numpy==1.19.5
   - scipy

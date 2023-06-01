@@ -27,6 +27,7 @@ donkeycar_pi_system_packages:
   - libgeos-dev
   - git
   - ntp
+  - transitions
   #- python-smbus
   # opencv requirements
   - libilmbase-dev
