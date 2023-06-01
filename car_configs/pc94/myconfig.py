@@ -62,17 +62,17 @@ IMAGE_H = 108 # 108
 
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
-
-OAK_ENABLE_DEPTH_MAP = False # enables depth map output
-OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
-
-# OBSTACLE_AVOIDANCE SETTINGS
-OBSTACLE_AVOIDANCE_ENABLED = False
+# 
+# OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+# OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
+# 
+# # OBSTACLE_AVOIDANCE SETTINGS
+# OBSTACLE_AVOIDANCE_ENABLED = False
 # OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
 # CLOSE_AVOIDANCE_DIST_MM = 1000
-
-# OBSTACLE_DETECTOR
-OBSTACLE_DETECTOR_ENABLED = False
+# 
+# # OBSTACLE_DETECTOR
+# OBSTACLE_DETECTOR_ENABLED = False
 # OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 # OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
 # OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"

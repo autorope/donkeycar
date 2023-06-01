@@ -7,5 +7,7 @@ nanos
 [nanos]
 pc91 ansible_host=pc91.local
 pc92 ansible_host=pc92.local
+pc93 ansible_host=pc93.local
 pc94 ansible_host=pc94.local
+pc95 ansible_host=pc95.local
 strada

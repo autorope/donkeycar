@@ -16,7 +16,7 @@
 # MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # 
 # #VEHICLE
-DRIVE_LOOP_HZ = 35      # the vehicle loop will pause if faster than this speed.
+DRIVE_LOOP_HZ = 50      # the vehicle loop will pause if faster than this speed.
 # MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 # 
 # #CAMERA
@@ -37,12 +37,12 @@ CAMERA_TYPE = "OAK"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 
 # OAK-D-LITE: "1080p" for rgb
 # OAK-D-WIDE: "800p" for rgb
-RGB_RESOLUTION = "1080p" 
+RGB_RESOLUTION = "800p" 
 
 RGB_APPLY_CROPPING = True
 RGB_SENSOR_CROP_X = 0.0
-RGB_SENSOR_CROP_Y = 0.2
-RGB_VIDEO_SIZE = (240,108) # (240,108)
+RGB_SENSOR_CROP_Y = 0.175
+RGB_VIDEO_SIZE = (320,165)
 
 # RGB_APPLY_MANUAL_CONF = False
 # RGB_EXPOSURE_TIME = 2000
@@ -51,14 +51,14 @@ RGB_VIDEO_SIZE = (240,108) # (240,108)
 
 # OAK-D-LITE: from 1920/1080 (1,8)>>240/135 
 # OAK-D-WIDE: from 1280/800  (1,8)>>160/100 (3,16)>>240/150 5/32>>200/125 
-OAK_D_ISP_SCALE = (1,8) # (1,8)
+OAK_D_ISP_SCALE = (1,4) 
 
 # OAK-D-LITE: color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
 # OAK-D-WIDE: 240 ou 200 ou 160
-IMAGE_W = 240 # 240 
+IMAGE_W = 320 
 # OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 # OAK-D-WIDE: 150 ou 125 ou 100
-IMAGE_H = 108 # 108 
+IMAGE_H = 165 
 
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
@@ -554,9 +554,9 @@ ROBOCARSHAT_SERIAL_SPEED = 250000
 # ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
 # ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE   =   1500
 # ROBOCARSHAT_PWM_OUT_THROTTLE_MAX    =   2000
-ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1140
-ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1450
-ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1860 
+ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1000
+ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1500
+ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   2000
 # ROBOCARSHAT_PWM_OUT_STEERING_INVERT    =   False
 # 
 # # Folowing values can be ajusted to normalized btzeen -1 and 1.
