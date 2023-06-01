@@ -415,6 +415,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.TRAIN_LOCALIZER:
             outputs.append("pilot/loc")
 
+        if cfg.ROBOCARS_SL_DETECTION_MODEL:
+            outputs.append("pilot/sl")
+
         #
         # Add image transformations like crop or trapezoidal mask
         #
@@ -444,20 +447,6 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(DepthAvoidance(cfg.CLOSE_AVOIDANCE_DIST_MM), inputs=inputs, outputs=outputs)
         # Should be run with following line only when autopilot is in charge
         # V.add(DepthAvoidance, inputs=inputs, outputs=outputs, run_condition='run_pilot')
-
-    # 
-    # steering/throttle scaler
-    # enabled
-    # steering_factor
-    # throttle_factor
-    # steering_on_throttle_factor
-    # 
-    if cfg.STEERING_THROTTLE_SCALER_ENABLED:
-        inputs = ["pilot/angle", "pilot/throttle"]
-        outputs = ['pilot/angle', 'pilot/throttle']
-        from donkeycar.parts.steering_throttle_scaler import SteeringThrottleScaler
-        V.add(SteeringThrottleScaler(cfg.STEERING_FACTOR, cfg.THROTTLE_FACTOR, cfg.STEERING_ON_THROTTLE_FACTOR), inputs=inputs, outputs=outputs, run_condition='run_pilot')
-
 
     #
     # stop at a stop sign
@@ -558,8 +547,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:
-        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode']
-        types=['image_array','float', 'float','str']
+        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode', "angle", "throttle"]
+        types=['image_array','float', 'float','str', 'float', 'float']
 
     if cfg.HAVE_ODOM:
         inputs += ['enc/speed']
@@ -616,10 +605,17 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         types += ['float', 'float', 'float']
         V.add(mon, inputs=[], outputs=perfmon_outputs, threaded=True)
 
+    if (cfg.ROBOCARS_SL_DETECTION_MODEL):
+        inputs += ['user/sl']
+        types += ['int']
+        inputs += ['pilot/sl']
+        types += ['int']
+
     # do we want to store new records into own dir or append to existing
     tub_path = TubHandler(path=cfg.DATA_PATH).create_tub_path() if \
         cfg.AUTO_CREATE_NEW_TUB else cfg.DATA_PATH
     meta += getattr(cfg, 'METADATA', [])
+
     tub_writer = TubWriter(tub_path, inputs=inputs, types=types, metadata=meta)
     V.add(tub_writer, inputs=inputs, outputs=["tub/num_records"], run_condition='recording')
 
@@ -726,6 +722,11 @@ def add_user_controller(V, cfg, use_joystick, input_image='cam/image_array'):
                          'user/mode', 'recording'],
                 threaded=True)
     if cfg.USE_ROBOCARSHAT_AS_CONTROLLER:
+        if cfg.USE_ROBOCARSHAT_BATTERY_MONITOR:
+            from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInBattery
+            batt = RobocarsHatInBattery(cfg)
+            V.add(batt, outputs=['battery'],threaded=False)
+
         from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInCtrl
         ctr = RobocarsHatInCtrl(cfg)
         V.add(ctr, outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],threaded=False)
@@ -980,6 +981,11 @@ def add_imu(V, cfg):
 #
 def add_drivetrain(V, cfg):
 
+    if cfg.USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER :
+        from donkeycar.parts.robocars_hat_ctrl import RobocarsHatDriveCtrl
+        drive_controller = RobocarsHatDriveCtrl(cfg)
+        V.add(drive_controller, inputs=['throttle','angle','user/mode', 'pilot/sl'], outputs=['throttle','angle'], threaded=False)
+
     if (not cfg.DONKEY_GYM) and not cfg.DONKEY_WEBOT and cfg.DRIVE_TRAIN_TYPE != "MOCK":
         from donkeycar.parts import actuator, pins
         from donkeycar.parts.actuator import TwoWheelSteeringThrottle
@@ -1188,6 +1194,10 @@ def add_drivetrain(V, cfg):
             from donkeycar.parts.actuator import RobocarsHat
             train_controller = RobocarsHat(cfg)
             V.add(train_controller, inputs=['throttle','angle'], threaded=False)
+            if cfg.ROBOCARSHAT_CONTROL_LED:
+                from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
+                ctr = RobocarsHatLedCtrl(cfg)
+                V.add(ctr, inputs=['angle', 'throttle', 'user/mode'],threaded=False)
 
 
 if __name__ == '__main__':
