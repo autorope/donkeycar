@@ -80,14 +80,6 @@ CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # BEHAVIOR_LIST = ['left', 'right']
 # OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
 # 
-# # STEERING_THROTTLE_SCALER
-# # scaled_throttle = throttle * THROTTLE_FACTOR
-# # scaled_steering = steering_angle * STEERING_FACTOR * STEERING_ON_THROTTLE_FACTOR * THROTTLE_FACTOR
-# STEERING_THROTTLE_SCALER_ENABLED = False
-# STEERING_FACTOR = 1.0
-# THROTTLE_FACTOR = 1.0
-# STEERING_ON_THROTTLE_FACTOR = 1.0
-# 
 # #CAMERA Settings Vivatech 2022 (nano)
 # #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 # #IMAGE_W = 160
@@ -549,7 +541,10 @@ DRIVE_TRAIN_TYPE = "ROBOCARSHAT"
 USE_ROBOCARSHAT_AS_CONTROLLER = True
 ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
 ROBOCARSHAT_SERIAL_SPEED = 250000
-
+# 
+# USE_ROBOCARSHAT_BATTERY_MONITOR = False
+# ROBOCARSHAT_LIPO_CELLS = 2
+# 
 # # Following values must be aligned with values in Hat !
 # ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
 # ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE   =   1500
@@ -574,7 +569,7 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   2000
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 # ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : local_angle or local
-# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle)
+# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
 # THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -588,19 +583,24 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   2000
 # # 'steering_exploration' means special mode where aux ch is used to increment/decrement a fixed steering value in user mode 
 # # 'output_steering_trim' means special mode where aux ch is used to increment/decrement a steering idle output for triming direction in user mode, resulting value must be reported in  ROBOCARSHAT_PWM_OUT_STEERING_IDLE
 # # 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
-# # 'local_angle_fix_throttle' means special mode where aux ch is used to fix throttle to use when autopilot is engeged in local_angle mode
+# # 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged 
+# # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
 # ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
 # ROBOCARSHAT_CH4_FEATURE = 'none' 
+# ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
+# ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
+# 
 # ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 # ROBOCARSHAT_STEERING_EXP_INC = 0.05 
 # ROBOCARSHAT_OUTPUT_STEERING_TRIM_INC = 10 
 # 
-# AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MIN = 0.17
-# AUX_FEATURE_LOCAL_ANGLE_FIX_THROTTLE_MAX = 0.24
-# 
-# 
 # #ROBOCARSHAT_STEERING_FIX used for steering calibration, enforce a fixed steering value (betzeen -1.0 and 1.0). None means no enforcment
 # ROBOCARSHAT_STEERING_FIX = None 
+# 
+# # For 'throttle_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
+# AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 1.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
+# # For 'adaptative_steering_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
+# AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
 # 
 # # ROBOCARSHAT_THROTTLE_DISCRET used to control throttle with discretes values (only in user mode, first value must be 0.0)
 # # ROBOCARSHAT_THROTTLE_DISCRET has precedence over ROBOCARSHAT_THROTTLE_FLANGER
@@ -616,7 +616,26 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   2000
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
 # 
 # ROBOCARSHAT_CONTROL_LED = False
+# ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = None
 # ROBOCARSHAT_LED_MODEL = 'Alpine' #Alpine, Duo, 
+# ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
+# 
+# # straight line detection model
+# ROBOCARS_SL_DETECTION_MODEL=False
+# ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
+# 
+# # 
+# USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
+# ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default 
+# ROBOCARS_THROTTLE_SCALER_ON_SL = 0.0 # extra scalar to apply to throttle when straight line is detected 
+# ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
+# ROBOCARS_THROTTLE_ON_SL_BRAKE_DURATION = 5
+# ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 0.0 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle 
+# ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY = False
+# ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
+# ROBOCARS_SL_FILTER_TRESH_HIGH=4
+# ROBOCARS_SL_FILTER_TRESH_LOW=2
+# 
 # 
 # #LOGGING
 # HAVE_CONSOLE_LOGGING = True
