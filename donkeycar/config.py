@@ -53,6 +53,8 @@ def load_config(config_path=None, myconfig="myconfig.py"):
             local_config = os.path.join(os.path.curdir, 'config.py')
             if os.path.exists(local_config):
                 config_path = local_config
+    else:
+        config_path = os.path.join(config_path, 'config.py')
     
     logger.info(f'loading config file: {config_path}')
     cfg = Config()
