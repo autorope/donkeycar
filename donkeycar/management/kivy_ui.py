@@ -412,15 +412,17 @@ class ControlPanel(BoxLayout):
     speed = NumericProperty(1.0)
     record_display = StringProperty()
     labels_display = StringProperty()
+    throttle_field = StringProperty('user/throttle')
     clock = None
     fwd = None
 
-    def start(self, fwd=True, continuous=False):
+    def start(self, fwd=True, continuous=False, nextThrottleFallingEdge=False):
         """
         Method to cycle through records if either single <,> or continuous
         <<, >> buttons are pressed
         :param fwd:         If we go forward or backward
         :param continuous:  If we do <<, >> or <, >
+        :param nextThrottleFallingEdge: search for throttle falling edge
         :return:            None
         """
         # this widget it used in two screens, so reference the original location
@@ -428,7 +430,10 @@ class ControlPanel(BoxLayout):
         cfg = tub_screen().ids.config_manager.config
         hz = cfg.DRIVE_LOOP_HZ if cfg else 20
         time.sleep(0.1)
-        call = partial(self.step, fwd, continuous)
+        if (nextThrottleFallingEdge) :
+            call = partial (self.skip_next_throttle_down)
+        else:
+            call = partial(self.step, fwd, continuous)
         if continuous:
             self.fwd = fwd
             s = float(self.speed) * hz
@@ -460,6 +465,26 @@ class ControlPanel(BoxLayout):
             msg += f' - you can also use {"<right>" if fwd else "<left>"} key'
         else:
             msg += ' - you can toggle run/stop with <space>'
+        self.screen.status(msg)
+
+    def skip_next_throttle_down(self, *largs):
+        if self.screen.index is None:
+            self.screen.status("No tub loaded")
+            return
+        starting_index = self.screen.index + 1
+        if starting_index >= tub_screen().ids.tub_loader.len:
+            starting_index = 0
+        elif starting_index < 0:
+            starting_index = tub_screen().ids.tub_loader.len - 1
+        new_index = starting_index
+        for index, rec in enumerate (tub_screen().ids.tub_loader.records[starting_index:]): 
+            if (float(rec.underlying[self.throttle_field] < 0.05)):
+                new_index = index+starting_index
+                break
+        self.screen.index = new_index
+        msg = f'Donkey {"step"} ' \
+              f'{"forward"}'
+        msg += ' - Low Throttle detected'
         self.screen.status(msg)
 
     def stop(self):
@@ -692,7 +717,8 @@ class TubScreen(Screen):
         """ Kivy method that is called if self.current_record changes."""
         self.ids.img.update(record)
         i = record.underlying['_index']
-        self.ids.control_panel.record_display = f"Record {i:06}"
+        t = len(tub_screen().ids.tub_loader.tub)
+        self.ids.control_panel.record_display = f"Record {i:06} [{t:06} kept]"
         self.ids.control_panel.labels_display = f"{self._get_label(i)}"
 
 

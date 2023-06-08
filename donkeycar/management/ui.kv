@@ -190,6 +190,13 @@
             on_press:
                 root.start(fwd=True, continuous=True)
                 root.set_button_status(disabled=True)
+        Button:
+            id: next_throttle_falling_edge
+            text: 'T  ¯¯\\__'
+            on_press:
+                root.start(fwd=True, continuous=False, nextThrottleFallingEdge=True)
+            on_release:
+                root.stop()
     Button:
         size_hint_y: 0.3
         text: 'Stop'
