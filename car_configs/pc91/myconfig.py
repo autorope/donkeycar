@@ -549,27 +549,27 @@ ROBOCARSHAT_SERIAL_SPEED = 250000
 # ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
 # ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE   =   1500
 # ROBOCARSHAT_PWM_OUT_THROTTLE_MAX    =   2000
-ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1140
-ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1450
+ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1150
+ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1460
 ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1860 
 # ROBOCARSHAT_PWM_OUT_STEERING_INVERT    =   False
 # 
 # # Folowing values can be ajusted to normalized btzeen -1 and 1.
 # # # If  ROBOCARSHAT_USE_AUTOCALIBRATION is used, IDLE values are automatically identified by the Hat
-# ROBOCARSHAT_PWM_IN_THROTTLE_MIN    =   1000
+ROBOCARSHAT_PWM_IN_THROTTLE_MIN    =   980
 # ROBOCARSHAT_PWM_IN_THROTTLE_IDLE   =   1500
-# ROBOCARSHAT_PWM_IN_THROTTLE_MAX    =   2000
-# ROBOCARSHAT_PWM_IN_STEERING_MIN    =   1000
+ROBOCARSHAT_PWM_IN_THROTTLE_MAX    =   1970
+ROBOCARSHAT_PWM_IN_STEERING_MIN    =   995
 # ROBOCARSHAT_PWM_IN_STEERING_IDLE   =   1500
-# ROBOCARSHAT_PWM_IN_STEERING_MAX    =   2000
+ROBOCARSHAT_PWM_IN_STEERING_MAX    =   1935
 # ROBOCARSHAT_PWM_IN_AUX_MIN    =   1000
 # ROBOCARSHAT_PWM_IN_AUX_IDLE   =   1500
 # ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 # 
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
-# ROBOCARSHAT_PILOT_MODE = 'local' # Which autonomous mode is triggered by Hat : local_angle or local
-# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.18 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
 # THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -610,7 +610,7 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1860
 # # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange, giving a range betzeen -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # #ROBOCARSHAT_THROTTLE_FLANGER = None 
-# ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2] 
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.25,0.25] 
 # 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
@@ -625,12 +625,12 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1860
 # ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
 # 
 # # 
-# USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
-# ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default 
+USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
+ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default 
 # ROBOCARS_THROTTLE_SCALER_ON_SL = 0.0 # extra scalar to apply to throttle when straight line is detected 
 # ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
 # ROBOCARS_THROTTLE_ON_SL_BRAKE_DURATION = 5
-# ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 0.0 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle 
+ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 0.3 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle 
 # ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY = False
 # ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 # ROBOCARS_SL_FILTER_TRESH_HIGH=4

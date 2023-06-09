@@ -13,5 +13,5 @@ LOCAL_PATH="$SCRIPT_DIR/../../"
 
 echo SENDING DONKEYCAR FILES
 rsync -rv --progress --partial --delete \
-  --exclude=.DS_Store --exclude=.git --exclude=doc --exclude=notebooks \
+  --exclude=.DS_Store --exclude=.git --exclude=doc --exclude=notebooks --exclude=car_configs \
   "$LOCAL_PATH" "$USER"@"$SRV":"${REMOTE_PATH}"

@@ -3,15 +3,15 @@
 set -e
 
 USER=donkey
-SRV=pc91.local
+SRV=pc94.local
 
 # include trailing /
-REMOTE_PATH="/home/$USER/donkeycar/"
+REMOTE_PATH="/home/$USER/car/"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-LOCAL_PATH="$SCRIPT_DIR/../../"
+LOCAL_PATH="${SCRIPT_DIR}/"
 
-echo SENDING DONKEYCAR FILES
+echo "SENDING"
 rsync -rv --progress --partial --delete \
-  --exclude=.DS_Store --exclude=.git --exclude=doc --exclude=notebooks --exclude=car_configs \
+  --exclude=.DS_Store  --exclude=logs --exclude=.git \
   "$LOCAL_PATH" "$USER"@"$SRV":"${REMOTE_PATH}"

@@ -71,8 +71,10 @@ donkeycar_nano_pip_packages:
   # opencv
   - opencv-python
   # onnx support
+  - onnx==1.10.0
   - tf2onnx
-  - onnxruntime
+  - onnxruntime==1.10.0
+  # - pycuda==2020.1 # NEEDS SOME VARS (cuda on path and lib)
   # allready in tensorflow 2.7.0 install
   #- protobuf==3.19.6
   #- h5py
