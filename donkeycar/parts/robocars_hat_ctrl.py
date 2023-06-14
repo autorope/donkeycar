@@ -483,14 +483,6 @@ class RobocarsHatInBattery:
         time.sleep(.5)
 
 class RobocarsHatLedCtrl():
-    NUM_LED=6
-    INDEX_LED_1=0
-    INDEX_LED_2=1
-    INDEX_LED_3=2
-    INDEX_LED_4=3
-    INDEX_LED_5=4
-    INDEX_LED_6=5
-
     STEERING_HIGH=0.4
     STEERING_LOW=0.2
     
@@ -518,7 +510,19 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_REAR_TURN_LEFT = 0
             self.LED_INDEX_FRONT_LIGHT_RIGHT = 2
             self.LED_INDEX_FRONT_LIGHT_LEFT = 5
-
+            self.LED_INDEX_REAR_STOP_RIGHT = -1
+            self.LED_INDEX_REAR_STOP_LEFT = -1
+            self.NUM_LED = 6
+        elif cfg.ROBOCARSHAT_LED_MODEL == 'Duo':
+            self.LED_INDEX_FRONT_TURN_RIGHT = 1
+            self.LED_INDEX_FRONT_TURN_LEFT = 0
+            self.LED_INDEX_REAR_TURN_RIGHT = 2
+            self.LED_INDEX_REAR_TURN_LEFT = 5
+            self.LED_INDEX_REAR_STOP_RIGHT = 3
+            self.LED_INDEX_REAR_STOP_LEFT = 4
+            self.LED_INDEX_FRONT_LIGHT_RIGHT = -1
+            self.LED_INDEX_FRONT_LIGHT_LEFT = -1
+            self.NUM_LED = 6
         else: #default
             self.LED_INDEX_FRONT_TURN_RIGHT = 0
             self.LED_INDEX_FRONT_TURN_LEFT = 1
@@ -526,6 +530,9 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_REAR_TURN_LEFT = 3
             self.LED_INDEX_FRONT_LIGHT_RIGHT = 4
             self.LED_INDEX_FRONT_LIGHT_LEFT = 5
+            self.LED_INDEX_REAR_STOP_RIGHT = 6
+            self.LED_INDEX_REAR_STOP_LEFT = 7
+            self.NUM_LED = 8
 
 
         self.idx = 0
@@ -543,6 +550,8 @@ class RobocarsHatLedCtrl():
             mylogger.info(f"LED : Failed to connect to port {self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY}")
         
     def setLed(self, i, r, v, b, timing):
+        if i==-1:
+            return
         from serial import SerialException
         cmd=("2,%01d,%03d,%03d,%03d,%05d\n" % (int(i), int(r), int(v), int(b), int(timing))).encode('ascii')
         if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY:
@@ -593,6 +602,7 @@ class RobocarsHatLedCtrl():
         refresh = (time.perf_counter()-self.last_refresh) >= 2.0
         if refresh:
             self.last_refresh = time.perf_counter()
+
         if self.last_mode == None:
             self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0x0);
             self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0x0);
@@ -600,38 +610,71 @@ class RobocarsHatLedCtrl():
             self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0x0);
             self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, 0, 0, 0, 0x0);
             self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_REAR_STOP_RIGHT, 0, 0, 0, 0x0);
+            self.setLed(self.LED_INDEX_REAR_STOP_LEFT, 0, 0, 0, 0x0);
+
+        #first, find if car is turning 
+        steering_state = 0
+        if (abs(steering)>self.STEERING_HIGH and steering<0 and self.last_steering_state != self.STEERING_RIGHT):
+            steering_state = self.STEERING_RIGHT
+        if (abs(steering)>self.STEERING_HIGH and steering>0 and self.last_steering_state != self.STEERING_LEFT):
+            steering_state = self.STEERING_LEFT
+        if (abs(steering)<self.STEERING_LOW and self.last_steering_state != 0):
+            steering_state = 0
 
         if mode != self.last_mode or refresh:
             if mode=='user' :
-                self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, *self.USER_FRONT_LIGH, 0xffff);
-                self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, *self.USER_FRONT_LIGH, 0xffff);
-            else:
+                # regular lighting in user mode 
                 if self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM:
+                    self.setAnim(0)
+                self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, *self.USER_FRONT_LIGH_COLOR, 0xffff);
+                self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, *self.USER_FRONT_LIGH_COLOR, 0xffff);
+                self.setLed(self.LED_INDEX_REAR_STOP_RIGHT, *self.USER_REAR_STOP_COLOR, 0xffff);
+                self.setLed(self.LED_INDEX_REAR_STOP_LEFT, *self.USER_REAR_STOP_COLOR, 0xffff);
+            else:
+                # in pilot modem do we have a special animation to trigger
+                if self.cfg.ROBOCARS_PROFILES:
+                    anim_from_profile = self.cfg.ROBOCARS_PROFILES[self.hatInCtrl.getProfile()][2]
+                if anim_from_profile:
+                    self.setAnim(anim_from_profile)
+                elif self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM:
                     self.setAnim(self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM)
                 else:
-                    self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, *self.AUTO_FRONT_LIGH, 0xffff);
-                    self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, *self.AUTO_FRONT_LIGH, 0xffff);
+                    # regular lighting in pilot mode 
+                    self.setLed(self.LED_INDEX_FRONT_LIGHT_RIGHT, *self.AUTO_FRONT_LIGH_COLOR, 0x5555);
+                    self.setLed(self.LED_INDEX_FRONT_LIGHT_LEFT, *self.AUTO_FRONT_LIGH_COLOR, 0x5555);
+                    self.setLed(self.LED_INDEX_REAR_STOP_RIGHT, *self.AUTO_REAR_STOP_COLOR, 0x5555);
+                    self.setLed(self.LED_INDEX_REAR_STOP_LEFT, *self.AUTO_REAR_STOP_COLOR, 0x5555);
 
             self.last_mode = mode
 
-        if (abs(steering)>self.STEERING_HIGH and steering<0 and self.last_steering_state != self.STEERING_RIGHT):
-            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.TURN_LIGHT, 0x3333)
-            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, *self.TURN_LIGHT, 0x3333)
-            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0xffff)
-            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0xffff)
-            self.last_steering_state = self.STEERING_RIGHT
-        if (abs(steering)>self.STEERING_HIGH and steering>0 and self.last_steering_state != self.STEERING_LEFT):
-            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0xffff)
-            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0xffff)
-            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.TURN_LIGHT, 0x3333)
-            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, *self.TURN_LIGHT, 0x3333)
-            self.last_steering_state = self.STEERING_LEFT
-        if (abs(steering)<self.STEERING_LOW and self.last_steering_state != 0):
-            self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0xffff)
-            self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0xffff)
-            self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0xffff)
-            self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0xffff)
-            self.last_steering_state = 0
+        # are entering turn or leaving turn
+        if (steering_state != self.last_steering_state) :
+            if (steering_state==self.STEERING_RIGHT):
+                self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.TURN_LIGHT_COLOR, 0x3333)
+                self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, *self.TURN_LIGHT_COLOR, 0x3333)
+                self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0xffff)
+                self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0xffff)
+            if (steering_state==self.STEERING_LEFT):
+                self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0xffff)
+                self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0xffff)
+                self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.TURN_LIGHT_COLOR, 0x3333)
+                self.setLed(self.LED_INDEX_REAR_TURN_LEFT, *self.TURN_LIGHT_COLOR, 0x3333)
+            if (steering_state==0):
+                self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, 0, 0, 0, 0xffff)
+                self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, 0, 0, 0, 0xffff)
+                self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, 0, 0, 0, 0xffff)
+                self.setLed(self.LED_INDEX_REAR_TURN_LEFT, 0, 0, 0, 0xffff)
+                # Hack for Duo since front LED used for both Turn and Light
+                if self.cfg.ROBOCARSHAT_LED_MODEL == 'Duo' and not self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM:
+                    if mode == 'user':
+                        self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.AUTO_FRONT_LIGH_COLOR, 0xffff);
+                        self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.AUTO_FRONT_LIGH_COLOR, 0xffff);
+                    else:
+                        self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.AUTO_FRONT_LIGH_COLOR, 0x5555);
+                        self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.AUTO_FRONT_LIGH_COLOR, 0x5555);
+
+            self.last_steering_state = steering_state
         #self.updateAnim()
         return None
     
