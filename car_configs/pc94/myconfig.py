@@ -569,7 +569,7 @@ ROBOCARSHAT_PWM_IN_STEERING_MAX    =   1990
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.15 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
 # THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -610,15 +610,15 @@ ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.15 # For pilot_angle autonomous mode (a
 # # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange, giving a range betzeen -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # #ROBOCARSHAT_THROTTLE_FLANGER = None 
-ROBOCARSHAT_THROTTLE_FLANGER = [-0.3, 0.25]
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.25, 0.25]
 # 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
 # 
-# ROBOCARSHAT_CONTROL_LED = False
-# ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = None
-# ROBOCARSHAT_LED_MODEL = 'Alpine' #Alpine, Duo, 
-# ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
+ROBOCARSHAT_CONTROL_LED = True
+ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = "/dev/ttyACM0"
+ROBOCARSHAT_LED_MODEL = 'Duo' #Alpine, Duo, 
+ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = 3 # 1 = sparkle, 2 = strobe
 # 
 # # straight line detection model
 # ROBOCARS_SL_DETECTION_MODEL=False
@@ -635,6 +635,9 @@ ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 0.3 # scalar to apply to throttle whe
 # ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 # ROBOCARS_SL_FILTER_TRESH_HIGH=4
 # ROBOCARS_SL_FILTER_TRESH_LOW=2
+
+ROBOCARS_PROFILES = None
+
 # 
 # 
 # #LOGGING
