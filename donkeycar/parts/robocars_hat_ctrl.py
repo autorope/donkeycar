@@ -635,6 +635,7 @@ class RobocarsHatLedCtrl():
                 self.setLed(self.LED_INDEX_REAR_STOP_LEFT, *self.USER_REAR_STOP_COLOR, 0xffff);
             else:
                 # in pilot modem do we have a special animation to trigger
+                anim_from_profile = None
                 if self.cfg.ROBOCARS_PROFILES:
                     anim_from_profile = self.cfg.ROBOCARS_PROFILES[self.hatInCtrl.getProfile()][2]
                 if anim_from_profile:
