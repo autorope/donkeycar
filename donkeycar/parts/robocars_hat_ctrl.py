@@ -651,7 +651,7 @@ class RobocarsHatLedCtrl():
             self.last_mode = mode
 
         # are entering turn or leaving turn
-        if (steering_state != self.last_steering_state) :
+        if (steering_state != self.last_steering_state or refresh) :
             if (steering_state==self.STEERING_RIGHT):
                 self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.TURN_LIGHT_COLOR, 0x3333)
                 self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, *self.TURN_LIGHT_COLOR, 0x3333)
@@ -670,8 +670,8 @@ class RobocarsHatLedCtrl():
                 # Hack for Duo since front LED used for both Turn and Light
                 if self.cfg.ROBOCARSHAT_LED_MODEL == 'Duo' and not self.cfg.ROBOCARSHAT_CONTROL_LED_PILOT_ANIM:
                     if mode == 'user':
-                        self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.AUTO_FRONT_LIGH_COLOR, 0xffff);
-                        self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.AUTO_FRONT_LIGH_COLOR, 0xffff);
+                        self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.USER_FRONT_LIGH_COLOR, 0xffff);
+                        self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.USER_FRONT_LIGH_COLOR, 0xffff);
                     else:
                         self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.AUTO_FRONT_LIGH_COLOR, 0x5555);
                         self.setLed(self.LED_INDEX_FRONT_TURN_LEFT, *self.AUTO_FRONT_LIGH_COLOR, 0x5555);
