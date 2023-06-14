@@ -651,7 +651,7 @@ class RobocarsHatLedCtrl():
             self.last_mode = mode
 
         # are entering turn or leaving turn
-        if (steering_state != self.last_steering_state or refresh) :
+        if ((steering_state != self.last_steering_state) or refresh) :
             if (steering_state==self.STEERING_RIGHT):
                 self.setLed(self.LED_INDEX_FRONT_TURN_RIGHT, *self.TURN_LIGHT_COLOR, 0x3333)
                 self.setLed(self.LED_INDEX_REAR_TURN_RIGHT, *self.TURN_LIGHT_COLOR, 0x3333)
