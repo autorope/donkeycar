@@ -516,14 +516,14 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_REAR_STOP_LEFT = -1
             self.NUM_LED = 6
         elif cfg.ROBOCARSHAT_LED_MODEL == 'Duo':
-            self.LED_INDEX_FRONT_TURN_RIGHT = 1
-            self.LED_INDEX_FRONT_TURN_LEFT = 0
+            self.LED_INDEX_FRONT_TURN_RIGHT = -1
+            self.LED_INDEX_FRONT_TURN_LEFT = -1
             self.LED_INDEX_REAR_TURN_RIGHT = 2
             self.LED_INDEX_REAR_TURN_LEFT = 5
             self.LED_INDEX_REAR_STOP_RIGHT = 3
             self.LED_INDEX_REAR_STOP_LEFT = 4
-            self.LED_INDEX_FRONT_LIGHT_RIGHT = -1
-            self.LED_INDEX_FRONT_LIGHT_LEFT = -1
+            self.LED_INDEX_FRONT_LIGHT_RIGHT = 1
+            self.LED_INDEX_FRONT_LIGHT_LEFT = 0
             self.NUM_LED = 6
         else: #default
             self.LED_INDEX_FRONT_TURN_RIGHT = 0
