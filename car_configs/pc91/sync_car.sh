@@ -13,7 +13,7 @@ LOCAL_PATH="${SCRIPT_DIR}/"
 
 echo "SENDING"
 rsync -rv --progress --partial --delete \
-  --exclude=.DS_Store --exclude=data --exclude=logs --exclude=.git \
+  --exclude=.DS_Store --exclude=data --exclude=logs --exclude=.git --exclude=models_trt \
   "$LOCAL_PATH" "$USER"@"$SRV":"${REMOTE_PATH}"
 
 echo
