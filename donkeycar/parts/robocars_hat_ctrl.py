@@ -525,6 +525,16 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_FRONT_LIGHT_RIGHT = 1
             self.LED_INDEX_FRONT_LIGHT_LEFT = 0
             self.NUM_LED = 6
+        elif cfg.ROBOCARSHAT_LED_MODEL == 'Megane':
+            self.LED_INDEX_FRONT_TURN_RIGHT = 0
+            self.LED_INDEX_FRONT_TURN_LEFT = 3
+            self.LED_INDEX_REAR_TURN_RIGHT = 7
+            self.LED_INDEX_REAR_TURN_LEFT = 4
+            self.LED_INDEX_REAR_STOP_RIGHT = 6
+            self.LED_INDEX_REAR_STOP_LEFT = 5
+            self.LED_INDEX_FRONT_LIGHT_RIGHT = 1
+            self.LED_INDEX_FRONT_LIGHT_LEFT = 2
+            self.NUM_LED = 8
         else: #default
             self.LED_INDEX_FRONT_TURN_RIGHT = 0
             self.LED_INDEX_FRONT_TURN_LEFT = 1
