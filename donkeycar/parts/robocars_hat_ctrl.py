@@ -535,6 +535,16 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_FRONT_LIGHT_RIGHT = 1
             self.LED_INDEX_FRONT_LIGHT_LEFT = 2
             self.NUM_LED = 8
+        elif cfg.ROBOCARSHAT_LED_MODEL == 'Sandero':
+            self.LED_INDEX_FRONT_TURN_RIGHT = 3
+            self.LED_INDEX_FRONT_TURN_LEFT = 0
+            self.LED_INDEX_REAR_TURN_RIGHT = 5
+            self.LED_INDEX_REAR_TURN_LEFT = 7
+            self.LED_INDEX_REAR_STOP_RIGHT = 4
+            self.LED_INDEX_REAR_STOP_LEFT = 6
+            self.LED_INDEX_FRONT_LIGHT_RIGHT = 2
+            self.LED_INDEX_FRONT_LIGHT_LEFT = 1
+            self.NUM_LED = 8
         else: #default
             self.LED_INDEX_FRONT_TURN_RIGHT = 0
             self.LED_INDEX_FRONT_TURN_LEFT = 1
@@ -582,10 +592,11 @@ class RobocarsHatLedCtrl():
 
     def setAnim(self, n):
         cmd=("3,%01d\n" % (int(n))).encode('ascii')
-        if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
-            self.cmdinterface.write(cmd)
-        else:
-            self.cmdinterface.sendCmd(cmd)
+        if self.cmdinterface :
+            if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY and :
+                self.cmdinterface.write(cmd)
+            else:
+                self.cmdinterface.sendCmd(cmd)
 
     def updateAnim(self):
         self.setLed(int(self.idx/10), 0, 0, 0, 0x0);
