@@ -500,6 +500,7 @@ class RobocarsHatLedCtrl():
         self.cfg = cfg
         self.reconnect=True
         self.reconnectDelay=500
+        self.cmdinterface=None
         if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
             self.connectPort()
         else:
