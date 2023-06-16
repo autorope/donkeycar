@@ -593,7 +593,7 @@ class RobocarsHatLedCtrl():
     def setAnim(self, n):
         cmd=("3,%01d\n" % (int(n))).encode('ascii')
         if self.cmdinterface :
-            if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY and :
+            if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
                 self.cmdinterface.write(cmd)
             else:
                 self.cmdinterface.sendCmd(cmd)
