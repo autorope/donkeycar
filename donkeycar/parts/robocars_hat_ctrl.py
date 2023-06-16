@@ -538,9 +538,9 @@ class RobocarsHatLedCtrl():
         elif cfg.ROBOCARSHAT_LED_MODEL == 'Sandero':
             self.LED_INDEX_FRONT_TURN_RIGHT = 3
             self.LED_INDEX_FRONT_TURN_LEFT = 0
-            self.LED_INDEX_REAR_TURN_RIGHT = 5
+            self.LED_INDEX_REAR_TURN_RIGHT = 4
             self.LED_INDEX_REAR_TURN_LEFT = 7
-            self.LED_INDEX_REAR_STOP_RIGHT = 4
+            self.LED_INDEX_REAR_STOP_RIGHT = 5
             self.LED_INDEX_REAR_STOP_LEFT = 6
             self.LED_INDEX_FRONT_LIGHT_RIGHT = 2
             self.LED_INDEX_FRONT_LIGHT_LEFT = 1
