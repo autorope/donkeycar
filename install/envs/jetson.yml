@@ -3,11 +3,10 @@ name: donkey
 channels:
   - defaults
   - conda-forge
-  - pytorch
   - fastai
 
 dependencies:
-  - python=3.9
+  - python=3.8
   - h5py
   - pillow
   - opencv
@@ -26,20 +25,17 @@ dependencies:
   - PrettyTable
   - pyfiglet
   - mypy
-  - pytorch
-  - torchvision=0.12
-  - torchaudio
-  - pytorch-lightning
   - numpy
-  - kivy=2.1
+  - psutil
   - plotly
   - pyyaml
-  - psutil
   - fastai
   - pynmea2
   - pyserial
   - utm
-  - albumentations
   - pip:
+    - --extra-index-url https://developer.download.nvidia.com/compute/redist/jp/v502
+    - tensorflow==2.9.1+nv22.09
     - git+https://github.com/autorope/keras-vis.git
     - simple-pid
+    - kivy

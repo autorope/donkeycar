@@ -9,29 +9,37 @@ from donkeycar.utils import rgb2gray
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 class CameraError(Exception):
     pass
+
 
 class BaseCamera:
 
     def run_threaded(self):
         return self.frame
 
-class PiCamera(BaseCamera):
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, vflip=False, hflip=False):
-        from picamera.array import PiRGBArray
-        from picamera import PiCamera
 
-        resolution = (image_w, image_h)
-        # initialize the camera and stream
-        self.camera = PiCamera() #PiCamera gets resolution (height, width)
-        self.camera.resolution = resolution
-        self.camera.framerate = framerate
-        self.camera.vflip = vflip
-        self.camera.hflip = hflip
-        self.rawCapture = PiRGBArray(self.camera, size=resolution)
-        self.stream = self.camera.capture_continuous(self.rawCapture,
-            format="rgb", use_video_port=True)
+class PiCamera(BaseCamera):
+    """
+    RPi Camera class based on Bullseye's python class Picamera2.
+    """
+    def __init__(self, image_w=160, image_h=120, image_d=3,
+                 vflip=False, hflip=False):
+        from picamera2 import Picamera2
+        from libcamera import Transform
+
+        # it's weird but BGR returns RGB images
+        config_dict = {"size": (image_w, image_h), "format": "BGR888"}
+        transform = Transform(hflip=hflip, vflip=vflip)
+        self.camera = Picamera2()
+        config = self.camera.create_preview_configuration(
+            config_dict, transform=transform)
+        self.camera.align_configuration(config)
+        self.camera.configure(config)
+        # try min / max frame rate as 0.1 / 1 ms (it will be slower though)
+        self.camera.set_controls({"FrameDurationLimits": (100, 1000)})
+        self.camera.start()
 
         # initialize the frame and the variable used to indicate
         # if the thread should be stopped
@@ -40,31 +48,23 @@ class PiCamera(BaseCamera):
         self.image_d = image_d
 
         # get the first frame or timeout
-        logger.info('PiCamera loaded...')
-        if self.stream is not None:
-            logger.info('PiCamera opened...')
-            warming_time = time.time() + 5  # quick after 5 seconds
-            while self.frame is None and time.time() < warming_time:
-                logger.info("...warming camera")
-                self.run()
-                time.sleep(0.2)
+        logger.info('PiCamera opened...')
+        warming_time = time.time() + 5  # quick after 5 seconds
+        while self.frame is None and time.time() < warming_time:
+            logger.info("...warming camera")
+            self.run()
+            time.sleep(0.2)
 
-            if self.frame is None:
-                raise CameraError("Unable to start PiCamera.")
-        else:
-            raise CameraError("Unable to open PiCamera.")
+        if self.frame is None:
+            raise CameraError("Unable to start PiCamera.")
+
         logger.info("PiCamera ready.")
 
     def run(self):
-        # grab the frame from the stream and clear the stream in
-        # preparation for the next frame
-        if self.stream is not None:
-            f = next(self.stream)
-            if f is not None:
-                self.frame = f.array
-                self.rawCapture.truncate(0)
-                if self.image_d == 1:
-                    self.frame = rgb2gray(self.frame)
+        # grab the next frame from the camera buffer
+        self.frame = self.camera.capture_array("main")
+        if self.image_d == 1:
+            self.frame = rgb2gray(self.frame)
 
         return self.frame
 
@@ -78,16 +78,13 @@ class PiCamera(BaseCamera):
         self.on = False
         logger.info('Stopping PiCamera')
         time.sleep(.5)
-        self.stream.close()
-        self.rawCapture.close()
         self.camera.close()
-        self.stream = None
-        self.rawCapture = None
         self.camera = None
 
 
 class Webcam(BaseCamera):
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate = 20, camera_index = 0):
+    def __init__(self, image_w=160, image_h=120, image_d=3,
+                 framerate=20, camera_index=0):
         #
         # pygame is not installed by default.
         # Installation on RaspberryPi (with env activated):
@@ -270,18 +267,20 @@ class CSICamera(BaseCamera):
         self.running = False
         logger.info('Stopping CSICamera')
         time.sleep(.5)
-        del(self.camera)
+        del self.camera
 
 
 class V4LCamera(BaseCamera):
     '''
-    uses the v4l2capture library from this fork for python3 support: https://github.com/atareao/python3-v4l2capture
+    uses the v4l2capture library from this fork for python3 support:
+    https://github.com/atareao/python3-v4l2capture
     sudo apt-get install libv4l-dev
     cd python3-v4l2capture
     python setup.py build
     pip install -e .
     '''
-    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20, dev_fn="/dev/video0", fourcc='MJPG'):
+    def __init__(self, image_w=160, image_h=120, image_d=3, framerate=20,
+                 dev_fn="/dev/video0", fourcc='MJPG'):
 
         self.running = True
         self.frame = None

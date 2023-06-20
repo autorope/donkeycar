@@ -315,7 +315,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         model_reload_cb = None
         if '.h5' in model_path or '.trt' in model_path or '.tflite' in \
-                model_path or '.savedmodel' in model_path or '.pth':
+            model_path or '.savedmodel' in model_path or '.pth' in model_path:
             # load the whole model with weigths, etc
             load_model(kl, model_path)
 
@@ -796,7 +796,6 @@ def get_camera(cfg):
         if cfg.CAMERA_TYPE == "PICAM":
             from donkeycar.parts.camera import PiCamera
             cam = PiCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
-                           framerate=cfg.CAMERA_FRAMERATE,
                            vflip=cfg.CAMERA_VFLIP, hflip=cfg.CAMERA_HFLIP)
         elif cfg.CAMERA_TYPE == "WEBCAM":
             from donkeycar.parts.camera import Webcam

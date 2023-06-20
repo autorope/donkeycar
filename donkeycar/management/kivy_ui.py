@@ -716,7 +716,7 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 if 'tflite' in self.model_type:
                     self.filters = ['*.tflite']
                 elif 'tensorrt' in self.model_type:
-                    self.filters = ['*.trt']
+                    self.filters = ['*.trt', '*.savedmodel']
                 else:
                     self.filters = ['*.h5', '*.savedmodel']
 
@@ -971,7 +971,7 @@ class DataFrameLabel(Label):
 
 class TransferSelector(BoxLayout, FileChooserBase):
     """ Class to select transfer model"""
-    filters = ['*.h5']
+    filters = ['*.h5', '*.savedmodel']
 
 
 class TrainScreen(Screen):
@@ -980,13 +980,24 @@ class TrainScreen(Screen):
     database = ObjectProperty()
     pilot_df = ObjectProperty(force_dispatch=True)
     tub_df = ObjectProperty(force_dispatch=True)
+    train_checker = False
 
-    def train_call(self, model_type, *args):
-        # remove car directory from path
+    def train_call(self, *args):
         tub_path = tub_screen().ids.tub_loader.tub.base_path
         transfer = self.ids.transfer_spinner.text
+        model_type = self.ids.train_spinner.text
         if transfer != 'Choose transfer model':
-            transfer = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
+            h5 = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
+            sm = os.path.join(self.config.MODELS_PATH, transfer + '.savedmodel')
+            if os.path.exists(sm):
+                transfer = sm
+            elif os.path.exists(h5):
+                transfer = h5
+            else:
+                transfer = None
+                self.ids.status.text = \
+                    f'Could find neither {sm} nor {trans_h5} - training ' \
+                    f'without transfer'
         else:
             transfer = None
         try:
@@ -994,20 +1005,32 @@ class TrainScreen(Screen):
                             model_type=model_type,
                             transfer=transfer,
                             comment=self.ids.comment.text)
-            self.ids.status.text = f'Training completed.'
-            self.ids.comment.text = 'Comment'
-            self.ids.transfer_spinner.text = 'Choose transfer model'
-            self.reload_database()
         except Exception as e:
             Logger.error(e)
             self.ids.status.text = f'Train failed see console'
-        finally:
-            self.ids.train_button.state = 'normal'
 
-    def train(self, model_type):
+    def train(self):
         self.config.SHOW_PLOT = False
-        Thread(target=self.train_call, args=(model_type,)).start()
-        self.ids.status.text = f'Training started.'
+        t = Thread(target=self.train_call)
+        self.ids.status.text = 'Training started.'
+
+        def func(dt):
+            t.start()
+
+        def check_training_done(dt):
+            if not t.is_alive():
+                self.train_checker.cancel()
+                self.ids.comment.text = 'Comment'
+                self.ids.transfer_spinner.text = 'Choose transfer model'
+                self.ids.train_button.state = 'normal'
+                self.ids.status.text = 'Training completed.'
+                self.ids.train_button.disabled = False
+                self.reload_database()
+
+        # schedules the call after the current frame
+        Clock.schedule_once(func, 0)
+        # checks if training finished and updates the window if
+        self.train_checker = Clock.schedule_interval(check_training_done, 0.5)
 
     def set_config_attribute(self, input):
         try:
@@ -1197,19 +1220,20 @@ class CarScreen(Screen):
             self.is_connected = False
             if return_val is None:
                 # command still running, do nothing and check next time again
-                status = 'Awaiting connection...'
+                status = 'Awaiting connection to...'
                 self.ids.connected.color = 0.8, 0.8, 0.0, 1
             else:
                 # command finished, check if successful and reset connection
                 if return_val == 0:
-                    status = 'Connected'
+                    status = 'Connected to'
                     self.ids.connected.color = 0, 0.9, 0, 1
                     self.is_connected = True
                 else:
-                    status = 'Disconnected'
+                    status = 'Disconnected from'
                     self.ids.connected.color = 0.9, 0, 0, 1
                 self.connection = None
-            self.ids.connected.text = status
+            self.ids.connected.text \
+                = f'{status} {getattr(self.config, "PI_HOSTNAME")}'
 
     def drive(self):
         model_args = ''

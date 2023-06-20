@@ -1,5 +1,6 @@
 
-from typing import (Any, Callable, Generic, Iterable, Iterator, List, Sized, Tuple, TypeVar)
+from typing import (Any, Callable, Generic, Iterable, Iterator, List, Sized,
+                    Tuple, TypeVar)
 
 from donkeycar.pipeline.types import TubRecord
 
@@ -13,7 +14,7 @@ XOut = TypeVar('XOut', covariant=True)
 YOut = TypeVar('YOut', covariant=True)
 
 
-class SizedIterator(Generic[X], Iterator[X], Sized):
+class SizedIterator(Generic[R], Sized):
     def __init__(self) -> None:
         # This is a protocol type without explicitly using a `Protocol`
         # Using `Protocol` requires Python 3.7
@@ -52,20 +53,25 @@ class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
         self.x_transform = x_transform
         self.y_transform = y_transform
         self.iterator = BaseTfmIterator_(
-            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
+            iterable=self.iterable,
+            x_transform=self.x_transform,
+            y_transform=self.y_transform)
 
     def __len__(self):
         return len(self.iterator)
 
     def __iter__(self) -> SizedIterator[Tuple[XOut, YOut]]:
         return BaseTfmIterator_(
-            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
+            iterable=self.iterable,
+            x_transform=self.x_transform,
+            y_transform=self.y_transform)
 
     def __next__(self):
         return next(self.iterator)
 
 
-class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
+class TfmTupleIterator(Generic[X, Y, XOut, YOut],
+                       SizedIterator[Tuple[XOut, YOut]]):
     def __init__(self,
                  iterable: Iterable[Tuple[X, Y]],
                  x_transform: Callable[[X], XOut],
@@ -75,14 +81,18 @@ class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOu
         self.x_transform = x_transform
         self.y_transform = y_transform
         self.iterator = BaseTfmIterator_(
-            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
+            iterable=self.iterable,
+            x_transform=self.x_transform,
+            y_transform=self.y_transform)
 
     def __len__(self):
         return len(self.iterator)
 
     def __iter__(self) -> SizedIterator[Tuple[XOut, YOut]]:
         return BaseTfmIterator_(
-            iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
+            iterable=self.iterable,
+            x_transform=self.x_transform,
+            y_transform=self.y_transform)
 
     def __next__(self):
         return next(self.iterator)
@@ -109,7 +119,8 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
         return len(self.iterator)
 
     def __iter__(self) -> SizedIterator[Tuple[XOut, YOut]]:
-        return BaseTfmIterator_(self.iterable, self.x_transform, self.y_transform)
+        return BaseTfmIterator_(
+            self.iterable, self.x_transform, self.y_transform)
 
     def __next__(self):
         record = next(self.iterator)
@@ -134,22 +145,30 @@ class TubSequence(Iterable[TubRecord]):
                        x_transform: Callable[[TubRecord], X],
                        y_transform: Callable[[TubRecord], Y]) \
             -> TfmIterator:
-        return TfmIterator(self, x_transform=x_transform, y_transform=y_transform)
+        return TfmIterator(self,
+                           x_transform=x_transform,
+                           y_transform=y_transform)
 
     @classmethod
     def map_pipeline(
             cls,
             x_transform: Callable[[X], XOut],
             y_transform: Callable[[Y], YOut],
-            pipeline: SizedIterator[Tuple[X, Y]]) -> SizedIterator[Tuple[XOut, YOut]]:
-        return TfmTupleIterator(pipeline, x_transform=x_transform, y_transform=y_transform)
+            pipeline: SizedIterator[Tuple[X, Y]]) \
+            -> SizedIterator[Tuple[XOut, YOut]]:
+        return TfmTupleIterator(pipeline,
+                                x_transform=x_transform,
+                                y_transform=y_transform)
 
     @classmethod
     def map_pipeline_factory(
             cls,
             x_transform: Callable[[X], XOut],
             y_transform: Callable[[Y], YOut],
-            factory: Callable[[], SizedIterator[Tuple[X, Y]]]) -> SizedIterator[Tuple[XOut, YOut]]:
+            factory: Callable[[], SizedIterator[Tuple[X, Y]]]) \
+            -> SizedIterator[Tuple[XOut, YOut]]:
 
         pipeline = factory()
-        return cls.map_pipeline(pipeline=pipeline, x_transform=x_transform, y_transform=y_transform)
+        return cls.map_pipeline(pipeline=pipeline,
+                                x_transform=x_transform,
+                                y_transform=y_transform)

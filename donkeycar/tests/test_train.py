@@ -135,13 +135,13 @@ full_tub = ['imu', 'behavior', 'localizer']
 @pytest.mark.parametrize('data', test_data)
 def test_train(config: Config, data: Data) -> None:
     """
-    Testing convergence of the linear an categorical models
+    Testing convergence of the above models
     :param config:          donkey config
     :param data:            test case data
     :return:                None
     """
     def pilot_path(name):
-        pilot_name = f'pilot_{name}.h5'
+        pilot_name = f'pilot_{name}.savedmodel'
         return os.path.join(config.MODELS_PATH, pilot_name)
 
     cfg = copy(config)

@@ -2,6 +2,7 @@ import math
 import os
 from time import time
 from typing import List, Dict, Union, Tuple
+import logging
 
 from tensorflow.python.keras.models import load_model
 
@@ -17,6 +18,8 @@ from donkeycar.parts.image_transformations import ImageTransformations
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 import tensorflow as tf
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class BatchSequence(object):
@@ -109,12 +112,12 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     model_path, model_num = \
         get_model_train_details(database, model)
 
-    base_path = os.path.splitext(model_path)[0]
+    base_path, ext = tuple(os.path.splitext(model_path))
     kl = get_model_by_type(model_type, cfg)
     if transfer:
         kl.load(transfer)
     if cfg.PRINT_MODEL_SUMMARY:
-        print(kl.interpreter.summary())
+        kl.interpreter.summary()
 
     tubs = tub_paths.split(',')
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
@@ -123,8 +126,9 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     training_records, validation_records \
         = train_test_split(dataset.get_records(), shuffle=True,
                            test_size=(1. - cfg.TRAIN_TEST_SPLIT))
-    print(f'Records # Training {len(training_records)}')
-    print(f'Records # Validation {len(validation_records)}')
+    logger.info(f'Records # Training {len(training_records)}')
+    logger.info(f'Records # Validation {len(validation_records)}')
+    dataset.close()
 
     # We need augmentation in validation when using crop / trapeze
 
@@ -148,7 +152,8 @@ def train(cfg: Config, tub_paths: str, model: str = None,
 
     assert val_size > 0, "Not enough validation data, decrease the batch " \
                          "size or add more data."
-
+    logger.info(f'Train with image caching: '
+                f'{getattr(cfg, "CACHE_IMAGES", True)}')
     history = kl.train(model_path=model_path,
                        train_data=dataset_train,
                        train_steps=train_size,
@@ -161,15 +166,21 @@ def train(cfg: Config, tub_paths: str, model: str = None,
                        patience=cfg.EARLY_STOP_PATIENCE,
                        show_plot=cfg.SHOW_PLOT)
 
+    # We are doing the tflite/trt conversion here on a previously saved model
+    # and not on the kl.interpreter.model object directly. The reason is that
+    # we want to convert the best model which is not the model in its current
+    # state, but in the state it was saved the last time during training.
     if getattr(cfg, 'CREATE_TF_LITE', True):
         tf_lite_model_path = f'{base_path}.tflite'
         keras_model_to_tflite(model_path, tf_lite_model_path)
 
     if getattr(cfg, 'CREATE_TENSOR_RT', False):
-        # load h5 (ie. keras) model
-        model_rt = load_model(model_path)
-        # save in tensorflow savedmodel format (i.e. directory)
-        model_rt.save(f'{base_path}.savedmodel')
+        # convert .h5 model to .savedmodel, only if we are using h5 format
+        if ext == '.h5':
+            logger.info(f"Converting from .h5 to .savedmodel first")
+            model_tmp = load_model(model_path, compile=False)
+            # save in tensorflow savedmodel format (i.e. directory)
+            model_tmp.save(f'{base_path}.savedmodel')
         # pass savedmodel to the rt converter
         saved_model_to_tensor_rt(f'{base_path}.savedmodel', f'{base_path}.trt')
 
@@ -182,7 +193,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         'History': history,
         'Transfer': os.path.basename(transfer) if transfer else None,
         'Comment': comment,
-        'Config': str(cfg)
+        'Config': cfg.__dict__
     }
     database.add_entry(database_entry)
     database.write()

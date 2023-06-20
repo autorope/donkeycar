@@ -84,8 +84,8 @@ class FastAiPilot(ABC):
         self.interpreter.set_optimizer(optimizer)
 
     # shape
-    def get_input_shapes(self):
-        return self.interpreter.get_input_shapes()
+    def get_input_shape(self, input_name):
+        return self.interpreter.get_input_shape(input_name)
 
     def seq_size(self) -> int:
         return 0
@@ -237,12 +237,13 @@ class FastAILinear(FastAiPilot):
 
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
-        img_shape = self.get_input_shapes()[0][1:]
+        img_shape = self.get_input_shape('img')[1:]
+        return img_shape
 
 
 class Linear(nn.Module):
     def __init__(self):
-        super(Linear, self).__init__()
+        super().__init__()
         self.dropout = 0.1
         # init the layers
         self.conv24 = nn.Conv2d(3, 24, kernel_size=(5, 5), stride=(2, 2))
