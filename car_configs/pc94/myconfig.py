@@ -610,7 +610,7 @@ ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (a
 # # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange, giving a range betzeen -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # #ROBOCARSHAT_THROTTLE_FLANGER = None 
-ROBOCARSHAT_THROTTLE_FLANGER = [-0.25, 0.25]
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.2, 0.2]
 # 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
