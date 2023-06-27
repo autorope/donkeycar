@@ -233,8 +233,8 @@ class ImgTransformList:
 
     @staticmethod
     def fromJson(filepath):
-        config = loadImgTransformJson(filepath)
-        transforms = imgTransformListFromJson(config)
+        config = load_img_transform_json(filepath)
+        transforms = img_transform_list_from_json(config)
         return ImgTransformList(transforms)
 
     def run(self, image):
@@ -248,12 +248,12 @@ class ImgTransformList:
                 transform.shutdown()
 
 
-def imgTransformFromJson(transform_config):
+def img_transform_from_json(transform_config):
     """
     Construct a single Image transform from given dictionary.
     The dictionary corresponds the the image transform's
     constructor arguments, so it can be passed to the 
-    constructure using object destructuring.
+    constructor using object destructuring.
     """
     if not isinstance(transform_config, object):
         raise TypeError("transform_config must be a dictionary")
@@ -337,8 +337,7 @@ def imgTransformFromJson(transform_config):
     return transformer
 
 
-
-def imgTransformListFromJson(transforms_config):
+def img_transform_list_from_json(transforms_config):
     """
     Parse one or more Image transforms from given list
     and return an ImgTransformer that applies
@@ -352,13 +351,12 @@ def imgTransformListFromJson(transforms_config):
     transformers = []
     
     for transform_config in transforms_config:
-        transformers.append(imgTransformFromJson(transform_config))
+        transformers.append(img_transform_from_json(transform_config))
 
     return transformers
 
 
-
-def loadImgTransformJson(filepath):
+def load_img_transform_json(filepath):
     """
     Load a json file that specifies a list with one or more
     image transforms, their order and their arguments.
@@ -424,6 +422,7 @@ def loadImgTransformJson(filepath):
         logger.error(f"Can't open transforms json file '{filepath}' due to error: {e}")
         raise e
 
+
 if __name__ == "__main__":
     """
     Image transforms self test.
@@ -435,13 +434,13 @@ if __name__ == "__main__":
     This json specifies a pipeline that applies canny edge detection to the image.
 
     ```
-        [
-            ["RGB2GRAY"],
-            ["BLUR", {}],
-            ["CANNY", {}],
-            ["CROP", {"left": 0, "top": 45, "right": 0, "bottom": 0}],
-            ["GRAY2RGB"]
-        ]
+    [
+        ["RGB2GRAY"],
+        ["BLUR", {}],
+        ["CANNY", {}],
+        ["CROP", {"left": 0, "top": 45, "right": 0, "bottom": 0}],
+        ["GRAY2RGB"]
+    ]
     ```
 
     Here the "BLUR" and "CANNY" transforms are using default parameters, so the 
@@ -452,8 +451,8 @@ if __name__ == "__main__":
     If it was in a json file named `canny_pipeline.json` in `pi` home folder the usage would be:
 
     ```
-        cd donkeycar/parts
-        python image_transformations.py --width=640 --height=480 --json=/Home/pi/canny_pipeline.json
+    cd donkeycar/parts
+    python image_transformations.py --width=640 --height=480 --json=/Home/pi/canny_pipeline.json
     ```
 
     """
