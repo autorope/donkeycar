@@ -73,8 +73,6 @@ setup(name='donkeycar',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
               'matplotlib',
-              'kivy-jetson',
-              'plotly'
           ],
           'nano': [
               'Adafruit_PCA9685',
@@ -82,7 +80,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
               'matplotlib',
-              'kivy',
+              'kivy-jetson',
               'plotly'
           ],
           'pc': [
