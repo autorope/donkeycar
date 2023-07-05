@@ -1,0 +1,57 @@
+# As posted by @cfox570 on Discord:
+# @see https://discord.com/channels/662098530411741184/671604367706554388/926561747983294544
+
+# `tensorflow-macos` requires the following environmental variables set before install:
+# `export GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1`
+# `export GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1`
+# @see https://github.com/grpc/grpc/issues/25082#issuecomment-988464912
+
+name: donkey
+
+channels:
+  - defaults
+  - conda-forge
+  - pytorch
+  - fastai
+
+dependencies:
+  - python=3.9         # 3.9.15
+  - numpy              # 1.23.5
+  - h5py               # 3.7.0
+  - pillow             # 9.4.0
+  - opencv             # 4.6.0
+  - matplotlib         # 3.7.1
+  - tornado            # 6.2
+  - docopt             # 0.6.2
+  - pandas             # 1.5.3
+  - pylint             # 2.16.2
+  - pytest             # 7.1.2
+  - pytest-cov         # 4.0.0
+  - codecov            # 2.1.11
+  - pip                # 23.0.1
+  - progress           # 1.5
+  - paho-mqtt          # 1.6.1
+  - PrettyTable        # 3.5.0
+  - pyfiglet           # 0.8.post1
+  - mypy               # 0.981
+  - pytorch            # 1.12.1
+  - torchvision=0.12   # 0.12.0
+  - torchaudio         # 0.12.1
+  - pytorch-lightning>=1.9,<2.0  # 1.9.3
+  - psutil             # 5.9.0
+  - plotly             # 5.9.0
+  - pyyaml             # 6.0
+  - fastai             # 2.7.11
+  - pynmea2            # 1.19.0
+  - pyserial           # 3.5
+  - utm                # 0.7.0
+  - albumentations     # 1.3.0
+#  - imgaug             # 0.4.0 # This _was_ in mac.yml for an older Donkey version
+  - pip:
+    - kivy==2.1.0       # 2.1.0 # Moved from macos.yml dependencies section.
+    - tensorflow-macos==2.9 # 2.9.0
+    - tensorflow-metal==0.5.0 # 0.5.0
+    - git+https://github.com/autorope/keras-vis.git # 0.5.0
+    - simple-pid        # 1.0.1
+    - moviepy           # 1.0.3
+#    - pygame            # 2.3.0
