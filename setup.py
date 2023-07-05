@@ -24,7 +24,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='donkeycar',
-      version="5.0.dev2",
+      version="5.0.dev3",
       long_description=long_description,
       description='Self driving library for python.',
       url='https://github.com/autorope/donkeycar',
@@ -53,7 +53,8 @@ setup(name='donkeycar',
           "pynmea2",
           'pyserial',
           "utm",
-          'pandas'
+          'pandas',
+          'pyyaml',
       ],
       extras_require={
           # if installing into a conda (i.e. miniforge) env on Pi we have to
@@ -71,11 +72,7 @@ setup(name='donkeycar',
               'adafruit-circuitpython-ssd1306',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
-              'albumentations',
               'matplotlib',
-              'kivy-jetson',
-              'pyyaml',
-              'plotly'
           ],
           'nano': [
               'Adafruit_PCA9685',
@@ -83,15 +80,13 @@ setup(name='donkeycar',
               'adafruit-circuitpython-rplidar',
               'Jetson.GPIO',
               'matplotlib',
-              'kivy',
-              'pyyaml',
+              'kivy-jetson',
               'plotly'
           ],
           'pc': [
               'matplotlib',
               'kivy',
               'pandas',
-              'pyyaml',
               'plotly',
               'albumentations'
           ],
@@ -128,8 +123,8 @@ setup(name='donkeycar',
           'License :: OSI Approved :: MIT License',
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
       ],
       keywords='selfdriving cars donkeycar diyrobocars',
       packages=find_packages(exclude=(['tests', 'docs', 'site', 'env'])),
