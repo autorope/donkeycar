@@ -429,6 +429,38 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(ThrottleFilter(), 
               inputs=['pilot/throttle'],
               outputs=['pilot/throttle'])
+              
+    # Stop at a stop sign and pause for n seconds then proceed
+    elif cfg.OD_STOPANDGO:
+        from donkeycar.parts.object_detector.od_protocol import Stop_And_Go
+        V.add(Stop_And_Go(
+                pause_time = cfg.OD_PAUSE_TIME,
+                use_edgetpu = cfg.OD_USE_EDGETPU,
+                score = cfg.OD_SCORE,
+                image_width = cfg.IMAGE_W,
+                run_hz = cfg.OD_RUN_HZ,
+                vehicle_hz = cfg.DRIVE_LOOP_HZ
+                ),
+              inputs=['pilot/angle', 'pilot/throttle', 'cam/image_array'],
+              outputs=['pilot/angle', 'pilot/throttle', 'cam/image_array'],
+              run_condition="run_pilot")
+    
+    # Swerve around a traffic cone
+    elif cfg.OD_PASS_CONE:
+        from donkeycar.parts.object_detector.od_protocol import Pass_Object
+        V.add(Pass_Object(
+                speedup_multiplier = cfg.OD_SPEEDUP_MULTIPLIER,
+                max_angle = cfg.OD_MAX_ANGLE,
+                tolerance = cfg.OD_TOLERANCE,
+                use_edgetpu = cfg.OD_USE_EDGETPU,
+                score = cfg.OD_SCORE,
+                image_width = cfg.IMAGE_W,
+                run_hz = cfg.OD_RUN_HZ,
+                vehicle_hz = cfg.DRIVE_LOOP_HZ
+                ),
+              inputs=['pilot/angle', 'pilot/throttle', 'cam/image_array'],
+              outputs=['pilot/angle', 'pilot/throttle', 'cam/image_array'],
+              run_condition="run_pilot")
 
     #
     # to give the car a boost when starting ai mode in a race.

@@ -750,12 +750,31 @@ REALSENSE_D435_DEPTH = True     # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
+# Only enable one of the following object detector protocols
+# 1) STOP_SIGN_DETECTOR 2) OD_STOPANDGO 3) OD_PASS_CONE
+
 # Stop Sign Detector
 STOP_SIGN_DETECTOR = False
 STOP_SIGN_MIN_SCORE = 0.2
 STOP_SIGN_SHOW_BOUNDING_BOX = True
 STOP_SIGN_MAX_REVERSE_COUNT = 10    # How many times should the car reverse when detected a stop sign, set to 0 to disable reversing
 STOP_SIGN_REVERSE_THROTTLE = -0.5     # Throttle during reversing when detected a stop sign
+
+# Object Detector - Common
+# Unlike the Stop Sign Detector, the object detector works with or without Coral Edge TPU.  This part
+# leverages the Tensorflow Lite object detection model. 
+OD_USE_EDGETPU = False          # If True, Coral Edge TPU connected. Use the edgeTPU model 
+OD_SCORE = 0.5                  # Set the score threshold for detection.
+OD_RUN_HZ = 1                   # Run detection algorithm n times per drive_loop_hz ex. 1 time every 20 drive loop 
+                                # Recommend 1 for Stop And Go protocol and 3 or 4 for Pass Cone protocol
+# Object Detector - Stop and Go protocol
+OD_STOPANDGO = False            # enable stop and go;  stop and pause, then proceed past the sign before looking again
+OD_PAUSE_TIME = 2.0             # after stop sequence completes, pause for n seconds
+#Object Detector - Pass a Cone protocol
+OD_PASS_CONE = False            # enable detection to swerve around a cone in roadway
+OD_SPEEDUP_MULTIPLIER = 1.0     # scale throttle of the car as it passes the object (cone)
+OD_MAX_ANGLE = 0.75             # maximum and minimum drive angle target
+OD_TOLERANCE = 0.45             # drive angle is set to be larger than TOLERANCE + CONE ANGLE or smaller than TOL - CONE angle
 
 # FPS counter
 SHOW_FPS = False
