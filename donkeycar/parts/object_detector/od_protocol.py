@@ -25,7 +25,7 @@ import logging
 from donkeycar.parts.object_detector.detector import Object_Detector
 
 logger = logging.getLogger(__name__)
-# logger.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)
 
 class Detection_Protocol:
 
@@ -137,7 +137,6 @@ class Detection_Protocol:
         
 class Stop_Manager():
     # Stop states
-    stop_states = ('idle', 'start', 'back1', 'forward', 'back2')
     IDLE = 0
     INITIATE = 1
     POS_ONE = 3
@@ -177,23 +176,8 @@ class Stop_Manager():
         self.last_throttle = throttle
         return throttle
 
-'''
-    Stop_And_Go:
-        args:
-            pause_time:     2.0 # seconds
-            image_width:    160
-            run_hz:         1 
-            vehicle_hz:     20
-        inputs:  [pilot/angle, pilot/throttle, cam/image_array]
-        outputs: [pilot/angle, pilot/throttle, cam/image_array]
-        threaded:   True
-        run_condition: run_pilot   
-
-'''
-  
 class Stop_And_Go(Detection_Protocol):
     # Stop and Go protocol States
-    states = ('running', 'stopping', 'pausing', 'passing')
     RUNNING = 0
     STOPPING = 1
     PAUSING = 2
@@ -201,7 +185,6 @@ class Stop_And_Go(Detection_Protocol):
 
     def __init__(self, pause_time=2.0, **kwargs):
         super().__init__(category = 'stop sign', **kwargs)
-
         self.pause = pause_time
         self.state = self.RUNNING
         self.timeout = 0.0
@@ -231,25 +214,10 @@ class Stop_And_Go(Detection_Protocol):
 
         return angle, throttle
 
-'''
-    Pass_Cone:
-        args:
-            image_width:        160
-            run_hz:             4
-            vehicle_hz:         20    
-            speedup_multiplier: 1.0
-            tolerance:          0.45
-            max_angle:          0.75
-        inputs:  [pilot/angle, pilot/throttle, cam/image_array]
-        outputs: [pilot/angle, pilot/throttle, cam/image_array]
-        run_condition: run_pilot  
-'''
-
 class Pass_Object(Detection_Protocol):
 
     def __init__(self, speedup_multiplier=1.0, tolerance=.25, max_angle=.75, **kwargs):
         super().__init__(category = 'cone', **kwargs)
-
         self.speedup = speedup_multiplier
         self.max_angle = max_angle
         self.tolerance = tolerance

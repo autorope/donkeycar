@@ -24,45 +24,6 @@ from tflite_support.task import core
 from tflite_support.task import processor
 from tflite_support.task import vision
 
-'''
-https://github.com/tensorflow/tflite-support/tree/master/tensorflow_lite_support/python/task/processor/proto
-class Category:
-  """A classification category.
-
-  Category is a util class, contains a label, its display name, a float
-  value as score, and the index of the label in the corresponding label file.
-  Typically it's used as the result of classification tasks.
-
-  Attributes:
-    index: The index of the label in the corresponding label file.
-    score: The probability score of this label category.
-    display_name: The display name of the label, which may be translated for
-      different locales. For example, a label, "apple", may be translated into
-      Spanish for display purpose, so that the `display_name` is "manzana".
-    category_name: The label of this category object.
-  """
-
-  index: int
-  score: float
-  display_name: str
-  category_name: str
-#####################################################################
-
-class Detection:
-  """Represents one detected object in the object detector's results.
-  Attributes:
-    bounding_box: A `bounding_box_pb2.BoundingBox` object.
-    categories: A list of `class_pb2.Category` objects.
-  """
-
-  bounding_box: bounding_box_pb2.BoundingBox
-  categories: List[class_pb2.Category]
-  tflite_support.task.processor.BoundingBox(
-    origin_x: int, origin_y: int, width: int, height: int
-
-'''
-
-
 import logging
 
 logger = logging.getLogger(__name__)
@@ -111,8 +72,7 @@ class Object_Detector:
     
     def average_perf(self):
         p = 0 if self.loops == 0 else self.total_time / self.loops
-        return p
-        
+        return p 
     
     def detect(self, image):
         # Create a TensorImage object from the RGB image.
