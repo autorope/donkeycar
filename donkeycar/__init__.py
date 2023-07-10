@@ -4,7 +4,7 @@ from pyfiglet import Figlet
 import logging
 from pkg_resources import get_distribution
 
-__version__ = '5.1.dev1'
+__version__ = '5.1.dev2'
 
 logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO').upper())
 
