@@ -1,4 +1,4 @@
-import moviepy.editor as mpy
+
 from tensorflow.python.keras import activations
 from tensorflow.python.keras import backend as K
 import tensorflow as tf
@@ -24,6 +24,11 @@ class MakeMovie(object):
         Load the images from a tub and create a movie from them.
         Movie
         '''
+        try:
+            import moviepy.editor as mpy
+        except ImportError as e:
+            logger.error(f'Please install moviepy first: {e}')
+            return
 
         if args.tub is None:
             print("ERR>> --tub argument missing.")
