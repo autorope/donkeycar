@@ -2,10 +2,9 @@ import pytest
 import tarfile
 import os
 import platform
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 
-import torch
-import pytorch_lightning as pl
+
 from donkeycar.parts.pytorch.torch_train import train
 from donkeycar.parts.pytorch.torch_data import TorchTubDataModule
 from donkeycar.parts.pytorch.torch_utils import get_model_by_type
@@ -68,6 +67,7 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     :param data:            test case data
     :return:                None
     """
+
     def pilot_path(name):
         pilot_name = f'pilot_{name}.ckpt'
         return os.path.join(car_dir, 'models', pilot_name)
@@ -95,6 +95,9 @@ def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
     :param tub_dir:                 tub directory (car_dir/tub)
     :return:                        None
     """
+    import torch
+    import pytorch_lightning as pl
+
     model = get_model_by_type(
         model_type, config, checkpoint_path=None)
 
