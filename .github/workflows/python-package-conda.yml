@@ -29,6 +29,8 @@ jobs:
           conda info
           conda list
       - name: Install donkey
-        run: pip install -e .[pc]
+        run: | 
+          pip install -e .[pc,dev]
+          pip list
       - name: Run tests
         run: pytest
