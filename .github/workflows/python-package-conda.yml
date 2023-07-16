@@ -25,7 +25,7 @@ jobs:
           activate-environment: donkey
           auto-activate-base: false
       - name: Conda install and list
-        run: Conda list
+        run: |
           conda info
           conda list
       - name: Install donkey
