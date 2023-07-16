@@ -3,12 +3,6 @@ import tarfile
 import os
 import platform
 from collections import namedtuple
-
-
-from donkeycar.parts.pytorch.torch_train import train
-from donkeycar.parts.pytorch.torch_data import TorchTubDataModule
-from donkeycar.parts.pytorch.torch_utils import get_model_by_type
-
 from donkeycar.config import Config
 
 Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
@@ -67,6 +61,7 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
     :param data:            test case data
     :return:                None
     """
+    from donkeycar.parts.pytorch.torch_train import train
 
     def pilot_path(name):
         pilot_name = f'pilot_{name}.ckpt'
@@ -97,6 +92,8 @@ def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
     """
     import torch
     import pytorch_lightning as pl
+    from donkeycar.parts.pytorch.torch_data import TorchTubDataModule
+    from donkeycar.parts.pytorch.torch_utils import get_model_by_type
 
     model = get_model_by_type(
         model_type, config, checkpoint_path=None)
@@ -123,11 +120,11 @@ def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
         x, y = batch
         # In order to use a model pre-trained on ImageNet, the image
         # will be re-sized to 3x224x224 regardless of what the user chooses.
-        assert(x.shape == (config.BATCH_SIZE, 3, 224, 224))
-        assert(y.shape == (config.BATCH_SIZE, 2))
+        assert x.shape == (config.BATCH_SIZE, 3, 224, 224), "shape mismatch"
+        assert y.shape == (config.BATCH_SIZE, 2), "shape mismatch"
         break
 
     # Check inference
     val_x, val_y = next(iter(data_module.val_dataloader()))
     output = model(val_x)
-    assert(output.shape == (config.BATCH_SIZE, 2))
+    assert output.shape == (config.BATCH_SIZE, 2), "shape mismatch"
