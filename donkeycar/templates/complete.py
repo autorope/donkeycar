@@ -269,6 +269,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     add_imu(V, cfg)
 
 
+    if cfg.USE_MAVLINK:
+        from donkeycar.parts.mavlink import MavlinkIMUPart
+        mavlink_imu = MavlinkIMUPart(connection_string='/dev/ttyACM0')
+        V.add(mavlink_imu, outputs=['imu_roll', 'imu_pitch', 'imu_yaw', 
+                            'lat', 'lon', 'alt', 
+                            'vx', 'vy', 'vz'], threaded=True)
+
+
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
         V.add(WebFpv(), inputs=['cam/image_array'], threaded=True)

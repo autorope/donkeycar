@@ -347,6 +347,9 @@ MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm.
 ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
 ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
 
+#MAVLINK 
+USE_MAVLINK = False                 # Set to True to use a Pixhawk-based drone flight controller for IMU and GPS
+
 # #LIDAR
 USE_LIDAR = False
 LIDAR_TYPE = 'RP' #(RP|YD)
