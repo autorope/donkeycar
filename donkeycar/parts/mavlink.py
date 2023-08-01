@@ -3,10 +3,6 @@ import math
 
 debug = False
 
-try:
-    import serial
-except ImportError:
-    print("PySerial not found.  Please install: pip install pyserial")
 
 try:
     from pymavlink import mavutil
