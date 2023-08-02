@@ -4,11 +4,6 @@ import math
 debug = False
 
 try:
-    import serial
-except ImportError:
-    print("PySerial not found.  Please install: pip install pyserial")
-
-try:
     from pymavlink import mavutil
 except ImportError:
     print("Pymavlink not found.  Please install: pip install pymavlink")
