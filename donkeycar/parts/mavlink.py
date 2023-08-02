@@ -3,7 +3,6 @@ import math
 
 debug = False
 
-
 try:
     from pymavlink import mavutil
 except ImportError:
@@ -68,4 +67,5 @@ class MavlinkIMUPart:
                 self.vx, self.vy, self.vz)
 
     def shutdown(self):
+        self.master.close()
         self.running = False
