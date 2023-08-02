@@ -67,4 +67,5 @@ class MavlinkIMUPart:
                 self.vx, self.vy, self.vz)
 
     def shutdown(self):
+        self.master.close()
         self.running = False
