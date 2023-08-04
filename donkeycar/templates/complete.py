@@ -271,7 +271,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     if cfg.USE_MAVLINK:
         from donkeycar.parts.mavlink import MavlinkIMUPart
-        mavlink_imu = MavlinkIMUPart(connection_string='/dev/ttyACM0')
+        mavlink_imu = MavlinkIMUPart(connection_string=cfg.MAVLINK_SERIAL_PORT)
         V.add(mavlink_imu, outputs=['imu_roll', 'imu_pitch', 'imu_yaw', 
                             'lat', 'lon', 'alt', 
                             'vx', 'vy', 'vz'], threaded=True)
