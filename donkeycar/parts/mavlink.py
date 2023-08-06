@@ -36,30 +36,32 @@ class MavlinkIMUPart:
 
 
     def update(self):
-        self.poll()
+        while self.running:
+            self.poll()
 
     def poll(self):
-        if self.running:
-            message = self.master.recv_match()
-            if message is not None:
-                attitude_msg = self.master.recv_match(type='ATTITUDE', blocking=True)
-                position_msg = self.master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
-                velocity_msg = self.master.recv_match(type='VFR_HUD', blocking=True)
+       message = self.master.recv_match()
+       if message is not None:
+           attitude_msg = self.master.recv_match(type='ATTITUDE', blocking=True)
+           position_msg = self.master.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
+           velocity_msg = self.master.recv_match(type='VFR_HUD', blocking=True)
 
-                # Updating IMU data
-                self.roll = attitude_msg.roll
-                self.pitch = attitude_msg.pitch
-                self.yaw = attitude_msg.yaw
+            # Updating IMU data
+           self.roll = attitude_msg.roll
+           self.pitch = attitude_msg.pitch
+           self.yaw = attitude_msg.yaw
                 
-                # Updating Position data
-                self.lat = position_msg.lat / 1e7  # Convert to degrees
-                self.lon = position_msg.lon / 1e7  # Convert to degrees
-                self.alt = position_msg.alt / 1e3  # Convert to meters
+           # Updating Position data
+           self.lat = position_msg.lat / 1e7  # Convert to degrees
+           self.lon = position_msg.lon / 1e7  # Convert to degrees
+           self.alt = position_msg.alt / 1e3  # Convert to meters
 
-                # Updating Velocity data (VFR_HUD provides ground speeds)
-                self.vx = velocity_msg.groundspeed * math.cos(self.yaw)
-                self.vy = velocity_msg.groundspeed * math.sin(self.yaw)
-                self.vz = velocity_msg.climb
+           # Updating Velocity data (VFR_HUD provides ground speeds)
+           self.vx = velocity_msg.groundspeed * math.cos(self.yaw)
+           self.vy = velocity_msg.groundspeed * math.sin(self.yaw)
+           self.vz = velocity_msg.climb
+       else:
+           print("no Mavlink data")
 
     def run_threaded(self):
         return (self.roll, self.pitch, self.yaw, 
