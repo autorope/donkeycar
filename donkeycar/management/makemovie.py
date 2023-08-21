@@ -4,10 +4,7 @@ from tensorflow.python.keras import backend as K
 import tensorflow as tf
 import cv2
 from matplotlib import cm
-try:
-    from vis.utils import utils
-except:
-    raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
+
 
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import Tub
@@ -167,6 +164,12 @@ class MakeMovie(object):
     def init_salient(self, model):
         # Utility to search for layer index by name. 
         # Alternatively we can specify this as -1 since it corresponds to the last layer.
+        try:
+            from vis.utils import utils
+        except ImportError:
+            raise Exception(
+                "Please install keras-vis: pip install "
+                "git+https://github.com/autorope/keras-vis.git")
         output_name = []
         layer_idx = []
         for i, layer in enumerate(model.layers):
@@ -191,6 +194,13 @@ class MakeMovie(object):
         return True
 
     def compute_visualisation_mask(self, img):
+        try:
+            from vis.utils import utils
+        except ImportError:
+            raise Exception(
+                "Please install keras-vis: pip install "
+                "git+https://github.com/autorope/keras-vis.git")
+
         img = img.reshape((1,) + img.shape)
         images = tf.Variable(img, dtype=float)
 
