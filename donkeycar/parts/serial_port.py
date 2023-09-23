@@ -110,7 +110,7 @@ class SerialPort:
         try:
             return (ok, bytestring.decode(self.charset))
         except UnicodeDecodeError:
-            # the first read often includes mis-framed garbase
+            # the first read often includes mis-framed garbage
             return (False, "")
 
     def readln(self) -> Tuple[bool, str]:
@@ -139,7 +139,7 @@ class SerialPort:
             return (False, "")
         except UnicodeDecodeError:
             # the first read often includes mis-framed garbase
-            logger.warn("failed decoding unicode line from serial port")
+            # logger.warn("failed decoding unicode line from serial port")
             return (False, "")
 
     def writeBytes(self, value:bytes):
