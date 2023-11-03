@@ -199,7 +199,12 @@ sudo apt-get install openssh-server python3 python3-pip
 ### Deploy to remote node
 
 ```bash
-# from controller node (replace hostname by car host)
+# from controller node
+# skip those 2 line if your ssh key is not protected by a passphrase
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_rsa
+
+# replace hostname by car host
 ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit [hostname]
 
 # -e "ansible_host=raspberrypi" for first run if needed
@@ -239,8 +244,6 @@ RPis:
 ## Add a new User
 
 The file `donkeycar/install/ansible/group_vars/all/vault.yml` contains public ssh keys. Add your own public key to this file to deploy it during install with ansible. See `ansible-vault` command below.
-
-Warning : The script don't work if your ssh key is protected by a passphrase.
 
 ## Resources
 
