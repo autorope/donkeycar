@@ -2,6 +2,7 @@
 env/*
 data/*
 dist/*
+car_configs/**/config.py
 car_configs/**/data
 car_configs/**/logs
 car_configs/**/models
