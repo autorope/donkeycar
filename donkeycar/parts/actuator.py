@@ -16,7 +16,7 @@ from donkeycar.utilities.logger import init_special_logger
 
 logger = logging.getLogger(__name__)
 
-actlogger = init_special_logger ("Act")
+actlogger = init_special_logger("Act")
 actlogger.setLevel(logging.INFO)
 
 try:
@@ -27,8 +27,6 @@ except ImportError as e:
 
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState
 from donkeycar.utilities.deprecated import deprecated
-
-logger = logging.getLogger(__name__)
 
 
 #
@@ -1157,7 +1155,7 @@ class ArdPWMThrottle:
         self.run(0)
         self.running = False
 
-class RobocarsHat (metaclass=Singleton):
+class RobocarsHat(metaclass=Singleton):
     '''
     Robocars Hat Servo controller
     '''

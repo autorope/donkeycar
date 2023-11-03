@@ -14,7 +14,7 @@ import fcntl,os
 from transitions.extensions import HierarchicalMachine
 from collections import deque
 
-mylogger = init_special_logger ("Rx")
+mylogger = init_special_logger("Rx")
 mylogger.setLevel(logging.INFO)
 
 def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max, enforce_input_in_range=False) :
