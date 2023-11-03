@@ -1,0 +1,14 @@
+---
+
+# Defaults are for RPi, change to Nano here
+
+system_default_user: "donkey"
+system_default_user_password: "donkeycar"
+
+# TODO system_ssh_user_groups
+ufw_enabled: false # need different kernel
+donkeycar_flavor: "nano"
+donkeycar_export_openblas_coretype_armv8: true
+donkeycar_export_kerastuner_fix: true
+donkeycar_system_packages: "{{ donkeycar_orin_system_packages }}"
+donkeycar_pip_packages: "{{ donkeycar_orin_pip_packages }}"
