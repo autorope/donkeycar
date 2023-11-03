@@ -65,7 +65,7 @@ pip install tensorflow==2.7.0
 # Ubuntu ansible requirements
 sudo apt-get install openssh-server git python3 python3-dev python3-pip sshpass python3-testresources
 
-# MacOS ansible requirements 
+# MacOS ansible requirements
 brew install esolitos/ipa/sshpass
 
 # install ansible and python requirements
@@ -131,7 +131,7 @@ network={
 - Connect via serial
   - Serial cable is enough for power
   - See headless setup from [Jetson Nano instructions](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#setup) :
-  
+
 ```bash
 ls /dev/cu.usbmodem*
 sudo screen /dev/cu.usbmodemXXX
@@ -199,8 +199,8 @@ sudo apt-get install openssh-server python3 python3-pip
 ### Deploy to remote node
 
 ```bash
-# from controller node
-ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit hostname
+# from controller node (replace hostname by car host)
+ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit [hostname]
 
 # -e "ansible_host=raspberrypi" for first run if needed
 # -e "system_default_user_password=XXX" for first run if needed
@@ -223,7 +223,7 @@ ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_p
 Example on WINET, overriding hostname with IP address (or .local) and specifying manually actual SSH and sudo password :
 
 ```bash
-ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit pc92 -e "ansible_host=172.32.65.167" -e "system_default_user_password=XXX" 
+ansible-playbook -i hosts donkeycars.yml --vault-password-file ~/.donkey_vault_pass --limit pc92 -e "ansible_host=172.32.65.167" -e "system_default_user_password=XXX"
 ```
 
 RPis:
@@ -239,6 +239,8 @@ RPis:
 ## Add a new User
 
 The file `donkeycar/install/ansible/group_vars/all/vault.yml` contains public ssh keys. Add your own public key to this file to deploy it during install with ansible. See `ansible-vault` command below.
+
+Warning : The script don't work if your ssh key is protected by a passphrase.
 
 ## Resources
 
