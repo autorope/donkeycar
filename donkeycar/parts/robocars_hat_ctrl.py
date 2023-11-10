@@ -336,6 +336,13 @@ class RobocarsHatInCtrl(metaclass=Singleton):
                 mode = 'user'
                 user_throttle = 0
 
+        if self.cfg.ROBOCARSHAT_COPILOT_MODE and mode != 'user':
+            user_throttle = user_throttle * (1.0+self.inThrottle)
+            # Full Reverse trigger will stop the car as long as maintained 
+            if self.inThrottle < -0.9:
+                mode = 'user'
+                self.throttle_out = 0
+
         # Discret throttle mode
         if mode=='user':
             # Discret mode, apply profile
