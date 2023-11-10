@@ -595,6 +595,7 @@ ROBOCARSHAT_CH3_FEATURE = 'record/pilot'
 ROBOCARSHAT_CH4_FEATURE = 'none' 
 ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
 ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
+ROBOCARSHAT_COPILOT_MODE = False #when pilot is engaged, this mode allows user to control throttle while pilot controls steering. 
 
 ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 ROBOCARSHAT_STEERING_EXP_INC = 0.05 
