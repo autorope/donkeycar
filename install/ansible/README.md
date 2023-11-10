@@ -45,6 +45,9 @@ git clone git@github.com:roboracingleague/donkeycar.git
 cd donkeycar
 
 # create and activate a venv
+# Prerequisite : Install PyEnv
+sudo apt install zlib1g zlib1g-dev libssl-dev libbz2-dev libsqlite3-dev  # On Ubuntu/Debian
+sudo apt install libmtdev1 xclip libffi-dev # On WSL
 pyenv install 3.8.15
 pyenv virtualenv 3.8.15 donkeycar
 pyenv local donkeycar
