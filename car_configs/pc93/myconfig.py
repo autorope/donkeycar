@@ -569,7 +569,7 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1940
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.1 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 #
 # THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
