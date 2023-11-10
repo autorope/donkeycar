@@ -24,7 +24,7 @@ donkeycar_nano_system_packages:
   - openmpi-doc
   - openmpi-bin
   - libopenmpi-dev
-  # opencv requirements 
+  # opencv requirements
   - libilmbase-dev
   - libopenexr-dev
   - libgstreamer1.0-dev
@@ -74,6 +74,8 @@ donkeycar_nano_pip_packages:
   - onnx==1.10.0
   - tf2onnx
   - onnxruntime==1.10.0
+  - depthai==2.22.0.0
+  - depthai-sdk==1.13.1
   # - pycuda==2020.1 # NEEDS SOME VARS (cuda on path and lib)
   # allready in tensorflow 2.7.0 install
   #- protobuf==3.19.6

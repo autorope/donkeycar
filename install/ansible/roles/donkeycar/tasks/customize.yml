@@ -9,7 +9,7 @@
     state: "{{ 'present' if donkeycar_pigpiod_enabled else 'absent' }}"
   tags:
     - pigpiod
-    
+
 - name: enable and start pigpiod
   systemd:
     state: started
@@ -29,17 +29,6 @@
   when: donkeycar_depthai_enabled
   notify:
     - reload udev rules
-  tags:
-    - depthai
-
-- name: install depthai
-  become: false
-  pip:
-    name:
-      - depthai
-      - depthai-sdk
-    virtualenv: "/home/{{ donkeycar_user }}/env"
-  when: donkeycar_depthai_enabled
   tags:
     - depthai
 
