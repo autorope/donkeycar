@@ -46,35 +46,36 @@ donkeycar_orin_system_packages:
   - tio # serial link debug
 
 donkeycar_orin_pip_packages:
-  - testresources
-  - futures==2.2.0
-  - pybind11
-  - cython
-  - pyserial
-  - future==0.18.0 # version with a wheel instead of 0.18.2
-  - mock
-  - py-cpuinfo
-  - portpicker
-  - astor
-  - gdown
-  - keras_applications
-  - transitions
+  - testresources==2.0.1
+  - futures==3.0.5
+  - pybind11==2.10.4
+  - cython==0.29.34
+  - pyserial==3.5
+  - future==0.18.2
+  - mock==5.0.2
+  - py-cpuinfo==9.0.0
+  - portpicker==1.5.2
+  - astor==0.8.1
+  - gdown==4.7.1
+  - keras_applications==1.0.8
+  - transitions==0.9.0
   # more from install-jp461.sh script
-  - numpy==1.19.5
-  - scipy
-  - pandas
-  - pkgconfig
-  - packaging
-  - grpcio
-  - keras==2.6.0
-  - https://developer.download.nvidia.com/compute/redist/jp/v502/tensorflow/tensorflow-2.10.1+nv22.12-cp38-cp38-linux_aarch64.whl
+  - numpy==1.23.5
+  - scipy==1.10.1
+  - pandas==2.0.1
+  - pkgconfig==1.5.5
+  - packaging==23.1
+  - grpcio==1.54.2
+  - keras==2.12.0
+  - tensorflow==2.12.0
+  # - https://developer.download.nvidia.com/compute/redist/jp/v502/tensorflow/tensorflow-2.10.1+nv22.12-cp38-cp38-linux_aarch64.whl
   # opencv
-  - opencv-python
+  - opencv-contrib-python==4.7.0.72
   # onnx support
-  - onnx==1.10.0
-  - tf2onnx
-  - onnxruntime==1.10.0
-  # - pycuda==2020.1 # NEEDS SOME VARS (cuda on path and lib)
+  - onnx==1.14.0
+  #- tf2onnx
+  - onnxruntime==1.14.1
+  - pycuda==2022.2.2 # NEEDS SOME VARS (cuda on path and lib)
   # allready in tensorflow 2.7.0 install
   #- protobuf==3.19.6
   #- h5py
