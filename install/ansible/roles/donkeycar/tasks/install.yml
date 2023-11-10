@@ -50,6 +50,22 @@
   tags:
     - pip
 
+- name: add pycuda on path on jetson nano
+  lineinfile:
+    path: "/home/{{ donkeycar_user }}/.bashrc"
+    line: "export PATH=/usr/local/cuda/bin:$PATH"
+    state: "present"
+  tags:
+    - pycuda
+
+- name: add pycuda on lib path on jetson nano
+  lineinfile:
+    path: "/home/{{ donkeycar_user }}/.bashrc"
+    line: "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH"
+    state: "present"
+  tags:
+    - pycuda
+    
 - name: install python requirements
   become: false
   pip:
