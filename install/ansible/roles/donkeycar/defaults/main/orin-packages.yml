@@ -44,6 +44,9 @@ donkeycar_orin_system_packages:
   - python3-psutil # to fix donkeycar install
   - nano
   - tio # serial link debug
+  - tensorrt
+  - nvidia-tensorrt-dev
+  - python3-libnvinfer-dev
 
 donkeycar_orin_pip_packages:
   - testresources==2.0.1
