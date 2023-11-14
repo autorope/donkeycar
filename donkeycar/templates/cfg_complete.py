@@ -646,7 +646,8 @@ ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 ROBOCARS_SL_FILTER_TRESH_HIGH=4
 ROBOCARS_SL_FILTER_TRESH_LOW=2
 
-ROBOCARS_PROFILES=[]
+ROBOCARS_PROFILES = None # Powetrain Profile, define fix throttle, steering scalar and LED Anim to use in pilot mode, accordingly to profile selector (remote control feature)
+#ROBOCARS_PROFILES = [[0.0, 0.0,3],[0.2,1.1,3],[0.35,1.85,1]]
 
 
 #LOGGING
