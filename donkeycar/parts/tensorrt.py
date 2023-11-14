@@ -321,7 +321,7 @@ class TensorRTBehavior(KerasPilot):
     '''
     def __init__(self, cfg):
         super().__init__()
-        self.logger = trt.Logger(trt.Logger.WARNING)
+        self.logger = trt.Logger(trt.Logger.ERROR)
         self.trt_runtime = trt.Runtime(self.logger)
         self.cfg = cfg
         self.engine = None
