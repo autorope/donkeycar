@@ -361,11 +361,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # outputs value from 0..3 ['NA', left', 'middle', 'right']
         # 
         if cfg.OBSTACLE_DETECTOR_ENABLED:
-            detector_outputs=[]
+            detector_outputs = ['detector/obstacle_lane']
             if not cfg.OBSTACLE_DETECTOR_MANUAL_LANE:
                 kd = dk.utils.get_model_by_type(cfg.OBSTACLE_DETECTOR_MODEL_TYPE, cfg)
                 load_model(kd, cfg.OBSTACLE_DETECTOR_MODEL_PATH)
-                detector_outputs = ['detector/obstacle_lane']
                 V.add(kd, inputs=['cam/image_array'], outputs=detector_outputs, run_condition='run_pilot')
 
             # Avoidance logic between obstacle_detector and KerasBehavioral
