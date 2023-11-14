@@ -361,15 +361,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # outputs value from 0..3 ['NA', left', 'middle', 'right']
         # 
         if cfg.OBSTACLE_DETECTOR_ENABLED:
-            kd = dk.utils.get_model_by_type(cfg.OBSTACLE_DETECTOR_MODEL_TYPE, cfg)
-            load_model(kd, cfg.OBSTACLE_DETECTOR_MODEL_PATH)
-
-            V.add(kd, inputs=['cam/image_array'], outputs=['detector/obstacle_lane'], run_condition='run_pilot')
+            detector_outputs=[]
+            if not cfg.OBSTACLE_DETECTOR_MANUAL_LANE:
+                kd = dk.utils.get_model_by_type(cfg.OBSTACLE_DETECTOR_MODEL_TYPE, cfg)
+                load_model(kd, cfg.OBSTACLE_DETECTOR_MODEL_PATH)
+                detector_outputs = ['detector/obstacle_lane']
+                V.add(kd, inputs=['cam/image_array'], outputs=detector_outputs, run_condition='run_pilot')
 
             # Avoidance logic between obstacle_detector and KerasBehavioral
             from donkeycar.parts.avoidance_behavior import AvoidanceBehaviorPart
-            abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST, cfg.OBSTACLE_DETECTOR_AVOIDANCE_ENABLED)
-            V.add(abh, inputs=['detector/obstacle_lane'], outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
+            abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST, cfg.OBSTACLE_DETECTOR_AVOIDANCE_ENABLED, cfg.OBSTACLE_DETECTOR_MANUAL_LANE)
+            #V.add(abh, inputs=['detector/obstacle_lane'], outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
+            V.add(abh, inputs=detector_outputs, outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
             
             inputs = ["cam/image_array", "behavior/one_hot_state_array"]
 
@@ -384,8 +387,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             except:
                 pass
 
-            inputs = ['cam/image_array', "behavior/one_hot_state_array"]
-
+            inputs = ['cam/image_array', "behavior/one_hot_state_array"]        
         elif cfg.USE_LIDAR:
             inputs = ['cam/image_array', 'lidar/dist_array']
 

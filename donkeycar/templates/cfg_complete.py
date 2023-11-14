@@ -82,8 +82,9 @@ OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
 OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
 OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
-BEHAVIOR_LIST = ['left', 'right']
+BEHAVIOR_LIST = ['left', 'middle', 'right']
 OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
+OBSTACLE_DETECTOR_MANUAL_LANE = False
 
 #CAMERA Settings Vivatech 2022 (nano)
 #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -591,6 +592,7 @@ THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
 # 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged 
 # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
+# 'drive_by_lane' means special mode where aux ch is used to set the lane the car must use (left, middle, right) (behavior model)
 ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
 ROBOCARSHAT_CH4_FEATURE = 'none' 
 ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
@@ -711,7 +713,7 @@ MODEL_RELOADED_LED_B = 0
 #When training the Behavioral Neural Network model, make a list of the behaviors,
 #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
 TRAIN_BEHAVIORS = False
-# BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
+# BEHAVIOR_LIST = ['left', 'middle', "right"]
 # BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 
 #Localizer
