@@ -370,7 +370,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
             # Avoidance logic between obstacle_detector and KerasBehavioral
             from donkeycar.parts.avoidance_behavior import AvoidanceBehaviorPart
-            abh = AvoidanceBehaviorPart(cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST, cfg.BEHAVIOR_LIST, cfg.OBSTACLE_DETECTOR_AVOIDANCE_ENABLED, cfg.OBSTACLE_DETECTOR_MANUAL_LANE)
+            abh = AvoidanceBehaviorPart(cfg)
             #V.add(abh, inputs=['detector/obstacle_lane'], outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
             V.add(abh, inputs=detector_outputs, outputs=['behavior/one_hot_state_array'], run_condition='run_pilot')
             

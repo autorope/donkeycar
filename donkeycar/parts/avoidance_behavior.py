@@ -5,23 +5,23 @@ class AvoidanceBehaviorPart(object):
     Keep a list of states, and an active state. Keep track of switching.
     And return active state information.
     '''
-    def __init__(self, obstacle_states, lane_options, avoidance_enabled, manual_lane):
+    def __init__(self, cfg):
         '''
         expects a list of strings to enumerate state
         '''
         # print("bvh states:", states)
-        self.obstacle_states = obstacle_states
-        self.lane_options_size = len(lane_options)
-        self.lane_options = lane_options
+        self.obstacle_states = cfg.OBSTACLE_DETECTOR_BEHAVIOR_LIST
+        self.lane_options_size = len(cfg.BEHAVIOR_LIST)
+        self.lane_options = cfg.BEHAVIOR_LIST
         self.lane_behavior_left_index = self.lane_options.index('left')
         self.lane_behavior_right_index = self.lane_options.index('right')
         self.lane_behavior_middle_index = self.lane_options.index('middle')
-        self.avoidance_enabled = avoidance_enabled
-        self.manual_lane = manual_lane
+        self.avoidance_enabled = cfg.OBSTACLE_DETECTOR_AVOIDANCE_ENABLED
+        self.manual_lane = cfg.OBSTACLE_DETECTOR_MANUAL_LANE
 
         if (self.manual_lane):
             from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInCtrl
-            self.hatInCtrl = RobocarsHatInCtrl(self.cfg)
+            self.hatInCtrl = RobocarsHatInCtrl(cfg)
 
     def run(self, detector_obstacle_lane):
         one_hot_bhv_arr = np.zeros(self.lane_options_size)
