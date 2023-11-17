@@ -77,6 +77,8 @@ class RobocarsHatInCtrl(metaclass=Singleton):
     AUX_FEATURE_OUTPUT_STEERING_EXP=7
     AUX_FEATURE_THROTTLE_SCALAR_EXP=8
     AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP = 9
+    AUX_FEATURE_DRIVE_BY_LANE = 10
+
 
     def _map_aux_feature (self, feature):
         if feature == 'record/pilot':
@@ -97,6 +99,8 @@ class RobocarsHatInCtrl(metaclass=Singleton):
             return self.AUX_FEATURE_THROTTLE_SCALAR_EXP
         elif feature == 'adaptative_steering_scalar_exp':
             return self.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP
+        elif feature == 'drive_by_lane':
+            return self.AUX_FEATURE_DRIVE_BY_LANE
         elif feature != 'none':
             mylogger.info(f"CtrlIn : Unkown requested feature : {feature}")
 
@@ -112,6 +116,7 @@ class RobocarsHatInCtrl(metaclass=Singleton):
         self.fixOutputSteering = None
         self.fixThrottleExtraScalar = 0.0
         self.adaptativeSteeringExtraScalar = 0.0
+        self.selectedLane = 1
         self.inAux1 = 0.0
         self.inAux2 = 0.0
         self.lastAux1 = -1.0
@@ -201,6 +206,9 @@ class RobocarsHatInCtrl(metaclass=Singleton):
     def getAdaptativeSteeringExtraScalar(self):
         return self.adaptativeSteeringExtraScalar
 
+    def getSelectedLane(self):
+        return self.selectedLane
+    
     def getCommand(self):
         self.processRxCh()
         self.processCalibration()
@@ -235,7 +243,9 @@ class RobocarsHatInCtrl(metaclass=Singleton):
                 mode='user'
             elif (command>0.5):
                 mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                if self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE != None:
+                    user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                # else we keep value from remote control                    
             else:
                 mode='user'
 
@@ -312,6 +322,15 @@ class RobocarsHatInCtrl(metaclass=Singleton):
                  mylogger.info("CtrlIn adaptative steering scalar set to {}".format(newScalar))
             self.adaptativeSteeringExtraScalar = newScalar
 
+        command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_DRIVE_BY_LANE)
+        if command != None :
+            if (command<-0.5):
+                self.selectedLane=0
+            elif (command>0.5):
+                self.selectedLane=2
+            else:
+                self.selectedLane=1
+
         # Process other features 
         if self.cfg.ROBOCARSHAT_STEERING_FIX != None:
              user_steering = self.cfg.ROBOCARSHAT_STEERING_FIX
@@ -335,13 +354,6 @@ class RobocarsHatInCtrl(metaclass=Singleton):
             if self.inThrottle < -0.9:
                 mode = 'user'
                 user_throttle = 0
-
-        if self.cfg.ROBOCARSHAT_COPILOT_MODE and mode != 'user':
-            user_throttle = user_throttle * (1.0+self.inThrottle)
-            # Full Reverse trigger will stop the car as long as maintained 
-            if self.inThrottle < -0.9:
-                mode = 'user'
-                self.throttle_out = 0
 
         # Discret throttle mode
         if mode=='user':

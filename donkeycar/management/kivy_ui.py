@@ -808,7 +808,7 @@ class OverlayImage(FullImage):
         try:
             # Not each model is supported in each interpreter
             if len(self.pilot.get_input_shapes()) > 1:
-                output = self.pilot.run(aug_img_arr, np.array([0.,0.]))
+                output = self.pilot.run(aug_img_arr, np.array([0,1,0]))
             else:    
                 output = self.pilot.run(aug_img_arr)
         except Exception as e:
