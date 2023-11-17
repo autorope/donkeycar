@@ -59,8 +59,8 @@ IMAGE_W = 320
 # OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 # OAK-D-WIDE: 150 ou 125 ou 100
 IMAGE_H = 165
-
-IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+ROBOCARS_DRIVE_BY_LANE=False
+DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 #
 # OAK_ENABLE_DEPTH_MAP = False # enables depth map output
@@ -72,13 +72,14 @@ CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # CLOSE_AVOIDANCE_DIST_MM = 1000
 #
 # # OBSTACLE_DETECTOR
-# OBSTACLE_DETECTOR_ENABLED = False
+OBSTACLE_DETECTOR_ENABLED = True
 # OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 # OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
 # OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
 # OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
-# BEHAVIOR_LIST = ['left', 'right']
+BEHAVIOR_LIST = ['left', 'middle', 'right']
 # OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
+OBSTACLE_DETECTOR_MANUAL_LANE = True
 #
 # #CAMERA Settings Vivatech 2022 (nano)
 # #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -569,7 +570,7 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1840
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.1 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None #0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 #
 # THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -615,10 +616,10 @@ ROBOCARSHAT_THROTTLE_FLANGER = [-0.6,0.25]
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
 #
-# ROBOCARSHAT_CONTROL_LED = False
-# ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = None
-# ROBOCARSHAT_LED_MODEL = 'Alpine' #Alpine, Duo,
-# ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
+ROBOCARSHAT_CONTROL_LED = True
+ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = '/dev/ttyACM0'
+ROBOCARSHAT_LED_MODEL = 'Megane' #Alpine, Duo,
+ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
 #
 # # straight line detection model
 # ROBOCARS_SL_DETECTION_MODEL=False
