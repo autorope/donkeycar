@@ -573,8 +573,8 @@ ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
-#ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+#ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -591,11 +591,12 @@ THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # # 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged 
 # # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
 ROBOCARSHAT_CH3_FEATURE = 'pilot' 
-#ROBOCARSHAT_CH4_FEATURE = 'record' 
+ROBOCARSHAT_CH4_FEATURE = 'record' 
 #ROBOCARSHAT_CH4_FEATURE = 'adaptative_steering_scalar_exp' 
-ROBOCARSHAT_CH4_FEATURE = 'drive_by_lane' 
 ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
 # ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
+ROBOCARS_DRIVE_BY_LANE = True # if true, when in pilot mode, steering is used to feed model as lane to follow
+
 # 
 # ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 # ROBOCARSHAT_STEERING_EXP_INC = 0.05 
