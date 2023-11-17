@@ -371,7 +371,7 @@ class TensorRTBehavior(KerasPilot):
         #     self.engine = builder.build_cuda_engine(network)
         # Allocate buffers
         print("load tensorrt engine")
-        self.engine = eng.load_engine(eng.trt_runtime, model_path)
+        self.engine = eng.load_engine(self.trt_runtime, model_path)
         
         print('Allocating Buffers')
         self.inputs, self.outputs, self.bindings, self.stream \
