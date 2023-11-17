@@ -1,0 +1,3 @@
+[submodule "donkeycar-models"]
+	path = donkeycar-models
+	url = https://github.com/roboracingleague/donkeycar-models
