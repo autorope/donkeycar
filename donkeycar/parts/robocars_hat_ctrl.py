@@ -326,9 +326,9 @@ class RobocarsHatInCtrl(metaclass=Singleton):
 
         if self.cfg.ROBOCARS_DRIVE_BY_LANE and mode != 'user':
             if (user_steering<-0.5):
-                self.selectedLane=0
-            elif (user_steering>0.5):
                 self.selectedLane=2
+            elif (user_steering>0.5):
+                self.selectedLane=0
             else:
                 self.selectedLane=1
 
