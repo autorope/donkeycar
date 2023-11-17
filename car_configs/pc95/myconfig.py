@@ -8,16 +8,16 @@
 # The update operation will not touch this file.
 # """
 
-import os
+# import os
 # 
 # #PATHS
-CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
-DATA_PATH = os.path.join(CAR_PATH, 'data')
-MODELS_PATH = os.path.join(CAR_PATH, 'models')
+# CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
+# DATA_PATH = os.path.join(CAR_PATH, 'data')
+# MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # 
 # #VEHICLE
 DRIVE_LOOP_HZ = 50      # the vehicle loop will pause if faster than this speed.
-MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
+# MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 # 
 # #CAMERA
 # # CAMERA_TYPE = "PICAM"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
@@ -37,7 +37,7 @@ CAMERA_TYPE = "OAK"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 # 
 # # OAK-D-LITE: "1080p" for rgb
 # # OAK-D-WIDE: "800p" for rgb
-RGB_RESOLUTION = "800p" 
+RGB_RESOLUTION = "800p"
 # 
 RGB_APPLY_CROPPING = True
 RGB_SENSOR_CROP_X = 0.0
@@ -53,24 +53,24 @@ RGB_VIDEO_SIZE = (320,165)
 # 
 # # OAK-D-LITE: from 1920/1080 (1,8)>>240/135 
 # # OAK-D-WIDE: from 1280/800  (1,8)>>160/100 (3,16)>>240/150 5/32>>200/125 
-OAK_D_ISP_SCALE = (1,4) 
+OAK_D_ISP_SCALE = (1,4)
 # 
 # # OAK-D-LITE: color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
 # # OAK-D-WIDE: 240 ou 200 ou 160
-IMAGE_W = 320 
+IMAGE_W = 320
 # # OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 # # OAK-D-WIDE: 150 ou 125 ou 100
-IMAGE_H = 165 
-#IMAGE_H = 125 
+IMAGE_H = 165
 # 
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # 
 # OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+# OAK_DEPTH_CROP_RECT = None # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
 # OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 # 
 # # OBSTACLE_AVOIDANCE SETTINGS
-OBSTACLE_AVOIDANCE_ENABLED = False
+# OBSTACLE_AVOIDANCE_ENABLED = False
 # OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
 # CLOSE_AVOIDANCE_DIST_MM = 1000
 # 
@@ -122,13 +122,14 @@ OBSTACLE_DETECTOR_MANUAL_LANE = True
 # # "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
 # # "DC_TWO_WHEEL" uses HBridge in 2-pin mode to control two drive motors, one on the left, and one on the right.
 # # "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
+# # "ROBOCARSHAT" using robocars hat
 # # "MOCK" no drive train.  This can be used to test other features in a test rig.
 # # (deprecated) "SERVO_HBRIDGE_PWM" use ServoBlaster to output pwm control from the PiZero directly to control steering,
 # #                                  and HBridge for a drive motor.
 # # (deprecated) "PIGPIO_PWM" uses Raspberrys internal PWM
 # # (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
 # #
-DRIVE_TRAIN_TYPE = "ROBOCARSHAT"
+# DRIVE_TRAIN_TYPE = "ROBOCARSHAT"
 # 
 # #
 # # PWM_STEERING_THROTTLE
@@ -438,9 +439,9 @@ DRIVE_TRAIN_TYPE = "ROBOCARSHAT"
 # LEARNING_RATE = 0.001           #only used when OPTIMIZER specified
 # LEARNING_RATE_DECAY = 0.0       #only used when OPTIMIZER specified
 # SEND_BEST_MODEL_TO_PI = False   #change to true to automatically send best model during training
-CREATE_TF_LITE = True           # automatically create tflite model in training
+# CREATE_TF_LITE = False           # automatically create tflite model in training
 # CREATE_TENSOR_RT = False        # automatically create tensorrt model in training
-CREATE_ONNX_MODEL = True       # automatically create onnx model in training
+# CREATE_ONNX_MODEL = True       # automatically create onnx model in training
 # 
 # PRUNE_CNN = False               #This will remove weights from your model. The primary goal is to increase performance.
 # PRUNE_PERCENT_TARGET = 75       # The desired percentage of pruning.
@@ -542,12 +543,12 @@ CREATE_ONNX_MODEL = True       # automatically create onnx model in training
 # MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 # 
 # #ROBOCARSHAT
-USE_ROBOCARSHAT_AS_CONTROLLER  = True
+USE_ROBOCARSHAT_AS_CONTROLLER = True
 ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS0'
 ROBOCARSHAT_SERIAL_SPEED = 250000
 # 
-USE_ROBOCARSHAT_BATTERY_MONITOR = False
-ROBOCARSHAT_LIPO_CELLS = 3
+# USE_ROBOCARSHAT_BATTERY_MONITOR = False
+# ROBOCARSHAT_LIPO_CELLS = 2
 # 
 # # Following values must be aligned with values in Hat !
 ROBOCARSHAT_PWM_OUT_THROTTLE_MIN    =   1000
@@ -573,11 +574,11 @@ ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-#ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
-ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
+# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by remote control
+# ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
-THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
+# THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # 
 # #ROBOCARSHAT_CH3_FEATURE and ROBOCARSHAT_CH4_FEATURE controls the feature attached to radio ch3 and ch4
 # # 'none' means aux ch is not used 
@@ -590,13 +591,13 @@ THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # # 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
 # # 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged 
 # # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
+# # 'drive_by_lane' means special mode where aux ch is used to set the lane the car must use (left, middle, right) (behavior model)
 ROBOCARSHAT_CH3_FEATURE = 'pilot' 
 ROBOCARSHAT_CH4_FEATURE = 'record' 
 #ROBOCARSHAT_CH4_FEATURE = 'adaptative_steering_scalar_exp' 
-ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
+# ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
 # ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
 ROBOCARS_DRIVE_BY_LANE = True # if true, when in pilot mode, steering is used to feed model as lane to follow
-
 # 
 # ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 # ROBOCARSHAT_STEERING_EXP_INC = 0.05 
@@ -608,32 +609,33 @@ ROBOCARS_DRIVE_BY_LANE = True # if true, when in pilot mode, steering is used to
 # # For 'throttle_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
 # AUX_FEATURE_THROTTLE_SCALAR_EXP_MAX_VALUE = 1.0 # to report to ROBOCARS_THROTTLE_SCALER or ROBOCARS_THROTTLE_SCALER_ON_SL depending on use case tested
 # # For 'adaptative_steering_scalar_exp' feature, specify maximum scalar to apply when aux ch is set to maximum position.
-AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
+# AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP_MAX_VALUE = 3.0 # to report on ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
 # 
 # # ROBOCARSHAT_THROTTLE_DISCRET used to control throttle with discretes values (only in user mode, first value must be 0.0)
 # # ROBOCARSHAT_THROTTLE_DISCRET has precedence over ROBOCARSHAT_THROTTLE_FLANGER
 # #Example : ROBOCARSHAT_THROTTLE_DISCRET = [0.0, 0.1, 0.2], if not used, set to None 
 # ROBOCARSHAT_THROTTLE_DISCRET = None 
 # 
-# # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange, giving a range betzeen -1 and 1, like [-0.1, 0.1]
+# # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange (map outputs to given range), ONLY in USER MODE
+# # giving a range between -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # #ROBOCARSHAT_THROTTLE_FLANGER = None 
-ROBOCARSHAT_THROTTLE_FLANGER = [-0.6,0.3] 
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.6, 0.3]
 # 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
-ROBOCARSHAT_USE_AUTOCALIBRATION = True
+# ROBOCARSHAT_USE_AUTOCALIBRATION = True
 # 
 ROBOCARSHAT_CONTROL_LED = True
 ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = '/dev/ttyACM0'
 ROBOCARSHAT_LED_MODEL = 'Alpine' #Alpine, Duo, 
-ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe
+ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe, 3=HAL
 # 
 # # straight line detection model
 # ROBOCARS_SL_DETECTION_MODEL=False
 # ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
 # 
 # # 
-USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
+# USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
 # ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default 
 # ROBOCARS_THROTTLE_SCALER_ON_SL = 0.0 # extra scalar to apply to throttle when straight line is detected 
 # ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
@@ -643,8 +645,9 @@ USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
 # ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 # ROBOCARS_SL_FILTER_TRESH_HIGH=4
 # ROBOCARS_SL_FILTER_TRESH_LOW=2
-ROBOCARS_PROFILES=[]
-
+# 
+# ROBOCARS_PROFILES = None # Powetrain Profile, define fix throttle, steering scalar and LED Anim to use in pilot mode, accordingly to profile selector (remote control feature)
+# #ROBOCARS_PROFILES = [[0.0, 0.0,3],[0.2,1.1,3],[0.35,1.85,1]]
 # 
 # 
 # #LOGGING
@@ -713,7 +716,7 @@ ROBOCARS_PROFILES=[]
 # #When training the Behavioral Neural Network model, make a list of the behaviors,
 # #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
 # TRAIN_BEHAVIORS = False
-# # BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
+# # BEHAVIOR_LIST = ['left', 'middle', "right"]
 # # BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 # 
 # #Localizer
@@ -732,7 +735,7 @@ ROBOCARS_PROFILES=[]
 # #then extract that and modify DONKEY_SIM_PATH.
 # DONKEY_GYM = False
 # DONKEY_SIM_PATH = "path to sim" #"/home/tkramer/projects/sdsandbox/sdsim/build/DonkeySimLinux/donkey_sim.x86_64" when racing on virtual-race-league use "remote", or user "remote" when you want to start the sim manually first.
-# DONKEY_GYM_ENV_NAME = "donkey-generated-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
+# DONKEY_GYM_ENV_NAME = "donkey-roboracingleague-track-v0" # ("donkey-generated-track-v0"|"donkey-generated-roads-v0"|"donkey-warehouse-v0"|"donkey-avc-sparkfun-v0")
 # GYM_CONF = { "body_style" : "donkey", "body_rgb" : (128, 128, 128), "car_name" : "car", "font_size" : 100} # body style(donkey|bare|car01) body rgb 0-255
 # GYM_CONF["racer_name"] = "Your Name"
 # GYM_CONF["country"] = "Place"

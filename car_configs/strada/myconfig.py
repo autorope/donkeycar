@@ -8,7 +8,6 @@
 # The update operation will not touch this file.
 # """
 
-
 # import os
 # 
 # #PATHS
@@ -16,7 +15,7 @@
 # DATA_PATH = os.path.join(CAR_PATH, 'data')
 # MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # 
-# # VEHICLE
+# #VEHICLE
 DRIVE_LOOP_HZ = 35      # the vehicle loop will pause if faster than this speed.
 # MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 # 
@@ -33,7 +32,7 @@ DRIVE_LOOP_HZ = 35      # the vehicle loop will pause if faster than this speed.
 # # CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 # # OAK_D_ISP_SCALE = None
 # 
-# OAK-D CAMERA SETTINGS
+# # OAK-D-LITE CAMERA SETTINGS
 CAMERA_TYPE = "OAK"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 
 # OAK-D-LITE: "1080p" for rgb
@@ -49,7 +48,7 @@ RGB_VIDEO_SIZE = (320,165)
 # RGB_EXPOSURE_TIME = 2000
 # RGB_SENSOR_ISO = 400
 # RGB_WB_MANUAL = 2800
-
+# 
 # # OAK-D-LITE: from 1920/1080 (1,8)>>240/135 
 # # OAK-D-WIDE: from 1280/800  (1,8)>>160/100 (3,16)>>240/150 5/32>>200/125 
 OAK_D_ISP_SCALE = (1,6) 
@@ -63,24 +62,26 @@ IMAGE_H = 165
 
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
-
+# 
 # OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+# OAK_DEPTH_CROP_RECT = None # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
 # OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
-
+# 
 # # OBSTACLE_AVOIDANCE SETTINGS
 # OBSTACLE_AVOIDANCE_ENABLED = False
 # OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
 # CLOSE_AVOIDANCE_DIST_MM = 1000
-
+# 
 # # OBSTACLE_DETECTOR
 # OBSTACLE_DETECTOR_ENABLED = False
 # OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 # OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
 # OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
 # OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
-# BEHAVIOR_LIST = ['left', 'right']
+# BEHAVIOR_LIST = ['left', 'middle', 'right']
 # OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
-
+# OBSTACLE_DETECTOR_MANUAL_LANE = False
+# 
 # #CAMERA Settings Vivatech 2022 (nano)
 # #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 # #IMAGE_W = 160
@@ -127,7 +128,7 @@ CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # # (deprecated) "I2C_SERVO" uses PCA9685 servo controller to control a steering servo and an ESC, as in a standard RC car
 # #
 # DRIVE_TRAIN_TYPE = "ROBOCARSHAT"
-
+# 
 # #
 # # PWM_STEERING_THROTTLE
 # #
@@ -540,8 +541,8 @@ AUTO_RECORD_ON_THROTTLE = False      #if true, we will record whenever throttle 
 # MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 # 
 # #ROBOCARSHAT
-# USE_ROBOCARSHAT_AS_CONTROLLER  = True
-# ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
+USE_ROBOCARSHAT_AS_CONTROLLER = True
+ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
 ROBOCARSHAT_SERIAL_SPEED = 250000
 # 
 # USE_ROBOCARSHAT_BATTERY_MONITOR = False
@@ -572,9 +573,10 @@ ROBOCARSHAT_SERIAL_SPEED = 250000
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.09 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+# # ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by remote control
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
-THROTTLE_BRAKE_REV_FILTER = True # ESC is configured in Fw/Rv mode (no braking)
+THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
 # 
 # #ROBOCARSHAT_CH3_FEATURE and ROBOCARSHAT_CH4_FEATURE controls the feature attached to radio ch3 and ch4
 # # 'none' means aux ch is not used 
@@ -587,10 +589,12 @@ THROTTLE_BRAKE_REV_FILTER = True # ESC is configured in Fw/Rv mode (no braking)
 # # 'output_steering_exp' means special mode where aux ch is used to increment/decrement a fixed steering output to calibrate direction in user mode, resulting values must be reported in  ROBOCARSHAT_PWM_IN_STEERING_MIN and ROBOCARSHAT_PWM_IN_STEERING_MAX
 # # 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged 
 # # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged 
+# # 'drive_by_lane' means special mode where aux ch is used to set the lane the car must use (left, middle, right) (behavior model)
 # ROBOCARSHAT_CH3_FEATURE = 'record/pilot' 
 # ROBOCARSHAT_CH4_FEATURE = 'none' 
 # ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
 # ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
+# ROBOCARS_DRIVE_BY_LANE = False # if true, when in pilot mode, steering is used to feed model as lane to follow
 # 
 # ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 # ROBOCARSHAT_STEERING_EXP_INC = 0.05 
@@ -607,13 +611,13 @@ THROTTLE_BRAKE_REV_FILTER = True # ESC is configured in Fw/Rv mode (no braking)
 # # ROBOCARSHAT_THROTTLE_DISCRET used to control throttle with discretes values (only in user mode, first value must be 0.0)
 # # ROBOCARSHAT_THROTTLE_DISCRET has precedence over ROBOCARSHAT_THROTTLE_FLANGER
 # #Example : ROBOCARSHAT_THROTTLE_DISCRET = [0.0, 0.1, 0.2], if not used, set to None 
-# ROBOCARSHAT_THROTTLE_DISCRET = None # [0.0, ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE]
+# ROBOCARSHAT_THROTTLE_DISCRET = None 
 # 
 # # ROBOCARSHAT_THROTTLE_FLANGER used to control throttle flange (map outputs to given range), ONLY in USER MODE
 # # giving a range between -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # #ROBOCARSHAT_THROTTLE_FLANGER = None 
-# ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2] 
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.2, 0.2]
 # 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
@@ -638,6 +642,9 @@ THROTTLE_BRAKE_REV_FILTER = True # ESC is configured in Fw/Rv mode (no braking)
 # ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 # ROBOCARS_SL_FILTER_TRESH_HIGH=4
 # ROBOCARS_SL_FILTER_TRESH_LOW=2
+# 
+# ROBOCARS_PROFILES = None # Powetrain Profile, define fix throttle, steering scalar and LED Anim to use in pilot mode, accordingly to profile selector (remote control feature)
+# #ROBOCARS_PROFILES = [[0.0, 0.0,3],[0.2,1.1,3],[0.35,1.85,1]]
 # 
 # 
 # #LOGGING
@@ -706,16 +713,16 @@ AUTO_CREATE_NEW_TUB = True     #create a new tub (tub_YY_MM_DD) directory when r
 # #When training the Behavioral Neural Network model, make a list of the behaviors,
 # #Set the TRAIN_BEHAVIORS = True, and use the BEHAVIOR_LED_COLORS to give each behavior a color
 # TRAIN_BEHAVIORS = False
-# BEHAVIOR_LIST = ['Left_Lane', "Right_Lane"]
-# BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
+# # BEHAVIOR_LIST = ['left', 'middle', "right"]
+# # BEHAVIOR_LED_COLORS = [(0, 10, 0), (10, 0, 0)]  #RGB tuples 0-100 per chanel
 # 
 # #Localizer
 # #The localizer is a neural network that can learn to predict its location on the track.
 # #This is an experimental feature that needs more developement. But it can currently be used
 # #to predict the segement of the course, where the course is divided into NUM_LOCATIONS segments.
 # TRAIN_LOCALIZER = False
-# NUM_LOCATIONS = 10
-# BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
+# # NUM_LOCATIONS = 10
+# # BUTTON_PRESS_NEW_TUB = False #when enabled, makes it easier to divide our data into one tub per track length if we make a new tub on each X button press.
 # 
 # #DonkeyGym
 # #Only on Ubuntu linux, you can use the simulator as a virtual donkey and

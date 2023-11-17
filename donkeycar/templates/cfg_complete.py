@@ -69,6 +69,7 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 
 OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+OAK_DEPTH_CROP_RECT = None # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
 OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 
 # OBSTACLE_AVOIDANCE SETTINGS
@@ -545,9 +546,9 @@ MM1_SHOW_STEERING_VALUE = False
 MM1_SERIAL_PORT = '/dev/ttyS0'  # Serial Port for reading and sending MM1 data.
 
 #ROBOCARSHAT
-USE_ROBOCARSHAT_AS_CONTROLLER  = True
+USE_ROBOCARSHAT_AS_CONTROLLER = True
 ROBOCARSHAT_SERIAL_PORT = '/dev/ttyTHS1'
-ROBOCARSHAT_SERIAL_SPEED = 1000000
+ROBOCARSHAT_SERIAL_SPEED = 250000
 
 USE_ROBOCARSHAT_BATTERY_MONITOR = False
 ROBOCARSHAT_LIPO_CELLS = 2
@@ -577,7 +578,7 @@ ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
-# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by re;ote control
+# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by remote control
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -620,7 +621,7 @@ ROBOCARSHAT_THROTTLE_DISCRET = None
 # giving a range between -1 and 1, like [-0.1, 0.1]
 #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 #ROBOCARSHAT_THROTTLE_FLANGER = None 
-ROBOCARSHAT_THROTTLE_FLANGER = [-0.2,0.2] 
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.2, 0.2] 
 
 # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 ROBOCARSHAT_USE_AUTOCALIBRATION = True
