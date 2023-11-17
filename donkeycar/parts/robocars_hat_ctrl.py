@@ -243,7 +243,9 @@ class RobocarsHatInCtrl(metaclass=Singleton):
                 mode='user'
             elif (command>0.5):
                 mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                if self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE != None:
+                    user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                # else we keep value from remote control                    
             else:
                 mode='user'
 
@@ -352,13 +354,6 @@ class RobocarsHatInCtrl(metaclass=Singleton):
             if self.inThrottle < -0.9:
                 mode = 'user'
                 user_throttle = 0
-
-        if self.cfg.ROBOCARSHAT_COPILOT_MODE and mode != 'user':
-            user_throttle = user_throttle * (1.0+self.inThrottle)
-            # Full Reverse trigger will stop the car as long as maintained 
-            if self.inThrottle < -0.9:
-                mode = 'user'
-                self.throttle_out = 0
 
         # Discret throttle mode
         if mode=='user':

@@ -577,6 +577,7 @@ ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
 ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
 ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.2 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by re;ote control
 ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 
 THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -597,7 +598,6 @@ ROBOCARSHAT_CH3_FEATURE = 'record/pilot'
 ROBOCARSHAT_CH4_FEATURE = 'none' 
 ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
 ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
-ROBOCARSHAT_COPILOT_MODE = False #when pilot is engaged, this mode allows user to control boost on the fixed throttle, while pilot controls steering, works only if pilot mode is local_angle.
 
 ROBOCARSHAT_THROTTLE_EXP_INC = 0.05 
 ROBOCARSHAT_STEERING_EXP_INC = 0.05 
