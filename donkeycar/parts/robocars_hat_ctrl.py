@@ -258,7 +258,8 @@ class RobocarsHatInCtrl(metaclass=Singleton):
         if command != None :
             if command > 0.5:
                 mode=self.cfg.ROBOCARSHAT_PILOT_MODE
-                user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
+                if self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE != None:
+                    user_throttle = self.cfg.ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE
 
         command, has_changed = self.getAuxValuePerFeat(self.AUX_FEATURE_THROTTLEEXP)
         if command != None :
