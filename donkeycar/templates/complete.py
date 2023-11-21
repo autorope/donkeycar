@@ -555,6 +555,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs += ['enc/speed']
         types += ['float']
 
+        if cfg.ENCODER_TYPE == "LS7366R" and cfg.DONKEY_GYM == False:
+            inputs += ['enc/distance', 'enc/speed']
+            types += ['float', 'float']
+
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
         types += ['int', 'str', 'vector']
@@ -918,6 +922,16 @@ def add_odometry(V, cfg):
             enc = RobocarsHatInOdom(cfg)
             V.add(enc, outputs=['enc/speed'], threaded=True)
             print("ODOM from Robocars Hat")
+        elif cfg.ENCODER_TYPE == "LS7366R" and cfg.DONKEY_GYM == False:
+            from donkeycar.parts.encoder import LS7366ROdometry
+            enc = LS7366ROdometry(
+                mm_per_tick=cfg.MM_PER_TICK,
+                frequency=cfg.ODOM_FREQUENCY,
+                spi_cs_line=cfg.ODOM_SPI_CS_LINE,
+                spi_max_speed_hz=cfg.ODOM_SPI_FREQUENCY,
+                reverse=cfg.ODOM_REVERSE,
+                debug=cfg.ODOM_DEBUG)
+            V.add(enc, outputs=['enc/distance', 'enc/speed'], threaded=True)
         else:
             print("No supported encoder found")
 

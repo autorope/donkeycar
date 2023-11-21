@@ -5,6 +5,10 @@ Encoders and odometry
 from datetime import datetime
 import re
 import time
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 # The Arduino class is for a quadrature wheel or motor encoder that is being read by an offboard microcontroller
@@ -52,7 +56,6 @@ class ArduinoEncoder(object):
     def run_threaded(self):
         self.speed 
         return self.speed 
-
 
     def shutdown(self):
         # indicate that the thread should be stopped
@@ -192,3 +195,63 @@ class RotaryEncoder():
             self.cb.cancel()
             self.cb = None
         self.pi.stop()
+
+class LS7366ROdometry():
+    '''
+    Odometry based on LS7366R quadrature decoder.
+    '''
+    def __init__(self, mm_per_tick=0.306096, frequency=20, spi_cs_line=0, spi_max_speed_hz=1000000, reverse=False, debug=False):
+        from donkeycar.parts.ls7366r import LS7366R
+        self.counter = LS7366R(spi_cs_line, spi_max_speed_hz, reverse)
+
+        self.m_per_tick = mm_per_tick / 1000.0
+        self.poll_delay = 1.0 / frequency
+        if debug:
+            logger.setLevel(logging.DEBUG)
+        
+        self.last_time = time.time()
+        self.last_ticks = 0
+        self.velocity = 0.0
+        self.top_speed = 0.0
+        self.on = True
+
+    def run(self):
+        current_time = time.time()
+        ticks = self.counter.read_counter()
+        
+        seconds = current_time - self.last_time
+        distance = (ticks - self.last_ticks) * self.m_per_tick
+        self.velocity = distance / seconds
+        total_distance = ticks * self.m_per_tick
+
+        if(self.velocity > self.top_speed):
+            self.top_speed = self.velocity
+
+        # save values for next run
+        self.last_ticks = ticks
+        self.last_time = current_time
+
+        # console output for debugging and calibration
+        if(logger.isEnabledFor(logging.DEBUG)):
+            logger.debug('Total distance: {:>9,.3f} m, velocity: {:>7,.3f} m/s'.format(total_distance, self.velocity))
+
+        return total_distance, self.velocity
+
+    def update(self):
+        # keep looping infinitely until the thread is stopped
+        while(self.on):
+            self.run()
+            delay = self.last_time - time.time() + self.poll_delay
+            if delay > 0:
+                time.sleep(delay)
+
+    def run_threaded(self):
+        return self.last_ticks * self.m_per_tick, self.velocity
+
+    def shutdown(self):
+        self.on = False
+        logger.info('Stopping LS7366R Odometry')
+        logger.info('Total distance: {:>8,.3f} m, max velocity: {:>6,.3f} m/s'.format(self.last_ticks * self.m_per_tick, self.top_speed))
+        if self.counter != None:
+            self.counter.close()
+            self.counter = None

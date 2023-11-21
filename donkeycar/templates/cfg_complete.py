@@ -402,11 +402,15 @@ DC_TWO_WHEEL_L298N = {
 }
 
 #ODOMETRY
-HAVE_ODOM = False                   # Do you have an odometer/encoder 
-ENCODER_TYPE = 'GPIO'            # What kind of encoder? GPIO|Arduino|Astar|ROBOCARSHAT
-MM_PER_TICK = 12.7625               # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
+HAVE_ODOM = False                    # Do you have an odometer/encoder 
+ENCODER_TYPE = 'GPIO'                # What kind of encoder? GPIO|Arduino|Astar|ROBOCARSHAT|LS7366R
+MM_PER_TICK = 12.7625                # How much travel with a single tick, in mm. Roll you car a meter and divide total ticks measured by 1,000
 ODOM_PIN = 13                        # if using GPIO, which GPIO board mode pin to use as input
-ODOM_DEBUG = False                  # Write out values on vel and distance as it runs
+ODOM_DEBUG = False                   # Write out values on vel and distance as it runs
+ODOM_FREQUENCY = DRIVE_LOOP_HZ * 3   # if odometer needs it, at what frequency should it poll measurements
+ODOM_SPI_FREQUENCY = 1000000         # SPI frequency, if using a SPI odometer 
+ODOM_SPI_CS_LINE = 0                 # SPI chip select line, if using a SPI odometer
+ODOM_REVERSE = False                 # reverse counter direction, if used by your odometer
 
 # #LIDAR
 USE_LIDAR = False
