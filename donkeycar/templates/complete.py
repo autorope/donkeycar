@@ -548,8 +548,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs = ['cam/image_array', 'lidar/dist_array', 'user/angle', 'user/throttle', 'user/mode']
         types = ['image_array', 'nparray','float', 'float', 'str']
     else:
-        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode', "angle", "throttle"]
-        types=['image_array','float', 'float','str', 'float', 'float']
+        inputs=['cam/image_array','user/angle', 'user/throttle', 'user/mode', 'angle', 'throttle']
+        types=['image_array','float', 'float', 'str', 'float', 'float']
 
     if cfg.HAVE_ODOM:
         inputs += ['enc/speed']
@@ -558,6 +558,9 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.ENCODER_TYPE == "LS7366R" and cfg.DONKEY_GYM == False:
             inputs += ['enc/distance', 'enc/speed']
             types += ['float', 'float']
+        elif cfg.ENCODER_TYPE == "FF_LS7366R" and cfg.DONKEY_GYM == False:
+            inputs += ['pos/time', 'pos/x', 'pos/y', 'pos/yaw', 'enc/distance', 'enc/speed']
+            types += ['float', 'float', 'float', 'float', 'float', 'float']
 
     if cfg.TRAIN_BEHAVIORS:
         inputs += ['behavior/state', 'behavior/label', "behavior/one_hot_state_array"]
@@ -599,7 +602,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             types  += ['nparray']
 
     if cfg.RECORD_DURING_AI:
-        inputs += ['pilot/angle', 'pilot/throttle','behavior/one_hot_state_array']
+        inputs += ['pilot/angle', 'pilot/throttle', 'behavior/one_hot_state_array']
         types += ['float', 'float', 'list']
 
     if cfg.HAVE_PERFMON:
@@ -932,6 +935,23 @@ def add_odometry(V, cfg):
                 reverse=cfg.ODOM_REVERSE,
                 debug=cfg.ODOM_DEBUG)
             V.add(enc, outputs=['enc/distance', 'enc/speed'], threaded=True)
+        elif cfg.ENCODER_TYPE == "FF_LS7366R" and cfg.DONKEY_GYM == False:
+            from donkeycar.parts.encoder import LS7366ROdometry
+            from donkeycar.parts.localization import FeedForwardLocalization
+            odo = LS7366ROdometry(
+                mm_per_tick=cfg.MM_PER_TICK,
+                frequency=cfg.ODOM_FREQUENCY,
+                spi_cs_line=cfg.ODOM_SPI_CS_LINE,
+                spi_max_speed_hz=cfg.ODOM_SPI_FREQUENCY,
+                reverse=cfg.ODOM_REVERSE,
+                debug=cfg.ODOM_DEBUG)
+            enc = FeedForwardLocalization(
+                frequency=cfg.ODOM_FREQUENCY,
+                vehicle_length=cfg.ODOM_VEHICLE_LENGTH,
+                max_velocity=cfg.ODOM_MAX_VELOCITY,
+                max_steering_angle=cfg.ODOM_MAX_STEERING_ANGLE,
+                odometry=odo)
+            V.add(enc, outputs=['pos/time', 'pos/x', 'pos/y', 'pos/yaw', 'enc/distance', 'enc/speed'], threaded=True)
         else:
             print("No supported encoder found")
 
@@ -1172,6 +1192,11 @@ def add_drivetrain(V, cfg):
                 from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
                 ctr = RobocarsHatLedCtrl(cfg)
                 V.add(ctr, inputs=['angle', 'throttle', 'user/mode'],threaded=False)
+
+    if cfg.HAVE_ODOM and cfg.ENCODER_TYPE == 'FF_LS7366R':
+        # FF_LS7366R needs to be aware of throttle and angle sent to actuators as soon as possible
+        from donkeycar.parts.localization import FeedForwardLocalizationCommands
+        V.add(FeedForwardLocalizationCommands(), inputs=['throttle','angle'], threaded=False)
 
 
 if __name__ == '__main__':

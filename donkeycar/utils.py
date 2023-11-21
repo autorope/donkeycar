@@ -343,11 +343,27 @@ def norm_deg(theta):
     return theta
 
 
+# Wraps angle to (-pi,pi] range
+def wrap_to_pi(x):
+    if x > math.pi:
+        x = x - (math.floor(x / (2 * math.pi)) + 1) * 2 * math.pi
+    elif x < -math.pi:
+        x = x + (math.floor(x / (-2 * math.pi)) + 1) * 2 * math.pi
+    return x
+
+
 DEG_TO_RAD = math.pi / 180.0
 
 
 def deg2rad(theta):
     return theta * DEG_TO_RAD
+
+
+RAD_TO_DEG = 180.0 / math.pi
+
+
+def rad2deg(theta):
+    return theta * RAD_TO_DEG
 
 '''
 VECTORS
