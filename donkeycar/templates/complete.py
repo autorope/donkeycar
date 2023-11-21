@@ -868,6 +868,7 @@ def add_camera(V, cfg, camera_type):
                     .with_depth(cfg.IMAGE_DEPTH) \
                     .with_isp_scale(cfg.OAK_D_ISP_SCALE) \
                     .with_framerate(cfg.CAMERA_FRAMERATE) \
+                    .with_depth_crop_rect(cfg.OAK_DEPTH_CROP_RECT) \
                     .with_enable_depth(cfg.OAK_ENABLE_DEPTH_MAP) \
                     .with_enable_obstacle_dist(cfg.OAK_OBSTACLE_DETECTION_ENABLED) \
                     .with_rgb_resolution(cfg.RGB_RESOLUTION) \

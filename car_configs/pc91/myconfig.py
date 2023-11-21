@@ -63,7 +63,7 @@ IMAGE_H = 108 # 108
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # 
-# OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+OAK_ENABLE_DEPTH_MAP = True # enables depth map output
 # OAK_DEPTH_CROP_RECT = None # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
 # OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 # 
@@ -572,7 +572,7 @@ ROBOCARSHAT_PWM_IN_STEERING_MAX    =   1970
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.15 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
 # # ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by remote control
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 # 
@@ -617,12 +617,12 @@ ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (a
 # # giving a range between -1 and 1, like [-0.1, 0.1]
 # #Example : ROBOCARSHAT_THROTTLE_FLANGER = [-0.1, 0.1], if not used, set to None 
 # #ROBOCARSHAT_THROTTLE_FLANGER = None 
-ROBOCARSHAT_THROTTLE_FLANGER = [-0.2, 0.2]
+ROBOCARSHAT_THROTTLE_FLANGER = [-0.2, 0.25]
 # 
 # # ROBOCARSHAT_USE_AUTOCALIBRATION used to rely on idle coming from autocalibation done by hat
 # ROBOCARSHAT_USE_AUTOCALIBRATION = True
 # 
-ROBOCARSHAT_CONTROL_LED = True
+ROBOCARSHAT_CONTROL_LED = False
 ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY = "/dev/ttyACM0"
 ROBOCARSHAT_LED_MODEL = 'Duo' #Alpine, Duo, 
 ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = 3 # 1 = sparkle, 2 = strobe, 3=HAL

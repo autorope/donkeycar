@@ -19,6 +19,7 @@ class OakDCameraBuilder:
         self.isp_scale = None
         self.framerate = 30
         self.enable_depth = False
+        self.depth_crop_rect = None
         self.enable_obstacle_dist = False
         self.rgb_resolution = "1080p"
         self.rgb_apply_cropping = False
@@ -52,6 +53,10 @@ class OakDCameraBuilder:
 
     def with_enable_depth(self, enable_depth):
         self.enable_depth = enable_depth
+        return self
+    
+    def with_depth_crop_rect(self, depth_crop_rect):
+        self.depth_crop_rect = depth_crop_rect
         return self
 
     def with_enable_obstacle_dist(self, enable_obstacle_dist):
@@ -102,6 +107,7 @@ class OakDCameraBuilder:
             isp_scale=self.isp_scale, 
             framerate=self.framerate, 
             enable_depth=self.enable_depth, 
+            depth_crop_rect=self.depth_crop_rect,
             enable_obstacle_dist=self.enable_obstacle_dist, 
             rgb_resolution=self.rgb_resolution,
             rgb_apply_cropping=self.rgb_apply_cropping,
@@ -121,7 +127,8 @@ class OakDCamera:
                  depth=3, 
                  isp_scale=None, 
                  framerate=30, 
-                 enable_depth=False, 
+                 enable_depth=False,
+                 depth_crop_rect=None,
                  enable_obstacle_dist=False, 
                  rgb_resolution="1080p",
                  rgb_apply_cropping=False,
@@ -139,6 +146,7 @@ class OakDCamera:
         self.isp_scale = isp_scale
         self.framerate = framerate
         self.enable_depth = enable_depth
+        self.depth_crop_rect = depth_crop_rect
         self.enable_obstacle_dist = enable_obstacle_dist
         self.rgb_resolution = rgb_resolution
         self.rgb_apply_cropping = rgb_apply_cropping
@@ -184,7 +192,6 @@ class OakDCamera:
             self.create_obstacle_dist_pipeline()
 
         try:
-
             # Connect to device and start pipeline
             logger.info('Starting OAK-D camera')
             self.device = dai.Device(self.pipeline)
@@ -287,23 +294,23 @@ class OakDCamera:
 
         xout_depth = self.pipeline.create(dai.node.XLinkOut)
         xout_depth.setStreamName("xout_depth")
-
-        # Crop range
-        topLeft = dai.Point2f(0.1875, 0.0)
-        bottomRight = dai.Point2f(0.8125, 0.25)
-        #    - - > x 
-        #    |
-        #    y
         
         # Properties
         monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
         monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
         monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
         monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-
-        stereo_manip.initialConfig.setCropRect(topLeft.x, topLeft.y, bottomRight.x, bottomRight.y)
+        monoRight.setFps(self.framerate)
+        monoLeft.setFps(self.framerate)
         # manip.setMaxOutputFrameSize(monoRight.getResolutionHeight()*monoRight.getResolutionWidth()*3)
         stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
+
+        # Crop range
+        #    - - > x 
+        #    |
+        #    y
+        if self.depth_crop_rect:
+            stereo_manip.initialConfig.setCropRect(*self.depth_crop_rect)
 
         # Linking
         # configIn.out.link(manip.inputConfig)
@@ -332,6 +339,8 @@ class OakDCamera:
         monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
         monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
         monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+        monoRight.setFps(self.framerate)
+        monoLeft.setFps(self.framerate)
 
         stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
         stereo.setLeftRightCheck(self.lr_check)

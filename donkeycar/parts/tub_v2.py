@@ -22,6 +22,7 @@ class Tub(object):
                  max_catalog_len=1000, read_only=False):
         self.base_path = base_path
         self.images_base_path = os.path.join(self.base_path, Tub.images())
+        self.depths_base_path = self.images_base_path.replace("images","depths")
         self.inputs = inputs
         self.types = types
         self.metadata = metadata
@@ -32,6 +33,8 @@ class Tub(object):
         # Create images folder if necessary
         if not os.path.exists(self.images_base_path):
             os.makedirs(self.images_base_path, exist_ok=True)
+        if not os.path.exists(self.depths_base_path):
+            os.makedirs(self.depths_base_path, exist_ok=True)
         
         # set up the publisher
         # self.context = zmq.Context()
@@ -103,7 +106,7 @@ class Tub(object):
                 elif input_type == 'gray16_array':
                     # Handle image array
                     name = Tub._image_file_name(self.manifest.current_index, key).replace("image","depth")
-                    image_path = os.path.join(self.images_base_path.replace("images","depths"), name)
+                    image_path = os.path.join(self.depths_base_path, name)
                     np.savez_compressed(image_path, img=np.uint16(value))
                     contents[key] = name
 
