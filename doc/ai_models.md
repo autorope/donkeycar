@@ -100,12 +100,14 @@ Improvements:
 - [depthai experiments OCR](https://github.com/luxonis/depthai-experiments/tree/master/gen2-ocr)
 
 ## Grip loss detection
+
 - Find a model to use IMU and detect sudden lateral acceleration to identify maximum speed with grip
 
 ## decision confidence management
+
 - How to improve the models when images cannot be inferred with sufficient confidence
 - What is the offline learning cycle
 
-## use segmentation to tag images 
+## use segmentation to tag images
+
 - Modify acquired driving date with the correct steering angle based on track orientation vs car orientation
-- 
