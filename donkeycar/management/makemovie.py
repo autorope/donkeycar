@@ -169,7 +169,7 @@ class MakeMovie(object):
                 output_name.append(layer.name)
                 layer_idx.append(i)
 
-        if output_name is []:
+        if output_name == []:
             print("Failed to find the model layer named with 'out'. Skipping salient.")
             return False
 
