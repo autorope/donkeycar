@@ -17,14 +17,15 @@ jobs:
         shell: bash -l {0}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Create python 3.9 conda env
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.9
+          mamba-version: "*"
           activate-environment: donkey
           auto-activate-base: false
-      - name: Conda install and list
+      - name: Conda info and list
         run: |
           conda info
           conda list
