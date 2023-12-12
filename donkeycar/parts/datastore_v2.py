@@ -287,12 +287,11 @@ class Manifest(object):
         # Automatically save config when program ends
         atexit.register(exit_hook)
 
-    def write_record(self, record, index=None):
-        if index is None:
-            new_catalog = self.current_index > 0 \
-                          and (self.current_index % self.max_len) == 0
-            if new_catalog:
-                self._add_catalog()
+    def write_record(self, record):
+        new_catalog = self.current_index > 0 \
+                      and (self.current_index % self.max_len) == 0
+        if new_catalog:
+            self._add_catalog()
 
         self.current_catalog.write_record(record)
         self.current_index += 1
@@ -415,8 +414,6 @@ class Manifest(object):
             indexes = {indexes}
         self.deleted_indexes.update(indexes)
         self._update_catalog_metadata(update=True)
-
-
 
     def close(self):
         """ Closing tub closes open files for catalog, catalog manifest and
