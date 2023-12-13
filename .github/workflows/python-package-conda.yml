@@ -25,6 +25,8 @@ jobs:
           mamba-version: "*"
           activate-environment: donkey
           auto-activate-base: false
+          channels: default, conda-forge, pytorch
+          channel-priority: true
       - name: Conda info and list
         run: |
           conda info
