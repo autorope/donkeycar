@@ -30,6 +30,7 @@ class OakDCameraBuilder:
         self.rgb_exposure_time = 2000
         self.rgb_sensor_iso = 1200
         self.rgb_wb_manual = 2800
+        self.use_camera_tuning_blob = False
 
     def with_width(self, width):
         self.width = width
@@ -99,6 +100,11 @@ class OakDCameraBuilder:
         self.rgb_wb_manual = rgb_wb_manual
         return self
 
+    def with_use_camera_tuning_blob(self, use_camera_tuning_blob):
+        self.use_camera_tuning_blob = use_camera_tuning_blob
+        return self
+
+
     def build(self):
         return OakDCamera(
             width=self.width, 
@@ -117,7 +123,8 @@ class OakDCameraBuilder:
             rgb_apply_manual_conf=self.rgb_apply_manual_conf,
             rgb_exposure_time=self.rgb_exposure_time,
             rgb_sensor_iso=self.rgb_sensor_iso,
-            rgb_wb_manual=self.rgb_wb_manual
+            rgb_wb_manual=self.rgb_wb_manual,
+            use_camera_tuning_blob=self.use_camera_tuning_blob
         )
 
 class OakDCamera:
@@ -138,7 +145,8 @@ class OakDCamera:
                  rgb_apply_manual_conf=False,
                  rgb_exposure_time = 2000,
                  rgb_sensor_iso = 1200,
-                 rgb_wb_manual= 2800):
+                 rgb_wb_manual= 2800,
+                 use_camera_tuning_blob = False):
         
         self.width = width
         self.height = height
@@ -157,6 +165,7 @@ class OakDCamera:
         self.rgb_exposure_time = rgb_exposure_time
         self.rgb_sensor_iso = rgb_sensor_iso
         self.rgb_wb_manual = rgb_wb_manual
+        self.use_camera_tuning_blob = use_camera_tuning_blob
 
         # depth config
         self.extended_disparity = True # Closer-in minimum depth, disparity range is doubled (from 95 to 190)
@@ -177,6 +186,9 @@ class OakDCamera:
         # Create pipeline
         self.pipeline = dai.Pipeline()
         # self.pipeline.setCameraTuningBlobPath('/tuning_color_ov9782_wide_fov.bin')
+        if self.use_camera_tuning_blob == True:
+            self.pipeline.setCameraTuningBlobPath('/home/donkey/tuning_exp_limit_8300us.bin')
+        
         self.pipeline.setXLinkChunkSize(0) # This might improve reducing the latency on some systems
 
         if self.depth == 3:

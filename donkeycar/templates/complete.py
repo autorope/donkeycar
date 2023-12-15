@@ -887,6 +887,7 @@ def add_camera(V, cfg, camera_type):
                     .with_rgb_exposure_time(cfg.RGB_EXPOSURE_TIME) \
                     .with_rgb_sensor_iso(cfg.RGB_SENSOR_ISO) \
                     .with_rgb_wb_manual(cfg.RGB_WB_MANUAL) \
+                    .with_use_camera_tuning_blob(cfg.USE_CAMERA_TUNING_BLOB) \
                     .build()
         outputs = ['cam/image_array']
         if cfg.OAK_ENABLE_DEPTH_MAP:

@@ -307,7 +307,12 @@ class KerasCategorical(KerasPilot):
             -> Dict[str, Union[float, List[float]]]:
         assert isinstance(record, TubRecord), "TubRecord expected"
         angle: float = record.underlying['user/angle']
-        throttle: float = record.underlying['user/throttle']
+
+        if 'ai/accel' in record.underlying:
+            throttle: float = record.underlying['ai/accel']
+        else:
+            throttle: float = record.underlying['user/throttle']
+        
         angle = linear_bin(angle, N=15, offset=1, R=2.0)
         throttle = linear_bin(throttle, N=20, offset=0.0, R=self.throttle_range)
         return {'angle_out': angle, 'throttle_out': throttle}

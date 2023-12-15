@@ -398,6 +398,9 @@ class TensorRTBehavior(KerasPilot):
         
 
     def interpreter_to_output(self, interpreter_out):
+        min_throttle = 0.24
+        max_throttle = 0.36
+        
         if len(interpreter_out) == 3:
             [sl, throttle_binned, angle_binned] = interpreter_out
             angle = dk.utils.linear_unbin(angle_binned)
@@ -405,19 +408,36 @@ class TensorRTBehavior(KerasPilot):
             #print(f"steering={steering[0]} throttle={throttle[0]}")
             # return -0.25, 0.3
             # return steering[0], throttle[0]
-            return angle, throttle, sl[0]
+            # print(f"throttle:{throttle}")
+
+            if (throttle >= 0.0 and throttle < 0.25):
+                out_throttle = min_throttle
+            elif (throttle >= 0.25):
+                out_throttle = max_throttle
+            elif (throttle < 0.0):
+                out_throttle = min_throttle
+
+            return angle, out_throttle, sl[0]
         elif len(interpreter_out) == 2:
             [throttle_binned, angle_binned] = interpreter_out
             angle = dk.utils.linear_unbin(angle_binned)
             throttle = dk.utils.linear_unbin(throttle_binned)
-            #print(f"steering={steering[0]} throttle={throttle[0]}")
+            # print(f"steering={steering[0]} throttle={throttle[0]}")
             # return -0.25, 0.3
             # return steering[0], throttle[0]
-            return angle, throttle
+            # print(f"throttle:{throttle}")
+            if (throttle >= 0.0 and throttle < 0.25):
+                out_throttle = min_throttle
+            elif (throttle >= 0.25):
+                out_throttle = max_throttle
+            elif (throttle < 0.0):
+                out_throttle = min_throttle
+
+            return angle, out_throttle
         else:
             [angle_binned] = interpreter_out
             angle = dk.utils.linear_unbin(angle_binned)
-            #print(f"steering={steering[0]}")
+            # print(f"steering={steering[0]}")
             return angle, calculate_throttle(angle)
 
     @classmethod
