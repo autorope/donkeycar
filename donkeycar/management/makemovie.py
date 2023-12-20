@@ -1,13 +1,12 @@
-import moviepy.editor as mpy
+import tempfile
+
 from tensorflow.python.keras import activations
 from tensorflow.python.keras import backend as K
+from tensorflow.python.keras.models import load_model
 import tensorflow as tf
 import cv2
 from matplotlib import cm
-try:
-    from vis.utils import utils
-except:
-    raise Exception("Please install keras-vis: pip install git+https://github.com/autorope/keras-vis.git")
+
 
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import Tub
@@ -17,6 +16,52 @@ from donkeycar.utils import *
 DEG_TO_RAD = math.pi / 180.0
 
 
+def apply_modifications(model, custom_objects=None):
+    """Applies modifications to the model layers to create a new Graph. For
+    example, simply changing `model.layers[idx].activation = new activation`
+    does not change the graph. The entire graph needs to be updated with
+    modified inbound and outbound tensors because of change in layer building
+    function.
+
+    Args:
+        model: The `keras.models.Model` instance.
+
+    Returns:
+        The modified model with changes applied. Does not mutate the original
+        `model`.
+    """
+    # The strategy is to save the modified model and load it back. This is
+    # done because setting the activation in a Keras layer doesnt actually
+    # change the graph. We have to iterate the entire graph and change the
+    # layer inbound and outbound nodes with modified tensors. This is doubly
+    # complicated in Keras 2.x since multiple inbound and outbound nodes are
+    # allowed with the Graph API.
+    model_path = os.path.join(tempfile.gettempdir(),
+                              next(tempfile._get_candidate_names()) + '.h5')
+    try:
+        model.save(model_path)
+        return load_model(model_path, custom_objects=custom_objects)
+    finally:
+        os.remove(model_path)
+
+
+def normalize(array, min_value=0., max_value=1.):
+    """Normalizes the numpy array to (min_value, max_value)
+
+    Args:
+        array: The numpy array
+        min_value: The min value in normalized array (Default value = 0)
+        max_value: The max value in normalized array (Default value = 1)
+
+    Returns:
+        The array normalized to range between (min_value, max_value)
+    """
+    arr_min = np.min(array)
+    arr_max = np.max(array)
+    normalized = (array - arr_min) / (arr_max - arr_min + K.epsilon())
+    return (max_value - min_value) * normalized + min_value
+
+
 class MakeMovie(object):
 
     def run(self, args, parser):
@@ -24,6 +69,11 @@ class MakeMovie(object):
         Load the images from a tub and create a movie from them.
         Movie
         '''
+        try:
+            import moviepy.editor as mpy
+        except ImportError as e:
+            logger.error(f'Please install moviepy first: {e}')
+            return
 
         if args.tub is None:
             print("ERR>> --tub argument missing.")
@@ -40,15 +90,18 @@ class MakeMovie(object):
 
         if args.type is None and args.model is not None:
             args.type = self.cfg.DEFAULT_MODEL_TYPE
-            print("Model type not provided. Using default model type from config file")
+            print("Model type not provided. Using default model type from "
+                  "config file")
 
         if args.salient:
             if args.model is None:
-                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
+                print("ERR>> salient visualization requires a model. Pass "
+                      "with the --model arg.")
                 parser.print_help()
 
             if args.type not in ['linear', 'categorical']:
-                print("Model type {} is not supported. Only linear or categorical is supported for salient visualization".format(args.type))
+                print(f"Model type {args.type} is not supported. Only linear "
+                      f"or categorical is supported for salient visualization")
                 parser.print_help()
                 return
 
@@ -181,7 +234,7 @@ class MakeMovie(object):
         for li in layer_idx:
             model.layers[li].activation = activations.linear
         # build salient model and optimizer
-        sal_model = utils.apply_modifications(model)
+        sal_model = apply_modifications(model)
         self.sal_model = sal_model
         return True
 
@@ -210,7 +263,7 @@ class MakeMovie(object):
 
         channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
         grads = np.sum(grads, axis=channel_idx)
-        res = utils.normalize(grads)[0]
+        res = normalize(grads)[0]
         return res
 
     def draw_salient(self, img):
