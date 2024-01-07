@@ -68,8 +68,7 @@ setup(name='donkeycar',
               'Adafruit_PCA9685',
               'adafruit-circuitpython-lis3dh',
               'adafruit-circuitpython-ssd1306',
-              'adafruit-circuitpython-rplidar',
-              'Jetson.GPIO'
+              'adafruit-circuitpython-rplidar'
           ],
           'pc': [
               'matplotlib',
