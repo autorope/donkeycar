@@ -249,8 +249,21 @@ class OakDCamera:
             camera.setIspScale(self.isp_scale)
         
         if self.rgb_apply_cropping:
+            # setSensorCrop sets the upper left corner (in noramlized format) of the video window extracted from the sensor stream
             camera.setSensorCrop(self.rgb_sensor_crop_x, self.rgb_sensor_crop_y) # When croping to keep only smaller video
+
+            # setVideoSize sets the video window size, this window upper left corner corresponds to the previously set upper left corner
             camera.setVideoSize(self.rgb_video_size) # Desired video size = ispscale result or smaller if croping
+            #  x sensor crop
+            # -->|
+            #    | y sensor crop
+            #    |
+            #    ---------------------|
+            #    |                    |
+            #    | video window size  |
+            #    |                    |
+            #    |--------------------|
+
 
         # Resize image
         camera.setPreviewKeepAspectRatio(False)
