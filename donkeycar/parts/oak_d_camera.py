@@ -292,44 +292,79 @@ class OakDCamera:
         manip.out.link(xout.input)
 
     def create_depth_pipeline(self):
-        # Create depth nodes
-        monoRight = self.pipeline.create(dai.node.MonoCamera)
+        # Create mono left image source node
         monoLeft = self.pipeline.create(dai.node.MonoCamera)
-        stereo_manip = self.pipeline.create(dai.node.ImageManip)
-        stereo = self.pipeline.create(dai.node.StereoDepth)
-
-        stereo.setLeftRightCheck(self.lr_check)
-        stereo.setExtendedDisparity(self.extended_disparity)
-        stereo.setSubpixel(self.subpixel)
-        stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
-        stereo.initialConfig.setConfidenceThreshold(200)
-
-        xout_depth = self.pipeline.create(dai.node.XLinkOut)
-        xout_depth.setStreamName("xout_depth")
         
-        # Properties
-        monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+        # Set mono left image source node properties
         monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
-        monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
         monoLeft.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
-        monoRight.setFps(self.framerate)
+        monoLeft.setNumFramesPool(2)
         monoLeft.setFps(self.framerate)
-        # manip.setMaxOutputFrameSize(monoRight.getResolutionHeight()*monoRight.getResolutionWidth()*3)
-        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
+
+        # Create mono right image source node
+        monoRight = self.pipeline.create(dai.node.MonoCamera)
+        
+        # Set mono right image source node properties
+        monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
+        monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
+        monoRight.setNumFramesPool(2)
+        monoRight.setFps(self.framerate)
+        
+        # Create resize manip left node
+        stereo_manip_left = self.pipeline.create(dai.node.ImageManip)
+        
+        # Set resize manip left node properties
+        stereo_manip_left.initialConfig.setResize(self.width, self.height)
+        stereo_manip_left.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
+        stereo_manip_left.initialConfig.setInterpolation(dai.Interpolation.DEFAULT_DISPARITY_DEPTH)
+        stereo_manip_left.setNumFramesPool(1)
+
+        # Create resize manip right node
+        stereo_manip_right = self.pipeline.create(dai.node.ImageManip)
+
+        # Set resize manip left node properties
+        stereo_manip_right.initialConfig.setResize(self.width, self.height)
+        stereo_manip_right.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
+        stereo_manip_right.initialConfig.setInterpolation(dai.Interpolation.DEFAULT_DISPARITY_DEPTH)
+        stereo_manip_right.setNumFramesPool(1)
 
         # Crop range
         #    - - > x 
         #    |
         #    y
         if self.depth_crop_rect:
-            stereo_manip.initialConfig.setCropRect(*self.depth_crop_rect)
+            stereo_manip_left.initialConfig.setCropRect(*self.depth_crop_rect)
+            stereo_manip_right.initialConfig.setCropRect(*self.depth_crop_rect)
 
-        # Linking
-        # configIn.out.link(manip.inputConfig)
-        monoRight.out.link(stereo.right)
-        monoLeft.out.link(stereo.left)
-        stereo.depth.link(stereo_manip.inputImage)
-        stereo_manip.out.link(xout_depth.input)
+        # Create stereo_depth node
+        stereo = self.pipeline.create(dai.node.StereoDepth)
+
+        # Set stereo_depth node properties
+        stereo.setLeftRightCheck(self.lr_check)
+        stereo.setExtendedDisparity(self.extended_disparity)
+        stereo.setSubpixel(self.subpixel)
+        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_ACCURACY)
+        stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
+        stereo.initialConfig.setConfidenceThreshold(200)
+        stereo.setInputResolution(self.width, self.height)
+        stereo.setNumFramesPool(2)
+        
+        # Create depth output node
+        xout_depth = self.pipeline.create(dai.node.XLinkOut)
+        xout_depth.setStreamName("xout_depth")
+        
+
+        # Linking mono node to manip image resize node
+        monoLeft.out.link(stereo_manip_left.inputImage)
+        monoRight.out.link(stereo_manip_right.inputImage)
+        
+        # Linking manip node to stereo_depth node
+        stereo_manip_left.out.link(stereo.left)
+        stereo_manip_right.out.link(stereo.right)
+        
+        # Linking stereo_depth node to output
+        stereo.depth.link(xout_depth.input)
+        
 
     def create_obstacle_dist_pipeline(self):
         # Define sources and outputs

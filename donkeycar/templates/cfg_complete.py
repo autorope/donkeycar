@@ -70,8 +70,13 @@ IMAGE_H = 165
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 
-OAK_ENABLE_DEPTH_MAP = False # enables depth map output
-OAK_DEPTH_CROP_RECT = None # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
+USE_CAMERA_TUNING_BLOB = True
+OAK_ENABLE_DEPTH_MAP = True # enables depth map output
+
+# The following config is centered cropping to align with RGB
+# If RGB cropping modified, modify depth cropping  
+OAK_DEPTH_CROP_RECT = (0.0,0.0875,1.0,0.9125) # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
+
 OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 
 # OBSTACLE_AVOIDANCE SETTINGS
