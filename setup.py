@@ -53,7 +53,8 @@ setup(name='donkeycar',
           "pynmea2",
           'pyserial',
           "utm",
-          "transitions"
+          "transitions",
+          "watchdog"
       ],
       extras_require={
           'pi': [
