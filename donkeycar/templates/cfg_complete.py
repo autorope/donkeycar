@@ -75,7 +75,7 @@ OAK_ENABLE_DEPTH_MAP = True # enables depth map output
 
 # The following config is centered cropping to align with RGB
 # If RGB cropping modified, modify depth cropping  
-OAK_DEPTH_CROP_RECT = (0.0,0.0875,1.0,0.9125) # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
+OAK_DEPTH_CROP_RECT = (0.0,0.175,1.0,1.0) # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
 
 OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 
