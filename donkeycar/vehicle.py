@@ -147,8 +147,16 @@ class Vehicle:
             logger.info('Starting vehicle at {} Hz'.format(rate_hz))
 
             loop_count = 0
+            previous_start_time = 0
+            start_time = 0
             while self.on:
+                previous_start_time = start_time
                 start_time = time.time()
+                jitter = abs((1.0 / rate_hz)-(start_time-previous_start_time))
+                if (jitter>(1.0 / rate_hz)*0.05) :
+                    logger.info('WARN::Vehicle: jitter violation in vehicle loop '
+                            'with {0:4.3f}ms'.format(abs(1000 * jitter)))
+
                 loop_count += 1
 
                 self.update_parts()
@@ -163,7 +171,7 @@ class Vehicle:
                 else:
                     # print a message when could not maintain loop rate.
                     if verbose:
-                        logger.info('WARN::Vehicle: jitter violation in vehicle loop '
+                        logger.info('WARN::Vehicle: loop duration violation in vehicle loop '
                               'with {0:4.0f}ms'.format(abs(1000 * sleep_time)))
 
                 if verbose and loop_count % 200 == 0:
