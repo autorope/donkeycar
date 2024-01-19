@@ -23,6 +23,7 @@ class Tub(object):
         self.base_path = base_path
         self.images_base_path = os.path.join(self.base_path, Tub.images())
         self.depths_base_path = self.images_base_path.replace("images","depths")
+        self.undistorted_images_base_path = self.images_base_path.replace("images","undistorted_images")
         self.inputs = inputs
         self.types = types
         self.metadata = metadata
@@ -35,6 +36,8 @@ class Tub(object):
             os.makedirs(self.images_base_path, exist_ok=True)
         if not os.path.exists(self.depths_base_path):
             os.makedirs(self.depths_base_path, exist_ok=True)
+        if not os.path.exists(self.undistorted_images_base_path):
+            os.makedirs(self.undistorted_images_base_path, exist_ok=True)
         
         # set up the publisher
         # self.context = zmq.Context()
@@ -109,6 +112,15 @@ class Tub(object):
                     image_path = os.path.join(self.depths_base_path, name)
                     np.savez_compressed(image_path, img=np.uint16(value))
                     contents[key] = name
+                elif input_type == 'undistorted_image':
+                    name = Tub._image_file_name(self.manifest.current_index, key).replace("image","undistort")
+                    image_path = os.path.join(self.undistorted_images_base_path, name)
+                    image = Image.fromarray(np.uint8(value))
+                    image.save(image_path)
+                    image.close()
+                    del image
+                    contents[key] = name
+
 
         # Private properties
         contents['_timestamp_ms'] = int(round(time.time() * 1000))

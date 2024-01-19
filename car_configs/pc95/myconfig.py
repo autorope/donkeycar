@@ -39,11 +39,11 @@ CAMERA_TYPE = "OAK"   # (OAK|PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
 # # OAK-D-WIDE: "800p" for rgb
 RGB_RESOLUTION = "800p"
 #
-RGB_APPLY_CROPPING = True
+RGB_APPLY_CROPPING = False
 RGB_SENSOR_CROP_X = 0.0
 RGB_SENSOR_CROP_Y = 0.175
 #RGB_SENSOR_CROP_Y = 0.325
-RGB_VIDEO_SIZE = (320,165)
+RGB_VIDEO_SIZE = (320,200) # (320,165)
 #RGB_VIDEO_SIZE = (320,125)
 #
 # RGB_APPLY_MANUAL_CONF = False
@@ -58,14 +58,23 @@ USE_CAMERA_TUNING_BLOB = True
 # # OAK-D-WIDE: from 1280/800  (1,8)>>160/100 (3,16)>>240/150 5/32>>200/125
 OAK_D_ISP_SCALE = (1,4)
 #
-# # OAK-D-LITE: color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
-# # OAK-D-WIDE: 240 ou 200 ou 160
-IMAGE_W = 320
-# # OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
-# # OAK-D-WIDE: 150 ou 125 ou 100
-IMAGE_H = 165
-#
+OAK_IMAGE_W = 320 
+# OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
+# OAK-D-WIDE: 150 ou 125 ou 100
+OAK_IMAGE_H = 200 # 165 
+
+OAK_IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+
+
+# OAK-D-LITE: color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
+# OAK-D-WIDE: 240 ou 200 ou 160
+IMAGE_W = 320 
+# OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
+# OAK-D-WIDE: 150 ou 125 ou 100
+IMAGE_H = 165 
+
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
+
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # 
 
@@ -74,23 +83,30 @@ OAK_ENABLE_DEPTH_MAP = True # enables depth map output
 
 # The following config is centered cropping to align with RGB
 # If RGB cropping modified, modify depth cropping  
-OAK_DEPTH_CROP_RECT = (0.0,0.175,1.0,1.0) # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
+OAK_DEPTH_CROP_RECT = None # (0.0,0.175,1.0,1.0) # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
+OAK_ENABLE_UNDISTORTED_RGB = True # Activate undistorted rgb generation and recording
 OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 # 
 # # OBSTACLE_AVOIDANCE SETTINGS
-# OBSTACLE_AVOIDANCE_ENABLED = False
-# OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
-# CLOSE_AVOIDANCE_DIST_MM = 1000
+OBSTACLE_AVOIDANCE_ENABLED = False
+OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
+CLOSE_AVOIDANCE_DIST_MM = 1000
 #
 # # OBSTACLE_DETECTOR
-OBSTACLE_DETECTOR_ENABLED = True
-# OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
+OBSTACLE_DETECTOR_ENABLED = True # Si True active detection d'obstacle ou l'avoidance ou le suivi de ligne 
+OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 # OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
+OBSTACLE_DETECTOR_MODEL_PATH = "~/car_ref/models/20240112161500-20240114222912-LR-A001-avoidance-rgb-cone-car.trt"
+
 # OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
-# OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
+OBSTACLE_DETECTOR_MODEL_TYPE = "trt_obstacle_detectortrt"
+
+OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
 BEHAVIOR_LIST = ['left', 'middle', 'right']
-# OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = False # To free drive using behavior model
-OBSTACLE_DETECTOR_MANUAL_LANE = True
+# Next 2 params cannot be enabled together.
+OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = True # To free drive using behavior model, Si True, active l'autopilote du steering avec avoidance
+OBSTACLE_DETECTOR_MANUAL_LANE = False # si True, active le mode copilot pour le steering depuis la radio 
+
 #
 # #CAMERA Settings Vivatech 2022 (nano)
 # #CAMERA_TYPE = "CSIC"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)

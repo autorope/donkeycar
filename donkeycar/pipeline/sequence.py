@@ -54,6 +54,7 @@ class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
         self.iterator = BaseTfmIterator_(
             iterable=self.iterable, x_transform=self.x_transform, y_transform=self.y_transform)
 
+
     def __len__(self):
         return len(self.iterator)
 
@@ -105,6 +106,7 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
         self.y_transform = y_transform
         self.iterator = iter(self.iterable)
 
+
     def __len__(self):
         return len(self.iterator)
 
@@ -113,6 +115,7 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
 
     def __next__(self):
         record = next(self.iterator)
+
         if isinstance(record, tuple) and len(record) == 2:
             x, y = record
             return self.x_transform(x), self.y_transform(y)
@@ -123,7 +126,6 @@ class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
 class TubSequence(Iterable[TubRecord]):
     def __init__(self, records: List[TubRecord]) -> None:
         self.records = records
-
     def __iter__(self) -> SizedIterator[TubRecord]:
         return TubSeqIterator(self.records)
 

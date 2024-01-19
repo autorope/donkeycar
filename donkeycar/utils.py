@@ -150,6 +150,17 @@ def normalize_image(img_arr_uint):
     """
     return img_arr_uint.astype(np.float64) * ONE_BYTE_SCALE
 
+def normalize_depth_map(depth_map_arr_uint16):
+    """
+    Convert uint16 numpy image array into [0,1] float image array
+    :param img_arr_uint:    [0,255]uint8 numpy image array
+    :return:                [0,1] float32 numpy image array
+    """
+    depth_map_arr_uint16[depth_map_arr_uint16 > 1200] = 1200
+
+    depth_map_arr_uint16[depth_map_arr_uint16 == 0] = 1500
+
+    return depth_map_arr_uint16.astype(np.float64) / 1500.0 
 
 def denormalize_image(img_arr_float):
     """
@@ -204,6 +215,14 @@ def load_image(filename, cfg):
         img_arr = img_arr.reshape(h, w, 1)
 
     return img_arr
+
+def load_depth_map(filename, cfg):
+    npz = np.load(filename)
+    depth_map = npz["img"]
+    h, w = depth_map.shape[:2]
+    depth_map = depth_map.reshape(h, w, 1)
+
+    return depth_map
 
 '''
 FILES
@@ -499,7 +518,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     '''
     from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
         KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
-        KerasLSTM, Keras3D_CNN, KerasDetector
+        KerasLSTM, Keras3D_CNN, KerasDetector, KerasDetectorDualInput
     from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
         FastAIInterpreter, OnnxInterpreter
 
@@ -507,11 +526,12 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         model_type = cfg.DEFAULT_MODEL_TYPE
     logger.info(f'get_model_by_type: model type is: {model_type}')
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
+    input_depth_shape = (cfg.IMAGE_H, cfg.IMAGE_W, 1)
     if 'tflite_' in model_type:
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
     elif 'trt_' in model_type:
-        from donkeycar.parts.tensorrt import TensorRTLinear, TensorRTBehavior
+        from donkeycar.parts.tensorrt import TensorRTLinear, TensorRTBehavior, TensorRTDetector
         used_model_type = model_type.replace('trt_', '')
     elif 'tensorrt_' in model_type:
         interpreter = TensorRT()
@@ -535,6 +555,8 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         kl = TensorRTLinear(cfg=cfg)
     elif used_model_type == "behaviortrt":
         kl = TensorRTBehavior(cfg=cfg)
+    elif used_model_type == "obstacle_detectortrt":
+        kl = TensorRTDetector(cfg=cfg)
     elif used_model_type == "linear":
         kl = KerasLinear(interpreter=interpreter, input_shape=input_shape, have_odom=cfg.HAVE_ODOM, have_scen_cat=cfg.ROBOCARS_SL_DETECTION_MODEL, num_scen_cat=cfg.ROBOCARS_NUM_SCEN_CAT)
 
@@ -562,6 +584,12 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         kl = KerasDetector(
             interpreter=interpreter, 
             input_shape = input_shape,
+            num_locations=cfg.OBSTACLE_DETECTOR_NUM_LOCATIONS)
+    elif used_model_type == "obstacle_detector_dual":
+        kl = KerasDetectorDualInput(
+            interpreter=interpreter, 
+            input_shape = input_shape,
+            input_depth_shape = input_depth_shape, 
             num_locations=cfg.OBSTACLE_DETECTOR_NUM_LOCATIONS)
     elif used_model_type == 'localizer':
         kl = KerasLocalizer(interpreter=interpreter, input_shape=input_shape,
@@ -614,7 +642,8 @@ def train_test_split(data_list: List[Any],
         i_sample = 0
         while i_sample < target_train_size and len(data_list) > 1:
             i_choice = random.randint(0, len(data_list) - 1)
-            train_data.append(data_list.pop(i_choice))
+            chosen_data = data_list.pop(i_choice)
+            train_data.append(chosen_data)
             i_sample += 1
 
         # remainder of the original list is the validation set

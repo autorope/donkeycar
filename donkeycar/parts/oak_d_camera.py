@@ -3,6 +3,7 @@ import time
 from collections import deque
 import numpy as np
 import depthai as dai
+import cv2
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -31,6 +32,7 @@ class OakDCameraBuilder:
         self.rgb_sensor_iso = 1200
         self.rgb_wb_manual = 2800
         self.use_camera_tuning_blob = False
+        self.enable_undistort_rgb = False
 
     def with_width(self, width):
         self.width = width
@@ -104,6 +106,9 @@ class OakDCameraBuilder:
         self.use_camera_tuning_blob = use_camera_tuning_blob
         return self
 
+    def with_enable_undistort_rgb(self, enable_undistort_rgb):
+        self.enable_undistort_rgb = enable_undistort_rgb
+        return self
 
     def build(self):
         return OakDCamera(
@@ -124,7 +129,8 @@ class OakDCameraBuilder:
             rgb_exposure_time=self.rgb_exposure_time,
             rgb_sensor_iso=self.rgb_sensor_iso,
             rgb_wb_manual=self.rgb_wb_manual,
-            use_camera_tuning_blob=self.use_camera_tuning_blob
+            use_camera_tuning_blob=self.use_camera_tuning_blob,
+            enable_undistort_rgb=self.enable_undistort_rgb
         )
 
 class OakDCamera:
@@ -146,7 +152,8 @@ class OakDCamera:
                  rgb_exposure_time = 2000,
                  rgb_sensor_iso = 1200,
                  rgb_wb_manual= 2800,
-                 use_camera_tuning_blob = False):
+                 use_camera_tuning_blob = False,
+                 enable_undistort_rgb = False):
         
         self.width = width
         self.height = height
@@ -166,6 +173,7 @@ class OakDCamera:
         self.rgb_sensor_iso = rgb_sensor_iso
         self.rgb_wb_manual = rgb_wb_manual
         self.use_camera_tuning_blob = use_camera_tuning_blob
+        self.enable_undistort_rgb = enable_undistort_rgb
 
         # depth config
         self.extended_disparity = True # Closer-in minimum depth, disparity range is doubled (from 95 to 190)
@@ -180,8 +188,11 @@ class OakDCamera:
         self.frame_xout = None
         self.frame_time = None
         self.frame_xout_depth = None
+        self.frame_undistorted_rgb = None
         self.roi_distances = []
         self.latencies = deque([], maxlen=20)
+
+        self.alpha = 0
 
         # Create pipeline
         self.pipeline = dai.Pipeline()
@@ -189,8 +200,7 @@ class OakDCamera:
         if self.use_camera_tuning_blob == True:
             self.pipeline.setCameraTuningBlobPath('/home/donkey/tuning_exp_limit_8300us.bin')
         
-        self.pipeline.setXLinkChunkSize(0) # This might improve reducing the latency on some systems
-
+        # self.pipeline.setXLinkChunkSize(0) # default = 64*1024  To adjust latency on some systems if needed RRL
         if self.depth == 3:
             self.create_color_pipeline()
         elif self.depth == 1:
@@ -202,11 +212,21 @@ class OakDCamera:
             self.create_depth_pipeline()
         elif self.enable_obstacle_dist:
             self.create_obstacle_dist_pipeline()
-
         try:
             # Connect to device and start pipeline
             logger.info('Starting OAK-D camera')
             self.device = dai.Device(self.pipeline)
+
+            calibData = self.device.readCalibration2()
+            rgbCamSocket = dai.CameraBoardSocket.CAM_A
+            rgb_w = 320  # camRgb.getResolutionWidth()
+            rgb_h = 200  # camRgb.getResolutionHeight()
+            rgbIntrinsics = np.array(calibData.getCameraIntrinsics(rgbCamSocket, rgb_w, rgb_h))
+            rgb_d = np.array(calibData.getDistortionCoefficients(rgbCamSocket))
+
+            rgb_new_cam_matrix, _ = cv2.getOptimalNewCameraMatrix(rgbIntrinsics, rgb_d, (rgb_w, rgb_h), self.alpha)
+
+            self.map_x, self.map_y = cv2.initUndistortRectifyMap(rgbIntrinsics, rgb_d, None, rgb_new_cam_matrix, (rgb_w, rgb_h), cv2.CV_32FC1)
 
             # Create queues
             self.queue_xout = self.device.getOutputQueue("xout", maxSize=1, blocking=False)
@@ -264,7 +284,6 @@ class OakDCamera:
             #    |                    |
             #    |--------------------|
 
-
         # Resize image
         camera.setPreviewKeepAspectRatio(False)
         camera.setPreviewSize(self.width, self.height) # wich means cropping if aspect ratio kept
@@ -278,7 +297,7 @@ class OakDCamera:
             camera.initialControl.setManualWhiteBalance(self.rgb_wb_manual)
         else:
             camera.initialControl.SceneMode(dai.CameraControl.SceneMode.SPORTS)
-            camera.initialControl.setAutoWhiteBalanceMode(dai.CameraControl.AutoWhiteBalanceMode.AUTO)
+            # camera.initialControl.setAutoWhiteBalanceMode(dai.CameraControl.AutoWhiteBalanceMode.AUTO)
 
         # Define output and link
         xout = self.pipeline.create(dai.node.XLinkOut)
@@ -327,19 +346,21 @@ class OakDCamera:
         stereo_manip_left = self.pipeline.create(dai.node.ImageManip)
         
         # Set resize manip left node properties
-        stereo_manip_left.initialConfig.setResize(self.width, self.height)
+        # stereo_manip_left.initialConfig.setResize(self.width, self.height)
+        stereo_manip_left.initialConfig.setResize(320, 200)
         stereo_manip_left.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
         stereo_manip_left.initialConfig.setInterpolation(dai.Interpolation.DEFAULT_DISPARITY_DEPTH)
-        stereo_manip_left.setNumFramesPool(1)
+        stereo_manip_left.setNumFramesPool(2)
 
         # Create resize manip right node
         stereo_manip_right = self.pipeline.create(dai.node.ImageManip)
 
         # Set resize manip left node properties
-        stereo_manip_right.initialConfig.setResize(self.width, self.height)
+        # stereo_manip_right.initialConfig.setResize(self.width, self.height)
+        stereo_manip_right.initialConfig.setResize(320, 200)
         stereo_manip_right.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
         stereo_manip_right.initialConfig.setInterpolation(dai.Interpolation.DEFAULT_DISPARITY_DEPTH)
-        stereo_manip_right.setNumFramesPool(1)
+        stereo_manip_right.setNumFramesPool(2)
 
         # Crop range
         #    - - > x 
@@ -356,12 +377,17 @@ class OakDCamera:
         stereo.setLeftRightCheck(self.lr_check)
         stereo.setExtendedDisparity(self.extended_disparity)
         stereo.setSubpixel(self.subpixel)
-        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_ACCURACY)
+        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
         stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
-        stereo.initialConfig.setConfidenceThreshold(200)
-        stereo.setInputResolution(self.width, self.height)
+        # stereo.initialConfig.setConfidenceThreshold(200)
+        # stereo.setInputResolution(self.width, self.height)
         stereo.setNumFramesPool(2)
         
+        stereo.setAlphaScaling(self.alpha)
+
+        stereo.setInputResolution(320,200)
+        stereo.setDepthAlign(dai.CameraBoardSocket.CAM_A)
+
         # Create depth output node
         xout_depth = self.pipeline.create(dai.node.XLinkOut)
         xout_depth.setStreamName("xout_depth")
@@ -436,10 +462,16 @@ class OakDCamera:
             image_data_xout = data_xout.getFrame()
             if self.depth == 3:
                 image_data_xout = np.moveaxis(image_data_xout,0,-1)
-            self.frame_xout = image_data_xout
 
             latency = (dai.Clock.now() - data_xout.getTimestamp()).total_seconds()
             self.frame_time = time.time() - latency
+
+            if self.enable_undistort_rgb == True:
+                frame_undistorted_rgb_full = cv2.remap(image_data_xout.copy(), self.map_x, self.map_y, cv2.INTER_LINEAR)
+                self.frame_undistorted_rgb = frame_undistorted_rgb_full[35:200,0:320]
+            
+            image_data_xout = image_data_xout[35:200,0:320]
+            self.frame_xout = image_data_xout
 
             if logger.isEnabledFor(logging.DEBUG):
                 # Latency in miliseconds 
@@ -451,7 +483,8 @@ class OakDCamera:
 
         if self.queue_xout_depth is not None:
             data_xout_depth = self.queue_xout_depth.get()
-            self.frame_xout_depth = data_xout_depth.getFrame()
+            frame_xout_depth_full = data_xout_depth.getFrame()
+            self.frame_xout_depth = frame_xout_depth_full[35:200,0:320]
 
         if self.queue_xout_spatial_data is not None:
             xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
@@ -471,12 +504,20 @@ class OakDCamera:
         # return self.frame
 
     def run_threaded(self):
-        if self.enable_depth:
-            return self.frame_xout, self.frame_xout_depth
-        elif self.enable_obstacle_dist:
-            return self.frame_xout, np.array(self.roi_distances)
-        else:
-            return self.frame_xout
+
+        ret_list = [self.frame_xout]
+        
+        if self.enable_depth == True: ret_list.append(self.frame_xout_depth)
+        if self.enable_undistort_rgb == True: ret_list.append(self.frame_undistorted_rgb)
+        if self.enable_obstacle_dist == True: ret_list.append(np.array(self.roi_distances))
+        
+        return ret_list
+        # if self.enable_depth:
+        #     return self.frame_xout, self.frame_xout_depth
+        # elif self.enable_obstacle_dist:
+        #     return self.frame_xout, np.array(self.roi_distances)
+        # else:
+        #     return self.frame_xout
 
     def update(self):
         # Keep looping infinitely until the thread is stopped

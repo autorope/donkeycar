@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from donkeycar.config import Config
 from donkeycar.parts.tub_v2 import Tub
-from donkeycar.utils import load_image, load_pil_image
+from donkeycar.utils import load_image, load_pil_image, load_depth_map
 from typing_extensions import TypedDict
 
 
@@ -28,7 +28,8 @@ TubRecordDict = TypedDict(
         'imu/gyr_y': Optional[float],
         'imu/gyr_z': Optional[float],
         'behavior/one_hot_state_array': Optional[List[float]],
-        'localizer/location': Optional[int]
+        'localizer/location': Optional[int],
+        'cam/depth_array': Optional[str]
     }
 )
 
@@ -41,6 +42,8 @@ class TubRecord(object):
         self.underlying = underlying
         self._cache_images = getattr(self.config, 'CACHE_IMAGES', True)
         self._image: Optional[Any] = None
+        self._depth_map: Optional[Any] = None
+        
 
     def image(self, processor=None, as_nparray=True) -> np.ndarray:
         """
@@ -53,6 +56,7 @@ class TubRecord(object):
                             Image.open()
         :return:            Image
         """
+
         if self._image is None:
             image_path = self.underlying['cam/image_array']
             full_path = os.path.join(self.base_path, 'images', image_path)
@@ -71,9 +75,39 @@ class TubRecord(object):
             _image = self._image
         return _image
 
+    def depth_map(self, processor=None, as_nparray=True) -> np.ndarray:
+        """
+        Loads the image.
+
+        :param processor:   Image processing like augmentations or cropping, if
+                            not None. Defaults to None.
+        :param as_nparray:  Whether to convert the image to a np array of uint8.
+                            Defaults to True. If false, returns result of
+                            Image.open()
+        :return:            Image
+        """
+
+        if self._depth_map is None:
+            depth_map_path = self.underlying['cam/depth_array']
+            depth_map_path = depth_map_path + ".npz"
+            full_path = os.path.join(self.base_path, 'depths', depth_map_path)
+            if as_nparray:
+                _depth_map = load_depth_map(full_path, cfg=self.config)
+
+            else:
+                # If you just want the raw Image
+                _depth_map = np.asarray(load_depth_map(full_path, cfg=self.config))
+            if processor:
+                _depth_map = processor(_depth_map)
+            # only cache images if config does not forbid it
+            if self._cache_images:
+                self._depth_map = _depth_map
+        else:
+            _depth_map = self._depth_map
+        return _depth_map
+
     def __repr__(self) -> str:
         return repr(self.underlying)
-
 
 class TubDataset(object):
     """

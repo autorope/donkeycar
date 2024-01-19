@@ -365,7 +365,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             if not cfg.OBSTACLE_DETECTOR_MANUAL_LANE:
                 kd = dk.utils.get_model_by_type(cfg.OBSTACLE_DETECTOR_MODEL_TYPE, cfg)
                 load_model(kd, cfg.OBSTACLE_DETECTOR_MODEL_PATH)
-                V.add(kd, inputs=['cam/image_array'], outputs=detector_outputs, run_condition='run_pilot')
+                if cfg.OAK_ENABLE_DEPTH_MAP:
+                    inputs = ['cam/image_array', 'cam/depth_array']
+                else:
+                    inputs = ['cam/image_array']
+                V.add(kd, inputs=inputs, outputs=detector_outputs, run_condition='run_pilot')
 
             # Avoidance logic between obstacle_detector and KerasBehavioral
             from donkeycar.parts.avoidance_behavior import AvoidanceBehaviorPart
@@ -581,6 +585,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs += ['cam/depth_array']
         types += ['gray16_array']
 
+    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_UNDISTORTED_RGB:
+        inputs += ['cam/undistorted_rgb']
+        types += ['undistorted_image']
+        # print(f"in complete cfg.OAK_ENABLE_UNDISTORTED_RGB: {cfg.OAK_ENABLE_UNDISTORTED_RGB}")
     # if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
     #     inputs += ['cam/obstacle_distances']
     #     types += ['nparray']
@@ -870,9 +878,9 @@ def add_camera(V, cfg, camera_type):
         from donkeycar.parts.oak_d_camera import OakDCameraBuilder
         # cam = OakDCamera(width=cfg.IMAGE_W, height=cfg.IMAGE_H, depth=cfg.IMAGE_DEPTH, isp_scale=cfg.OAK_D_ISP_SCALE, framerate=cfg.CAMERA_FRAMERATE, enable_depth=cfg.OAK_ENABLE_DEPTH_MAP, enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED, rgb_resolution=cfg.RGB_RESOLUTION)
         cam = OakDCameraBuilder() \
-                    .with_width(cfg.IMAGE_W) \
-                    .with_height(cfg.IMAGE_H) \
-                    .with_depth(cfg.IMAGE_DEPTH) \
+                    .with_width(cfg.OAK_IMAGE_W) \
+                    .with_height(cfg.OAK_IMAGE_H) \
+                    .with_depth(cfg.OAK_IMAGE_DEPTH) \
                     .with_isp_scale(cfg.OAK_D_ISP_SCALE) \
                     .with_framerate(cfg.CAMERA_FRAMERATE) \
                     .with_depth_crop_rect(cfg.OAK_DEPTH_CROP_RECT) \
@@ -888,10 +896,13 @@ def add_camera(V, cfg, camera_type):
                     .with_rgb_sensor_iso(cfg.RGB_SENSOR_ISO) \
                     .with_rgb_wb_manual(cfg.RGB_WB_MANUAL) \
                     .with_use_camera_tuning_blob(cfg.USE_CAMERA_TUNING_BLOB) \
+                    .with_enable_undistort_rgb(cfg.OAK_ENABLE_UNDISTORTED_RGB) \
                     .build()
         outputs = ['cam/image_array']
         if cfg.OAK_ENABLE_DEPTH_MAP:
             outputs += ['cam/depth_array']
+        if cfg.OAK_ENABLE_UNDISTORTED_RGB:
+            outputs += ['cam/undistorted_rgb']
         if cfg.OAK_OBSTACLE_DETECTION_ENABLED:
             outputs += ['cam/obstacle_distances']
         V.add(cam, inputs=[], outputs=outputs, threaded=True)

@@ -13,10 +13,11 @@ from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
-from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
+from donkeycar.utils import get_model_by_type, normalize_image, train_test_split, normalize_depth_map
 import tensorflow as tf
 import numpy as np
-
+import logging
+logger = logging.getLogger(__name__)
 
 class BatchSequence(object):
     """
@@ -61,18 +62,24 @@ class BatchSequence(object):
         def get_x(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting x from record for training"""
             out_dict = self.model.x_transform(record, self.image_processor)
+
             # apply the normalisation here on the fly to go from uint8 -> float
             out_dict['img_in'] = normalize_image(out_dict['img_in'])
+
+            if "depth_in" in out_dict:
+                out_dict['depth_in'] = normalize_depth_map(out_dict['depth_in'])
             return out_dict
 
         def get_y(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting y from record for training """
             y = self.model.y_transform(record)
+
             return y
 
         # 2. Build pipeline using the transformations
         pipeline = self.sequence.build_pipeline(x_transform=get_x,
                                                 y_transform=get_y)
+        
         return pipeline
 
     def create_tf_data(self) -> tf.data.Dataset:
@@ -81,6 +88,7 @@ class BatchSequence(object):
             generator=lambda: self.pipeline,
             output_types=self.model.output_types(),
             output_shapes=self.model.output_shapes())
+
         return dataset.repeat().batch(self.batch_size)
 
 

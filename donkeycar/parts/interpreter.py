@@ -174,7 +174,7 @@ class KerasInterpreter(Interpreter):
         img_arr = np.expand_dims(img_arr, axis=0)
         inputs = img_arr
         
-        if type(other_arr) == 'numpy.ndarray':
+        if type(other_arr) == np.ndarray:
             other_arr = np.expand_dims(other_arr, axis=0)
             inputs = [img_arr, other_arr]
         return self.invoke(inputs)
