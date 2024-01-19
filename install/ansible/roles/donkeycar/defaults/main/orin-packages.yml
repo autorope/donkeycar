@@ -79,7 +79,7 @@ donkeycar_orin_pip_packages:
   #- tf2onnx
   - onnxruntime==1.14.1
   - pycuda==2022.2.2 # NEEDS SOME VARS (cuda on path and lib)
-  - depthai==2.22.0.0
+  - depthai==2.24.0.0
   - depthai-sdk==1.13.1
   # allready in tensorflow 2.7.0 install
   #- protobuf==3.19.6

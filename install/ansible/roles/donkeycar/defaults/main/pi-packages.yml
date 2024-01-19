@@ -52,6 +52,6 @@ donkeycar_pi_pip_packages:
   - tensorflow
   # more
   - tensorflow-io # to remove warning at tensorflow start on pi
-  - depthai==2.22.0.0
+  - depthai==2.24.0.0
   - depthai-sdk==1.13.1
 
