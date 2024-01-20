@@ -1,0 +1,174 @@
+# #:import TsPlot donkeycar.management.graph.TsPlot
+
+<ConfigManager>
+    title: 'Choose the car directory'
+    orientation: 'vertical'
+
+    Header:
+        title: 'Config Loader'
+        description:
+            "Load config from car directory, typically ~/mycar"
+    BoxLayout:
+        orientation: 'horizontal'
+        spacing: spacing
+        RoundedButton:
+            text: 'Load config'
+            on_release: root.open_popup()
+        MyLabel:
+            id: car_dir
+            text: root.file_path
+
+
+<TubLoader>
+    title: 'Choose the tub directory'
+    orientation: 'vertical'
+    Header:
+        title: 'Tub Loader'
+        description: "Load tub from within the car directory, typically ./data"
+    BoxLayout:
+        spacing: spacing
+        RoundedButton:
+            id: tub_button
+            text: 'Load tub'
+            disabled: True
+            on_release: root.open_popup()
+        MyLabel:
+            id: tub_dir
+            text: root.file_path
+
+
+<TubEditor>
+    orientation: 'horizontal'
+    spacing: spacing
+    on_lr:
+        msg = f'Setting range, '
+        if root.lr[0] < root.lr[1]: msg += (f'affecting records inside [{root.lr[0]}, {root.lr[1]}) ' + \
+        '- you can affect records outside by setting left > right')
+        else: msg += (f'affecting records outside ({root.lr[1]}, {root.lr[0]}] ' + \
+        '- you can affect records inside by setting left < right')
+        app.root.ids.status.text = msg
+    RoundedButton:
+        text: 'Set left'
+        on_release: root.set_lr(True)
+    RoundedButton:
+        text: 'Set right'
+        on_release: root.set_lr(False)
+    AutoLabel:
+        text: '[' + str(root.lr[0]) + ', ' + str(root.lr[1]) + ')'
+    RoundedButton:
+        text: 'Delete'
+        on_release:
+            root.del_lr(True)
+            msg = f'Delete records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can delete multiple ranges before doing so.'
+            app.root.ids.status.text = msg
+    RoundedButton:
+        text: 'Restore'
+        on_release:
+            root.del_lr(False)
+            msg = f'Restore records {root.lr} - press <Reload tub> to see the ' \
+            + f'effect, but you can restore multiple ranges before doing so.'
+            app.root.ids.status.text = msg
+    RoundedButton:
+        text: 'Reload Tub'
+        on_release:
+            app.root.ids.tub_screen.ids.tub_loader.update_tub()
+
+
+<TubFilter>:
+    orientation: 'horizontal'
+    spacing: spacing
+    RoundedButton:
+        text: 'Set filter'
+        size_hint_x: 0.19
+        on_release: root.update_filter()
+    MyTextInput:
+        id: record_filter
+        text: root.record_filter
+        multiline: False
+        on_focus: root.filter_focus()
+
+
+
+<DataPlot>:
+    padding: 0
+    spacing: spacing
+    RoundedButton:
+        text: 'Reload Graph'
+        on_release: root.plot_from_current_bars()
+    RoundedButton:
+        text: 'Browser Graph'
+        on_release: root.plot_from_current_bars(in_app=False)
+
+
+<TubScreen>
+    BoxLayout:
+        orientation: 'vertical'
+        padding: spacing
+        spacing: spacing
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: spacing
+            size_hint_y: 0.7
+            ConfigManager:
+                id: config_manager
+            TubLoader:
+                id: tub_loader
+
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 1.8
+            Header:
+                size_hint_y: 0.25
+                title: 'Tub Navigator'
+                description:
+                    "Use control panel or slider to navigate through tub and "\
+                    "select records. Add / remove record fields using the drop"\
+                    " down menu."
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: spacing
+                DataPanel:
+                    id: data_panel
+                    screen: root
+                    record: root.current_record
+                FullImage:
+                    id: img
+                ControlPanel
+                    id: control_panel
+                    size_hint_x: 0.75
+                    screen: root
+            Slider:
+                id: slider
+                size_hint_y: 0.25
+                min: 0
+                max: tub_loader.len - 1
+                value: 0
+                size_hint_y: None
+                height: common_height
+                on_value: root.index = int(self.value)
+
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            Header:
+                size_hint_y: 1.2
+                title: 'Tub Cleaner'
+                description:
+                    "Select records using intervals to delete / restore or set "\
+                    "a filter. The filter is temporary in the app."
+            TubEditor:
+                id: tub_editor
+            TubFilter:
+                id: tub_filter
+                screen: root
+
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 1.5
+            Plot:
+                id: graph
+            DataPlot:
+                id: data_plot
+
+
+

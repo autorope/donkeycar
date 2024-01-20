@@ -1,0 +1,240 @@
+
+<PilotLoader>:
+    spacing: spacing
+    title: 'Choose the pilot'
+    orientation: 'horizontal'
+    model_type: pilot_spinner.text
+    RoundedButton:
+        id: pilot_button
+        text: 'Choose pilot'
+        disabled: True
+        on_release:
+            root.open_popup()
+    MySpinner:
+        id: pilot_spinner
+        text: 'Model type'
+        values: drive_models
+    MyLabel:
+        id: pilot_file
+        size_hint_x: 3.0
+        text: root.file_path
+
+
+<TransformationPopup>:
+    size_hint: 0.5, 1.0
+    auto_dismiss: False
+    pos_hint: {'center_x': .25 if self.right else 0.75, 'center_y': .5}
+
+    BoxLayout:
+        orientation: "horizontal"
+        BoxLayout:
+            orientation: 'vertical'
+            id: selected_list
+            spacing: 20
+
+        BoxLayout:
+            orientation: 'vertical'
+            spacing: 20
+            BoxLayout:
+                spacing: spacing
+                orientation: 'vertical'
+                id: trafo_list
+            RoundedButton:
+                text: "Close"
+                size_hint_y: 0.1
+                on_release: root.dismiss()
+
+
+<TubplotPopup>:
+    size_hint: 0.5, 0.5
+    auto_dismiss: False
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    BoxLayout:
+        orientation: "vertical"
+        padding: spacing
+        spacing: spacing
+        BackgroundBoxLayout:
+            orientation: "vertical"
+            spacing: spacing
+            BoxLayout:
+                MyLabel:
+                    size_hint_x: 0.5
+                    text: 'Select pilot'
+                MySpinner:
+                    id: tubplot_spinner
+                    size_hint_y: 1
+                    text_autoupdate: True
+                    values: root.screen.ids.pilot_board.get_pilot_names()
+            Slider:
+                id: slider
+                min: root.screen.ids.slider.min
+                max: root.screen.ids.slider.max
+                value: 1000
+            MyLabel:
+                valign: 'center'
+                text: f'Selected records 0 to {int(slider.value)}'
+            RoundedButton:
+                text: 'Tub plot'
+                on_release:
+                    root.screen.tub_plot(tubplot_spinner.text, int(slider.value))
+            RoundedButton:
+                text: "Close"
+                on_release: root.dismiss()
+
+
+<PilotViewer>
+    orientation: 'vertical'
+    current_user_field: root.screen.ids.data_in.current_field
+    on_current_user_field:
+        data_panel.ids.data_spinner.text = root.map_pilot_field(self.current_user_field)
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: self.minimum_height + layout_height
+        spacing: spacing
+        PilotLoader:
+            id: pilot_loader
+        RoundedButton:
+            size_hint_x: 0.1
+            text: '-'
+            on_release:
+                root.screen.ids.pilot_board.remove_viewer(root)
+    OverlayImage:
+        id: img
+        pilot_loader: pilot_loader
+    DataPanel:
+        size_hint_y: None
+        height: 20 + (self.minimum_height - 20) * 15
+        id: data_panel
+        is_linked: True
+        font_color: [0.2, 0.2, 1, 1]
+        screen: root.screen
+        record: img.pilot_record
+
+
+<PilotBoard>
+    size_hint_y: 1.5
+    spacing: spacing
+
+
+<PilotScreen>:
+    name: 'pilot'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: spacing
+        spacing: spacing
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height +60
+            Header:
+                title: 'Multi Pilot Loader'
+                description:
+                    'Load pilots from the Trainer screen and compare the model '\
+                    'inference with the recorded user data.'
+            BoxLayout:
+                orientation: 'horizontal'
+                size_hint_y: 0.6
+                spacing: spacing
+                MyLabel:
+                    text: 'Add pilot'
+                RoundedButton:
+                    id: add_pilot_btn
+                    text: '+'
+                    on_release: pilot_board.add_viewer()
+                MyLabel:
+                    text: 'Number of columns'
+                MySpinner:
+                    id: col_spinner
+                    values: ['1', '2', '3', '4']
+                    text: '2'
+                Tubplot:
+                    text: 'Tub plot'
+                    on_release: self.open_popup(root)
+
+        PilotBoard:
+            id: pilot_board
+            cols: int(col_spinner.text or '2')
+            screen: root
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height + common_height
+            Header:
+                title: 'Augmentations and Transformations'
+                description:
+                    'Set image augmentation and transformations on '\
+                    'the fly. Transformations execute before augmentations'\
+                    'and post transformations afterwards.'
+
+            BoxLayout:
+                size_hint_y: None
+                height: common_height
+                orientation: 'horizontal'
+                spacing: spacing
+                RoundedToggleButton:
+                    id: button_bright
+                    size_hint_x: 0.5
+                    text: 'Brightness {:4.2f}'.format(slider_bright.value)
+                    on_release: root.set_brightness(slider_bright.value)
+                Slider:
+                    id: slider_bright
+                    value: 0
+                    min: -0.5
+                    max: 0.5
+                    on_value: root.set_brightness(self.value)
+                RoundedToggleButton:
+                    id: button_blur
+                    size_hint_x: 0.5
+                    text: 'Blur {:4.2f}'.format(slider_blur.value)
+                    on_release: root.set_blur(slider_blur.value)
+                Slider:
+                    id: slider_blur
+                    value: 0
+                    min: 0.001
+                    max: 3
+                    on_value: root.set_blur(self.value)
+            BoxLayout:
+                size_hint_y: None
+                height: common_height
+                orientation: 'horizontal'
+                spacing: spacing
+                Transformations:
+                    id: pre_transformation
+                    title: 'Pre-Augmentation Transformations'
+                    text: 'Set pre transformation'
+                    pilot_screen: root
+                    is_post: False
+                    on_release: self.open_popup()
+                Transformations:
+                    id: post_transformation
+                    title: 'Post-Augmentation Transformations'
+                    text: 'Set post transformation'
+                    pilot_screen: root
+                    is_post: True
+                    on_release: self.open_popup()
+
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height + 90
+            Slider:
+                size_hint_y: None
+                height: common_height
+                id: slider
+                min: 0
+                value: 0
+                on_value:
+                    root.index = int(self.value)
+            BoxLayout:
+                orientation: 'horizontal'
+                spacing: spacing
+                ControlPanel:
+                    id: pilot_control
+                    screen: root
+                DataPanel:
+                    id: data_in
+                    font_color: [0.3, 0.8, 0.3, 1]
+                    screen: root
+                    record: root.current_record
+

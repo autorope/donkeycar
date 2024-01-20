@@ -1,0 +1,78 @@
+
+<StartScreen>:
+    BoxLayout:
+        padding: 10
+        orientation: 'vertical'
+        Image:
+            source: root.img_path
+            size: self.texture_size
+
+
+BoxLayout:
+    orientation: 'vertical'
+    ActionView:
+        id: av
+        size_hint_y: None
+        height: 20
+
+        ActionPrevious:
+            with_previous: False
+            app_icon: ''
+            size_hint_x: None
+            width: 0
+        ActionButton:
+            id: tub_btn
+            color: font_color
+            text: 'Tub Manager'
+            on_release:
+                sm.current = 'tub'
+                sm.current_screen.bind_keyboard()
+        ActionButton:
+            id: train_btn
+            color: font_color
+            text: 'Trainer'
+            on_release:
+                sm.current = 'train'
+                sm.current_screen.bind_keyboard()
+        ActionButton:
+            id: pilot_btn
+            color: font_color
+            text: 'Pilot Arena'
+            on_release:
+                sm.current = 'pilot'
+                if not sm.current_screen.index: sm.current_screen.index = 0
+                sm.current_screen.bind_keyboard()
+        ActionButton:
+            id: car_btn
+            color: font_color
+            text: 'Car Connector'
+            on_release:
+                sm.current = 'car'
+                sm.current_screen.update_pilots()
+                sm.current_screen.bind_keyboard()
+        ActionButton:
+            color: font_color
+            text: 'Quit'
+            on_release: app.get_running_app().stop()
+
+    ScreenManager:
+        id: sm
+        StartScreen:
+            id: start_screen
+            name: 'start'
+        TubScreen:
+            id: tub_screen
+            name: 'tub'
+        TrainScreen:
+            id: train_screen
+            name: 'train'
+        PilotScreen:
+            id: pilot_screen
+            name: 'pilot'
+        CarScreen:
+            id: car_screen
+            name: 'car'
+
+    StatusBar:
+        id: status
+        text: "Donkey ready"

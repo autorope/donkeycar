@@ -1,0 +1,295 @@
+#:import ScrollEffect  kivy.effects.scroll.ScrollEffect
+
+#:set supported_models ['linear', 'categorical', 'inferred', 'memory', 'behavior', 'localizer', 'rnn', '3d', 'sq', 'sq_imu', 'sq_mem', 'sq_mem_lap']
+#:set drive_models [pre + t for pre in['', 'tflite_', 'tensorrt_'] for t in supported_models ]
+
+
+<ConfigParamSetter>
+    size_hint_y: None
+    height: common_height
+    spacing: spacing
+    MySpinner:
+        id: cfg_spinner
+        # text_autoupdate: True
+        values: []
+        on_text:
+            root.update_rc(self.text)
+    MyTextInput:
+        id: cfg_overwrite
+        multiline: False
+        text:
+            str(getattr(root.config, cfg_spinner.text, '')) if root.config else ''
+        on_text_validate:
+            root.set_config_attribute(self.text)
+    RoundedButton:
+        id: cfg_add_remove
+        size_hint_x: 0.15
+        text: "-"
+        on_release:
+            root.screen.ids.config_panel.remove_widget(root)
+
+
+<ConfigParamPanel>:
+    spacing: spacing
+    cols: 1
+
+
+<BackgroundLabel>:
+    font_size: '12sp'
+    text_size: self.width, None
+    size: self.texture_size
+    valign: 'middle'
+    halign: 'left'
+    color: font_color
+
+
+<TransferSelector>:
+    title: 'Choose transfer model'
+    orientation: 'horizontal'
+    RoundedButton:
+        id: transfer_button
+        text: 'Transfer model'
+        size_hint_x: 0.5
+        on_release: root.open_popup()
+    AutoLabel:
+        text: root.file_path
+
+
+<MenuCheckBox>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    CheckBox:
+        active: True
+        on_active:
+            root.menu.selected.insert(root.i, root.text) if self.active else root.menu.selected.remove(root.text)
+    MyLabel:
+        valign: 'middle'
+        font_size: '12sp'
+        text: root.text
+
+
+<CheckBoxRow>:
+    orientation: 'horizontal'
+    on_selected: self.screen.plot_dataframe(self.screen.dataframe, self.selected)
+
+
+<ConfigViewerPopup>:
+    size_hint: 1.0, 1.0
+    auto_dismiss: False
+    pos_hint: {'center_x': 0.5, 'center_y': .5}
+    BoxLayout:
+        orientation: 'vertical'
+        spacing: 20
+        ScrollView:
+            effect_cls: ScrollEffect
+            GridLayout:
+                id: pilot_cfg_viewer_grid
+                cols: 2
+                row_default_height: 26
+                size_hint_y: None
+                height: self.minimum_height
+        RoundedButton:
+            text: "Close"
+            size_hint_y: 0.05
+            on_release: root.dismiss()
+
+<HistoryViewerPopup>
+    auto_dismiss: False
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    BoxLayout:
+        orientation: "vertical"
+        padding: spacing
+        spacing: spacing
+        BackgroundBoxLayout:
+            orientation: "vertical"
+            spacing: spacing
+            HistoryPlot:
+                id: history_plot
+                df: root.df
+            RoundedButton:
+                size_hint_y: None
+                height: common_height
+                text: "Close"
+                on_release: root.dismiss()
+
+
+<TrainScreen>:
+    name: 'train'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: spacing
+        spacing: spacing
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            spacing: spacing
+            size_hint_y: None
+            height: self.minimum_height + 80
+            Header:
+                size_hint_y: 1.5
+                id: cfg_header
+                title: 'Config Editor'
+                description:
+                    'Use dropdown menus to edit config parameters. Add more'\
+                    ' rows to keep track of more parameters without scrolling.'\
+                    ' Use json syntax, i.e. double-quoted "string" and true,'\
+                    ' false.'
+            BoxLayout:
+                id: lower_row
+                orientation: 'horizontal'
+                size_hint_y: 0.75
+                spacing: spacing
+                MyLabel:
+                    size_hint_x: 1.3
+                    text: 'Add config setter'
+                RoundedButton:
+                    size_hint_x: 1.3
+                    text: '+'
+                    on_release: config_panel.add()
+                MyLabel:
+                    text: 'Number columns'
+                MySpinner:
+                    id: col_setter
+                    values: ['1', '2', '3', '4']
+                    text: '1'
+                    on_text:
+                        config_panel.cols = int(self.text)
+                RoundedToggleButton:
+                    id: save_cfg
+                    text: 'Save myconfig'
+
+            ConfigParamPanel:
+                id: config_panel
+                size_hint_y: None
+                height:
+                    (common_height + 10) * (int(len(self.children) // self.cols)
+                    + (0 if len(self.children) % self.cols == 0 else 1)) - 10
+
+
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            Header:
+                size_hint_y: None
+                height: 40
+                title: 'Trainer'
+                description:
+                    "Train pilot using config parameters from above. Choose a "\
+                    "model type and optionally a transfer model. Provide a "\
+                    "comment to help identify the training parameters."
+
+            BoxLayout:
+                size_hint_y: None
+                height: common_height
+                spacing: spacing
+                MyLabel:
+                    text: 'Select model type'
+                MySpinner:
+                    id: train_spinner
+                    text: 'linear'
+                    values: supported_models
+                MyTextInput:
+                    id: comment
+                    size_hint_x: 2.05
+                    multiline: False
+                    text: 'Comment'
+                    on_text: app.root.ids.status.text = f'Adding comment: {self.text}'
+            BoxLayout:
+                size_hint_y: None
+                height: common_height
+                spacing: spacing
+                MySpinner:
+                    id: transfer_spinner
+                    text: 'Choose transfer model'
+                RoundedToggleButton:
+                    id: train_button
+                    text: 'Training running...' if self.state == 'down' else 'Train'
+                    on_press:
+                        root.train()
+                        self.disabled = True
+
+        BackgroundBoxLayout:
+            size_hint_y: 2
+            orientation: 'vertical'
+            spacing: 0
+            padding: 0
+            CheckBoxRow:
+                size_hint_y: None
+                height: 90
+                screen: root
+                id: column_chooser
+            ScrollView:
+                id: scroll
+                effect_cls: ScrollEffect
+                GridLayout:
+                    size_hint_y: None
+                    padding: 2
+                    spacing: 2
+                    cols: 2
+                    row_default_height: 28
+                    height: self.minimum_height
+                    id: scroll_pilots
+
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: self.minimum_height
+            Header:
+                size_hint_y: None
+                height: 50
+                title: 'Pilot Viewer and Editor'
+                description:
+                    "Select a pilot for viewing its config, updating the " \
+                    "comment or to deleting it. Deletion removes files from "\
+                    "disk and the entry from the database."
+            BoxLayout:
+                size_hint_y: None
+                height: common_height
+                spacing: spacing
+                MySpinner:
+                    size_hint_x: 1.2
+                    id: select_spinner
+                    text_autoupdate: True
+                    on_text:
+                        entry = root.database.get_entry(select_spinner.text)
+                        txt = entry.get('Comment') or ''
+                        comment.text = txt
+                RoundedToggleButton:
+                    id: delete_switch
+                    font_size: '11sp'
+                    text: 'Enable delete'
+                    size_hint_x: 0.3
+                    active: False
+                    on_release:
+                        delete_btn.disabled = False if self.state == 'down' else True
+                RoundedButton:
+                    size_hint_x: 0.75
+                    id: delete_btn
+                    disabled: True
+                    color: (.4, .4, .4, 1) if self.disabled else (0.95, 0, 0, 1)
+                    text: 'Delete pilot'
+                    on_release:
+                        root.database.delete_entry(select_spinner.text)
+                        root.reload_database()
+                        delete_switch.state = 'normal'
+                        self.disabled = True
+                RoundedButton:
+                    size_hint_x: 0.75
+                    id: update_comment
+                    text: 'Update comment'
+                    on_release:
+                        root.database.get_entry(select_spinner.text)['Comment'] = comment.text
+                        root.database.write()
+                        root.on_database()
+                RoundedButton:
+                    size_hint_x: 0.75
+                    id: show_config
+                    text: 'Show Config'
+                    on_release:
+                        root.show_config()
+                RoundedButton:
+                    size_hint_x: 0.75
+                    id: show_history()
+                    text: 'Training history'
+                    on_release:
+                        root.show_history()
