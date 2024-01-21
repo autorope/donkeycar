@@ -79,6 +79,8 @@ class TubRecord(object):
             _image = self._extract_image(as_nparray, processor)
         else:
             _image = self._image_from_cache(as_nparray)
+            if processor:
+                _image = processor(_image)
         return _image
 
     def _image_from_cache(self, as_nparray):
@@ -213,7 +215,7 @@ class Collator(Iterable[List[TubRecord]]):
         it = iter(self.records)
         for this_record in it:
             seq = [this_record]
-            seq_it = copy.copy(it)
+            seq_it = copy(it)
             for next_record in seq_it:
                 if self.is_continuous(this_record, next_record) and \
                         len(seq) < self.seq_length:
