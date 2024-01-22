@@ -90,9 +90,9 @@ OAK_ENABLE_UNDISTORTED_RGB = True # Activate undistorted rgb generation and reco
 OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
 
 # OBSTACLE_AVOIDANCE SETTINGS
-# OBSTACLE_AVOIDANCE_ENABLED = False
-# OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
-# CLOSE_AVOIDANCE_DIST_MM = 1000
+OBSTACLE_AVOIDANCE_ENABLED = False
+OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
+CLOSE_AVOIDANCE_DIST_MM = 1000
 
 # OBSTACLE_DETECTOR
 OBSTACLE_DETECTOR_ENABLED = True # Si True active detection d'obstacle ou l'avoidance ou le suivi de ligne 

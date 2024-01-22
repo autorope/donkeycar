@@ -599,7 +599,7 @@ class KerasBehavioral(KerasCategorical):
         assert isinstance(record, TubRecord), 'TubRecord expected'
         # this transforms the record into x for training the model to x,y
         img_arr = record.image(processor=img_processor)
-        bhv_arr = ['left','right']
+        bhv_arr = ['left','center','right']
         bhv_one_hot = np.zeros(self.num_behavior_inputs)
         if 'car_position' in record.underlying:
             bhv = bhv_arr.index(record.underlying['car_position'])
