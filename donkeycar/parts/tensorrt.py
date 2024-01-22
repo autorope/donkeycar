@@ -398,8 +398,8 @@ class TensorRTBehavior(KerasPilot):
         
 
     def interpreter_to_output(self, interpreter_out):
-        min_throttle = 0.24
-        max_throttle = 0.36
+        min_throttle = self.cfg.ROBOCARS_THROTTLE_LOW
+        max_throttle = self.cfg.ROBOCARS_THROTTLE_HIGH
         
         if len(interpreter_out) == 3:
             [sl, throttle_binned, angle_binned] = interpreter_out
@@ -409,13 +409,15 @@ class TensorRTBehavior(KerasPilot):
             # return -0.25, 0.3
             # return steering[0], throttle[0]
             # print(f"throttle:{throttle}")
-
-            if (throttle >= 0.0 and throttle < 0.25):
-                out_throttle = min_throttle
-            elif (throttle >= 0.25):
-                out_throttle = max_throttle
-            elif (throttle < 0.0):
-                out_throttle = min_throttle
+            if self.cfg.ROBOCARS_THROTTLE_DUAL_THROTTLE_MODEL:
+                if (throttle >= 0.0 and throttle < 0.25):
+                    out_throttle = min_throttle
+                elif (throttle >= 0.25):
+                    out_throttle = max_throttle
+                elif (throttle < 0.0):
+                    out_throttle = min_throttle
+            else:
+                out_throttle = throttle
 
             return angle, out_throttle, sl[0]
         elif len(interpreter_out) == 2:
@@ -426,12 +428,15 @@ class TensorRTBehavior(KerasPilot):
             # return -0.25, 0.3
             # return steering[0], throttle[0]
             # print(f"throttle:{throttle}")
-            if (throttle >= 0.0 and throttle < 0.25):
-                out_throttle = min_throttle
-            elif (throttle >= 0.25):
-                out_throttle = max_throttle
-            elif (throttle < 0.0):
-                out_throttle = min_throttle
+            if self.cfg.ROBOCARS_THROTTLE_DUAL_THROTTLE_MODEL:
+                if (throttle >= 0.0 and throttle < 0.25):
+                    out_throttle = min_throttle
+                elif (throttle >= 0.25):
+                    out_throttle = max_throttle
+                elif (throttle < 0.0):
+                    out_throttle = min_throttle
+            else:
+                out_throttle = throttle
 
             return angle, out_throttle
         else:
