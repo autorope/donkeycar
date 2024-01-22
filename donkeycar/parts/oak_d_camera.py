@@ -219,8 +219,8 @@ class OakDCamera:
 
             calibData = self.device.readCalibration2()
             rgbCamSocket = dai.CameraBoardSocket.CAM_A
-            rgb_w = 320  # camRgb.getResolutionWidth()
-            rgb_h = 200  # camRgb.getResolutionHeight()
+            rgb_w = self.width  # camRgb.getResolutionWidth()
+            rgb_h = self.height  # camRgb.getResolutionHeight()
             rgbIntrinsics = np.array(calibData.getCameraIntrinsics(rgbCamSocket, rgb_w, rgb_h))
             rgb_d = np.array(calibData.getDistortionCoefficients(rgbCamSocket))
 
@@ -347,7 +347,7 @@ class OakDCamera:
         
         # Set resize manip left node properties
         # stereo_manip_left.initialConfig.setResize(self.width, self.height)
-        stereo_manip_left.initialConfig.setResize(320, 200)
+        stereo_manip_left.initialConfig.setResize(self.width, self.height)
         stereo_manip_left.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
         stereo_manip_left.initialConfig.setInterpolation(dai.Interpolation.DEFAULT_DISPARITY_DEPTH)
         stereo_manip_left.setNumFramesPool(2)
@@ -357,7 +357,7 @@ class OakDCamera:
 
         # Set resize manip left node properties
         # stereo_manip_right.initialConfig.setResize(self.width, self.height)
-        stereo_manip_right.initialConfig.setResize(320, 200)
+        stereo_manip_right.initialConfig.setResize(self.width, self.height)
         stereo_manip_right.initialConfig.setFrameType(dai.ImgFrame.Type.GRAY8)
         stereo_manip_right.initialConfig.setInterpolation(dai.Interpolation.DEFAULT_DISPARITY_DEPTH)
         stereo_manip_right.setNumFramesPool(2)
@@ -379,13 +379,13 @@ class OakDCamera:
         stereo.setSubpixel(self.subpixel)
         stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DENSITY)
         stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
-        # stereo.initialConfig.setConfidenceThreshold(200)
+        # stereo.initialConfig.setConfidenceThreshold(self.height)
         # stereo.setInputResolution(self.width, self.height)
         stereo.setNumFramesPool(2)
         
         stereo.setAlphaScaling(self.alpha)
 
-        stereo.setInputResolution(320,200)
+        stereo.setInputResolution(self.width,self.height)
         stereo.setDepthAlign(dai.CameraBoardSocket.CAM_A)
 
         # Create depth output node
@@ -468,9 +468,9 @@ class OakDCamera:
 
             if self.enable_undistort_rgb == True:
                 frame_undistorted_rgb_full = cv2.remap(image_data_xout.copy(), self.map_x, self.map_y, cv2.INTER_LINEAR)
-                self.frame_undistorted_rgb = frame_undistorted_rgb_full[35:200,0:320]
+                self.frame_undistorted_rgb = frame_undistorted_rgb_full[35:self.height,0:self.width]
             
-            image_data_xout = image_data_xout[35:200,0:320]
+            image_data_xout = image_data_xout[35:self.height,0:self.width]
             self.frame_xout = image_data_xout
 
             if logger.isEnabledFor(logging.DEBUG):
@@ -484,7 +484,7 @@ class OakDCamera:
         if self.queue_xout_depth is not None:
             data_xout_depth = self.queue_xout_depth.get()
             frame_xout_depth_full = data_xout_depth.getFrame()
-            self.frame_xout_depth = frame_xout_depth_full[35:200,0:320]
+            self.frame_xout_depth = frame_xout_depth_full[35:self.height,0:self.width]
 
         if self.queue_xout_spatial_data is not None:
             xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
