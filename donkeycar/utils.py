@@ -636,6 +636,7 @@ def train_test_split(data_list: List[Any],
     shuffle is always True, left there to be backwards compatible
     '''
     target_train_size = int(len(data_list) * (1. - test_size))
+    target_val_size = int(len(data_list) * (test_size))
 
     if shuffle:
         train_data = []
@@ -650,8 +651,12 @@ def train_test_split(data_list: List[Any],
         val_data = data_list
 
     else:
-        train_data = data_list[:target_train_size]
-        val_data = data_list[target_train_size:]
+        # train_data = data_list[:target_train_size]
+        # val_data = data_list[target_train_size:]
+        # Code to get 1 or 2 first laps of validation data depending on test_size
+        # i.e. 1500 (1 lap) on 13277 is 0.12 --> 2 laps is 0.24
+        train_data = data_list[target_val_size:]
+        val_data = data_list[:target_val_size]
 
     return train_data, val_data
 

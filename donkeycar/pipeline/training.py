@@ -61,6 +61,7 @@ class BatchSequence(object):
         # 1. Initialise TubRecord -> x, y transformations
         def get_x(record: TubRecord) -> Dict[str, Union[float, np.ndarray]]:
             """ Extracting x from record for training"""
+            # print(record)
             out_dict = self.model.x_transform(record, self.image_processor)
 
             # apply the normalisation here on the fly to go from uint8 -> float
@@ -124,6 +125,7 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     all_tub_paths = [os.path.expanduser(tub) for tub in tubs]
     dataset = TubDataset(config=cfg, tub_paths=all_tub_paths,
                          seq_size=kl.seq_size())
+    # print(dataset)
     training_records, validation_records \
         = train_test_split(dataset.get_records(), shuffle=True,
                            test_size=(1. - cfg.TRAIN_TEST_SPLIT))

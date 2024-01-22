@@ -35,6 +35,10 @@ from tensorflow.keras.backend import concatenate
 from tensorflow.keras.models import Model
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 
+import cv2
+import os
+
+
 ONE_BYTE_SCALE = 1.0 / 255.0
 
 # type of x
@@ -128,7 +132,6 @@ class KerasPilot(ABC):
                                 state vector in the Behavioural model
             :return:            tuple of (angle, throttle)
         """
-        #print("FOLLOW")
         out = self.interpreter.predict(img_arr, other_arr)
         return self.interpreter_to_output(out)
 
@@ -306,7 +309,15 @@ class KerasCategorical(KerasPilot):
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
             -> Dict[str, Union[float, List[float]]]:
         assert isinstance(record, TubRecord), "TubRecord expected"
-        angle: float = record.underlying['user/angle']
+        
+        if (record.underlying['car_position'] == "left"):
+            angle: float = record.underlying['ai_L/angle']
+        elif (record.underlying['car_position'] == "center"):
+            angle: float = record.underlying['ai_C/angle']
+        elif (record.underlying['car_position'] == "right"):
+            angle: float = record.underlying['ai_R/angle']
+        else:
+            angle: float = record.underlying['user/angle']
 
         if 'ai/accel' in record.underlying:
             throttle: float = record.underlying['ai/accel']
@@ -335,20 +346,24 @@ class KerasLinear(KerasPilot):
     def __init__(self,
                  interpreter: Interpreter = KerasInterpreter(),
                  input_shape: Tuple[int, ...] = (120, 160, 3),
-                 num_outputs: int = 2, have_odom=False,have_scen_cat=False, num_scen_cat=0):
+                 num_outputs: int = 2, have_odom=False,have_scen_cat=False, num_scen_cat=0, use_extended=False, l4_stride=2, l1_channels=16):
         self.num_outputs = num_outputs
         self.have_odom=have_odom
         self.have_scen_cat=have_scen_cat
         self.num_scen_cat=num_scen_cat
+        self.use_extended=use_extended
+        self.l4_stride=l4_stride
+        self.l1_channels=l1_channels
         super().__init__(interpreter, input_shape)
         logger.info(f'Created {self} with odom={have_odom}, scene={have_scen_cat}')
 
     def create_model(self):
         if self.have_odom:
             return default_n_linear_odom(self.num_outputs, self.input_shape,num_scen=self.num_scen_cat if self.have_scen_cat else 0)
+        elif self.use_extended:
+            return default_n_linear_extended(self.num_outputs, self.input_shape, self.l4_stride, self.l1_channels)
         else:
             return default_n_linear(self.num_outputs, self.input_shape,num_scen=self.num_scen_cat if self.have_scen_cat else 0)
-
     def compile(self):
         if self.have_scen_cat:
             self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'], loss='mse')
@@ -365,6 +380,40 @@ class KerasLinear(KerasPilot):
         else:
             return steering[0], throttle[0]
 
+    def add_white_noise_to_black_pixels(self, input_image, binary_mask):
+        
+        # Generate random white noise with the same dimensions as the input image
+        rng = np.random.default_rng()
+        white_noise = rng.integers(256, size=input_image.shape,dtype=np.uint8)
+        
+        # white_noise = np.random.randint(0, 256, input_image.shape, dtype=np.uint8)
+        
+        binary_mask = binary_mask * 255
+        inversed_binary_mask = cv2.bitwise_not(binary_mask)
+        wn = cv2.bitwise_and(white_noise, white_noise, mask=inversed_binary_mask)
+        im = cv2.bitwise_and(input_image, input_image, mask=binary_mask)
+        noised_image = np.add(im,wn)
+
+        return noised_image
+
+    def add_white_noise_to_rgb_image(self, rgb_image):
+        
+        # Generate random white noise with the same dimensions as the input image
+        # rng = np.random.default_rng()
+        # white_noise = rng.integers(256, size=rgb_image.shape,dtype=np.uint8)
+        white_noise = np.random.randint(0, 255, size=rgb_image.shape,dtype=np.uint8)
+
+        binary_mask = np.any(rgb_image > [10, 10, 10], axis=-1)
+
+        binary_mask = binary_mask.astype(np.uint8) * 255
+        
+        inversed_binary_mask = cv2.bitwise_not(binary_mask)
+        wn = cv2.bitwise_and(white_noise, white_noise, mask=inversed_binary_mask)
+        im = cv2.bitwise_and(rgb_image, rgb_image, mask=binary_mask)
+        noised_image = np.add(im,wn)
+
+        return noised_image
+
     def x_transform(
             self,
             record: Union[TubRecord, List[TubRecord]],
@@ -373,6 +422,16 @@ class KerasLinear(KerasPilot):
         assert isinstance(record, TubRecord), 'TubRecord expected'
         # this transforms the record into x for training the model to x,y
         img_arr = record.image(processor=img_processor)
+        # img_name = record.underlying['cam/image_array'] # Nom de l'image .jpg
+        # img_name_no_ext, _ = os.path.splitext(img_name)
+        # Load the RGB image
+        # masked_image = img_arr.copy() # POUR les images masquées
+        # binary_mask = np.load(f"/Users/olivier/mycar/data/binary_masks/both/{img_name_no_ext}.npy")
+
+        # Apply the function to change black pixels to white noise
+        # img_arr = self.add_white_noise_to_black_pixels(masked_image, binary_mask)
+        # img_arr = self.add_white_noise_to_rgb_image(masked_image) # POUR les images masquées
+        # img_arr = normalize_image(img_arr)
         x_trans = {'img_in': img_arr}
         if self.have_odom:
             speed_arr = [np.array(record.underlying['enc/speed'])]
@@ -382,7 +441,7 @@ class KerasLinear(KerasPilot):
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
             -> Dict[str, Union[float, List[float]]]:
         assert isinstance(record, TubRecord), 'TubRecord expected'
-        angle: float = record.underlying['user/angle']
+        angle: float = record.underlying['ai/angle'] # use 'ai/angle' instead of 'user/angle'
         throttle: float = record.underlying['user/throttle']
         y_trans = {'n_outputs0': angle, 'n_outputs1': throttle}
         if self.have_scen_cat:
@@ -982,8 +1041,26 @@ def conv2d(filters, kernel, strides, layer_num, activation='relu', prefix=''):
                          activation=activation,
                          name=prefix + 'conv2d_' + str(layer_num))
 
+def conv2d_bis(filters, kernel, strides, layer_num, activation='relu'):
+    """
+    Helper function to create a standard valid-padded convolutional layer
+    with square kernel and strides and unified naming convention
 
-def core_cnn_layers(img_in, drop, l4_stride=1):
+    :param filters:     channel dimension of the layer
+    :param kernel:      creates (kernel, kernel) kernel matrix dimension
+    :param strides:     creates (strides, strides) stride
+    :param layer_num:   used in labelling the layer
+    :param activation:  activation, defaults to relu
+    :return:            tf.keras Convolution2D layer
+    """
+    return Convolution2D(filters=filters,
+                         kernel_size=(kernel, kernel),
+                         strides=(strides, strides),
+                         activation=activation,
+                         padding="same",
+                         name='conv2d_' + str(layer_num))
+
+def core_cnn_layers(img_in, drop, l4_stride=1, l1_channels=12):
     """
     Returns the core CNN layers that are shared among the different models,
     like linear, imu, behavioural
@@ -993,8 +1070,12 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     :param l4_stride:       4-th layer stride, default 1
     :return:                stack of CNN layers
     """
+
+    # l1_channels=24
+
     x = img_in
-    x = conv2d(24, 5, 2, 1)(x)
+    
+    x = conv2d(l1_channels, 5, 2, 1)(x)
     x = Dropout(drop)(x)
     x = conv2d(32, 5, 2, 2)(x)
     x = Dropout(drop)(x)
@@ -1004,6 +1085,51 @@ def core_cnn_layers(img_in, drop, l4_stride=1):
     x = Dropout(drop)(x)
     x = conv2d(64, 3, 1, 5)(x)
     x = Dropout(drop)(x)
+
+
+    # x = conv2d(16, 5, 2, 1)(x)
+    # x = Dropout(drop)(x)
+    # x = conv2d(32, 5, 2, 2)(x)
+    # x = Dropout(drop)(x)
+    # x = conv2d(64, 5, 2, 3)(x)
+    # x = Dropout(drop)(x)
+    # x = conv2d(128, 3, 2, 4)(x)
+    # x = Dropout(drop)(x)
+    # x = conv2d(128, 3, 1, 5)(x)
+    # x = Dropout(drop)(x)
+
+
+    # # 1 on remplace les 24 channels par 16
+    # # x = conv2d(24, 5, 2, 1)(x)
+    # x = conv2d(16, 5, 2, 1)(x)
+    # x = Dropout(drop)(x)
+    
+    # # 2 on remplace la layer avec des kernels 5x5 par 2 layers avec des kernels 3x3
+    # # x = conv2d(32, 5, 2, 2)(x)
+    # # x = Dropout(drop)(x)
+    # x = conv2d(32, 3, 1, 2)(x)
+    # x = Dropout(drop)(x)
+    # x = conv2d(32, 3, 2, 3)(x)
+    # x = Dropout(drop)(x)
+   
+    # # 3 on remplace la layer avec des kernels 5x5 par 2 layers avec des kernels 3x3
+    # # x = conv2d(64, 5, 2, 3)(x)
+    # # x = Dropout(drop)(x)
+    # x = conv2d(64, 3, 1, 4)(x)
+    # x = Dropout(drop)(x)
+    # x = conv2d(64, 3, 2, 5)(x)
+    # x = Dropout(drop)(x)
+    
+    # # x = conv2d(128, 3, l4_stride, 6)(x)
+    # # x = Dropout(drop)(x)
+    # # x = conv2d(128, 3, 2, 7)(x)
+    # # x = Dropout(drop)(x)
+
+    # x = conv2d(32, 3, 1, 6)(x)
+    # x = Dropout(drop)(x)
+    # # x = conv2d(16, 3, 1, 7)(x)
+    # # x = Dropout(drop)(x)
+
     x = Flatten(name='flattened')(x)
     return x
 
@@ -1053,6 +1179,25 @@ def default_n_linear(num_outputs, input_shape=(120, 160, 3), num_scen=0):
     model = Model(inputs=[img_in], outputs=outputs, name='linear')
     return model
 
+def default_n_linear_mask(num_outputs, input_shape=(120, 160, 3)):
+    drop = 0.2
+    img_in = Input(shape=input_shape, name='img_in')
+    mask_in = Input(shape=(input_shape[0],input_shape[1]), name='mask_in')
+    
+    x = core_cnn_layers(img_in, drop)
+    x = Dense(100, activation='relu', name='dense_1')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu', name='dense_2')(x)
+    x = Dropout(drop)(x)
+
+    outputs = []
+    for i in range(num_outputs):
+        outputs.append(
+            Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+
+    model = Model(inputs=[img_in], outputs=outputs, name='linear')
+    return model
+
 def default_n_linear_odom(num_outputs, input_shape=(120, 160, 3), num_scen=0):
     drop = 0.2
     img_in = Input(shape=input_shape, name='img_in')
@@ -1084,6 +1229,24 @@ def default_n_linear_odom(num_outputs, input_shape=(120, 160, 3), num_scen=0):
 
     model = Model(inputs=[img_in, speed_in], outputs=outputs, name='linear')
     return model
+
+def default_n_linear_extended(num_outputs, input_shape=(120, 160, 3), l4_stride=1, l1_channels=24):
+    drop = 0.2
+    img_in = Input(shape=input_shape, name='img_in')
+    x = core_cnn_layers(img_in, drop, l4_stride, l1_channels)
+    x = Dense(100, activation='relu', name='dense_1')(x)
+    x = Dropout(drop)(x)
+    x = Dense(50, activation='relu', name='dense_2')(x)
+    x = Dropout(drop)(x)
+
+    outputs = []
+    for i in range(num_outputs):
+        outputs.append(
+            Dense(1, activation='linear', name='n_outputs' + str(i))(x))
+
+    model = Model(inputs=[img_in], outputs=outputs, name='linear')
+    return model
+
 
 def default_memory(input_shape=(120, 160, 3), mem_length=3, mem_depth=0):
     drop = 0.2

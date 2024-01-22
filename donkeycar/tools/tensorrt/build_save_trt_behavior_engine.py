@@ -38,7 +38,7 @@ def build_engine(onnx_file_path, engine_file_path):
 
     # Build the engine
     builder.max_batch_size = 1
-    #builder.max_workspace_size = 1 << 30  # 1GB
+    builder.max_workspace_size = 1 << 30  # 1GB
     engine = builder.build_engine(network, config)
     
     # Save the engine to a file

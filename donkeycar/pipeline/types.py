@@ -137,6 +137,23 @@ class TubDataset(object):
                 self.records = list(seq)
         return self.records
 
+    def get_records2(self):
+        if not self.records:
+            logger.info(f'Loading tubs from paths {self.tub_paths}')
+            cpt=0
+            for tub in self.tubs:
+                if (cpt==0):
+                    pass
+                cpt = cpt+1
+                for underlying in tub:
+                    record = TubRecord(self.config, tub.base_path, underlying)
+                    if not self.train_filter or self.train_filter(record):
+                        self.records.append(record)
+            if self.seq_size > 0:
+                seq = Collator(self.seq_size, self.records)
+                self.records = list(seq)
+        return self.records
+
 
 class Collator(Iterable[List[TubRecord]]):
     """" Builds a sequence of continuous records for RNN and similar models. """
