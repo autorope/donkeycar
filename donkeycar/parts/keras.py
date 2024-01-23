@@ -757,8 +757,17 @@ class KerasDetector(KerasPilot):
         # angle: float = record.underlying['user/angle']
         # throttle: float = record.underlying['user/throttle']
         # loc = record.underlying['localizer/location']
+        dist = record.underlying['obstacle_dist']
         loc_arr = ['NA','left','middle','right']
-        loc = loc_arr.index(record.underlying['labeled_indexes'])
+
+        # Value to change instead of generating new catalogs
+        max_obstacle_detection_distance = 1500
+
+        if dist <= max_obstacle_detection_distance and dist > 0:
+            loc = loc_arr.index(record.underlying['labeled_indexes'])
+        else:
+            # default to 'NA'
+            loc = 0
         loc_one_hot = np.zeros(self.num_locations)
         loc_one_hot[loc] = 1
         return {'zloc': loc_one_hot}
