@@ -38,6 +38,24 @@ CSIC_CAM_GSTREAMER_FLIP_PARM = 0 # (0 => none , 4 => Flip horizontally, 6 => Fli
 BGR2RGB = False  # true to convert from BRG format to RGB format; requires opencv
 SHOW_PILOT_IMAGE = False  # show the image used to do the inference when in autopilot mode
 
+# OAK-D-LITE: "1080p" for rgb
+# OAK-D-WIDE: "800p" for rgb
+RGB_RESOLUTION = "800p" 
+
+RGB_APPLY_CROPPING = True
+RGB_SENSOR_CROP_X = 0.0
+RGB_SENSOR_CROP_Y = 0.175
+RGB_VIDEO_SIZE = (320,165)
+
+RGB_APPLY_MANUAL_CONF = False
+RGB_EXPOSURE_TIME = 2000
+RGB_SENSOR_ISO = 400
+RGB_WB_MANUAL = 2800
+
+OAK_D_ISP_SCALE = (1,4)
+OAK_ENABLE_DEPTH_MAP = False # enables depth map output
+OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
+
 # For IMAGE_LIST camera
 # PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 
