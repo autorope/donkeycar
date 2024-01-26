@@ -13,9 +13,15 @@ import sys
 import fcntl,os
 from transitions.extensions import HierarchicalMachine
 from collections import deque
+import math
 
 mylogger = init_special_logger("Rx")
 mylogger.setLevel(logging.INFO)
+
+def most_frequent(List):
+    val = max(set(List), key = List.count)
+    freq = List.count(val)
+    return val, freq
 
 def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, output_max, enforce_input_in_range=False) :
     if (input < input_idle) :
@@ -25,6 +31,13 @@ def dualMap (input, input_min, input_idle, input_max, output_min, output_idle, o
     else:
         output = output_idle
     return output
+
+def num_to_rgb(val, rmax, gmax, bmax, max_val=3):
+    i = (val * 255 / max_val);
+    r = max(0,round(math.sin(0.024 * i + 0) * ((rmax/2)-1) + (rmax/2)));
+    g = max(0,round(math.sin(0.024 * i + 2) * ((gmax/2)-1) + (gmax/2)));
+    b = max(0,round(math.sin(0.024 * i + 4) * ((bmax/2)-1) + (bmax/2)));
+    return (g,r,b)
 
 class RobocarsHatIn(metaclass=Singleton):
 
@@ -511,12 +524,18 @@ class RobocarsHatLedCtrl():
     AUTO_FRONT_LIGH_COLOR=(75,0,130)
     AUTO_REAR_STOP_COLOR=(255,0,0)
 
+    MODE_OPTICAL_BLOCK = 0
+    MODE_AI_FEEDBACK = 1
+
+    count_obstacle_event = 0
+    OBSTACLE_NBEVENT_INTEGRATION = 20
 
     def __init__(self, cfg):
         self.cfg = cfg
         self.reconnect=True
         self.reconnectDelay=500
         self.cmdinterface=None
+        self.mode = RobocarsHatLedCtrl.MODE_OPTICAL_BLOCK
         if self.cfg.ROBOCARSHAT_CONTROL_LED_DEDICATED_TTY :
             self.connectPort()
         else:
@@ -562,6 +581,9 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_FRONT_LIGHT_RIGHT = 2
             self.LED_INDEX_FRONT_LIGHT_LEFT = 1
             self.NUM_LED = 8
+        elif cfg.ROBOCARSHAT_LED_MODEL == 'Feedback':
+            self.NUM_LED = 8
+            self.mode = RobocarsHatLedCtrl.MODE_AI_FEEDBACK
         else: #default
             self.LED_INDEX_FRONT_TURN_RIGHT = 0
             self.LED_INDEX_FRONT_TURN_LEFT = 1
@@ -573,11 +595,11 @@ class RobocarsHatLedCtrl():
             self.LED_INDEX_REAR_STOP_LEFT = 7
             self.NUM_LED = 8
 
-
         self.idx = 0
         self.last_mode = None
         self.last_steering_state = 0
         self.last_refresh = 0
+        self.latestObstacle = deque()
 
     def connectPort(self):
         import serial
@@ -628,17 +650,12 @@ class RobocarsHatLedCtrl():
             if s > 0:
                 time.sleep(s)
 
-    def run_threaded(self, steering, throttle, mode):
+    def run_threaded(self, steering, throttle, mode, obstacle=None):
         #self.updateAnim()
         return None
 
-    def run (self, steering, throttle, mode):
+    def update_optical_block(self, steering, mode) :
 
-        if (self.reconnect):
-            if self.reconnectDelay==0:
-                self.connectPort()
-            else:
-                self.reconnectDelay-=1
         refresh = (time.perf_counter()-self.last_refresh) >= 2.0
         if refresh:
             self.last_refresh = time.perf_counter()
@@ -717,6 +734,45 @@ class RobocarsHatLedCtrl():
 
             self.last_steering_state = steering_state
         #self.updateAnim()
+
+    def show_obstacle (self, obs, intensity):
+        col = num_to_rgb(intensity, 16, 16, 0, RobocarsHatLedCtrl.OBSTACLE_NBEVENT_INTEGRATION)
+        self.setLed(0, *col, 0xffff if obs==1 else 0x0000)
+        self.setLed(1, *col, 0xffff if obs==1 else 0x0000)
+        self.setLed(2, *col, 0xffff if obs==0 else 0x0000)
+        self.setLed(3, *col, 0xffff if obs==2 else 0x0000)
+        self.setLed(4, *col, 0xffff if obs==2 else 0x0000)
+        self.setLed(5, *col, 0xffff if obs==0 else 0x0000)
+        self.setLed(6, *col, 0xffff if obs==3 else 0x0000)
+        self.setLed(7, *col, 0xffff if obs==3 else 0x0000)
+
+    def update_ai_feedback(self, throttle, steering, mode, obstacle) :
+        if len(self.latestObstacle)>RobocarsHatLedCtrl.OBSTACLE_NBEVENT_INTEGRATION:
+            self.latestObstacle.popleft();
+        self.latestObstacle.append (obstacle)
+
+        RobocarsHatLedCtrl.count_obstacle_event +=1
+        if RobocarsHatLedCtrl.count_obstacle_event%10 == 0:
+            if mode == 'user' and self.last_mode != mode:
+                self.show_obstacle (-1, 0)
+            if (mode != 'user'):
+                self.show_obstacle (*most_frequent(list(self.latestObstacle)))
+            self.last_mode = mode
+
+    def run (self, steering, throttle, mode, obstacle=None):
+
+        if (self.reconnect):
+            if self.reconnectDelay==0:
+                self.connectPort()
+            else:
+                self.reconnectDelay-=1
+
+        if self.mode == RobocarsHatLedCtrl.MODE_OPTICAL_BLOCK :
+            self.update_optical_block(steering, mode)
+        
+        if self.mode == RobocarsHatLedCtrl.MODE_AI_FEEDBACK:
+            self.update_ai_feedback (throttle, steering, mode, obstacle)
+            
         return None
     
 
@@ -813,6 +869,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
         # compute the scalar to apply, proportionnaly to the targeted throttle comparted to throttle from model or from local_angle mode
         # dyn_steering_factor = dk.utils.map_range_float(self.throttle_out, self.throttle_from_pilot, 1.0, 0.0, self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER)
         dyn_steering_factor = self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER
+        dyn_steering_offset = self.cfg.ROBOCARS_CTRL_STEERING_OFFSET
         if self.hatInCtrl.isFeatActive(self.hatInCtrl.AUX_FEATURE_ADAPTATIVE_STEERING_SCALAR_EXP):
             # if feature to explore adaptative steering scalar is enabled, override scalar with current value beeing tested
             dyn_steering_factor = self.hatInCtrl.getAdaptativeSteeringExtraScalar()
@@ -830,6 +887,7 @@ class RobocarsHatDriveCtrl(metaclass=Singleton):
         if self.is_driving_regularspeed(allow_substates=True):
             if not self.cfg.ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY:
                 # apply steering scaler even at low speed (turn)
+                self.angle_out = self.angle_from_pilot + dyn_steering_offset
                 self.angle_out = max(min(self.angle_from_pilot * (1.0+dyn_steering_factor),1.0),-1.0)
             if (self.is_sl_confition()==True) :
                 self.accelerate() #sl detected and confirmed 

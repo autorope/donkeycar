@@ -1203,7 +1203,10 @@ def add_drivetrain(V, cfg):
             if cfg.ROBOCARSHAT_CONTROL_LED:
                 from donkeycar.parts.robocars_hat_ctrl import RobocarsHatLedCtrl
                 ctr = RobocarsHatLedCtrl(cfg)
-                V.add(ctr, inputs=['angle', 'throttle', 'user/mode'],threaded=False)
+                inputs=['angle', 'throttle', 'user/mode']
+                if cfg.OBSTACLE_DETECTOR_ENABLED:
+                    inputs+= ['detector/obstacle_lane']
+                V.add(ctr, inputs=inputs,threaded=False)
 
     if cfg.HAVE_ODOM and cfg.ENCODER_TYPE == 'FF_LS7366R':
         # FF_LS7366R needs to be aware of throttle and angle sent to actuators as soon as possible
