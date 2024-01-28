@@ -19,6 +19,8 @@ class AvoidanceBehaviorPart(object):
         self.avoidance_enabled = cfg.OBSTACLE_DETECTOR_AVOIDANCE_ENABLED
         self.manual_lane = cfg.OBSTACLE_DETECTOR_MANUAL_LANE
         self.lane_behavior_previous_index = self.lane_behavior_middle_index
+        self.delayed_frame_cpt = 0
+        self.max_delayed_frames = 15
         if (self.manual_lane):
             from donkeycar.parts.robocars_hat_ctrl import RobocarsHatInCtrl
             self.hatInCtrl = RobocarsHatInCtrl(cfg)
@@ -46,16 +48,23 @@ class AvoidanceBehaviorPart(object):
             if obstacle_position_text == "left":
                 one_hot_bhv_arr[self.lane_behavior_right_index] = 1.0
                 self.lane_behavior_previous_index = self.lane_behavior_right_index
+                self.delayed_frame_cpt = 0
             elif obstacle_position_text == "right":
                 one_hot_bhv_arr[self.lane_behavior_left_index] = 1.0
                 self.lane_behavior_previous_index = self.lane_behavior_left_index
+                self.delayed_frame_cpt = 0
             elif obstacle_position_text == "middle":
                 one_hot_bhv_arr[self.lane_behavior_middle_index] = 1.0
                 self.lane_behavior_previous_index = self.lane_behavior_middle_index
+                self.delayed_frame_cpt = 0
             elif obstacle_position_text == "NA":
                 # SET TO 0.0 WHEN MODEL CAN HANDLE [0.0,0.0], NO lane seletion = regular driving
                 # at the moment default driving is left lane driving
-                one_hot_bhv_arr[self.lane_behavior_previous_index] = 1.0
+                if self.delayed_frame_cpt >= self.max_delayed_frames:
+                    one_hot_bhv_arr[self.lane_behavior_middle_index] = 1.0
+                else:
+                    self.delayed_frame_cpt = self.delayed_frame_cpt + 1
+                    one_hot_bhv_arr[self.lane_behavior_previous_index] = 1.0
 
         return one_hot_bhv_arr
 

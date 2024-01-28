@@ -1337,7 +1337,7 @@ def default_bhv(num_bvh_inputs, input_shape):
     # so behavior must come after image, hence we put an x here in front.
     bvh_in = Input(shape=(num_bvh_inputs,), name="xbehavior_in")
 
-    x = core_cnn_layers(img_in, drop)
+    x = core_cnn_layers(img_in, drop, l4_stride=1, l1_channels=12)
     x = Dense(100, activation='relu')(x)
     x = Dropout(.1)(x)
     
