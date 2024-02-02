@@ -41,8 +41,12 @@ class TubSeqIterator(SizedIterator[TubRecord]):
 
     next = __next__
 
+class IntermediateIterator(Generic[R, XOut, YOut]):
+    def __init__(self) -> None:
+        pass
 
-class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
+#class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
+class TfmIterator(IntermediateIterator[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
     def __init__(self,
                  iterable: Iterable[R],
                  x_transform: Callable[[R], XOut],
@@ -65,8 +69,12 @@ class TfmIterator(Generic[R, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
     def __next__(self):
         return next(self.iterator)
 
+class IntermediateIterator2(Generic[X, Y, XOut, YOut]):
+    def __init__(self) -> None:
+        pass
 
-class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
+#class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
+class TfmTupleIterator(IntermediateIterator2[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
     def __init__(self,
                  iterable: Iterable[Tuple[X, Y]],
                  x_transform: Callable[[X], XOut],
@@ -88,8 +96,11 @@ class TfmTupleIterator(Generic[X, Y, XOut, YOut],  SizedIterator[Tuple[XOut, YOu
     def __next__(self):
         return next(self.iterator)
 
+class IntermediateIterator3(Generic[XOut, YOut]):
+    def __init__(self) -> None:
+        pass
 
-class BaseTfmIterator_(Generic[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
+class BaseTfmIterator_(IntermediateIterator3[XOut, YOut],  SizedIterator[Tuple[XOut, YOut]]):
     '''
     A basic transforming iterator.
     Do no use this class directly.

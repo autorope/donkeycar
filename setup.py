@@ -84,6 +84,15 @@ setup(name='donkeycar',
               'plotly',
               'imgaug'
           ],
+          'macm2': [
+            'tensorflow-macos==2.9.2',
+            'tensorflow-metal==0.5.1',
+            'kivy==2.1',
+            'pandas',
+            'plotly',
+            'albumentations'
+
+          ],
           'dev': [
               'pytest',
               'pytest-cov',

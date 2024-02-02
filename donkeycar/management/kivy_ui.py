@@ -673,7 +673,7 @@ class DataPlot(PaddedBoxLayout):
             data panel."""
         generator = (t.underlying for t in tub_screen().ids.tub_loader.records)
         self.df = pd.DataFrame(generator).dropna()
-        to_drop = {'cam/image_array'}
+        to_drop = {'cam/image_array', 'cam/undistorted_rgb', 'cam/depth_array'}
         self.df.drop(labels=to_drop, axis=1, errors='ignore', inplace=True)
         self.df.set_index('_index', inplace=True)
         self.unravel_vectors()
