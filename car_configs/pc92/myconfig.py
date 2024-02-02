@@ -78,6 +78,47 @@ IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
 # 
 
+
+# SPRINT
+SP = {
+    "OBSTACLE_DETECTOR_AVOIDANCE_ENABLED" : False,
+    "OBSTACLE_DETECTOR_MANUAL_LANE" : True,
+    "ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE" : 0.195,
+    "ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER" : 0.20,
+}
+
+# SPRINT CIRCUIT 24
+SP24 = {
+    "OBSTACLE_DETECTOR_AVOIDANCE_ENABLED" : False,
+    "OBSTACLE_DETECTOR_MANUAL_LANE" : True,
+    "ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE" : None,
+    "ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER" : 0.20,
+}
+
+# SLALOM
+SL = {
+    "OBSTACLE_DETECTOR_AVOIDANCE_ENABLED" : True,
+    "OBSTACLE_DETECTOR_MANUAL_LANE" : False,
+    "ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE" : 0.18,
+    "ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER" : 0.20,
+}
+
+# SLALOM CIRCUIT 24
+SL24 = {
+    "OBSTACLE_DETECTOR_AVOIDANCE_ENABLED" : True,
+    "OBSTACLE_DETECTOR_MANUAL_LANE" : False,
+    "ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE" : None,
+    "ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER" : 0.20,
+}
+
+MODE = SL
+
+OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = MODE["OBSTACLE_DETECTOR_AVOIDANCE_ENABLED"]
+OBSTACLE_DETECTOR_MANUAL_LANE = MODE["OBSTACLE_DETECTOR_MANUAL_LANE"]
+ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = MODE["ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE"]
+ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = MODE["ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER"]
+
+
 USE_CAMERA_TUNING_BLOB = True
 OAK_ENABLE_DEPTH_MAP = True # enables depth map output
 
@@ -96,7 +137,7 @@ CLOSE_AVOIDANCE_DIST_MM = 1000
 OBSTACLE_DETECTOR_ENABLED = True # Si True active detection d'obstacle ou l'avoidance ou le suivi de ligne 
 OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 # OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
-OBSTACLE_DETECTOR_MODEL_PATH = "~/car_ref/models/20240112161500-20240114222912-LR-A001-avoidance-rgb-cone-car.trt"
+OBSTACLE_DETECTOR_MODEL_PATH = "/home/donkey/donkeycar-models/trt_4.6/model-A022.trt"
 
 # OBSTACLE_DETECTOR_MODEL_TYPE = "tflite_obstacle_detector"
 OBSTACLE_DETECTOR_MODEL_TYPE = "trt_obstacle_detectortrt"
@@ -104,8 +145,8 @@ OBSTACLE_DETECTOR_MODEL_TYPE = "trt_obstacle_detectortrt"
 OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
 BEHAVIOR_LIST = ['left', 'middle', 'right']
 # Next 2 params cannot be enabled together.
-OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = True # To free drive using behavior model, Si True, active l'autopilote du steering avec avoidance
-OBSTACLE_DETECTOR_MANUAL_LANE = False # si True, active le mode copilot pour le steering depuis la radio 
+#OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = True # To free drive using behavior model, Si True, active l'autopilote du steering avec avoidance
+#OBSTACLE_DETECTOR_MANUAL_LANE = False # si True, active le mode copilot pour le steering depuis la radio 
 
 #
 # #CAMERA Settings Vivatech 2022 (nano)
@@ -579,18 +620,18 @@ ROBOCARSHAT_SERIAL_SPEED = 250000
 # ROBOCARSHAT_PWM_OUT_THROTTLE_IDLE   =   1500
 # ROBOCARSHAT_PWM_OUT_THROTTLE_MAX    =   2000
 ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1180
-ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1560
+ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1520
 ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1940
 # ROBOCARSHAT_PWM_OUT_STEERING_INVERT    =   False
 # 
 # # Folowing values can be ajusted to normalized btzeen -1 and 1.
 # # # If  ROBOCARSHAT_USE_AUTOCALIBRATION is used, IDLE values are automatically identified by the Hat
-# ROBOCARSHAT_PWM_IN_THROTTLE_MIN    =   1000
+ROBOCARSHAT_PWM_IN_THROTTLE_MIN    =   1004
 # ROBOCARSHAT_PWM_IN_THROTTLE_IDLE   =   1500
-# ROBOCARSHAT_PWM_IN_THROTTLE_MAX    =   2000
-# ROBOCARSHAT_PWM_IN_STEERING_MIN    =   1000
+ROBOCARSHAT_PWM_IN_THROTTLE_MAX    =   1982
+ROBOCARSHAT_PWM_IN_STEERING_MIN    =   995
 # ROBOCARSHAT_PWM_IN_STEERING_IDLE   =   1500
-# ROBOCARSHAT_PWM_IN_STEERING_MAX    =   2000
+ROBOCARSHAT_PWM_IN_STEERING_MAX    =   1985
 # ROBOCARSHAT_PWM_IN_AUX_MIN    =   1000
 # ROBOCARSHAT_PWM_IN_AUX_IDLE   =   1500
 # ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
@@ -598,8 +639,8 @@ ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1940
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
-# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.16 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
-ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by remote control
+# ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = 0.14 # For pilot_angle autonomous mode (aka constant throttle), this is the default throttle to apply
+#ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the one provided by remote control
 # ROBOCARSHAT_BRAKE_ON_IDLE_THROTTLE = -0.2
 #
 # THROTTLE_BRAKE_REV_FILTER = False # ESC is configured in Fw/Rv mode (no braking)
@@ -616,8 +657,8 @@ ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE = None # if set to None, throttle is the on
 # # 'throttle_scalar_exp' means special mode where aux ch is used to explore throttle scalar to apply on throttle when autopilot is engaged
 # # 'adaptative_steering_scalar_exp' means special mode where aux ch is used to explore adaptative steering scalar to apply on steering when autopilot is engaged
 # # 'drive_by_lane' means special mode where aux ch is used to set the lane the car must use (left, middle, right) (behavior model)
-ROBOCARSHAT_CH3_FEATURE = 'pilot'
-ROBOCARSHAT_CH4_FEATURE = 'record'
+ROBOCARSHAT_CH3_FEATURE = 'record/pilot'
+#ROBOCARSHAT_CH4_FEATURE = 'record'
 #ROBOCARSHAT_CH4_FEATURE = 'adaptative_steering_scalar_exp'
 # ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL = False # specific mode when in pilot, throttle control control throttle scaler
 # ROBOCARSHAT_EXPLORE_THROTTLE_SCALER_USING_THROTTLE_CONTROL_INC = 0.01
@@ -659,12 +700,12 @@ ROBOCARSHAT_CONTROL_LED_PILOT_ANIM = None # 1 = sparkle, 2 = strobe, 3=HAL
 # ROBOCARS_NUM_SCEN_CAT=2 #straight line or turn
 #
 # #
-# USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
-# ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default
+USE_ROBOCARSHAT_POWERTRAIN_CONTROLLER  = False
+ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default
 # ROBOCARS_THROTTLE_SCALER_ON_SL = 0.0 # extra scalar to apply to throttle when straight line is detected
 # ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED = 0.0 # For pilot_angle autonomous mode, throttle for turn entry (brake)
 # ROBOCARS_THROTTLE_ON_SL_BRAKE_DURATION = 5
-# ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 0.0 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle
+#ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER = 0.20 # scalar to apply to throttle when straight line is detected.THis scalar is proportionnaly applied dependeing on throttle
 # ROBOCARS_CTRL_ADAPTATIVE_STEERING_IN_TURN_ONLY = False
 # ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE=6
 # ROBOCARS_SL_FILTER_TRESH_HIGH=4
