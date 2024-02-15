@@ -3,6 +3,7 @@ import time
 from collections import deque
 import numpy as np
 import depthai as dai
+import cv2
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -29,6 +30,9 @@ class OakDCameraBuilder:
         self.rgb_exposure_time = 2000
         self.rgb_sensor_iso = 1200
         self.rgb_wb_manual = 2800
+        self.center_image_return = False
+        self.five_channel_image_return = True
+        self.depth_image_return = False
 
     def with_width(self, width):
         self.width = width
@@ -93,6 +97,18 @@ class OakDCameraBuilder:
     def with_rgb_wb_manual(self, rgb_wb_manual):
         self.rgb_wb_manual = rgb_wb_manual
         return self
+    
+    def with_center_image_return(self, center_image_return):
+        self.center_image_return = center_image_return
+        return self
+    
+    def with_five_channel_image_return(self, five_channel_image_return):
+        self.five_channel_image_return = five_channel_image_return
+        return self
+    
+    def with_depth_image_return(self, depth_image_return):
+        self.depth_image_return = depth_image_return
+        return self
 
     def build(self):
         return OakDCamera(
@@ -111,7 +127,10 @@ class OakDCameraBuilder:
             rgb_apply_manual_conf=self.rgb_apply_manual_conf,
             rgb_exposure_time=self.rgb_exposure_time,
             rgb_sensor_iso=self.rgb_sensor_iso,
-            rgb_wb_manual=self.rgb_wb_manual
+            rgb_wb_manual=self.rgb_wb_manual,
+            center_image_return=self.center_image_return,
+            five_channel_image_return = self.five_channel_image_return,
+            depth_image_return=self.depth_image_return
         )
 
 class OakDCamera:
@@ -131,7 +150,10 @@ class OakDCamera:
                  rgb_apply_manual_conf=False,
                  rgb_exposure_time = 2000,
                  rgb_sensor_iso = 1200,
-                 rgb_wb_manual= 2800):
+                 rgb_wb_manual= 2800,
+                 center_image_return = False,
+                 five_channel_image_return = True,
+                 depth_image_return = False):
 
         
         self.on = False
@@ -140,6 +162,9 @@ class OakDCamera:
         self.frame_left = None
         self.frame_right = None
 
+        self.center_image_return = center_image_return
+        self.five_channel_return = five_channel_image_return
+        self.depth_image_return = depth_image_return
 
         self.rgb_resolution = rgb_resolution
         
@@ -261,8 +286,9 @@ class OakDCamera:
                 self.queue_xout = self.device.getOutputQueue("xout", maxSize=1, blocking=False)
                 self.queue_xout_depth = self.device.getOutputQueue("xout_depth", maxSize=1, blocking=False)
                 # At the end of the __init__ method, create queues for left and right camera frames
-                self.queue_left = self.device.getOutputQueue(name="left", maxSize=1, blocking=False)
-                self.queue_right = self.device.getOutputQueue(name="right", maxSize=1, blocking=False)
+                if self.center_image_return == False:
+                    self.queue_left = self.device.getOutputQueue(name="left", maxSize=1, blocking=False)
+                    self.queue_right = self.device.getOutputQueue(name="right", maxSize=1, blocking=False)
 
                 # Get the first frame or timeout
                 while (self.frame_xout is None or self.frame_xout_depth is None) and time.time() < warming_time:
@@ -303,17 +329,18 @@ class OakDCamera:
         monoRight = self.pipeline.create(dai.node.MonoCamera)
         monoLeft = self.pipeline.create(dai.node.MonoCamera)
 
-        # Create XLinkOut nodes for left and right cameras
-        xout_left = self.pipeline.create(dai.node.XLinkOut)
-        xout_right = self.pipeline.create(dai.node.XLinkOut)
+        if self.center_image_return == False:
+            # Create XLinkOut nodes for left and right cameras
+            xout_left = self.pipeline.create(dai.node.XLinkOut)
+            xout_right = self.pipeline.create(dai.node.XLinkOut)
 
-        # Set stream names
-        xout_left.setStreamName("left")
-        xout_right.setStreamName("right")
+            # Set stream names
+            xout_left.setStreamName("left")
+            xout_right.setStreamName("right")
 
-        # Link MonoCamera outputs to XLinkOut inputs
-        monoLeft.out.link(xout_left.input)
-        monoRight.out.link(xout_right.input)
+            # Link MonoCamera outputs to XLinkOut inputs
+            monoLeft.out.link(xout_left.input)
+            monoRight.out.link(xout_right.input)
 
         stereo_manip = self.pipeline.create(dai.node.ImageManip)
         stereo = self.pipeline.create(dai.node.StereoDepth)
@@ -402,19 +429,56 @@ class OakDCamera:
         spatialLocationCalculator.out.link(xoutSpatialData.input)
         xinSpatialCalcConfig.out.link(spatialLocationCalculator.inputConfig)
 
+    def enhance_center_with_grayscale(self, center_img, left_img, right_img):
+        # Check if the images are loaded correctly
+        print(left_img, right_img, "ahhh")
+        if left_img is None or right_img is None or center_img is None:
+            raise ValueError("One or more input images are None. Please check image loading.")
+
+        # Adjust for channel-first format if necessary
+        if center_img.shape[0] == 3:
+            center_img = np.transpose(center_img, (1, 2, 0))
+        
+        if left_img is not None and left_img.shape[0] == 3:
+            left_img = np.transpose(left_img, (1, 2, 0))
+        
+        if right_img is not None and right_img.shape[0] == 3:
+            right_img = np.transpose(right_img, (1, 2, 0))
+
+        # Ensure resizing happens regardless of channel condition
+        if left_img is not None:
+            left_resized = cv2.resize(left_img, (800, 600))
+        else:
+            raise ValueError("left_img is None after format adjustment.")
+        
+        if right_img is not None:
+            right_resized = cv2.resize(right_img, (800, 600))
+        else:
+            raise ValueError("right_img is None after format adjustment.")
+
+        # Continue with processing...
+        left_resized_3ch = np.stack((left_resized,)*3, axis=-1)
+        right_resized_3ch = np.stack((right_resized,)*3, axis=-1)
+        avg_grayscale = np.mean(np.array([left_resized_3ch, right_resized_3ch]), axis=0)
+        avg_grayscale_single_channel = cv2.cvtColor(avg_grayscale.astype(np.uint8), cv2.COLOR_RGB2GRAY)
+        center_YCrCb = cv2.cvtColor(center_img, cv2.COLOR_RGB2YCrCb)
+        center_YCrCb[:, :, 0] = cv2.addWeighted(center_YCrCb[:, :, 0], 0.5, avg_grayscale_single_channel, 0.5, 0)
+        enhanced_center_img = cv2.cvtColor(center_YCrCb, cv2.COLOR_YCrCb2RGB)
+
+        return enhanced_center_img
 
     def run(self):
 
+        depth_frame = None
         # Grab the frame from the stream 
         if self.queue_xout is not None:
             data_xout = self.queue_xout.get() # blocking
             image_data_xout = data_xout.getFrame()
             self.frame_xout = np.moveaxis(image_data_xout,0,-1)
-
             # Retrieve the left camera frame
             if self.queue_left.has():
                 data_left = self.queue_left.get()
-                image_data_xout_left = data_left.getCvFrame()
+                self.frame_left = data_left.getCvFrame()
                 # self.frame_left = np.moveaxis(image_data_xout_left,0,-1)
 
             # Retrieve the right camera frame
@@ -432,10 +496,13 @@ class OakDCamera:
                     self.latencies.clear()
 
         if self.queue_xout_depth is not None:
-            data_xout_depth = self.queue_xout_depth.get()
-            self.frame_xout_depth = data_xout_depth.getFrame()
+            data_xout_depth = self.queue_xout_depth.tryGet()
+            if data_xout_depth is not None:
+                depth_frame = data_xout_depth.getFrame()
+                self.frame_xout_depth = depth_frame
 
         if self.queue_xout_spatial_data is not None:
+            print("bhhhhh")
             xout_spatial_data = self.queue_xout_spatial_data.get().getSpatialLocations()
             self.roi_distances = []
             for depthData in xout_spatial_data:
@@ -455,19 +522,21 @@ class OakDCamera:
                 self.roi_distances.append(int(coords.x))
                 self.roi_distances.append(int(coords.y))
                 self.roi_distances.append(int(coords.z))
-        # print(self.frame_xout.shape, "ahhhh")
-        # print(self.frame_left.shape, "bhhh")
-        # print(self.frame_right.shape, "chhhh")
-        #return self.frame_xout, self.frame_left, self.frame_right
-        #return self.frame_left
-        return self.frame_xout
+            
+        print(image_data_xout.shape, "alll")
+        if self.center_image_return:
+            return self.frame_xout
+        elif self.depth_image_return:
+            return depth_frame # Pixel map of distances (in millimeters)
+        elif self.five_channel_return and self.frame_left is not None and self.frame_right is not None:
+            return self.enhance_center_with_grayscale(image_data_xout, self.frame_left, self.frame_right)
+        else:
+            return None
 
     def run_threaded(self):
         if self.enable_depth:
-            print("1")
             return self.frame_xout,self.frame_xout_depth
         elif self.enable_obstacle_dist:
-            print("2")
             return self.frame_xout, np.array(self.roi_distances)
         else:
             return self.frame_xout

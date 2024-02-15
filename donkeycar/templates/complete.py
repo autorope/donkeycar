@@ -839,6 +839,9 @@ def get_camera(cfg):
                     .with_rgb_exposure_time(cfg.RGB_EXPOSURE_TIME) \
                     .with_rgb_sensor_iso(cfg.RGB_SENSOR_ISO) \
                     .with_rgb_wb_manual(cfg.RGB_WB_MANUAL) \
+                    .with_center_image_return(cfg.CENTER_IMAGE_RETURN) \
+                    .with_depth_image_return(cfg.DEPTH_IMAGE_RETURN) \
+                    .with_five_channel_image_return(cfg.FIVE_CHANNEL_IMAGE_RETURN) \
                     .build()
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
