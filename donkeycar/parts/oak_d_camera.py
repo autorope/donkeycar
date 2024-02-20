@@ -2,7 +2,11 @@ import logging
 import time
 from collections import deque
 import numpy as np
-import depthai as dai
+try:
+    import depthai as dai
+except ImportError:
+    raise ImportError("Please install the depthai library. See https://docs.luxonis.com/en/latest/pages/tutorials/first_steps/#installing-depthai")
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
