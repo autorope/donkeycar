@@ -9,110 +9,12 @@ logger.setLevel(logging.INFO)
 
 
 class CameraError(Exception):
-    pass
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
 
-class OakDCameraBuilder:
-    def __init__(self):
-        self.width = None
-        self.height = None
-        self.depth = 3
-        self.isp_scale = None
-        self.framerate = 30
-        self.enable_depth = False
-        self.enable_obstacle_dist = False
-        self.rgb_resolution = "1080p"
-        self.rgb_apply_cropping = False
-        self.rgb_sensor_crop_x = 0.0
-        self.rgb_sensor_crop_y = 0.125
-        self.rgb_video_size = (1280,600)
-        self.rgb_apply_manual_conf = False
-        self.rgb_exposure_time = 2000
-        self.rgb_sensor_iso = 1200
-        self.rgb_wb_manual = 2800
-
-    def with_width(self, width):
-        self.width = width
-        return self
-
-    def with_height(self, height):
-        self.height = height
-        return self
-
-    def with_depth(self, depth):
-        self.depth = depth
-        return self
-
-    def with_isp_scale(self, isp_scale):
-        self.isp_scale = isp_scale
-        return self
-
-    def with_framerate(self, framerate):
-        self.framerate = framerate
-        return self
-
-    def with_enable_depth(self, enable_depth):
-        self.enable_depth = enable_depth
-        return self
-
-    def with_enable_obstacle_dist(self, enable_obstacle_dist):
-        self.enable_obstacle_dist = enable_obstacle_dist
-        return self
-
-    def with_rgb_resolution(self, rgb_resolution):
-        self.rgb_resolution = rgb_resolution
-        return self
-
-    def with_rgb_apply_cropping(self, rgb_apply_cropping):
-        self.rgb_apply_cropping = rgb_apply_cropping
-        return self
-
-    def with_rgb_sensor_crop_x(self, rgb_sensor_crop_x):
-        self.rgb_sensor_crop_x = rgb_sensor_crop_x
-        return self
-
-    def with_rgb_sensor_crop_y(self, rgb_sensor_crop_y):
-        self.rgb_sensor_crop_y = rgb_sensor_crop_y
-        return self
-
-    def with_rgb_video_size(self, rgb_video_size):
-        self.rgb_video_size = rgb_video_size
-        return self
-
-    def with_rgb_apply_manual_conf(self, rgb_apply_manual_conf):
-        self.rgb_apply_manual_conf = rgb_apply_manual_conf
-        return self
-
-    def with_rgb_exposure_time(self, rgb_exposure_time):
-        self.rgb_exposure_time = rgb_exposure_time
-        return self
-
-    def with_rgb_sensor_iso(self, rgb_sensor_iso):
-        self.rgb_sensor_iso = rgb_sensor_iso
-        return self
-
-    def with_rgb_wb_manual(self, rgb_wb_manual):
-        self.rgb_wb_manual = rgb_wb_manual
-        return self
-
-    def build(self):
-        return OakDCamera(
-            width=self.width, 
-            height=self.height, 
-            depth=self.depth, 
-            isp_scale=self.isp_scale, 
-            framerate=self.framerate, 
-            enable_depth=self.enable_depth, 
-            enable_obstacle_dist=self.enable_obstacle_dist, 
-            rgb_resolution=self.rgb_resolution,
-            rgb_apply_cropping=self.rgb_apply_cropping,
-            rgb_sensor_crop_x=self.rgb_sensor_crop_x,
-            rgb_sensor_crop_y=self.rgb_sensor_crop_y,
-            rgb_video_size=self.rgb_video_size,
-            rgb_apply_manual_conf=self.rgb_apply_manual_conf,
-            rgb_exposure_time=self.rgb_exposure_time,
-            rgb_sensor_iso=self.rgb_sensor_iso,
-            rgb_wb_manual=self.rgb_wb_manual
-        )
+    def __str__(self):
+        return f'{self.message}'
 
 class OakDCamera:
     def __init__(self, 
@@ -438,6 +340,7 @@ class OakDCamera:
         # Keep looping infinitely until the thread is stopped
         while self.on:
             self.run()
+            time.sleep(0.001)
 
     def shutdown(self):
         # Indicate that the thread should be stopped
