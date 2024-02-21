@@ -901,12 +901,12 @@ def add_camera(V, cfg, camera_type):
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
               threaded=True)
-    elif cfg.CAMERA_TYPE == "OAK" and cfg.OBSTACLE_DETECTION_ENABLED:
+    elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
         cam = get_camera(cfg)
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/obstacle_distances'],
               threaded=True)
-    elif cfg.CAMERA_TYPE == "OAK" and cfg.ENABLE_DEPTH_MAP:
+    elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
         cam = get_camera(cfg)
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/depth_array'],
