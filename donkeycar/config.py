@@ -58,6 +58,9 @@ class Config():
         if getattr (self, 'ROBOCARS_CONFIG_PROFILE', None):
             print (f"Config : Profile {self.ROBOCARS_CONFIG_PROFILE['ROBOCARS_PROFILE_NAME']} found")
             for k,v in self.ROBOCARS_CONFIG_PROFILE.items() :
+                current = getattr(self, k,None)
+                if current and current != v:
+                    print(f"Profile : Config : attribute {k} changed from {current} to {v}")
                 setattr(self, k, v)
         else:
             print (f"Config : no ROBOCARS_CONFIG_PROFILE profile found")
