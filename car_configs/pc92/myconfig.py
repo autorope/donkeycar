@@ -58,25 +58,25 @@ USE_CAMERA_TUNING_BLOB = True
 # # OAK-D-WIDE: from 1280/800  (1,8)>>160/100 (3,16)>>240/150 5/32>>200/125
 OAK_D_ISP_SCALE = (1,4)
 #
-OAK_IMAGE_W = 320 
+OAK_IMAGE_W = 320
 # OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 # OAK-D-WIDE: 150 ou 125 ou 100
-OAK_IMAGE_H = 200 # 165 
+OAK_IMAGE_H = 200 # 165
 
 OAK_IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 
 
 # OAK-D-LITE: color cam = 240 ISP 1/8 ou 192 ISP 1/10 ou 224 ISP 7/60
 # OAK-D-WIDE: 240 ou 200 ou 160
-IMAGE_W = 320 
+IMAGE_W = 320
 # OAK-D-LITE: color cam = 135 ISP 1/8 ou 108 ISP 1/10 ou 126 ISP 7/60
 # OAK-D-WIDE: 150 ou 125 ou 100
-IMAGE_H = 165 
+IMAGE_H = 165
 
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
 
 CAMERA_FRAMERATE = DRIVE_LOOP_HZ # 35hz
-# 
+#
 
 
 # SPRINT
@@ -123,18 +123,18 @@ USE_CAMERA_TUNING_BLOB = True
 OAK_ENABLE_DEPTH_MAP = True # enables depth map output
 
 # The following config is centered cropping to align with RGB
-# If RGB cropping modified, modify depth cropping  
+# If RGB cropping modified, modify depth cropping
 OAK_DEPTH_CROP_RECT = None # (0.0,0.175,1.0,1.0) # (top_left_x, top_left_y, bottom_right_x, bottom_right_y) with normalized values ie in [0,1]
 OAK_ENABLE_UNDISTORTED_RGB = True # Activate undistorted rgb generation and recording
 OAK_OBSTACLE_DETECTION_ENABLED = False # enable roi distances output
-# 
+#
 # # OBSTACLE_AVOIDANCE SETTINGS
 OBSTACLE_AVOIDANCE_ENABLED = False
 OBSTACLE_AVOIDANCE_FOR_AUTOPILOT = False # True activates avoidance for autopilot, False for user (manual control)
 CLOSE_AVOIDANCE_DIST_MM = 1000
 #
 # # OBSTACLE_DETECTOR
-OBSTACLE_DETECTOR_ENABLED = True # Si True active detection d'obstacle ou l'avoidance ou le suivi de ligne 
+OBSTACLE_DETECTOR_ENABLED = True # Si True active detection d'obstacle ou l'avoidance ou le suivi de ligne
 OBSTACLE_DETECTOR_NUM_LOCATIONS = 4
 # OBSTACLE_DETECTOR_MODEL_PATH = "~/mycar/models/pilot_23-02-15_29.tflite"
 OBSTACLE_DETECTOR_MODEL_PATH = "/home/donkey/donkeycar-models/trt_4.6/model-A022.trt"
@@ -146,7 +146,7 @@ OBSTACLE_DETECTOR_BEHAVIOR_LIST = ['NA', 'left', 'middle', 'right']
 BEHAVIOR_LIST = ['left', 'middle', 'right']
 # Next 2 params cannot be enabled together.
 #OBSTACLE_DETECTOR_AVOIDANCE_ENABLED = True # To free drive using behavior model, Si True, active l'autopilote du steering avec avoidance
-#OBSTACLE_DETECTOR_MANUAL_LANE = False # si True, active le mode copilot pour le steering depuis la radio 
+#OBSTACLE_DETECTOR_MANUAL_LANE = False # si True, active le mode copilot pour le steering depuis la radio
 
 #
 # #CAMERA Settings Vivatech 2022 (nano)
@@ -623,7 +623,7 @@ ROBOCARSHAT_PWM_OUT_STEERING_MIN    =   1180
 ROBOCARSHAT_PWM_OUT_STEERING_IDLE   =   1520
 ROBOCARSHAT_PWM_OUT_STEERING_MAX    =   1940
 # ROBOCARSHAT_PWM_OUT_STEERING_INVERT    =   False
-# 
+#
 # # Folowing values can be ajusted to normalized btzeen -1 and 1.
 # # # If  ROBOCARSHAT_USE_AUTOCALIBRATION is used, IDLE values are automatically identified by the Hat
 ROBOCARSHAT_PWM_IN_THROTTLE_MIN    =   1004
@@ -635,7 +635,7 @@ ROBOCARSHAT_PWM_IN_STEERING_MAX    =   1985
 # ROBOCARSHAT_PWM_IN_AUX_MIN    =   1000
 # ROBOCARSHAT_PWM_IN_AUX_IDLE   =   1500
 # ROBOCARSHAT_PWM_IN_AUX_MAX    =   2000
-# 
+#
 # #ODOM Sensor max value (max matching lowest speed)
 # ROBOCARSHAT_ODOM_IN_MAX = 20000
 ROBOCARSHAT_PILOT_MODE = 'local_angle' # Which autonomous mode is triggered by Hat : local_angle or local
@@ -861,3 +861,69 @@ ROBOCARS_THROTTLE_SCALER = 0.0 # extra scalar to apply by default
 # # FPS counter
 # SHOW_FPS = False
 # FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency info into the shell
+
+# PROFILES
+ROBOCARS_CONFIG_PROFILE_IARACING_SPRINT_FIXSPEED = {
+    'ROBOCARS_PROFILE_NAME' : 'IARACING-SPRINT-FIXSPEED',
+    'ROBOCARSHAT_PILOT_MODE' : 'local_angle',
+    'ROBOCARS_THROTTLE_DUAL_THROTTLE_MODEL' : 'False',
+    'ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE' : 0.18,
+    'ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER': 0.0,
+    'OBSTACLE_DETECTOR_AVOIDANCE_ENABLED' : False,
+    'OBSTACLE_DETECTOR_MANUAL_LANE' : True
+}
+
+ROBOCARS_CONFIG_PROFILE_IARACING_SPRINT = {
+    'ROBOCARS_PROFILE_NAME' : 'IARACING-SPRINT',
+    'ROBOCARSHAT_PILOT_MODE' : 'local',
+    'ROBOCARS_THROTTLE_DUAL_THROTTLE_MODEL' : 'True',
+    'ROBOCARS_THROTTLE_LOW' : 0.15,
+    'ROBOCARS_THROTTLE_HIGH' : 0.20,
+    'ROBOCARS_THROTTLE_ON_SL_BRAKE_SPEED' : -0.00,
+    'ROBOCARS_THROTTLE_SCALER_ON_SL_FILTER_SIZE' : 10,
+    'ROBOCARS_SL_FILTER_TRESH_HIGH':3,
+    'ROBOCARS_SL_FILTER_TRESH_LOW':1,
+    'ROBOCARS_THROTTLE_ON_SL_BRAKE_DURATION' : 15,
+    'ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE' : 0.18,
+    'ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER': 0.0,
+    'OBSTACLE_DETECTOR_AVOIDANCE_ENABLED' : False,
+    'OBSTACLE_DETECTOR_MANUAL_LANE' : True
+}
+
+ROBOCARS_CONFIG_PROFILE_IARACING_SLALOM = {
+    'ROBOCARS_PROFILE_NAME' : 'IARACING-SLALOM',
+    'ROBOCARSHAT_PILOT_MODE' : 'local_angle',
+    'ROBOCARS_THROTTLE_DUAL_THROTTLE_MODEL' : 'False',
+    'ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE' : 0.12,
+    'ROBOCARS_CTRL_STEERING_OFFSET' : 0.0,
+    'ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER': 0.1,
+    'OBSTACLE_DETECTOR_AVOIDANCE_ENABLED' : True,
+    'OBSTACLE_DETECTOR_MANUAL_LANE' : False
+}
+
+ROBOCARS_CONFIG_PROFILE_COPILOT_SPRINT = {
+    'ROBOCARS_PROFILE_NAME' : 'COPILOT-SPRINT',
+    'ROBOCARSHAT_PILOT_MODE' : 'local_angle',
+    'ROBOCARS_THROTTLE_DUAL_THROTTLE_MODEL' : 'False',
+    'ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER': 0.0,
+    'ROBOCARS_CTRL_STEERING_OFFSET' : -0.25,
+    'ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE' : None,
+    'OBSTACLE_DETECTOR_AVOIDANCE_ENABLED' : False,
+    'OBSTACLE_DETECTOR_MANUAL_LANE' : True
+}
+
+ROBOCARS_CONFIG_PROFILE_COPILOT_SLALOM = {
+    'ROBOCARS_PROFILE_NAME' : 'COPILOT-SLALOM',
+    'ROBOCARS_CTRL_STEERING_OFFSET' : 0.0,
+    'ROBOCARSHAT_PILOT_MODE' : 'local_angle',
+    'ROBOCARS_CTRL_ADAPTATIVE_STEERING_SCALER': 0.1,
+    'ROBOCARSHAT_LOCAL_ANGLE_FIX_THROTTLE' : None,
+    'OBSTACLE_DETECTOR_AVOIDANCE_ENABLED' : True,
+    'OBSTACLE_DETECTOR_MANUAL_LANE' : False
+}
+
+#ROBOCARS_CONFIG_PROFILE = ROBOCARS_CONFIG_PROFILE_IARACING_SPRINT_FIXSPEED
+#ROBOCARS_CONFIG_PROFILE = ROBOCARS_CONFIG_PROFILE_IARACING_SPRINT
+#ROBOCARS_CONFIG_PROFILE = ROBOCARS_CONFIG_PROFILE_IARACING_SLALOM
+ROBOCARS_CONFIG_PROFILE = ROBOCARS_CONFIG_PROFILE_COPILOT_SPRINT
+#ROBOCARS_CONFIG_PROFILE = ROBOCARS_CONFIG_PROFILE_COPILOT_SLALOM
