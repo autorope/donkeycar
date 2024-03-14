@@ -46,7 +46,7 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
 
     if cfg.PRINT_MODEL_SUMMARY:
         summarize(model)
-    trainer = pl.Trainer(gpus=gpus, logger=logger, max_epochs=cfg.MAX_EPOCHS,
+    trainer = pl.Trainer(logger=logger, max_epochs=cfg.MAX_EPOCHS,
                          default_root_dir=output_dir)
 
     data_module = TorchTubDataModule(cfg, tub_paths)
