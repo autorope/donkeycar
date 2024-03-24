@@ -42,4 +42,4 @@ def profile(model_path, model_type):
 
 if __name__ == '__main__':
     args = docopt(__doc__)
-    profile(model_path = args['--model'], model_type = args['--type'])
+    profile(model_path=args['--model'], model_type=args['--type'])

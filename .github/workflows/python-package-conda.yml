@@ -10,34 +10,30 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          - os: macos-latest
-            ENV_FILE: install/envs/mac.yml
-          - os: ubuntu-latest
-            ENV_FILE: install/envs/ubuntu.yml
+        os: ["macos-latest", "ubuntu-latest"]
       fail-fast: false
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Create python 3.9 conda env
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         with:
           python-version: 3.9
-          mamba-version: 1.3 # "*"
+          mamba-version: "*"
           activate-environment: donkey
-          environment-file: ${{matrix.ENV_FILE}}
           auto-activate-base: false
           channels: default, conda-forge, pytorch
           channel-priority: true
       - name: Conda info and list
         run: |
-          echo Environment file ${{matrix.ENV_FILE}}
           conda info
           conda list
       - name: Install donkey
-        run: pip install -e .[pc]
+        run: | 
+          pip install -e .[pc,dev]
+          pip list
       - name: Run tests
         run: pytest
