@@ -499,6 +499,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs += ['cam/depth_array']
         types += ['gray16_array']
 
+    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
+        inputs += ['cam/depth_array']
+        types += ['gray16_array']
+
+    if cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
+        inputs += ['cam/obstacle_distances']
+        types += ['np_array']
+
     if cfg.HAVE_IMU or (cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_IMU):
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
@@ -820,6 +828,26 @@ def get_camera(cfg):
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "OAK":
+            from donkeycar.parts.oak_d_camera import OakDCamera
+            cam = OakDCamera(
+                width=cfg.IMAGE_W, 
+                height=cfg.IMAGE_H, 
+                depth=cfg.IMAGE_DEPTH, 
+                isp_scale=cfg.OAK_D_ISP_SCALE, 
+                framerate=cfg.CAMERA_FRAMERATE,
+                enable_depth=cfg.OAK_ENABLE_DEPTH_MAP,
+                enable_obstacle_dist=cfg.OAK_OBSTACLE_DETECTION_ENABLED,
+                rgb_resolution=cfg.RGB_RESOLUTION,
+                rgb_apply_cropping=cfg.RGB_APPLY_CROPPING,
+                rgb_sensor_crop_x=cfg.RGB_SENSOR_CROP_X,
+                rgb_sensor_crop_y=cfg.RGB_SENSOR_CROP_Y,
+                rgb_video_size=cfg.RGB_VIDEO_SIZE,
+                rgb_apply_manual_conf=cfg.RGB_APPLY_MANUAL_CONF,
+                rgb_exposure_time=cfg.RGB_EXPOSURE_TIME,
+                rgb_sensor_iso=cfg.RGB_SENSOR_ISO,
+                rgb_wb_manual=cfg.RGB_WB_MANUAL
+            )
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
@@ -872,6 +900,16 @@ def add_camera(V, cfg, camera_type):
               outputs=['cam/image_array', 'cam/depth_array',
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+              threaded=True)
+    elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_OBSTACLE_DETECTION_ENABLED:
+        cam = get_camera(cfg)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/obstacle_distances'],
+              threaded=True)
+    elif cfg.CAMERA_TYPE == "OAK" and cfg.OAK_ENABLE_DEPTH_MAP:
+        cam = get_camera(cfg)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/depth_array'],
               threaded=True)
     else:
         inputs = []
