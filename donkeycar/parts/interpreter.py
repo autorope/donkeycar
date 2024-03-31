@@ -351,8 +351,6 @@ class TensorRT(Interpreter):
         # Squeeze here because we send a batch of size one, so pick first
         # element. To return the order of outputs as defined in the model we
         # need to iterate through the model's output shapes here
-        # outputs = [out_dict[k].numpy().squeeze(axis=0) for k in
-        #            self.output_keys]
         outputs = [k.numpy().squeeze(axis=0) for k in out_list]
 
         # don't return list if output is 1d
