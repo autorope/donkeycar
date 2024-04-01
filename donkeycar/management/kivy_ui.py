@@ -148,7 +148,7 @@ class RcFileHandler:
                 Logger.info(f'Donkeyrc: Donkey file {self.file_path} loaded.')
                 return data
         else:
-            Logger.warn(f'Donkeyrc: Donkey file {self.file_path} does not '
+            Logger.warning(f'Donkeyrc: Donkey file {self.file_path} does not '
                         f'exist.')
             return {}
 

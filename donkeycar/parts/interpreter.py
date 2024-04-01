@@ -347,12 +347,12 @@ class TensorRT(Interpreter):
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
             input_dict[k] = self.expand_and_convert(v)
-        out_dict = self.graph_func(**input_dict)
+        out_list = self.graph_func(**input_dict)
         # Squeeze here because we send a batch of size one, so pick first
         # element. To return the order of outputs as defined in the model we
         # need to iterate through the model's output shapes here
-        outputs = [out_dict[k].numpy().squeeze(axis=0) for k in
-                   self.output_keys]
+        outputs = [k.numpy().squeeze(axis=0) for k in out_list]
+
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 

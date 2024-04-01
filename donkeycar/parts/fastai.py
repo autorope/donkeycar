@@ -158,11 +158,10 @@ class FastAiPilot(ABC):
         model = self.interpreter.model
 
         dataLoader = DataLoaders.from_dsets(train_data, validation_data, bs=batch_size, shuffle=False)
-        if torch.cuda.is_available():
-            dataLoader.cuda()
+        # old way of enabling gpu now crashes with torch 2.1.*
+        # if torch.cuda.is_available():
+        #     dataLoader.cuda()
 
-        #dataLoaderTest = self.dataBlock.dataloaders.test_dl(validation_data, with_labels=True)
-        #print(dataLoader.train[0])
 
         callbacks = [
             EarlyStoppingCallback(monitor='valid_loss',

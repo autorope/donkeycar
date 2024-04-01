@@ -310,7 +310,7 @@ class GpioEncoder(AbstractEncoder):
         self.debounce_ns:int = debounce_ns
         self.debounce_time:int = 0
         if self.debounce_ns > 0:
-            logger.warn("GpioEncoder debounce_ns will be ignored.")
+            logger.warning("GpioEncoder debounce_ns will be ignored.")
         self.lock = threading.Lock()
 
     def _cb(self):
