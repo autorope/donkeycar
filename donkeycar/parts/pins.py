@@ -400,7 +400,7 @@ try:
     gpio_pin_pull = [None, GPIO.PUD_OFF, GPIO.PUD_DOWN, GPIO.PUD_UP]
     gpio_pin_scheme = {PinScheme.BOARD: GPIO.BOARD, PinScheme.BCM: GPIO.BCM}
 except ImportError:
-    logger.warn("RPi.GPIO was not imported.")
+    logger.warning("RPi.GPIO was not imported.")
     globals()["GPIO"] = None
 
 
@@ -753,7 +753,7 @@ try:
     pigpio_pin_edge = [None, pigpio.RISING_EDGE, pigpio.FALLING_EDGE, pigpio.EITHER_EDGE]
     pigpio_pin_pull = [None, pigpio.PUD_OFF, pigpio.PUD_DOWN, pigpio.PUD_UP]
 except ImportError:
-    logger.warn("pigpio was not imported.")
+    logger.warning("pigpio was not imported.")
     globals()["pigpio"] = None
 
 

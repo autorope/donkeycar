@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 try:
     import RPi.GPIO as GPIO
 except ImportError as e:
-    logger.warn(f"RPi.GPIO was not imported. {e}")
+    logger.warning(f"RPi.GPIO was not imported. {e}")
     globals()["GPIO"] = None
 
 from donkeycar.parts.pins import OutputPin, PwmPin, PinState
@@ -800,10 +800,10 @@ class L298N_HBridge_3pin(object):
                         where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
-            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            logger.warning("TwoWheelSteeringThrottle throttle is None")
             return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warning( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
             throttle = clamp(throttle, -1, 1)
         
         self.speed = throttle
@@ -843,16 +843,16 @@ class TwoWheelSteeringThrottle(object):
                  where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
-            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            logger.warning("TwoWheelSteeringThrottle throttle is None")
             return
         if steering is None:
-            logger.warn("TwoWheelSteeringThrottle steering is None")
+            logger.warning("TwoWheelSteeringThrottle steering is None")
             return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warning( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
             throttle = clamp(throttle, -1, 1)
         if steering > 1 or steering < -1:
-            logger.warn( f"TwoWheelSteeringThrottle steering is {steering}, but it must be between 1(right) and -1(left)")
+            logger.warning( f"TwoWheelSteeringThrottle steering is {steering}, but it must be between 1(right) and -1(left)")
             steering = clamp(steering, -1, 1)
 
         left_motor_speed = throttle
@@ -920,10 +920,10 @@ class L298N_HBridge_2pin(object):
                         where 1 is full forward and -1 is full backwards.
         """
         if throttle is None:
-            logger.warn("TwoWheelSteeringThrottle throttle is None")
+            logger.warning("TwoWheelSteeringThrottle throttle is None")
             return
         if throttle > 1 or throttle < -1:
-            logger.warn( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
+            logger.warning( f"TwoWheelSteeringThrottle throttle is {throttle}, but it must be between 1(forward) and -1(reverse)")
             throttle = clamp(throttle, -1, 1)
 
         self.speed = throttle
