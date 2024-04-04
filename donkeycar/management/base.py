@@ -9,7 +9,6 @@ import logging
 from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
-from donkeycar.management.tub import TubManager
 
 from donkeycar.utils import normalize_image, load_image, math
 
@@ -607,7 +606,6 @@ def execute_from_command_line():
         'createcar': CreateCar,
         'findcar': FindCar,
         'calibrate': CalibrateCar,
-        'tubclean': TubManager,
         'tubplot': ShowPredictionPlots,
         'tubhist': ShowHistogram,
         'makemovie': MakeMovieShell,
