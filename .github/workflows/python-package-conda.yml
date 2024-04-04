@@ -33,8 +33,8 @@ jobs:
           conda list
       - name: Install donkey
         run: | 
-          pip config set global.extra-index-url https://kivy-garden.github.io/simple/
           pip install -e .[pc,dev]
+          pip install https://github.com/kivy-garden/matplotlib/archive/master.zip
           pip list
       - name: Run tests
         run: pytest
