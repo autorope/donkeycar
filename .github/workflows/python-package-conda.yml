@@ -33,6 +33,7 @@ jobs:
           conda list
       - name: Install donkey
         run: | 
+          pip config set global.extra-index-url https://kivy-garden.github.io/simple/
           pip install -e .[pc,dev]
           pip list
       - name: Run tests
