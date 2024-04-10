@@ -1,4 +1,7 @@
 import os
+# need to do this before importing anything else
+os.environ['KIVY_LOG_MODE'] = 'MIXED'
+
 from kivy.logger import Logger, LOG_LEVELS
 from kivy.clock import Clock
 from kivy.app import App
@@ -15,7 +18,6 @@ from donkeycar.management.ui.tub_screen import TubScreen
 from donkeycar.management.ui.common import AppScreen
 
 Logger.setLevel(LOG_LEVELS["info"])
-
 Window.size = (800, 800)
 
 
