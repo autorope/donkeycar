@@ -30,6 +30,9 @@ class Memory:
             return self.d[key]
         
     def update(self, new_d):
+        '''
+        update memory with values from a dictionary
+        '''
         self.d.update(new_d)
         
     def put(self, keys, inputs):
@@ -45,10 +48,16 @@ class Memory:
             self.d[keys[0]] = inputs
 
             
-            
     def get(self, keys):
         result = [self.d.get(k) for k in keys]
         return result
+
+    def remove(self, keys):
+        '''
+        Remove all the keys in the given list
+        '''
+        for key in keys:
+            del self.d[key]
     
     def keys(self):
         return self.d.keys()

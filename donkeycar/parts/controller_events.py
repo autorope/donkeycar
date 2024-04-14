@@ -5,13 +5,80 @@ import struct
 import random
 import threading
 import logging
+from typing import Any
+from typing_extensions import Self
 
 from prettytable import PrettyTable
 
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
-from donkeycar import Memory
+# from donkeycar import Memory
+
+class Memory:
+    """
+    A convenience class to save key/value pairs.
+    """
+    def __init__(self, *args, **kw):
+        self.d = {}
+    
+    def __setitem__(self, key, value):
+        if type(key) is str:
+            self.d[key] = value
+        else:
+            if type(key) is not tuple:
+                key = tuple(key)
+                value = tuple(key)
+            for i, k in enumerate(key):
+                self.d[k] = value[i]
+        
+    def __getitem__(self, key):
+        if type(key) is tuple:
+            return [self.d[k] for k in key]
+        else:
+            return self.d[key]
+        
+    def update(self, new_d):
+        self.d.update(new_d)
+        
+    def put(self, keys, inputs):
+        if len(keys) > 1:
+            for i, key in enumerate(keys):
+                try:
+                    self.d[key] = inputs[i]
+                except IndexError as e:
+                    error = str(e) + ' issue with keys: ' + str(key)
+                    raise IndexError(error)
+        
+        else:
+            self.d[keys[0]] = inputs
+
+    def update(self, dict):
+        '''
+        update memory with values from a dictionary
+        '''
+        self.d.update(dict)
+            
+    def get(self, keys):
+        result = [self.d.get(k) for k in keys]
+        return result
+
+    def remove(self, keys):
+        '''
+        Remove all the keys in the given list
+        '''
+        for key in keys:
+            del self.d[key]
+    
+    def keys(self):
+        return self.d.keys()
+    
+    def values(self):
+        return self.d.values()
+    
+    def items(self):
+        return self.d.items()
+        
 
 logger = logging.getLogger(__name__)
 
@@ -24,28 +91,49 @@ def format_button_event(button) -> str:
 def format_axis_event(axis) -> str:
     return f'/event/axis/{axis}'
 
-class AbstractController(object):
-    def init(self) -> bool:
+class AbstractInputController(object):
+    '''
+    A threadsafe object that can be polled to return 
+    button and axis change events from an input device.
+    ''' 
+    def init(self) -> Self:
         '''
-        Attempt to initialize the controller. Should be defined by derived class
-        Should return true on successfully created joystick object
+        Attempt to initialize the controller. Should be defined by derived class.
+        - on success returns self so it can be fluently chained
+        - on failure return false
         '''
         raise(Exception("Subclass needs to define init()"))
 
+    def show_map(self) -> bool:
+        '''
+        Print the names of the buttons and axes found on this input controller
+        - returns True if input controller is initialized
+        - returns False if input controller is not initialized
+        '''
+        raise(Exception("Subclass needs to define show_map()"))
+
+
     def poll(self):
         '''
-        query the state of the joystick, returns button which was pressed, if any,
-        and axis which was moved, if any. button_state will be None, 1, or 0 if no changes,
-        pressed, or released. axis_val will be a float from -1 to +1. button and axis will
-        be the string label determined by the axis map in init.
+        Query the input controller for a button or axis state change event.
+        This must be threadsafe.
+
+        returns: tuple of 
+        - button: string name of button if a button changed, otherwise None
+        - button_state: number 0 or 1 if a button changed, otherwise None
+        - axis: string name of axis if an axis changed, otherwise None
+        - button_state: number -1 to 1 if an axis changed, otherwise None
         '''
         raise(Exception("Subclass needs to define poll()"))
 
 
 
-class GameController(AbstractController):
+class LinuxGameController(AbstractInputController):
     '''
-    An interface to a physical joystick.
+    An interface to a physical joystick with a linux driver that
+    supports fnctl and a mapping into the linux input device tree.
+
+    The
     The joystick holds available buttons
     and axis; both their names and values
     and can be polled to state changes.
@@ -63,26 +151,42 @@ class GameController(AbstractController):
         self.button_names = axis_names
         self.axis_map = []
         self.button_map = []
+        self.num_axes = 0
+        self.num_buttons = 0
         self.jsdev = None
         self.dev_fn = dev_fn
+        self.initialized = False
 
 
     def init(self) -> bool:
         """
-        Query available buttons and axes given
-        a path in the linux device tree.
+        Attempt to initialize the controller.
+        In Linux, query available buttons and axes using fnctl and
+        a path in the linux device tree.  
+        If the button_names or axis_names mappings passed to the contruct
+        maps to a discovered input control, then use that name when emitting
+        events for that input control, otherwise emit using a default name.
+        - on success returns self so it can be fluently chained
+        - on failure it raises an exception
+
         """
         try:
             from fcntl import ioctl
         except ModuleNotFoundError:
             self.num_axes = 0
             self.num_buttons = 0
-            logger.warn("no support for fnctl module. joystick not enabled.")
-            return False
+            logger.warn("No support for fnctl module. LinuxGameController not initialized.")
+            raise Exception("No support for fnctl module. LinuxGameController not initialized.")
 
         if not os.path.exists(self.dev_fn):
-            logger.warn(f"{self.dev_fn} is missing")
-            return False
+            logger.warn(f"No device {self.dev_fn}. LinuxGameController not initialized.")
+            raise Exception(f"No device {self.dev_fn}. LinuxGameController not initialized.")
+
+        #
+        # only initialize once
+        #
+        if self.initialized:
+            return True
 
         '''
         call once to setup connection to device and map buttons
@@ -125,29 +229,40 @@ class GameController(AbstractController):
             self.button_states[btn_name] = 0
             #print('btn', '0x%03x' % btn, 'name', btn_name)
 
+        self.initialized = True
         return True
 
 
-    def show_map(self):
+    def show_map(self) -> bool:
         '''
-        list the buttons and axis found on this joystick
+        Print the names of the buttons and axes found on this input controller
         '''
-        print ('%d axes found: %s' % (self.num_axes, ', '.join(self.axis_map)))
-        print ('%d buttons found: %s' % (self.num_buttons, ', '.join(self.button_map)))
+        if self.initialized:
+            print ('%d axes found: %s' % (self.num_axes, ', '.join(self.axis_map)))
+            print ('%d buttons found: %s' % (self.num_buttons, ', '.join(self.button_map)))
+            return True
+        return False
 
 
     def poll(self):
         '''
-        query the state of the joystick, returns button which was pressed, if any,
-        and axis which was moved, if any. button_state will be None, 1, or 0 if no changes,
-        pressed, or released. axis_val will be a float from -1 to +1. button and axis will
-        be the string label determined by the axis map in init.
+        Query the the input controller for a button or axis state change event.
+        If the button_names or axis_names mappings passed to the contruct
+        maps to a discovered input control, then use that name when emitting
+        events for that input control, otherwise emit using a default name.
+
+        returns: tuple of 
+        - button: string name of button if a button changed, otherwise None
+        - button_state: number 0 or 1 if a button changed, otherwise None
+        - axis: string name of axis if an axis changed, otherwise None
+        - button_state: number -1 to 1 if an axis changed, otherwise None
         '''
         button = None
         button_state = None
         axis = None
         axis_val = None
 
+        # just return None until the joystick device is online
         if self.jsdev is None:
             return button, button_state, axis, axis_val
 
@@ -155,6 +270,7 @@ class GameController(AbstractController):
         evbuf = self.jsdev.read(8)
 
         if evbuf:
+            # 'IhBB' = unsigned int 32bits, signed int 16 bits, unsigned int 8 bits, unsigned int 8 bits
             tval, value, typev, number = struct.unpack('IhBB', evbuf)
 
             if typev & 0x80:
@@ -163,11 +279,10 @@ class GameController(AbstractController):
 
             if typev & 0x01:
                 button = self.button_map[number]
-                #print(tval, value, typev, number, button, 'pressed')
                 if button:
                     self.button_states[button] = value
                     button_state = value
-                    logger.info("button: %s state: %d" % (button, value))
+                    logger.debug("button: %s state: %d" % (button, value))
 
             if typev & 0x02:
                 axis = self.axis_map[number]
@@ -180,11 +295,11 @@ class GameController(AbstractController):
         return button, button_state, axis, axis_val
 
 
-class ControllerEvents(object):
+class InputControllerEvents(object):
     '''
-    Poll a GameController() and convert to button and axis events.
+    Poll a AbstractGameController() and convert to button and axis events.
     '''
-    def __init__(self, memory: Memory, joystick: GameController, poll_delay=0.0):
+    def __init__(self, memory: Memory, joystick: AbstractInputController, poll_delay=0.0):
         self.memory = memory
         self.controller = joystick
         self.button_states = {} # most recent state for each button
@@ -194,18 +309,28 @@ class ControllerEvents(object):
         self.previous_button_events = {} # collected button events to delete
         self.previous_axis_events = {}   # collected axis events to delete
         self.lock = threading.Lock()
+        self.poll_delay = poll_delay
+        self.running = False
+
+    def init_controller(self):
+        # wait for joystick to be online
+        wait_until = time.time() + 5  # wait for 5 seconds for joystick
+        joystick_initialized = self.controller.init()
+        while self.running and (wait_until > time.time()) and not joystick_initialized:
+            if not joystick_initialized:
+                time.sleep(1)
+            joystick_initialized = self.controller.init()
+        if not joystick_initialized:
+            raise Exception("Unabled to initialize joystick after 5 seconds.")
+        self.controller.show_map()
         self.running = True
 
-    def update(self):
-        '''
-        poll a joystick for input events
-        '''
 
-        #wait for joystick to be online
-        while self.running and self.controller is None and not self.init_js():
-            time.sleep(3)
-
-        while self.running:
+    def poll(self):
+        '''
+        poll a joystick once for input events
+        '''
+        if self.running:
             button, button_state, axis, axis_val = self.controller.poll()
 
             if button is not None or axis is not None:
@@ -216,7 +341,7 @@ class ControllerEvents(object):
                     if axis is not None:
                         if self.axis_states.get(axis, None) != axis_val:
                             self.axis_states[axis] = axis_val
-                            self.axis_events[axis] = axis_val
+                            self.axis_events[format_axis_event(axis)] = axis_val
 
                     #
                     # check for button change and turn it into an event
@@ -228,34 +353,51 @@ class ControllerEvents(object):
                                 #
                                 # turn button up into click
                                 #
-                                self.button_states[button] = button_state
-                                self.button_events[button] = BUTTON_CLICK
+                                self.button_events[format_button_event(button)] = BUTTON_CLICK
 
+
+    def update(self):
+        '''
+        Continually poll a joystick for input events.
+        - This is meant to be run in a thread.
+        - Use run_threaded() to move events into self.memory()
+        '''
+
+        # wait for joystick to be online
+        wait_until = time.time() + 5  # wait for 5 seconds for joystick
+        joystick_initialized = self.controller.init()
+        while self.running and (wait_until > time.time()) and not joystick_initialized:
+            if not joystick_initialized:
+                time.sleep(1)
+            joystick_initialized = self.controller.init()
+        if not joystick_initialized:
+            raise Exception("Unabled to initialize joystick after 5 seconds.")
+        self.controller.show_map()
+
+        while self.running:
+            self.poll()
             time.sleep(self.poll_delay)
 
     def run_threaded(self):
         '''
         emit the button and axis events into the memory
         '''
-        with self.lock:
-            # clear prior one-shot events
-            for button in self.previous_button_events:
-                del self.memory[format_button_event(button)]
+        if self.running:
+            if self.button_events or self.axis_events:
+                with self.lock:
+                    # clear prior one-shot events
+                    self.memory.remove(self.previous_button_events.keys())
+                    self.memory.remove(self.previous_axis_events.keys())
 
-            for axis in self.previous_axis_events:
-                del self.memory[format_axis_event(axis)]
+                    # emit new one-shot events
+                    self.memory.update(self.button_events)
+                    self.memory.update(self.axis_events)
 
-            # emit new one-shot events
-            for button in self.button_events:
-                self.memory[format_button_event(button)] = self.button_events[button]
-
-            for axis in self.axis_events:
-                self.memory[format_axis_event(axis)] = self.axis_events[axis]
-
-            self.previous_button_events = self.button_events
-            self.previous_axis_events = self.axis_events
-            self.button_events = {}
-            self.axis_events = {}
+                    # remember the new events so we can remove them later
+                    self.previous_button_events = self.button_events
+                    self.previous_axis_events = self.axis_events
+                    self.button_events = {}
+                    self.axis_events = {}
 
     def shutdown(self):
         self.running = False
@@ -263,20 +405,68 @@ class ControllerEvents(object):
 
 # TODO: add __main__ that creates a vehicle and displays events from a game controller
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-th", "--threaded", default=True,  help = "run in threaded mode.")
+    args = parser.parse_args()
+
+
     #Initialize car
+    loop_rate = 20                  # 20 interations per second for vehicle loop
+    loop_duration = 1.0 / loop_rate # minium duration for each iteration of the vehicle loop
 
     #
     # step 1: collect button and axis names
+    # - init must be called to initialize the 
     #
-    controller = GameController(button_names=[], axis_names=[])
-    controller.show_map()
+    controller = LinuxGameController(button_names={}, axis_names={})
 
     #
     # step 2: start sending events
+    # >> Note that poll_delay of zero is important because some drivers buffer
+    #    axis changes and so delaying only delays sending stale values.
     #
     memory = Memory()
-    controller_events = ControllerEvents(memory=memory, joystick=controller, poll_delay=0.1)
-    while controller_events.running:
-        controller_events.update()
-        controller_events.run_threaded()
-        print( memory )
+    controller_events = InputControllerEvents(memory=memory, joystick=controller, poll_delay=0.0001)
+    controller_events.init_controller()
+
+
+    #
+    # start the threaded part
+    # and a threaded window to show plot
+    #
+    update_thread = None
+    if args.threaded:
+        update_thread = threading.Thread(target=controller_events.update, args=())
+        update_thread.start()
+
+    try:
+        while controller_events.running:
+            loop_end = time.time() + loop_duration
+
+            # fake running on a background thread
+            if update_thread is None:
+                while controller_events.running and (time.time() < loop_end):
+                    controller_events.poll()
+
+            # move collected events into memory and remove the prior events
+            controller_events.run_threaded()
+
+            # print button and axis events
+            for key in memory.keys():
+                if key.startswith(format_button_event("")) or key.startswith(format_axis_event("")):
+                    print(f"'{key}' = '{memory[key]}'")
+
+            # delay to achieve desired loop rate
+            loop_delay = loop_end - time.time()
+            if loop_delay > 0:
+                time.sleep(loop_delay)
+
+    except KeyboardInterrupt:
+        controller_events.shutdown()
+    finally:
+        controller_events.shutdown()
+        if update_thread is not None:
+            update_thread.join()  # wait for thread to end
+
