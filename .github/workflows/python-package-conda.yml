@@ -34,7 +34,6 @@ jobs:
       - name: Install donkey
         run: | 
           pip install -e .[pc,dev]
-          pip install https://github.com/kivy-garden/matplotlib/archive/master.zip
           pip list
       - name: Run tests
         run: pytest
