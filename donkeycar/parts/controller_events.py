@@ -13,75 +13,9 @@ from prettytable import PrettyTable
 #import for syntactical ease
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.parts.web_controller.web import WebFpv
-# from donkeycar import Memory
-
-class Memory:
-    """
-    A convenience class to save key/value pairs.
-    """
-    def __init__(self, *args, **kw):
-        self.d = {}
-    
-    def __setitem__(self, key, value):
-        if type(key) is str:
-            self.d[key] = value
-        else:
-            if type(key) is not tuple:
-                key = tuple(key)
-                value = tuple(key)
-            for i, k in enumerate(key):
-                self.d[k] = value[i]
-        
-    def __getitem__(self, key):
-        if type(key) is tuple:
-            return [self.d[k] for k in key]
-        else:
-            return self.d[key]
-        
-    def update(self, new_d):
-        self.d.update(new_d)
-        
-    def put(self, keys, inputs):
-        if len(keys) > 1:
-            for i, key in enumerate(keys):
-                try:
-                    self.d[key] = inputs[i]
-                except IndexError as e:
-                    error = str(e) + ' issue with keys: ' + str(key)
-                    raise IndexError(error)
-        
-        else:
-            self.d[keys[0]] = inputs
-
-    def update(self, dict):
-        '''
-        update memory with values from a dictionary
-        '''
-        self.d.update(dict)
-            
-    def get(self, keys):
-        result = [self.d.get(k) for k in keys]
-        return result
-
-    def remove(self, keys):
-        '''
-        Remove all the keys in the given list
-        '''
-        for key in keys:
-            del self.d[key]
-    
-    def keys(self):
-        return self.d.keys()
-    
-    def values(self):
-        return self.d.values()
-    
-    def items(self):
-        return self.d.items()
-        
+from donkeycar import Memory
 
 logger = logging.getLogger(__name__)
-
 
 BUTTON_CLICK = "click"
 
@@ -266,8 +200,14 @@ class LinuxGameController(AbstractInputController):
         if self.jsdev is None:
             return button, button_state, axis, axis_val
 
+        # make sure there is enough data to read
+        # >> NOTE: this call blocks if no bytes are available
+        if len(self.jsdev.peek(8)) < 8:
+            return button, button_state, axis, axis_val
+
         # Main event loop
-        evbuf = self.jsdev.read(8)
+        # >> NOTE: this call blocks until 8 bytes are available
+        evbuf = self.jsdev.read(8) 
 
         if evbuf:
             # 'IhBB' = unsigned int 32bits, signed int 16 bits, unsigned int 8 bits, unsigned int 8 bits
@@ -310,7 +250,7 @@ class InputControllerEvents(object):
         self.previous_axis_events = {}   # collected axis events to delete
         self.lock = threading.Lock()
         self.poll_delay = poll_delay
-        self.running = False
+        self.running = True
 
     def init_controller(self):
         # wait for joystick to be online
@@ -323,7 +263,6 @@ class InputControllerEvents(object):
         if not joystick_initialized:
             raise Exception("Unabled to initialize joystick after 5 seconds.")
         self.controller.show_map()
-        self.running = True
 
 
     def poll(self):
@@ -331,6 +270,8 @@ class InputControllerEvents(object):
         poll a joystick once for input events
         '''
         if self.running:
+
+            # >> NOTE: this call blocks if no bytes are available
             button, button_state, axis, axis_val = self.controller.poll()
 
             if button is not None or axis is not None:
@@ -354,6 +295,8 @@ class InputControllerEvents(object):
                                 # turn button up into click
                                 #
                                 self.button_events[format_button_event(button)] = BUTTON_CLICK
+                            
+                            
 
 
     def update(self):
@@ -383,7 +326,8 @@ class InputControllerEvents(object):
         emit the button and axis events into the memory
         '''
         if self.running:
-            if self.button_events or self.axis_events:
+            # do a quick check to see if aquiring the lock is necessary
+            if self.button_events or self.axis_events or self.previous_button_events or self.previous_axis_events:
                 with self.lock:
                     # clear prior one-shot events
                     self.memory.remove(self.previous_button_events.keys())
@@ -408,7 +352,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-th", "--threaded", default=True,  help = "run in threaded mode.")
+    parser.add_argument("-th", "--threaded", default="true", type=str, help = "run in threaded mode.")
     args = parser.parse_args()
 
 
@@ -437,7 +381,7 @@ if __name__ == "__main__":
     # and a threaded window to show plot
     #
     update_thread = None
-    if args.threaded:
+    if args.threaded.lower() == "true":
         update_thread = threading.Thread(target=controller_events.update, args=())
         update_thread.start()
 
