@@ -50,7 +50,8 @@ class AbstractInputController(object):
     def poll(self):
         '''
         Query the input controller for a button or axis state change event.
-        This must be threadsafe.
+        This must be threadsafe as it will generally be called on
+        a separate thread.
 
         returns: tuple of 
         - button: string name of button if a button changed, otherwise None
@@ -81,8 +82,8 @@ class LinuxGameController(AbstractInputController):
     def __init__(self, button_names = {}, axis_names = {}, dev_fn='/dev/input/js0'):
         self.axis_states = {}
         self.button_states = {}
-        self.axis_names = button_names
-        self.button_names = axis_names
+        self.axis_names = axis_names
+        self.button_names = button_names
         self.axis_map = []
         self.button_map = []
         self.num_axes = 0
@@ -97,7 +98,7 @@ class LinuxGameController(AbstractInputController):
         Attempt to initialize the controller.
         In Linux, query available buttons and axes using fnctl and
         a path in the linux device tree.  
-        If the button_names or axis_names mappings passed to the contruct
+        If the button_names or axis_names mappings passed to the contructor
         maps to a discovered input control, then use that name when emitting
         events for that input control, otherwise emit using a default name.
         - on success returns self so it can be fluently chained
@@ -152,6 +153,7 @@ class LinuxGameController(AbstractInputController):
             axis_name = self.axis_names.get(axis, 'axis(0x%02x)' % axis)
             self.axis_map.append(axis_name)
             self.axis_states[axis_name] = 0.0
+            self.axis_names[axis] = axis_name # update the name map
 
         # Get the button map.
         buf = array.array('H', [0] * 200)
@@ -161,7 +163,7 @@ class LinuxGameController(AbstractInputController):
             btn_name = self.button_names.get(btn, 'button(0x%03x)' % btn)
             self.button_map.append(btn_name)
             self.button_states[btn_name] = 0
-            #print('btn', '0x%03x' % btn, 'name', btn_name)
+            self.button_names[btn] = btn_name # update the name map
 
         self.initialized = True
         return True
@@ -233,6 +235,49 @@ class LinuxGameController(AbstractInputController):
                     logger.debug("axis: %s val: %f" % (axis, fvalue))
 
         return button, button_state, axis, axis_val
+
+
+class LogitechJoystick(LinuxGameController):
+    '''
+    An interface to a physical Logitech joystick available at /dev/input/js0
+    Contains mapping that work for Raspian Stretch drivers
+    Tested with Logitech Gamepad F710
+    https://www.amazon.com/Logitech-940-000117-Gamepad-F710/dp/B0041RR0TW
+    credit:
+    https://github.com/kevkruemp/donkeypart_logitech_controller/blob/master/donkeypart_logitech_controller/part.py
+    '''
+    def __init__(self, *args, **kwargs):
+        super(LogitechJoystick, self).__init__(*args, **kwargs)
+
+        self.axis_names = {
+            0x00: 'left_stick_horz',
+            0x01: 'left_stick_vert',
+            0x03: 'right_stick_horz',
+            0x04: 'right_stick_vert',
+
+            0x02: 'L2_pressure',
+            0x05: 'R2_pressure',
+
+            0x10: 'dpad_leftright', # 1 is right, -1 is left
+            0x11: 'dpad_up_down', # 1 is down, -1 is up
+        }
+
+        self.button_names = {
+            0x13a: 'back',  # 8 314
+            0x13b: 'start',  # 9 315
+            0x13c: 'Logitech',  # a  316
+
+            0x130: 'A',
+            0x131: 'B',
+            0x133: 'X',
+            0x134: 'Y',
+
+            0x136: 'L1',
+            0x137: 'R1',
+
+            0x13d: 'left_stick_press',
+            0x13e: 'right_stick_press',
+        }
 
 
 class InputControllerEvents(object):
@@ -364,7 +409,9 @@ if __name__ == "__main__":
     # step 1: collect button and axis names
     # - init must be called to initialize the 
     #
-    controller = LinuxGameController(button_names={}, axis_names={})
+    # controller = LinuxGameController(button_names={}, axis_names={})
+    controller = LogitechJoystick()
+    
 
     #
     # step 2: start sending events
