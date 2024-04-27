@@ -9,7 +9,6 @@ import logging
 from progress.bar import IncrementalBar
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
-from donkeycar.management.tub import TubManager
 
 from donkeycar.utils import normalize_image, load_image, math
 
@@ -439,7 +438,7 @@ class ShowCnnActivations(BaseCommand):
 class ShowPredictionPlots(BaseCommand):
 
     def plot_predictions(self, cfg, tub_paths, model_path, limit, model_type,
-                         noshow):
+                         noshow, dark=False):
         """
         Plot model predictions for angle and throttle against data from tubs.
         """
@@ -472,9 +471,8 @@ class ShowPredictionPlots(BaseCommand):
                 tub_record, lambda x: normalize_image(x))
             pilot_angle, pilot_throttle = \
                 model.inference_from_dict(input_dict)
-            y_dict = model.y_transform(tub_record)
-            user_angle, user_throttle \
-                = y_dict[output_names[0]], y_dict[output_names[1]]
+            user_angle = tub_record.underlying['user/angle']
+            user_throttle = tub_record.underlying['user/throttle']
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
@@ -486,8 +484,10 @@ class ShowPredictionPlots(BaseCommand):
                                   'pilot_angle': pilot_angles})
         throttles_df = pd.DataFrame({'user_throttle': user_throttles,
                                      'pilot_throttle': pilot_throttles})
-
-        fig = plt.figure()
+        if dark:
+            plt.style.use('dark_background')
+        fig = plt.figure('Tub Plot')
+        fig.set_layout_engine('tight')
         title = f"Model Predictions\nTubs: {tub_paths}\nModel: {model_path}\n" \
                 f"Type: {model_type}"
         fig.suptitle(title)
@@ -594,7 +594,7 @@ class ModelDatabase(BaseCommand):
 
 class Gui(BaseCommand):
     def run(self, args):
-        from donkeycar.management.kivy_ui import main
+        from donkeycar.management.ui.ui import main
         main()
 
 
@@ -606,7 +606,6 @@ def execute_from_command_line():
         'createcar': CreateCar,
         'findcar': FindCar,
         'calibrate': CalibrateCar,
-        'tubclean': TubManager,
         'tubplot': ShowPredictionPlots,
         'tubhist': ShowHistogram,
         'makemovie': MakeMovieShell,

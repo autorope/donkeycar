@@ -1,7 +1,5 @@
 import os
-import platform
 import subprocess
-import sys
 import tarfile
 
 from donkeycar import utils
