@@ -1,0 +1,302 @@
+#:import platform sys.platform
+
+#:set common_height 30
+#:set spacing 10
+#:set layout_height common_height + spacing
+
+
+#:set font_color 0.8, 0.9, 0.9, 1
+#:set action_text_color 0.6, 0.6, 0.4, 1
+#:set label_bar_back_color 0.15, 0.16, 0.18, 1
+
+
+# Define button background color template
+<RoundedButton>:
+    background_color: 0,0,0,0  # the last zero is the critical on, make invisible
+    canvas.before:
+        Color:
+            rgba: (.3,.3,.3,1) if self.state=='normal' else (0.2, 0.6,.8,1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10,]
+    color: font_color
+    text_size: self.width, None
+    valgin: 'middle'
+    halign: 'center'
+    size: self.texture_size
+
+
+<RoundedToggleButton@ToggleButton>:
+    background_color: 0,0,0,0  # the last zero is the critical on, make invisible
+    canvas.before:
+        Color:
+            rgba: (.3,.3,.3,1) if self.state=='normal' else (0.2, 0.6,.8,1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10,]
+    color: font_color
+    text_size: self.width, None
+    valgin: 'middle'
+    halign: 'center'
+    size: self.texture_size
+
+
+<BackgroundColor>
+    background_color: 1, 1, 1, 1
+    canvas.before:
+        Color:
+            rgba: root.background_color
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+
+<BackgroundBoxLayout>
+    background_color: 0,0,0,0  # the last zero is the critical on, make invisible
+    padding: spacing
+    spacing: 5
+    canvas.before:
+        Color:
+            rgba: 0.10, 0.11, 0.12, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [root.radius,]
+
+
+<MyLabel>:
+    halign: 'left'
+    valign: 'top'
+    color: font_color
+    text_size: self.size
+
+
+<AutoLabel@Label>
+    halign: 'center'
+    valign: 'middle'
+    color: font_color
+    text_size: self.size
+
+
+<Header>
+    MyLabel:
+        font_size: '20sp'
+        text: root.title
+    MyLabel:
+        font_size: '13sp'
+        text: root.description
+
+
+<PaddedBoxLayout>:
+    size_hint_y: None
+    height: layout_height
+    padding: [spacing, spacing // 2]
+    spacing: spacing
+
+
+<StatusBar>:
+    orientation: 'vertical'
+    padding: [10, 0, 10, 10]
+    size_hint_y: None
+    height: common_height
+    BackgroundBoxLayout:
+        radius: 6
+        MyLabel:
+            valign: 'middle'
+            font_size: '12sp'
+            color: action_text_color
+            text: root.text
+
+
+<MySpinnerOption>:
+    text_size: self.size
+    halign: 'center'
+    valign: 'middle'
+    height: common_height
+    background_color: 0,0,0,0  # the last zero is the critical on, make invisible
+    canvas.before:
+        Color:
+            rgba: (.3,.3,.3,1) if self.state=='normal' else (0.2, 0.6,.8,1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10,]
+    color: font_color
+
+
+<MySpinner>:
+    text_size: self.size
+    halign: 'center'
+    valign: 'middle'
+    height: common_height
+    background_color: 0,0,0,0  # the last zero is the critical on, make invisible
+    canvas.before:
+        Color:
+            rgba: (.3,.3,.3,1) if self.state=='normal' else (0.2, 0.6,.8,1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [10,]
+    color: font_color
+
+
+<MyTextInput@TextInput>:
+    background_color: 0.15, 0.17, 0.19, 1
+    foreground_color: action_text_color
+
+
+<FileChooserPopup>:
+    title: "Choose the directory"
+    size_hint: 1.0, 1.0
+    auto_dismiss: False
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    BoxLayout:
+        orientation: "vertical"
+        FileChooser:
+            id: file_chooser
+            rootpath: root.root_path
+            dirselect: True
+            filter_dirs: True
+            filters: root.filters
+            FileChooserListLayout
+
+        BoxLayout:
+            size_hint_y: None
+            height: common_height
+            pos_hint: {'center_x': .5, 'center_y': .5}
+            spacing: 20
+            RoundedButton:
+                text: "Cancel"
+                on_release: root.dismiss()
+            RoundedButton:
+                text: "Load"
+                on_release: root.load(file_chooser.selection)
+                disabled: file_chooser.selection==[]
+
+
+<LabelBar>:
+    orientation: 'horizontal'
+    spacing: 4
+    MyLabel:
+        id: field_label
+        text_size: self.size
+        halign: 'left'
+        valign: 'middle'
+        font_size: '12sp'
+        color: root.font_color
+        canvas.before:
+            Color:
+                rgba: label_bar_back_color
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [5,]
+    MyLabel:
+        id: value_label
+        text_size: self.size
+        halign: 'right'
+        valign: 'middle'
+        font_size: '12sp'
+        color: root.font_color
+        canvas.before:
+            Color:
+                rgba: label_bar_back_color
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [5,]
+    ProgressBar:
+        id: bar
+
+<-FullImage>:
+    canvas:
+        Color:
+            rgb: (1, 1, 1)
+        Rectangle:
+            texture: self.texture
+            size: self.width, self.height
+            pos: self.x, self.y
+
+
+<DataPanel>
+    cols: 1
+    spacing: 2
+    current_field: data_spinner.text
+    BoxLayout:
+        size_hint_y: None
+        height: 20
+        spacing: 2
+        MyLabel:
+            id: label
+            size_hint_x: 0.4
+            text: 'Field'
+        RoundedToggleButton:
+            id: format_button
+            size_hint_x: 0.4
+            font_size: '10sp'
+            text: 'Format timestamp'
+            disabled: root.is_linked
+            on_press:
+                root.format_timestamp = (self.state == 'down')
+        MySpinner:
+            id: data_spinner
+            text: 'Add/remove'
+            on_text: root.add_remove()
+            on_values: root.clear()
+            disabled: root.current_field != self.text or root.is_linked
+
+
+<ControlPanel>
+    orientation: 'vertical'
+    spacing: 5
+    GridLayout:
+        spacing: 5
+        cols: 2
+        MyLabel:
+            id: record_num
+            font_size: '14sp'
+            text: root.record_display
+        MySpinner:
+            id: control_spinner
+            pos_hint: {'center': (.5, .5)}
+            text: '1.00'
+            values: ['0.25', '0.50', '1.00', '1.50', '2.00', '3.00', '4.00']
+            on_text:
+                root.speed = float(self.text)
+                app.root.ids.status.text = f'Setting speed to '\
+                f'{self.text} - you can also use the <up>/<down> keys.'
+                root.restart()
+        RoundedButton:
+            id: step_bwd
+            text: '<'
+            on_press:
+                root.start(fwd=False)
+            on_release:
+                root.stop()
+        RoundedButton:
+            id: step_fwd
+            text: '>'
+            on_press:
+                root.start(fwd=True)
+            on_release:
+                root.stop()
+        RoundedButton:
+            id: run_bwd
+            text: '<<'
+            on_press:
+                root.start(fwd=False, continuous=True)
+                root.set_button_status(disabled=True)
+        RoundedButton:
+            id: run_fwd
+            text: '>>'
+            on_press:
+                root.start(fwd=True, continuous=True)
+                root.set_button_status(disabled=True)
+    RoundedButton:
+        size_hint_y: 0.3
+        text: 'Stop'
+        on_press:
+            root.stop()
+            root.set_button_status(disabled=False)

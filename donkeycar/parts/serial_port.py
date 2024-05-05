@@ -92,7 +92,7 @@ class SerialPort:
                 input = self.ser.read(count)
             return (waiting, input)
         except (serial.serialutil.SerialException, TypeError):
-            logger.warn("failed reading bytes from serial port")
+            logger.warning("failed reading bytes from serial port")
             return (False, b'')
 
     def read(self, count:int=0) -> Tuple[bool, str]:
@@ -135,11 +135,11 @@ class SerialPort:
                 input = buffer.decode(self.charset)
             return (waiting, input)
         except (serial.serialutil.SerialException, TypeError):
-            logger.warn("failed reading line from serial port")
+            logger.warning("failed reading line from serial port")
             return (False, "")
         except UnicodeDecodeError:
             # the first read often includes mis-framed garbase
-            logger.warn("failed decoding unicode line from serial port")
+            logger.warning("failed decoding unicode line from serial port")
             return (False, "")
 
     def writeBytes(self, value:bytes):
@@ -150,7 +150,7 @@ class SerialPort:
             try:
                 self.ser.write(value)  
             except (serial.serialutil.SerialException, TypeError):
-                logger.warn("Can't write to serial port")
+                logger.warning("Can't write to serial port")
 
     def write(self, value:str):
         """

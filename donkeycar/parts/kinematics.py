@@ -582,7 +582,7 @@ class UnnormalizeSteeringAngle:
             return 0
 
         if steering > 1 or steering < -1:
-            logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
+            logger.warning(f"steering = {steering}, but must be between 1(right) and -1(left)")
 
         steering = clamp(steering, -1, 1)
         
@@ -632,14 +632,14 @@ def differential_steering(throttle: float, steering: float, steering_zero: float
             logger.error("throttle must be a number")
             return 0, 0
         if throttle > 1 or throttle < -1:
-            logger.warn(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
+            logger.warning(f"throttle = {throttle}, but must be between 1(right) and -1(left)")
         throttle = clamp(throttle, -1, 1)
 
         if not is_number_type(steering):
             logger.error("steering must be a number")
             return 0, 0
         if steering > 1 or steering < -1:
-            logger.warn(f"steering = {steering}, but must be between 1(right) and -1(left)")
+            logger.warning(f"steering = {steering}, but must be between 1(right) and -1(left)")
         steering = clamp(steering, -1, 1)
 
         left_throttle = throttle

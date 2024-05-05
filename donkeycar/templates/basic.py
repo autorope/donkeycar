@@ -21,7 +21,7 @@ from donkeycar.parts.controller import LocalWebController, RCReceiver
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.pipeline.augmentations import ImageAugmentation
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 

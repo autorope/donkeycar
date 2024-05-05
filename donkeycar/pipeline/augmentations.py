@@ -20,8 +20,8 @@ class ImageAugmentation:
     @classmethod
     def create(cls, aug_type: str, config: Config, prob, always) -> \
             albumentations.core.transforms_interface.BasicTransform:
-        """ Augmenatition factory. Cropping and trapezoidal mask are
-            transfomations which should be applied in training, validation
+        """ Augmentation factory. Cropping and trapezoidal mask are
+            transformations which should be applied in training, validation
             and inference. Multiply, Blur and similar are augmentations
             which should be used only in training. """
 

@@ -1,0 +1,154 @@
+
+<CarScreen>:
+    name: 'car'
+    BoxLayout:
+        orientation: 'vertical'
+        padding: spacing
+        spacing: spacing
+        BackgroundBoxLayout:
+            orientation: 'vertical'
+            size_hint_y: 0.6
+            Header:
+                title: 'Car Connector'
+                description:
+                    'Connects to your car to pull tub data from the car or ' \
+                    'send pilots to the car. The car must be connected to ' \
+                    'your local network and the CONFIG settings PI_USERNAME ' \
+                    'and PI_HOSTNAME have to be set correctly. SSH access ' \
+                    'into the car must be unrestricted, i.e the command ' \
+                    '"ssh PI_USERNAME@PI_HOSTNAME" should open a shell on the car.'
+            BoxLayout:
+                size_hint_y: 0.25
+                MyLabel:
+                    text: 'Connection status'
+                MyLabel:
+                    id: connected
+                    text: 'Checking...'
+
+        BackgroundBoxLayout:
+            BoxLayout:
+                orientation: 'vertical'
+                Header:
+                    size_hint_y: 0.5
+                    title: 'Pull Tub'
+                    description:
+                        'Type the Donkey Car directory on the host into the '\
+                        'text field and hit <return>. Then in the "select" '\
+                        'dropdown, select the Tub directory within that '\
+                        'directory, usually this is called "data"'
+                GridLayout:
+                    spacing: spacing
+                    cols: 2
+                    MyLabel:
+                        text: 'Car directory (hit return)'
+                    MyTextInput:
+                        id: car_dir
+                        multiline: False
+                        text: root.car_dir
+                        on_text_validate:
+                            root.list_car_dir(self.text)
+                            root.update_pilots()
+                    MyLabel:
+                        text:
+                            'Create a new tub within the data folder, '\
+                            'instead of updating the data folder.'
+                    CheckBox:
+                        id: create_dir
+                    MyLabel:
+                        text: 'Select tub'
+                    MySpinner:
+                        id: tub_dir_spinner
+                        text: 'select'
+                        values: root.files
+                    ProgressBar:
+                        id: pull_bar
+                        #value: root.pull_bar
+                    RoundedButton:
+                        id: pull_tub
+                        text: 'Pull tub ' + tub_dir_spinner.text
+                        on_release:
+                            self.disabled = True
+                            root.pull(tub_dir_spinner.text)
+
+        BackgroundBoxLayout:
+            size_hint_y: 0.8
+            BoxLayout:
+                orientation: 'vertical'
+                spacing: spacing
+                Header:
+                    size_hint_y: 0.5
+                    title: 'Push Pilots'
+                    description:
+                        'Copy trained pilots from the PC to the car. Select '\
+                        'the format of the models. If nothing is selected, '\
+                        'all formats will be copied. Usually you will only '\
+                        'require the "tflite" models.'
+                BoxLayout:
+                    size_hint_y: None
+                    height: common_height
+                    spacing: spacing
+                    RoundedToggleButton:
+                        id: btn_h5
+                        text: 'Sync h5'
+                    RoundedToggleButton:
+                        id: btn_savedmodel
+                        text: 'Sync savedmodel'
+                    RoundedToggleButton:
+                        id: btn_tflite
+                        text: 'Sync tflite'
+                    RoundedToggleButton:
+                        id: btn_trt
+                        text: 'Sync tensorrt'
+                BoxLayout:
+                    size_hint_y: None
+                    height: common_height
+                    spacing: spacing
+                    ProgressBar:
+                        id: push_bar
+                    RoundedButton:
+                        id: send_pilots
+                        multiline: False
+                        text: 'Push pilots'
+                        on_release:
+                            self.disabled = True
+                            root.send_pilot()
+
+        BackgroundBoxLayout:
+            size_hint_y: 0.75
+            BoxLayout:
+                orientation: 'vertical'
+                Header:
+                    size_hint_y: 0.25
+                    title: 'Drive Car'
+                    description:
+                        'Highly experimental!!!'
+                GridLayout:
+                    cols: 2
+                    spacing: spacing
+                    MyLabel:
+                        text: 'Set model type'
+                    MySpinner:
+                        id: type_spinner
+                        text: 'tflite_linear'
+                        values: drive_models
+                    MyLabel:
+                        text: 'Select pilot (or leave empty)'
+                    MySpinner:
+                        id: pilot_spinner
+                        text: 'No pilot'
+                        values: ['No pilot'] + root.pilots
+                    RoundedButton:
+                        id: drive_btn
+                        text: 'Drive'
+                        on_release:
+                            root.drive()
+                            self.disabled = True
+                            stop_btn.disabled = False
+                    RoundedButton:
+                        id: stop_btn
+                        text: 'Stop'
+                        disabled: True
+                        on_release:
+                            root.stop()
+                            self.disabled = True
+                            drive_btn.disabled = False

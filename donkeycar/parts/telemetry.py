@@ -14,6 +14,7 @@ import logging
 import numpy as np
 from logging import StreamHandler
 from paho.mqtt.client import Client as MQTTClient
+from paho.mqtt.enums import CallbackAPIVersion
 
 logger = logging.getLogger()
 
@@ -40,7 +41,7 @@ class MqttTelemetry(StreamHandler):
         self._mqtt_broker = os.environ.get('DONKEY_MQTT_BROKER', cfg.TELEMETRY_MQTT_BROKER_HOST)  # 'iot.eclipse.org'
         self._topic = cfg.TELEMETRY_MQTT_TOPIC_TEMPLATE % self._donkey_name
         self._use_json_format = cfg.TELEMETRY_MQTT_JSON_ENABLE
-        self._mqtt_client = MQTTClient()
+        self._mqtt_client = MQTTClient(callback_api_version=CallbackAPIVersion.VERSION2)
         self._mqtt_client.connect(self._mqtt_broker, cfg.TELEMETRY_MQTT_BROKER_PORT)
         self._mqtt_client.loop_start()
         self._on = True
