@@ -340,6 +340,13 @@ class OakDCamera:
                 self.roi_distances.append(int(coords.y))
                 self.roi_distances.append(int(coords.z))
 
+        if self.enable_depth:
+            return self.frame_xout, self.frame_xout_depth
+        elif self.enable_obstacle_dist:
+            return self.frame_xout, np.array(self.roi_distances)
+        else:
+            return self.frame_xout
+
     def run_threaded(self):
         if self.enable_depth:
             return self.frame_xout, self.frame_xout_depth
@@ -349,10 +356,14 @@ class OakDCamera:
             return self.frame_xout
 
     def update(self):
-        # Keep looping infinitely until the thread is stopped
+        from datetime import datetime, timedelta
         while self.on:
+            start = datetime.now()
             self.run()
-            time.sleep(0.001)
+            stop = datetime.now()
+            s = 1 / self.framerate - (stop - start).total_seconds()
+            if s > 0:
+                time.sleep(s)
 
     def shutdown(self):
         # Indicate that the thread should be stopped
