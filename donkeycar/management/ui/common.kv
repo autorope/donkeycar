@@ -1,6 +1,7 @@
 #:import platform sys.platform
 
-#:set common_height 30
+#:set reduced_height 40 if platform == 'darwin' else 20
+#:set common_height 60 if platform == 'darwin' else 30
 #:set spacing 10
 #:set layout_height common_height + spacing
 
@@ -226,7 +227,7 @@
     current_field: data_spinner.text
     BoxLayout:
         size_hint_y: None
-        height: 20
+        height: reduced_height
         spacing: 2
         MyLabel:
             id: label
