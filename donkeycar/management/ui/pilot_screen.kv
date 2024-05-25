@@ -104,7 +104,7 @@
         pilot_loader: pilot_loader
     DataPanel:
         size_hint_y: None
-        height: 20 + (self.minimum_height - 20) * 15
+        height: reduced_height + (self.minimum_height - reduced_height) * 15
         id: data_panel
         is_linked: True
         font_color: [0.2, 0.2, 1, 1]
@@ -126,7 +126,7 @@
         BackgroundBoxLayout:
             orientation: 'vertical'
             size_hint_y: None
-            height: self.minimum_height +60
+            height: self.minimum_height + 2 * common_height
             Header:
                 title: 'Multi Pilot Loader'
                 description:
@@ -217,7 +217,7 @@
         BackgroundBoxLayout:
             orientation: 'vertical'
             size_hint_y: None
-            height: self.minimum_height + 90
+            height: self.minimum_height + 3 * common_height
             Slider:
                 size_hint_y: None
                 height: common_height

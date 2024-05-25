@@ -40,6 +40,8 @@ class ImageAugmentation:
 
     # Parts interface
     def run(self, img_arr):
+        if len(self.augmentations) == 0:
+            return img_arr
         aug_img_arr = self.augmentations(image=img_arr)["image"]
         return aug_img_arr
 
