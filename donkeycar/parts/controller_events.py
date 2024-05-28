@@ -17,13 +17,28 @@ from donkeycar import Memory
 
 logger = logging.getLogger(__name__)
 
-BUTTON_CLICK = "click"
+BUTTON_DOWN = "press"                   # button changed to down state
+BUTTON_UP = "release"                   # button changed to up state
+BUTTON_CLICK = "click"                  # button completed one or more sequential down to up cycles
 
-def format_button_event(button) -> str:
-    return f'/event/button/{button}'
+def format_button_click_event(button: str, click_count: int) -> str:
+    return format_button_event(button, f'click/{click_count}')
 
+BUTTON_EVENT = '/event/button/'
+def format_button_event(button: str, event: str) -> str:
+    return f'/event/button/{button}/{event}'
+
+AXIS_EVENT = '/event/axis/'
 def format_axis_event(axis) -> str:
     return f'/event/axis/{axis}'
+
+BUTTON_STATE = '/button/'
+def format_button_key(button: str) -> str:
+    return f'/button/{button}'
+
+AXIS_STATE = '/axis/'
+def format_axis_key(axis: str) -> str:
+    return f'/axis/{axis}'
 
 class AbstractInputController(object):
     '''
@@ -47,7 +62,7 @@ class AbstractInputController(object):
         raise(Exception("Subclass needs to define show_map()"))
 
 
-    def poll(self):
+    def poll(self) -> tuple[str | None, int | None, str | ModuleNotFoundError, float | None]:
         '''
         Query the input controller for a button or axis state change event.
         This must be threadsafe as it will generally be called on
@@ -55,9 +70,9 @@ class AbstractInputController(object):
 
         returns: tuple of 
         - button: string name of button if a button changed, otherwise None
-        - button_state: number 0 or 1 if a button changed, otherwise None
+        - button_state: int of 0 or 1 if a button changed, otherwise None
         - axis: string name of axis if an axis changed, otherwise None
-        - button_state: number -1 to 1 if an axis changed, otherwise None
+        - button_state: float between -1 to 1 if an axis changed, otherwise None
         '''
         raise(Exception("Subclass needs to define poll()"))
 
@@ -284,24 +299,31 @@ class InputControllerEvents(object):
     '''
     Poll a AbstractGameController() and convert to button and axis events.
     '''
-    def __init__(self, memory: Memory, joystick: AbstractInputController, poll_delay=0.0):
+    def __init__(self, memory: Memory, joystick: AbstractInputController, fast_click=0.2):
         self.memory = memory
         self.controller = joystick
-        self.button_states = {} # most recent state for each button
-        self.axis_states = {}   # most recent state for each axis
+        self.button_states = {} # most recent state for each button; int where 0 = up, 1 = down OR None on startup
+        self.button_times = {}  # time of most recent state change for each button OR None on startup
+        self.button_clicks = {} # number of sequential clicks for a button
+        self.button_outputs = {}# state change to be written as persistent outputs
+        self.previous_button_events = {} # collected button events to delete
+        self.axis_states = {}   # most recent state for each axis; float in range -1 and 1 inclusive OR None on startup
         self.button_events = {} # collected button events to emit
         self.axis_events = {}   # collected axis events to emit
-        self.previous_button_events = {} # collected button events to delete
+        self.axis_outputs = {}  # state changes to be written as persistent outputs
         self.previous_axis_events = {}   # collected axis events to delete
         self.lock = threading.Lock()
-        self.poll_delay = poll_delay
+        self.fast_click_time = fast_click
+
+        self.init_controller()
         self.running = True
+
 
     def init_controller(self):
         # wait for joystick to be online
-        wait_until = time.time() + 5  # wait for 5 seconds for joystick
+        wait_until = time.time() + 5  # wait for 5 seconds for jstring representing sequential clicks as '.' for short and '-' for long, for example short followed by long would be ".-"oystick
         joystick_initialized = self.controller.init()
-        while self.running and (wait_until > time.time()) and not joystick_initialized:
+        while (wait_until > time.time()) and not joystick_initialized:
             if not joystick_initialized:
                 time.sleep(1)
             joystick_initialized = self.controller.init()
@@ -315,34 +337,59 @@ class InputControllerEvents(object):
         poll a joystick once for input events
         '''
         if self.running:
+            try:
+                # >> NOTE: this call blocks if no bytes are available
+                button, button_state, axis, axis_val = self.controller.poll()
 
-            # >> NOTE: this call blocks if no bytes are available
-            button, button_state, axis, axis_val = self.controller.poll()
+                if self.running and (button is not None or axis is not None):
+                    with self.lock:
+                        #
+                        # check for axis change and turn it into an event
+                        #
+                        now = time.time()
+                        if axis is not None:
+                            if self.axis_states.get(axis, None) != axis_val:
+                                self.axis_states[axis] = axis_val
+                                # save state change as an event and as a persistent output
+                                self.axis_events[format_axis_event(axis)] = axis_val
+                                self.axis_outputs[format_axis_key(axis)] = axis_val
 
-            if button is not None or axis is not None:
-                with self.lock:
-                    #
-                    # check for axis change and turn it into an event
-                    #
-                    if axis is not None:
-                        if self.axis_states.get(axis, None) != axis_val:
-                            self.axis_states[axis] = axis_val
-                            self.axis_events[format_axis_event(axis)] = axis_val
+                        #
+                        # check for button change and turn into press/release/click events
+                        #
+                        if button is not None:
+                            if button_state != self.button_states.get(button, None):
+                                # save state change as a persistent output
+                                self.button_outputs[format_button_key(button)] = button_state
+                                if button_state == 1:
+                                    # transition to down event with time as value
+                                    self.button_events[format_button_event(button, BUTTON_DOWN)] = now
 
-                    #
-                    # check for button change and turn it into an event
-                    #
-                    if button is not None:
-                        if button_state != self.button_states.get(button, None):
-                            self.button_states[button] = button_state
-                            if button_state == 0:
-                                #
-                                # turn button up into click
-                                #
-                                self.button_events[format_button_event(button)] = BUTTON_CLICK
-                            
-                            
+                                    #
+                                    # if this was a fast transtion from up to down, 
+                                    # then count it as a sequential click,
+                                    # otherwise clear the sequential click count
+                                    #
+                                    fast_click = (now - self.button_times.get(button, 0)) <= self.fast_click_time
+                                    if fast_click:  # count sequential click
+                                        self.button_clicks[button] = self.button_clicks.get(button, 0) + 1
+                                    else:  # clear squential click counter
+                                        self.button_clicks[button] = 0
+                                elif button_state == 0:
+                                    # transition from down to up event with time as value
+                                    self.button_events[format_button_event(button, BUTTON_UP)] = now
 
+                                    #
+                                    # convert to sequential clicks with 1-based click count
+                                    #
+                                    click_count = self.button_clicks.get(button, 0) + 1
+                                    self.button_events[format_button_click_event(button, click_count)] = now
+
+                                # set the new button state and time
+                                self.button_states[button] = button_state
+                                self.button_times[button] = now
+            except:
+                self.running = False
 
     def update(self):
         '''
@@ -350,21 +397,11 @@ class InputControllerEvents(object):
         - This is meant to be run in a thread.
         - Use run_threaded() to move events into self.memory()
         '''
-
-        # wait for joystick to be online
-        wait_until = time.time() + 5  # wait for 5 seconds for joystick
-        joystick_initialized = self.controller.init()
-        while self.running and (wait_until > time.time()) and not joystick_initialized:
-            if not joystick_initialized:
-                time.sleep(1)
-            joystick_initialized = self.controller.init()
-        if not joystick_initialized:
-            raise Exception("Unabled to initialize joystick after 5 seconds.")
-        self.controller.show_map()
-
-        while self.running:
-            self.poll()
-            time.sleep(self.poll_delay)
+        try:
+            while self.running:
+                self.poll()
+        except:
+            self.running = False
 
     def run_threaded(self):
         '''
@@ -372,8 +409,15 @@ class InputControllerEvents(object):
         '''
         if self.running:
             # do a quick check to see if aquiring the lock is necessary
-            if self.button_events or self.axis_events or self.previous_button_events or self.previous_axis_events:
+            if self.axis_outputs or self.button_outputs or self.button_events or self.axis_events or self.previous_button_events or self.previous_axis_events:
                 with self.lock:
+                    # update persistent state with any changes
+                    self.memory.update(self.axis_outputs)
+                    self.axis_outputs = {}
+
+                    self.memory.update(self.button_outputs)
+                    self.button_outputs = {}
+
                     # clear prior one-shot events
                     self.memory.remove(self.previous_button_events.keys())
                     self.memory.remove(self.previous_axis_events.keys())
@@ -392,72 +436,138 @@ class InputControllerEvents(object):
         self.running = False
 
 
+class TogglePilotMode:
+    '''
+    Part that toggles pilot modes: user -> local_angle -> local -> user
+    - When added to the vehicle loop, the input should be 'user/mode' and 
+      the output should be 'user/mode'.
+    - When added to the vehicle loop, this should be configured with a 
+      run_condition so it only toggles the mode when the run_condition is
+      set.  The run_conditin should only live for a _single_ pass throught
+      the vehicle event loop so that part only gets run once.
+    - This is meant to be used with input controller events where the controller
+      manages the event that is then used as the run_condition for this part.
+    - For instance, if pressing 'button1' toggles the pilot mode, then
+      the run condition should be 'run_condition="/event/button/button1/press"'
+    - For instance, if double-click of 'button3' toggles the pilot mode, then
+      the run condition should be 'run_condition="/event/button/button1/click/2"'
+    '''
+
+    def run(self, mode: str) -> str:
+        '''
+        toggle pilot mode in order: user -> local_angle -> local -> user
+        '''
+        if mode == 'user':
+            mode = 'local_angle'
+        elif mode == 'local_angle':
+            mode = 'local'
+        else:
+            mode = 'user'
+        logger.info(f'toggled to mode: {mode}')
+
+        # output the new value
+        return mode
+
+
+class StopVehicle:
+    from donkeycar.vehicle import Vehicle
+    '''
+    Part to stop vehicle with a keypress
+    '''
+    def __init__(self, vehicle: Vehicle) -> None:
+        self.vehicle = vehicle
+        self.running = True
+
+    def run(self, key_state: int) -> None:
+        if self.running and key_state:
+            self.running = False
+            self.vehicle.on = False
+
+    def stop(self):
+        self.running = False
+
+
 # TODO: add __main__ that creates a vehicle and displays events from a game controller
 if __name__ == "__main__":
+    from donkeycar.vehicle import Vehicle
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-th", "--threaded", default="true", type=str, help = "run in threaded mode.")
+    parser.add_argument("-ve", "--vehicle", default="true", type=str, help = "run using Vehicle loop.")
+
     args = parser.parse_args()
 
 
     #Initialize car
     loop_rate = 20                  # 20 interations per second for vehicle loop
-    loop_duration = 1.0 / loop_rate # minium duration for each iteration of the vehicle loop
-
-    #
-    # step 1: collect button and axis names
-    # - init must be called to initialize the 
-    #
-    # controller = LinuxGameController(button_names={}, axis_names={})
-    controller = LogitechJoystick()
-    
-
-    #
-    # step 2: start sending events
-    # >> Note that poll_delay of zero is important because some drivers buffer
-    #    axis changes and so delaying only delays sending stale values.
-    #
-    memory = Memory()
-    controller_events = InputControllerEvents(memory=memory, joystick=controller, poll_delay=0.0001)
-    controller_events.init_controller()
-
-
-    #
-    # start the threaded part
-    # and a threaded window to show plot
-    #
+    loop_duration = 1.0 / loop_rate # minium duration for each iteration of the vehicle loo
     update_thread = None
-    if args.threaded.lower() == "true":
-        update_thread = threading.Thread(target=controller_events.update, args=())
-        update_thread.start()
+    if args.vehicle.lower() == "true":
+        # use an actual Vehicle loop
+        vehicle = Vehicle()
+        vehicle.add(InputControllerEvents(memory=vehicle.mem, joystick=LogitechJoystick()), threaded=True)
 
-    try:
-        while controller_events.running:
-            loop_end = time.time() + loop_duration
+        # toggle pilot mode when 'Y' button is pressed
+        vehicle.add(TogglePilotMode(), inputs=['/user/mode'], outputs=['/user/mode'], run_condition=format_button_event("Y", "press"))
 
-            # fake running on a background thread
-            if update_thread is None:
-                while controller_events.running and (time.time() < loop_end):
-                    controller_events.poll()
+        # quit when 'B' button is double-clicked while holding down the 'X' button
+        vehicle.add(StopVehicle(vehicle), inputs=[format_button_key('X')], run_condition=format_button_click_event('B', 2))
+        vehicle.start(rate_hz=loop_rate)
 
-            # move collected events into memory and remove the prior events
-            controller_events.run_threaded()
+    else:
+        #
+        # simulate the vehicle loop so we can easily introspect memory
+        #
+        #
+        # step 1: collect button and axis names
+        # - init must be called to initialize the 
+        #
+        # controller = LinuxGameController(button_names={}, axis_names={})
+        controller = LogitechJoystick()
+        
 
-            # print button and axis events
-            for key in memory.keys():
-                if key.startswith(format_button_event("")) or key.startswith(format_axis_event("")):
-                    print(f"'{key}' = '{memory[key]}'")
+        #
+        # step 2: start sending events
+        # >> Note that poll_delay of zero is important because some drivers buffer
+        #    axis changes and so delaying only delays sending stale values.
+        #
+        memory = Memory()
+        controller_events = InputControllerEvents(memory=memory, joystick=controller)
 
-            # delay to achieve desired loop rate
-            loop_delay = loop_end - time.time()
-            if loop_delay > 0:
-                time.sleep(loop_delay)
+        #
+        # start the threaded part
+        # and a threaded window to show plot
+        #
+        if args.threaded.lower() == "true":
+            update_thread = threading.Thread(target=controller_events.update, args=())
+            update_thread.daemon = True
+            update_thread.start()
 
-    except KeyboardInterrupt:
-        controller_events.shutdown()
-    finally:
-        controller_events.shutdown()
-        if update_thread is not None:
-            update_thread.join()  # wait for thread to end
+        try:
+            while controller_events.running:
+                loop_end = time.time() + loop_duration
+
+                # fake running on a background thread
+                if update_thread is None:
+                    while controller_events.running and (time.time() < loop_end):
+                        controller_events.poll()
+
+                # move collected events into memory and remove the prior events
+                controller_events.run_threaded()
+
+                # print button and axis events
+                for key in memory.keys():
+                    if key.startswith(BUTTON_EVENT) or key.startswith(AXIS_EVENT):
+                        print(f"'{key}' = '{memory[key]}'")
+
+                # delay to achieve desired loop rate
+                loop_delay = loop_end - time.time()
+                if loop_delay > 0:
+                    time.sleep(loop_delay)
+
+        except KeyboardInterrupt:
+            print("Shutting down...")
+        finally:
+            controller_events.shutdown()
 
