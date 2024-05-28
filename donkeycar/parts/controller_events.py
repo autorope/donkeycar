@@ -469,6 +469,39 @@ class TogglePilotMode:
         return mode
 
 
+class UserThrottle:
+    def __init__(self, throttle_dir: int = 1, throttle_scale: float = 1.0) -> None:
+        self.throttle_dir = throttle_dir
+        self.throttle_scale = throttle_scale
+        self.running = True
+
+    def run(self, throttle_axis: float) -> float:
+        throttle: float = 0.0
+        if self.running:
+            throttle = (self.throttle_dir * throttle_axis * self.throttle_scale)
+            print(f"Throttle = {throttle}")
+
+        return throttle
+
+    def shutdown(self) -> None:
+        self.running = False
+
+class UserSteering:
+    def __init__(self, steering_scale: float = 1.0) -> None:
+        self.steering_scale = steering_scale
+        self.running = True
+
+    def run(self, steering_axis: float) -> float:
+        steering = 0.0
+        if self.running:
+            steering = self.steering_scale * steering_axis
+            print(f"Steering = {steering}")
+        return steering
+
+    def shutdown(self) -> None:
+        self.running = False
+
+
 class StopVehicle:
     from donkeycar.vehicle import Vehicle
     '''
@@ -511,8 +544,25 @@ if __name__ == "__main__":
         # toggle pilot mode when 'Y' button is pressed
         vehicle.add(TogglePilotMode(), inputs=['/user/mode'], outputs=['/user/mode'], run_condition=format_button_event("Y", "press"))
 
-        # quit when 'B' button is double-clicked while holding down the 'X' button
+        # part to change user throttle when joystick axis changes
+        # - throttle axis event is used as run_condition to part only runs when the throttle axis changes
+        # - throttle axis event is used as the input so the part gets the changed throttle when it runs
+        throttle_event = format_axis_event("right_stick_vert")
+        vehicle.add(UserThrottle(throttle_dir=-1), inputs=[throttle_event], outputs=["user/throttle"], run_condition=throttle_event)
+
+        # part to change user steering when joystick axis changes
+        # - steering axis event is used as run_condition to part only runs when the steering axis changes
+        # - steering axis event is used as the input so the part gets the changed steering when it runs
+        steering_event = format_axis_event("left_stick_horz")
+        vehicle.add(UserSteering(), inputs=[steering_event], outputs=["user/steering"], run_condition=steering_event)
+
+        # part to quit the vehicle when a button gesture is done
+        # - quit when 'B' button is double-clicked while holding down the 'X' button
+        # - The 'B' button double-click event is used as the run condition so it only runs on a double-click of B
+        # - The state of the 'X' button is taken as an input so it can test to see if it should quit when it runs
         vehicle.add(StopVehicle(vehicle), inputs=[format_button_key('X')], run_condition=format_button_click_event('B', 2))
+
+        # Let's do this thing...
         vehicle.start(rate_hz=loop_rate)
 
     else:
