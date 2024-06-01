@@ -389,6 +389,41 @@ class YDLidar(object):
         self.lidar.StopScanning()
         self.lidar.Disconnect()
 
+class HokuyoLidar(object):
+    '''
+    Class for ethernet-based Hokuyo lidars (e.g. UST-10LX in F1Tenth)
+    '''
+    def __init__(self, max_dist):
+        '''
+        max_dist: maximum distance in mm (e.g. 20,000 for UST-20LX)
+        '''
+        from hokuyolx import HokuyoLX
+        self.laser = HokuyoLX()
+        self.DMAX = max_dist
+
+    def poll(self):
+        # scan is list of (theta, r) - e.g. shape of 1000, 2
+        timestamp, scan = self.laser.get_filtered_dist(dmax=self.DMAX)
+
+        # flip so it's (r, theta) --> compatible with LidarPlot
+        distances = scan[,:1]
+        angles = scan[,:0]
+        self.scan = np.hstack(distances, angles)
+
+    def update(self):
+        self.poll()
+        time.sleep(0) # copied from RPLidar2
+
+    def run_threaded(self):
+        return self.scan
+
+    def run(self):
+        self.poll()
+        return self.scan
+
+    def shutdown(self):
+        self.laser.close()
+
 
 class LidarPlot(object):
     '''
@@ -643,7 +678,7 @@ def plot_polar_angle(draw_context, bounds, color, theta,
 class LidarPlot2(object):
     '''
     takes the lidar measurements as a list of (distance, angle) tuples
-    and plots them to a PIL image which it outputs
+    and plots them to a CV2 (numpy) image which it outputs
     
     resolution: dimensions of image in pixels as tuple (width, height)
     plot_type: PLOT_TYPE_CIRC or PLOT_TYPE_LINE
@@ -708,7 +743,7 @@ class LidarPlot2(object):
             [(distance, angle) for distance, angle, _, _, _ in measurements],
             self.max_distance, self.angle_direction, self.rotate_plot)
         
-        return self.frame
+        return np.asarray(self.frame) # convert to image
 
     def shutdown(self):
         pass
@@ -893,8 +928,8 @@ if __name__ == "__main__":
             img = plotter.run(measurements)
             
             # show the image in the window
-            cv2img = convert_from_image_to_cv2(img)
-            cv2.imshow("lidar", cv2img)
+            # cv2img = convert_from_image_to_cv2(img)
+            cv2.imshow("lidar", img)
             
             if not args.threaded:
                 key = cv2.waitKey(1) & 0xFF
