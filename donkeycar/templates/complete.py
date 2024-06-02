@@ -116,8 +116,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.LIDAR_TYPE == "HOKUYO":
             from donkeycar.parts.lidar import HokuyoLidar
             print("adding Hokuyo lidar part")
-            lidar = HokuyoLidar(max_dist = 10_000)
-            V.add(lidar, inputs=[], outputs=['lidar/dist_scan'], threaded=True)
+            lidar = HokuyoLidar(max_dist = cfg.LIDAR_MAX_DIST)
+            V.add(lidar, inputs=[], outputs=['lidar/dist_scan'], threaded=False)
 
     if cfg.HAVE_TFMINI:
         from donkeycar.parts.tfmini import TFMini
@@ -880,7 +880,31 @@ def add_camera(V, cfg, camera_type):
               outputs=['cam/image_array', 'cam/depth_array',
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+              threaded=False)
+        
+    elif cfg.CAMERA_TYPE == "OAKD":
+        from donkeycar.parts.oak_d import OakD
+        cam = OakD(
+            enable_rgb=cfg.OAKD_RGB,
+            enable_depth=cfg.OAKD_DEPTH,
+            device_id=cfg.OAKD_ID)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/depth_array'],
               threaded=True)
+    
+    elif cfg.CAMERA_TYPE == "LIDAR_PLOT":
+        from donkeycar.parts.lidar import LidarPlot2
+        cam = LidarPlot2(
+            resolution=(cfg.IMAGE_W, cfg.IMAGE_H),
+            rotate_plot=cfg.LIDAR_ANGLE_OFFSET,
+            max_dist=cfg.LIDAR_MAX_DIST,
+            plot_type=LidarPlot2.PLOT_TYPE_CIRCLE,
+            mark_px=1
+        )
+        V.add(cam, inputs=['lidar/dist_scan'],
+              outputs=['cam/image_array'],
+              threaded=True)
+
     else:
         inputs = []
         outputs = ['cam/image_array']

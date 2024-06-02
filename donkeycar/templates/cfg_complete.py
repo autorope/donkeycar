@@ -25,7 +25,7 @@ DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 #CAMERA
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|OAKD|MOCK|IMAGE_LIST|LIDAR_PLOT)
 IMAGE_W = 160
 IMAGE_H = 120
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
@@ -349,9 +349,11 @@ ODOM_DEBUG = False                  # Write out values on vel and distance as it
 
 # #LIDAR
 USE_LIDAR = False
-LIDAR_TYPE = 'RP' #(RP|YD)
+LIDAR_TYPE = 'RP' #(RP|YD|HOKUYO)
 LIDAR_LOWER_LIMIT = 90 # angles that will be recorded. Use this to block out obstructed areas on your car, or looking backwards. Note that for the RP A1M8 Lidar, "0" is in the direction of the motor
 LIDAR_UPPER_LIMIT = 270
+LIDAR_MAX_DIST = 10_000 # Maximum distance for LiDAR. Measured in mm
+LIDAR_ANGLE_OFFSET = 135 # The zero point of the LiDAR is rotated this much in degrees on LidarPlot
 
 # TFMINI
 HAVE_TFMINI = False

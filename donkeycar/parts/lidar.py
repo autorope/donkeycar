@@ -402,17 +402,17 @@ class HokuyoLidar(object):
         self.DMAX = max_dist
 
     def poll(self):
-        # scan is list of (theta, r) - e.g. shape of 1000, 2
         timestamp, scan = self.laser.get_filtered_dist(dmax=self.DMAX)
 
-        # flip so it's (r, theta) --> compatible with LidarPlot
-        distances = scan[,:1]
-        angles = scan[,:0]
-        self.scan = np.hstack(distances, angles)
+        # shape (n, 2) --> list of (theta, r, _, _, _)
+        angles, distances = scan[:,0], scan[:,1]
+        angles = np.rad2deg(angles)
+        filler = np.zeros_like(angles) # for LidarPlot
+        self.scan = np.stack((distances, angles, filler, filler, filler), axis=-1)
 
     def update(self):
         self.poll()
-        time.sleep(0) # copied from RPLidar2
+        time.sleep(0) # copied from RPLidar2 (release to other threads)
 
     def run_threaded(self):
         return self.scan
@@ -736,6 +736,11 @@ class LidarPlot2(object):
                           self.angle_direction, self.rotate_plot)
         plot_polar_angle(draw, bounds, self.border_color, 0,
                          self.angle_direction, self.rotate_plot)
+        
+        # handle no data yet
+        if measurements is None:
+            print("bruh")
+            return np.asarray(self.frame)
         
         # data points
         plot_polar_points(
