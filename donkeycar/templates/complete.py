@@ -882,15 +882,6 @@ def add_camera(V, cfg, camera_type):
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
               threaded=False)
         
-    elif cfg.CAMERA_TYPE == "OAKD":
-        from donkeycar.parts.oak_d import OakD
-        cam = OakD(
-            enable_rgb=cfg.OAKD_RGB,
-            enable_depth=cfg.OAKD_DEPTH,
-            device_id=cfg.OAKD_ID)
-        V.add(cam, inputs=[],
-              outputs=['cam/image_array', 'cam/depth_array'],
-              threaded=True)
     
     elif cfg.CAMERA_TYPE == "LIDAR_PLOT":
         from donkeycar.parts.lidar import LidarPlot2

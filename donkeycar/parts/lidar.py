@@ -737,10 +737,12 @@ class LidarPlot2(object):
         plot_polar_angle(draw, bounds, self.border_color, 0,
                          self.angle_direction, self.rotate_plot)
         
-        # handle no data yet
-        if measurements is None:
-            print("bruh")
-            return np.asarray(self.frame)
+        # data points
+        if measurements:
+          plot_polar_points(
+              draw, bounds, self.mark_fn, self.point_color, self.mark_px,
+              [(distance, angle) for distance, angle, _, _, _ in measurements],
+              self.max_distance, self.angle_direction, self.rotate_plot)
         
         # data points
         plot_polar_points(
