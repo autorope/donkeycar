@@ -6,7 +6,7 @@ Donkeycar Parts to manage a sequence of events based upon object detection
 
     ActionProtocol is a base class for the actions that can be managed by the DetectorManager.
       * action_demo.py: An example that shows how to create an action.
-      * action_pass_object.py: Pass the target object if it is detected.
+      * action_stop_and_go.py: action_stop_and_go.py: First stops the car, then pauses for delay, then passes the Stop Sign. 
 
     Mediapipe_Object_Detector: detects objects in the image using the mediapipe object detection model.
 
