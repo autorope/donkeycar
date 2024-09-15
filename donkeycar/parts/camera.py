@@ -1,8 +1,10 @@
 import logging
 import os
 import time
+import threading
 import numpy as np
 from PIL import Image
+import mss
 import glob
 from donkeycar.utils import rgb2gray
 
@@ -328,6 +330,61 @@ class V4LCamera(BaseCamera):
     def shutdown(self):
         self.running = False
         time.sleep(0.5)
+
+class ScreenCamera(BaseCamera):
+    '''
+    Camera that uses mss to capture the screen
+    For capturing video games
+    '''
+
+    def __init__(self, image_w=160, image_h=120, image_d=3,
+                 vflip=False, hflip=False):
+        self.image_w = image_w
+        self.image_h = image_h
+        self.image_d = image_d
+        self.vflip = vflip
+        self.hflip = hflip
+        self.sct = mss.mss()
+        self.running = True
+
+        self._monitor_thread = threading.Thread(target=self.take_screenshot, args=())
+        self._monitor_thread.daemon = True
+        self._monitor_thread.start()
+
+    def take_screenshot(self):
+        # Capture the screen
+        monitor = {"top": 0, 
+                   "left": 320, 
+                   "width": 1920, 
+                   "height": 1080
+                   }
+        sct_img = self.sct.grab(monitor)
+        img = Image.frombytes('RGB', sct_img.size, sct_img.bgra, 'raw', 'BGRX')
+        img = img.resize((self.image_w, self.image_h))
+        img_arr = np.asarray(img)
+        if self.vflip:
+            img_arr = np.flipud(img_arr)
+        if self.hflip:
+            img_arr = np.fliplr(img_arr)
+        self.frame = img_arr
+        return img
+
+    def update(self):
+        if self.running:
+            img = self.take_screenshot()
+            return img
+
+    def run(self):
+        self.update()
+        assert self.frame is not None
+        return self.frame
+
+    def run_threaded(self):
+        return self.frame
+
+    def shutdown(self):
+        self.running = False
+        self.sct.close()
 
 
 class MockCamera(BaseCamera):
