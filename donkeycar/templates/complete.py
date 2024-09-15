@@ -106,13 +106,18 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     # add lidar
     if cfg.USE_LIDAR:
-        from donkeycar.parts.lidar import RPLidar
         if cfg.LIDAR_TYPE == 'RP':
+            from donkeycar.parts.lidar import RPLidar
             print("adding RP lidar part")
             lidar = RPLidar(lower_limit = cfg.LIDAR_LOWER_LIMIT, upper_limit = cfg.LIDAR_UPPER_LIMIT)
             V.add(lidar, inputs=[],outputs=['lidar/dist_array'], threaded=True)
         if cfg.LIDAR_TYPE == 'YD':
             print("YD Lidar not yet supported")
+        if cfg.LIDAR_TYPE == "HOKUYO":
+            from donkeycar.parts.lidar import HokuyoLidar
+            print("adding Hokuyo lidar part")
+            lidar = HokuyoLidar(max_dist = cfg.LIDAR_MAX_DIST)
+            V.add(lidar, inputs=[], outputs=['lidar/dist_scan'], threaded=False)
 
     if cfg.HAVE_TFMINI:
         from donkeycar.parts.tfmini import TFMini
@@ -820,6 +825,9 @@ def get_camera(cfg):
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "LIDAR_PLOT":
+            from donkeycar.parts.lidar import LidarPlot2
+            cam = LidarPlot2(resolution=(cfg.IMAGE_H, cfg.IMAGE_W))
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
@@ -872,7 +880,22 @@ def add_camera(V, cfg, camera_type):
               outputs=['cam/image_array', 'cam/depth_array',
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+              threaded=False)
+        
+    
+    elif cfg.CAMERA_TYPE == "LIDAR_PLOT":
+        from donkeycar.parts.lidar import LidarPlot2
+        cam = LidarPlot2(
+            resolution=(cfg.IMAGE_W, cfg.IMAGE_H),
+            rotate_plot=cfg.LIDAR_ANGLE_OFFSET,
+            max_dist=cfg.LIDAR_MAX_DIST,
+            plot_type=LidarPlot2.PLOT_TYPE_CIRCLE,
+            mark_px=1
+        )
+        V.add(cam, inputs=['lidar/dist_scan'],
+              outputs=['cam/image_array'],
               threaded=True)
+
     else:
         inputs = []
         outputs = ['cam/image_array']
