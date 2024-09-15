@@ -364,17 +364,17 @@ class CTE(object):
         """
         if path is None or len(path) < 2:
             logging.error("path is none; cannot calculate nearest points")
-            return None, None
+            return None, None, None
 
         if look_ahead < 0:
             logging.error("look_ahead must be a non-negative number")
-            return None, None
+            return None, None, None
         if look_behind < 0:
             logging.error("look_behind must be a non-negative number")
-            return None, None
+            return None, None, None
         if (look_ahead + look_behind) > len(path):
             logging.error("the path is not long enough to supply the waypoints")
-            return None, None
+            return None, None, None
 
         _pt, i, _distance = self.nearest_pt(path, x, y, from_pt, num_pts)
 
