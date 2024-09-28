@@ -764,3 +764,18 @@ FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency 
 # PI connection
 PI_USERNAME = "pi"
 PI_HOSTNAME = "donkeypi.local"
+
+
+# # Object Detector
+OBJECT_DETECTOR = False  # enable Detector lab
+OBJECT_DETECTOR_SHOW_BOUNDING_BOX = True     # show bounding box on the web control
+OD_MODEL_NAME ='efficientdet_lite0.tflite'   # object detection model name, file path is CAR_PATH/DETECTOR_LAB_MODEL_NAME 
+OD_SCORE = 0.5          # Set the score threshold for detection.
+OD_RUN_HZ = 1           # Run detection algorithm n times per drive_loop_hz ex. 1 time every 20 drive loop 
+
+OD_ACTION_DEMO = False              # enable detection to trigger a demo action
+OD_ACTION_DEMO_LABEL = "person"     # label to trigger demo action
+
+OD_ACTION_STOP_AND_GO = False           # enable detection to stop and go
+OD_ACTION_STOP_AND_GO_LABEL = "stop sign"    # label to trigger stop and go
+OD_ACTION_STOP_AND_GO_PAUSE_TIME = 2.0       # after stop sequence completes, pause for n seconds
