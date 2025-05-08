@@ -1,9 +1,8 @@
 """
-DonkeyCar Grad-CAM visualization package.
+Gradient-weighted Class Activation Mapping for DonkeyCar models.
 
-This package provides tools to visualize and understand
-what DonkeyCar neural networks are focusing on when making
-driving decisions.
+This module provides tools to visualize what regions of an input image
+influenced the model's predictions.
 """
 
-__version__ = '0.1.0' 
+__version__ = '0.1.0'
