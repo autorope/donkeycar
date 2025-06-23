@@ -6,6 +6,14 @@ import express2 from "express";
 // server/routes.ts
 import { createServer } from "http";
 async function registerRoutes(app2) {
+  app2.post("/api/shutdown", (req, res) => {
+    console.log("Shutdown requested via web interface");
+    res.json({ message: "Server shutting down..." });
+    setTimeout(() => {
+      console.log("Server shutting down gracefully");
+      process.exit(0);
+    }, 1e3);
+  });
   const httpServer = createServer(app2);
   return httpServer;
 }

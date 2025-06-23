@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Path Data Visualizer & Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2563eb;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .exit-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        .exit-btn:hover {
+            background: #dc2626;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .upload-area:hover {
+            border-color: #2563eb;
+        }
+        
+        .upload-area.dragover {
+            border-color: #2563eb;
+            background: #eff6ff;
+        }
+        
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .canvas-container {
+            position: relative;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 400px;
+        }
+        
+        .controls {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .control-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .control-item:hover {
+            background: #f9fafb;
+        }
+        
+        .control-item.selected {
+            background: #eff6ff;
+            border-color: #2563eb;
+        }
+        
+        .speed-input {
+            width: 80px;
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .point-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .status {
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 1rem;
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>🚗 Path Data Visualizer & Editor</h1>
+        <button class="exit-btn" onclick="shutdownServer()">⚡ Exit</button>
+    </header>
+    
+    <div class="container">
+        <div class="main-content">
+            <div class="card">
+                <h2>File Upload</h2>
+                <div class="upload-area" id="uploadArea">
+                    <p>Drag & drop your CSV file here or click to browse</p>
+                    <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
+                        Expected format: x, y, speed columns
+                    </p>
+                    <input type="file" id="fileInput" accept=".csv" style="display: none;">
+                </div>
+                <div id="fileInfo" class="hidden">
+                    <p><strong>File:</strong> <span id="fileName"></span></p>
+                    <p><strong>Points:</strong> <span id="pointCount"></span></p>
+                    <button class="btn" id="exportBtn" onclick="exportCSV()">Export Modified CSV</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Path Visualization</h2>
+                <div class="canvas-container">
+                    <canvas id="pathCanvas" width="600" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sidebar">
+            <div class="card">
+                <h2>Speed Controls</h2>
+                <div id="speedControls" class="controls">
+                    <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                        Upload a CSV file to edit speed values
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="status" class="hidden"></div>
+
+    <script>
+        let pathData = [];
+        let selectedPointIndex = -1;
+        let fileName = '';
+        
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+        
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+        
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    pathData = result.data;
+                    fileName = result.filename;
+                    updateUI();
+                    drawPath();
+                    showStatus('File uploaded successfully!', 'success');
+                } else {
+                    showStatus(result.error || 'Upload failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Upload failed: ' + error.message, 'error');
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('fileName').textContent = fileName;
+            document.getElementById('pointCount').textContent = pathData.length;
+            document.getElementById('fileInfo').classList.remove('hidden');
+            
+            updateSpeedControls();
+        }
+        
+        function updateSpeedControls() {
+            const controls = document.getElementById('speedControls');
+            controls.innerHTML = '';
+            
+            pathData.forEach((point, index) => {
+                const controlItem = document.createElement('div');
+                controlItem.className = 'control-item';
+                controlItem.onclick = () => selectPoint(index);
+                
+                controlItem.innerHTML = `
+                    <div class="point-info">
+                        Point ${index + 1}: (${point.x.toFixed(2)}, ${point.y.toFixed(2)})
+                    </div>
+                    <input type="number" class="speed-input" value="${point.speed}" 
+                           min="0.1" max="1.0" step="0.1" 
+                           onchange="updateSpeed(${index}, this.value)"
+                           onclick="event.stopPropagation()">
+                `;
+                
+                controls.appendChild(controlItem);
+            });
+        }
+        
+        function selectPoint(index) {
+            selectedPointIndex = index;
+            
+            // Update visual selection
+            document.querySelectorAll('.control-item').forEach((item, i) => {
+                item.classList.toggle('selected', i === index);
+            });
+            
+            drawPath();
+        }
+        
+        function updateSpeed(index, newSpeed) {
+            const speed = Math.max(0.1, Math.min(1.0, parseFloat(newSpeed)));
+            pathData[index].speed = speed;
+            drawPath();
+        }
+        
+        function drawPath() {
+            const canvas = document.getElementById('pathCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (pathData.length === 0) return;
+            
+            // Calculate bounds
+            const xs = pathData.map(p => p.x);
+            const ys = pathData.map(p => p.y);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            
+            const margin = 20;
+            const scaleX = (canvas.width - 2 * margin) / (maxX - minX || 1);
+            const scaleY = (canvas.height - 2 * margin) / (maxY - minY || 1);
+            const scale = Math.min(scaleX, scaleY);
+            
+            function worldToCanvas(point) {
+                return {
+                    x: margin + (point.x - minX) * scale,
+                    y: canvas.height - margin - (point.y - minY) * scale
+                };
+            }
+            
+            // Draw path lines
+            ctx.strokeStyle = '#6b7280';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            pathData.forEach((point, i) => {
+                const canvasPoint = worldToCanvas(point);
+                if (i === 0) {
+                    ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                } else {
+                    ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                }
+            });
+            ctx.stroke();
+            
+            // Draw points
+            pathData.forEach((point, i) => {
+                const canvasPoint = worldToCanvas(point);
+                
+                // Color based on speed
+                const red = Math.round(255 * (1 - point.speed));
+                const green = Math.round(255 * point.speed);
+                ctx.fillStyle = `rgb(${red}, ${green}, 0)`;
+                
+                // Highlight selected point
+                if (i === selectedPointIndex) {
+                    ctx.strokeStyle = '#2563eb';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(canvasPoint.x, canvasPoint.y, 8, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+                
+                ctx.beginPath();
+                ctx.arc(canvasPoint.x, canvasPoint.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+        
+        async function exportCSV() {
+            try {
+                const response = await fetch('/api/export', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        pathData: pathData,
+                        filename: fileName.replace('.csv', '_modified.csv')
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName.replace('.csv', '_modified.csv');
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    showStatus('CSV exported successfully!', 'success');
+                } else {
+                    showStatus('Export failed', 'error');
+                }
+            } catch (error) {
+                showStatus('Export failed: ' + error.message, 'error');
+            }
+        }
+        
+        async function shutdownServer() {
+            if (confirm('Are you sure you want to stop the server?')) {
+                try {
+                    await fetch('/api/shutdown', { method: 'POST' });
+                    showStatus('Server shutting down...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'about:blank';
+                    }, 2000);
+                } catch (error) {
+                    // Expected error as server shuts down
+                    setTimeout(() => {
+                        window.location.href = 'about:blank';
+                    }, 1000);
+                }
+            }
+        }
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.classList.remove('hidden');
+            
+            setTimeout(() => {
+                status.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // Remove dragover class when leaving upload area
+        uploadArea.addEventListener('dragleave', (e) => {
+            if (!uploadArea.contains(e.relatedTarget)) {
+                uploadArea.classList.remove('dragover');
+            }
+        });
+    </script>
+</body>
+</html>

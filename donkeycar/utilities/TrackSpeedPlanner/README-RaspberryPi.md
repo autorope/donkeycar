@@ -24,7 +24,28 @@ This guide helps you deploy the Path Data Visualizer & Editor on a Raspberry Pi 
    ./deploy-pi-simple.sh
    ```
 
-3. **Access your application:**
+   *Note: The deployment script automatically cleans up any previous installation.*
+
+## Reinstalling or Updating
+
+If you need to reinstall or had a previous version installed:
+
+1. **Clean uninstall (optional):**
+   ```bash
+   chmod +x uninstall-pi.sh
+   ./uninstall-pi.sh
+   ```
+
+2. **Then run the deployment script normally**
+
+The deployment script automatically handles cleanup, but you can manually uninstall first if needed.
+
+3. **Start the server manually:**
+   ```bash
+   python3 start-server.py
+   ```
+
+4. **Access your application:**
    Open a browser and go to: `http://your-pi-ip:5000`
 
 ## What the deployment script does:
@@ -32,8 +53,8 @@ This guide helps you deploy the Path Data Visualizer & Editor on a Raspberry Pi 
 - Installs Node.js 20 if not present
 - Installs project dependencies
 - Builds the application with ESM compatibility fixes
-- Creates a systemd service for auto-start
-- Starts the service and enables it to run on boot
+- Creates manual start scripts (no auto-start on boot)
+- Provides both Python and shell script options
 
 ## Manual Setup (if script fails)
 
@@ -55,15 +76,16 @@ This guide helps you deploy the Path Data Visualizer & Editor on a Raspberry Pi 
 
 4. **Start manually:**
    ```bash
+   python3 start-server.py
+   # OR
    NODE_ENV=production PORT=5000 node dist/start-production.js
    ```
 
-## Service Management
+## Starting the Server
 
-- **Check status:** `sudo systemctl status path-editor`
-- **View logs:** `sudo journalctl -u path-editor -f`
-- **Restart:** `sudo systemctl restart path-editor`
-- **Stop:** `sudo systemctl stop path-editor`
+- **Python launcher:** `python3 start-server.py` (recommended)
+- **Shell script:** `./start-server.sh` 
+- **Direct Node.js:** `NODE_ENV=production PORT=5000 node dist/start-production.js`
 
 ## Network Access
 

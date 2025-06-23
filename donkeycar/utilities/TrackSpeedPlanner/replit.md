@@ -140,6 +140,23 @@ Changelog:
   * Updated deploy-pi-simple.sh with multiple build script fallbacks
   * Created comprehensive README-RaspberryPi.md deployment guide
   * Resolved production build failures for Node.js ESM modules
+- June 15, 2025. Modified deployment for manual start and added Exit functionality:
+  * Removed auto-start systemd service configuration
+  * Created start-server.py Python launcher for manual server control
+  * Added Exit button to web interface header with clean shutdown
+  * Implemented /api/shutdown route for graceful server termination
+  * Updated deployment scripts to support manual-only server operation
+  * Created uninstall-pi.sh script for clean removal of previous installations
+  * Integrated automatic cleanup into deployment process
+- June 23, 2025. Added Python Tornado server option for Raspberry Pi:
+  * Created server-tornado.py as lightweight alternative to Node.js
+  * Built complete HTML/CSS/JS interface in single static file
+  * Added deploy-pi-tornado.sh for Python-only deployment
+  * Implemented all CSV upload, editing, and export features in Python
+  * Tested Tornado server with health checks and graceful shutdown
+  * Created start-pi.sh as main entry point for Pi users
+  * Optimized for all Pi models including Pi Zero
+  * Made Tornado the recommended deployment option
 ```
 
 ## User Preferences

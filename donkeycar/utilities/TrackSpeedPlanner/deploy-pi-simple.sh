@@ -7,6 +7,14 @@ set -e
 
 echo "🔧 Setting up Path Data Visualizer on Raspberry Pi (Node.js only)..."
 
+# Clean up any previous installation
+if [ -f "uninstall-pi.sh" ]; then
+    echo "🧹 Cleaning up previous installation..."
+    chmod +x uninstall-pi.sh
+    ./uninstall-pi.sh
+    echo ""
+fi
+
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
     echo "📦 Installing Node.js..."
@@ -67,8 +75,22 @@ fi
 
 echo "✅ Build completed successfully"
 
-# Create systemd service for auto-start
-echo "⚙️  Creating systemd service..."
+# Create shell start script for compatibility
+echo "⚙️  Creating start scripts..."
+cat > start-server.sh << 'EOF'
+#!/bin/bash
+echo "🚀 Starting Path Data Visualizer & Editor..."
+echo "📱 Access at: http://$(hostname -I | awk '{print $1}'):5000"
+echo "🛑 Use the Exit button in web interface or press Ctrl+C to stop"
+echo ""
+NODE_ENV=production PORT=5000 HOST=0.0.0.0 node dist/start-production.js
+EOF
+
+chmod +x start-server.sh
+chmod +x start-server.py 2>/dev/null || true
+
+# Create temporary systemd service (not enabled for auto-start)
+echo "⚙️  Creating service template..."
 cat > /tmp/path-editor.service << EOF
 [Unit]
 Description=Path Data Visualizer & Editor
@@ -94,39 +116,24 @@ EOF
 # Move the service file with proper permissions
 sudo mv /tmp/path-editor.service /etc/systemd/system/path-editor.service
 
-# Enable and start the service
-echo "🚀 Starting service..."
+# Install service template but don't enable auto-start
+echo "⚙️  Installing service template (manual start only)..."
 sudo systemctl daemon-reload
-sudo systemctl enable path-editor
-sudo systemctl start path-editor
-
-# Wait a moment for service to start
-sleep 3
-
-# Check service status
-if sudo systemctl is-active --quiet path-editor; then
-    echo "✅ Service started successfully!"
-else
-    echo "❌ Service failed to start. Checking logs..."
-    sudo journalctl -u path-editor --no-pager -n 10
-    exit 1
-fi
 
 # Get IP address
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
 echo ""
-echo "🎉 Installation complete!"
+echo "✅ Installation complete!"
 echo ""
-echo "🌐 Your Path Data Visualizer is now running at:"
+echo "🚀 To start the server manually, use either:"
+echo "   python3 start-server.py    (recommended)"
+echo "   ./start-server.sh          (alternative)"
+echo ""
+echo "📱 Server will be accessible at:"
 echo "   http://$IP_ADDRESS:5000"
 echo "   http://localhost:5000 (from the Pi itself)"
 echo ""
-echo "📊 Service management commands:"
-echo "   sudo systemctl status path-editor   # Check status"
-echo "   sudo systemctl restart path-editor  # Restart service"
-echo "   sudo systemctl stop path-editor     # Stop service"
-echo "   sudo journalctl -u path-editor -f   # View live logs"
-echo ""
-echo "🔧 To access from other devices on your network:"
-echo "   Open a web browser and go to: http://$IP_ADDRESS:5000"
+echo "🛑 To stop the server:"
+echo "   Use the Exit button in the web interface"
+echo "   Or press Ctrl+C in the terminal"

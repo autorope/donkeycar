@@ -1,19 +1,39 @@
 import { useState } from "react";
-import { Route } from "lucide-react";
+import { Route, Power } from "lucide-react";
 import { PathDataPoint } from "@shared/schema";
 import { FileUpload } from "@/components/file-upload";
 import { PathCanvas } from "@/components/path-canvas";
 import { SpeedControls } from "@/components/speed-controls";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function PathEditor() {
   const [pathData, setPathData] = useState<PathDataPoint[]>([]);
   const [selectedPointIndex, setSelectedPointIndex] = useState(-1);
   const [fileName, setFileName] = useState<string>("");
+  const { toast } = useToast();
 
   const handleDataLoaded = (data: PathDataPoint[], loadedFileName: string) => {
     setPathData(data);
     setFileName(loadedFileName);
     setSelectedPointIndex(-1);
+  };
+
+  const handleShutdown = async () => {
+    try {
+      toast({
+        title: "Shutting down server...",
+        description: "The server will stop in a few seconds.",
+      });
+
+      await apiRequest('POST', '/api/shutdown');
+    } catch (error) {
+      // Expected error since server shuts down before response
+      setTimeout(() => {
+        window.location.href = 'about:blank';
+      }, 2000);
+    }
   };
 
   const handleSpeedChange = (index: number, newSpeed: number) => {
@@ -45,6 +65,15 @@ export default function PathEditor() {
               <Route className="text-primary text-2xl mr-3 w-8 h-8" />
               <h1 className="text-xl font-semibold text-gray-900">Path Data Visualizer & Editor</h1>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShutdown}
+              className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+            >
+              <Power className="w-4 h-4" />
+              Exit
+            </Button>
           </div>
         </div>
       </header>
