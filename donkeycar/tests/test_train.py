@@ -106,6 +106,8 @@ def car_dir(tmpdir_factory, base_config, imu_fields) -> str:
         record['localizer/location'] = 3 * count // len(tub)
         tub_full.write_record(record)
         count += 1
+    tub_full.close()
+    tub.close()
     return car_dir
 
 
