@@ -820,6 +820,9 @@ def get_camera(cfg):
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "SCREENSHOT":
+            from donkeycar.parts.camera import ScreenCamera
+            cam = ScreenCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
         else:
             raise(Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
@@ -873,6 +876,18 @@ def add_camera(V, cfg, camera_type):
                        'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
                        'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
               threaded=True)
+        
+    elif cfg.CAMERA_TYPE == "SCREENSHOT":
+        from donkeycar.parts.camera import ScreenCamera
+        cam = ScreenCamera(
+            image_w=cfg.IMAGE_W, 
+            image_h=cfg.IMAGE_H,
+            vflip=cfg.CAMERA_VFLIP,
+            hflip=cfg.CAMERA_HFLIP)
+        V.add(cam, 
+              outputs=['cam/image_array'], 
+              threaded=False)
+        
     else:
         inputs = []
         outputs = ['cam/image_array']
@@ -1130,6 +1145,11 @@ def add_drivetrain(V, cfg):
                           cfg.VESC_STEERING_OFFSET
                         )
             V.add(vesc, inputs=['steering', 'throttle'])
+
+        elif cfg.DRIVE_TRAIN_TYPE == "VIRTUAL":
+            from donkeycar.parts.actuator import VirtualController
+            logger.info("Creating virtual controller")
+            V.add(VirtualController(), inputs=['steering', 'throttle'])
 
 
 if __name__ == '__main__':
