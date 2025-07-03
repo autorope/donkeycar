@@ -3,488 +3,575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Path Data Visualizer & Editor</title>
+    <title>Donkey Car Path Data Visualizer & Editor</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             color: #333;
         }
-        
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
         .header {
-            background: white;
-            border-bottom: 1px solid #ddd;
-            padding: 1rem 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .header h1 {
-            color: #2563eb;
-            font-size: 1.5rem;
+            color: #4a5568;
+            font-size: 1.8rem;
             font-weight: 600;
         }
-        
+
         .exit-btn {
-            background: #ef4444;
+            background: #e53e3e;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
+            padding: 10px 20px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: background-color 0.2s;
+            font-weight: 600;
+            transition: background 0.3s;
         }
-        
+
         .exit-btn:hover {
-            background: #dc2626;
+            background: #c53030;
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+
+        .main-content {
             display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 2rem;
+            grid-template-columns: 300px 1fr 280px;
+            gap: 20px;
+            height: calc(100vh - 140px);
         }
-        
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 1.5rem;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+
+        .upload-section, .controls-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
         }
-        
+
+        .upload-section h2, .controls-section h2 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
         .upload-area {
-            border: 2px dashed #d1d5db;
-            border-radius: 8px;
-            padding: 3rem;
+            border: 3px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 30px;
             text-align: center;
-            margin-bottom: 1.5rem;
             cursor: pointer;
-            transition: border-color 0.2s;
+            transition: all 0.3s;
+            margin-bottom: 15px;
         }
-        
+
         .upload-area:hover {
-            border-color: #2563eb;
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
         }
-        
+
         .upload-area.dragover {
-            border-color: #2563eb;
-            background: #eff6ff;
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
         }
-        
-        .btn {
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 0.75rem 1.5rem;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin: 0.5rem;
-            transition: background-color 0.2s;
-        }
-        
-        .btn:hover {
-            background: #1d4ed8;
-        }
-        
-        .btn:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-        
-        .canvas-container {
-            position: relative;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            overflow: hidden;
-            background: white;
-        }
-        
-        canvas {
-            display: block;
-            width: 100%;
-            height: 400px;
-        }
-        
-        .controls {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        
-        .control-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 6px;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .control-item:hover {
-            background: #f9fafb;
-        }
-        
-        .control-item.selected {
-            background: #eff6ff;
-            border-color: #2563eb;
-        }
-        
-        .speed-input {
-            width: 80px;
-            padding: 0.25rem 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-        
-        .point-info {
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-        
-        .status {
-            padding: 0.75rem;
-            border-radius: 6px;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-        }
-        
-        .status.success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-        
-        .status.error {
-            background: #fef2f2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
-        }
-        
-        .hidden {
+
+        .file-input {
             display: none;
         }
-        
-        @media (max-width: 768px) {
-            .container {
+
+        .upload-text {
+            color: #718096;
+            margin-bottom: 10px;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .export-btn {
+            width: 100%;
+            background: #38a169;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .export-btn:hover {
+            background: #2f855a;
+        }
+
+        .export-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #pathCanvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            flex: 1;
+            cursor: crosshair;
+        }
+
+        .canvas-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #4a5568;
+            text-align: center;
+        }
+
+        .controls-section {
+            overflow-y: auto;
+        }
+
+        .speed-control {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+        }
+
+        .speed-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .speed-select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .selected-point {
+            background: #667eea !important;
+            color: white;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #a0aec0;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
                 grid-template-columns: 1fr;
-                padding: 1rem;
+                grid-template-rows: auto auto 1fr;
+                height: auto;
             }
             
-            .header {
-                padding: 1rem;
+            .canvas-container {
+                order: 2;
+                height: 400px;
             }
             
-            .header h1 {
-                font-size: 1.25rem;
+            .upload-section {
+                order: 1;
+            }
+            
+            .controls-section {
+                order: 3;
+                max-height: 300px;
             }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <h1>🚗 Path Data Visualizer & Editor</h1>
-        <button class="exit-btn" onclick="shutdownServer()">⚡ Exit</button>
-    </header>
-    
     <div class="container">
-        <div class="main-content">
-            <div class="card">
-                <h2>File Upload</h2>
-                <div class="upload-area" id="uploadArea">
-                    <p>Drag & drop your CSV file here or click to browse</p>
-                    <p style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">
-                        Expected format: x, y, speed columns
-                    </p>
-                    <input type="file" id="fileInput" accept=".csv" style="display: none;">
-                </div>
-                <div id="fileInfo" class="hidden">
-                    <p><strong>File:</strong> <span id="fileName"></span></p>
-                    <p><strong>Points:</strong> <span id="pointCount"></span></p>
-                    <button class="btn" id="exportBtn" onclick="exportCSV()">Export Modified CSV</button>
-                </div>
-            </div>
-            
-            <div class="card">
-                <h2>Path Visualization</h2>
-                <div class="canvas-container">
-                    <canvas id="pathCanvas" width="600" height="400"></canvas>
-                </div>
-            </div>
+        <div class="header">
+            <h1>🚗 Donkey Car Path Data Visualizer & Editor</h1>
+            <button class="exit-btn" onclick="exitApp()">Exit</button>
         </div>
-        
-        <div class="sidebar">
-            <div class="card">
-                <h2>Speed Controls</h2>
-                <div id="speedControls" class="controls">
-                    <p style="text-align: center; color: #6b7280; padding: 2rem;">
-                        Upload a CSV file to edit speed values
-                    </p>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <h2>📁 Upload CSV File</h2>
+                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-text">
+                        <strong>Click here or drag CSV file</strong><br>
+                        to upload path data
+                    </div>
+                    <input type="file" id="fileInput" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+                <button id="exportBtn" class="export-btn" onclick="exportCSV()" disabled>📥 Export Modified CSV</button>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="pathCanvas" width="800" height="600"></canvas>
+                <div id="canvasInfo" class="canvas-info">
+                    Upload a CSV file to visualize path data
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h2>🎛️ Speed Controls</h2>
+                <div id="speedControls" class="no-data">
+                    No path data loaded
                 </div>
             </div>
         </div>
     </div>
-    
-    <div id="status" class="hidden"></div>
 
     <script>
         let pathData = [];
         let selectedPointIndex = -1;
-        let fileName = '';
-        
-        // File upload handling
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        
-        uploadArea.addEventListener('click', () => fileInput.click());
-        uploadArea.addEventListener('dragover', handleDragOver);
-        uploadArea.addEventListener('drop', handleDrop);
-        fileInput.addEventListener('change', handleFileSelect);
-        
-        function handleDragOver(e) {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        }
-        
-        function handleDrop(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                uploadFile(files[0]);
+        let canvas, ctx;
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        // Initialize canvas
+        window.onload = function() {
+            canvas = document.getElementById('pathCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set up drag and drop
+            setupDragAndDrop();
+            
+            // Set up canvas click handler
+            canvas.addEventListener('click', onCanvasClick);
+            
+            // Resize canvas to fit container
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        };
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width - 40; // Account for padding
+            canvas.height = rect.height - 80; // Account for padding and info
+            
+            if (pathData.length > 0) {
+                drawPath();
             }
         }
-        
-        function handleFileSelect(e) {
-            const files = e.target.files;
-            if (files.length > 0) {
-                uploadFile(files[0]);
+
+        function setupDragAndDrop() {
+            const uploadArea = document.querySelector('.upload-area');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
             }
         }
-        
-        async function uploadFile(file) {
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
             const formData = new FormData();
             formData.append('file', file);
-            
-            try {
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    pathData = result.data;
-                    fileName = result.filename;
-                    updateUI();
-                    drawPath();
-                    showStatus('File uploaded successfully!', 'success');
-                } else {
-                    showStatus(result.error || 'Upload failed', 'error');
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
                 }
-            } catch (error) {
-                showStatus('Upload failed: ' + error.message, 'error');
-            }
-        }
-        
-        function updateUI() {
-            document.getElementById('fileName').textContent = fileName;
-            document.getElementById('pointCount').textContent = pathData.length;
-            document.getElementById('fileInfo').classList.remove('hidden');
-            
-            updateSpeedControls();
-        }
-        
-        function updateSpeedControls() {
-            const controls = document.getElementById('speedControls');
-            controls.innerHTML = '';
-            
-            pathData.forEach((point, index) => {
-                const controlItem = document.createElement('div');
-                controlItem.className = 'control-item';
-                controlItem.onclick = () => selectPoint(index);
                 
-                controlItem.innerHTML = `
-                    <div class="point-info">
-                        Point ${index + 1}: (${point.x.toFixed(2)}, ${point.y.toFixed(2)})
-                    </div>
-                    <input type="number" class="speed-input" value="${point.speed}" 
-                           min="0.1" max="1.0" step="0.1" 
-                           onchange="updateSpeed(${index}, this.value)"
-                           onclick="event.stopPropagation()">
-                `;
+                pathData = data.data;
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = 
+                    `<strong>File:</strong> ${data.filename}<br>
+                     <strong>Points:</strong> ${data.count}`;
                 
-                controls.appendChild(controlItem);
+                document.getElementById('exportBtn').disabled = false;
+                document.getElementById('canvasInfo').textContent = 
+                    `Loaded ${data.count} path points - Click on points to select and edit speed`;
+                
+                drawPath();
+                createSpeedControls();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading file');
             });
         }
-        
-        function selectPoint(index) {
-            selectedPointIndex = index;
-            
-            // Update visual selection
-            document.querySelectorAll('.control-item').forEach((item, i) => {
-                item.classList.toggle('selected', i === index);
-            });
-            
-            drawPath();
-        }
-        
-        function updateSpeed(index, newSpeed) {
-            const speed = Math.max(0.1, Math.min(1.0, parseFloat(newSpeed)));
-            pathData[index].speed = speed;
-            drawPath();
-        }
-        
+
         function drawPath() {
-            const canvas = document.getElementById('pathCanvas');
-            const ctx = canvas.getContext('2d');
+            if (!pathData.length) return;
             
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            if (pathData.length === 0) return;
-            
             // Calculate bounds
-            const xs = pathData.map(p => p.x);
-            const ys = pathData.map(p => p.y);
-            const minX = Math.min(...xs);
-            const maxX = Math.max(...xs);
-            const minY = Math.min(...ys);
-            const maxY = Math.max(...ys);
+            const bounds = calculateBounds();
+            const padding = 40;
             
-            const margin = 20;
-            const scaleX = (canvas.width - 2 * margin) / (maxX - minX || 1);
-            const scaleY = (canvas.height - 2 * margin) / (maxY - minY || 1);
-            const scale = Math.min(scaleX, scaleY);
+            scale = Math.min(
+                (canvas.width - padding * 2) / (bounds.maxX - bounds.minX),
+                (canvas.height - padding * 2) / (bounds.maxY - bounds.minY)
+            );
             
-            function worldToCanvas(point) {
-                return {
-                    x: margin + (point.x - minX) * scale,
-                    y: canvas.height - margin - (point.y - minY) * scale
-                };
-            }
+            offsetX = padding - bounds.minX * scale;
+            offsetY = padding - bounds.minY * scale;
             
             // Draw path lines
-            ctx.strokeStyle = '#6b7280';
+            ctx.strokeStyle = '#cbd5e0';
             ctx.lineWidth = 2;
             ctx.beginPath();
             
-            pathData.forEach((point, i) => {
-                const canvasPoint = worldToCanvas(point);
+            for (let i = 0; i < pathData.length; i++) {
+                const point = pathData[i];
+                const x = point.x * scale + offsetX;
+                const y = canvas.height - (point.y * scale + offsetY); // Flip Y
+                
                 if (i === 0) {
-                    ctx.moveTo(canvasPoint.x, canvasPoint.y);
+                    ctx.moveTo(x, y);
                 } else {
-                    ctx.lineTo(canvasPoint.x, canvasPoint.y);
+                    ctx.lineTo(x, y);
                 }
-            });
+            }
             ctx.stroke();
             
             // Draw points
-            pathData.forEach((point, i) => {
-                const canvasPoint = worldToCanvas(point);
+            for (let i = 0; i < pathData.length; i++) {
+                const point = pathData[i];
+                const x = point.x * scale + offsetX;
+                const y = canvas.height - (point.y * scale + offsetY);
                 
                 // Color based on speed
-                const red = Math.round(255 * (1 - point.speed));
-                const green = Math.round(255 * point.speed);
-                ctx.fillStyle = `rgb(${red}, ${green}, 0)`;
+                const speedRatio = point.speed;
+                const red = Math.floor(255 * (1 - speedRatio));
+                const green = Math.floor(255 * speedRatio);
                 
-                // Highlight selected point
-                if (i === selectedPointIndex) {
-                    ctx.strokeStyle = '#2563eb';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.arc(canvasPoint.x, canvasPoint.y, 8, 0, 2 * Math.PI);
-                    ctx.stroke();
+                ctx.fillStyle = i === selectedPointIndex ? '#667eea' : `rgb(${red}, ${green}, 0)`;
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Add white border for visibility
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function calculateBounds() {
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            for (const point of pathData) {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            }
+            
+            return { minX, maxX, minY, maxY };
+        }
+
+        function onCanvasClick(event) {
+            if (!pathData.length) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+            
+            // Find closest point
+            let closestIndex = -1;
+            let closestDistance = Infinity;
+            
+            for (let i = 0; i < pathData.length; i++) {
+                const point = pathData[i];
+                const x = point.x * scale + offsetX;
+                const y = canvas.height - (point.y * scale + offsetY);
+                
+                const distance = Math.sqrt((clickX - x) ** 2 + (clickY - y) ** 2);
+                if (distance < closestDistance && distance < 15) {
+                    closestDistance = distance;
+                    closestIndex = i;
+                }
+            }
+            
+            if (closestIndex !== -1) {
+                selectedPointIndex = closestIndex;
+                drawPath();
+                highlightSpeedControl(closestIndex);
+            }
+        }
+
+        function createSpeedControls() {
+            const container = document.getElementById('speedControls');
+            container.innerHTML = '';
+            
+            pathData.forEach((point, index) => {
+                const controlDiv = document.createElement('div');
+                controlDiv.className = 'speed-control';
+                controlDiv.id = `control-${index}`;
+                
+                const label = document.createElement('label');
+                label.textContent = `Point ${index + 1} (${point.x.toFixed(1)}, ${point.y.toFixed(1)})`;
+                
+                const select = document.createElement('select');
+                select.className = 'speed-select';
+                
+                // Create speed options
+                for (let speed = 0.1; speed <= 1.0; speed += 0.1) {
+                    const option = document.createElement('option');
+                    option.value = speed.toFixed(1);
+                    option.textContent = `Speed: ${speed.toFixed(1)}`;
+                    if (Math.abs(speed - point.speed) < 0.05) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
                 }
                 
-                ctx.beginPath();
-                ctx.arc(canvasPoint.x, canvasPoint.y, 5, 0, 2 * Math.PI);
-                ctx.fill();
-            });
-        }
-        
-        async function exportCSV() {
-            try {
-                const response = await fetch('/api/export', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        pathData: pathData,
-                        filename: fileName.replace('.csv', '_modified.csv')
-                    })
+                select.addEventListener('change', (e) => {
+                    const newSpeed = parseFloat(e.target.value);
+                    pathData[index].speed = newSpeed;
+                    drawPath();
                 });
                 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName.replace('.csv', '_modified.csv');
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    showStatus('CSV exported successfully!', 'success');
-                } else {
-                    showStatus('Export failed', 'error');
-                }
-            } catch (error) {
-                showStatus('Export failed: ' + error.message, 'error');
-            }
+                controlDiv.appendChild(label);
+                controlDiv.appendChild(select);
+                container.appendChild(controlDiv);
+            });
         }
-        
-        async function shutdownServer() {
-            if (confirm('Are you sure you want to stop the server?')) {
-                try {
-                    await fetch('/api/shutdown', { method: 'POST' });
-                    showStatus('Server shutting down...', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'about:blank';
-                    }, 2000);
-                } catch (error) {
-                    // Expected error as server shuts down
-                    setTimeout(() => {
-                        window.location.href = 'about:blank';
-                    }, 1000);
-                }
-            }
-        }
-        
-        function showStatus(message, type) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.className = `status ${type}`;
-            status.classList.remove('hidden');
+
+        function highlightSpeedControl(index) {
+            // Remove previous highlights
+            document.querySelectorAll('.speed-control').forEach(control => {
+                control.classList.remove('selected-point');
+            });
             
-            setTimeout(() => {
-                status.classList.add('hidden');
-            }, 3000);
-        }
-        
-        // Remove dragover class when leaving upload area
-        uploadArea.addEventListener('dragleave', (e) => {
-            if (!uploadArea.contains(e.relatedTarget)) {
-                uploadArea.classList.remove('dragover');
+            // Highlight selected control
+            const control = document.getElementById(`control-${index}`);
+            if (control) {
+                control.classList.add('selected-point');
+                control.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-        });
+        }
+
+        function exportCSV() {
+            if (!pathData.length) {
+                alert('No data to export');
+                return;
+            }
+            
+            const exportData = {
+                pathData: pathData,
+                filename: 'modified_path_data.csv'
+            };
+            
+            fetch('/api/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(exportData)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'modified_path_data.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error exporting file');
+            });
+        }
+
+        function exitApp() {
+            if (confirm('Are you sure you want to exit the application? This will stop the server.')) {
+                fetch('/api/shutdown', {
+                    method: 'POST'
+                })
+                .then(() => {
+                    document.body.innerHTML = '<div style="text-align: center; padding: 100px; font-size: 1.5rem; color: #4a5568;"><h1>🛑 Server Stopped</h1><p>The application has been shut down.</p></div>';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error shutting down server');
+                });
+            }
+        }
     </script>
 </body>
 </html>

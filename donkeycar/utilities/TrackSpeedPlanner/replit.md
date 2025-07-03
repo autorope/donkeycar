@@ -1,49 +1,42 @@
-# Path Data Visualizer & Editor
+# Donkey Car Path Data Visualizer & Editor
 
 ## Overview
 
-This is a full-stack web application for visualizing and editing donkey car path data. The application allows users to upload CSV files containing path coordinates and speed values, visualize them on an interactive canvas, edit speed values through a control panel, and export modified data back to CSV format.
+This is a Python-based web application for visualizing and editing donkey car path data. The application allows users to upload CSV files containing path coordinates and speed values, visualize them on an interactive canvas, edit speed values through a control panel, and export modified data back to CSV format.
 
 ## System Architecture
 
-The application follows a modern full-stack architecture with a clear separation between client and server:
+The application uses a lightweight Python Tornado web server architecture optimized for Raspberry Pi deployment:
+
+### Server Architecture
+- **Runtime**: Python 3.6+ with Tornado web framework
+- **Language**: Python with async/await support
+- **Web Server**: Tornado (lightweight, efficient, great for embedded systems)
+- **Static Files**: Single HTML file with embedded CSS/JavaScript
+- **Data Processing**: Pure Python CSV parsing and generation
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter (lightweight React router)
-- **UI Library**: Radix UI components with Tailwind CSS styling (shadcn/ui)
-- **State Management**: React Query (@tanstack/react-query) for server state
-- **Styling**: Tailwind CSS with custom CSS variables for theming
-- **Build Tool**: Vite for fast development and optimized builds
-
-### Backend Architecture
-- **Runtime**: Node.js with Express.js framework
-- **Language**: TypeScript with ES modules
-- **Database ORM**: Drizzle ORM configured for PostgreSQL
-- **Database Provider**: Neon Database (@neondatabase/serverless)
-- **Development**: Hot module replacement via Vite middleware
-
-### Data Storage Solutions
-- **Primary Database**: PostgreSQL (configured via Drizzle)
-- **Development Storage**: In-memory storage implementation for rapid prototyping
-- **Schema Management**: Drizzle Kit for migrations and schema management
+- **Technology**: Vanilla JavaScript with HTML5 Canvas
+- **UI Components**: Custom CSS with responsive design
+- **File Upload**: Drag-and-drop interface with validation
+- **Visualization**: Interactive HTML5 canvas for path rendering
+- **Controls**: Dynamic speed adjustment dropdowns
 
 ## Key Components
 
-### Frontend Components
-1. **PathEditor** (`/client/src/pages/path-editor.tsx`): Main application page coordinating file upload, canvas display, and speed controls
-2. **FileUpload** (`/client/src/components/file-upload.tsx`): Drag-and-drop CSV file upload with validation
-3. **PathCanvas** (`/client/src/components/path-canvas.tsx`): Interactive HTML5 canvas for path visualization with point selection
-4. **SpeedControls** (`/client/src/components/speed-controls.tsx`): Dynamic speed adjustment interface for each path point
+### Python Server Components
+1. **Main Server** (`server-tornado.py`): Tornado web server handling all HTTP requests
+2. **CSV Handler**: File upload and parsing functionality
+3. **Static Handler**: Serves the web interface and assets
+4. **Shutdown Handler**: Graceful server termination endpoint
+5. **Health Check**: Server status monitoring
 
-### Backend Components
-1. **Storage Interface** (`/server/storage.ts`): Abstracted storage layer with in-memory implementation
-2. **Route Registration** (`/server/routes.ts`): Express route configuration (currently minimal)
-3. **Vite Integration** (`/server/vite.ts`): Development server setup with HMR support
-
-### Shared Components
-1. **Database Schema** (`/shared/schema.ts`): Drizzle ORM schema definitions for users and path points
-2. **Type Definitions**: Shared TypeScript interfaces for path data structures
+### Web Interface Components
+1. **Upload Interface**: Drag-and-drop CSV file upload with validation
+2. **Path Canvas**: Interactive HTML5 canvas for path visualization with point selection
+3. **Speed Controls**: Dynamic speed adjustment interface for each path point
+4. **Export Function**: CSV generation and download functionality
+5. **Exit Control**: Clean server shutdown from web interface
 
 ## Data Flow
 
@@ -65,57 +58,43 @@ interface PathDataPoint {
 
 ## External Dependencies
 
-### Core Framework Dependencies
-- **React Ecosystem**: React, React DOM, React Query for state management
-- **UI Components**: Comprehensive Radix UI component library
-- **Styling**: Tailwind CSS with class-variance-authority for component variants
-- **Database**: Drizzle ORM with Neon serverless PostgreSQL driver
-- **Validation**: Zod schema validation with Drizzle integration
+### Core Dependencies
+- **Python 3.6+**: Required for async/await support and modern Python features
+- **Tornado**: Lightweight web server framework (usually pre-installed on Pi)
+- **Standard Library**: Uses only Python built-in modules for CSV processing
 
-### Development Dependencies
-- **Build Tools**: Vite with React plugin and TypeScript support
-- **Code Quality**: TypeScript compiler with strict configuration
-- **Replit Integration**: Custom Vite plugins for Replit environment
+### Optional Dependencies
+- **None**: The application is designed to run with minimal dependencies
+- **Tornado Installation**: Automatically installed if not present via pip
 
-### Notable Integrations
-- **Wouter**: Lightweight client-side routing
-- **React Hook Form**: Form handling with Zod resolvers
-- **Date-fns**: Date manipulation utilities
-- **Lucide React**: Icon library for UI components
+### System Requirements
+- **Raspberry Pi**: Compatible with all models (Pi Zero to Pi 5)
+- **Python Version**: 3.6 or higher (standard on modern Pi images)
+- **Memory**: Minimal RAM usage, suitable for Pi Zero
+- **Storage**: Less than 1MB total application size
 
 ## Deployment Strategy
 
-### Development Environment
-- **Platform**: Replit with Node.js 20, Web, and PostgreSQL 16 modules
-- **Development Server**: Vite dev server on port 5000 with Express backend
-- **Hot Reload**: Automatic reloading for both client and server code
-- **Database**: PostgreSQL instance provisioned through Replit
-
-### Production Deployment Options
-
-#### Replit Production
-- **Build Process**: 
-  1. Vite builds client-side React application to `dist/public`
-  2. esbuild bundles server-side Express application to `dist/index.js`
-- **Deployment Target**: Autoscale deployment on Replit
-- **Port Configuration**: Internal port 5000 mapped to external port 80
-
-#### Raspberry Pi Deployment
-- **Supported Platforms**: Raspberry Pi 3B+ or newer recommended
-- **Node.js Version**: 18+ required for ARM compatibility
-- **Deployment Methods**:
-  1. **Direct Node.js**: Using systemd service for auto-start
-  2. **Docker**: Containerized deployment with docker-compose
-- **Installation**: Automated via `deploy-pi.sh` script
+### Raspberry Pi Deployment (Primary)
+- **Target Platform**: All Raspberry Pi models (Zero, 3B+, 4, 5)
+- **Python Version**: 3.6+ (standard on modern Pi images)
+- **Installation**: Automated via `deploy-pi-tornado.sh` script
 - **Network Access**: Accessible on local network via Pi's IP address
-- **Auto-Start**: Systemd service ensures application starts on boot
+- **Manual Start**: No auto-boot service, controlled via `trackeditor.sh`
+
+### Deployment Process
+1. **File Transfer**: Copy project files to Pi via SCP or direct download
+2. **Dependency Check**: Automatically installs Tornado if not present
+3. **Permission Setup**: Makes scripts executable
+4. **Server Start**: Launch via `./trackeditor.sh` command
+5. **Access**: Web interface available at `http://pi-ip:5000`
 
 ### Environment Configuration
-- **Database URL**: Required environment variable for PostgreSQL connection
-- **Session Management**: PostgreSQL-backed sessions with connect-pg-simple
-- **Static Assets**: Served through Express with Vite middleware in development
-- **Port Configuration**: Configurable via PORT environment variable (default: 5000)
-- **Host Binding**: Configurable via HOST environment variable (default: 0.0.0.0)
+- **Port Configuration**: Configurable via command line (default: 5000)
+- **Host Binding**: Configured for 0.0.0.0 (accessible from network)
+- **Static Assets**: Embedded in single HTML file for simplicity
+- **No Database**: File-based operation, no persistent storage needed
+- **Clean Shutdown**: Exit button and graceful termination support
 
 ## Changelog
 
@@ -154,13 +133,20 @@ Changelog:
   * Added deploy-pi-tornado.sh for Python-only deployment
   * Implemented all CSV upload, editing, and export features in Python
   * Tested Tornado server with health checks and graceful shutdown
-  * Created start-pi.sh as main entry point for Pi users
+  * Created trackeditor.sh as main entry point for Pi users
   * Optimized for all Pi models including Pi Zero
   * Made Tornado the recommended deployment option
+- July 3, 2025. Cleaned up project to use Tornado exclusively:
+  * Removed all Node.js dependencies and configuration files
+  * Removed Docker deployment files and scripts
+  * Updated .gitignore for Python-only project
+  * Simplified project structure to focus on Tornado server
+  * Renamed start script to trackeditor.sh per user request
 ```
 
 ## User Preferences
 
 ```
 Preferred communication style: Simple, everyday language.
+Deployment preference: Python-only using Tornado server (no Node.js dependencies).
 ```
