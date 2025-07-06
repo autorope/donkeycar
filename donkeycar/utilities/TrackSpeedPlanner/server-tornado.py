@@ -83,22 +83,49 @@ class CSVUploadHandler(tornado.web.RequestHandler):
     def parse_csv(self, content: str) -> List[PathDataPoint]:
         """Parse CSV content into PathDataPoint objects"""
         points = []
-        reader = csv.DictReader(io.StringIO(content))
+        lines = content.strip().split('\n')
         
-        for i, row in enumerate(reader):
-            try:
-                x = float(row.get('x', row.get('X', 0)))
-                y = float(row.get('y', row.get('Y', 0)))
-                speed = float(row.get('speed', row.get('Speed', 0.5)))
-                
-                # Ensure speed is within valid range
-                speed = max(0.1, min(1.0, speed))
-                
-                points.append(PathDataPoint(x, y, speed, i))
-                
-            except (ValueError, KeyError) as e:
-                print(f"Error parsing row {i}: {e}")
-                continue
+        # Check if first line looks like headers
+        first_line = lines[0].lower()
+        has_headers = any(col in first_line for col in ['x', 'y', 'speed', 'pos_x', 'pos_y'])
+        
+        if has_headers:
+            # Use DictReader for CSV with headers
+            reader = csv.DictReader(io.StringIO(content))
+            for i, row in enumerate(reader):
+                try:
+                    x = float(row.get('x', row.get('X', row.get('pos_x', row.get('pos_X', 0)))))
+                    y = float(row.get('y', row.get('Y', row.get('pos_y', row.get('pos_Y', 0)))))
+                    speed = float(row.get('speed', row.get('Speed', row.get('throttle', 0.5))))
+                    
+                    # Ensure speed is within valid range
+                    speed = max(0.1, min(1.0, speed))
+                    
+                    points.append(PathDataPoint(x, y, speed, i))
+                    
+                except (ValueError, KeyError) as e:
+                    print(f"Error parsing row {i}: {e}")
+                    continue
+        else:
+            # Parse as raw CSV values (x, y, speed)
+            for i, line in enumerate(lines):
+                if not line.strip():
+                    continue
+                try:
+                    values = [v.strip() for v in line.split(',')]
+                    if len(values) >= 2:
+                        x = float(values[0])
+                        y = float(values[1])
+                        speed = float(values[2]) if len(values) > 2 else 0.5
+                        
+                        # Ensure speed is within valid range
+                        speed = max(0.1, min(1.0, speed))
+                        
+                        points.append(PathDataPoint(x, y, speed, i))
+                        
+                except (ValueError, IndexError) as e:
+                    print(f"Error parsing line {i}: {e}")
+                    continue
         
         return points
 
@@ -156,6 +183,120 @@ class HealthHandler(tornado.web.RequestHandler):
     def get(self):
         self.write({'status': 'ok', 'server': 'tornado'})
 
+class FileListHandler(tornado.web.RequestHandler):
+    """List CSV files in the current directory"""
+    
+    def get(self):
+        try:
+            current_dir = Path(__file__).parent
+            csv_files = []
+            
+            # Get all CSV files in the current directory
+            for file_path in current_dir.glob("*.csv"):
+                csv_files.append({
+                    'name': file_path.name,
+                    'size': file_path.stat().st_size,
+                    'modified': file_path.stat().st_mtime
+                })
+            
+            # Sort by name
+            csv_files.sort(key=lambda x: x['name'])
+            
+            self.write({
+                'files': csv_files,
+                'directory': str(current_dir)
+            })
+            
+        except Exception as e:
+            self.set_status(500)
+            self.write({'error': str(e)})
+
+class ServerFileHandler(tornado.web.RequestHandler):
+    """Load CSV file from server directory"""
+    
+    def post(self):
+        try:
+            data = json.loads(self.request.body)
+            filename = data.get('filename', '')
+            
+            if not filename.endswith('.csv'):
+                self.set_status(400)
+                self.write({'error': 'Invalid file type'})
+                return
+            
+            current_dir = Path(__file__).parent
+            file_path = current_dir / filename
+            
+            if not file_path.exists() or not file_path.is_file():
+                self.set_status(404)
+                self.write({'error': 'File not found'})
+                return
+            
+            # Read and parse the CSV file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            path_data = self.parse_csv(content)
+            
+            self.write({
+                'filename': filename,
+                'data': [point.to_dict() for point in path_data],
+                'count': len(path_data)
+            })
+            
+        except Exception as e:
+            self.set_status(400)
+            self.write({'error': str(e)})
+    
+    def parse_csv(self, content: str) -> List[PathDataPoint]:
+        """Parse CSV content into PathDataPoint objects"""
+        points = []
+        lines = content.strip().split('\n')
+        
+        # Check if first line looks like headers
+        first_line = lines[0].lower()
+        has_headers = any(col in first_line for col in ['x', 'y', 'speed', 'pos_x', 'pos_y'])
+        
+        if has_headers:
+            # Use DictReader for CSV with headers
+            reader = csv.DictReader(io.StringIO(content))
+            for i, row in enumerate(reader):
+                try:
+                    x = float(row.get('x', row.get('X', row.get('pos_x', row.get('pos_X', 0)))))
+                    y = float(row.get('y', row.get('Y', row.get('pos_y', row.get('pos_Y', 0)))))
+                    speed = float(row.get('speed', row.get('Speed', row.get('throttle', 0.5))))
+                    
+                    # Ensure speed is within valid range
+                    speed = max(0.1, min(1.0, speed))
+                    
+                    points.append(PathDataPoint(x, y, speed, i))
+                    
+                except (ValueError, KeyError) as e:
+                    print(f"Error parsing row {i}: {e}")
+                    continue
+        else:
+            # Parse as raw CSV values (x, y, speed)
+            for i, line in enumerate(lines):
+                if not line.strip():
+                    continue
+                try:
+                    values = [v.strip() for v in line.split(',')]
+                    if len(values) >= 2:
+                        x = float(values[0])
+                        y = float(values[1])
+                        speed = float(values[2]) if len(values) > 2 else 0.5
+                        
+                        # Ensure speed is within valid range
+                        speed = max(0.1, min(1.0, speed))
+                        
+                        points.append(PathDataPoint(x, y, speed, i))
+                        
+                except (ValueError, IndexError) as e:
+                    print(f"Error parsing line {i}: {e}")
+                    continue
+        
+        return points
+
 def get_local_ip():
     """Get the local IP address of the Pi"""
     try:
@@ -182,6 +323,8 @@ def make_app():
         (r"/api/export", CSVExportHandler),
         (r"/api/shutdown", ShutdownHandler),
         (r"/api/health", HealthHandler),
+        (r"/api/files", FileListHandler),
+        (r"/api/loadfile", ServerFileHandler),
         (r"/static/(.*)", StaticFileHandler, {"path": str(static_path)}),
         (r"/(.*)", tornado.web.StaticFileHandler, {"path": str(static_path), "default_filename": "index.html"}),
     ], debug=options.debug)

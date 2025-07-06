@@ -237,14 +237,29 @@
 
         <div class="main-content">
             <div class="upload-section">
-                <h2>📁 Upload CSV File</h2>
-                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                    <div class="upload-text">
-                        <strong>Click here or drag CSV file</strong><br>
-                        to upload path data
-                    </div>
-                    <input type="file" id="fileInput" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                <h2>📁 Load CSV File</h2>
+                
+                <!-- Pi File Browser -->
+                <div style="margin-bottom: 15px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 10px;">Pi Directory Files:</h3>
+                    <select id="piFileSelect" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; margin-bottom: 10px;">
+                        <option value="">Select a CSV file from Pi...</option>
+                    </select>
+                    <button onclick="loadPiFile()" style="width: 100%; padding: 8px; background: #4299e1; color: white; border: none; border-radius: 4px; margin-bottom: 15px;">Load Selected File</button>
                 </div>
+                
+                <!-- Or upload from browser -->
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 10px;">Or Upload from Browser:</h3>
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-text">
+                            <strong>Click here or drag CSV file</strong><br>
+                            to upload path data
+                        </div>
+                        <input type="file" id="fileInput" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                    </div>
+                </div>
+                
                 <div id="fileInfo" class="file-info" style="display: none;"></div>
                 <button id="exportBtn" class="export-btn" onclick="exportCSV()" disabled>📥 Export Modified CSV</button>
             </div>
@@ -287,6 +302,9 @@
             // Resize canvas to fit container
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
+            
+            // Load Pi files list
+            loadPiFilesList();
         };
 
         function resizeCanvas() {
@@ -330,6 +348,65 @@
             }
         }
 
+        function loadPiFilesList() {
+            fetch('/api/files')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('piFileSelect');
+                select.innerHTML = '<option value="">Select a CSV file from Pi...</option>';
+                
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.name;
+                        option.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No CSV files found in Pi directory';
+                    select.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Pi files:', error);
+                const select = document.getElementById('piFileSelect');
+                select.innerHTML = '<option value="">Error loading files</option>';
+            });
+        }
+
+        function loadPiFile() {
+            const select = document.getElementById('piFileSelect');
+            const filename = select.value;
+            
+            if (!filename) {
+                alert('Please select a file from the list');
+                return;
+            }
+
+            fetch('/api/loadfile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: filename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                processLoadedData(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading file from Pi');
+            });
+        }
+
         function handleFile(file) {
             if (!file.name.toLowerCase().endsWith('.csv')) {
                 alert('Please select a CSV file');
@@ -350,18 +427,7 @@
                     return;
                 }
                 
-                pathData = data.data;
-                document.getElementById('fileInfo').style.display = 'block';
-                document.getElementById('fileInfo').innerHTML = 
-                    `<strong>File:</strong> ${data.filename}<br>
-                     <strong>Points:</strong> ${data.count}`;
-                
-                document.getElementById('exportBtn').disabled = false;
-                document.getElementById('canvasInfo').textContent = 
-                    `Loaded ${data.count} path points - Click on points to select and edit speed`;
-                
-                drawPath();
-                createSpeedControls();
+                processLoadedData(data);
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -369,22 +435,65 @@
             });
         }
 
+        function processLoadedData(data) {
+            pathData = data.data;
+            console.log('Loaded path data:', pathData); // Debug output
+            
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileInfo').innerHTML = 
+                `<strong>File:</strong> ${data.filename}<br>
+                 <strong>Points:</strong> ${data.count}`;
+            
+            document.getElementById('exportBtn').disabled = false;
+            document.getElementById('canvasInfo').textContent = 
+                `Loaded ${data.count} path points - Click on points to select and edit speed`;
+            
+            if (pathData.length > 0) {
+                console.log('First point:', pathData[0]); // Debug output
+                drawPath();
+                createSpeedControls();
+            } else {
+                console.log('No path data to display');
+            }
+        }
+
         function drawPath() {
-            if (!pathData.length) return;
+            if (!pathData.length) {
+                console.log('No path data to draw');
+                return;
+            }
+            
+            console.log('Drawing path with', pathData.length, 'points');
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             // Calculate bounds
             const bounds = calculateBounds();
+            console.log('Bounds:', bounds);
+            
             const padding = 40;
             
-            scale = Math.min(
-                (canvas.width - padding * 2) / (bounds.maxX - bounds.minX),
-                (canvas.height - padding * 2) / (bounds.maxY - bounds.minY)
-            );
+            // Handle case where all points are the same
+            const rangeX = bounds.maxX - bounds.minX;
+            const rangeY = bounds.maxY - bounds.minY;
             
-            offsetX = padding - bounds.minX * scale;
-            offsetY = padding - bounds.minY * scale;
+            if (rangeX === 0 && rangeY === 0) {
+                // Single point, center it
+                scale = 1;
+                offsetX = canvas.width / 2;
+                offsetY = canvas.height / 2;
+            } else {
+                scale = Math.min(
+                    rangeX > 0 ? (canvas.width - padding * 2) / rangeX : 1,
+                    rangeY > 0 ? (canvas.height - padding * 2) / rangeY : 1
+                );
+                
+                offsetX = padding - bounds.minX * scale + (canvas.width - padding * 2 - rangeX * scale) / 2;
+                offsetY = padding - bounds.minY * scale + (canvas.height - padding * 2 - rangeY * scale) / 2;
+            }
+            
+            console.log('Scale:', scale, 'Offset:', offsetX, offsetY);
             
             // Draw path lines
             ctx.strokeStyle = '#cbd5e0';
@@ -410,6 +519,10 @@
                 const x = point.x * scale + offsetX;
                 const y = canvas.height - (point.y * scale + offsetY);
                 
+                if (i === 0) {
+                    console.log('Drawing first point at:', x, y, 'from data:', point);
+                }
+                
                 // Color based on speed
                 const speedRatio = point.speed;
                 const red = Math.floor(255 * (1 - speedRatio));
@@ -425,6 +538,8 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
             }
+            
+            console.log('Finished drawing', pathData.length, 'points');
         }
 
         function calculateBounds() {
