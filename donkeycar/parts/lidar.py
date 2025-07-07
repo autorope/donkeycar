@@ -389,6 +389,41 @@ class YDLidar(object):
         self.lidar.StopScanning()
         self.lidar.Disconnect()
 
+class HokuyoLidar(object):
+    '''
+    Class for ethernet-based Hokuyo lidars (e.g. UST-10LX in F1Tenth)
+    '''
+    def __init__(self, max_dist):
+        '''
+        max_dist: maximum distance in mm (e.g. 20,000 for UST-20LX)
+        '''
+        from hokuyolx import HokuyoLX
+        self.laser = HokuyoLX()
+        self.DMAX = max_dist
+
+    def poll(self):
+        timestamp, scan = self.laser.get_filtered_dist(dmax=self.DMAX)
+
+        # shape (n, 2) --> list of (theta, r, _, _, _)
+        angles, distances = scan[:,0], scan[:,1]
+        angles = np.rad2deg(angles)
+        filler = np.zeros_like(angles) # for LidarPlot
+        self.scan = np.stack((distances, angles, filler, filler, filler), axis=-1)
+
+    def update(self):
+        self.poll()
+        time.sleep(0) # copied from RPLidar2 (release to other threads)
+
+    def run_threaded(self):
+        return self.scan
+
+    def run(self):
+        self.poll()
+        return self.scan
+
+    def shutdown(self):
+        self.laser.close()
+
 
 class LidarPlot(object):
     '''
@@ -643,7 +678,7 @@ def plot_polar_angle(draw_context, bounds, color, theta,
 class LidarPlot2(object):
     '''
     takes the lidar measurements as a list of (distance, angle) tuples
-    and plots them to a PIL image which it outputs
+    and plots them to a CV2 (numpy) image which it outputs
     
     resolution: dimensions of image in pixels as tuple (width, height)
     plot_type: PLOT_TYPE_CIRC or PLOT_TYPE_LINE
@@ -703,12 +738,19 @@ class LidarPlot2(object):
                          self.angle_direction, self.rotate_plot)
         
         # data points
+        if measurements:
+          plot_polar_points(
+              draw, bounds, self.mark_fn, self.point_color, self.mark_px,
+              [(distance, angle) for distance, angle, _, _, _ in measurements],
+              self.max_distance, self.angle_direction, self.rotate_plot)
+        
+        # data points
         plot_polar_points(
             draw, bounds, self.mark_fn, self.point_color, self.mark_px,
             [(distance, angle) for distance, angle, _, _, _ in measurements],
             self.max_distance, self.angle_direction, self.rotate_plot)
         
-        return self.frame
+        return np.asarray(self.frame) # convert to image
 
     def shutdown(self):
         pass
@@ -893,8 +935,8 @@ if __name__ == "__main__":
             img = plotter.run(measurements)
             
             # show the image in the window
-            cv2img = convert_from_image_to_cv2(img)
-            cv2.imshow("lidar", cv2img)
+            # cv2img = convert_from_image_to_cv2(img)
+            cv2.imshow("lidar", img)
             
             if not args.threaded:
                 key = cv2.waitKey(1) & 0xFF
