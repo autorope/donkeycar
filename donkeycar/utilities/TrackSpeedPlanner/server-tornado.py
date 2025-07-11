@@ -207,18 +207,19 @@ class CSVExportHandler(tornado.web.RequestHandler):
         return output.getvalue()
 
 class ShutdownHandler(tornado.web.RequestHandler):
-    """Handle graceful server shutdown"""
+    """Handle graceful script shutdown"""
     
     def post(self):
-        print("Shutdown requested via web interface")
-        self.write({'message': 'Server shutting down...'})
+        print("Script shutdown requested via web interface")
+        self.write({'message': 'Python script stopping...'})
         
-        # Schedule shutdown after response is sent
-        tornado.ioloop.IOLoop.current().call_later(1.0, self.shutdown_server)
+        # Schedule script exit after response is sent
+        tornado.ioloop.IOLoop.current().call_later(1.0, self.exit_script)
     
-    def shutdown_server(self):
-        print("Server shutting down gracefully")
-        tornado.ioloop.IOLoop.current().stop()
+    def exit_script(self):
+        print("Python script exiting gracefully")
+        import sys
+        sys.exit(0)
 
 class HealthHandler(tornado.web.RequestHandler):
     """Health check endpoint"""
@@ -399,3 +400,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

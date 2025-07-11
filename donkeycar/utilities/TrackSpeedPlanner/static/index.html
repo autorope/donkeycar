@@ -716,16 +716,16 @@
         }
 
         function exitApp() {
-            if (confirm('Are you sure you want to exit the application? This will stop the server.')) {
+            if (confirm('Are you sure you want to exit the application? This will stop the Python script.')) {
                 fetch('/api/shutdown', {
                     method: 'POST'
                 })
                 .then(() => {
-                    document.body.innerHTML = '<div style="text-align: center; padding: 100px; font-size: 1.5rem; color: #4a5568;"><h1>🛑 Server Stopped</h1><p>The application has been shut down.</p></div>';
+                    document.body.innerHTML = '<div style="text-align: center; padding: 100px; font-size: 1.5rem; color: #4a5568;"><h1>🛑 Script Stopped</h1><p>The Python script has been stopped. The Tornado server continues running.</p></div>';
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error shutting down server');
+                    alert('Error stopping Python script');
                 });
             }
         }
