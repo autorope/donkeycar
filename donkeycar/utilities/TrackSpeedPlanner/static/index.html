@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donkey Car Path Data Visualizer & Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .exit-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .exit-btn:hover {
+            background: #c53030;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr 280px;
+            gap: 20px;
+            height: calc(100vh - 140px);
+        }
+
+        .upload-section, .controls-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-section h2, .controls-section h2 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-text {
+            color: #718096;
+            margin-bottom: 10px;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .export-btn {
+            width: 100%;
+            background: #38a169;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.3s;
+        }
+
+        .export-btn:hover {
+            background: #2f855a;
+        }
+
+        .export-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #pathCanvas {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: white;
+            flex: 1;
+            cursor: crosshair;
+        }
+
+        .canvas-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            color: #4a5568;
+            text-align: center;
+        }
+
+        .controls-section {
+            overflow-y: auto;
+        }
+
+        .speed-control {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 5px;
+        }
+
+        .speed-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .speed-select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            background: white;
+        }
+
+        .selected-point {
+            background: #667eea !important;
+            color: white;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #a0aec0;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                height: auto;
+            }
+            
+            .canvas-container {
+                order: 2;
+                height: 400px;
+            }
+            
+            .upload-section {
+                order: 1;
+            }
+            
+            .controls-section {
+                order: 3;
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Donkey Car Path Data Visualizer & Editor</h1>
+            <button class="exit-btn" onclick="exitApp()">Exit</button>
+        </div>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <h2>📁 Load CSV File</h2>
+                
+                <!-- Pi File Browser -->
+                <div style="margin-bottom: 15px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 10px;">Pi Directory Files:</h3>
+                    <select id="piFileSelect" style="width: 100%; padding: 8px; border: 1px solid #cbd5e0; border-radius: 4px; margin-bottom: 10px;">
+                        <option value="">Select a CSV file from Pi...</option>
+                    </select>
+                    <button onclick="loadPiFile()" style="width: 100%; padding: 8px; background: #4299e1; color: white; border: none; border-radius: 4px; margin-bottom: 15px;">Load Selected File</button>
+                </div>
+                
+                <!-- Or upload from browser -->
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 10px;">Or Upload from Browser:</h3>
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <div class="upload-text">
+                            <strong>Click here or drag CSV file</strong><br>
+                            to upload path data
+                        </div>
+                        <input type="file" id="fileInput" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                    </div>
+                </div>
+                
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+                <button id="exportBtn" class="export-btn" onclick="saveCSV()" disabled>💾 Save</button>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="pathCanvas" width="800" height="600"></canvas>
+                <div id="canvasInfo" class="canvas-info">
+                    Upload a CSV file to visualize path data
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h2>🎛️ Speed Controls</h2>
+                <div id="speedControls" class="no-data">
+                    No path data loaded
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let pathData = [];
+        let selectedPointIndex = -1;
+        let currentFileName = null;
+        let fileSource = null; // 'pi' or 'upload'
+        let canvas, ctx;
+        let scale = 1;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        // Initialize canvas
+        window.onload = function() {
+            canvas = document.getElementById('pathCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set up drag and drop
+            setupDragAndDrop();
+            
+            // Set up canvas click handler
+            canvas.addEventListener('click', onCanvasClick);
+            
+            // Resize canvas to fit container
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // Load Pi files list
+            loadPiFilesList();
+        };
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width - 40; // Account for padding
+            canvas.height = rect.height - 80; // Account for padding and info
+            
+            if (pathData.length > 0) {
+                drawPath();
+            }
+        }
+
+        function setupDragAndDrop() {
+            const uploadArea = document.querySelector('.upload-area');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function loadPiFilesList() {
+            fetch('/api/files')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('piFileSelect');
+                select.innerHTML = '<option value="">Select a CSV file from Pi...</option>';
+                
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file.name;
+                        option.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No CSV files found in Pi directory';
+                    select.appendChild(option);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading Pi files:', error);
+                const select = document.getElementById('piFileSelect');
+                select.innerHTML = '<option value="">Error loading files</option>';
+            });
+        }
+
+        function loadPiFile() {
+            const select = document.getElementById('piFileSelect');
+            const filename = select.value;
+            
+            if (!filename) {
+                alert('Please select a file from the list');
+                return;
+            }
+
+            fetch('/api/loadfile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: filename })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                fileSource = 'pi';
+                processLoadedData(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error loading file from Pi');
+            });
+        }
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('Please select a CSV file');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+                
+                fileSource = 'upload';
+                processLoadedData(data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error uploading file');
+            });
+        }
+
+        function processLoadedData(data) {
+            pathData = data.data;
+            currentFileName = data.filename; // Track the loaded filename
+            console.log('Loaded path data:', pathData); // Debug output
+            
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileInfo').innerHTML = 
+                `<strong>File:</strong> ${data.filename}<br>
+                 <strong>Points:</strong> ${data.count}`;
+            
+            document.getElementById('exportBtn').disabled = false;
+            document.getElementById('canvasInfo').textContent = 
+                `Loaded ${data.count} path points - Click on points to select and edit speed`;
+            
+            if (pathData.length > 0) {
+                console.log('First point:', pathData[0]); // Debug output
+                drawPath();
+                createSpeedControls();
+            } else {
+                console.log('No path data to display');
+            }
+        }
+
+        function drawPath() {
+            if (!pathData.length) {
+                console.log('No path data to draw');
+                return;
+            }
+            
+            console.log('Drawing path with', pathData.length, 'points');
+            console.log('Canvas size:', canvas.width, 'x', canvas.height);
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate bounds
+            const bounds = calculateBounds();
+            console.log('Bounds:', bounds);
+            
+            const padding = 40;
+            
+            // Handle case where all points are the same
+            const rangeX = bounds.maxX - bounds.minX;
+            const rangeY = bounds.maxY - bounds.minY;
+            
+            if (rangeX === 0 && rangeY === 0) {
+                // Single point, center it
+                scale = 1;
+                offsetX = canvas.width / 2;
+                offsetY = canvas.height / 2;
+            } else {
+                scale = Math.min(
+                    rangeX > 0 ? (canvas.width - padding * 2) / rangeX : 1,
+                    rangeY > 0 ? (canvas.height - padding * 2) / rangeY : 1
+                );
+                
+                offsetX = padding - bounds.minX * scale + (canvas.width - padding * 2 - rangeX * scale) / 2;
+                offsetY = padding - bounds.minY * scale + (canvas.height - padding * 2 - rangeY * scale) / 2;
+            }
+            
+            console.log('Scale:', scale, 'Offset:', offsetX, offsetY);
+            
+            // Draw path lines
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            for (let i = 0; i < pathData.length; i++) {
+                const point = pathData[i];
+                const x = point.x * scale + offsetX;
+                const y = canvas.height - (point.y * scale + offsetY); // Flip Y
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            
+            // Draw points
+            for (let i = 0; i < pathData.length; i++) {
+                const point = pathData[i];
+                const x = point.x * scale + offsetX;
+                const y = canvas.height - (point.y * scale + offsetY);
+                
+                if (i === 0) {
+                    console.log('Drawing first point at:', x, y, 'from data:', point);
+                }
+                
+                // Color based on speed
+                const speedRatio = point.speed;
+                const red = Math.floor(255 * (1 - speedRatio));
+                const green = Math.floor(255 * speedRatio);
+                
+                ctx.fillStyle = i === selectedPointIndex ? '#667eea' : `rgb(${red}, ${green}, 0)`;
+                ctx.beginPath();
+                ctx.arc(x, y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                // Add white border for visibility
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            
+            console.log('Finished drawing', pathData.length, 'points');
+        }
+
+        function calculateBounds() {
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            for (const point of pathData) {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            }
+            
+            return { minX, maxX, minY, maxY };
+        }
+
+        function onCanvasClick(event) {
+            if (!pathData.length) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+            
+            // Find closest point
+            let closestIndex = -1;
+            let closestDistance = Infinity;
+            
+            for (let i = 0; i < pathData.length; i++) {
+                const point = pathData[i];
+                const x = point.x * scale + offsetX;
+                const y = canvas.height - (point.y * scale + offsetY);
+                
+                const distance = Math.sqrt((clickX - x) ** 2 + (clickY - y) ** 2);
+                if (distance < closestDistance && distance < 15) {
+                    closestDistance = distance;
+                    closestIndex = i;
+                }
+            }
+            
+            if (closestIndex !== -1) {
+                selectedPointIndex = closestIndex;
+                drawPath();
+                highlightSpeedControl(closestIndex);
+            }
+        }
+
+        function createSpeedControls() {
+            const container = document.getElementById('speedControls');
+            container.innerHTML = '';
+            
+            pathData.forEach((point, index) => {
+                const controlDiv = document.createElement('div');
+                controlDiv.className = 'speed-control';
+                controlDiv.id = `control-${index}`;
+                
+                const label = document.createElement('label');
+                label.textContent = `Point ${index + 1} (${point.x.toFixed(1)}, ${point.y.toFixed(1)})`;
+                
+                const select = document.createElement('select');
+                select.className = 'speed-select';
+                
+                // Create speed options
+                for (let speed = 0.1; speed <= 1.0; speed += 0.1) {
+                    const option = document.createElement('option');
+                    option.value = speed.toFixed(1);
+                    option.textContent = `Speed: ${speed.toFixed(1)}`;
+                    if (Math.abs(speed - point.speed) < 0.05) {
+                        option.selected = true;
+                    }
+                    select.appendChild(option);
+                }
+                
+                select.addEventListener('change', (e) => {
+                    const newSpeed = parseFloat(e.target.value);
+                    pathData[index].speed = newSpeed;
+                    drawPath();
+                });
+                
+                controlDiv.appendChild(label);
+                controlDiv.appendChild(select);
+                container.appendChild(controlDiv);
+            });
+        }
+
+        function highlightSpeedControl(index) {
+            // Remove previous highlights
+            document.querySelectorAll('.speed-control').forEach(control => {
+                control.classList.remove('selected-point');
+            });
+            
+            // Highlight selected control
+            const control = document.getElementById(`control-${index}`);
+            if (control) {
+                control.classList.add('selected-point');
+                control.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function saveCSV() {
+            if (!pathData.length) {
+                alert('No data to save');
+                return;
+            }
+            
+            if (fileSource === 'pi') {
+                // Save back to Pi directory
+                saveToPi();
+            } else {
+                // Download to user's local machine
+                downloadToLocal();
+            }
+        }
+        
+        function saveToPi() {
+            const saveData = {
+                pathData: pathData,
+                filename: currentFileName
+            };
+            
+            fetch('/api/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(saveData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error saving file: ' + data.error);
+                } else {
+                    alert('File saved successfully to Pi directory!');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving file to Pi');
+            });
+        }
+        
+        function downloadToLocal() {
+            const exportData = {
+                pathData: pathData,
+                filename: currentFileName || 'modified_path_data.csv'
+            };
+            
+            fetch('/api/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(exportData)
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentFileName || 'modified_path_data.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error downloading file');
+            });
+        }
+
+        function exitApp() {
+            if (confirm('Are you sure you want to exit the application? This will stop the Python script.')) {
+                fetch('/api/shutdown', {
+                    method: 'POST'
+                })
+                .then(() => {
+                    document.body.innerHTML = '<div style="text-align: center; padding: 100px; font-size: 1.5rem; color: #4a5568;"><h1>🛑 Script Stopped</h1><p>The Python script has been stopped. The Tornado server continues running.</p></div>';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error stopping Python script');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
