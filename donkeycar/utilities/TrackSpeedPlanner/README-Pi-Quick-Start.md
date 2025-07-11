@@ -7,23 +7,16 @@
 scp -r . pi@your-pi-ip:/home/pi/path-editor/
 ```
 
-### 2. Deploy
+### 2. Start Server
 ```bash
-ssh pi@your-pi-ip
-cd /home/pi/path-editor
-chmod +x deploy-pi-tornado.sh
-./deploy-pi-tornado.sh
-```
-
-### 3. Start Server
-```bash
+chmod +x trackeditor.sh
 ./trackeditor.sh
 ```
 
-### 4. Access
+### 3. Access
 Open browser: `http://your-pi-ip:5000`
 
-### 5. Stop Server
+### 4. Stop Server
 - Use Exit button in web interface
 - Or press Ctrl+C in terminal
 
