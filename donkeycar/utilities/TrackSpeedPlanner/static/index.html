@@ -261,7 +261,7 @@
                 </div>
                 
                 <div id="fileInfo" class="file-info" style="display: none;"></div>
-                <button id="exportBtn" class="export-btn" onclick="exportCSV()" disabled>📥 Export Modified CSV</button>
+                <button id="exportBtn" class="export-btn" onclick="saveCSV()" disabled>💾 Save</button>
             </div>
 
             <div class="canvas-container">
@@ -283,6 +283,8 @@
     <script>
         let pathData = [];
         let selectedPointIndex = -1;
+        let currentFileName = null;
+        let fileSource = null; // 'pi' or 'upload'
         let canvas, ctx;
         let scale = 1;
         let offsetX = 0;
@@ -399,6 +401,7 @@
                     return;
                 }
                 
+                fileSource = 'pi';
                 processLoadedData(data);
             })
             .catch(error => {
@@ -427,6 +430,7 @@
                     return;
                 }
                 
+                fileSource = 'upload';
                 processLoadedData(data);
             })
             .catch(error => {
@@ -437,6 +441,7 @@
 
         function processLoadedData(data) {
             pathData = data.data;
+            currentFileName = data.filename; // Track the loaded filename
             console.log('Loaded path data:', pathData); // Debug output
             
             document.getElementById('fileInfo').style.display = 'block';
@@ -638,15 +643,52 @@
             }
         }
 
-        function exportCSV() {
+        function saveCSV() {
             if (!pathData.length) {
-                alert('No data to export');
+                alert('No data to save');
                 return;
             }
             
+            if (fileSource === 'pi') {
+                // Save back to Pi directory
+                saveToPi();
+            } else {
+                // Download to user's local machine
+                downloadToLocal();
+            }
+        }
+        
+        function saveToPi() {
+            const saveData = {
+                pathData: pathData,
+                filename: currentFileName
+            };
+            
+            fetch('/api/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(saveData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert('Error saving file: ' + data.error);
+                } else {
+                    alert('File saved successfully to Pi directory!');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving file to Pi');
+            });
+        }
+        
+        function downloadToLocal() {
             const exportData = {
                 pathData: pathData,
-                filename: 'modified_path_data.csv'
+                filename: currentFileName || 'modified_path_data.csv'
             };
             
             fetch('/api/export', {
@@ -661,7 +703,7 @@
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'modified_path_data.csv';
+                a.download = currentFileName || 'modified_path_data.csv';
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -669,7 +711,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error exporting file');
+                alert('Error downloading file');
             });
         }
 

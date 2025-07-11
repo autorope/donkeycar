@@ -129,6 +129,49 @@ class CSVUploadHandler(tornado.web.RequestHandler):
         
         return points
 
+class CSVSaveHandler(tornado.web.RequestHandler):
+    """Handle saving CSV files back to Pi directory"""
+    
+    def post(self):
+        try:
+            data = json.loads(self.request.body)
+            path_data = data.get('pathData', [])
+            filename = data.get('filename')
+            
+            if not path_data:
+                self.set_status(400)
+                self.write({'error': 'No path data provided'})
+                return
+                
+            if not filename:
+                self.set_status(400)
+                self.write({'error': 'No filename provided'})
+                return
+            
+            # Generate CSV content
+            csv_content = self.generate_csv(path_data)
+            
+            # Save to Pi directory
+            file_path = os.path.join(os.getcwd(), filename)
+            with open(file_path, 'w', newline='') as f:
+                f.write(csv_content)
+            
+            self.write({'success': True, 'message': f'File saved to {filename}'})
+            
+        except Exception as e:
+            self.set_status(400)
+            self.write({'error': str(e)})
+    
+    def generate_csv(self, path_data: List[Dict]) -> str:
+        """Generate CSV content from path data"""
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        for point in path_data:
+            writer.writerow([point['x'], point['y'], point['speed']])
+        
+        return output.getvalue()
+
 class CSVExportHandler(tornado.web.RequestHandler):
     """Handle CSV export functionality"""
     
@@ -320,6 +363,7 @@ def make_app():
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/api/upload", CSVUploadHandler),
+        (r"/api/save", CSVSaveHandler),
         (r"/api/export", CSVExportHandler),
         (r"/api/shutdown", ShutdownHandler),
         (r"/api/health", HealthHandler),
