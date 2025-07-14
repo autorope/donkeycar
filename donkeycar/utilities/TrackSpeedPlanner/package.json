@@ -1,0 +1,1 @@
+{"name": "tornado-server", "scripts": {"dev": "./start.sh"}}
