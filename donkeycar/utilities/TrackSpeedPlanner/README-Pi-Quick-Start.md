@@ -9,8 +9,7 @@ scp -r . pi@your-pi-ip:/home/pi/path-editor/
 
 ### 2. Start Server
 ```bash
-chmod +x trackeditor.sh
-./trackeditor.sh
+python trackedtor.py
 ```
 
 ### 3. Access
