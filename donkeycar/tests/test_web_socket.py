@@ -31,6 +31,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.left_pulse = None
+        mock.right_pulse = None
         self.app.drive_train = dict()
         self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "I2C_SERVO"
@@ -40,7 +42,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         yield ws_client.close()
         sleep(SLEEP)
         assert self.app.drive_train['steering'].left_pulse == 444
-        assert isinstance(self.app.drive_train['steering'].right_pulse, Mock)
+        assert self.app.drive_train['steering'].right_pulse is None
 
     @tornado.testing.gen_test
     def test_calibrate_servo_esc_1a(self):
@@ -48,6 +50,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.left_pulse = None
+        mock.right_pulse = None
         self.app.drive_train = dict()
         self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "PWM_STEERING_THROTTLE"
@@ -57,7 +61,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         yield ws_client.close()
         sleep(SLEEP)
         assert self.app.drive_train['steering'].left_pulse == 444
-        assert isinstance(self.app.drive_train['steering'].right_pulse, Mock)
+        assert self.app.drive_train['steering'].right_pulse is None
 
     @tornado.testing.gen_test
     def test_calibrate_servo_esc_2b(self):
@@ -65,6 +69,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.left_pulse = None
+        mock.right_pulse = None
         self.app.drive_train = dict()
         self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "I2C_SERVO"
@@ -74,7 +80,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         yield ws_client.close()
         sleep(SLEEP)
         assert self.app.drive_train['steering'].right_pulse == 555
-        assert isinstance(self.app.drive_train['steering'].left_pulse, Mock)
+        assert self.app.drive_train['steering'].left_pulse is None
 
     @tornado.testing.gen_test
     def test_calibrate_servo_esc_2a(self):
@@ -82,6 +88,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.left_pulse = None
+        mock.right_pulse = None
         self.app.drive_train = dict()
         self.app.drive_train['steering'] = mock
         self.app.drive_train_type = "PWM_STEERING_THROTTLE"
@@ -91,7 +99,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         yield ws_client.close()
         sleep(SLEEP)
         assert self.app.drive_train['steering'].right_pulse == 555
-        assert isinstance(self.app.drive_train['steering'].left_pulse, Mock)
+        assert self.app.drive_train['steering'].left_pulse is None
 
     @tornado.testing.gen_test
     def test_calibrate_servo_esc_3b(self):
@@ -99,6 +107,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.max_pulse = None
+        mock.min_pulse = None
         self.app.drive_train = dict()
         self.app.drive_train['throttle'] = mock
         self.app.drive_train_type = "I2C_SERVO"
@@ -108,7 +118,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         yield ws_client.close()
         sleep(SLEEP)
         assert self.app.drive_train['throttle'].max_pulse == 666
-        assert isinstance(self.app.drive_train['throttle'].min_pulse, Mock)
+        assert self.app.drive_train['throttle'].min_pulse is None
 
     @tornado.testing.gen_test
     def test_calibrate_servo_esc_3a(self):
@@ -116,6 +126,8 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.max_pulse = None
+        mock.min_pulse = None
         self.app.drive_train = dict()
         self.app.drive_train['throttle'] = mock
         self.app.drive_train_type = "PWM_STEERING_THROTTLE"
@@ -125,7 +137,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
         yield ws_client.close()
         sleep(SLEEP)
         assert self.app.drive_train['throttle'].max_pulse == 666
-        assert isinstance(self.app.drive_train['throttle'].min_pulse, Mock)
+        assert self.app.drive_train['throttle'].min_pulse is None
 
     @tornado.testing.gen_test
     def test_calibrate_mm1(self):
@@ -133,6 +145,7 @@ class WebSocketCalibrateTest(testing.AsyncHTTPTestCase):
 
         # Now we can run a test on the WebSocket.
         mock = Mock()
+        mock.STEERING_MID = None
         self.app.drive_train = mock
         self.app.drive_train_type = "MM1"
         data = {"config": {"MM1_STEERING_MID": 1234}}
