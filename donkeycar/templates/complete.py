@@ -429,6 +429,34 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         V.add(ThrottleFilter(), 
               inputs=['pilot/throttle'],
               outputs=['pilot/throttle'])
+        
+              
+    # Stop at a stop sign and pause for n seconds then proceed
+    elif cfg.OBJECT_DETECTOR:
+        logging.info(f"OBJECT_DETECTOR = {cfg.OBJECT_DETECTOR}")
+
+        from donkeycar.parts.object_detector.detector_manager import DetectorManager
+        dm = DetectorManager(od_model_path = os.path.join(cfg.CAR_PATH, cfg.OD_MODEL_NAME),
+                              score = cfg.OD_SCORE,
+                              image_width = cfg.IMAGE_W,
+                              run_hz = cfg.OD_RUN_HZ,
+                              vehicle_hz = cfg.DRIVE_LOOP_HZ,
+                              show_bounding_box = cfg.OBJECT_DETECTOR_SHOW_BOUNDING_BOX)
+        if cfg.OD_ACTION_DEMO:
+            from donkeycar.parts.object_detector.action_demo import ActionDemo
+            action = ActionDemo(od_label=cfg.OD_ACTION_DEMO_LABEL)
+            dm.addAction(action)
+
+        if cfg.OD_ACTION_STOP_AND_GO:
+            from donkeycar.parts.object_detector.action_stop_and_go import ActionStopAndGo
+            action = ActionStopAndGo(od_label=cfg.OD_ACTION_STOP_AND_GO_LABEL,
+                                     pause_time = cfg.OD_ACTION_STOP_AND_GO_PAUSE_TIME)
+            dm.addAction(action)
+
+        V.add(dm,
+              inputs=['pilot/angle', 'pilot/throttle', 'cam/image_array'],
+              outputs=['pilot/angle', 'pilot/throttle', 'cam/image_array'],
+              run_condition="run_pilot")
 
     #
     # to give the car a boost when starting ai mode in a race.
