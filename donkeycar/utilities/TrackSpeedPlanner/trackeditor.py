@@ -385,7 +385,7 @@ def main():
     
     # Create and start the application
     app = make_app()
-    app.listen(options.port, address="127.0.0.1")
+    app.listen(options.port, address="0.0.0.0")
     
     ip = get_local_ip()
     print(f"🚀 Donkey Car Path Editor (Tornado) starting...")
