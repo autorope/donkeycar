@@ -43,6 +43,7 @@ class MainHandler(tornado.web.RequestHandler):
     """Serve the main HTML page"""
     
     def get(self):
+        print("Serving main page")
         self.render("static/index.html")
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
@@ -362,7 +363,6 @@ def make_app():
     static_path = Path(__file__).parent / "static"
     
     return tornado.web.Application([
-        (r"/", MainHandler),
         (r"/api/upload", CSVUploadHandler),
         (r"/api/save", CSVSaveHandler),
         (r"/api/export", CSVExportHandler),
@@ -371,6 +371,7 @@ def make_app():
         (r"/api/files", FileListHandler),
         (r"/api/loadfile", ServerFileHandler),
         (r"/static/(.*)", StaticFileHandler, {"path": str(static_path)}),
+        (r"/", MainHandler),
         (r"/(.*)", tornado.web.StaticFileHandler, {"path": str(static_path), "default_filename": "index.html"}),
     ], debug=options.debug)
 
