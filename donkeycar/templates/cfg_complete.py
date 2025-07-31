@@ -25,7 +25,7 @@ DRIVE_LOOP_HZ = 20      # the vehicle loop will pause if faster than this speed.
 MAX_LOOPS = None        # the vehicle loop can abort after this many iterations, when given a positive integer.
 
 #CAMERA
-CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|MOCK|IMAGE_LIST)
+CAMERA_TYPE = "PICAM"   # (PICAM|WEBCAM|CVCAM|CSIC|V4L|D435|OAKD|MOCK|IMAGE_LIST)
 IMAGE_W = 160
 IMAGE_H = 120
 IMAGE_DEPTH = 3         # default RGB=3, make 1 for mono
@@ -749,6 +749,10 @@ REALSENSE_D435_RGB = True       # True to capture RGB image
 REALSENSE_D435_DEPTH = True     # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
+
+OAKD_RGB = True       # True to capture RGB image
+OAKD_DEPTH = True     # True to capture depth as image array
+OAKD_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
 # Stop Sign Detector
 STOP_SIGN_DETECTOR = False
