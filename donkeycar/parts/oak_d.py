@@ -56,7 +56,7 @@ class OakD(object):
         self.height = height
 
         # TODO: Accommodate using device native resolutions to avoid resizing.
-        self.resize = (width != WIDTH) or (height != height)
+        self.resize = (width != WIDTH) or (height != HEIGHT)
         if self.resize:
             print(
                 f"The output images will be resized from {(WIDTH, HEIGHT)} to {(self.width, self.height)} using OpenCV. Device resolution in use is 640x480."
