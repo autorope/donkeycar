@@ -819,7 +819,6 @@ if __name__ == "__main__":
     from threading import Thread
     
     def convert_from_image_to_cv2(img: Image) -> np.ndarray:
-        # return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
         return np.asarray(img)
     
     # parse arguments
@@ -935,7 +934,6 @@ if __name__ == "__main__":
             img = plotter.run(measurements)
             
             # show the image in the window
-            # cv2img = convert_from_image_to_cv2(img)
             cv2.imshow("lidar", img)
             
             if not args.threaded:
