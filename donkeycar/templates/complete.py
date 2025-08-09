@@ -504,6 +504,10 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         inputs += ['cam/depth_array']
         types += ['gray16_array']
 
+    if cfg.CAMERA_TYPE == "OAKD" and cfg.OAKD_DEPTH:
+        inputs += ['cam/depth_array']
+        types += ['gray16_array']
+
     if cfg.HAVE_IMU or (cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_IMU):
         inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
             'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
@@ -894,6 +898,16 @@ def add_camera(V, cfg, camera_type):
         )
         V.add(cam, inputs=['lidar/dist_scan'],
               outputs=['cam/image_array'],
+              threaded=True)
+        
+    elif cfg.CAMERA_TYPE == "OAKD":
+        from donkeycar.parts.oak_d import OakD
+        cam = OakD(
+            enable_rgb=cfg.OAKD_RGB,
+            enable_depth=cfg.OAKD_DEPTH,
+            device_id=cfg.OAKD_ID)
+        V.add(cam, inputs=[],
+              outputs=['cam/image_array', 'cam/depth_array'],
               threaded=True)
 
     else:

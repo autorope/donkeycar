@@ -274,6 +274,10 @@ REALSENSE_D435_DEPTH = True     # True to capture depth as image array
 REALSENSE_D435_IMU = False      # True to capture IMU data (D435i only)
 REALSENSE_D435_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
 
+OAKD_RGB = True       # True to capture RGB image
+OAKD_DEPTH = True     # True to capture depth as image array
+OAKD_ID = None        # serial number of camera or None if you only have one camera (it will autodetect)
+
 # Stop Sign Detector
 STOP_SIGN_DETECTOR = False
 STOP_SIGN_MIN_SCORE = 0.2
