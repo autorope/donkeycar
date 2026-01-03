@@ -487,9 +487,10 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     create a Keras model and return it.
     '''
     normalized_type = (model_type or cfg.DEFAULT_MODEL_TYPE).strip().lower()
-    logger.info(f'get_model_by_type: model type is: {normalized_type}')
+    clean_type = normalized_type.replace('-', '_')
+    logger.info(f'get_model_by_type: model type is: {clean_type}')
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
-    if normalized_type.startswith('tflite'):
+    if clean_type.startswith('tflite'):
         from donkeycar.parts.interpreter import TfLite
         from donkeycar.parts.litert import (
             LiteRTBehavioral,
@@ -504,7 +505,7 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         )
 
         interpreter = TfLite()
-        used_model_type = normalized_type.replace('tflite_', '')
+        used_model_type = clean_type.replace('tflite_', '')
         used_model_type = EqMemorizedString(used_model_type)
         if used_model_type == "linear":
             return LiteRTLinear(interpreter=interpreter, input_shape=input_shape)
@@ -560,18 +561,18 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
         from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
             FastAIInterpreter
 
-        if 'tensorrt_' in normalized_type:
+        if 'tensorrt_' in clean_type:
             interpreter = TensorRT()
-            used_model_type = normalized_type.replace('tensorrt_', '')
-        elif 'fastai_' in normalized_type:
+            used_model_type = clean_type.replace('tensorrt_', '')
+        elif 'fastai_' in clean_type:
             interpreter = FastAIInterpreter()
-            used_model_type = normalized_type.replace('fastai_', '')
+            used_model_type = clean_type.replace('fastai_', '')
             if used_model_type == "linear":
                 from donkeycar.parts.fastai import FastAILinear
                 return FastAILinear(interpreter=interpreter, input_shape=input_shape)
         else:
             interpreter = KerasInterpreter()
-            used_model_type = normalized_type
+            used_model_type = clean_type
 
     used_model_type = EqMemorizedString(used_model_type)
     if used_model_type == "linear":
