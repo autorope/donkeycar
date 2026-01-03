@@ -486,31 +486,93 @@ def get_model_by_type(model_type: str, cfg: 'Config') -> Union['KerasPilot', 'Fa
     given the string model_type and the configuration settings in cfg
     create a Keras model and return it.
     '''
-    from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
-        KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
-        KerasLSTM, Keras3D_CNN
-    from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
-        FastAIInterpreter
-
     if model_type is None:
         model_type = cfg.DEFAULT_MODEL_TYPE
     logger.info(f'get_model_by_type: model type is: {model_type}')
     input_shape = (cfg.IMAGE_H, cfg.IMAGE_W, cfg.IMAGE_DEPTH)
     if 'tflite_' in model_type:
+        from donkeycar.parts.interpreter import TfLite
+        from donkeycar.parts.litert import (
+            LiteRTBehavioral,
+            LiteRTCategorical,
+            LiteRTIMU,
+            LiteRTInferred,
+            LiteRTLinear,
+            LiteRTLocalizer,
+            LiteRTMemory,
+            LiteRTLSTM,
+            LiteRT3D_CNN,
+        )
+
         interpreter = TfLite()
         used_model_type = model_type.replace('tflite_', '')
-    elif 'tensorrt_' in model_type:
-        interpreter = TensorRT()
-        used_model_type = model_type.replace('tensorrt_', '')
-    elif 'fastai_' in model_type:
-        interpreter = FastAIInterpreter()
-        used_model_type = model_type.replace('fastai_', '')
+        used_model_type = EqMemorizedString(used_model_type)
         if used_model_type == "linear":
-            from donkeycar.parts.fastai import FastAILinear
-            return FastAILinear(interpreter=interpreter, input_shape=input_shape)
+            return LiteRTLinear(interpreter=interpreter, input_shape=input_shape)
+        elif used_model_type == "categorical":
+            return LiteRTCategorical(
+                interpreter=interpreter,
+                input_shape=input_shape,
+                throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE)
+        elif used_model_type == 'inferred':
+            return LiteRTInferred(interpreter=interpreter, input_shape=input_shape)
+        elif used_model_type == "imu":
+            return LiteRTIMU(interpreter=interpreter, input_shape=input_shape)
+        elif used_model_type == "memory":
+            mem_length = getattr(cfg, 'SEQUENCE_LENGTH', 3)
+            mem_depth = getattr(cfg, 'MEM_DEPTH', 0)
+            mem_start_speed = getattr(cfg, 'MEM_START_SPEED', 0.0)
+            return LiteRTMemory(
+                interpreter=interpreter,
+                input_shape=input_shape,
+                mem_length=mem_length,
+                mem_depth=mem_depth,
+                mem_start_speed=mem_start_speed)
+        elif used_model_type == "behavior":
+            return LiteRTBehavioral(
+                interpreter=interpreter,
+                input_shape=input_shape,
+                throttle_range=cfg.MODEL_CATEGORICAL_MAX_THROTTLE_RANGE,
+                num_behavior_inputs=len(cfg.BEHAVIOR_LIST))
+        elif used_model_type == 'localizer':
+            return LiteRTLocalizer(
+                interpreter=interpreter,
+                input_shape=input_shape,
+                num_locations=cfg.NUM_LOCATIONS)
+        elif used_model_type == 'rnn':
+            return LiteRTLSTM(
+                interpreter=interpreter,
+                input_shape=input_shape,
+                seq_length=cfg.SEQUENCE_LENGTH)
+        elif used_model_type == '3d':
+            return LiteRT3D_CNN(
+                interpreter=interpreter,
+                input_shape=input_shape,
+                seq_length=cfg.SEQUENCE_LENGTH)
+        else:
+            known = [k + u for k in ('', 'tflite_', 'tensorrt_')
+                     for u in used_model_type.mem]
+            raise ValueError(f"Unknown model type {model_type}, supported types are"
+                             f" { ', '.join(known)}")
     else:
-        interpreter = KerasInterpreter()
-        used_model_type = model_type
+        from donkeycar.parts.keras import KerasCategorical, KerasLinear, \
+            KerasInferred, KerasIMU, KerasMemory, KerasBehavioral, KerasLocalizer, \
+            KerasLSTM, Keras3D_CNN
+        from donkeycar.parts.interpreter import KerasInterpreter, TfLite, TensorRT, \
+            FastAIInterpreter
+
+        if 'tensorrt_' in model_type:
+            interpreter = TensorRT()
+            used_model_type = model_type.replace('tensorrt_', '')
+        elif 'fastai_' in model_type:
+            interpreter = FastAIInterpreter()
+            used_model_type = model_type.replace('fastai_', '')
+            if used_model_type == "linear":
+                from donkeycar.parts.fastai import FastAILinear
+                return FastAILinear(interpreter=interpreter, input_shape=input_shape)
+        else:
+            interpreter = KerasInterpreter()
+            used_model_type = model_type
 
     used_model_type = EqMemorizedString(used_model_type)
     if used_model_type == "linear":

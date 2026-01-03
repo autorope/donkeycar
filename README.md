@@ -22,6 +22,9 @@ Donkeycar is minimalist and modular self driving library for Python. It is devel
 * [Build instructions and Software documentation](http://docs.donkeycar.com)
 * [Discord / Chat](https://discord.gg/PN6kFeA)
 
+### Installation targets
+For Raspberry Pi inference, install the LiteRT-focused extras with `pip install "donkeycar[pi]"`, which pulls in `tflite-runtime` for running models on-device. Desktop training and conversion continue to use full TensorFlow via the `pc` and `macos` extras, so pick the extra that matches your target platform.
+
 ![donkeycar](https://github.com/autorope/donkeydocs/blob/master/docs/assets/build_hardware/donkey2.png)
 
 ### Use Donkeycar if you want to:
