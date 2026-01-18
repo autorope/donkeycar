@@ -35,7 +35,7 @@ class PiCamera(BaseCamera):
         self.camera = Picamera2()
         config = self.camera.create_preview_configuration(
             config_dict, transform=transform)
-        self.camera.align_configuration(config)
+        # self.camera.align_configuration(config)   # this created issues with the libcamera2 library on the Pi5, which automatically changes the resolution to 128x120 in an attempt to align with native sensor resolution
         self.camera.configure(config)
         # try min / max frame rate as 0.1 / 1 ms (it will be slower though)
         self.camera.set_controls({"FrameDurationLimits": (100, 1000)})
