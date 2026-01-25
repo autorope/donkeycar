@@ -1,79 +1,42 @@
-from __future__ import annotations
-
 import os
 from abc import ABC, abstractmethod
 import logging
 import numpy as np
-from typing import Union, Sequence, List, Optional
+from typing import Union, Sequence, List
 
-tf = None
-keras = None
-tag_constants = None
-signature_constants = None
-trt = None
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+    from tensorflow.python.saved_model import tag_constants, signature_constants
+    from tensorflow.python.compiler.tensorrt import trt_convert as trt
+except ImportError:
+    tf = None
+    keras = None
+    tag_constants = None
+    signature_constants = None
+    trt = None
 
 logger = logging.getLogger(__name__)
 
 
-def _ensure_tensorflow():
-    """
-    Lazily import TensorFlow and related modules. Raise ImportError with a
-    helpful message when TensorFlow is unavailable so LiteRT-only
-    environments can continue running.
-    """
-    global tf, keras, tag_constants, signature_constants, trt
-    if tf is not None:
-        return
+def get_tflite_interpreter():
+    """Get TFLite Interpreter from tflite-runtime or full TensorFlow."""
     try:
-        import tensorflow as _tf  # type: ignore
-        from tensorflow import keras as _keras  # type: ignore
-        from tensorflow.python.saved_model import (  # type: ignore
-            tag_constants as _tag_constants,
-            signature_constants as _signature_constants,
-        )
-        from tensorflow.python.compiler.tensorrt import (  # type: ignore
-            trt_convert as _trt,
-        )
-    except ImportError as exc:
-        raise ImportError(
-            "TensorFlow is required for this functionality. "
-            "Install the desktop extras (e.g. [pc] or [macos]) to enable "
-            "training and conversion utilities."
-        ) from exc
-
-    tf = _tf
-    keras = _keras
-    tag_constants = _tag_constants
-    signature_constants = _signature_constants
-    trt = _trt
-
-
-def _get_tflite_interpreter() -> Optional[type]:
-    """
-    Prefer the tflite_runtime interpreter on LiteRT-only systems and fall
-    back to the TensorFlow Lite interpreter when TensorFlow is available.
-    """
-    try:
-        from tflite_runtime.interpreter import Interpreter as TFLiteInterpreter
-
-        return TFLiteInterpreter
+        from tflite_runtime.interpreter import Interpreter
+        return Interpreter
     except ImportError:
         pass
-
     try:
-        _ensure_tensorflow()
+        from ai_edge_litert.interpreter import Interpreter
+        return Interpreter
     except ImportError:
-        return None
-
-    return tf.lite.Interpreter
+        pass
+    if tf is not None:
+        return tf.lite.Interpreter
+    raise ImportError("No TFLite runtime found. Install tflite-runtime or tensorflow.")
 
 
 def has_trt_support():
-    try:
-        _ensure_tensorflow()
-    except ImportError as e:
-        logger.warning(e)
-        return False
     try:
         converter = trt.TrtGraphConverterV2()
         return True
@@ -83,7 +46,6 @@ def has_trt_support():
 
 
 def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
-    _ensure_tensorflow()
     logger.info(f'Convert model {in_filename} to TFLite {out_filename}')
     model = tf.keras.models.load_model(in_filename, compile=False)
     keras_to_tflite(model, out_filename, data_gen)
@@ -91,7 +53,6 @@ def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
 
 
 def keras_to_tflite(model, out_filename, data_gen=None):
-    _ensure_tensorflow()
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
                                            tf.lite.OpsSet.SELECT_TF_OPS]
@@ -123,7 +84,6 @@ def saved_model_to_tensor_rt(saved_path: str, tensor_rt_path: str) -> bool:
     """ Converts TF SavedModel format into TensorRT for cuda. Note,
         this works also without cuda as all GPU specific magic is handled
         within TF now. """
-    _ensure_tensorflow()
     logger.info(f'Converting SavedModel {saved_path} to TensorRT'
                 f' {tensor_rt_path}')
     try:
@@ -155,14 +115,14 @@ class Interpreter(ABC):
         """ Some interpreters will need the model"""
         pass
 
-    def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
+    def set_optimizer(self, optimizer) -> None:
         pass
 
     def compile(self, **kwargs):
         raise NotImplementedError('Requires implementation')
 
     @abstractmethod
-    def get_input_shape(self, input_name) -> tf.TensorShape:
+    def get_input_shape(self, input_name):
         pass
 
     def predict(self, img_arr: np.ndarray, *other_arr: np.ndarray) \
@@ -190,9 +150,8 @@ class Interpreter(ABC):
 class KerasInterpreter(Interpreter):
 
     def __init__(self):
-        _ensure_tensorflow()
         super().__init__()
-        self.model: tf.keras.Model = None
+        self.model = None
 
     def set_model(self, pilot: 'KerasPilot') -> None:
         self.model = pilot.create_model()
@@ -211,10 +170,10 @@ class KerasInterpreter(Interpreter):
         self.shapes = (dict(zip(self.input_keys, input_shape)),
                        dict(zip(self.output_keys, output_shape)))
 
-    def set_optimizer(self, optimizer: tf.keras.optimizers.Optimizer) -> None:
+    def set_optimizer(self, optimizer) -> None:
         self.model.optimizer = optimizer
 
-    def get_input_shape(self, input_name) -> tf.TensorShape:
+    def get_input_shape(self, input_name):
         assert self.model, 'Model not set'
         return self.shapes[0][input_name]
 
@@ -327,14 +286,9 @@ class TfLite(Interpreter):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'
         logger.info(f'Loading model {model_path}')
-        interpreter_cls = _get_tflite_interpreter()
-        if interpreter_cls is None:
-            raise ImportError(
-                "TensorFlow Lite runtime is not available. Install tflite_runtime "
-                "on the Pi or TensorFlow on desktop to run .tflite models."
-            )
         # Load TFLite model and extract input and output keys
-        self.interpreter = interpreter_cls(model_path=model_path)
+        Interpreter = get_tflite_interpreter()
+        self.interpreter = Interpreter(model_path=model_path)
         self.signatures = self.interpreter.get_signature_list()
         self.runner = self.interpreter.get_signature_runner()
         self.input_keys = self.signatures['serving_default']['inputs']
@@ -372,7 +326,6 @@ class TensorRT(Interpreter):
     Uses TensorRT to do the inference.
     """
     def __init__(self):
-        _ensure_tensorflow()
         super().__init__()
         self.graph_func = None
         self.pilot = None
@@ -384,7 +337,7 @@ class TensorRT(Interpreter):
         # state as the trt model hasn't been loaded yet
         self.pilot = pilot
 
-    def get_input_shape(self, input_name) -> tf.TensorShape:
+    def get_input_shape(self, input_name):
         assert self.graph_func, "Requires loadin the tensorrt model first"
         return self.graph_func.structured_input_signature[1][input_name].shape
 
@@ -392,7 +345,6 @@ class TensorRT(Interpreter):
         pass
 
     def load(self, model_path: str) -> None:
-        _ensure_tensorflow()
         logger.info(f'Loading TensorRT model {model_path}')
         assert self.pilot, "Need to set pilot first"
         try:
