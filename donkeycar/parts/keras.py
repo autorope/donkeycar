@@ -15,23 +15,27 @@ import numpy as np
 from typing import Dict, Tuple, Optional, Union, List, Sequence, Callable, Any
 from logging import getLogger
 
-from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
-
 import donkeycar as dk
 from donkeycar.utils import normalize_image, linear_bin
 from donkeycar.pipeline.types import TubRecord
 from donkeycar.parts.interpreter import Interpreter, KerasInterpreter
 
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.keras.layers import (Dense, Input,Convolution2D,
-    MaxPooling2D, Activation, Dropout, Flatten, LSTM, BatchNormalization,
-    Conv3D, MaxPooling3D, Conv2DTranspose)
-
-from tensorflow.keras.layers import TimeDistributed as TD
-from tensorflow.keras.backend import concatenate
-from tensorflow.keras.models import Model
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+try:
+    import tensorflow as tf
+    from tensorflow import keras
+    from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
+    from tensorflow.keras.layers import (Dense, Input, Convolution2D,
+        MaxPooling2D, Activation, Dropout, Flatten, LSTM, BatchNormalization,
+        Conv3D, MaxPooling3D, Conv2DTranspose)
+    from tensorflow.keras.layers import TimeDistributed as TD
+    from tensorflow.keras.backend import concatenate
+    from tensorflow.keras.models import Model
+    from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+except ImportError:
+    tf = None
+    keras = None
+    DatasetV1 = None
+    DatasetV2 = None
 
 ONE_BYTE_SCALE = 1.0 / 255.0
 
@@ -86,7 +90,7 @@ class KerasPilot(ABC):
             raise Exception(f"Unknown optimizer type: {optimizer_type}")
         self.interpreter.set_optimizer(optimizer)
 
-    def get_input_shape(self, input_name) -> tf.TensorShape:
+    def get_input_shape(self, input_name):
         return self.interpreter.get_input_shape(input_name)
 
     def seq_size(self) -> int:
@@ -110,9 +114,8 @@ class KerasPilot(ABC):
         # self.output_shape() first dictionary keys, because that's how we
         # set up the model
         values = (norm_img_arr, ) + np_other_array
-        # note output_shapes() returns a 2-tuple of dicts for input shapes
-        # and output shapes(), so we need the first tuple here
-        input_dict = dict(zip(self.output_shapes()[0].keys(), values))
+        # use interpreter's input_keys directly (works with TFLite and Keras)
+        input_dict = dict(zip(self.interpreter.input_keys, values))
         return self.inference_from_dict(input_dict)
 
     def inference_from_dict(self, input_dict: Dict[str, np.ndarray]) \
@@ -146,7 +149,7 @@ class KerasPilot(ABC):
               verbose: int = 1,
               min_delta: float = .0005,
               patience: int = 5,
-              show_plot: bool = False) -> tf.keras.callbacks.History:
+              show_plot: bool = False):
         """
         trains the model
         """
@@ -242,7 +245,7 @@ class KerasPilot(ABC):
         types = tuple({k: tf.float64 for k in d} for d in shapes)
         return types
 
-    def output_shapes(self) -> Dict[str, tf.TensorShape]:
+    def output_shapes(self):
         return {}
 
     def __str__(self) -> str:
