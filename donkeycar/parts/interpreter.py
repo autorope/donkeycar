@@ -198,6 +198,18 @@ class KerasInterpreter(Interpreter):
     def load(self, model_path: str) -> None:
         logger.info(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False)
+        # Set input_keys and output_keys after loading (same as set_model)
+        input_shape = self.model.input_shape
+        if type(input_shape) is not list:
+            input_shape = [input_shape]
+        output_shape = self.model.output_shape
+        if type(output_shape) is not list:
+            output_shape = [output_shape]
+
+        self.input_keys = self.model.input_names
+        self.output_keys = self.model.output_names
+        self.shapes = (dict(zip(self.input_keys, input_shape)),
+                       dict(zip(self.output_keys, output_shape)))
 
     def load_weights(self, model_path: str, by_name: bool = True) -> \
             None:
