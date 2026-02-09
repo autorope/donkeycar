@@ -813,7 +813,7 @@ PI_HOSTNAME = "donkeypi.local"
 
 
 # WEB CONTROL
-The port for the web server (default 8887).
+# The port for the web server (default 8887).
 WEB_CONTROL_PORT = int(os.getenv("WEB_CONTROL_PORT", 8887))
 
 # Initial mode on startup.
