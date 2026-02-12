@@ -741,8 +741,21 @@ PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.2                        # differential mult for PID path follower
 PID_THROTTLE = 0.2                  # constant throttle value during path following
 USE_CONSTANT_THROTTLE = False       # whether or not to use the constant throttle or variable throttle captured during path recording
-SAVE_PATH_BTN = "cross"             # joystick button to save path
-RESET_ORIGIN_BTN = "triangle"       # joystick button to press to move car back to origin
+#
+# Assign path follow functions to buttons.
+# You can use game pad buttons OR web ui buttons ('web/w1' to 'web/w5')
+# Use None use the game controller default
+# NOTE: the cross button is already reserved for the emergency stop
+#
+SAVE_PATH_BTN = "web/w1"        # button to save path
+LOAD_PATH_BTN = "web/w2"             # button (re)load path
+RESET_ORIGIN_BTN = "web/w3"     # button to press to move car back to origin
+ERASE_PATH_BTN = "web/w4"     # button to erase path
+TOGGLE_RECORDING_BTN = "web/w5" # button to toggle recording mode
+INC_PID_D_BTN = None            # button to change PID 'D' constant by PID_D_DELTA
+DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DELTA
+INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
+DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
 
 # Intel Realsense D435 and D435i depth sensing camera
 REALSENSE_D435_RGB = True       # True to capture RGB image

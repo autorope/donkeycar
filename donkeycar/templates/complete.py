@@ -684,6 +684,33 @@ class UserPilotCondition:
             return False, True, pilot_image if self.show_pilot_image else user_image
 
 
+# Known config key -> short display label for web buttons
+BUTTON_LABEL_MAP = {
+    'SAVE_PATH_BTN': 'Save',
+    'LOAD_PATH_BTN': 'Load',
+    'RESET_ORIGIN_BTN': 'Origin',
+    'ERASE_PATH_BTN': 'Erase',
+    'TOGGLE_RECORDING_BTN': 'Rec',
+    'INC_PID_P_BTN': 'P+',
+    'DEC_PID_P_BTN': 'P-',
+    'INC_PID_D_BTN': 'D+',
+    'DEC_PID_D_BTN': 'D-',
+}
+
+
+def get_web_button_labels(cfg):
+    """Scan config for *_BTN attrs assigned to web buttons, return {button_id: label}"""
+    labels = {}
+    for attr in dir(cfg):
+        if attr.endswith('_BTN'):
+            val = getattr(cfg, attr, None)
+            if isinstance(val, str) and val.startswith("web/w"):
+                btn_id = val.replace("web/", "")  # "w1", "w2", etc.
+                label = BUTTON_LABEL_MAP.get(attr, attr.replace('_BTN', '').replace('_', ' ').title())
+                labels[btn_id] = label
+    return labels
+
+
 def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     """
     Add the web controller and any other
@@ -698,7 +725,8 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     # This web controller will create a web server that is capable
     # of managing steering, throttle, and modes, and more.
     #
-    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
+    button_labels = get_web_button_labels(cfg)
+    ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE, button_labels=button_labels)
     V.add(ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
           outputs=['user/steering', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],

@@ -20,11 +20,11 @@
 
         <!-- programmable buttons -->
         <form id="button_bar">
-          <button type="button" id="w1" class="btn btn-info">1</button>
-          <button type="button" id="w2" class="btn btn-info">2</button>
-          <button type="button" id="w3" class="btn btn-info">3</button>
-          <button type="button" id="w4" class="btn btn-info">4</button>
-          <button type="button" id="w5" class="btn btn-info">5</button>
+          <button type="button" id="w1" class="btn btn-info">{{ button_labels.get("w1", "1") }}</button>
+          <button type="button" id="w2" class="btn btn-info">{{ button_labels.get("w2", "2") }}</button>
+          <button type="button" id="w3" class="btn btn-info">{{ button_labels.get("w3", "3") }}</button>
+          <button type="button" id="w4" class="btn btn-info">{{ button_labels.get("w4", "4") }}</button>
+          <button type="button" id="w5" class="btn btn-info">{{ button_labels.get("w5", "5") }}</button>
         </form>
 
         <!-- video -->
