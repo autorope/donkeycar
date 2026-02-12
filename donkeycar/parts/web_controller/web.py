@@ -101,7 +101,7 @@ class RemoteWebServer():
 
 class LocalWebController(tornado.web.Application):
 
-    def __init__(self, port=8887, mode='user'):
+    def __init__(self, port=8887, mode='user', button_labels=None):
         """
         Create and publish variables needed on many of
         the web handlers.
@@ -117,6 +117,7 @@ class LocalWebController(tornado.web.Application):
         self.recording = False
         self.recording_latch = None
         self.buttons = {}  # latched button values for processing
+        self.button_labels = button_labels or {}
 
         self.port = port
 
@@ -223,7 +224,7 @@ class LocalWebController(tornado.web.Application):
 class DriveAPI(RequestHandler):
 
     def get(self):
-        data = {}
+        data = {'button_labels': self.application.button_labels}
         self.render("templates/vehicle.html", **data)
 
     def post(self):
