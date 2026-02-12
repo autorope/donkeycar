@@ -180,9 +180,13 @@ class RoboHATDriver:
     This is developed by Robotics Masters
     """
 
-    def __init__(self, cfg, debug=False):
+    def __init__(self, cfg, serial_port=None, debug=False):
         # Initialise the Robo HAT using the serial port
-        self.pwm = serial.Serial(cfg.MM1_SERIAL_PORT, 115200, timeout=1)
+        # Use shared serial port if provided to avoid opening the same port twice
+        if serial_port is not None:
+            self.pwm = serial_port
+        else:
+            self.pwm = serial.Serial(cfg.MM1_SERIAL_PORT, 115200, timeout=1)
         self.MAX_FORWARD = cfg.MM1_MAX_FORWARD
         self.MAX_REVERSE = cfg.MM1_MAX_REVERSE
         self.STOPPED_PWM = cfg.MM1_STOPPED_PWM
