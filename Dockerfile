@@ -19,6 +19,9 @@ RUN echo "c.NotebookApp.token = ''">>/root/.jupyter/jupyter_notebook_config.py
 # add the whole app dir after install so the pip install isn't updated when code changes.
 ADD . /app
 
+#create notebooks directory
+RUN mkdir notebooks
+
 #start the jupyter notebook
 CMD jupyter notebook --no-browser --ip 0.0.0.0 --port 8888 --allow-root  --notebook-dir=/app/notebooks
 

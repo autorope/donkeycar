@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+
+  donkeycar:
+    build: .
+    ports:
+      - "8887:8887"
+      - "8888:8888"
