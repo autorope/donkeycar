@@ -4,7 +4,7 @@ PATH FOLLOWING: 'path_follow' template configurations
 # This file is read by your car application's manage.py script to change the car
 # performance
 
-# If desired, all config overrides can be specified here. 
+# If desired, all config overrides can be specified here.
 # The update operation will not touch this file.
 # """
 
@@ -641,9 +641,15 @@ PATH_DEBUG = True                   # True to log x,y position
 PATH_SCALE = 10.0                   # the path display will be scaled by this factor in the web page
 PATH_OFFSET = (255, 255)            # 255, 255 is the center of the map. This offset controls where the origin is displayed.
 PATH_MIN_DIST = 0.2                 # after travelling this distance (m), save a path point
-PATH_SEARCH_LENGTH = None           # number of points to search for closest point, None to search entire path
+PATH_SEARCH_LENGTH = 10             # number of points to search for closest point, None to search entire path
+                                    # ideally this is set to a number that is large enough to find the closest point
+                                    # but not so large that it finds a point on a different part of the track.
+                                    # For instance, if you are racing on a track with long straightaways and tight turns,
+                                    # you may want to set this to a number that is large enough to find the closest point
+                                    # on the straightaway but not so large that it finds a point on the straightaway
+                                    # when you are in the middle of the turn.
 PATH_LOOK_AHEAD = 1                 # number of points ahead of the closest point to include in cte track
-PATH_LOOK_BEHIND = 1                # number of points behind the closest point to include in cte track   
+PATH_LOOK_BEHIND = 1                # number of points behind the closest point to include in cte track
 PID_P = -0.5                        # proportional mult for PID path follower
 PID_I = 0.000                       # integral mult for PID path follower
 PID_D = -0.3                        # differential mult for PID path follower
@@ -671,4 +677,3 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
-
