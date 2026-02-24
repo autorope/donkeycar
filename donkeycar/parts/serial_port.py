@@ -280,6 +280,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--serial", type=str, required=True,
                         help="Serial port address, like '/dev/tty.usbmodem1411'")
+    parser.add_argument("-s2", "--serial2", type=str, default=None,
+                        help="Optional second serial port for loopback testing. "
+                             "If provided, test data is written to the first port "
+                             "and read back from the second port for validation.")
     parser.add_argument("-b", "--baudrate", type=int, default=9600, help="Serial port baud rate.")
     parser.add_argument("-t", "--timeout", type=float, default=0.5, help="Serial port timeout in seconds.")
     parser.add_argument("-sp", '--samples', type=int, default=5, help="Number of samples per read cycle; 0 for unlimited.")
@@ -297,34 +301,92 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(0)
 
-    update_thread = None
-    reader = None
-
-    try:
-        serial_port = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
-        line_reader = SerialLineReader(serial_port, max_lines=args.samples, debug=args.debug)
-
+    if args.serial2:
         #
-        # start the threaded part
-        # and a threaded window to show plot
+        # Loopback test: write test data to serial port 1,
+        # read it back from serial port 2, and validate.
         #
-        if args.threaded:
-            update_thread = threading.Thread(target=line_reader.update, args=())
-            update_thread.start()
+        sender = None
+        receiver = None
+        try:
+            sender = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
+            receiver = SerialPort(args.serial2, baudrate=args.baudrate, timeout=args.timeout)
+            sender.start()
+            receiver.start()
+
+            test_messages = [
+                "Hello, serial!",
+                "Test message 2",
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+                "Special chars: !@#$%^&*()_+-=[]",
+                "Final test message",
+            ]
+
+            passed = 0
+            failed = 0
+
+            for i, message in enumerate(test_messages):
+                # clear the receiver buffer before each test
+                receiver.clear()
+
+                print(f"Test {i+1}/{len(test_messages)}: Sending: {message!r}")
+                sender.writeln(message)
+
+                # wait for the data to arrive
+                time.sleep(0.1 + args.timeout)
+
+                success, received = receiver.readln()
+                received = received.rstrip('\n').rstrip('\r')
+
+                if success and received == message:
+                    print(f"  PASS: Received: {received!r}")
+                    passed += 1
+                elif success:
+                    print(f"  FAIL: Expected: {message!r}, Received: {received!r}")
+                    failed += 1
+                else:
+                    print(f"  FAIL: No data received (timeout)")
+                    failed += 1
+
+            print(f"\nResults: {passed} passed, {failed} failed, {len(test_messages)} total")
+            sys.exit(0 if failed == 0 else 1)
+        finally:
+            if sender is not None:
+                sender.stop()
+            if receiver is not None:
+                receiver.stop()
+    else:
+        #
+        # Read-only mode: print lines received on the serial port to stdout
+        #
+        update_thread = None
+        line_reader = None
+
+        try:
+            serial_port = SerialPort(args.serial, baudrate=args.baudrate, timeout=args.timeout)
+            line_reader = SerialLineReader(serial_port, max_lines=args.samples, debug=args.debug)
+
+            #
+            # start the threaded part
+            # and a threaded window to show plot
+            #
+            if args.threaded:
+                update_thread = threading.Thread(target=line_reader.update, args=())
+                update_thread.start()
 
 
-        def read_lines():
-            return line_reader.run_threaded() if args.threaded else line_reader.run()
+            def read_lines():
+                return line_reader.run_threaded() if args.threaded else line_reader.run()
 
-        while line_reader.running:
-            readings = read_lines()
-            if readings:
-                # just log the readings
-                for line in readings:
-                    print(line)
-    finally:
-        if line_reader:
-            line_reader.shutdown()
-        if update_thread is not None:
-            update_thread.join()  # wait for thread to end
+            while line_reader.running:
+                readings = read_lines()
+                if readings:
+                    # just log the readings
+                    for line in readings:
+                        print(line)
+        finally:
+            if line_reader:
+                line_reader.shutdown()
+            if update_thread is not None:
+                update_thread.join()  # wait for thread to end
 
