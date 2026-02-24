@@ -471,8 +471,13 @@ class ShowPredictionPlots(BaseCommand):
                 tub_record, lambda x: normalize_image(x))
             pilot_angle, pilot_throttle = \
                 model.inference_from_dict(input_dict)
-            user_angle = tub_record.underlying['user/angle']
-            user_throttle = tub_record.underlying['user/throttle']
+            # For sequence models (RNN/3D), tub_record is a list of
+            # TubRecord objects; use the last element for ground truth
+            # (matching y_transform behavior).
+            record = tub_record[-1] if isinstance(tub_record, list) \
+                else tub_record
+            user_angle = record.underlying['user/angle']
+            user_throttle = record.underlying['user/throttle']
             user_angles.append(user_angle)
             user_throttles.append(user_throttle)
             pilot_angles.append(pilot_angle)
