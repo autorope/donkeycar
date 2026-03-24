@@ -1,3 +1,4 @@
+import importlib.util
 import pytest
 import tarfile
 import os
@@ -7,6 +8,7 @@ from donkeycar.config import Config
 
 Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
 
+torch_available = importlib.util.find_spec('torch') is not None
 
 is_jetson = pytest.mark.skipif(
     platform.machine() == 'aarch64',
@@ -49,8 +51,8 @@ test_data = [d1]
 
 
 @is_jetson
-@pytest.mark.skipif("GITHUB_ACTIONS" in os.environ,
-                    reason='Suppress training test in CI')
+@pytest.mark.skipif(not torch_available,
+                    reason='torch not installed')
 @pytest.mark.parametrize('data', test_data)
 def test_train(config: Config, car_dir: str, data: Data) -> None:
     """
@@ -76,8 +78,8 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
 
 
 @is_jetson
-@pytest.mark.skipif("GITHUB_ACTIONS" in os.environ,
-                    reason='Suppress training test in CI')
+@pytest.mark.skipif(not torch_available,
+                    reason='torch not installed')
 @pytest.mark.parametrize('model_type', ['resnet18'])
 def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
         -> None:

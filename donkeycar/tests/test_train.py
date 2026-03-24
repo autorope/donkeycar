@@ -132,8 +132,6 @@ test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
-@pytest.mark.skipif("GITHUB_ACTIONS" in os.environ,
-                    reason='Suppress training test in CI')
 @pytest.mark.parametrize('data', test_data)
 def test_train(config: Config, data: Data) -> None:
     """
@@ -142,6 +140,9 @@ def test_train(config: Config, data: Data) -> None:
     :param data:            test case data
     :return:                None
     """
+    if data.type in ('fastai_linear',):
+        pytest.importorskip('torch', reason='torch not installed')
+
     def pilot_path(name):
         pilot_name = f'pilot_{name}.savedmodel'
         return os.path.join(config.MODELS_PATH, pilot_name)
