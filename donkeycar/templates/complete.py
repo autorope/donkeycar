@@ -1110,7 +1110,7 @@ def add_drivetrain(V, cfg):
         elif cfg.DRIVE_TRAIN_TYPE == "MM1":
             from donkeycar.parts.robohat import RoboHATDriver
             # Share serial port with controller to avoid opening the same port twice
-            V.add(RoboHATDriver(cfg, serial_port=ctr.serial), inputs=['steering', 'throttle'])
+            V.add(RoboHATDriver(cfg), inputs=['steering', 'throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
             #
