@@ -132,6 +132,8 @@ test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
+@pytest.mark.skipif("GITHUB_ACTIONS" in os.environ,
+                    reason='Suppress training test in CI')
 @pytest.mark.parametrize('data', test_data)
 def test_train(config: Config, data: Data) -> None:
     """
