@@ -4,8 +4,6 @@ from time import time
 from typing import List, Dict, Union, Tuple
 import logging
 
-from tensorflow.python.keras.models import load_model
-
 from donkeycar.config import Config
 from donkeycar.parts.keras import KerasPilot
 from donkeycar.parts.interpreter import keras_model_to_tflite, \
@@ -16,8 +14,13 @@ from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.parts.image_transformations import ImageTransformations
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
-import tensorflow as tf
 import numpy as np
+try:
+    import tensorflow as tf
+    from tensorflow.keras.models import load_model
+    logging.getLogger('tensorflow').setLevel(logging.WARNING)
+except ImportError:
+    tf = None
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +85,7 @@ class BatchSequence(object):
                                                 y_transform=get_y)
         return pipeline
 
-    def create_tf_data(self) -> tf.data.Dataset:
+    def create_tf_data(self):
         """ Assembles the tf data pipeline """
         dataset = tf.data.Dataset.from_generator(
             generator=lambda: self.pipeline,
@@ -102,7 +105,7 @@ def get_model_train_details(database: PilotDatabase, model: str = None) \
 
 def train(cfg: Config, tub_paths: str, model: str = None,
           model_type: str = None, transfer: str = None, comment: str = None) \
-        -> tf.keras.callbacks.History:
+        :
     """
     Train the model
     """
@@ -116,6 +119,8 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     kl = get_model_by_type(model_type, cfg)
     if transfer:
         kl.load(transfer)
+        if getattr(cfg, 'FREEZE_LAYERS', False):
+            kl.freeze_first_layers()
     if cfg.PRINT_MODEL_SUMMARY:
         kl.interpreter.summary()
 
@@ -131,18 +136,21 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     dataset.close()
 
     # We need augmentation in validation when using crop / trapeze
-
     if 'fastai_' in model_type:
         from donkeycar.parts.pytorch.torch_data \
             import TorchTubDataset, get_default_transform
         transform = get_default_transform(resize=False)
-        dataset_train = TorchTubDataset(cfg, training_records, transform=transform)
-        dataset_validate = TorchTubDataset(cfg, validation_records, transform=transform)
+        dataset_train = TorchTubDataset(cfg, training_records,
+                                        transform=transform)
+        dataset_validate = TorchTubDataset(cfg, validation_records,
+                                           transform=transform)
         train_size = len(training_records)
         val_size = len(validation_records)
     else:
-        training_pipe = BatchSequence(kl, cfg, training_records, is_train=True)
-        validation_pipe = BatchSequence(kl, cfg, validation_records, is_train=False)
+        training_pipe = BatchSequence(kl, cfg, training_records,
+                                      is_train=True)
+        validation_pipe = BatchSequence(kl, cfg, validation_records,
+                                        is_train=False)
         tune = tf.data.experimental.AUTOTUNE
         dataset_train = training_pipe.create_tf_data().prefetch(tune)
         dataset_validate = validation_pipe.create_tf_data().prefetch(tune)
@@ -175,12 +183,11 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         keras_model_to_tflite(model_path, tf_lite_model_path)
 
     if getattr(cfg, 'CREATE_TENSOR_RT', False):
-        # convert .h5 model to .savedmodel, only if we are using h5 format
-        if ext == '.h5':
-            logger.info(f"Converting from .h5 to .savedmodel first")
+        # export to savedmodel format for TRT if not already in that format
+        if ext != '.savedmodel':
+            logger.info(f"Exporting to .savedmodel for TRT conversion")
             model_tmp = load_model(model_path, compile=False)
-            # save in tensorflow savedmodel format (i.e. directory)
-            model_tmp.save(f'{base_path}.savedmodel')
+            model_tmp.export(f'{base_path}.savedmodel')
         # pass savedmodel to the rt converter
         saved_model_to_tensor_rt(f'{base_path}.savedmodel', f'{base_path}.trt')
 

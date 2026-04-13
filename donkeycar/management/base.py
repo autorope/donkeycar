@@ -375,7 +375,7 @@ class ShowCnnActivations(BaseCommand):
 
         returns activations/features
         '''
-        from tensorflow.python.keras.models import load_model, Model
+        from tensorflow.keras.models import load_model, Model
 
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)

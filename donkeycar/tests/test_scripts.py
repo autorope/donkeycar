@@ -1,9 +1,18 @@
 import os
+import shutil
 import subprocess
 import tarfile
 
 from donkeycar import utils
 import pytest
+
+
+tf_available = pytest.mark.skipif(
+    not __import__('importlib').util.find_spec('tensorflow'),
+    reason='TensorFlow not installed'
+)
+
+DONKEY_CLI_AVAILABLE = shutil.which('donkey') is not None
 
 
 def is_error(err):
@@ -23,14 +32,23 @@ def cardir(tmpdir_factory):
     return path
 
 
+@pytest.mark.skipif(
+    not DONKEY_CLI_AVAILABLE,
+    reason="donkey CLI not installed in PATH"
+)
 def test_createcar(cardir):
     cmd = ['donkey', 'createcar', '--path', cardir]
     out, err, proc_id = utils.run_shell_command(cmd)
     assert is_error(err) is False
 
 
+@pytest.mark.skipif(
+    not DONKEY_CLI_AVAILABLE,
+    reason="donkey CLI not installed in PATH"
+)
+@tf_available
 def test_drivesim(cardir):
-    cmd = ['donkey', 'createcar', '--path', cardir ,'--template', 'square']
+    cmd = ['donkey', 'createcar', '--path', cardir, '--template', 'square']
     out, err, proc_id = utils.run_shell_command(cmd, timeout=10)
     cmd = ['python', 'manage.py', 'drive']
     out, err, proc_id = utils.run_shell_command(cmd, cwd=cardir)
@@ -42,6 +60,10 @@ def test_drivesim(cardir):
         raise ValueError(err)
 
 
+@pytest.mark.skipif(
+    not DONKEY_CLI_AVAILABLE,
+    reason="donkey CLI not installed in PATH"
+)
 def test_bad_command_fails():
     cmd = ['donkey', 'not a comand']
     out, err, proc_id = utils.run_shell_command(cmd)
@@ -50,11 +72,16 @@ def test_bad_command_fails():
     assert is_error(err) is True
 
 
+@pytest.mark.skipif(
+    not DONKEY_CLI_AVAILABLE,
+    reason="donkey CLI not installed in PATH"
+)
+@tf_available
 def test_tubplot(cardir):
     # create empy KerasLinear model in car directory
     model_dir = os.path.join(cardir, 'models')
     os.mkdir(model_dir)
-    model_path = os.path.join(model_dir, 'model.savedmodel')
+    model_path = os.path.join(model_dir, 'model.keras')
     from donkeycar.parts.keras import KerasLinear
     KerasLinear().interpreter.model.save(model_path)
 
@@ -67,8 +94,8 @@ def test_tubplot(cardir):
     # put a dummy config file into the car dir
     cfg_file = os.path.join(cardir, 'config.py')
     with open(cfg_file, "w+") as f:
-        f.writelines(["# config file\n", "IMAGE_H = 120\n", "IMAGE_W = 160\n",
-                      "IMAGE_DEPTH = 3\n", "\n"])
+        f.writelines(["# config file\n", "IMAGE_H = 120\n",
+                      "IMAGE_W = 160\n", "IMAGE_DEPTH = 3\n", "\n"])
     cmd = ['donkey', 'tubplot', '--tub', tub_dir, '--model', model_path,
            '--type', 'linear', '--noshow']
 
@@ -80,4 +107,3 @@ def test_tubplot(cardir):
             line = pipe.stdout.readline().decode()
     print(f'List model dir: {os.listdir(model_dir)}')
     assert os.path.exists(model_path + '_pred.png')
-

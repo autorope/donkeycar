@@ -4,6 +4,9 @@ from pytest import approx
 import pytest
 import os
 
+tf = pytest.importorskip('tensorflow',
+                         reason='TensorFlow not installed, skipping keras tests')
+
 from donkeycar.parts.interpreter import keras_to_tflite, \
     saved_model_to_tensor_rt, TfLite, TensorRT, has_trt_support
 from donkeycar.parts.keras import *
@@ -19,9 +22,16 @@ def tmp_dir() -> str:
     shutil.rmtree(tmp_dir)
 
 
-test_data = [KerasLinear, KerasCategorical, KerasInferred, KerasLSTM,
-             KerasLocalizer, KerasIMU, Keras3D_CNN, KerasMemory,
-             KerasBehavioral]
+test_data = [
+    KerasLinear, KerasCategorical, KerasInferred, KerasLSTM,
+    KerasLocalizer, KerasIMU,
+    # Keras3D_CNN uses MaxPool3D (Flex op) which requires the TFLite Flex
+    # delegate; standard interpreter cannot run it
+    pytest.param(Keras3D_CNN, marks=pytest.mark.xfail(
+        reason='Keras3D_CNN requires TFLite Flex delegate (FlexMaxPool3D)',
+        strict=True)),
+    KerasMemory, KerasBehavioral,
+]
 
 
 def create_models(keras_pilot, dir):
@@ -33,8 +43,8 @@ def create_models(keras_pilot, dir):
     keras_to_tflite(interpreter.model, tflite_model_path)
     kl = keras_pilot(interpreter=TfLite())
     kl.load(tflite_model_path)
-    # save model in savedmodel format
-    savedmodel_path = os.path.join(dir, 'model.savedmodel')
+    # save model (Keras 3 requires .keras or .h5 extension)
+    savedmodel_path = os.path.join(dir, 'model.keras')
     interpreter.model.save(savedmodel_path)
     krt = None
     # load tensorrt only if supported

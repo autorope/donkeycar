@@ -8,12 +8,14 @@ include one or more models to help direct the vehicles motion.
 
 """
 import datetime
+from datetime import datetime
+from os import path
 from abc import ABC, abstractmethod
 from collections import deque
 
 import numpy as np
 from typing import Dict, Tuple, Optional, Union, List, Sequence, Callable, Any
-from logging import getLogger
+import logging
 
 import donkeycar as dk
 from donkeycar.utils import normalize_image, linear_bin
@@ -23,27 +25,35 @@ from donkeycar.parts.interpreter import Interpreter, KerasInterpreter
 try:
     import tensorflow as tf
     from tensorflow import keras
-    from tensorflow.python.data.ops.dataset_ops import DatasetV1, DatasetV2
     from tensorflow.keras.layers import (Dense, Input, Convolution2D,
         MaxPooling2D, Activation, Dropout, Flatten, LSTM, BatchNormalization,
         Conv3D, MaxPooling3D, Conv2DTranspose)
     from tensorflow.keras.layers import TimeDistributed as TD
-    from tensorflow.keras.backend import concatenate
+    from tensorflow.keras.layers import concatenate
     from tensorflow.keras.models import Model
-    from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
+    from tensorflow.keras.callbacks import (EarlyStopping, ModelCheckpoint,
+        TensorBoard)
+    logging.getLogger('tensorflow').setLevel(logging.WARNING)
 except ImportError:
     tf = None
     keras = None
-    DatasetV1 = None
-    DatasetV2 = None
 
 ONE_BYTE_SCALE = 1.0 / 255.0
+
+
+def _tshape(shape):
+    """Shape helper for LiteRT-only Pi inference when TensorFlow is absent."""
+    if isinstance(shape, (int, np.integer)):
+        shape = (int(shape),)
+    else:
+        shape = tuple(shape)
+    return tf.TensorShape(shape) if tf is not None else shape
 
 # type of x
 XY = Union[float, np.ndarray, Tuple[Union[float, np.ndarray], ...]]
 
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class KerasPilot(ABC):
@@ -96,6 +106,9 @@ class KerasPilot(ABC):
     def seq_size(self) -> int:
         return 0
 
+    def use_lap_pct(self) -> bool:
+        return False
+
     def run(self, img_arr: np.ndarray, *other_arr: List[float]) \
             -> Tuple[Union[float, np.ndarray], ...]:
         """
@@ -114,8 +127,9 @@ class KerasPilot(ABC):
         # self.output_shape() first dictionary keys, because that's how we
         # set up the model
         values = (norm_img_arr, ) + np_other_array
-        # use interpreter's input_keys directly (works with TFLite and Keras)
-        input_dict = dict(zip(self.interpreter.input_keys, values))
+        # note output_shapes() returns a 2-tuple of dicts for input shapes
+        # and output shapes(), so we need the first tuple here
+        input_dict = dict(zip(self.output_shapes()[0].keys(), values))
         return self.inference_from_dict(input_dict)
 
     def inference_from_dict(self, input_dict: Dict[str, np.ndarray]) \
@@ -140,10 +154,10 @@ class KerasPilot(ABC):
 
     def train(self,
               model_path: str,
-              train_data: Union[DatasetV1, DatasetV2],
+              train_data: Any,
               train_steps: int,
               batch_size: int,
-              validation_data: Union[DatasetV1, DatasetV2],
+              validation_data: Any,
               validation_steps: int,
               epochs: int,
               verbose: int = 1,
@@ -154,6 +168,10 @@ class KerasPilot(ABC):
         trains the model
         """
         assert isinstance(self.interpreter, KerasInterpreter)
+        dev = tf.config.list_physical_devices('GPU')
+        if not dev:
+            logger.warning("No GPU found for training")
+
         model = self.interpreter.model
         self.compile()
 
@@ -166,7 +184,16 @@ class KerasPilot(ABC):
                             save_best_only=True,
                             verbose=verbose)]
 
-        tic = datetime.datetime.now()
+        # Create a TensorBoard callback
+        log_path = path.join(path.dirname(model_path),
+                             "logs", datetime.now().strftime("%Y%m%d-%H%M%S"))
+        board = TensorBoard(
+            log_dir=log_path,
+            histogram_freq=1,
+            profile_batch=(0, 4))
+        callbacks.append(board)
+
+        tic = datetime.now()
         logger.info('////////// Starting training //////////')
         history: tf.keras.callbacks.History = model.fit(
             x=train_data,
@@ -176,10 +203,8 @@ class KerasPilot(ABC):
             validation_data=validation_data,
             validation_steps=validation_steps,
             epochs=epochs,
-            verbose=verbose,
-            workers=1,
-            use_multiprocessing=False)
-        toc = datetime.datetime.now()
+            verbose=verbose)
+        toc = datetime.now()
         logger.info(f'////////// Finished training in: {toc - tic} //////////')
 
         if show_plot:
@@ -234,10 +259,17 @@ class KerasPilot(ABC):
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
             -> Dict[str, Union[float, List[float]]]:
         """ Transforms the record into dictionary for y for training the
-        model to x,y. All model ouputs layer's names must be matched by
+        model to x,y. All model outputs layer's names must be matched by
         dictionary keys. """
-        raise NotImplementedError(f'{self} not ready yet for new training '
-                                  f'pipeline')
+        raise NotImplementedError(f'y_transform for {self} not implemented')
+
+    def w_transform(self, records: Union[TubRecord, List[TubRecord]]) \
+            -> Dict[str, Union[float, List[float]]]:
+        """ Transforms the record into dictionary for weights for training the
+        model to x,y. All model outputs layer's names must be matched by
+        dictionary keys, i.e the format of the dictionary here has to match
+        the output of y_transform. """
+        raise NotImplementedError(f'w_transform for {self} not implemented')
 
     def output_types(self) -> Tuple[Dict[str, np.typename], ...]:
         """ Used in tf.data, assume all types are doubles"""
@@ -245,12 +277,35 @@ class KerasPilot(ABC):
         types = tuple({k: tf.float64 for k in d} for d in shapes)
         return types
 
-    def output_shapes(self):
+    def output_shapes(self) -> dict:
         return {}
 
     def __str__(self) -> str:
         """ For printing model initialisation """
         return type(self).__name__
+
+    def get_num_last_layers_to_train(self):
+        """ Find the canonically named Flatten layer and return number of
+        layers after that"""
+        assert isinstance(self.interpreter, KerasInterpreter) and \
+               self.interpreter.model, "Wrong interpreter or no model set"
+        i = 0
+        while self.interpreter.model.layers[i].name != 'flattened':
+            i += 1
+        return len(self.interpreter.model.layers) - i - 1
+
+    def freeze_first_layers(self, num_last_layers_to_train=None):
+        if num_last_layers_to_train is None:
+            num_last_layers_to_train = self.get_num_last_layers_to_train()
+        assert isinstance(self.interpreter, KerasInterpreter), \
+            'Can only freeze layers in Keras model but not in TfLite and others'
+        num_to_freeze = len(self.interpreter.model.layers) - num_last_layers_to_train
+        frozen_layers = []
+        for i in range(num_to_freeze):
+            self.interpreter.model.layers[i].trainable = False
+            frozen_layers.append(self.interpreter.model.layers[i].name)
+        logger.info(f'Freezing layers {frozen_layers}')
+        return num_to_freeze
 
 
 class KerasCategorical(KerasPilot):
@@ -278,9 +333,10 @@ class KerasCategorical(KerasPilot):
         return default_categorical(self.input_shape)
 
     def compile(self):
+        # Keras 3.x requires one metric per output for multi-output models
         self.interpreter.compile(
             optimizer=self.optimizer,
-            metrics=['accuracy'],
+            metrics=['accuracy', 'accuracy'],
             loss={'angle_out': 'categorical_crossentropy',
                   'throttle_out': 'categorical_crossentropy'},
             loss_weights={'angle_out': 0.5, 'throttle_out': 0.5})
@@ -305,9 +361,9 @@ class KerasCategorical(KerasPilot):
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'angle_out': tf.TensorShape([15]),
-                   'throttle_out': tf.TensorShape([20])})
+        shapes = ({'img_in': _tshape(img_shape)},
+                  {'angle_out': _tshape([15]),
+                   'throttle_out': _tshape([20])})
         return shapes
 
     def __str__(self) -> str:
@@ -349,9 +405,9 @@ class KerasLinear(KerasPilot):
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'n_outputs0': tf.TensorShape([]),
-                   'n_outputs1': tf.TensorShape([])})
+        shapes = ({'img_in': _tshape(img_shape)},
+                  {'n_outputs0': _tshape([]),
+                   'n_outputs1': _tshape([])})
         return shapes
 
 
@@ -436,16 +492,16 @@ class KerasMemory(KerasLinear):
     def output_shapes(self):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape),
-                   'mem_in': tf.TensorShape(2 * self.mem_length)},
-                  {'n_outputs0': tf.TensorShape([]),
-                   'n_outputs1': tf.TensorShape([])})
+        shapes = ({'img_in': _tshape(img_shape),
+                   'mem_in': _tshape(2 * self.mem_length)},
+                  {'n_outputs0': _tshape([]),
+                   'n_outputs1': _tshape([])})
         return shapes
 
     def __str__(self) -> str:
         """ For printing model initialisation """
-        return super().__str__() \
-            + f'-L:{self.mem_length}-D:{self.mem_depth}'
+        return super().__str__() + f'-L:{self.mem_length}-D' + \
+            f':{self.mem_depth}-SS:{self.mem_start_speed}'
 
 
 class KerasInferred(KerasPilot):
@@ -465,17 +521,18 @@ class KerasInferred(KerasPilot):
         return steering, dk.utils.throttle(steering)
 
     def y_transform(self, record: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
+            -> Union[float, Dict[str, Union[float, List[float]]]]:
         assert isinstance(record, TubRecord), "TubRecord expected"
-        angle: float = record.underlying['user/angle']
-        return {'n_outputs0': angle}
+        # Keras 3.x: single-output models require raw value, not dict
+        return record.underlying['user/angle']
 
     def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'n_outputs0': tf.TensorShape([])})
-        return shapes
+        # Keras 3.x: single-output shape is a TensorShape, not a dict
+        return ({'img_in': _tshape(img_shape)}, _tshape([]))
+
+    def output_types(self):
+        return ({'img_in': tf.float64}, tf.float64)
 
 
 class KerasIMU(KerasPilot):
@@ -530,10 +587,10 @@ class KerasIMU(KerasPilot):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
         # the keys need to match the models input/output layers
-        shapes = ({'img_in': tf.TensorShape(img_shape),
-                   'imu_in': tf.TensorShape([self.num_imu_inputs])},
-                  {'out_0': tf.TensorShape([]),
-                   'out_1': tf.TensorShape([])})
+        shapes = ({'img_in': _tshape(img_shape),
+                   'imu_in': _tshape([self.num_imu_inputs])},
+                  {'out_0': _tshape([]),
+                   'out_1': _tshape([])})
         return shapes
 
 
@@ -569,10 +626,10 @@ class KerasBehavioral(KerasCategorical):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
         # the keys need to match the models input/output layers
-        shapes = ({'img_in': tf.TensorShape(img_shape),
-                   'xbehavior_in': tf.TensorShape([self.num_behavior_inputs])},
-                  {'angle_out': tf.TensorShape([15]),
-                   'throttle_out': tf.TensorShape([20])})
+        shapes = ({'img_in': _tshape(img_shape),
+                   'xbehavior_in': _tshape([self.num_behavior_inputs])},
+                  {'angle_out': _tshape([15]),
+                   'throttle_out': _tshape([20])})
         return shapes
 
 
@@ -593,7 +650,9 @@ class KerasLocalizer(KerasPilot):
                            input_shape=self.input_shape)
 
     def compile(self):
-        self.interpreter.compile(optimizer=self.optimizer, metrics=['acc'],
+        # Keras 3.x requires metrics per output for multi-output models
+        self.interpreter.compile(optimizer=self.optimizer,
+                                 metrics={'zloc': 'accuracy'},
                                  loss='mse')
 
     def interpreter_to_output(self, interpreter_out) \
@@ -616,10 +675,10 @@ class KerasLocalizer(KerasPilot):
         # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
         # the keys need to match the models input/output layers
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'angle': tf.TensorShape([]),
-                   'throttle': tf.TensorShape([]),
-                   'zloc': tf.TensorShape([self.num_locations])})
+        shapes = ({'img_in': _tshape(img_shape)},
+                  {'angle': _tshape([]),
+                   'throttle': _tshape([]),
+                   'zloc': _tshape([self.num_locations])})
         return shapes
 
 
@@ -661,12 +720,13 @@ class KerasLSTM(KerasPilot):
         return {'img_in': np.array(img_arrays)}
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
+            -> Union[np.ndarray, Dict[str, Union[float, List[float]]]]:
         """ Only return the last entry of angle/throttle"""
         assert isinstance(records, list), 'List[TubRecord] expected'
         angle = records[-1].underlying['user/angle']
         throttle = records[-1].underlying['user/throttle']
-        return {'model_outputs': [angle, throttle]}
+        # Keras 3.x: single-output models require raw array, not dict
+        return np.array([angle, throttle])
 
     def run(self, img_arr, *other_arr):
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
@@ -690,12 +750,13 @@ class KerasLSTM(KerasPilot):
         return steering, throttle
 
     def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        # the keys need to match the models input/output layers
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'model_outputs': tf.TensorShape([self.num_outputs])})
-        return shapes
+        # Keras 3.x: single-output shape is a TensorShape, not a dict
+        return ({'img_in': _tshape(img_shape)},
+                _tshape([self.num_outputs]))
+
+    def output_types(self):
+        return ({'img_in': tf.float64}, tf.float64)
 
     def __str__(self) -> str:
         """ For printing model initialisation """
@@ -738,12 +799,13 @@ class Keras3D_CNN(KerasPilot):
         return {'img_in': np.array(img_seq)}
 
     def y_transform(self, records: Union[TubRecord, List[TubRecord]]) \
-            -> Dict[str, Union[float, List[float]]]:
+            -> Union[np.ndarray, Dict[str, Union[float, List[float]]]]:
         """ Only return the last entry of angle/throttle"""
         assert isinstance(records, list), 'List[TubRecord] expected'
         angle = records[-1].underlying['user/angle']
         throttle = records[-1].underlying['user/throttle']
-        return {'outputs': [angle, throttle]}
+        # Keras 3.x: single-output models require raw array, not dict
+        return np.array([angle, throttle])
 
     def run(self, img_arr, *other_arr):
         if img_arr.shape[2] == 3 and self.input_shape[2] == 1:
@@ -767,12 +829,13 @@ class Keras3D_CNN(KerasPilot):
         return steering, throttle
 
     def output_shapes(self):
-        # need to cut off None from [None, 120, 160, 3] tensor shape
         img_shape = self.get_input_shape('img_in')[1:]
-        # the keys need to match the models input/output layers
-        shapes = ({'img_in': tf.TensorShape(img_shape)},
-                  {'outputs': tf.TensorShape([self.num_outputs])})
-        return shapes
+        # Keras 3.x: single-output shape is a TensorShape, not a dict
+        return ({'img_in': _tshape(img_shape)},
+                _tshape([self.num_outputs]))
+
+    def output_types(self):
+        return ({'img_in': tf.float64}, tf.float64)
 
 
 class KerasLatent(KerasPilot):
