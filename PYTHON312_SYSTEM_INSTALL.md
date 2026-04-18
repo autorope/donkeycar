@@ -106,6 +106,78 @@ Notes:
 - `make altinstall` avoids replacing `/usr/bin/python3`.
 - `ensurepip` installed `pip` for Python 3.12 during the install.
 
+## Known `venv` Prompt Bug and Fix
+
+This Python `3.12.13` build generated broken bash activation prompts for new
+virtual environments. For example:
+
+```bash
+python3.12 -m venv ~/env312
+source ~/env312/bin/activate
+```
+
+would show:
+
+```text
+((env312) ) dirk@host:~ $
+```
+
+instead of the expected:
+
+```text
+(env312) dirk@host:~ $
+```
+
+Root cause:
+
+- `/usr/local/lib/python3.12/venv/__init__.py` sets
+  `context.prompt = '(%s) ' % prompt`
+- `/usr/local/lib/python3.12/venv/scripts/common/activate` then wraps
+  `__VENV_PROMPT__` in parentheses again when building `PS1`
+
+That produces an activation script containing lines like:
+
+```bash
+VIRTUAL_ENV_PROMPT='(env312) '
+PS1="("'(env312) '") ${PS1:-}"
+```
+
+### Fix Existing Installed Python 3.12
+
+Patch the installed stdlib `venv` module so future `python3.12 -m venv ...`
+environments use a normal prompt:
+
+```bash
+sudo sed -i "s/context.prompt = '(%%s) ' %% prompt/context.prompt = prompt/" /usr/local/lib/python3.12/venv/__init__.py
+```
+
+After that change, new environments should generate activation scripts with a
+single set of parentheses in the shell prompt.
+
+### Fix an Already-Created Environment
+
+For an existing environment such as `~/env312`, edit `bin/activate` and change:
+
+```bash
+VIRTUAL_ENV_PROMPT='(env312) '
+PS1="("'(env312) '") ${PS1:-}"
+```
+
+to:
+
+```bash
+VIRTUAL_ENV_PROMPT=env312
+PS1="(${VIRTUAL_ENV_PROMPT}) ${PS1:-}"
+```
+
+### Alternative Workaround
+
+If you do not want the activation script to modify the shell prompt at all:
+
+```bash
+VIRTUAL_ENV_DISABLE_PROMPT=1 source ~/env312/bin/activate
+```
+
 ## Resulting Installed Files
 
 Verified installed executables:
