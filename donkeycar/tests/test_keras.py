@@ -23,13 +23,13 @@ def tmp_dir() -> str:
 
 
 test_data = [
-    KerasLinear, KerasCategorical, KerasInferred, KerasLSTM,
-    KerasLocalizer, KerasIMU,
-    # Keras3D_CNN uses MaxPool3D (Flex op) which requires the TFLite Flex
-    # delegate; standard interpreter cannot run it
-    pytest.param(Keras3D_CNN, marks=pytest.mark.xfail(
-        reason='Keras3D_CNN requires TFLite Flex delegate (FlexMaxPool3D)',
+    KerasLinear, KerasCategorical, KerasInferred,
+    # KerasLSTM uses CudnnRNNV3 which TFLite cannot run without CUDA
+    pytest.param(KerasLSTM, marks=pytest.mark.xfail(
+        reason='KerasLSTM uses CudnnRNNV3, not supported in TFLite',
         strict=True)),
+    KerasLocalizer, KerasIMU,
+    Keras3D_CNN,
     KerasMemory, KerasBehavioral,
 ]
 

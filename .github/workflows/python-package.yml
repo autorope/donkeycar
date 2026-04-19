@@ -18,8 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Create virtual environment
+        run: uv venv --python ${{ matrix.python-version }}
       - name: Install donkey
         run: uv pip install -e ".[pc,dev]"
       - name: Run tests
