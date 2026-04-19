@@ -19,8 +19,9 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
-requires-python = ">=3.12.0,<3.13"
+requires-python = ">=3.12.0,<3.14"
 dependencies = [
     "numpy>=1.26.0",
     "pillow",

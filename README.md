@@ -93,8 +93,18 @@ adding the `source` line to your shell profile.
 
 ### Raspberry Pi
 
+Camera support (`picamera2`, `libcamera`) requires system packages that are
+not on PyPI. Install them first:
+
 ```zsh
-uv venv ~/env --python 3.12
+sudo apt install python3-libcamera python3-picamera2
+```
+
+Then create the venv using the system Python (3.13 on Raspberry Pi OS Trixie)
+with `--system-site-packages` so the venv can see the camera libraries:
+
+```zsh
+uv venv ~/env --python 3.13 --system-site-packages
 echo 'source ~/env/bin/activate' >> ~/.zshrc
 source ~/env/bin/activate
 ```

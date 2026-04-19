@@ -77,7 +77,7 @@ model.
 `pyproject.toml`:
 
 - `[project]` — name, dynamic version, authors, license, classifiers,
-  `requires-python = ">=3.12.0,<3.13"`, core dependencies
+  `requires-python = ">=3.12.0,<3.14"`, core dependencies
 - `[project.optional-dependencies]` — `pi`, `nano`, `pc`, `macos`, `dev`,
   `torch` extras
 - `[project.scripts]` — `donkey` entry point
