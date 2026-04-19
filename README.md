@@ -1,7 +1,7 @@
 # Donkeycar: a python self driving library
 
 
-![Build Status](https://github.com/autorope/donkeycar/actions/workflows/python-package-conda.yml/badge.svg?branch=main)
+![Build Status](https://github.com/autorope/donkeycar/actions/workflows/python-package.yml/badge.svg?branch=main)
 ![Lint Status](https://github.com/autorope/donkeycar/actions/workflows/superlinter.yml/badge.svg?branch=main)
 ![Release](https://img.shields.io/github/v/release/autorope/donkeycar)
 
@@ -78,6 +78,75 @@ V.add(tub, inputs=['image'], outputs=['num_records'])
 #start the drive loop at 10 Hz
 V.start(rate_hz=10)
 ```
+
+## Installation
+
+Donkeycar uses [uv](https://docs.astral.sh/uv/) for environment management.
+Install uv first:
+
+```zsh
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then create a persistent virtual environment and activate it on login by
+adding the `source` line to your shell profile.
+
+### Raspberry Pi
+
+```zsh
+uv venv ~/env --python 3.12
+echo 'source ~/env/bin/activate' >> ~/.zshrc
+source ~/env/bin/activate
+```
+
+User install (from PyPI):
+```zsh
+uv pip install donkeycar[pi]
+```
+
+Developer install (from a git clone):
+```zsh
+uv pip install -e ".[pi,dev]"
+```
+
+### Mac
+
+```zsh
+uv venv ~/.venvs/donkeycar --python 3.12
+echo 'source ~/.venvs/donkeycar/bin/activate' >> ~/.zshrc
+source ~/.venvs/donkeycar/bin/activate
+```
+
+User install (from PyPI):
+```zsh
+uv pip install donkeycar[macos]
+```
+
+Developer install (from a git clone):
+```zsh
+uv pip install -e ".[macos,dev]"
+```
+
+### PC (Linux/Windows)
+
+```zsh
+uv venv ~/.venvs/donkeycar --python 3.12
+echo 'source ~/.venvs/donkeycar/bin/activate' >> ~/.zshrc
+source ~/.venvs/donkeycar/bin/activate
+```
+
+User install (from PyPI):
+```zsh
+uv pip install donkeycar[pc]
+```
+
+Developer install (from a git clone):
+```zsh
+uv pip install -e ".[pc,dev]"
+```
+
+Once the venv is activated in your shell profile the `donkey` command is
+available from any directory without needing `uv run`.
 
 See [home page](http://donkeycar.com), [docs](http://docs.donkeycar.com)
 or join the [Discord server](http://www.donkeycar.com/community.html) to learn more.

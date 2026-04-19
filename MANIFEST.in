@@ -1,3 +1,0 @@
-include donkeycar/templates/*
-include scripts
-recursive-include donkeycar/parts/web_controller/templates/ *

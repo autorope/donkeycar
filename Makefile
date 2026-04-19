@@ -1,8 +1,6 @@
 
-
 tests:
-	pytest
+	uv run pytest
 
 package:
-	python setup.py sdist
-
+	uv build
