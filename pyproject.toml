@@ -59,6 +59,18 @@ pi = [
     "plotly",
     "albumentations",
 ]
+nano = [
+    "Adafruit_PCA9685",
+    "adafruit-circuitpython-ssd1306",
+    "adafruit-circuitpython-rplidar",
+    "Jetson.GPIO",
+    "numpy==1.23.*",
+    "matplotlib==3.7.*",
+    "kivy",
+    "kivy-garden.matplotlib",
+    "plotly",
+    "pandas==2.0.*",
+]
 pc = [
     "tensorflow==2.19.*",
     "tf-keras==2.19.*",

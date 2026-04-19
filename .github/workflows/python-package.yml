@@ -23,4 +23,4 @@ jobs:
       - name: Install donkey
         run: uv pip install -e ".[pc,dev]"
       - name: Run tests
-        run: uv run pytest
+        run: uv run --no-sync pytest
