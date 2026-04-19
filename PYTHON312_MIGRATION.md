@@ -1,22 +1,32 @@
-# Python 3.12 Migration
+# Python 3.12/3.13 Migration
 
-Donkeycar moved from Python 3.11 + conda to Python 3.12 + uv. This document
+Donkeycar moved from Python 3.11 + conda to Python 3.12+ + uv. This document
 covers every technical decision, all code changes, the new install workflow,
 and what the documentation team needs to update.
 
 ---
 
-## Why Python 3.12 (not 3.13)
+## Python version per platform
 
-Python 3.13 was the original target but was abandoned because TF's internal
-`inspect.getattr_static` behavior changed in 3.13, breaking all SavedModel
-export paths (`model.export()`, `tf.saved_model.save()`). The `_DictWrapper`
-workaround via `tf.function + from_concrete_functions` produces TFLite with
-no `serving_default` signature, requiring a tensor-API fallback in the `TfLite`
+| Platform | Python | Reason |
+|---|---|---|
+| Mac (`[macos]`) | **3.12** | `tensorflow-metal==1.2.0` has no Python 3.13 wheel; TF 2.19 SavedModel export broken on 3.13 |
+| PC (`[pc]`) | **3.12** | TF 2.19 SavedModel export broken on 3.13 |
+| Raspberry Pi (`[pi]`) | **3.13** | `libcamera`/`picamera2` are Debian system packages for Python 3.13; no pip-installable alternative |
+
+**Why not 3.13 for Mac/PC:** TF's internal `inspect.getattr_static` behavior
+changed in 3.13, breaking all SavedModel export paths (`model.export()`,
+`tf.saved_model.save()`). The `_DictWrapper` workaround via
+`tf.function + from_concrete_functions` produces TFLite with no
+`serving_default` signature, requiring a tensor-API fallback in the `TfLite`
 interpreter. This is too invasive for the current release cycle.
 
-Python 3.12 avoids all of these issues while still getting the benefits of a
-modern Python.
+**Why 3.13 on Pi:** `python3-libcamera` and `python3-picamera2` are Debian
+packages installed for the system Python (3.13 on Trixie). The venv must use
+the system Python with `--system-site-packages` to access them. A Python 3.12
+venv cannot reach these packages even with `--system-site-packages` because
+Debian installs them under `/usr/lib/python3/dist-packages`, not under the
+custom Python 3.12 tree at `/usr/local`.
 
 ---
 
@@ -27,8 +37,9 @@ modern Python.
   directory once the venv is activated in the shell profile.
 - `uv pip install` is a drop-in for pip; editable installs (`-e`) work
   unchanged.
-- uv ships prebuilt CPython for `aarch64-linux` (Pi) so no compiling needed
-  even on Debian Trixie.
+- On Pi, the Debian system Python 3.13 is used directly (not uv's bundled
+  CPython) because camera libraries are Debian system packages that must be
+  visible to the venv via `--system-site-packages`.
 
 ---
 
@@ -42,11 +53,12 @@ modern Python.
 
 **`tensorflow-metal` compatibility wall:** TF 2.20 changed the internal
 `_pywrap_tensorflow_internal.so` rpath, breaking `libmetal_plugin.dylib`.
-TF 2.18 and 2.19 both work with `tensorflow-metal==1.2.0` on Python 3.12.
-TF 2.20 and 2.21 do not. Check back when Apple releases tensorflow-metal 1.3+.
+TF 2.18 and 2.19 both work with `tensorflow-metal==1.2.0` on **Python 3.12
+only**. TF 2.20 and 2.21 do not. Check back when Apple releases
+tensorflow-metal 1.3+.
 
 **`tensorflow-metal==1.1.0`** (the previous version) has no Python 3.12 wheel.
-`1.2.0` is the first release with a `cp312` wheel.
+`1.2.0` is the first release with a `cp312` wheel. There is no `cp313` wheel.
 
 **Inference performance:** TFLite on Pi 5 (aarch64, XNNPACK): **~282 fps**
 for a `KerasLinear` 160×120×3 model. No regression vs TF 2.21 on the same
@@ -64,8 +76,9 @@ model.
 | `ai-edge-litert` | absent | `>=2.1.4` | Google's official TFLite successor, drop-in API |
 | `tensorflow-metal` | `1.1.0` | `1.2.0` | First release with Python 3.12 wheel |
 | `RPi.GPIO` | present | **removed** | No wheels past Python 3.9 |
-| `gpiozero` | absent | present | Supports Python 3.12, covers same hardware |
-| `torch` | `2.1.*` | `2.6.*` | First series with Python 3.12 aarch64 wheels |
+| `gpiozero` | absent | present | Supports Python 3.12+, covers same hardware |
+| `torch` | `2.1.*` | `2.6.*` | First series with Python 3.12+ aarch64 wheels |
+| `picamera2` (pi extra) | present | **removed** | Debian system package only; install via `apt` |
 
 ---
 
@@ -136,41 +149,22 @@ converting from Keras 3 via `from_concrete_functions`).
 
 ---
 
-## Pi: Python 3.12 from source on Debian Trixie
+## Pi: Python 3.13 (system) on Debian Trixie
 
-Pi 5 running Debian 13 (trixie) ships Python 3.13 as the system default. With
-uv, Python 3.12 is pulled automatically from Astral's prebuilt binaries:
+Pi 5 running Debian 13 (Trixie) ships Python 3.13 as the system default.
+Camera support requires `libcamera` and `picamera2`, which are Debian packages
+installed for that system Python — they are not available on PyPI. The venv
+must therefore use the system Python 3.13 with `--system-site-packages`:
 
 ```zsh
-uv venv ~/env --python 3.12
+sudo apt install python3-libcamera python3-picamera2
+uv venv ~/env --python 3.13 --system-site-packages
 ```
 
-uv resolves `CPython 3.12.13` from `/usr/local/bin/python3.12` (installed
-from source) or downloads it automatically if not present.
-
-If Python 3.12 must be built from source (e.g. no uv available yet):
-
-```bash
-sudo apt-get install -y build-essential pkg-config libbz2-dev libffi-dev \
-  libgdbm-dev libgdbm-compat-dev liblzma-dev libncurses-dev libreadline-dev \
-  libsqlite3-dev libssl-dev tk-dev uuid-dev zlib1g-dev libmpdec-dev \
-  libexpat1-dev wget
-cd /tmp
-wget -q https://www.python.org/ftp/python/3.12.13/Python-3.12.13.tar.xz
-tar -xf Python-3.12.13.tar.xz && cd Python-3.12.13
-./configure --prefix=/usr/local --with-ensurepip=install
-make -j$(nproc) && sudo make altinstall
-```
-
-**Known venv prompt bug** in the source-built Python 3.12.13: activating a
-venv shows `((env) )` instead of `(env)`. Fix:
-
-```bash
-sudo sed -i "s/context.prompt = '(%s) ' % prompt/context.prompt = prompt/" \
-  /usr/local/lib/python3.12/venv/__init__.py
-```
-
-This bug does not affect uv-created venvs.
+Using `--python 3.12` (custom-built at `/usr/local/bin/python3.12`) will not
+work: its `--system-site-packages` only includes
+`/usr/local/lib/python3.12/site-packages`, not Debian's
+`/usr/lib/python3/dist-packages` where `libcamera` and `picamera2` live.
 
 ---
 
@@ -195,7 +189,9 @@ echo 'source ~/.venvs/donkeycar/bin/activate' >> ~/.zshrc
 ### Raspberry Pi
 
 ```zsh
-uv venv ~/env --python 3.12
+sudo apt install python3-libcamera python3-picamera2
+uv venv ~/env --python 3.13 --system-site-packages
+echo 'source ~/env/bin/activate' >> ~/.zshrc
 source ~/env/bin/activate
 
 # User install (PyPI):
