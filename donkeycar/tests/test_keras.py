@@ -26,8 +26,8 @@ test_data = [
     KerasLinear, KerasCategorical, KerasInferred,
     # KerasLSTM uses CudnnRNNV3 which TFLite cannot run without CUDA
     pytest.param(KerasLSTM, marks=pytest.mark.xfail(
-        reason='KerasLSTM uses CudnnRNNV3, not supported in TFLite',
-        strict=True)),
+        reason='KerasLSTM uses CudnnRNNV3, not supported in TFLite on macOS',
+        strict=False)),
     KerasLocalizer, KerasIMU,
     Keras3D_CNN,
     KerasMemory, KerasBehavioral,
