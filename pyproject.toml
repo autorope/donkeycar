@@ -42,7 +42,6 @@ dependencies = [
 
 [project.optional-dependencies]
 pi = [
-    "picamera2",
     "Adafruit_PCA9685",
     "adafruit-circuitpython-ssd1306",
     "adafruit-circuitpython-rplidar",
