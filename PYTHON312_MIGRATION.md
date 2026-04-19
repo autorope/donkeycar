@@ -70,7 +70,8 @@ model.
 
 | Dependency | Before | After | Reason |
 |---|---|---|---|
-| Python | 3.11 | 3.12 | Stability, TF 2.19 support |
+| Python (Mac/PC) | 3.11 | 3.12 | Stability, TF 2.19 support |
+| Python (Pi) | 3.11 | 3.13 | System Python required for Debian camera packages |
 | TF (pc/mac) | `2.15.*` | `2.19.*` | Latest compatible with metal |
 | `tflite-runtime` | present | **removed** | Dead project (last release Python 3.11) |
 | `ai-edge-litert` | absent | `>=2.1.4` | Google's official TFLite successor, drop-in API |
@@ -176,16 +177,6 @@ work: its `--system-site-packages` only includes
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Add activation to shell profile so `donkey` works from any directory:
-
-```zsh
-# Pi
-echo 'source ~/env/bin/activate' >> ~/.zshrc
-
-# Mac / PC
-echo 'source ~/.venvs/donkeycar/bin/activate' >> ~/.zshrc
-```
-
 ### Raspberry Pi
 
 ```zsh
@@ -205,6 +196,7 @@ uv pip install -e ".[pi,dev]"
 
 ```zsh
 uv venv ~/.venvs/donkeycar --python 3.12
+echo 'source ~/.venvs/donkeycar/bin/activate' >> ~/.zshrc
 source ~/.venvs/donkeycar/bin/activate
 
 # User install (PyPI):
@@ -218,6 +210,7 @@ uv pip install -e ".[macos,dev]"
 
 ```zsh
 uv venv ~/.venvs/donkeycar --python 3.12
+echo 'source ~/.venvs/donkeycar/bin/activate' >> ~/.zshrc
 source ~/.venvs/donkeycar/bin/activate
 
 # User install (PyPI):
@@ -239,7 +232,7 @@ is merged to main:
 | Install — Raspberry Pi | Replace conda/pip steps with uv workflow above; note Pi uses TFLite via `ai-edge-litert`, not full TF |
 | Install — Mac | Replace conda steps with uv + `[macos]` extra; note TF 2.19 + Metal GPU |
 | Install — PC / Linux | Replace conda steps with uv + `[pc]` extra |
-| Software requirements | Update Python version from 3.11 to 3.12; remove conda prerequisite; add uv install step |
+| Software requirements | Update Python version from 3.11 to 3.12 (Mac/PC) or 3.13 (Pi); remove conda prerequisite; add uv install step |
 | Upgrade guide | Add section: "Upgrading from conda to uv" — remove old env, install uv, create new venv |
 | Training / model formats | Note default save format is now `.keras` (was `.savedmodel`) |
 | Pi inference | Update package name from `tflite-runtime` to `ai-edge-litert`; confirm API is identical |
