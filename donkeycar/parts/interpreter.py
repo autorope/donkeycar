@@ -206,8 +206,8 @@ class KerasInterpreter(Interpreter):
 
     def load(self, model_path: str) -> None:
         self.model = keras.models.load_model(model_path, compile=False)
-        # this sets the tf.keras output names of a composite model to what we
-        # want, because these names get lost when saving as savedmodel
+        # composite model output names can be lost when exporting to SavedModel
+        # for TRT; overwrite them from the pilot's declared output_keys
         logger.info(f'Loading model {model_path} and overwriting model output '
                     f'names {self.model.output_names} with {self.output_keys}')
         self.model.output_names = self.output_keys
@@ -398,23 +398,13 @@ class TensorRT(Interpreter):
         logger.info(f'Loading TensorRT model {model_path}')
         assert self.pilot, "Need to set pilot first"
         try:
-            ext = os.path.splitext(model_path)[1]
-            if ext == '.savedmodel':
-                # first load tf model format to extract input and output keys
-                model = tf.keras.models.load_model(model_path, compile=False)
-                self.input_keys = model.input_names
-                self.output_keys = model.output_names
-                converter \
-                    = trt.TrtGraphConverterV2(input_saved_model_dir=model_path)
-                self.graph_func = converter.convert()
-            else:
-                trt_model_loaded = tf.saved_model.load(
-                    model_path, tags=[tf.saved_model.SERVING])
-                self.graph_func = trt_model_loaded.signatures[
-                    tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-                inputs, outputs = self.pilot.output_shapes()
-                self.input_keys = list(inputs.keys())
-                self.output_keys = list(outputs.keys())
+            trt_model_loaded = tf.saved_model.load(
+                model_path, tags=[tf.saved_model.SERVING])
+            self.graph_func = trt_model_loaded.signatures[
+                tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+            inputs, outputs = self.pilot.output_shapes()
+            self.input_keys = list(inputs.keys())
+            self.output_keys = list(outputs.keys())
             logger.info(f'Finished loading TensorRT model.')
         except Exception as e:
             logger.error(f'Could not load TensorRT model because: {e}')

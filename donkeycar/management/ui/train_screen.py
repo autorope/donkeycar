@@ -121,7 +121,7 @@ class CheckBoxRow(BoxLayout):
 
 class TransferSelector(BoxLayout, FileChooserBase):
     """ Class to select transfer model"""
-    filters = ['*.h5', '*.savedmodel']
+    filters = ['*.h5', '*.keras']
 
 
 class ConfigViewerPopup(Popup):
@@ -198,18 +198,18 @@ class TrainScreen(AppScreen):
         tub_path = get_app_screen('tub').ids.tub_loader.tub.base_path
         transfer = self.ids.transfer_spinner.text
         model_type = self.ids.train_spinner.text
+        keras = os.path.join(self.config.MODELS_PATH, transfer + '.keras')
         h5 = os.path.join(self.config.MODELS_PATH, transfer + '.h5')
-        sm = os.path.join(self.config.MODELS_PATH, transfer + '.savedmodel')
 
         if transfer == 'Choose transfer model':
             transfer_model = None
-        elif os.path.exists(sm):
-            transfer_model = str(sm)
+        elif os.path.exists(keras):
+            transfer_model = str(keras)
         elif os.path.exists(h5):
             transfer_model = str(h5)
         else:
             transfer_model = None
-            status(f'Could find neither {sm} nor {h5} - training without '
+            status(f'Could find neither {keras} nor {h5} - training without '
                    f'transfer')
         try:
             history = train(self.config, tub_paths=tub_path,

@@ -66,14 +66,14 @@ class CarScreen(AppScreen):
         # add trailing '/'
         src = os.path.join(self.config.MODELS_PATH, '')
         # check if any sync buttons are pressed and update path accordingly
-        buttons = ['h5', 'savedmodel', 'tflite', 'trt']
+        buttons = ['h5', 'keras', 'tflite', 'trt']
         select = [btn for btn in buttons if self.ids[f'btn_{btn}'].state
                   == 'down']
-        # build filter: for example this rsyncs all .tfilte and .trt models
+        # build filter: for example this rsyncs all .tflite and .trt models
         # --include=*.trt/*** --include=*.tflite --exclude=*
         filter = ['--include=database.json']
         for ext in select:
-            if ext in ['savedmodel', 'trt']:
+            if ext == 'trt':
                 ext += '/***'
             filter.append(f'--include=*.{ext}')
         # if nothing selected, sync all

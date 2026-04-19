@@ -43,14 +43,13 @@ def create_models(keras_pilot, dir):
     keras_to_tflite(interpreter.model, tflite_model_path)
     kl = keras_pilot(interpreter=TfLite())
     kl.load(tflite_model_path)
-    # save model (Keras 3 requires .keras or .h5 extension)
-    savedmodel_path = os.path.join(dir, 'model.keras')
-    interpreter.model.save(savedmodel_path)
+    keras_path = os.path.join(dir, 'model.keras')
+    interpreter.model.save(keras_path)
     krt = None
     # load tensorrt only if supported
     if has_trt_support():
         krt = keras_pilot(interpreter=TensorRT())
-        krt.load(savedmodel_path)
+        krt.load(keras_path)
 
     return km, kl, krt
 

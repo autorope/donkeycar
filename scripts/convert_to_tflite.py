@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
 Usage:
-    convert_to_tflite.py [-o | --overwrite] <model.h5>...
+    convert_to_tflite.py [-o | --overwrite] <model>...
 
 Options:
     -h --help       Show this screen.
     -o --overwrite  Force overwriting existing TFLite files
 
 Note:
-    This script converts a keras (.h5) or tensorflow (.savedmodel) into
-    TFlite. Supports multiple input files.
+    This script converts a keras (.keras or .h5) model into TFLite.
+    Supports multiple input files.
 
 """
 
@@ -26,8 +26,8 @@ if __name__ == '__main__':
     count = 0
     for model_path in model_path_list:
         base_path, ext = splitext(model_path)
-        if ext not in ['.h5', '.savedmodel']:
-            print(f"Can only convert '.h5' or '.savedmodel' but not {ext}")
+        if ext not in ['.h5', '.keras']:
+            print(f"Can only convert '.h5' or '.keras' but not {ext}")
             continue
         tflite_filename = base_path + '.tflite'
         if exists(tflite_filename) and not overwrite:

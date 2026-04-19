@@ -127,8 +127,7 @@ class PilotDatabase:
             return datetime.fromtimestamp(t).strftime(fmt)
 
         def transfer_fmt(model_name):
-            return (model_name.replace('.h5', '').replace('.savedmodel', '')
-                .replace('.keras', ''))
+            return model_name.replace('.h5', '').replace('.keras', '')
 
         return {'Time': time_fmt, 'Transfer': transfer_fmt}
 
@@ -156,7 +155,7 @@ def update_config_from_database(cfg, model_path, model_type):
                  'ROI_CROP_BOTTOM', 'ROI_CROP_LEFT', 'ROI_CROP_RIGHT',
                  'ROI_CROP_TOP', 'SEQUENCE_LENGTH']
     model_prefix_map = {'.tflite': 'tflite_', '.trt': 'tensorrt_',
-                        '.savedmodel': '', '.keras': '', '.h5': ''}
+                        '.keras': '', '.h5': ''}
     db = PilotDatabase(cfg)
     model_basename, model_ext = os.path.splitext(
         os.path.basename(model_path))
