@@ -130,7 +130,17 @@ d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
 d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6,
            tf_lite=False, tensor_rt=False)
 
-test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
+try:
+    import fastai as _fastai  # noqa: F401
+    _skip_fastai = ()
+except ImportError:
+    _skip_fastai = (pytest.mark.skip(
+        reason='fastai not installed. Install with: uv pip install '
+               '--python ~/.venvs/donkeycar/bin/python '
+               'pytorch-lightning fastai'),)
+
+test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12,
+             pytest.param(d14, marks=_skip_fastai)]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
@@ -144,9 +154,6 @@ def test_train(config: Config, data: Data) -> None:
     :param data:            test case data
     :return:                None
     """
-    if data.type in ('fastai_linear',):
-        pytest.importorskip('torch', reason='torch not installed')
-
     def pilot_path(name):
         pilot_name = f'pilot_{name}.keras'
         return os.path.join(config.MODELS_PATH, pilot_name)

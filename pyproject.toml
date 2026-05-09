@@ -100,10 +100,10 @@ dev = [
     "black",
 ]
 torch = [
-    "torch==2.6.*",
+    "torch==2.11.*",
     "pytorch-lightning",
-    "torchvision==0.21.*",
-    "torchaudio==2.6.*",
+    "torchvision==0.26.*",
+    "torchaudio==2.11.*",
     "fastai",
 ]
 

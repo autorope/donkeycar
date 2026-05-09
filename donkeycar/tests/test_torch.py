@@ -1,4 +1,3 @@
-import importlib.util
 import pytest
 import tarfile
 import os
@@ -6,9 +5,18 @@ import platform
 from collections import namedtuple
 from donkeycar.config import Config
 
-Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
+try:
+    import torch as _torch
+except ImportError:
+    pytest.skip(
+        'PyTorch not installed. Install with: uv pip install '
+        '--python ~/.venvs/donkeycar/bin/python '
+        '"torch==2.11.*" "torchvision==0.26.*" "torchaudio==2.11.*" '
+        'pytorch-lightning fastai',
+        allow_module_level=True,
+    )
 
-torch_available = importlib.util.find_spec('torch') is not None
+Data = namedtuple('Data', ['type', 'name', 'convergence', 'pretrained'])
 
 is_jetson = pytest.mark.skipif(
     platform.machine() == 'aarch64',
@@ -51,8 +59,6 @@ test_data = [d1]
 
 
 @is_jetson
-@pytest.mark.skipif(not torch_available,
-                    reason='torch not installed')
 @pytest.mark.parametrize('data', test_data)
 def test_train(config: Config, car_dir: str, data: Data) -> None:
     """
@@ -78,8 +84,6 @@ def test_train(config: Config, car_dir: str, data: Data) -> None:
 
 
 @is_jetson
-@pytest.mark.skipif(not torch_available,
-                    reason='torch not installed')
 @pytest.mark.parametrize('model_type', ['resnet18'])
 def test_training_pipeline(config: Config, model_type: str, car_dir: str) \
         -> None:

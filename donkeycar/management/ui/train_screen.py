@@ -2,6 +2,7 @@ import datetime
 import os
 from threading import Thread
 import json
+import traceback
 
 import pandas as pd
 from kivy import Logger
@@ -195,6 +196,11 @@ class TrainScreen(AppScreen):
     train_checker = False
 
     def train_call(self, *args):
+        try:
+            import tensorflow as tf
+            tf.keras.backend.clear_session()
+        except Exception:
+            pass
         tub_path = get_app_screen('tub').ids.tub_loader.tub.base_path
         transfer = self.ids.transfer_spinner.text
         model_type = self.ids.train_spinner.text
@@ -217,7 +223,7 @@ class TrainScreen(AppScreen):
                             transfer=transfer_model,
                             comment=self.ids.comment.text)
         except Exception as e:
-            Logger.error(e)
+            Logger.error(f'Training error: {e}\n{traceback.format_exc()}')
             status(f'Training failed see console')
 
     def train(self):
