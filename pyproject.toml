@@ -105,6 +105,7 @@ torch = [
     "torchvision==0.26.*",
     "torchaudio==2.11.*",
     "fastai",
+    "ipython",
 ]
 
 [project.scripts]
