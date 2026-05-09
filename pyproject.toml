@@ -25,7 +25,7 @@ requires-python = ">=3.12.0,<3.14"
 dependencies = [
     "numpy>=1.26.0",
     "pillow",
-    "docopt",
+    "docopt-ng",
     "tornado",
     "requests",
     "PrettyTable",
