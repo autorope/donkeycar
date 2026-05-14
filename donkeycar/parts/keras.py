@@ -90,12 +90,16 @@ class KerasPilot(ABC):
 
     def set_optimizer(self, optimizer_type: str,
                       rate: float, decay: float) -> None:
+        # decay is emulated via ExponentialDecay (Keras 3 removed the
+        # per-step decay kwarg from optimizer constructors).
+        lr = keras.optimizers.schedules.ExponentialDecay(
+            rate, decay_steps=1, decay_rate=1 - decay) if decay else rate
         if optimizer_type == "adam":
-            optimizer = keras.optimizers.Adam(lr=rate, decay=decay)
+            optimizer = keras.optimizers.Adam(learning_rate=lr)
         elif optimizer_type == "sgd":
-            optimizer = keras.optimizers.SGD(lr=rate, decay=decay)
+            optimizer = keras.optimizers.SGD(learning_rate=lr)
         elif optimizer_type == "rmsprop":
-            optimizer = keras.optimizers.RMSprop(lr=rate, decay=decay)
+            optimizer = keras.optimizers.RMSprop(learning_rate=lr)
         else:
             raise Exception(f"Unknown optimizer type: {optimizer_type}")
         self.interpreter.set_optimizer(optimizer)

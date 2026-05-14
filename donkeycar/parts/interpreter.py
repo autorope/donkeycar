@@ -188,6 +188,10 @@ class KerasInterpreter(Interpreter):
 
     def compile(self, **kwargs):
         assert self.model, 'Model not set'
+        # jit_compile=False: tf-metal's PluggableDevice does not support XLA,
+        # which Keras enables by default. Without this the Metal backend
+        # silently corrupts gradient updates.
+        kwargs.setdefault('jit_compile', False)
         self.model.compile(**kwargs)
 
     def predict_from_dict(self, input_dict):

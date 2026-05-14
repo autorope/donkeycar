@@ -88,8 +88,7 @@ def test_tubplot(cardir):
     # extract tub.tar.gz into car_dir/tub
     this_dir = os.path.dirname(os.path.abspath(__file__))
     with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
-        file.extractall(cardir)
-    # define the tub dir
+        file.extractall(cardir, filter='data')
     tub_dir = os.path.join(cardir, 'tub')
     # put a dummy config file into the car dir
     cfg_file = os.path.join(cardir, 'config.py')

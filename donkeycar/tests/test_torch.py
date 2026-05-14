@@ -49,7 +49,7 @@ def car_dir(tmpdir_factory):
     # extract tub.tar.gz into temp car_dir/tub
     this_dir = os.path.dirname(os.path.abspath(__file__))
     with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
-        file.extractall(dir)
+        file.extractall(dir, filter='data')
     return dir
 
 

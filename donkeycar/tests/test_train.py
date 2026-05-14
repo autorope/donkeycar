@@ -86,7 +86,7 @@ def car_dir(tmpdir_factory, base_config, imu_fields) -> str:
     # extract tub.tar.gz into car_dir/tub
     this_dir = os.path.dirname(os.path.abspath(__file__))
     with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
-        file.extractall(car_dir)
+        file.extractall(car_dir, filter='data')
     # now create a second tub with additonal imu data
     tub_dir = os.path.join(car_dir, 'tub')
     tub = Tub(base_path=tub_dir)
