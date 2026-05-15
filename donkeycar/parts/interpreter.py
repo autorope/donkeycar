@@ -1,4 +1,6 @@
+import importlib.metadata
 import os
+import sys
 from abc import ABC, abstractmethod
 import logging
 import numpy as np
@@ -19,6 +21,15 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+
+def _is_metal_installed() -> bool:
+    if sys.platform != 'darwin':
+        return False
+    try:
+        importlib.metadata.version('tensorflow-metal')
+        return True
+    except importlib.metadata.PackageNotFoundError:
+        return False
 
 def get_tflite_interpreter():
     try:
@@ -188,11 +199,23 @@ class KerasInterpreter(Interpreter):
 
     def compile(self, **kwargs):
         assert self.model, 'Model not set'
-        # jit_compile=False: tf-metal's PluggableDevice does not support XLA,
-        # which Keras enables by default. Without this the Metal backend
-        # silently corrupts gradient updates.
         kwargs.setdefault('jit_compile', False)
+        if _is_metal_installed():
+            # Safe production fallback: the current compiled Metal training
+            # path is unsafe across the covered optimizers on the real
+            # workload, so force eager execution until regression tests
+            # prove a compiled path is both correct and faster.
+            kwargs.setdefault('run_eagerly', True)
         self.model.compile(**kwargs)
+
+    def fit(self, x, steps_per_epoch, batch_size, callbacks,
+            validation_data, validation_steps, epochs, verbose):
+        return self.model.fit(
+            x=x, steps_per_epoch=steps_per_epoch,
+            batch_size=batch_size, callbacks=callbacks,
+            validation_data=validation_data,
+            validation_steps=validation_steps,
+            epochs=epochs, verbose=verbose)
 
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():

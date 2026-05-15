@@ -116,6 +116,9 @@ def train(cfg: Config, tub_paths: str, model: str = None,
         get_model_train_details(database, model)
 
     base_path, ext = tuple(os.path.splitext(model_path))
+    if tf is not None:
+        from tensorflow import keras as _keras
+        _keras.backend.clear_session()
     kl = get_model_by_type(model_type, cfg)
     if transfer:
         kl.load(transfer)

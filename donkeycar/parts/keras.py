@@ -20,7 +20,11 @@ import logging
 import donkeycar as dk
 from donkeycar.utils import normalize_image, linear_bin
 from donkeycar.pipeline.types import TubRecord
-from donkeycar.parts.interpreter import Interpreter, KerasInterpreter
+from donkeycar.parts.interpreter import (
+    Interpreter,
+    KerasInterpreter,
+    _is_metal_installed,
+)
 
 try:
     import tensorflow as tf
@@ -178,6 +182,12 @@ class KerasPilot(ABC):
 
         model = self.interpreter.model
         self.compile()
+        if _is_metal_installed() and batch_size < 512:
+            logger.info(
+                'Metal eager training may need BATCH_SIZE >= 512 '
+                'for a clear speedup over CPU. Current BATCH_SIZE=%s.',
+                batch_size,
+            )
 
         callbacks = [
             EarlyStopping(monitor='val_loss',
@@ -199,7 +209,7 @@ class KerasPilot(ABC):
 
         tic = datetime.now()
         logger.info('////////// Starting training //////////')
-        history: tf.keras.callbacks.History = model.fit(
+        history = self.interpreter.fit(
             x=train_data,
             steps_per_epoch=train_steps,
             batch_size=batch_size,
