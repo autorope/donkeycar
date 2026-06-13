@@ -1,6 +1,9 @@
 import os
 import time
-import gymnasium as gym
+try:
+    import gymnasium as gym
+except ImportError:  # pragma: no cover
+    import gym
 import gym_donkeycar
 
 
