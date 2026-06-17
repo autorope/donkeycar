@@ -478,20 +478,31 @@ def add_gps(V, cfg):
 
         if cfg.USE_FUSION:
             from donkeycar.parts.gps_imu_fusion import EKFFusion
+            from donkeycar.parts.transform import Lambda
             fusion = EKFFusion(debug=cfg.FUSION_DEBUG)
 
-            # Combine GPS values into a tuple for fusion
-            from donkeycar.parts.transform import Lambda
-            V.add(Lambda(lambda x, y: (x, y)), 
-                  inputs=['gps/utm/longitude', 'gps/utm/latitude'], 
+            # Combine the two GPS scalars into a single (x, y) tuple.
+            # gps/pos -> (easting, northing) in UTM meters (lon=x, lat=y)
+            V.add(Lambda(lambda x, y: (x, y)),
+                  inputs=['gps/utm/longitude', 'gps/utm/latitude'],
                   outputs=['gps/pos'])
 
+            # IMU already publishes accel/gyro/quat as tuples.
+            # MPU-class IMUs have no quaternion, so feed an identity quat.
+            if cfg.IMU_SENSOR.lower() == "bno08x":
+                quat_key = 'imu/quat'
+            else:
+                quat_key = 'imu/quat_identity'
+                V.add(Lambda(lambda _a: (0.0, 0.0, 0.0, 1.0)),
+                      inputs=['imu/accel'],
+                      outputs=[quat_key])
+
+            # Fusion consumes exactly 4 tuple inputs.
             V.add(fusion,
-                  inputs=['gps/pos', 'imu/accel', 'imu/gyro', 'imu/quat'],
+                  inputs=['gps/pos', 'imu/accel', 'imu/gyro', quat_key],
                   outputs=['pos/x', 'pos/y', 'pos/yaw'],
                   threaded=False)
             return None
-
         else:
             # rename gps utm position to pose values
             V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
