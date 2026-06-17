@@ -56,10 +56,12 @@ class IMU:
             self.sensor.calibrateMPU6500()
             self.sensor.configure()
 
-        self.accel = {'x': 0., 'y': 0., 'z': 0.}
-        self.gyro = {'x': 0., 'y': 0., 'z': 0.}
-        self.mag = {'x': 0., 'y': 0., 'z': 0.}
-        self.temp = 0.
+        # self.accel = {'x': 0., 'y': 0., 'z': 0.}
+        # self.gyro = {'x': 0., 'y': 0., 'z': 0.}
+        # self.quat = {'i': 0., 'j': 0., 'k': 0., 'real': 0.}
+        self.accel = (0., 0., 0.)
+        self.gyro = (0., 0., 0.)
+        self.quat = (0., 0., 0., 0.)
         self.poll_delay = poll_delay
         self.on = True
 
@@ -75,21 +77,19 @@ class IMU:
             else:
                 from mpu9250_jmdev.registers import GRAVITY
                 ret = self.sensor.getAllData()
-                self.accel = {'x': ret[1] * GRAVITY, 'y': ret[2] * GRAVITY, 'z': ret[3] * GRAVITY}
-                self.gyro = {'x': ret[4], 'y': ret[5], 'z': ret[6]}
-                self.mag = {'x': ret[13], 'y': ret[14], 'z': ret[15]}
+                self.accel = (ret[1] * GRAVITY, ret[2] * GRAVITY, ret[3] * GRAVITY)
+                self.gyro = (ret[4], ret[5], ret[6])
+                self.mag = (ret[13], ret[14], ret[15])
                 self.temp = ret[16]
         except:
             print('failed to read imu!!')
 
     def run_threaded(self):
-        return self.accel['x'], self.accel['y'], self.accel['z'], self.gyro['x'], self.gyro['y'], self.gyro[
-            'z'], self.temp
+        return self.accel, self.gyro, self.temp
 
     def run(self):
         self.poll()
-        return self.accel['x'], self.accel['y'], self.accel['z'], self.gyro['x'], self.gyro['y'], self.gyro[
-            'z'], self.temp
+        return self.accel, self.gyro, self.temp
 
     def shutdown(self):
         self.on = False
@@ -116,9 +116,12 @@ class Bno08xIMU:
         self.sensor.enable_feature(BNO_REPORT_GYROSCOPE)
         self.sensor.enable_feature(BNO_REPORT_ROTATION_VECTOR)
 
-        self.accel = {'x': 0., 'y': 0., 'z': 0.}
-        self.gyro = {'x': 0., 'y': 0., 'z': 0.}
-        self.quat = {'i': 0., 'j': 0., 'k': 0., 'real': 0.}
+        # self.accel = {'x': 0., 'y': 0., 'z': 0.}
+        # self.gyro = {'x': 0., 'y': 0., 'z': 0.}
+        # self.quat = {'i': 0., 'j': 0., 'k': 0., 'real': 0.}
+        self.accel = (0., 0., 0.)
+        self.gyro = (0., 0., 0.)
+        self.quat = (0., 0., 0., 0.)
         self.poll_delay = poll_delay
         self.on = True
 
@@ -131,21 +134,30 @@ class Bno08xIMU:
     def poll(self):
         try:
             ax, ay, az = self.sensor.acceleration
-            self.accel['x'], self.accel['y'], self.accel['z'] = ax, ay, az
+            self.accel = (ax, ay, az)
 
             gx, gy, gz = self.sensor.gyro
-            self.gyro['x'], self.gyro['y'], self.gyro['z'] = gx, gy, gz
+            self.gyro = (gx, gy, gz)
 
             # Quaternions are ideal for avoiding gimbal lock during fusion
             qi, qj, qk, qr = self.sensor.quaternion
-            self.quat['i'], self.quat['j'], self.quat['k'], self.quat['real'] = qi, qj, qk, qr
+            self.quat = (qi, qj, qk, qr)
         except Exception as e:
             print(f"Failed to read BNO08x: {e}")
 
+    # Instead of returning flat scalars:
+    # return self.accel['x'], self.accel['y'], self.accel['z'], self.gyro['x'] ...
+
     def run_threaded(self):
-        return (self.accel['x'], self.accel['y'], self.accel['z'],
-                self.gyro['x'], self.gyro['y'], self.gyro['z'],
-                self.quat['i'], self.quat['j'], self.quat['k'], self.quat['real'])
+        accel = self.accel  # (ax, ay, az)
+        gyro = self.gyro  # (gx, gy, gz)
+        
+        # If using the BNO08x, include the quaternion tuple as well
+        if hasattr(self, 'quat'):
+            quat = self.quat  # (qi, qj, qk, qr)
+            return accel, gyro, quat
+            
+        return accel, gyro, self.temp
 
     def run(self):
         self.poll()

@@ -55,7 +55,12 @@ class EKFFusion:
         cosy_cosp = 1 - 2 * (qj * qj + qk * qk)
         return math.atan2(siny_cosp, cosy_cosp)
 
-    def run(self, gps_x, gps_y, ax, ay, az, gx, gy, gz, qi, qj, qk, qr):
+    def run(self, gps, accel, gyro, quat):
+        gps_x, gps_y = gps
+        ax, ay, az = accel
+        gx, gy, gz = gyro
+        qi, qj, qk, qr = quat
+
         # Graceful fallback if sensors are still booting up
         if any(v is None for v in [gps_x, gps_y, ax, qi]):
             return 0.0, 0.0, 0.0

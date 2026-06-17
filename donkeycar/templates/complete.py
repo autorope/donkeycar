@@ -377,13 +377,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             assert cfg.HAVE_IMU, 'Missing imu parameter in config'
 
             class Vectorizer:
-                def run(self, *components):
-                    return components
+                def run(self, accel, gyro):
+                    # accel is (ax, ay, az) and gyro is (gx, gy, gz)
+                    return list(accel) + list(gyro)
 
-            V.add(Vectorizer, inputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                                      'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+            # Add it to the vehicle loop
+            V.add(Vectorizer(), 
+                  inputs=['imu/accel', 'imu/gyro'],
                   outputs=['imu_array'])
-
             inputs = ['cam/image_array', 'imu_array']
         else:
             inputs = ['cam/image_array']
@@ -500,11 +501,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         types += ['gray16_array']
 
     if cfg.HAVE_IMU or (cfg.CAMERA_TYPE == "D435" and cfg.REALSENSE_D435_IMU):
-        inputs += ['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                   'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z']
-
-        types += ['float', 'float', 'float',
-                  'float', 'float', 'float']
+        inputs += ['imu/accel', 'imu/gyro']
+        types += ['vector', 'vector']
 
     # rbx
     if cfg.DONKEY_GYM:
@@ -870,8 +868,7 @@ def add_camera(V, cfg, camera_type):
             device_id=cfg.REALSENSE_D435_ID)
         V.add(cam, inputs=[],
               outputs=['cam/image_array', 'cam/depth_array',
-                       'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                       'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'],
+                       'imu/accel', 'imu/gyro', 'imu/temp'],
               threaded=True)
 
     elif cfg.CAMERA_TYPE == "OAKD":
@@ -926,18 +923,14 @@ def add_imu(V, cfg):
         if cfg.IMU_SENSOR.lower() == "bno08x":
             from donkeycar.parts.imu import Bno08xIMU
             imu = Bno08xIMU(addr=cfg.IMU_ADDRESS)
-            V.add(imu,
-                  outputs=[
-                      'imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                      'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z',
-                      'imu/quat_i', 'imu/quat_j', 'imu/quat_k', 'imu/quat_real'
-                  ], threaded=True)
+            V.add(imu, 
+                outputs=['imu/accel', 'imu/gyro', 'imu/quat'], 
+                threaded=True)
         else:
             from donkeycar.parts.imu import IMU
             imu = IMU(sensor=cfg.IMU_SENSOR, addr=cfg.IMU_ADDRESS,
                       dlp_setting=cfg.IMU_DLP_CONFIG)
-            V.add(imu, outputs=['imu/acl_x', 'imu/acl_y', 'imu/acl_z',
-                                'imu/gyr_x', 'imu/gyr_y', 'imu/gyr_z'], threaded=True)
+            V.add(imu, outputs=['imu/accel', 'imu/gyro', 'imu/temp'], threaded=True)
     return imu
 
 
