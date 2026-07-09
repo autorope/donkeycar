@@ -135,17 +135,19 @@ class OakD(object):
     def setup_rgb_camera(self, width, height):
         cam_rgb = self.pipeline.create(depthai.node.ColorCamera)
 
-        res = depthai.ColorCameraProperties.SensorResolution.THE_1080_P
-
+        # 'video' is always center-cropped to 16:9 (max 4K) before scaling,
+        # regardless of setResolution(), which clips the sensor's full FOV.
+        # 'isp' preserves the full sensor FOV, so downscale from there
+        # instead; setIspScale() can't land on an exact pixel size, so
+        # _poll() resizes the result down to the exact requested dimensions.
+        res = depthai.ColorCameraProperties.SensorResolution.THE_13_MP
         cam_rgb.setResolution(res)
-        # Set preview size to match model input
-        cam_rgb.setPreviewSize(self.image_w, self.image_h)
-        cam_rgb.setInterleaved(False)
+        cam_rgb.setIspScale(1, 6)  # ~4208x3120 -> ~701x520, full FOV
 
         xout_rgb = self.pipeline.create(depthai.node.XLinkOut)
         xout_rgb.setStreamName("rgb")
 
-        cam_rgb.video.link(xout_rgb.input)
+        cam_rgb.isp.link(xout_rgb.input)
 
     def get_mono_camera(self, pipeline: Pipeline, is_left: bool):
         # Configure mono camera
@@ -189,25 +191,36 @@ class OakD(object):
         #
         # convert camera frames to images
         #
-        if self.enable_rgb or self.enable_depth:
-
-            self.depth_queue: DataOutputQueue = self.oak_d_device.getOutputQueue(
-                name="depth", maxSize=1, blocking=False
-            )
+        # RGB and depth queues are initialized independently based on which
+        # streams are enabled; querying a queue for a disabled stream raises
+        # a RuntimeError since no XLinkOut was ever wired for it.
+        if self.enable_rgb:
             self.rgb_queue: DataOutputQueue = self.oak_d_device.getOutputQueue(
                 "rgb", maxSize=1, blocking=False
             )
-
-            depth_frame = self.get_frame(self.depth_queue)
             rgb_frame = self.get_frame(self.rgb_queue)
-
-            self.depth_image = depth_frame
+            if rgb_frame.shape[1] != self.width or rgb_frame.shape[0] != self.height:
+                # setIspScale() lands on an approximate size; resize to the
+                # exact requested dimensions without re-cropping the FOV.
+                rgb_frame = cv2.resize(
+                    rgb_frame, (self.width, self.height), interpolation=cv2.INTER_NEAREST
+                )
             self.color_image = rgb_frame
+        else:
+            self.color_image = None   # Explicitly set None to prevent AttributeError later
+
+        if self.enable_depth:
+            self.depth_queue: DataOutputQueue = self.oak_d_device.getOutputQueue(
+                name="depth", maxSize=1, blocking=False
+            )
+            depth_frame = self.get_frame(self.depth_queue)
+            self.depth_image = depth_frame
+        else:
+            self.depth_image = None   # Explicitly set None to prevent AttributeError later
+
 
         if self.resize:
             if self.width != WIDTH or self.height != HEIGHT:
-                import cv2
-
                 self.color_image = (
                     cv2.resize(
                         self.color_image, (self.width, self.height), cv2.INTER_NEAREST
