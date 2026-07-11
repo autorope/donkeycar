@@ -47,10 +47,20 @@ class OakD(object):
         enable_rgb=True,
         enable_depth=True,
         device_id=None,
+        rgb_output_mode="isp",
+        rgb_isp_scale_num=1,
+        rgb_isp_scale_den=6,
+        rgb_sensor_crop_x=None,
+        rgb_sensor_crop_y=None,
     ):
         self.device_id = device_id  # "18443010C1E4681200" # serial number of device to use|None to use default|"list" to list devices and exit
         self.enable_rgb = enable_rgb
         self.enable_depth = enable_depth
+        self.rgb_output_mode = rgb_output_mode
+        self.rgb_isp_scale_num = rgb_isp_scale_num
+        self.rgb_isp_scale_den = rgb_isp_scale_den
+        self.rgb_sensor_crop_x = rgb_sensor_crop_x
+        self.rgb_sensor_crop_y = rgb_sensor_crop_y
 
         self.width = width
         self.height = height
@@ -142,12 +152,21 @@ class OakD(object):
         # _poll() resizes the result down to the exact requested dimensions.
         res = depthai.ColorCameraProperties.SensorResolution.THE_13_MP
         cam_rgb.setResolution(res)
-        cam_rgb.setIspScale(1, 6)  # ~4208x3120 -> ~701x520, full FOV
 
         xout_rgb = self.pipeline.create(depthai.node.XLinkOut)
         xout_rgb.setStreamName("rgb")
 
-        cam_rgb.isp.link(xout_rgb.input)
+        if self.rgb_output_mode == "video":
+            if self.rgb_sensor_crop_x is not None or self.rgb_sensor_crop_y is not None:
+                cam_rgb.setSensorCrop(
+                    0.0 if self.rgb_sensor_crop_x is None else self.rgb_sensor_crop_x,
+                    0.0 if self.rgb_sensor_crop_y is None else self.rgb_sensor_crop_y,
+                )
+            cam_rgb.setVideoSize(self.width, self.height)
+            cam_rgb.video.link(xout_rgb.input)
+        else:
+            cam_rgb.setIspScale(self.rgb_isp_scale_num, self.rgb_isp_scale_den)
+            cam_rgb.isp.link(xout_rgb.input)
 
     def get_mono_camera(self, pipeline: Pipeline, is_left: bool):
         # Configure mono camera
@@ -314,7 +333,7 @@ if __name__ == "__main__":
 
     camera = None
     try:
-        camera = OakDLite(
+        camera = OakD(
             width=width,
             height=height,
             enable_rgb=enable_rgb,
