@@ -138,7 +138,9 @@ class OakD(object):
         res = depthai.ColorCameraProperties.SensorResolution.THE_1080_P
 
         cam_rgb.setResolution(res)
-        cam_rgb.setVideoSize(width, height)
+        # Set preview size to match model input
+        cam_rgb.setPreviewSize(self.image_w, self.image_h)
+        cam_rgb.setInterleaved(False)
 
         xout_rgb = self.pipeline.create(depthai.node.XLinkOut)
         xout_rgb.setStreamName("rgb")

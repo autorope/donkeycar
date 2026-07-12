@@ -464,20 +464,51 @@ def add_gps(V, cfg):
         nmea_player = None
         if cfg.GPS_NMEA_PATH:
             nmea_writer = CsvLogger(cfg.GPS_NMEA_PATH, separator='\t', field_count=2)
-            V.add(nmea_writer, inputs=['recording', 'gps/nmea'], outputs=['gps/recorded/nmea'])  # only record nmea sentences in user mode
+            V.add(nmea_writer, inputs=['recording', 'gps/nmea'],
+                      outputs=['gps/recorded/nmea'])  # only record nmea sentences in user mode
             nmea_player = GpsPlayer(nmea_writer)
-            V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'], outputs=['gps/playing', 'gps/nmea'])  # only play nmea sentences in autopilot mode
+            V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'],
+                      outputs=['gps/playing', 'gps/nmea'])  # only play nmea sentences in autopilot mode
 
         gps_positions = GpsNmeaPositions(debug=cfg.GPS_DEBUG)
         V.add(gps_positions, inputs=['gps/nmea'], outputs=['gps/positions'])
         gps_latest_position = GpsLatestPosition(debug=cfg.GPS_DEBUG)
-        V.add(gps_latest_position, inputs=['gps/positions'], outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
+        V.add(gps_latest_position, inputs=['gps/positions'],
+                  outputs=['gps/timestamp', 'gps/utm/longitude', 'gps/utm/latitude'])
 
-        # rename gps utm position to pose values
-        V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
+        if cfg.USE_FUSION:
+            from donkeycar.parts.gps_imu_fusion import EKFFusion
+            from donkeycar.parts.transform import Lambda
+            fusion = EKFFusion(debug=cfg.FUSION_DEBUG)
 
-        return nmea_player
+            # Combine the two GPS scalars into a single (x, y) tuple.
+            # gps/pos -> (easting, northing) in UTM meters (lon=x, lat=y)
+            V.add(Lambda(lambda x, y: (x, y)),
+                  inputs=['gps/utm/longitude', 'gps/utm/latitude'],
+                  outputs=['gps/pos'])
 
+            # IMU already publishes accel/gyro/quat as tuples.
+            # MPU-class IMUs have no quaternion, so feed an identity quat.
+            if cfg.IMU_SENSOR.lower() == "bno08x":
+                quat_key = 'imu/quat'
+            else:
+                quat_key = 'imu/quat_identity'
+                V.add(Lambda(lambda _a: (0.0, 0.0, 0.0, 1.0)),
+                      inputs=['imu/accel'],
+                      outputs=[quat_key])
+
+            # Fusion consumes exactly 4 tuple inputs.
+            V.add(fusion,
+                  inputs=['gps/pos', 'imu/accel', 'imu/gyro', quat_key],
+                  outputs=['pos/x', 'pos/y', 'pos/yaw'],
+                  threaded=False)
+            return None
+        else:
+            # rename gps utm position to pose values
+            V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
+            return nmea_player
+
+    return None
 
 if __name__ == '__main__':
     args = docopt(__doc__)

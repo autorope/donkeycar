@@ -410,9 +410,13 @@ TFMINI_SERIAL_PORT = "/dev/serial0"
 
 # IMU: Inertial Measurement Unit (e.g. MPU6050).
 HAVE_IMU = False
-IMU_SENSOR = 'mpu6050'      # (mpu6050|mpu9250)
+IMU_SENSOR = 'mpu6050'      # (mpu6050|mpu9250|bno08x)
 IMU_ADDRESS = 0x68          # I2C address
 IMU_DLP_CONFIG = 0          # Digital Lowpass Filter (0-6)
+
+# GPS + IMU Fusion: Use the BNO08x IMU to update position faster
+USE_FUSION = False          # Activate GPS + IMU Fusion
+FUSION_DEBUG = False        # Logs the position and yaw from the kalman filter
 
 # SOMBRERO HAT: Enable if using the Sombrero Hat.
 HAVE_SOMBRERO = False
