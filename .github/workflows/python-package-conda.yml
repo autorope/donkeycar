@@ -26,7 +26,7 @@ jobs:
           activate-environment: donkey
           auto-activate-base: false
           channels: conda-forge, pytorch
-          channel-priority: flexible
+          channel-priority: strict
       - name: Conda info and list
         run: |
           conda info
