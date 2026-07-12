@@ -18,18 +18,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set macOS conda environment overrides
-        if: runner.os == 'macOS'
-        run: echo "CONDA_OVERRIDE_OSX=12.0" >> $GITHUB_ENV
       - name: Create python 3.11 conda env
         uses: conda-incubator/setup-miniconda@v3
         with:
-          python-version: 3.11
-          mamba-version: "*"
+          python-version: '3.11'
+          miniforge-version: latest
           activate-environment: donkey
           auto-activate-base: false
-          channels: default, conda-forge, pytorch
-          channel-priority: true
+          channels: conda-forge, pytorch
+          channel-priority: flexible
       - name: Conda info and list
         run: |
           conda info
