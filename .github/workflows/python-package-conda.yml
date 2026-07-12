@@ -12,14 +12,15 @@ jobs:
       matrix:
         os: ["macos-latest", "ubuntu-latest"]
       fail-fast: false
-    env:
-      CONDA_OVERRIDE_OSX: "12.0"
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Set macOS conda environment overrides
+        if: runner.os == 'macOS'
+        run: echo "CONDA_OVERRIDE_OSX=12.0" >> $GITHUB_ENV
       - name: Create python 3.11 conda env
         uses: conda-incubator/setup-miniconda@v3
         with:
