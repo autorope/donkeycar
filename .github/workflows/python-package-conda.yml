@@ -12,6 +12,8 @@ jobs:
       matrix:
         os: ["macos-latest", "ubuntu-latest"]
       fail-fast: false
+    env:
+      CONDA_OVERRIDE_OSX: "12.0"
     defaults:
       run:
         shell: bash -l {0}
