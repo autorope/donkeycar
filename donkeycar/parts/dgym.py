@@ -1,6 +1,9 @@
 import os
 import time
-import gym
+try:
+    import gymnasium as gym
+except ImportError:  # pragma: no cover
+    import gym
 import gym_donkeycar
 
 
@@ -64,10 +67,10 @@ class DonkeyGymEnv(object):
     def update(self):
         while self.running:
             if self.delay > 0.0:
-                current_frame, _, _, current_info = self.env.step(self.action)
+                current_frame, _, _, _, current_info = self.env.step(self.action)
                 self.delay_buffer(current_frame, current_info)
             else:
-                self.frame, _, _, self.info = self.env.step(self.action)
+                self.frame, _, _, _, self.info = self.env.step(self.action)
 
     def run_threaded(self, steering, throttle, brake=None):
         if steering is None or throttle is None:
