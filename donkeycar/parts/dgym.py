@@ -1,7 +1,15 @@
 import os
 import time
-import gymnasium as gym
-import gym_donkeycar
+
+try:
+    import gymnasium as gym
+    import gym_donkeycar
+
+except ImportError:
+    raise ImportError(
+        "You need to install gymnasium and gym-donkeycar to use the DonkeyGymEnv."
+        "Please follow the instructions at https://docs.donkeycar.com/guide/deep_learning/simulator/"
+    )
 
 
 def is_exe(fpath):
