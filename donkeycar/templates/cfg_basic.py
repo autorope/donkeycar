@@ -114,6 +114,15 @@ TRANSFORMATIONS = []
 # AUGMENTATIONS
 AUG_BRIGHTNESS_RANGE = 0.2  # this is interpreted as [-0.2, 0.2]
 AUG_BLUR_RANGE = (0, 3)
+# Settings for random partial shadows (simulates changing sunlight), use
+# 'SHADOW' in AUGMENTATIONS. See cfg_complete.py for a full explanation of
+# each setting.
+AUG_SHADOW_PROBABILITY = 0.3
+AUG_SHADOW_DARKNESS_RANGE = (0.4, 0.7)
+AUG_SHADOW_COUNT_RANGE = (1, 2)
+AUG_SHADOW_DIMENSION = 5
+AUG_SHADOW_ROI = (0.0, 0.3, 1.0, 1.0)
+AUG_SHADOW_BLUR_KSIZE = 21
 # Number of pixels to crop, requires 'CROP' in TRANSFORMATIONS to be set
 ROI_CROP_TOP = 45
 ROI_CROP_BOTTOM = 0

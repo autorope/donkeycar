@@ -535,6 +535,32 @@ AUG_BRIGHTNESS_RANGE = 0.2
 # Blur range for augmentation (kernel size).
 AUG_BLUR_RANGE = (0, 3)
 
+# Shadow augmentation. Adds randomly shaped, randomly placed partial
+# shadows to training images (e.g. tree/building shadows crossing the
+# lane), so the model learns stable road/lane features instead of
+# lighting-specific patterns. Enable it by adding 'SHADOW' to the
+# AUGMENTATIONS list above; like all augmentations this only ever runs
+# during training and has no effect during inference. Overly dark or
+# frequent shadows can make the lane hard to see and hurt training, so
+# keep the darkness range moderate.
+#
+# Probability that a given training image receives a shadow (0..1).
+AUG_SHADOW_PROBABILITY = 0.3
+# Min/max shadow darkness: 0 = no darkening, 1 = fully black.
+AUG_SHADOW_DARKNESS_RANGE = (0.4, 0.7)
+# Min/max number of shadow shapes added per image.
+AUG_SHADOW_COUNT_RANGE = (1, 2)
+# Number of vertices of the random shadow polygon. Higher gives a more
+# irregular, realistic shape.
+AUG_SHADOW_DIMENSION = 5
+# Region of the image (x_min, y_min, x_max, y_max), as fractions of
+# (width, height), where shadows may appear. Defaults to the bottom 70%
+# of the image, which is typically where the road is.
+AUG_SHADOW_ROI = (0.0, 0.3, 1.0, 1.0)
+# Gaussian blur kernel size used to soften the shadow edge so it blends
+# into the image instead of looking like a hard cutout. 0 or 1 = hard edge.
+AUG_SHADOW_BLUR_KSIZE = 21
+
 
 # ------------------------------------------------------------------------------
 # TRANSFORMATIONS (Applied during Training AND Inference)
@@ -546,6 +572,7 @@ AUG_BLUR_RANGE = (0, 3)
 #   Available augmentations are:
 #   - BRIGHTNESS  - modify the image brightness. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/transforms/#albumentations.augmentations.transforms.RandomBrightnessContrast)
 #   - BLUR        - blur the image. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/blur/transforms/#albumentations.augmentations.blur.transforms.Blur)
+#   - SHADOW      - add random partial shadows to simulate changing sunlight
 #
 # - Transformations are changes to the image that apply both in
 #   training and at inference.  They are always applied and in
