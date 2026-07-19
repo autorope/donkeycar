@@ -4,7 +4,7 @@ import logging
 import albumentations as A
 import cv2
 import numpy as np
-from albumentations import GaussianBlur
+from albumentations import GaussianBlur, RandomGamma, GaussNoise
 from albumentations.augmentations import RandomBrightnessContrast
 from albumentations.core.transforms_interface import ImageOnlyTransform
 
@@ -38,6 +38,13 @@ class RandomShadow(ImageOnlyTransform):
         self.blur_ksize = blur_ksize
 
     def apply(self, img, **params):
+        # Compatibility guard: shadow simulation reduces lightness via the
+        # HLS color space, which requires a 3-channel (RGB/BGR) image.
+        # Skip (no-op) on grayscale or other channel counts (e.g. if a
+        # config sets IMAGE_DEPTH = 1) instead of letting cv2 raise.
+        if img.ndim != 3 or img.shape[2] != 3:
+            return img
+
         height, width = img.shape[:2]
         x_min, y_min, x_max, y_max = self.shadow_roi
         roi_x_min, roi_x_max = int(x_min * width), int(x_max * width)
@@ -97,9 +104,15 @@ class ImageAugmentation:
 
         if aug_type == 'BRIGHTNESS':
             b_limit = getattr(config, 'AUG_BRIGHTNESS_RANGE', 0.2)
-            logger.info(f'Creating augmentation {aug_type} {b_limit}')
+            # AUG_CONTRAST_RANGE is optional and defaults to the brightness
+            # range, so existing configs that only set AUG_BRIGHTNESS_RANGE
+            # keep their exact previous behaviour (brightness and contrast
+            # limits equal).
+            c_limit = getattr(config, 'AUG_CONTRAST_RANGE', b_limit)
+            logger.info(f'Creating augmentation {aug_type} '
+                       f'brightness={b_limit} contrast={c_limit}')
             return RandomBrightnessContrast(brightness_limit=b_limit,
-                                            contrast_limit=b_limit,
+                                            contrast_limit=c_limit,
                                             p=prob)
 
         elif aug_type == 'BLUR':
@@ -107,6 +120,31 @@ class ImageAugmentation:
             logger.info(f'Creating augmentation {aug_type} {b_range}')
             return GaussianBlur(sigma_limit=b_range, blur_limit=(13, 13),
                                 p=prob)
+
+        elif aug_type == 'GAMMA':
+            # Nonlinear brightness change. gamma_limit is a percentage
+            # around 100: values below 100 brighten the image, values above
+            # 100 darken it, so a single range like (60, 160) simulates
+            # both glare/overexposure and dim/nighttime conditions without
+            # needing separate augmentations for each direction.
+            gamma_limit = getattr(config, 'AUG_GAMMA_RANGE', (80, 120))
+            gamma_prob = getattr(config, 'AUG_GAMMA_PROBABILITY', prob)
+            logger.info(f'Creating augmentation {aug_type} {gamma_limit} '
+                       f'p={gamma_prob}')
+            return RandomGamma(gamma_limit=gamma_limit, p=gamma_prob)
+
+        elif aug_type == 'NOISE':
+            # Simulates sensor grain, most noticeable in low-light /
+            # nighttime footage. std_range/mean_range are fractions of the
+            # image's max pixel value (e.g. 0.1 ~= 10% of 255 for uint8
+            # images).
+            std_range = getattr(config, 'AUG_NOISE_STD_RANGE', (0.05, 0.15))
+            mean_range = getattr(config, 'AUG_NOISE_MEAN_RANGE', (0.0, 0.0))
+            noise_prob = getattr(config, 'AUG_NOISE_PROBABILITY', prob)
+            logger.info(f'Creating augmentation {aug_type} std={std_range} '
+                       f'p={noise_prob}')
+            return GaussNoise(std_range=std_range, mean_range=mean_range,
+                              p=noise_prob)
 
         elif aug_type == 'SHADOW':
             shadow_prob = getattr(config, 'AUG_SHADOW_PROBABILITY', prob)

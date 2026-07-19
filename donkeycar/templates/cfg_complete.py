@@ -532,8 +532,39 @@ AUGMENTATIONS = []
 # Brightness range for augmentation [-0.2, 0.2].
 AUG_BRIGHTNESS_RANGE = 0.2
 
+# Contrast range for augmentation. Optional - if not set, this defaults to
+# AUG_BRIGHTNESS_RANGE (the previous behaviour, where brightness and
+# contrast used the same limit). Set this only if you want to vary
+# brightness and contrast independently.
+# AUG_CONTRAST_RANGE = 0.2
+
 # Blur range for augmentation (kernel size).
 AUG_BLUR_RANGE = (0, 3)
+
+# Gamma augmentation. Applies a nonlinear brightness curve, which is a
+# closer match to how a camera sensor responds in low light than a plain
+# brightness shift. gamma_limit is a percentage around 100: values below
+# 100 brighten the image (simulates glare / overexposure), values above
+# 100 darken it (simulates dusk / nighttime), so a single range covers
+# both directions. Enable it by adding 'GAMMA' to the AUGMENTATIONS list.
+#
+# Min/max gamma, as a percentage (100 = unchanged).
+AUG_GAMMA_RANGE = (80, 120)
+# Probability that a given training image gets gamma-adjusted (0..1).
+AUG_GAMMA_PROBABILITY = 0.5
+
+# Noise augmentation. Adds Gaussian sensor noise/grain, most noticeable in
+# low-light or nighttime footage, so the model doesn't learn to expect
+# unnaturally clean dark frames. Enable it by adding 'NOISE' to the
+# AUGMENTATIONS list.
+#
+# Min/max noise standard deviation, as a fraction of the image's max pixel
+# value (e.g. 0.1 ~= 10% of 255 for a uint8 image).
+AUG_NOISE_STD_RANGE = (0.05, 0.15)
+# Min/max noise mean offset, as a fraction of the image's max pixel value.
+AUG_NOISE_MEAN_RANGE = (0.0, 0.0)
+# Probability that a given training image gets noise added (0..1).
+AUG_NOISE_PROBABILITY = 0.15
 
 # Shadow augmentation. Adds randomly shaped, randomly placed partial
 # shadows to training images (e.g. tree/building shadows crossing the
@@ -573,6 +604,21 @@ AUG_SHADOW_BLUR_KSIZE = 21
 #   - BRIGHTNESS  - modify the image brightness. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/transforms/#albumentations.augmentations.transforms.RandomBrightnessContrast)
 #   - BLUR        - blur the image. See [albumentations](https://albumentations.ai/docs/api_reference/augmentations/blur/transforms/#albumentations.augmentations.blur.transforms.Blur)
 #   - SHADOW      - add random partial shadows to simulate changing sunlight
+#   - GAMMA       - nonlinear brightening/darkening, simulates glare and low light
+#   - NOISE       - add sensor grain/noise, simulates low-light camera footage
+#
+# Example AUGMENTATIONS profiles - copy the list (and any of the AUG_*
+# overrides mentioned) into your myconfig.py. These are starting points,
+# not required settings.
+#   - indoor:          ['BRIGHTNESS', 'GAMMA']
+#   - outdoor:         ['BRIGHTNESS', 'SHADOW', 'BLUR']
+#   - low_light:       ['GAMMA', 'NOISE', 'SHADOW']
+#   - all_conditions:  ['BRIGHTNESS', 'BLUR', 'SHADOW', 'GAMMA', 'NOISE']
+#     Recommended starting point when training a single model on combined
+#     day/midday/night data, since it covers exposure variation, partial
+#     shadows, nonlinear day<->night lighting changes, and low-light
+#     sensor grain together. Consider widening AUG_GAMMA_RANGE (e.g. to
+#     (60, 160)) so it covers stronger night darkening and midday glare.
 #
 # - Transformations are changes to the image that apply both in
 #   training and at inference.  They are always applied and in
