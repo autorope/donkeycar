@@ -123,6 +123,11 @@ AUG_SHADOW_COUNT_RANGE = (1, 2)
 AUG_SHADOW_DIMENSION = 5
 AUG_SHADOW_ROI = (0.0, 0.3, 1.0, 1.0)
 AUG_SHADOW_BLUR_KSIZE = 21
+# Settings for Gaussian sensor noise (simulates low light / cheap camera
+# noise), use 'NOISE' in AUGMENTATIONS. See cfg_complete.py for a full
+# explanation of each setting.
+AUG_NOISE_PROBABILITY = 0.3
+AUG_NOISE_STD_RANGE = (0.05, 0.15)
 # Number of pixels to crop, requires 'CROP' in TRANSFORMATIONS to be set
 ROI_CROP_TOP = 45
 ROI_CROP_BOTTOM = 0

@@ -4,7 +4,7 @@ import logging
 import albumentations as A
 import cv2
 import numpy as np
-from albumentations import GaussianBlur
+from albumentations import GaussianBlur, GaussNoise
 from albumentations.augmentations import RandomBrightnessContrast
 from albumentations.core.transforms_interface import ImageOnlyTransform
 
@@ -126,6 +126,17 @@ class ImageAugmentation:
                                 shadow_roi=shadow_roi,
                                 blur_ksize=blur_ksize,
                                 p=shadow_prob)
+
+        elif aug_type == 'NOISE':
+            # Gaussian noise mimics the sensor/ISO noise produced by cheap
+            # camera modules in low light or fast-changing outdoor
+            # brightness, so the model learns to key off lane geometry
+            # rather than individual noisy pixels.
+            noise_prob = getattr(config, 'AUG_NOISE_PROBABILITY', prob)
+            std_range = getattr(config, 'AUG_NOISE_STD_RANGE', (0.05, 0.15))
+            logger.info(f'Creating augmentation {aug_type} '
+                       f'std_range={std_range} p={noise_prob}')
+            return GaussNoise(std_range=std_range, p=noise_prob)
 
     # Parts interface
     def run(self, img_arr):
