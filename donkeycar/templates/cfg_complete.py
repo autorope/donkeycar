@@ -592,6 +592,20 @@ AUG_SHADOW_ROI = (0.0, 0.3, 1.0, 1.0)
 # into the image instead of looking like a hard cutout. 0 or 1 = hard edge.
 AUG_SHADOW_BLUR_KSIZE = 21
 
+# Gaussian noise augmentation. Adds per-pixel Gaussian noise to training
+# images to simulate the sensor noise produced by cheap camera modules in
+# low light or fast-changing outdoor conditions, so the model learns to
+# rely on lane features instead of individual noisy pixels. Enable it by
+# adding 'NOISE' to the AUGMENTATIONS list above; like all augmentations
+# this only ever runs during training and has no effect during inference.
+#
+# Probability that a given training image receives noise (0..1).
+AUG_NOISE_PROBABILITY = 0.3
+# Min/max noise standard deviation, as a fraction of the max pixel value
+# (255 for uint8 images). Higher values produce grainier images; keep this
+# moderate so lane markings stay visible.
+AUG_NOISE_STD_RANGE = (0.05, 0.15)
+
 
 # ------------------------------------------------------------------------------
 # TRANSFORMATIONS (Applied during Training AND Inference)
