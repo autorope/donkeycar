@@ -582,6 +582,17 @@ CONFIDENCE_THRESHOLD = 0.0015   # The fraction of total sampled pixels that must
                                 # If you keep getting `No line detected` logs in the console then you
                                 # may want to lower the threshold.
 
+# LineFollower - optional ROI + denoising (both default to a no-op, so leaving
+# them unset keeps the classic single-band behavior unchanged)
+CROP_TOP_FRACTION = 0.0  # if > 0, ignore masked pixels above this fraction of the
+                         # image height so line-colored clutter high in the frame
+                         # (people, banners, walls) cannot bias detection. e.g. 0.5
+                         # ignores the top half. Only affects rows inside the scan
+                         # band, so a band already below the line is untouched.
+MASK_MORPH_KERNEL = 0    # if > 0 (use an odd value such as 5), denoise the mask
+                         # with a morphological open+close using an elliptical
+                         # kernel of this size to drop speckle and fill small gaps.
+
 # LineFollower - throttle step controller; increase throttle on straights, descrease on turns
 THROTTLE_MAX = 0.3    # maximum throttle value the controller will produce
 THROTTLE_MIN = 0.15   # minimum throttle value the controller will produce
