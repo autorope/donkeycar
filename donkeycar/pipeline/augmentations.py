@@ -138,13 +138,25 @@ class ImageAugmentation:
             # nighttime footage. std_range/mean_range are fractions of the
             # image's max pixel value (e.g. 0.1 ~= 10% of 255 for uint8
             # images).
-            std_range = getattr(config, 'AUG_NOISE_STD_RANGE', (0.05, 0.15))
+            std_range = getattr(config, 'AUG_NOISE_STD_RANGE', (0.005, 0.03))
             mean_range = getattr(config, 'AUG_NOISE_MEAN_RANGE', (0.0, 0.0))
             noise_prob = getattr(config, 'AUG_NOISE_PROBABILITY', prob)
             logger.info(f'Creating augmentation {aug_type} std={std_range} '
                        f'p={noise_prob}')
-            return GaussNoise(std_range=std_range, mean_range=mean_range,
-                              p=noise_prob)
+
+            try:
+                # Albumentations 2.x
+                return GaussNoise(std_range=std_range,
+                                  mean_range=mean_range,
+                                  p=noise_prob)
+            except TypeError:
+                # Albumentations 1.x used in the DSMLP GPU env
+                var_limit = tuple((s * 255.0) ** 2 for s in std_range)
+                mean = sum(mean_range) / 2.0 * 255.0
+
+                return GaussNoise(var_limit=var_limit,
+                                  mean=mean,
+                                  p=noise_prob)
 
         elif aug_type == 'SHADOW':
             shadow_prob = getattr(config, 'AUG_SHADOW_PROBABILITY', prob)
@@ -165,16 +177,6 @@ class ImageAugmentation:
                                 blur_ksize=blur_ksize,
                                 p=shadow_prob)
 
-        elif aug_type == 'NOISE':
-            # Gaussian noise mimics the sensor/ISO noise produced by cheap
-            # camera modules in low light or fast-changing outdoor
-            # brightness, so the model learns to key off lane geometry
-            # rather than individual noisy pixels.
-            noise_prob = getattr(config, 'AUG_NOISE_PROBABILITY', prob)
-            std_range = getattr(config, 'AUG_NOISE_STD_RANGE', (0.05, 0.15))
-            logger.info(f'Creating augmentation {aug_type} '
-                       f'std_range={std_range} p={noise_prob}')
-            return GaussNoise(std_range=std_range, p=noise_prob)
 
     # Parts interface
     def run(self, img_arr):
