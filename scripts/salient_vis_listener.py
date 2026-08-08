@@ -37,7 +37,8 @@ model.load(model_path)
 V.add(TCPClientValue(name="camera", host=ip), outputs=["packet"])
 V.add(JpgToImgArr(), inputs=["packet"], outputs=["img"]) 
 V.add(ImgBGR2RGB(), inputs=["img"], outputs=["img"])
-V.add(SalientVis(model), inputs=["img"], outputs=["img"])
+V.add(SalientVis(model, categorical=(model_type == "categorical")),
+      inputs=["img"], outputs=["img"])
 V.add(ImageScale(4.0), inputs=["img"], outputs=["lg_img"])
 V.add(CvImageView(), inputs=["lg_img"])
 

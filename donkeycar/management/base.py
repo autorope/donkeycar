@@ -88,11 +88,14 @@ class CreateCar(BaseCommand):
         myconfig_template_path = os.path.join(TEMPLATES_PATH, 'myconfig.py')
         train_template_path = os.path.join(TEMPLATES_PATH, 'train.py')
         calibrate_template_path = os.path.join(TEMPLATES_PATH, 'calibrate.py')
+        gradcam_template_path = os.path.join(TEMPLATES_PATH,
+                                             'run_gradcam_analysis.py')
         car_app_path = os.path.join(path, 'manage.py')
         car_config_path = os.path.join(path, 'config.py')
         mycar_config_path = os.path.join(path, 'myconfig.py')
         train_app_path = os.path.join(path, 'train.py')
         calibrate_app_path = os.path.join(path, 'calibrate.py')
+        gradcam_app_path = os.path.join(path, 'run_gradcam_analysis.py')
 
         if os.path.exists(car_app_path) and not overwrite:
             print('Car app already exists. Delete it and rerun createcar to replace.')
@@ -120,6 +123,13 @@ class CreateCar(BaseCommand):
             print("Copying calibrate script. Adjust these before starting your car.")
             shutil.copyfile(calibrate_template_path, calibrate_app_path)
             os.chmod(calibrate_app_path, stat.S_IRWXU)
+
+        if os.path.exists(gradcam_app_path) and not overwrite:
+            print('run_gradcam_analysis.py already exists. Delete it and rerun createcar to replace.')
+        else:
+            print("Copying explainability analysis launcher script.")
+            shutil.copyfile(gradcam_template_path, gradcam_app_path)
+            os.chmod(gradcam_app_path, stat.S_IRWXU)
 
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")

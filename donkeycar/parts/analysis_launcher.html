@@ -1,0 +1,482 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run Explainability Analysis</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f5f6f8; color: #24292f;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    background: #fff; border-bottom: 1px solid #d8dee4;
+    padding: 10px 18px;
+  }
+  header h1 { font-size: 16px; margin: 0; }
+  header .meta { font-size: 12px; color: #57606a; margin-top: 2px; }
+  main { max-width: 640px; margin: 14px auto; padding: 0 14px; }
+  .panel {
+    background: #fff; border: 1px solid #d8dee4; border-radius: 6px;
+    padding: 16px 18px; margin-bottom: 14px;
+  }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 4px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=number] {
+    width: 100%; padding: 6px 8px; font: inherit; font-size: 13px;
+    border: 1px solid #d0d7de; border-radius: 6px;
+  }
+  .radio-row { display: flex; flex-wrap: wrap; row-gap: 8px; column-gap: 14px;
+              align-items: center; font-size: 13px; }
+  .radio-row label { display: inline-flex; align-items: center; gap: 5px;
+                     font-weight: 400; margin: 0; white-space: nowrap;
+                     flex: 0 0 auto; }
+  #mode-value.mode-value { width: 70px; margin-left: 2px; flex: 0 0 auto; }
+  .checkbox-row { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .checkbox-row label { font-weight: 400; margin: 0; }
+  .hint { font-size: 11px; color: #8b949e; margin-top: 4px; }
+  button {
+    font: inherit; font-size: 14px; font-weight: 600; padding: 8px 20px;
+    border: none; border-radius: 6px; background: #0969da; color: #fff;
+    cursor: pointer; margin-top: 18px;
+  }
+  button:hover { background: #0757ba; }
+  button:disabled { background: #8b949e; cursor: not-allowed; }
+  #progress-panel { display: none; }
+  #progress-bar-wrap {
+    background: #eef1f4; border-radius: 6px; height: 10px; overflow: hidden;
+    margin: 10px 0 6px;
+  }
+  #progress-bar {
+    background: #0969da; height: 100%; width: 0%; transition: width 0.3s;
+  }
+  #progress-text { font-size: 13px; color: #57606a; }
+  #error-box {
+    display: none; background: #fff1f0; border: 1px solid #ffccc7;
+    color: #cf1322; padding: 10px 12px; border-radius: 6px; font-size: 13px;
+    margin-top: 10px;
+  }
+  #calib-warning-box {
+    display: none; background: #fff8e6; border: 1px solid #ffe08a;
+    color: #7a5900; padding: 10px 12px; border-radius: 6px; font-size: 13px;
+    margin-top: 10px;
+  }
+  datalist { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Run Explainability Analysis</h1>
+  <div class="meta">Grad-CAM attention/uncertainty, feature-space novelty, and pixel-gradient saliency for a recorded drive.</div>
+</header>
+
+<main>
+  <div class="panel" id="form-panel">
+    <label for="tub">Tub path</label>
+    <input type="text" id="tub" list="tubs-list" placeholder="data/">
+    <datalist id="tubs-list"></datalist>
+
+    <label for="model">Model path</label>
+    <input type="text" id="model" list="models-list" placeholder="models/mypilot.h5">
+    <datalist id="models-list"></datalist>
+    <div class="hint" id="model-pipeline-hint"></div>
+
+    <label for="transformations-override">Transformations override (optional)</label>
+    <input type="text" id="transformations-override"
+           placeholder="e.g. CROP, CANNY -- leave blank to use this launcher's config">
+    <div class="hint" id="transformations-override-hint">This launcher was
+      started with one fixed config, but every model above may have been
+      trained with a DIFFERENT TRANSFORMATIONS/POST_TRANSFORMATIONS pipeline
+      -- nothing here connects a model file back to the config it needs, so
+      analysing it with the wrong one silently computes every heat map on
+      pixels the model never saw. By default this is caught for you: the run
+      is refused if it doesn't match the model's saved training pipeline
+      (shown above once you pick a model). Only fill this in to deliberately
+      analyse a model under a DIFFERENT pipeline than it was trained with
+      (an intentional what-if) -- doing so replaces POST_TRANSFORMATIONS for
+      this run only and skips that check, since you're now doing it on
+      purpose.</div>
+
+    <label>Frames to analyse</label>
+    <div class="radio-row">
+      <label title="Analyse the K frames with the highest steering-uncertainty (variance). A fixed number of frames is analysed no matter how long the drive is.">
+        <input type="radio" name="mode" value="top_k" checked> top-K most uncertain</label>
+      <label title="Analyse every frame whose uncertainty is at or above this percentile of the whole drive (e.g. 90 = the most uncertain 10% of frames). How many frames that turns out to be depends on the drive itself.">
+        <input type="radio" name="mode" value="percentile"> percentile &ge;</label>
+      <label title="Analyse every single frame in the tub. Only practical for short drives -- long drives will take a long time and produce a large output folder.">
+        <input type="radio" name="mode" value="all"> all frames</label>
+      <input type="number" id="mode-value" class="mode-value" value="50" min="1">
+    </div>
+    <div class="hint" id="mode-value-hint">top-K: how many frames to analyse (1&ndash;total frames in the tub).</div>
+
+    <label for="limit">Limit / range of frames considered (optional)</label>
+    <input type="text" id="limit" placeholder="e.g. 500, or a range like 1000-2000 -- leave blank to use the whole tub">
+    <div class="hint" id="limit-hint">Only looks at part of the drive before
+      picking which frames to analyse above &mdash; use this to try a quick,
+      fast run, or to zoom into a specific part of the drive. A single number
+      (e.g. 500) looks at just the first N frames; a range (e.g. 1000-2000)
+      looks at only that span. Leave blank to use the whole tub.</div>
+
+    <div class="checkbox-row" style="margin-top: 14px;">
+      <input type="checkbox" id="auto-calibrate">
+      <label for="auto-calibrate">Auto-calibrate this model first if it has no calibration yet</label>
+    </div>
+    <div class="hint">Needed for confidence %% / novelty %%; adds a one-time
+      full-drive replay (only the first time you analyse this model &mdash;
+      later runs reuse the saved calibration). Checked automatically when the
+      model above has no saved calibration yet.</div>
+
+    <div id="calib-tub-section" style="display: none; margin-top: 14px;">
+      <label for="calib-tub" id="calib-tub-label">Calibration tub (training data)</label>
+      <input type="text" id="calib-tub" list="tubs-list"
+             placeholder="auto-detected from this model's training record, if known">
+      <div class="hint" id="calib-tub-hint">Calibration must be run against the
+        tub(s) this model was actually TRAINED on &mdash; not necessarily the
+        tub above, which is often a separate inference/test drive. Calibrating
+        against the wrong data makes confidence/novelty %% meaningless (novelty
+        would end up measuring "unlike this other drive" instead of "unlike
+        what the model learned"). Auto-filled when this model's training tub
+        is on record; edit it, or leave blank and it falls back to the tub
+        above with a visible warning.</div>
+    </div>
+
+    <div class="checkbox-row" style="margin-top: 14px;">
+      <input type="checkbox" id="export-frames">
+      <label for="export-frames">Export every camera frame (self-contained output, larger folder)</label>
+    </div>
+    <div class="hint">Off (default): the output folder only has images for
+      the analysed frames above, plus the drive's numbers (confidence/
+      novelty/etc) for every frame -- the viewer shows the camera feed for
+      other frames by reading straight from the tub, so the tub must stay
+      where it is. On: also copies every camera frame into the output folder
+      (~5&ndash;8 KB each), so the whole analysis folder can be moved, zipped,
+      or viewed on another machine without the original tub.</div>
+
+    <button id="run-btn" onclick="runAnalysis()">Run Analysis</button>
+    <div id="error-box"></div>
+  </div>
+
+  <div class="panel" id="progress-panel">
+    <div id="calib-warning-box"></div>
+    <div id="progress-text">Starting&hellip;</div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+    <button id="continue-btn" onclick="location.href='/'"
+            style="display:none;">Continue to viewer</button>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+
+  fetch('/api/scan').then(r => r.json()).then(d => {
+    // Suggestions only -- the field itself stays empty (its placeholder
+    // shows the expected format) until the user types or picks one, even
+    // when there's only a single match on disk.
+    const fill = (listId, values) => {
+      $(listId).innerHTML = values.map(v => `<option value="${v}">`).join('');
+    };
+    fill('tubs-list', d.tubs || []);
+    fill('models-list', d.models || []);
+  }).catch(() => {});
+
+  // ---- tub frame count (drives the hint text + top-K/limit validation) ----
+  let totalFrames = null;
+  function refreshTubInfo() {
+    const tub = $('tub').value.trim();
+    totalFrames = null;
+    if (!tub) { updateModeHint(); updateLimitHint(); return; }
+    fetch('/api/tub_info?tub=' + encodeURIComponent(tub))
+      .then(r => r.json())
+      .then(d => { totalFrames = d.n_records ?? null; })
+      .catch(() => { totalFrames = null; })
+      .finally(() => { updateModeHint(); updateLimitHint(); });
+  }
+  $('tub').addEventListener('change', refreshTubInfo);
+  $('tub').addEventListener('blur', refreshTubInfo);
+
+  // ---- calibration tub: auto-fill from this model's training record -------
+  // (courtesy default only -- never overwrites a value the user already
+  // typed, and the user can always clear/edit it to specify a different tub.)
+  let calibTubUserEdited = false;
+  $('calib-tub').addEventListener('input', () => { calibTubUserEdited = true; });
+
+  // ---- auto-calibrate checkbox: default on only when the selected model
+  // has no saved calibration yet (courtesy default only -- never overwrites
+  // a value the user already toggled by hand). The "Calibration tub" field
+  // is only relevant when auto-calibrate is on, so keep it hidden otherwise.
+  let autoCalibrateUserEdited = false;
+  function updateCalibVisibility() {
+    $('calib-tub-section').style.display =
+      $('auto-calibrate').checked ? '' : 'none';
+  }
+  $('auto-calibrate').addEventListener('change', () => {
+    autoCalibrateUserEdited = true;
+    updateCalibVisibility();
+  });
+  updateCalibVisibility();
+
+  function refreshTrainingTubs() {
+    const model = $('model').value.trim();
+    const hint = $('calib-tub-hint');
+    const DEFAULT_HINT = 'Calibration must be run against the tub(s) this ' +
+      'model was actually TRAINED on — not necessarily the tub above, ' +
+      'which is often a separate inference/test drive. Calibrating against ' +
+      'the wrong data makes confidence/novelty % meaningless (novelty would ' +
+      'end up measuring "unlike this other drive" instead of "unlike what ' +
+      'the model learned"). Auto-filled when this model\'s training tub is ' +
+      'on record; edit it, or leave blank and it falls back to the tub ' +
+      'above with a visible warning.';
+    if (!model) { hint.textContent = DEFAULT_HINT; return; }
+    fetch('/api/training_tubs?model=' + encodeURIComponent(model))
+      .then(r => r.json())
+      .then(d => {
+        if (d.tubs && d.tubs.length) {
+          if (!calibTubUserEdited) {
+            $('calib-tub').value = d.tubs.join(', ');
+          }
+          hint.textContent = 'Auto-detected from this model\'s training ' +
+            'record: ' + d.tubs.join(', ') + '. Edit if this isn\'t right.';
+        } else {
+          hint.textContent = 'No training-tub record found for this model ' +
+            '(it may not have been trained with `donkey train`, or ' +
+            'models/database.json is missing) — type the tub(s) this model ' +
+            'was actually trained on, or leave blank to fall back to the ' +
+            'tub above (with a visible warning).';
+        }
+      })
+      .catch(() => { hint.textContent = DEFAULT_HINT; });
+  }
+  $('model').addEventListener('change', refreshTrainingTubs);
+  $('model').addEventListener('blur', refreshTrainingTubs);
+
+  // ---- model field: show the pipeline this model was actually trained
+  // with (from its .preprocessing.json sidecar), so it's visible before
+  // deciding whether an override is needed at all. ----------------------
+  function refreshModelPipeline() {
+    const model = $('model').value.trim();
+    const hint = $('model-pipeline-hint');
+    if (!model) { hint.textContent = ''; return; }
+    fetch('/api/model_info?model=' + encodeURIComponent(model))
+      .then(r => r.json())
+      .then(d => {
+        if (d.pipeline_steps && d.pipeline_steps.length) {
+          hint.textContent = 'Trained with: ' + d.pipeline_steps.join(', ');
+        } else if (d.pipeline_steps === null) {
+          hint.textContent = 'No preprocessing record for this model (older '
+            + 'model, or none was ever saved) -- cannot verify the '
+            + 'transformations pipeline automatically for it.';
+        } else {
+          hint.textContent = 'Trained with no TRANSFORMATIONS/'
+            + 'POST_TRANSFORMATIONS (raw camera frames).';
+        }
+        if (!autoCalibrateUserEdited && typeof d.has_calibration === 'boolean') {
+          $('auto-calibrate').checked = !d.has_calibration;
+          updateCalibVisibility();
+        }
+      })
+      .catch(() => { hint.textContent = ''; });
+  }
+  $('model').addEventListener('change', refreshModelPipeline);
+  $('model').addEventListener('blur', refreshModelPipeline);
+
+  // Returns null (meaning: don't state a range at all) until a tub has been
+  // entered AND its frame count successfully resolved -- showing a fake
+  // "1-total frames" placeholder before then reads as a real constraint.
+  function frameRangeText() {
+    return totalFrames ? `1–${totalFrames} (this tub has ${totalFrames} frames)`
+                       : null;
+  }
+
+  // ---- "Frames to analyse" mode: show/hide + relabel the value box --------
+  function updateModeHint() {
+    const mode = document.querySelector('input[name=mode]:checked').value;
+    const valueBox = $('mode-value');
+    const hint = $('mode-value-hint');
+    if (mode === 'all') {
+      valueBox.style.display = 'none';
+      hint.textContent = 'Every frame in the tub will be analysed.';
+    } else if (mode === 'percentile') {
+      valueBox.style.display = '';
+      valueBox.min = 0; valueBox.max = 100;
+      if (!valueBox.value || valueBox.value > 100) valueBox.value = 90;
+      hint.textContent = 'percentile: 0–100 (e.g. 90 analyses the most ' +
+        'uncertain 10% of frames).';
+    } else {
+      valueBox.style.display = '';
+      valueBox.min = 1;
+      valueBox.removeAttribute('max');
+      if (!valueBox.value) valueBox.value = 50;
+      const range = frameRangeText();
+      hint.textContent = 'top-K: how many frames to analyse' +
+        (range ? ' (' + range + ').' : '.');
+    }
+  }
+  function updateLimitHint() {
+    const range = frameRangeText();
+    $('limit-hint').textContent =
+      'Only looks at part of the drive before picking which frames to ' +
+      'analyse above — use this to try a quick, fast run, or to zoom into ' +
+      'a specific part of the drive. A single number (e.g. 500) looks at ' +
+      'just the first N frames; a range (e.g. 1000-2000) looks at only ' +
+      'that span' + (range ? ' (valid frames: ' + range + ')' : '') +
+      '. Leave blank to use the whole tub.';
+  }
+  document.querySelectorAll('input[name=mode]').forEach(
+    r => r.addEventListener('change', updateModeHint));
+  updateModeHint();
+
+  const STAGE_LABEL = {
+    starting: 'Starting…',
+    calibrate: 'Calibrating model (one-time) — replaying drive for confidence/novelty %',
+    calibrate_ood: 'Calibrating model (one-time) — building novelty feature bank',
+    variance: 'Replaying drive — computing MC-Dropout uncertainty',
+    novelty: 'Replaying drive — computing feature-space novelty',
+    tta: 'Replaying drive — computing test-time-augmentation stability',
+    gradcam: 'Rendering Grad-CAM / novelty / saliency overlays',
+  };
+
+  window.runAnalysis = function () {
+    const tub = $('tub').value.trim();
+    const model = $('model').value.trim();
+    $('error-box').style.display = 'none';
+    if (!tub || !model) {
+      $('error-box').textContent = 'Tub and model paths are both required.';
+      $('error-box').style.display = 'block';
+      return;
+    }
+    const mode = document.querySelector('input[name=mode]:checked').value;
+    const valueStr = $('mode-value').value.trim();
+    const limitStr = $('limit').value.trim();
+
+    if (mode !== 'all') {
+      const value = Number(valueStr);
+      if (valueStr === '' || !Number.isFinite(value)) {
+        return showError('Enter a number for "' +
+          (mode === 'percentile' ? 'percentile' : 'top-K') + '".');
+      }
+      if (mode === 'percentile' && (value < 0 || value > 100)) {
+        return showError('Percentile must be between 0 and 100.');
+      }
+      if (mode === 'top_k') {
+        const max = totalFrames || Infinity;
+        if (value < 1 || value > max) {
+          return showError('top-K must be between 1 and ' +
+            (totalFrames || 'the number of frames in the tub') + '.');
+        }
+      }
+    }
+    // Limit accepts either a single count ("500" -> first 500 frames) or a
+    // range ("1000-2000" -> just that span), parsed into start/limit here.
+    let rangeStart = null, rangeLimit = null;
+    if (limitStr !== '') {
+      const max = totalFrames || Infinity;
+      if (limitStr.includes('-')) {
+        const parts = limitStr.split('-').map(s => s.trim());
+        const from = Number(parts[0]), to = Number(parts[1]);
+        if (parts.length !== 2 || !Number.isFinite(from) || !Number.isFinite(to)) {
+          return showError('A frame range must look like "1000-2000".');
+        }
+        if (from < 0 || to <= from) {
+          return showError('The range\'s end must be greater than its start.');
+        }
+        if (to > max) {
+          return showError('The range\'s end must be at most ' +
+            (totalFrames || 'the number of frames in the tub') + '.');
+        }
+        rangeStart = from;
+        rangeLimit = to - from;
+      } else {
+        const n = Number(limitStr);
+        if (!Number.isFinite(n) || n < 1 || n > max) {
+          return showError('Limit must be a number between 1 and ' +
+            (totalFrames || 'the number of frames in the tub') +
+            ', or a range like "1000-2000".');
+        }
+        rangeLimit = n;
+      }
+    }
+
+    const body = {
+      tub: tub,
+      model: model,
+      mode: mode,
+      value: mode === 'all' ? '' : valueStr,
+      start: rangeStart,
+      limit: rangeLimit,
+      export_frames: $('export-frames').checked,
+      auto_calibrate: $('auto-calibrate').checked,
+      calib_tub: $('calib-tub').value.trim(),
+      transformations_override: $('transformations-override').value.trim(),
+    };
+
+    $('run-btn').disabled = true;
+    $('form-panel').style.opacity = '0.6';
+    $('progress-panel').style.display = 'block';
+    $('progress-text').textContent = 'Starting…';
+    $('progress-bar').style.width = '2%';
+
+    fetch('/api/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body),
+    }).then(r => r.json()).then(d => {
+      if (!d.ok) {
+        showError(d.error || 'Failed to start analysis.');
+        return;
+      }
+      pollProgress();
+    }).catch(e => showError(String(e)));
+  };
+
+  function showError(msg) {
+    $('run-btn').disabled = false;
+    $('form-panel').style.opacity = '1';
+    $('error-box').textContent = msg;
+    $('error-box').style.display = 'block';
+  }
+
+  function pollProgress() {
+    fetch('/api/progress').then(r => r.json()).then(p => {
+      if (p.error) {
+        showError(p.error);
+        return;
+      }
+      // Show as soon as it appears (mid-run), not only once everything is
+      // done -- this is a correctness caveat, not a transient status.
+      if (p.calibration_warning) {
+        const box = $('calib-warning-box');
+        box.textContent = '⚠ ' + p.calibration_warning;
+        box.style.display = 'block';
+      }
+
+      const label = STAGE_LABEL[p.stage] || p.stage || 'Working…';
+      const pct = p.total ? Math.round(100 * p.current / p.total) : 2;
+      $('progress-text').textContent =
+        label + (p.total ? ` (${p.current}/${p.total})` : '');
+      $('progress-bar').style.width = Math.max(2, pct) + '%';
+
+      if (p.done) {
+        if (p.out_dir) {
+          $('progress-bar').style.width = '100%';
+          if (p.calibration_warning) {
+            // Don't whisk the user away before they've read the warning --
+            // require an explicit click through instead of auto-redirecting.
+            $('progress-text').textContent = 'Done (see warning above).';
+            $('continue-btn').style.display = 'inline-block';
+          } else {
+            $('progress-text').textContent = 'Done! Opening viewer…';
+            setTimeout(() => { window.location.href = '/'; }, 600);
+          }
+        }
+        return;
+      }
+      setTimeout(pollProgress, 1000);
+    }).catch(() => setTimeout(pollProgress, 2000));
+  }
+})();
+</script>
+</body>
+</html>

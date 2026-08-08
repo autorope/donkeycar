@@ -141,3 +141,58 @@ body {
   height: 60px;
   background-color: #f5f5f5;
 }
+
+.xai-explain-toggle {
+  background: none;
+  border: none;
+  color: #337ab7;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 0 0 4px;
+  text-decoration: underline;
+}
+.xai-explain-toggle:hover {
+  color: #23527c;
+}
+.xai-explain {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: #eef6ff;
+  border: 1px solid #bcdcff;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #1c3d5a;
+}
+
+.xai-banner {
+  position: relative;
+  background: #fff8e6;
+  border-bottom: 2px solid #f0c14b;
+  color: #6b5300;
+  padding: 10px 36px 10px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.xai-banner ul {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+}
+.xai-banner li {
+  margin-top: 2px;
+}
+.xai-banner-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b5300;
+  padding: 2px 6px;
+}
+.xai-banner-dismiss:hover {
+  color: #4a3a00;
+}

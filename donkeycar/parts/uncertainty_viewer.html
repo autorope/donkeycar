@@ -1,0 +1,558 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DonkeyCar Uncertainty Viewer</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: #f5f6f8; color: #24292f;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    background: #fff; border-bottom: 1px solid #d8dee4;
+    padding: 10px 18px; display: flex; align-items: baseline; gap: 14px;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 16px; margin: 0; }
+  header .meta { font-size: 12px; color: #57606a; }
+  main { max-width: 1280px; margin: 14px auto; padding: 0 14px; }
+  .panel {
+    background: #fff; border: 1px solid #d8dee4; border-radius: 6px;
+    padding: 12px; margin-bottom: 14px;
+  }
+  /* The wrapper's aspect ratio is set from the first real frame that loads
+     (see seek()), so the stage matches the actual footage instead of a
+     hardcoded 4:3 that letterboxes 16:9 frames. 16/9 is only the starting
+     guess before anything has loaded. Keeping the ratio on the wrapper (not
+     the img) means the "unavailable" placeholder, which has its own size,
+     drops into the same box without shifting the layout. */
+  #img-wrap { position: relative; background: #0d1117; border-radius: 4px;
+              display: flex; align-items: center; justify-content: center;
+              overflow: hidden; aspect-ratio: 16 / 9; max-height: 78vh; }
+  #frame-img {
+    image-rendering: auto; display: block;
+    width: 100%; height: 100%; object-fit: contain;
+  }
+  #badge {
+    position: absolute; top: 8px; left: 8px; font-size: 11px;
+    background: rgba(0,0,0,.65); color: #fff; padding: 3px 8px;
+    border-radius: 10px;
+  }
+  #controls { display: flex; align-items: center; gap: 10px; margin-top: 10px;
+              flex-wrap: wrap; font-size: 13px; }
+  button, select {
+    font: inherit; padding: 4px 12px; border: 1px solid #d0d7de;
+    border-radius: 6px; background: #f6f8fa; cursor: pointer;
+  }
+  button:hover, select:hover { background: #eef1f4; }
+  #play { min-width: 84px; font-weight: 600; }
+  #scrub { width: 100%; margin-top: 10px; }
+  #readout { margin-top: 6px; font-size: 13px; color: #57606a;
+             font-variant-numeric: tabular-nums; min-height: 18px; }
+  #readout b { color: #24292f; }
+  #layer-explain { margin-top: 10px; padding: 10px 12px; background: #eef6ff;
+                   border: 1px solid #bcdcff; border-radius: 6px;
+                   font-size: 12.5px; line-height: 1.5; color: #1c3d5a; }
+  #layer-explain .term { font-weight: 700; color: #0969da; }
+  #layer-explain .tech { font-weight: 400; color: #57606a; font-size: 11.5px; }
+  .glossary-toggle { background: none; border: none; color: #0969da;
+                      font: inherit; font-size: 12px; cursor: pointer;
+                      padding: 2px 0; text-decoration: underline; }
+  .glossary-toggle:hover { color: #0550ae; }
+  #glossary { display: none; margin-top: 8px; padding: 10px 12px;
+              background: #f6f8fa; border: 1px solid #d8dee4;
+              border-radius: 6px; font-size: 12.5px; line-height: 1.6; }
+  #glossary dt { font-weight: 700; color: #24292f; margin-top: 6px; }
+  #glossary dt:first-child { margin-top: 0; }
+  #glossary dd { margin: 2px 0 0 0; color: #444d56; }
+  #graph { width: 100%; height: 170px; display: block; cursor: crosshair; }
+  .graph-title { font-size: 12px; color: #57606a; margin: 0 0 6px 2px; }
+  .legend { font-size: 11px; color: #57606a; margin-top: 4px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 4px;
+         vertical-align: middle; margin: 0 3px 0 8px; }
+  .series-missing { flex-basis: 100%; font-size: 11.5px; color: #7d4e00;
+                    background: #fff8e5; border: 1px solid #f0d999;
+                    border-radius: 5px; padding: 5px 8px; margin-top: 4px; }
+  .series-legend { display: flex; flex-wrap: wrap; gap: 4px 16px;
+                    margin-top: 8px; font-size: 12.5px; }
+  .series-item { display: inline-flex; align-items: center; gap: 5px;
+                 cursor: pointer; user-select: none; color: #24292f; }
+  .series-item input[type="checkbox"] { margin: 0; cursor: pointer; }
+  .series-item input:disabled ~ .dot { opacity: .35; }
+  .series-item:has(input:disabled) { color: #8b949e; cursor: default; }
+  .hint { font-size: 11px; color: #8b949e; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>DonkeyCar Uncertainty Viewer</h1>
+  <span class="meta" id="meta">loading&hellip;</span>
+</header>
+
+<main>
+  <div class="panel">
+    <div id="img-wrap">
+      <img id="frame-img" alt="camera frame">
+      <span id="badge" hidden></span>
+    </div>
+    <div id="controls">
+      <button id="play">&#9654; Play</button>
+      <label>speed
+        <select id="fps">
+          <option value="2">2 fps</option>
+          <option value="5" selected>5 fps</option>
+          <option value="10">10 fps</option>
+        </select>
+      </label>
+      <label>layer
+        <select id="layer">
+          <option value="overlay" selected>Where the model was unsure (uncertainty)</option>
+          <option value="attention">Where the model looked (Grad-CAM)</option>
+          <option value="attention_pp">Where the model looked, sharper (Grad-CAM++)</option>
+          <option value="novelty">Have I seen this before? (novelty)</option>
+          <option value="saliency">Exact pixels that mattered (saliency)</option>
+          <option value="integrated_gradients">Exact pixels that mattered, cleaner (integrated gradients)</option>
+          <option value="orig">Just the camera</option>
+          <option value="model_input">What the model actually sees (transformed)</option>
+        </select>
+      </label>
+      <label><input type="checkbox" id="analyzed-only"> analysed frames only</label>
+      <label id="draw-on-mi-wrap" style="display:none"><input type="checkbox" id="draw-on-mi"> draw on model input</label>
+    </div>
+    <div id="layer-explain"></div>
+    <input type="range" id="scrub" min="0" max="0" value="0" step="1">
+    <div id="readout"></div>
+    <button class="glossary-toggle" id="glossary-btn" type="button">What do confidence / novelty / stability / variance mean? ▾</button>
+    <dl id="glossary">
+      <dt>variance</dt>
+      <dd>The raw, uncalibrated number underneath every % score below. On its
+        own it isn't meaningful (its scale depends on this specific model) --
+        the percentages are what you should actually read.</dd>
+      <dt>confidence %</dt>
+      <dd>Ask the model the same question 15 times, each time with a random
+        slice of its "brain" (dropout) switched off -- like asking 15 slightly
+        different clones. If the clones agree, confidence is high. This
+        measures whether the model agrees with <em>itself</em>, not whether
+        it's actually right.</dd>
+      <dt>novelty %</dt>
+      <dd>How far this scene's internal features are from anything the model
+        saw during training -- "does this remind me of anything I've driven
+        through before?" A model can be confident (its clones agree) about a
+        scene it has never truly seen, which novelty is built to catch.</dd>
+      <dt>TTA stability %</dt>
+      <dd>Show the model the same photo 8 times, each time with the
+        brightness/contrast/noise tweaked slightly -- like showing a photo at
+        noon, at dusk, through foggy glasses. If the answer barely changes,
+        stability is high. A low score means the model is fragile to
+        lighting/noise, a different failure mode from low confidence or high
+        novelty.</dd>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <p class="graph-title" id="graph-title">Signals over drive</p>
+    <canvas id="graph"></canvas>
+    <div class="series-legend" id="series-legend"></div>
+    <div class="legend">
+      <span class="dot" style="background:#fb8c00"></span>analysed frame (has
+      overlay images)
+      <span class="dot" style="background:#24292f"></span>current position
+      &mdash; click the graph to jump
+    </div>
+    <p class="hint">Relative per-model signal, not a calibrated probability.
+      Independent of the layer dropdown above -- tick/untick to compare.
+      Space = play/pause, &larr;/&rarr; = step.</p>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const img = $('frame-img'), imgWrap = $('img-wrap'), badge = $('badge'),
+        scrub = $('scrub'),
+        playBtn = $('play'), fpsSel = $('fps'), layerSel = $('layer'),
+        analyzedOnly = $('analyzed-only'), readout = $('readout'),
+        canvas = $('graph'), layerExplain = $('layer-explain'),
+        glossaryBtn = $('glossary-btn'), glossary = $('glossary'),
+        drawOnMi = $('draw-on-mi'), drawOnMiWrap = $('draw-on-mi-wrap');
+
+  // Plain-language explanation for whichever layer is currently selected,
+  // technical name kept alongside rather than removed -- same information for
+  // every reader, just introduced before the jargon instead of instead of it.
+  const LAYER_INFO = {
+    overlay: {
+      term: 'Where the model was unsure', tech: 'uncertainty / Grad-CAM variance',
+      text: 'Runs Grad-CAM once per dropout sub-network, then highlights spots ' +
+            'where those sub-networks pointed at different things. Bright = ' +
+            'the sub-networks disagreed about where to look here.'
+    },
+    attention: {
+      term: 'Where the model looked', tech: 'Grad-CAM',
+      text: 'Shows which part of the image most influenced the steering ' +
+            'decision, averaged across the sub-networks. Bright = this region ' +
+            'mattered a lot to the prediction.'
+    },
+    attention_pp: {
+      term: 'Where the model looked, sharper', tech: 'Grad-CAM++',
+      text: 'A refined version of the map above: gives more credit to pixels ' +
+            'that individually pushed the prediction hardest, so it can show ' +
+            'several important regions clearly (e.g. both lane lines) instead ' +
+            'of blurring them into one blob.'
+    },
+    novelty: {
+      term: 'Have I seen this before?', tech: 'feature-space novelty / OOD',
+      text: 'Shows which parts of the image look unlike anything in the ' +
+            'training data -- about familiarity, not confidence. A model can ' +
+            'be confident (its sub-networks agree) about a scene it has never ' +
+            'truly seen; this layer is built to catch exactly that case.'
+    },
+    saliency: {
+      term: 'Exact pixels that mattered', tech: 'vanilla-gradient saliency',
+      text: 'Instead of coarse regions, this asks pixel-by-pixel: how much ' +
+            'would changing this exact pixel change the steering prediction? ' +
+            'Tends to look speckled/noisy -- that is a real property of this ' +
+            'technique, not a bug.'
+    },
+    integrated_gradients: {
+      term: 'Exact pixels that mattered, cleaner', tech: 'Integrated Gradients',
+      text: 'A more rigorous version of the pixel map above. Instead of one ' +
+            'noisy snapshot, it averages pixel-importance along a path from a ' +
+            'blank black image up to the real photo, cancelling out a lot of ' +
+            'the speckle.'
+    },
+    orig: {
+      term: 'Just the camera', tech: '',
+      text: 'No AI overlay -- the plain camera frame, for reference against ' +
+            'the layers above.'
+    },
+    model_input: {
+      term: 'What the model actually sees', tech: 'TRANSFORMATIONS applied',
+      text: 'The camera frame after the configured TRANSFORMATIONS / ' +
+            'POST_TRANSFORMATIONS (crop, edge detection, colour ' +
+            'conversion). This -- not the plain camera frame -- is the input ' +
+            'every heat map above is computed against, so if it looks wrong ' +
+            'here the model is genuinely being fed something wrong. Only ' +
+            'present when the pipeline actually changes the image.'
+    },
+  };
+
+  function updateLayerExplain() {
+    const info = LAYER_INFO[layerSel.value];
+    if (!info) { layerExplain.innerHTML = ''; return; }
+    layerExplain.innerHTML =
+      '<span class="term">' + info.term + '</span>' +
+      (info.tech ? ' <span class="tech">(' + info.tech + ')</span>' : '') +
+      ' &mdash; ' + info.text;
+  }
+
+  glossaryBtn.addEventListener('click', () => {
+    const open = glossary.style.display === 'block';
+    glossary.style.display = open ? 'none' : 'block';
+    glossaryBtn.textContent = (open ? 'What do confidence / novelty / '
+      + 'stability / variance mean? ▾' : 'Hide glossary ▴');
+  });
+
+  const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240">' +
+    '<rect width="100%" height="100%" fill="#161b22"/>' +
+    '<text x="50%" y="50%" fill="#8b949e" font-size="13" ' +
+    'font-family="sans-serif" text-anchor="middle">camera frame ' +
+    'unavailable</text></svg>');
+
+  let data = null, timeline = [], analyzedPos = [], pos = 0, timer = null;
+
+  // Graph series are the full-timeline scalar signals -- deliberately
+  // independent of the image-layer dropdown above, since most image layers
+  // (Grad-CAM++, saliency, integrated gradients) only have a value for the
+  // analysed top-K frames, not a per-frame number across the whole drive.
+  // Tick/untick any combination to compare signals directly.
+  const SERIES_DEFS = [
+    { key: 'confidence', label: 'Confidence', color: '#0969da' },
+    { key: 'novelty_score', label: 'Novelty', color: '#cf222e' },
+    { key: 'tta_stability', label: 'TTA stability', color: '#1a7f37' },
+  ];
+  let series = [];       // [{key,label,color,enabled}] -- what actually got drawn
+  let usingRawFallback = false, varMax = 1;
+
+  fetch('data.json').then(r => {
+    if (!r.ok) throw new Error('data.json not found (' + r.status + ')');
+    return r.json();
+  }).then(d => {
+    data = d;
+    timeline = d.timeline || [];
+    if (!timeline.length) throw new Error('empty timeline in data.json');
+
+    timeline.forEach((e, i) => {
+      if (d.frames && d.frames[String(e.index)]) analyzedPos.push(i);
+    });
+
+    // Only offer the model-input toggle when the transformation pipeline
+    // actually changed the pixels -- otherwise the two overlay variants
+    // would be identical and the checkbox would be a no-op.
+    if (drawOnMiWrap && d.model_input_available) {
+      drawOnMiWrap.style.display = '';
+    }
+
+    series = SERIES_DEFS
+      .filter(s => timeline.some(e => e[s.key] !== null && e[s.key] !== undefined))
+      .map(s => ({ ...s, enabled: true }));
+    usingRawFallback = series.length === 0;
+    if (usingRawFallback) {
+      // No calibrated % signal anywhere in this timeline (e.g. no calib.json
+      // when this analysis was run) -- fall back to the one thing every
+      // timeline always has: raw steering variance.
+      series = [{ key: 'variance', label: 'Steering variance (raw)',
+                 color: '#0969da', enabled: true, raw: true }];
+      varMax = Math.max(1e-9, ...timeline.map(e => e.variance || 0));
+    }
+    buildSeriesLegend();
+
+    $('meta').textContent =
+      d.model + ' · ' + (d.tub || '') + ' · N=' + d.num_passes +
+      ' · ' + d.n_analyzed + '/' + d.n_records +
+      ' frames analysed · ' + (d.created || '');
+    $('graph-title').textContent = usingRawFallback ?
+      'Steering variance over drive' : 'Signals over drive (%)';
+    scrub.max = timeline.length - 1;
+    seek(analyzedPos.length ? analyzedPos[0] : 0);
+    window.addEventListener('resize', drawGraph);
+  }).catch(err => {
+    $('meta').textContent = 'Error: ' + err.message;
+  });
+
+  function buildSeriesLegend() {
+    const el = $('series-legend');
+    el.innerHTML = '';
+    series.forEach(s => {
+      const label = document.createElement('label');
+      label.className = 'series-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = s.enabled;
+      cb.disabled = usingRawFallback;   // nothing to toggle with just one series
+      cb.addEventListener('change', () => { s.enabled = cb.checked; drawGraph(); });
+      const dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.style.background = s.color;
+      label.appendChild(cb);
+      label.appendChild(dot);
+      label.appendChild(document.createTextNode(s.label));
+      el.appendChild(label);
+    });
+
+    // Say WHY a signal is absent rather than just leaving it out of the
+    // legend -- "not calibrated" and "calibrated but flat" look identical on
+    // a graph, and only one of them is something the user can act on.
+    const missing = (data && data.signals_unavailable) || [];
+    if (missing.length) {
+      const note = document.createElement('div');
+      note.className = 'series-missing';
+      note.textContent = 'Not shown: ' + missing
+        .map(m => m.label + ' (' + m.reason + ')').join('; ')
+        + '. Re-run calibration on this model to add them.';
+      el.appendChild(note);
+    }
+  }
+
+  function entryImage(entry) {
+    const f = data.frames && data.frames[String(entry.index)];
+    if (f) {
+      const layer = layerSel.value;
+      // When 'draw on model input' is ticked, prefer the '_mi' variant of
+      // whichever heat map is selected. Those are drawn straight onto the
+      // transformed image, so they need no crop mapping and are exact by
+      // construction; the default variants are projected back onto the raw
+      // frame instead. Novelty has no _mi variant on purpose -- it is
+      // measured on raw pixels, so it is already in raw coordinates.
+      if (drawOnMi && drawOnMi.checked && f[layer + '_mi']) {
+        return f[layer + '_mi'];
+      }
+      if (layer === 'attention') return f.attention;
+      if (layer === 'orig') return f.orig;
+      // absent when the pipeline is a no-op (nothing to show that the
+      // 'orig' layer doesn't already show) or on older analyses.
+      if (layer === 'model_input') return f.model_input || null;
+      // attention++ / IG maps may be absent on analyses produced before those
+      // layers existed -- fall through to unavailable rather than the overlay.
+      if (layer === 'attention_pp') return f.attention_pp || null;
+      if (layer === 'integrated_gradients') return f.integrated_gradients || null;
+      // novelty map may be absent even on an analysed frame if the model's
+      // calibration predates novelty stats -- fall through to unavailable.
+      if (layer === 'novelty') return f.novelty || null;
+      if (layer === 'saliency') return f.saliency || null;
+      return f.overlay;
+    }
+    if (entry.image) return entry.image;          // exported frames/
+    if (entry.tub_image) return 'tub/' + entry.tub_image;
+    return null;
+  }
+
+  function seek(p) {
+    pos = Math.max(0, Math.min(timeline.length - 1, p));
+    const entry = timeline[pos];
+    const f = data.frames && data.frames[String(entry.index)];
+
+    updateLayerExplain();
+    const src = entryImage(entry);
+    img.onerror = () => { img.onerror = null; img.src = PLACEHOLDER;
+                          showBadge('frame image unavailable'); };
+    // Size the stage to whatever this frame actually is. Camera frames and
+    // model-sized overlays don't always share a ratio, so read it per load
+    // rather than assuming one.
+    img.onload = () => {
+      if (img.src === PLACEHOLDER) return;   // keep the last real ratio
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (w > 0 && h > 0) imgWrap.style.aspectRatio = w + ' / ' + h;
+    };
+    if (src) { img.src = src; } else { img.src = PLACEHOLDER; }
+
+    if (f) {
+      if (layerSel.value === 'orig') showBadge('analysed · overlays hidden');
+      else if (layerSel.value === 'novelty' && !f.novelty)
+        showBadge('no novelty map for this frame (model has no novelty calibration)');
+      else if (layerSel.value === 'attention_pp' && !f.attention_pp)
+        showBadge('no attention++ map (analysis predates Grad-CAM++)');
+      else if (layerSel.value === 'integrated_gradients' && !f.integrated_gradients)
+        showBadge('no integrated-gradients map (analysis predates this layer)');
+      else badge.hidden = true;
+    } else {
+      showBadge('no uncertainty map for this frame');
+    }
+
+    scrub.value = pos;
+    const t0 = timeline[0].timestamp_ms || 0;
+    const dt = ((entry.timestamp_ms || t0) - t0) / 1000;
+    let txt = '<b>frame ' + entry.index + '</b> · t=+' + dt.toFixed(1) +
+              's · variance ' + (entry.variance === null ||
+                                 entry.variance === undefined
+                                 ? 'n/a' : entry.variance.toFixed(5));
+    if (entry.confidence !== null && entry.confidence !== undefined)
+      txt += ' · confidence <b>' + Math.round(entry.confidence) + '%</b>';
+    if (entry.novelty_score !== null && entry.novelty_score !== undefined)
+      txt += ' · novelty <b>' + Math.round(entry.novelty_score) + '%</b>';
+    if (entry.tta_stability !== null && entry.tta_stability !== undefined)
+      txt += ' · TTA stability <b>' + Math.round(entry.tta_stability) + '%</b>';
+    readout.innerHTML = txt;
+    drawGraph();
+  }
+
+  function showBadge(text) { badge.textContent = text; badge.hidden = false; }
+
+  // ---- playback ----------------------------------------------------------
+  function stepForward() {
+    if (analyzedOnly.checked && analyzedPos.length) {
+      const next = analyzedPos.find(p => p > pos);
+      if (next === undefined) { pause(); return; }
+      seek(next);
+    } else {
+      if (pos >= timeline.length - 1) { pause(); return; }
+      seek(pos + 1);
+    }
+  }
+  function stepBack() {
+    if (analyzedOnly.checked && analyzedPos.length) {
+      const prev = [...analyzedPos].reverse().find(p => p < pos);
+      if (prev !== undefined) seek(prev);
+    } else seek(pos - 1);
+  }
+  function play() {
+    if (pos >= timeline.length - 1) seek(0);       // replay from start
+    timer = setInterval(stepForward, 1000 / parseFloat(fpsSel.value));
+    playBtn.innerHTML = '&#10074;&#10074; Pause';
+  }
+  function pause() {
+    clearInterval(timer); timer = null;
+    playBtn.innerHTML = '&#9654; Play';
+  }
+  playBtn.addEventListener('click', () => timer ? pause() : play());
+  fpsSel.addEventListener('change', () => { if (timer) { pause(); play(); } });
+  layerSel.addEventListener('change', () => seek(pos));
+  if (drawOnMi) drawOnMi.addEventListener('change', () => seek(pos));
+  scrub.addEventListener('input', () => seek(parseInt(scrub.value, 10)));
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); timer ? pause() : play(); }
+    if (e.code === 'ArrowRight') { pause(); stepForward(); }
+    if (e.code === 'ArrowLeft') { pause(); stepBack(); }
+  });
+
+  // ---- signals graph -------------------------------------------------------
+  function seriesValue(s, e) {
+    // Keep a missing variance as null (a gap in the line), not 0 -- 0 is the
+    // lowest possible variance and would read as "maximally certain here".
+    const v = s.raw ? e.variance : e[s.key];
+    return (v === null || v === undefined) ? null : v;
+  }
+  function drawGraph() {
+    if (!timeline.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth * dpr, H = canvas.clientHeight * dpr;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const pad = { l: 40 * dpr, r: 8 * dpr, t: 8 * dpr, b: 20 * dpr };
+    const yMax = usingRawFallback ? varMax * 1.05 : 100;
+    const n = timeline.length;
+    const x = i => pad.l + (n === 1 ? 0 : i / (n - 1)) * (W - pad.l - pad.r);
+    const y = v => H - pad.b - (v / yMax) * (H - pad.t - pad.b);
+
+    // axes + gridlines
+    ctx.strokeStyle = '#d8dee4'; ctx.fillStyle = '#8b949e';
+    ctx.lineWidth = dpr; ctx.font = (10 * dpr) + 'px sans-serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    const ticks = usingRawFallback ? [0, yMax / 2, yMax] : [0, 25, 50, 75, 100];
+    ticks.forEach(tv => {
+      ctx.beginPath(); ctx.moveTo(pad.l, y(tv)); ctx.lineTo(W - pad.r, y(tv));
+      ctx.stroke();
+      ctx.fillText(usingRawFallback ? tv.toExponential(0) : tv,
+                   pad.l - 5 * dpr, y(tv));
+    });
+
+    // one polyline per ticked series; a null/undefined value breaks the line
+    // into a gap instead of dropping to 0 (which would misread as "measured
+    // zero" rather than "no data this frame").
+    series.forEach(s => {
+      if (!s.enabled) return;
+      ctx.strokeStyle = s.color; ctx.lineWidth = 1.4 * dpr;
+      ctx.beginPath();
+      let drawing = false;
+      timeline.forEach((e, i) => {
+        const v = seriesValue(s, e);
+        if (v === null) { drawing = false; return; }
+        const px = x(i), py = y(v);
+        if (!drawing) { ctx.moveTo(px, py); drawing = true; }
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    });
+
+    // analysed-frame markers: a fixed row along the top edge, independent of
+    // which series are ticked (an analysed frame has overlay images
+    // regardless of which scalar signal you're currently comparing).
+    ctx.fillStyle = '#fb8c00';
+    analyzedPos.forEach(i => {
+      ctx.beginPath();
+      ctx.arc(x(i), pad.t + 3 * dpr, 2.2 * dpr, 0, 7);
+      ctx.fill();
+    });
+
+    // cursor
+    ctx.strokeStyle = '#24292f'; ctx.lineWidth = 1.6 * dpr;
+    ctx.beginPath(); ctx.moveTo(x(pos), pad.t);
+    ctx.lineTo(x(pos), H - pad.b); ctx.stroke();
+  }
+  canvas.addEventListener('click', e => {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const padL = 40, padR = 8;
+    const frac = (e.clientX - rect.left - padL) /
+                 (rect.width - padL - padR);
+    pause();
+    seek(Math.round(frac * (timeline.length - 1)));
+  });
+})();
+</script>
+</body>
+</html>

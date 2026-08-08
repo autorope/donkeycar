@@ -499,6 +499,159 @@ LEARNING_RATE_DECAY = 0.0
 # Store images as 'ARRAY' (faster), 'BINARY', or 'NOCACHE' (saves RAM).
 CACHE_POLICY = 'ARRAY'
 
+# ============================================================
+# EXPLAINABLE AI / UNCERTAINTY TOOLKIT
+# Two independent live signals, each its own on/off switch below. Either,
+# both, or neither can be enabled -- they don't depend on each other, and
+# neither needs any command-line flag. Both need a calibration file
+# (<model>.calib.json, produced by `python -m donkeycar.parts.mc_calibrate`
+# or automatically via XAI_CONFIDENCE_AUTO_CALIBRATE below) to show a % on
+# the dashboard; without one the raw numbers still get logged to the tub.
+# ============================================================
+
+# --- Signal 1: MC-Dropout confidence -------------------------------------
+# Runs the linear model N times per frame with dropout active and reports
+# the variance of the steering predictions as a relative uncertainty signal
+# ("do my dropout sub-networks agree?"). NOT a calibrated probability.
+# Costs N extra forward passes per frame -- the more expensive of the two
+# signals, hence its own explicit toggle.
+XAI_CONFIDENCE_ENABLED = False   # master on/off for the confidence signal
+XAI_CONFIDENCE_PASSES = 15       # number of stochastic forward passes per frame
+XAI_CONFIDENCE_ALPHA = 0.2       # EMA smoothing of the variance (0..1, higher=faster)
+# Minimum seconds between confidence updates. 0 = every frame; the default
+# below (0.3) updates confidence ~3x/sec instead. Between updates the car
+# still steers every frame via a cheap single-pass inference -- only the
+# confidence number is held, so this never costs driving responsiveness.
+# Reduces average compute load on slow hardware (Pi) by cutting how often
+# the expensive N-pass update runs.
+XAI_CONFIDENCE_INTERVAL = 0.3
+# When True, training automatically builds the confidence (and novelty)
+# calibration on the training tubs and saves <model>.calib.json next to the
+# model, so the model ships ready for the dashboard. Adds a replay pass
+# (~minutes), so it is off by default. Linear model only.
+XAI_CONFIDENCE_AUTO_CALIBRATE = False
+XAI_CONFIDENCE_CALIBRATE_LIMIT = None   # cap frames used for calibration (None=all)
+
+# --- Augmentation-aware novelty calibration ------------------------------
+# Training applies AUGMENTATIONS (see the augmentation section further down)
+# only to the training split, so a novelty baseline fit on raw tub frames
+# describes a NARROWER input distribution than the model was actually
+# trained for. The consequence: an ordinary brighter/dimmer or blurrier frame
+# scores as highly novel at runtime, and with XAI_THROTTLE_SCALING_ENABLED the
+# car slows down in exactly the conditions augmentation was added to survive.
+#
+# Unlike the confidence/TTA percentiles -- which are re-measured through the
+# retrained model on every calibration and so rescale themselves -- this
+# cannot self-correct: live novelty measures distance in a FROZEN ImageNet
+# encoder's feature space, which never sees a training epoch.
+#
+# When True (default) and AUGMENTATIONS is non-empty, calibration also pushes
+# a strided subset of frames through the same augmentation pipeline used in
+# training and pools those features into the novelty baseline. With no
+# AUGMENTATIONS configured this does nothing, so un-augmented models
+# calibrate exactly as before. Scoped to the novelty baselines only: the
+# MC-Dropout and TTA replays are untouched (their EMAs assume a contiguous
+# time-ordered frame stream).
+XAI_CALIBRATE_WITH_AUGMENTATIONS = True
+XAI_CALIBRATE_AUG_PASSES = 2        # randomised augmented passes per sampled frame
+XAI_CALIBRATE_AUG_MAX_SAMPLES = 1500  # cap on total augmented samples (bounds RAM/time)
+
+# --- Signal 2: feature-space novelty (out-of-distribution) detection -----
+# Measures how far the current scene is from the training distribution
+# (Mahalanobis distance) -- "have I seen anything like this?" A different
+# question from confidence above: a frame can be low-confidence yet
+# familiar-looking, or high-confidence yet genuinely novel (confidently
+# wrong). See donkeycar.parts.novelty module docstring for the full picture.
+#
+# Novelty is measured in the features of a GENERIC ImageNet encoder (below),
+# NOT the steering model's own layers -- the steering model is trained to
+# ignore scene content (grass vs track), so measuring novelty there barely
+# responded to different scenes. The encoder keeps that content. Its ImageNet
+# weights are fetched once at calibration time and saved next to the model as
+# <model>.novelty_encoder.h5, so a Pi driving offline needs no download.
+XAI_NOVELTY_ENABLED = False   # master on/off for the novelty signal
+XAI_NOVELTY_ALPHA = 0.2       # EMA smoothing of the raw Mahalanobis distance
+XAI_NOVELTY_ENCODER = 'mobilenet_v2'   # generic feature encoder ('mobilenet_v2'|'mobilenet')
+XAI_NOVELTY_ENCODER_INPUT = 128        # square input size fed to the encoder
+XAI_NOVELTY_ENCODER_ALPHA = 1.0        # encoder width multiplier (smaller=faster, e.g. 0.35 on a Pi)
+# Offline-only: the novelty HEAT MAP in the analysis viewer uses the same
+# encoder but keeps its spatial grid, at a larger, aspect-preserving input so
+# the map isn't a coarse 4x4. Costs nothing while driving. Grid resolution is
+# roughly (short side / 32), e.g. 224 -> a 7-row grid on a 16:9 frame.
+XAI_NOVELTY_SPATIAL_INPUT = 224
+# Frames sampled to fit that map's baseline. Every grid location of every
+# sampled frame is one training vector, so a few hundred frames is plenty.
+XAI_NOVELTY_SPATIAL_MAX_FRAMES = 400
+# Hard cap on those per-location vectors before fitting. Bounds calibration
+# memory (the fit materialises several n_vectors x 1280 float64 arrays);
+# a diagonal Gaussian fits each dimension independently, so a few thousand
+# samples is already ample.
+XAI_NOVELTY_SPATIAL_MAX_VECTORS = 4000
+# Minimum seconds between novelty updates. 0 = every frame; the default below
+# (0.3) updates novelty ~3x/sec instead. Unlike confidence's interval, a held
+# frame here costs NOTHING -- this signal never drives, so between updates it
+# just holds the last score with zero forward passes, instead of falling back
+# to a cheap pass. See the note by XAI_THROTTLE_STOP_DURATION below for how
+# this interacts with throttle scaling's reaction time.
+XAI_NOVELTY_INTERVAL = 0.3
+
+# --- Signal 3: test-time augmentation (TTA) stability --------------------
+# Runs the DETERMINISTIC model on M photometrically-augmented copies of the
+# frame and reports the variance of the steering predictions as a "stability"
+# signal ("does my answer stay the same if the lighting/noise changes a
+# little?"). A third, distinct question from the two above: confidence probes
+# the model's weights, novelty probes the scene, TTA probes robustness to
+# input perturbation. Photometric augmentation only (brightness/contrast/gamma
+# /noise) -- never geometric, which would change the correct steering answer.
+# M forward passes batched into one call, cheap enough for live use.
+# This flag only controls whether the signal runs while DRIVING. Calibration
+# always builds the "tta" block regardless, so you can switch this on later
+# without re-running calibration.
+XAI_TTA_ENABLED = False       # master on/off for the TTA stability signal (live only)
+XAI_TTA_SAMPLES = 8           # M, number of augmented copies per frame
+XAI_TTA_ALPHA = 0.2           # EMA smoothing of the steering variance
+# Minimum seconds between TTA updates. 0 = every frame, which means M forward
+# passes EVERY frame -- the most expensive of the three signals per update.
+# A held frame costs zero forward passes (this signal never drives). The
+# default below (0.5, i.e. ~2x/sec) is the most relaxed of the three since TTA
+# has the biggest single per-frame cost -- if confidence + novelty + TTA
+# together is straining the hardware (Pi power draw, brownouts), this is the
+# first knob to raise further. See the note by XAI_THROTTLE_STOP_DURATION
+# below for how this interacts with throttle scaling's reaction time.
+XAI_TTA_INTERVAL = 0.5
+XAI_TTA_STRENGTH = 0.2        # photometric jitter strength (0..1); 0 = no augmentation
+
+# --- Throttle scaling (Feature 2) -----------------------------------------
+# Scales autopilot throttle down as confidence drops and/or novelty rises;
+# steering is never affected, and manual driving is unchanged. Takes the
+# more conservative (lowest) scale across whichever of the two signals above
+# are currently enabled and calibrated -- enabling only one of them still
+# works, using that one signal alone. Disabled -> zero behaviour change.
+XAI_THROTTLE_SCALING_ENABLED = False
+XAI_CONFIDENCE_REDUCED_THRESHOLD = 65.0    # below this confidence %, start scaling
+XAI_CONFIDENCE_CRITICAL_THRESHOLD = 25.0   # below this confidence %, critical tier
+XAI_NOVELTY_REDUCED_THRESHOLD = 25.0       # above this novelty %, start scaling
+XAI_NOVELTY_CRITICAL_THRESHOLD = 65.0      # above this novelty %, critical tier
+XAI_TTA_REDUCED_THRESHOLD = 65.0           # below this stability %, start scaling
+XAI_TTA_CRITICAL_THRESHOLD = 25.0          # below this stability %, critical tier
+XAI_THROTTLE_MIN_SCALE = 0.4    # floor: never below 40% from any single signal
+# Secs sustained-critical (any signal) before full stop. If you also raised
+# XAI_NOVELTY_INTERVAL / XAI_TTA_INTERVAL to reduce compute load, know that
+# those signals can now be stale by up to that many seconds before a new
+# reading even arrives -- worst case, this adds to that delay before the car
+# reacts (e.g. NOVELTY_INTERVAL=0.3 + STOP_DURATION=1.0 -> up to ~1.3s before
+# a full stop). Fine for dashboard/monitoring use; worth tightening the
+# interval(s) back down if you're relying on this for real-time braking.
+XAI_THROTTLE_STOP_DURATION = 1.0   # secs sustained-critical (any signal) before full stop
+
+# --- Offline analysis (Grad-CAM tool) -------------------------------------
+# These only affect the offline post-drive analysis tool
+# (donkeycar.parts.gradcam_uncertainty / the run_gradcam_analysis.py GUI),
+# never the live drive loop. Each analysed frame gets several overlay layers:
+# Grad-CAM attention + uncertainty, Grad-CAM++ attention (sharper), novelty,
+# vanilla saliency, and Integrated Gradients.
+XAI_IG_STEPS = 32   # Integrated Gradients Riemann steps (20-50 typical; higher=cleaner+slower)
+
 # MODEL OPTIMIZATION
 # Automatically create TFLite model for faster inference on Pi.
 CREATE_TF_LITE = True

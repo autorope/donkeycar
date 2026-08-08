@@ -301,10 +301,24 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             print(e)
             print("ERR>> problems loading model json", json_fnm)
 
+    # Always defined (not just inside `if model_path:` below), so the
+    # throttle-scaling block further down -- which now runs AFTER AiLaunch,
+    # outside this conditional -- can safely check them even when driving
+    # without a model at all.
+    use_mc_dropout = use_novelty = use_tta = False
+
     #
     # load and configure model for inference
     #
     if model_path:
+        # Deterministic transforms (crop, trapezoidal mask, etc.) must be
+        # identical between training and driving, or the model looks at a
+        # different kind of input than it was trained on - stop startup
+        # rather than silently drive with mismatched preprocessing.
+        from donkeycar.parts.image_transformations import \
+            check_preprocessing_metadata
+        check_preprocessing_metadata(cfg, model_path)
+
         # If we have a model, create an appropriate Keras part
         kl = dk.utils.get_model_by_type(model_type, cfg)
 
@@ -402,17 +416,176 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         # so they get applied at inference time in autopilot mode.
         #
         if hasattr(cfg, 'TRANSFORMATIONS') or hasattr(cfg, 'POST_TRANSFORMATIONS'):
-            from donkeycar.parts.image_transformations import ImageTransformations
+            from donkeycar.parts.image_transformations import \
+                ImageTransformations, log_preprocessing_config
             #
             # add the complete set of pre and post augmentation transformations
             #
             logger.info(f"Adding inference transformations")
+            log_preprocessing_config(cfg, 'vehicle')
             V.add(ImageTransformations(cfg, 'TRANSFORMATIONS',
                                        'POST_TRANSFORMATIONS'),
                   inputs=['cam/image_array'], outputs=['cam/image_array_trans'])
             inputs = ['cam/image_array_trans'] + inputs[1:]
 
-        V.add(kl, inputs=inputs, outputs=outputs, run_condition='run_pilot')
+        # Enabled-but-uncalibrated XAI signals, collected below and pushed to
+        # the dashboard once (see the end of this block) -- so someone
+        # actually driving sees why a panel never shows a %%, instead of that
+        # only ever appearing as a server log line nobody watching the
+        # dashboard would see.
+        xai_uncalibrated = []
+
+        from donkeycar.parts.mc_calibrate import (default_calib_path,
+                                                  missing_calibration_reason,
+                                                  transformation_drift)
+
+        def xai_calib_path(signal, label):
+            """Calibration path for one signal, or None when it has no usable
+            calibration -- in which case the reason is logged AND queued for
+            the dashboard banner. Checking the BLOCK (not just that the file
+            exists) matters: a calib.json written by an older version can be
+            present but lack this signal, which would otherwise show no panel
+            and no banner -- indistinguishable from the feature being off."""
+            path = default_calib_path(model_path)
+            reason = missing_calibration_reason(path, signal)
+            if not reason:
+                return path
+            logger.warning(f"{label} not calibrated: {reason}; run 'python -m "
+                           f"donkeycar.parts.mc_calibrate' to enable it. Raw "
+                           f"values are still logged to the tub.")
+            xai_uncalibrated.append({
+                'signal': signal, 'label': label,
+                'message': f"Enabled, but {reason}, so this won't show a "
+                           f"%. Run: python -m donkeycar.parts.mc_calibrate "
+                           f"--tub <training tub> --model {model_path}"})
+            return None
+
+        # MC-Dropout and TTA read the model's raw output tensors as scalar
+        # steering/throttle, which only holds for the default linear
+        # architecture. On a categorical/behavior/imu/localizer pilot those
+        # outputs are bin vectors (or the output list has a different arity),
+        # so the signals would be meaningless -- and MC-Dropout, which
+        # actually DRIVES, would feed the car a garbage command rather than
+        # fail. Gate both on the model type, matching the guard the training
+        # path already applies to auto-calibration.
+        xai_model_ok = (model_type == 'linear' and not cfg.TRAIN_LOCALIZER)
+        if not xai_model_ok and (getattr(cfg, 'XAI_CONFIDENCE_ENABLED', False)
+                                 or getattr(cfg, 'XAI_TTA_ENABLED', False)):
+            logger.warning(
+                f"XAI confidence/TTA are supported for the 'linear' model "
+                f"only (this vehicle uses '{model_type}'"
+                f"{' with TRAIN_LOCALIZER' if cfg.TRAIN_LOCALIZER else ''}); "
+                f"disabling them. Novelty detection is unaffected -- it uses "
+                f"its own encoder, not the pilot.")
+
+        #
+        # MC-Dropout confidence signal: runs the model N times per frame with
+        # dropout active and emits the variance of the steering predictions
+        # as an uncertainty signal. Linear model only; the averaged
+        # prediction is the driving command. Toggled independently of
+        # novelty detection below -- each is its own config flag, and each
+        # works with or without the other.
+        #
+        use_mc_dropout = getattr(cfg, 'XAI_CONFIDENCE_ENABLED', False) \
+            and xai_model_ok
+        if use_mc_dropout:
+            from donkeycar.parts.mc_dropout import MCDropoutConfidence
+            n_passes = getattr(cfg, 'XAI_CONFIDENCE_PASSES', 15)
+            alpha = getattr(cfg, 'XAI_CONFIDENCE_ALPHA', 0.2)
+            mc_interval = getattr(cfg, 'XAI_CONFIDENCE_INTERVAL', 0.0)
+            calib_path = xai_calib_path('confidence', 'Confidence')
+            logger.info(f"Enabling MC-Dropout confidence (N={n_passes}, "
+                        f"alpha={alpha})")
+            mc_pilot = MCDropoutConfidence(kl, num_passes=n_passes, alpha=alpha,
+                                           calibration_path=calib_path,
+                                           interval=mc_interval)
+            V.add(mc_pilot, inputs=inputs,
+                  outputs=outputs + ['pilot/confidence',
+                                     'pilot/raw_variance',
+                                     'pilot/smoothed_variance'],
+                  run_condition='run_pilot')
+        else:
+            V.add(kl, inputs=inputs, outputs=outputs,
+                  run_condition='run_pilot')
+
+        #
+        # Feature-space novelty (out-of-distribution) detection. Independent
+        # of XAI_CONFIDENCE_ENABLED: it's a single cheap deterministic
+        # pass, so it shouldn't force the N-pass MC-Dropout cost onto someone
+        # who only wants OOD detection. Rides alongside whichever part drives
+        # above (mc_pilot or kl) as a pure auxiliary observer -- it never
+        # produces steering/throttle.
+        #
+        use_novelty = getattr(cfg, 'XAI_NOVELTY_ENABLED', False)
+        if use_novelty:
+            from donkeycar.parts.novelty import FeatureNoveltyDetector
+            novelty_calib_path = xai_calib_path('novelty', 'Novelty')
+            logger.info("Enabling feature-space novelty detection")
+            novelty_part = FeatureNoveltyDetector(
+                kl, calibration_path=novelty_calib_path,
+                alpha=getattr(cfg, 'XAI_NOVELTY_ALPHA', 0.2),
+                interval=getattr(cfg, 'XAI_NOVELTY_INTERVAL', 0.0))
+            # Deliberately the RAW camera frame, not inputs[0] (which becomes
+            # 'cam/image_array_trans' when TRANSFORMATIONS are configured).
+            # Novelty asks "is this scene familiar?" -- a question about the
+            # world, not about the model -- and it answers it with a frozen
+            # ImageNet encoder whose features depend on the colour/texture
+            # content that a CROP or high-pass filter throws away. Confidence
+            # and TTA below/above stay on the transformed image, since those
+            # ARE questions about the model's own behaviour. Calibration
+            # mirrors this split (see mc_calibrate.calibrate_from_tub).
+            V.add(novelty_part, inputs=['cam/image_array'],
+                  outputs=['pilot/novelty', 'pilot/raw_novelty_distance',
+                           'pilot/smoothed_novelty_distance'],
+                  run_condition='run_pilot')
+
+        #
+        # Signal 3: test-time augmentation (TTA) stability. Independent of the
+        # two signals above (its own config toggle) -- a pure auxiliary
+        # observer (like novelty) that runs the deterministic model on M
+        # photometrically-augmented copies of the frame and reports the
+        # steering-prediction variance as a robustness signal. Rides alongside
+        # whichever part drives; never produces steering/throttle.
+        #
+        use_tta = getattr(cfg, 'XAI_TTA_ENABLED', False) and xai_model_ok
+        if use_tta:
+            from donkeycar.parts.tta import TTAStabilityDetector
+            tta_calib_path = xai_calib_path('tta', 'TTA stability')
+            logger.info("Enabling test-time augmentation (TTA) stability")
+            tta_part = TTAStabilityDetector(
+                kl, calibration_path=tta_calib_path,
+                num_samples=getattr(cfg, 'XAI_TTA_SAMPLES', 8),
+                alpha=getattr(cfg, 'XAI_TTA_ALPHA', 0.2),
+                strength=getattr(cfg, 'XAI_TTA_STRENGTH', 0.2),
+                interval=getattr(cfg, 'XAI_TTA_INTERVAL', 0.0))
+            V.add(tta_part, inputs=[inputs[0]],
+                  outputs=['pilot/tta_stability', 'pilot/raw_tta_variance',
+                           'pilot/smoothed_tta_variance'],
+                  run_condition='run_pilot')
+
+        # A calibration can be complete yet still stale: TRANSFORMATIONS
+        # apply at inference, so adding/removing one after calibrating means
+        # every threshold was measured on different pixels than the model now
+        # sees. Mask-style transforms (CROP/TRAPEZE) keep image dimensions, so
+        # nothing errors -- this check is the only thing that surfaces it.
+        if use_mc_dropout or use_novelty or use_tta:
+            drift = transformation_drift(default_calib_path(model_path), cfg)
+            if drift:
+                logger.warning(f'XAI calibration may be stale: {drift}.')
+                xai_uncalibrated.append({
+                    'signal': 'transformations', 'label': 'Calibration stale',
+                    'message': f"{drift} --tub <training tub> --model "
+                               f"{model_path}"})
+
+        # Push the calibration gaps found above to the dashboard (once per
+        # new connection -- see WebSocketDriveAPI.open in web.py). Read from
+        # V.web_ctr (set in add_user_controller), NOT a local `ctr` variable,
+        # since `ctr` gets reassigned to a joystick/RC controller when one is
+        # configured -- the web dashboard still runs in that case (just isn't
+        # the primary input), and should still get the banner.
+        web_ctr = getattr(V, 'web_ctr', None)
+        if xai_uncalibrated and web_ctr is not None:
+            web_ctr.xai_uncalibrated = xai_uncalibrated
 
     #
     # stop at a stop sign
@@ -442,6 +615,45 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     V.add(aiLauncher,
           inputs=['user/mode', 'pilot/throttle'],
           outputs=['pilot/throttle'])
+
+    #
+    # Feature 2: scale throttle down as confidence drops, novelty rises,
+    # and/or TTA stability drops. Only reduces throttle, never touches
+    # steering. Takes the more conservative (lowest) scale across whichever
+    # signal(s) are currently enabled and calibrated; a disabled or
+    # uncalibrated signal is ignored rather than blocking the others.
+    #
+    # Deliberately placed AFTER aiLauncher, not back where the signals
+    # themselves are added: AiLaunch REPLACES pilot/throttle outright with a
+    # fixed boost value for AI_LAUNCH_DURATION seconds rather than modulating
+    # it, so scaling applied before that point would simply be overwritten --
+    # meaning a critical signal (including the forced stop) would have no
+    # effect during exactly the window the car is least predictable. Running
+    # last means whichever value pilot/throttle currently holds -- boosted or
+    # not -- still gets scaled/stopped if a signal says so.
+    #
+    if model_path and getattr(cfg, 'XAI_THROTTLE_SCALING_ENABLED', False):
+        if not use_mc_dropout and not use_novelty and not use_tta:
+            logger.warning("XAI_THROTTLE_SCALING_ENABLED is set but none of "
+                           "XAI_CONFIDENCE_ENABLED / XAI_NOVELTY_ENABLED / "
+                           "XAI_TTA_ENABLED is enabled; throttle scaling "
+                           "has no signal to act on and will be inactive.")
+        from donkeycar.parts.mc_dropout import ThrottleScaler
+        logger.info("Enabling confidence/novelty/TTA-based throttle scaling")
+        throttle_scaler = ThrottleScaler(
+            confidence_reduced_threshold=getattr(cfg, 'XAI_CONFIDENCE_REDUCED_THRESHOLD', 65.0),
+            confidence_critical_threshold=getattr(cfg, 'XAI_CONFIDENCE_CRITICAL_THRESHOLD', 25.0),
+            novelty_reduced_threshold=getattr(cfg, 'XAI_NOVELTY_REDUCED_THRESHOLD', 25.0),
+            novelty_critical_threshold=getattr(cfg, 'XAI_NOVELTY_CRITICAL_THRESHOLD', 65.0),
+            tta_reduced_threshold=getattr(cfg, 'XAI_TTA_REDUCED_THRESHOLD', 65.0),
+            tta_critical_threshold=getattr(cfg, 'XAI_TTA_CRITICAL_THRESHOLD', 25.0),
+            min_scale=getattr(cfg, 'XAI_THROTTLE_MIN_SCALE', 0.4),
+            stop_duration=getattr(cfg, 'XAI_THROTTLE_STOP_DURATION', 1.0))
+        V.add(throttle_scaler,
+              inputs=['pilot/throttle', 'pilot/confidence', 'pilot/novelty',
+                      'pilot/tta_stability'],
+              outputs=['pilot/throttle'],
+              run_condition='run_pilot')
 
     #
     # Decide what inputs should change the car's steering and throttle
@@ -522,6 +734,28 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     if cfg.RECORD_DURING_AI:
         inputs += ['pilot/angle', 'pilot/throttle']
         types += ['float', 'float']
+
+    # Log the MC-Dropout confidence signal with each frame; this is the
+    # input for the offline Grad-CAM analysis tool. Values are None (and thus
+    # skipped by the tub) whenever the pilot isn't running.
+    if getattr(cfg, 'XAI_CONFIDENCE_ENABLED', False):
+        inputs += ['pilot/confidence', 'pilot/raw_variance',
+                   'pilot/smoothed_variance']
+        types += ['float', 'float', 'float']
+
+    # Log the novelty (out-of-distribution) signal too, independent of
+    # XAI_CONFIDENCE_ENABLED -- input for the offline Grad-CAM analysis tool.
+    if getattr(cfg, 'XAI_NOVELTY_ENABLED', False):
+        inputs += ['pilot/novelty', 'pilot/raw_novelty_distance',
+                   'pilot/smoothed_novelty_distance']
+        types += ['float', 'float', 'float']
+
+    # Log the TTA stability signal too, independent of the others -- input for
+    # the offline analysis timeline.
+    if getattr(cfg, 'XAI_TTA_ENABLED', False):
+        inputs += ['pilot/tta_stability', 'pilot/raw_tta_variance',
+                   'pilot/smoothed_tta_variance']
+        types += ['float', 'float', 'float']
 
     if cfg.HAVE_PERFMON:
         from donkeycar.parts.perfmon import PerfMonitor
@@ -693,9 +927,17 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     #
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
-          inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
+          inputs=[input_image, 'tub/num_records', 'user/mode', 'recording',
+                  'pilot/confidence', 'pilot/novelty', 'pilot/tta_stability'],
           outputs=['user/steering', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
           threaded=True)
+    # Keep a reference to the web controller specifically, on the vehicle
+    # itself rather than this function's local `ctr` -- `ctr` gets
+    # REASSIGNED below to a joystick/RC controller when one is configured
+    # (a common setup: joystick to drive, web dashboard just to monitor), so
+    # code elsewhere that needs the actual web controller (e.g. to push the
+    # XAI "not calibrated" dashboard banner) must not rely on `ctr` itself.
+    V.web_ctr = ctr
 
     #
     # also add a physical controller if one is configured
