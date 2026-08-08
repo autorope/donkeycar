@@ -121,6 +121,20 @@ class LocalWebController(tornado.web.Application):
         self.port = port
 
         self.num_records = 0
+        self.confidence = None            # last MC-Dropout confidence % (or None)
+        self.last_confidence_pct = None   # last value pushed to clients
+        self.novelty = None                # last novelty (OOD) % (or None)
+        self.last_novelty_pct = None       # last value pushed to clients
+        self.tta_stability = None          # last TTA stability % (or None)
+        self.last_tta_pct = None           # last value pushed to clients
+        # XAI signals that are enabled but have no calibration -- set once by
+        # the drive template (complete.py) before the server starts, since it
+        # already knows this at vehicle-build time. Pushed to each new
+        # dashboard connection (see WebSocketDriveAPI.open below) so the
+        # person actually driving sees it, instead of only a server log line
+        # nobody watching the dashboard would ever see.
+        # [{'signal': 'confidence', 'label': 'Confidence', 'message': '...'}]
+        self.xai_uncalibrated = []
         self.wsclients = []
         self.loop = None
 
@@ -162,12 +176,20 @@ class LocalWebController(tornado.web.Application):
                                    exc_info=e)
                     pass
 
-    def run_threaded(self, img_arr=None, num_records=0, mode=None, recording=None):
+    def run_threaded(self, img_arr=None, num_records=0, mode=None,
+                     recording=None, confidence=None, novelty=None,
+                     tta_stability=None):
         """
         :param img_arr: current camera image or None
         :param num_records: current number of data records
         :param mode: default user/mode
         :param recording: default recording mode
+        :param confidence: MC-Dropout confidence % (0-100) or None if the
+                           feature is disabled / the model is uncalibrated
+        :param novelty: feature-space novelty (OOD) % (0-100) or None if the
+                        feature is disabled / the model is uncalibrated
+        :param tta_stability: test-time-augmentation stability % (0-100) or
+                        None if the feature is disabled / model uncalibrated
         """
         self.img_arr = img_arr
         self.num_records = num_records
@@ -196,6 +218,31 @@ class LocalWebController(tornado.web.Application):
             if self.num_records % 10 == 0:
                 changes['num_records'] = self.num_records
 
+        # Push MC-Dropout confidence, but only when the whole-number percent
+        # changes, so we don't flood the socket every drive-loop frame.
+        self.confidence = confidence
+        if confidence is not None:
+            conf_pct = int(round(confidence))
+            if conf_pct != self.last_confidence_pct:
+                self.last_confidence_pct = conf_pct
+                changes['confidence'] = conf_pct
+
+        # Push feature-space novelty (OOD) score the same throttled way.
+        self.novelty = novelty
+        if novelty is not None:
+            nov_pct = int(round(novelty))
+            if nov_pct != self.last_novelty_pct:
+                self.last_novelty_pct = nov_pct
+                changes['novelty'] = nov_pct
+
+        # Push TTA stability score the same throttled way.
+        self.tta_stability = tta_stability
+        if tta_stability is not None:
+            tta_pct = int(round(tta_stability))
+            if tta_pct != self.last_tta_pct:
+                self.last_tta_pct = tta_pct
+                changes['tta_stability'] = tta_pct
+
         #
         # get latched button presses then clear button presses
         # Next iteration will clear press in memory
@@ -213,8 +260,10 @@ class LocalWebController(tornado.web.Application):
 
         return self.angle, self.throttle, self.mode, self.recording, buttons
 
-    def run(self, img_arr=None, num_records=0, mode=None, recording=None):
-        return self.run_threaded(img_arr, num_records, mode, recording)
+    def run(self, img_arr=None, num_records=0, mode=None, recording=None,
+            confidence=None, novelty=None, tta_stability=None):
+        return self.run_threaded(img_arr, num_records, mode, recording,
+                                 confidence, novelty, tta_stability)
 
     def shutdown(self):
         pass
@@ -282,6 +331,24 @@ class WebSocketDriveAPI(tornado.websocket.WebSocketHandler):
     def open(self):
         logger.info("New client connected")
         self.application.wsclients.append(self)
+        # One-time push (not part of the per-frame telemetry loop) so a
+        # dashboard user sees, at a glance, which enabled XAI signals won't
+        # show a %% because this model has never been calibrated.
+        if self.application.xai_uncalibrated:
+            self.write_message(json.dumps(
+                {'xai_uncalibrated': self.application.xai_uncalibrated}))
+        # Seed this client with the CURRENT XAI values. run_threaded only
+        # emits a signal when its whole-number percent CHANGES, and the
+        # last-sent value is per-server, not per-client -- so without this a
+        # reconnecting or second client would see no panel at all until the
+        # number happened to move, which on a steady car can be indefinite.
+        current = {key: value for key, value in (
+                       ('confidence', self.application.last_confidence_pct),
+                       ('novelty', self.application.last_novelty_pct),
+                       ('tta_stability', self.application.last_tta_pct))
+                   if value is not None}
+        if current:
+            self.write_message(json.dumps(current))
 
     def on_message(self, message):
         data = json.loads(message)

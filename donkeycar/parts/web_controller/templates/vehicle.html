@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <!-- Shown once per dashboard connection when an enabled XAI signal (confidence/
+       novelty/TTA) has no calibration yet, so the person actually driving sees
+       why a panel never appears -- not just a line in a server log. -->
+  <div id="xai-uncalibrated-banner" class="xai-banner" style="display: none;">
+    <button type="button" id="xai-banner-dismiss" class="xai-banner-dismiss" aria-label="Dismiss">&times;</button>
+    <strong>Calibration warnings:</strong> these signals won't show a percentage, or may be reading against the wrong baseline.
+    <ul id="xai-banner-list"></ul>
+  </div>
   <div class="container">
     <div class="row">
 
@@ -57,6 +65,88 @@
             <div class="progress positive">
               <div id="throttle-bar-forward" class="progress-bar progress-bar-success" role="progressbar" style="width: 0%;">
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- model confidence (MC-Dropout), only shown when XAI_CONFIDENCE_ENABLED is on -->
+        <div id="confidence-panel" class="panel panel-default" style="display: none; clear: both; margin-top: 15px;">
+          <div class="panel-heading">
+            <strong>Do the model's "sub-networks" agree?</strong>
+            <small class="text-muted">(confidence)</small>
+            <span id="confidence-value" class="pull-right"></span>
+          </div>
+          <div class="panel-body">
+            <div class="progress" id="confidence-progress" style="margin-bottom: 8px;">
+              <div id="confidence-bar" class="progress-bar progress-bar-success"
+                   role="progressbar" style="width: 0%;"></div>
+            </div>
+            <small class="text-muted">
+              Relative to this model's own baseline, not a calibrated
+              probability.
+              <button type="button" class="xai-explain-toggle" data-target="confidence-explain">What does this mean? &#9662;</button>
+            </small>
+            <div id="confidence-explain" class="xai-explain" style="display: none;">
+              This works by asking the model the same question 15 times, each
+              time with a different random slice of its "brain" (dropout)
+              switched off &mdash; like asking 15 slightly different clones.
+              If the clones agree, confidence is high; if they scatter, it's
+              low. This measures whether the model agrees with
+              <em>itself</em> &mdash; not whether it's actually right.
+            </div>
+          </div>
+        </div>
+
+        <!-- feature-space novelty / OOD detection, only shown when XAI_NOVELTY_ENABLED is on -->
+        <div id="novelty-panel" class="panel panel-default" style="display: none; clear: both; margin-top: 15px;">
+          <div class="panel-heading">
+            <strong>Does this look familiar?</strong>
+            <small class="text-muted">(novelty)</small>
+            <span id="novelty-value" class="pull-right"></span>
+          </div>
+          <div class="panel-body">
+            <div class="progress" id="novelty-progress" style="margin-bottom: 8px;">
+              <div id="novelty-bar" class="progress-bar progress-bar-success"
+                   role="progressbar" style="width: 0%;"></div>
+            </div>
+            <small class="text-muted">
+              A different signal from model confidence above.
+              <button type="button" class="xai-explain-toggle" data-target="novelty-explain">What does this mean? &#9662;</button>
+            </small>
+            <div id="novelty-explain" class="xai-explain" style="display: none;">
+              This checks how far the current camera view is, in the model's
+              internal representation, from everything it saw during training
+              &mdash; like asking "does this remind me of anything I've
+              driven through before?" A totally new kind of scene can score
+              high here even while the model still feels "confident" above
+              &mdash; that's the point of having both signals.
+            </div>
+          </div>
+        </div>
+
+        <!-- test-time augmentation stability, only shown when XAI_TTA_ENABLED is on -->
+        <div id="tta-panel" class="panel panel-default" style="display: none; clear: both; margin-top: 15px;">
+          <div class="panel-heading">
+            <strong>Is the answer stable?</strong>
+            <small class="text-muted">(TTA stability)</small>
+            <span id="tta-value" class="pull-right"></span>
+          </div>
+          <div class="panel-body">
+            <div class="progress" id="tta-progress" style="margin-bottom: 8px;">
+              <div id="tta-bar" class="progress-bar progress-bar-success"
+                   role="progressbar" style="width: 0%;"></div>
+            </div>
+            <small class="text-muted">
+              A different signal from the two above.
+              <button type="button" class="xai-explain-toggle" data-target="tta-explain">What does this mean? &#9662;</button>
+            </small>
+            <div id="tta-explain" class="xai-explain" style="display: none;">
+              This shows the model the same photo 8 times, each time with the
+              brightness/contrast/noise tweaked slightly &mdash; like showing
+              a photo at noon, at dusk, through foggy glasses. If the answer
+              barely changes, stability is high. A low score means the model
+              is fragile to lighting/noise &mdash; a different failure mode
+              from low confidence or high novelty.
             </div>
           </div>
         </div>

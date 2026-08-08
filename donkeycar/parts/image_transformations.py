@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 from typing import List
 from donkeycar.config import Config
 from donkeycar.parts import cv as cv_parts
@@ -14,9 +16,12 @@ class ImageTransformations:
         Part that constructs a list of image transformers
         and run them in sequence to produce a transformed image
         """
-        transformations = getattr(config, transformation, [])
+        # NOTE: build a NEW list rather than `+=`, which would extend (and so
+        # permanently corrupt) the config's own TRANSFORMATIONS list in place.
+        transformations = list(getattr(config, transformation, []) or [])
         if post_transformation:
-            transformations += getattr(config, post_transformation, [])
+            transformations = transformations + list(
+                getattr(config, post_transformation, []) or [])
         self.transformations = [image_transformer(name, config) for name in
                                 transformations]
         logger.info(f'Creating ImageTransformations {transformations}')
@@ -29,6 +34,225 @@ class ImageTransformations:
         for transformer in self.transformations:
             image = transformer.run(image)
         return image
+
+
+def _pipeline_steps(cfg, include_augmentations=False):
+    """
+    Return the ordered list of pipeline step names actually executed by
+    donkeycar.pipeline.training.BatchSequence.image_processor -
+    TRANSFORMATIONS, then AUGMENTATIONS (training only), then
+    POST_TRANSFORMATIONS - so logging/metadata always reflect the real
+    execution order rather than the raw config attributes.
+    """
+    steps = list(getattr(cfg, 'TRANSFORMATIONS', []) or [])
+    if include_augmentations:
+        steps += list(getattr(cfg, 'AUGMENTATIONS', []) or [])
+    steps += list(getattr(cfg, 'POST_TRANSFORMATIONS', []) or [])
+    return steps
+
+
+def log_preprocessing_config(cfg, context: str, include_augmentations=False):
+    """
+    Print the resolved image size, transformation/augmentation config and
+    the actual ordered pipeline for a given context ('training',
+    'validation' or 'vehicle'), so a train/inference preprocessing mismatch
+    shows up in the logs instead of only as bad driving behaviour.
+    """
+    logger.info(
+        f"[{context}] IMAGE_W={getattr(cfg, 'IMAGE_W', None)} "
+        f"IMAGE_H={getattr(cfg, 'IMAGE_H', None)} "
+        f"TRANSFORMATIONS={getattr(cfg, 'TRANSFORMATIONS', [])} "
+        f"POST_TRANSFORMATIONS={getattr(cfg, 'POST_TRANSFORMATIONS', [])} "
+        f"ROI_CROP_TOP={getattr(cfg, 'ROI_CROP_TOP', None)} "
+        f"ROI_CROP_BOTTOM={getattr(cfg, 'ROI_CROP_BOTTOM', None)} "
+        f"ROI_CROP_LEFT={getattr(cfg, 'ROI_CROP_LEFT', None)} "
+        f"ROI_CROP_RIGHT={getattr(cfg, 'ROI_CROP_RIGHT', None)}")
+    steps = ['Raw Image'] + \
+        _pipeline_steps(cfg, include_augmentations) + ['Model']
+    logger.info(f"[{context}] pipeline: {' -> '.join(steps)}")
+
+
+def build_preprocessing_metadata(cfg) -> dict:
+    """
+    Snapshot of the preprocessing settings that must be identical between
+    training and driving (or, for gradcam_uncertainty.py, training and
+    offline analysis). Used both as the sidecar json saved next to a trained
+    model and as the "current config" side of the comparison done by
+    check_preprocessing_metadata().
+    """
+    steps = _pipeline_steps(cfg, include_augmentations=False)
+    crop_active = 'CROP' in steps
+    return {
+        "image_width": getattr(cfg, 'IMAGE_W', None),
+        "image_height": getattr(cfg, 'IMAGE_H', None),
+        "roi_crop_top": getattr(cfg, 'ROI_CROP_TOP', 0) if crop_active else 0,
+        "roi_crop_bottom": getattr(cfg, 'ROI_CROP_BOTTOM', 0)
+                           if crop_active else 0,
+        "roi_crop_left": getattr(cfg, 'ROI_CROP_LEFT', 0)
+                         if crop_active else 0,
+        "roi_crop_right": getattr(cfg, 'ROI_CROP_RIGHT', 0)
+                          if crop_active else 0,
+        # The ROI_CROP_* fields above only ever describe the CROP mask, and
+        # can't distinguish CANNY, colour-space conversions or TRAPEZE from
+        # each other, or catch a step LIST changing. pipeline_steps is the
+        # actual ordered TRANSFORMATIONS + POST_TRANSFORMATIONS list, so any
+        # such change is caught too.
+        "pipeline_steps": steps,
+    }
+
+
+def load_config_and_myconfig(config_path=None):
+    """
+    Load a Config the way the offline analysis tools (gradcam_uncertainty.py,
+    uncertainty_viewer.py) need it: the full set of base settings, plus this
+    project's real overrides from myconfig.py, reliably - regardless of
+    which file ``config_path`` happens to point at.
+
+    Why this exists rather than just calling donkeycar.config.load_config()
+    directly: that function's own myconfig.py lookup is a literal string
+    ``config_path.replace("config.py", "myconfig.py")`` on the WHOLE path.
+    That only works when the base file is literally named "config.py"
+    sitting next to a myconfig.py - the standard ``donkey createcar``
+    layout. It silently breaks in two cases that are completely ordinary
+    for this project, where the real base/override pair is
+    donkeycar/templates/cfg_complete.py + donkeycar/templates/myconfig.py,
+    not a repo-root config.py/myconfig.py:
+
+      1. Falling back to the bundled cfg_complete.py (no ./config.py found,
+         nothing passed via --config): "cfg_complete.py" doesn't contain the
+         substring "config.py", so the .replace() is a no-op and myconfig.py
+         is never even looked for. This is what a bare
+         ``python run_gradcam_analysis.py`` hits.
+      2. Pointing --config directly at myconfig.py: "myconfig.py" DOES
+         contain "config.py" as a substring (it's the last 9 characters), so
+         the .replace() fires and produces the nonexistent "mymyconfig.py" -
+         and myconfig.py alone lacks base settings like IMAGE_DEPTH/
+         BATCH_SIZE that only cfg_complete.py defines, so the result is an
+         incomplete config either way.
+
+    This does not touch donkeycar.config.load_config() itself, since that
+    would change behaviour for every caller (train, drive, ...) rather than
+    just the two analysis-tool entry points that actually hit this.
+    """
+    import donkeycar as dk
+
+    bundled_base = os.path.join(os.path.dirname(dk.__file__),
+                                'templates', 'cfg_complete.py')
+
+    if config_path is None:
+        if os.path.exists('config.py'):
+            config_path = 'config.py'
+        else:
+            logger.warning(f'No ./config.py; using the bundled base config at '
+                           f'{bundled_base}.')
+            config_path = bundled_base
+    config_path = os.path.abspath(config_path)
+
+    if os.path.basename(config_path) == 'myconfig.py':
+        # config_path IS the overrides-only file - load the full bundled
+        # base first so IMAGE_DEPTH/BATCH_SIZE/etc aren't silently missing,
+        # then apply config_path's own content on top of it.
+        cfg = dk.load_config(bundled_base)
+        overrides = Config()
+        overrides.from_pyfile(config_path)
+        cfg.from_object(overrides)
+    else:
+        cfg = dk.load_config(config_path)
+
+    # Redo the myconfig.py sibling lookup with a real path join instead of
+    # the broken string-replace described above. In the standard config.py
+    # layout this re-applies what load_config() already merged in (harmless
+    # - from_object() is idempotent); in both cases above it's what actually
+    # makes myconfig.py's overrides take effect at all.
+    sibling = os.path.join(os.path.dirname(config_path), 'myconfig.py')
+    if os.path.isfile(sibling) and os.path.abspath(sibling) != config_path:
+        logger.info(f'Applying overrides from {sibling}')
+        overrides = Config()
+        overrides.from_pyfile(sibling)
+        cfg.from_object(overrides)
+
+    return cfg
+
+
+def _sidecar_path_for(model_path: str) -> str:
+    base, _ext = os.path.splitext(model_path)
+    return base + ".preprocessing.json"
+
+
+def save_preprocessing_metadata(cfg, model_path: str) -> str:
+    """ Write the resolved preprocessing metadata next to a just-trained
+        model, e.g. models/mypilot.h5 -> models/mypilot.preprocessing.json """
+    sidecar_path = _sidecar_path_for(model_path)
+    with open(sidecar_path, 'w') as f:
+        json.dump(build_preprocessing_metadata(cfg), f, indent=2)
+    logger.info(f"Saved preprocessing metadata to {sidecar_path}")
+    return sidecar_path
+
+
+def check_preprocessing_metadata(cfg, model_path: str,
+                                 context: str = "vehicle",
+                                 skip_keys=()) -> None:
+    """
+    Compare model_path's preprocessing sidecar (if any) against the given
+    config. Raises RuntimeError describing every mismatched field if any
+    differ, so a stale/mismatched crop, transformation step or resolution
+    stops whatever is about to consume the model instead of silently
+    producing wrong output. If no sidecar exists (e.g. a model trained
+    before this check existed), this only logs a warning and continues.
+
+    :param context: how to describe the caller in the error/warning text -
+        "vehicle" (default, for drive-time use) or e.g. "this analysis's
+        config" for gradcam_uncertainty.py. Purely cosmetic.
+    :param skip_keys: fields to leave out of the comparison because the
+        caller reconciles them itself. The offline analysis tools pass
+        ('image_width', 'image_height'): they call
+        mc_calibrate.check_model_image_size() first, which takes the model
+        file as the authority on its own input size, rewrites cfg to match
+        and says so - a documented convenience so a model can be analysed
+        without hunting down the exact config.py it was trained with.
+        Comparing those two fields afterwards would be meaningless (cfg was
+        just set FROM the model), so they are excluded explicitly rather
+        than left in to silently always-agree.
+    """
+    sidecar_path = _sidecar_path_for(model_path)
+    if not os.path.exists(sidecar_path):
+        logger.warning(
+            f"No preprocessing metadata found at {sidecar_path} - cannot "
+            f"verify that {model_path} matches {context}'s TRANSFORMATIONS"
+            f"/POST_TRANSFORMATIONS/ROI_CROP_* configuration.")
+        return
+
+    with open(sidecar_path) as f:
+        saved = json.load(f)
+    current = {key: value for key, value
+               in build_preprocessing_metadata(cfg).items()
+               if key not in skip_keys}
+
+    # Only enforce fields the sidecar actually recorded. Keys can be added to
+    # build_preprocessing_metadata() over time (pipeline_steps postdates
+    # the original schema) - a sidecar
+    # written before that addition simply never captured it, which is not
+    # evidence of a real mismatch, so it must not be treated as one.
+    unverifiable = [key for key in current if key not in saved]
+    if unverifiable:
+        logger.warning(
+            f"{sidecar_path} predates tracking {unverifiable} - cannot "
+            f"verify {'those fields' if len(unverifiable) > 1 else 'that field'} "
+            f"match {context}. Retrain to refresh the sidecar and get full "
+            f"verification.")
+
+    mismatches = [
+        f"  {key}: model was trained with {saved.get(key)!r}, "
+        f"current {context} has {current.get(key)!r}"
+        for key in current if key in saved and saved.get(key) != current.get(key)
+    ]
+    if mismatches:
+        raise RuntimeError(
+            "Preprocessing mismatch between the trained model "
+            f"({sidecar_path}) and {context}:\n" +
+            "\n".join(mismatches) +
+            f"\nRefusing to proceed - retrain the model with {context}, "
+            f"or update {context} to match the model.")
 
 
 def image_transformer(name: str, config):

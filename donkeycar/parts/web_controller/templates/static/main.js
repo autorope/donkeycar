@@ -17,6 +17,9 @@ var driveHandler = new function() {
         'driveMode': "user",
         'pilot': 'None',
         'session': 'None',
+        'confidence': null,   // MC-Dropout confidence %, null when disabled
+        'novelty': null,      // feature-space novelty (OOD) %, null when disabled
+        'tta_stability': null, // TTA stability %, null when disabled
         'lag': 0,
         'controlMode': 'joystick',
         'maxThrottle' : 1,
@@ -94,7 +97,7 @@ var driveHandler = new function() {
                 // we are only updating existing fields.
                 //
                 if(state.hasOwnProperty(key) && state[key] !== data[key]) {
-                    if(typeof state[key] === 'object') {
+                    if(state[key] !== null && typeof state[key] === 'object') {
                         // recursively update the state's object field
                         changed = updateState(state[key], data[key]) && changed;
                     } else {
@@ -107,6 +110,18 @@ var driveHandler = new function() {
         return changed;
     }
 
+    // Renders the one-time "not calibrated" dashboard banner. `items` is a
+    // list of {signal, label, message} -- see LocalWebController.xai_uncalibrated
+    // (web.py) / complete.py, where this is built at vehicle start.
+    var showXaiUncalibratedBanner = function(items) {
+        var $list = $('#xai-banner-list');
+        $list.empty();
+        items.forEach(function(item) {
+            $list.append($('<li>').append($('<strong>').text(item.label + ': ')).append(document.createTextNode(item.message)));
+        });
+        $('#xai-uncalibrated-banner').show();
+    }
+
     var setBindings = function() {
       //
       // when server sends a message with state changes
@@ -116,6 +131,12 @@ var driveHandler = new function() {
       socket.onmessage = function (event) {
         console.log(event.data);
         const data = JSON.parse(event.data);
+        // One-time push on connect (not part of the per-frame telemetry
+        // updateState/updateUI loop below) -- handled separately since
+        // updateState only ever updates keys the state object already has.
+        if (data.xai_uncalibrated) {
+            showXaiUncalibratedBanner(data.xai_uncalibrated);
+        }
         if(updateState(state, data)) {
             updateUI();
         }
@@ -152,6 +173,21 @@ var driveHandler = new function() {
 
       $('#brake_button').click(function() {
         toggleBrake();
+      });
+
+      $('#xai-banner-dismiss').click(function() {
+        $('#xai-uncalibrated-banner').hide();
+      });
+
+      // Plain-language "what does this mean?" toggles on the confidence/
+      // novelty/TTA panels. Delegated so any future XAI panel with the same
+      // markup pattern (.xai-explain-toggle + data-target) works for free.
+      $(document).on('click', '.xai-explain-toggle', function () {
+        var $btn = $(this);
+        var $panel = $('#' + $btn.data('target'));
+        var opening = $panel.css('display') === 'none';
+        $panel.slideToggle(120);
+        $btn.html(opening ? 'Hide &#9652;' : 'What does this mean? &#9662;');
       });
 
       $('input[type=radio][name=controlMode]').change(function() {
@@ -231,6 +267,52 @@ var driveHandler = new function() {
 
       $('#throttle_label').html(throttleRounded);
       $('#steering_label').html(steeringRounded);
+
+      // MC-Dropout model confidence meter (only present when XAI_CONFIDENCE_ENABLED is on)
+      if (state.confidence !== null && state.confidence !== undefined) {
+        var conf = Math.max(0, Math.min(100, Math.round(state.confidence)));
+        // Tiers mirror the calibration anchors: normal / reduced / critical.
+        var confClass = conf >= 65 ? 'progress-bar-success'
+                      : conf >= 25 ? 'progress-bar-warning'
+                      : 'progress-bar-danger';
+        $('#confidence-panel').show();
+        $('#confidence-value').html(conf + '%');
+        $('#confidence-bar')
+          .css('width', conf + '%')
+          .removeClass('progress-bar-success progress-bar-warning progress-bar-danger')
+          .addClass(confClass);
+      }
+
+      // Feature-space novelty (OOD) meter (only present when
+      // XAI_NOVELTY_ENABLED is on). Tier colors are INVERTED from
+      // confidence: low novelty (familiar) = green, high (unfamiliar) = red.
+      if (state.novelty !== null && state.novelty !== undefined) {
+        var nov = Math.max(0, Math.min(100, Math.round(state.novelty)));
+        var novClass = nov <= 25 ? 'progress-bar-success'
+                     : nov <= 65 ? 'progress-bar-warning'
+                     : 'progress-bar-danger';
+        $('#novelty-panel').show();
+        $('#novelty-value').html(nov + '%');
+        $('#novelty-bar')
+          .css('width', nov + '%')
+          .removeClass('progress-bar-success progress-bar-warning progress-bar-danger')
+          .addClass(novClass);
+      }
+
+      // TTA stability meter (only present when XAI_TTA_ENABLED is on). Tier
+      // colors match confidence (high = good): stable = green, fragile = red.
+      if (state.tta_stability !== null && state.tta_stability !== undefined) {
+        var tta = Math.max(0, Math.min(100, Math.round(state.tta_stability)));
+        var ttaClass = tta >= 65 ? 'progress-bar-success'
+                     : tta >= 25 ? 'progress-bar-warning'
+                     : 'progress-bar-danger';
+        $('#tta-panel').show();
+        $('#tta-value').html(tta + '%');
+        $('#tta-bar')
+          .css('width', tta + '%')
+          .removeClass('progress-bar-success progress-bar-warning progress-bar-danger')
+          .addClass(ttaClass);
+      }
 
       if(state.tele.user.throttle < 0) {
         $('#throttle-bar-backward').css('width', throttlePercent).html(throttleRounded)

@@ -1,65 +1,13 @@
-import tempfile
-
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import load_model
-import tensorflow as tf
 import cv2
 from matplotlib import cm
 
-
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import Tub
+from donkeycar.parts.salient import VanillaGradientSaliency
 from donkeycar.utils import *
 
 
 DEG_TO_RAD = math.pi / 180.0
-
-
-def apply_modifications(model, custom_objects=None):
-    """Applies modifications to the model layers to create a new Graph. For
-    example, simply changing `model.layers[idx].activation = new activation`
-    does not change the graph. The entire graph needs to be updated with
-    modified inbound and outbound tensors because of change in layer building
-    function.
-
-    Args:
-        model: The `keras.models.Model` instance.
-
-    Returns:
-        The modified model with changes applied. Does not mutate the original
-        `model`.
-    """
-    # The strategy is to save the modified model and load it back. This is
-    # done because setting the activation in a Keras layer doesnt actually
-    # change the graph. We have to iterate the entire graph and change the
-    # layer inbound and outbound nodes with modified tensors. This is doubly
-    # complicated in Keras 2.x since multiple inbound and outbound nodes are
-    # allowed with the Graph API.
-    model_path = os.path.join(tempfile.gettempdir(),
-                              next(tempfile._get_candidate_names()) + '.h5')
-    try:
-        model.save(model_path)
-        return load_model(model_path, custom_objects=custom_objects)
-    finally:
-        os.remove(model_path)
-
-
-def normalize(array, min_value=0., max_value=1.):
-    """Normalizes the numpy array to (min_value, max_value)
-
-    Args:
-        array: The numpy array
-        min_value: The min value in normalized array (Default value = 0)
-        max_value: The max value in normalized array (Default value = 1)
-
-    Returns:
-        The array normalized to range between (min_value, max_value)
-    """
-    arr_min = np.min(array)
-    arr_max = np.max(array)
-    normalized = (array - arr_min) / (arr_max - arr_min + K.epsilon())
-    return (max_value - min_value) * normalized + min_value
 
 
 class MakeMovie(object):
@@ -127,7 +75,8 @@ class MakeMovie(object):
             self.keras_part = get_model_by_type(args.type, cfg=self.cfg)
             self.keras_part.load(args.model)
             if args.salient:
-                self.do_salient = self.init_salient(self.keras_part.interpreter.model)
+                self.do_salient = self.init_salient(self.keras_part.interpreter.model,
+                                                    categorical=(args.type == 'categorical'))
 
         print('making movie', args.out, 'from', num_frames, 'images')
         clip = mpy.VideoClip(self.make_frame, duration=((num_frames - 1) / self.cfg.DRIVE_LOOP_HZ))
@@ -212,59 +161,15 @@ class MakeMovie(object):
                 cv2.line(img_drawon, p1, p2, (200, 200, 200), 2)
             x += dx
 
-    def init_salient(self, model):
-        # Utility to search for layer index by name. 
-        # Alternatively we can specify this as -1 since it corresponds to the last layer.
-        output_name = []
-        layer_idx = []
-        for i, layer in enumerate(model.layers):
-            if "dropout" not in layer.name.lower() and "out" in layer.name.lower():
-                output_name.append(layer.name)
-                layer_idx.append(i)
-
-        if output_name == []:
+    def init_salient(self, model, categorical=False):
+        self.saliency = VanillaGradientSaliency(model, categorical=categorical)
+        if not self.saliency.found_output_layers:
             print("Failed to find the model layer named with 'out'. Skipping salient.")
             return False
-
         print("####################")
-        print("Visualizing activations on layer:", output_name)
+        print("Visualizing gradient saliency on output layers")
         print("####################")
-        
-        # ensure we have linear activation
-        for li in layer_idx:
-            model.layers[li].activation = activations.linear
-        # build salient model and optimizer
-        sal_model = apply_modifications(model)
-        self.sal_model = sal_model
         return True
-
-    def compute_visualisation_mask(self, img):
-        img = img.reshape((1,) + img.shape)
-        images = tf.Variable(img, dtype=float)
-
-        if self.model_type == 'linear':
-            with tf.GradientTape(persistent=True) as tape:
-                tape.watch(images)
-                pred_list = self.sal_model(images, training=False)
-        elif self.model_type == 'categorical':
-            with tf.GradientTape(persistent=True) as tape:
-                tape.watch(images)
-                pred = self.sal_model(images, training=False)
-                pred_list = []
-                for p in pred:
-                    maxindex = tf.math.argmax(p[0])
-                    pred_list.append(p[0][maxindex])
-                    
-        grads = 0
-        for p in pred_list:
-            grad = tape.gradient(p, images)
-            grads += tf.math.square(grad)
-        grads = tf.math.sqrt(grads)
-
-        channel_idx = 1 if K.image_data_format() == 'channels_first' else -1
-        grads = np.sum(grads, axis=channel_idx)
-        res = normalize(grads)[0]
-        return res
 
     def draw_salient(self, img):
 
@@ -279,7 +184,7 @@ class MakeMovie(object):
             img = grey_img.reshape(grey_img.shape + (1,))
 
         norm_img = normalize_image(img)
-        salient_mask = self.compute_visualisation_mask(norm_img)
+        salient_mask = self.saliency.saliency_map(norm_img)
         salient_mask_stacked = cm.inferno(salient_mask)[:,:,0:3]
         salient_mask_stacked = cv2.GaussianBlur(salient_mask_stacked,(3,3),cv2.BORDER_DEFAULT)
         blend = cv2.addWeighted(img.astype('float32'), alpha, salient_mask_stacked.astype('float32'), beta, 0)

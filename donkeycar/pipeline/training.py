@@ -14,7 +14,8 @@ from donkeycar.pipeline.database import PilotDatabase
 from donkeycar.pipeline.sequence import TubRecord, TubSequence, TfmIterator
 from donkeycar.pipeline.types import TubDataset
 from donkeycar.pipeline.augmentations import ImageAugmentation
-from donkeycar.parts.image_transformations import ImageTransformations
+from donkeycar.parts.image_transformations import ImageTransformations, \
+    log_preprocessing_config, save_preprocessing_metadata
 from donkeycar.utils import get_model_by_type, normalize_image, train_test_split
 import tensorflow as tf
 import numpy as np
@@ -42,6 +43,9 @@ class BatchSequence(object):
         self.transformation = ImageTransformations(config, 'TRANSFORMATIONS')
         self.post_transformation = ImageTransformations(config,
                                                         'POST_TRANSFORMATIONS')
+        log_preprocessing_config(config,
+                                 'training' if is_train else 'validation',
+                                 include_augmentations=is_train)
         self.pipeline = self._create_pipeline()
 
     def __len__(self) -> int:
@@ -166,6 +170,10 @@ def train(cfg: Config, tub_paths: str, model: str = None,
                        patience=cfg.EARLY_STOP_PATIENCE,
                        show_plot=cfg.SHOW_PLOT)
 
+    # Record the exact preprocessing this model was trained with, so the
+    # vehicle can refuse to drive it if its own config doesn't match.
+    save_preprocessing_metadata(cfg, model_path)
+
     # We are doing the tflite/trt conversion here on a previously saved model
     # and not on the kl.interpreter.model object directly. The reason is that
     # we want to convert the best model which is not the model in its current
@@ -198,5 +206,31 @@ def train(cfg: Config, tub_paths: str, model: str = None,
     }
     database.add_entry(database_entry)
     database.write()
+
+    # Optionally build the MC-Dropout confidence calibration on the training
+    # tubs, so the trained model ships with a <model>.calib.json (saved next to
+    # the model) that the dashboard uses to show a confidence % when
+    # XAI_CONFIDENCE_ENABLED is enabled.
+    # Off by default because it adds a replay pass over the data; enable with
+    # XAI_CONFIDENCE_AUTO_CALIBRATE = True. Linear model only (MC-Dropout relies on
+    # the dropout layers in the default linear architecture).
+    if getattr(cfg, 'XAI_CONFIDENCE_AUTO_CALIBRATE', False):
+        if model_type == 'linear':
+            try:
+                from donkeycar.parts.mc_calibrate import calibrate_from_tub
+                calib_tubs = [os.path.expanduser(t)
+                              for t in tub_paths.split(',')]
+                limit = getattr(cfg, 'XAI_CONFIDENCE_CALIBRATE_LIMIT', None)
+                logger.info('Building MC-Dropout confidence calibration on '
+                            'the training tubs...')
+                _, calib_path = calibrate_from_tub(
+                    cfg, calib_tubs, model_path, limit=limit)
+                logger.info(f'Saved MC-Dropout calibration to {calib_path}')
+            except Exception as e:
+                logger.warning(f'MC-Dropout auto-calibration failed '
+                               f'(model still trained fine): {e}')
+        else:
+            logger.info(f'Skipping MC-Dropout calibration: only supported for '
+                        f'the linear model, not "{model_type}".')
 
     return history
