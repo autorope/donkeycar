@@ -72,6 +72,11 @@ REALSENSE_D435_ID = None        # Serial number of camera or None for auto-detec
 OAKD_RGB = True       # True to capture RGB image
 OAKD_DEPTH = True     # True to capture depth as image array
 OAKD_ID = None        # Serial number of camera or None for auto-detect
+OAKD_RGB_OUTPUT_MODE = "isp"   # "isp" preserves full FOV; "video" uses crop-based framing
+OAKD_RGB_ISP_SCALE_NUM = 1      # Used when OAKD_RGB_OUTPUT_MODE == "isp"
+OAKD_RGB_ISP_SCALE_DEN = 6      # Used when OAKD_RGB_OUTPUT_MODE == "isp"
+OAKD_RGB_SENSOR_CROP_X = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
+OAKD_RGB_SENSOR_CROP_Y = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
 
 
 # ------------------------------------------------------------------------------
