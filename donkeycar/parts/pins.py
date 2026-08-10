@@ -382,7 +382,7 @@ def pwm_pin(
     if pin_provider == PinProvider.RPI_GPIO:
         return PwmPinGpio(pin_number, pin_scheme, frequency_hz)
     if pin_provider == PinProvider.PCA9685:
-        return PwmPinPCA9685(pin_number, pca9685(i2c_bus, i2c_address, frequency_hz))
+        return PwmPinPCA9685(pin_number, i2c_bus, i2c_address, frequency_hz)
     if pin_provider == PinProvider.PIGPIO:
         if pin_scheme != PinScheme.BCM:
             raise ValueError("Pin scheme must be PinScheme.BCM for PIGPIO")
@@ -560,51 +560,74 @@ class PwmPinGpio(PwmPin):
 #
 # ----- PCA9685 implementations -----
 #
-class PCA9685:
+class PCA9685board:
     '''
-    Pin controller using PCA9685 boards.
-    This is used for most RC Cars.  This
-    driver can output ttl HIGH or LOW or
-    produce a duty cycle at the given frequency.
+    Adapter over PCA9685 driver.
+    It initializes the PCA9685 board at the given busnum:address
+    to produce pulses at the given frequency in hertz.
+    >> NOTE: The busnum argument is now ignored.
+    >>       The I2C bus device is auto detected using
+    >>       Adafruit Blinka board interface, which is 
+    >>       implemented for RaspberryPi, but may not be 
+    >>       implemented for other SBCs.  
+    >>       See [boards.py](https://github.com/adafruit/Adafruit_Blinka/blob/main/src/board.py)
+    >>       and [busio.py](https://github.com/adafruit/Adafruit_Blinka/blob/b3beba7399bc4d5faa203ef705691ef79fc4e87f/src/busio.py#L29)
     '''
-    def __init__(self, busnum: int, address: int, frequency: int):
-
-        import Adafruit_PCA9685
-        if busnum is not None:
-            from Adafruit_GPIO import I2C
-
-            # monkey-patch I2C driver to use our bus number
-            def get_bus():
-                return busnum
-
-            I2C.get_default_bus = get_bus
-        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
-        self.pwm.set_pwm_freq(frequency)
+    def __init__(self, busnum: int = 1, address: int = 0x40, frequency: int = 60):
+        import board
+        import busio
+        import adafruit_pca9685
+        i2c = busio.I2C(board.SCL, board.SDA)
+        self.pca9685driver = adafruit_pca9685.PCA9685(i2c, address=address)
+        self.pca9685driver.frequency = frequency
+        self.busnum = busnum
+        self.address = address
         self._frequency = frequency
 
-    def get_frequency(self):
+    def get_frequency(self) -> int:
         return self._frequency
 
-    def set_high(self, channel: int):
-        self.pwm.set_pwm(channel, 4096, 0)
+class PCA9685Pin:
+    '''
+    Adapter over PCA9685 pin driver.
+    This can output ttl HIGH or LOW or
+    produce a duty cycle at the given frequency.
+    '''
+    def __init__(self, channel: int, busnum: int = 1, address: int = 0x40, frequency: int = 60):
 
-    def set_low(self, channel: int):
-        self.pwm.set_pwm(channel, 0, 4096)
+        import adafruit_pca9685
+        self.pca = pca9685(busnum, address, frequency)
+        self.pca_pin = adafruit_pca9685.PWMChannel(self.pca.pca9685driver, channel)
+        self.channel = channel
 
-    def set_duty_cycle(self, channel: int, duty_cycle: float):
+    def get_frequency(self) -> int:
+        return self.pca.get_frequency()
+
+    def set_high(self):
+        # adafruit blinka uses 16bit values
+        # where 0xFFFF is a flag that means fully high
+        self.pca_pin.duty_cycle = 0xFFFF
+
+    def set_low(self):
+        # adafruit blinka uses 16bit values
+        # where 0x0000 is a flag that means fully low
+        self.pca_pin.duty_cycle = 0x0000
+
+    def set_duty_cycle(self, duty_cycle: float):
         if duty_cycle < 0 or duty_cycle > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
         if duty_cycle == 1:
-            self.set_high(channel)
+            self.set_high()
         elif duty_cycle == 0:
-            self.set_low(channel)
+            self.set_low()
         else:
-            # duty cycle is fraction of the 12 bits
-            pulse = int(4096 * duty_cycle)
+            # adafruit blinka uses 16 bit values
+            # for resolution of duty cycle.
+            pulse = int(0x10000 * duty_cycle)
             try:
-                self.pwm.set_pwm(channel, 0, pulse)
+                self.pca_pin.duty_cycle = pulse
             except Exception as e:
-                logger.error(f'Error on PCA9685 channel {channel}: {str(e)}')
+                logger.error(f'Error on PCA9685 channel {self.channel}: {str(e)}')
 
 
 #
@@ -612,9 +635,10 @@ class PCA9685:
 # key is "busnum:address"
 #
 _pca9685 = {}
+_pca9685pin = {}
 
 
-def pca9685(busnum: int, address: int, frequency: int = 60):
+def pca9685(busnum: int, address: int, frequency: int = 60) -> PCA9685board:
     """
     pca9685 factory allocates driver for pca9685
     at given bus number and i2c address.
@@ -632,21 +656,46 @@ def pca9685(busnum: int, address: int, frequency: int = 60):
     key = str(busnum) + ":" + hex(address)
     pca = _pca9685.get(key)
     if pca is None:
-        pca = PCA9685(busnum, address, frequency)
+        pca = PCA9685board(busnum, address, frequency)
+        _pca9685[key] = pca
     if pca.get_frequency() != frequency:
         raise ValueError(
             f"Frequency {frequency} conflicts with pca9685 at {key} "
-            f"with frequency {pca.pwm.get_pwm_freq()}")
+            f"with frequency {pca.get_frequency()}")
     return pca
 
 
-class OutputPinPCA9685(ABC):
+def pca9685pin(channel: int, busnum: int, address: int, frequency: int = 60) -> PCA9685Pin:
+    """
+    pca9685 pin factory allocates driver for pin on channel on pca9685
+    at given bus number and i2c address.
+    If we have already created one for that bus/addr/channel
+    pair then use that singleton.  If frequency is
+    not the same, then error.
+    :param channel: PCA9685 channel 0..15 to control
+    :param busnum: I2C bus number of PCA9685
+    :param address: address of PCA9685 on I2C bus
+    :param frequency: frequency in hertz of duty cycle
+    :except: PCA9685 has a single frequency for all channels,
+             so attempts to allocate a controller at a
+             given bus number and address with different
+             frequencies will raise a ValueError
+    """
+    key = str(busnum) + ":" + hex(address) + ":" + str(channel)
+    pca_pin = _pca9685pin.get(key)
+    if pca_pin is None:
+        pca_pin = PCA9685Pin(channel, busnum, address, frequency)
+        _pca9685pin[key] = pca_pin
+    return pca_pin
+
+
+class OutputPinPCA9685(OutputPin):
     """
     Output pin ttl HIGH/LOW using PCA9685
     """
-    def __init__(self, pin_number: int, pca9685: PCA9685) -> None:
+    def __init__(self, pin_number: int, busnum: int, address: int, frequency: int = 60) -> None:
         self.pin_number = pin_number
-        self.pca9685 = pca9685
+        self.pca_pin = pca9685pin(pin_number, busnum, address, frequency)
         self._state = PinState.NOT_STARTED
 
     def start(self, state: int = PinState.LOW) -> None:
@@ -688,9 +737,9 @@ class OutputPinPCA9685(ABC):
         if self.state() == PinState.NOT_STARTED:
             raise RuntimeError(f"Attempt to use pin ({self.pin_number}) that is not started")
         if state == PinState.HIGH:
-            self.pca9685.set_high(self.pin_number)
+            self.pca_pin.set_high()
         else:
-            self.pca9685.set_low(self.pin_number)
+            self.pca_pin.set_low()
         self._state = state
 
 
@@ -698,9 +747,9 @@ class PwmPinPCA9685(PwmPin):
     """
     PWM output pin using PCA9685
     """
-    def __init__(self, pin_number: int, pca9685: PCA9685) -> None:
+    def __init__(self, pin_number: int, busnum: int, address: int, frequency: int = 60) -> None:
         self.pin_number = pin_number
-        self.pca9685 = pca9685
+        self.pca_pin = pca9685pin(pin_number, busnum, address, frequency)
         self._state = PinState.NOT_STARTED
 
     def start(self, duty: float = 0) -> None:
@@ -739,7 +788,7 @@ class PwmPinPCA9685(PwmPin):
             raise RuntimeError(f"Attempt to use pin ({self.pin_number}) that is not started")
         if duty < 0 or duty > 1:
             raise ValueError("duty_cycle must be in range 0 to 1")
-        self.pca9685.set_duty_cycle(self.pin_number, duty)
+        self.pca_pin.set_duty_cycle(duty)
         self._state = duty
 
 

@@ -125,60 +125,29 @@ class PulseController:
 
 
 @deprecated("Deprecated in favor or PulseController.  This will be removed in a future release")
-class PCA9685:
+class PCA9685(PulseController):
     ''' 
     PWM motor controler using PCA9685 boards. 
     This is used for most RC Cars
     '''
-    def __init__(self, channel, address=0x40, frequency=60, busnum=None, init_delay=0.1):
-
-        self.default_freq = 60
-        self.pwm_scale = frequency / self.default_freq
-
-        import Adafruit_PCA9685
-        # Initialise the PCA9685 using the default address (0x40).
-        if busnum is not None:
-            from Adafruit_GPIO import I2C
-            # replace the get_bus function with our own
-            def get_bus():
-                return busnum
-            I2C.get_default_bus = get_bus
-        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
-        self.pwm.set_pwm_freq(frequency)
-        self.channel = channel
+    def __init__(self, channel, address=0x40, frequency=60, busnum=1, init_delay=0.1):
+        from donkeycar.parts.pins import PwmPinPCA9685
+        pca_pin = PwmPinPCA9685(channel, busnum, address, frequency)
+        super().__init__(pca_pin, frequency / 60, False)
+        self.pca_pin = pca_pin
         time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_high(self):
-        self.pwm.set_pwm(self.channel, 4096, 0)
+        self.pca_pin.set_duty_cycle(1)
 
     def set_low(self):
-        self.pwm.set_pwm(self.channel, 0, 4096)
+        self.pca_pin.set_duty_cycle(0)
 
-    def set_duty_cycle(self, duty_cycle):
+    def set_duty_cycle(self, duty_cycle: float):
         if duty_cycle < 0 or duty_cycle > 1:
-            logging.error("duty_cycle must be in range 0 to 1")
+            logging.error("duty_cycle must be in range 0.0 to 1.0")
             duty_cycle = clamp(duty_cycle, 0, 1)
-            
-        if duty_cycle == 1:
-            self.set_high()
-        elif duty_cycle == 0:
-            self.set_low()
-        else:
-            # duty cycle is fraction of the 12 bits
-            pulse = int(4096 * duty_cycle)
-            try:
-                self.pwm.set_pwm(self.channel, 0, pulse)
-            except:
-                self.pwm.set_pwm(self.channel, 0, pulse)
-
-    def set_pulse(self, pulse):
-        try:
-            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
-        except:
-            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
-
-    def run(self, pulse):
-        self.set_pulse(pulse)
+        self.pca_pin.set_duty_cycle(duty_cycle)
 
 
 class VESC:
