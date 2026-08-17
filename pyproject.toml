@@ -2,5 +2,127 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "donkeycar"
+dynamic = ["version"]
+authors = [
+    {name = "Will Roscoe"},
+    {name = "Adam Conway"},
+    {name = "Tawn Kramer"},
+]
+description = "Self driving library for python."
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["selfdriving", "cars", "donkeycar", "diyrobocars"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.12.0,<3.14"
+dependencies = [
+    "numpy>=1.26.0",
+    "pillow",
+    "docopt-ng",
+    "tornado",
+    "requests",
+    "PrettyTable",
+    "paho-mqtt",
+    "simple_pid",
+    "progress",
+    "pyfiglet",
+    "psutil",
+    "pynmea2",
+    "pyserial",
+    "utm",
+    "pandas",
+    "pyyaml",
+]
 
+[project.optional-dependencies]
+pi = [
+    "Adafruit_PCA9685",
+    "adafruit-circuitpython-ssd1306",
+    "adafruit-circuitpython-rplidar",
+    "adafruit-circuitpython-mpu6050",
+    "adafruit-circuitpython-bno055",
+    "gpiozero",
+    "ai-edge-litert>=2.1.4",
+    "opencv-contrib-python",
+    "matplotlib",
+    "kivy",
+    "kivy-garden.matplotlib",
+    "pandas",
+    "pandas-stubs",
+    "plotly",
+    "albumentations",
+]
+nano = [
+    "Adafruit_PCA9685",
+    "adafruit-circuitpython-ssd1306",
+    "adafruit-circuitpython-rplidar",
+    "Jetson.GPIO",
+    "numpy==1.23.*",
+    "matplotlib==3.7.*",
+    "kivy",
+    "kivy-garden.matplotlib",
+    "plotly",
+    "pandas==2.0.*",
+]
+pc = [
+    "tensorflow==2.19.*",
+    "tf-keras==2.19.*",
+    "matplotlib",
+    "kivy",
+    "kivy-garden.matplotlib",
+    "pandas",
+    "plotly",
+    "albumentations",
+]
+macos = [
+    "tensorflow==2.19.*",
+    "tf-keras==2.19.*",
+    "tensorflow-metal==1.2.0",
+    "matplotlib",
+    "kivy",
+    "kivy-garden.matplotlib",
+    "pandas",
+    "plotly",
+    "albumentations",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "responses",
+    "mypy",
+    "black",
+]
+torch = [
+    "torch==2.11.*",
+    "pytorch-lightning",
+    "torchvision==0.26.*",
+    "torchaudio==2.11.*",
+    "fastai",
+    "ipython",
+]
 
+[project.scripts]
+donkey = "donkeycar.management.base:execute_from_command_line"
+
+[project.urls]
+Homepage = "https://github.com/autorope/donkeycar"
+
+[tool.setuptools.dynamic]
+version = {attr = "donkeycar.__version__"}
+
+[tool.setuptools.packages.find]
+namespaces = true
+
+[tool.setuptools.package-data]
+"*" = ["*.html", "*.ini", "*.txt", "*.kv"]
+"donkeycar.templates" = ["*"]
+"donkeycar.parts.web_controller.templates" = ["*"]
+"donkeycar.management.tub_web" = ["*.html", "static/**/*"]
+"scripts" = ["*"]

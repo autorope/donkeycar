@@ -1,31 +1,37 @@
+import importlib.metadata
 import os
+import sys
 from abc import ABC, abstractmethod
 import logging
 import numpy as np
-from typing import Union, Sequence, List
+from typing import Union, Sequence
 
 try:
     import tensorflow as tf
     from tensorflow import keras
-    from tensorflow.python.saved_model import tag_constants, signature_constants
-    from tensorflow.python.compiler.tensorrt import trt_convert as trt
+    logging.getLogger('tensorflow').setLevel(logging.WARNING)
+    try:
+        import tensorflow.compiler.tf2tensorrt.wrap_py_utils as trt
+    except ImportError:
+        trt = None
 except ImportError:
     tf = None
     keras = None
-    tag_constants = None
-    signature_constants = None
     trt = None
 
 logger = logging.getLogger(__name__)
 
 
-def get_tflite_interpreter():
-    """Get TFLite Interpreter from tflite-runtime or full TensorFlow."""
+def _is_metal_installed() -> bool:
+    if sys.platform != 'darwin':
+        return False
     try:
-        from tflite_runtime.interpreter import Interpreter
-        return Interpreter
-    except ImportError:
-        pass
+        importlib.metadata.version('tensorflow-metal')
+        return True
+    except importlib.metadata.PackageNotFoundError:
+        return False
+
+def get_tflite_interpreter():
     try:
         from ai_edge_litert.interpreter import Interpreter
         return Interpreter
@@ -33,10 +39,12 @@ def get_tflite_interpreter():
         pass
     if tf is not None:
         return tf.lite.Interpreter
-    raise ImportError("No TFLite runtime found. Install tflite-runtime or tensorflow.")
+    raise ImportError('No TFLite interpreter found. Install ai-edge-litert.')
 
 
 def has_trt_support():
+    if trt is None:
+        return False
     try:
         converter = trt.TrtGraphConverterV2()
         return True
@@ -53,7 +61,19 @@ def keras_model_to_tflite(in_filename, out_filename, data_gen=None):
 
 
 def keras_to_tflite(model, out_filename, data_gen=None):
-    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    # from_keras_model is broken with Keras 3.x; use tf.function +
+    # from_concrete_functions which bypasses the problematic Keras export path
+    input_sig = [tf.TensorSpec(shape=(1,) + tuple(inp.shape[1:]),
+                               dtype=tf.float32, name=inp.name)
+                 for inp in model.inputs]
+    if len(input_sig) == 1:
+        tf_func = tf.function(model, input_signature=input_sig)
+    else:
+        tf_func = tf.function(lambda *args: model(list(args)),
+                              input_signature=input_sig)
+    concrete = tf_func.get_concrete_function()
+    converter = tf.lite.TFLiteConverter.from_concrete_functions(
+        [concrete], tf_func)
     converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS,
                                            tf.lite.OpsSet.SELECT_TF_OPS]
     converter.allow_custom_ops = True
@@ -139,7 +159,7 @@ class Interpreter(ABC):
     def predict_from_dict(self, input_dict) -> Sequence[Union[float, np.ndarray]]:
         pass
 
-    def summary(self) -> str:
+    def summary(self) -> None:
         pass
 
     def __str__(self) -> str:
@@ -165,7 +185,7 @@ class KerasInterpreter(Interpreter):
         if type(output_shape) is not list:
             output_shape = [output_shape]
 
-        self.input_keys = self.model.input_names
+        self.input_keys = [inp.name for inp in self.model.inputs]
         self.output_keys = self.model.output_names
         self.shapes = (dict(zip(self.input_keys, input_shape)),
                        dict(zip(self.output_keys, output_shape)))
@@ -179,7 +199,23 @@ class KerasInterpreter(Interpreter):
 
     def compile(self, **kwargs):
         assert self.model, 'Model not set'
+        kwargs.setdefault('jit_compile', False)
+        if _is_metal_installed():
+            # Safe production fallback: the current compiled Metal training
+            # path is unsafe across the covered optimizers on the real
+            # workload, so force eager execution until regression tests
+            # prove a compiled path is both correct and faster.
+            kwargs.setdefault('run_eagerly', True)
         self.model.compile(**kwargs)
+
+    def fit(self, x, steps_per_epoch, batch_size, callbacks,
+            validation_data, validation_steps, epochs, verbose):
+        return self.model.fit(
+            x=x, steps_per_epoch=steps_per_epoch,
+            batch_size=batch_size, callbacks=callbacks,
+            validation_data=validation_data,
+            validation_steps=validation_steps,
+            epochs=epochs, verbose=verbose)
 
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
@@ -196,28 +232,20 @@ class KerasInterpreter(Interpreter):
             return outputs.numpy().squeeze(axis=0)
 
     def load(self, model_path: str) -> None:
-        logger.info(f'Loading model {model_path}')
         self.model = keras.models.load_model(model_path, compile=False)
-        # Set input_keys and output_keys after loading (same as set_model)
-        input_shape = self.model.input_shape
-        if type(input_shape) is not list:
-            input_shape = [input_shape]
-        output_shape = self.model.output_shape
-        if type(output_shape) is not list:
-            output_shape = [output_shape]
-
-        self.input_keys = self.model.input_names
-        self.output_keys = self.model.output_names
-        self.shapes = (dict(zip(self.input_keys, input_shape)),
-                       dict(zip(self.output_keys, output_shape)))
+        # composite model output names can be lost when exporting to SavedModel
+        # for TRT; overwrite them from the pilot's declared output_keys
+        logger.info(f'Loading model {model_path} and overwriting model output '
+                    f'names {self.model.output_names} with {self.output_keys}')
+        self.model.output_names = self.output_keys
 
     def load_weights(self, model_path: str, by_name: bool = True) -> \
             None:
         assert self.model, 'Model not set'
         self.model.load_weights(model_path, by_name=by_name)
 
-    def summary(self) -> str:
-        return self.model.summary()
+    def summary(self) -> None:
+        self.model.summary(expand_nested=True, show_trainable=True)
 
     @staticmethod
     def expand_and_convert(arr):
@@ -279,9 +307,6 @@ class FastAIInterpreter(Interpreter):
         logger.info(self.model)
         self.model.eval()
 
-    def summary(self) -> str:
-        return self.model
-
 
 class TfLite(Interpreter):
     """
@@ -294,17 +319,39 @@ class TfLite(Interpreter):
         self.runner = None
         self.signatures = None
     
+    @staticmethod
+    def _normalise_tensor_name(raw):
+        return raw.removeprefix('serving_default_').removesuffix(':0')
+
     def load(self, model_path):
         assert os.path.splitext(model_path)[1] == '.tflite', \
             'TFlitePilot should load only .tflite files'
         logger.info(f'Loading model {model_path}')
-        # Load TFLite model and extract input and output keys
-        Interpreter = get_tflite_interpreter()
-        self.interpreter = Interpreter(model_path=model_path)
+        TfliteInterpreter = get_tflite_interpreter()
+        self.interpreter = TfliteInterpreter(model_path=model_path)
         self.signatures = self.interpreter.get_signature_list()
+        if not self.signatures:
+            return self._load_via_tensor_api()
         self.runner = self.interpreter.get_signature_runner()
-        self.input_keys = self.signatures['serving_default']['inputs']
-        self.output_keys = self.signatures['serving_default']['outputs']
+        self.input_keys = list(
+            self.signatures['serving_default']['inputs'])
+        self.output_keys = list(
+            self.signatures['serving_default']['outputs'])
+
+    def _load_via_tensor_api(self):
+        logger.info(
+            'No TFLite signatures found; using tensor API fallback')
+        self.runner = None
+        self.interpreter.allocate_tensors()
+        in_details = self.interpreter.get_input_details()
+        out_details = sorted(self.interpreter.get_output_details(),
+                             key=lambda d: d['index'])
+        self.input_keys = [
+            self._normalise_tensor_name(d['name']) for d in in_details]
+        self._input_index_map = {
+            k: d['index'] for k, d in zip(self.input_keys, in_details)}
+        self._output_indices = [d['index'] for d in out_details]
+        self.output_keys = [str(i) for i in range(len(out_details))]
 
     def compile(self, **kwargs):
         pass
@@ -312,17 +359,35 @@ class TfLite(Interpreter):
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
             input_dict[k] = self.expand_and_convert(v)
+        if self.runner is not None:
+            return self._predict_via_runner(input_dict)
+        return self._predict_via_tensor_api(input_dict)
+
+    def _predict_via_runner(self, input_dict):
         outputs = self.runner(**input_dict)
         ret = list(outputs[k][0] for k in self.output_keys)
         return ret if len(ret) > 1 else ret[0]
 
+    def _predict_via_tensor_api(self, input_dict):
+        for k, v in input_dict.items():
+            self.interpreter.set_tensor(self._input_index_map[k], v)
+        self.interpreter.invoke()
+        ret = [self.interpreter.get_tensor(i)[0]
+               for i in self._output_indices]
+        return ret if len(ret) > 1 else ret[0]
+
     def get_input_shape(self, input_name):
-        assert self.interpreter is not None, "Need to load tflite model first"
+        assert self.interpreter is not None, \
+            "Need to load tflite model first"
         details = self.interpreter.get_input_details()
-        for detail in details:
-            if detail['name'] == f"serving_default_{input_name}:0":
-                return detail['shape']
-        raise RuntimeError(f'{input_name} not found in TFlite model')
+        match = next(
+            (d for d in details
+             if self._normalise_tensor_name(d['name']) == input_name),
+            None)
+        if match is None:
+            raise RuntimeError(
+                f'{input_name} not found in TFlite model')
+        return match['shape']
 
     @staticmethod
     def expand_and_convert(arr):
@@ -360,23 +425,13 @@ class TensorRT(Interpreter):
         logger.info(f'Loading TensorRT model {model_path}')
         assert self.pilot, "Need to set pilot first"
         try:
-            ext = os.path.splitext(model_path)[1]
-            if ext == '.savedmodel':
-                # first load tf model format to extract input and output keys
-                model = tf.keras.models.load_model(model_path, compile=False)
-                self.input_keys = model.input_names
-                self.output_keys = model.output_names
-                converter \
-                    = trt.TrtGraphConverterV2(input_saved_model_dir=model_path)
-                self.graph_func = converter.convert()
-            else:
-                trt_model_loaded = tf.saved_model.load(
-                    model_path, tags=[tag_constants.SERVING])
-                self.graph_func = trt_model_loaded.signatures[
-                    signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
-                inputs, outputs = self.pilot.output_shapes()
-                self.input_keys = list(inputs.keys())
-                self.output_keys = list(outputs.keys())
+            trt_model_loaded = tf.saved_model.load(
+                model_path, tags=[tf.saved_model.SERVING])
+            self.graph_func = trt_model_loaded.signatures[
+                tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY]
+            inputs, outputs = self.pilot.output_shapes()
+            self.input_keys = list(inputs.keys())
+            self.output_keys = list(outputs.keys())
             logger.info(f'Finished loading TensorRT model.')
         except Exception as e:
             logger.error(f'Could not load TensorRT model because: {e}')
@@ -384,12 +439,12 @@ class TensorRT(Interpreter):
     def predict_from_dict(self, input_dict):
         for k, v in input_dict.items():
             input_dict[k] = self.expand_and_convert(v)
-        out_list = self.graph_func(**input_dict)
+        out_dict = self.graph_func(**input_dict)
         # Squeeze here because we send a batch of size one, so pick first
         # element. To return the order of outputs as defined in the model we
         # need to iterate through the model's output shapes here
-        outputs = [k.numpy().squeeze(axis=0) for k in out_list]
-
+        outputs = [out_dict[k].numpy().squeeze(axis=0) for k in
+                   self.output_keys]
         # don't return list if output is 1d
         return outputs if len(outputs) > 1 else outputs[0]
 

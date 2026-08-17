@@ -314,7 +314,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         #
         model_reload_cb = None
         if '.h5' in model_path or '.trt' in model_path or '.tflite' in \
-                model_path or '.savedmodel' in model_path or '.pth' in model_path:
+                model_path or '.pth' in model_path or '.keras' in model_path:
             # load the whole model with weigths, etc
             load_model(kl, model_path)
 
@@ -382,7 +382,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                     return list(accel) + list(gyro)
 
             # Add it to the vehicle loop
-            V.add(Vectorizer(), 
+            V.add(Vectorizer(),
                   inputs=['imu/accel', 'imu/gyro'],
                   outputs=['imu_array'])
             inputs = ['cam/image_array', 'imu_array']
@@ -928,7 +928,7 @@ def add_imu(V, cfg):
         if cfg.IMU_SENSOR.lower() == "bno08x":
             from donkeycar.parts.imu import Bno08xIMU
             imu = Bno08xIMU(addr=cfg.IMU_ADDRESS)
-            V.add(imu, 
+            V.add(imu,
                 outputs=['imu/accel', 'imu/gyro', 'imu/quat'], 
                 threaded=True)
         else:

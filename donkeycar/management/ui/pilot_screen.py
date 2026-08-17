@@ -18,7 +18,7 @@ from donkeycar.pipeline.augmentations import ImageAugmentation
 from donkeycar.utils import get_model_by_type
 
 
-ALL_FILTERS = ['*.h5', '*.tflite', '*.savedmodel', '*.trt']
+ALL_FILTERS = ['*.h5', '*.keras', '*.tflite', '*.trt']
 
 
 class PilotLoader(BoxLayout, FileChooserBase):
@@ -66,9 +66,9 @@ class PilotLoader(BoxLayout, FileChooserBase):
                 if 'tflite' in self.model_type:
                     self.filters = ['*.tflite']
                 elif 'tensorrt' in self.model_type:
-                    self.filters = ['*.trt', '*.savedmodel']
+                    self.filters = ['*.trt']
                 else:
-                    self.filters = ['*.h5', '*.savedmodel']
+                    self.filters = ['*.h5', '*.keras']
             except Exception as e:
                 status(f'Error: {e}')
 

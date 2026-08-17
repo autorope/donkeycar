@@ -30,10 +30,13 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
     model = get_model_by_type(model_type, cfg, checkpoint_path=checkpoint_path)
     if torch.cuda.is_available():
         print('Using CUDA')
-        gpus = -1
+        accelerator, devices = 'cuda', -1
+    elif torch.backends.mps.is_available():
+        print('Using MPS (Apple GPU)')
+        accelerator, devices = 'mps', 1
     else:
-        print('Not using CUDA')
-        gpus = 0
+        print('Using CPU')
+        accelerator, devices = 'cpu', 1
 
     logger = None
     if cfg.VERBOSE_TRAIN:
@@ -46,8 +49,9 @@ def train(cfg, tub_paths, model_output_path, model_type, checkpoint_path=None):
 
     if cfg.PRINT_MODEL_SUMMARY:
         summarize(model)
-    trainer = pl.Trainer(accelerator='cpu', logger=logger,
-                         max_epochs=cfg.MAX_EPOCHS, default_root_dir=output_dir)
+    trainer = pl.Trainer(logger=logger, max_epochs=cfg.MAX_EPOCHS,
+                         default_root_dir=output_dir,
+                         accelerator=accelerator, devices=devices)
 
     data_module = TorchTubDataModule(cfg, tub_paths)
     trainer.fit(model, data_module)

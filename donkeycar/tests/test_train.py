@@ -1,6 +1,8 @@
 from copy import copy
 
 import pytest
+pytest.importorskip('tensorflow',
+                    reason='TensorFlow not installed, skipping training tests')
 import tarfile
 import os
 import numpy as np
@@ -84,7 +86,7 @@ def car_dir(tmpdir_factory, base_config, imu_fields) -> str:
     # extract tub.tar.gz into car_dir/tub
     this_dir = os.path.dirname(os.path.abspath(__file__))
     with tarfile.open(os.path.join(this_dir, 'tub', 'tub.tar.gz')) as file:
-        file.extractall(car_dir)
+        file.extractall(car_dir, filter='data')
     # now create a second tub with additonal imu data
     tub_dir = os.path.join(car_dir, 'tub')
     tub = Tub(base_path=tub_dir)
@@ -128,7 +130,17 @@ d13 = Data(type='linear', name='lin3', convergence=0.7, preprocess='trans')
 d14 = Data(type='fastai_linear', name='linfastai1', convergence=0.6,
            tf_lite=False, tensor_rt=False)
 
-test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12, d14]
+try:
+    import fastai as _fastai  # noqa: F401
+    _skip_fastai = ()
+except ImportError:
+    _skip_fastai = (pytest.mark.skip(
+        reason='fastai not installed. Install with: uv pip install '
+               '--python ~/.venvs/donkeycar/bin/python '
+               'pytorch-lightning fastai'),)
+
+test_data = [d1, d2, d3, d6, d7, d8, d9, d10, d11, d12,
+             pytest.param(d14, marks=_skip_fastai)]
 full_tub = ['imu', 'behavior', 'localizer']
 
 
@@ -142,11 +154,8 @@ def test_train(config: Config, data: Data) -> None:
     :param data:            test case data
     :return:                None
     """
-    if data.type in ('fastai_linear',):
-        pytest.importorskip('torch', reason='torch not installed')
-
     def pilot_path(name):
-        pilot_name = f'pilot_{name}.savedmodel'
+        pilot_name = f'pilot_{name}.keras'
         return os.path.join(config.MODELS_PATH, pilot_name)
 
     cfg = copy(config)
@@ -209,31 +218,35 @@ def test_training_pipeline(config: Config, model_type: str,
     # this takes all batches into one list
     tf_batch = list(data_train.take(num_whole_batches).as_numpy_iterator())
     it = iter(training_records)
-    for xy_batch in tf_batch:
-        # extract x and y values from records, asymmetric in x and y b/c x
-        # requires image manipulations
-        batch_records = [next(it) for _ in range(config.BATCH_SIZE)]
-        # if we cache images then the normalisation here would not work, because
-        # the tf batch might already have taken the images out and written
-        # the uint8 images into the cache.
-        records_x = [kl.x_transform(r, normalize_image) for r in batch_records]
-        records_y = [kl.y_transform(r) for r in batch_records]
-        # from here all checks are symmetrical between x and y
-        for batch, o_type, records \
-                in zip(xy_batch, kl.output_types(), (records_x, records_y)):
-            # check batch dictionary have expected keys
-            assert batch.keys() == o_type.keys(), \
-                'batch keys need to match models output types'
-            # convert record values into arrays of batch size
-            values = defaultdict(list)
-            for r in records:
-                for k, v in r.items():
-                    values[k].append(v)
-            # now convert arrays of floats or numpy arrays into numpy arrays
-            np_dict = dict()
-            for k, v in values.items():
-                np_dict[k] = np.array(v)
-            # compare record values with values from tf.data
-            for k, v in batch.items():
-                assert np.isclose(v, np_dict[k]).all()
+    try:
+        for xy_batch in tf_batch:
+            # extract x and y values from records, asymmetric in x and y b/c x
+            # requires image manipulations
+            batch_records = [next(it) for _ in range(config.BATCH_SIZE)]
+            # if we cache images then the normalisation here would not work,
+            # because the tf batch might already have taken the images out and
+            # written the uint8 images into the cache.
+            records_x = [kl.x_transform(r, normalize_image)
+                         for r in batch_records]
+            records_y = [kl.y_transform(r) for r in batch_records]
+            # from here all checks are symmetrical between x and y
+            for batch, o_type, records in zip(
+                    xy_batch, kl.output_types(), (records_x, records_y)):
+                if not isinstance(batch, dict):
+                    # single-output models return raw arrays (Keras 3.x)
+                    assert np.isclose(batch, np.array(records)).all()
+                    continue
+                assert batch.keys() == o_type.keys(), \
+                    'batch keys need to match models output types'
+                values = defaultdict(list)
+                for r in records:
+                    for k, v in r.items():
+                        values[k].append(v)
+                np_dict = dict()
+                for k, v in values.items():
+                    np_dict[k] = np.array(v)
+                for k, v in batch.items():
+                    assert np.isclose(v, np_dict[k]).all()
+    finally:
+        dataset.close()
 

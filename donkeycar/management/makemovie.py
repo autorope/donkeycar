@@ -1,12 +1,13 @@
 import tempfile
+import logging
 
-from tensorflow.python.keras import activations
-from tensorflow.python.keras import backend as K
-from tensorflow.python.keras.models import load_model
+logging.getLogger('tensorflow').setLevel(logging.WARNING)
 import tensorflow as tf
-import cv2
+from tensorflow.keras import activations
+from tensorflow.keras import backend as K
+from tensorflow.keras.models import load_model
 from matplotlib import cm
-
+import cv2
 
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import Tub
@@ -90,18 +91,15 @@ class MakeMovie(object):
 
         if args.type is None and args.model is not None:
             args.type = self.cfg.DEFAULT_MODEL_TYPE
-            print("Model type not provided. Using default model type from "
-                  "config file")
+            print("Model type not provided. Using default model type from config file")
 
         if args.salient:
             if args.model is None:
-                print("ERR>> salient visualization requires a model. Pass "
-                      "with the --model arg.")
+                print("ERR>> salient visualization requires a model. Pass with the --model arg.")
                 parser.print_help()
 
             if args.type not in ['linear', 'categorical']:
-                print(f"Model type {args.type} is not supported. Only linear "
-                      f"or categorical is supported for salient visualization")
+                print("Model type {} is not supported. Only linear or categorical is supported for salient visualization".format(args.type))
                 parser.print_help()
                 return
 

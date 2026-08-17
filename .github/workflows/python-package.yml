@@ -1,0 +1,26 @@
+name: Python package and test
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+
+jobs:
+  checkout-test:
+    name: Checkout and test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        python-version: ['3.12']
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Create virtual environment
+        run: uv venv --python ${{ matrix.python-version }}
+      - name: Install donkey
+        run: uv pip install -e ".[pc,dev]"
+      - name: Run tests
+        run: uv run --no-sync pytest
