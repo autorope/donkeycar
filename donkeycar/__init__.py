@@ -3,7 +3,7 @@ import sys
 from pyfiglet import Figlet
 import logging
 
-__version__ = '5.4.dev1'
+__version__ = '5.4.0'
 
 logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO').upper())
 
