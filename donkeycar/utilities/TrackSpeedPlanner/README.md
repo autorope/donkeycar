@@ -115,19 +115,18 @@ TrackSpeedPlanner/
 
 ## Requirements
 
-- **Python 3.6+**
-- **Tornado web framework**
-You should run this out of your donkey environment which has python=3.11 with 
-tornado installed. The above is only relevant when running out of another 
-environment. Please see next section for that.
+- **Python 3.12** on a PC or Mac, or **Python 3.13** on a Raspberry Pi
+- **Tornado web framework** (installed with Donkeycar)
+
+Run the editor from an activated Donkeycar environment.
 
 ### Installation
-```bash
-# Install Tornado if not available
-pip install tornado
+Create and activate the Donkeycar environment as described in the root
+[README](../../../README.md#installation). Tornado is installed with
+Donkeycar; to install it separately, use:
 
-# Or with conda
-conda install tornado
+```zsh
+uv pip install tornado
 ```
 
 ## Technical Details
@@ -154,10 +153,10 @@ conda install tornado
 ### Server Won't Start
 ```bash
 # Check Python version
-python --version  # Should be 3.6+
+python --version  # Should be 3.12 (PC/Mac) or 3.13 (Raspberry Pi)
 
 # Install Tornado
-pip install tornado
+uv pip install tornado
 
 # Check port availability (especially on macOS)
 lsof -i :5000  # If in use, try different port

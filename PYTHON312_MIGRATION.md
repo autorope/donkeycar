@@ -92,7 +92,7 @@ model.
 
 - `[project]` — name, dynamic version, authors, license, classifiers,
   `requires-python = ">=3.12.0,<3.14"`, core dependencies
-- `[project.optional-dependencies]` — `pi`, `nano`, `pc`, `macos`, `dev`,
+- `[project.optional-dependencies]` — `pi`, `pc`, `macos`, `dev`, and
   `torch` extras
 - `[project.scripts]` — `donkey` entry point
 - `[tool.setuptools.dynamic]` — `version = {attr = "donkeycar.__version__"}`
