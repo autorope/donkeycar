@@ -16,7 +16,7 @@ Options:
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from docopt import docopt
 from simple_pid import PID
@@ -38,6 +38,9 @@ from donkeycar.templates.complete import (
 )
 from donkeycar.vehicle import Vehicle
 
+if TYPE_CHECKING:  # pragma: no cover - import only for type checking
+    from donkeycar.parts.mcp_server import MCPBridge
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -53,6 +56,7 @@ def build_vehicle(
     camera_type: str = "single",
     meta: list[str] | None = None,
     enable_mcp: bool = False,
+    mcp_bridge: "MCPBridge | None" = None,
 ) -> Vehicle:
     """
     Construct a working robotic vehicle from many parts, but do NOT start it.
@@ -149,11 +153,14 @@ def build_vehicle(
     # pilot/throttle on the way through. Only added when asked for, so the
     # default pipeline is exactly the pipeline it has always been.
     #
-    if enable_mcp:
+    if enable_mcp or mcp_bridge is not None:
         from donkeycar.parts.mcp_server import MCPBridge
 
+        # The supervisor passes in a bridge that outlives the vehicle, so the
+        # agent keeps its connection across a stop/start. Left to itself the
+        # template builds its own and serves from the part's thread.
         V.add(
-            MCPBridge(cfg),
+            mcp_bridge if mcp_bridge is not None else MCPBridge(cfg),
             inputs=["cam/image_array", "cv/image_array", "pilot/steering", "pilot/throttle", "user/mode"],
             outputs=["pilot/throttle", "mcp/lane_offset_px", "mcp/armed"],
             threaded=True,

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Sat Jun 24 20:10:44 2017
 @author: wroscoe
@@ -8,27 +7,30 @@ The client and web server needed to control a car remotely.
 """
 
 
-import os
+import asyncio
+import contextlib
 import json
 import logging
+import os
+import threading
 import time
-import asyncio
+from socket import gethostname
 
 import requests
-from tornado.ioloop import IOLoop
-from tornado.web import Application, RedirectHandler, StaticFileHandler, \
-    RequestHandler
-from tornado.httpserver import HTTPServer
 import tornado.gen
 import tornado.websocket
-from socket import gethostname
+from tornado.ioloop import IOLoop
+from tornado.web import Application, RedirectHandler, RequestHandler, StaticFileHandler
 
 from ... import utils
 
 logger = logging.getLogger(__name__)
 
+# How long shutdown() waits for the tornado loop to release its socket.
+WEB_SHUTDOWN_TIMEOUT_S = 5.0
 
-class RemoteWebServer():
+
+class RemoteWebServer:
     '''
     A controller that repeatedly polls a remote webserver and expects
     the response to be angle, throttle and drive mode.
@@ -76,12 +78,12 @@ class RemoteWebServer():
                                              files={'json': json.dumps(data)},
                                              timeout=0.25)
 
-            except requests.exceptions.ReadTimeout as err:
+            except requests.exceptions.ReadTimeout:
                 print("\n Request took too long. Retrying")
                 # Lower throttle to prevent runaways.
                 return self.angle, self.throttle * .8, None
 
-            except requests.ConnectionError as err:
+            except requests.ConnectionError:
                 # try to reconnect every 3 seconds
                 print("\n Vehicle could not connect to server. Make sure you've " +
                     "started your server and you're referencing the right port.")
@@ -123,6 +125,18 @@ class LocalWebController(tornado.web.Application):
         self.num_records = 0
         self.wsclients = []
         self.loop = None
+        # Kept so shutdown() can release the listening socket. Without it the
+        # tornado server outlives the vehicle, and rebuilding the vehicle -- as
+        # the MCP supervisor does on restart -- cannot rebind the port.
+        self.server = None
+        # Set by shutdown(). update() checks it around the bind so that a
+        # shutdown arriving while this part is still starting cannot leave an
+        # orphaned socket behind.
+        self._shutdown_requested = False
+        # Set while the IOLoop is actually running. shutdown() has to hand the
+        # close to that loop's thread, but only if there is one; otherwise it
+        # would wait out the timeout for a callback that can never run.
+        self._serving = threading.Event()
 
 
         handlers = [
@@ -146,9 +160,22 @@ class LocalWebController(tornado.web.Application):
     def update(self):
         """ Start the tornado webserver. """
         asyncio.set_event_loop(asyncio.new_event_loop())
-        self.listen(self.port)
-        self.loop = IOLoop.instance()
-        self.loop.start()
+        # Record the loop before binding. shutdown() may arrive while this
+        # thread is still starting, and it can only release what it can see.
+        self.loop = IOLoop.current()
+        if self._shutdown_requested:
+            return
+        self.server = self.listen(self.port)
+        if self._shutdown_requested:
+            # Shutdown landed during the bind; release it rather than serve.
+            self.server.stop()
+            self.server = None
+            return
+        self._serving.set()
+        try:
+            self.loop.start()
+        finally:
+            self._serving.clear()
 
     def update_wsclients(self, data):
         if data:
@@ -187,14 +214,14 @@ class LocalWebController(tornado.web.Application):
             self.recording = recording
             changes["recording"] = self.recording
         if self.recording_latch is not None:
-            self.recording = self.recording_latch;
-            self.recording_latch = None;
-            changes["recording"] = self.recording;
+            self.recording = self.recording_latch
+            self.recording_latch = None
+            changes["recording"] = self.recording
 
         # Send record count to websocket clients
-        if (self.num_records is not None and self.recording is True):
-            if self.num_records % 10 == 0:
-                changes['num_records'] = self.num_records
+        if (self.num_records is not None and self.recording is True
+                and self.num_records % 10 == 0):
+            changes['num_records'] = self.num_records
 
         #
         # get latched button presses then clear button presses
@@ -217,7 +244,48 @@ class LocalWebController(tornado.web.Application):
         return self.run_threaded(img_arr, num_records, mode, recording)
 
     def shutdown(self):
-        pass
+        """
+        Stop serving and release the port, and wait until it really is released.
+
+        This used to be a no-op, which left the tornado server and its listening
+        socket alive after the vehicle had shut down. That is invisible when the
+        process exits with the vehicle, but the MCP supervisor rebuilds the
+        vehicle in a running process and the new web controller could not bind.
+
+        The close has to happen on the IOLoop's own thread, and it has to be
+        waited for: returning while the socket is still open just moves the
+        race to whoever rebinds next.
+        """
+        self._shutdown_requested = True
+        loop, server = self.loop, self.server
+        self.loop, self.server = None, None
+        if loop is None:
+            return
+
+        if not self._serving.is_set():
+            # No loop running to hand the close to, so do it here.
+            if server is not None:
+                server.stop()
+            return
+
+        closed = threading.Event()
+
+        def _close():
+            try:
+                if server is not None:
+                    server.stop()
+            finally:
+                loop.stop()
+                closed.set()
+
+        try:
+            loop.add_callback(_close)
+        except RuntimeError:
+            # The loop is already gone; nothing left to release.
+            return
+        if not closed.wait(timeout=WEB_SHUTDOWN_TIMEOUT_S):
+            logger.warning("Web controller did not release port %s within %ss",
+                           self.port, WEB_SHUTDOWN_TIMEOUT_S)
 
 
 class DriveAPI(RequestHandler):
@@ -380,13 +448,11 @@ class VideoAPI(RequestHandler):
 
                 self.write(my_boundary)
                 self.write("Content-type: image/jpeg\r\n")
-                self.write("Content-length: %s\r\n\r\n" % len(img))
+                self.write(f"Content-length: {len(img)}\r\n\r\n")
                 self.write(img)
                 served_image_timestamp = time.time()
-                try:
+                with contextlib.suppress(tornado.iostream.StreamClosedError):
                     await self.flush()
-                except tornado.iostream.StreamClosedError:
-                    pass
             else:
                 await tornado.gen.sleep(interval)
 
@@ -422,6 +488,10 @@ class WebFpv(Application):
 
         settings = {'debug': True}
         self.img_arr = None
+        self.server = None
+        self.loop = None
+        self._shutdown_requested = False
+        self._serving = threading.Event()
         super().__init__(handlers, **settings)
         logger.info(f"Started Web FPV server. You can now go to "
                     f"{gethostname()}.local:{self.port} to view the car camera")
@@ -429,8 +499,19 @@ class WebFpv(Application):
     def update(self):
         """ Start the tornado webserver. """
         asyncio.set_event_loop(asyncio.new_event_loop())
-        self.listen(self.port)
-        IOLoop.instance().start()
+        self.loop = IOLoop.current()
+        if self._shutdown_requested:
+            return
+        self.server = self.listen(self.port)
+        if self._shutdown_requested:
+            self.server.stop()
+            self.server = None
+            return
+        self._serving.set()
+        try:
+            self.loop.start()
+        finally:
+            self._serving.clear()
 
     def run_threaded(self, img_arr=None):
         self.img_arr = img_arr
@@ -439,6 +520,32 @@ class WebFpv(Application):
         self.img_arr = img_arr
 
     def shutdown(self):
-        pass
+        """Stop serving and release the port. See LocalWebController.shutdown."""
+        self._shutdown_requested = True
+        loop, server = self.loop, self.server
+        self.loop, self.server = None, None
+        if loop is None:
+            return
+
+        if not self._serving.is_set():
+            if server is not None:
+                server.stop()
+            return
+
+        closed = threading.Event()
+
+        def _close():
+            try:
+                if server is not None:
+                    server.stop()
+            finally:
+                loop.stop()
+                closed.set()
+
+        try:
+            loop.add_callback(_close)
+        except RuntimeError:
+            return
+        closed.wait(timeout=WEB_SHUTDOWN_TIMEOUT_S)
 
 

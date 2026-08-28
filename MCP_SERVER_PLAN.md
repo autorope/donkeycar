@@ -13,7 +13,7 @@ keeps following the tape line at 20 Hz.
 - [x] **M0** — Fix the toolchain, stand up the gate, split assembly from run
 - [x] **M1** — Lane offset in `LineFollower`
 - [x] **M2** — `MCPBridge` part and the tool surface
-- [ ] **M3** — `donkey mcp` supervisor
+- [x] **M3** — `donkey mcp` supervisor
 - [ ] **M4** — `track.yml` schema and loader
 - [ ] **M5** — Camera calibration with live preview *(parallel to M2–M4)*
 - [ ] **M6** — Docs and the activity progression
@@ -410,7 +410,7 @@ New file `donkeycar/parts/mcp_server.py`, shaped on `LocalWebController`: `MCPSe
 
 ## M3 — `donkey mcp` supervisor
 
-- [ ] **M3 done**
+- [x] **M3 done**
 
 **Depends on:** M2. **Delivers:** true start/stop.
 
@@ -422,16 +422,33 @@ Resolve `build_vehicle` from the car directory's own `manage.py` when it exposes
 packaged template. Necessary because `manage.py` is a *copy* (`base.py:101`) — existing car folders won't
 have `build_vehicle` until `donkey update`, and cars with local customizations deserve to keep them.
 
+### Implementation notes
+
+- **The bridge outlives the vehicle.** The supervisor owns one `MCPBridge` and injects it into each build via
+  a new `mcp_bridge=` parameter, so an agent keeps its connection and its command state across a restart.
+- **A restart bug in the web controller had to be fixed first.** `LocalWebController.shutdown()` was `pass`
+  and `update()` discarded the server handle, so the tornado loop and its listening socket outlived
+  `V.stop()`. Harmless when the process exits with the vehicle; fatal for M3, where the rebuilt controller
+  could not rebind and the web UI would have come back dead, still attached to the torn-down vehicle. Fixing
+  it took three passes, each exposed by a test: release the socket on the loop's own thread; *wait* for that
+  release rather than returning while it is still open; and gate the wait on a loop that is actually running,
+  since a shutdown arriving mid-startup otherwise waits out the full timeout (that one turned a 0.5s test
+  run into 25s). A shutdown flag checked around the bind closes the last race deterministically.
+- **`web.py` is exempted from the annotation rules, visibly.** 52 of its 56 findings are `ANN` on 450 lines
+  of untyped legacy that this work only visits to fix that leak. The exemption is written into
+  `pyproject.toml` with its reason rather than left implicit; every other rule still applies, and the three
+  real findings it surfaced were fixed.
+
 ### Acceptance criteria
 
-- [ ] `donkey mcp --car=<path>` starts and serves tools with **no vehicle running** until `start` is called
-- [ ] `start` → loop runs; `stop` → loop stops and every part's `shutdown()` is called; `start` again →
+- [x] `donkey mcp --car=<path>` starts and serves tools with **no vehicle running** until `start` is called
+- [x] `start` → loop runs; `stop` → loop stops and every part's `shutdown()` is called; `start` again →
       loop runs again. This restart cycle is the whole point of M3 and is what part-mode cannot do
-- [ ] `stop` leaves throttle at 0 — no coasting drivetrain
-- [ ] Uses the car directory's `build_vehicle` when present; falls back to the packaged template when
+- [x] `stop` leaves throttle at 0 — no coasting drivetrain
+- [x] Uses the car directory's `build_vehicle` when present; falls back to the packaged template when
       absent. **Both paths asserted.**
-- [ ] `donkey mcp` appears in the CLI usage listing
-- [ ] `mypy` strict passes for `donkeycar.management.mcp`
+- [x] `donkey mcp` appears in the CLI usage listing
+- [x] `mypy` strict passes for `donkeycar.management.mcp`
 
 ---
 

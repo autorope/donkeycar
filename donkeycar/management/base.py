@@ -592,6 +592,17 @@ class ModelDatabase(BaseCommand):
         print(tub_txt)
 
 
+class Mcp(BaseCommand):
+    """
+    Run an MCP server that owns the vehicle loop, so an AI agent can start,
+    stop and drive the car. See donkeycar/management/mcp.py.
+    """
+
+    def run(self, args):
+        from donkeycar.management.mcp import run as run_mcp
+        run_mcp(args)
+
+
 class Gui(BaseCommand):
     def run(self, args):
         from donkeycar.management.ui.ui import main
@@ -615,6 +626,7 @@ def execute_from_command_line():
         'train': Train,
         'models': ModelDatabase,
         'ui': Gui,
+        'mcp': Mcp,
     }
 
     args = sys.argv[:]

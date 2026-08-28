@@ -140,6 +140,10 @@ select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
 # reference they exist to be. Every other rule still applies to them.
 "donkeycar/templates/cfg_*.py" = ["E501"]
 "donkeycar/templates/myconfig.py" = ["E501"]
+# 450 lines of untyped legacy that the MCP work only visits to fix a port leak.
+# Annotating it is worth doing, but it is separate work and does not belong in
+# an MCP commit. Every rule except the annotation ones still applies here.
+"donkeycar/parts/web_controller/web.py" = ["ANN"]
 
 [tool.ruff.format]
 # Config templates are hand-aligned reference documents: the trailing comment on
