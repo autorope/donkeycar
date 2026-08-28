@@ -11,7 +11,7 @@ keeps following the tape line at 20 Hz.
 ## Progress
 
 - [x] **M0** — Fix the toolchain, stand up the gate, split assembly from run
-- [ ] **M1** — Lane offset in `LineFollower`
+- [x] **M1** — Lane offset in `LineFollower`
 - [ ] **M2** — `MCPBridge` part and the tool surface
 - [ ] **M3** — `donkey mcp` supervisor
 - [ ] **M4** — `track.yml` schema and loader
@@ -289,7 +289,7 @@ calls it and then `V.start()`. Add the `mcp` optional extra.
 
 ## M1 — Lane offset in `LineFollower`
 
-- [ ] **M1 done**
+- [x] **M1 done**
 
 **Depends on:** M0. **Independent of the server; fully unit-testable.**
 
@@ -310,17 +310,34 @@ Three details the current code makes easy to get wrong:
 
 Wire it in by config alone: `CV_CONTROLLER_INPUTS = ['cam/image_array', 'mcp/lane_offset_px']`.
 
+### Implementation notes
+
+- All three predicted traps were real and are covered by tests: the PID setpoint and the throttle ramp both
+  now read `effective_target_pixel`, and `IMAGE_W` was indeed absent from the part (it falls back to the
+  frame width when the config omits it).
+- **Two further bugs surfaced while typing the file.** `run()` returned a *four*-tuple when handed no image
+  while the part declares three outputs, so `cv/image_array` was being set to `False`. And
+  `simple_pid.PID.__call__` returns `None` until it has produced an output, which was being assigned
+  straight to `self.steering` and would have propagated `None` into the drivetrain. Both fixed, both pinned
+  by tests.
+- **Config templates are exempt from `E501` and from the formatter.** They are hand-aligned reference
+  documents whose trailing comments are the documentation; formatting `cfg_cv_control.py` rewrote the whole
+  file and parenthesised constants. `force-exclude = true` is required for the exclusion to hold when CI
+  names files explicitly. The resulting config diff is 4 lines rather than ~1,500.
+- `config.py` was left alone deliberately: putting the shared `CarConfig` alias there would have pulled 20
+  findings into the gate for no benefit, so the alias is declared locally in each file that needs it.
+
 ### Acceptance criteria
 
-- [ ] `run(cam_img)` with no offset produces **bit-identical** steering and throttle to the pre-M1
+- [x] `run(cam_img)` with no offset produces **bit-identical** steering and throttle to the pre-M1
       implementation on a fixed test image (regression test)
-- [ ] A non-zero offset shifts the effective target: steering sign flips as the offset crosses the detected
+- [x] A non-zero offset shifts the effective target: steering sign flips as the offset crosses the detected
       line position
-- [ ] The effective target drives **both** the PID setpoint *and* the cornering/throttle-ramp comparison —
+- [x] The effective target drives **both** the PID setpoint *and* the cornering/throttle-ramp comparison —
       asserted separately, since fixing only the setpoint is the likely bug
-- [ ] Offsets beyond the frame clamp to `[0, IMAGE_W - 1]` rather than wrapping, going negative, or raising
-- [ ] End-to-end with MOCK camera: setting `mcp/lane_offset_px` in memory changes the steering output
-- [ ] All touched functions carry annotations; `ruff` and `mypy` gates pass
+- [x] Offsets beyond the frame clamp to `[0, IMAGE_W - 1]` rather than wrapping, going negative, or raising
+- [x] End-to-end with MOCK camera: setting `mcp/lane_offset_px` in memory changes the steering output
+- [x] All touched functions carry annotations; `ruff` and `mypy` gates pass
 
 ---
 

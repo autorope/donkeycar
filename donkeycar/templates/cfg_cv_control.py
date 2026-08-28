@@ -10,9 +10,6 @@ PATH FOLLOWING: 'path_follow' template configurations
 
 import os
 
-
-import os
-
 #
 # FILE PATHS
 #
@@ -555,7 +552,10 @@ FPS_DEBUG_INTERVAL = 10    # the interval in seconds for printing the frequency 
 # configure which part is used as the autopilot - change to use your own autopilot
 CV_CONTROLLER_MODULE = "donkeycar.parts.line_follower"
 CV_CONTROLLER_CLASS = "LineFollower"
-CV_CONTROLLER_INPUTS = ['cam/image_array']
+# 'mcp/lane_offset_px' is supplied by the MCP bridge when it is running. When it
+# is not, the key is simply absent from vehicle memory and resolves to None,
+# which makes the controller hold the line itself as it always has.
+CV_CONTROLLER_INPUTS = ['cam/image_array', 'mcp/lane_offset_px']
 CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array']
 CV_CONTROLLER_CONDITION = "run_pilot"
 

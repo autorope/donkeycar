@@ -126,12 +126,26 @@ namespaces = true
 [tool.ruff]
 target-version = "py312"
 line-length = 120
+# Without this, `exclude` is ignored for files named explicitly on the command
+# line -- which is exactly how CI invokes ruff on the changed-file list.
+force-exclude = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
 "donkeycar/tests/*" = ["ANN"]
+# Config templates are declarative constant files whose trailing comments
+# document each tuning value. Reflowing them to a column limit would damage the
+# reference they exist to be. Every other rule still applies to them.
+"donkeycar/templates/cfg_*.py" = ["E501"]
+"donkeycar/templates/myconfig.py" = ["E501"]
+
+[tool.ruff.format]
+# Config templates are hand-aligned reference documents: the trailing comment on
+# each constant is the documentation. The formatter would rewrap those comments
+# and parenthesise long values, which destroys what people read them for.
+exclude = ["donkeycar/templates/cfg_*.py", "donkeycar/templates/myconfig.py"]
 
 [tool.mypy]
 python_version = "3.12"

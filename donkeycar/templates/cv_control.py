@@ -43,11 +43,11 @@ logging.basicConfig(level=logging.INFO)
 # `cfg` is a donkeycar.config.Config, which is populated by exec'ing the car's
 # config.py, so its attributes do not exist statically. Annotating it as Any
 # keeps the signatures honest instead of promising a shape mypy cannot check.
-Config = Any
+CarConfig = Any
 
 
 def build_vehicle(
-    cfg: Config,
+    cfg: CarConfig,
     use_joystick: bool = False,
     camera_type: str = "single",
     meta: list[str] | None = None,
@@ -244,7 +244,7 @@ def build_vehicle(
 
 
 def drive(
-    cfg: Config,
+    cfg: CarConfig,
     use_joystick: bool = False,
     camera_type: str = "single",
     meta: list[str] | None = None,
@@ -269,7 +269,7 @@ def drive(
 #
 def add_cv_controller(
     V: Vehicle,
-    cfg: Config,
+    cfg: CarConfig,
     pid: PID,
     module_name: str = "donkeycar.parts.line_follower",
     class_name: str = "LineFollower",

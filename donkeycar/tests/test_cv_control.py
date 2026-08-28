@@ -90,3 +90,34 @@ def test_build_vehicle_does_not_accumulate_metadata(tmp_path):
     assert tub_writers, "expected a TubWriter in the pipeline"
     # One entry, not two: the second build must not see the first build's append.
     assert tub_writers[0].tub.manifest.metadata == {"k": "v"}
+
+
+def test_lane_offset_is_wired_into_the_controller(tmp_path):
+    """
+    The controller must receive mcp/lane_offset_px from vehicle memory. Config
+    alone does this wiring, so this guards the config as much as the part.
+    """
+    cfg = _headless_cfg(tmp_path)
+    assert cfg.CV_CONTROLLER_INPUTS == ["cam/image_array", "mcp/lane_offset_px"]
+
+    v = cv_control.build_vehicle(cfg)
+    try:
+        entries = [e for e in v.parts if e["part"].__class__.__name__ == "LineFollower"]
+        assert entries, "expected a LineFollower in the pipeline"
+        assert entries[0]["inputs"] == ["cam/image_array", "mcp/lane_offset_px"]
+    finally:
+        v.stop()
+
+
+def test_missing_lane_offset_key_is_harmless(tmp_path):
+    """
+    With no MCP bridge running the key is absent from memory, which Memory.get
+    resolves to None. The loop must run exactly as before.
+    """
+    cfg = _headless_cfg(tmp_path, max_loops=5)
+    v = cv_control.build_vehicle(cfg)
+    try:
+        assert v.mem.get(["mcp/lane_offset_px"]) == [None]
+        v.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=5)
+    finally:
+        v.stop()
