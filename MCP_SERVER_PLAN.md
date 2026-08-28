@@ -593,6 +593,12 @@ double as the integration test suite for the tool surface.
   not even hold the centre lane. Zero inches is zero pixels at any scale; only a real offset needs one.
 - The docs are checked against the code — a test asserts the tool names and activity names the guide lists
   are the ones that exist.
+- **A live end-to-end run found the last gap.** `WEB_INIT_MODE` defaults to `"user"`, so `run_pilot` was
+  never set, the CV controller never ran, `pilot/throttle` stayed `None`, and the throttle ceiling resolved
+  to zero forever: an agent could arm the car, command full throttle, and never move. Arming now latches
+  the drive mode to `local_pilot` through the controller — the mechanism identified back in M2 as the right
+  way to change mode — and disarming latches it back. Verified over a real socket: the agent asks for 1.0
+  and gets the autopilot's 0.15.
 
 ---
 

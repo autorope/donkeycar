@@ -159,8 +159,12 @@ def build_vehicle(
         # The supervisor passes in a bridge that outlives the vehicle, so the
         # agent keeps its connection across a stop/start. Left to itself the
         # template builds its own and serves from the part's thread.
+        bridge = mcp_bridge if mcp_bridge is not None else MCPBridge(cfg)
+        # The bridge needs the controller to switch into autopilot mode; the CV
+        # controller only runs when run_pilot is set, which comes from user/mode.
+        bridge.attach_controller(ctr)
         V.add(
-            mcp_bridge if mcp_bridge is not None else MCPBridge(cfg),
+            bridge,
             inputs=["cam/image_array", "cv/image_array", "pilot/steering", "pilot/throttle", "user/mode"],
             outputs=["pilot/throttle", "mcp/lane_offset_px", "mcp/armed"],
             threaded=True,

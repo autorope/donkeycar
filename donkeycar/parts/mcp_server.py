@@ -43,6 +43,17 @@ DEFAULT_MCP_PORT = 8891
 DEFAULT_COMMAND_TIMEOUT_S = 2.0
 
 
+class ModeLatchingController(Protocol):
+    """
+    A user controller whose drive mode can be latched.
+
+    The web controller and the joystick controllers both work this way; the
+    bridge only ever sets the latch, never `user/mode` itself.
+    """
+
+    mode_latch: str | None
+
+
 class Lifecycle(Protocol):
     """
     What `start` and `stop` act on.
@@ -157,6 +168,10 @@ class MCPBridge:
 
         self.track = track if track is not None else self._load_track(car_dir)
         self.car_dir = car_dir
+        # The user controller, when there is one. Needed to put the car into
+        # autopilot mode: the CV controller only runs when run_pilot is set,
+        # and that comes from user/mode.
+        self._controller: object = None
         self.calibration_data: Calibration | None = load_calibration(car_dir, cfg)
 
     # ------------------------------------------------------------------
@@ -258,15 +273,42 @@ class MCPBridge:
         with self._lock:
             return self._command
 
+    def attach_controller(self, controller: object) -> None:
+        """
+        Remember the user controller so drive mode can be switched.
+
+        The bridge cannot write `user/mode` directly: the web controller
+        re-outputs it every loop and would clobber it. Latching is the same
+        mechanism its own buttons use.
+        """
+        self._controller = controller
+
+    def _request_mode(self, mode: str) -> None:
+        controller = self._controller
+        if controller is None:
+            return
+        if hasattr(controller, "mode_latch"):
+            controller.mode_latch = mode
+            logger.info("Requested drive mode %r", mode)
+        else:
+            logger.warning(
+                "The configured controller cannot switch drive mode; set WEB_INIT_MODE = 'local_pilot' "
+                "so the autopilot runs."
+            )
+
     def arm(self) -> None:
         with self._lock:
             self._command = replace(self._command, armed=True)
             self._last_command_at = time.monotonic()
+        # Without autopilot mode the CV controller never runs, pilot/throttle
+        # stays None, and the throttle ceiling resolves to zero forever.
+        self._request_mode("local_pilot")
 
     def disarm(self) -> None:
         with self._lock:
             self._command = replace(self._command, armed=False, throttle=0.0)
             self._last_command_at = time.monotonic()
+        self._request_mode("user")
 
     def is_armed(self) -> bool:
         with self._lock:

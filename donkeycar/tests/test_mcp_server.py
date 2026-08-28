@@ -596,3 +596,48 @@ def test_measure_without_calibration_tells_the_agent_what_to_do(tmp_path):
     result = _call(bridge.build_server(), "measure_ground_point", {"pixel_x": 10, "pixel_y": 10})
     assert result.is_error is True
     assert "calibrate-cv" in _text(result)
+
+
+# --------------------------------------------------------------- drive mode
+
+
+class FakeController:
+    """Stands in for the web controller, which latches its mode."""
+
+    def __init__(self):
+        self.mode_latch = None
+
+
+def test_arming_puts_the_car_into_autopilot_mode():
+    """
+    The CV controller only runs when run_pilot is set, and that comes from
+    user/mode. Without this the autopilot never runs, pilot/throttle stays None,
+    and the throttle ceiling resolves to zero forever -- an agent could arm the
+    car, command full throttle, and never move.
+    """
+    bridge = make_bridge()
+    controller = FakeController()
+    bridge.attach_controller(controller)
+
+    bridge.arm()
+    assert controller.mode_latch == "local_pilot"
+
+    bridge.disarm()
+    assert controller.mode_latch == "user"
+
+
+def test_arming_without_a_controller_is_harmless():
+    bridge = make_bridge()
+    bridge.arm()
+    assert bridge.is_armed() is True
+
+
+def test_controller_that_cannot_latch_is_reported_not_crashed(caplog):
+    class NoLatch:
+        pass
+
+    bridge = make_bridge()
+    bridge.attach_controller(NoLatch())
+    bridge.arm()
+    assert bridge.is_armed() is True
+    assert "WEB_INIT_MODE" in caplog.text

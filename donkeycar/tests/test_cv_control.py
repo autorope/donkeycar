@@ -156,3 +156,15 @@ def test_mcp_pipeline_runs_and_holds_the_car_until_started(tmp_path):
         assert v.mem.get(["pilot/throttle"]) == [0.0]
     finally:
         v.stop()
+
+
+def test_bridge_is_given_the_controller(tmp_path):
+    """The bridge needs it to switch the car into autopilot mode."""
+    cfg = _headless_cfg(tmp_path)
+    v = cv_control.build_vehicle(cfg, enable_mcp=True)
+    try:
+        bridge = next(e["part"] for e in v.parts if e["part"].__class__.__name__ == "MCPBridge")
+        assert bridge._controller is not None
+        assert hasattr(bridge._controller, "mode_latch")
+    finally:
+        v.stop()
