@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 
+from donkeycar.parts.track_config import TrackConfig, default_track, find_track_file, load_track
 from donkeycar.utils import arr_to_binary
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
@@ -128,6 +129,8 @@ class MCPBridge:
         port: int | None = None,
         command_timeout_s: float | None = None,
         serve: bool = True,
+        track: TrackConfig | None = None,
+        car_dir: str | None = None,
     ) -> None:
         self.cfg = cfg
         self.host = host
@@ -150,6 +153,8 @@ class MCPBridge:
 
         # In part mode the bridge is its own lifecycle: start/stop arm/disarm.
         self.lifecycle: Lifecycle = lifecycle if lifecycle is not None else _BridgeArming(self)
+
+        self.track = track if track is not None else self._load_track(car_dir)
 
     # ------------------------------------------------------------------
     # vehicle loop side
@@ -324,27 +329,38 @@ class MCPBridge:
     # Until then they answer from config so the tool surface is complete.
     # ------------------------------------------------------------------
 
-    def track_config(self) -> dict[str, Any]:
-        return {
-            "segment_length_inches": getattr(self.cfg, "TRACK_SEGMENT_LENGTH_INCHES", 36.0),
-            "cross_length_inches": getattr(self.cfg, "TRACK_CROSS_LENGTH_INCHES", 12.0),
-            "tape_width_inches": getattr(self.cfg, "TRACK_TAPE_WIDTH_INCHES", 1.0),
-            "segment_count": getattr(self.cfg, "TRACK_SEGMENT_COUNT", None),
-            "continuous": getattr(self.cfg, "TRACK_CONTINUOUS", False),
-            "lanes": self._lanes(),
-        }
+    def _load_track(self, car_dir: str | None) -> TrackConfig:
+        """
+        Prefer a track.yml beside the car's config, then the config constants,
+        then a default. A malformed file is an error, not a silent fallback:
+        driving a track you have mis-described is worse than not starting.
+        """
+        path = getattr(self.cfg, "TRACK_FILE", None) or find_track_file(car_dir or getattr(self.cfg, "CAR_PATH", None))
+        if path:
+            track = load_track(path)
+            logger.info("Loaded track description from %s", path)
+            return track
 
-    def _lanes(self) -> dict[str, float]:
         lanes = getattr(self.cfg, "TRACK_LANES_INCHES", None)
-        if isinstance(lanes, dict):
-            return {str(k): float(v) for k, v in lanes.items()}
-        return {"left": -12.0, "center": 0.0, "right": 12.0}
+        if isinstance(lanes, dict) and lanes:
+            return TrackConfig(
+                segment_length_inches=float(getattr(self.cfg, "TRACK_SEGMENT_LENGTH_INCHES", 36.0)),
+                cross_length_inches=float(getattr(self.cfg, "TRACK_CROSS_LENGTH_INCHES", 12.0)),
+                continuous=bool(getattr(self.cfg, "TRACK_CONTINUOUS", False)),
+                lanes={str(k): float(v) for k, v in lanes.items()},
+                tape_width_inches=float(getattr(self.cfg, "TRACK_TAPE_WIDTH_INCHES", 1.0)),
+                segment_count=getattr(self.cfg, "TRACK_SEGMENT_COUNT", None),
+                description="Track described by config constants; no track.yml was found.",
+            )
+        return default_track()
+
+    def track_config(self) -> dict[str, Any]:
+        return self.track.to_dict()
 
     def lane_offset_px_for(self, lane: str) -> int:
-        lanes = self._lanes()
-        if lane not in lanes:
-            raise ValueError(f"Unknown lane {lane!r}. Known lanes: {sorted(lanes)}")
-        return self.inches_to_px(lanes[lane])
+        # TrackConfigError is a ValueError, so the tool layer turns it into a
+        # ToolError carrying the list of lanes that do exist.
+        return self.inches_to_px(self.track.offset_inches(lane))
 
     def pixels_per_inch(self) -> float | None:
         value = getattr(self.cfg, "CV_PIXELS_PER_INCH", None)

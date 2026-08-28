@@ -1,0 +1,35 @@
+# Track description for the MCP server.
+#
+# Geometry only. Stop signs, addresses and obstacles are NOT listed here: the
+# agent finds those in the camera image, which is the point of the exercise, and
+# it means you can move a sign or add an obstacle without editing this file.
+#
+# The track is 1 inch yellow tape laid in segments. Each segment is a "T": a
+# 3 foot stem along the centreline, with a 1 foot cross of coloured tape at its
+# end. Measurements are in inches.
+
+name: Example track
+description: A single straight line of four segments that dead-ends.
+
+# One segment: the stem length and the length of the cross at its end.
+segment_length_inches: 36.0
+cross_length_inches: 12.0
+tape_width_inches: 1.0
+
+tape_color: yellow
+cross_colors: [red, blue]
+
+# How many segments make up the track. Omit if you would rather the agent
+# work it out by driving.
+segment_count: 4
+
+# true for a loop, false for a track that dead-ends.
+continuous: false
+
+# Where each named lane sits relative to the centreline, in inches.
+# Negative is left, positive is right. The agent picks lanes by name;
+# `set_control(lane_offset_inches=...)` is there for finer adjustments.
+lanes:
+  left: -12.0
+  center: 0.0
+  right: 12.0

@@ -96,6 +96,7 @@ class VehicleSupervisor:
         builder_source: str = "",
         use_joystick: bool = False,
         camera_type: str = "single",
+        car_dir: str | None = None,
     ) -> None:
         self.cfg = cfg
         self.builder = builder
@@ -103,7 +104,7 @@ class VehicleSupervisor:
         self.use_joystick = use_joystick
         self.camera_type = camera_type
 
-        self.bridge = MCPBridge(cfg, lifecycle=self, serve=False)
+        self.bridge = MCPBridge(cfg, lifecycle=self, serve=False, car_dir=car_dir)
 
         self._vehicle: Vehicle | None = None
         self._thread: threading.Thread | None = None
@@ -206,6 +207,7 @@ def run(args: list[str]) -> None:
         builder_source=source,
         use_joystick=parsed.js,
         camera_type=parsed.camera,
+        car_dir=car_dir,
     )
 
     host = parsed.host or getattr(cfg, "MCP_SERVER_HOST", "127.0.0.1")

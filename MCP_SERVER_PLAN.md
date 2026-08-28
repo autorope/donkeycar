@@ -14,7 +14,7 @@ keeps following the tape line at 20 Hz.
 - [x] **M1** — Lane offset in `LineFollower`
 - [x] **M2** — `MCPBridge` part and the tool surface
 - [x] **M3** — `donkey mcp` supervisor
-- [ ] **M4** — `track.yml` schema and loader
+- [x] **M4** — `track.yml` schema and loader
 - [ ] **M5** — Camera calibration with live preview *(parallel to M2–M4)*
 - [ ] **M6** — Docs and the activity progression
 
@@ -454,7 +454,7 @@ have `build_vehicle` until `donkey update`, and cars with local customizations d
 
 ## M4 — `track.yml` schema and loader
 
-- [ ] **M4 done**
+- [x] **M4 done**
 
 **Depends on:** M2. **Completes:** `get_track_config`.
 
@@ -470,16 +470,29 @@ One knock-on: it makes `measure_ground_point` (M5) load-bearing rather than opti
 look up where a stop sign is, its only way to know when to brake is to measure how far away the one it can
 see actually is.
 
+### Implementation notes
+
+- **Unknown keys are rejected.** That is what keeps traffic features out of the schema: a file that tries to
+  list them fails loudly rather than having the section silently ignored. It also catches typos, which would
+  otherwise read as "that field was never set".
+- **A malformed track file refuses to start.** Driving a track you have mis-described is worse than not
+  starting, so a bad file raises rather than quietly falling back to defaults. A *missing* file does fall
+  back — first to the config constants, then to a built-in default.
+- **Case-different lane names count as duplicates.** YAML cannot repeat a key, but `Left` and `left` in the
+  same file read as a duplicate to a human and one would silently shadow the other.
+- An example `track.yml` ships with the templates and `donkey createcar` copies it when absent. A test
+  parses that shipped file, so the example cannot rot.
+
 ### Acceptance criteria
 
-- [ ] `get_track_config` returns segment count, stem/cross lengths, continuity, and named lane offsets
+- [x] `get_track_config` returns segment count, stem/cross lengths, continuity, and named lane offsets
       sourced from the file
-- [ ] Each invalid input fails at load with a message naming the offending field: missing required key,
+- [x] Each invalid input fails at load with a message naming the offending field: missing required key,
       wrong type, negative length, duplicate or unknown lane name
-- [ ] The schema carries **no** traffic-feature list — geometry and lanes only
-- [ ] A `lane` name passed to `set_control` is validated against the track config; an unknown name is an
+- [x] The schema carries **no** traffic-feature list — geometry and lanes only
+- [x] A `lane` name passed to `set_control` is validated against the track config; an unknown name is an
       explicit error, never a silent fallback to 0
-- [ ] Swapping in a different `track.yml` changes `get_track_config` output with no code edit
+- [x] Swapping in a different `track.yml` changes `get_track_config` output with no code edit
 
 ---
 

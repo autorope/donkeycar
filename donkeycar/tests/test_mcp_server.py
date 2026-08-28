@@ -19,6 +19,7 @@ from donkeycar.parts.mcp_server import (
     MCPBridge,
     resolve_throttle,
 )
+from donkeycar.parts.track_config import TrackConfigError
 
 
 class Cfg:
@@ -446,3 +447,55 @@ def test_track_config_through_the_client():
     payload = json.loads(_text(_call(server, "get_track_config")))
     assert payload["segment_count"] == 8
     assert payload["continuous"] is True
+
+
+# ------------------------------------------------------------- track loading
+
+
+def test_bridge_reads_track_yml_from_the_car_directory(tmp_path):
+    (tmp_path / "track.yml").write_text(
+        "segment_length_inches: 24\n"
+        "cross_length_inches: 6\n"
+        "continuous: true\n"
+        "segment_count: 12\n"
+        "lanes:\n"
+        "  center: 0\n"
+        "  outside: 9\n"
+    )
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    track = bridge.track_config()
+    assert track["segment_length_inches"] == 24.0
+    assert track["segment_count"] == 12
+    assert sorted(track["lanes"]) == ["center", "outside"]
+    # 9 inches at 4 px/inch
+    assert bridge.lane_offset_px_for("outside") == 36
+
+
+def test_bridge_falls_back_to_config_constants_without_a_file(tmp_path):
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    track = bridge.track_config()
+    assert sorted(track["lanes"]) == ["center", "left", "right"]
+    assert "no track.yml" in (track["description"] or "")
+
+
+def test_malformed_track_file_refuses_to_start(tmp_path):
+    """
+    Driving a track you have mis-described is worse than not starting, so a bad
+    file is an error rather than a quiet fallback to defaults.
+    """
+    (tmp_path / "track.yml").write_text(
+        "segment_length_inches: -5\ncross_length_inches: 12\ncontinuous: false\nlanes: {center: 0}\n"
+    )
+    with pytest.raises(TrackConfigError, match="positive"):
+        MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+
+
+def test_track_from_a_file_reaches_the_client(tmp_path):
+    (tmp_path / "track.yml").write_text(
+        "name: Loop\nsegment_length_inches: 36\ncross_length_inches: 12\ncontinuous: true\nlanes: {center: 0}\n"
+    )
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    payload = json.loads(_text(_call(bridge.build_server(), "get_track_config")))
+    assert payload["name"] == "Loop"
+    assert payload["continuous"] is True
+    assert "features" not in payload

@@ -121,6 +121,15 @@ class CreateCar(BaseCommand):
             shutil.copyfile(calibrate_template_path, calibrate_app_path)
             os.chmod(calibrate_app_path, stat.S_IRWXU)
 
+        # A track description, if this template ships one. It is data rather
+        # than code, so it is only copied when absent -- an existing track
+        # belongs to the user.
+        track_template_path = os.path.join(TEMPLATES_PATH, 'track.yml')
+        car_track_path = os.path.join(path, 'track.yml')
+        if os.path.exists(track_template_path) and not os.path.exists(car_track_path):
+            print("Copying example track description.")
+            shutil.copyfile(track_template_path, car_track_path)
+
         if not os.path.exists(mycar_config_path):
             print("Copying my car config overrides")
             shutil.copyfile(myconfig_template_path, mycar_config_path)
