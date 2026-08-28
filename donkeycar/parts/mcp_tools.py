@@ -139,6 +139,17 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         return {"throttle": command.throttle, "armed": command.armed}
 
     @server.tool()
+    def measure_ground_point(pixel_x: float, pixel_y: float) -> dict[str, Any]:
+        """
+        Convert a point in the camera image to a position on the ground, in
+        inches. Use it to work out how far ahead something is -- a stop sign, an
+        obstacle -- so you can slow down in time rather than guessing from how
+        large it looks.
+        """
+        with _agent_facing_errors():
+            return bridge.measure_ground_point(pixel_x, pixel_y)
+
+    @server.tool()
     def get_calibration() -> dict[str, Any]:
         """
         Pixels-per-inch and the ground homography, with the settings they were

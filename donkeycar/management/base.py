@@ -1,16 +1,16 @@
 import argparse
+import logging
 import os
 import shutil
 import socket
 import stat
 import sys
-import logging
 
 from progress.bar import IncrementalBar
+
 import donkeycar as dk
 from donkeycar.management.joystick_creator import CreateJoystick
-
-from donkeycar.utils import normalize_image, load_image, math
+from donkeycar.utils import load_image, math, normalize_image
 
 PACKAGE_PATH = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 TEMPLATES_PATH = os.path.join(PACKAGE_PATH, 'templates')
@@ -45,7 +45,7 @@ def load_config(config_path, myconfig='myconfig.py'):
     return cfg
 
 
-class BaseCommand(object):
+class BaseCommand:
     pass
 
 
@@ -135,16 +135,13 @@ class CreateCar(BaseCommand):
             shutil.copyfile(myconfig_template_path, mycar_config_path)
             # now copy file contents from config to myconfig, with all lines
             # commented out.
-            cfg = open(car_config_path, "rt")
-            mcfg = open(mycar_config_path, "at")
-            copy = False
-            for line in cfg:
-                if "import os" in line:
-                    copy = True
-                if copy:
-                    mcfg.write("# " + line)
-            cfg.close()
-            mcfg.close()
+            with open(car_config_path) as cfg, open(mycar_config_path, 'a') as mcfg:
+                copy = False
+                for line in cfg:
+                    if "import os" in line:
+                        copy = True
+                    if copy:
+                        mcfg.write("# " + line)
 
         print("Donkey setup complete.")
 
@@ -175,7 +172,7 @@ class FindCar(BaseCommand):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
-        print('Your IP address: %s ' % s.getsockname()[0])
+        print(f'Your IP address: {s.getsockname()[0]} ')
         s.close()
 
         print("Finding your car's IP address...")
@@ -220,12 +217,12 @@ class CalibrateCar(BaseCommand):
 
             channel = int(args.channel)
             arduino_controller = ArduinoFirmata(servo_pin=channel)
-            print('init Arduino PWM on pin %d' % (channel))
+            print(f'init Arduino PWM on pin {channel}')
             input_prompt = "Enter a PWM setting to test ('q' for quit) (0-180): "
 
         elif args.pwm_pin is not None:
-            from donkeycar.parts.actuator import PulseController
             from donkeycar.parts import pins
+            from donkeycar.parts.actuator import PulseController
 
             pwm_pin = None
             try:
@@ -252,7 +249,7 @@ class CalibrateCar(BaseCommand):
             if args.bus:
                 busnum = int(args.bus)
             address = int(args.address, 16)
-            print('init PCA9685 on channel %d address %s bus %s' % (channel, str(hex(address)), str(busnum)))
+            print(f'init PCA9685 on channel {channel} address {hex(address)} bus {busnum}')
             freq = int(args.pwmFreq)
             print(f"Using PWM freq: {freq}")
             c = PCA9685(channel, address=address, busnum=busnum, frequency=freq)
@@ -265,7 +262,7 @@ class CalibrateCar(BaseCommand):
                 if val == 'q' or val == 'Q':
                     break
                 pmw = int(val)
-                if args.arduino == True:
+                if args.arduino:
                     arduino_controller.set_pulse(channel, pmw)
                 else:
                     c.run(pmw)
@@ -337,6 +334,7 @@ class ShowHistogram(BaseCommand):
         """
         import pandas as pd
         from matplotlib import pyplot as plt
+
         from donkeycar.parts.tub_v2 import Tub
 
         output = out or os.path.basename(tub_paths)
@@ -384,7 +382,7 @@ class ShowCnnActivations(BaseCommand):
 
         returns activations/features
         '''
-        from tensorflow.keras.models import load_model, Model
+        from tensorflow.keras.models import Model, load_model
 
         model_path = os.path.expanduser(model_path)
         image_path = os.path.expanduser(image_path)
@@ -451,9 +449,11 @@ class ShowPredictionPlots(BaseCommand):
         """
         Plot model predictions for angle and throttle against data from tubs.
         """
+        from pathlib import Path
+
         import matplotlib.pyplot as plt
         import pandas as pd
-        from pathlib import Path
+
         from donkeycar.pipeline.types import TubDataset
 
         model_path = os.path.expanduser(model_path)
@@ -474,7 +474,6 @@ class ShowPredictionPlots(BaseCommand):
         records = dataset.get_records()[:limit]
         bar = IncrementalBar('Inferencing', max=len(records))
 
-        output_names = list(model.output_shapes()[1].keys())
         for tub_record in records:
             input_dict = model.x_transform(
                 tub_record, lambda x: normalize_image(x))
@@ -612,6 +611,17 @@ class Mcp(BaseCommand):
         run_mcp(args)
 
 
+class CalibrateCv(BaseCommand):
+    """
+    Measure pixels-per-inch on the ground, with a live preview so the board can
+    be lined up. See donkeycar/management/calibrate_cv.py.
+    """
+
+    def run(self, args):
+        from donkeycar.management.calibrate_cv import run as run_calibrate_cv
+        run_calibrate_cv(args)
+
+
 class Gui(BaseCommand):
     def run(self, args):
         from donkeycar.management.ui.ui import main
@@ -636,11 +646,12 @@ def execute_from_command_line():
         'models': ModelDatabase,
         'ui': Gui,
         'mcp': Mcp,
+        'calibrate-cv': CalibrateCv,
     }
 
     args = sys.argv[:]
 
-    if len(args) > 1 and args[1] in commands.keys():
+    if len(args) > 1 and args[1] in commands:
         command = commands[args[1]]
         c = command()
         c.run(args[2:])

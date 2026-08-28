@@ -144,12 +144,26 @@ select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
 # Annotating it is worth doing, but it is separate work and does not belong in
 # an MCP commit. Every rule except the annotation ones still applies here.
 "donkeycar/parts/web_controller/web.py" = ["ANN"]
+# Likewise the management CLI: 78 of its 94 findings are ANN, and this work only
+# visits it to register two commands and copy a file.
+"donkeycar/management/base.py" = ["ANN"]
 
 [tool.ruff.format]
 # Config templates are hand-aligned reference documents: the trailing comment on
 # each constant is the documentation. The formatter would rewrap those comments
 # and parenthesise long values, which destroys what people read them for.
-exclude = ["donkeycar/templates/cfg_*.py", "donkeycar/templates/myconfig.py"]
+# Config templates are excluded because their hand-alignment IS the
+# documentation. The two legacy modules are excluded for a different reason:
+# this work only visits them (a port leak, two command registrations), and
+# reformatting ~560 lines of unrelated code would bury those changes. Files this
+# work actually rewrites are formatted normally. Formatting the legacy tree is
+# worth doing, but as its own change.
+exclude = [
+    "donkeycar/templates/cfg_*.py",
+    "donkeycar/templates/myconfig.py",
+    "donkeycar/parts/web_controller/web.py",
+    "donkeycar/management/base.py",
+]
 
 [tool.mypy]
 python_version = "3.12"
@@ -170,6 +184,7 @@ module = [
     "donkeycar.parts.track_config",
     "donkeycar.parts.cv_calibration",
     "donkeycar.management.mcp",
+    "donkeycar.management.calibrate_cv",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

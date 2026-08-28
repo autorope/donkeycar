@@ -499,3 +499,100 @@ def test_track_from_a_file_reaches_the_client(tmp_path):
     assert payload["name"] == "Loop"
     assert payload["continuous"] is True
     assert "features" not in payload
+
+
+# --------------------------------------------------------------- calibration
+
+
+def _write_calibration(tmp_path):
+    """A real board calibration, produced from the synthetic scene."""
+    from donkeycar.parts.cv_calibration import calibrate_from_image
+
+    from .test_cv_calibration import COLS, ROWS, SQUARE_INCHES, camera_view
+    from .test_cv_calibration import Cfg as CalCfg
+
+    calibration = calibrate_from_image(camera_view(), CalCfg(), (COLS, ROWS), SQUARE_INCHES)
+    calibration.save(str(tmp_path / "cv_calibration.json"))
+    return calibration
+
+
+def test_bridge_reports_no_calibration_when_there_is_none(tmp_path):
+    class NoCal(Cfg):
+        CV_PIXELS_PER_INCH = None
+
+    bridge = MCPBridge(NoCal(), serve=False, car_dir=str(tmp_path))
+    payload = bridge.calibration()
+    assert payload["calibrated"] is False
+    assert "calibrate-cv" in payload["reason"]
+
+
+def test_manual_calibration_converts_lanes_but_cannot_measure(tmp_path):
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    payload = bridge.calibration()
+    assert payload["calibrated"] is True
+    assert payload["source"] == "config"
+    assert payload["can_measure_points"] is False
+    with pytest.raises(ValueError, match="no homography"):
+        bridge.measure_ground_point(10, 10)
+
+
+def test_board_calibration_enables_ground_measurement(tmp_path):
+    _write_calibration(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    bridge.run_threaded(cam_img=frame(w=320, h=240))
+
+    payload = bridge.calibration()
+    assert payload["can_measure_points"] is True
+    assert payload["source"] == "chessboard"
+
+    measured = bridge.measure_ground_point(160, 120)
+    assert "lateral_inches" in measured and "forward_inches" in measured
+
+
+def test_measuring_outside_the_frame_is_rejected(tmp_path):
+    _write_calibration(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    bridge.run_threaded(cam_img=frame(w=320, h=240))
+    with pytest.raises(ValueError, match="outside"):
+        bridge.measure_ground_point(9999, 9999)
+
+
+def test_stale_calibration_is_flagged_not_silently_used(tmp_path):
+    """
+    A calibration taken at a different scan line describes a different
+    measurement. Reusing it silently is how a lane change ends up in the
+    wrong lane.
+    """
+    _write_calibration(tmp_path)
+
+    class MovedScanLine(Cfg):
+        SCAN_Y = 40
+        IMAGE_W = 320
+        IMAGE_H = 240
+        CAMERA_TYPE = "MOCK"
+
+    bridge = MCPBridge(MovedScanLine(), serve=False, car_dir=str(tmp_path))
+    payload = bridge.calibration()
+    assert payload["stale"] is True
+    assert any("scan_y" in reason for reason in payload["stale_reasons"])
+
+
+def test_measure_ground_point_through_the_client(tmp_path):
+    _write_calibration(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    bridge.run_threaded(cam_img=frame(w=320, h=240))
+
+    result = _call(bridge.build_server(), "measure_ground_point", {"pixel_x": 160, "pixel_y": 120})
+    assert result.is_error is not True
+    payload = json.loads(_text(result))
+    assert "lateral_inches" in payload
+
+
+def test_measure_without_calibration_tells_the_agent_what_to_do(tmp_path):
+    class NoCal(Cfg):
+        CV_PIXELS_PER_INCH = None
+
+    bridge = MCPBridge(NoCal(), serve=False, car_dir=str(tmp_path))
+    result = _call(bridge.build_server(), "measure_ground_point", {"pixel_x": 10, "pixel_y": 10})
+    assert result.is_error is True
+    assert "calibrate-cv" in _text(result)

@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 
+from donkeycar.parts.cv_calibration import Calibration, load_calibration
 from donkeycar.parts.track_config import TrackConfig, default_track, find_track_file, load_track
 from donkeycar.utils import arr_to_binary
 
@@ -155,6 +156,8 @@ class MCPBridge:
         self.lifecycle: Lifecycle = lifecycle if lifecycle is not None else _BridgeArming(self)
 
         self.track = track if track is not None else self._load_track(car_dir)
+        self.car_dir = car_dir
+        self.calibration_data: Calibration | None = load_calibration(car_dir, cfg)
 
     # ------------------------------------------------------------------
     # vehicle loop side
@@ -363,8 +366,7 @@ class MCPBridge:
         return self.inches_to_px(self.track.offset_inches(lane))
 
     def pixels_per_inch(self) -> float | None:
-        value = getattr(self.cfg, "CV_PIXELS_PER_INCH", None)
-        return float(value) if value else None
+        return self.calibration_data.pixels_per_inch if self.calibration_data else None
 
     def inches_to_px(self, inches: float) -> int:
         ppi = self.pixels_per_inch()
@@ -379,12 +381,49 @@ class MCPBridge:
         return px / ppi
 
     def calibration(self) -> dict[str, Any]:
+        if self.calibration_data is None:
+            return {
+                "calibrated": False,
+                "reason": (
+                    "No calibration. Run `donkey calibrate-cv` with a checkerboard, or set "
+                    "CV_PIXELS_PER_INCH by hand for lane offsets only."
+                ),
+            }
+        stale = self.calibration_data.stale_reasons(self.cfg)
+        payload = self.calibration_data.to_dict()
+        payload["calibrated"] = True
+        payload["stale"] = bool(stale)
+        payload["stale_reasons"] = stale
+        payload["can_measure_points"] = self.calibration_data.homography is not None
+        return payload
+
+    def measure_ground_point(self, u: float, v: float) -> dict[str, Any]:
+        """
+        Where on the ground is the thing at this pixel?
+
+        This is the agent's only source of depth. Braking for a stop sign means
+        knowing how far away it is, and the alternative -- inferring distance
+        from apparent size over a network round trip -- is a guess.
+        """
+        if self.calibration_data is None:
+            raise ValueError(
+                "No calibration, so points cannot be measured. Run `donkey calibrate-cv` with a checkerboard."
+            )
+        state = self.snapshot()
+        if state.frame is not None:
+            height, width = state.frame.shape[:2]
+            if not (0 <= u < width and 0 <= v < height):
+                raise ValueError(f"Pixel ({u}, {v}) is outside the {width}x{height} camera frame")
+
+        lateral, forward = self.calibration_data.image_to_ground(u, v)
         return {
-            "pixels_per_inch": self.pixels_per_inch(),
-            "homography": None,
-            "captured_at": None,
-            "source": "config" if self.pixels_per_inch() else None,
-            "stale": None,
+            "lateral_inches": lateral,
+            "forward_inches": forward,
+            "note": (
+                "Positive lateral is right of centre, positive forward is away from the car. "
+                "Accuracy degrades toward the frame edges because a single homography "
+                "assumes no lens distortion."
+            ),
         }
 
 
