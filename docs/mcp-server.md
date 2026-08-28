@@ -67,14 +67,20 @@ than reading as "never set". A silently wrong lane width is a car in the wall.
 A lane offset given in inches has to become a pixel offset, so the car needs to know
 how many pixels an inch is worth on the ground.
 
+Print the board first: [`assets/calibration-checkerboard-9x6-1in-letter.pdf`](../assets/calibration-checkerboard-9x6-1in-letter.pdf)
+(or the A4 version). **Print at 100% / actual size** — "Fit to Page" silently shrinks
+it, and a board printed at 96% gives a confident, wrong calibration rather than an
+error. Check with a ruler that 10 squares measure 10 inches, then mount it on
+something rigid: a curled sheet is a curved plane, and the maths assumes a flat one.
+
 ```
 donkey calibrate-cv --car ~/mycar
 ```
 
 Then open `http://localhost:8892`:
 
-1. Lay a checkerboard **flat on the floor** in front of the car. Held upright it
-   gives meaningless numbers.
+1. Lay the board **flat on the floor** in front of the car. Held upright it gives
+   meaningless numbers.
 2. Slide it until the blue band crosses the board and the corners turn green. The
    blue band is the strip the follower actually samples.
 3. Press **Capture**. It writes `cv_calibration.json` beside your config.

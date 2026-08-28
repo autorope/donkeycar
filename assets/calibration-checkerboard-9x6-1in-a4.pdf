@@ -1,0 +1,99 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 841.6800 595.4400] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1939 >>
+stream
+q
+0 0 0 rg
+60.8400 483.7200 72.0000 72.0000 re f
+60.8400 339.7200 72.0000 72.0000 re f
+60.8400 195.7200 72.0000 72.0000 re f
+60.8400 51.7200 72.0000 72.0000 re f
+132.8400 411.7200 72.0000 72.0000 re f
+132.8400 267.7200 72.0000 72.0000 re f
+132.8400 123.7200 72.0000 72.0000 re f
+204.8400 483.7200 72.0000 72.0000 re f
+204.8400 339.7200 72.0000 72.0000 re f
+204.8400 195.7200 72.0000 72.0000 re f
+204.8400 51.7200 72.0000 72.0000 re f
+276.8400 411.7200 72.0000 72.0000 re f
+276.8400 267.7200 72.0000 72.0000 re f
+276.8400 123.7200 72.0000 72.0000 re f
+348.8400 483.7200 72.0000 72.0000 re f
+348.8400 339.7200 72.0000 72.0000 re f
+348.8400 195.7200 72.0000 72.0000 re f
+348.8400 51.7200 72.0000 72.0000 re f
+420.8400 411.7200 72.0000 72.0000 re f
+420.8400 267.7200 72.0000 72.0000 re f
+420.8400 123.7200 72.0000 72.0000 re f
+492.8400 483.7200 72.0000 72.0000 re f
+492.8400 339.7200 72.0000 72.0000 re f
+492.8400 195.7200 72.0000 72.0000 re f
+492.8400 51.7200 72.0000 72.0000 re f
+564.8400 411.7200 72.0000 72.0000 re f
+564.8400 267.7200 72.0000 72.0000 re f
+564.8400 123.7200 72.0000 72.0000 re f
+636.8400 483.7200 72.0000 72.0000 re f
+636.8400 339.7200 72.0000 72.0000 re f
+636.8400 195.7200 72.0000 72.0000 re f
+636.8400 51.7200 72.0000 72.0000 re f
+708.8400 411.7200 72.0000 72.0000 re f
+708.8400 267.7200 72.0000 72.0000 re f
+708.8400 123.7200 72.0000 72.0000 re f
+0.5 w
+60.8400 51.7200 720.0000 504.0000 re S
+Q
+BT
+/F1 11 Tf
+1 0 0 1 60.8400 569.7200 Tm
+(Donkeycar CV calibration board - 9x6 inner corners, 1 inch squares) Tj
+ET
+BT
+/F2 10 Tf
+1 0 0 1 60.8400 31.7200 Tm
+(PRINT AT 100% / ACTUAL SIZE. Do not use Fit to Page, Shrink to Fit, or Scale to Fit.) Tj
+ET
+BT
+/F1 9 Tf
+1 0 0 1 60.8400 18.7200 Tm
+(Check before use: any 10 squares across must measure 10 inches, and the outline 10 x 7 inches.) Tj
+ET
+BT
+/F1 9 Tf
+1 0 0 1 60.8400 6.7200 Tm
+(Lay it FLAT on the floor in front of the car. Held upright it gives meaningless numbers.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+7 0 obj
+<< /Title (Donkeycar CV calibration board) /Subject (pattern=9x6 inner corners; square=1in) /Creator (donkeycar assets/generate_checkerboard.py) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000261 00000 n 
+0000002252 00000 n 
+0000002322 00000 n 
+0000002397 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R /Info 7 0 R >>
+startxref
+2560
+%%EOF
