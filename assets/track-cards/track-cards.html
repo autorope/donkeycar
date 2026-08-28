@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donkeycar Track Cards &mdash; 3in Fold-Over Pieces</title>
+<style>
+  @page { size: letter portrait; margin: 0.25in; }
+
+  html, body { margin: 0; padding: 0; background: #55606a; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+
+  .howto {
+    background: #fff; color: #222; max-width: 8in; margin: 24px auto;
+    padding: 20px 28px; border-radius: 8px; line-height: 1.5; font-size: 14px;
+  }
+  .howto h1 { font-size: 20px; margin: 0 0 8px; }
+  .howto ol { margin: 8px 0 0 18px; padding: 0; }
+  .howto li { margin-bottom: 6px; }
+  .howto .diag { font: 11px/1.35 ui-monospace, Menlo, monospace; color: #444;
+                 background: #f5f5f5; padding: 10px 14px; border-radius: 6px;
+                 white-space: pre; display: inline-block; margin-top: 10px; }
+
+  .page {
+    box-sizing: border-box;
+    width: 8in; height: 10.5in; margin: 24px auto; background: #fff;
+    display: flex; flex-direction: row; align-items: center;
+    justify-content: center; gap: 0.7in; overflow: hidden;
+  }
+
+  /* A strip is 3in x 9in, folded at the top into a self-standing tent:
+       1.5in base tab | 3in panel (180deg) | APEX FOLD | 3in panel | 1.5in base tab
+     A horizontal fold means the two panels print head-to-head -- the upper one
+     rotated 180deg -- so both read upright once the tent is formed. */
+  .strip {
+    box-sizing: border-box;
+    width: 3in; height: 9in; display: flex; flex-direction: column;
+    outline: 1px solid #999;          /* cut line */
+    position: relative;
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .panel { width: 3in; height: 3in; display: block; }
+  .panel.flip { transform: rotate(180deg); }
+
+  .tab {
+    box-sizing: border-box; width: 3in; height: 1.5in;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6.5pt; color: #bbbbbb; letter-spacing: .06em;
+    font-family: Arial, sans-serif; text-align: center;
+  }
+  .tab.top    { border-bottom: 1px dashed #b0b0b0; }  /* fold line */
+  .tab.bottom { border-top:    1px dashed #b0b0b0; }  /* fold line */
+
+  .crease {                                            /* apex fold: long dashes */
+    position: absolute; top: 4.5in; left: 0; width: 3in; height: 1.5px;
+    background: repeating-linear-gradient(to right,
+                #5f5f5f 0 12px, rgba(255,255,255,0) 12px 20px);
+  }
+  .crease::after {
+    content: "APEX FOLD"; position: absolute; right: 3px; top: -9px;
+    font: 5.5pt Arial, sans-serif; color: #8a8a8a; letter-spacing: .08em;
+    background: rgba(255,255,255,.75); padding: 0 2px; border-radius: 2px;
+  }
+  .tag {
+    position: absolute; bottom: -11px; left: 1.5in; transform: translateX(-50%);
+    font-size: 6pt; color: #b8b8b8; letter-spacing: .04em; white-space: nowrap;
+    font-family: Arial, sans-serif;
+  }
+
+  @media print {
+    body { background: #fff; }
+    .howto { display: none; }
+    .page { margin: 0; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="howto">
+  <h1>Donkeycar Track Tents &mdash; 3&Prime; &times; 3&Prime; faces, self-standing</h1>
+  <ol>
+    <li><b>Print</b> at 100% / &ldquo;Actual size&rdquo; (turn OFF &ldquo;fit to page&rdquo;) on US Letter, portrait. Card stock stands better than paper.</li>
+    <li><b>Cut</b> along the solid outline of each 3&Prime; &times; 9&Prime; strip.</li>
+    <li><b>Fold down</b> on the darker dashed line in the middle, printed side OUT. That crease is the top of the tent; the two images swing down front and back, and both come out right-side-up.</li>
+    <li><b>Fold the two 1.5&Prime; tabs outward</b> on their dashed lines so they lie flat on the table like feet. Tape them down &mdash; or tape the two tabs to a strip of card stock &mdash; and the tent stands on its own.</li>
+  </ol>
+  <div class="diag">   1.5&quot; tab   &rarr; folds out as a foot
+   3&quot;   image  (printed upside down on the sheet)
+  ==== APEX FOLD ====
+   3&quot;   image
+   1.5&quot; tab   &rarr; folds out as a foot</div>
+  <p style="margin:12px 0 0"><b>Assumption:</b> each tent shows the <i>same</i> image on both faces, so the car reads it identically from either approach direction. Say the word to pair two different images back-to-back.</p>
+  <p style="margin:8px 0 0">13 tents, 2 per page &rarr; 7 sheets. (The 9&Prime; strip only fits twice across a Letter page.) Screen-only instructions; they won&rsquo;t print.</p>
+</div>
+
+<!-- ============ ARTWORK DEFINITIONS ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+
+<!-- ---------- STOP SIGN ---------- -->
+<symbol id="art-stop" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#fdf7ee"/>
+  <rect x="140" y="196" width="20" height="92" fill="#9aa5ad" stroke="#5b666e" stroke-width="4"/>
+  <polygon points="108.6,40 191.4,40 250,98.6 250,181.4 191.4,240 108.6,240 50,181.4 50,98.6"
+           fill="#d3232f" stroke="#7a1119" stroke-width="6"/>
+  <polygon points="120.5,58 179.5,58 232,110.5 232,169.5 179.5,222 120.5,222 68,169.5 68,110.5"
+           fill="none" stroke="#ffffff" stroke-width="8"/>
+  <text x="150" y="158" text-anchor="middle" fill="#ffffff"
+        font-family="'Arial Black',Arial,Helvetica,sans-serif" font-weight="900"
+        font-size="48" letter-spacing="0">STOP</text>
+</symbol>
+
+<!-- ---------- TRAFFIC LIGHTS ---------- -->
+<symbol id="art-red" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eaf3fb"/>
+  <rect x="137" y="262" width="26" height="34" fill="#7f8c8d" stroke="#4a5657" stroke-width="4"/>
+  <rect x="86" y="18" width="128" height="250" rx="26" fill="#2f3640" stroke="#151a1f" stroke-width="6"/>
+  <circle cx="150" cy="64" r="44" fill="#e63946" opacity=".30"/>
+  <circle cx="150" cy="64"  r="33" fill="#ee2b3b" stroke="#101418" stroke-width="3"/>
+  <circle cx="150" cy="143" r="33" fill="#4d5560" stroke="#101418" stroke-width="3"/>
+  <circle cx="150" cy="222" r="33" fill="#4d5560" stroke="#101418" stroke-width="3"/>
+</symbol>
+
+<symbol id="art-yellow" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eaf3fb"/>
+  <rect x="137" y="262" width="26" height="34" fill="#7f8c8d" stroke="#4a5657" stroke-width="4"/>
+  <rect x="86" y="18" width="128" height="250" rx="26" fill="#2f3640" stroke="#151a1f" stroke-width="6"/>
+  <circle cx="150" cy="143" r="44" fill="#f2b705" opacity=".30"/>
+  <circle cx="150" cy="64"  r="33" fill="#4d5560" stroke="#101418" stroke-width="3"/>
+  <circle cx="150" cy="143" r="33" fill="#f8c400" stroke="#101418" stroke-width="3"/>
+  <circle cx="150" cy="222" r="33" fill="#4d5560" stroke="#101418" stroke-width="3"/>
+</symbol>
+
+<symbol id="art-green" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eaf3fb"/>
+  <rect x="137" y="262" width="26" height="34" fill="#7f8c8d" stroke="#4a5657" stroke-width="4"/>
+  <rect x="86" y="18" width="128" height="250" rx="26" fill="#2f3640" stroke="#151a1f" stroke-width="6"/>
+  <circle cx="150" cy="222" r="44" fill="#22b14c" opacity=".30"/>
+  <circle cx="150" cy="64"  r="33" fill="#4d5560" stroke="#101418" stroke-width="3"/>
+  <circle cx="150" cy="143" r="33" fill="#4d5560" stroke="#101418" stroke-width="3"/>
+  <circle cx="150" cy="222" r="33" fill="#25c455" stroke="#101418" stroke-width="3"/>
+</symbol>
+
+<!-- ---------- CHILD CHASING A BALL ---------- -->
+<symbol id="art-child" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#fff7e8"/>
+  <rect x="0" y="266" width="300" height="34" fill="#cfe0c0"/>
+  <!-- ball -->
+  <ellipse cx="252" cy="262" rx="30" ry="7" fill="#000000" opacity=".10"/>
+  <circle cx="254" cy="212" r="34" fill="#ff6b35" stroke="#8f3410" stroke-width="4"/>
+  <path d="M 222 202 Q 254 220 286 202" fill="none" stroke="#fff2e6" stroke-width="6"/>
+  <path d="M 254 178 Q 238 212 254 246" fill="none" stroke="#fff2e6" stroke-width="6"/>
+  <!-- legs -->
+  <g stroke="#f2c9a0" stroke-width="17" stroke-linecap="round" fill="none">
+    <path d="M 110 190 L 96 232 L 78 258"/>
+    <path d="M 146 188 L 174 214 L 196 236"/>
+  </g>
+  <ellipse cx="74" cy="262" rx="18" ry="10" fill="#33415c"/>
+  <ellipse cx="202" cy="240" rx="18" ry="10" fill="#33415c" transform="rotate(28 202 240)"/>
+  <!-- shorts -->
+  <path d="M 94 150 L 154 144 L 162 194 L 138 198 L 132 176 L 116 198 L 96 196 Z"
+        fill="#e0483c" stroke="#8d2119" stroke-width="4"/>
+  <!-- torso -->
+  <path d="M 84 96 L 140 90 L 154 156 L 96 162 Z" fill="#3d8bd6" stroke="#1d4f80" stroke-width="4"/>
+  <!-- arms -->
+  <g stroke="#f2c9a0" stroke-width="15" stroke-linecap="round" fill="none">
+    <path d="M 90 104 L 54 136 L 64 168"/>
+    <path d="M 140 98 L 180 112 L 202 92"/>
+  </g>
+  <!-- head -->
+  <circle cx="110" cy="66" r="30" fill="#f7d3ae" stroke="#b98a5e" stroke-width="4"/>
+  <path d="M 80 60 Q 92 26 122 34 Q 142 40 140 62 Q 126 44 104 48 Q 88 52 80 60 Z" fill="#6b4423"/>
+  <circle cx="122" cy="66" r="4.5" fill="#2b2b2b"/>
+  <circle cx="102" cy="68" r="4.5" fill="#2b2b2b"/>
+  <path d="M 104 82 Q 116 92 128 80" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+</symbol>
+
+<!-- ---------- MOTHER PUSHING A STROLLER ---------- -->
+<symbol id="art-stroller" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#f3efff"/>
+  <rect x="0" y="266" width="300" height="34" fill="#cfe0c0"/>
+  <!-- stroller frame -->
+  <g stroke="#3a4250" stroke-width="9" stroke-linecap="round" fill="none">
+    <path d="M 150 128 L 190 122"/>
+    <path d="M 190 122 L 198 156"/>
+    <path d="M 206 198 L 212 226"/>
+    <path d="M 284 198 L 276 226"/>
+    <path d="M 200 200 L 272 228"/>
+  </g>
+  <!-- hood -->
+  <path d="M 186 156 A 34 40 0 0 1 254 156 Z" fill="#2f6fb0" stroke="#1b4570" stroke-width="4"/>
+  <!-- baby -->
+  <circle cx="248" cy="146" r="16" fill="#f7d3ae" stroke="#b98a5e" stroke-width="3"/>
+  <!-- seat -->
+  <path d="M 184 154 L 292 154 L 280 202 L 198 202 Z" fill="#4a90d9" stroke="#1b4570" stroke-width="4"/>
+  <!-- wheels -->
+  <circle cx="212" cy="240" r="24" fill="#2b2b2b"/><circle cx="212" cy="240" r="9" fill="#c9c9c9"/>
+  <circle cx="276" cy="240" r="24" fill="#2b2b2b"/><circle cx="276" cy="240" r="9" fill="#c9c9c9"/>
+  <!-- mother: legs -->
+  <g stroke="#3b4a6b" stroke-width="19" stroke-linecap="round" fill="none">
+    <path d="M 66 172 L 58 250"/>
+    <path d="M 96 170 L 104 250"/>
+  </g>
+  <ellipse cx="54" cy="256" rx="18" ry="10" fill="#2b2b2b"/>
+  <ellipse cx="108" cy="256" rx="18" ry="10" fill="#2b2b2b"/>
+  <!-- torso -->
+  <path d="M 48 92 L 106 88 L 116 178 L 44 182 Z" fill="#c85a8b" stroke="#7d3358" stroke-width="4"/>
+  <!-- arm to handle -->
+  <path d="M 104 104 L 148 124" stroke="#c85a8b" stroke-width="16" stroke-linecap="round" fill="none"/>
+  <circle cx="150" cy="126" r="10" fill="#f7d3ae" stroke="#b98a5e" stroke-width="3"/>
+  <!-- head + blonde hair -->
+  <circle cx="76" cy="62" r="28" fill="#f7d3ae" stroke="#b98a5e" stroke-width="4"/>
+  <path d="M 45 58 Q 42 76 48 82 Q 56 72 54 54 Z" fill="#e8c25a" stroke="#b8912f" stroke-width="3"/>
+  <path d="M 107 58 Q 110 76 104 82 Q 96 72 98 54 Z" fill="#e8c25a" stroke="#b8912f" stroke-width="3"/>
+  <path d="M 46 58 Q 52 22 88 25 Q 111 29 107 60 Q 88 40 62 47 Z" fill="#e8c25a" stroke="#b8912f" stroke-width="3"/>
+  <circle cx="88" cy="62" r="4.5" fill="#2b2b2b"/>
+  <circle cx="68" cy="62" r="4.5" fill="#2b2b2b"/>
+  <path d="M 70 78 Q 80 86 90 76" fill="none" stroke="#2b2b2b" stroke-width="4" stroke-linecap="round"/>
+</symbol>
+
+<!-- ---------- ELDERLY MAN WITH A CANE ---------- -->
+<symbol id="art-elder" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#f2f6ee"/>
+  <rect x="0" y="266" width="300" height="34" fill="#cfe0c0"/>
+  <!-- cane -->
+  <path d="M 196 148 A 15 15 0 0 1 224 156 L 226 262" fill="none"
+        stroke="#8b5a2b" stroke-width="10" stroke-linecap="round"/>
+  <!-- legs -->
+  <g stroke="#4a4f5c" stroke-width="21" stroke-linecap="round" fill="none">
+    <path d="M 122 176 L 116 250"/>
+    <path d="M 156 174 L 166 250"/>
+  </g>
+  <ellipse cx="112" cy="258" rx="19" ry="10" fill="#3b2f28"/>
+  <ellipse cx="170" cy="258" rx="19" ry="10" fill="#3b2f28"/>
+  <!-- torso, slightly hunched -->
+  <path d="M 106 98 Q 100 140 106 182 L 172 180 Q 178 138 168 96 Z"
+        fill="#5b7c99" stroke="#33556f" stroke-width="4"/>
+  <!-- arms -->
+  <path d="M 110 106 L 96 156" fill="none" stroke="#5b7c99" stroke-width="17" stroke-linecap="round"/>
+  <path d="M 168 104 L 200 144" fill="none" stroke="#5b7c99" stroke-width="17" stroke-linecap="round"/>
+  <circle cx="204" cy="150" r="11" fill="#f0d3b6" stroke="#b98a5e" stroke-width="3"/>
+  <!-- head -->
+  <circle cx="140" cy="66" r="30" fill="#f0d3b6" stroke="#b98a5e" stroke-width="4"/>
+  <!-- beard -->
+  <path d="M 116 82 Q 118 122 140 122 Q 162 122 164 82 Q 140 100 116 82 Z"
+        fill="#e8e8e8" stroke="#b0b0b0" stroke-width="3"/>
+  <circle cx="152" cy="62" r="4.5" fill="#2b2b2b"/>
+  <circle cx="130" cy="62" r="4.5" fill="#2b2b2b"/>
+  <!-- brows -->
+  <path d="M 122 50 L 138 54 M 146 54 L 162 50" stroke="#cfcfcf" stroke-width="5" stroke-linecap="round"/>
+  <!-- hat -->
+  <path d="M 100 42 L 182 42 L 176 40 Q 172 12 140 12 Q 108 12 106 40 Z" fill="#6b6b73"/>
+  <rect x="98" y="38" width="86" height="10" rx="5" fill="#4f4f57"/>
+</symbol>
+
+<!-- ---------- DOG ---------- -->
+<symbol id="art-dog" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#fdf1e0"/>
+  <rect x="0" y="252" width="300" height="48" fill="#cfe0c0"/>
+  <!-- tail -->
+  <path d="M 76 150 Q 34 128 46 88" fill="none" stroke="#c98a45" stroke-width="18" stroke-linecap="round"/>
+  <!-- legs -->
+  <g fill="#b87a38" stroke="#7c4d1c" stroke-width="4">
+    <rect x="94"  y="188" width="24" height="66" rx="12"/>
+    <rect x="132" y="188" width="24" height="66" rx="12"/>
+    <rect x="184" y="188" width="24" height="66" rx="12"/>
+    <rect x="216" y="188" width="24" height="66" rx="12"/>
+  </g>
+  <!-- body -->
+  <ellipse cx="150" cy="172" rx="84" ry="48" fill="#c98a45" stroke="#7c4d1c" stroke-width="5"/>
+  <!-- neck + head -->
+  <path d="M 198 168 L 214 112 L 254 128 L 236 186 Z" fill="#c98a45" stroke="#7c4d1c" stroke-width="5"/>
+  <circle cx="228" cy="112" r="42" fill="#c98a45" stroke="#7c4d1c" stroke-width="5"/>
+  <!-- snout -->
+  <ellipse cx="268" cy="126" rx="28" ry="19" fill="#e2ab6d" stroke="#7c4d1c" stroke-width="5"/>
+  <ellipse cx="288" cy="120" rx="10" ry="8" fill="#2b2b2b"/>
+  <path d="M 250 138 Q 266 148 282 138" fill="none" stroke="#7c4d1c" stroke-width="4" stroke-linecap="round"/>
+  <!-- eye + ear -->
+  <circle cx="238" cy="98" r="6" fill="#2b2b2b"/>
+  <path d="M 206 78 Q 186 92 190 128 Q 206 138 216 118 Q 210 96 216 82 Z"
+        fill="#a2682c" stroke="#7c4d1c" stroke-width="4"/>
+  <!-- collar -->
+  <path d="M 204 170 L 242 152" stroke="#d63b3b" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="222" cy="174" r="6" fill="#f2c94c" stroke="#8a6d16" stroke-width="2"/>
+</symbol>
+
+<!-- ---------- CAR ---------- -->
+<symbol id="art-car" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eef3f8"/>
+  <rect x="0" y="240" width="300" height="60" fill="#9aa5ad"/>
+  <rect x="0" y="238" width="300" height="5" fill="#5f6a72"/>
+  <!-- body -->
+  <path d="M 22 210 L 22 168 C 22 158 30 153 42 151 L 108 145
+           L 140 105 C 145 99 152 96 160 96 L 208 96
+           C 218 96 226 102 231 110 L 254 148 L 272 155
+           C 280 158 282 165 282 174 L 282 210 Z"
+        fill="#2f80ed" stroke="#123a6b" stroke-width="5"/>
+  <!-- windows -->
+  <path d="M 116 142 L 146 108 L 168 108 L 168 142 Z" fill="#cfe6ff" stroke="#123a6b" stroke-width="4"/>
+  <path d="M 180 108 L 206 108 C 213 108 219 112 223 118 L 240 142 L 180 142 Z"
+        fill="#cfe6ff" stroke="#123a6b" stroke-width="4"/>
+  <!-- door + handle -->
+  <path d="M 172 145 L 172 200" stroke="#123a6b" stroke-width="4"/>
+  <rect x="128" y="160" width="26" height="7" rx="3.5" fill="#123a6b"/>
+  <!-- lights -->
+  <rect x="266" y="162" width="16" height="14" rx="4" fill="#ffe680" stroke="#123a6b" stroke-width="3"/>
+  <rect x="22"  y="168" width="14" height="14" rx="4" fill="#ff8080" stroke="#123a6b" stroke-width="3"/>
+  <!-- wheels -->
+  <circle cx="86"  cy="206" r="34" fill="#2b2b2b"/><circle cx="86"  cy="206" r="14" fill="#c9c9c9" stroke="#7a7a7a" stroke-width="3"/>
+  <circle cx="226" cy="206" r="34" fill="#2b2b2b"/><circle cx="226" cy="206" r="14" fill="#c9c9c9" stroke="#7a7a7a" stroke-width="3"/>
+</symbol>
+
+<!-- ---------- TRUCK ---------- -->
+<symbol id="art-truck" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eef3f8"/>
+  <rect x="0" y="246" width="300" height="54" fill="#9aa5ad"/>
+  <rect x="0" y="244" width="300" height="5" fill="#5f6a72"/>
+  <!-- cargo box -->
+  <rect x="16" y="86" width="168" height="126" rx="6" fill="#f4f4f2" stroke="#3c4650" stroke-width="6"/>
+  <rect x="16" y="140" width="168" height="20" fill="#d64545"/>
+  <path d="M 100 86 L 100 212" stroke="#c2c6c9" stroke-width="4"/>
+  <!-- cab -->
+  <path d="M 184 212 L 184 116 L 236 116 L 262 158 L 286 166
+           C 292 168 294 172 294 178 L 294 212 Z"
+        fill="#d64545" stroke="#7d1f1f" stroke-width="5"/>
+  <!-- window -->
+  <path d="M 196 124 L 232 124 L 254 158 L 196 158 Z" fill="#cfe6ff" stroke="#7d1f1f" stroke-width="4"/>
+  <!-- bumper + light -->
+  <rect x="276" y="170" width="18" height="14" rx="4" fill="#ffe680" stroke="#7d1f1f" stroke-width="3"/>
+  <rect x="272" y="200" width="24" height="14" rx="4" fill="#5f6a72"/>
+  <!-- wheels -->
+  <circle cx="72"  cy="212" r="32" fill="#2b2b2b"/><circle cx="72"  cy="212" r="13" fill="#c9c9c9" stroke="#7a7a7a" stroke-width="3"/>
+  <circle cx="150" cy="212" r="32" fill="#2b2b2b"/><circle cx="150" cy="212" r="13" fill="#c9c9c9" stroke="#7a7a7a" stroke-width="3"/>
+  <circle cx="240" cy="212" r="32" fill="#2b2b2b"/><circle cx="240" cy="212" r="13" fill="#c9c9c9" stroke="#7a7a7a" stroke-width="3"/>
+</symbol>
+
+<!-- ---------- HOUSE (number filled in per card) ---------- -->
+<symbol id="art-house-123" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eaf6ff"/>
+  <rect x="0" y="256" width="300" height="44" fill="#8bc48b"/>
+  <rect x="196" y="46" width="26" height="50" fill="#8a5a4a" stroke="#4a2f26" stroke-width="4"/>
+  <polygon points="150,28 288,140 12,140" fill="#b23a3a" stroke="#6f1f1f" stroke-width="6"/>
+  <rect x="46" y="138" width="208" height="124" fill="#f6e6c6" stroke="#7a6544" stroke-width="6"/>
+  <rect x="78" y="150" width="144" height="52" rx="6" fill="#ffffff" stroke="#2b2b2b" stroke-width="5"/>
+  <text x="150" y="192" text-anchor="middle" fill="#111111"
+        font-family="'Arial Black',Arial,Helvetica,sans-serif" font-weight="900"
+        font-size="46" letter-spacing="3">123</text>
+  <rect x="124" y="208" width="52" height="54" fill="#6b4423" stroke="#3d2613" stroke-width="5"/>
+  <circle cx="166" cy="236" r="4" fill="#ffd97a"/>
+  <rect x="62"  y="212" width="46" height="40" fill="#bfe3ff" stroke="#7a6544" stroke-width="5"/>
+  <rect x="192" y="212" width="46" height="40" fill="#bfe3ff" stroke="#7a6544" stroke-width="5"/>
+</symbol>
+
+<symbol id="art-house-456" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eaf6ff"/>
+  <rect x="0" y="256" width="300" height="44" fill="#8bc48b"/>
+  <rect x="196" y="46" width="26" height="50" fill="#8a5a4a" stroke="#4a2f26" stroke-width="4"/>
+  <polygon points="150,28 288,140 12,140" fill="#3f6f9f" stroke="#20415f" stroke-width="6"/>
+  <rect x="46" y="138" width="208" height="124" fill="#f6e6c6" stroke="#7a6544" stroke-width="6"/>
+  <rect x="78" y="150" width="144" height="52" rx="6" fill="#ffffff" stroke="#2b2b2b" stroke-width="5"/>
+  <text x="150" y="192" text-anchor="middle" fill="#111111"
+        font-family="'Arial Black',Arial,Helvetica,sans-serif" font-weight="900"
+        font-size="46" letter-spacing="3">456</text>
+  <rect x="124" y="208" width="52" height="54" fill="#6b4423" stroke="#3d2613" stroke-width="5"/>
+  <circle cx="166" cy="236" r="4" fill="#ffd97a"/>
+  <rect x="62"  y="212" width="46" height="40" fill="#bfe3ff" stroke="#7a6544" stroke-width="5"/>
+  <rect x="192" y="212" width="46" height="40" fill="#bfe3ff" stroke="#7a6544" stroke-width="5"/>
+</symbol>
+
+<symbol id="art-house-789" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#eaf6ff"/>
+  <rect x="0" y="256" width="300" height="44" fill="#8bc48b"/>
+  <rect x="196" y="46" width="26" height="50" fill="#8a5a4a" stroke="#4a2f26" stroke-width="4"/>
+  <polygon points="150,28 288,140 12,140" fill="#4e8c4e" stroke="#2c552c" stroke-width="6"/>
+  <rect x="46" y="138" width="208" height="124" fill="#f6e6c6" stroke="#7a6544" stroke-width="6"/>
+  <rect x="78" y="150" width="144" height="52" rx="6" fill="#ffffff" stroke="#2b2b2b" stroke-width="5"/>
+  <text x="150" y="192" text-anchor="middle" fill="#111111"
+        font-family="'Arial Black',Arial,Helvetica,sans-serif" font-weight="900"
+        font-size="46" letter-spacing="3">789</text>
+  <rect x="124" y="208" width="52" height="54" fill="#6b4423" stroke="#3d2613" stroke-width="5"/>
+  <circle cx="166" cy="236" r="4" fill="#ffd97a"/>
+  <rect x="62"  y="212" width="46" height="40" fill="#bfe3ff" stroke="#7a6544" stroke-width="5"/>
+  <rect x="192" y="212" width="46" height="40" fill="#bfe3ff" stroke="#7a6544" stroke-width="5"/>
+</symbol>
+
+</defs>
+</svg>
+<!-- ============ PRINT PAGES ============ -->
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-stop"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-stop"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">STOP SIGN</div>
+  </div>
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-red"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-red"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">TRAFFIC LIGHT / RED</div>
+  </div>
+</div>
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-yellow"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-yellow"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">TRAFFIC LIGHT / YELLOW</div>
+  </div>
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-green"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-green"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">TRAFFIC LIGHT / GREEN</div>
+  </div>
+</div>
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-child"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-child"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">CHILD CHASING BALL</div>
+  </div>
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-stroller"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-stroller"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">MOTHER WITH STROLLER</div>
+  </div>
+</div>
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-elder"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-elder"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">ELDERLY MAN WITH CANE</div>
+  </div>
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-dog"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-dog"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">DOG</div>
+  </div>
+</div>
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-car"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-car"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">CAR</div>
+  </div>
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-truck"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-truck"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">TRUCK</div>
+  </div>
+</div>
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-house-123"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-house-123"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">HOUSE 123</div>
+  </div>
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-house-456"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-house-456"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">HOUSE 456</div>
+  </div>
+</div>
+<div class="page">
+  <div class="strip">
+    <div class="tab top">fold out &amp; tape &mdash; base</div>
+    <svg class="panel flip" viewBox="0 0 300 300"><use href="#art-house-789"/></svg>
+    <svg class="panel" viewBox="0 0 300 300"><use href="#art-house-789"/></svg>
+    <div class="tab bottom">fold out &amp; tape &mdash; base</div>
+    <div class="crease"></div><div class="tag">HOUSE 789</div>
+  </div>
+</div>
+</body>
+</html>

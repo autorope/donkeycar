@@ -34,9 +34,25 @@ Rules of thumb:
   makes one quick to build.
 - Start with a straight line that dead-ends, then close it into a loop.
 
-Traffic features — stop signs, address plates — are printed on paper and stood up on
-card. Put them at the cross-tape end of a segment to begin with, so the follower has
-an obvious place to stop.
+### Traffic features
+
+Print [`assets/track-cards/track-cards.pdf`](../assets/track-cards/track-cards.pdf) —
+7 sheets giving 13 fold-over tents, each showing the same image on both faces so the
+car reads it the same whichever way it approaches:
+
+- **Signs** — stop sign, and a traffic light in red, yellow and green
+- **Obstacles to wait out** — child chasing a ball, adult with a stroller, elderly
+  man with a cane, dog
+- **Obstacles to drive around** — car, truck
+- **Addresses** — houses numbered 123, 456 and 789
+
+Print at 100%, on matte stock — **not glossy**. These exist to be read by a camera,
+and under overhead lights a glossy stop sign throws a specular highlight that blows
+out exactly the region a vision model needs. Assembly, paper weights and printer
+settings are in [`assets/track-cards/README.md`](../assets/track-cards/README.md).
+
+Put a feature at the cross-tape end of a segment to begin with, so the follower has an
+obvious place to stop.
 
 **Features are not configured anywhere.** The agent finds them in the camera image.
 That is the point of the exercise, and it means you can move a sign or drop an
