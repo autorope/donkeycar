@@ -185,6 +185,10 @@ module = [
     "donkeycar.parts.cv_calibration",
     "donkeycar.management.mcp",
     "donkeycar.management.calibrate_cv",
+    "donkeycar.mcp_agent.perception",
+    "donkeycar.mcp_agent.policies",
+    "donkeycar.mcp_agent.session",
+    "donkeycar.mcp_agent.runner",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

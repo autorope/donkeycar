@@ -369,9 +369,16 @@ class MCPBridge:
         return self.calibration_data.pixels_per_inch if self.calibration_data else None
 
     def inches_to_px(self, inches: float) -> int:
+        # Zero inches is zero pixels whatever the scale, so holding the centre
+        # lane must not require a calibration. Only a real offset does.
+        if inches == 0:
+            return 0
         ppi = self.pixels_per_inch()
         if not ppi:
-            raise ValueError("No pixels-per-inch calibration. Set CV_PIXELS_PER_INCH or run `donkey calibrate-cv`.")
+            raise ValueError(
+                "No pixels-per-inch calibration, so a lane offset cannot be converted. "
+                "Set CV_PIXELS_PER_INCH or run `donkey calibrate-cv`."
+            )
         return round(inches * ppi)
 
     def px_to_inches(self, px: int) -> float | None:

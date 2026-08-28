@@ -16,7 +16,7 @@ keeps following the tape line at 20 Hz.
 - [x] **M3** — `donkey mcp` supervisor
 - [x] **M4** — `track.yml` schema and loader
 - [x] **M5** — Camera calibration with live preview *(parallel to M2–M4)*
-- [ ] **M6** — Docs and the activity progression
+- [x] **M6** — Docs and the activity progression
 
 ---
 
@@ -559,7 +559,7 @@ invalidates it. And the board must lie flat on the floor — held vertically the
 
 ## M6 — Docs and the activity progression
 
-- [ ] **M6 done**
+- [x] **M6 done**
 
 **Depends on:** M2–M5.
 
@@ -568,17 +568,31 @@ double as the integration test suite for the tool surface.
 
 ### Acceptance criteria
 
-- [ ] Track construction guide: 1 in yellow tape, 3 ft segments, 1 ft perpendicular cross-ticks in red/blue,
+- [x] Track construction guide: 1 in yellow tape, 3 ft segments, 1 ft perpendicular cross-ticks in red/blue,
       centerline only, avoiding crossings and tight turns
-- [ ] Calibration walkthrough covering board placement, the preview overlay, and how to tell it went wrong
-- [ ] One runnable agent example for each of the five activities:
-  - [ ] Drive once around the track and stop
-  - [ ] Stop at stop signs for 5 seconds, then proceed
-  - [ ] Stop at obstacles until the obstacle is removed
-  - [ ] Drive around obstacles
-  - [ ] Stop at a numbered address until commanded to continue
-- [ ] Examples run against `MOCK` / `IMAGE_LIST` in CI, not only on hardware
-- [ ] Security posture documented: bind address, `TransportSecuritySettings`, and the bearer token
+- [x] Calibration walkthrough covering board placement, the preview overlay, and how to tell it went wrong
+- [x] One runnable agent example for each of the five activities:
+  - [x] Drive once around the track and stop
+  - [x] Stop at stop signs for 5 seconds, then proceed
+  - [x] Stop at obstacles until the obstacle is removed
+  - [x] Drive around obstacles
+  - [x] Stop at a numbered address until commanded to continue
+- [x] Examples run against `MOCK` / `IMAGE_LIST` in CI, not only on hardware
+- [x] Security posture documented: bind address, `TransportSecuritySettings`, and the bearer token
+
+### Implementation notes
+
+- **Perception is a seam, not an omission.** Recognising a stop sign is the agent's job and CI cannot do
+  it, so `Perception.observe(frame, state) -> list[Sighting]` is where a vision model plugs in. Everything
+  around it — the tool calls, the braking distance, the lane changes, the throttle ceiling — runs against a
+  real vehicle loop with a MOCK camera and scripted sightings. That is what makes the activities testable
+  at all.
+- **The activities are a class chain, because the progression is cumulative.** `AddressPolicy` inherits
+  obstacle avoidance, which inherits halting, which inherits stop signs, which inherits the lap.
+- **A bug the activities found:** `inches_to_px(0)` demanded a calibration, so an uncalibrated car could
+  not even hold the centre lane. Zero inches is zero pixels at any scale; only a real offset needs one.
+- The docs are checked against the code — a test asserts the tool names and activity names the guide lists
+  are the ones that exist.
 
 ---
 
