@@ -1,8 +1,6 @@
-# Assets
+# Calibration checkerboard
 
-Printable material for setting a car up.
-
-## Calibration checkerboard
+Printable board for `donkey calibrate-cv`.
 
 | File | Paper |
 | --- | --- |
@@ -41,7 +39,7 @@ donkey calibrate-cv --car ~/mycar
 
 and open `http://localhost:8892`. Slide the board until the blue scan band crosses it
 and the corners light up green, then press Capture. Full walkthrough in
-[`docs/mcp-server.md`](../docs/mcp-server.md).
+[`docs/mcp-server.md`](../../docs/mcp-server.md).
 
 ### A different board
 
@@ -55,7 +53,7 @@ donkey calibrate-cv --car ~/mycar --cols 7 --rows 5 --square-inches 1.5
 9 x 6 inner corners. To generate a matching PDF:
 
 ```
-python assets/generate_checkerboard.py --cols 7 --rows 5 --square-inches 1.5
+python assets/checkerboard/generate_checkerboard.py --cols 7 --rows 5 --square-inches 1.5
 ```
 
 A bigger board measured from further away gives a better homography, so use the

@@ -24,7 +24,7 @@ from donkeycar.parts.cv_calibration import (
 )
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(donkeycar.__file__)))
-ASSETS = os.path.join(REPO_ROOT, "assets")
+ASSETS = os.path.join(REPO_ROOT, "assets", "checkerboard")
 PDFS = [
     "calibration-checkerboard-9x6-1in-letter.pdf",
     "calibration-checkerboard-9x6-1in-a4.pdf",

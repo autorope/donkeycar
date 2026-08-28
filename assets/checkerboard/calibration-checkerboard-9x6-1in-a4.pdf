@@ -80,7 +80,7 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
 endobj
 7 0 obj
-<< /Title (Donkeycar CV calibration board) /Subject (pattern=9x6 inner corners; square=1in) /Creator (donkeycar assets/generate_checkerboard.py) >>
+<< /Title (Donkeycar CV calibration board) /Subject (pattern=9x6 inner corners; square=1in) /Creator (donkeycar assets/checkerboard/generate_checkerboard.py) >>
 endobj
 xref
 0 8
@@ -95,5 +95,5 @@ xref
 trailer
 << /Size 8 /Root 1 0 R /Info 7 0 R >>
 startxref
-2560
+2573
 %%EOF

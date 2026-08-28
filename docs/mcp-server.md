@@ -67,7 +67,7 @@ than reading as "never set". A silently wrong lane width is a car in the wall.
 A lane offset given in inches has to become a pixel offset, so the car needs to know
 how many pixels an inch is worth on the ground.
 
-Print the board first: [`assets/calibration-checkerboard-9x6-1in-letter.pdf`](../assets/calibration-checkerboard-9x6-1in-letter.pdf)
+Print the board first: [`assets/checkerboard/calibration-checkerboard-9x6-1in-letter.pdf`](../assets/checkerboard/calibration-checkerboard-9x6-1in-letter.pdf)
 (or the A4 version). **Print at 100% / actual size** — "Fit to Page" silently shrinks
 it, and a board printed at 96% gives a confident, wrong calibration rather than an
 error. Check with a ruler that 10 squares measure 10 inches, then mount it on

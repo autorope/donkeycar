@@ -12,7 +12,7 @@ donkeycar/parts/cv_calibration.py: 9x6 inner corners, which is 10x7 squares of
 one inch, so 10 x 7 inches of board. That fits US Letter and A4 in landscape
 with room for the printing instructions.
 
-    python assets/generate_checkerboard.py
+    python assets/checkerboard/generate_checkerboard.py
 
 Regenerate it if the pattern in cv_calibration.py ever changes; a test checks
 the two agree.
@@ -156,7 +156,7 @@ def build_pdf(board: Board, paper: str = "letter") -> bytes:
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
         (
             f"<< /Title (Donkeycar CV calibration board) /Subject ({_escape(subject)}) "
-            f"/Creator (donkeycar assets/generate_checkerboard.py) >>"
+            f"/Creator (donkeycar assets/checkerboard/generate_checkerboard.py) >>"
         ).encode("ascii"),
     ]
 
