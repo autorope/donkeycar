@@ -97,7 +97,10 @@ dev = [
     "pytest-cov",
     "responses",
     "mypy",
-    "black",
+    "ruff",
+]
+mcp = [
+    "mcp>=2.1,<3",
 ]
 torch = [
     "torch==2.11.*",
@@ -119,6 +122,46 @@ version = {attr = "donkeycar.__version__"}
 
 [tool.setuptools.packages.find]
 namespaces = true
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ANN", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"donkeycar/tests/*" = ["ANN"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+# Report only on the files handed to mypy. Imported legacy modules are still
+# read for type information but their own errors stay quiet -- the repo carries
+# ~257 pre-existing errors that are not this work's to fix.
+follow_imports = "silent"
+
+# Strict on new modules ONLY. Listing them explicitly is what keeps the
+# ~1,670 unannotated legacy functions out of the gate. Note that
+# `strict = true` here would NOT scope -- mypy applies it globally without
+# error -- so the individual flags are spelled out deliberately.
+[[tool.mypy.overrides]]
+module = [
+    "donkeycar.parts.mcp_server",
+    "donkeycar.parts.track_config",
+    "donkeycar.parts.cv_calibration",
+    "donkeycar.management.mcp",
+]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+disallow_any_generics = true
+warn_return_any = true
+no_implicit_optional = true
+check_untyped_defs = true
+strict_equality = true
+warn_unused_ignores = true
+extra_checks = true
 
 [tool.setuptools.package-data]
 "*" = ["*.html", "*.ini", "*.txt", "*.kv"]

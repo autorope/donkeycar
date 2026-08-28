@@ -1,0 +1,53 @@
+name: Lint and type check
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    name: Ruff and mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # full history so we can diff against the base branch
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Create environment
+        run: |
+          uv venv --python 3.12
+          uv pip install -e ".[dev]"
+
+      - name: Determine changed Python files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            git fetch --no-tags --depth=1 origin main || true
+            BASE="$(git merge-base origin/main HEAD || echo HEAD~1)"
+          fi
+          echo "Diffing against $BASE"
+          git diff --name-only --diff-filter=ACM "$BASE" HEAD -- '*.py' > changed.txt
+          cat changed.txt
+          echo "count=$(wc -l < changed.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+
+      # New code is held to the full bar. The legacy tree is not -- a repo-wide
+      # run reports thousands of pre-existing findings, and clearing those is
+      # separate work.
+      - name: Ruff check (changed files)
+        if: steps.changed.outputs.count != '0'
+        run: xargs -r .venv/bin/ruff check < changed.txt
+
+      - name: Ruff format check (changed files)
+        if: steps.changed.outputs.count != '0'
+        run: xargs -r .venv/bin/ruff format --check < changed.txt
+
+      # mypy checks the changed files only, for the same reason ruff does: the
+      # legacy tree carries ~257 pre-existing errors under even permissive
+      # settings. Strictness for new modules is scoped in pyproject.toml.
+      - name: Mypy (changed files)
+        if: steps.changed.outputs.count != '0'
+        run: xargs -r .venv/bin/mypy < changed.txt
