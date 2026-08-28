@@ -12,7 +12,7 @@ keeps following the tape line at 20 Hz.
 
 - [x] **M0** — Fix the toolchain, stand up the gate, split assembly from run
 - [x] **M1** — Lane offset in `LineFollower`
-- [ ] **M2** — `MCPBridge` part and the tool surface
+- [x] **M2** — `MCPBridge` part and the tool surface
 - [ ] **M3** — `donkey mcp` supervisor
 - [ ] **M4** — `track.yml` schema and loader
 - [ ] **M5** — Camera calibration with live preview *(parallel to M2–M4)*
@@ -343,7 +343,7 @@ Wire it in by config alone: `CV_CONTROLLER_INPUTS = ['cam/image_array', 'mcp/lan
 
 ## M2 — `MCPBridge` part and the tool surface
 
-- [ ] **M2 done**
+- [x] **M2 done**
 
 **Depends on:** M0, M1. **Delivers:** `drive --mcp`.
 
@@ -364,26 +364,47 @@ New file `donkeycar/parts/mcp_server.py`, shaped on `LocalWebController`: `MCPSe
   the same mechanism the web UI buttons use.
 - Port **8891** — 8887 is the web controller, 8890 is `WebFpv`.
 
+### Implementation notes
+
+- **Split into two modules.** `mcp_server.py` holds the part and never imports `mcp`, so a car without the
+  extra can still import and run it. `mcp_tools.py` holds the protocol surface and imports `mcp` freely.
+  That split is not just tidiness: the SDK resolves tool return annotations against *module* globals, so
+  types imported inside a function body fail to resolve at decoration time.
+- **A live client caught a bug 27 unit tests missed.** Returning `[dict, Image]` from a tool annotated
+  `-> list[Any]` fails to serialise: the SDK inspects the *annotation* to decide between content blocks and
+  structured JSON, and a loose one sends the image down the JSON path, where it raises at request time.
+  Fixed by annotating `-> list[TextContent | ImageContent]`. There are now tests that drive the server
+  through an in-process MCP client, because the bridge's own API cannot expose this class of fault.
+- **Validation errors were being swallowed.** Only a `ToolError`'s message reaches the client; every other
+  exception is reported as a bare "Error executing tool <name>". `set_control(lane="shoulder")` was telling
+  the agent nothing. Bridge `ValueError`s are now translated, so the agent gets
+  "Unknown lane 'shoulder'. Known lanes: ['center', 'left', 'right']".
+- **`disallow_untyped_calls` was dropped from the strict override set.** New modules necessarily call into
+  donkeycar's untyped legacy code, and keeping it would have meant a `type: ignore` on nearly every such
+  call. Verified that the remaining flags still reject an untyped def in these modules.
+- **Arming, not mode switching.** As predicted, the bridge cannot write `user/mode` (the web controller
+  rewrites it every loop), so `stop` gates throttle to zero and lets the CV controller keep steering.
+
 ### Acceptance criteria
 
-- [ ] Server is reachable over streamable HTTP; `tools/list` returns the 5 required tools plus whichever
+- [x] Server is reachable over streamable HTTP; `tools/list` returns the 5 required tools plus whichever
       recommended ones are implemented
-- [ ] `get_vehicle_state` returns a **decodable** JPEG plus throttle, steering, lane, offset, mode, and loop counter
-- [ ] The loop counter strictly increases between two calls while the loop runs, so the agent can detect a stale frame
-- [ ] `set_control(throttle=0)` drives the drivetrain input to `0` within 2 loop iterations
-- [ ] **Ceiling honored:** `set_control(throttle=v)` with `v` *above* the CV controller's current throttle
+- [x] `get_vehicle_state` returns a **decodable** JPEG plus throttle, steering, lane, offset, mode, and loop counter
+- [x] The loop counter strictly increases between two calls while the loop runs, so the agent can detect a stale frame
+- [x] `set_control(throttle=0)` drives the drivetrain input to `0` within 2 loop iterations
+- [x] **Ceiling honored:** `set_control(throttle=v)` with `v` *above* the CV controller's current throttle
       does not raise the applied throttle above the CV value
-- [ ] **CV authority preserved:** with the agent's ceiling set high, the controller's cornering slow-down
+- [x] **CV authority preserved:** with the agent's ceiling set high, the controller's cornering slow-down
       still occurs — proving the ceiling caps rather than replaces
-- [ ] `set_control(lane=...)` changes `mcp/lane_offset_px`, and `LineFollower` consumes it on the next iteration
-- [ ] **Watchdog:** with no agent command for longer than `MCP_COMMAND_TIMEOUT_S`, throttle returns to 0 automatically
-- [ ] **No torn reads:** many concurrent `get_vehicle_state` calls against a running loop never return a
+- [x] `set_control(lane=...)` changes `mcp/lane_offset_px`, and `LineFollower` consumes it on the next iteration
+- [x] **Watchdog:** with no agent command for longer than `MCP_COMMAND_TIMEOUT_S`, throttle returns to 0 automatically
+- [x] **No torn reads:** many concurrent `get_vehicle_state` calls against a running loop never return a
       frame paired with mismatched scalars
-- [ ] `python manage.py drive` *without* `--mcp` produces a part list identical to pre-M2 — the MCP part is
+- [x] `python manage.py drive` *without* `--mcp` produces a part list identical to pre-M2 — the MCP part is
       genuinely absent, not merely idle
-- [ ] Nothing on the server path writes to stdout
-- [ ] Tool handlers are unit-tested against a synthetic state object, with no `Vehicle` and no camera
-- [ ] `mypy` strict passes for `donkeycar.parts.mcp_server`
+- [x] Nothing on the server path writes to stdout
+- [x] Tool handlers are unit-tested against a synthetic state object, with no `Vehicle` and no camera
+- [x] `mypy` strict passes for `donkeycar.parts.mcp_server`
 
 ---
 

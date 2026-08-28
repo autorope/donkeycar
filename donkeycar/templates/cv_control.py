@@ -4,12 +4,13 @@
 Scripts to drive on autopilot using computer vision
 
 Usage:
-    manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)] [--myconfig=<filename>]
+    manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)] [--myconfig=<filename>] [--mcp]
 
 
 Options:
     -h --help          Show this screen.
     --js               Use physical joystick.
+    --mcp              Serve an MCP server so an AI agent can drive the car.
     --myconfig=filename     Specify myconfig file to use.
                             [default: myconfig.py]
 """
@@ -51,6 +52,7 @@ def build_vehicle(
     use_joystick: bool = False,
     camera_type: str = "single",
     meta: list[str] | None = None,
+    enable_mcp: bool = False,
 ) -> Vehicle:
     """
     Construct a working robotic vehicle from many parts, but do NOT start it.
@@ -140,6 +142,22 @@ def build_vehicle(
         cfg.CV_CONTROLLER_OUTPUTS,
         cfg.CV_CONTROLLER_CONDITION,
     )
+
+    #
+    # MCP bridge: carries agent intent into the loop and vehicle state back out.
+    # It sits between the CV controller and DriveMode so that it can cap
+    # pilot/throttle on the way through. Only added when asked for, so the
+    # default pipeline is exactly the pipeline it has always been.
+    #
+    if enable_mcp:
+        from donkeycar.parts.mcp_server import MCPBridge
+
+        V.add(
+            MCPBridge(cfg),
+            inputs=["cam/image_array", "cv/image_array", "pilot/steering", "pilot/throttle", "user/mode"],
+            outputs=["pilot/throttle", "mcp/lane_offset_px", "mcp/armed"],
+            threaded=True,
+        )
 
     recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
     V.add(recording_control, inputs=["user/mode", "recording"], outputs=["recording"])
@@ -248,13 +266,14 @@ def drive(
     use_joystick: bool = False,
     camera_type: str = "single",
     meta: list[str] | None = None,
+    enable_mcp: bool = False,
 ) -> Vehicle:
     """
     Assemble the vehicle and run it on the calling thread.
     This is the entry point used by `manage.py drive` and its behaviour is
     unchanged: it blocks until the loop stops or the user interrupts.
     """
-    V = build_vehicle(cfg, use_joystick=use_joystick, camera_type=camera_type, meta=meta)
+    V = build_vehicle(cfg, use_joystick=use_joystick, camera_type=camera_type, meta=meta, enable_mcp=enable_mcp)
 
     #
     # run the vehicle
@@ -312,4 +331,9 @@ if __name__ == "__main__":
     logging.basicConfig(level=numeric_level)
 
     if args["drive"]:
-        drive(cfg, use_joystick=args["--js"], camera_type=args["--camera"])
+        drive(
+            cfg,
+            use_joystick=args["--js"],
+            camera_type=args["--camera"],
+            enable_mcp=bool(args["--mcp"]),
+        )

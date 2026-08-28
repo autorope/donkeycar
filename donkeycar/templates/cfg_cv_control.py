@@ -613,3 +613,36 @@ DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DE
 INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
 DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
 
+
+#
+# MCP SERVER
+# Lets an AI agent read the car's state and set throttle and lane offset while
+# the CV autopilot keeps steering. Only started when the car is launched with
+# --mcp, or via `donkey mcp`.
+#
+MCP_SERVER_HOST = "127.0.0.1"   # bind address; set to the car's LAN address to reach it from a laptop
+MCP_SERVER_PORT = 8891          # 8887 is the web controller and 8890 is the FPV server
+MCP_COMMAND_TIMEOUT_S = 2.0     # zero the throttle if the agent goes quiet for this long
+
+#
+# TRACK
+# Geometry of the taped track. Traffic features (stop signs, addresses) are not
+# listed here: the agent discovers those visually from the camera frame.
+#
+TRACK_SEGMENT_LENGTH_INCHES = 36.0  # length of one tape segment (the stem of the T)
+TRACK_CROSS_LENGTH_INCHES = 12.0    # length of the perpendicular tick at the end of a segment
+TRACK_TAPE_WIDTH_INCHES = 1.0       # width of the tape itself
+TRACK_SEGMENT_COUNT = None          # how many segments make up the track, or None if unknown
+TRACK_CONTINUOUS = False            # True for a loop, False for a track that dead-ends
+TRACK_LANES_INCHES = {              # named lane offsets from the centreline, negative is left
+    "left": -12.0,
+    "center": 0.0,
+    "right": 12.0,
+}
+
+#
+# CV CALIBRATION
+# Pixels per inch on the ground at SCAN_Y. Run `donkey calibrate-cv` to measure
+# it, or set it by hand from a tape measure.
+#
+CV_PIXELS_PER_INCH = None

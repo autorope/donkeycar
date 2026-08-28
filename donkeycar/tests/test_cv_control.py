@@ -121,3 +121,38 @@ def test_missing_lane_offset_key_is_harmless(tmp_path):
         v.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=5)
     finally:
         v.stop()
+
+
+def test_mcp_bridge_present_when_enabled(tmp_path):
+    """--mcp adds the bridge between the CV controller and DriveMode."""
+    cfg = _headless_cfg(tmp_path)
+    v = cv_control.build_vehicle(cfg, enable_mcp=True)
+    try:
+        names = [e["part"].__class__.__name__ for e in v.parts]
+        assert "MCPBridge" in names
+
+        bridge_i = names.index("MCPBridge")
+        follower_i = names.index("LineFollower")
+        drivemode_i = names.index("DriveMode")
+        assert follower_i < bridge_i < drivemode_i, names
+
+        entry = v.parts[bridge_i]
+        assert entry["outputs"] == ["pilot/throttle", "mcp/lane_offset_px", "mcp/armed"]
+        assert entry["inputs"][0] == "cam/image_array"
+    finally:
+        v.stop()
+
+
+def test_mcp_pipeline_runs_and_holds_the_car_until_started(tmp_path):
+    """
+    End to end through the real vehicle loop: with the bridge added but never
+    started, throttle at the drivetrain must stay zero.
+    """
+    cfg = _headless_cfg(tmp_path, max_loops=8)
+    v = cv_control.build_vehicle(cfg, enable_mcp=True)
+    try:
+        v.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=8)
+        assert v.mem.get(["mcp/armed"]) == [False]
+        assert v.mem.get(["pilot/throttle"]) == [0.0]
+    finally:
+        v.stop()
