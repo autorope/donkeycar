@@ -72,8 +72,15 @@ nano = [
     "pandas==2.0.*",
 ]
 pc = [
-    "tensorflow==2.19.*",
-    "tf-keras==2.19.*",
+    # 2.20 is the first series with cp313 wheels, and requires-python allows
+    # 3.13. Pinned to 2.19 the [pc] extra simply cannot be installed there.
+    # 2.21 also has cp313 but regresses two tests, so 2.20 it is.
+    "tensorflow==2.20.*",
+    "tf-keras==2.20.*",
+    # keras.py imports TensorBoard directly. 2.20 still pulls it in as a
+    # transitive dep of tensorflow, but 2.21 unbundled it -- declare what we
+    # actually import rather than rely on that continuing.
+    "tensorboard==2.20.*",
     "matplotlib",
     "kivy",
     "kivy-garden.matplotlib",
@@ -82,9 +89,13 @@ pc = [
     "albumentations",
 ]
 macos = [
-    "tensorflow==2.19.*",
-    "tf-keras==2.19.*",
-    "tensorflow-metal==1.2.0",
+    "tensorflow==2.20.*",
+    "tf-keras==2.20.*",
+    "tensorboard==2.20.*",
+    # tensorflow-metal stops at 1.2.0, which has no cp313 wheel. Rather than
+    # cap the whole extra at 3.12, drop GPU acceleration on 3.13 and keep the
+    # rest installable.
+    "tensorflow-metal==1.2.0; python_version < '3.13'",
     "matplotlib",
     "kivy",
     "kivy-garden.matplotlib",

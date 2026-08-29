@@ -13,7 +13,9 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest, ubuntu-latest]
-        python-version: ['3.12']
+        # requires-python allows 3.12 and 3.13, so both are tested. Only 3.12
+        # was, which is how a [pc] extra that could not install on 3.13 shipped.
+        python-version: ['3.12', '3.13']
       fail-fast: false
     steps:
       - uses: actions/checkout@v4

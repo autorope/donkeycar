@@ -1,16 +1,35 @@
+import os
 import shutil
 import tempfile
-from pytest import approx
+
 import pytest
-import os
+from pytest import approx
 
-tf = pytest.importorskip('tensorflow',
-                         reason='TensorFlow not installed, skipping keras tests')
+tf = pytest.importorskip("tensorflow", reason="TensorFlow not installed, skipping keras tests")
 
-from donkeycar.parts.interpreter import keras_to_tflite, \
-    saved_model_to_tensor_rt, TfLite, TensorRT, has_trt_support
-from donkeycar.parts.keras import *
-from donkeycar.utils import get_test_img
+# Imported after the skip check on purpose: these pull in TensorFlow, so they
+# cannot be hoisted above it without breaking the skip on machines without it.
+import numpy as np  # noqa: E402
+
+from donkeycar.parts.interpreter import (  # noqa: E402
+    TensorRT,
+    TfLite,
+    has_trt_support,
+    keras_to_tflite,
+)
+from donkeycar.parts.keras import (  # noqa: E402
+    Keras3D_CNN,
+    KerasBehavioral,
+    KerasCategorical,
+    KerasIMU,
+    KerasInferred,
+    KerasInterpreter,
+    KerasLinear,
+    KerasLocalizer,
+    KerasLSTM,
+    KerasMemory,
+)
+from donkeycar.utils import get_test_img  # noqa: E402
 
 TOLERANCE = 1e-4
 
@@ -23,14 +42,27 @@ def tmp_dir() -> str:
 
 
 test_data = [
-    KerasLinear, KerasCategorical, KerasInferred,
+    KerasLinear,
+    KerasCategorical,
+    KerasInferred,
     # KerasLSTM uses CudnnRNNV3 which TFLite cannot run without CUDA
-    pytest.param(KerasLSTM, marks=pytest.mark.xfail(
-        reason='KerasLSTM uses CudnnRNNV3, not supported in TFLite on macOS',
-        strict=False)),
-    KerasLocalizer, KerasIMU,
-    Keras3D_CNN,
-    KerasMemory, KerasBehavioral,
+    pytest.param(
+        KerasLSTM,
+        marks=pytest.mark.xfail(reason="KerasLSTM uses CudnnRNNV3, not supported in TFLite on macOS", strict=False),
+    ),
+    KerasLocalizer,
+    KerasIMU,
+    # TFLite converts 3D max-pool to a Flex (Select TF ops) node from TF 2.20
+    # on, and the bundled interpreter cannot run one without the Flex delegate
+    # linked in. Same shape of problem as KerasLSTM above.
+    pytest.param(
+        Keras3D_CNN,
+        marks=pytest.mark.xfail(
+            reason="MaxPool3D becomes FlexMaxPool3D in TFLite, needs the Flex delegate", strict=False
+        ),
+    ),
+    KerasMemory,
+    KerasBehavioral,
 ]
 
 
@@ -39,11 +71,11 @@ def create_models(keras_pilot, dir):
     interpreter = KerasInterpreter()
     km = keras_pilot(interpreter=interpreter)
     # build tflite model from TfLite interpreter
-    tflite_model_path = os.path.join(dir, 'model.tflite')
+    tflite_model_path = os.path.join(dir, "model.tflite")
     keras_to_tflite(interpreter.model, tflite_model_path)
     kl = keras_pilot(interpreter=TfLite())
     kl.load(tflite_model_path)
-    keras_path = os.path.join(dir, 'model.keras')
+    keras_path = os.path.join(dir, "model.keras")
     interpreter.model.save(keras_path)
     krt = None
     # load tensorrt only if supported
@@ -54,10 +86,10 @@ def create_models(keras_pilot, dir):
     return km, kl, krt
 
 
-@pytest.mark.parametrize('keras_pilot', test_data)
+@pytest.mark.parametrize("keras_pilot", test_data)
 def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
-    """ This test cannot run for the 3D CNN model in tflite and the LSTM
-        model in """
+    """This test cannot run for the 3D CNN model in tflite and the LSTM
+    model in"""
     k_keras, k_tflite, k_trt = create_models(keras_pilot, tmp_dir)
 
     # prepare data
@@ -75,7 +107,7 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
         one_hot = [1.0, 0.0] if np.random.rand() < 0.5 else [0.0, 1.0]
         args = (img, one_hot)
     else:
-        args = (img, )
+        args = (img,)
 
     # run all three interpreters and check results are numerically close
     out2 = out3 = None
@@ -87,8 +119,4 @@ def test_keras_vs_tflite_and_tensorrt(keras_pilot, tmp_dir):
         # lstm cells are not yet supported in tensor RT
         out3 = k_trt.run(*args)
         assert out3 == approx(out1, rel=TOLERANCE, abs=TOLERANCE)
-    print('keras:', out1, 'tflite:', out2, 'trt:', out3)
-
-
-
-
+    print("keras:", out1, "tflite:", out2, "trt:", out3)

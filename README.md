@@ -119,7 +119,14 @@ Developer install (from a git clone):
 uv pip install -e ".[pi,dev]"
 ```
 
+Use the `pi` extra, not `pc`. It installs LiteRT for on-device inference rather
+than full TensorFlow, which is what you want on a Pi and is a much smaller
+install.
+
 ### Mac
+
+Python 3.12 or 3.13. Use 3.12 if you want GPU acceleration: `tensorflow-metal`
+has no 3.13 build, so on 3.13 it is skipped and TensorFlow runs on the CPU.
 
 ```zsh
 uv venv ~/.venvs/donkeycar --python 3.12
@@ -138,6 +145,8 @@ uv pip install -e ".[macos,dev]"
 ```
 
 ### PC (Linux/Windows)
+
+Python 3.12 or 3.13.
 
 ```zsh
 uv venv ~/.venvs/donkeycar --python 3.12

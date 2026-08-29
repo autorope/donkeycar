@@ -6,6 +6,7 @@ no camera and no server: the bridge is constructed with serve=False so that
 run_threaded and the agent-side methods can be driven by hand.
 """
 
+import importlib.util
 import json
 import threading
 import time
@@ -20,6 +21,15 @@ from donkeycar.parts.mcp_server import (
     resolve_throttle,
 )
 from donkeycar.parts.track_config import TrackConfigError
+
+# The bridge itself works without the `mcp` package -- that separation is the
+# point of splitting mcp_server from mcp_tools -- so only the tests that build a
+# server or drive a client need the extra. Installing [pc,dev] without [mcp]
+# should skip these, not fail them.
+requires_mcp = pytest.mark.skipif(
+    importlib.util.find_spec("mcp") is None,
+    reason="the `mcp` extra is not installed (pip install 'donkeycar[mcp]')",
+)
 
 
 class Cfg:
@@ -304,6 +314,7 @@ def test_track_config_carries_no_traffic_feature_list():
 # ----------------------------------------------------------------- server
 
 
+@requires_mcp
 def test_build_server_registers_the_tool_surface():
     bridge = make_bridge()
     server = bridge.build_server()
@@ -365,6 +376,7 @@ def _text(result):
     return "\n".join(b.text for b in result.content if type(b).__name__ == "TextContent")
 
 
+@requires_mcp
 def test_client_sees_the_whole_tool_surface():
     server = make_bridge().build_server()
     names = {t.name for t in _tools(server).tools}
@@ -379,6 +391,7 @@ def test_client_sees_the_whole_tool_surface():
     } <= names
 
 
+@requires_mcp
 def test_vehicle_state_returns_text_and_an_image_block():
     """
     The frame must come back as an image content block. Returning it inside a
@@ -400,6 +413,7 @@ def test_vehicle_state_returns_text_and_an_image_block():
     assert payload["loop_count"] >= 1
 
 
+@requires_mcp
 def test_vehicle_state_without_a_frame_is_still_valid():
     result = _call(make_bridge().build_server(), "get_vehicle_state")
     kinds = [type(b).__name__ for b in result.content]
@@ -407,6 +421,7 @@ def test_vehicle_state_without_a_frame_is_still_valid():
     assert result.is_error is not True
 
 
+@requires_mcp
 def test_start_and_stop_through_the_client():
     bridge = make_bridge()
     server = bridge.build_server()
@@ -418,6 +433,7 @@ def test_start_and_stop_through_the_client():
     assert bridge.is_armed() is False
 
 
+@requires_mcp
 def test_set_control_by_lane_name_through_the_client():
     bridge = make_bridge()
     server = bridge.build_server()
@@ -428,6 +444,7 @@ def test_set_control_by_lane_name_through_the_client():
     assert bridge.command().lane_offset_px == 48
 
 
+@requires_mcp
 def test_set_control_rejects_both_lane_and_inches():
     server = make_bridge().build_server()
     result = _call(server, "set_control", {"lane": "right", "lane_offset_inches": 3.0})
@@ -435,6 +452,7 @@ def test_set_control_rejects_both_lane_and_inches():
     assert "not both" in _text(result)
 
 
+@requires_mcp
 def test_unknown_lane_is_an_error_through_the_client():
     server = make_bridge().build_server()
     result = _call(server, "set_control", {"lane": "shoulder"})
@@ -442,6 +460,7 @@ def test_unknown_lane_is_an_error_through_the_client():
     assert "Unknown lane" in _text(result)
 
 
+@requires_mcp
 def test_track_config_through_the_client():
     server = make_bridge().build_server()
     payload = json.loads(_text(_call(server, "get_track_config")))
@@ -490,6 +509,7 @@ def test_malformed_track_file_refuses_to_start(tmp_path):
         MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
 
 
+@requires_mcp
 def test_track_from_a_file_reaches_the_client(tmp_path):
     (tmp_path / "track.yml").write_text(
         "name: Loop\nsegment_length_inches: 36\ncross_length_inches: 12\ncontinuous: true\nlanes: {center: 0}\n"
@@ -577,6 +597,7 @@ def test_stale_calibration_is_flagged_not_silently_used(tmp_path):
     assert any("scan_y" in reason for reason in payload["stale_reasons"])
 
 
+@requires_mcp
 def test_measure_ground_point_through_the_client(tmp_path):
     _write_calibration(tmp_path)
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
@@ -588,6 +609,7 @@ def test_measure_ground_point_through_the_client(tmp_path):
     assert "lateral_inches" in payload
 
 
+@requires_mcp
 def test_measure_without_calibration_tells_the_agent_what_to_do(tmp_path):
     class NoCal(Cfg):
         CV_PIXELS_PER_INCH = None
