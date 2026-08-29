@@ -123,6 +123,15 @@ Use the `pi` extra, not `pc`. It installs LiteRT for on-device inference rather
 than full TensorFlow, which is what you want on a Pi and is a much smaller
 install.
 
+To drive the car from an AI agent, add the `mcp` extra as well. It is separate
+because it is optional, so no platform extra pulls it in:
+
+```zsh
+uv pip install -e ".[pi,dev,mcp]"
+```
+
+See [`docs/mcp-server.md`](docs/mcp-server.md).
+
 ### Mac
 
 Python 3.12 or 3.13. Use 3.12 if you want GPU acceleration: `tensorflow-metal`

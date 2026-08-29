@@ -25,7 +25,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import donkeycar as dk
-from donkeycar.parts.mcp_server import MCPBridge
+from donkeycar.parts.mcp_server import MCP_INSTALL_HINT, MCPBridge, MCPNotInstalledError
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     from donkeycar.vehicle import Vehicle
@@ -177,7 +177,10 @@ class VehicleSupervisor:
 
     def serve(self, host: str, port: int) -> None:
         """Run the MCP server on this thread until interrupted."""
-        server = self.bridge.build_server()
+        try:
+            server = self.bridge.build_server()
+        except MCPNotInstalledError as exc:
+            raise SystemExit(str(exc)) from exc
         logger.info("MCP server listening on http://%s:%d/mcp", host, port)
         logger.info("The vehicle is not running yet; call the `start` tool to begin.")
         try:
@@ -196,6 +199,11 @@ def run(args: list[str]) -> None:
     parser.add_argument("--js", action="store_true", help="use a physical joystick as well")
     parser.add_argument("--camera", default="single", choices=["single", "stereo"])
     parsed = parser.parse_args(args)
+
+    # Fail before loading config or touching the camera: the whole command is
+    # the MCP server, so without the package there is nothing to run.
+    if importlib.util.find_spec("mcp") is None:
+        raise SystemExit(MCP_INSTALL_HINT)
 
     car_dir = os.path.expanduser(parsed.car) if parsed.car else os.getcwd()
     cfg = dk.load_config(config_path=os.path.join(car_dir, "config.py"), myconfig=parsed.myconfig)

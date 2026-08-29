@@ -8,6 +8,7 @@ run_threaded and the agent-side methods can be driven by hand.
 
 import importlib.util
 import json
+import sys
 import threading
 import time
 from typing import ClassVar
@@ -663,3 +664,54 @@ def test_controller_that_cannot_latch_is_reported_not_crashed(caplog):
     bridge.arm()
     assert bridge.is_armed() is True
     assert "WEB_INIT_MODE" in caplog.text
+
+
+# ------------------------------------------------- missing optional extra
+
+
+def test_missing_mcp_extra_gives_an_actionable_error(monkeypatch):
+    """
+    None of the platform extras pull in `mcp`, so `donkey mcp` on a freshly
+    installed car hits this. A bare ModuleNotFoundError names a package the
+    user has no reason to connect to a donkeycar extra.
+    """
+    import builtins
+
+    from donkeycar.parts.mcp_server import MCPNotInstalledError
+
+    real_import = builtins.__import__
+
+    def no_mcp(name, *args, **kwargs):
+        if name.split(".")[0] == "mcp":
+            raise ModuleNotFoundError(f"No module named {name.split('.')[0]!r}", name=name)
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.delitem(sys.modules, "donkeycar.parts.mcp_tools", raising=False)
+    monkeypatch.setattr(builtins, "__import__", no_mcp)
+
+    with pytest.raises(MCPNotInstalledError) as exc:
+        make_bridge().build_server()
+
+    message = str(exc.value)
+    assert "mcp" in message
+    assert "uv pip install" in message, "the error must say how to fix it"
+
+
+def test_a_real_error_inside_mcp_tools_is_not_disguised(monkeypatch):
+    """Only a missing `mcp` is translated; other failures surface as themselves."""
+    import builtins
+
+    real_import = builtins.__import__
+
+    def broken(name, *args, **kwargs):
+        if name == "donkeycar.parts.mcp_tools":
+            raise ImportError("cannot import name 'something'", name="donkeycar.parts.mcp_tools")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.delitem(sys.modules, "donkeycar.parts.mcp_tools", raising=False)
+    monkeypatch.setattr(builtins, "__import__", broken)
+
+    with pytest.raises(ImportError) as exc:
+        make_bridge().build_server()
+    assert "something" in str(exc.value)
+    assert "uv pip install" not in str(exc.value)

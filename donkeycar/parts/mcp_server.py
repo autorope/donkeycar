@@ -42,6 +42,20 @@ CarConfig = Any
 DEFAULT_MCP_PORT = 8891
 DEFAULT_COMMAND_TIMEOUT_S = 2.0
 
+MCP_INSTALL_HINT = (
+    "The MCP server needs the `mcp` package, which is not installed.\n"
+    "It is an optional extra, so none of the platform extras pull it in:\n"
+    "\n"
+    '    uv pip install -e ".[pi,dev,mcp]"     # on the car, from a clone\n'
+    '    uv pip install "donkeycar[pi,mcp]"     # on the car, from PyPI\n'
+    "\n"
+    "Swap `pi` for `pc` or `macos` off the car."
+)
+
+
+class MCPNotInstalledError(ImportError):
+    """The `mcp` extra is missing. The message says how to install it."""
+
 
 class ModeLatchingController(Protocol):
     """
@@ -248,11 +262,9 @@ class MCPBridge:
             return
         try:
             server = self.build_server()
-        except ImportError:
-            logger.error(
-                "The `mcp` package is not installed, so the MCP server cannot start. "
-                "Install it with: pip install 'donkeycar[mcp]'"
-            )
+        except MCPNotInstalledError as exc:
+            # The vehicle keeps driving; only the agent interface is missing.
+            logger.error("%s", exc)
             return
         logger.info("Starting MCP server on http://%s:%d/mcp", self.host, self.port)
         server.run(transport="streamable-http", host=self.host, port=self.port)
@@ -361,7 +373,14 @@ class MCPBridge:
         on a car that never installed the extra -- and it also lets the tool
         annotations resolve, which they cannot do from inside a function body.
         """
-        from donkeycar.parts.mcp_tools import build_server
+        try:
+            from donkeycar.parts.mcp_tools import build_server
+        except ImportError as exc:
+            # Only translate a missing `mcp`; anything else wrong inside
+            # mcp_tools should surface as itself rather than as bad advice.
+            if exc.name and exc.name.split(".")[0] != "mcp":
+                raise
+            raise MCPNotInstalledError(MCP_INSTALL_HINT) from exc
 
         server = build_server(self)
         self._server = server

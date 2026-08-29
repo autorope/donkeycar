@@ -127,7 +127,18 @@ those no longer match — but it cannot tell that someone knocked the camera.
 
 ## 4. Run the server
 
-Two ways, depending on who should own the process.
+First install the `mcp` extra. It is optional, so no platform extra pulls it in
+and a normal car install will not have it:
+
+```zsh
+uv pip install -e ".[pi,dev,mcp]"     # on the car, from a clone
+uv pip install "donkeycar[pi,mcp]"    # on the car, from PyPI
+```
+
+Swap `pi` for `pc` or `macos` off the car. Without it both commands below stop
+and tell you to install it.
+
+Two ways to run, depending on who should own the process.
 
 **Alongside a normally launched car.** The car runs as usual and serves MCP from
 inside the drive loop:
