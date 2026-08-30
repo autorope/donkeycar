@@ -165,7 +165,7 @@ agent calls `start`, and the car does not move until it also sets a throttle.
 | Tool | What it does |
 | --- | --- |
 | `get_track_config` | Segment geometry, how many, loop or dead-end, and the named lanes. Call once. |
-| `get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `loop_count` rises every loop, so compare it to tell a fresh frame from a stale one. |
+| `get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
 | `set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |
 | `start` / `stop` | Begin and end driving. |

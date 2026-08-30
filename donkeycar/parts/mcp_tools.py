@@ -19,6 +19,8 @@ from mcp.server.mcpserver import Image, MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ImageContent, TextContent
 
+import donkeycar
+
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     from donkeycar.parts.mcp_server import MCPBridge
 
@@ -50,7 +52,8 @@ def _agent_facing_errors() -> Iterator[None]:
 
 def build_server(bridge: MCPBridge) -> MCPServer:
     """Register the tool surface against a bridge and return the server."""
-    server = MCPServer(name="donkeycar", instructions=INSTRUCTIONS)
+    # Without an explicit version clients see an empty string in server_info.
+    server = MCPServer(name="donkeycar", version=donkeycar.__version__, instructions=INSTRUCTIONS)
 
     @server.tool()
     def get_track_config() -> dict[str, Any]:
@@ -69,19 +72,33 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         compare it across calls to tell a fresh frame from a stale one.
         """
         state = bridge.snapshot()
+        command = bridge.command()
+        live = bridge.state_is_live()
+
+        # What the agent has asked for is always current. What the vehicle
+        # reported is only current while the loop is turning -- after a stop the
+        # snapshot freezes, and reporting it verbatim told the agent the car was
+        # still armed and steering.
         payload: dict[str, Any] = {
-            "loop_count": state.loop_count,
-            "timestamp": state.timestamp,
-            "steering": state.steering,
-            "throttle": state.applied_throttle,
-            "autopilot_throttle": state.cv_throttle,
-            "lane_offset_px": state.lane_offset_px,
-            "lane_offset_inches": bridge.px_to_inches(state.lane_offset_px),
-            "user_mode": state.user_mode,
-            "armed": state.armed,
-            "watchdog_tripped": state.watchdog_tripped,
             "running": bridge.lifecycle.is_running(),
+            "live": live,
+            "armed": command.armed,
+            "commanded_throttle": command.throttle,
+            "lane_offset_px": command.lane_offset_px,
+            "lane_offset_inches": bridge.px_to_inches(command.lane_offset_px),
+            "loop_count": state.loop_count,
+            "timestamp": state.timestamp if live else None,
+            "steering": state.steering if live else None,
+            "throttle": state.applied_throttle if live else None,
+            "autopilot_throttle": state.cv_throttle if live else None,
+            "user_mode": state.user_mode if live else None,
+            "watchdog_tripped": state.watchdog_tripped if live else False,
         }
+        if not live:
+            payload["note"] = (
+                "The vehicle loop is not running, so there is no current camera frame, "
+                "steering or throttle. Call start."
+            )
         blocks: list[TextContent | ImageContent] = [
             TextContent(type="text", text=json.dumps(payload, indent=2, default=str))
         ]

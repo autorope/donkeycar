@@ -102,6 +102,10 @@ class VehicleState:
 
     loop_count: int = 0
     timestamp: float = 0.0
+    # Monotonic stamp of when the vehicle loop last wrote this. Used to tell a
+    # live snapshot from one frozen by a stopped loop; the wall clock above can
+    # jump and cannot be used for that.
+    monotonic: float = 0.0
     steering: float | None = None
     throttle: float | None = None
     cv_throttle: float | None = None
@@ -232,6 +236,7 @@ class MCPBridge:
             self._state = VehicleState(
                 loop_count=self._state.loop_count + 1,
                 timestamp=time.time(),
+                monotonic=now,
                 steering=pilot_steering,
                 throttle=pilot_throttle,
                 cv_throttle=pilot_throttle,
@@ -284,6 +289,22 @@ class MCPBridge:
     def command(self) -> AgentCommand:
         with self._lock:
             return self._command
+
+    def state_is_live(self) -> bool:
+        """
+        Is the vehicle loop still writing state?
+
+        Measured directly rather than inferred from the lifecycle: in part mode
+        the loop keeps turning while the bridge is disarmed, so "armed" says
+        nothing about whether the camera is still producing frames.
+        """
+        with self._lock:
+            written_at = self._state.monotonic
+        if not written_at:
+            return False
+        hz = float(getattr(self.cfg, "DRIVE_LOOP_HZ", 20) or 20)
+        # A few loop periods of slack, with a floor for very slow loops.
+        return (time.monotonic() - written_at) < max(1.0, 5.0 / hz)
 
     def attach_controller(self, controller: object) -> None:
         """
@@ -354,7 +375,12 @@ class MCPBridge:
         """
         Encode the latest frame. Done per request rather than per loop: at
         20 Hz most frames are never asked for.
+
+        Returns None once the loop has stopped. A stale frame is the most
+        dangerous stale field there is: an agent decides when to brake from it.
         """
+        if not self.state_is_live():
+            return None
         state = self.snapshot()
         if state.frame is None:
             return None

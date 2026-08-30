@@ -715,3 +715,100 @@ def test_a_real_error_inside_mcp_tools_is_not_disguised(monkeypatch):
         make_bridge().build_server()
     assert "something" in str(exc.value)
     assert "uv pip install" not in str(exc.value)
+
+
+# ------------------------------------------------------ identity & liveness
+
+
+@requires_mcp
+def test_server_reports_its_version():
+    """Clients see server_info.version; an empty string is no use to anyone."""
+    import donkeycar
+
+    server = make_bridge().build_server()
+    assert server.name == "donkeycar"
+    assert server.version == donkeycar.__version__
+    assert server.version
+
+
+def test_state_is_not_live_before_the_loop_runs():
+    assert make_bridge().state_is_live() is False
+
+
+def test_state_is_live_while_the_loop_turns():
+    bridge = make_bridge()
+    bridge.run_threaded(cam_img=frame(), pilot_throttle=0.3)
+    assert bridge.state_is_live() is True
+
+
+def test_state_goes_stale_when_the_loop_stops():
+    """
+    A snapshot frozen by a stopped loop must not read as current. This is
+    measured from the loop itself rather than from the lifecycle, because in
+    part mode the loop keeps turning while the bridge is disarmed.
+    """
+
+    class FastLoop(Cfg):
+        DRIVE_LOOP_HZ = 100  # 5 periods = 50ms, floored to 1s
+
+    bridge = MCPBridge(FastLoop(), serve=False)
+    bridge.run_threaded(cam_img=frame(), pilot_throttle=0.3)
+    assert bridge.state_is_live() is True
+    time.sleep(1.1)
+    assert bridge.state_is_live() is False
+
+
+def test_no_frame_is_served_once_the_loop_stops():
+    """A stale frame is the worst stale field: braking decisions come from it."""
+
+    class FastLoop(Cfg):
+        DRIVE_LOOP_HZ = 100
+
+    bridge = MCPBridge(FastLoop(), serve=False)
+    bridge.run_threaded(cam_img=frame())
+    assert bridge.frame_jpeg() is not None
+    time.sleep(1.1)
+    assert bridge.frame_jpeg() is None
+
+
+@requires_mcp
+def test_stopped_vehicle_reports_disarmed_not_frozen_state():
+    """
+    Reported live from the car: after `stop` the tool said armed=true with a
+    stale steering value, because it read the frozen snapshot rather than the
+    command.
+    """
+
+    class FastLoop(Cfg):
+        DRIVE_LOOP_HZ = 100
+
+    bridge = MCPBridge(FastLoop(), serve=False)
+    bridge.arm()
+    bridge.set_control(throttle=1.0)
+    bridge.run_threaded(cam_img=frame(), pilot_steering=-0.08, pilot_throttle=0.3)
+
+    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    assert payload["armed"] is True
+    assert payload["live"] is True
+    assert payload["steering"] == -0.08
+
+    bridge.disarm()
+    time.sleep(1.1)  # the loop has stopped writing
+
+    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    assert payload["armed"] is False, "command state must be current, not frozen"
+    assert payload["live"] is False
+    assert payload["steering"] is None, "a frozen steering value must not read as current"
+    assert payload["autopilot_throttle"] is None
+    assert payload["user_mode"] is None
+    assert "note" in payload
+
+
+@requires_mcp
+def test_command_state_stays_current_while_stopped():
+    """Lane and throttle intent survive a stop; they are the agent's, not the car's."""
+    bridge = make_bridge()
+    bridge.set_control(lane_offset_px=48)
+    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    assert payload["lane_offset_px"] == 48
+    assert payload["live"] is False
