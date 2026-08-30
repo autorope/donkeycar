@@ -93,7 +93,17 @@ def build_server(bridge: MCPBridge) -> MCPServer:
             "autopilot_throttle": state.cv_throttle if live else None,
             "user_mode": state.user_mode if live else None,
             "watchdog_tripped": state.watchdog_tripped if live else False,
+            # How well the autopilot can see the line. A hard steering value
+            # means something very different depending on this: following a
+            # bend, or driving blind at the lock it last held.
+            "line_detected": state.line_detected if live else None,
+            "line_confidence": state.line_confidence if live else None,
         }
+        if live and state.line_detected is False:
+            payload["warning"] = (
+                "The autopilot cannot see the line. Steering is decaying toward centre, "
+                "but the car is driving blind -- consider set_control(throttle=0)."
+            )
         if not live:
             payload["note"] = (
                 "The vehicle loop is not running, so there is no current camera frame, "

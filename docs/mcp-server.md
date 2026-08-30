@@ -219,6 +219,14 @@ those needs a real restart, and the server logs a warning saying so. Pass
 | `emergency_stop` | Zero the throttle now, without touching the lifecycle. |
 | `get_calibration` | Scale, homography, and whether either has gone stale. |
 
+`get_vehicle_state` also reports `line_detected` and `line_confidence`. Watch
+them: a hard steering value means something entirely different depending on
+whether the autopilot can see the line. Following a bend and driving blind at the
+lock it last held look identical otherwise &mdash; on a real track that difference
+put a car off the course. When the line is lost the payload carries a `warning`
+and the follower decays steering back toward centre, but it keeps moving until
+you set the throttle to 0.
+
 ### Throttle is a ceiling, not a command
 
 `set_control(throttle=0.8)` does **not** drive at 0.8. The autopilot computes its own

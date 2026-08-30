@@ -139,6 +139,10 @@ def test_mcp_bridge_present_when_enabled(tmp_path):
         entry = v.parts[bridge_i]
         assert entry["outputs"] == ["pilot/throttle", "mcp/lane_offset_px", "mcp/armed"]
         assert entry["inputs"][0] == "cam/image_array"
+        # line health has to reach the bridge, or an agent cannot tell a bend
+        # from a lost line
+        assert "cv/confidence" in entry["inputs"]
+        assert "cv/line_detected" in entry["inputs"]
     finally:
         v.stop()
 

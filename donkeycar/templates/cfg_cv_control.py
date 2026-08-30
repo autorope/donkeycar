@@ -556,7 +556,11 @@ CV_CONTROLLER_CLASS = "LineFollower"
 # is not, the key is simply absent from vehicle memory and resolves to None,
 # which makes the controller hold the line itself as it always has.
 CV_CONTROLLER_INPUTS = ['cam/image_array', 'mcp/lane_offset_px']
-CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array']
+# cv/confidence and cv/line_detected let an agent tell a confident lock from a
+# lost line. Steering looks identical in both cases, which is how a car that had
+# lost the line kept driving at full lock without anything noticing.
+CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array',
+                         'cv/confidence', 'cv/line_detected']
 CV_CONTROLLER_CONDITION = "run_pilot"
 
 # LineFollower - line color and detection area
@@ -590,6 +594,11 @@ THROTTLE_STEP = 0.05  # how much to change throttle when off the line
 
 # These three PID constants are crucial to the way the car drives. If you are tuning them
 # start by setting the others zero and focus on first Kp, then Kd, and then Ki.
+# How much steering to keep on each loop where the line cannot be seen. Set 1.0
+# to hold the last command, which is what the code used to do -- a car that lost
+# the line then kept turning at whatever lock it had.
+LOST_LINE_STEERING_DECAY = 0.85
+
 PID_P = -0.01         # proportional mult for PID path follower
 PID_I = 0.000         # integral mult for PID path follower
 PID_D = -0.0001       # differential mult for PID path follower

@@ -113,6 +113,11 @@ class VehicleState:
     lane_offset_px: int = 0
     user_mode: str | None = None
     armed: bool = False
+    # From the CV controller: how strongly it can see the line, and whether that
+    # clears its threshold. Without these an agent cannot distinguish a car
+    # holding a hard turn because the road turns from one that has lost the line.
+    line_confidence: float | None = None
+    line_detected: bool | None = None
     watchdog_tripped: bool = False
     frame: np.ndarray | None = field(default=None, repr=False)
 
@@ -203,6 +208,8 @@ class MCPBridge:
         pilot_steering: float | None = None,
         pilot_throttle: float | None = None,
         user_mode: str | None = None,
+        line_confidence: float | None = None,
+        line_detected: bool | None = None,
     ) -> tuple[float, int, bool]:
         """
         Called once per vehicle loop. Publishes a state snapshot for the agent
@@ -244,6 +251,8 @@ class MCPBridge:
                 lane_offset_px=command.lane_offset_px,
                 user_mode=user_mode,
                 armed=command.armed,
+                line_confidence=line_confidence,
+                line_detected=line_detected,
                 watchdog_tripped=tripped,
                 # The pilot image carries the CV overlay when one is enabled.
                 frame=cv_img if cv_img is not None else cam_img,
@@ -258,8 +267,12 @@ class MCPBridge:
         pilot_steering: float | None = None,
         pilot_throttle: float | None = None,
         user_mode: str | None = None,
+        line_confidence: float | None = None,
+        line_detected: bool | None = None,
     ) -> tuple[float, int, bool]:
-        return self.run_threaded(cam_img, cv_img, pilot_steering, pilot_throttle, user_mode)
+        return self.run_threaded(
+            cam_img, cv_img, pilot_steering, pilot_throttle, user_mode, line_confidence, line_detected
+        )
 
     def update(self) -> None:
         """Thread body: serve MCP until shutdown."""

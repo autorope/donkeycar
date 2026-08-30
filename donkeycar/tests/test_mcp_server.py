@@ -812,3 +812,57 @@ def test_command_state_stays_current_while_stopped():
     payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
     assert payload["lane_offset_px"] == 48
     assert payload["live"] is False
+
+
+# ------------------------------------------------------------- line health
+
+
+def test_line_confidence_reaches_the_snapshot():
+    bridge = make_bridge()
+    bridge.run_threaded(cam_img=frame(), pilot_throttle=0.3, line_confidence=1234.0, line_detected=True)
+    state = bridge.snapshot()
+    assert state.line_confidence == 1234.0
+    assert state.line_detected is True
+
+
+@requires_mcp
+def test_a_lost_line_is_reported_with_a_warning():
+    """
+    Steering alone cannot distinguish following a bend from driving blind at
+    the lock last held. On a real track that difference put the car into the
+    furniture, so the tool says so explicitly.
+    """
+    bridge = make_bridge()
+    bridge.arm()
+    bridge.run_threaded(
+        cam_img=frame(), pilot_steering=0.9, pilot_throttle=0.15, line_confidence=0.0, line_detected=False
+    )
+
+    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    assert payload["line_detected"] is False
+    assert payload["line_confidence"] == 0.0
+    assert "warning" in payload
+    assert "cannot see the line" in payload["warning"]
+
+
+@requires_mcp
+def test_no_warning_while_the_line_is_visible():
+    bridge = make_bridge()
+    bridge.arm()
+    bridge.run_threaded(cam_img=frame(), pilot_throttle=0.3, line_confidence=5000.0, line_detected=True)
+    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    assert payload["line_detected"] is True
+    assert "warning" not in payload
+
+
+def test_line_health_is_absent_rather_than_stale_when_stopped():
+    """Like the rest of the car-derived fields, it must not outlive the loop."""
+
+    class FastLoop(Cfg):
+        DRIVE_LOOP_HZ = 100
+
+    bridge = MCPBridge(FastLoop(), serve=False)
+    bridge.run_threaded(cam_img=frame(), line_confidence=900.0, line_detected=True)
+    assert bridge.snapshot().line_detected is True
+    time.sleep(1.1)
+    assert bridge.state_is_live() is False

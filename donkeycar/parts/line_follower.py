@@ -54,6 +54,18 @@ class LineFollower:
         # offset. Kept as state so the overlay can show what is being chased.
         self.effective_target_pixel = self.target_pixel
 
+        # How much of the last steering command to keep on each loop where the
+        # line cannot be seen. 1.0 restores the old behaviour of holding the
+        # last value indefinitely, which drives a blind car in a circle at
+        # whatever lock it happened to be at when it lost the line.
+        self.lost_line_decay = float(getattr(cfg, "LOST_LINE_STEERING_DECAY", 0.85))
+
+        # Published so an agent can tell a confident lock from a lost line;
+        # the steering value alone looks identical in both cases.
+        self.confidence = 0.0
+        self.line_detected = False
+        self.loops_since_line = 0
+
         self.pid_st = pid
 
     def get_i_color(self, cam_img: np.ndarray) -> tuple[int, int, np.ndarray]:
@@ -93,7 +105,7 @@ class LineFollower:
 
     def run(
         self, cam_img: np.ndarray | None, lane_offset_px: int | None = None
-    ) -> tuple[float, float, np.ndarray | None]:
+    ) -> tuple[float, float, np.ndarray | None, float, bool]:
         """
         main runloop of the CV controller
 
@@ -108,9 +120,9 @@ class LineFollower:
         is just passed-through untouched.
         """
         if cam_img is None:
-            # Three outputs, matching CV_CONTROLLER_OUTPUTS. This previously
-            # returned a fourth element, which left cv/image_array set to False.
-            return 0.0, 0.0, None
+            self.confidence = 0.0
+            self.line_detected = False
+            return 0.0, 0.0, None, 0.0, False
 
         max_yellow, confidence, mask = self.get_i_color(cam_img)
 
@@ -129,7 +141,11 @@ class LineFollower:
             # this is the target of our steering PID controller
             self.pid_st.setpoint = self.effective_target_pixel
 
+        self.confidence = float(confidence)
+        self.line_detected = bool(confidence >= self.confidence_threshold)
+
         if confidence >= self.confidence_threshold:
+            self.loops_since_line = 0
             # invoke the controller with the current yellow line position
             # get the new steering value as it chases the ideal.
             # The PID returns None until it has produced an output, so hold the
@@ -152,13 +168,27 @@ class LineFollower:
                 if self.throttle > self.throttle_max:
                     self.throttle = self.throttle_max
         else:
-            logger.info(f"No line detected: confidence {confidence} < {self.confidence_threshold}")
+            # Straighten up rather than hold the last command. Holding meant a
+            # car that lost the line kept driving at whatever lock it had --
+            # observed on a real track as a full-lock turn off the course into
+            # the furniture. Driving straight while blind is a great deal less
+            # bad than circling.
+            self.steering *= self.lost_line_decay
+            if abs(self.steering) < 0.01:
+                self.steering = 0.0
+            self.loops_since_line += 1
+            logger.info(
+                "No line detected: confidence %s < %s (steering decayed to %.3f)",
+                confidence,
+                self.confidence_threshold,
+                self.steering,
+            )
 
         # show some diagnostics
         if self.overlay_image:
             cam_img = self.overlay_display(cam_img, mask, max_yellow, confidence)
 
-        return self.steering, self.throttle, cam_img
+        return self.steering, self.throttle, cam_img, self.confidence, self.line_detected
 
     def overlay_display(self, cam_img: np.ndarray, mask: np.ndarray, max_yellow: int, confidense: float) -> np.ndarray:
         """
@@ -177,6 +207,8 @@ class LineFollower:
         display_str.append(f"I YELLOW:{max_yellow:d}")
         display_str.append(f"CONF:{confidense:.2f}")
         display_str.append(f"TARGET:{self.effective_target_pixel}")
+        if not self.line_detected:
+            display_str.append(f"LINE LOST x{self.loops_since_line}")
 
         y = 10
         x = 10

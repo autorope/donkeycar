@@ -165,7 +165,15 @@ def build_vehicle(
         bridge.attach_controller(ctr)
         V.add(
             bridge,
-            inputs=["cam/image_array", "cv/image_array", "pilot/steering", "pilot/throttle", "user/mode"],
+            inputs=[
+                "cam/image_array",
+                "cv/image_array",
+                "pilot/steering",
+                "pilot/throttle",
+                "user/mode",
+                "cv/confidence",
+                "cv/line_detected",
+            ],
             outputs=["pilot/throttle", "mcp/lane_offset_px", "mcp/armed"],
             threaded=True,
         )

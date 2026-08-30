@@ -170,16 +170,16 @@ def test_throttle_ramp_uses_the_effective_target():
     assert lf2.throttle < Cfg.THROTTLE_MAX
 
 
-def test_none_image_returns_three_outputs():
+def test_none_image_returns_the_declared_outputs():
     """
-    CV_CONTROLLER_OUTPUTS declares three names, so run() must return three
-    values. It previously returned four when handed no image, which left
+    run() must return exactly what CV_CONTROLLER_OUTPUTS declares. It once
+    returned a four-tuple here against three declared names, which left
     cv/image_array set to False.
     """
     lf = make_follower()
     out = lf.run(None)
-    assert len(out) == 3
-    assert out == (0.0, 0.0, None)
+    assert len(out) == 5
+    assert out == (0.0, 0.0, None, 0.0, False)
 
 
 def test_steering_survives_a_pid_that_returns_none():
@@ -191,7 +191,7 @@ def test_steering_survives_a_pid_that_returns_none():
     lf.pid_st.auto_mode = False  # forces __call__ to return _last_output, i.e. None
     assert lf.pid_st(0) is None
     img = make_image(80)
-    steering, throttle, _ = lf.run(img, 0)
+    steering, throttle, _img, _conf, _seen = lf.run(img, 0)
     assert steering == 0.0
     assert isinstance(steering, float)
     assert isinstance(throttle, float)
@@ -202,6 +202,102 @@ def test_overlay_runs_and_preserves_shape():
     cfg.OVERLAY_IMAGE = True
     lf = make_follower(cfg=cfg)
     img = make_image(80)
-    _, _, out = lf.run(img, 15)
+    _, _, out, _conf, _seen = lf.run(img, 15)
     assert out is not None
     assert out.shape == img.shape
+
+
+# ------------------------------------------------ losing sight of the line
+
+
+def blank_image(width=IMAGE_W, height=IMAGE_H):
+    """No tape anywhere."""
+    return np.zeros((height, width, 3), dtype=np.uint8)
+
+
+def test_reports_confidence_and_detection():
+    """
+    An agent cannot tell a confident lock from a lost line by steering alone --
+    both look like a number. These are what make the difference visible.
+    """
+    lf = make_follower()
+    _, _, _, conf, seen = lf.run(make_image(80))
+    assert seen is True
+    assert conf > 0
+
+    _, _, _, conf, seen = lf.run(blank_image())
+    assert seen is False
+    assert conf < Cfg.CONFIDENCE_THRESHOLD
+
+
+def test_steering_decays_toward_centre_when_the_line_is_lost():
+    """
+    Observed on a real track: the car lost the line at full right lock, held
+    that steering, and drove off the course into the furniture. Holding the last
+    command means driving blind in a circle.
+    """
+    lf = make_follower()
+    lf.steering = 0.9  # as if mid-turn when the line vanished
+
+    seen = [lf.run(blank_image())[0] for _ in range(5)]
+    assert seen[0] < 0.9, "steering must start coming back toward centre"
+    assert seen == sorted(seen, reverse=True), "and keep decaying"
+    assert seen[-1] < 0.5
+
+
+def test_steering_reaches_centre_and_stays():
+    lf = make_follower()
+    lf.steering = 0.9
+    for _ in range(60):
+        lf.run(blank_image())
+    assert lf.steering == 0.0
+
+
+def test_decay_of_one_restores_the_old_hold_behaviour():
+    """Left configurable so anyone relying on the old behaviour can keep it."""
+
+    class HoldCfg(Cfg):
+        LOST_LINE_STEERING_DECAY = 1.0
+
+    lf = make_follower(cfg=HoldCfg())
+    lf.steering = 0.9
+    for _ in range(5):
+        lf.run(blank_image())
+    assert lf.steering == pytest.approx(0.9)
+
+
+def test_lost_loop_counter_resets_when_the_line_returns():
+    lf = make_follower()
+    for _ in range(3):
+        lf.run(blank_image())
+    assert lf.loops_since_line == 3
+
+    lf.run(make_image(80))
+    assert lf.loops_since_line == 0
+    assert lf.line_detected is True
+
+
+def test_a_seen_line_still_steers_normally():
+    """The decay must not touch the normal path."""
+    lf = make_follower()
+    img = make_image(Cfg.TARGET_PIXEL)
+    lf.run(img, 30)
+    first = lf.steering
+    lf.run(img, 30)
+    assert lf.steering == pytest.approx(first, abs=0.2)
+    assert lf.line_detected is True
+
+
+def test_older_configs_declaring_three_outputs_still_work():
+    """
+    Memory.put assigns by position, so a config that names only the original
+    three outputs keeps working against the five returned.
+    """
+    from donkeycar.memory import Memory
+
+    lf = make_follower()
+    outputs = lf.run(make_image(80))
+    mem = Memory()
+    mem.put(["pilot/steering", "pilot/throttle", "cv/image_array"], outputs)
+    assert mem.get(["pilot/steering"])[0] == outputs[0]
+    assert mem.get(["cv/image_array"])[0] is outputs[2]
