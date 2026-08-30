@@ -196,6 +196,7 @@ module = [
     "donkeycar.parts.cv_calibration",
     "donkeycar.management.mcp",
     "donkeycar.management.calibrate_cv",
+    "donkeycar.management.calibrate_color",
     "donkeycar.mcp_agent.perception",
     "donkeycar.mcp_agent.policies",
     "donkeycar.mcp_agent.session",

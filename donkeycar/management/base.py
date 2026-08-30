@@ -622,6 +622,17 @@ class CalibrateCv(BaseCommand):
         run_calibrate_cv(args)
 
 
+class CalibrateColor(BaseCommand):
+    """
+    Work out the HSV window that isolates the tape, from frames taken by your
+    own car. See donkeycar/management/calibrate_color.py.
+    """
+
+    def run(self, args):
+        from donkeycar.management.calibrate_color import run as run_calibrate_color
+        run_calibrate_color(args)
+
+
 class Gui(BaseCommand):
     def run(self, args):
         from donkeycar.management.ui.ui import main
@@ -647,6 +658,7 @@ def execute_from_command_line():
         'ui': Gui,
         'mcp': Mcp,
         'calibrate-cv': CalibrateCv,
+        'calibrate-color': CalibrateColor,
     }
 
     args = sys.argv[:]

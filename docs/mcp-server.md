@@ -121,6 +121,39 @@ donkey calibrate-cv --car ~/mycar --tape-separation-inches 10
 That gives the scale but no homography, so lane changes work and distance
 measurement does not.
 
+### Tuning the line colour
+
+The follower finds the tape by thresholding hue, saturation and value, and the
+default window is wide: hue 0&ndash;50 from saturation 50 up. That admits skin,
+denim, ceiling lights and pale flooring, so a person walking past can capture the
+histogram peak and swing the steering to full lock.
+
+Save a few frames from your own car in your own lighting, then:
+
+```
+donkey calibrate-color --images "~/frames/*.jpg" --compare
+```
+
+It measures the tape's actual colour, proposes a window around it, and &mdash; the
+part that matters &mdash; checks that window against every frame you gave it:
+
+```
+  frame-102058.jpg   peak col 150  coverage  1.7%  concentration 100.0%
+  frame-102304.jpg   peak col 150  coverage  1.4%  concentration 100.0%
+```
+
+**Concentration is the number to watch**, not coverage. A wide window matches
+more of the band but spreads it, and the histogram peak then lands wherever the
+lighting is brightest. A tight window matches less and clusters it on the tape.
+
+Point `--region X,Y,W,H` at the tape if the automatic search picks the wrong
+thing, or `--pick` to drag a box.
+
+Capture the frames with `OVERLAY_IMAGE = False`. With it on, the scan band in the
+saved image is the follower's own mask rather than the scene, and calibrating
+from that measures the previous answer. The command detects and excludes such
+rows, and says so, but a clean frame is better.
+
 **Recalibrate whenever the camera moves.** The calibration records the `SCAN_Y`,
 image size and camera type it was taken with, and `get_calibration` reports when
 those no longer match — but it cannot tell that someone knocked the camera.
