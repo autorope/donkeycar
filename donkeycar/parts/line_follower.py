@@ -67,6 +67,15 @@ class LineFollower:
         self.loops_since_line = 0
 
         self.pid_st = pid
+        # Steering is a -1..1 command, so the controller that produces it should
+        # be limited to that. Without this the PID keeps integrating while the
+        # servo is already at full lock: observed on a real car as a reported
+        # steering of 1.28, which the drivetrain silently clamped, and which
+        # then took longer to unwind than it should have. simple_pid also
+        # freezes the integral term while saturated, which is the anti-windup we
+        # actually want.
+        if getattr(self.pid_st, "output_limits", None) in (None, (None, None)):
+            self.pid_st.output_limits = (-1.0, 1.0)
 
     def get_i_color(self, cam_img: np.ndarray) -> tuple[int, float, np.ndarray]:
         """
@@ -164,7 +173,9 @@ class LineFollower:
             # previous steering rather than propagating None downstream.
             control = self.pid_st(max_yellow)
             if control is not None:
-                self.steering = float(control)
+                # Belt and braces: output_limits should already have done this,
+                # but a caller may pass a PID with its own limits configured.
+                self.steering = max(-1.0, min(1.0, float(control)))
 
             # slow down linearly when away from ideal, and speed up when close
             if abs(max_yellow - self.effective_target_pixel) > self.target_threshold:

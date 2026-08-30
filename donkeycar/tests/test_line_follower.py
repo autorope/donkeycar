@@ -377,3 +377,63 @@ def test_confidence_is_independent_of_image_width():
         img[SCAN_Y : SCAN_Y + half, width // 2 - 5 : width // 2 + 5] = (255, 255, 0)
         _, conf, _ = lf.get_i_color(img)
         assert conf == pytest.approx(0.5, abs=0.05), width
+
+
+# ------------------------------------------------------------ steering limits
+
+
+def test_steering_never_leaves_the_commanded_range():
+    """
+    Steering is a -1..1 command. Observed on a real car as 1.28, which the
+    drivetrain silently clamped -- so the agent was told a number the actuator
+    could not deliver.
+    """
+    lf = make_follower()
+    # a line hard against one edge, far from the target
+    img = make_image(IMAGE_W - 3)
+    for _ in range(30):
+        steering, _, _, _, _ = lf.run(img)
+        assert -1.0 <= steering <= 1.0, steering
+
+
+def test_the_pid_is_given_output_limits():
+    lf = make_follower()
+    assert lf.pid_st.output_limits == (-1.0, 1.0)
+
+
+def test_limits_the_caller_configured_are_left_alone():
+    """A caller supplying its own limits knows something we do not."""
+    pid = PID(Kp=-0.01, Ki=0.0, Kd=0.0, output_limits=(-0.5, 0.5))
+    lf = LineFollower(pid, Cfg())
+    assert lf.pid_st.output_limits == (-0.5, 0.5)
+
+
+def test_output_limits_matter_only_when_there_is_an_integral():
+    """
+    The clamp is what this change actually buys with the stock config, since
+    donkeycar ships PID_I = 0.000 and there is then no integral to wind up.
+    The limits are still worth setting: they are anti-windup for anyone who
+    does configure PID_I, and they stop the PID reporting a command the servo
+    cannot deliver.
+
+    Kp is deliberately large here: with the test frame only IMAGE_W wide, the
+    stock -0.01 cannot produce an output beyond 0.8, so it would never saturate
+    and the test would prove nothing.
+    """
+    # sample_time=None so every call recomputes; otherwise simple_pid returns
+    # its cached output for calls inside one sample window and nothing moves.
+    pid = PID(Kp=-0.05, Ki=0.0, Kd=0.0, sample_time=None)
+    lf = LineFollower(pid, Cfg())
+    assert lf.pid_st.output_limits == (-1.0, 1.0)
+
+    hard_over = make_image(IMAGE_W - 3)
+    for _ in range(40):
+        steering, _, _, _, _ = lf.run(hard_over)
+        assert -1.0 <= steering <= 1.0
+
+    assert steering == pytest.approx(1.0), "expected the controller to be saturated"
+
+    # back on target it should come straight back, not grind down from a
+    # wound-up accumulator
+    first = lf.run(make_image(Cfg.TARGET_PIXEL))[0]
+    assert abs(first) < 0.2, f"recovery started at {first}"
