@@ -437,3 +437,59 @@ def test_output_limits_matter_only_when_there_is_an_integral():
     # wound-up accumulator
     first = lf.run(make_image(Cfg.TARGET_PIXEL))[0]
     assert abs(first) < 0.2, f"recovery started at {first}"
+
+
+# --------------------------------------------------- auto-latched target pixel
+
+
+class AutoCfg(Cfg):
+    """TARGET_PIXEL unset, so the follower latches it from what it sees."""
+
+    TARGET_PIXEL = None
+
+
+def make_speck_image(column, lit_rows=1):
+    """
+    A frame with too little yellow to count as a line: a short stub, the way a
+    reflection or a distant scrap of tape shows up in the scan band.
+
+    One row of ten scores 0.10 against the 0.15 gate -- deliberately close, and
+    the same margin the real car produced when it latched onto a reflection.
+    """
+    img = np.zeros((IMAGE_H, IMAGE_W, 3), dtype=np.uint8)
+    img[SCAN_Y : SCAN_Y + lit_rows, column : column + 3] = (255, 255, 0)
+    return img
+
+
+def test_a_speck_does_not_become_the_target():
+    """
+    Regression: the target used to be latched from the first frame outright,
+    before the confidence gate had any say. A car started while looking away
+    from the tape anchored itself to the argmax of an empty scan band -- seen on
+    a real car as a reflection at column 18, scored 0.087 against a threshold of
+    0.15, becoming the place it spent the rest of the run steering toward.
+    """
+    lf = make_follower(AutoCfg())
+    _steering, _throttle, _img, confidence, detected = lf.run(make_speck_image(18))
+
+    assert not detected, "the speck should not read as a line, or this proves nothing"
+    assert confidence < AutoCfg.CONFIDENCE_THRESHOLD
+    assert lf.target_pixel is None, "an unconfident frame must not latch the target"
+    assert lf.effective_target_pixel == IMAGE_W // 2, "with no line yet, steer to the middle"
+
+
+def test_the_target_latches_on_the_first_real_line():
+    lf = make_follower(AutoCfg())
+    lf.run(make_speck_image(18))
+    assert lf.target_pixel is None
+
+    lf.run(make_image(120))
+    assert lf.target_pixel is not None
+    assert abs(lf.target_pixel - 120) <= 3, "the target should latch to the real line"
+
+
+def test_a_lane_offset_applies_before_any_line_is_seen():
+    """A requested offset must still be honoured against the fallback centre."""
+    lf = make_follower(AutoCfg())
+    lf.run(make_speck_image(18), -21)
+    assert lf.effective_target_pixel == IMAGE_W // 2 - 21

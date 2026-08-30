@@ -117,12 +117,16 @@ class LineFollower:
         the frame. Returns the pixel column the PID should steer toward.
         """
         offset = 0 if lane_offset_px is None else int(lane_offset_px)
-        target = self.target_pixel + offset
 
         # Prefer the configured width, but fall back to the frame we were handed
         # so a mis-set IMAGE_W cannot push the target outside the image.
         width = self.image_w if self.image_w else cam_img.shape[1]
-        return max(0, min(int(target), int(width) - 1))
+
+        # Until a line has actually been seen, steer to the middle of the frame.
+        # The alternative is to have no opinion at all, and the caller still
+        # needs a number.
+        base = self.target_pixel if self.target_pixel is not None else int(width) // 2
+        return max(0, min(int(base + offset), int(width) - 1))
 
     def run(
         self, cam_img: np.ndarray | None, lane_offset_px: int | None = None
@@ -147,9 +151,14 @@ class LineFollower:
 
         max_yellow, confidence, mask = self.get_i_color(cam_img)
 
-        if self.target_pixel is None:
-            # Use the first run of get_i_color to set our relationship with the yellow line.
-            # You could optionally init the target_pixel with the desired value.
+        if self.target_pixel is None and confidence >= self.confidence_threshold:
+            # Latch our relationship with the line from the first frame that
+            # actually contains one. This used to latch from the first frame
+            # full stop, before the confidence gate below had any say -- so a
+            # car started while looking away from the tape anchored itself to
+            # the argmax of an empty scan band. Seen on a real car: a reflection
+            # at column 18, scored 0.087 against a threshold of 0.15, became the
+            # place the car spent the rest of the run trying to keep the line.
             self.target_pixel = max_yellow
             logger.info(f"Automatically chosen line position = {self.target_pixel}")
 
