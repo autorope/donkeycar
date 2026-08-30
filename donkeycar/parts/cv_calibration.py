@@ -167,6 +167,13 @@ def board_object_points(pattern: tuple[int, int], square_inches: float) -> np.nd
     return points * float(square_inches)
 
 
+# Upscale factors to retry detection at when the native frame is too coarse.
+# Not a smooth sweep on purpose: the detector's response to scale is lumpy --
+# on a real 320x240 frame it failed at 1x, 2x and 4x but succeeded at 3x and 6x
+# on the very same image, so this tries several rather than one "big enough" one.
+DETECT_UPSCALES: tuple[int, ...] = (2, 3, 4, 6)
+
+
 def detect_board(image: np.ndarray, pattern: tuple[int, int] = DEFAULT_PATTERN) -> np.ndarray | None:
     """
     Find the board's inner corners, or None.
@@ -174,14 +181,34 @@ def detect_board(image: np.ndarray, pattern: tuple[int, int] = DEFAULT_PATTERN) 
     Uses findChessboardCornersSB: a board lying flat under a low, pitched camera
     is exactly the shallow, perspective-heavy case where the classic detector
     gets unreliable, and SB also copes with a partly visible board.
+
+    Retries on an upscaled copy when the native frame fails. Donkeycar's stock
+    camera is 320x240, and a board small enough to sit at the scan line is then
+    only about 8 px per square -- below what the detector can resolve, even
+    though the board is perfectly flat, sharp and well lit. Upscaling adds no
+    information, but it does give the corner filters room to work: measured on a
+    real frame, corners recovered at 3x and divided back down fitted a
+    homography with 0.05 inch reprojection error. Interpolation is cubic so the
+    corners land on sub-pixel positions rather than snapping to the upscaled
+    grid.
     """
     if image is None:
         return None
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if image.ndim == 3 else image
-    found, corners = cv2.findChessboardCornersSB(gray, pattern, flags=cv2.CALIB_CB_EXHAUSTIVE)
-    if not found or corners is None:
-        return None
-    return corners.reshape(-1, 2).astype(np.float64)
+
+    for scale in (1, *DETECT_UPSCALES):
+        probe = gray if scale == 1 else cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+        found, corners = cv2.findChessboardCornersSB(probe, pattern, flags=cv2.CALIB_CB_EXHAUSTIVE)
+        if found and corners is not None:
+            if scale != 1:
+                logger.info("Board found at %dx upscale; the board is small in frame for a %s pattern", scale, pattern)
+            # Back to native pixel coordinates: everything downstream -- the
+            # homography, SCAN_Y, the lane offsets -- is in the camera's own
+            # frame, so corners measured on a magnified copy must be divided
+            # back or the calibration is wrong by exactly `scale`.
+            return corners.reshape(-1, 2).astype(np.float64) / float(scale)
+
+    return None
 
 
 def solve_homography(

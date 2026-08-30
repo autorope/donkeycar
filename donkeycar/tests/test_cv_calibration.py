@@ -80,6 +80,56 @@ def test_detects_a_board_in_a_perspective_view():
     assert corners.shape == (COLS * ROWS, 2)
 
 
+def small_board_frame(square_px=4, compress=0.6):
+    """
+    A board occupying a small patch of the frame with its far edge compressed:
+    what a floor-level camera sees when the board is far enough away to sit at
+    the scan line. `compress` is how wide the far edge is relative to the near.
+    """
+    board = board_image(square_px=square_px, margin=3)
+    h, w = board.shape[:2]
+    src = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+    dst = np.float32([[w * (0.5 - compress / 2), 0], [w * (0.5 + compress / 2), 0], [w, h], [0, h]])
+    warped = cv2.warpPerspective(board, cv2.getPerspectiveTransform(src, dst), (w, h), borderValue=(255, 255, 255))
+
+    frame = np.full((IMAGE_H, IMAGE_W, 3), 110, np.uint8)
+    y0, x0 = 120, 110
+    frame[y0 : y0 + h, x0 : x0 + w] = warped
+    return frame
+
+
+def test_finds_a_board_too_small_for_the_native_frame(monkeypatch):
+    """
+    Regression: at donkeycar's stock 320x240 a board far enough away to sit at
+    the scan line is only a handful of pixels per square, and the far rows are
+    compressed to less than that. The detector could not resolve it and simply
+    reported no board, on a frame where the board was plainly visible, flat,
+    sharp and well lit.
+    """
+    frame = small_board_frame()
+
+    monkeypatch.setattr("donkeycar.parts.cv_calibration.DETECT_UPSCALES", ())
+    assert detect_board(frame, (COLS, ROWS)) is None, "expected the native-scale detector to fail on this frame"
+
+    monkeypatch.undo()
+    corners = detect_board(frame, (COLS, ROWS))
+    assert corners is not None
+    assert corners.shape == (COLS * ROWS, 2)
+
+
+def test_upscaled_corners_come_back_in_native_pixel_coordinates():
+    """
+    Corners found on a magnified copy must be divided back down. If they are
+    not, they still form a perfectly good checkerboard, the homography still
+    solves and the reprojection error still looks fine -- the calibration is
+    just silently wrong by the upscale factor.
+    """
+    corners = detect_board(small_board_frame(), (COLS, ROWS))
+    assert corners is not None
+    assert corners[:, 0].max() < IMAGE_W
+    assert corners[:, 1].max() < IMAGE_H
+
+
 def test_returns_none_when_there_is_no_board():
     assert detect_board(np.zeros((IMAGE_H, IMAGE_W, 3), np.uint8), (COLS, ROWS)) is None
 
