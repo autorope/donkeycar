@@ -489,6 +489,20 @@ class MCPBridge:
         return self.calibration_data.pixels_per_inch if self.calibration_data else None
 
     def inches_to_px(self, inches: float) -> int:
+        """
+        A lane offset in ground inches, as the pixel offset the controller wants.
+
+        These are two different frames and they run in opposite directions.
+        `inches` says where the *car* should sit: positive is right of the
+        centreline, which is how a person describes a lane and how track.yml
+        records one. `lane_offset_px` says where the *tape* should appear in the
+        camera: positive moves the steering target right in the image.
+
+        Asking the car to sit right of the line is the same as asking the line
+        to appear left of centre, so the sign flips here. Without the flip the
+        lane named "right" drives the car down the left of the track -- steering
+        beautifully, holding its offset precisely, on the wrong side.
+        """
         # Zero inches is zero pixels whatever the scale, so holding the centre
         # lane must not require a calibration. Only a real offset does.
         if inches == 0:
@@ -499,13 +513,14 @@ class MCPBridge:
                 "No pixels-per-inch calibration, so a lane offset cannot be converted. "
                 "Set CV_PIXELS_PER_INCH or run `donkey calibrate-cv`."
             )
-        return round(inches * ppi)
+        return -round(inches * ppi)
 
     def px_to_inches(self, px: int) -> float | None:
+        """Back to ground inches, positive right of the centreline."""
         ppi = self.pixels_per_inch()
         if not ppi:
             return None
-        return px / ppi
+        return -px / ppi
 
     def calibration(self) -> dict[str, Any]:
         if self.calibration_data is None:

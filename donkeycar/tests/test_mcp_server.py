@@ -177,10 +177,57 @@ def test_emergency_stop_zeroes_throttle_without_disarming():
 
 def test_named_lane_converts_to_pixels():
     bridge = make_bridge()
-    # 12 inches right at 4 px/inch
-    assert bridge.lane_offset_px_for("right") == 48
-    assert bridge.lane_offset_px_for("left") == -48
+    # 12 inches at 4 px/inch. The sign flips: sitting right of the centreline
+    # means the tape appears left of centre, so the steering target moves left.
+    assert bridge.lane_offset_px_for("right") == -48
+    assert bridge.lane_offset_px_for("left") == 48
     assert bridge.lane_offset_px_for("center") == 0
+
+
+def test_a_lane_offset_round_trips_back_to_the_same_inches():
+    bridge = make_bridge()
+    assert bridge.px_to_inches(bridge.inches_to_px(12.0)) == pytest.approx(12.0, abs=0.3)
+    assert bridge.px_to_inches(bridge.inches_to_px(-12.0)) == pytest.approx(-12.0, abs=0.3)
+
+
+def test_the_right_lane_actually_steers_the_car_right():
+    """
+    The sign of a lane offset, tied to which way the car goes.
+
+    This is the test that was missing. The old ones checked that 12 inches at
+    4 px/inch came to 48 pixels, which it did, and said nothing about direction
+    -- so the lane named "right" drove down the left of the track, steering
+    accurately the whole way. Arithmetic on its own cannot catch that; only
+    running the offset through the controller can.
+    """
+    from simple_pid import PID
+
+    from donkeycar.parts.line_follower import LineFollower
+
+    class LFCfg:
+        OVERLAY_IMAGE = False
+        SCAN_Y, SCAN_HEIGHT = 100, 80
+        COLOR_THRESHOLD_LOW, COLOR_THRESHOLD_HIGH = (17, 103, 104), (37, 255, 255)
+        TARGET_PIXEL, TARGET_THRESHOLD, CONFIDENCE_THRESHOLD = 160, 20, 0.15
+        THROTTLE_INITIAL, THROTTLE_STEP = 0.25, 0.05
+        THROTTLE_MAX, THROTTLE_MIN = 0.3, 0.25
+        IMAGE_W = 320
+
+    def frame_with_centred_tape():
+        img = np.full((240, 320, 3), 40, np.uint8)
+        img[:, 156:164] = (200, 180, 30)
+        return img
+
+    def steering_for(lane):
+        offset_px = make_bridge().lane_offset_px_for(lane)
+        follower = LineFollower(PID(Kp=-0.01, Ki=0.0, Kd=-0.0001, sample_time=None), LFCfg())
+        steering, _throttle, _img, _conf, detected = follower.run(frame_with_centred_tape(), offset_px)
+        assert detected, "the synthetic tape should be found, or this proves nothing"
+        return steering
+
+    # Donkeycar steering is -1 left, +1 right.
+    assert steering_for("right") > 0.1, "the right lane must steer the car right of the tape"
+    assert steering_for("left") < -0.1, "the left lane must steer the car left of the tape"
 
 
 def test_unknown_lane_is_an_error_not_a_silent_zero():
@@ -440,9 +487,10 @@ def test_set_control_by_lane_name_through_the_client():
     server = bridge.build_server()
     result = _call(server, "set_control", {"throttle": 0.5, "lane": "right"})
     payload = json.loads(_text(result))
-    assert payload["lane_offset_px"] == 48
+    assert payload["lane_offset_px"] == -48
+    assert payload["lane_offset_inches"] == pytest.approx(12.0, abs=0.3)
     assert payload["throttle"] == 0.5
-    assert bridge.command().lane_offset_px == 48
+    assert bridge.command().lane_offset_px == -48
 
 
 @requires_mcp
@@ -487,8 +535,8 @@ def test_bridge_reads_track_yml_from_the_car_directory(tmp_path):
     assert track["segment_length_inches"] == 24.0
     assert track["segment_count"] == 12
     assert sorted(track["lanes"]) == ["center", "outside"]
-    # 9 inches at 4 px/inch
-    assert bridge.lane_offset_px_for("outside") == 36
+    # 9 inches at 4 px/inch, negated into the controller's frame
+    assert bridge.lane_offset_px_for("outside") == -36
 
 
 def test_bridge_falls_back_to_config_constants_without_a_file(tmp_path):
