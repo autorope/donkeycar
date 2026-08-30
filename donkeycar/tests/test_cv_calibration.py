@@ -144,6 +144,54 @@ def test_object_points_are_spaced_by_the_square_size():
     assert sorted({float(x) for x, _ in points}) == [0.0, 2.0, 4.0]
 
 
+# ------------------------------------------------------------------ orientation
+
+
+def _ground(matrix, x, y):
+    return cv2.perspectiveTransform(np.array([[[float(x), float(y)]]], np.float64), matrix).reshape(2)
+
+
+def test_ground_axes_point_the_same_way_as_the_camera():
+    """
+    Lateral must grow rightward and forward must grow away from the car,
+    whichever way round the board was lying when it was photographed.
+    """
+    cal = calibrate_from_image(camera_view(), Cfg(), (COLS, ROWS), SQUARE_INCHES)
+    matrix = np.array(cal.homography, np.float64)
+
+    left = _ground(matrix, IMAGE_W * 0.25, IMAGE_H * 0.75)
+    right = _ground(matrix, IMAGE_W * 0.75, IMAGE_H * 0.75)
+    near = _ground(matrix, IMAGE_W * 0.5, IMAGE_H * 0.9)
+    far = _ground(matrix, IMAGE_W * 0.5, IMAGE_H * 0.6)
+
+    assert right[0] > left[0], "lateral must increase to the right"
+    assert far[1] > near[1], "forward must increase away from the car"
+
+
+def test_a_board_laid_the_other_way_round_measures_the_same():
+    """
+    Regression: which way the board frame points is an accident of how the board
+    was placed, but the numbers the car reports must not be. Photographing the
+    same board rotated half a turn used to mirror every lateral measurement,
+    silently -- a cone to the right reported as a cone to the left, no error
+    raised and nothing in the output to show which capture you had.
+    """
+    upright = calibrate_from_image(camera_view(), Cfg(), (COLS, ROWS), SQUARE_INCHES)
+    turned = calibrate_from_image(
+        camera_view(cv2.rotate(board_image(), cv2.ROTATE_180)), Cfg(), (COLS, ROWS), SQUARE_INCHES
+    )
+
+    row = IMAGE_H * 0.8
+    centre = IMAGE_W * 0.5
+    for calibration in (upright, turned):
+        matrix = np.array(calibration.homography, np.float64)
+        middle = _ground(matrix, centre, row)[0]
+        assert _ground(matrix, centre + 60, row)[0] > middle, "right of centre must measure positive"
+        assert _ground(matrix, centre - 60, row)[0] < middle, "left of centre must measure negative"
+
+    assert upright.pixels_per_inch == pytest.approx(turned.pixels_per_inch, rel=0.05)
+
+
 # ------------------------------------------------------------------ homography
 
 
@@ -177,19 +225,31 @@ def test_ground_measurement_round_trips():
     A known board corner must map back to its true ground position. This is the
     property `measure_ground_point` rests on -- without it the agent's only
     distance cue is apparent size.
+
+    Checked as geometry rather than as equality with the object points, because
+    the ground frame is deliberately oriented to the camera rather than to the
+    board: which way the board's own axes ran is an accident of how it was laid
+    down, and is exactly what the calibration normalises away. What must survive
+    that is every distance and every angle, and those are what is asserted here.
     """
     view = camera_view()
     calibration = calibrate_from_image(view, Cfg(), (COLS, ROWS), SQUARE_INCHES)
     corners = detect_board(view, (COLS, ROWS))
-    expected = board_object_points((COLS, ROWS), SQUARE_INCHES)
 
-    errors = []
-    for (u, v), (x, y) in zip(corners, expected, strict=True):
-        lateral, forward = calibration.image_to_ground(u, v)
-        errors.append(abs(lateral - x))
-        errors.append(abs(forward - y))
+    ground = np.array([calibration.image_to_ground(u, v) for u, v in corners])
+    grid = ground.reshape(ROWS, COLS, 2)
 
-    assert max(errors) < 0.25, f"worst ground error {max(errors):.3f} in"
+    along_row = np.linalg.norm(np.diff(grid, axis=1), axis=2)
+    along_col = np.linalg.norm(np.diff(grid, axis=0), axis=2)
+    assert np.abs(along_row - SQUARE_INCHES).max() < 0.25, "corner spacing across the board is wrong"
+    assert np.abs(along_col - SQUARE_INCHES).max() < 0.25, "corner spacing down the board is wrong"
+
+    # The board must come back square, not sheared: its two edge directions
+    # should still meet at a right angle.
+    edge_x = grid[0, -1] - grid[0, 0]
+    edge_y = grid[-1, 0] - grid[0, 0]
+    cosine = float(edge_x @ edge_y / (np.linalg.norm(edge_x) * np.linalg.norm(edge_y)))
+    assert abs(cosine) < 0.02, f"board edges are not perpendicular on the ground (cos={cosine:.3f})"
 
 
 def test_origin_offsets_move_measurements_into_car_coordinates():

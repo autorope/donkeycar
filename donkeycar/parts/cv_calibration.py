@@ -232,6 +232,44 @@ def solve_homography(
     return matrix, error
 
 
+def orient_homography(matrix: np.ndarray, image_w: int, image_h: int) -> np.ndarray:
+    """
+    Flip the ground axes so +x is right in the image and +y is away from the car.
+
+    The homography comes out in the *board's* frame, and which way that frame
+    points depends on how the board happened to be lying and which corner the
+    detector called first. Rotate the board half a turn between two captures and
+    the same track measures with its lateral axis mirrored -- so a cone to the
+    right of the car is reported to the left, with no error anywhere and no way
+    for a caller to tell.
+
+    The camera's own frame settles it, since the car cannot be laid down
+    backwards: columns increase rightward and distance grows up the image.
+    Probes stay in the lower half of the frame, below any horizon, where the
+    mapping is well conditioned.
+    """
+
+    def ground(x: float, y: float) -> np.ndarray:
+        point = np.array([[[float(x), float(y)]]], dtype=np.float64)
+        return cv2.perspectiveTransform(point, matrix).reshape(2)
+
+    left = ground(image_w * 0.25, image_h * 0.75)
+    right = ground(image_w * 0.75, image_h * 0.75)
+    near = ground(image_w * 0.5, image_h * 0.9)
+    far = ground(image_w * 0.5, image_h * 0.6)
+    if not all(np.isfinite(p).all() for p in (left, right, near, far)):
+        # Degenerate probes; leave the matrix alone rather than flip on noise.
+        return matrix
+
+    flip_x = -1.0 if right[0] < left[0] else 1.0
+    flip_y = -1.0 if far[1] < near[1] else 1.0
+    if flip_x > 0 and flip_y > 0:
+        return matrix
+
+    logger.info("Reorienting the board frame to the camera's (x %+.0f, y %+.0f)", flip_x, flip_y)
+    return np.asarray(np.diag([flip_x, flip_y, 1.0]) @ matrix, dtype=np.float64)
+
+
 def pixels_per_inch_at_row(matrix: np.ndarray, row: int, image_w: int, span_px: int = 40) -> float:
     """
     How many pixels make an inch on the ground, along one image row.
@@ -271,6 +309,7 @@ def calibrate_from_image(
 
     matrix, error = solve_homography(corners, pattern, square_inches)
     height, width = image.shape[:2]
+    matrix = orient_homography(matrix, width, height)
     scan_y = int(getattr(cfg, "SCAN_Y", height // 2))
     ppi = pixels_per_inch_at_row(matrix, scan_y, width)
 
