@@ -9,6 +9,8 @@ import os
 import socket
 import time
 
+import pytest
+
 import donkeycar as dk
 from donkeycar.management.mcp import VehicleSupervisor, load_vehicle_builder
 from donkeycar.templates import cv_control
@@ -37,9 +39,22 @@ def _headless_cfg(tmp_path):
     return cfg, path
 
 
-def _make_supervisor(tmp_path):
-    cfg, _ = _headless_cfg(tmp_path)
-    return VehicleSupervisor(cfg, cv_control.build_vehicle, builder_source="test")
+def _make_supervisor(tmp_path, **kwargs):
+    cfg, path = _headless_cfg(tmp_path)
+    kwargs.setdefault("config_path", os.path.join(path, "config.py"))
+    kwargs.setdefault("car_dir", path)
+    return VehicleSupervisor(cfg, cv_control.build_vehicle, builder_source="test", **kwargs)
+
+
+def _set_myconfig(path, **values):
+    """Rewrite the car's myconfig.py, keeping it headless."""
+    with open(os.path.join(path, "myconfig.py"), "w") as handle:
+        handle.write("CAMERA_TYPE = 'MOCK'\n")
+        handle.write("USE_SSD1306_128_32 = False\n")
+        handle.write("DRIVE_TRAIN_TYPE = 'None'\n")
+        handle.write(f"WEB_CONTROL_PORT = {_free_port()}\n")
+        for key, value in values.items():
+            handle.write(f"{key} = {value!r}\n")
 
 
 def _wait_until(predicate, timeout=5.0):
@@ -67,7 +82,7 @@ def test_start_stop_start_rebuilds_the_vehicle(tmp_path):
     """
     sup = _make_supervisor(tmp_path)
 
-    assert sup.start() == "started"
+    assert sup.start().startswith("started")
     assert _wait_until(sup.is_running), "vehicle did not start"
     first = sup._vehicle
     assert first is not None
@@ -76,7 +91,7 @@ def test_start_stop_start_rebuilds_the_vehicle(tmp_path):
     assert sup.is_running() is False
     assert sup._vehicle is None
 
-    assert sup.start() == "started"
+    assert sup.start().startswith("started")
     assert _wait_until(sup.is_running), "vehicle did not restart"
     second = sup._vehicle
     assert second is not None
@@ -102,7 +117,7 @@ def test_stop_leaves_throttle_at_zero(tmp_path):
 
 def test_double_start_is_not_an_error(tmp_path):
     sup = _make_supervisor(tmp_path)
-    assert sup.start() == "started"
+    assert sup.start().startswith("started")
     _wait_until(sup.is_running)
     assert sup.start() == "already running"
     sup.stop()
@@ -189,3 +204,118 @@ def _flatten(consts):
             yield from _flatten(c)
         else:
             yield c
+
+
+# ------------------------------------------------------------ config reload
+
+
+def test_start_picks_up_edited_config(tmp_path):
+    """
+    The config is read once when the process launches, so before this a
+    stop/start cycle silently kept the old settings -- editing SCAN_HEIGHT and
+    restarting the vehicle changed nothing, which makes tuning painful.
+    """
+    cfg, path = _headless_cfg(tmp_path)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+    )
+    assert sup.cfg.SCAN_HEIGHT != 80
+
+    _set_myconfig(path, SCAN_HEIGHT=80)
+
+    assert sup.start() == "started (config reloaded)"
+    _wait_until(sup.is_running)
+    try:
+        assert sup.cfg.SCAN_HEIGHT == 80
+        follower = next(e["part"] for e in sup._vehicle.parts if e["part"].__class__.__name__ == "LineFollower")
+        assert follower.scan_height == 80, "the rebuilt follower must use the new value"
+    finally:
+        sup.stop()
+
+
+def test_the_bridge_adopts_the_reloaded_config(tmp_path):
+    """
+    The bridge outlives the vehicle, so it has to adopt the new config too --
+    otherwise the follower runs on new settings while lane offsets and
+    calibration still answer from the old ones.
+    """
+    cfg, path = _headless_cfg(tmp_path)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+    )
+    _set_myconfig(path, CV_PIXELS_PER_INCH=8.0, MCP_COMMAND_TIMEOUT_S=5.0)
+
+    sup.start()
+    _wait_until(sup.is_running)
+    try:
+        assert sup.bridge.pixels_per_inch() == 8.0
+        assert sup.bridge.command_timeout_s == 5.0
+    finally:
+        sup.stop()
+
+
+def test_a_broken_config_fails_the_start_and_keeps_the_old_one(tmp_path):
+    """Better to keep running on the last good settings than half-apply a typo."""
+    cfg, path = _headless_cfg(tmp_path)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+    )
+    previous = sup.cfg
+    with open(os.path.join(path, "myconfig.py"), "w") as handle:
+        handle.write("SCAN_HEIGHT = (this is not python\n")
+
+    with pytest.raises(ValueError, match="Could not reload"):
+        sup.start()
+
+    assert sup.is_running() is False
+    assert sup.cfg is previous, "the previous config must survive a failed reload"
+
+
+def test_reload_can_be_switched_off(tmp_path):
+    cfg, path = _headless_cfg(tmp_path)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+        reload_config=False,
+    )
+    _set_myconfig(path, SCAN_HEIGHT=80)
+    assert sup.start() == "started"
+    _wait_until(sup.is_running)
+    try:
+        assert sup.cfg.SCAN_HEIGHT != 80
+    finally:
+        sup.stop()
+
+
+def test_changing_the_bound_port_warns_rather_than_pretending(tmp_path, caplog):
+    """The socket is already bound; a config change cannot move it."""
+    cfg, path = _headless_cfg(tmp_path)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+    )
+    _set_myconfig(path, MCP_SERVER_PORT=9999)
+    sup.start()
+    _wait_until(sup.is_running)
+    try:
+        assert "restart `donkey mcp`" in caplog.text
+    finally:
+        sup.stop()

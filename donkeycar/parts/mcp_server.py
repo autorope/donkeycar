@@ -306,6 +306,26 @@ class MCPBridge:
         # A few loop periods of slack, with a floor for very slow loops.
         return (time.monotonic() - written_at) < max(1.0, 5.0 / hz)
 
+    def reload_config(self, cfg: CarConfig) -> None:
+        """
+        Adopt a freshly read config.
+
+        The bridge outlives the vehicle, so a rebuilt vehicle on new settings
+        would otherwise leave the bridge answering from the old ones -- lane
+        offsets, pixels-per-inch and the track all come from here. Track and
+        calibration are re-read too, so a malformed track.yml surfaces now
+        rather than at the next tool call.
+        """
+        track = self._load_track(self.car_dir) if cfg is not None else self.track
+        calibration = load_calibration(self.car_dir, cfg)
+        # Only commit once both have parsed: a half-applied config is worse
+        # than the old one.
+        self.cfg = cfg
+        self.track = track
+        self.calibration_data = calibration
+        self.command_timeout_s = getattr(cfg, "MCP_COMMAND_TIMEOUT_S", DEFAULT_COMMAND_TIMEOUT_S)
+        logger.info("Bridge adopted reloaded config")
+
     def attach_controller(self, controller: object) -> None:
         """
         Remember the user controller so drive mode can be switched.

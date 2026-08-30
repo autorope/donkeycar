@@ -97,8 +97,18 @@ class VehicleSupervisor:
         use_joystick: bool = False,
         camera_type: str = "single",
         car_dir: str | None = None,
+        config_path: str | None = None,
+        myconfig: str = "myconfig.py",
+        reload_config: bool = True,
     ) -> None:
         self.cfg = cfg
+        # Remembered so `start` can re-read them. Without this, editing
+        # myconfig.py and calling stop/start does nothing, because the config is
+        # read once when this process launches -- which makes tuning a
+        # threshold mean restarting the server every time.
+        self.config_path = config_path
+        self.myconfig = myconfig
+        self.reload_config = reload_config
         self.builder = builder
         self.builder_source = builder_source
         self.use_joystick = use_joystick
@@ -117,6 +127,8 @@ class VehicleSupervisor:
             if self._is_running():
                 return "already running"
 
+            reloaded = self._reload_config()
+
             logger.info("Building vehicle from %s", self.builder_source)
             vehicle = self.builder(
                 self.cfg,
@@ -133,7 +145,39 @@ class VehicleSupervisor:
             thread = threading.Thread(target=self._run, args=(vehicle,), daemon=True)
             self._thread = thread
             thread.start()
-            return "started"
+            return "started (config reloaded)" if reloaded else "started"
+
+    def _reload_config(self) -> bool:
+        """
+        Re-read the car's config so a rebuilt vehicle uses current settings.
+
+        A broken config fails the start and leaves the previous one in place: a
+        server that keeps running on the last good settings is more useful than
+        one that has half-applied a file with a typo in it.
+        """
+        if not self.reload_config or not self.config_path:
+            return False
+
+        try:
+            cfg = dk.load_config(config_path=self.config_path, myconfig=self.myconfig)
+        except Exception as exc:
+            raise ValueError(f"Could not reload {self.config_path}: {exc}. Keeping the previous config.") from exc
+
+        for attr, name in (("MCP_SERVER_HOST", "host"), ("MCP_SERVER_PORT", "port")):
+            was, now = getattr(self.cfg, attr, None), getattr(cfg, attr, None)
+            if was != now:
+                logger.warning(
+                    "%s changed from %r to %r, but the socket is already bound; restart `donkey mcp` to change the %s.",
+                    attr,
+                    was,
+                    now,
+                    name,
+                )
+
+        self.bridge.reload_config(cfg)
+        self.cfg = cfg
+        logger.info("Reloaded config from %s", self.config_path)
+        return True
 
     def _run(self, vehicle: Vehicle) -> None:
         try:
@@ -198,6 +242,11 @@ def run(args: list[str]) -> None:
     parser.add_argument("--port", type=int, default=None, help="port to bind (default from config)")
     parser.add_argument("--js", action="store_true", help="use a physical joystick as well")
     parser.add_argument("--camera", default="single", choices=["single", "stereo"])
+    parser.add_argument(
+        "--no-reload",
+        action="store_true",
+        help="do not re-read config.py/myconfig.py on each start",
+    )
     parsed = parser.parse_args(args)
 
     # Fail before loading config or touching the camera: the whole command is
@@ -206,7 +255,8 @@ def run(args: list[str]) -> None:
         raise SystemExit(MCP_INSTALL_HINT)
 
     car_dir = os.path.expanduser(parsed.car) if parsed.car else os.getcwd()
-    cfg = dk.load_config(config_path=os.path.join(car_dir, "config.py"), myconfig=parsed.myconfig)
+    config_path = os.path.join(car_dir, "config.py")
+    cfg = dk.load_config(config_path=config_path, myconfig=parsed.myconfig)
 
     builder, source = load_vehicle_builder(car_dir)
     supervisor = VehicleSupervisor(
@@ -216,6 +266,9 @@ def run(args: list[str]) -> None:
         use_joystick=parsed.js,
         camera_type=parsed.camera,
         car_dir=car_dir,
+        config_path=config_path,
+        myconfig=parsed.myconfig,
+        reload_config=not parsed.no_reload,
     )
 
     host = parsed.host or getattr(cfg, "MCP_SERVER_HOST", "127.0.0.1")

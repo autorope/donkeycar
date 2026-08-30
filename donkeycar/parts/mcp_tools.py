@@ -141,13 +141,22 @@ def build_server(bridge: MCPBridge) -> MCPServer:
 
     @server.tool()
     def start() -> dict[str, Any]:
-        """Start driving. The car does not move until this is called."""
-        return {"result": bridge.lifecycle.start(), "running": bridge.lifecycle.is_running()}
+        """
+        Start driving. The car does not move until this is called.
+
+        The car's config is re-read first, so edits to config.py or myconfig.py
+        take effect without restarting the server.
+        """
+        with _agent_facing_errors():
+            result = bridge.lifecycle.start()
+        return {"result": result, "running": bridge.lifecycle.is_running()}
 
     @server.tool()
     def stop() -> dict[str, Any]:
         """Stop driving. Throttle is zeroed first."""
-        return {"result": bridge.lifecycle.stop(), "running": bridge.lifecycle.is_running()}
+        with _agent_facing_errors():
+            result = bridge.lifecycle.stop()
+        return {"result": result, "running": bridge.lifecycle.is_running()}
 
     @server.tool()
     def emergency_stop() -> dict[str, Any]:

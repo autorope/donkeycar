@@ -160,6 +160,20 @@ donkey mcp --car ~/mycar
 Either way the tools are at `http://<host>:8891/mcp`. Nothing is running until the
 agent calls `start`, and the car does not move until it also sets a throttle.
 
+### Tuning without restarting
+
+`start` re-reads the car's config, so the loop is:
+
+1. edit `myconfig.py` (thresholds, `SCAN_Y`, `SCAN_HEIGHT`, lane offsets)
+2. call `stop`, then `start`
+3. look at the next `get_vehicle_state` frame
+
+A config that will not parse fails the `start` and leaves the previous one in
+place, so a typo does not take the server down with it. `MCP_SERVER_HOST` and
+`MCP_SERVER_PORT` are the exception: the socket is already bound, so changing
+those needs a real restart, and the server logs a warning saying so. Pass
+`--no-reload` to keep the config fixed for the life of the process.
+
 ## 5. The tools
 
 | Tool | What it does |
@@ -168,7 +182,7 @@ agent calls `start`, and the car does not move until it also sets a throttle.
 | `get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
 | `set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |
-| `start` / `stop` | Begin and end driving. |
+| `start` / `stop` | Begin and end driving. `start` re-reads `config.py` and `myconfig.py` first, so tuning is edit &rarr; stop &rarr; start &rarr; look, with no server restart. |
 | `emergency_stop` | Zero the throttle now, without touching the lifecycle. |
 | `get_calibration` | Scale, homography, and whether either has gone stale. |
 
