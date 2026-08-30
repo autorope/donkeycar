@@ -99,6 +99,12 @@ def build_server(bridge: MCPBridge) -> MCPServer:
             "line_detected": state.line_detected if live else None,
             "line_confidence": state.line_confidence if live else None,
         }
+        if live and state.watchdog_tripped:
+            payload["watchdog_note"] = (
+                "The throttle was zeroed because no command arrived for "
+                f"{bridge.command_timeout_s:.0f}s. Reading state does not reset the timer -- "
+                "call set_control again to resume, and keep calling it while driving."
+            )
         if live and state.line_detected is False:
             payload["warning"] = (
                 "The autopilot cannot see the line. Steering is decaying toward centre, "
@@ -129,6 +135,15 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         throttle is -1..1 and acts as a ceiling on the autopilot's own throttle;
         0 stops the car. Give either `lane` (a name from get_track_config) or
         `lane_offset_inches` for finer control.
+
+        KEEP CALLING THIS WHILE YOU WANT THE CAR TO MOVE. A watchdog zeroes the
+        throttle if no command arrives for MCP_COMMAND_TIMEOUT_S (2 seconds by
+        default), so that a car whose agent has crashed or lost its connection
+        stops rather than driving on unattended. Reading state does not count --
+        only a command resets the timer. Re-send this at least every second
+        during a drive; sending the same values again is fine and is the normal
+        way to hold a speed. If the car stops for no apparent reason, check
+        `watchdog_tripped` in get_vehicle_state.
         """
         if lane is not None and lane_offset_inches is not None:
             raise ToolError("Give either lane or lane_offset_inches, not both.")

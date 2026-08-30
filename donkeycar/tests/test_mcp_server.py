@@ -914,3 +914,27 @@ def test_line_health_is_absent_rather_than_stale_when_stopped():
     assert bridge.snapshot().line_detected is True
     time.sleep(1.1)
     assert bridge.state_is_live() is False
+
+
+@requires_mcp
+def test_a_tripped_watchdog_says_how_to_recover():
+    """
+    The watchdog stopping the car is correct; leaving the agent to guess why is
+    not. Reading state does not reset the timer, so an agent that polls state in
+    a driving loop -- the obvious thing to write -- gets a car that goes quiet
+    after two seconds with nothing in the payload explaining it.
+    """
+    bridge = make_bridge()
+    bridge.arm()  # the watchdog only guards a car that is actually armed
+    bridge.set_control(throttle=0.5)
+    bridge.run_threaded(pilot_throttle=0.5)
+
+    # Let the command go stale, then turn the loop again.
+    bridge._last_command_at -= bridge.command_timeout_s + 1.0
+    applied, _, _ = bridge.run_threaded(pilot_throttle=0.5)
+    assert applied == 0.0, "the watchdog should have zeroed the throttle"
+
+    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state", {})))
+    assert payload["watchdog_tripped"] is True
+    note = payload.get("watchdog_note", "")
+    assert "set_control" in note, "the agent must be told what resets the watchdog"
