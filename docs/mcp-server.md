@@ -78,6 +78,12 @@ lanes:                     # offsets from the centreline, inches
 Validation is strict and unknown fields are rejected, so a typo fails loudly rather
 than reading as "never set". A silently wrong lane width is a car in the wall.
 
+A lane offset says where **the car** should sit: positive is right of the centreline,
+the way a person would describe it. The controller works in the opposite frame &mdash;
+it steers the *tape* to a column in the image, and putting the car right of the line is
+the same as putting the line left of centre &mdash; but converting between the two is
+the server's job, not yours. Fill this file in as a person sees the track.
+
 ## 3. Calibrate the camera
 
 A lane offset given in inches has to become a pixel offset, so the car needs to know
@@ -111,6 +117,32 @@ board was:
 ```
 donkey calibrate-cv --car ~/mycar --forward-inches 24 --lateral-inches 0
 ```
+
+### Where to put the board
+
+Two things decide whether the numbers are worth having.
+
+**Big enough to find.** At donkeycar's stock 320&times;240 a 10&times;7 inch board lying
+where the scan line falls is about 8 pixels per square, which is below what the corner
+detector resolves &mdash; it reports no board at all on a frame where the board is
+plainly visible, flat, sharp and well lit. The detector retries on an upscaled copy for
+exactly this case and usually succeeds anyway. If the preview still says NO BOARD, the
+answer is almost always to move the board closer, not to change the lighting.
+
+**As close to the scan row as you can manage.** `pixels_per_inch` is evaluated at
+`SCAN_Y`, and a homography fitted from corners that all sit well below that row is
+extrapolating to reach it. On one car the board covered image rows 128&ndash;142 while
+`SCAN_Y` was 100, roughly 37 inches further out; perturbing the corners by a third of a
+pixel moved the answer by 5% at the scan row, against 0.4% at rows the board actually
+covered. Straddle the scan line if the board can still be found there. If it cannot, 5%
+is usually tolerable &mdash; a 6 inch lane offset still lands within a pixel &mdash; but
+that is the weakest number in the calibration and worth knowing about.
+
+**Lateral zero is the board's corner, not the car's centreline.** Unless you pass
+`--lateral-inches`, `measure_ground_point` reports lateral distance from wherever the
+board's first corner happened to be, so the middle of the frame will not read zero: on
+one capture it read &minus;2.8 inches. Scale is unaffected, so lane offsets are right
+either way; only absolute positions shift.
 
 **No printer?** Lay two strips of the follow-tape a known distance apart:
 
@@ -168,6 +200,14 @@ car drove off the course.
 
 Measured on that track: tape genuinely in view scores 0.28&ndash;0.44, and the speck
 that caused the crash scored 0.125.
+
+**Dashed tape can never fill the band.** Confidence is lit rows over `SCAN_HEIGHT`, so
+a track laid in dashes only ever scores what a single dash covers. On one course with
+`SCAN_HEIGHT = 80` a dash lit 10&ndash;25 rows, putting confidence between 0.12 and 0.31
+&mdash; straddling the 0.15 default, which reads as the line flickering in and out while
+the car is in fact tracking it perfectly well. Either lower the gate or shorten
+`SCAN_HEIGHT` so a dash covers more of it, but check real frames before deciding: the
+same change also raises what a reflection scores, and that is what the gate is for.
 
 If your config still has a value near 0.0015, the gate stays effectively open and
 you keep the behaviour you had &mdash; nothing breaks on upgrade. Raise it to around
@@ -267,6 +307,18 @@ donkey mcp --car ~/mycar --host <the car's LAN address>
 process starts, so a changed `manage.py` needs a real restart. As a rule: config
 values reload, code does not.
 
+### Reading a run that went wrong
+
+Several failure modes look like something else entirely:
+
+| What you see | What it usually is |
+| --- | --- |
+| `line_detected` true on ~100% of samples, steering barely varying | **The car is not moving.** An unpowered ESC produces a flawless-looking trace, because a stationary camera sees the same tape in every frame. Genuine driving on this course held the line about 86% of the time. Vary-free perfection is the tell. |
+| No line for the first several seconds after `start`, then it appears | The camera's auto-exposure is still settling. Measured on one car, confidence climbed from 0.07 to 0.36 over a few seconds while nothing moved. Wait for the line rather than judging placement from the first frames. |
+| The car drives for two seconds and stops | The command watchdog. See **Commands expire**. |
+| Steering pinned at full lock | Check `line_detected` first. The follower decays steering toward centre while blind, so a hard steering value means something completely different depending on whether the line is in view. |
+| The tape looks badly off-centre at the scan row | Not necessarily a placement problem. `SCAN_Y` looks tens of inches ahead &mdash; about 37 on one car &mdash; so the tape's column there mixes lateral offset with the car's heading and with the track's curvature over that distance. On a bend a correctly placed car reads as badly offset. |
+
 ### Tuning without restarting
 
 `start` re-reads the car's config, so the loop is:
@@ -319,6 +371,13 @@ If no command arrives for `MCP_COMMAND_TIMEOUT_S` (2 seconds by default) the thr
 goes to zero. Agent silence — a crash, a dropped connection, a long think — stops the
 car rather than letting it continue blind. **Keep calling `set_control` while you want
 the car to move.**
+
+Reading state does **not** reset the timer &mdash; only a command does. So the obvious
+driving loop, command once and then poll `get_vehicle_state` to watch what happens,
+gives you a car that moves for two seconds and parks, while the state you are reading
+goes on reporting the throttle you asked for. `watchdog_tripped` in the state payload
+says when this has happened, and sending the same values again is the normal way to
+hold a speed.
 
 ## 6. The activities
 
@@ -386,6 +445,9 @@ CONFIDENCE_THRESHOLD = 0.15
 SCAN_Y      = 100
 SCAN_HEIGHT = 80
 
+# pin the reference column; see below
+TARGET_PIXEL = 160
+
 # when to treat it as a corner
 TARGET_THRESHOLD = 20
 
@@ -437,6 +499,21 @@ four lost-line events against zero at 0.3.
 **`SCAN_Y`.** 60, 100 and 140 were all tried. 100 was best. Looking nearer (140)
 meant the car could not see where the line was going; looking further (60) made
 the tape thinner in frame, so confidence fell and the gate rejected it.
+
+**`TARGET_PIXEL = 160`** &mdash; the image centre, pinned rather than left at `None`.
+
+Left unset, the follower latches its reference from the first frame containing a line,
+and a lane offset is then measured from wherever the tape happened to be in that one
+frame rather than from the car's centreline. "Six inches right" only means six inches
+right if the car started square on the line. Pinning it to the middle of the image makes
+the offset mean the same thing on every run.
+
+It also removes a failure mode worth knowing about even if you leave it unset. The
+latch used to happen before the confidence gate, so a car started while looking away
+from the tape anchored itself to the argmax of an empty scan band &mdash; on this car a
+reflection at column 18, scored 0.087 against a threshold of 0.15, became the place it
+spent the rest of the run steering toward. The latch now waits for a frame that clears
+the gate.
 
 ### The general lesson
 
