@@ -68,11 +68,19 @@ class LineFollower:
 
         self.pid_st = pid
 
-    def get_i_color(self, cam_img: np.ndarray) -> tuple[int, int, np.ndarray]:
+    def get_i_color(self, cam_img: np.ndarray) -> tuple[int, float, np.ndarray]:
         """
         get the horizontal index of the color at the given slice of the image
-        input: cam_image, an RGB numpy array
-        output: index of max color, value of cumulative color at that index, and mask of pixels in range
+
+        input:  cam_image, an RGB numpy array
+        output: index of max color, confidence at that index, and the mask.
+
+        Confidence is the fraction of that column which matched, 0.0 to 1.0. It
+        used to be the raw sum of mask values -- 255 per matching pixel -- while
+        CONFIDENCE_THRESHOLD was documented as a fraction and defaulted to
+        0.0015. A single matching pixel scored 255 and cleared it, so the gate
+        could never reject anything: a ten-pixel speck at the edge of the frame
+        counted as a confident line detection, and the car drove off after it.
         """
         # take a horizontal slice of the image
         iSlice = self.scan_y
@@ -88,7 +96,11 @@ class LineFollower:
         hist = np.sum(mask, axis=0)
         max_yellow = np.argmax(hist)
 
-        return int(max_yellow), int(hist[max_yellow]), mask
+        # Matching pixels in the best column, over the height of that column.
+        lit = float(hist[max_yellow]) / 255.0
+        confidence = lit / float(self.scan_height) if self.scan_height else 0.0
+
+        return int(max_yellow), confidence, mask
 
     def _resolve_target(self, cam_img: np.ndarray, lane_offset_px: int | None) -> int:
         """
@@ -205,7 +217,7 @@ class LineFollower:
         display_str.append(f"STEERING:{self.steering:.1f}")
         display_str.append(f"THROTTLE:{self.throttle:.2f}")
         display_str.append(f"I YELLOW:{max_yellow:d}")
-        display_str.append(f"CONF:{confidense:.2f}")
+        display_str.append(f"CONF:{confidense:.3f}")
         display_str.append(f"TARGET:{self.effective_target_pixel}")
         if not self.line_detected:
             display_str.append(f"LINE LOST x{self.loops_since_line}")

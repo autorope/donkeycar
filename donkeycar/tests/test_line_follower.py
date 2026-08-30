@@ -28,7 +28,7 @@ class Cfg:
     COLOR_THRESHOLD_HIGH = (40, 255, 255)
     TARGET_PIXEL = IMAGE_W // 2
     TARGET_THRESHOLD = 10
-    CONFIDENCE_THRESHOLD = 1
+    CONFIDENCE_THRESHOLD = 0.15
     THROTTLE_INITIAL = 0.15
     THROTTLE_STEP = 0.05
     THROTTLE_MAX = 0.30
@@ -58,9 +58,10 @@ def test_detects_the_line():
     max_yellow, confidence, _mask = lf.get_i_color(img)
     assert abs(max_yellow - 100) <= 3
     assert confidence > 0
-    # The declared return type is plain ints, not numpy scalars.
     assert isinstance(max_yellow, int)
-    assert isinstance(confidence, int)
+    # Confidence is a fraction of the scan column, not a raw sum of mask values.
+    assert isinstance(confidence, float)
+    assert 0.0 <= confidence <= 1.0
 
 
 def test_no_offset_matches_base_target():
@@ -301,3 +302,78 @@ def test_older_configs_declaring_three_outputs_still_work():
     mem.put(["pilot/steering", "pilot/throttle", "cv/image_array"], outputs)
     assert mem.get(["pilot/steering"])[0] == outputs[0]
     assert mem.get(["cv/image_array"])[0] is outputs[2]
+
+
+# --------------------------------------------- the gate that could not reject
+
+
+def test_confidence_is_a_fraction_of_the_scan_column():
+    """
+    A full column of tape scores 1.0, half scores 0.5. It used to be the raw sum
+    of mask values -- 255 per pixel -- while the threshold was documented as a
+    fraction, so the two were never comparable.
+    """
+    lf = make_follower()
+    full = np.zeros((IMAGE_H, IMAGE_W, 3), dtype=np.uint8)
+    full[:, 150:160] = (255, 255, 0)  # tape spanning the whole band
+    _, conf, _ = lf.get_i_color(full)
+    assert conf == pytest.approx(1.0, abs=0.05)
+
+    half = np.zeros((IMAGE_H, IMAGE_W, 3), dtype=np.uint8)
+    half[SCAN_Y : SCAN_Y + Cfg.SCAN_HEIGHT // 2, 150:160] = (255, 255, 0)
+    _, conf, _ = lf.get_i_color(half)
+    assert conf == pytest.approx(0.5, abs=0.05)
+
+
+def test_a_speck_no_longer_counts_as_a_line():
+    """
+    The failure this fixes: ten matching pixels at the edge of the frame were
+    treated as a confident detection, the PID chased them, steering saturated
+    and the car drove off the course. 255 >= 0.0015 was always true.
+    """
+    lf = make_follower()
+    speck = np.zeros((IMAGE_H, IMAGE_W, 3), dtype=np.uint8)
+    # one row of a ten-row band, at the right-hand edge
+    speck[SCAN_Y : SCAN_Y + 1, IMAGE_W - 15 : IMAGE_W - 8] = (255, 255, 0)
+
+    _, _, _, conf, seen = lf.run(speck)
+    assert conf == pytest.approx(1 / Cfg.SCAN_HEIGHT, abs=0.02)
+    assert seen is False, "a one-row speck must not read as a detected line"
+
+
+def test_a_real_line_still_passes_the_gate():
+    lf = make_follower()
+    _, _, _, conf, seen = lf.run(make_image(150))
+    assert seen is True
+    assert conf > Cfg.CONFIDENCE_THRESHOLD
+
+
+def test_an_old_style_threshold_leaves_the_gate_open():
+    """
+    Someone upgrading still has 0.0015 in their config. Under the new units that
+    is a very low bar, so they keep the behaviour they had rather than suddenly
+    getting `No line detected` everywhere. It is a migration, not a trap.
+    """
+
+    class OldCfg(Cfg):
+        CONFIDENCE_THRESHOLD = 0.0015
+
+    lf = make_follower(cfg=OldCfg())
+    speck = np.zeros((IMAGE_H, IMAGE_W, 3), dtype=np.uint8)
+    speck[SCAN_Y : SCAN_Y + 1, IMAGE_W - 15 : IMAGE_W - 8] = (255, 255, 0)
+    _, _, _, _, seen = lf.run(speck)
+    assert seen is True, "old configs should behave as they did before"
+
+
+def test_confidence_is_independent_of_image_width():
+    """
+    Expressing it per column rather than per frame means a wider camera does not
+    silently change what the threshold means.
+    """
+    half = Cfg.SCAN_HEIGHT // 2
+    for width in (160, 640):
+        lf = make_follower()
+        img = np.zeros((IMAGE_H, width, 3), dtype=np.uint8)
+        img[SCAN_Y : SCAN_Y + half, width // 2 - 5 : width // 2 + 5] = (255, 255, 0)
+        _, conf, _ = lf.get_i_color(img)
+        assert conf == pytest.approx(0.5, abs=0.05), width

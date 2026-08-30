@@ -154,6 +154,25 @@ saved image is the follower's own mask rather than the scene, and calibrating
 from that measures the previous answer. The command detects and excludes such
 rows, and says so, but a clean frame is better.
 
+### CONFIDENCE_THRESHOLD changed meaning
+
+It is now the **fraction of the scan column** that must match the tape colour,
+0.0 to 1.0, defaulting to 0.15.
+
+It was previously compared against a raw sum of mask values &mdash; 255 per matching
+pixel &mdash; while being documented as a fraction with a default of 0.0015. One
+matching pixel scored 255 and cleared it, so **the gate could never reject
+anything**. On a real track a ten-pixel speck at the edge of the frame counted as
+a confident line detection: the follower chased it, steering saturated, and the
+car drove off the course.
+
+Measured on that track: tape genuinely in view scores 0.28&ndash;0.44, and the speck
+that caused the crash scored 0.125.
+
+If your config still has a value near 0.0015, the gate stays effectively open and
+you keep the behaviour you had &mdash; nothing breaks on upgrade. Raise it to around
+0.15 to actually get the protection.
+
 **Recalibrate whenever the camera moves.** The calibration records the `SCAN_Y`,
 image size and camera type it was taken with, and `get_calibration` reports when
 those no longer match — but it cannot tell that someone knocked the camera.
