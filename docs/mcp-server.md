@@ -368,7 +368,85 @@ The server can make a vehicle move, so treat the port as a control surface.
 - **Add a token** if the network is shared. The server accepts a token verifier, and
   that token is the only thing between a guest on the WiFi and the throttle.
 
-## 8. Testing without a car
+## 8. A worked example
+
+These are the settings one car ended up with after a session of tuning on a real
+indoor track. **The numbers are that car's, not yours** &mdash; they depend on its
+ESC, its servo, its camera mount and the lighting in that room. What transfers is
+the *method*: every value below was measured rather than guessed, and the
+measurement is given so you can repeat it.
+
+```python
+# colour, from `donkey calibrate-color` on five clean frames
+COLOR_THRESHOLD_LOW  = (17, 103, 104)
+COLOR_THRESHOLD_HIGH = (37, 255, 255)
+CONFIDENCE_THRESHOLD = 0.15
+
+# where and how much to look
+SCAN_Y      = 100
+SCAN_HEIGHT = 80
+
+# when to treat it as a corner
+TARGET_THRESHOLD = 20
+
+# speed
+THROTTLE_MIN = 0.25
+THROTTLE_MAX = 0.3
+
+PWM_STEERING_THROTTLE = {
+    "STEERING_RIGHT_PWM":   300,
+    "STEERING_LEFT_PWM":    440,
+    "THROTTLE_STOPPED_PWM": 370,
+    "THROTTLE_FORWARD_PWM": 450,
+    ...
+}
+```
+
+### How each one was arrived at
+
+**Colour and confidence.** `donkey calibrate-color` measured the tape at hue
+24&ndash;31, saturation 123+, value 135+, and proposed a window with margin. Tape
+genuinely in view scored 0.28&ndash;0.44 on the confidence scale; a ten-pixel speck at
+the frame edge that had sent the car off course scored 0.125. 0.15 sits between.
+
+**`THROTTLE_FORWARD_PWM`.** The car would not move at all. Converting to
+microseconds showed why: at the original 400, full throttle was only +122&nbsp;&micro;s
+above neutral, and 0.3 throttle just +37&nbsp;&micro;s &mdash; inside the ESC's deadband.
+Ramping the commanded throttle found the car first moved at about **+72&nbsp;&micro;s**.
+450 puts 0.3 throttle at +98&nbsp;&micro;s, comfortably past it.
+
+**`THROTTLE_MIN`.** At 0.15 the ESC sees +49&nbsp;&micro;s &mdash; enough to keep rolling,
+since rolling friction is lower than stiction, but not to start again. The car
+slowed for a corner, stopped, and could not restart. 0.25 gives +81&nbsp;&micro;s, just
+above the measured threshold.
+
+**Steering PWM.** The original 345&ndash;415 is &plusmn;142&nbsp;&micro;s, about a third of a
+typical RC servo's travel. The symptom was the PID winding to full lock and the
+car never recovering. 300&ndash;440 is &plusmn;285&nbsp;&micro;s, and corners then entered *and
+exited* &mdash; steering peaked around 0.5 and came back rather than pinning at 1.0.
+
+**`TARGET_THRESHOLD`.** Steering is `Kp` times the pixel error, so with
+`PID_P = -0.01` the pixel error is roughly `steering * 100`. Logging a real run
+gave a median error of 19&nbsp;px, which meant the stock threshold of 10 classified
+83% of the run as cornering and the car almost never reached `THROTTLE_MAX`.
+Raising it to 20 took mean throttle up 41% and time-at-maximum from 4% to 48%.
+
+**`THROTTLE_MAX`.** 0.4 was tried and reverted: on a tight section it produced
+four lost-line events against zero at 0.3.
+
+**`SCAN_Y`.** 60, 100 and 140 were all tried. 100 was best. Looking nearer (140)
+meant the car could not see where the line was going; looking further (60) made
+the tape thinner in frame, so confidence fell and the gate rejected it.
+
+### The general lesson
+
+Three of these were the same bug in different clothes: **a control range too
+narrow to do anything with**. Throttle spanned 30 PWM counts, steering 70, and in
+both cases the software was working perfectly and commanding values the hardware
+could not act on. If a car will not move, or will not turn, convert the PWM
+numbers to microseconds before touching anything else.
+
+## 9. Testing without a car
 
 Everything above is exercisable on a laptop.
 
