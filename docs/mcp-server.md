@@ -212,6 +212,61 @@ donkey mcp --car ~/mycar
 Either way the tools are at `http://<host>:8891/mcp`. Nothing is running until the
 agent calls `start`, and the car does not move until it also sets a throttle.
 
+### Upgrading a car that already exists
+
+Pulling new code onto the Pi is only the first step. A car directory holds
+*copies* of `manage.py` and `config.py` taken when it was created, and the
+supervisor prefers the car's own `manage.py` so that local changes survive. A
+template change therefore does not reach an existing car on its own, and the
+failure is silent &mdash; the car keeps running, just without the new behaviour.
+
+**1. Pull the code.**
+
+```zsh
+cd ~/projects/donkeycar && git pull
+```
+
+**2. Refresh the car's copies.** Run it *from inside the car directory*, and
+name the template &mdash; without `--template` it defaults to `complete` and you
+will get the wrong car app:
+
+```zsh
+cd ~/mycar
+donkey update --template cv_control
+```
+
+That rewrites `manage.py` and `config.py` from the template and leaves
+`myconfig.py` alone. Back up `manage.py` first if you have edited it.
+
+**3. Check `myconfig.py` for overrides of anything that changed.** `myconfig.py`
+wins over `config.py`, so a stale value there survives step 2. The one that
+bites is `CV_CONTROLLER_OUTPUTS`: a car created earlier has
+
+```python
+CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array']
+```
+
+`Memory.put` assigns by position, so extra values the controller returns are
+simply dropped. That is deliberate &mdash; it is what keeps old configs working &mdash;
+but it means new outputs never arrive, and everything downstream reads `None`
+with no error anywhere. The current list is:
+
+```python
+CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array',
+                         'cv/confidence', 'cv/line_detected']
+```
+
+**4. Restart the server, not just the vehicle.**
+
+```zsh
+pkill -f "donkey mcp"
+donkey mcp --car ~/mycar --host <the car's LAN address>
+```
+
+`start` re-reads the *config*, but the builder module is imported once when the
+process starts, so a changed `manage.py` needs a real restart. As a rule: config
+values reload, code does not.
+
 ### Tuning without restarting
 
 `start` re-reads the car's config, so the loop is:
