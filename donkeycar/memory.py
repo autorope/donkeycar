@@ -6,36 +6,37 @@ Created on Sun Jun 25 11:07:48 2017
 @author: wroscoe
 """
 
+from collections.abc import ItemsView, Iterable, KeysView, Sequence, ValuesView
+from typing import Any
+
+
 class Memory:
     """
     A convenience class to save key/value pairs.
     """
-    def __init__(self, *args, **kw):
-        self.d = {}
-    
-    def __setitem__(self, key, value):
-        if type(key) is str:
+
+    def __init__(self, *args: Any, **kw: Any) -> None:
+        self.d: dict[str, Any] = {}
+
+    def __setitem__(self, key: str | Sequence[str], value: Any) -> None:
+        if isinstance(key, str):
             self.d[key] = value
         else:
-            if type(key) is not tuple:
-                key = tuple(key)
-                value = tuple(key)
             for i, k in enumerate(key):
                 self.d[k] = value[i]
-        
-    def __getitem__(self, key):
-        if type(key) is tuple:
+
+    def __getitem__(self, key: str | tuple[str, ...]) -> Any:
+        if isinstance(key, tuple):
             return [self.d[k] for k in key]
-        else:
-            return self.d[key]
-        
-    def update(self, new_d):
+        return self.d[key]
+
+    def update(self, new_d: dict[str, Any]) -> None:
         '''
         update memory with values from a dictionary
         '''
         self.d.update(new_d)
-        
-    def put(self, keys, inputs):
+
+    def put(self, keys: Sequence[str], inputs: Any) -> None:
         if len(keys) > 1:
             for i, key in enumerate(keys):
                 try:
@@ -43,28 +44,28 @@ class Memory:
                 except IndexError as e:
                     error = str(e) + ' issue with keys: ' + str(key)
                     raise IndexError(error)
-        
+
         else:
             self.d[keys[0]] = inputs
 
-            
-    def get(self, keys):
+    def get(self, keys: Sequence[str]) -> list[Any]:
         result = [self.d.get(k) for k in keys]
         return result
 
-    def remove(self, keys):
+    def remove(self, keys: Iterable[str]) -> None:
         '''
-        Remove all the keys in the given list
+        Remove all the keys in the given list.
+        Keys that are not in memory are ignored, so it is safe to remove
+        a key that another part has already removed.
         '''
         for key in keys:
-            del self.d[key]
-    
-    def keys(self):
+            self.d.pop(key, None)
+
+    def keys(self) -> KeysView[str]:
         return self.d.keys()
-    
-    def values(self):
+
+    def values(self) -> ValuesView[Any]:
         return self.d.values()
-    
-    def items(self):
+
+    def items(self) -> ItemsView[str, Any]:
         return self.d.items()
-        
