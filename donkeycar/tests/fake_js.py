@@ -13,6 +13,11 @@ import textwrap
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from donkeycar.parts.controls.device import (
+    NO_CHANGE,
+    AbstractInputController,
+    ControlChange,
+)
 from donkeycar.parts.controls.linux import (
     JS_EVENT_AXIS,
     JS_EVENT_BUTTON,
@@ -64,6 +69,80 @@ class FakeJsDevice:
 #: Fail the type check here, rather than in twelve gamepad test modules,
 #: if the fake ever stops matching the real device contract.
 _protocol_check: JsDevice = FakeJsDevice()
+
+
+class FakeInputController(AbstractInputController):
+    """
+    An AbstractInputController that replays scripted state changes, for
+    testing the parts built on top of a controller rather than a
+    controller itself.
+    """
+
+    def __init__(
+        self,
+        changes: Iterable[ControlChange] = (),
+        init_results: Iterable[bool] = (),
+        poll_error: BaseException | None = None,
+    ) -> None:
+        """
+        changes:      state changes poll() will return, in order
+        init_results: results init() will return before settling on True,
+                      to simulate a device that is not ready yet
+        poll_error:   raised by the next call to poll(), once
+        """
+        self.changes = list(changes)
+        self.init_results = list(init_results)
+        self.poll_error = poll_error
+        self.init_count = 0
+        self.showed_map = False
+        self.closed = False
+
+    def init(self) -> bool:
+        self.init_count += 1
+        if self.init_results:
+            return self.init_results.pop(0)
+        return True
+
+    def show_map(self) -> bool:
+        self.showed_map = True
+        return True
+
+    def poll(self) -> ControlChange:
+        if self.poll_error is not None:
+            error = self.poll_error
+            self.poll_error = None
+            raise error
+        if self.changes:
+            return self.changes.pop(0)
+        return NO_CHANGE
+
+    def shutdown(self) -> None:
+        self.closed = True
+
+
+class FakeClock:
+    """
+    A clock the test drives by hand, so that click and hold timing is
+    exercised without any real waiting.
+    """
+
+    def __init__(self, now: float = 0.0) -> None:
+        self.now = now
+        self.slept: list[float] = []
+
+    def __call__(self) -> float:
+        return self.now
+
+    def advance(self, seconds: float) -> float:
+        self.now += seconds
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        """
+        Stands in for time.sleep, recording and advancing instead of waiting.
+        """
+        self.slept.append(seconds)
+        self.now += seconds
 
 
 def button_event(number: int, value: int, time: int = 0) -> JsEvent:

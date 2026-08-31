@@ -15,6 +15,18 @@ from donkeycar.parts.controls.device import (
     AbstractInputController as AbstractInputController,
     ControlChange as ControlChange,
 )
+from donkeycar.parts.controls.events import (
+    BUTTON_CLICK as BUTTON_CLICK,
+    BUTTON_DOWN as BUTTON_DOWN,
+    BUTTON_HOLD as BUTTON_HOLD,
+    BUTTON_UP as BUTTON_UP,
+    InputControllerEvents as InputControllerEvents,
+    format_axis_event as format_axis_event,
+    format_axis_key as format_axis_key,
+    format_button_click_event as format_button_click_event,
+    format_button_event as format_button_event,
+    format_button_key as format_button_key,
+)
 from donkeycar.parts.controls.linux import (
     JsDevice as JsDevice,
     JsDeviceInfo as JsDeviceInfo,
@@ -24,12 +36,22 @@ from donkeycar.parts.controls.linux import (
 )
 
 __all__ = [
+    'BUTTON_CLICK',
+    'BUTTON_DOWN',
+    'BUTTON_HOLD',
+    'BUTTON_UP',
     'NO_CHANGE',
     'AbstractInputController',
     'ControlChange',
+    'InputControllerEvents',
     'JsDevice',
     'JsDeviceInfo',
     'JsEvent',
     'LinuxGameController',
     'LinuxJsDevice',
+    'format_axis_event',
+    'format_axis_key',
+    'format_button_click_event',
+    'format_button_event',
+    'format_button_key',
 ]

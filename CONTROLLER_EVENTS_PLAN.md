@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 2 / 36 commits.**
-Phase 0 ▓▓░ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 3 / 36 commits — Phase 0 complete.**
+Phase 0 ▓▓▓ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -247,7 +247,7 @@ per-binding `web/w*`-vs-joystick branching in `path_follow.py` and
 Every commit: green `pytest`, green `mypy --strict` on the new package, no
 hardware required.
 
-### Phase 0 — Foundation (2 / 3)
+### Phase 0 — Foundation (3 / 3) ✅
 
 - [x] **0.1** `Memory.remove` uses `pop`; rewrite `events.py` as `OneShotEvents`
       — *tests:* extend `test_memory.py`; new `test_events.py` (emit/expire/re-emit, missing-key removal)
@@ -261,8 +261,12 @@ hardware required.
       already gone from the built dict — this is what catches defect 7). The
       helpers have their own self-tests, and `fake_js.py` is type-checked so the
       fake cannot drift from the `JsDevice` protocol.
-- [ ] **0.3** `InputControllerEvents` rewrite: injected clock, deferred clicks (D1), `hold` (D2), real exception handling, retry moved into `update()`
+- [x] **0.3** `InputControllerEvents` rewrite: injected clock, deferred clicks (D1), `hold` (D2), real exception handling, retry moved into `update()`
       — *tests:* new `test_input_controller_events.py`: press/release/click ordering, multi-click counts, one-shot expiry across loops, persistent state keys, clock-driven with zero `sleep`
+      — lives at `controls/events.py`; `FakeInputController` and `FakeClock` joined
+      the shared test kit. A hold suppresses the click that press would otherwise
+      have produced (a long press is its own gesture, not a slow click) — that was
+      an open question D2 did not settle, and it is now tested.
 
 ### Phase 1 — Gamepads, one commit each (0 / 12)
 
@@ -315,7 +319,7 @@ highest-value tests in the whole plan, since this logic has never had any.
 - [ ] **3.2** mode + recording — `TogglePilotMode`, `ToggleRecording`, `AutoRecordOnThrottle`, `ShowRecordCount`, `EraseLastNRecords`; deletes `complete.py`'s `ToggleRecording`, which #1097 explicitly calls out for removal
 - [ ] **3.3** throttle limits — `AdjustMaxThrottle`, `ToggleConstantThrottle`
 - [ ] **3.4** safety — `EmergencyStop` (the 4-state ES machine as a part), `ChaosMonkey`, `StopVehicle`
-- [ ] **3.5** template-specific — `EnableAiLaunch`, `IncrementBehaviorState`, `SavePath`/`LoadPath`/`ErasePath`/`ResetOrigin`, `AdjustPidP`/`AdjustPidD`
+- [ ] **3.5** template-specific — `EnableAiLaunch`, `IncrementBehaviorState`, `SavePath`/`LoadPath`/`ErasePath`/`ResetOrigin`, `AdjustPidP`/`AdjustPidD`; also deletes `donkeycar/parts/controller_events.py`, the POC, whose parts have all been ported by this point
 
 ### Phase 4 — Behavior mapping layer (0 / 2)
 
