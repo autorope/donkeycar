@@ -123,6 +123,8 @@ python_version = "3.12"
 files = [
     "donkeycar/memory.py",
     "donkeycar/events.py",
+    "donkeycar/parts/controls/",
+    "donkeycar/tests/fake_js.py",
 ]
 ignore_missing_imports = true
 # analyse imported modules for type information but do not report their
@@ -135,6 +137,8 @@ warn_unused_configs = true
 module = [
     "donkeycar.memory",
     "donkeycar.events",
+    "donkeycar.parts.controls.*",
+    "donkeycar.tests.fake_js",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true

@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 1 / 36 commits.**
-Phase 0 ▓░░ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 2 / 36 commits.**
+Phase 0 ▓▓░ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -199,7 +199,13 @@ Found while reading the branch; all are in Phase 0 unless noted:
    (Phase 1, WiiU commit.)
 9. **No axis jitter filter.** #1097 notes stick jitter floods the event stream
    (visible in the logged sample: five `right_stick_horz` events for one
-   `right_stick_vert` push). Add an epsilon and wire `JOYSTICK_DEADZONE` to it.
+   `right_stick_vert` push). Fixed in 0.2 as `axis_epsilon`, a deadband on
+   *change* measured against the last reported value, so jitter is suppressed
+   but slow sustained movement still accumulates through. A return to exact
+   center is always reported — swallowing it would leave throttle or steering
+   stuck slightly off zero. Note this is **not** `JOYSTICK_DEADZONE`, which is
+   a deadband around center and belongs with `UserThrottle`/`UserSteering` in
+   3.1, where it gated auto-record in the legacy code.
 10. **`Nimbus` axes named `hmm` and `what`.** Placeholder names shipping in
     the public map. (Phase 1, Nimbus commit — needs a call on real names.)
 11. **`Memory.__setitem__` assigns keys as values.** For a non-tuple sequence
@@ -241,23 +247,39 @@ per-binding `web/w*`-vs-joystick branching in `path_follow.py` and
 Every commit: green `pytest`, green `mypy --strict` on the new package, no
 hardware required.
 
-### Phase 0 — Foundation (1 / 3)
+### Phase 0 — Foundation (2 / 3)
 
 - [x] **0.1** `Memory.remove` uses `pop`; rewrite `events.py` as `OneShotEvents`
       — *tests:* extend `test_memory.py`; new `test_events.py` (emit/expire/re-emit, missing-key removal)
       — also typed `memory.py`, added the scoped strict-mypy config (§5) and a
       `mypy` step to CI, and fixed a latent `Memory.__setitem__` bug (see below)
-- [ ] **0.2** `controls/` package: `ControlChange`, `AbstractInputController`, `JsDevice` seam, typed `LinuxGameController` with defects 1, 2, 9 fixed
+- [x] **0.2** `controls/` package: `ControlChange`, `AbstractInputController`, `JsDevice` seam, typed `LinuxGameController` with defects 1, 2, 9 fixed
       — *tests:* new `test_linux_game_controller.py` + `FakeJsDevice` fixture: enumeration, name mapping, unmapped-code fallback names, axis scaling, init-event suppression, jitter filter
+      — the Phase 1 test kit lives in `donkeycar/tests/fake_js.py`: `FakeJsDevice`,
+      the `button_event`/`axis_event`/`init_event` builders, `duplicate_values()`,
+      and `duplicate_literal_keys()` (an AST check, since a duplicate dict key is
+      already gone from the built dict — this is what catches defect 7). The
+      helpers have their own self-tests, and `fake_js.py` is type-checked so the
+      fake cannot drift from the `JsDevice` protocol.
 - [ ] **0.3** `InputControllerEvents` rewrite: injected clock, deferred clicks (D1), `hold` (D2), real exception handling, retry moved into `update()`
       — *tests:* new `test_input_controller_events.py`: press/release/click ordering, multi-click counts, one-shot expiry across loops, persistent state keys, clock-driven with zero `sleep`
 
 ### Phase 1 — Gamepads, one commit each (0 / 12)
 
-Each commit adds one name map to `gamepads.py` plus its test. Every commit
-gets the same three assertions — no duplicate device codes, no duplicate
-control names, and a synthetic-event round trip through `FakeJsDevice` —
-which is what catches defects 7 and 8.
+Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
+now pure data — a `LinuxGameController` subclass declaring the class
+constants `BUTTON_NAMES` and `AXIS_NAMES`, keyed by driver code:
+
+```python
+class LogitechJoystick(LinuxGameController):
+    AXIS_NAMES = {0x00: 'left_stick_horz', ...}
+    BUTTON_NAMES = {0x130: 'A', ...}
+```
+
+Every commit gets the same three assertions — `duplicate_literal_keys()` (no
+duplicate device codes), `duplicate_values()` (no duplicate control names),
+and a synthetic-event round trip through `FakeJsDevice` — which is what
+catches defects 7 and 8.
 
 - [ ] **1.1** `LogitechF710` — re-land the POC map on the new base
 - [ ] **1.2** `PS3`
