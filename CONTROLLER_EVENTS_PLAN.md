@@ -322,21 +322,33 @@ Legacy `controller.py` is untouched and still working throughout Phase 1, so
 every one of these commits is independently mergeable.
 
 **Measured on a real Xbox One S pad through `xpad` (2026-08-31), which the
-1.7 commit must act on.** The driver reports 8 axes and 11 buttons; the
-legacy `XboxOneJoystick` map is wrong for four of them:
+1.7 commit must act on.** Each control was moved in isolation with pauses
+between, and every axis event timestamped, so these are attributions rather
+than inferences from convention. The driver reports 8 axes and 11 buttons.
 
-| code | legacy name | what it actually is | evidence |
+| code | legacy name | verified as | how |
 |---|---|---|---|
-| `0x02` | `right_stick_horz` | **left trigger** (`ABS_Z`) | rests at `-1.0`, sweeps to `+1.0` one way only |
-| `0x05` | `right_stick_vert` | **right trigger** (`ABS_RZ`) | same |
-| `0x03` | *(unmapped)* | **right stick X** (`ABS_RX`) | 52 events while nobody touched a trigger |
-| `0x04` | *(unmapped)* | **right stick Y** (`ABS_RY`) | 64 events, ditto |
-| `0x09`, `0x0a` | `right_trigger`, `left_trigger` | **not reported at all** | absent from the driver's axis list |
+| `0x00`, `0x01` | `left_stick_horz/vert` | correct | — |
+| `0x02` | `right_stick_horz` | **left trigger** | isolated squeeze at t=181.6s moved only this |
+| `0x05` | `right_stick_vert` | **right trigger** | isolated squeeze at t=184.3s, and again at t=196.4s |
+| `0x03` | *(unmapped)* | **right stick X** | stick pushed left at t=190.1s drove this to `-0.94`, returning to `0.0` |
+| `0x04` | *(unmapped)* | **right stick Y** | stick pushed up at t=193.2s drove this to `-1.0`, returning to `0.0` |
+| `0x10`, `0x11` | `dpad_horiz/vert` | correct | discrete -1 / 0 / +1 |
+| `0x09`, `0x0a` | `right_trigger`, `left_trigger` | **do not exist** | absent from the driver's axis list |
 
-So on `main` today an Xbox user's "right stick" *is* their triggers, resting
-pegged at `-1.0`, and the real right stick has no name. Four buttons are also
-unmapped: `0x13a` (back/view), `0x13c` (guide), `0x13d`/`0x13e` (stick
-presses); `dpad_horiz`/`dpad_vert` are correct.
+Buttons unmapped by the legacy map: `0x13a` (back/view), `0x13c` (guide),
+`0x13d`/`0x13e` (stick presses).
+
+Triggers rest at `-1.0` and travel to `+1.0`; sticks rest at `0.0` and travel
+both ways. That difference is what identifies them, and it also means the
+legacy "Forza mode" was dead code on this driver: `magnitude()` was bound to
+`right_trigger`/`left_trigger`, names that map to `0x09`/`0x0a`, which the
+device never reports. So on `main` today an Xbox user's "right stick" *is*
+their triggers, pegged at `-1.0` at rest, the real right stick has no name,
+and Forza mode never runs.
+
+Directions are conventional: +x is right, and up is negative on the vertical
+axes.
 
 This is the class of error the `duplicate_*` assertions cannot catch — a map
 can be perfectly self-consistent and still describe a different device. Any
