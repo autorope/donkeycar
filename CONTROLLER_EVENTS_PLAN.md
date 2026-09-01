@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 20 / 36 commits — Phases 0, 1 and 2 complete.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ░░░░░ ·
+**Progress: 21 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -443,13 +443,20 @@ gamepad map we cannot verify against hardware should say so in a comment.
 - [ ] **2.4** Networked `JoyStickSub` as a device — replaces the `ctr.js = netwkJs` monkey-patch in the templates
 - [ ] **2.5** Web controller emits button events (D3)
 
-### Phase 3 — Behavior parts (0 / 5)
+### Phase 3 — Behavior parts (1 / 5)
 
 Every legacy `JoystickController` method becomes a part. These are pure
 functions of their inputs, so tests are plain `run()` calls — the
 highest-value tests in the whole plan, since this logic has never had any.
 
-- [ ] **3.1** driving — `UserSteering`, `UserThrottle` (deadzone, scale, direction), `TriggerAxisThrottle` (Xbox "Forza" mode from `magnitude()`)
+- [x] **3.1** driving — `UserSteering`, `UserThrottle` (deadzone, scale, direction),
+      `TriggerThrottle` (the Xbox "Forza" mode). Throttle scale arrives as an *input*
+      so 3.3 can change it while driving. Two safety points, both tested: an untouched
+      trigger has no value in memory and reading that absence as centre would mean
+      half throttle at startup; and `TriggerThrottle` takes both triggers together, so
+      squeezing both cancels rather than last-writer-wins. **`JOYSTICK_DEADZONE`
+      defaults to off here** — legacy applied it only to the record decision, never to
+      steering or throttle, so wiring it in Phase 5 is a deliberate behaviour change.
 - [ ] **3.2** mode + recording — `TogglePilotMode`, `ToggleRecording`, `AutoRecordOnThrottle`, `ShowRecordCount`, `EraseLastNRecords`; deletes `complete.py`'s `ToggleRecording`, which #1097 explicitly calls out for removal
 - [ ] **3.3** throttle limits — `AdjustMaxThrottle`, `ToggleConstantThrottle`
 - [ ] **3.4** safety — `EmergencyStop` (the 4-state ES machine as a part), `ChaosMonkey`, `StopVehicle`

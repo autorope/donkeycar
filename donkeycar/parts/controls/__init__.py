@@ -10,6 +10,11 @@ memory, which ordinary parts consume as inputs and run_conditions.
 See CONTROLLER_EVENTS_PLAN.md and issue #1097.
 """
 
+from donkeycar.parts.controls.behaviors import (
+    TriggerThrottle as TriggerThrottle,
+    UserSteering as UserSteering,
+    UserThrottle as UserThrottle,
+)
 from donkeycar.parts.controls.device import (
     NO_CHANGE as NO_CHANGE,
     AbstractInputController as AbstractInputController,
@@ -111,6 +116,9 @@ __all__ = [
     'RealPyGameDevice',
     'RoboHATController',
     'SerialPort',
+    'TriggerThrottle',
+    'UserSteering',
+    'UserThrottle',
     'ZmqPublisher',
     'ZmqSubscriber',
     'RC3ChanJoystick',
