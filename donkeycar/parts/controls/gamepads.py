@@ -275,6 +275,77 @@ class PS3JoystickPC(PS3Joystick):
     }
 
 
+class PS4Joystick(LinuxGameController):
+    """
+    Sony DualShock 4 on the in-kernel `hid-sony` driver.
+
+    Closer to the Xbox pads in shape than to the DualShock 3: the dpad is an
+    axis pair rather than four buttons, and the triggers report as analog
+    axes with digital buttons alongside.
+
+    The legacy map for this pad had a defect that cost two controls.  It
+    wrote 0x13a twice, as both 'L3' and 'share', and 0x13b twice, as both
+    'R3' and 'options'.  Python keeps the last of a repeated key, so the
+    earlier entries vanished silently and the stick-press buttons could not
+    be bound at all.  A duplicate key cannot be seen in the finished dict --
+    it is already gone -- which is why the tests read the source instead.
+
+    Fixing that meant deciding what those codes really are, and the codes
+    are unambiguous: 0x13a is BTN_SELECT and 0x13b is BTN_START, so share
+    and options, while the stick presses are BTN_THUMBL and BTN_THUMBR at
+    0x13d and 0x13e.  That is what PS3Joystick already does on the same
+    driver.
+
+    Two further corrections in the same area.  The legacy map had the
+    shoulders and triggers the other way round from its own PS3 map -- L1 at
+    0x138 and L2 at 0x136, where the PS3 map, the kernel headers and this
+    one all have L1 at 0x136 (BTN_TL) and L2 at 0x138 (BTN_TL2).  The two
+    shipped maps cannot both be right for the same driver.  And 0x13d was
+    named 'pad' for the touchpad click; it is BTN_THUMBL.  The touchpad
+    presents as its own input device rather than on the joystick node, so
+    it is not named here at all.
+
+    NOT VERIFIED against hardware -- no DualShock 4 was available.  Every
+    correction above follows the kernel's own button codes and agrees with
+    the PS3 map on the shared driver, but a pad on a bench would settle it.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'left_trigger',
+        0x03: 'right_stick_horz',
+        0x04: 'right_stick_vert',
+        0x05: 'right_trigger',
+        0x10: 'dpad_horiz',
+        0x11: 'dpad_vert',
+
+        # motion sensors; the legacy names, meanings unestablished
+        0x06: 'motion_a',
+        0x07: 'motion_b',
+        0x08: 'motion_c',
+        0x19: 'tilt_a',
+        0x1A: 'tilt_b',
+        0x1B: 'tilt_c',
+    }
+
+    BUTTON_NAMES = {
+        0x130: 'cross',
+        0x131: 'circle',
+        0x133: 'triangle',
+        0x134: 'square',
+        0x136: 'left_shoulder',
+        0x137: 'right_shoulder',
+        0x138: 'left_trigger_button',
+        0x139: 'right_trigger_button',
+        0x13A: 'share',
+        0x13B: 'options',
+        0x13C: 'ps',
+        0x13D: 'left_stick_press',
+        0x13E: 'right_stick_press',
+    }
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).

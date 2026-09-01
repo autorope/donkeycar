@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 10 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 11 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -193,8 +193,13 @@ Found while reading the branch; all are in Phase 0 unless noted:
    threaded `update()`, as legacy `JoystickController.update()` did.
 7. **`PS4Joystick.button_names` has duplicate keys** — `0x13a` is written as
    both `L3` and `share`, `0x13b` as both `R3` and `options`. Python keeps the
-   last, so **`L3` and `R3` are unreachable on PS4 today**. (Phase 1, PS4
-   commit; the duplicate-key test catches it.)
+   last, so **`L3` and `R3` are unreachable on PS4 today**. Fixed in 1.6, and
+   the AST check was run against the legacy class to confirm it reports exactly
+   those two codes. Two neighbouring errors turned up with it: legacy PS4 and
+   legacy PS3 disagree over which codes are the shoulders and which the
+   triggers (the kernel headers side with PS3), and `0x13d` was named `pad` for
+   the touchpad when it is `BTN_THUMBL` — the touchpad is a separate input
+   device and never appears on the joystick node.
 8. **`WiiU` button `548: 'PAD_DOWN,'`** — trailing comma inside the string.
    (Phase 1, WiiU commit.)
 9. **No axis jitter filter.** #1097 notes stick jitter floods the event stream
@@ -288,7 +293,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (6 / 11)
+### Phase 1 — Gamepads, one commit each (7 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -356,7 +361,11 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       with more axes surfaced, then 1.2 is not different but *incomplete*, and a Pi
       user is getting anonymous `axis(0x2c)` events for pressure the pad really
       sends — in which case these two should merge.
-- [ ] **1.6** `PS4` — fixes defect 7 (`L3`/`R3` unreachable)
+- [x] **1.6** `PS4` — fixes defect 7. Confirmed the AST check catches the real
+      legacy map: `duplicate_literal_keys(legacy.PS4Joystick)` reports `['314',
+      '315']`, i.e. `0x13a`/`0x13b`. Also resolves a disagreement between the two
+      shipped Sony maps over which codes are shoulders and which are triggers, and
+      drops the `pad` name for `0x13d`, which is `BTN_THUMBL`.
 - [x] **1.7** `XboxOne` — done first, out of order, while the pad was on the
       bench; written from the measured capture below rather than from convention,
       and verified against the real device (every control named, no fallbacks)
