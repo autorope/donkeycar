@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 25 / 37 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓░ ·
+**Progress: 26 / 37 commits — Phase 3 complete.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -443,7 +443,7 @@ gamepad map we cannot verify against hardware should say so in a comment.
 - [ ] **2.4** Networked `JoyStickSub` as a device — replaces the `ctr.js = netwkJs` monkey-patch in the templates
 - [ ] **2.5** Web controller emits button events (D3)
 
-### Phase 3 — Behavior parts (4 / 5)
+### Phase 3 — Behavior parts (5 / 5) ✅
 
 Every legacy `JoystickController` method becomes a part. These are pure
 functions of their inputs, so tests are plain `run()` calls — the
@@ -489,7 +489,22 @@ highest-value tests in the whole plan, since this logic has never had any.
       spans many loop passes, so a run condition would fire it once and abandon it
       mid-sequence, leaving the car in reverse. Pressing again mid-stop is ignored
       rather than restarting.
-- [ ] **3.5** template-specific — `EnableAiLaunch`, `IncrementBehaviorState`, `SavePath`/`LoadPath`/`ErasePath`/`ResetOrigin`, `AdjustPidP`/`AdjustPidD`; also deletes `donkeycar/parts/controller_events.py`, the POC, whose parts have all been ported by this point
+- [x] **3.5** template-specific — **smaller than planned, deliberately.** Only
+      `AdjustPid` was written: one part, signed step, replacing four closures, and it
+      floors the gain at zero (legacy subtracted with no floor, and a negative gain
+      inverts the controller so the car steers *away* from the line).
+
+      The other six named parts were **not** written. `SavePath`, `LoadPath`,
+      `ErasePath`, `ResetOrigin`, `EnableAiLaunch` and `IncrementBehaviorState` are
+      all "call this when the event fires", which `Lambda` already does — and
+      `path_follow.py` already uses it that way for its web buttons. Six one-line
+      wrapper classes would be worse than the part that exists. They close over
+      template locals (the path, the gps player, `cfg`), which do not belong in a
+      general part anyway. Only the *binding* changes, in Phase 5. Tests pin the
+      `Lambda` patterns so the claim is checked rather than assumed.
+
+      Also deletes `donkeycar/parts/controller_events.py`, the POC — everything in
+      it is now ported and nothing imported it.
 
 ### Phase 4 — Behavior mapping layer (0 / 2)
 

@@ -13,6 +13,7 @@ See CONTROLLER_EVENTS_PLAN.md and issue #1097.
 from donkeycar.parts.controls.behaviors import (
     PILOT_MODES as PILOT_MODES,
     AdjustMaxThrottle as AdjustMaxThrottle,
+    AdjustPid as AdjustPid,
     AutoRecordOnThrottle as AutoRecordOnThrottle,
     ChaosMonkey as ChaosMonkey,
     ConstantThrottle as ConstantThrottle,
@@ -101,6 +102,7 @@ __all__ = [
     'PILOT_MODES',
     'AbstractInputController',
     'AdjustMaxThrottle',
+    'AdjustPid',
     'AutoRecordOnThrottle',
     'ChaosMonkey',
     'ConstantThrottle',

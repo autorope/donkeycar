@@ -685,3 +685,64 @@ class StopVehicle:
         logger.info('stopping the vehicle')
         if self.vehicle is not None:
             self.vehicle.on = False
+
+
+#: A PID gain cannot go below this.  A negative gain inverts the
+#: controller, so it steers away from the line rather than towards it, and
+#: the car leaves the track at the first corner.
+MIN_PID_GAIN = 0.0
+
+
+class AdjustPid:
+    """
+    Trims a PID gain while driving, for tuning a line or path follower
+    without stopping to edit the configuration.
+
+        V.add(AdjustPid(pid, 'Kp', +cfg.PID_P_DELTA),
+              run_condition=format_button_event('dpad_up', BUTTON_DOWN))
+        V.add(AdjustPid(pid, 'Kp', -cfg.PID_P_DELTA),
+              run_condition=format_button_event('dpad_down', BUTTON_DOWN))
+
+    One part with a signed step, as with AdjustMaxThrottle, so that the two
+    directions cannot drift apart.  It changes the gain on the controller
+    object rather than passing a value through memory, because the PID part
+    owns its own gains and reads them every pass.
+
+    Steps once per call, so it wants a one-pass run condition.
+
+    The gain is held at or above zero.  The legacy handlers subtracted
+    without a floor, so holding the decrement long enough took the gain
+    negative, which inverts the controller: it then steers away from the
+    line and the car leaves the track at the first corner.
+    """
+
+    def __init__(
+        self,
+        pid: Any,
+        gain: str,
+        step: float,
+        minimum: float = MIN_PID_GAIN,
+    ) -> None:
+        """
+        pid:     the controller to trim
+        gain:    which gain to change, 'Kp', 'Ki' or 'Kd'
+        step:    how much to change it by, signed
+        minimum: the lowest the gain may go
+        """
+        self.pid = pid
+        self.gain = gain
+        self.step = step
+        self.minimum = minimum
+
+    def run(self) -> None:
+        if self.pid is None:
+            return
+
+        current = getattr(self.pid, self.gain, None)
+        if current is None:
+            logger.warning(f'The controller has no gain named {self.gain}.')
+            return
+
+        adjusted = max(self.minimum, current + self.step)
+        setattr(self.pid, self.gain, adjusted)
+        logger.info(f'pid {self.gain}: {adjusted}')
