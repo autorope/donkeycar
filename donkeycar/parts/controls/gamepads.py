@@ -220,6 +220,61 @@ class PS3JoystickOld(LinuxGameController):
     }
 
 
+class PS3JoystickPC(PS3Joystick):
+    """
+    Sony DualShock 3 on a PC, where the driver also exposes the pad's
+    pressure and motion axes.
+
+    Unlike the other PlayStation variants this is not a different layout.
+    Every code it shares with PS3Joystick means the same thing -- the
+    buttons are identical, and so are the sticks and triggers -- and it adds
+    the twelve pressure axes and four tilt axes on top.  So it derives from
+    PS3Joystick rather than restating it, which also stops the two drifting
+    apart if either is ever corrected.
+
+    That raises a question worth someone checking on real hardware: if this
+    is the same driver with more axes surfaced, then PS3Joystick is not
+    *different*, just incomplete, and a Pi user is getting anonymous
+    'axis(0x2c)' events for pressure the pad is really sending.  If so these
+    two should merge.  Nobody has confirmed it either way.
+
+    The legacy map noted this pad wants /dev/input/js1 rather than js0, and
+    that on Ubuntu 16.04 it drives the mouse around until you run:
+
+        xinput set-prop "Sony PLAYSTATION(R)3 Controller" "Device Enabled" 0
+
+    NOT VERIFIED against hardware.  As in PS3JoystickOld, the legacy map
+    left dpad_left_pressure at 0x2f unnamed -- the one gap in the dpad's run
+    -- and it is filled here by inference from the sequence.  Note that
+    0x30 and 0x31 are deliberately absent: on this driver the analog
+    triggers arrive at 0x02 and 0x05 with the sticks, not in the pressure
+    block where PS3JoystickOld puts them.
+    """
+
+    AXIS_NAMES = {
+        **PS3Joystick.AXIS_NAMES,
+
+        # motion sensors; the legacy names, meanings unestablished
+        0x1A: 'tilt_x',
+        0x1B: 'tilt_y',
+        0x3C: 'tilt_b',
+        0x3D: 'tilt_a',
+
+        # pressure-sensitive controls.  The triggers are absent from this
+        # run because this driver reports them at 0x02/0x05 instead.
+        0x2C: 'dpad_up_pressure',
+        0x2D: 'dpad_right_pressure',
+        0x2E: 'dpad_down_pressure',
+        0x2F: 'dpad_left_pressure',
+        0x32: 'left_shoulder_pressure',
+        0x33: 'right_shoulder_pressure',
+        0x34: 'triangle_pressure',
+        0x35: 'circle_pressure',
+        0x36: 'cross_pressure',
+        0x37: 'square_pressure',
+    }
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).

@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 9 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 10 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -288,7 +288,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (5 / 11)
+### Phase 1 — Gamepads, one commit each (6 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -349,7 +349,13 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       `0x03/0x04` on 1.2, `0x02/0x03` on 1.3. Exposes the DualShock 3's pressure
       sensitivity as twelve extra axes. Fills a gap the legacy map left at `0x2f`,
       where a left-dpad press surfaced as an anonymous `axis(0x2f)`.
-- [ ] **1.5** `PS3PC`
+- [x] **1.5** `PS3PC` — the one PlayStation variant that is *not* a different
+      layout: every code it shares with 1.2 means the same thing, and it only adds
+      the pressure and tilt axes. So it subclasses 1.2 rather than restating it.
+      **Open question for someone with the hardware:** if this is the same driver
+      with more axes surfaced, then 1.2 is not different but *incomplete*, and a Pi
+      user is getting anonymous `axis(0x2c)` events for pressure the pad really
+      sends — in which case these two should merge.
 - [ ] **1.6** `PS4` — fixes defect 7 (`L3`/`R3` unreachable)
 - [x] **1.7** `XboxOne` — done first, out of order, while the pad was on the
       bench; written from the measured capture below rather than from convention,

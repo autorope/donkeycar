@@ -31,6 +31,7 @@ from donkeycar.parts.controls.gamepads import (
     LogitechJoystick as LogitechJoystick,
     PS3Joystick as PS3Joystick,
     PS3JoystickOld as PS3JoystickOld,
+    PS3JoystickPC as PS3JoystickPC,
     PS3JoystickSixAd as PS3JoystickSixAd,
     XboxOneJoystick as XboxOneJoystick,
 )
@@ -59,6 +60,7 @@ __all__ = [
     'LogitechJoystick',
     'PS3Joystick',
     'PS3JoystickOld',
+    'PS3JoystickPC',
     'PS3JoystickSixAd',
     'XboxOneJoystick',
     'format_axis_event',
