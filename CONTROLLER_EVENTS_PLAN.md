@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 27 / 37 commits.**
+**Progress: 28 / 37 commits — Phase 4 complete.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
+Phase 4 ▓▓ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -506,7 +506,7 @@ highest-value tests in the whole plan, since this logic has never had any.
       Also deletes `donkeycar/parts/controller_events.py`, the POC — everything in
       it is now ported and nothing imported it.
 
-### Phase 4 — Behavior mapping layer (1 / 2)
+### Phase 4 — Behavior mapping layer (2 / 2) ✅
 
 This is what keeps users out of the templates: remapping a button is a
 dictionary edit in `myconfig.py`.
@@ -521,7 +521,16 @@ dictionary edit in `myconfig.py`.
       exactly as long as what caused it: one-shot events drive one-shot behaviors,
       persistent states drive persistent ones. `unknown_behaviors()` catches typos —
       a behavior nothing listens to does nothing and says nothing.
-- [ ] **4.2** Default `CONTROLLER_BEHAVIOR_MAP` per controller type + `custom`; `factory.get_input_controller(cfg)`; new `cfg_*.py` entries
+- [x] **4.2** Default `CONTROLLER_BEHAVIOR_MAP` per controller type + `custom`;
+      `factory.get_input_controller(cfg)` and `get_behavior_map(cfg)`; new
+      `cfg_complete.py` entries. Defaults follow the legacy bindings so muscle memory
+      carries over — except where legacy named a control the driver never sends.
+      **A test checks every default map against the pad it is for**, and it catches a
+      dead binding when one is injected: that is the Forza-mode defect class, now
+      impossible to ship. Also added `AxisButton` (scope found here, not planned):
+      some pads report the dpad as buttons and others as an axis pair, so a behavior
+      bound to "dpad up" needs an edge detector on the second kind. Legacy solved
+      this inside the Logitech class, which is why it worked there and nowhere else.
 
 ### Phase 5 — Templates, one commit each (0 / 7)
 

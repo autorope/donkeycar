@@ -15,6 +15,7 @@ from donkeycar.parts.controls.behaviors import (
     AdjustMaxThrottle as AdjustMaxThrottle,
     AdjustPid as AdjustPid,
     AutoRecordOnThrottle as AutoRecordOnThrottle,
+    AxisButton as AxisButton,
     ChaosMonkey as ChaosMonkey,
     ConstantThrottle as ConstantThrottle,
     EmergencyStop as EmergencyStop,
@@ -44,6 +45,12 @@ from donkeycar.parts.controls.events import (
     format_button_click_event as format_button_click_event,
     format_button_event as format_button_event,
     format_button_key as format_button_key,
+)
+from donkeycar.parts.controls.factory import (
+    CONTROLLER_TYPES as CONTROLLER_TYPES,
+    DEFAULT_BEHAVIOR_MAPS as DEFAULT_BEHAVIOR_MAPS,
+    get_behavior_map as get_behavior_map,
+    get_input_controller as get_input_controller,
 )
 from donkeycar.parts.controls.gamepads import (
     CustomJoystick as CustomJoystick,
@@ -101,6 +108,8 @@ from donkeycar.parts.controls.linux import (
 
 __all__ = [
     'BEHAVIOR',
+    'CONTROLLER_TYPES',
+    'DEFAULT_BEHAVIOR_MAPS',
     'BUTTON_CLICK',
     'BUTTON_DOWN',
     'BUTTON_HOLD',
@@ -110,6 +119,7 @@ __all__ = [
     'AbstractInputController',
     'AdjustMaxThrottle',
     'AdjustPid',
+    'AxisButton',
     'AutoRecordOnThrottle',
     'BehaviorEventMapper',
     'ChaosMonkey',
@@ -162,6 +172,8 @@ __all__ = [
     'XboxOneJoystick',
     'format_axis_event',
     'format_behavior',
+    'get_behavior_map',
+    'get_input_controller',
     'format_axis_key',
     'format_button_click_event',
     'format_button_event',

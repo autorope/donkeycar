@@ -746,3 +746,56 @@ class AdjustPid:
         adjusted = max(self.minimum, current + self.step)
         setattr(self.pid, self.gain, adjusted)
         logger.info(f'pid {self.gain}: {adjusted}')
+
+
+#: How far a discrete axis must travel to count as pressed.  A dpad
+#: reported as an axis only ever sends -1, 0 and +1, so anything past
+#: halfway is unambiguous.
+DEFAULT_AXIS_BUTTON_THRESHOLD = 0.5
+
+
+class AxisButton:
+    """
+    Turns one direction of an axis into something a run condition can use.
+
+        V.add(AxisButton(direction=-1),
+              inputs=[format_axis_key('dpad_vert')],
+              outputs=['dpad_up_pressed'])
+        V.add(AdjustMaxThrottle(+cfg.THROTTLE_STEP),
+              inputs=['user/throttle_scale'],
+              outputs=['user/throttle_scale'],
+              run_condition='dpad_up_pressed')
+
+    Some pads report the dpad as four buttons and others as a pair of
+    axes -- measured: a DualShock 3 does the first, an Xbox pad the second
+    -- so a behavior bound to "dpad up" needs this on the pads that take
+    the second route.  The legacy code had the same problem and solved it
+    inside the Logitech controller class, which is why it worked there and
+    nowhere else.
+
+    Outputs true only on the pass where the axis crosses the threshold, not
+    for as long as it is held, so the behavior it drives happens once per
+    push.  Holding the dpad up would otherwise wind the throttle limit to
+    maximum in about a second.
+    """
+
+    def __init__(
+        self,
+        direction: int = 1,
+        threshold: float = DEFAULT_AXIS_BUTTON_THRESHOLD,
+    ) -> None:
+        """
+        direction: which way along the axis counts, 1 or -1
+        threshold: how far it must travel to count
+        """
+        self.direction = direction
+        self.threshold = threshold
+        self._pressed = False
+
+    def run(self, axis_value: float | None = None) -> bool:
+        travel = (axis_value or 0.0) * self.direction
+        pressed = travel >= self.threshold
+
+        crossed = pressed and not self._pressed
+        self._pressed = pressed
+        return crossed
