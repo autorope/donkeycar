@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 26 / 37 commits — Phase 3 complete.**
+**Progress: 27 / 37 commits.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
+Phase 4 ▓░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -506,12 +506,21 @@ highest-value tests in the whole plan, since this logic has never had any.
       Also deletes `donkeycar/parts/controller_events.py`, the POC — everything in
       it is now ported and nothing imported it.
 
-### Phase 4 — Behavior mapping layer (0 / 2)
+### Phase 4 — Behavior mapping layer (1 / 2)
 
 This is what keeps users out of the templates: remapping a button is a
 dictionary edit in `myconfig.py`.
 
-- [ ] **4.1** `BehaviorEventMapper` part + behavior-event name constants (`/behavior/toggle_pilot_mode`, …), built on `OneShotEvents`
+- [x] **4.1** `BehaviorEventMapper` part + behavior-event name constants
+      (`/behavior/toggle_pilot_mode`, …), built on `OneShotEvents`. **The map is
+      behavior → control, not control → behavior**, because that is the question a
+      user is answering, and because it lets one behavior take *several* controls —
+      which is exactly the gamepad-or-web-button case the templates currently
+      handle by writing every binding twice. Value is carried through unchanged, so
+      a behavior can be a part's input and run condition at once. A behavior lives
+      exactly as long as what caused it: one-shot events drive one-shot behaviors,
+      persistent states drive persistent ones. `unknown_behaviors()` catches typos —
+      a behavior nothing listens to does nothing and says nothing.
 - [ ] **4.2** Default `CONTROLLER_BEHAVIOR_MAP` per controller type + `custom`; `factory.get_input_controller(cfg)`; new `cfg_*.py` entries
 
 ### Phase 5 — Templates, one commit each (0 / 7)

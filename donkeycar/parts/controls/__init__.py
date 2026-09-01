@@ -61,6 +61,12 @@ from donkeycar.parts.controls.gamepads import (
 from donkeycar.parts.controls.web import (
     WebButtonController as WebButtonController,
 )
+from donkeycar.parts.controls.mapping import (
+    BEHAVIOR as BEHAVIOR,
+    KNOWN_BEHAVIORS as KNOWN_BEHAVIORS,
+    BehaviorEventMapper as BehaviorEventMapper,
+    format_behavior as format_behavior,
+)
 from donkeycar.parts.controls.network import (
     ControllerPublisher as ControllerPublisher,
     MessagePublisher as MessagePublisher,
@@ -94,6 +100,7 @@ from donkeycar.parts.controls.linux import (
 )
 
 __all__ = [
+    'BEHAVIOR',
     'BUTTON_CLICK',
     'BUTTON_DOWN',
     'BUTTON_HOLD',
@@ -104,6 +111,7 @@ __all__ = [
     'AdjustMaxThrottle',
     'AdjustPid',
     'AutoRecordOnThrottle',
+    'BehaviorEventMapper',
     'ChaosMonkey',
     'ConstantThrottle',
     'ControlChange',
@@ -115,6 +123,7 @@ __all__ = [
     'JsDevice',
     'JsDeviceInfo',
     'JsEvent',
+    'KNOWN_BEHAVIORS',
     'LinuxGameController',
     'LinuxJsDevice',
     'MessagePublisher',
@@ -152,6 +161,7 @@ __all__ = [
     'WiiU',
     'XboxOneJoystick',
     'format_axis_event',
+    'format_behavior',
     'format_axis_key',
     'format_button_click_event',
     'format_button_event',
