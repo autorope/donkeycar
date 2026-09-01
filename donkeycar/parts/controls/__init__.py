@@ -40,6 +40,14 @@ from donkeycar.parts.controls.gamepads import (
     WiiU as WiiU,
     XboxOneJoystick as XboxOneJoystick,
 )
+from donkeycar.parts.controls.network import (
+    ControllerPublisher as ControllerPublisher,
+    MessagePublisher as MessagePublisher,
+    MessageSubscriber as MessageSubscriber,
+    NetworkedController as NetworkedController,
+    ZmqPublisher as ZmqPublisher,
+    ZmqSubscriber as ZmqSubscriber,
+)
 from donkeycar.parts.controls.robohat import (
     RealSerialPort as RealSerialPort,
     RoboHATController as RoboHATController,
@@ -72,6 +80,7 @@ __all__ = [
     'NO_CHANGE',
     'AbstractInputController',
     'ControlChange',
+    'ControllerPublisher',
     'CustomJoystick',
     'InputControllerEvents',
     'JsDevice',
@@ -79,6 +88,9 @@ __all__ = [
     'JsEvent',
     'LinuxGameController',
     'LinuxJsDevice',
+    'MessagePublisher',
+    'MessageSubscriber',
+    'NetworkedController',
     'LogitechJoystick',
     'Nimbus',
     'PS3Joystick',
@@ -96,6 +108,8 @@ __all__ = [
     'RealPyGameDevice',
     'RoboHATController',
     'SerialPort',
+    'ZmqPublisher',
+    'ZmqSubscriber',
     'RC3ChanJoystick',
     'WiiU',
     'XboxOneJoystick',
