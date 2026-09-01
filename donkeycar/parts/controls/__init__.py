@@ -40,6 +40,11 @@ from donkeycar.parts.controls.gamepads import (
     WiiU as WiiU,
     XboxOneJoystick as XboxOneJoystick,
 )
+from donkeycar.parts.controls.robohat import (
+    RealSerialPort as RealSerialPort,
+    RoboHATController as RoboHATController,
+    SerialPort as SerialPort,
+)
 from donkeycar.parts.controls.rc import (
     PigpioDevice as PigpioDevice,
     RCReceiver as RCReceiver,
@@ -87,7 +92,10 @@ __all__ = [
     'PyGamePS4Joystick',
     'RCReceiver',
     'RealPigpioDevice',
+    'RealSerialPort',
     'RealPyGameDevice',
+    'RoboHATController',
+    'SerialPort',
     'RC3ChanJoystick',
     'WiiU',
     'XboxOneJoystick',
