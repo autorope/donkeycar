@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 12 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 13 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -200,8 +200,11 @@ Found while reading the branch; all are in Phase 0 unless noted:
    triggers (the kernel headers side with PS3), and `0x13d` was named `pad` for
    the touchpad when it is `BTN_THUMBL` — the touchpad is a separate input
    device and never appears on the joystick node.
-8. **`WiiU` button `548: 'PAD_DOWN,'`** — trailing comma inside the string.
-   (Phase 1, WiiU commit.)
+8. **`WiiU` button `548: 'PAD_DOWN,'`** — trailing comma inside the string, so
+   the event key carried it too. Fixed in 1.9, along with a worse defect found
+   beside it: `548` is `0x224`, not a dpad code at all. The dpad is `0x220`-
+   `0x223` and legacy had the other three right, so **dpad down could never
+   fire** and `0x221` went unnamed.
 9. **No axis jitter filter.** #1097 notes stick jitter floods the event stream
    (visible in the logged sample: five `right_stick_horz` events for one
    `right_stick_vert` push). Fixed in 0.2 as `axis_epsilon`, a deadband on
@@ -294,7 +297,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (8 / 11)
+### Phase 1 — Gamepads, one commit each (9 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -376,7 +379,11 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       with a hat. Its buttons run consecutively `0x130`-`0x137` because
       `hid-generic` numbers them in descriptor order, so they deliberately do not
       line up with the Xbox-style pads — asserted, so it is not tidied away.
-- [ ] **1.9** `WiiU` — fixes defect 8 (`'PAD_DOWN,'`)
+- [x] **1.9** `WiiU` — fixes defect 8, and a worse one beside it: legacy put dpad
+      *down* on `0x224`, which is not a dpad code, so that direction could never
+      fire and `0x221` went unnamed. Nintendo's face buttons are transposed
+      relative to every other pad (B is the bottom button), which is correct and
+      is asserted so it does not look like a bug.
 - [ ] **1.10** `RC3Chan`
 - [ ] **1.11** `custom` — the `donkey createjs` name dict
 

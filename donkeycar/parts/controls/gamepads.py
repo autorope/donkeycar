@@ -396,6 +396,65 @@ class Nimbus(LinuxGameController):
     }
 
 
+class WiiU(LinuxGameController):
+    """
+    Nintendo Wii U Pro Controller.
+
+    Nintendo's face buttons sit in the opposite arrangement to everyone
+    else's: B is the bottom button and A the right one, X the top and Y the
+    left.  The codes follow the positions, not the letters, so a_button is
+    at 0x131 here where an Xbox pad has b_button.  That is correct and a
+    test asserts it, because it looks exactly like the kind of transposition
+    that is usually a bug.
+
+    The four shoulders are all digital -- the Pro Controller has no analog
+    triggers -- so they are named as buttons.  The pad prints its two system
+    buttons as minus and plus; they are named select and start after the
+    codes they use and the names Donkeycar has always given them.
+
+    NOT VERIFIED against hardware, and rather less certain than the other
+    maps: the legacy map was transcribed from a third-party config file and
+    carried the comment "need testing!" from the day it landed.
+
+    Two corrections.  The legacy map named the down direction 'PAD_DOWN,'
+    with a comma inside the string, so the event key had a stray comma in
+    it.  And it put that direction on 0x224, which is not a dpad code at
+    all: up, down, left and right are 0x220 to 0x223, and the legacy map had
+    the other three right.  So down is moved to 0x221, where the run of four
+    is unbroken.  As it stood, dpad down could not fire and 0x221 went
+    unnamed.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x03: 'right_stick_horz',
+        0x04: 'right_stick_vert',
+    }
+
+    BUTTON_NAMES = {
+        # face buttons by position, which is how Nintendo arranges them
+        0x130: 'b_button',
+        0x131: 'a_button',
+        0x133: 'x_button',
+        0x134: 'y_button',
+
+        0x136: 'left_shoulder',
+        0x137: 'right_shoulder',
+        0x138: 'left_trigger_button',
+        0x139: 'right_trigger_button',
+        0x13A: 'select',
+        0x13B: 'start',
+        0x13D: 'left_stick_press',
+        0x13E: 'right_stick_press',
+
+        0x220: 'dpad_up',
+        0x221: 'dpad_down',
+        0x222: 'dpad_left',
+        0x223: 'dpad_right',
+    }
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).
