@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 7 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓░░░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 8 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓░░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -288,7 +288,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (3 / 11)
+### Phase 1 — Gamepads, one commit each (4 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -316,6 +316,14 @@ whichever of these applies:
 - **No pad** — say so in the class docstring, and cross-check against a map
   that *was* measured on the same driver. Codes are a property of the driver,
   not the pad, so an `xpad` device must agree with the measured `xpad` device.
+- **No pad and a different driver** — the cross-check weakens to "this driver
+  follows the kernel's ABS conventions", which is an assumption, not a fact.
+  Say which it is. And where a driver genuinely departs from the convention
+  (1.3 `sixad`), assert the departure so it is not later tidied away.
+
+The shared soundness checks live in `GamepadMapChecks` in the test kit. They
+check a map against *itself* and so can never catch a map that describes the
+wrong device — which is exactly how the legacy Xbox map passed for years.
 
 - [x] **1.1** `LogitechF710` — re-landed on the new base. **Not verified against
       hardware** (no F710 available), so the tests cross-check it against the Xbox
@@ -330,7 +338,12 @@ whichever of these applies:
       — noted in the docstring. Also fixes the naming convention for the whole of
       Phase 1 (see `gamepads.py` module docstring): shared controls get shared
       names, pad identity lives in the face buttons.
-- [ ] **1.3** `PS3SixAd`
+- [x] **1.3** `PS3SixAd` — **the case that proves the cross-check is about drivers,
+      not hardware.** Same physical pad as 1.2, sharing only two axis codes and one
+      button code with it. `sixad` numbers axes sequentially, so the right stick sits
+      on the codes that mean *triggers* everywhere else — and it reports no analog
+      triggers at all. Tests assert the disagreement deliberately, so nobody later
+      "fixes" it into agreement and moves steering onto a control that is never sent.
 - [ ] **1.4** `PS3Old`
 - [ ] **1.5** `PS3PC`
 - [ ] **1.6** `PS4` — fixes defect 7 (`L3`/`R3` unreachable)

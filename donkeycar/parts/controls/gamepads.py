@@ -86,6 +86,63 @@ class PS3Joystick(LinuxGameController):
     }
 
 
+class PS3JoystickSixAd(LinuxGameController):
+    """
+    Sony DualShock 3 through the `sixad` userland driver, as used on the
+    Jetson Nano.
+
+    The same physical pad as PS3Joystick, reporting entirely different
+    codes.  `sixad` builds its own uinput device and assigns controls in its
+    own order rather than following the conventions the in-kernel drivers
+    use, so:
+
+    The right stick is at 0x02/0x03, not 0x03/0x04.  `sixad` numbers the
+    axes sequentially -- left stick, then right stick -- so the right stick
+    lands on ABS_Z and ABS_RX, the codes that mean the triggers everywhere
+    else.  A map that "corrected" this to match the Xbox pad would steer
+    with the wrong stick.
+
+    There are no analog trigger axes at all.  L2 and R2 are reported only as
+    digital buttons, so proportional trigger control is not available on
+    this driver.
+
+    The buttons are in the generic joystick block (0x120-0x12f) rather than
+    the gamepad block (0x130+), because `sixad` presents the pad as a plain
+    joystick.  Only the PS button lands at 0x130.
+
+    NOT VERIFIED against hardware.  The codes come from the map Donkeycar
+    has shipped, and unlike the other PlayStation map there is no convention
+    to check them against -- these assignments are `sixad`'s own.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'right_stick_horz',
+        0x03: 'right_stick_vert',
+    }
+
+    BUTTON_NAMES = {
+        0x120: 'select',
+        0x121: 'left_stick_press',
+        0x122: 'right_stick_press',
+        0x123: 'start',
+        0x124: 'dpad_up',
+        0x125: 'dpad_right',
+        0x126: 'dpad_down',
+        0x127: 'dpad_left',
+        0x128: 'left_trigger_button',
+        0x129: 'right_trigger_button',
+        0x12A: 'left_shoulder',
+        0x12B: 'right_shoulder',
+        0x12C: 'triangle',
+        0x12D: 'circle',
+        0x12E: 'cross',
+        0x12F: 'square',
+        0x130: 'ps',
+    }
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).

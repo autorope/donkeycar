@@ -5,10 +5,9 @@ import unittest
 from donkeycar.parts.controls.gamepads import XboxOneJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
+    GamepadMapChecks,
     axis_event,
     button_event,
-    duplicate_literal_keys,
-    duplicate_values,
 )
 
 # Exactly what a 'Microsoft X-Box One S pad' reported through the xpad
@@ -34,16 +33,8 @@ def make_pad(events=(), **kwargs) -> XboxOneJoystick:
     return pad
 
 
-class TestMapIsSound(unittest.TestCase):
-
-    def test_no_duplicate_control_codes(self):
-        assert duplicate_literal_keys(XboxOneJoystick) == []
-
-    def test_no_duplicate_axis_names(self):
-        assert duplicate_values(XboxOneJoystick.AXIS_NAMES) == []
-
-    def test_no_duplicate_button_names(self):
-        assert duplicate_values(XboxOneJoystick.BUTTON_NAMES) == []
+class TestMapIsSound(GamepadMapChecks, unittest.TestCase):
+    PAD = XboxOneJoystick
 
 
 class TestMapCoversTheDevice(unittest.TestCase):

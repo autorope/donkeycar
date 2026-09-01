@@ -174,6 +174,31 @@ def init_event(number: int, value: int = 0, time: int = 0) -> JsEvent:
     )
 
 
+class GamepadMapChecks:
+    """
+    The soundness checks every gamepad map must pass.  Mix into a TestCase
+    and set PAD to the controller class.
+
+    These check a map against *itself*: that no control code is written
+    twice, and no two controls share a name.  They cannot tell whether the
+    map describes the right device -- the legacy Xbox map passed all of them
+    and still named the triggers as the right stick.  Only pinning the
+    enumeration a real device reports can catch that, so a pad we have on
+    the bench should add those checks on top of these.
+    """
+
+    PAD: Any
+
+    def test_no_duplicate_control_codes(self) -> None:
+        assert duplicate_literal_keys(self.PAD) == []
+
+    def test_no_duplicate_axis_names(self) -> None:
+        assert duplicate_values(self.PAD.AXIS_NAMES) == []
+
+    def test_no_duplicate_button_names(self) -> None:
+        assert duplicate_values(self.PAD.BUTTON_NAMES) == []
+
+
 def duplicate_values(names: Mapping[int, str]) -> list[str]:
     """
     Names used for more than one control, which would make two controls

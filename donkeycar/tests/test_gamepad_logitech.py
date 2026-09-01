@@ -5,10 +5,9 @@ import unittest
 from donkeycar.parts.controls.gamepads import LogitechJoystick, XboxOneJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
+    GamepadMapChecks,
     axis_event,
     button_event,
-    duplicate_literal_keys,
-    duplicate_values,
 )
 
 # What an F710 in XInput mode is expected to report.  Unlike the Xbox tests,
@@ -31,24 +30,8 @@ def make_pad(events=(), **kwargs) -> LogitechJoystick:
     return pad
 
 
-class TestMapIsSound(unittest.TestCase):
-
-    def test_no_duplicate_control_codes(self):
-        assert duplicate_literal_keys(LogitechJoystick) == []
-
-    def test_no_duplicate_axis_names(self):
-        assert duplicate_values(LogitechJoystick.AXIS_NAMES) == []
-
-    def test_no_duplicate_button_names(self):
-        assert duplicate_values(LogitechJoystick.BUTTON_NAMES) == []
-
-    def test_every_control_is_named(self):
-        pad = make_pad()
-        unnamed = [
-            n for n in pad.axis_map + pad.button_map
-            if n.startswith(('axis(', 'button('))
-        ]
-        assert unnamed == []
+class TestMapIsSound(GamepadMapChecks, unittest.TestCase):
+    PAD = LogitechJoystick
 
 
 class TestAgreesWithTheMeasuredDriverLayout(unittest.TestCase):

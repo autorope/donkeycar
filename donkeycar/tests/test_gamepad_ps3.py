@@ -5,10 +5,9 @@ import unittest
 from donkeycar.parts.controls.gamepads import PS3Joystick, XboxOneJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
+    GamepadMapChecks,
     axis_event,
     button_event,
-    duplicate_literal_keys,
-    duplicate_values,
 )
 
 # NOT a capture from a real device -- no DualShock 3 was available.  See the
@@ -37,24 +36,8 @@ def index_of(name: str) -> int:
     )
 
 
-class TestMapIsSound(unittest.TestCase):
-
-    def test_no_duplicate_control_codes(self):
-        assert duplicate_literal_keys(PS3Joystick) == []
-
-    def test_no_duplicate_axis_names(self):
-        assert duplicate_values(PS3Joystick.AXIS_NAMES) == []
-
-    def test_no_duplicate_button_names(self):
-        assert duplicate_values(PS3Joystick.BUTTON_NAMES) == []
-
-    def test_every_control_is_named(self):
-        pad = make_pad()
-        unnamed = [
-            n for n in pad.axis_map + pad.button_map
-            if n.startswith(('axis(', 'button('))
-        ]
-        assert unnamed == []
+class TestMapIsSound(GamepadMapChecks, unittest.TestCase):
+    PAD = PS3Joystick
 
 
 class TestAgreesWithTheMeasuredAxisLayout(unittest.TestCase):
