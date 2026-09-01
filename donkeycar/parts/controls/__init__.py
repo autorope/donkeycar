@@ -28,6 +28,7 @@ from donkeycar.parts.controls.events import (
     format_button_key as format_button_key,
 )
 from donkeycar.parts.controls.gamepads import (
+    CustomJoystick as CustomJoystick,
     LogitechJoystick as LogitechJoystick,
     Nimbus as Nimbus,
     PS3Joystick as PS3Joystick,
@@ -55,6 +56,7 @@ __all__ = [
     'NO_CHANGE',
     'AbstractInputController',
     'ControlChange',
+    'CustomJoystick',
     'InputControllerEvents',
     'JsDevice',
     'JsDeviceInfo',

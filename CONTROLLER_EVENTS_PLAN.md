@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 14 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 15 / 36 commits — Phase 1 complete.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -297,7 +297,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (10 / 11)
+### Phase 1 — Gamepads, one commit each (11 / 11) ✅
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -388,7 +388,11 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       `throttle`, plus a switch reported as two position buttons. Shares no control
       name with any gamepad, which is the case the per-controller behavior map in
       Phase 4 has to cope with.
-- [ ] **1.11** `custom` — the `donkey createjs` name dict
+- [x] **1.11** `custom` — `CustomJoystick` declares nothing, so an unsupported pad
+      is usable immediately with default `button(0x133)` names that tell the user
+      exactly what to put in `myconfig.py`. The same layering renames one control
+      on a *supported* pad without restating the map or forking a class — which is
+      what 6.2 turns `donkey createjs` into.
 
 > **No `XboxOneSwapped`.** The legacy class only swaps which stick drives
 > steering and which drives throttle. That is a *behavior* binding, not a
