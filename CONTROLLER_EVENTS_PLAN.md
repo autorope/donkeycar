@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 5 / 37 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ░░░░░░▓░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 6 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓░░░░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -288,7 +288,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (1 / 12)
+### Phase 1 — Gamepads, one commit each (2 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -305,7 +305,23 @@ duplicate device codes), `duplicate_values()` (no duplicate control names),
 and a synthetic-event round trip through `FakeJsDevice` — which is what
 catches defects 7 and 8.
 
-- [ ] **1.1** `LogitechF710` — re-land the POC map on the new base
+**Those three are not enough on their own**, as 1.7 showed: the legacy Xbox
+map passed all of them and still described a different controller. Add
+whichever of these applies:
+
+- **Pad on the bench** — pin the enumeration the real device reports, assert
+  every reported control resolves to a real name, and assert the map names
+  nothing the device lacks (which is how legacy's Forza mode came to be bound
+  to codes that are never sent). Verify on the car before ticking the box.
+- **No pad** — say so in the class docstring, and cross-check against a map
+  that *was* measured on the same driver. Codes are a property of the driver,
+  not the pad, so an `xpad` device must agree with the measured `xpad` device.
+
+- [x] **1.1** `LogitechF710` — re-landed on the new base. **Not verified against
+      hardware** (no F710 available), so the tests cross-check it against the Xbox
+      measurement instead: the F710 in XInput mode runs on the same `xpad` driver,
+      so shared codes must mean the same thing on both pads. That check fails if
+      the legacy Xbox defect is reintroduced, so it is not inert.
 - [ ] **1.2** `PS3`
 - [ ] **1.3** `PS3SixAd`
 - [ ] **1.4** `PS3Old`
@@ -314,14 +330,15 @@ catches defects 7 and 8.
 - [x] **1.7** `XboxOne` — done first, out of order, while the pad was on the
       bench; written from the measured capture below rather than from convention,
       and verified against the real device (every control named, no fallbacks)
-- [ ] **1.8** `XboxOneSwapped` — mapping-only, no new device. **Reconsider:** this
-      swaps which stick drives steering vs throttle, which is a *behavior* binding,
-      not a device naming. In the new architecture that belongs in the Phase 4
-      behavior map, so 1.8 may collapse into a config default rather than a class.
-- [ ] **1.9** `Nimbus` — needs a call on the `hmm` / `what` axis names (defect 10)
-- [ ] **1.10** `WiiU` — fixes defect 8 (`'PAD_DOWN,'`)
-- [ ] **1.11** `RC3Chan`
-- [ ] **1.12** `custom` — the `donkey createjs` name dict
+- [ ] **1.8** `Nimbus` — needs a call on the `hmm` / `what` axis names (defect 10)
+- [ ] **1.9** `WiiU` — fixes defect 8 (`'PAD_DOWN,'`)
+- [ ] **1.10** `RC3Chan`
+- [ ] **1.11** `custom` — the `donkey createjs` name dict
+
+> **No `XboxOneSwapped`.** The legacy class only swaps which stick drives
+> steering and which drives throttle. That is a *behavior* binding, not a
+> device naming, so in the new architecture it is a line in the Phase 4
+> behavior map rather than a controller class. Dropped from Phase 1.
 
 Legacy `controller.py` is untouched and still working throughout Phase 1, so
 every one of these commits is independently mergeable.
@@ -414,7 +431,7 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 - [ ] **6.2** Rework `donkey createjs` (`management/joystick_creator.py`, 584 lines) to emit a name dictionary instead of a controller class
 - [ ] **6.3** Docs + `myconfig.py` template + a migration note for users with a custom `my_joystick.py`
 
-**Total: 36 commits.** Phases 0–2 are mergeable independently; Phases 5–6
+**Total: 35 commits.** Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
 
 ---

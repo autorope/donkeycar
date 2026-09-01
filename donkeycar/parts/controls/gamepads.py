@@ -19,6 +19,54 @@ was not verified at all.
 from donkeycar.parts.controls.linux import LinuxGameController
 
 
+class LogitechJoystick(LinuxGameController):
+    """
+    Logitech Gamepad F710 with its mode switch set to X (XInput).
+
+    In that mode the pad presents itself as an Xbox 360 controller and is
+    driven by the same in-kernel `xpad` driver, so it reports the same
+    control codes as XboxOneJoystick and differs only in what the labels
+    say: BACK, START and the Logitech button in place of view, menu and the
+    Xbox guide.  Set to D (DirectInput) it enumerates differently and this
+    map does not apply.
+
+    Like the Xbox pad, the triggers are axes resting at -1.0 rather than
+    centring at 0.0, and the sticks jitter enough to want `axis_epsilon`.
+
+    NOT VERIFIED against hardware -- no F710 was available.  The codes come
+    from the map Donkeycar has shipped for years, which is corroborated by
+    the Xbox measurement: it places the triggers at 0x02/0x05 and the right
+    stick at 0x03/0x04, exactly as measured on the same driver, and this is
+    where the legacy Xbox map was wrong.  Worth confirming on a real F710
+    before relying on it.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'left_trigger',
+        0x03: 'right_stick_horz',
+        0x04: 'right_stick_vert',
+        0x05: 'right_trigger',
+        0x10: 'dpad_horiz',
+        0x11: 'dpad_vert',
+    }
+
+    BUTTON_NAMES = {
+        0x130: 'a_button',
+        0x131: 'b_button',
+        0x133: 'x_button',
+        0x134: 'y_button',
+        0x136: 'left_shoulder',
+        0x137: 'right_shoulder',
+        0x13A: 'back',
+        0x13B: 'start',
+        0x13C: 'logitech',
+        0x13D: 'left_stick_press',
+        0x13E: 'right_stick_press',
+    }
+
+
 class XboxOneJoystick(LinuxGameController):
     """
     Microsoft Xbox One / Series controller on the in-kernel `xpad` driver.
