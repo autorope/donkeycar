@@ -143,6 +143,83 @@ class PS3JoystickSixAd(LinuxGameController):
     }
 
 
+class PS3JoystickOld(LinuxGameController):
+    """
+    Sony DualShock 3 on the Raspbian Jessie-era `hid-sony` driver.
+
+    The third layout for this one controller, agreeing with neither of the
+    others: the right stick is at 0x02/0x05 here, at 0x03/0x04 through the
+    modern in-kernel driver, and at 0x02/0x03 through `sixad`.
+
+    What makes this driver distinctive is that it exposes the DualShock 3's
+    pressure sensitivity.  Every face button, shoulder and dpad direction
+    reports how hard it is being pressed, as an axis, alongside the ordinary
+    digital button.  Twelve of the axes here are pressure; only the first
+    four and the tilt axes are conventional.
+
+    The pad's motion sensors also appear, as tilt_x, tilt_y, tilt_a and
+    tilt_b.  Those names come from the legacy map and are kept because
+    nothing better is known -- which of them are accelerometer axes and
+    which the gyro has not been established.
+
+    NOT VERIFIED against hardware.  The codes come from the map Donkeycar
+    has shipped.  One addition: the legacy map named eleven of the twelve
+    pressure axes, in the order the DualShock 3 reports them, and omitted
+    dpad_left_pressure at 0x2f, the one gap in an otherwise unbroken run.
+    It is named here so a left-dpad press does not surface as an anonymous
+    'axis(0x2f)', but the inference is from the sequence rather than from a
+    device.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'right_stick_horz',
+        0x05: 'right_stick_vert',
+
+        # motion sensors; the legacy names, meanings unestablished
+        0x1A: 'tilt_x',
+        0x1B: 'tilt_y',
+        0x3C: 'tilt_b',
+        0x3D: 'tilt_a',
+
+        # pressure-sensitive controls, in the order the pad reports them:
+        # dpad up/right/down/left, L2, R2, L1, R1, then the face buttons
+        0x2C: 'dpad_up_pressure',
+        0x2D: 'dpad_right_pressure',
+        0x2E: 'dpad_down_pressure',
+        0x2F: 'dpad_left_pressure',
+        0x30: 'left_trigger',
+        0x31: 'right_trigger',
+        0x32: 'left_shoulder_pressure',
+        0x33: 'right_shoulder_pressure',
+        0x34: 'triangle_pressure',
+        0x35: 'circle_pressure',
+        0x36: 'cross_pressure',
+        0x37: 'square_pressure',
+    }
+
+    BUTTON_NAMES = {
+        0x120: 'select',
+        0x121: 'left_stick_press',
+        0x122: 'right_stick_press',
+        0x123: 'start',
+        0x124: 'dpad_up',
+        0x125: 'dpad_right',
+        0x126: 'dpad_down',
+        0x127: 'dpad_left',
+        0x128: 'left_trigger_button',
+        0x129: 'right_trigger_button',
+        0x12A: 'left_shoulder',
+        0x12B: 'right_shoulder',
+        0x12C: 'triangle',
+        0x12D: 'circle',
+        0x12E: 'cross',
+        0x12F: 'square',
+        0x2C0: 'ps',
+    }
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).

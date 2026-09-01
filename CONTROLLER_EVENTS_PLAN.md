@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 8 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓░░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 9 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -288,7 +288,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (4 / 11)
+### Phase 1 — Gamepads, one commit each (5 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -344,7 +344,11 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       on the codes that mean *triggers* everywhere else — and it reports no analog
       triggers at all. Tests assert the disagreement deliberately, so nobody later
       "fixes" it into agreement and moves steering onto a control that is never sent.
-- [ ] **1.4** `PS3Old`
+- [x] **1.4** `PS3Old` — Jessie-era `hid-sony`. A third layout for the same pad,
+      agreeing with neither of the others: right stick at `0x02/0x05` here,
+      `0x03/0x04` on 1.2, `0x02/0x03` on 1.3. Exposes the DualShock 3's pressure
+      sensitivity as twelve extra axes. Fills a gap the legacy map left at `0x2f`,
+      where a left-dpad press surfaced as an anonymous `axis(0x2f)`.
 - [ ] **1.5** `PS3PC`
 - [ ] **1.6** `PS4` — fixes defect 7 (`L3`/`R3` unreachable)
 - [x] **1.7** `XboxOne` — done first, out of order, while the pad was on the
