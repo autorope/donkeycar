@@ -3,6 +3,7 @@
 import unittest
 
 from donkeycar.parts.controls.behaviors import (
+    DEFAULT_DEAD_ZONE,
     TriggerThrottle,
     UserSteering,
     UserThrottle,
@@ -29,13 +30,16 @@ class TestUserSteering(unittest.TestCase):
         assert UserSteering().run(None) == 0.0
         assert UserSteering().run() == 0.0
 
-    def test_the_dead_zone_is_off_by_default(self):
+    def test_the_dead_zone_is_applied_by_default(self):
         """
         The legacy controller applied JOYSTICK_DEADZONE only to whether to
-        record, never to steering, so switching it on here would change how
-        a car drives.  A template has to ask.
+        record, never to steering, so a resting stick steered the car.
         """
-        assert UserSteering().run(0.02) == 0.02
+        assert UserSteering().run(DEFAULT_DEAD_ZONE / 2) == 0.0
+        assert UserSteering().run(0.5) == 0.5
+
+    def test_the_dead_zone_can_be_turned_off(self):
+        assert UserSteering(dead_zone=0.0).run(0.002) == 0.002
 
     def test_the_dead_zone_ignores_a_resting_stick(self):
         steering = UserSteering(dead_zone=0.1)
@@ -78,6 +82,9 @@ class TestUserThrottle(unittest.TestCase):
     def test_no_scale_input_falls_back_to_the_constructor(self):
         throttle = UserThrottle(direction=1.0, scale=0.4)
         assert throttle.run(1.0, None) == 0.4
+
+    def test_the_dead_zone_is_applied_by_default(self):
+        assert UserThrottle(direction=1.0).run(DEFAULT_DEAD_ZONE / 2) == 0.0
 
     def test_the_dead_zone_ignores_a_resting_stick(self):
         throttle = UserThrottle(direction=1.0, dead_zone=0.1)
@@ -174,13 +181,16 @@ class TestTheMeasuredPad(unittest.TestCase):
         """
         assert TriggerThrottle().run(-1.0, -1.0) == 0.0
 
-    def test_resting_stick_jitter_needs_a_dead_zone(self):
+    def test_the_default_dead_zone_is_too_small_for_this_pad(self):
         """
         Measured: the resting sticks produced readings of 0.048, 0.068 and
-        0.099.  With no dead zone those are steering input.
+        0.099, all well past the shipped 0.01.  So the default keeps a car
+        from drifting on a tidy pad but not on this one, and a car whose
+        sticks idle this far out needs JOYSTICK_DEADZONE raised.
         """
         steering = UserSteering()
-        assert steering.run(0.099) != 0.0
+        for jitter in (0.048, 0.068, 0.099):
+            assert steering.run(jitter) != 0.0
 
         steering = UserSteering(dead_zone=0.1)
         for jitter in (0.048, 0.068, 0.099):

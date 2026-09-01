@@ -456,7 +456,11 @@ highest-value tests in the whole plan, since this logic has never had any.
       half throttle at startup; and `TriggerThrottle` takes both triggers together, so
       squeezing both cancels rather than last-writer-wins. **`JOYSTICK_DEADZONE`
       defaults to off here** — legacy applied it only to the record decision, never to
-      steering or throttle, so wiring it in Phase 5 is a deliberate behaviour change.
+      steering or throttle. **Changed at Ed's direction:** it is now on by default
+      at the shipped `JOYSTICK_DEADZONE` of 0.01. Note that is *smaller than the
+      jitter measured on the test pad* (0.048-0.099), so it stops a tidy pad
+      drifting but not a worn one — Phase 5 should pass `cfg.JOYSTICK_DEADZONE`
+      through, and a car with loose sticks needs it raised in `myconfig.py`.
 - [ ] **3.2** mode + recording — `TogglePilotMode`, `ToggleRecording`, `AutoRecordOnThrottle`, `ShowRecordCount`, `EraseLastNRecords`; deletes `complete.py`'s `ToggleRecording`, which #1097 explicitly calls out for removal
 - [ ] **3.3** throttle limits — `AdjustMaxThrottle`, `ToggleConstantThrottle`
 - [ ] **3.4** safety — `EmergencyStop` (the 4-state ES machine as a part), `ChaosMonkey`, `StopVehicle`

@@ -16,6 +16,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+#: Applied to steering and throttle unless a template says otherwise.
+#: Matches JOYSTICK_DEADZONE in the shipped configuration.
+#:
+#: Note the measured jitter on a real pad reached 0.099, well past this, so
+#: a car whose sticks idle that far out wants a larger value.  Raise
+#: JOYSTICK_DEADZONE in myconfig.py rather than editing this.
+DEFAULT_DEAD_ZONE = 0.01
+
 #: A trigger rests at one end of its travel rather than in the middle,
 #: measured on a real Xbox pad.  Before a trigger has been touched there is
 #: no value for it in memory at all, and reading that absence as centre
@@ -46,16 +54,17 @@ class UserSteering:
     part runs only when the control actually moves, and gets the new
     position when it does.
 
-    NOTE on dead_zone: the legacy controller applied JOYSTICK_DEADZONE only
-    to the decision about whether to record, never to the steering value
-    itself.  Wiring it here would be a change in how a car drives, so it
-    defaults to zero and a template has to ask for it deliberately.
+    The dead zone is applied by default.  The legacy controller applied
+    JOYSTICK_DEADZONE only to the decision about whether to record and never
+    to the steering value, so a resting stick steered the car a little --
+    measured jitter on a real pad reached 0.099.  Pass dead_zone=0.0 for the
+    old behavior.
     """
 
     def __init__(
         self,
         scale: float = 1.0,
-        dead_zone: float = 0.0,
+        dead_zone: float = DEFAULT_DEAD_ZONE,
         invert: bool = False,
     ) -> None:
         """
@@ -97,7 +106,7 @@ class UserThrottle:
         self,
         direction: float = -1.0,
         scale: float = 1.0,
-        dead_zone: float = 0.0,
+        dead_zone: float = DEFAULT_DEAD_ZONE,
     ) -> None:
         """
         direction: -1.0 if pushing the control forward reads negative
@@ -147,7 +156,9 @@ class TriggerThrottle:
     condition; it is cheap and needs to see every change.
     """
 
-    def __init__(self, scale: float = 1.0, dead_zone: float = 0.0) -> None:
+    def __init__(
+        self, scale: float = 1.0, dead_zone: float = DEFAULT_DEAD_ZONE
+    ) -> None:
         """
         scale:     the most throttle to give at full squeeze
         dead_zone: squeezes smaller than this count as untouched
