@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 21 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓░░░░ ·
+**Progress: 23 / 37 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -443,7 +443,7 @@ gamepad map we cannot verify against hardware should say so in a comment.
 - [ ] **2.4** Networked `JoyStickSub` as a device — replaces the `ctr.js = netwkJs` monkey-patch in the templates
 - [ ] **2.5** Web controller emits button events (D3)
 
-### Phase 3 — Behavior parts (1 / 5)
+### Phase 3 — Behavior parts (2 / 5)
 
 Every legacy `JoystickController` method becomes a part. These are pure
 functions of their inputs, so tests are plain `run()` calls — the
@@ -461,7 +461,13 @@ highest-value tests in the whole plan, since this logic has never had any.
       jitter measured on the test pad* (0.048-0.099), so it stops a tidy pad
       drifting but not a worn one — Phase 5 should pass `cfg.JOYSTICK_DEADZONE`
       through, and a car with loose sticks needs it raised in `myconfig.py`.
-- [ ] **3.2** mode + recording — `TogglePilotMode`, `ToggleRecording`, `AutoRecordOnThrottle`, `ShowRecordCount`, `EraseLastNRecords`; deletes `complete.py`'s `ToggleRecording`, which #1097 explicitly calls out for removal
+- [x] **3.2** mode + recording — `TogglePilotMode`, `ToggleRecording`,
+      `AutoRecordOnThrottle`, `ShowRecordCount`, `EraseLastNRecords`. The toggles read
+      their current value as an *input* rather than remembering it, so anything else
+      may change the mode and they still step on from where the car actually is.
+      `complete.py`'s `ToggleRecording` is superseded — in it, a manual toggle
+      silently did nothing whenever auto-record was on. **Its deletion happens in
+      5.1**, since deleting it now would break the template before it is rewritten.
 - [ ] **3.3** throttle limits — `AdjustMaxThrottle`, `ToggleConstantThrottle`
 - [ ] **3.4** safety — `EmergencyStop` (the 4-state ES machine as a part), `ChaosMonkey`, `StopVehicle`
 - [ ] **3.5** template-specific — `EnableAiLaunch`, `IncrementBehaviorState`, `SavePath`/`LoadPath`/`ErasePath`/`ResetOrigin`, `AdjustPidP`/`AdjustPidD`; also deletes `donkeycar/parts/controller_events.py`, the POC, whose parts have all been ported by this point
@@ -501,7 +507,7 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 - [ ] **6.2** Rework `donkey createjs` (`management/joystick_creator.py`, 584 lines) to emit a name dictionary instead of a controller class
 - [ ] **6.3** Docs + `myconfig.py` template + a migration note for users with a custom `my_joystick.py`
 
-**Total: 35 commits.** Phases 0–2 are mergeable independently; Phases 5–6
+**Total: 36 commits** (one added: the dead-zone default change). Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
 
 ---

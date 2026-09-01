@@ -13,6 +13,7 @@ behaviors could not be moved to different buttons.
 """
 
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -189,3 +190,180 @@ class TriggerThrottle:
         squeeze = (axis_value - TRIGGER_RESTING) / 2.0
         squeeze = max(0.0, min(1.0, squeeze))
         return apply_dead_zone(squeeze, self.dead_zone)
+
+
+#: The pilot modes, in the order TogglePilotMode steps through them.
+#:
+#: 'user' is human steering and throttle, 'local_angle' is the pilot
+#: steering with human throttle, and 'local' is the pilot driving.
+PILOT_MODES = ('user', 'local_angle', 'local')
+
+DEFAULT_PILOT_MODE = PILOT_MODES[0]
+
+
+class TogglePilotMode:
+    """
+    Steps the pilot mode on: user, local_angle, local, and round again.
+
+        V.add(TogglePilotMode(),
+              inputs=['user/mode'],
+              outputs=['user/mode'],
+              run_condition=format_button_event('y_button', BUTTON_DOWN))
+
+    Steps once per call, so it needs a run condition that is true for one
+    pass through the loop -- which is exactly what an input event is.
+    Without one it would race through the modes several times a second.
+
+    Takes the current mode as an input and returns the next, rather than
+    keeping the mode itself, so that anything else can change the mode too
+    and this part will still step on from wherever it actually is.
+    """
+
+    def __init__(self, modes: tuple[str, ...] = PILOT_MODES) -> None:
+        self.modes = modes
+
+    def run(self, mode: str | None = None) -> str:
+        if mode not in self.modes:
+            # nothing set it yet, or something set a mode we do not know;
+            # either way the first mode is the safe answer, since it is the
+            # one where the human is driving
+            return self.modes[0]
+
+        index = self.modes.index(mode)
+        next_mode = self.modes[(index + 1) % len(self.modes)]
+        logger.info(f'pilot mode: {next_mode}')
+        return next_mode
+
+
+class ToggleRecording:
+    """
+    Turns recording on or off.
+
+        V.add(ToggleRecording(),
+              inputs=['recording'],
+              outputs=['recording'],
+              run_condition=format_button_event('b_button', BUTTON_DOWN))
+
+    Like TogglePilotMode this flips once per call and takes the current
+    value as an input, so it needs a one-pass run condition.
+
+    This replaces the ToggleRecording in complete.py, which #1097 asks to
+    have removed.  That part decided three separate things at once -- a
+    manual toggle, whether auto-record-on-throttle should override it, and
+    whether recording is allowed in autopilot -- through two latches and a
+    remembered previous value, which is why it could not be moved to
+    another button.  Each of those is now its own part.
+    """
+
+    def run(self, recording: bool | None = None) -> bool:
+        toggled = not bool(recording)
+        logger.info(f'recording: {toggled}')
+        return toggled
+
+
+class AutoRecordOnThrottle:
+    """
+    Records whenever the car is being driven.
+
+        V.add(AutoRecordOnThrottle(dead_zone=cfg.JOYSTICK_DEADZONE),
+              inputs=['user/throttle', 'user/mode'],
+              outputs=['recording'])
+
+    Runs every pass rather than on an event, since it follows the throttle
+    rather than a button.  Add it *instead of* ToggleRecording: with both,
+    whichever runs later in the loop wins and the button appears to do
+    nothing every time the throttle is open.
+
+    Only records while the human is driving, unless record_in_autopilot is
+    set.  Recording the pilot's own output and then training on it teaches
+    the pilot to do what it already does.
+    """
+
+    def __init__(
+        self,
+        dead_zone: float = DEFAULT_DEAD_ZONE,
+        record_in_autopilot: bool = False,
+        user_mode: str = DEFAULT_PILOT_MODE,
+    ) -> None:
+        """
+        dead_zone:           throttle smaller than this is not driving
+        record_in_autopilot: record while a pilot is driving too
+        user_mode:           the mode in which the human is driving
+        """
+        self.dead_zone = dead_zone
+        self.record_in_autopilot = record_in_autopilot
+        self.user_mode = user_mode
+        self._recording = False
+
+    def run(
+        self,
+        throttle: float | None = None,
+        mode: str | None = None,
+    ) -> bool:
+        driving = abs(throttle or 0.0) > self.dead_zone
+        if mode is not None and mode != self.user_mode:
+            driving = driving and self.record_in_autopilot
+
+        if driving != self._recording:
+            self._recording = driving
+            logger.info(f'recording: {driving}')
+        return driving
+
+
+class EraseLastNRecords:
+    """
+    Throws away the last few records, for when a run goes wrong.
+
+        V.add(EraseLastNRecords(tub_writer.tub, cfg.ERASE_LAST_N_RECORDS),
+              run_condition=format_button_event('x_button', BUTTON_DOWN))
+
+    Erases once per call, so it wants a one-pass run condition; on a held
+    button it would erase the whole tub in a couple of seconds.
+
+    Consider binding this to a click rather than a press, or to a
+    double-click, since it cannot be undone.
+    """
+
+    def __init__(self, tub: Any, num_records: int = 100) -> None:
+        """
+        tub:         the tub to erase from
+        num_records: how many of the most recent records to erase
+        """
+        self.tub = tub
+        self.num_records = num_records
+
+    def run(self) -> None:
+        if self.tub is None:
+            logger.warning('No tub to erase records from.')
+            return
+
+        try:
+            self.tub.delete_last_n_records(self.num_records)
+            logger.info(f'deleted last {self.num_records} records')
+        except Exception:
+            # erasing is a convenience; failing to erase must not stop a
+            # car that is driving
+            logger.exception('Failed to erase records.')
+
+
+class ShowRecordCount:
+    """
+    Asks for the record count to be announced.
+
+        V.add(ShowRecordCount(rec_tracker),
+              run_condition=format_button_event('view', BUTTON_DOWN))
+
+    In the legacy template this hijacked the circle button whenever
+    auto-record-on-throttle was on, on the reasoning that the button was
+    free because manual recording was disabled.  As a part it can go on any
+    button, and does not need manual recording to be off.
+    """
+
+    def __init__(self, record_tracker: Any) -> None:
+        self.record_tracker = record_tracker
+
+    def run(self) -> None:
+        if self.record_tracker is None:
+            return
+        self.record_tracker.last_num_rec_print = 0
+        self.record_tracker.force_alert = 1
