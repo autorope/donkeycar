@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 13 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 14 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -297,7 +297,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (9 / 11)
+### Phase 1 — Gamepads, one commit each (10 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -384,7 +384,10 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       fire and `0x221` went unnamed. Nintendo's face buttons are transposed
       relative to every other pad (B is the bottom button), which is correct and
       is asserted so it does not look like a bug.
-- [ ] **1.10** `RC3Chan`
+- [x] **1.10** `RC3Chan` — not a gamepad: two channels named `steering` and
+      `throttle`, plus a switch reported as two position buttons. Shares no control
+      name with any gamepad, which is the case the per-controller behavior map in
+      Phase 4 has to cope with.
 - [ ] **1.11** `custom` — the `donkey createjs` name dict
 
 > **No `XboxOneSwapped`.** The legacy class only swaps which stick drives

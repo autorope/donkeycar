@@ -35,6 +35,7 @@ from donkeycar.parts.controls.gamepads import (
     PS3JoystickPC as PS3JoystickPC,
     PS3JoystickSixAd as PS3JoystickSixAd,
     PS4Joystick as PS4Joystick,
+    RC3ChanJoystick as RC3ChanJoystick,
     WiiU as WiiU,
     XboxOneJoystick as XboxOneJoystick,
 )
@@ -67,6 +68,7 @@ __all__ = [
     'PS3JoystickPC',
     'PS3JoystickSixAd',
     'PS4Joystick',
+    'RC3ChanJoystick',
     'WiiU',
     'XboxOneJoystick',
     'format_axis_event',

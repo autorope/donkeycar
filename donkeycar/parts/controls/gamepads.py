@@ -455,6 +455,63 @@ class WiiU(LinuxGameController):
     }
 
 
+class RC3ChanJoystick(LinuxGameController):
+    """
+    A three-channel RC transmitter presenting itself as a joystick.
+
+    Not a gamepad, and named accordingly.  Its two axes are the transmitter's
+    steering and throttle channels rather than sticks belonging to a left or
+    right hand, so they are called steering and throttle -- what the controls
+    are, which is the convention this module follows.  A behavior map for
+    this transmitter reads directly: throttle binds to /axis/throttle.
+
+    The third channel is a switch, reported as two buttons for its two
+    positions rather than one button with a state.  Note that means moving
+    the switch produces a press on one and, depending on the transmitter, no
+    release on the other; a behavior should treat each position as an event
+    rather than tracking a single button's state.
+
+    There is no dpad, no face buttons and nothing analog beyond the two
+    channels, so most of what a template binds by default does not exist
+    here.  That is the point of the behavior map being per-controller.
+
+    NOT VERIFIED against hardware.  The codes come from the map Donkeycar
+    has shipped.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'steering',
+        0x01: 'throttle',
+    }
+
+    BUTTON_NAMES = {
+        0x120: 'switch_up',
+        0x121: 'switch_down',
+    }
+
+
+class CustomJoystick(LinuxGameController):
+    """
+    Any controller Donkeycar has no built-in map for.
+
+    Declares nothing, so every control keeps the default name built from its
+    driver code -- 'button(0x133)', 'axis(0x03)' -- and the pad is usable
+    immediately, if unreadably.  Run show_map() to see what the driver
+    reports, then name the controls that matter from myconfig.py:
+
+        CONTROLLER_TYPE = 'custom'
+        JOYSTICK_BUTTON_NAMES = {0x133: 'red_button'}
+        JOYSTICK_AXIS_NAMES = {0x03: 'throttle_lever'}
+
+    Names given that way are layered over whatever the class declares, so
+    this also works for renaming one control on a pad that does have a map,
+    without having to restate the rest of it.
+
+    Only the controls worth binding need names.  Anything left out keeps its
+    default and still works; it is just harder to read in a behavior map.
+    """
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).
