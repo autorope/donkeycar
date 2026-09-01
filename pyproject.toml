@@ -126,6 +126,7 @@ files = [
     "donkeycar/parts/controls/",
     "donkeycar/tests/fake_js.py",
     "donkeycar/tests/fake_pygame.py",
+    "donkeycar/tests/fake_rc.py",
 ]
 ignore_missing_imports = true
 # analyse imported modules for type information but do not report their
@@ -141,6 +142,7 @@ module = [
     "donkeycar.parts.controls.*",
     "donkeycar.tests.fake_js",
     "donkeycar.tests.fake_pygame",
+    "donkeycar.tests.fake_rc",
 ]
 disallow_any_generics = true
 disallow_subclassing_any = true
