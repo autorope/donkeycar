@@ -602,14 +602,25 @@ OVERLAY_IMAGE = True  # True to draw computer vision overlay on camera image in 
 
 
 #
-# Assign path follow functions to buttons.
-# You can use game pad buttons OR web ui buttons ('web/w1' to 'web/w5')
-# Use None use the game controller default
-# NOTE: the cross button is already reserved for the emergency stop
+# Which control does what is now CONTROLLER_BEHAVIOR_MAP, above.  The
+# behaviors this template adds beyond the usual ones are:
 #
-TOGGLE_RECORDING_BTN = "option" # button to toggle recording mode
-INC_PID_D_BTN = None            # button to change PID 'D' constant by PID_D_DELTA
-DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DELTA
-INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
-DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
+#   from donkeycar.parts.controls.mapping import (
+#       INCREASE_PID_P, DECREASE_PID_P, INCREASE_PID_D, DECREASE_PID_D)
+#
+# A behavior may take a list, so a gamepad button and a web button can both
+# drive it -- which is why there is no longer a separate setting per button
+# and a separate one per web button:
+#
+#   CONTROLLER_BEHAVIOR_MAP = {
+#       ...,
+#       INCREASE_PID_P: ['/event/button/right_shoulder/press',
+#                        '/event/button/web_w1/press'],
+#       DECREASE_PID_P: '/event/button/left_shoulder/press',
+#   }
+#
+# The old TOGGLE_RECORDING_BTN, INC_PID_P_BTN, DEC_PID_P_BTN, INC_PID_D_BTN
+# and DEC_PID_D_BTN settings are replaced by that map and are no longer
+# read.  Note they named controls in the legacy vocabulary ("option", "R2"),
+# which does not match what the drivers actually report.
 
