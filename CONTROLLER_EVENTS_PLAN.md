@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 28 / 37 commits — Phase 4 complete.**
+**Progress: 29 / 37 commits.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ░░░░░░░ · Phase 6 ░░░
+Phase 4 ▓▓ · Phase 5 ▓░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -532,7 +532,7 @@ dictionary edit in `myconfig.py`.
       bound to "dpad up" needs an edge detector on the second kind. Legacy solved
       this inside the Logitech class, which is why it worked there and nowhere else.
 
-### Phase 5 — Templates, one commit each (0 / 7)
+### Phase 5 — Templates, one commit each (1 / 7)
 
 Each commit drops `isinstance(ctr, JoystickController)` and
 `ctr.set_button_down_trigger(...)` in favour of `V.add(part, ...,
@@ -540,7 +540,19 @@ run_condition=BEHAVIOR_X)`. `InputControllerEvents` is added at the **top** of
 the loop so every part sees events in the same iteration (§#1097).
 `test_template.py` must stay green on every one.
 
-- [ ] **5.1** `complete.py` — the big one: mode toggle, recording, erase-N, e-stop, throttle scaling, constant throttle, chaos monkey, AI launch, behavior increment; also rewrites `add_user_controller()`, which `cv_control.py` and `path_follow.py` both import
+- [x] **5.1** `complete.py` — every binding now goes through a behavior. `drive()`
+      builds a working vehicle and the existing `test_drive` runs ten real loops of
+      it. `add_user_controller()` rewritten; `add_behavior_mapping()` and
+      `add_controller_behaviors()` added beside it. The superseded `ToggleRecording`
+      class is deleted. `cfg_complete.py` gains `ERASE_LAST_N_RECORDS`,
+      `THROTTLE_STEP` and `CHAOS_MONKEY_STEERING`.
+
+      > **Known temporary regression.** `add_user_controller()` now returns the *web*
+      > controller, so `isinstance(ctr, JoystickController)` in `cv_control.py` and
+      > `path_follow.py` is False and their gamepad button bindings do not fire until
+      > 5.2 and 5.3. Their `web/w*` bindings still work, and both templates still
+      > import and run. This is the ordering constraint the plan already noted; it
+      > closes two commits from here.
 - [ ] **5.2** `cv_control.py` — toggle recording, PID tuning buttons
 - [ ] **5.3** `path_follow.py` — save/load/erase path, reset origin, PID tuning
 - [ ] **5.4** `basic.py` — thin: `get_js_controller` call site plus the `ctr.js = netwkJs` monkey-patch

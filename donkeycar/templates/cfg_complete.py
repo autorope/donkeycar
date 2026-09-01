@@ -168,6 +168,18 @@ JOYSTICK_AXIS_NAMES = None
 #   }
 CONTROLLER_BEHAVIOR_MAP = None
 
+# How many records the erase-records behavior throws away each time. This
+# cannot be undone, so it is worth binding that behavior to a click or a
+# double-click rather than a press; see CONTROLLER_BEHAVIOR_MAP.
+ERASE_LAST_N_RECORDS = 100
+
+# How much one press changes the maximum throttle.
+THROTTLE_STEP = 0.01
+
+# How hard the chaos monkey pulls the steering aside while its button is
+# held, to knock the car off its line and see whether the pilot recovers.
+CHAOS_MONKEY_STEERING = 0.2
+
 # Enable listening for remote joystick control over the network.
 USE_NETWORKED_JS = False
 NETWORK_JS_SERVER_IP = None
