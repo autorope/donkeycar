@@ -27,6 +27,9 @@ from donkeycar.parts.controls.events import (
     format_button_event as format_button_event,
     format_button_key as format_button_key,
 )
+from donkeycar.parts.controls.gamepads import (
+    XboxOneJoystick as XboxOneJoystick,
+)
 from donkeycar.parts.controls.linux import (
     JsDevice as JsDevice,
     JsDeviceInfo as JsDeviceInfo,
@@ -49,6 +52,7 @@ __all__ = [
     'JsEvent',
     'LinuxGameController',
     'LinuxJsDevice',
+    'XboxOneJoystick',
     'format_axis_event',
     'format_axis_key',
     'format_button_click_event',

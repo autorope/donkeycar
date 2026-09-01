@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 4 / 37 commits — Phase 0 complete, verified on a real car.**
-Phase 0 ▓▓▓▓ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 5 / 37 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ░░░░░░▓░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -288,7 +288,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (0 / 12)
+### Phase 1 — Gamepads, one commit each (1 / 12)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -311,8 +311,13 @@ catches defects 7 and 8.
 - [ ] **1.4** `PS3Old`
 - [ ] **1.5** `PS3PC`
 - [ ] **1.6** `PS4` — fixes defect 7 (`L3`/`R3` unreachable)
-- [ ] **1.7** `XboxOne` — **the shipped map is wrong**; see the hardware capture below
-- [ ] **1.8** `XboxOneSwapped` — mapping-only, no new device
+- [x] **1.7** `XboxOne` — done first, out of order, while the pad was on the
+      bench; written from the measured capture below rather than from convention,
+      and verified against the real device (every control named, no fallbacks)
+- [ ] **1.8** `XboxOneSwapped` — mapping-only, no new device. **Reconsider:** this
+      swaps which stick drives steering vs throttle, which is a *behavior* binding,
+      not a device naming. In the new architecture that belongs in the Phase 4
+      behavior map, so 1.8 may collapse into a config default rather than a class.
 - [ ] **1.9** `Nimbus` — needs a call on the `hmm` / `what` axis names (defect 10)
 - [ ] **1.10** `WiiU` — fixes defect 8 (`'PAD_DOWN,'`)
 - [ ] **1.11** `RC3Chan`
