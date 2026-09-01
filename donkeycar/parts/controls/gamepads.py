@@ -13,10 +13,77 @@ reports different codes through different drivers, so each map records which
 driver and which device it was verified against, and says so plainly when it
 was not verified at all.
 
+Naming convention.  Controls that every pad has are named for what they are,
+identically across pads: left_stick_horz, left_stick_vert, right_stick_horz,
+right_stick_vert, left_trigger, right_trigger, left_shoulder,
+right_shoulder, left_stick_press, right_stick_press, dpad_*.  Controls that
+carry the pad's own identity keep the words printed on it: a_button and
+menu on an Xbox pad, cross and select on a PlayStation one.  This keeps a
+behavior map legible when it is read next to another pad's, while leaving
+each pad recognisable to the person holding it.
+
 @author: ezward
 """
 
 from donkeycar.parts.controls.linux import LinuxGameController
+
+
+class PS3Joystick(LinuxGameController):
+    """
+    Sony DualShock 3 on the in-kernel `hid-sony` driver.
+
+    This is the mapping that has worked on Raspberry Pi OS from Stretch
+    onward.  PS3 pads are unusually driver-dependent -- the same controller
+    reports different codes through `sixad` and through the older Jessie
+    driver -- so those have their own classes rather than options here.
+
+    Two things differ from the Xbox-style pads:
+
+    The dpad is four buttons, not a pair of axes.  `hid-sony` reports
+    BTN_DPAD_UP and friends, so bind dpad_up rather than watching an axis
+    for -1.
+
+    The triggers are reported twice over: as analog axes (left_trigger,
+    right_trigger) and as digital buttons (left_trigger_button,
+    right_trigger_button).  A squeeze produces both.  Use the axis for
+    proportional control and the button for a simple press.
+
+    NOT VERIFIED against hardware -- no DualShock 3 was available.  The
+    codes come from the map Donkeycar has shipped for years.  Its axis
+    layout agrees with the Xbox pad that was measured, which is reassuring
+    but not proof: the ABS codes are kernel-wide constants with conventional
+    meanings, and `hid-sony` follows the same convention `xpad` does, but
+    nothing forces a driver to.  Worth confirming on a real pad.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'left_trigger',
+        0x03: 'right_stick_horz',
+        0x04: 'right_stick_vert',
+        0x05: 'right_trigger',
+    }
+
+    BUTTON_NAMES = {
+        0x130: 'cross',
+        0x131: 'circle',
+        0x133: 'triangle',
+        0x134: 'square',
+        0x136: 'left_shoulder',
+        0x137: 'right_shoulder',
+        0x138: 'left_trigger_button',
+        0x139: 'right_trigger_button',
+        0x13A: 'select',
+        0x13B: 'start',
+        0x13C: 'ps',
+        0x13D: 'left_stick_press',
+        0x13E: 'right_stick_press',
+        0x220: 'dpad_up',
+        0x221: 'dpad_down',
+        0x222: 'dpad_left',
+        0x223: 'dpad_right',
+    }
 
 
 class LogitechJoystick(LinuxGameController):

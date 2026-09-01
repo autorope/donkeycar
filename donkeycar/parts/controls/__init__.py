@@ -29,6 +29,7 @@ from donkeycar.parts.controls.events import (
 )
 from donkeycar.parts.controls.gamepads import (
     LogitechJoystick as LogitechJoystick,
+    PS3Joystick as PS3Joystick,
     XboxOneJoystick as XboxOneJoystick,
 )
 from donkeycar.parts.controls.linux import (
@@ -54,6 +55,7 @@ __all__ = [
     'LinuxGameController',
     'LinuxJsDevice',
     'LogitechJoystick',
+    'PS3Joystick',
     'XboxOneJoystick',
     'format_axis_event',
     'format_axis_key',

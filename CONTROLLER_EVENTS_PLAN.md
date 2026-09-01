@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 6 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓░░░░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 7 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓░░░░▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -288,7 +288,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (2 / 11)
+### Phase 1 — Gamepads, one commit each (3 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -322,7 +322,14 @@ whichever of these applies:
       measurement instead: the F710 in XInput mode runs on the same `xpad` driver,
       so shared codes must mean the same thing on both pads. That check fails if
       the legacy Xbox defect is reintroduced, so it is not inert.
-- [ ] **1.2** `PS3`
+- [x] **1.2** `PS3` — `hid-sony`. **Not verified against hardware.** Differs in
+      shape from the Xbox-style pads: the dpad is four buttons rather than an axis
+      pair, and each trigger reports twice (analog axis *and* digital button). The
+      axis cross-check against the measured pad is weaker here than for the F710,
+      since this is a different driver and only the ABS-code *convention* is shared
+      — noted in the docstring. Also fixes the naming convention for the whole of
+      Phase 1 (see `gamepads.py` module docstring): shared controls get shared
+      names, pad identity lives in the face buttons.
 - [ ] **1.3** `PS3SixAd`
 - [ ] **1.4** `PS3Old`
 - [ ] **1.5** `PS3PC`
