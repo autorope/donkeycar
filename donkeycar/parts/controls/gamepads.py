@@ -346,6 +346,56 @@ class PS4Joystick(LinuxGameController):
     }
 
 
+class Nimbus(LinuxGameController):
+    """
+    SteelSeries Nimbus, as seen on a Jetson TX2 running JetPack 4.2.
+
+    An MFi controller handled by `hid-generic`, which assigns the gamepad
+    button codes in the order the HID descriptor lists them rather than by
+    what each button means.  So the codes run straight through 0x130-0x137
+    for A, B, X, Y and the four shoulders, and do not line up with the
+    Xbox-style pads: 0x133 is Y here and X there.  That is the driver's
+    doing, not an error, and a test asserts the difference so it is not
+    tidied into agreement later.
+
+    The pad's four shoulders are all digital on this driver -- no analog
+    trigger axes are reported -- so the triggers are named as buttons.
+
+    The Nimbus has a Menu button that the legacy map did not name and this
+    one does not either, because its code is unknown.  It will surface as
+    'button(0x...)', which show_map() will reveal on a real device.
+
+    NOT VERIFIED against hardware.  The codes come from the map Donkeycar
+    has shipped.
+
+    One correction: the legacy map named the two hat axes 'hmm' and 'what',
+    evidently placeholders that were never resolved.  They are 0x10 and
+    0x11, ABS_HAT0X and ABS_HAT0Y, which are the dpad -- the same codes
+    measured as the dpad on a real Xbox pad.  They are named dpad_horiz and
+    dpad_vert here, matching every other pad that reports a hat.
+    """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'right_stick_horz',
+        0x05: 'right_stick_vert',
+        0x10: 'dpad_horiz',
+        0x11: 'dpad_vert',
+    }
+
+    BUTTON_NAMES = {
+        0x130: 'a_button',
+        0x131: 'b_button',
+        0x132: 'x_button',
+        0x133: 'y_button',
+        0x134: 'left_shoulder',
+        0x135: 'right_shoulder',
+        0x136: 'left_trigger_button',
+        0x137: 'right_trigger_button',
+    }
+
+
 class LogitechJoystick(LinuxGameController):
     """
     Logitech Gamepad F710 with its mode switch set to X (XInput).

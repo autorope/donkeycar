@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 11 / 36 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 12 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -212,7 +212,8 @@ Found while reading the branch; all are in Phase 0 unless noted:
    a deadband around center and belongs with `UserThrottle`/`UserSteering` in
    3.1, where it gated auto-record in the legacy code.
 10. **`Nimbus` axes named `hmm` and `what`.** Placeholder names shipping in
-    the public map. (Phase 1, Nimbus commit — needs a call on real names.)
+    the public map. Resolved in 1.8 with evidence rather than a guess: they are
+    `0x10`/`0x11`, the hat axes, which the Xbox capture measured as the dpad.
 11. **Shutdown deadlocked against its own reader.** (Found on the car; fixed
     in 0.4.) Reads went through a buffered file object, whose `peek()` blocks
     on an idle gamepad — nearly always — while holding the file object's
@@ -293,7 +294,7 @@ hardware required.
       — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
       `FakeJsDevice` returns immediately and cannot reproduce either bug
 
-### Phase 1 — Gamepads, one commit each (7 / 11)
+### Phase 1 — Gamepads, one commit each (8 / 11)
 
 Each commit adds one name map to `gamepads.py` plus its test. A gamepad is
 now pure data — a `LinuxGameController` subclass declaring the class
@@ -369,7 +370,12 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
 - [x] **1.7** `XboxOne` — done first, out of order, while the pad was on the
       bench; written from the measured capture below rather than from convention,
       and verified against the real device (every control named, no fallbacks)
-- [ ] **1.8** `Nimbus` — needs a call on the `hmm` / `what` axis names (defect 10)
+- [x] **1.8** `Nimbus` — resolves defect 10 without needing a call: `hmm`/`what`
+      are `0x10`/`0x11`, i.e. `ABS_HAT0X`/`ABS_HAT0Y`, the codes *measured* as the
+      dpad on the Xbox pad. Named `dpad_horiz`/`dpad_vert` like every other pad
+      with a hat. Its buttons run consecutively `0x130`-`0x137` because
+      `hid-generic` numbers them in descriptor order, so they deliberately do not
+      line up with the Xbox-style pads — asserted, so it is not tidied away.
 - [ ] **1.9** `WiiU` — fixes defect 8 (`'PAD_DOWN,'`)
 - [ ] **1.10** `RC3Chan`
 - [ ] **1.11** `custom` — the `donkey createjs` name dict

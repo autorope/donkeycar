@@ -29,6 +29,7 @@ from donkeycar.parts.controls.events import (
 )
 from donkeycar.parts.controls.gamepads import (
     LogitechJoystick as LogitechJoystick,
+    Nimbus as Nimbus,
     PS3Joystick as PS3Joystick,
     PS3JoystickOld as PS3JoystickOld,
     PS3JoystickPC as PS3JoystickPC,
@@ -59,6 +60,7 @@ __all__ = [
     'LinuxGameController',
     'LinuxJsDevice',
     'LogitechJoystick',
+    'Nimbus',
     'PS3Joystick',
     'PS3JoystickOld',
     'PS3JoystickPC',
