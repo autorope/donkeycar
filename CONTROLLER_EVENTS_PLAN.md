@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 23 / 37 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓░░░ ·
+**Progress: 24 / 37 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -443,7 +443,7 @@ gamepad map we cannot verify against hardware should say so in a comment.
 - [ ] **2.4** Networked `JoyStickSub` as a device — replaces the `ctr.js = netwkJs` monkey-patch in the templates
 - [ ] **2.5** Web controller emits button events (D3)
 
-### Phase 3 — Behavior parts (2 / 5)
+### Phase 3 — Behavior parts (3 / 5)
 
 Every legacy `JoystickController` method becomes a part. These are pure
 functions of their inputs, so tests are plain `run()` calls — the
@@ -468,7 +468,20 @@ highest-value tests in the whole plan, since this logic has never had any.
       `complete.py`'s `ToggleRecording` is superseded — in it, a manual toggle
       silently did nothing whenever auto-record was on. **Its deletion happens in
       5.1**, since deleting it now would break the template before it is rewritten.
-- [ ] **3.3** throttle limits — `AdjustMaxThrottle`, `ToggleConstantThrottle`
+- [x] **3.3** throttle limits — `AdjustMaxThrottle` (one part with a *signed* step,
+      so up and down cannot drift apart), `ToggleConstantThrottle` and
+      `ConstantThrottle`. Splitting the toggle from the part that acts on it is what
+      makes constant throttle rebindable. Turning it off gives zero rather than
+      handing back a stale stick reading — that would lurch at speed. This closes
+      the `user/throttle_scale` loop opened in 3.1, replacing the legacy shared
+      mutable field; a test drives `AdjustMaxThrottle` into `UserThrottle` to check
+      the two ends meet.
+
+      **Not carried over:** the legacy methods also wrote `self.throttle` directly
+      on each press, recomputing it from a remembered last axis value. That is
+      unnecessary now — `UserThrottle` recomputes from the live scale on the next
+      pass — and it was the mechanism by which changing the limit could move a
+      stationary car.
 - [ ] **3.4** safety — `EmergencyStop` (the 4-state ES machine as a part), `ChaosMonkey`, `StopVehicle`
 - [ ] **3.5** template-specific — `EnableAiLaunch`, `IncrementBehaviorState`, `SavePath`/`LoadPath`/`ErasePath`/`ResetOrigin`, `AdjustPidP`/`AdjustPidD`; also deletes `donkeycar/parts/controller_events.py`, the POC, whose parts have all been ported by this point
 

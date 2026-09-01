@@ -367,3 +367,142 @@ class ShowRecordCount:
             return
         self.record_tracker.last_num_rec_print = 0
         self.record_tracker.force_alert = 1
+
+
+#: How much one press changes the throttle limit.  Matches the legacy step.
+DEFAULT_THROTTLE_STEP = 0.01
+
+#: The most and least the throttle limit can be set to.
+MIN_THROTTLE_SCALE = 0.0
+MAX_THROTTLE_SCALE = 1.0
+
+#: The throttle limit is rounded to this many places, as the legacy code
+#: did, so that repeated steps do not accumulate float error and leave the
+#: limit reading 0.7300000000000001.
+THROTTLE_SCALE_PLACES = 2
+
+
+class AdjustMaxThrottle:
+    """
+    Raises or lowers the throttle limit while driving.
+
+        V.add(AdjustMaxThrottle(+cfg.THROTTLE_STEP),
+              inputs=['user/throttle_scale'],
+              outputs=['user/throttle_scale'],
+              run_condition=format_button_event('dpad_up', BUTTON_DOWN))
+        V.add(AdjustMaxThrottle(-cfg.THROTTLE_STEP),
+              inputs=['user/throttle_scale'],
+              outputs=['user/throttle_scale'],
+              run_condition=format_button_event('dpad_down', BUTTON_DOWN))
+
+    One part with a signed step, rather than a separate part for up and
+    down, so both directions cannot drift apart.
+
+    Steps once per call, so it wants a one-pass run condition.  Note that
+    binding it to a press gives one step per press, which at the default
+    step of 0.01 takes fifty presses to cross half the range -- fine for
+    trimming, tedious for a real change.  Binding it to '/hold' instead
+    gives one step per hold rather than a repeat; there is deliberately no
+    key-repeat here, because a part that repeats while a button is held
+    would need to know how long it has been held, and that belongs in the
+    event layer if it is ever wanted.
+
+    Takes the current limit as an input, so the web interface or a config
+    reload can change it too.
+    """
+
+    def __init__(
+        self,
+        step: float = DEFAULT_THROTTLE_STEP,
+        default_scale: float = MAX_THROTTLE_SCALE,
+    ) -> None:
+        """
+        step:          how much to change the limit by, signed
+        default_scale: the limit to assume when nothing has set one
+        """
+        self.step = step
+        self.default_scale = default_scale
+
+    def run(self, throttle_scale: float | None = None) -> float:
+        current = self.default_scale if throttle_scale is None else throttle_scale
+        adjusted = current + self.step
+        adjusted = max(MIN_THROTTLE_SCALE, min(MAX_THROTTLE_SCALE, adjusted))
+        adjusted = round(adjusted, THROTTLE_SCALE_PLACES)
+
+        logger.info(f'throttle scale: {adjusted}')
+        return adjusted
+
+
+class ToggleConstantThrottle:
+    """
+    Holds the throttle open without the control being touched, so the car
+    can be driven on steering alone.
+
+        V.add(ToggleConstantThrottle(),
+              inputs=['user/constant_throttle'],
+              outputs=['user/constant_throttle'],
+              run_condition=format_button_event('start', BUTTON_DOWN))
+
+    This only says whether constant throttle is wanted.  ConstantThrottle
+    is the part that acts on it, because what to do about the throttle is a
+    separate question from whether the driver asked for it -- and the
+    legacy version answered both at once, which is why it could not be
+    rebound.
+
+    Steps once per call, so it wants a one-pass run condition.
+    """
+
+    def run(self, constant_throttle: bool | None = None) -> bool:
+        toggled = not bool(constant_throttle)
+        logger.info(f'constant throttle: {toggled}')
+        return toggled
+
+
+class ConstantThrottle:
+    """
+    Supplies the throttle while constant throttle is on.
+
+        V.add(ConstantThrottle(),
+              inputs=['user/constant_throttle', 'user/throttle_scale',
+                      'user/throttle'],
+              outputs=['user/throttle'])
+
+    Add it after the part that reads the throttle control, since it
+    overrides that part's answer while it is on and passes it through
+    untouched while it is off.
+
+    While on, the throttle is held at the current limit -- so the same
+    control that trims the limit also sets the speed the car holds, which
+    is what makes AdjustMaxThrottle worth binding on a car driven this way.
+
+    Turning it off gives no throttle rather than handing back whatever the
+    control happens to read.  A driver who has not touched the throttle for
+    a lap will have it resting at zero, and a car that lurched to whatever
+    the stick said at that moment would be a surprise.  The next real
+    movement of the control takes over as usual.
+    """
+
+    def __init__(self, default_scale: float = MAX_THROTTLE_SCALE) -> None:
+        self.default_scale = default_scale
+        self._was_on = False
+
+    def run(
+        self,
+        constant_throttle: bool | None = None,
+        throttle_scale: float | None = None,
+        throttle: float | None = None,
+    ) -> float:
+        is_on = bool(constant_throttle)
+        scale = self.default_scale if throttle_scale is None else throttle_scale
+
+        if is_on:
+            self._was_on = True
+            return scale
+
+        if self._was_on:
+            # just switched off; stop rather than jump to whatever the
+            # control reads right now
+            self._was_on = False
+            return 0.0
+
+        return throttle or 0.0
