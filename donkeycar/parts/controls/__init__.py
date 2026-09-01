@@ -40,6 +40,9 @@ from donkeycar.parts.controls.gamepads import (
     WiiU as WiiU,
     XboxOneJoystick as XboxOneJoystick,
 )
+from donkeycar.parts.controls.web import (
+    WebButtonController as WebButtonController,
+)
 from donkeycar.parts.controls.network import (
     ControllerPublisher as ControllerPublisher,
     MessagePublisher as MessagePublisher,
@@ -111,6 +114,7 @@ __all__ = [
     'ZmqPublisher',
     'ZmqSubscriber',
     'RC3ChanJoystick',
+    'WebButtonController',
     'WiiU',
     'XboxOneJoystick',
     'format_axis_event',
