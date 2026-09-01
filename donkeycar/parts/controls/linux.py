@@ -10,9 +10,9 @@ Game controllers read through the Linux joystick device tree,
 import array
 import logging
 import os
+import select
 import struct
 from collections.abc import Mapping, Sequence
-from io import BufferedReader
 from typing import NamedTuple, Protocol
 
 from donkeycar.parts.controls.device import (
@@ -97,14 +97,34 @@ class JsDevice(Protocol):
         ...
 
 
+#: How long read_event() will wait for the device before giving the caller
+#: back control.  This bounds shutdown; it does not delay events, which
+#: wake select() as soon as they arrive.
+DEFAULT_POLL_TIMEOUT = 0.05
+
+
 class LinuxJsDevice:
     """
     Reads a Linux joystick device node using ioctl and struct.
+
+    Reads go through select() on a non-blocking file descriptor rather than
+    a buffered file object.  A buffered read blocks indefinitely on an idle
+    gamepad -- which is nearly always -- and holds the file object's
+    internal lock while it does, so closing the device from another thread
+    deadlocks against its own reader.  A raw descriptor has no such lock,
+    and the select timeout means an idle reader returns regularly to notice
+    that it has been shut down.
     """
 
-    def __init__(self, dev_fn: str = '/dev/input/js0') -> None:
+    def __init__(
+        self,
+        dev_fn: str = '/dev/input/js0',
+        poll_timeout: float = DEFAULT_POLL_TIMEOUT,
+    ) -> None:
         self.dev_fn = dev_fn
-        self._jsdev: BufferedReader | None = None
+        self._poll_timeout = poll_timeout
+        self._fd: int | None = None
+        self._poller: 'select.poll | None' = None
 
     def open(self) -> JsDeviceInfo:
         try:
@@ -119,54 +139,95 @@ class LinuxJsDevice:
             raise FileNotFoundError(f'No such device: {self.dev_fn}')
 
         logger.info(f'Opening {self.dev_fn}...')
-        # buffered, so that read_event() can peek before it commits to a
-        # read that would otherwise block on a partial event
-        jsdev = open(self.dev_fn, 'rb')
-        self._jsdev = jsdev
+        fd = os.open(self.dev_fn, os.O_RDONLY | os.O_NONBLOCK)
+        self._fd = fd
+        poller = select.poll()
+        poller.register(fd, select.POLLIN)
+        self._poller = poller
 
         buf = array.array('B', [0] * 64)
-        ioctl(jsdev, JSIOCGNAME + (0x10000 * len(buf)), buf)
+        ioctl(fd, JSIOCGNAME + (0x10000 * len(buf)), buf)
         name = buf.tobytes().rstrip(b'\x00').decode('utf-8', errors='replace')
 
         buf = array.array('B', [0])
-        ioctl(jsdev, JSIOCGAXES, buf)
+        ioctl(fd, JSIOCGAXES, buf)
         num_axes = buf[0]
 
         buf = array.array('B', [0])
-        ioctl(jsdev, JSIOCGBUTTONS, buf)
+        ioctl(fd, JSIOCGBUTTONS, buf)
         num_buttons = buf[0]
 
         buf = array.array('B', [0] * 0x40)
-        ioctl(jsdev, JSIOCGAXMAP, buf)
+        ioctl(fd, JSIOCGAXMAP, buf)
         axis_codes = tuple(buf[:num_axes])
 
         btn_buf = array.array('H', [0] * 200)
-        ioctl(jsdev, JSIOCGBTNMAP, btn_buf)
+        ioctl(fd, JSIOCGBTNMAP, btn_buf)
         button_codes = tuple(btn_buf[:num_buttons])
 
         logger.info(f'Device name: {name}')
         return JsDeviceInfo(name, axis_codes, button_codes)
 
     def read_event(self) -> JsEvent | None:
-        jsdev = self._jsdev
-        if jsdev is None:
+        fd = self._fd
+        poller = self._poller
+        if fd is None or poller is None:
             return None
 
-        # peek first; read() would block until a whole event is available
-        if len(jsdev.peek(JS_EVENT_SIZE)) < JS_EVENT_SIZE:
+        try:
+            ready = poller.poll(self._poll_timeout * 1000.0)
+        except (OSError, ValueError):
+            # closed underneath us while we were waiting; that is shutdown,
+            # not a failure
+            return None
+        if not ready:
             return None
 
-        evbuf = jsdev.read(JS_EVENT_SIZE)
-        if not evbuf or len(evbuf) < JS_EVENT_SIZE:
+        _, flags = ready[0]
+        if flags & (select.POLLHUP | select.POLLERR | select.POLLNVAL):
+            # The device node went away -- the pad was unplugged, or its USB
+            # connection dropped and it re-enumerated behind our back.  Say
+            # so.  Reporting "no event" forever instead leaves the car with a
+            # dead controller and nothing in the log, which is exactly the
+            # failure this class exists to make visible.
+            self._fail(f'{self.dev_fn} disconnected')
+
+        try:
+            evbuf = os.read(fd, JS_EVENT_SIZE)
+        except BlockingIOError:
+            return None
+        except OSError as e:
+            if self._fd is None:
+                return None
+            raise OSError(f'{self.dev_fn} read failed: {e}') from e
+
+        if not evbuf:
+            # readable but empty is end-of-file, which for a device node
+            # means the same thing as POLLHUP
+            self._fail(f'{self.dev_fn} returned no data; device is gone')
+
+        if len(evbuf) < JS_EVENT_SIZE:
             return None
 
         time, value, kind, number = struct.unpack(JS_EVENT_FORMAT, evbuf)
         return JsEvent(time, value, kind, number)
 
+    def _fail(self, message: str) -> None:
+        """
+        Report a device that has gone away, unless we are shutting down --
+        in which case it going away is what we asked for.
+        """
+        if self._fd is None:
+            return
+        raise OSError(message)
+
     def close(self) -> None:
-        if self._jsdev is not None:
-            self._jsdev.close()
-            self._jsdev = None
+        # clear the descriptor before closing it, so a reader waiting in
+        # poll() sees that it is gone rather than racing on a stale fd
+        fd, self._fd = self._fd, None
+        self._poller = None
+        if fd is not None:
+            os.close(fd)
 
 
 class LinuxGameController(AbstractInputController):

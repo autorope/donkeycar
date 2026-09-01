@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
+import select
+import struct
+import threading
+import time
 import unittest
+
+import pytest
 
 from donkeycar.parts.controls import (
     NO_CHANGE,
     ControlChange,
+    JsEvent,
     LinuxGameController,
+    LinuxJsDevice,
 )
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
@@ -313,6 +322,107 @@ class TestShutdown(unittest.TestCase):
 
         assert device.closed is True
         assert pad.poll() == NO_CHANGE
+
+
+class TestLinuxJsDeviceReads(unittest.TestCase):
+    """
+    LinuxJsDevice against a real file descriptor.  FakeJsDevice returns
+    immediately and so cannot exercise waiting for a device that has
+    nothing to say -- which is the state a gamepad is in almost always.
+    """
+
+    def setUp(self):
+        self.read_fd, self.write_fd = os.pipe()
+        self.device = LinuxJsDevice(poll_timeout=0.05)
+        self.device._fd = self.read_fd
+        poller = select.poll()
+        poller.register(self.read_fd, select.POLLIN)
+        self.device._poller = poller
+        self.addCleanup(self._close_fds)
+
+    def _close_fds(self):
+        for fd in (self.read_fd, self.write_fd):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+    def test_read_event_returns_none_when_idle(self):
+        assert self.device.read_event() is None
+
+    def test_read_event_waits_no_longer_than_the_timeout(self):
+        started = time.monotonic()
+        self.device.read_event()
+        waited = time.monotonic() - started
+
+        assert waited < 1.0, f'idle read blocked for {waited:.2f}s'
+
+    def test_read_event_parses_an_event(self):
+        os.write(self.write_fd, struct.pack('IhBB', 1234, -32767, 0x02, 3))
+        event = self.device.read_event()
+
+        assert event == JsEvent(time=1234, value=-32767, type=0x02, number=3)
+
+    def test_read_event_ignores_a_partial_event(self):
+        os.write(self.write_fd, b'\x00\x01\x02')
+        assert self.device.read_event() is None
+
+    def test_close_does_not_deadlock_against_a_waiting_reader(self):
+        """
+        Regression, found on a real car: reads went through a buffered file
+        object, whose internal lock the blocked reader held, so close() from
+        the vehicle thread waited on a reader that was itself waiting on an
+        idle gamepad.  Shutting the car down hung.
+        """
+        stopped = threading.Event()
+
+        def read_forever() -> None:
+            while not stopped.is_set():
+                if self.device.read_event() is None and self.device._fd is None:
+                    break
+            stopped.set()
+
+        reader = threading.Thread(target=read_forever, daemon=True)
+        reader.start()
+        time.sleep(0.1)  # let it get into select()
+
+        started = time.monotonic()
+        self.device.close()
+        closed_in = time.monotonic() - started
+
+        stopped.set()
+        reader.join(timeout=2.0)
+
+        assert closed_in < 1.0, f'close() blocked for {closed_in:.2f}s'
+        assert not reader.is_alive(), 'reader thread never came back'
+
+    def test_close_is_idempotent(self):
+        self.device.close()
+        self.device.close()
+        assert self.device.read_event() is None
+
+    def test_a_vanished_device_is_reported(self):
+        """
+        Regression, found on a real car: an Xbox pad dropping off USB and
+        re-enumerating left the reader holding a descriptor for a device
+        that no longer existed.  read_event() returned 'no event' every
+        50ms for the rest of the run -- no error, no log line, and every
+        button press silently going nowhere.
+        """
+        os.close(self.write_fd)  # the far end goes away, as on an unplug
+
+        with pytest.raises(OSError, match='disconnected|gone'):
+            self.device.read_event()
+
+    def test_a_vanished_device_is_silent_during_shutdown(self):
+        """
+        The same condition during our own close() is not a failure: it is
+        what close() asked for.
+        """
+        self.device.close()
+        os.close(self.write_fd)
+
+        assert self.device.read_event() is None
 
 
 class TestNameMapAssertions(unittest.TestCase):

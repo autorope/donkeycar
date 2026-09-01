@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 3 / 36 commits — Phase 0 complete.**
-Phase 0 ▓▓▓ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 4 / 37 commits — Phase 0 complete, verified on a real car.**
+Phase 0 ▓▓▓▓ · Phase 1 ░░░░░░░░░░░░ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -208,7 +208,22 @@ Found while reading the branch; all are in Phase 0 unless noted:
    3.1, where it gated auto-record in the legacy code.
 10. **`Nimbus` axes named `hmm` and `what`.** Placeholder names shipping in
     the public map. (Phase 1, Nimbus commit — needs a call on real names.)
-11. **`Memory.__setitem__` assigns keys as values.** For a non-tuple sequence
+11. **Shutdown deadlocked against its own reader.** (Found on the car; fixed
+    in 0.4.) Reads went through a buffered file object, whose `peek()` blocks
+    on an idle gamepad — nearly always — while holding the file object's
+    internal lock. `close()` from the vehicle thread then waited forever on
+    the reader thread. Thread dump showed the reader parked in `read_event`
+    and the main thread parked in `close`. **A car with an idle gamepad hung
+    on shutdown.**
+12. **A vanished device was reported as "no event", forever.** (Found on the
+    car; fixed in 0.4.) The Xbox pad dropped off USB and re-enumerated; the
+    reader kept the old descriptor and returned "nothing happened" every 50ms
+    for the rest of the run — no error, no log line, `running` still true.
+    This is the same silent-failure class as the bare `except:` in defect 4.
+    `select.select()` cannot tell "quiet" from "gone"; `select.poll()` reports
+    `POLLHUP`/`POLLERR`/`POLLNVAL`, so a vanished device now raises `OSError`,
+    which `InputControllerEvents` already logs and stops on.
+13. **`Memory.__setitem__` assigns keys as values.** For a non-tuple sequence
     key the branch read `key = tuple(key); value = tuple(key)` — the second
     line should have been `tuple(value)`, so `mem[['a','b']] = [1,2]` stored
     `'a'` and `'b'` as the *values*. The existing test only passed a tuple
@@ -247,7 +262,7 @@ per-binding `web/w*`-vs-joystick branching in `path_follow.py` and
 Every commit: green `pytest`, green `mypy --strict` on the new package, no
 hardware required.
 
-### Phase 0 — Foundation (3 / 3) ✅
+### Phase 0 — Foundation (4 / 4) ✅
 
 - [x] **0.1** `Memory.remove` uses `pop`; rewrite `events.py` as `OneShotEvents`
       — *tests:* extend `test_memory.py`; new `test_events.py` (emit/expire/re-emit, missing-key removal)
@@ -267,6 +282,11 @@ hardware required.
       the shared test kit. A hold suppresses the click that press would otherwise
       have produced (a long press is its own gesture, not a slow click) — that was
       an open question D2 did not settle, and it is now tested.
+- [x] **0.4** Fix two device-layer defects found running against a real Xbox pad
+      on the car (defects 12 and 13) — `LinuxJsDevice` reads through `select.poll()`
+      on a raw non-blocking descriptor instead of a buffered file object
+      — *tests:* `TestLinuxJsDeviceReads` against a real `os.pipe()`, since
+      `FakeJsDevice` returns immediately and cannot reproduce either bug
 
 ### Phase 1 — Gamepads, one commit each (0 / 12)
 
@@ -291,7 +311,7 @@ catches defects 7 and 8.
 - [ ] **1.4** `PS3Old`
 - [ ] **1.5** `PS3PC`
 - [ ] **1.6** `PS4` — fixes defect 7 (`L3`/`R3` unreachable)
-- [ ] **1.7** `XboxOne`
+- [ ] **1.7** `XboxOne` — **the shipped map is wrong**; see the hardware capture below
 - [ ] **1.8** `XboxOneSwapped` — mapping-only, no new device
 - [ ] **1.9** `Nimbus` — needs a call on the `hmm` / `what` axis names (defect 10)
 - [ ] **1.10** `WiiU` — fixes defect 8 (`'PAD_DOWN,'`)
@@ -300,6 +320,27 @@ catches defects 7 and 8.
 
 Legacy `controller.py` is untouched and still working throughout Phase 1, so
 every one of these commits is independently mergeable.
+
+**Measured on a real Xbox One S pad through `xpad` (2026-08-31), which the
+1.7 commit must act on.** The driver reports 8 axes and 11 buttons; the
+legacy `XboxOneJoystick` map is wrong for four of them:
+
+| code | legacy name | what it actually is | evidence |
+|---|---|---|---|
+| `0x02` | `right_stick_horz` | **left trigger** (`ABS_Z`) | rests at `-1.0`, sweeps to `+1.0` one way only |
+| `0x05` | `right_stick_vert` | **right trigger** (`ABS_RZ`) | same |
+| `0x03` | *(unmapped)* | **right stick X** (`ABS_RX`) | 52 events while nobody touched a trigger |
+| `0x04` | *(unmapped)* | **right stick Y** (`ABS_RY`) | 64 events, ditto |
+| `0x09`, `0x0a` | `right_trigger`, `left_trigger` | **not reported at all** | absent from the driver's axis list |
+
+So on `main` today an Xbox user's "right stick" *is* their triggers, resting
+pegged at `-1.0`, and the real right stick has no name. Four buttons are also
+unmapped: `0x13a` (back/view), `0x13c` (guide), `0x13d`/`0x13e` (stick
+presses); `dpad_horiz`/`dpad_vert` are correct.
+
+This is the class of error the `duplicate_*` assertions cannot catch — a map
+can be perfectly self-consistent and still describe a different device. Any
+gamepad map we cannot verify against hardware should say so in a comment.
 
 ### Phase 2 — Non-gamepad input devices (0 / 5)
 
