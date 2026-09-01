@@ -40,6 +40,12 @@ from donkeycar.parts.controls.gamepads import (
     WiiU as WiiU,
     XboxOneJoystick as XboxOneJoystick,
 )
+from donkeycar.parts.controls.pygame_device import (
+    PyGameController as PyGameController,
+    PyGameDevice as PyGameDevice,
+    PyGamePS4Joystick as PyGamePS4Joystick,
+    RealPyGameDevice as RealPyGameDevice,
+)
 from donkeycar.parts.controls.linux import (
     JsDevice as JsDevice,
     JsDeviceInfo as JsDeviceInfo,
@@ -70,6 +76,10 @@ __all__ = [
     'PS3JoystickPC',
     'PS3JoystickSixAd',
     'PS4Joystick',
+    'PyGameController',
+    'PyGameDevice',
+    'PyGamePS4Joystick',
+    'RealPyGameDevice',
     'RC3ChanJoystick',
     'WiiU',
     'XboxOneJoystick',

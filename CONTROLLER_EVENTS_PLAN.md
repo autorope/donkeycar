@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 15 / 36 commits — Phase 1 complete.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ░░░░░ · Phase 3 ░░░░░ ·
+**Progress: 16 / 36 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓░░░░ · Phase 3 ░░░░░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -435,7 +435,7 @@ This is the class of error the `duplicate_*` assertions cannot catch — a map
 can be perfectly self-consistent and still describe a different device. Any
 gamepad map we cannot verify against hardware should say so in a comment.
 
-### Phase 2 — Non-gamepad input devices (0 / 5)
+### Phase 2 — Non-gamepad input devices (1 / 5)
 
 - [ ] **2.1** PyGame device + `PyGamePS4` map — integer-keyed maps; hats expand to buttons
 - [ ] **2.2** pigpio `RCReceiver` as `AbstractInputController` — restructure: today it's a full part emitting steering/throttle/mode/recording, not a `poll()` device
