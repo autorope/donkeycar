@@ -506,3 +506,182 @@ class ConstantThrottle:
             return 0.0
 
         return throttle or 0.0
+
+
+#: How much throttle the emergency stop gives back per pass while it winds
+#: down.  At the default loop rate this unwinds a full-reverse pulse in
+#: about half a second.
+DEFAULT_ESTOP_RECOVERY_STEP = 0.05
+
+#: The brief forward blip between the two reverse pulses.  Many RC speed
+#: controllers read a single reverse request as "brake" and only engage
+#: reverse on a second one, so the sequence is reverse, neutral, reverse.
+ESTOP_NEUTRAL_THROTTLE = 0.01
+
+#: How hard the chaos monkey pulls the steering while it is held.
+DEFAULT_CHAOS_STEERING = 0.2
+
+
+class EmergencyStop:
+    """
+    Stops the car as fast as the drivetrain allows.
+
+        V.add(EmergencyStop(),
+              inputs=[format_button_event('y_button', BUTTON_DOWN),
+                      'user/throttle', 'user/throttle_scale',
+                      'user/mode', 'recording'],
+              outputs=['user/throttle', 'user/mode', 'recording',
+                       'user/estop'])
+
+    Takes the button event as an *input* rather than a run condition,
+    unlike the other behaviors here, because stopping takes several passes
+    through the loop and a run condition would only run it on the one pass
+    where the button was pressed.  So it runs every pass and watches for
+    the event itself.
+
+    The stop is a sequence, not a single value, because many RC speed
+    controllers read one reverse request as "brake" and only engage reverse
+    on a second one.  So it sends full reverse, a brief forward blip,
+    full reverse again, and then winds back up to zero rather than leaving
+    the car sitting in reverse.  Add it after the parts that set the
+    throttle, since it overrides them while it is stopping.
+
+    It also puts the car back in manual and stops recording, because
+    whatever the pilot was doing is what is being stopped, and a recording
+    of an emergency is not training data.
+    """
+
+    def __init__(
+        self,
+        recovery_step: float = DEFAULT_ESTOP_RECOVERY_STEP,
+        default_scale: float = MAX_THROTTLE_SCALE,
+        user_mode: str = DEFAULT_PILOT_MODE,
+    ) -> None:
+        """
+        recovery_step: how much throttle to give back per pass at the end
+        default_scale: throttle limit to assume when nothing has set one
+        user_mode:     the mode to drop back to
+        """
+        self.recovery_step = recovery_step
+        self.default_scale = default_scale
+        self.user_mode = user_mode
+        self._stage = 0
+        self._throttle = 0.0
+
+    @property
+    def stopping(self) -> bool:
+        return self._stage > 0
+
+    def run(
+        self,
+        estop_event: float | None = None,
+        throttle: float | None = None,
+        throttle_scale: float | None = None,
+        mode: str | None = None,
+        recording: bool | None = None,
+    ) -> tuple[float, str, bool, bool]:
+        """
+        Returns the throttle, pilot mode, whether to record, and whether a
+        stop is in progress.
+        """
+        scale = self.default_scale if throttle_scale is None else throttle_scale
+
+        if estop_event is not None and not self.stopping:
+            logger.warning('emergency stop')
+            self._stage = 1
+
+        if not self.stopping:
+            # nothing to do; pass everything through untouched
+            return (
+                throttle or 0.0,
+                mode if mode is not None else self.user_mode,
+                bool(recording),
+                False,
+            )
+
+        self._throttle = self._next_throttle(scale)
+        return self._throttle, self.user_mode, False, True
+
+    def _next_throttle(self, scale: float) -> float:
+        """
+        The next step of the stopping sequence.
+        """
+        if self._stage == 1:
+            self._stage = 2
+            return -scale
+
+        if self._stage == 2:
+            self._stage = 3
+            return ESTOP_NEUTRAL_THROTTLE
+
+        if self._stage == 3:
+            self._stage = 4
+            return -scale
+
+        # winding back up to zero, so the car does not sit in reverse
+        throttle = self._throttle + self.recovery_step
+        if throttle >= 0.0:
+            throttle = 0.0
+            self._stage = 0
+        return throttle
+
+
+class ChaosMonkey:
+    """
+    Pulls the steering aside while a button is held, to knock the car off
+    its line and see whether the pilot recovers.
+
+        V.add(ChaosMonkey(-cfg.CHAOS_MONKEY_STEERING),
+              inputs=[format_button_key('left_shoulder'), 'user/steering'],
+              outputs=['user/steering'])
+        V.add(ChaosMonkey(+cfg.CHAOS_MONKEY_STEERING),
+              inputs=[format_button_key('right_shoulder'), 'user/steering'],
+              outputs=['user/steering'])
+
+    Takes the button's *state* rather than its event, since it applies
+    while the button is held rather than once when it is pressed.  Add it
+    after the part that sets the steering, since it overrides that while
+    held and passes it through when not.
+    """
+
+    def __init__(self, steering: float = DEFAULT_CHAOS_STEERING) -> None:
+        """
+        steering: where to pull the steering to while held, signed
+        """
+        self.steering = steering
+
+    def run(
+        self,
+        button_state: int | None = None,
+        steering: float | None = None,
+    ) -> float:
+        if button_state:
+            return self.steering
+        return steering or 0.0
+
+
+class StopVehicle:
+    """
+    Ends the drive loop, so the car can be stopped without a keyboard.
+
+        V.add(StopVehicle(V),
+              inputs=[format_button_key('x_button')],
+              run_condition=format_button_click_event('b_button', 2))
+
+    Worth binding to a gesture rather than a single button, since there is
+    no undo.  Taking one button's state as an input while triggering on
+    another's event gives a two-handed gesture that is easy to do on
+    purpose and hard to do by accident -- above, double-click B while
+    holding X.  Called with no input at all it simply stops.
+    """
+
+    def __init__(self, vehicle: Any) -> None:
+        self.vehicle = vehicle
+
+    def run(self, modifier_state: int | None = None) -> None:
+        if modifier_state is not None and not modifier_state:
+            return  # the gesture was not completed
+
+        logger.info('stopping the vehicle')
+        if self.vehicle is not None:
+            self.vehicle.on = False

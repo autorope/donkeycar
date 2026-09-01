@@ -1,7 +1,7 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 24 / 37 commits.**
-Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓░░ ·
+**Progress: 25 / 37 commits.**
+Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓░ ·
 Phase 4 ░░ · Phase 5 ░░░░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
@@ -443,7 +443,7 @@ gamepad map we cannot verify against hardware should say so in a comment.
 - [ ] **2.4** Networked `JoyStickSub` as a device — replaces the `ctr.js = netwkJs` monkey-patch in the templates
 - [ ] **2.5** Web controller emits button events (D3)
 
-### Phase 3 — Behavior parts (3 / 5)
+### Phase 3 — Behavior parts (4 / 5)
 
 Every legacy `JoystickController` method becomes a part. These are pure
 functions of their inputs, so tests are plain `run()` calls — the
@@ -482,7 +482,13 @@ highest-value tests in the whole plan, since this logic has never had any.
       unnecessary now — `UserThrottle` recomputes from the live scale on the next
       pass — and it was the mechanism by which changing the limit could move a
       stationary car.
-- [ ] **3.4** safety — `EmergencyStop` (the 4-state ES machine as a part), `ChaosMonkey`, `StopVehicle`
+- [x] **3.4** safety — `EmergencyStop`, `ChaosMonkey`, `StopVehicle`. The e-stop's
+      full 23-step throttle sequence is pinned against the legacy machine replayed
+      verbatim; how hard a car brakes is not something to change in passing.
+      **It takes the button event as an `input`, not a `run_condition`** — the stop
+      spans many loop passes, so a run condition would fire it once and abandon it
+      mid-sequence, leaving the car in reverse. Pressing again mid-stop is ignored
+      rather than restarting.
 - [ ] **3.5** template-specific — `EnableAiLaunch`, `IncrementBehaviorState`, `SavePath`/`LoadPath`/`ErasePath`/`ResetOrigin`, `AdjustPidP`/`AdjustPidD`; also deletes `donkeycar/parts/controller_events.py`, the POC, whose parts have all been ported by this point
 
 ### Phase 4 — Behavior mapping layer (0 / 2)
