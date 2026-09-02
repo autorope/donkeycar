@@ -1,6 +1,10 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 38 / 38 commits — COMPLETE.**
+**COMPLETE — 37 / 37 tasks.**
+
+39 commits in total: the 37 tasks below, plus one for the dead-zone default
+change (folded into 3.1's note) and one correcting this checklist, whose
+Phase 2 and Phase 6 boxes had been left unticked while their work was done.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
 Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓
 
@@ -437,11 +441,41 @@ gamepad map we cannot verify against hardware should say so in a comment.
 
 ### Phase 2 — Non-gamepad input devices (5 / 5) ✅
 
-- [ ] **2.1** PyGame device + `PyGamePS4` map — integer-keyed maps; hats expand to buttons
-- [ ] **2.2** pigpio `RCReceiver` as `AbstractInputController` — restructure: today it's a full part emitting steering/throttle/mode/recording, not a `poll()` device
-- [ ] **2.3** RoboHAT MM1 as `AbstractInputController` — same restructure; `test_robohat.py` already covers `read_serial()` and must keep passing
-- [ ] **2.4** Networked `JoyStickSub` as a device — replaces the `ctr.js = netwkJs` monkey-patch in the templates
-- [ ] **2.5** Web controller emits button events (D3)
+- [x] **2.1** PyGame device + `PyGamePS4` map — integer-keyed, so it shares no numbering
+      with the evdev PS4 map; hats expand to four pseudo-buttons. Fixed a real defect:
+      PyGame reports *positions*, not events, and the legacy scan overwrote one return
+      value while walking every control — so simultaneous changes were recorded but
+      never reported, and a diagonal stick lost half its movement on every scan.
+      `poll()` now drains a queue.
+- [x] **2.2** pigpio `RCReceiver` as `AbstractInputController` — now reports three
+      channels as axes and nothing else; deciding pilot mode and recording moved out
+      to behavior parts, which is the whole point. Fixed: legacy `shutdown()` indexed
+      its callback list with a `Channel` object, so it raised `TypeError` every time
+      and never released pigpio.
+- [x] **2.3** RoboHAT MM1 as `AbstractInputController` — arithmetic pinned against the
+      exact readings `test_robohat.py` uses, so an MM1 car's steering feel cannot change
+      quietly; that legacy test still passes untouched. Two parsing fixes: legacy split
+      on `', '` exactly (so `1500,1500` parsed to nothing) and used `str.isnumeric()`
+      (which rejects `1600.0`). **Resolved (Ed):** `MM1_STOPPED_PWM`,
+      `MM1_MAX_FORWARD` and `MM1_MAX_REVERSE` are output-side settings only — they
+      limit how hard the car drives, in `RoboHATDriver`. The input path's apparent use
+      of them cancelled exactly and never had any effect, so preserving the behaviour
+      was right. Now stated as a deliberate choice and pinned by tests, so nobody later
+      "fixes" the unused constants and silently changes every MM1 car's throttle.
+- [x] **2.4** Networked `JoyStickSub` as a device — `NetworkedController` is an ordinary
+      input controller, so the `ctr.js = netwkJs` monkey-patch is gone. Wire format is
+      JSON now: the old space-separated one broke on any control name containing a
+      space and used `'0'` to mean "nothing", so a control named `0` was unreportable.
+      Three defects fixed — a malformed message killed the receiving thread outright;
+      a burst overwrote all but the last change (losing a release leaves a button stuck
+      down); and `shutdown()` could never work because `recv()` blocked forever, the
+      same shape as the deadlock found on the car in 0.4.
+- [x] **2.5** Web controller emits button events (D3) — `WebButtonController` is an input
+      controller fed from the vehicle loop, so a web push goes through the *same* event
+      pump as a gamepad and gets press, release, click and multi-click for free. That is
+      what let Phase 5 delete the `web/w*`-versus-joystick branching rather than port it.
+      No `hold` from this controller: the web interface does not report how long a button
+      was held.
 
 ### Phase 3 — Behavior parts (5 / 5) ✅
 
@@ -600,9 +634,32 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 
 ### Phase 6 — Cutover (3 / 3) ✅
 
-- [ ] **6.1** Delete `Joystick`, `JoystickController`, all `*JoystickController` subclasses, `get_js_controller`; move `RCReceiver`; rewrite `test_controller.py` (it imports `PS3Joystick`/`PS3JoystickController` directly and will not survive)
-- [ ] **6.2** Rework `donkey createjs` (`management/joystick_creator.py`, 584 lines) to emit a name dictionary instead of a controller class
-- [ ] **6.3** Docs + `myconfig.py` template + a migration note for users with a custom `my_joystick.py`
+> **6.1 and 6.2 had to swap.** `management/base.py` imports `CreateJoystick` at
+> module scope, and the old wizard imported `JoystickCreatorController` at module
+> scope, so deleting the legacy hierarchy first would have made **every** `donkey`
+> command fail with an ImportError, not just `createjs`. 6.2 went first.
+
+- [x] **6.2** *(done first)* Rework `donkey createjs` — 584 lines down to ~200, emitting
+      `JOYSTICK_BUTTON_NAMES`/`JOYSTICK_AXIS_NAMES` to paste into `myconfig.py` rather
+      than generating a controller class and a behavior map. A test feeds its output
+      back through the factory to check the names actually take. Axis jitter below half
+      travel is ignored, so a twitching stick cannot answer for the control the user
+      pressed.
+- [x] **6.1** Delete `Joystick`, `JoystickController`, all `*JoystickController`
+      subclasses, `get_js_controller`; rewrite `test_controller.py`.
+      **`parts/controller.py`: 1750 lines → 33** — just the `LocalWebController`/`WebFpv`
+      re-export five templates import, plus a docstring recording where everything went.
+      The old test called methods in sequence and asserted *nothing*, and was skipped
+      entirely without a joystick attached; the new one asserts the legacy names are
+      gone and that each moved somewhere, so the "where it went" list cannot go stale
+      unnoticed.
+- [x] **6.3** Docs + migration note — `CONTROLLER_MIGRATION.md`, covering every way a
+      legacy config can break, with `test_migration_guide.py` checking each claim it
+      makes: a guide that has drifted is worse than none. Writing it **found three
+      `CONTROLLER_TYPE` values that no longer worked** — `pygame` and `xboxswapped`
+      were dropped by the new factory (regressions introduced in 4.2), and `mock` had
+      never worked at all on `main`, importing a `MockController` from a module that
+      never defined one. All twelve legacy values now build and have a behavior map.
 
 **Total: 38 commits.** Phases 0–2 were mergeable independently; Phases 5–6
 landed together as planned, except that 6.1 and 6.2 had to swap. Phases 0–2 are mergeable independently; Phases 5–6

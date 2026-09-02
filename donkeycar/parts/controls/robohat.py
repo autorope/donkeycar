@@ -124,13 +124,22 @@ class RoboHATController(AbstractInputController):
     unchanged, and its arithmetic is pinned by the same values the existing
     RoboHAT tests use.
 
-    One thing worth someone checking who has the hardware: the legacy part
-    took MM1_STOPPED_PWM, MM1_MAX_FORWARD and MM1_MAX_REVERSE and mapped
-    throttle through them twice -- raw range into the configured range, then
-    the configured range into -1..1.  Those two maps cancel exactly, so the
-    three settings had no effect whatever on throttle.  This keeps that
-    behavior rather than quietly changing how every MM1 car drives, but if
-    they were meant to do something, they never did it.
+    MM1_STOPPED_PWM, MM1_MAX_FORWARD and MM1_MAX_REVERSE are deliberately
+    not read here.  They limit how hard the car drives, which is the output
+    side's business -- RoboHATDriver.set_pulse -- and this is the input
+    side, which reports what the transmitter is asking for.  The two are
+    separate questions: how far the driver pushed the stick, and how much
+    of that the car is allowed to act on.
+
+    The legacy part appeared to read them, mapping throttle through the
+    configured range and straight back out again.  Those two maps cancel
+    exactly, so the settings never affected input throttle however they
+    were set.  The arithmetic here is the same, with the pair of maps that
+    cancelled written as the one thing they amount to.
+
+    MM1_STEERING_MID *is* read, as steering_mid, and does something: it is
+    where the wheel rests, which the input side has to know to report
+    centre correctly.
     """
 
     #: What the two numbers on each line are called.

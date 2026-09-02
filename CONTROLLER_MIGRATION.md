@@ -247,11 +247,17 @@ Two fixes you may notice:
 - **`pigpio_rc` shutdown never worked.** It indexed a list with an object
   rather than an index, so it raised `TypeError` every time and never
   released pigpio.
-- **`MM1_STOPPED_PWM`, `MM1_MAX_FORWARD` and `MM1_MAX_REVERSE` have never
-  affected throttle.** They were applied twice, in opposite directions, and
-  cancelled exactly.  That behaviour is preserved rather than changed on a
-  guess — if you have been tuning them and seeing nothing, that is why.
-  Please say so on #1097 if you know what they were meant to do.
+- **`MM1_STOPPED_PWM`, `MM1_MAX_FORWARD` and `MM1_MAX_REVERSE` limit the
+  output, not the input, and always have.** They set how hard the car
+  drives, in `RoboHATDriver`.  On the input side — reading what the
+  transmitter is asking for — the old code appeared to use them but mapped
+  throttle through them and straight back out again, so they cancelled and
+  had no effect.  Nothing changes for you: they go on limiting your car
+  exactly as before.
+
+  If you have been tuning them expecting them to change how far the *stick*
+  travels, that is not what they do, and it is not what they did.  To limit
+  the throttle a driver can ask for, use `JOYSTICK_MAX_THROTTLE`.
 
 If you use `basic.py` with `USE_RC = True`, it could not have been working:
 it called the receiver with a pin where it expected a config and with two

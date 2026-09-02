@@ -85,6 +85,49 @@ class TestMatchesTheLegacyArithmetic(unittest.TestCase):
         self.check('1200, 1200', steering=0.6, throttle=-0.6)
 
 
+class TestTheOutputSettingsAreNotReadHere(unittest.TestCase):
+    """
+    MM1_STOPPED_PWM, MM1_MAX_FORWARD and MM1_MAX_REVERSE limit how hard the
+    car drives, which is RoboHATDriver's job.  This is the input side, and
+    reports what the transmitter asked for.
+
+    The legacy part appeared to read them but mapped throttle through the
+    configured range and straight back out, so they cancelled and never had
+    any effect.  These tests exist so that nobody later notices the
+    constants are unused, wires them in as a fix, and silently changes the
+    throttle response of every MM1 car.
+    """
+
+    def test_the_controller_takes_no_output_limits(self):
+        import inspect
+
+        parameters = inspect.signature(RoboHATController.__init__).parameters
+        for setting in ('stopped_pwm', 'max_forward', 'max_reverse'):
+            assert setting not in parameters, setting
+
+    def test_full_travel_reports_full_travel(self):
+        """
+        Whatever the car is allowed to do with it.  Scaling belongs on the
+        output side, where one setting limits every source of throttle
+        rather than each source limiting itself.
+        """
+        controller, _ = make_controller(['1500, 2000', '1500, 1000'])
+
+        # steering stays centred, so only the throttle reports
+        assert controller.poll().axis_value == 1.0
+        assert controller.poll().axis_value == -1.0
+
+    def test_steering_mid_is_read_because_it_describes_the_input(self):
+        """
+        The one MM1 setting this side does read: where the wheel rests is
+        something the input has to know to report centre correctly.
+        """
+        import inspect
+
+        parameters = inspect.signature(RoboHATController.__init__).parameters
+        assert 'steering_mid' in parameters
+
+
 class TestAdjustedSteeringMid(unittest.TestCase):
     """
     A receiver whose centre is off-centre still has to reach full lock both
