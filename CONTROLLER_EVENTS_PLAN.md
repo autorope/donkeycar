@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 30 / 37 commits.**
+**Progress: 31 / 37 commits.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓░░░░░ · Phase 6 ░░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓░░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -532,7 +532,7 @@ dictionary edit in `myconfig.py`.
       bound to "dpad up" needs an edge detector on the second kind. Legacy solved
       this inside the Logitech class, which is why it worked there and nowhere else.
 
-### Phase 5 — Templates, one commit each (2 / 7)
+### Phase 5 — Templates, one commit each (3 / 7)
 
 Each commit drops `isinstance(ctr, JoystickController)` and
 `ctr.set_button_down_trigger(...)` in favour of `V.add(part, ...,
@@ -551,8 +551,8 @@ the loop so every part sees events in the same iteration (§#1097).
       > controller, so `isinstance(ctr, JoystickController)` in `cv_control.py` and
       > `path_follow.py` is False and their gamepad button bindings do not fire until
       > 5.2 and 5.3. Their `web/w*` bindings still work, and both templates still
-      > import and run. This is the ordering constraint the plan already noted; it
-      > closes two commits from here.
+      > import and run. This is the ordering constraint the plan already noted.
+      > **Closed by 5.3.**
 - [x] **5.2** `cv_control.py` — **the `web/w*`-vs-joystick branching is deleted, not
       ported**, which is what 2.5 was built for: each binding was written twice, once
       per route in, and both routes now name one behavior. Four PID closures with no
@@ -560,7 +560,10 @@ the loop so every part sees events in the same iteration (§#1097).
       loops on the car. Its five `*_BTN` config settings are superseded by
       `CONTROLLER_BEHAVIOR_MAP` — worth noting they named controls in the legacy
       vocabulary (`"option"`, `"R2"`), which does not match what the drivers report.
-- [ ] **5.3** `path_follow.py` — save/load/erase path, reset origin, PID tuning
+- [x] **5.3** `path_follow.py` — nine doubled bindings collapse to nine single ones.
+      Verified by running the template for real loops on the car. **This closes the
+      temporary regression from 5.1**: no template now depends on
+      `isinstance(ctr, JoystickController)`.
 - [ ] **5.4** `basic.py` — thin: `get_js_controller` call site plus the `ctr.js = netwkJs` monkey-patch
 - [ ] **5.5** `arduino_drive.py` — thin: `get_js_controller` call site, no button bindings
 - [ ] **5.6** `simulator.py` — carries its own inline copy of the `add_user_controller` logic plus `circle`/`L1`/AI-launch bindings; does not share `complete.py`'s helper

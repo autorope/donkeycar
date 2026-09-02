@@ -56,14 +56,16 @@ except:
 from docopt import docopt
 
 import donkeycar as dk
-from donkeycar.parts.controller import JoystickController
+from donkeycar.parts.controls import AdjustPid
+from donkeycar.parts.controls import mapping as behaviors
+from donkeycar.parts.controls.behaviors import AutoRecordOnThrottle
 from donkeycar.parts.path import CsvThrottlePath, PathPlot, CTE, PID_Pilot, \
     PlotCircle, PImage, OriginOffset
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_drivetrain, add_simulator, add_imu, DriveMode, \
-    UserPilotCondition, ToggleRecording
+    add_user_controller, add_controller_behaviors, add_drivetrain, \
+    add_simulator, add_imu, DriveMode, UserPilotCondition
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
@@ -285,108 +287,50 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE, cfg.USE_CONSTANT_THROTTLE, min_throttle=cfg.PID_THROTTLE)
     V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/steering', 'pilot/throttle'], run_condition="run_pilot")
 
-    def dec_pid_d():
-        pid.Kd -= cfg.PID_D_DELTA
-        logging.info("pid: d- %f" % pid.Kd)
-
-    def inc_pid_d():
-        pid.Kd += cfg.PID_D_DELTA
-        logging.info("pid: d+ %f" % pid.Kd)
-
-    def dec_pid_p():
-        pid.Kp -= cfg.PID_P_DELTA
-        logging.info("pid: p- %f" % pid.Kp)
-
-    def inc_pid_p():
-        pid.Kp += cfg.PID_P_DELTA
-        logging.info("pid: p+ %f" % pid.Kp)
-
-
-    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
-    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
-
+    #
+    # Recording follows the throttle, or a button toggles it -- never both,
+    # since both write 'recording' and whichever ran later would win.
+    #
+    if cfg.AUTO_RECORD_ON_THROTTLE:
+        V.add(AutoRecordOnThrottle(
+                  dead_zone=cfg.JOYSTICK_DEADZONE,
+                  record_in_autopilot=getattr(cfg, 'RECORD_DURING_AI', False)),
+              inputs=['user/throttle', 'user/mode'],
+              outputs=['recording'])
 
     #
-    # Add buttons for handling various user actions
-    # The button names are in configuration.
-    # They may refer to game controller (joystick) buttons OR web ui buttons
+    # What this template lets a driver do, each bound to a behavior rather
+    # than to a button.  A gamepad button and a web button reach a behavior
+    # the same way, which is why none of this is written twice any more.
+    # Which control drives each is CONTROLLER_BEHAVIOR_MAP in myconfig.py.
     #
-    # There are 5 programmable webui buttons, "web/w1" to "web/w5"
-    # adding a button handler for a webui button
-    # is just adding a part with a run_condition set to
-    # the button's name, so it runs when button is pressed.
+    # Complete one circuit of your course, then save the path and stop.
+    # Restart and it will be loaded.
     #
-    have_joystick = ctr is not None and isinstance(ctr, JoystickController)
+    V.add(Lambda(lambda: save_path()), run_condition=behaviors.SAVE_PATH)
+    V.add(Lambda(lambda: load_path()), run_condition=behaviors.LOAD_PATH)
 
-    # Here's a trigger to save the path. Complete one circuit of your course, when you
-    # have exactly looped, or just shy of the loop, then save the path and shutdown
-    # this process. Restart and the path will be loaded.
-    if cfg.SAVE_PATH_BTN:
-        print(f"Save path button is {cfg.SAVE_PATH_BTN}")
-        if cfg.SAVE_PATH_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: save_path()), run_condition=cfg.SAVE_PATH_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.SAVE_PATH_BTN, save_path)
+    #
+    # Erasing clears the path held in memory; it does not touch the saved
+    # file.  Resetting the origin moves the car's idea of (0, 0) to where it
+    # is now.
+    #
+    V.add(Lambda(lambda: erase_path()), run_condition=behaviors.ERASE_PATH)
+    V.add(Lambda(lambda: reset_origin()), run_condition=behaviors.RESET_ORIGIN)
 
-    # allow controller to (re)load the path
-    if cfg.LOAD_PATH_BTN:
-        print(f"Load path button is {cfg.LOAD_PATH_BTN}")
-        if cfg.LOAD_PATH_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: load_path()), run_condition=cfg.LOAD_PATH_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.LOAD_PATH_BTN, load_path)
-
-    # Here's a trigger to erase a previously saved path.
-    # This erases the path in memory; it does NOT erase any saved path file
-    if cfg.ERASE_PATH_BTN:
-        print(f"Erase path button is {cfg.ERASE_PATH_BTN}")
-        if cfg.ERASE_PATH_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: erase_path()), run_condition=cfg.ERASE_PATH_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.ERASE_PATH_BTN, erase_path)
-
-    # Here's a trigger to reset the origin based on the current position
-    if cfg.RESET_ORIGIN_BTN:
-        print(f"Reset origin button is {cfg.RESET_ORIGIN_BTN}")
-        if cfg.RESET_ORIGIN_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: reset_origin()), run_condition=cfg.RESET_ORIGIN_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.RESET_ORIGIN_BTN, reset_origin)
-
-    # button to toggle recording
-    if cfg.TOGGLE_RECORDING_BTN:
-        print(f"Toggle recording button is {cfg.TOGGLE_RECORDING_BTN}")
-        if cfg.TOGGLE_RECORDING_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: recording_control.toggle_recording()), run_condition=cfg.TOGGLE_RECORDING_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.TOGGLE_RECORDING_BTN, recording_control.toggle_recording)
-
-    # Buttons to tune PID constants
-    if cfg.DEC_PID_P_BTN and cfg.PID_P_DELTA:
-        print(f"Decrement PID P button is {cfg.DEC_PID_P_BTN}")
-        if cfg.DEC_PID_P_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: dec_pid_p()), run_condition=cfg.DEC_PID_P_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.DEC_PID_P_BTN, dec_pid_p)
-    if cfg.INC_PID_P_BTN and cfg.PID_P_DELTA:
-        print(f"Increment PID P button is {cfg.INC_PID_P_BTN}")
-        if cfg.INC_PID_P_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: inc_pid_p()), run_condition=cfg.INC_PID_P_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.INC_PID_P_BTN, inc_pid_p)
-    if cfg.DEC_PID_D_BTN and cfg.PID_D_DELTA:
-        print(f"Decrement PID D button is {cfg.DEC_PID_D_BTN}")
-        if cfg.DEC_PID_D_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: dec_pid_d()), run_condition=cfg.DEC_PID_D_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.DEC_PID_D_BTN, dec_pid_d)
-    if cfg.INC_PID_D_BTN and cfg.PID_D_DELTA:
-        print(f"Increment PID D button is {cfg.INC_PID_D_BTN}")
-        if cfg.INC_PID_D_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: inc_pid_d()), run_condition=cfg.INC_PID_D_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
-
+    #
+    # Tuning the PID while driving.
+    #
+    if cfg.PID_P_DELTA:
+        V.add(AdjustPid(pid, 'Kp', +cfg.PID_P_DELTA),
+              run_condition=behaviors.INCREASE_PID_P)
+        V.add(AdjustPid(pid, 'Kp', -cfg.PID_P_DELTA),
+              run_condition=behaviors.DECREASE_PID_P)
+    if cfg.PID_D_DELTA:
+        V.add(AdjustPid(pid, 'Kd', +cfg.PID_D_DELTA),
+              run_condition=behaviors.INCREASE_PID_D)
+        V.add(AdjustPid(pid, 'Kd', -cfg.PID_D_DELTA),
+              run_condition=behaviors.DECREASE_PID_D)
 
     #
     # Decide what inputs should change the car's steering and throttle
@@ -424,9 +368,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
 
-    # Print Joystick controls
-    if ctr is not None and isinstance(ctr, JoystickController):
-        ctr.print_controls()
+    #
+    # The parts a controller drives.  The behavior map was printed when it
+    # was added, so a driver can already see what their controller does.
+    #
+    add_controller_behaviors(V, cfg)
 
     #
     # draw a map image as the vehicle moves
