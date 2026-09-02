@@ -29,7 +29,34 @@ import donkeycar as dk
 from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, WebFpv, JoystickController
+from donkeycar.parts.controller import LocalWebController, WebFpv
+from donkeycar.parts.controls import (
+    AdjustMaxThrottle,
+    AxisButton,
+    BehaviorEventMapper,
+    ChaosMonkey,
+    ConstantThrottle,
+    EmergencyStop,
+    EraseLastNRecords,
+    InputControllerEvents,
+    ShowRecordCount,
+    StopVehicle,
+    ToggleConstantThrottle,
+    TogglePilotMode,
+    ToggleRecording,
+    UserSteering,
+    UserThrottle,
+    WebButtonController,
+    get_behavior_map,
+    get_input_controller,
+)
+from donkeycar.parts.controls import mapping as behaviors
+from donkeycar.parts.controls.behaviors import (
+    DEFAULT_CHAOS_STEERING,
+    DEFAULT_THROTTLE_STEP,
+    AutoRecordOnThrottle,
+)
+from donkeycar.parts.controls.events import AXIS_STATE
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -246,19 +273,12 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     rec_tracker_part = RecordTracker()
     V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
 
-    if cfg.AUTO_RECORD_ON_THROTTLE:
-        def show_record_count_status():
-            rec_tracker_part.last_num_rec_print = 0
-            rec_tracker_part.force_alert = 1
-
-        if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (
-                cfg.CONTROLLER_TYPE != "MM1"):  # these controllers don't use the joystick class
-            if isinstance(ctr, JoystickController):
-                ctr.set_button_down_trigger('circle',
-                                            show_record_count_status)  # then we are not using the circle button. hijack that to force a record count indication
-        else:
-
-            show_record_count_status()
+    #
+    # Announcing the record count is now bound like anything else, in
+    # add_controller_behaviors below.  The legacy template hijacked the
+    # circle button for it whenever auto-record-on-throttle had made manual
+    # recording unavailable, on the reasoning that the button was spare.
+    #
 
     # Sombrero
     if cfg.HAVE_SOMBRERO:
@@ -360,10 +380,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         if cfg.TRAIN_BEHAVIORS:
             bh = BehaviorPart(cfg.BEHAVIOR_LIST)
             V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
-            try:
-                ctr.set_button_down_trigger('L1', bh.increment_state)
-            except:
-                pass
+            V.add(Lambda(lambda: bh.increment_state()),
+                  run_condition=behaviors.INCREMENT_BEHAVIOR_STATE)
 
             inputs = ['cam/image_array', "behavior/one_hot_state_array"]
 
@@ -452,13 +470,21 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                   'pilot/angle', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
-    if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
-        if isinstance(ctr, JoystickController):
-            ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
+    V.add(Lambda(lambda: aiLauncher.enable_ai_launch()),
+          run_condition=behaviors.ENABLE_AI_LAUNCH)
 
-    # Ai Recording
-    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
-    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
+    #
+    # Recording.  Either the throttle decides it or a button toggles it;
+    # both writing 'recording' would mean whichever ran later won and the
+    # button appeared to do nothing.  ToggleRecording is added instead, in
+    # add_controller_behaviors, when auto-record is off.
+    #
+    if cfg.AUTO_RECORD_ON_THROTTLE:
+        V.add(AutoRecordOnThrottle(
+                  dead_zone=cfg.JOYSTICK_DEADZONE,
+                  record_in_autopilot=getattr(cfg, 'RECORD_DURING_AI', False)),
+              inputs=['user/throttle', 'user/mode'],
+              outputs=['recording'])
 
     #
     # Setup drivetrain
@@ -560,71 +586,17 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     if has_input_controller:
         print("You can now move your controller to drive your car.")
-        if isinstance(ctr, JoystickController):
-            ctr.set_tub(tub_writer.tub)
-            ctr.print_controls()
+
+    #
+    # The parts a controller drives.  Added last because some of them need
+    # the tub, and after the drivetrain so that the emergency stop and the
+    # chaos monkey override what the driver asked for.
+    #
+    add_controller_behaviors(V, cfg, tub=tub_writer.tub,
+                             record_tracker=rec_tracker_part)
 
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
-
-
-class ToggleRecording:
-    def __init__(self, auto_record_on_throttle, record_in_autopilot):
-        """
-        Donkeycar Part that manages the recording state.
-        """
-        self.auto_record_on_throttle = auto_record_on_throttle
-        self.record_in_autopilot = record_in_autopilot
-        self.recording_latch: bool = None
-        self.toggle_latch: bool = False
-        self.last_recording = None
-
-    def set_recording(self, recording: bool):
-        """
-        Set latched recording value to be applied on next call to run()
-        :param recording: True to record, False to not record
-        """
-        self.recording_latch = recording
-
-    def toggle_recording(self):
-        """
-        Force toggle of recording state on next call to run()
-        """
-        self.toggle_latch = True
-
-    def run(self, mode: str, recording: bool):
-        """
-        Set recording based on user/autopilot mode
-        :param mode: 'user'|'local_angle'|'local_pilot'
-        :param recording: current recording flag
-        :return: updated recording flag
-        """
-        recording_in = recording
-        if recording_in != self.last_recording:
-            logging.info(f"Recording Change = {recording_in}")
-
-        if self.toggle_latch:
-            if self.auto_record_on_throttle:
-                logger.info(
-                    'auto record on throttle is enabled; ignoring toggle of manual mode.')
-            else:
-                recording = not self.last_recording
-            self.toggle_latch = False
-
-        if self.recording_latch is not None:
-            recording = self.recording_latch
-            self.recording_latch = None
-
-        if recording and mode != 'user' and not self.record_in_autopilot:
-            logging.info("Ignoring recording in auto-pilot mode")
-            recording = False
-
-        if self.last_recording != recording:
-            logging.info(f"Setting Recording = {recording}")
-
-        self.last_recording = recording
-
-        return recording
 
 
 class DriveMode:
@@ -679,78 +651,214 @@ class UserPilotCondition:
 
 def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     """
-    Add the web controller and any other
-    configured user input controller.
-    :param V: the vehicle pipeline.
-              On output this will be modified.
+    Add the web controller, and any configured physical controller.
+
+    The physical controller no longer decides anything.  It reports which of
+    its controls moved; InputControllerEvents turns that into events in
+    memory; BehaviorEventMapper translates those into the behaviors this
+    template binds parts to.  So which button does what is a line in
+    myconfig.py rather than an edit here -- see issue #1097.
+
+    :param V: the vehicle pipeline, modified in place
     :param cfg: the configuration (from myconfig.py)
-    :return: the controller
+    :return: the web controller, which still reports steering and throttle
     """
 
     #
-    # This web controller will create a web server that is capable
-    # of managing steering, throttle, and modes, and more.
+    # The web controller serves a page that can steer, drive, change mode
+    # and more.  It stays a normal part, since it reports steering and
+    # throttle directly rather than as control changes.
     #
     ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT, mode=cfg.WEB_INIT_MODE)
     V.add(ctr,
           inputs=[input_image, 'tub/num_records', 'user/mode', 'recording'],
-          outputs=['user/steering', 'user/throttle', 'user/mode', 'recording', 'web/buttons'],
+          outputs=['user/steering', 'user/throttle', 'user/mode', 'recording',
+                   'web/buttons'],
           threaded=True)
 
     #
-    # also add a physical controller if one is configured
+    # Its buttons go through the event system, so a web button and a gamepad
+    # button produce the same events and a behavior can be bound to either.
     #
-    if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
+    web_buttons = WebButtonController()
+    V.add(web_buttons, inputs=['web/buttons'])
+    V.add(InputControllerEvents(V.mem, web_buttons), threaded=True)
+
+    if not (use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT):
+        add_behavior_mapping(V, cfg)
+        return ctr
+
+    #
+    # Build the configured controller.  Each of these reports control
+    # changes and nothing else; what those changes do is decided by the
+    # behavior map and the parts bound to it.
+    #
+    controller_type = getattr(cfg, 'CONTROLLER_TYPE', None)
+    if controller_type == 'pigpio_rc':
+        from donkeycar.parts.controls import RCReceiver
+        controller = RCReceiver(
+            pins=(cfg.STEERING_RC_GPIO, cfg.THROTTLE_RC_GPIO,
+                  cfg.DATA_WIPER_RC_GPIO),
+            invert=cfg.PIGPIO_INVERT,
+            axis_epsilon=cfg.PIGPIO_JITTER)
+    elif controller_type == 'MM1':
+        from donkeycar.parts.controls import RealSerialPort, RoboHATController
+        controller = RoboHATController(
+            port=RealSerialPort(cfg.MM1_SERIAL_PORT),
+            steering_mid=cfg.MM1_STEERING_MID,
+            show_steering=cfg.MM1_SHOW_STEERING_VALUE)
+    elif cfg.USE_NETWORKED_JS:
         #
-        # RC controller
+        # A controller on another machine.  It is an input controller like
+        # any other now, rather than being pushed into one after the fact.
         #
-        if cfg.CONTROLLER_TYPE == "pigpio_rc":  # an RC controllers read by GPIO pins. They typically don't have buttons
-            from donkeycar.parts.controller import RCReceiver
-            ctr = RCReceiver(cfg)
-            V.add(
-                ctr,
-                inputs=['user/mode', 'recording'],
-                outputs=['user/steering', 'user/throttle',
-                         'user/mode', 'recording'],
-                threaded=False)
-        else:
-            #
-            # custom game controller mapping created with
-            # `donkey createjs` command
-            #
-            if cfg.CONTROLLER_TYPE == "custom":  # custom controller created with `donkey createjs` command
-                from my_joystick import MyJoystickController
-                ctr = MyJoystickController(
-                    throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
-                    throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-                    steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                    auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-                ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
-            elif cfg.CONTROLLER_TYPE == "MM1":
-                from donkeycar.parts.robohat import RoboHATController
-                ctr = RoboHATController(cfg)
-            elif cfg.CONTROLLER_TYPE == "mock":
-                from donkeycar.parts.controller import MockController
-                ctr = MockController(steering=cfg.MOCK_JOYSTICK_STEERING,
-                                     throttle=cfg.MOCK_JOYSTICK_THROTTLE)
-            else:
-                #
-                # game controller
-                #
-                from donkeycar.parts.controller import get_js_controller
-                ctr = get_js_controller(cfg)
-                if cfg.USE_NETWORKED_JS:
-                    from donkeycar.parts.controller import JoyStickSub
-                    netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-                    V.add(netwkJs, threaded=True)
-                    ctr.js = netwkJs
-            V.add(
-                ctr,
-                inputs=[input_image, 'user/mode', 'recording'],
-                outputs=['user/steering', 'user/throttle',
-                         'user/mode', 'recording'],
-                threaded=True)
+        from donkeycar.parts.controls import NetworkedController, ZmqSubscriber
+        controller = NetworkedController(
+            ZmqSubscriber(cfg.NETWORK_JS_SERVER_IP))
+    else:
+        controller = get_input_controller(cfg)
+
+    V.add(InputControllerEvents(V.mem, controller), threaded=True)
+    add_behavior_mapping(V, cfg)
     return ctr
+
+
+def add_behavior_mapping(V, cfg):
+    """
+    Translate control events into the behaviors this template binds to.
+
+    Added straight after the controllers so a behavior lands in the same
+    pass as the event that caused it.
+    """
+    behavior_map = get_behavior_map(cfg)
+    mapper = BehaviorEventMapper(V.mem, behavior_map)
+    mapper.show_map()
+    V.add(mapper)
+    return mapper
+
+
+def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
+    """
+    The parts a controller drives.
+
+    Each is bound to a behavior rather than to a control, so this does not
+    change when someone plugs in a different make of controller.
+    """
+    #
+    # Steering and throttle.  The behavior is used as both the input and the
+    # run condition, so the part runs only when the control moves and gets
+    # the new position when it does.
+    #
+    V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+                       dead_zone=cfg.JOYSTICK_DEADZONE),
+          inputs=[behaviors.STEERING],
+          outputs=['user/steering'],
+          run_condition=behaviors.STEERING)
+    V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
+                       scale=cfg.JOYSTICK_MAX_THROTTLE,
+                       dead_zone=cfg.JOYSTICK_DEADZONE),
+          inputs=[behaviors.THROTTLE, 'user/throttle_scale'],
+          outputs=['user/throttle'],
+          run_condition=behaviors.THROTTLE)
+
+    #
+    # Pilot mode and recording.  Both read their current value and return
+    # the next, so anything else may change them too.
+    #
+    V.add(TogglePilotMode(),
+          inputs=['user/mode'], outputs=['user/mode'],
+          run_condition=behaviors.TOGGLE_PILOT_MODE)
+
+    if not cfg.AUTO_RECORD_ON_THROTTLE:
+        V.add(ToggleRecording(),
+              inputs=['recording'], outputs=['recording'],
+              run_condition=behaviors.TOGGLE_RECORDING)
+
+    #
+    # Throttle limit.  A dpad reported as an axis needs an edge detector
+    # first, since the behavior would otherwise fire on release too.
+    #
+    _add_throttle_limit(V, cfg, behaviors.INCREASE_MAX_THROTTLE, +1)
+    _add_throttle_limit(V, cfg, behaviors.DECREASE_MAX_THROTTLE, -1)
+
+    V.add(ToggleConstantThrottle(),
+          inputs=['user/constant_throttle'], outputs=['user/constant_throttle'],
+          run_condition=behaviors.TOGGLE_CONSTANT_THROTTLE)
+    V.add(ConstantThrottle(default_scale=cfg.JOYSTICK_MAX_THROTTLE),
+          inputs=['user/constant_throttle', 'user/throttle_scale',
+                  'user/throttle'],
+          outputs=['user/throttle'])
+
+    #
+    # Knock the car off its line, to see whether the pilot recovers.
+    #
+    chaos = getattr(cfg, 'CHAOS_MONKEY_STEERING', DEFAULT_CHAOS_STEERING)
+    V.add(ChaosMonkey(-chaos),
+          inputs=[behaviors.CHAOS_MONKEY_LEFT, 'user/steering'],
+          outputs=['user/steering'])
+    V.add(ChaosMonkey(+chaos),
+          inputs=[behaviors.CHAOS_MONKEY_RIGHT, 'user/steering'],
+          outputs=['user/steering'])
+
+    #
+    # Records.  Erasing cannot be undone, so it is worth binding to a click
+    # or a double-click rather than a press; that is the behavior map's
+    # decision, not this one's.
+    #
+    if tub is not None:
+        V.add(EraseLastNRecords(tub, getattr(cfg, 'ERASE_LAST_N_RECORDS', 100)),
+              run_condition=behaviors.ERASE_RECORDS)
+    if record_tracker is not None:
+        V.add(ShowRecordCount(record_tracker),
+              run_condition=behaviors.SHOW_RECORD_COUNT)
+
+    #
+    # Stop the car.  Takes the event as an input rather than a run
+    # condition, because stopping spans many passes through the loop and a
+    # run condition would abandon it after the first -- which is to say it
+    # would leave the car in reverse.
+    #
+    V.add(EmergencyStop(default_scale=cfg.JOYSTICK_MAX_THROTTLE),
+          inputs=[behaviors.EMERGENCY_STOP, 'user/throttle',
+                  'user/throttle_scale', 'user/mode', 'recording'],
+          outputs=['user/throttle', 'user/mode', 'recording', 'user/estop'])
+
+    #
+    # End the drive loop.  Bound with a modifier so it cannot happen by
+    # accident, since there is no undo.
+    #
+    V.add(StopVehicle(V),
+          inputs=[behaviors.STOP_VEHICLE_MODIFIER],
+          run_condition=behaviors.STOP_VEHICLE)
+
+
+def _add_throttle_limit(V, cfg, behavior, direction):
+    """
+    Bind one direction of the throttle limit.
+
+    A behavior bound to a dpad *axis* fires when the dpad returns to centre
+    as well as when it is pushed, so it goes through an edge detector.  Pads
+    whose dpad is buttons need no such thing.
+    """
+    step = getattr(cfg, 'THROTTLE_STEP', DEFAULT_THROTTLE_STEP) * direction
+    behavior_map = get_behavior_map(cfg)
+    controls = behavior_map.get(behavior)
+    if controls is None:
+        return  # this controller has nothing spare to bind it to
+
+    control = controls if isinstance(controls, str) else next(iter(controls), '')
+    if control.startswith(AXIS_STATE):
+        pressed = f'{behavior}/pressed'
+        V.add(AxisButton(direction=direction),
+              inputs=[behavior], outputs=[pressed])
+        run_condition = pressed
+    else:
+        run_condition = behavior
+
+    V.add(AdjustMaxThrottle(step, default_scale=cfg.JOYSTICK_MAX_THROTTLE),
+          inputs=['user/throttle_scale'],
+          outputs=['user/throttle_scale'],
+          run_condition=run_condition)
 
 
 def add_simulator(V, cfg):

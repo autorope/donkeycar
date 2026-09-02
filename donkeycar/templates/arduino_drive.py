@@ -18,7 +18,16 @@ from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.actuator import ArduinoFirmata, ArdPWMSteering, ArdPWMThrottle
-from donkeycar.parts.controller import get_js_controller
+from donkeycar.parts.controls import (
+    BehaviorEventMapper,
+    InputControllerEvents,
+    TogglePilotMode,
+    UserSteering,
+    UserThrottle,
+    get_behavior_map,
+    get_input_controller,
+)
+from donkeycar.parts.controls import mapping as behaviors
 
 
 def drive(cfg):
@@ -34,10 +43,34 @@ def drive(cfg):
 
     #Initialize car
     V = dk.vehicle.Vehicle()
-    ctr = get_js_controller(cfg)
-    V.add(ctr,
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
+
+    #
+    # The controller reports which of its controls moved; the parts below
+    # decide what that means, so which button does what is
+    # CONTROLLER_BEHAVIOR_MAP in myconfig.py rather than an edit here.
+    #
+    V.add(InputControllerEvents(V.mem, get_input_controller(cfg)),
           threaded=True)
+
+    mapper = BehaviorEventMapper(V.mem, get_behavior_map(cfg))
+    mapper.show_map()
+    V.add(mapper)
+
+    #
+    # This template calls its steering 'user/angle', and has no camera, tub
+    # or pilot, so it binds only what it can actually use.
+    #
+    V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+                       dead_zone=cfg.JOYSTICK_DEADZONE),
+          inputs=[behaviors.STEERING], outputs=['user/angle'],
+          run_condition=behaviors.STEERING)
+    V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
+                       scale=cfg.JOYSTICK_MAX_THROTTLE,
+                       dead_zone=cfg.JOYSTICK_DEADZONE),
+          inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
+          run_condition=behaviors.THROTTLE)
+    V.add(TogglePilotMode(), inputs=['user/mode'], outputs=['user/mode'],
+          run_condition=behaviors.TOGGLE_PILOT_MODE)
 
     #Drive train setup
     arduino_controller = ArduinoFirmata(

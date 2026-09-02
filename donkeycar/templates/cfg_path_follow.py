@@ -667,15 +667,32 @@ PID_P_DELTA = 0.25                  # amount the inc/dec function will change th
 # Use None use the game controller default
 # NOTE: the cross button is already reserved for the emergency stop
 #
-SAVE_PATH_BTN = "circle"        # button to save path
-LOAD_PATH_BTN = "x"             # button (re)load path
-RESET_ORIGIN_BTN = "square"     # button to press to move car back to origin
-ERASE_PATH_BTN = "triangle"     # button to erase path
-TOGGLE_RECORDING_BTN = "option" # button to toggle recording mode
-INC_PID_D_BTN = None            # button to change PID 'D' constant by PID_D_DELTA
-DEC_PID_D_BTN = None            # button to change PID 'D' constant by -PID_D_DELTA
-INC_PID_P_BTN = "R2"            # button to change PID 'P' constant by PID_P_DELTA
-DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DELTA
+# Which control does what is now CONTROLLER_BEHAVIOR_MAP, above.  The
+# behaviors this template adds beyond the usual ones are:
+#
+#   from donkeycar.parts.controls.mapping import (
+#       SAVE_PATH, LOAD_PATH, ERASE_PATH, RESET_ORIGIN,
+#       INCREASE_PID_P, DECREASE_PID_P, INCREASE_PID_D, DECREASE_PID_D)
+#
+# A behavior may take a list, so a gamepad button and a web button can both
+# drive it -- which is why there is no longer one setting per button and
+# another per web button:
+#
+#   CONTROLLER_BEHAVIOR_MAP = {
+#       ...,
+#       SAVE_PATH: ['/event/button/circle/press',
+#                   '/event/button/web_w1/press'],
+#       ERASE_PATH: '/event/button/triangle/click/2',
+#   }
+#
+# Erasing a path cannot be undone, so it is worth binding to a double-click
+# as above rather than to a press.
+#
+# The old SAVE_PATH_BTN, LOAD_PATH_BTN, RESET_ORIGIN_BTN, ERASE_PATH_BTN,
+# TOGGLE_RECORDING_BTN and the four PID button settings are replaced by that
+# map and are no longer read.  Note they named controls in the legacy
+# vocabulary ("x", "option", "R2"), which does not match what the drivers
+# actually report.
 
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
