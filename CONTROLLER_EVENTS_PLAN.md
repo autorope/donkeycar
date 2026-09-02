@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 36 / 37 commits.**
+**Progress: 37 / 37 commits.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ░▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -598,7 +598,7 @@ the loop so every part sees events in the same iteration (§#1097).
 Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 `add_user_controller` from `complete.py`. 5.4–5.7 are independent.
 
-### Phase 6 — Cutover (1 / 3)
+### Phase 6 — Cutover (2 / 3)
 
 - [ ] **6.1** Delete `Joystick`, `JoystickController`, all `*JoystickController` subclasses, `get_js_controller`; move `RCReceiver`; rewrite `test_controller.py` (it imports `PS3Joystick`/`PS3JoystickController` directly and will not survive)
 - [ ] **6.2** Rework `donkey createjs` (`management/joystick_creator.py`, 584 lines) to emit a name dictionary instead of a controller class
