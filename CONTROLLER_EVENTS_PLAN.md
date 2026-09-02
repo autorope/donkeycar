@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 31 / 37 commits.**
+**Progress: 32 / 37 commits.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓░░░░ · Phase 6 ░░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓░░░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -532,7 +532,7 @@ dictionary edit in `myconfig.py`.
       bound to "dpad up" needs an edge detector on the second kind. Legacy solved
       this inside the Logitech class, which is why it worked there and nowhere else.
 
-### Phase 5 — Templates, one commit each (3 / 7)
+### Phase 5 — Templates, one commit each (4 / 7)
 
 Each commit drops `isinstance(ctr, JoystickController)` and
 `ctr.set_button_down_trigger(...)` in favour of `V.add(part, ...,
@@ -564,7 +564,18 @@ the loop so every part sees events in the same iteration (§#1097).
       Verified by running the template for real loops on the car. **This closes the
       temporary regression from 5.1**: no template now depends on
       `isinstance(ctr, JoystickController)`.
-- [ ] **5.4** `basic.py` — thin: `get_js_controller` call site plus the `ctr.js = netwkJs` monkey-patch
+- [x] **5.4** `basic.py` — not thin after all. **Its `USE_RC` path was broken on
+      `main`**: it called `RCReceiver(pin, invert=True, jitter=..., no_action=...)`
+      against a class whose signature is `(cfg, debug=False)`, so `USE_RC=True`
+      raised `TypeError` at startup, and it bound two outputs to a `run()` returning
+      four. Written against a receiver that no longer exists. Rewritten on the new
+      one, in `drive()` and in the calibrate helper, which was broken identically.
+      This template names its steering `user/angle`, so it binds the driving parts
+      itself rather than using `complete.py`'s.
+
+      > Separately and **not** fixed here: `basic.py` hardcodes PCA9685 and ignores
+      > `DRIVE_TRAIN_TYPE`, so it cannot run on a machine without that hardware. Out
+      > of scope for a controller refactor.
 - [ ] **5.5** `arduino_drive.py` — thin: `get_js_controller` call site, no button bindings
 - [ ] **5.6** `simulator.py` — carries its own inline copy of the `add_user_controller` logic plus `circle`/`L1`/AI-launch bindings; does not share `complete.py`'s helper
 - [ ] **5.7** `calibrate.py` — imports `JoystickController` but never uses it; drop the dead import so nothing references the legacy module before Phase 6 deletes it
