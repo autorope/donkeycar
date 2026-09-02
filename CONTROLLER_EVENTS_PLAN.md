@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 32 / 37 commits.**
+**Progress: 33 / 37 commits.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓░░░ · Phase 6 ░░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓░▓░ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -532,7 +532,7 @@ dictionary edit in `myconfig.py`.
       bound to "dpad up" needs an edge detector on the second kind. Legacy solved
       this inside the Logitech class, which is why it worked there and nowhere else.
 
-### Phase 5 — Templates, one commit each (4 / 7)
+### Phase 5 — Templates, one commit each (5 / 7)
 
 Each commit drops `isinstance(ctr, JoystickController)` and
 `ctr.set_button_down_trigger(...)` in favour of `V.add(part, ...,
@@ -577,7 +577,12 @@ the loop so every part sees events in the same iteration (§#1097).
       > `DRIVE_TRAIN_TYPE`, so it cannot run on a machine without that hardware. Out
       > of scope for a controller refactor.
 - [ ] **5.5** `arduino_drive.py` — thin: `get_js_controller` call site, no button bindings
-- [ ] **5.6** `simulator.py` — carries its own inline copy of the `add_user_controller` logic plus `circle`/`L1`/AI-launch bindings; does not share `complete.py`'s helper
+- [x] **5.6** `simulator.py` — done out of order, at Ed's request. As the plan
+      predicted, it carries its own inline copy of the controller logic and could not
+      ride along with 5.1. Like `basic.py` it names its steering `user/angle`, so it
+      binds the driving parts itself. Also gained `EraseLastNRecords`, which it
+      never had — the legacy template called `ctr.set_tub()` but never bound
+      anything to erasing, so the tub it passed in went unused.
 - [ ] **5.7** `calibrate.py` — imports `JoystickController` but never uses it; drop the dead import so nothing references the legacy module before Phase 6 deletes it
 
 `square.py` and `just_drive.py` need no change; neither imports a controller.
