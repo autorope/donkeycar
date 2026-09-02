@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 34 / 37 commits.**
+**Progress: 35 / 37 commits — Phase 5 complete.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓░ · Phase 6 ░░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -532,7 +532,7 @@ dictionary edit in `myconfig.py`.
       bound to "dpad up" needs an edge detector on the second kind. Legacy solved
       this inside the Logitech class, which is why it worked there and nowhere else.
 
-### Phase 5 — Templates, one commit each (6 / 7)
+### Phase 5 — Templates, one commit each (7 / 7) ✅
 
 Each commit drops `isinstance(ctr, JoystickController)` and
 `ctr.set_button_down_trigger(...)` in favour of `V.add(part, ...,
@@ -586,7 +586,12 @@ the loop so every part sees events in the same iteration (§#1097).
       binds the driving parts itself. Also gained `EraseLastNRecords`, which it
       never had — the legacy template called `ctr.set_tub()` but never bound
       anything to erasing, so the tub it passed in went unused.
-- [ ] **5.7** `calibrate.py` — imports `JoystickController` but never uses it; drop the dead import so nothing references the legacy module before Phase 6 deletes it
+- [x] **5.7** `calibrate.py` — dropped the dead `JoystickController` import, and
+      `WebFpv` with it, which was unused on the same line. **No template anywhere
+      now references `JoystickController`, `set_button_down_trigger`,
+      `get_js_controller`, `JoyStickSub`, `ctr.js`, `MyJoystickController`,
+      `print_controls`, `set_tub` or `set_deadzone`** — swept and verified, which is
+      the precondition Phase 6 needs before it can delete the legacy hierarchy.
 
 `square.py` and `just_drive.py` need no change; neither imports a controller.
 
