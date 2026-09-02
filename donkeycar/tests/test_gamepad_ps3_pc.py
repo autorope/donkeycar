@@ -52,7 +52,33 @@ class TestExtendsRatherThanContradicts(unittest.TestCase):
     The one PlayStation variant that is not a different layout.  Every code
     it shares with PS3Joystick means the same thing; it only adds.  If that
     ever stops being true, these two should not be related by inheritance.
+
+    They stay two maps rather than merging into one that names everything.
+    Naming an axis the driver does not report is how the legacy Forza mode
+    came to be dead code, so a map describes the driver in front of it and
+    not the union of every driver the pad has ever had.
     """
+
+    def test_they_stay_two_separate_controller_types(self):
+        """
+        A deliberate choice, not an omission.  Which one a user wants
+        depends on what their driver reports, which only they can see.
+        """
+        from donkeycar.parts.controls.factory import CONTROLLER_TYPES
+
+        assert CONTROLLER_TYPES['ps3'] is PS3Joystick
+        assert CONTROLLER_TYPES['ps3pc'] is PS3JoystickPC
+        assert CONTROLLER_TYPES['ps3'] is not CONTROLLER_TYPES['ps3pc']
+
+    def test_the_plain_map_names_only_what_that_driver_reports(self):
+        """
+        PS3Joystick stays six axes.  Adding the pressure axes to it would
+        name controls a Pi driver does not send, which is exactly the
+        defect this refactor spent Phase 1 removing.
+        """
+        assert len(PS3Joystick.AXIS_NAMES) == 6
+        assert not any(n.endswith('_pressure')
+                       for n in PS3Joystick.AXIS_NAMES.values())
 
     def test_it_derives_from_the_in_kernel_map(self):
         assert issubclass(PS3JoystickPC, PS3Joystick)

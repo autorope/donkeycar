@@ -365,10 +365,12 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
 - [x] **1.5** `PS3PC` — the one PlayStation variant that is *not* a different
       layout: every code it shares with 1.2 means the same thing, and it only adds
       the pressure and tilt axes. So it subclasses 1.2 rather than restating it.
-      **Open question for someone with the hardware:** if this is the same driver
-      with more axes surfaced, then 1.2 is not different but *incomplete*, and a Pi
-      user is getting anonymous `axis(0x2c)` events for pressure the pad really
-      sends — in which case these two should merge.
+      **Resolved (Ed): they stay separate.** Merging into one map that named
+      everything would name axes a given driver does not report, which is exactly how
+      the legacy Forza mode became dead code. A map describes the driver in front of
+      it, not the union of every driver that pad has ever had. A user whose pad reports
+      `axis(0x2c)` chooses `ps3pc`; one whose pad does not chooses `ps3`. Pinned by a
+      test so neither is later "completed" with the other's axes.
 - [x] **1.6** `PS4` — fixes defect 7. Confirmed the AST check catches the real
       legacy map: `duplicate_literal_keys(legacy.PS4Joystick)` reports `['314',
       '315']`, i.e. `0x13a`/`0x13b`. Also resolves a disagreement between the two

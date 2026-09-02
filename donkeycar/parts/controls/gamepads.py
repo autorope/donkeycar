@@ -232,11 +232,17 @@ class PS3JoystickPC(PS3Joystick):
     PS3Joystick rather than restating it, which also stops the two drifting
     apart if either is ever corrected.
 
-    That raises a question worth someone checking on real hardware: if this
-    is the same driver with more axes surfaced, then PS3Joystick is not
-    *different*, just incomplete, and a Pi user is getting anonymous
-    'axis(0x2c)' events for pressure the pad is really sending.  If so these
-    two should merge.  Nobody has confirmed it either way.
+    The two stay separate rather than merging into one map that names
+    everything.  Naming an axis the driver does not report is how the
+    legacy Forza mode came to be dead code -- a control a user can bind and
+    then watch do nothing -- so a map should describe the driver in front
+    of it and not the union of every driver that pad has ever had.
+
+    If your DualShock 3 reports controls as 'axis(0x2c)' and similar, its
+    driver is surfacing the pressure axes and CONTROLLER_TYPE = 'ps3pc' will
+    name them.  That is the practical difference between these two, and it
+    is why choosing between them is left to the person who can see what
+    their pad actually reports.
 
     The legacy map noted this pad wants /dev/input/js1 rather than js0, and
     that on Ubuntu 16.04 it drives the mouse around until you run:

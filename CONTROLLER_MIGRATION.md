@@ -235,6 +235,12 @@ reports completely different codes through each, sharing as few as two
 between them, so choosing the wrong one names every control incorrectly.
 If your PS3 controls are all wrong, try another variant.
 
+If your controls are *right* but a few report as `axis(0x2c)` and similar,
+your driver is also surfacing the pad's pressure-sensitive axes.
+`ps3pc` names those; `ps3` does not, because on the drivers it is written
+for they are not sent, and naming a control the driver never sends gives you
+something you can bind and then watch do nothing.
+
 ---
 
 ## 6. If you use an RC receiver or a RoboHAT MM1
