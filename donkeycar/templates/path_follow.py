@@ -184,9 +184,10 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
 
     #
-    # This part will reset the car back to the origin. You must put the car in the known origin
-    # and push the cfg.RESET_ORIGIN_BTN on your controller. This will allow you to induce an offset
-    # in the mapping.
+    # This part resets the car back to the origin. Put the car at the known
+    # origin and trigger the reset_origin behavior on your controller; which
+    # control does that is CONTROLLER_BEHAVIOR_MAP in myconfig.py. This lets
+    # you induce an offset in the mapping.
     #
     origin_reset = OriginOffset(cfg.PATH_DEBUG)
     V.add(origin_reset, inputs=['pos/x', 'pos/y', 'cte/closest_pt'], outputs=['pos/x', 'pos/y', 'cte/closest_pt'])

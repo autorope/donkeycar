@@ -88,3 +88,41 @@ class AbstractInputController(abc.ABC):
         """
         Release the device.  Safe to call more than once.
         """
+
+
+class MockInputController(AbstractInputController):
+    """
+    A controller that is not there, reporting whatever it was told to.
+
+    For running a car with no hardware attached: it reports the configured
+    steering and throttle once and then nothing, so the vehicle loop has
+    something to drive with.
+
+    CONTROLLER_TYPE = 'mock' has never worked.  The template imported a
+    MockController from donkeycar.parts.controller, which has no such class
+    and never had, so choosing it raised ImportError at startup.
+    """
+
+    def __init__(
+        self,
+        steering: float = 0.0,
+        throttle: float = 0.0,
+        steering_axis: str = 'left_stick_horz',
+        throttle_axis: str = 'right_stick_vert',
+    ) -> None:
+        self._changes = [
+            ControlChange(axis=steering_axis, axis_value=steering),
+            ControlChange(axis=throttle_axis, axis_value=throttle),
+        ]
+
+    def init(self) -> bool:
+        return True
+
+    def show_map(self) -> bool:
+        print('Mock controller: reporting fixed steering and throttle.')
+        return True
+
+    def poll(self) -> ControlChange:
+        if self._changes:
+            return self._changes.pop(0)
+        return NO_CHANGE

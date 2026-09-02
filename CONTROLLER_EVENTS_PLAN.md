@@ -1,8 +1,8 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**Progress: 37 / 37 commits.**
+**Progress: 38 / 38 commits — COMPLETE.**
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -598,13 +598,14 @@ the loop so every part sees events in the same iteration (§#1097).
 Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 `add_user_controller` from `complete.py`. 5.4–5.7 are independent.
 
-### Phase 6 — Cutover (2 / 3)
+### Phase 6 — Cutover (3 / 3) ✅
 
 - [ ] **6.1** Delete `Joystick`, `JoystickController`, all `*JoystickController` subclasses, `get_js_controller`; move `RCReceiver`; rewrite `test_controller.py` (it imports `PS3Joystick`/`PS3JoystickController` directly and will not survive)
 - [ ] **6.2** Rework `donkey createjs` (`management/joystick_creator.py`, 584 lines) to emit a name dictionary instead of a controller class
 - [ ] **6.3** Docs + `myconfig.py` template + a migration note for users with a custom `my_joystick.py`
 
-**Total: 36 commits** (one added: the dead-zone default change). Phases 0–2 are mergeable independently; Phases 5–6
+**Total: 38 commits.** Phases 0–2 were mergeable independently; Phases 5–6
+landed together as planned, except that 6.1 and 6.2 had to swap. Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
 
 ---

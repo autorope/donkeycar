@@ -15,7 +15,10 @@ sends -- the note says so.
 import logging
 from typing import Any
 
-from donkeycar.parts.controls.device import AbstractInputController
+from donkeycar.parts.controls.device import (
+    AbstractInputController,
+    MockInputController,
+)
 from donkeycar.parts.controls.events import (
     BUTTON_DOWN,
     BUTTON_UP,
@@ -37,6 +40,7 @@ from donkeycar.parts.controls.gamepads import (
     WiiU,
     XboxOneJoystick,
 )
+from donkeycar.parts.controls.pygame_device import PyGamePS4Joystick
 from donkeycar.parts.controls.mapping import (
     CHAOS_MONKEY_LEFT,
     CHAOS_MONKEY_RIGHT,
@@ -69,6 +73,22 @@ CONTROLLER_TYPES: dict[str, type[AbstractInputController]] = {
     'wiiu': WiiU,
     'rc3': RC3ChanJoystick,
     'custom': CustomJoystick,
+    #
+    # Kept so that configurations naming them go on working.
+    #
+    # 'pygame' reaches a controller through PyGame rather than through
+    # /dev/input, for hosts where that is the way in.  It is indexed
+    # differently, so it has its own behavior map below.
+    #
+    # 'xboxswapped' is the same pad as 'xbox'.  It used to be a controller
+    # class of its own whose only difference was which stick steered and
+    # which drove, which is a behavior binding rather than a property of
+    # the hardware, so it is now the same controller with a different
+    # default map.
+    #
+    'pygame': PyGamePS4Joystick,
+    'xboxswapped': XboxOneJoystick,
+    'mock': MockInputController,
 }
 
 
@@ -210,12 +230,58 @@ DEFAULT_BEHAVIOR_MAPS: dict[str, BehaviorMap] = {
         EMERGENCY_STOP: _press('switch_up'),
     },
     #
+    # The same Xbox pad, with the sticks the other way round.  This was a
+    # controller class of its own whose only difference was which stick
+    # steered and which drove.
+    #
+    'xboxswapped': {
+        **_XBOX_FACE_BUTTONS,
+        STEERING: format_axis_event('right_stick_horz'),
+        THROTTLE: format_axis_event('left_stick_vert'),
+        INCREASE_MAX_THROTTLE: _press('right_shoulder'),
+        DECREASE_MAX_THROTTLE: _press('left_shoulder'),
+        TOGGLE_CONSTANT_THROTTLE: _press('menu'),
+        STOP_VEHICLE: _press('xbox'),
+        STOP_VEHICLE_MODIFIER: format_button_key('view'),
+    },
+    #
+    # A DualShock 4 through PyGame.  PyGame numbers the controls itself, so
+    # this pad's names come from a different map to the evdev one, but the
+    # names are the same and so this map reads the same.
+    #
+    'pygame': {
+        **_PLAYSTATION_FACE_BUTTONS,
+        **_STICKS,
+        TOGGLE_PILOT_MODE: _press('share'),
+        INCREASE_MAX_THROTTLE: _press('left_shoulder'),
+        DECREASE_MAX_THROTTLE: _press('right_shoulder'),
+        TOGGLE_CONSTANT_THROTTLE: _press('options'),
+    },
+    #
+    # A controller that is not there reports steering and throttle only.
+    #
+    'mock': {
+        STEERING: format_axis_event('left_stick_horz'),
+        THROTTLE: format_axis_event('right_stick_vert'),
+    },
+    #
     # An unsupported pad names nothing, so nothing can be bound until the
     # user has run it once, read show_map() and named the controls that
     # matter in myconfig.py.
     #
     'custom': {},
 }
+
+
+#
+# The other three PS3 drivers report different codes for the same pad, but
+# the naming convention means they report the same *names* -- so one map
+# covers all four.  That is what the convention is for.
+#
+DEFAULT_BEHAVIOR_MAPS.update({
+    variant: DEFAULT_BEHAVIOR_MAPS['ps3']
+    for variant in ('ps3sixad', 'ps3old', 'ps3pc')
+})
 
 
 def get_input_controller(cfg: Any) -> AbstractInputController:
@@ -235,6 +301,21 @@ def get_input_controller(cfg: Any) -> AbstractInputController:
         )
 
     controller_class = CONTROLLER_TYPES[controller_type]
+
+    if controller_type == 'mock':
+        return MockInputController(
+            steering=getattr(cfg, 'MOCK_JOYSTICK_STEERING', 0.0),
+            throttle=getattr(cfg, 'MOCK_JOYSTICK_THROTTLE', 0.0))
+
+    if controller_type == 'pygame':
+        # PyGame indexes its controllers rather than opening a device node
+        return controller_class(  # type: ignore[call-arg]
+            which_js=getattr(cfg, 'JOYSTICK_DEVICE_INDEX', 0),
+            dead_zone=getattr(cfg, 'JOYSTICK_DEADZONE', 0.07),
+            button_names=getattr(cfg, 'JOYSTICK_BUTTON_NAMES', None),
+            axis_names=getattr(cfg, 'JOYSTICK_AXIS_NAMES', None),
+        )
+
     return controller_class(  # type: ignore[call-arg]
         dev_fn=getattr(cfg, 'JOYSTICK_DEVICE_FILE', '/dev/input/js0'),
         axis_epsilon=getattr(cfg, 'JOYSTICK_AXIS_EPSILON', 0.0),

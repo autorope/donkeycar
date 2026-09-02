@@ -110,8 +110,14 @@ class TestTheDefaultMapsAreSound(unittest.TestCase):
     dead code for years.
     """
 
-    def control_names(self, controller_type: str) -> set[str]:
+    def control_names(self, controller_type: str) -> set[str] | None:
+        """
+        The names a controller can report, or None if it does not declare
+        any -- the mock controller makes its up rather than reading a pad.
+        """
         controller_class = CONTROLLER_TYPES[controller_type]
+        if not hasattr(controller_class, 'AXIS_NAMES'):
+            return None
         return set(controller_class.AXIS_NAMES.values()) | set(
             controller_class.BUTTON_NAMES.values()
         )
@@ -133,11 +139,10 @@ class TestTheDefaultMapsAreSound(unittest.TestCase):
 
     def test_every_binding_names_a_control_the_pad_has(self):
         for controller_type, behavior_map in DEFAULT_BEHAVIOR_MAPS.items():
-            if not behavior_map:
+            names = self.control_names(controller_type)
+            if not behavior_map or names is None:
                 continue
-            missing = self.bound_controls(behavior_map) - self.control_names(
-                controller_type
-            )
+            missing = self.bound_controls(behavior_map) - names
             assert missing == set(), f'{controller_type} binds {missing}'
 
     def test_every_behavior_bound_is_one_a_template_uses(self):
@@ -154,6 +159,26 @@ class TestTheDefaultMapsAreSound(unittest.TestCase):
                 continue
             assert STEERING in behavior_map, controller_type
             assert THROTTLE in behavior_map, controller_type
+
+    def test_the_legacy_controller_types_all_still_work(self):
+        """
+        A configuration naming any of these worked before the refactor and
+        has to go on working, or an upgrade breaks someone's car with an
+        "Unknown CONTROLLER_TYPE" at startup.
+        """
+        for controller_type in ('ps3', 'ps3sixad', 'ps4', 'nimbus', 'xbox',
+                                'xboxswapped', 'wiiu', 'F710', 'rc3',
+                                'pygame', 'custom', 'mock'):
+            assert controller_type in CONTROLLER_TYPES, controller_type
+
+    def test_the_ps3_variants_share_one_map(self):
+        """
+        Same pad, four drivers, four sets of codes -- but the naming
+        convention means they report the same names, so one map covers all
+        of them.
+        """
+        for variant in ('ps3sixad', 'ps3old', 'ps3pc'):
+            assert DEFAULT_BEHAVIOR_MAPS[variant] == DEFAULT_BEHAVIOR_MAPS['ps3']
 
     def test_the_xbox_throttle_reaches_the_stick_it_names(self):
         """
