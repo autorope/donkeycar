@@ -447,9 +447,18 @@ first, and they are exactly the ones to avoid.
 are validated, both are plain non-complementary outputs, and 400 ns is still
 2,500 steps across a 1000 µs servo range — far finer than a servo resolves.
 
-Still unproven in software: `rc == 0` says the driver programmed the period,
-not that the pad carries a correct waveform. Confirming that wants a servo or
-a scope, which is task 5.3.
+**Confirmed on hardware.** A Miuzei MG90S was driven from D5 and tracked
+commanded pulse widths correctly through its full travel, so the pad really
+does carry a correct 50 Hz waveform — `rc == 0` was not merely the driver
+accepting a period it could not deliver. D2 is still only inferred (from
+TIM2 being 32-bit) rather than measured with a servo.
+
+One calibration trap worth recording. The first test used 1000–2000 µs, the
+conservative RC-standard range, and produced only about half the servo's
+travel — which reads exactly like a broken PWM configuration. It is not: an
+MG90S wants roughly **500–2500 µs** for a full 180°, and at 600–2400 µs the
+sweep was correct and smooth. Do not diagnose the PWM path from a servo that
+moves but under-travels.
 
 So the Uno Q needs **no PCA9685 at all**, and no I2C for the drive train.
 This is the donkeyhat architecture: MCU reads the RC receiver and drives the
@@ -482,8 +491,8 @@ direction pays it.
 - [ ] **5.3** Write the donkeyhat-equivalent sketch: three RC channels in via
       `attachInterrupt`/`micros`, two servo outputs via `pwm_set_dt` on D2 and
       D5, RC values pushed with `Bridge.notify` at ~40 Hz, and a provided
-      `set_pulse(steering, throttle)`. Confirm the waveform against a real
-      servo or scope, closing §6.3's open point.
+      `set_pulse(steering, throttle)`. (D5's waveform is already confirmed
+      against a real servo; D2 still needs the same check.)
 - [ ] **5.4** Add a `UnoQRcHat` donkeycar part reusing `robohat.py`'s scaling
       and trim logic over the bridge instead of a serial port, with
       hardware-free tests against a fake bridge.

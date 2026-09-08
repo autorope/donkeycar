@@ -117,6 +117,17 @@ reaches for first, and they are the wrong ones here.
 400 ns still gives 2,500 steps across a 1000 µs servo range, far finer than a
 servo resolves.
 
+**Verified on hardware:** a Miuzei MG90S driven from D5 tracked commanded
+pulse widths correctly across its full travel.
+
+**Mind the pulse range when testing.** 1000–2000 µs is the conservative
+RC-standard range and yields only about half an MG90S's travel — which looks
+convincingly like a broken PWM setup but is not. That servo wants roughly
+500–2500 µs for a full 180°. Note this is only for proving the hardware: on a
+real car the steering servo is deliberately driven over a *narrower* range so
+the linkage never pushes the wheels past their lock, which is what
+`STEERING_LEFT_PWM` / `STEERING_RIGHT_PWM` and `donkey calibrate` are for.
+
 ## Diagnostic sketches
 
 `arduino/unoq_i2c_scan/` scans the MCU's three `Wire` buses and reports over
