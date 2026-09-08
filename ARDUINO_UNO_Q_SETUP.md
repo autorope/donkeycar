@@ -10,7 +10,7 @@ on a real board; see `ARDUINO_UNO_Q_PLAN.md` for the work still outstanding.
 |---|---|
 | Camera | **Yes** — OpenCV reads `/dev/video0`. Use `CAMERA_TYPE = "CVCAM"`. |
 | Autopilot inference | **Yes** — `ai-edge-litert` imports, so `.tflite` models run. |
-| PCA9685 servo/ESC output | **Yes**, via `PinProvider.PCA9685`. Needs the I2C setup below. |
+| PCA9685 servo/ESC output | **Not yet** if wired to the UNO header — those pins belong to the STM32, not Linux. See "The header pins belong to the MCU". |
 | `RPI_GPIO` / `PIGPIO` pin providers | **No** — both are Raspberry Pi only. |
 | `parts/imu.py`, `parts/lidar.py`, `parts/oled.py` | **No** — see "Blinka" below. |
 | `donkey ui` | Not installed by the `unoq` extra; see "Optional: kivy". |
@@ -66,7 +66,42 @@ Mind the disk: the stock image leaves about 2.4 GB free on `/`, and the
 `unoq` extra uses a good part of it. Do not add torch or tensorflow to the
 car — train off-board and copy a `.tflite` across.
 
-## I2C setup for the PCA9685
+## The header pins belong to the MCU
+
+**A PCA9685 on the UNO header SDA/SCL is invisible to Linux.** The
+UNO-shaped header is wired to the STM32U585, not the Qualcomm SoC: App Lab's
+`unoq-pin-toggle` example drives `D0`–`D21` and `A0`–`A5` from a *sketch*,
+the Zephyr overlay declares the header I2C as `i2c3` on the STM32, and the
+Linux-side Python API exposes no I2C at all. Confirmed by measurement — with
+a powered PCA9685 on the header, a Linux bus scan is unchanged, while a scan
+from an MCU sketch finds it at once:
+
+```
+i2c_scan -> Wire:none|Wire1:none|Wire2:0x40,0x70
+```
+
+(`0x40` is the chip, `0x70` its all-call address. `Wire2` is `i2c3`.)
+
+Reaching it therefore means going through the MCU: a sketch that exposes I2C
+over the router bridge, and a Linux-side bus object that calls it. That work
+is Phase 5 of `ARDUINO_UNO_Q_PLAN.md` and is not finished yet. A round trip
+through the bridge to the MCU measures ~5.8 ms median, so two per frame fits
+inside a 20 Hz loop.
+
+`arduino/unoq_i2c_scan/` is a diagnostic sketch for exactly this check:
+
+```bash
+cd arduino/unoq_i2c_scan
+arduino-cli compile --fqbn arduino:zephyr:unoq .
+arduino-cli upload  --fqbn arduino:zephyr:unoq .   # overwrites the MCU sketch
+```
+
+## I2C setup for the PCA9685 (Linux-side buses)
+
+The rest of this section applies to a PCA9685 on a **Linux** I2C bus. On the
+Uno Q as shipped there is no known connector that reaches one, so this is
+here for completeness and because the same code path is what the Raspberry
+Pi uses.
 
 **Add yourself to the `i2c` group.** The stock image puts `arduino` in
 `gpiod`, `video` and `dialout`, but *not* `i2c`, so `/dev/i2c-*`

@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 11 / 19 tasks.**
+**IN PROGRESS — 12 / 25 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓░░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -103,7 +103,31 @@ the bus number is already part of the pin id: `"PCA9685.1:40.1"` is
 *provider.busnum:address.channel*, and `PCA9685_I2C_BUSNUM` is already a
 config value that the current `board`/`busio` code in 1177 silently ignores.
 
-**(c) No GPIO story.** `RPi.GPIO` and `pigpio` are both Pi-only, so
+**(c) The Arduino header pins belong to the MCU, not Linux.** This is the
+one that changes the architecture, and it was only settled by wiring a real
+PCA9685 up. The UNO-shaped header — including the SDA/SCL pins — is owned by
+the STM32U585, so a device on it is invisible to Linux `/dev/i2c-*` no matter
+what the Linux-side code does. Four confirmations:
+
+1. App Lab's `unoq-pin-toggle` example maps `D0`–`D21` and `A0`–`A5` to
+   *sketch* pins; Linux Python reaches them only through
+   `Bridge.call("set_pin_by_name", ...)` into a sketch built on
+   `Arduino_RouterBridge.h`.
+2. The board's Zephyr overlay declares `i2cs = <&i2c2>, <&i2c4>, <&i2c3>`
+   under its `arduino` node, and `libraries/Wire/Wire.cpp` maps that array to
+   `Wire`, `Wire1`, `Wire2` in order.
+3. The Linux-side Python API (`arduino.app_peripherals`) offers speaker,
+   microphone, camera and remote_sensor — **no I2C at all**.
+4. Empirically: with the PCA9685 wired to the header and powered, a Linux
+   rescan was byte-for-byte unchanged, while a scan from an MCU sketch found
+   it immediately (see §6).
+
+So `ExplicitBusI2C` cannot reach a header device on this board. It is not
+wasted — it is still the right way to reach a PCA9685 from Linux, and it is
+what makes the Pi path work — but the Uno Q needs a route through the MCU.
+That is §6.
+
+**(d) No GPIO story.** `RPi.GPIO` and `pigpio` are both Pi-only, so
 `PinProvider.RPI_GPIO` and `PinProvider.PIGPIO` are dead on this board. Only
 `PinProvider.PCA9685` is reachable. That is enough for
 `PWM_STEERING_THROTTLE` (a standard RC car: servo + ESC on a PCA9685), which
@@ -221,15 +245,15 @@ message saying the dependency was dropped and how to install it by hand.
 
 None of these block Phases 0–1, but all block Phase 3:
 
-- **Which `/dev/i2c-N` is on the Arduino headers?** Narrowed by task 1.1's
-  `scan()`: `i2c-0` is quiet, `i2c-1` carries seven SoC-internal peripherals
-  (`0x2a 0x2c 0x38 0x39 0x3d 0x3f 0x42`) and must be left alone, and `i2c-2`
-  ACKs all 112 addresses, which is the signature of a bus with no pull-ups
-  and nothing attached — so `i2c-2` is the likely header bus. Confirm by
-  attaching the PCA9685 and rescanning: it should then show `0x40` alone.
-- **Level shifting.** The Uno Q's SoC I2C is 3.3 V. Confirm whether the
-  chosen bus is level-shifted on the header before hanging a 5 V PCA9685 hat
-  off it.
+- **~~Which `/dev/i2c-N` is on the Arduino headers?~~ Answered: none of
+  them.** The headers are MCU-owned (§1.3c). On the Linux side, `i2c-0` is
+  quiet, `i2c-1` carries eight SoC-internal peripherals
+  (`0x2a 0x2c 0x38 0x39 0x3d 0x3f 0x42`, plus `0x58` bound by a kernel
+  driver) and must be left alone, and `i2c-2` ACKs all 112 addresses — no
+  pull-ups, nothing attached, and no known connector. The PCA9685 lives on
+  the MCU's `Wire2` (`i2c3`, PC0/PC1) at `0x40`.
+- **Level shifting.** The header I2C is 3.3 V (STM32 side). A PCA9685
+  breakout tolerated it fine at `Wire2`, but confirm before relying on it.
 - **Servo/ESC power.** The PCA9685 needs its own V+ rail; do not try to feed
   a steering servo from the board.
 - **`arduino` is not in the `i2c` group.** Confirmed: `open('/dev/i2c-1')`
@@ -345,3 +369,81 @@ nothing about this conflict either way.
 longer pulls `spidev` — the `pi` extra now resolves to 79 packages with no
 sdist that needs compiling. A Raspberry Pi install stops needing a C toolchain
 for the same reason the Uno Q one does.
+
+---
+
+## 6. The MCU bridge route
+
+Settled by flashing `arduino/unoq_i2c_scan/` (a throwaway diagnostic that
+scans all three `Wire` buses and echoes a `ping`) and calling it from Linux:
+
+```
+i2c_scan -> Wire:none|Wire1:none|Wire2:0x40,0x70
+```
+
+`0x40` is the PCA9685 and `0x70` its all-call address — so the chip sits on
+`Wire2`, which is `i2c3` on PC0/PC1. The wiring is good; only the software
+route was missing.
+
+### 6.1 The transport is usable from donkeycar
+
+`Bridge` comes from `arduino_app_bricks`, which App Lab ships inside a Docker
+image (`ghcr.io/arduino/app-bricks/python-apps-base`) and which is **not** on
+PyPI. It is, however, an ordinary pip package — source at
+`github.com/arduino/app-bricks-py`, requiring only msgpack, Pillow, pyyaml and
+requests. Importing `arduino.app_utils.bridge` in a plain venv on the host,
+outside any container, works: it reaches `arduino-router` on `127.0.0.1:7500`
+and RPCs into the sketch. For donkeycar only **msgpack** and **watchdog** are
+new; numpy, Pillow, pyyaml and requests are already dependencies.
+
+### 6.2 Latency
+
+Measured against the flashed sketch's `ping`, 60 calls:
+
+| leg | median | p95 |
+|---|---|---|
+| host → router (error path, no MCU) | 0.24 ms | 0.31 ms |
+| host → router → MCU → back | **5.79 ms** | 6.40 ms |
+
+Two round trips per frame is 11.6 ms of the 50 ms available at 20 Hz. That is
+workable but not free, so the design below wants one I2C transaction per pin
+per frame and no chatter.
+
+### 6.3 Design: a bridge-backed busio.I2C, not a bridge-backed drive train
+
+Two ways to expose the PCA9685 through the MCU:
+
+1. **The sketch owns the PCA9685** and provides `set_pwm(channel, duty)`.
+   Fewer round trips, but it reimplements the driver in C++ and only ever
+   serves this one chip.
+2. **The sketch exposes raw I2C transfers** — `i2c_write`,
+   `i2c_write_read` — and Linux keeps the driver.
+
+**Take option 2.** A `BridgeI2C` class implementing the same `busio.I2C`
+surface as `ExplicitBusI2C` means `adafruit_pca9685`, `pins.py`,
+`actuator.py` and every test from Phase 1 work unchanged — only the bus
+object differs. It also generalises: any I2C device on the header (IMU, OLED)
+becomes reachable by the same route, which is most of Phase 4.1 for free.
+
+The cost is round trips per driver operation. Setting a channel's duty cycle
+is a single 5-byte write to the four channel registers, so it stays at one
+RPC per pin per frame, matching option 1. Board init costs a handful more,
+once.
+
+### 6.4 Tasks
+
+- [x] **5.1** Commit the diagnostic sketch and record §6's findings.
+- [ ] **5.2** Add an MCU sketch under `arduino/` that owns no device but
+      provides `i2c_write`, `i2c_write_read` and `i2c_scan` over the bridge
+      for a selectable `Wire` instance.
+- [ ] **5.3** Add `BridgeI2C` to `i2c_bus.py`: the same `busio.I2C` surface
+      as `ExplicitBusI2C`, backed by those bridge calls, with unit tests
+      against a fake bridge.
+- [ ] **5.4** Let the PCA9685 pin provider select a bus implementation, so a
+      pin id can name the bridge rather than a `/dev/i2c-N`, and add the
+      config plumbing.
+- [ ] **5.5** Pin down how donkeycar gets `arduino_app_bricks` (vendored,
+      git dependency, or asking Arduino to publish it) and add it to the
+      `unoq` extra.
+- [ ] **5.6** Measure the real drive loop with both pins on the bridge and
+      confirm 20 Hz holds.
