@@ -15,6 +15,13 @@ on a real board; see `ARDUINO_UNO_Q_PLAN.md` for the work still outstanding.
 | `parts/imu.py`, `parts/lidar.py`, `parts/oled.py` | **No** — see "Blinka" below. |
 | `donkey ui` | Not installed by the `unoq` extra; see "Optional: kivy". |
 
+A full `manage.py drive` loop has been run on the board with
+`DRIVE_TRAIN_TYPE = "MOCK"` (no actuators wired): it started in 4 seconds,
+served the web controller, and streamed live MJPEG at ~17 distinct frames per
+second from a 20 Hz vehicle loop, using 68% of one core and 89 MB, at a load
+average of 0.27. No errors or tracebacks. There is ample headroom on the
+board's four cores.
+
 Set `CAMERA_TYPE = "CVCAM"`, **not** `"WEBCAM"`. Despite the name, the
 `WEBCAM` path uses `parts/camera.py:Webcam`, which is built on pygame — a
 dependency no extra installs. `CVCAM` uses `parts/cv.py:CvCam` over OpenCV,

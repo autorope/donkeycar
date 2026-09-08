@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 10 / 19 tasks.**
+**IN PROGRESS — 11 / 19 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓░▓ · Phase 3 ░░░░ · Phase 4 ░░░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -283,9 +283,11 @@ None of these block Phases 0–1, but all block Phase 3:
       fork ~470 lines of `cfg_complete.py` to change five values. Note
       `arduino_drive` is a different thing — a host driving a separate
       Arduino over Firmata.)
-- [ ] **2.2** Create a car on the board and confirm `manage.py drive` starts,
+- [x] **2.2** Create a car on the board and confirm `manage.py drive` starts,
       serves the web controller, and streams camera frames — with the
-      actuator pins still unwired.
+      actuator pins still unwired. (Done with `DRIVE_TRAIN_TYPE = "MOCK"`:
+      up in 4s, 20 Hz loop, ~17 distinct MJPEG fps, 68% of one core, no
+      errors. Test car left at `~/mycar-unoq` on the board.)
 - [x] **2.3** Note in `ARDUINO_UNO_Q_SETUP.md` that `donkey ui` is not
       installed by the `unoq` extra, and how to add kivy if wanted.
 
