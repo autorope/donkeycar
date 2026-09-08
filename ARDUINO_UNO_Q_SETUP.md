@@ -119,6 +119,19 @@ reaches for first, and they are the wrong ones here.
 400 ns still gives 2,500 steps across a 1000 µs servo range, far finer than a
 servo resolves.
 
+### Wiring the servo
+
+Signal to D2 (steering) or D5 (throttle), and ground to any header GND.
+
+- **Power the servo externally.** A small servo idles at tens of milliamps but
+  can pull over an amp when it stalls or slews under load, which will brown
+  out the SoC and reboot Linux. Use a separate pack or BEC, not the board.
+- **Ground must be common.** The servo's ground has to reach both its own
+  supply's negative *and* a header GND, or the pulse has no reference. This is
+  the usual cause of "the signal looks right but nothing moves".
+- **The MCU drives 3.3 V logic.** Most hobby servos read a 3.3 V pulse fine,
+  but some older analogue ones expect 5 V and will be jittery or dead.
+
 **Verified on hardware:** a Miuzei MG90S driven from D5, and then from D2,
 tracked commanded pulse widths correctly across its full travel on both.
 
@@ -142,59 +155,6 @@ arduino-cli compile --fqbn arduino:zephyr:unoq .
 arduino-cli upload  --fqbn arduino:zephyr:unoq .   # overwrites the MCU sketch
 ```
 
-## I2C setup for the PCA9685 (Linux-side buses)
-
-The rest of this section applies to a PCA9685 on a **Linux** I2C bus. On the
-Uno Q as shipped there is no known connector that reaches one, so this is
-here for completeness and because the same code path is what the Raspberry
-Pi uses.
-
-**Add yourself to the `i2c` group.** The stock image puts `arduino` in
-`gpiod`, `video` and `dialout`, but *not* `i2c`, so `/dev/i2c-*`
-(`root:i2c 0660`) is unreadable and you get `PermissionError: [Errno 13]`:
-
-```bash
-sudo usermod -aG i2c arduino
-```
-
-Log out and back in — group changes do not apply to existing sessions, ssh
-master connections included.
-
-**Find the bus.** The board exposes `/dev/i2c-0`, `-1` and `-2`, and which one
-reaches the Arduino headers is board-revision specific. Install the tools and
-scan, with the PCA9685 attached:
-
-```bash
-sudo apt-get install i2c-tools
-for n in 0 1 2; do echo "== i2c-$n"; i2cdetect -y $n; done
-```
-
-A PCA9685 shows at `0x40` by default. Use `i2cdetect`, not a hand-rolled
-scan that probes by reading a byte — that reports a device at every address
-on some buses.
-
-Put the bus number in the pin ids and in `myconfig.py`. Pin ids are
-`provider.busnum:address.channel`, so on bus 1 at `0x40`:
-
-```python
-PCA9685_I2C_BUSNUM = 1
-PCA9685_I2C_ADDR = 0x40
-DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
-PWM_STEERING_THROTTLE = {
-    "PWM_STEERING_PIN": "PCA9685.1:40.1",
-    "PWM_THROTTLE_PIN": "PCA9685.1:40.0",
-    ...
-}
-```
-
-### Wiring cautions
-
-- **Check the logic level.** The SoC's I2C lines are 3.3 V. Confirm whether
-  the header bus you picked is level-shifted before connecting a 5 V PCA9685
-  breakout.
-- **Power the servo rail separately.** The PCA9685 needs its own V+ for the
-  steering servo and ESC. Do not try to draw that through the Uno Q.
-
 ## Car configuration
 
 Create the car with the stock `complete` template. There is no separate Uno Q
@@ -205,10 +165,7 @@ different config values:
 donkey createcar --path ~/mycar
 ```
 
-Then put the following in `~/mycar/myconfig.py`. Pin ids are
-`provider.busnum:address.channel`, so the `1` in `PCA9685.1:40.0` is the bus
-number: change every occurrence to whichever bus you found above, and keep
-`PCA9685_I2C_BUSNUM` in step with it.
+Then put the following in `~/mycar/myconfig.py`:
 
 ```python
 # --- camera: USB webcam through OpenCV ---
@@ -256,37 +213,28 @@ If the drive train cannot reach the MCU you will see
 Train on a real machine and copy the `.tflite` across. Do not install
 tensorflow or torch on the board.
 
-## Blinka does not detect this board
+## Why there are no CircuitPython sensor drivers
 
 `adafruit-platformdetect` does not recognise the Uno Q — it reports both chip
-and board as `None` — so `import board` raises:
+and board as `None` — so `import board` raises, and every
+`adafruit-circuitpython-*` driver needs it:
 
 ```
 >>> import board
   ... your board may not yet be supported. Please open a New Issue ...
 ```
 
-donkeycar's PCA9685 support works anyway, because it addresses the bus by
-number through `donkeycar/parts/i2c_bus.py` rather than going through
-`board`/`busio`. But any part that still does `import board` will fail on
-this board: `parts/imu.py`, `parts/lidar.py` and `parts/oled.py`. Converting
-them is Phase 4 of the plan.
-
 Forcing a generic board does not help, so do not spend time on it. With
 `BLINKA_FORCECHIP=GENERIC_X86 BLINKA_FORCEBOARD=GENERIC_LINUX_PC` you do get
-`board.SCL` and `board.SDA`, but constructing the bus then fails:
+`board.SCL` and `board.SDA`, but constructing the bus then fails with
+`ImportError: cannot import name 'i2cPorts' from 'microcontroller.pin'`.
 
-```
-ImportError: cannot import name 'i2cPorts' from 'microcontroller.pin'
-```
-
-## Deprecated parts that need the old library
-
-`JHat` and `JHatReader` in `parts/actuator.py` still import
-`Adafruit_PCA9685`, which no extra installs any more. Both are deprecated and
-undocumented, and they are for a Teensy emulating a PCA9685 rather than a real
-one. If you genuinely need them, `uv pip install Adafruit_PCA9685` — which
-will want `build-essential` and `python3-dev` for `spidev`.
+This costs the drive train nothing, since the MCU handles it. It does mean
+`parts/imu.py`, `parts/lidar.py` and `parts/oled.py` will not import on this
+board, and the `unoq` extra deliberately omits those drivers rather than
+installing packages that cannot work. Reaching an I2C sensor here means going
+through the MCU, the same way the servo does — see Phase 4 of
+`ARDUINO_UNO_Q_PLAN.md`.
 
 ## Optional: kivy
 

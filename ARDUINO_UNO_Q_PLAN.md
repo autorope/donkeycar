@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 18 / 27 tasks.**
+**IN PROGRESS — 13 / 19 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓▓▓▓▓▓░
+Phase 0 ▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░ · Phase 4 ░░ · Phase 5 ▓▓▓▓▓▓▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -48,7 +48,7 @@ Verified over ssh against a real board on 2026-09-07:
 So the camera → inference → recording path is already supported. The gaps are
 all in the actuator/I2C layer and in the install extra itself.
 
-### 1.3 The three real blockers
+### 1.3 The four real blockers
 
 **(a) `Adafruit_PCA9685` needs a C compiler.** It is Adafruit's deprecated
 pre-Blinka library and the sole reason a bare Uno Q image cannot
@@ -122,10 +122,9 @@ what the Linux-side code does. Four confirmations:
    rescan was byte-for-byte unchanged, while a scan from an MCU sketch found
    it immediately (see §6).
 
-So `ExplicitBusI2C` cannot reach a header device on this board. It is not
-wasted — it is still the right way to reach a PCA9685 from Linux, and it is
-what makes the Pi path work — but the Uno Q needs a route through the MCU.
-That is §6.
+So no amount of Linux-side I2C code can reach a header device on this board,
+which is why this branch carries none: the route has to go through the MCU.
+That is §6, and §2 explains where the Linux-side I2C work went.
 
 **(d) No GPIO story.** `RPi.GPIO` and `pigpio` are both Pi-only, so
 `PinProvider.RPI_GPIO` and `PinProvider.PIGPIO` are dead on this board. Only
@@ -133,39 +132,11 @@ That is §6.
 `PWM_STEERING_THROTTLE` (a standard RC car: servo + ESC on a PCA9685), which
 is the target configuration. Native GPIO is deferred to Phase 4.
 
-### 1.4 The I2C shim
-
-New file, `donkeycar/parts/i2c_bus.py`, no Blinka board detection anywhere:
-
-```python
-class ExplicitBusI2C:
-    """A busio.I2C-compatible bus addressed by /dev/i2c-N bus number.
-
-    Blinka's board detection does not support every SBC (the Arduino Uno Q
-    among them), so `import board` can fail on an otherwise fine Linux I2C
-    bus. This wraps the generic-Linux backend directly and adds the locking
-    and deinit methods the CircuitPython drivers expect.
-    """
-    def __init__(self, busnum: int) -> None: ...
-    def try_lock(self) -> bool: ...      # threading.Lock, non-blocking
-    def unlock(self) -> None: ...
-    def deinit(self) -> None: ...
-    # readfrom_into / writeto / writeto_then_readfrom / scan delegate
-```
-
-Because it is duck-typed against `busio.I2C`, the same object also unblocks
-`imu.py`, `lidar.py` and `oled.py` on boards Blinka does not detect — but
-converting those parts is out of scope here and left to Phase 4.
-
-### 1.5 The `unoq` extra
+### 1.4 The `unoq` extra
 
 ```toml
 unoq = [
-    "adafruit-circuitpython-pca9685",   # replaces legacy Adafruit_PCA9685
-    "adafruit-circuitpython-ssd1306",
-    "adafruit-circuitpython-rplidar",
-    "adafruit-circuitpython-mpu6050",
-    "adafruit-circuitpython-bno055",
+    "msgpack",                  # to talk MsgPack-RPC to arduino-router
     "ai-edge-litert>=2.1.4",
     "opencv-contrib-python",
     "matplotlib",
@@ -177,69 +148,47 @@ unoq = [
 
 Differences from `pi`, and why:
 
-- `Adafruit_PCA9685` → `adafruit-circuitpython-pca9685`. This is the change
-  that removes the compiler requirement (§1.3a).
+- **No PCA9685 driver and no `adafruit-circuitpython-*` at all.** The header
+  belongs to the MCU (§1.3c), so no I2C device on it is reachable from Linux,
+  and `import board` raises here anyway (§1.3b). Installing those drivers
+  would mean shipping packages that cannot work.
+- **`msgpack` added.** It is the only thing needed to reach the MCU; see §6.1.
 - **`gpiozero` dropped.** Nothing under `donkeycar/` imports it, and its pin
   factories are Pi-only.
 - **`kivy` and `kivy-garden.matplotlib` dropped.** They are only for
-  `donkey ui`, which belongs on the training machine. Worth ~250 MB on a
-  board with 2.4 GB free. Both do install and import fine on this board, so
-  anyone who wants the UI on the Uno Q's XFCE desktop can add them by hand.
+  `donkey ui`, which belongs on the training machine, and cost ~250 MB on a
+  board with 2.4 GB free. Both install and import fine if wanted.
 - **`pandas-stubs` dropped** — a typing-only dependency, `dev`'s business.
-- The four `adafruit-circuitpython-*` sensor drivers are kept because they
-  are small and pure Python, but note that `imu.py` / `lidar.py` / `oled.py`
-  still `import board` and so remain non-functional until Phase 4.
 
----
+## 2. The PCA9685 work lives on another branch
 
-## 2. Decision: one shared implementation
+An earlier version of this plan had a Phase 1 that replaced the deprecated
+`Adafruit_PCA9685` with the CircuitPython driver across `pins.py` and
+`actuator.py`, plus an `ExplicitBusI2C` that opened a bus by number so the
+driver would work on boards Blinka cannot detect.
 
-**Agreed (option 1).** `PinProvider.PCA9685` keeps its name and gets the
-CircuitPython driver over `ExplicitBusI2C`, so one implementation serves the
-Pi and the Uno Q, honours `PCA9685_I2C_BUSNUM` on both, and retires the
-deprecated library. This touches the Pi path, so Phase 3 must include a
-regression run on the real car before this is considered done.
+**None of that is needed here, and it has been moved out.** The Uno Q's
+header belongs to its MCU (§1.3c), so there is no Linux-side I2C to reach a
+PCA9685 on, and the MCU emits the servo pulses itself (§6.3). This branch
+therefore leaves `pins.py` and `actuator.py` exactly as `main` has them.
 
-`1177-update-i2c-driver-for-bookwork` is **subsumed, not merged** — it has no
-PR, so its useful work is lifted onto current `main` and the branch is left
-alone. What is worth taking:
+That work was worth keeping, though — it is a Raspberry Pi and Jetson Nano
+improvement that stands on its own, and it is what
+`1177-update-i2c-driver-for-bookwork` set out to do. It now lives on
+**`pca9685-circuitpython-driver`**, branched from `main`, where it:
 
-- the split of the old monolithic `PCA9685` into a `PCA9685board` (one board)
-  plus a `PCA9685Pin` (one channel, wrapping `adafruit_pca9685.PWMChannel`),
-  which is what lets pin objects stop passing a channel into every call
-- the move from 12-bit (`4096`) to 16-bit (`0x10000`) duty-cycle resolution,
-  which is what the CircuitPython driver expects
-- a genuine bug fix: `main`'s `pca9685()` factory never writes into its
-  `_pca9685` cache, so the "singleton" is allocated fresh every call
-- `OutputPinPCA9685` inheriting `OutputPin` rather than `ABC`
+- retires the deprecated library in `pins.py`, `actuator.py` and the `pi` and
+  `nano` extras
+- removes the last C-toolchain requirement from `[pi]`, since
+  `Adafruit_PCA9685` was what pulled `Adafruit-GPIO` → `spidev`
+- fixes two real bugs: `pca9685()` never wrote into its `_pca9685` cache, so
+  the board re-initialised on every call and the frequency-conflict check
+  could never fire; and `OutputPinPCA9685` derived from `ABC` rather than
+  `OutputPin`
+- adds 49 tests, where that provider previously had none that ran off a Pi
 
-Three things must **not** be carried over as-is:
-
-1. `busio.I2C(board.SCL, board.SDA)` — does not work on the Uno Q (§1.3b),
-   and it is why 1177's docstring says "the busnum argument is now ignored".
-   Replaced by `ExplicitBusI2C(busnum)`, which restores `busnum`.
-2. `super().__init__(self, pca_pin, frequency / 60, False)` in
-   `actuator.PCA9685` passes four arguments to a three-parameter
-   `PulseController.__init__`, so `pwm_pin` binds to `self` and `pwm_scale`
-   to the pin. Must be `super().__init__(pwm_pin, frequency / 60, False)`.
-3. That same call hands `PulseController` a `PCA9685Pin`, but
-   `PulseController` requires a `PwmPin` — it calls `.state()`, `.start()`
-   and `.duty_cycle()`, none of which `PCA9685Pin` has. It must be given a
-   `PwmPinPCA9685`.
-
-### 2.1 The two deprecated Teensy classes
-
-`JHat` and `JHatReader` in `actuator.py` also import the legacy library, but
-they are **not** being ported. Both are `@deprecated` and documented as
-"unsupported/undocumented in the framework", and `JHatReader` drives the chip
-through `self.pwm._device.writeRaw8(0x06)` — reaching into `Adafruit_GPIO`
-internals that have no equivalent in the CircuitPython driver. Porting them
-blind, with no Teensy to test against, would be guesswork.
-
-Instead they keep their lazy `import Adafruit_PCA9685`, which now simply is
-not installed by any extra. They already import inside `__init__`, so nothing
-breaks until someone instantiates one, and Task 1.3 gives that path a clear
-message saying the dependency was dropped and how to install it by hand.
+It needs its own review and a regression run on a real Pi car before merging.
+Nothing on this branch depends on it.
 
 ## 3. Open hardware questions
 
@@ -265,7 +214,7 @@ None of these block Phases 0–1, but all block Phase 3:
 
 ### Phase 0 — install path
 
-- [x] **0.1** Add the `unoq` extra to `pyproject.toml` per §1.5.
+- [x] **0.1** Add the `unoq` extra to `pyproject.toml` per §1.4.
 - [x] **0.2** Add `ARDUINO_UNO_Q_SETUP.md`: the `build-essential
       python3-dev` finding and why it is no longer needed after 0.1,
       `usermod -aG i2c arduino`, the `i2c-tools` hint, and the §3
@@ -278,24 +227,6 @@ None of these block Phases 0–1, but all block Phase 3:
       (Done by forcing `CC=/bin/false CXX=/bin/false` rather than removing
       `build-essential`, which keeps the board's toolchain intact: 69
       packages resolved, only `donkeycar` built, install clean.)
-
-### Phase 1 — I2C and the PCA9685
-
-- [x] **1.1** Add `donkeycar/parts/i2c_bus.py` with `ExplicitBusI2C` (§1.4),
-      typed, plus unit tests against an injected fake backend (19 tests),
-      and verify it against the real buses on the board.
-- [x] **1.2** Rebase 1177's `pins.py` PCA9685 work onto current `main`,
-      replacing `busio.I2C(board.SCL, board.SDA)` with
-      `ExplicitBusI2C(busnum)`.
-- [x] **1.3** Convert `actuator.PCA9685` (line ~138) the same way, fixing
-      both `super().__init__` defects from §2. Leave `JHat`/`JHatReader`
-      (~404, ~447) on the legacy import per §2.1, but give the failure a
-      message that names the dropped dependency.
-- [x] **1.4** Unit tests for the PCA9685 pin provider with the I2C layer
-      mocked: pin-id parsing (`"PCA9685.1:40.1"` → busnum 1, addr 0x40,
-      channel 1), duty-cycle bounds, frequency. (30 tests, hardware-free.)
-- [x] **1.5** Drop `Adafruit_PCA9685` from the `pi` and `nano` extras and add
-      `adafruit-circuitpython-pca9685`, completing 1177's intent.
 
 ### Phase 2 — car configuration
 
@@ -317,27 +248,22 @@ None of these block Phases 0–1, but all block Phase 3:
 
 ### Phase 3 — on-car validation (needs the wired car)
 
-- [ ] **3.1** `donkey calibrate` against a real PCA9685: confirm steering and
-      throttle channels respond and find the pulse limits.
+- [ ] **3.1** `donkey calibrate` against the car's real steering linkage and
+      ESC, and record the resulting pulse limits. The wide 600-2400 us range
+      used to prove the hardware will drive the wheels past their lock.
 - [ ] **3.2** Drive and record a tub on the track; check frame rate and the
       thermal/CPU headroom while recording.
 - [ ] **3.3** Train off-board, copy a `.tflite` back, and confirm an
       autopilot lap via `interpreter.TfLite`.
-- [ ] **3.4** Regression-run the shared PCA9685 path on the Pi car
-      (`murmurpi64.local`) per the §2 caveat: calibrate, drive, record.
 
 ### Phase 4 — beyond the minimum (optional, later)
 
-- [ ] **4.1** Convert `imu.py`, `lidar.py` and `oled.py` to accept an
-      injected bus so they work without Blinka board detection (§1.4).
+- [ ] **4.1** Reach I2C sensors through the MCU, the way the servo is: a
+      sketch exposing `i2c_write` / `i2c_write_read` over the bridge, and a
+      `busio.I2C`-compatible object on the Linux side, so `imu.py`,
+      `lidar.py` and `oled.py` can work on this board.
 - [ ] **4.2** Add a libgpiod-backed `PinProvider` for `/dev/gpiochip*`, so
       native GPIO input/output works on the Uno Q (§1.3c).
-- [ ] **4.3** Investigate driving actuators through the STM32U585 MCU over
-      the Arduino bridge (`~/.arduino-bricks`) instead of a PCA9685, which
-      would remove the I2C hat from the bill of materials entirely.
-- [ ] **4.4** Upstream a board definition to `adafruit-platformdetect` /
-      Blinka so `import board` works natively on the Uno Q and the shim
-      becomes a fallback rather than the only path.
 
 ---
 
@@ -385,11 +311,10 @@ Not fixed here because it is outside this work and the browser is unaffected;
 worth its own change. Found while trying to measure the loop rate through the
 HTTP API, which is why the measurement now uses the websocket.
 
-**A side benefit for the Pi.** Because task 1.5 removed the last dependency on
-`Adafruit_PCA9685`, `donkeycar[pi]` no longer pulls `Adafruit-GPIO` and so no
-longer pulls `spidev` — the `pi` extra now resolves to 79 packages with no
-sdist that needs compiling. A Raspberry Pi install stops needing a C toolchain
-for the same reason the Uno Q one does.
+**The `[pi]` toolchain requirement.** `Adafruit_PCA9685` is what pulls
+`Adafruit-GPIO` -> `spidev`, which ships no wheel, so a Raspberry Pi install
+needs `build-essential` too. Retiring it fixes that, but that change lives on
+`pca9685-circuitpython-driver` (§2), not here.
 
 ---
 
@@ -484,9 +409,8 @@ moves but under-travels.
 
 So the Uno Q needs **no PCA9685 at all**, and no I2C for the drive train.
 This is the donkeyhat architecture: MCU reads the RC receiver and drives the
-servo and ESC; the host does vision and inference. `BridgeI2C` is dropped from
-the drive-train plan and kept only as the eventual route for *other* header
-I2C devices (IMU, OLED), which is Phase 4.1.
+servo and ESC; the host does vision and inference. Reaching *other* header
+I2C devices (IMU, OLED) would use the same MCU route, which is Phase 4.1.
 
 ### 6.3.1 Protocol: donkeycar's host side already exists
 
@@ -539,6 +463,23 @@ direction pays it.
 - [ ] **5.8** Wire encoders, as the RC hat does, and feed donkeycar's
       odometry parts.
 
+### 6.5 Verified against real hardware
+
+Our own client, the sketch and the donkeycar parts, end to end on the board:
+
+| | |
+|---|---|
+| `get_rc` / `set_pulse` / `get_last_pulse` | all answer correctly |
+| **Pushed `rc_input` notifications** | 77–78 frames in 2 s = **38–39 Hz**, inter-frame median 26.4 ms against the sketch's 25 ms cadence |
+| `UnoQRcHatDriver.run(-1, 0)` → `750 µs`, `run(1, 0)` → `2250 µs` | servo tracked it |
+| Sustained 20 Hz through the part | median **7.4 ms**, p95 9.1 ms of a 50 ms budget |
+| `shutdown()` | returns the car to `1500, 1500` |
+
+One router quirk found this way: **the arduino-router build on this board does
+not implement `$/unregister`**. `unprovide()` drops the local handler first,
+so dispatch stops regardless, and the failed call is now logged at debug
+rather than warned about. There is a regression test for it.
+
 ### 6.6 A driveable car
 
 `DRIVE_TRAIN_TYPE = "UNOQ"` in `complete.py` builds a car from these parts,
@@ -559,20 +500,3 @@ Measured on the board, driving from the web controller with a servo attached:
 The failsafe was also confirmed the hard way: after `kill -9` of the drive
 process, so `shutdown()` never ran, the MCU was left at `1500, 1500, 1` —
 throttle neutralised and the tripped flag set.
-
-### 6.5 Verified against real hardware
-
-Our own client, the sketch and the donkeycar parts, end to end on the board:
-
-| | |
-|---|---|
-| `get_rc` / `set_pulse` / `get_last_pulse` | all answer correctly |
-| **Pushed `rc_input` notifications** | 77–78 frames in 2 s = **38–39 Hz**, inter-frame median 26.4 ms against the sketch's 25 ms cadence |
-| `UnoQRcHatDriver.run(-1, 0)` → `750 µs`, `run(1, 0)` → `2250 µs` | servo tracked it |
-| Sustained 20 Hz through the part | median **7.4 ms**, p95 9.1 ms of a 50 ms budget |
-| `shutdown()` | returns the car to `1500, 1500` |
-
-One router quirk found this way: **the arduino-router build on this board does
-not implement `$/unregister`**. `unprovide()` drops the local handler first,
-so dispatch stops regardless, and the failed call is now logged at debug
-rather than warned about. There is a regression test for it.
