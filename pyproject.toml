@@ -62,13 +62,20 @@ pi = [
 unoq = [
     # The Arduino Uno Q runs Debian on aarch64 with no C toolchain in the
     # stock image, so every dependency here must ship an aarch64 wheel or be
-    # pure Python.  That rules out the deprecated Adafruit_PCA9685, whose
-    # Adafruit-GPIO -> spidev dependency has to be compiled.
-    "adafruit-circuitpython-pca9685",
-    "adafruit-circuitpython-ssd1306",
-    "adafruit-circuitpython-rplidar",
-    "adafruit-circuitpython-mpu6050",
-    "adafruit-circuitpython-bno055",
+    # pure Python.
+    #
+    # There is deliberately no PCA9685 or CircuitPython driver here.  The
+    # Arduino header belongs to the board's STM32U585, not to Linux, so no
+    # I2C device on it is reachable from here and adafruit-platformdetect does
+    # not recognise the board at all -- `import board` raises, which is what
+    # every adafruit-circuitpython-* driver needs.  The MCU drives the servo
+    # and ESC directly instead; see donkeycar/parts/unoq.py and
+    # arduino/unoq_rc_hat/.
+    #
+    # msgpack is for talking MsgPack-RPC to arduino-router, which is how we
+    # reach the MCU.  Arduino's own client for this ships only inside App
+    # Lab's Docker image, so donkeycar speaks the protocol itself.
+    "msgpack",
     "ai-edge-litert>=2.1.4",
     "opencv-contrib-python",
     "matplotlib",
@@ -76,6 +83,7 @@ unoq = [
     "plotly",
     "albumentations",
 ]
+
 nano = [
     "Adafruit_PCA9685",
     "adafruit-circuitpython-ssd1306",

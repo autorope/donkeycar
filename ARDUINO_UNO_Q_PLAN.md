@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 14 / 27 tasks.**
+**IN PROGRESS — 17 / 27 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓▓░░░░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓▓▓▓▓░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -495,15 +495,41 @@ direction pays it.
       `set_pulse(steering, throttle)`. (Both D2 and D5 confirmed against a
       real servo. Output, clamping and failsafe verified; the three RC input
       channels are written but **unproven** — no receiver to hand.)
-- [ ] **5.4** Add a `UnoQRcHat` donkeycar part reusing `robohat.py`'s scaling
+- [x] **5.4** Add a `UnoQRcHat` donkeycar part reusing `robohat.py`'s scaling
       and trim logic over the bridge instead of a serial port, with
-      hardware-free tests against a fake bridge.
-- [ ] **5.5** Pin down how donkeycar gets `arduino_app_bricks` (vendored, git
-      dependency, or ask Arduino to publish it) and add it to the `unoq`
-      extra.
-- [ ] **5.6** Drop the PCA9685 packages from the `unoq` extra — the board does
-      not need them — keeping them in `pi` and `nano`.
+      hardware-free tests against a fake bridge. (47 tests; also verified
+      against the real router and MCU.)
+- [x] **5.5** ~~Pin down how donkeycar gets `arduino_app_bricks`~~ —
+      **dissolved.** donkeycar does not need it. The router speaks standard
+      MsgPack-RPC, so `parts/unoq_bridge.py` speaks it directly and the only
+      new dependency is `msgpack`, which is on PyPI with aarch64 wheels.
+      That avoids all three bad options: no MPL-2.0 files vendored into an
+      MIT tree, no PEP 508 direct URL (which PyPI rejects in published
+      metadata), and nothing to ask Arduino for.
+- [x] **5.6** Drop the PCA9685 packages from the `unoq` extra — the board does
+      not need them — keeping them in `pi` and `nano`. (Also dropped the four
+      `adafruit-circuitpython-*` sensor drivers: all of them need
+      `import board`, which raises on this board, so the extra was installing
+      things that cannot work. They return if Phase 4.1 routes I2C through
+      the MCU.)
 - [ ] **5.7** Measure the real drive loop with the bridge drive train and
       confirm 20 Hz holds.
 - [ ] **5.8** Wire encoders, as the RC hat does, and feed donkeycar's
       odometry parts.
+
+### 6.5 Verified against real hardware
+
+Our own client, the sketch and the donkeycar parts, end to end on the board:
+
+| | |
+|---|---|
+| `get_rc` / `set_pulse` / `get_last_pulse` | all answer correctly |
+| **Pushed `rc_input` notifications** | 77–78 frames in 2 s = **38–39 Hz**, inter-frame median 26.4 ms against the sketch's 25 ms cadence |
+| `UnoQRcHatDriver.run(-1, 0)` → `750 µs`, `run(1, 0)` → `2250 µs` | servo tracked it |
+| Sustained 20 Hz through the part | median **7.4 ms**, p95 9.1 ms of a 50 ms budget |
+| `shutdown()` | returns the car to `1500, 1500` |
+
+One router quirk found this way: **the arduino-router build on this board does
+not implement `$/unregister`**. `unprovide()` drops the local handler first,
+so dispatch stops regardless, and the failed call is now logged at debug
+rather than warned about. There is a regression test for it.
