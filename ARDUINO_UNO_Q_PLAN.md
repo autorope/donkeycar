@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 13 / 27 tasks.**
+**IN PROGRESS — 14 / 27 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓░░░░░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓▓░░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -450,8 +450,9 @@ are validated, both are plain non-complementary outputs, and 400 ns is still
 **Confirmed on hardware.** A Miuzei MG90S was driven from D5 and tracked
 commanded pulse widths correctly through its full travel, so the pad really
 does carry a correct 50 Hz waveform — `rc == 0` was not merely the driver
-accepting a period it could not deliver. D2 is still only inferred (from
-TIM2 being 32-bit) rather than measured with a servo.
+accepting a period it could not deliver. **D2 was then checked the same way
+and behaves identically**, so both intended channels are measured rather
+than inferred.
 
 One calibration trap worth recording. The first test used 1000–2000 µs, the
 conservative RC-standard range, and produced only about half the servo's
@@ -488,11 +489,12 @@ direction pays it.
 - [x] **5.2** Establish whether the MCU can emit servo PWM directly, which
       pins are trustworthy, and at what resolution (§6.3). Supersedes the
       PCA9685-over-bridge design.
-- [ ] **5.3** Write the donkeyhat-equivalent sketch: three RC channels in via
+- [x] **5.3** Write the donkeyhat-equivalent sketch: three RC channels in via
       `attachInterrupt`/`micros`, two servo outputs via `pwm_set_dt` on D2 and
       D5, RC values pushed with `Bridge.notify` at ~40 Hz, and a provided
-      `set_pulse(steering, throttle)`. (D5's waveform is already confirmed
-      against a real servo; D2 still needs the same check.)
+      `set_pulse(steering, throttle)`. (Both D2 and D5 confirmed against a
+      real servo. Output, clamping and failsafe verified; the three RC input
+      channels are written but **unproven** — no receiver to hand.)
 - [ ] **5.4** Add a `UnoQRcHat` donkeycar part reusing `robohat.py`'s scaling
       and trim logic over the bridge instead of a serial port, with
       hardware-free tests against a fake bridge.

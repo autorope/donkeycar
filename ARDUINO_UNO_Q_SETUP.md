@@ -117,8 +117,8 @@ reaches for first, and they are the wrong ones here.
 400 ns still gives 2,500 steps across a 1000 µs servo range, far finer than a
 servo resolves.
 
-**Verified on hardware:** a Miuzei MG90S driven from D5 tracked commanded
-pulse widths correctly across its full travel.
+**Verified on hardware:** a Miuzei MG90S driven from D5, and then from D2,
+tracked commanded pulse widths correctly across its full travel on both.
 
 **Mind the pulse range when testing.** 1000–2000 µs is the conservative
 RC-standard range and yields only about half an MG90S's travel — which looks
