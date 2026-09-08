@@ -107,6 +107,59 @@ PWM_STEERING_THROTTLE = {
 - **Power the servo rail separately.** The PCA9685 needs its own V+ for the
   steering servo and ESC. Do not try to draw that through the Uno Q.
 
+## Car configuration
+
+Create the car with the stock `complete` template. There is no separate Uno Q
+template, because nothing about the board needs different *code* — only
+different config values:
+
+```bash
+donkey createcar --path ~/mycar
+```
+
+Then put the following in `~/mycar/myconfig.py`. Pin ids are
+`provider.busnum:address.channel`, so the `1` in `PCA9685.1:40.0` is the bus
+number: change every occurrence to whichever bus you found above, and keep
+`PCA9685_I2C_BUSNUM` in step with it.
+
+```python
+# --- camera: USB webcam through OpenCV ---
+CAMERA_TYPE = "CVCAM"          # not "WEBCAM", which is the pygame path
+CAMERA_INDEX = 0               # /dev/video0
+IMAGE_W = 160
+IMAGE_H = 120
+IMAGE_DEPTH = 3
+
+# --- drive train: steering servo + ESC on a PCA9685 ---
+DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
+PCA9685_I2C_BUSNUM = 1         # set to the bus you found; see "Find the bus"
+PCA9685_I2C_ADDR = 0x40
+PWM_STEERING_THROTTLE = {
+    "PWM_STEERING_PIN": "PCA9685.1:40.1",
+    "PWM_STEERING_SCALE": 1.0,
+    "PWM_STEERING_INVERTED": False,
+    "PWM_THROTTLE_PIN": "PCA9685.1:40.0",
+    "PWM_THROTTLE_SCALE": 1.0,
+    "PWM_THROTTLE_INVERTED": False,
+    # replace these five with what `donkey calibrate` gives you
+    "STEERING_LEFT_PWM": 460,
+    "STEERING_RIGHT_PWM": 290,
+    "THROTTLE_FORWARD_PWM": 500,
+    "THROTTLE_STOPPED_PWM": 370,
+    "THROTTLE_REVERSE_PWM": 220,
+}
+
+# --- autopilot: train off-board, run a .tflite here ---
+DEFAULT_MODEL_TYPE = "tflite_linear"
+```
+
+The steering and throttle PWM values above are the template's defaults, **not
+calibration values for your car**. Run `donkey calibrate` and replace them, or
+the car will drive its servo into its end stops.
+
+Train on a real machine and copy the `.tflite` across. Do not install
+tensorflow or torch on the board.
+
 ## Blinka does not detect this board
 
 `adafruit-platformdetect` does not recognise the Uno Q — it reports both chip
@@ -141,7 +194,9 @@ will want `build-essential` and `python3-dev` for `spidev`.
 
 ## Optional: kivy
 
-`donkey ui` needs kivy, which the `unoq` extra leaves out to save ~250 MB.
+`donkey ui` is **not** installed by the `unoq` extra: it needs kivy, which is
+left out to save ~250 MB on a board with little disk to spare, and the UI
+belongs on the machine you train on.
 The board does have an XFCE desktop, and kivy installs and imports fine there
 if you want the UI locally:
 

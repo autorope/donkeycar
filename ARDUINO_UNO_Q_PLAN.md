@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 3 / 19 tasks.**
+**IN PROGRESS — 10 / 19 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓░▓ · Phase 3 ░░░░ · Phase 4 ░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -221,11 +221,12 @@ message saying the dependency was dropped and how to install it by hand.
 
 None of these block Phases 0–1, but all block Phase 3:
 
-- **Which `/dev/i2c-N` is on the Arduino headers?** Unresolved. Nothing is
-  wired to the board yet, so it cannot be determined by scanning. (My probe
-  showed `i2c-2` "responding" at all 125 addresses, which is a read-probe
-  artifact, not 125 devices.) Resolve with `i2cdetect -y N` once a PCA9685 is
-  attached; `i2c-tools` is not currently installed.
+- **Which `/dev/i2c-N` is on the Arduino headers?** Narrowed by task 1.1's
+  `scan()`: `i2c-0` is quiet, `i2c-1` carries seven SoC-internal peripherals
+  (`0x2a 0x2c 0x38 0x39 0x3d 0x3f 0x42`) and must be left alone, and `i2c-2`
+  ACKs all 112 addresses, which is the signature of a bus with no pull-ups
+  and nothing attached — so `i2c-2` is the likely header bus. Confirm by
+  attaching the PCA9685 and rescanning: it should then show `0x40` alone.
 - **Level shifting.** The Uno Q's SoC I2C is 3.3 V. Confirm whether the
   chosen bus is level-shifted on the header before hanging a 5 V PCA9685 hat
   off it.
@@ -256,31 +257,37 @@ None of these block Phases 0–1, but all block Phase 3:
 
 ### Phase 1 — I2C and the PCA9685
 
-- [ ] **1.1** Add `donkeycar/parts/i2c_bus.py` with `ExplicitBusI2C` (§1.4),
-      typed, plus unit tests against a fake `/dev/i2c` file object.
-- [ ] **1.2** Rebase 1177's `pins.py` PCA9685 work onto current `main`,
+- [x] **1.1** Add `donkeycar/parts/i2c_bus.py` with `ExplicitBusI2C` (§1.4),
+      typed, plus unit tests against an injected fake backend (19 tests),
+      and verify it against the real buses on the board.
+- [x] **1.2** Rebase 1177's `pins.py` PCA9685 work onto current `main`,
       replacing `busio.I2C(board.SCL, board.SDA)` with
       `ExplicitBusI2C(busnum)`.
-- [ ] **1.3** Convert `actuator.PCA9685` (line ~138) the same way, fixing
+- [x] **1.3** Convert `actuator.PCA9685` (line ~138) the same way, fixing
       both `super().__init__` defects from §2. Leave `JHat`/`JHatReader`
       (~404, ~447) on the legacy import per §2.1, but give the failure a
       message that names the dropped dependency.
-- [ ] **1.4** Unit tests for the PCA9685 pin provider with the I2C layer
+- [x] **1.4** Unit tests for the PCA9685 pin provider with the I2C layer
       mocked: pin-id parsing (`"PCA9685.1:40.1"` → busnum 1, addr 0x40,
-      channel 1), duty-cycle bounds, frequency.
-- [ ] **1.5** Drop `Adafruit_PCA9685` from the `pi` and `nano` extras and add
+      channel 1), duty-cycle bounds, frequency. (30 tests, hardware-free.)
+- [x] **1.5** Drop `Adafruit_PCA9685` from the `pi` and `nano` extras and add
       `adafruit-circuitpython-pca9685`, completing 1177's intent.
 
 ### Phase 2 — car configuration
 
-- [ ] **2.1** `donkey createcar` config defaults for the Uno Q:
+- [x] **2.1** `donkey createcar` config defaults for the Uno Q:
       `CAMERA_TYPE = "CVCAM"`, `DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"`,
-      `PCA9685_I2C_BUSNUM` set to whatever §3 resolves to.
+      `PCA9685_I2C_BUSNUM` set to whatever §3 resolves to. (Delivered as a
+      documented `myconfig.py` block, not a `cfg_unoq.py` template pair:
+      nothing about the board needs different *code*, and a template would
+      fork ~470 lines of `cfg_complete.py` to change five values. Note
+      `arduino_drive` is a different thing — a host driving a separate
+      Arduino over Firmata.)
 - [ ] **2.2** Create a car on the board and confirm `manage.py drive` starts,
       serves the web controller, and streams camera frames — with the
       actuator pins still unwired.
-- [ ] **2.3** Note in `ARDUINO_UNO_Q_SETUP.md` that `donkey ui` is not installed by the
-      `unoq` extra, and how to add kivy if wanted.
+- [x] **2.3** Note in `ARDUINO_UNO_Q_SETUP.md` that `donkey ui` is not
+      installed by the `unoq` extra, and how to add kivy if wanted.
 
 ### Phase 3 — on-car validation (needs the wired car)
 
@@ -305,3 +312,34 @@ None of these block Phases 0–1, but all block Phase 3:
 - [ ] **4.4** Upstream a board definition to `adafruit-platformdetect` /
       Blinka so `import board` works natively on the Uno Q and the shim
       becomes a fallback rather than the only path.
+
+---
+
+## 5. Found on the way, out of scope here
+
+**The `nano` extra cannot be resolved at all, and this predates any of the
+work above.** On current `main`, `donkeycar[nano]` pins `numpy==1.23.*` while
+the base `dependencies` require `numpy>=1.26.0`:
+
+```
+× No solution found when resolving dependencies:
+╰─▶ Because donkeycar[nano]==5.4.dev1 depends on numpy==1.23.* and
+    donkeycar==5.4.dev1 depends on numpy>=1.26.0, we can conclude that
+    donkeycar==5.4.dev1 and donkeycar[nano]==5.4.dev1 are incompatible.
+```
+
+`matplotlib==3.7.*` and `pandas==2.0.*` in that extra are likely to be stuck
+the same way. It looks like the Python 3.12/3.13 migration (ba25266b) raised
+the floor on the base dependencies without revisiting `nano`, whose pins exist
+because the Jetson Nano's JetPack is tied to an older Python.
+
+Deliberately not fixed here: it needs a Jetson Nano to validate against, and
+whether `nano` should be re-pinned or retired is a separate call. Task 1.5
+swapped its PCA9685 driver along with the Pi's for consistency, which changes
+nothing about this conflict either way.
+
+**A side benefit for the Pi.** Because task 1.5 removed the last dependency on
+`Adafruit_PCA9685`, `donkeycar[pi]` no longer pulls `Adafruit-GPIO` and so no
+longer pulls `spidev` — the `pi` extra now resolves to 79 packages with no
+sdist that needs compiling. A Raspberry Pi install stops needing a C toolchain
+for the same reason the Uno Q one does.
