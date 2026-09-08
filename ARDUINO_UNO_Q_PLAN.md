@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 0 / 19 tasks.**
+**IN PROGRESS — 1 / 19 tasks.**
 
-Phase 0 ░░░ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
+Phase 0 ▓░░ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -240,7 +240,7 @@ None of these block Phases 0–1, but all block Phase 3:
 
 ### Phase 0 — install path
 
-- [ ] **0.1** Add the `unoq` extra to `pyproject.toml` per §1.5.
+- [x] **0.1** Add the `unoq` extra to `pyproject.toml` per §1.5.
 - [ ] **0.2** Add `docs/unoq.md`: the `build-essential python3-dev` finding
       and why it is no longer needed after 0.1, `usermod -aG i2c arduino`,
       the `i2c-tools` hint, and the §3 power/level-shift warnings.

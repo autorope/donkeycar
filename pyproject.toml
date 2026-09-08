@@ -59,6 +59,23 @@ pi = [
     "plotly",
     "albumentations",
 ]
+unoq = [
+    # The Arduino Uno Q runs Debian on aarch64 with no C toolchain in the
+    # stock image, so every dependency here must ship an aarch64 wheel or be
+    # pure Python.  That rules out the deprecated Adafruit_PCA9685, whose
+    # Adafruit-GPIO -> spidev dependency has to be compiled.
+    "adafruit-circuitpython-pca9685",
+    "adafruit-circuitpython-ssd1306",
+    "adafruit-circuitpython-rplidar",
+    "adafruit-circuitpython-mpu6050",
+    "adafruit-circuitpython-bno055",
+    "ai-edge-litert>=2.1.4",
+    "opencv-contrib-python",
+    "matplotlib",
+    "pandas",
+    "plotly",
+    "albumentations",
+]
 nano = [
     "Adafruit_PCA9685",
     "adafruit-circuitpython-ssd1306",
