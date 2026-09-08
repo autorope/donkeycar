@@ -35,7 +35,13 @@ cd ~/projects/donkeycar
 uv pip install -e ".[unoq]"
 ```
 
-No compiler is required. If you install `[pi]` instead, it will fail with:
+No compiler is required, and that is verified rather than assumed: on a real
+board, `uv pip install -e ".[unoq]"` into a fresh venv with
+`CC=/bin/false CXX=/bin/false` resolves 69 packages, builds only `donkeycar`
+itself (pure Python), and succeeds. The same install of `[pi,dev]` resolves 96
+packages and has to compile `spidev`.
+
+If you install `[pi]` instead, it will fail with:
 
 ```
 × Failed to build `spidev==3.8`

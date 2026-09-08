@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 2 / 19 tasks.**
+**IN PROGRESS — 3 / 19 tasks.**
 
-Phase 0 ▓▓░ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
+Phase 0 ▓▓▓ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -247,9 +247,12 @@ None of these block Phases 0–1, but all block Phase 3:
       power/level-shift warnings. (Not `docs/`: that directory was removed
       from the repo in #875, and root-level `*_MIGRATION.md` is the
       surviving convention.)
-- [ ] **0.3** Verify on the board that `uv pip install -e ".[unoq]"` succeeds
-      in a *fresh* venv with the compiler uninstalled, proving 0.1 removed
-      the toolchain requirement. Record the result in `ARDUINO_UNO_Q_SETUP.md`.
+- [x] **0.3** Verify on the board that `uv pip install -e ".[unoq]"` succeeds
+      in a *fresh* venv with no usable C compiler, proving 0.1 removed the
+      toolchain requirement. Record the result in `ARDUINO_UNO_Q_SETUP.md`.
+      (Done by forcing `CC=/bin/false CXX=/bin/false` rather than removing
+      `build-essential`, which keeps the board's toolchain intact: 69
+      packages resolved, only `donkeycar` built, install clean.)
 
 ### Phase 1 — I2C and the PCA9685
 
