@@ -13,7 +13,7 @@ Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░
 
 ### 1.1 The board
 
-Verified over ssh on `arduino@10.0.0.75` (`Edunoq.local`) on 2026-09-07:
+Verified over ssh against a real board on 2026-09-07:
 
 | | |
 |---|---|
