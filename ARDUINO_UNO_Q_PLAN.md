@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 12 / 25 tasks.**
+**IN PROGRESS — 13 / 27 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓░░░░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓░░░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -409,41 +409,90 @@ Two round trips per frame is 11.6 ms of the 50 ms available at 20 Hz. That is
 workable but not free, so the design below wants one I2C transaction per pin
 per frame and no chatter.
 
-### 6.3 Design: a bridge-backed busio.I2C, not a bridge-backed drive train
+### 6.3 Design: the MCU emits the servo PWM; no PCA9685 on this board
 
-Two ways to expose the PCA9685 through the MCU:
+**This supersedes an earlier version of this section, which was wrong.** It
+had Linux driving a PCA9685 over raw I2C through the bridge, on the grounds
+that the MCU could not produce servo pulses. That grounding was mistaken.
 
-1. **The sketch owns the PCA9685** and provides `set_pwm(channel, duty)`.
-   Fewer round trips, but it reimplements the driver in C++ and only ever
-   serves this one chip.
-2. **The sketch exposes raw I2C transfers** — `i2c_write`,
-   `i2c_write_read` — and Linux keeps the driver.
+What is true is narrower: **`analogWrite()` cannot do servo PWM.** It calls
+`pwm_set_pulse_dt()`, which takes the period from the devicetree, and the
+overlay fixes every PWM pin at `PWM_HZ(500)`. But `pwm_set_dt()` sets period
+*and* pulse, and a sketch can call it directly, so the real limit is only
+what each timer can reach given its devicetree prescaler and counter width.
 
-**Take option 2.** A `BridgeI2C` class implementing the same `busio.I2C`
-surface as `ExplicitBusI2C` means `adafruit_pca9685`, `pins.py`,
-`actuator.py` and every test from Phase 1 work unchanged — only the bus
-object differs. It also generalises: any I2C device on the header (IMU, OLED)
-becomes reachable by the same route, which is most of Phase 4.1 for free.
+Measured on the board with `arduino/unoq_pwm_probe/`, which asks the driver
+to program a real 20 ms / 1.5 ms signal and reports Zephyr's return code:
 
-The cost is round trips per driver operation. Setting a channel's duty cycle
-is a single 5-byte write to the four channel registers, so it stays at one
-RPC per pin per frame, matching option 1. Board init costs a handful more,
-once.
+| Pin | Timer | cycles/sec | step | counts per 20 ms | 20 ms accepted | rejects 1 s | verdict |
+|---|---|---|---|---|---|---|---|
+| **D2** | TIM2_CH2 | 32 MHz | 31 ns | 640,000 | yes | no | **good** — TIM2 is 32-bit, so it genuinely reaches these periods |
+| D3 | TIM3_CH3 | 32 MHz | 31 ns | 640,000 | yes | **no** | **avoid** |
+| **D5** | TIM1_CH4 | 2.5 MHz | 400 ns | 50,000 | yes | yes | **good** |
+| D7 | TIM8_CH4N | 2.5 MHz | 400 ns | 50,000 | yes | yes | usable, but complementary output |
+| D9 | TIM4_CH3 | 32 MHz | 31 ns | 640,000 | yes | **no** | **avoid** |
+| D13 | TIM1_CH1N | 2.5 MHz | 400 ns | 50,000 | yes | yes | usable, but complementary output |
+
+The "rejects 1 s" column is what makes this trustworthy. TIM1 and TIM8 refuse
+an impossible 1-second period with `-134` (`-ENOTSUP`), so the driver is
+validating and their `0` at 20 ms means something. TIM3 and TIM4 accept a
+**10-second** period, which a 16-bit counter cannot hold at 32 MHz, so they
+are not validating and their `0` proves nothing — the waveform on those pins
+is unverified and probably wrong.
+
+That matters because D9 and D10 are the pins an Arduino habit would reach for
+first, and they are exactly the ones to avoid.
+
+**Use D2 (TIM2_CH2) for one channel and D5 (TIM1_CH4) for the other.** Both
+are validated, both are plain non-complementary outputs, and 400 ns is still
+2,500 steps across a 1000 µs servo range — far finer than a servo resolves.
+
+Still unproven in software: `rc == 0` says the driver programmed the period,
+not that the pad carries a correct waveform. Confirming that wants a servo or
+a scope, which is task 5.3.
+
+So the Uno Q needs **no PCA9685 at all**, and no I2C for the drive train.
+This is the donkeyhat architecture: MCU reads the RC receiver and drives the
+servo and ESC; the host does vision and inference. `BridgeI2C` is dropped from
+the drive-train plan and kept only as the eventual route for *other* header
+I2C devices (IMU, OLED), which is Phase 4.1.
+
+### 6.3.1 Protocol: donkeycar's host side already exists
+
+The RC hat's `code.py` writes `b"%i, %i\r\n"` at 40 Hz and reads a
+fixed-width 4+4 character command, which is exactly what
+`donkeycar/parts/robohat.py` speaks — `RoboHATController` for RC input and
+`RoboHATDriver` for output, under `DRIVE_TRAIN_TYPE = "MM1"`, with the
+scaling, trim and bounds logic already written and field-tested.
+
+So the sketch should carry MM1 semantics: two pulse widths in microseconds
+each way. Over the bridge rather than a UART, because `/dev/ttyHS1` (the
+SoC-to-MCU UART, already at 115200) is held exclusively by `arduino-router`,
+which also drives MCU reset via `gpiochip1`. Taking the UART would mean
+disabling the router and losing App Lab; the bridge costs 5.79 ms per round
+trip, and RC input can be *pushed* with `Bridge.notify` so only the output
+direction pays it.
 
 ### 6.4 Tasks
 
 - [x] **5.1** Commit the diagnostic sketch and record §6's findings.
-- [ ] **5.2** Add an MCU sketch under `arduino/` that owns no device but
-      provides `i2c_write`, `i2c_write_read` and `i2c_scan` over the bridge
-      for a selectable `Wire` instance.
-- [ ] **5.3** Add `BridgeI2C` to `i2c_bus.py`: the same `busio.I2C` surface
-      as `ExplicitBusI2C`, backed by those bridge calls, with unit tests
-      against a fake bridge.
-- [ ] **5.4** Let the PCA9685 pin provider select a bus implementation, so a
-      pin id can name the bridge rather than a `/dev/i2c-N`, and add the
-      config plumbing.
-- [ ] **5.5** Pin down how donkeycar gets `arduino_app_bricks` (vendored,
-      git dependency, or asking Arduino to publish it) and add it to the
-      `unoq` extra.
-- [ ] **5.6** Measure the real drive loop with both pins on the bridge and
+- [x] **5.2** Establish whether the MCU can emit servo PWM directly, which
+      pins are trustworthy, and at what resolution (§6.3). Supersedes the
+      PCA9685-over-bridge design.
+- [ ] **5.3** Write the donkeyhat-equivalent sketch: three RC channels in via
+      `attachInterrupt`/`micros`, two servo outputs via `pwm_set_dt` on D2 and
+      D5, RC values pushed with `Bridge.notify` at ~40 Hz, and a provided
+      `set_pulse(steering, throttle)`. Confirm the waveform against a real
+      servo or scope, closing §6.3's open point.
+- [ ] **5.4** Add a `UnoQRcHat` donkeycar part reusing `robohat.py`'s scaling
+      and trim logic over the bridge instead of a serial port, with
+      hardware-free tests against a fake bridge.
+- [ ] **5.5** Pin down how donkeycar gets `arduino_app_bricks` (vendored, git
+      dependency, or ask Arduino to publish it) and add it to the `unoq`
+      extra.
+- [ ] **5.6** Drop the PCA9685 packages from the `unoq` extra — the board does
+      not need them — keeping them in `pi` and `nano`.
+- [ ] **5.7** Measure the real drive loop with the bridge drive train and
       confirm 20 Hz holds.
+- [ ] **5.8** Wire encoders, as the RC hat does, and feed donkeycar's
+      odometry parts.

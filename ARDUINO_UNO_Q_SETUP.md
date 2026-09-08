@@ -10,7 +10,7 @@ on a real board; see `ARDUINO_UNO_Q_PLAN.md` for the work still outstanding.
 |---|---|
 | Camera | **Yes** — OpenCV reads `/dev/video0`. Use `CAMERA_TYPE = "CVCAM"`. |
 | Autopilot inference | **Yes** — `ai-edge-litert` imports, so `.tflite` models run. |
-| PCA9685 servo/ESC output | **Not yet** if wired to the UNO header — those pins belong to the STM32, not Linux. See "The header pins belong to the MCU". |
+| Servo/ESC output | **Not yet wired up in donkeycar**, but the MCU can do it directly — no PCA9685 needed. See "Servo PWM from the MCU". |
 | `RPI_GPIO` / `PIGPIO` pin providers | **No** — both are Raspberry Pi only. |
 | `parts/imu.py`, `parts/lidar.py`, `parts/oled.py` | **No** — see "Blinka" below. |
 | `donkey ui` | Not installed by the `unoq` extra; see "Optional: kivy". |
@@ -88,10 +88,43 @@ is Phase 5 of `ARDUINO_UNO_Q_PLAN.md` and is not finished yet. A round trip
 through the bridge to the MCU measures ~5.8 ms median, so two per frame fits
 inside a 20 Hz loop.
 
-`arduino/unoq_i2c_scan/` is a diagnostic sketch for exactly this check:
+## Servo PWM from the MCU
+
+The Uno Q does **not** need a PCA9685. The MCU drives the steering servo and
+ESC directly, as the DIY Robocars RC hat does.
+
+`analogWrite()` will not do it — it calls `pwm_set_pulse_dt()`, which takes
+the period from the devicetree, and the overlay pins every PWM channel at
+500 Hz. Call Zephyr's `pwm_set_dt()` from the sketch instead, which sets
+period and pulse together.
+
+**Use D2 and D5.** Measured on the board (`arduino/unoq_pwm_probe/`):
+
+| Pin | Timer | step | verdict |
+|---|---|---|---|
+| **D2** | TIM2_CH2 | 31 ns | good — 32-bit counter |
+| **D5** | TIM1_CH4 | 400 ns | good |
+| D7, D13 | TIM8/TIM1 | 400 ns | usable, but complementary outputs |
+| D3, D9 | TIM3/TIM4 | — | **avoid** |
+
+Avoid D3 and D9 even though they *appear* to work. A 20 ms frame needs 640,000
+counts at their 32 MHz clock, which a 16-bit counter cannot hold, and the
+driver does not validate: those pins accept a 10-second period and return
+success. TIM1 and TIM8 correctly reject an impossible period with `-ENOTSUP`,
+so their success means something. D9 and D10 are the pins Arduino habit
+reaches for first, and they are the wrong ones here.
+
+400 ns still gives 2,500 steps across a 1000 µs servo range, far finer than a
+servo resolves.
+
+## Diagnostic sketches
+
+`arduino/unoq_i2c_scan/` scans the MCU's three `Wire` buses and reports over
+the bridge; `arduino/unoq_pwm_probe/` reports which pins can carry servo PWM
+and at what resolution. Build and flash either with:
 
 ```bash
-cd arduino/unoq_i2c_scan
+cd arduino/unoq_pwm_probe      # or arduino/unoq_i2c_scan
 arduino-cli compile --fqbn arduino:zephyr:unoq .
 arduino-cli upload  --fqbn arduino:zephyr:unoq .   # overwrites the MCU sketch
 ```
