@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 1 / 19 tasks.**
+**IN PROGRESS — 2 / 19 tasks.**
 
-Phase 0 ▓░░ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
+Phase 0 ▓▓░ · Phase 1 ░░░░░ · Phase 2 ░░░ · Phase 3 ░░░░ · Phase 4 ░░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -241,12 +241,15 @@ None of these block Phases 0–1, but all block Phase 3:
 ### Phase 0 — install path
 
 - [x] **0.1** Add the `unoq` extra to `pyproject.toml` per §1.5.
-- [ ] **0.2** Add `docs/unoq.md`: the `build-essential python3-dev` finding
-      and why it is no longer needed after 0.1, `usermod -aG i2c arduino`,
-      the `i2c-tools` hint, and the §3 power/level-shift warnings.
+- [x] **0.2** Add `ARDUINO_UNO_Q_SETUP.md`: the `build-essential
+      python3-dev` finding and why it is no longer needed after 0.1,
+      `usermod -aG i2c arduino`, the `i2c-tools` hint, and the §3
+      power/level-shift warnings. (Not `docs/`: that directory was removed
+      from the repo in #875, and root-level `*_MIGRATION.md` is the
+      surviving convention.)
 - [ ] **0.3** Verify on the board that `uv pip install -e ".[unoq]"` succeeds
       in a *fresh* venv with the compiler uninstalled, proving 0.1 removed
-      the toolchain requirement. Record the result in `docs/unoq.md`.
+      the toolchain requirement. Record the result in `ARDUINO_UNO_Q_SETUP.md`.
 
 ### Phase 1 — I2C and the PCA9685
 
@@ -273,7 +276,7 @@ None of these block Phases 0–1, but all block Phase 3:
 - [ ] **2.2** Create a car on the board and confirm `manage.py drive` starts,
       serves the web controller, and streams camera frames — with the
       actuator pins still unwired.
-- [ ] **2.3** Note in `docs/unoq.md` that `donkey ui` is not installed by the
+- [ ] **2.3** Note in `ARDUINO_UNO_Q_SETUP.md` that `donkey ui` is not installed by the
       `unoq` extra, and how to add kivy if wanted.
 
 ### Phase 3 — on-car validation (needs the wired car)
