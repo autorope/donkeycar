@@ -24,8 +24,9 @@ Config (see the unoq section of myconfig.py):
     UNOQ_STOPPED_PWM      pulse width for neutral throttle
     UNOQ_MAX_REVERSE      pulse width for full reverse
 """
-from typing import Optional
+from typing import Dict, Optional
 import logging
+import threading
 import time
 
 import donkeycar as dk
@@ -39,16 +40,42 @@ PULSE_MIN = 500
 PULSE_MAX = 2500
 
 
+# A car built with both parts must not open two connections to the router, so
+# they are cached per address.  The template then just constructs both parts
+# without having to thread a bridge between them.
+_bridges: Dict[str, UnoQBridge] = {}
+_bridges_lock = threading.Lock()
+
+
 def _shared_bridge(cfg, bridge: Optional[UnoQBridge] = None) -> UnoQBridge:
     """
-    Both parts want the same connection, and a car uses both, so allow one to
-    be passed in rather than opening two.
+    :param bridge: an existing connection to use; tests pass a fake here,
+                   which also bypasses the cache
+    :return: the connection for this config's router address
     """
     if bridge is not None:
         return bridge
     address = getattr(cfg, "UNOQ_BRIDGE_ADDRESS",
                       "unix:///var/run/arduino-router.sock")
-    return UnoQBridge(address)
+    with _bridges_lock:
+        existing = _bridges.get(address)
+        if existing is not None:
+            return existing
+        created = UnoQBridge(address)
+        _bridges[address] = created
+        return created
+
+
+def reset_shared_bridges() -> None:
+    """Close and forget the cached connections.  For tests and teardown."""
+    with _bridges_lock:
+        cached = list(_bridges.values())
+        _bridges.clear()
+    for b in cached:
+        try:
+            b.close()
+        except Exception as e:
+            logger.warning(f"Error closing bridge {b}: {e}")
 
 
 class UnoQRcHatDriver:

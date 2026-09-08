@@ -148,6 +148,7 @@ NETWORK_JS_SERVER_IP = None
 # "DC_STEER_THROTTLE" uses HBridge pwm to control one steering dc motor, and one drive wheel motor
 # "DC_TWO_WHEEL" uses HBridge in 2-pin mode to control two drive motors, one on the left, and one on the right.
 # "DC_TWO_WHEEL_L298N" using HBridge in 3-pin mode to control two drive motors, one of the left and one on the right.
+# "UNOQ" Arduino UNO Q, servo and ESC driven by the board's own MCU
 # "MOCK" no drive train.  This can be used to test other features in a test rig.
 # "VESC" VESC Motor controller to set servo angle and duty cycle
 
@@ -160,6 +161,7 @@ NETWORK_JS_SERVER_IP = None
 # "DC_TWO_WHEEL": Differential drive (tank style), 2 Pin HBridge
 # "DC_TWO_WHEEL_L298N": Differential drive (tank style), 3 Pin HBridge
 # "VESC": VESC Motor Controller
+# "UNOQ": Arduino UNO Q (MCU drives the servo and ESC)
 DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
 
 # Configuration for PWM_STEERING_THROTTLE (Standard RC Car)
@@ -390,6 +392,24 @@ MM1_STOPPED_PWM = 1500
 MM1_MAX_REVERSE = 1000
 MM1_SHOW_STEERING_VALUE = False
 MM1_SERIAL_PORT = '/dev/ttyAMA0'
+
+#
+# Configuration for DRIVE_TRAIN_TYPE = "UNOQ" and CONTROLLER_TYPE = "UNOQ"
+#
+# On the Arduino UNO Q the header pins belong to the board's STM32 MCU rather
+# than to Linux, so the steering servo, the ESC and any RC receiver are all
+# reached through the MCU.  Flash arduino/unoq_rc_hat/ to it first; see
+# ARDUINO_UNO_Q_SETUP.md.
+#
+# Pulse widths below are in microseconds, as for the MM1.  Find the real
+# values for your car with `donkey calibrate` rather than trusting these.
+UNOQ_BRIDGE_ADDRESS = 'unix:///var/run/arduino-router.sock'
+UNOQ_STEERING_MID = 1500      # pulse width for straight ahead
+UNOQ_MAX_FORWARD = 2000       # pulse width for full throttle
+UNOQ_STOPPED_PWM = 1500       # pulse width for neutral throttle
+UNOQ_MAX_REVERSE = 1000       # pulse width for full reverse
+UNOQ_SHOW_STEERING_VALUE = False
+UNOQ_RC_POLL = False          # True polls the MCU instead of receiving pushes
 
 
 # ------------------------------------------------------------------------------

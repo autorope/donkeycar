@@ -15,7 +15,9 @@ msgpack = pytest.importorskip("msgpack")
 from donkeycar.parts.unoq_bridge import (  # noqa: E402
     UnoQBridge, UnoQBridgeError, DEFAULT_ADDRESS,
 )
-from donkeycar.parts.unoq import UnoQRcHatDriver, UnoQRcHatController  # noqa: E402
+from donkeycar.parts.unoq import (  # noqa: E402
+    UnoQRcHatDriver, UnoQRcHatController, reset_shared_bridges,
+)
 
 
 class FakeSocket:
@@ -412,4 +414,62 @@ def test_controller_polling_ignores_a_short_reply():
     c = UnoQRcHatController(cfg_stub(UNOQ_RC_POLL=True), bridge=b)
     c.read_rc()
     assert c.angle == 0.0
+    b.close()
+
+
+#
+# ----- one connection shared by both parts -----
+#
+def test_both_parts_share_one_connection(monkeypatch):
+    """
+    A car uses the driver and the controller together.  Opening two
+    connections to the router for that would be wasteful and confusing.
+    """
+    import donkeycar.parts.unoq as unoq
+    opened = []
+
+    def fake_bridge(address):
+        sock = FakeSocket({"set_pulse": lambda st, th: 0})
+        b = make_bridge(sock)
+        opened.append(b)
+        return b
+
+    monkeypatch.setattr(unoq, "UnoQBridge", fake_bridge)
+    reset_shared_bridges()
+    try:
+        cfg = cfg_stub()
+        d = UnoQRcHatDriver(cfg)
+        c = UnoQRcHatController(cfg)
+        assert d.bridge is c.bridge
+        assert len(opened) == 1
+    finally:
+        reset_shared_bridges()
+
+
+def test_reset_shared_bridges_closes_and_forgets(monkeypatch):
+    import donkeycar.parts.unoq as unoq
+    socks = []
+
+    def fake_bridge(address):
+        sock = FakeSocket({"set_pulse": lambda st, th: 0})
+        socks.append(sock)
+        return make_bridge(sock)
+
+    monkeypatch.setattr(unoq, "UnoQBridge", fake_bridge)
+    reset_shared_bridges()
+    UnoQRcHatDriver(cfg_stub())
+    reset_shared_bridges()
+    assert socks[0].closed
+    UnoQRcHatDriver(cfg_stub())
+    assert len(socks) == 2      # a fresh connection after a reset
+    reset_shared_bridges()
+
+
+def test_an_explicit_bridge_bypasses_the_cache():
+    sock = FakeSocket({"set_pulse": lambda st, th: 0})
+    b = make_bridge(sock)
+    d = UnoQRcHatDriver(cfg_stub(), bridge=b)
+    assert d.bridge is b
+    import donkeycar.parts.unoq as unoq
+    assert unoq._bridges == {}
     b.close()

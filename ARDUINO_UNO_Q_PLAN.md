@@ -1,8 +1,8 @@
 # Plan: run donkeycar on the Arduino Uno Q
 
-**IN PROGRESS — 17 / 27 tasks.**
+**IN PROGRESS — 18 / 27 tasks.**
 
-Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓▓▓▓▓░░
+Phase 0 ▓▓▓ · Phase 1 ▓▓▓▓▓ · Phase 2 ▓▓▓ · Phase 3 ░░░░ · Phase 4 ░░░░ · Phase 5 ▓▓▓▓▓▓▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -364,6 +364,27 @@ whether `nano` should be re-pinned or retired is a separate call. Task 1.5
 swapped its PCA9685 driver along with the Pi's for consistency, which changes
 nothing about this conflict either way.
 
+**`POST /drive` cannot start recording, and this is nothing to do with the
+Uno Q.** `DriveAPI.post` in `parts/web_controller/web.py` sets
+`application.recording`, but `LocalWebController.run_threaded` takes
+`recording` as an *input* wired from `ToggleRecording`'s *output*:
+
+```python
+if recording is not None and self.recording != recording:
+    self.recording = recording     # clobbers what the POST just set
+```
+
+So the POSTed value is overwritten on the next loop tick before
+`ToggleRecording` ever sees it. The websocket path (`WebSocketDriveAPI`) also
+sets `recording_latch`, which is applied after that block and therefore
+survives — which is why the browser UI records correctly and only the plain
+HTTP API is affected. `drive_mode` looks to have the same asymmetry:
+`DriveAPI` sets `mode` without `mode_latch`.
+
+Not fixed here because it is outside this work and the browser is unaffected;
+worth its own change. Found while trying to measure the loop rate through the
+HTTP API, which is why the measurement now uses the websocket.
+
 **A side benefit for the Pi.** Because task 1.5 removed the last dependency on
 `Adafruit_PCA9685`, `donkeycar[pi]` no longer pulls `Adafruit-GPIO` and so no
 longer pulls `spidev` — the `pi` extra now resolves to 79 packages with no
@@ -512,10 +533,32 @@ direction pays it.
       `import board`, which raises on this board, so the extra was installing
       things that cannot work. They return if Phase 4.1 routes I2C through
       the MCU.)
-- [ ] **5.7** Measure the real drive loop with the bridge drive train and
-      confirm 20 Hz holds.
+- [x] **5.7** Measure the real drive loop with the bridge drive train and
+      confirm 20 Hz holds. (**19.93 Hz** over 400 loops; recording at
+      **19.8 Hz**, 200 frames in 10.1 s.)
 - [ ] **5.8** Wire encoders, as the RC hat does, and feed donkeycar's
       odometry parts.
+
+### 6.6 A driveable car
+
+`DRIVE_TRAIN_TYPE = "UNOQ"` in `complete.py` builds a car from these parts,
+and `CONTROLLER_TYPE = "UNOQ"` adds RC input for anyone with a receiver.
+Both are wired next to the MM1's, and `UNOQ` joins `MM1` and `pigpio_rc` in
+the checks that skip joystick-only button wiring.
+
+Measured on the board, driving from the web controller with a servo attached:
+
+| | |
+|---|---|
+| Drive loop | **19.93 Hz** — 400 steps in 20.07 s against a 20 Hz target |
+| Recording while steering | **19.8 Hz** — 200 frames and 200 images in 10.1 s |
+| Web angle → pulse | −1.0 → 750 µs, −0.5 → 1125, 0 → 1500, 0.5 → 1875, 1.0 → 2250 |
+| CPU | 46% of one core, load average 0.17 |
+| Errors in the log | none |
+
+The failsafe was also confirmed the hard way: after `kill -9` of the drive
+process, so `shutdown()` never ran, the MCU was left at `1500, 1500, 1` —
+throttle neutralised and the tripped flag set.
 
 ### 6.5 Verified against real hardware
 

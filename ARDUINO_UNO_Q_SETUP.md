@@ -10,7 +10,9 @@ on a real board; see `ARDUINO_UNO_Q_PLAN.md` for the work still outstanding.
 |---|---|
 | Camera | **Yes** — OpenCV reads `/dev/video0`. Use `CAMERA_TYPE = "CVCAM"`. |
 | Autopilot inference | **Yes** — `ai-edge-litert` imports, so `.tflite` models run. |
-| Servo/ESC output | **Not yet wired up in donkeycar**, but the MCU can do it directly — no PCA9685 needed. See "Servo PWM from the MCU". |
+| Servo/ESC output | **Yes** — `DRIVE_TRAIN_TYPE = "UNOQ"`, driven by the board's own MCU. No PCA9685 needed. |
+| Driving from a browser | **Yes** — 19.93 Hz loop, recording at 19.8 Hz. |
+| Driving from an RC transmitter | Code is in place (`CONTROLLER_TYPE = "UNOQ"`) but **untested** — no receiver was available. |
 | `RPI_GPIO` / `PIGPIO` pin providers | **No** — both are Raspberry Pi only. |
 | `parts/imu.py`, `parts/lidar.py`, `parts/oled.py` | **No** — see "Blinka" below. |
 | `donkey ui` | Not installed by the `unoq` extra; see "Optional: kivy". |
@@ -216,32 +218,40 @@ IMAGE_W = 160
 IMAGE_H = 120
 IMAGE_DEPTH = 3
 
-# --- drive train: steering servo + ESC on a PCA9685 ---
-DRIVE_TRAIN_TYPE = "PWM_STEERING_THROTTLE"
-PCA9685_I2C_BUSNUM = 1         # set to the bus you found; see "Find the bus"
-PCA9685_I2C_ADDR = 0x40
-PWM_STEERING_THROTTLE = {
-    "PWM_STEERING_PIN": "PCA9685.1:40.1",
-    "PWM_STEERING_SCALE": 1.0,
-    "PWM_STEERING_INVERTED": False,
-    "PWM_THROTTLE_PIN": "PCA9685.1:40.0",
-    "PWM_THROTTLE_SCALE": 1.0,
-    "PWM_THROTTLE_INVERTED": False,
-    # replace these five with what `donkey calibrate` gives you
-    "STEERING_LEFT_PWM": 460,
-    "STEERING_RIGHT_PWM": 290,
-    "THROTTLE_FORWARD_PWM": 500,
-    "THROTTLE_STOPPED_PWM": 370,
-    "THROTTLE_REVERSE_PWM": 220,
-}
+# --- drive train: servo and ESC driven by the board's own MCU ---
+# Flash arduino/unoq_rc_hat/ to the MCU first.  Steering goes to D2,
+# throttle to D5; see "Servo PWM from the MCU" for why those pins.
+DRIVE_TRAIN_TYPE = "UNOQ"
+UNOQ_STEERING_MID = 1500       # pulse width for straight ahead
+UNOQ_MAX_FORWARD = 2000        # full throttle
+UNOQ_STOPPED_PWM = 1500        # neutral
+UNOQ_MAX_REVERSE = 1000        # full reverse
+
+# Optional: drive from an RC transmitter instead of the browser.
+# Untested -- no receiver was available.  Channels on D3, D4, D6.
+# CONTROLLER_TYPE = "UNOQ"
 
 # --- autopilot: train off-board, run a .tflite here ---
 DEFAULT_MODEL_TYPE = "tflite_linear"
 ```
 
-The steering and throttle PWM values above are the template's defaults, **not
-calibration values for your car**. Run `donkey calibrate` and replace them, or
-the car will drive its servo into its end stops.
+The pulse widths above are conservative defaults, **not calibration values
+for your car**. Run `donkey calibrate` and replace them, or the steering
+linkage will be driven past the wheels' lock.
+
+Then drive it:
+
+```bash
+cd ~/mycar
+python manage.py drive
+```
+
+and open `http://<board>:8887/drive`. Measured on the board: a 19.93 Hz drive
+loop and recording at 19.8 Hz, at 46% of one core.
+
+If the drive train cannot reach the MCU you will see
+`Cannot reach arduino-router at /var/run/arduino-router.sock` — check that
+`arduino-router.service` is running and that the sketch is flashed.
 
 Train on a real machine and copy the `.tflite` across. Do not install
 tensorflow or torch on the board.
