@@ -317,3 +317,88 @@ class InputControllerEvents:
 
 
 _FOREVER = float('inf')
+
+
+def _monitor() -> None:
+    """
+    Print a controller's events as they happen.
+
+        python -m donkeycar.parts.controls.events --type xbox
+
+    For seeing what a controller reports before binding anything to it, and
+    for checking that press, release, click and hold arrive when expected.
+    A car prints its control map at startup but not the event stream, and
+    the timing is the part worth watching: a single click should not appear
+    until the double-click window has closed, and a long press should
+    publish a hold and then no click at all.
+    """
+    import argparse
+    import threading
+
+    from donkeycar.memory import Memory
+    from donkeycar.parts.controls.factory import CONTROLLER_TYPES, get_input_controller
+
+    parser = argparse.ArgumentParser(
+        prog='donkeycar.parts.controls.events',
+        description="Print a controller's events as they happen.")
+    parser.add_argument('--type', default='xbox',
+                        choices=sorted(CONTROLLER_TYPES),
+                        help='controller type (default: xbox)')
+    parser.add_argument('--dev', default='/dev/input/js0',
+                        help='device file (default: /dev/input/js0)')
+    parser.add_argument('--epsilon', type=float, default=0.0,
+                        help='axis jitter deadband; 0 reports every change')
+    parser.add_argument('--rate', type=float, default=20.0,
+                        help='loop rate in Hz, as a car would run (default: 20)')
+    args = parser.parse_args()
+
+    class Config:
+        CONTROLLER_TYPE = args.type
+        JOYSTICK_DEVICE_FILE = args.dev
+        JOYSTICK_AXIS_EPSILON = args.epsilon
+
+    memory = Memory()
+    controller = get_input_controller(Config())
+    part = InputControllerEvents(memory=memory, controller=controller)
+
+    reader = threading.Thread(target=part.update, daemon=True)
+    reader.start()
+
+    time.sleep(1.5)
+    print(f'axes   : {", ".join(getattr(controller, "axis_map", ()))}')
+    print(f'buttons: {", ".join(getattr(controller, "button_map", ()))}')
+    print()
+    print('Press buttons and move sticks.  Ctrl-C to stop.')
+    print('-' * 64)
+
+    started = time.monotonic()
+    interval = 1.0 / args.rate
+    try:
+        while part.running:
+            loop_end = time.monotonic() + interval
+            part.run_threaded()
+
+            elapsed = time.monotonic() - started
+            for key in sorted(memory.keys()):
+                if key.startswith((BUTTON_EVENT, AXIS_EVENT)):
+                    value = memory[key]
+                    shown = f'{value:+.4f}' if key.startswith(AXIS_EVENT) else ''
+                    print(f'{elapsed:8.3f}s  {key:<44} {shown}')
+
+            delay = loop_end - time.monotonic()
+            if delay > 0:
+                time.sleep(delay)
+    except KeyboardInterrupt:
+        print('\nstopping...')
+    finally:
+        part.shutdown()
+
+    print('-' * 64)
+    print('control states at exit:')
+    for key in sorted(memory.keys()):
+        if key.startswith((BUTTON_STATE, AXIS_STATE)):
+            print(f'  {key:<44} {memory[key]}')
+
+
+if __name__ == '__main__':
+    _monitor()

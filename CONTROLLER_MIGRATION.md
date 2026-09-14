@@ -346,5 +346,16 @@ Start the car and read the first few lines.  It prints the controls your
 pad reports and the behavior each is bound to, which answers most of these
 questions faster than this document does.
 
+To watch the events themselves — which is what you want when a button seems
+not to work, or when you are choosing between `click/1`, `click/2` and
+`hold`:
+
+```bash
+python -m donkeycar.parts.controls.events --type xbox
+```
+
+It prints every event as it happens, at the rate a car runs, so the timing
+you see is the timing a behavior will get.
+
 If something here is wrong or missing, say so on
 [#1097](https://github.com/autorope/donkeycar/issues/1097).
