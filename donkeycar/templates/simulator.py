@@ -22,10 +22,28 @@ import numpy as np
 
 import donkeycar as dk
 
-from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger
+from donkeycar.parts.transform import TriggeredCallback, DelayedTrigger, Lambda
 from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, JoystickController, WebFpv
+from donkeycar.parts.controller import LocalWebController, WebFpv
+from donkeycar.parts.controls import (
+    BehaviorEventMapper,
+    InputControllerEvents,
+    NetworkedController,
+    RealSerialPort,
+    RoboHATController,
+    EraseLastNRecords,
+    ShowRecordCount,
+    TogglePilotMode,
+    ToggleRecording,
+    UserSteering,
+    UserThrottle,
+    ZmqSubscriber,
+    get_behavior_map,
+    get_input_controller,
+)
+from donkeycar.parts.controls import mapping as behaviors
+from donkeycar.parts.controls.behaviors import AutoRecordOnThrottle
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -70,38 +88,57 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
 
     V.add(cam, inputs=inputs, outputs=['cam/image_array'], threaded=threaded)
 
-    if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
-        #modify max_throttle closer to 1.0 to have more power
-        #modify steering_scale lower than 1.0 to have less responsive steering
+    has_joystick = use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT
+    if has_joystick:
+        #
+        # The controller reports which of its controls moved and nothing
+        # else; the parts bound to behaviors below decide what that means.
+        # Scale and direction are JOYSTICK_MAX_THROTTLE and
+        # JOYSTICK_STEERING_SCALE, applied by those parts.
+        #
         if cfg.CONTROLLER_TYPE == "MM1":
-            from donkeycar.parts.robohat import RoboHATController            
-            ctr = RoboHATController(cfg)
-        elif "custom" == cfg.CONTROLLER_TYPE:
-            #
-            # custom controller created with `donkey createjs` command
-            #
-            from my_joystick import MyJoystickController
-            ctr = MyJoystickController(
-                throttle_dir=cfg.JOYSTICK_THROTTLE_DIR,
-                throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-                steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-                auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
-            ctr.set_deadzone(cfg.JOYSTICK_DEADZONE)
+            controller = RoboHATController(
+                port=RealSerialPort(cfg.MM1_SERIAL_PORT),
+                steering_mid=cfg.MM1_STEERING_MID,
+                show_steering=cfg.MM1_SHOW_STEERING_VALUE)
+        elif cfg.USE_NETWORKED_JS:
+            controller = NetworkedController(
+                ZmqSubscriber(cfg.NETWORK_JS_SERVER_IP))
         else:
-            from donkeycar.parts.controller import get_js_controller
+            controller = get_input_controller(cfg)
 
-            ctr = get_js_controller(cfg)
+        V.add(InputControllerEvents(V.mem, controller), threaded=True)
 
-            if cfg.USE_NETWORKED_JS:
-                from donkeycar.parts.controller import JoyStickSub
-                netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-                V.add(netwkJs, threaded=True)
-                ctr.js = netwkJs
-        
-        V.add(ctr, 
-          inputs=['cam/image_array'],
-          outputs=['user/angle', 'user/throttle', 'user/mode', 'recording'],
-          threaded=True)
+        mapper = BehaviorEventMapper(V.mem, get_behavior_map(cfg))
+        mapper.show_map()
+        V.add(mapper)
+
+        #
+        # This template calls its steering 'user/angle', so it binds the
+        # driving parts itself rather than using complete.py's.
+        #
+        V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+                           dead_zone=cfg.JOYSTICK_DEADZONE),
+              inputs=[behaviors.STEERING], outputs=['user/angle'],
+              run_condition=behaviors.STEERING)
+        V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
+                           scale=cfg.JOYSTICK_MAX_THROTTLE,
+                           dead_zone=cfg.JOYSTICK_DEADZONE),
+              inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
+              run_condition=behaviors.THROTTLE)
+        V.add(TogglePilotMode(), inputs=['user/mode'], outputs=['user/mode'],
+              run_condition=behaviors.TOGGLE_PILOT_MODE)
+
+        if cfg.AUTO_RECORD_ON_THROTTLE:
+            V.add(AutoRecordOnThrottle(
+                      dead_zone=cfg.JOYSTICK_DEADZONE,
+                      record_in_autopilot=getattr(cfg, 'RECORD_DURING_AI', False)),
+                  inputs=['user/throttle', 'user/mode'],
+                  outputs=['recording'])
+        else:
+            V.add(ToggleRecording(), inputs=['recording'],
+                  outputs=['recording'],
+                  run_condition=behaviors.TOGGLE_RECORDING)
 
     else:
         #This web controller will create a web server that is capable
@@ -214,12 +251,14 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     rec_tracker_part = RecordTracker()
     V.add(rec_tracker_part, inputs=["tub/num_records"], outputs=['records/alert'])
 
-    if cfg.AUTO_RECORD_ON_THROTTLE and isinstance(ctr, JoystickController):
-        #then we are not using the circle button. hijack that to force a record count indication
-        def show_record_acount_status():
-            rec_tracker_part.last_num_rec_print = 0
-            rec_tracker_part.force_alert = 1
-        ctr.set_button_down_trigger('circle', show_record_acount_status)
+    #
+    # Announcing the record count is bound like anything else now.  It used
+    # to hijack the circle button whenever auto-record-on-throttle had made
+    # manual recording unavailable, on the reasoning that it was spare.
+    #
+    if has_joystick:
+        V.add(ShowRecordCount(rec_tracker_part),
+              run_condition=behaviors.SHOW_RECORD_COUNT)
 
     # Use the FPV preview, which will show the cropped image output, or the full frame.
     if cfg.USE_FPV:
@@ -229,10 +268,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
     if cfg.TRAIN_BEHAVIORS:
         bh = BehaviorPart(cfg.BEHAVIOR_LIST)
         V.add(bh, outputs=['behavior/state', 'behavior/label', "behavior/one_hot_state_array"])
-        try:
-            ctr.set_button_down_trigger('L1', bh.increment_state)
-        except:
-            pass
+        V.add(Lambda(lambda: bh.increment_state()),
+              run_condition=behaviors.INCREMENT_BEHAVIOR_STATE)
 
         inputs = ['cam/image_array', "behavior/one_hot_state_array"]
     else:
@@ -350,8 +387,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         inputs=['user/mode', 'throttle'],
         outputs=['throttle'])
 
-    if isinstance(ctr, JoystickController):
-        ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
+    V.add(Lambda(lambda: aiLauncher.enable_ai_launch()),
+          run_condition=behaviors.ENABLE_AI_LAUNCH)
 
 
     class AiRunCondition:
@@ -409,15 +446,22 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         V.add(ImgArrToJpg(), inputs=['cam/image_array'], outputs=['jpg/bin'])
         V.add(pub, inputs=['jpg/bin'])
 
-    if type(ctr) is LocalWebController:
-        if cfg.DONKEY_GYM:
-            print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
-        else:
-            print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
-    elif isinstance(ctr, JoystickController):
+    if has_joystick:
+        # the behavior map was printed when it was added, so the driver can
+        # already see what their controller does
         print("You can now move your joystick to drive your car.")
-        ctr.set_tub(tub_writer.tub)
-        ctr.print_controls()
+    elif cfg.DONKEY_GYM:
+        print("You can now go to http://localhost:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+    else:
+        print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
+
+    #
+    # Throwing away the last few records, for when a run goes wrong.
+    #
+    if has_joystick:
+        V.add(EraseLastNRecords(tub_writer.tub,
+                                getattr(cfg, 'ERASE_LAST_N_RECORDS', 100)),
+              run_condition=behaviors.ERASE_RECORDS)
 
     #run the vehicle for 20 seconds
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
