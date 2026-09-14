@@ -213,6 +213,69 @@ If the drive train cannot reach the MCU you will see
 Train on a real machine and copy the `.tflite` across. Do not install
 tensorflow or torch on the board.
 
+## Why the sketch is C++ and not Python
+
+donkeycar is a Python project, and the two boards this drive train is modelled
+on — the Robo HAT MM1 and the DIY Robocars RC hat — both run **CircuitPython**
+on the microcontroller. So the obvious question is why `arduino/unoq_rc_hat/`
+is a `.ino`.
+
+**Because on the UNO Q the MCU cannot run Python, and does not need to.**
+
+The MM1 and the RC hat put a SAMD51 or an RP2040 on a car that has no Linux.
+The microcontroller is the only computer there, so everything — pulse maths,
+scaling, trim, the serial protocol — has to live on it, and CircuitPython is
+what makes that bearable. The UNO Q is a different machine: it *has* a Linux
+side, and Arduino's own model for it is
+["Python code running on Linux with C code running as a Sketch on the
+microcontroller"](https://docs.arduino.cc/tutorials/uno-q/user-manual/).
+
+So the Python did not go away, it moved to where the board puts it:
+
+| | MM1 / DIY hat | UNO Q |
+|---|---|---|
+| Pulse maths, scaling, trim | CircuitPython on the MCU | **Python** — `parts/unoq.py` |
+| Transport to the host | CircuitPython UART | **Python** — `parts/unoq_bridge.py` |
+| Pin timing and PWM generation | CircuitPython on the MCU | C++ sketch |
+
+What stays in C++ is only what must be on the MCU: interrupt-driven RC pulse
+capture, `pwm_set_dt()` output, and the failsafe.
+
+The failsafe is the clearest case. It neutralises the throttle when the host
+stops commanding — a crashed drive loop, a hung process, a killed ssh session.
+That was verified by `kill -9`-ing the drive process so its `shutdown()` never
+ran; the MCU returned the throttle to neutral on its own. Written in Python on
+the Linux side it would die alongside the very thing it exists to protect
+against.
+
+### Python on the MCU is not available today
+
+Checked on the board and upstream, as of this writing:
+
+- `arduino-cli core search micropython` → *"No platforms matching your
+  search."* The only core for this board is `arduino:zephyr`.
+- All 27 App Lab example sketches are `.ino`. None is Python. The `python/`
+  directories in those examples are the **Linux** half of an app.
+- CircuitPython has no STM32U5 port at all — the
+  [STM32 port](https://docs.circuitpython.org/en/latest/ports/stm/README.html)
+  covers F4, F7 and H7. A draft PR for the UNO Q (adafruit/circuitpython
+  #10674) was closed without merging.
+
+### The MicroPython alternative
+
+[MicroPython v1.28 does support STM32U5](https://www.cnx-software.com/2026/04/08/weact-stm32u585ciu6-core-mini-stm32u5-board-supported-by-micropython-v1-28/),
+so a Python MCU firmware is not impossible in principle — just not through
+Arduino's toolchain. Going that way would mean flashing MicroPython over the
+Zephyr firmware, which gives up the Arduino core, `Arduino_RouterBridge` and
+App Lab. The MCU would then talk over `/dev/ttyHS1` raw, and since that is
+already 115200 and the MM1 protocol is two pulse widths each way, donkeycar's
+existing `parts/robohat.py` would drive it with **no new Python part at all**.
+
+That is the most Pythonic end state and reuses the most existing code. It also
+means disabling `arduino-router`, which owns that UART and drives MCU reset
+over `gpiochip1`, and nobody appears to have run MicroPython on this board's
+STM32 yet. It is a spike worth doing before it is a plan worth committing to.
+
 ## Why there are no CircuitPython sensor drivers
 
 `adafruit-platformdetect` does not recognise the Uno Q — it reports both chip

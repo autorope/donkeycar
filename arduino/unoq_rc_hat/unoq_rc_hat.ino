@@ -7,6 +7,17 @@
  * it reads the RC receiver and emits the servo and ESC pulses.  Linux does
  * vision and inference.
  *
+ * Why C++ and not Python, when the MM1 and the DIY Robocars RC hat both use
+ * CircuitPython: those boards have no Linux, so the MCU is the only computer
+ * and everything must live on it.  The UNO Q has a Linux side, and that is
+ * where this drive train's Python lives -- parts/unoq.py and
+ * parts/unoq_bridge.py hold the pulse maths and the transport.  What is left
+ * here is only what must be on the MCU: pulse capture, PWM generation, and a
+ * failsafe that has to outlive a crashed host.  Python is also simply not
+ * available for this MCU today: there is no MicroPython core for the board and
+ * CircuitPython has no STM32U5 port.  See ARDUINO_UNO_Q_SETUP.md, "Why the
+ * sketch is C++ and not Python".
+ *
  * Why the bridge and not a serial port: /dev/ttyHS1 is the SoC-to-MCU UART
  * and is already at 115200, but arduino-router holds it exclusively and also
  * drives MCU reset over gpiochip1.  Taking it would mean disabling the router
