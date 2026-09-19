@@ -157,11 +157,23 @@ arduino-cli upload  --fqbn arduino:zephyr:unoq .   # overwrites the MCU sketch
 
 ## Talking to the MCU from a shell
 
-For bring-up and debugging, `unoq_bridge` has a command line. Activate the
-venv first; `donkeycar` is installed editable, so any directory works.
+For bring-up and debugging, `unoq_bridge` has a command line.
+
+**Activate the venv first.** There is no `python` outside it, and the system
+`python3` has no donkeycar:
+
+```bash
+source ~/env/bin/activate
+```
+
+Without that you get `python: command not found`, or
+`No module named 'donkeycar'`. If you would rather not activate, call the
+venv's interpreter directly: `~/env/bin/python -m donkeycar.parts.unoq_bridge ...`
 
 ```bash
 # what the MCU last applied: "steering, throttle, failsafe_tripped"
+# the third field is 1 when nothing has commanded for 500ms, which is normal
+# after a one-shot call like this -- it is the failsafe doing its job
 python -m donkeycar.parts.unoq_bridge get_last_pulse
 
 # command a pulse pair (microseconds)
