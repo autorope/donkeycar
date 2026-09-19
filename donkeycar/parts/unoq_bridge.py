@@ -311,3 +311,89 @@ class UnoQBridge:
     def __repr__(self) -> str:
         return (f"UnoQBridge(address={self.address!r}, "
                 f"{'closed' if self._closed else 'open'})")
+
+
+#
+# ----- command line -----
+#
+# Talking to the MCU from a shell, for bring-up and field debugging:
+#
+#   python -m donkeycar.parts.unoq_bridge get_last_pulse
+#   python -m donkeycar.parts.unoq_bridge set_pulse 1500 1500
+#   python -m donkeycar.parts.unoq_bridge --listen rc_input --seconds 3
+#
+def _coerce(value: str) -> Any:
+    """CLI args arrive as strings; send numbers as numbers."""
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+    import time
+
+    parser = argparse.ArgumentParser(
+        description="Call a method the Arduino UNO Q's MCU provides, or watch "
+                    "for values it pushes. Requires the arduino-router service "
+                    "and a sketch such as arduino/unoq_rc_hat/.")
+    parser.add_argument("method", nargs="?",
+                        help="method to call, e.g. get_last_pulse or set_pulse")
+    parser.add_argument("params", nargs="*",
+                        help="arguments to the method, e.g. 1500 1500")
+    parser.add_argument("-a", "--address", default=DEFAULT_ADDRESS,
+                        help=f"router address (default {DEFAULT_ADDRESS})")
+    parser.add_argument("-l", "--listen", default=None,
+                        help="instead of calling, print values the MCU pushes "
+                             "under this name, e.g. rc_input")
+    parser.add_argument("-s", "--seconds", type=float, default=3.0,
+                        help="how long to listen for (default 3)")
+    parser.add_argument("-t", "--timeout", type=float, default=5.0,
+                        help="seconds to wait for a reply (default 5)")
+    args = parser.parse_args()
+
+    if not args.method and not args.listen:
+        parser.error("give a method to call, or --listen NAME")
+
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    try:
+        bridge = UnoQBridge(args.address, timeout=args.timeout)
+    except (UnoQBridgeError, ImportError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        if args.listen:
+            count = 0
+
+            def _show(*values: Any) -> None:
+                global count
+                count += 1
+                print(f"{args.listen}: {', '.join(str(v) for v in values)}")
+
+            bridge.provide(args.listen, _show)
+            print(f"listening for {args.listen!r} for {args.seconds}s "
+                  f"(Ctrl-C to stop)")
+            try:
+                time.sleep(args.seconds)
+            except KeyboardInterrupt:
+                pass
+            print(f"{count} pushed in {args.seconds}s "
+                  f"({count / args.seconds:.1f} Hz)")
+            bridge.unprovide(args.listen)
+        else:
+            result = bridge.call(args.method,
+                                 *[_coerce(p) for p in args.params])
+            print(result)
+    except UnoQBridgeError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+    finally:
+        bridge.close()

@@ -155,6 +155,35 @@ arduino-cli compile --fqbn arduino:zephyr:unoq .
 arduino-cli upload  --fqbn arduino:zephyr:unoq .   # overwrites the MCU sketch
 ```
 
+## Talking to the MCU from a shell
+
+For bring-up and debugging, `unoq_bridge` has a command line. Activate the
+venv first; `donkeycar` is installed editable, so any directory works.
+
+```bash
+# what the MCU last applied: "steering, throttle, failsafe_tripped"
+python -m donkeycar.parts.unoq_bridge get_last_pulse
+
+# command a pulse pair (microseconds)
+python -m donkeycar.parts.unoq_bridge set_pulse 1500 1500
+
+# the RC receiver, as the MCU sees it: "steering, throttle, mode, age_ms"
+python -m donkeycar.parts.unoq_bridge get_rc
+
+# watch what the MCU pushes, and at what rate
+python -m donkeycar.parts.unoq_bridge --listen rc_input --seconds 3
+```
+
+`python -m donkeycar.parts.unoq_bridge --help` lists the rest. If the router
+is not running you get
+`Cannot reach arduino-router at /var/run/arduino-router.sock`.
+
+These are the same calls the drive train makes; the class behind them is
+`UnoQBridge` in `donkeycar/parts/unoq_bridge.py`. It is donkeycar's own
+MsgPack-RPC client, **not** part of Arduino's `arduino_app_bricks` — that
+package ships only inside App Lab's Docker image and is not installed on the
+board, which is why this speaks the router's protocol directly.
+
 ## Car configuration
 
 Create the car with the stock `complete` template. There is no separate Uno Q

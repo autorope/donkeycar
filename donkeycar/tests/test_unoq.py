@@ -13,7 +13,7 @@ import pytest
 msgpack = pytest.importorskip("msgpack")
 
 from donkeycar.parts.unoq_bridge import (  # noqa: E402
-    UnoQBridge, UnoQBridgeError, DEFAULT_ADDRESS,
+    UnoQBridge, UnoQBridgeError, DEFAULT_ADDRESS, _coerce,
 )
 from donkeycar.parts.unoq import (  # noqa: E402
     UnoQRcHatDriver, UnoQRcHatController, reset_shared_bridges,
@@ -473,3 +473,21 @@ def test_an_explicit_bridge_bypasses_the_cache():
     import donkeycar.parts.unoq as unoq
     assert unoq._bridges == {}
     b.close()
+
+
+#
+# ----- command line argument handling -----
+#
+@pytest.mark.parametrize("given,expected", [
+    ("1500", 1500), ("-1", -1), ("0", 0),
+    ("1.5", 1.5), ("-0.25", -0.25),
+    ("rc_input", "rc_input"), ("", ""),
+])
+def test_cli_coerces_numeric_arguments(given, expected):
+    """
+    Shell arguments arrive as strings, but set_pulse needs numbers -- sending
+    "1500" instead of 1500 would be a type error at the MCU.
+    """
+    result = _coerce(given)
+    assert result == expected
+    assert type(result) is type(expected)
