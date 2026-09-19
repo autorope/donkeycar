@@ -44,6 +44,14 @@ cd ~/projects/donkeycar
 uv pip install -e ".[unoq]"
 ```
 
+If you have no virtualenv yet, make one first — `--system-site-packages`
+matches how the board's stock venv is built:
+
+```bash
+uv venv --python 3.13 --system-site-packages ~/env   # or: python3 -m venv --system-site-packages ~/env
+source ~/env/bin/activate
+```
+
 No compiler is required, and that is verified rather than assumed: on a real
 board, `uv pip install -e ".[unoq]"` into a fresh venv with
 `CC=/bin/false CXX=/bin/false` resolves 69 packages, builds only `donkeycar`
@@ -169,6 +177,17 @@ source ~/env/bin/activate
 Without that you get `python: command not found`, or
 `No module named 'donkeycar'`. If you would rather not activate, call the
 venv's interpreter directly: `~/env/bin/python -m donkeycar.parts.unoq_bridge ...`
+
+To have it activated for you on every login, append this to `~/.bashrc`:
+
+```bash
+if [ -f "$HOME/env/bin/activate" ]; then
+    . "$HOME/env/bin/activate"
+fi
+```
+
+Debian's `~/.bashrc` returns early for non-interactive shells, so this does
+not affect `scp`, `rsync` or `ssh host "<command>"`.
 
 ```bash
 # what the MCU last applied: "steering, throttle, failsafe_tripped"
