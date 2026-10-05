@@ -2,7 +2,7 @@
 """
 Scripts to record a path by driving a donkey car
 and using an autopilot to drive the recoded path.
-Works with wheel encoders and/or Intel T265
+Works with GPS, including Mighty Camera VIO, wheel encoders and/or Intel T265
 
 Usage:
     manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)]
@@ -201,7 +201,14 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # This is the path object. It will record a path when distance changes and it travels
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
     path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST)
-    V.add(path, inputs=['recording', 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
+    path_recording = 'recording'
+    if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
+        from donkeycar.parts.mighty_gps import GpsRecordingGate
+        V.add(GpsRecordingGate(), inputs=['recording', 'gps/valid'],
+              outputs=['path/recording'])
+        path_recording = 'path/recording'
+    V.add(path, inputs=[path_recording, 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
+    V.add(Lambda(lambda points: len(points)), inputs=['path'], outputs=['tub/num_records'])
 
     #
     # log pose
@@ -397,6 +404,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                   'pilot/steering', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
+    if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
+        from donkeycar.parts.mighty_gps import GpsDriveGate
+        V.add(GpsDriveGate(), inputs=['user/mode', 'steering', 'throttle', 'gps/valid'],
+              outputs=['steering', 'throttle'])
+
     # V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
 
     #
@@ -456,13 +468,18 @@ def add_gps(V, cfg):
         # - convert nmea lines to positions
         # - retrieve the most recent position
         #
-        serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
-        nmea_reader = SerialLineReader(serial_port)
-        V.add(nmea_reader, outputs=['gps/nmea'], threaded=True)
+        if getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
+            from donkeycar.parts.mighty_gps import MightyGpsReader
+            nmea_reader = MightyGpsReader(cfg)
+            V.add(nmea_reader, outputs=['gps/nmea', 'gps/valid'], threaded=True)
+        else:
+            serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
+            nmea_reader = SerialLineReader(serial_port)
+            V.add(nmea_reader, outputs=['gps/nmea'], threaded=True)
 
         # part to save nmea sentences for later playback
         nmea_player = None
-        if cfg.GPS_NMEA_PATH:
+        if cfg.GPS_NMEA_PATH and getattr(cfg, 'GPS_SOURCE', 'serial') != 'mighty':
             nmea_writer = CsvLogger(cfg.GPS_NMEA_PATH, separator='\t', field_count=2)
             V.add(nmea_writer, inputs=['recording', 'gps/nmea'],
                       outputs=['gps/recorded/nmea'])  # only record nmea sentences in user mode

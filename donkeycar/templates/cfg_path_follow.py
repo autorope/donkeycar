@@ -680,3 +680,13 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
+
+
+# MightyCamera VIO source for indoor GPS path following.
+GPS_SOURCE = 'serial'  # 'serial' or 'mighty'; requires HAVE_GPS = True
+MIGHTY_GPS_URL = 'http://192.168.7.1'
+MIGHTY_GPS_START_VIO = True
+MIGHTY_GPS_LAT = 37.0  # synthetic UTM anchor, not a measured GPS location
+MIGHTY_GPS_LON = -122.0
+MIGHTY_GPS_YAW = 0.0  # degrees CCW from local XY into UTM east/north
+MIGHTY_GPS_MAX_AGE = 0.5  # seconds before tracking is considered stale
