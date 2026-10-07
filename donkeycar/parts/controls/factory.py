@@ -39,6 +39,7 @@ from donkeycar.parts.controls.gamepads import (
     RC3ChanJoystick,
     WiiU,
     XboxOneJoystick,
+    XboxOneUsbJoystick,
 )
 from donkeycar.parts.controls.pygame_device import PyGamePS4Joystick
 from donkeycar.parts.controls.mapping import (
@@ -63,6 +64,7 @@ logger = logging.getLogger(__name__)
 #: The controller classes, by the name a configuration uses.
 CONTROLLER_TYPES: dict[str, type[AbstractInputController]] = {
     'xbox': XboxOneJoystick,
+    'xbox-usb': XboxOneUsbJoystick,
     'F710': LogitechJoystick,
     'ps3': PS3Joystick,
     'ps3sixad': PS3JoystickSixAd,
@@ -130,12 +132,12 @@ _STICKS: dict[str, str] = {
 
 DEFAULT_BEHAVIOR_MAPS: dict[str, BehaviorMap] = {
     #
-    # Xbox.  Legacy bound the throttle to 'right_stick_vert', which on this
-    # driver was really the right trigger -- the axis names were wrong, as
-    # 1.7 established by measurement.  The binding here is what the legacy
-    # one meant, and now reaches the stick it names.
+    # Xbox over USB.  Legacy bound the throttle to 'right_stick_vert', which
+    # on this driver was really the right trigger -- the axis names were
+    # wrong, as 1.7 established by measurement.  The binding here is what
+    # the legacy one meant, and now reaches the stick it names.
     #
-    'xbox': {
+    'xbox-usb': {
         **_XBOX_FACE_BUTTONS,
         **_STICKS,
         INCREASE_MAX_THROTTLE: _press('right_shoulder'),
@@ -282,6 +284,9 @@ DEFAULT_BEHAVIOR_MAPS.update({
     variant: DEFAULT_BEHAVIOR_MAPS['ps3']
     for variant in ('ps3sixad', 'ps3old', 'ps3pc')
 })
+
+# For now 'xbox' is the same pad on the same driver as 'xbox-usb'.
+DEFAULT_BEHAVIOR_MAPS['xbox'] = DEFAULT_BEHAVIOR_MAPS['xbox-usb']
 
 
 def get_input_controller(cfg: Any) -> AbstractInputController:

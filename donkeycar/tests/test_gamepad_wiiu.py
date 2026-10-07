@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import PS3Joystick, WiiU, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import PS3Joystick, WiiU, XboxOneUsbJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
     GamepadMapChecks,
@@ -89,8 +89,8 @@ class TestNintendoFaceButtonLayout(unittest.TestCase):
         assert WiiU.BUTTON_NAMES[0x130] == 'b_button'
         assert WiiU.BUTTON_NAMES[0x131] == 'a_button'
 
-        assert XboxOneJoystick.BUTTON_NAMES[0x130] == 'a_button'
-        assert XboxOneJoystick.BUTTON_NAMES[0x131] == 'b_button'
+        assert XboxOneUsbJoystick.BUTTON_NAMES[0x130] == 'a_button'
+        assert XboxOneUsbJoystick.BUTTON_NAMES[0x131] == 'b_button'
 
     def test_x_and_y_keep_the_usual_codes(self):
         assert WiiU.BUTTON_NAMES[0x133] == 'x_button'
@@ -101,18 +101,18 @@ class TestNintendoFaceButtonLayout(unittest.TestCase):
         The codes agree on position; only the letters printed there differ.
         """
         assert 0x130 in WiiU.BUTTON_NAMES  # BTN_SOUTH, the bottom button
-        assert 0x130 in XboxOneJoystick.BUTTON_NAMES
+        assert 0x130 in XboxOneUsbJoystick.BUTTON_NAMES
 
 
 class TestSharedControls(unittest.TestCase):
 
     def test_the_shoulders_match_the_measured_pad(self):
-        assert WiiU.BUTTON_NAMES[0x136] == XboxOneJoystick.BUTTON_NAMES[0x136]
-        assert WiiU.BUTTON_NAMES[0x137] == XboxOneJoystick.BUTTON_NAMES[0x137]
+        assert WiiU.BUTTON_NAMES[0x136] == XboxOneUsbJoystick.BUTTON_NAMES[0x136]
+        assert WiiU.BUTTON_NAMES[0x137] == XboxOneUsbJoystick.BUTTON_NAMES[0x137]
 
     def test_the_sticks_match_the_measured_pad(self):
         for code in WiiU.AXIS_NAMES:
-            assert WiiU.AXIS_NAMES[code] == XboxOneJoystick.AXIS_NAMES[code]
+            assert WiiU.AXIS_NAMES[code] == XboxOneUsbJoystick.AXIS_NAMES[code]
 
     def test_there_are_no_analog_triggers(self):
         assert 'left_trigger' not in WiiU.AXIS_NAMES.values()

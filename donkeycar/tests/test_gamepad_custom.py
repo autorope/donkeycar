@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import CustomJoystick, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import CustomJoystick, XboxOneUsbJoystick
 from donkeycar.tests.fake_js import FakeJsDevice, axis_event, button_event
 
 # a pad nothing has a map for: some codes that look like a gamepad's, some
@@ -93,10 +93,10 @@ class TestRenamingAPadThatHasAMap(unittest.TestCase):
 
     def test_one_control_can_be_renamed_without_restating_the_rest(self):
         device = FakeJsDevice(
-            axis_codes=tuple(sorted(XboxOneJoystick.AXIS_NAMES)),
-            button_codes=tuple(sorted(XboxOneJoystick.BUTTON_NAMES)),
+            axis_codes=tuple(sorted(XboxOneUsbJoystick.AXIS_NAMES)),
+            button_codes=tuple(sorted(XboxOneUsbJoystick.BUTTON_NAMES)),
         )
-        pad = XboxOneJoystick(device=device, button_names={0x13C: 'guide'})
+        pad = XboxOneUsbJoystick(device=device, button_names={0x13C: 'guide'})
         pad.init()
 
         assert 'guide' in pad.button_map
@@ -107,9 +107,9 @@ class TestRenamingAPadThatHasAMap(unittest.TestCase):
 
     def test_the_class_map_is_not_modified(self):
         device = FakeJsDevice(
-            axis_codes=tuple(sorted(XboxOneJoystick.AXIS_NAMES)),
-            button_codes=tuple(sorted(XboxOneJoystick.BUTTON_NAMES)),
+            axis_codes=tuple(sorted(XboxOneUsbJoystick.AXIS_NAMES)),
+            button_codes=tuple(sorted(XboxOneUsbJoystick.BUTTON_NAMES)),
         )
-        XboxOneJoystick(device=device, button_names={0x13C: 'guide'}).init()
+        XboxOneUsbJoystick(device=device, button_names={0x13C: 'guide'}).init()
 
-        assert XboxOneJoystick.BUTTON_NAMES[0x13C] == 'xbox'
+        assert XboxOneUsbJoystick.BUTTON_NAMES[0x13C] == 'xbox'

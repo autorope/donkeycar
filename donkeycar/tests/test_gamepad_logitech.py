@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import LogitechJoystick, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import LogitechJoystick, XboxOneUsbJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
     GamepadMapChecks,
@@ -44,11 +44,11 @@ class TestAgreesWithTheMeasuredDriverLayout(unittest.TestCase):
     """
 
     def test_axis_codes_mean_the_same_as_on_the_measured_pad(self):
-        shared = set(LogitechJoystick.AXIS_NAMES) & set(XboxOneJoystick.AXIS_NAMES)
+        shared = set(LogitechJoystick.AXIS_NAMES) & set(XboxOneUsbJoystick.AXIS_NAMES)
         disagreements = {
-            code: (LogitechJoystick.AXIS_NAMES[code], XboxOneJoystick.AXIS_NAMES[code])
+            code: (LogitechJoystick.AXIS_NAMES[code], XboxOneUsbJoystick.AXIS_NAMES[code])
             for code in shared
-            if LogitechJoystick.AXIS_NAMES[code] != XboxOneJoystick.AXIS_NAMES[code]
+            if LogitechJoystick.AXIS_NAMES[code] != XboxOneUsbJoystick.AXIS_NAMES[code]
         }
         assert disagreements == {}
 
@@ -68,9 +68,9 @@ class TestAgreesWithTheMeasuredDriverLayout(unittest.TestCase):
         differing = {
             code
             for code in set(LogitechJoystick.BUTTON_NAMES)
-            & set(XboxOneJoystick.BUTTON_NAMES)
+            & set(XboxOneUsbJoystick.BUTTON_NAMES)
             if LogitechJoystick.BUTTON_NAMES[code]
-            != XboxOneJoystick.BUTTON_NAMES[code]
+            != XboxOneUsbJoystick.BUTTON_NAMES[code]
         }
         assert differing == {0x13A, 0x13B, 0x13C}
 

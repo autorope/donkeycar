@@ -5,7 +5,7 @@ import unittest
 from donkeycar.parts.controls.gamepads import (
     PS3Joystick,
     PS4Joystick,
-    XboxOneJoystick,
+    XboxOneUsbJoystick,
 )
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
@@ -121,11 +121,11 @@ class TestResolvesTheLegacyDisagreement(unittest.TestCase):
 class TestAgreesWithTheMeasuredAxisLayout(unittest.TestCase):
 
     def test_shared_axis_codes_agree_with_the_measured_pad(self):
-        shared = set(PS4Joystick.AXIS_NAMES) & set(XboxOneJoystick.AXIS_NAMES)
+        shared = set(PS4Joystick.AXIS_NAMES) & set(XboxOneUsbJoystick.AXIS_NAMES)
         disagreements = {
-            code: (PS4Joystick.AXIS_NAMES[code], XboxOneJoystick.AXIS_NAMES[code])
+            code: (PS4Joystick.AXIS_NAMES[code], XboxOneUsbJoystick.AXIS_NAMES[code])
             for code in shared
-            if PS4Joystick.AXIS_NAMES[code] != XboxOneJoystick.AXIS_NAMES[code]
+            if PS4Joystick.AXIS_NAMES[code] != XboxOneUsbJoystick.AXIS_NAMES[code]
         }
         assert disagreements == {}
 

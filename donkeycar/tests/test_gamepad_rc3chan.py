@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import RC3ChanJoystick, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import RC3ChanJoystick, XboxOneUsbJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
     GamepadMapChecks,
@@ -58,8 +58,8 @@ class TestItIsNotAGamepad(unittest.TestCase):
         rc = set(RC3ChanJoystick.AXIS_NAMES.values()) | set(
             RC3ChanJoystick.BUTTON_NAMES.values()
         )
-        pad = set(XboxOneJoystick.AXIS_NAMES.values()) | set(
-            XboxOneJoystick.BUTTON_NAMES.values()
+        pad = set(XboxOneUsbJoystick.AXIS_NAMES.values()) | set(
+            XboxOneUsbJoystick.BUTTON_NAMES.values()
         )
         assert rc & pad == set()
 

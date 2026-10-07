@@ -566,9 +566,10 @@ class LogitechJoystick(LinuxGameController):
     }
 
 
-class XboxOneJoystick(LinuxGameController):
+class XboxOneUsbJoystick(LinuxGameController):
     """
-    Microsoft Xbox One / Series controller on the in-kernel `xpad` driver.
+    Microsoft Xbox One / Series controller over USB, on the in-kernel `xpad`
+    driver.  CONTROLLER_TYPE = 'xbox-usb'.
 
     Verified against a 'Microsoft X-Box One S pad' over USB on 2026-08-31,
     each control moved in isolation.  The driver reports exactly the eight
@@ -616,3 +617,11 @@ class XboxOneJoystick(LinuxGameController):
         0x13D: 'left_stick_press',
         0x13E: 'right_stick_press',
     }
+
+
+class XboxOneJoystick(XboxOneUsbJoystick):
+    """
+    Microsoft Xbox One / Series controller.  CONTROLLER_TYPE = 'xbox'.
+
+    For now the same as XboxOneUsbJoystick.
+    """

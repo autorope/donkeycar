@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import XboxOneJoystick
+from donkeycar.parts.controls.gamepads import XboxOneUsbJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
     GamepadMapChecks,
@@ -21,20 +21,20 @@ XBOX_BUTTON_CODES = (
 )
 
 
-def make_pad(events=(), **kwargs) -> XboxOneJoystick:
+def make_pad(events=(), **kwargs) -> XboxOneUsbJoystick:
     device = FakeJsDevice(
         name='Microsoft X-Box One S pad',
         axis_codes=XBOX_AXIS_CODES,
         button_codes=XBOX_BUTTON_CODES,
         events=events,
     )
-    pad = XboxOneJoystick(device=device, **kwargs)
+    pad = XboxOneUsbJoystick(device=device, **kwargs)
     pad.init()
     return pad
 
 
 class TestMapIsSound(GamepadMapChecks, unittest.TestCase):
-    PAD = XboxOneJoystick
+    PAD = XboxOneUsbJoystick
 
 
 class TestMapCoversTheDevice(unittest.TestCase):
@@ -58,8 +58,8 @@ class TestMapCoversTheDevice(unittest.TestCase):
         a behavior to and then watch do nothing.  Legacy bound Forza mode to
         two such names, so it never once ran.
         """
-        extra_axes = set(XboxOneJoystick.AXIS_NAMES) - set(XBOX_AXIS_CODES)
-        extra_buttons = set(XboxOneJoystick.BUTTON_NAMES) - set(XBOX_BUTTON_CODES)
+        extra_axes = set(XboxOneUsbJoystick.AXIS_NAMES) - set(XBOX_AXIS_CODES)
+        extra_buttons = set(XboxOneUsbJoystick.BUTTON_NAMES) - set(XBOX_BUTTON_CODES)
 
         assert extra_axes == set()
         assert extra_buttons == set()
@@ -78,16 +78,16 @@ class TestMeasuredAxisAttribution(unittest.TestCase):
     """
 
     def test_left_trigger(self):
-        assert XboxOneJoystick.AXIS_NAMES[0x02] == 'left_trigger'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x02] == 'left_trigger'
 
     def test_right_trigger(self):
-        assert XboxOneJoystick.AXIS_NAMES[0x05] == 'right_trigger'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x05] == 'right_trigger'
 
     def test_right_stick_horizontal(self):
-        assert XboxOneJoystick.AXIS_NAMES[0x03] == 'right_stick_horz'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x03] == 'right_stick_horz'
 
     def test_right_stick_vertical(self):
-        assert XboxOneJoystick.AXIS_NAMES[0x04] == 'right_stick_vert'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x04] == 'right_stick_vert'
 
     def test_triggers_are_not_the_right_stick(self):
         """
@@ -95,8 +95,8 @@ class TestMeasuredAxisAttribution(unittest.TestCase):
         stick, so an Xbox user's 'right stick' was really their triggers,
         sitting pegged at -1.0 whenever they were not being squeezed.
         """
-        assert XboxOneJoystick.AXIS_NAMES[0x02] != 'right_stick_horz'
-        assert XboxOneJoystick.AXIS_NAMES[0x05] != 'right_stick_vert'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x02] != 'right_stick_horz'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x05] != 'right_stick_vert'
 
 
 class TestPolling(unittest.TestCase):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import PS3Joystick, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import PS3Joystick, XboxOneUsbJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
     GamepadMapChecks,
@@ -50,11 +50,11 @@ class TestAgreesWithTheMeasuredAxisLayout(unittest.TestCase):
     """
 
     def test_shared_axis_codes_agree_with_the_measured_pad(self):
-        shared = set(PS3Joystick.AXIS_NAMES) & set(XboxOneJoystick.AXIS_NAMES)
+        shared = set(PS3Joystick.AXIS_NAMES) & set(XboxOneUsbJoystick.AXIS_NAMES)
         disagreements = {
-            code: (PS3Joystick.AXIS_NAMES[code], XboxOneJoystick.AXIS_NAMES[code])
+            code: (PS3Joystick.AXIS_NAMES[code], XboxOneUsbJoystick.AXIS_NAMES[code])
             for code in shared
-            if PS3Joystick.AXIS_NAMES[code] != XboxOneJoystick.AXIS_NAMES[code]
+            if PS3Joystick.AXIS_NAMES[code] != XboxOneUsbJoystick.AXIS_NAMES[code]
         }
         assert disagreements == {}
 

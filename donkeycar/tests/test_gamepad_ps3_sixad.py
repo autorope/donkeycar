@@ -5,7 +5,7 @@ import unittest
 from donkeycar.parts.controls.gamepads import (
     PS3Joystick,
     PS3JoystickSixAd,
-    XboxOneJoystick,
+    XboxOneUsbJoystick,
 )
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
@@ -60,8 +60,8 @@ class TestDeliberatelyDisagreesWithTheConvention(unittest.TestCase):
         assert PS3JoystickSixAd.AXIS_NAMES[0x03] == 'right_stick_vert'
 
         # the same codes on the pad we measured
-        assert XboxOneJoystick.AXIS_NAMES[0x02] == 'left_trigger'
-        assert XboxOneJoystick.AXIS_NAMES[0x03] == 'right_stick_horz'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x02] == 'left_trigger'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x03] == 'right_stick_horz'
 
     def test_the_same_pad_reports_differently_through_the_two_drivers(self):
         """

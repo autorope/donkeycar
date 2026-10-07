@@ -65,6 +65,7 @@ from donkeycar.parts.controls.gamepads import (
     RC3ChanJoystick as RC3ChanJoystick,
     WiiU as WiiU,
     XboxOneJoystick as XboxOneJoystick,
+    XboxOneUsbJoystick as XboxOneUsbJoystick,
 )
 from donkeycar.parts.controls.web import (
     WebButtonController as WebButtonController,
@@ -172,6 +173,7 @@ __all__ = [
     'WebButtonController',
     'WiiU',
     'XboxOneJoystick',
+    'XboxOneUsbJoystick',
     'format_axis_event',
     'format_behavior',
     'get_behavior_map',

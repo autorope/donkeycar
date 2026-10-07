@@ -12,7 +12,11 @@ from donkeycar.parts.controls.factory import (
     get_behavior_map,
     get_input_controller,
 )
-from donkeycar.parts.controls.gamepads import PS4Joystick, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import (
+    PS4Joystick,
+    XboxOneJoystick,
+    XboxOneUsbJoystick,
+)
 from donkeycar.parts.controls.mapping import (
     STEERING,
     THROTTLE,
@@ -34,6 +38,10 @@ class TestGetInputController(unittest.TestCase):
     def test_it_builds_the_configured_controller(self):
         controller = get_input_controller(FakeConfig(CONTROLLER_TYPE='xbox'))
         assert isinstance(controller, XboxOneJoystick)
+
+    def test_xbox_usb_builds_the_usb_map(self):
+        controller = get_input_controller(FakeConfig(CONTROLLER_TYPE='xbox-usb'))
+        assert type(controller) is XboxOneUsbJoystick
 
     def test_every_controller_type_can_be_built(self):
         for controller_type in CONTROLLER_TYPES:
@@ -60,7 +68,7 @@ class TestGetInputController(unittest.TestCase):
     def test_a_control_can_be_renamed_from_the_configuration(self):
         controller = get_input_controller(
             FakeConfig(
-                CONTROLLER_TYPE='xbox',
+                CONTROLLER_TYPE='xbox-usb',
                 JOYSTICK_BUTTON_NAMES={0x13C: 'guide'},
             )
         )
@@ -71,11 +79,11 @@ class TestGetInputController(unittest.TestCase):
     def test_the_class_map_is_not_modified_by_a_rename(self):
         get_input_controller(
             FakeConfig(
-                CONTROLLER_TYPE='xbox',
+                CONTROLLER_TYPE='xbox-usb',
                 JOYSTICK_BUTTON_NAMES={0x13C: 'guide'},
             )
         )
-        assert XboxOneJoystick.BUTTON_NAMES[0x13C] == 'xbox'
+        assert XboxOneUsbJoystick.BUTTON_NAMES[0x13C] == 'xbox'
 
 
 class TestGetBehaviorMap(unittest.TestCase):
@@ -182,14 +190,14 @@ class TestTheDefaultMapsAreSound(unittest.TestCase):
 
     def test_the_xbox_throttle_reaches_the_stick_it_names(self):
         """
-        Legacy bound the throttle to 'right_stick_vert', which on this
+        Legacy bound the throttle to 'right_stick_vert', which on the USB
         driver was really the right trigger.  The binding is unchanged in
         intent; the axis it names is now the one measurement found.
         """
-        assert DEFAULT_BEHAVIOR_MAPS['xbox'][THROTTLE] == (
+        assert DEFAULT_BEHAVIOR_MAPS['xbox-usb'][THROTTLE] == (
             '/event/axis/right_stick_vert'
         )
-        assert XboxOneJoystick.AXIS_NAMES[0x04] == 'right_stick_vert'
+        assert XboxOneUsbJoystick.AXIS_NAMES[0x04] == 'right_stick_vert'
 
     def test_no_two_behaviors_on_one_pad_share_a_button_press(self):
         """

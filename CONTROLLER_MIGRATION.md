@@ -224,6 +224,7 @@ are new:
 | `ps3old` | **New.** Raspbian Jessie-era driver |
 | `ps3pc` | **New.** On a PC, where the pressure axes are also reported |
 | `ps4`, `xbox`, `nimbus`, `wiiu`, `F710`, `rc3` | Unchanged |
+| `xbox-usb` | **New.** An Xbox pad on a USB cable, through the `xpad` driver |
 | `xboxswapped` | **Now the same controller as `xbox`** with a different default map — swapping which stick steers is a binding, not hardware |
 | `pygame` | Unchanged |
 | `custom` | **Changed.** No longer imports `my_joystick.py`; see [4](#4-a-custom-my_joystickpy) |

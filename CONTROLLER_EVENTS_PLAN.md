@@ -1,12 +1,12 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**39 / 41 tasks — Phase 7 (Xbox over Bluetooth) in progress.**
+**40 / 41 tasks — Phase 7 (Xbox over Bluetooth) in progress.**
 
 39 commits in total for Phases 0–6: the 37 tasks below, plus one for the dead-zone default
 change (folded into 3.1's note) and one correcting this checklist, whose
 Phase 2 and Phase 6 boxes had been left unticked while their work was done.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -667,7 +667,7 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 landed together as planned, except that 6.1 and 6.2 had to swap. Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
 
-### Phase 7 — Xbox over Bluetooth (2 / 4)
+### Phase 7 — Xbox over Bluetooth (3 / 4)
 
 > **Why.** The `xbox` map (1.7) was measured over USB, on the `xpad` driver.
 > Over Bluetooth the same pad is driven by `hid-microsoft` and reports
@@ -706,7 +706,7 @@ must land together to keep the templates working.
       button path otherwise: wired the button way, a released trigger's -1.0
       is truthy and would stop the car on the first pass — a test pins that.
       A trigger with no value yet in memory counts as released.
-- [ ] **7.3** Add `xbox-usb`: the 1.7 map, unchanged, as `XboxOneUsbJoystick`
+- [x] **7.3** Add `xbox-usb`: the 1.7 map, unchanged, as `XboxOneUsbJoystick`
       with its existing behavior map. The tests that cross-check other `xpad`
       pads (F710) and conventional layouts against "the Xbox pad" now name the
       USB class, which is the one they meant. `xbox` is unchanged in this commit.

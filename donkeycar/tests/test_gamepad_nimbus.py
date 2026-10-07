@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from donkeycar.parts.controls.gamepads import Nimbus, XboxOneJoystick
+from donkeycar.parts.controls.gamepads import Nimbus, XboxOneUsbJoystick
 from donkeycar.tests.fake_js import (
     FakeJsDevice,
     GamepadMapChecks,
@@ -55,8 +55,8 @@ class TestTheHatAxesAreTheDpad(unittest.TestCase):
         assert Nimbus.AXIS_NAMES[0x11] == 'dpad_vert'
 
     def test_they_agree_with_the_measured_pad(self):
-        assert Nimbus.AXIS_NAMES[0x10] == XboxOneJoystick.AXIS_NAMES[0x10]
-        assert Nimbus.AXIS_NAMES[0x11] == XboxOneJoystick.AXIS_NAMES[0x11]
+        assert Nimbus.AXIS_NAMES[0x10] == XboxOneUsbJoystick.AXIS_NAMES[0x10]
+        assert Nimbus.AXIS_NAMES[0x11] == XboxOneUsbJoystick.AXIS_NAMES[0x11]
 
     def test_no_placeholder_names_remain(self):
         """
@@ -78,18 +78,18 @@ class TestSequentialButtonBlock(unittest.TestCase):
         assert sorted(Nimbus.BUTTON_NAMES) == list(range(0x130, 0x138))
 
     def test_the_face_buttons_disagree_with_the_measured_pad(self):
-        shared = set(Nimbus.BUTTON_NAMES) & set(XboxOneJoystick.BUTTON_NAMES)
+        shared = set(Nimbus.BUTTON_NAMES) & set(XboxOneUsbJoystick.BUTTON_NAMES)
         disagreements = {
             code
             for code in shared
-            if Nimbus.BUTTON_NAMES[code] != XboxOneJoystick.BUTTON_NAMES[code]
+            if Nimbus.BUTTON_NAMES[code] != XboxOneUsbJoystick.BUTTON_NAMES[code]
         }
         # they agree on A and B and part ways from there
         assert disagreements == {0x133, 0x134, 0x136, 0x137}
 
     def test_y_is_where_the_xbox_pad_puts_x(self):
         assert Nimbus.BUTTON_NAMES[0x133] == 'y_button'
-        assert XboxOneJoystick.BUTTON_NAMES[0x133] == 'x_button'
+        assert XboxOneUsbJoystick.BUTTON_NAMES[0x133] == 'x_button'
 
     def test_the_shoulders_follow_the_face_buttons(self):
         assert Nimbus.BUTTON_NAMES[0x134] == 'left_shoulder'
