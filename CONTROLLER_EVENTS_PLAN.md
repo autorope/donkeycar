@@ -1,12 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**40 / 41 tasks — Phase 7 (Xbox over Bluetooth) in progress.**
+**COMPLETE — 41 / 41 tasks.**
 
-39 commits in total for Phases 0–6: the 37 tasks below, plus one for the dead-zone default
-change (folded into 3.1's note) and one correcting this checklist, whose
-Phase 2 and Phase 6 boxes had been left unticked while their work was done.
+43 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+dead-zone default change (folded into 3.1's note) and one correcting this
+checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
+their work was done.  Phase 7 took 4, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -667,7 +668,7 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 landed together as planned, except that 6.1 and 6.2 had to swap. Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
 
-### Phase 7 — Xbox over Bluetooth (3 / 4)
+### Phase 7 — Xbox over Bluetooth (4 / 4) ✅
 
 > **Why.** The `xbox` map (1.7) was measured over USB, on the `xpad` driver.
 > Over Bluetooth the same pad is driven by `hid-microsoft` and reports
@@ -710,12 +711,14 @@ must land together to keep the templates working.
       with its existing behavior map. The tests that cross-check other `xpad`
       pads (F710) and conventional layouts against "the Xbox pad" now name the
       USB class, which is the one they meant. `xbox` is unchanged in this commit.
-- [ ] **7.4** Make `xbox` the Bluetooth map: `XboxOneJoystick` gets the measured
+- [x] **7.4** Make `xbox` the Bluetooth map: `XboxOneJoystick` gets the measured
       codes above and names neither view nor xbox; its behavior map moves
       STOP_VEHICLE to the triggers. `xboxswapped` follows `xbox` (it is a
       binding, not hardware). The docstring's "Bluetooth does not work" note
-      becomes the trixie pairing note. Migration guide, the `CONTROLLER_TYPE`
-      option lists in the templates, and `events.py --type` help updated.
+      becomes the trixie pairing note. Migration guide and the `CONTROLLER_TYPE`
+      option lists in the templates updated. A new test checks that every
+      default map binds only controls its pad names — the check that would
+      have caught the Bluetooth map still binding View and Xbox.
 
 ---
 

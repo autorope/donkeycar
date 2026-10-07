@@ -19,6 +19,8 @@ from donkeycar.parts.controls.gamepads import (
 )
 from donkeycar.parts.controls.mapping import (
     STEERING,
+    STOP_VEHICLE,
+    STOP_VEHICLE_MODIFIER,
     THROTTLE,
     TOGGLE_RECORDING,
     BehaviorEventMapper,
@@ -286,3 +288,52 @@ class TestAxisButton(unittest.TestCase):
 
         assert (up.run(-1.0), down.run(-1.0)) == (True, False)
         assert (up.run(1.0), down.run(1.0)) == (False, True)
+
+
+def _bound_control_names(behavior_map) -> set[str]:
+    """
+    The control names a behavior map binds, from keys like
+    '/event/button/a_button/press', '/button/view' and '/axis/left_trigger'.
+    """
+    names = set()
+    for controls in behavior_map.values():
+        for key in [controls] if isinstance(controls, str) else controls:
+            parts = key.split('/')
+            names.add(parts[3] if parts[1] == 'event' else parts[2])
+    return names
+
+
+class TestDefaultMapsBindRealControls(unittest.TestCase):
+    """
+    A default map that binds a name its pad never reports is a behavior
+    that silently never happens.  The Xbox stop gesture would have been
+    exactly that over Bluetooth, where View and Xbox never arrive.
+    """
+
+    def test_every_bound_control_is_one_the_pad_names(self):
+        for controller_type, behavior_map in DEFAULT_BEHAVIOR_MAPS.items():
+            pad = CONTROLLER_TYPES[controller_type]
+            if not hasattr(pad, 'AXIS_NAMES') or pad.__module__.endswith('pygame_device'):
+                continue  # names come from somewhere other than the class
+            offered = set(pad.AXIS_NAMES.values()) | set(pad.BUTTON_NAMES.values())
+            missing = _bound_control_names(behavior_map) - offered
+            assert missing == set(), (controller_type, missing)
+
+    def test_xbox_stops_on_both_triggers(self):
+        for controller_type in ('xbox', 'xboxswapped'):
+            behavior_map = DEFAULT_BEHAVIOR_MAPS[controller_type]
+            assert behavior_map[STOP_VEHICLE] == '/axis/right_trigger'
+            assert behavior_map[STOP_VEHICLE_MODIFIER] == '/axis/left_trigger'
+
+    def test_xbox_usb_keeps_the_button_gesture(self):
+        behavior_map = DEFAULT_BEHAVIOR_MAPS['xbox-usb']
+        assert behavior_map[STOP_VEHICLE] == '/event/button/xbox/press'
+        assert behavior_map[STOP_VEHICLE_MODIFIER] == '/button/view'
+
+    def test_xbox_and_xbox_usb_differ_only_in_how_to_stop(self):
+        bluetooth = dict(DEFAULT_BEHAVIOR_MAPS['xbox'])
+        usb = dict(DEFAULT_BEHAVIOR_MAPS['xbox-usb'])
+        for behavior_map in (bluetooth, usb):
+            del behavior_map[STOP_VEHICLE], behavior_map[STOP_VEHICLE_MODIFIER]
+
+        assert bluetooth == usb

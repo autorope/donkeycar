@@ -123,8 +123,12 @@ JOYSTICK_THROTTLE_DIR = -1.0
 JOYSTICK_DEVICE_FILE = "/dev/input/js0"
 
 # The type of controller being used.
-# Options: 'ps3', 'ps3sixad', 'ps3old', 'ps3pc', 'ps4', 'xbox', 'nimbus',
-#          'wiiu', 'F710', 'rc3', 'MM1' (use for RC Hat), 'pigpio_rc', 'custom'
+# Options: 'ps3', 'ps3sixad', 'ps3old', 'ps3pc', 'ps4', 'xbox', 'xbox-usb',
+#          'nimbus', 'wiiu', 'F710', 'rc3', 'MM1' (use for RC Hat),
+#          'pigpio_rc', 'custom'
+# 'xbox' is an Xbox pad paired over Bluetooth, which squeezes both triggers
+# to stop the car; 'xbox-usb' is one on a USB cable, which reports different
+# codes for the right stick and the triggers.
 # Note the ps3 variants differ by driver, not by pad: 'ps3' for the current
 # in-kernel driver, 'ps3sixad' when using sixad (Jetson Nano), 'ps3old' for
 # Raspbian Jessie-era drivers, 'ps3pc' on a PC. Reporting differs between

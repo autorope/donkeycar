@@ -124,6 +124,16 @@ _PLAYSTATION_FACE_BUTTONS: dict[str, str] = {
     EMERGENCY_STOP: _press('cross'),
 }
 
+#
+# Stop the car by squeezing both triggers, for pads whose spare controls
+# are axes.  The template sees axes here and wires a chord, so the order
+# they go in does not matter.
+#
+_BOTH_TRIGGERS_STOP: dict[str, str] = {
+    STOP_VEHICLE: format_axis_key('right_trigger'),
+    STOP_VEHICLE_MODIFIER: format_axis_key('left_trigger'),
+}
+
 _STICKS: dict[str, str] = {
     STEERING: format_axis_event('left_stick_horz'),
     THROTTLE: format_axis_event('right_stick_vert'),
@@ -131,6 +141,20 @@ _STICKS: dict[str, str] = {
 
 
 DEFAULT_BEHAVIOR_MAPS: dict[str, BehaviorMap] = {
+    #
+    # Xbox over Bluetooth.  The same bindings as over USB, except stopping
+    # the car: View and Xbox never reach the joystick device on this
+    # driver, so the gesture is both triggers squeezed instead.  Nothing
+    # else is bound to them, and squeezing both at once is deliberate.
+    #
+    'xbox': {
+        **_XBOX_FACE_BUTTONS,
+        **_STICKS,
+        INCREASE_MAX_THROTTLE: _press('right_shoulder'),
+        DECREASE_MAX_THROTTLE: _press('left_shoulder'),
+        TOGGLE_CONSTANT_THROTTLE: _press('menu'),
+        **_BOTH_TRIGGERS_STOP,
+    },
     #
     # Xbox over USB.  Legacy bound the throttle to 'right_stick_vert', which
     # on this driver was really the right trigger -- the axis names were
@@ -232,9 +256,9 @@ DEFAULT_BEHAVIOR_MAPS: dict[str, BehaviorMap] = {
         EMERGENCY_STOP: _press('switch_up'),
     },
     #
-    # The same Xbox pad, with the sticks the other way round.  This was a
-    # controller class of its own whose only difference was which stick
-    # steered and which drove.
+    # The same Xbox pad over Bluetooth, with the sticks the other way round.
+    # This was a controller class of its own whose only difference was
+    # which stick steered and which drove.
     #
     'xboxswapped': {
         **_XBOX_FACE_BUTTONS,
@@ -243,8 +267,7 @@ DEFAULT_BEHAVIOR_MAPS: dict[str, BehaviorMap] = {
         INCREASE_MAX_THROTTLE: _press('right_shoulder'),
         DECREASE_MAX_THROTTLE: _press('left_shoulder'),
         TOGGLE_CONSTANT_THROTTLE: _press('menu'),
-        STOP_VEHICLE: _press('xbox'),
-        STOP_VEHICLE_MODIFIER: format_button_key('view'),
+        **_BOTH_TRIGGERS_STOP,
     },
     #
     # A DualShock 4 through PyGame.  PyGame numbers the controls itself, so
@@ -284,9 +307,6 @@ DEFAULT_BEHAVIOR_MAPS.update({
     variant: DEFAULT_BEHAVIOR_MAPS['ps3']
     for variant in ('ps3sixad', 'ps3old', 'ps3pc')
 })
-
-# For now 'xbox' is the same pad on the same driver as 'xbox-usb'.
-DEFAULT_BEHAVIOR_MAPS['xbox'] = DEFAULT_BEHAVIOR_MAPS['xbox-usb']
 
 
 def get_input_controller(cfg: Any) -> AbstractInputController:

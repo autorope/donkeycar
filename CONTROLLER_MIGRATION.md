@@ -62,6 +62,28 @@ Two consequences worth knowing:
   code let whichever trigger moved last win outright, so holding forward
   while brushing reverse gave full reverse. They now cancel.
 
+### An Xbox pad over Bluetooth has its own map
+
+The same Xbox pad reports different codes depending on how it is
+connected.  On a USB cable the `xpad` driver handles it; paired over
+Bluetooth, `hid-microsoft` does, and puts the right stick and the triggers
+somewhere else.  A map written for one, used on the other, drives with a
+trigger.
+
+`CONTROLLER_TYPE = 'xbox'` is now the **Bluetooth** map, since that is how
+nearly everyone connects one.  If your pad is on a cable, use `'xbox-usb'`.
+
+Over Bluetooth, **View and the Xbox button cannot be bound at all** — the
+driver sends them as keyboard keys, which never reach `/dev/input/js0`.
+They were the stop-the-car gesture, so on `xbox` that is now **both
+triggers squeezed fully**, in either order.  `xbox-usb` keeps Xbox while
+holding View.
+
+On Debian trixie, pairing needs `ClassicBondedOnly=false` and
+`LEAutoSecurity=false` under `[General]` in `/etc/bluetooth/input.conf`.
+Without them the pad bonds and lights up solid, but no `/dev/input/js0`
+appears.
+
 ### Recording is either automatic or a button, never both
 
 `AUTO_RECORD_ON_THROTTLE = True` used to silently disable the manual
@@ -214,8 +236,8 @@ you want renamed.
 
 ## 5. `CONTROLLER_TYPE`
 
-Every value that worked before still works.  Two changed meaning and four
-are new:
+Every value that worked before still works, though `xbox` now means a pad
+paired over Bluetooth rather than one on a cable:
 
 | Value | Notes |
 |---|---|
@@ -223,9 +245,10 @@ are new:
 | `ps3sixad` | **Unchanged.** For `sixad`, as on a Jetson Nano |
 | `ps3old` | **New.** Raspbian Jessie-era driver |
 | `ps3pc` | **New.** On a PC, where the pressure axes are also reported |
-| `ps4`, `xbox`, `nimbus`, `wiiu`, `F710`, `rc3` | Unchanged |
-| `xbox-usb` | **New.** An Xbox pad on a USB cable, through the `xpad` driver |
-| `xboxswapped` | **Now the same controller as `xbox`** with a different default map — swapping which stick steers is a binding, not hardware |
+| `ps4`, `nimbus`, `wiiu`, `F710`, `rc3` | Unchanged |
+| `xbox` | **Changed.** An Xbox pad over Bluetooth, through `hid-microsoft`.  Stop the car by squeezing both triggers; see [2](#an-xbox-pad-over-bluetooth-has-its-own-map) |
+| `xbox-usb` | **New.** An Xbox pad on a USB cable, through `xpad` — what `xbox` used to describe |
+| `xboxswapped` | **Now the same controller as `xbox`** (so Bluetooth) with a different default map — swapping which stick steers is a binding, not hardware |
 | `pygame` | Unchanged |
 | `custom` | **Changed.** No longer imports `my_joystick.py`; see [4](#4-a-custom-my_joystickpy) |
 | `mock` | **Now works.** It never did: the template imported a `MockController` that no module defined, so choosing it raised `ImportError` |
@@ -303,6 +326,11 @@ CONTROLLER_BEHAVIOR_MAP = {
     THROTTLE_FORWARD: '/axis/right_trigger',
     THROTTLE_REVERSE: '/axis/left_trigger',
 ```
+
+On `xbox` (Bluetooth), both triggers are also the default stop gesture.
+A `CONTROLLER_BEHAVIOR_MAP` replaces the default outright, so bind
+`STOP_VEHICLE` to something else in the same map — or leave it out, and
+stopping is the keyboard's job.
 
 **Guard something irreversible behind a double-click.**  Erasing a path or
 records cannot be undone, and the old button triggers had no way to express

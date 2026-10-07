@@ -586,11 +586,10 @@ class XboxOneUsbJoystick(LinuxGameController):
     trickle of events up to about 0.1, which floods the event stream.  Pass
     `axis_epsilon` to filter it; 0.1 was enough here.
 
-    NOTE: over Bluetooth this pad presents a malformed HID report descriptor
-    that mainline `hid-generic` rejects outright ('unbalanced collection at
-    end of report description'), so no device node appears at all.  Use USB,
-    update the pad's firmware, or install `xpadneo`.  Note that `xpadneo`
-    numbers the axes differently, so this map does not apply to it.
+    Over Bluetooth the same pad is driven by `hid-microsoft` instead and
+    reports the right stick and the triggers on different codes, so it
+    wants XboxOneJoystick ('xbox').  `xpadneo` numbers the axes differently
+    again, and neither map applies to it.
     """
 
     AXIS_NAMES = {
@@ -619,9 +618,59 @@ class XboxOneUsbJoystick(LinuxGameController):
     }
 
 
-class XboxOneJoystick(XboxOneUsbJoystick):
+class XboxOneJoystick(LinuxGameController):
     """
-    Microsoft Xbox One / Series controller.  CONTROLLER_TYPE = 'xbox'.
+    Microsoft Xbox One / Series controller over Bluetooth, on the in-kernel
+    `hid-microsoft` driver.  CONTROLLER_TYPE = 'xbox'.
 
-    For now the same as XboxOneUsbJoystick.
+    Verified against an 'Xbox Wireless Controller' (045e:02fd) paired over
+    Bluetooth on Debian trixie, kernel 6.18, on 2026-10-07, each control
+    moved in isolation with `python -m donkeycar.parts.controls.capture`.
+
+    The same pad over USB is driven by `xpad` and is XboxOneUsbJoystick
+    ('xbox-usb').  The two drivers agree on the left stick, the dpad and
+    the buttons, and disagree on the rest:
+
+    The right stick is at 0x02/0x05, and the triggers at 0x0A (left) and
+    0x09 (right).  `xpad` puts the triggers on 0x02/0x05 -- so the USB map
+    on a Bluetooth pad steers or drives with a trigger.
+
+    View and Xbox do not reach the joystick device at all.  The driver
+    sends them as keyboard keys (the device advertises KEY_BACK and
+    KEY_HOMEPAGE), which `joydev` does not carry, so they cannot be bound.
+    The driver does declare buttons 0x132, 0x135, 0x138, 0x139, 0x13A and
+    0x13C, but none of them moved when every control was worked, so none is
+    named: a name for a control that never reports is one a user can bind
+    and then watch do nothing.  They show as 'button(0x13a)' and similar.
+
+    As over USB, the triggers rest at -1.0 and travel to +1.0, and the
+    sticks jitter enough to want `axis_epsilon`.
+
+    Pairing on Debian trixie needs `ClassicBondedOnly=false` and
+    `LEAutoSecurity=false` under [General] in /etc/bluetooth/input.conf;
+    without them the pad bonds and shows a solid light, but no
+    /dev/input/js0 appears.
     """
+
+    AXIS_NAMES = {
+        0x00: 'left_stick_horz',
+        0x01: 'left_stick_vert',
+        0x02: 'right_stick_horz',
+        0x05: 'right_stick_vert',
+        0x09: 'right_trigger',
+        0x0A: 'left_trigger',
+        0x10: 'dpad_horiz',
+        0x11: 'dpad_vert',
+    }
+
+    BUTTON_NAMES = {
+        0x130: 'a_button',
+        0x131: 'b_button',
+        0x133: 'x_button',
+        0x134: 'y_button',
+        0x136: 'left_shoulder',
+        0x137: 'right_shoulder',
+        0x13B: 'menu',
+        0x13D: 'left_stick_press',
+        0x13E: 'right_stick_press',
+    }
