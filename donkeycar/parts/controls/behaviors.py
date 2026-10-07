@@ -799,3 +799,57 @@ class AxisButton:
         crossed = pressed and not self._pressed
         self._pressed = pressed
         return crossed
+
+
+#: How far both triggers must be squeezed for an AxisChord to count, as an
+#: axis position: a trigger rests at -1.0 and is fully in at +1.0, so 0.6
+#: is 80% of its squeeze.  Deep enough that it is never a brush, and short
+#: enough of the end stop that a trigger which does not quite reach +1.0
+#: still counts.
+DEFAULT_AXIS_CHORD_THRESHOLD = 0.6
+
+
+class AxisChord:
+    """
+    Fires once when every axis given to it is pushed past a threshold.
+
+        V.add(AxisChord(),
+              inputs=[format_axis_key('left_trigger'),
+                      format_axis_key('right_trigger')],
+              outputs=['both_triggers'])
+        V.add(StopVehicle(V), run_condition='both_triggers')
+
+    For gestures made of axes rather than buttons -- squeezing both
+    triggers, say.  An Xbox pad over Bluetooth needs this: the two buttons
+    its stop gesture used over USB never reach the joystick device, and the
+    triggers are what is left that nothing else is bound to.
+
+    The order the axes arrive in does not matter.  A button gesture names
+    one control as the trigger and the other as a modifier that has to be
+    held first, which is easy with a button and unreasonable to ask of two
+    triggers squeezed at once.  This fires on the pass where the last of
+    them crosses, whichever that is.
+
+    Outputs true only on that pass, not for as long as they are held, and
+    fires again only once one has been let go.
+
+    An axis with no value yet counts as at rest -- a trigger has nothing in
+    memory until it first moves, and that is not a squeeze.
+    """
+
+    def __init__(self, threshold: float = DEFAULT_AXIS_CHORD_THRESHOLD) -> None:
+        """
+        threshold: how far along every axis must be to count
+        """
+        self.threshold = threshold
+        self._pressed = False
+
+    def run(self, *axis_values: float | None) -> bool:
+        pressed = bool(axis_values) and all(
+            value is not None and value >= self.threshold
+            for value in axis_values
+        )
+
+        crossed = pressed and not self._pressed
+        self._pressed = pressed
+        return crossed

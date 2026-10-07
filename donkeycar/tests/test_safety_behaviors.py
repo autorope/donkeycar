@@ -4,6 +4,7 @@ import unittest
 
 from donkeycar.parts.controls.behaviors import (
     ESTOP_NEUTRAL_THROTTLE,
+    AxisChord,
     ChaosMonkey,
     EmergencyStop,
     StopVehicle,
@@ -228,3 +229,77 @@ class TestStopVehicle(unittest.TestCase):
 
     def test_no_vehicle_is_not_a_crash(self):
         StopVehicle(None).run()  # must not raise
+
+
+class TestAxisChord(unittest.TestCase):
+    """
+    Both triggers squeezed, as the stop gesture for a pad whose spare
+    controls are axes.  Triggers rest at -1.0 and are fully in at +1.0.
+    """
+
+    def test_fires_when_both_are_squeezed(self):
+        assert AxisChord().run(1.0, 1.0) is True
+
+    def test_one_alone_is_not_enough(self):
+        chord = AxisChord()
+
+        assert chord.run(1.0, -1.0) is False
+        assert chord.run(-1.0, 1.0) is False
+
+    def test_either_order(self):
+        """
+        Squeezed together, either trigger may cross first.  A button-style
+        modifier would only fire if the modifier went in first.
+        """
+        left_first = AxisChord()
+        assert left_first.run(1.0, -1.0) is False
+        assert left_first.run(1.0, 1.0) is True
+
+        right_first = AxisChord()
+        assert right_first.run(-1.0, 1.0) is False
+        assert right_first.run(1.0, 1.0) is True
+
+    def test_fires_once_while_held(self):
+        """
+        StopVehicle cannot be undone, but firing it every pass while the
+        triggers are held would still be wrong for any other use.
+        """
+        chord = AxisChord()
+
+        assert chord.run(1.0, 1.0) is True
+        assert chord.run(1.0, 1.0) is False
+        assert chord.run(0.9, 1.0) is False
+
+    def test_letting_one_go_rearms_it(self):
+        chord = AxisChord()
+
+        assert chord.run(1.0, 1.0) is True
+        assert chord.run(-1.0, 1.0) is False
+        assert chord.run(1.0, 1.0) is True
+
+    def test_a_partial_squeeze_does_not_count(self):
+        """
+        0.6 is 80% of a trigger's travel from rest.
+        """
+        assert AxisChord().run(0.5, 1.0) is False
+        assert AxisChord().run(0.6, 1.0) is True
+
+    def test_released_triggers_are_not_squeezed(self):
+        """
+        A released trigger reads -1.0, which is truthy.  That is the trap
+        this part exists to avoid.
+        """
+        assert AxisChord().run(-1.0, -1.0) is False
+
+    def test_an_untouched_trigger_is_not_squeezed(self):
+        """
+        A trigger has no value in memory until it first moves.
+        """
+        assert AxisChord().run(None, 1.0) is False
+        assert AxisChord().run(None, None) is False
+
+    def test_no_axes_is_not_a_chord(self):
+        assert AxisChord().run() is False
+
+    def test_a_single_axis_works(self):
+        assert AxisChord().run(1.0) is True

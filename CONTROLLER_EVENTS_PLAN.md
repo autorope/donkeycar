@@ -1,12 +1,12 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**38 / 41 tasks — Phase 7 (Xbox over Bluetooth) in progress.**
+**39 / 41 tasks — Phase 7 (Xbox over Bluetooth) in progress.**
 
 39 commits in total for Phases 0–6: the 37 tasks below, plus one for the dead-zone default
 change (folded into 3.1's note) and one correcting this checklist, whose
 Phase 2 and Phase 6 boxes had been left unticked while their work was done.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓░░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -667,7 +667,7 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 landed together as planned, except that 6.1 and 6.2 had to swap. Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
 
-### Phase 7 — Xbox over Bluetooth (1 / 4)
+### Phase 7 — Xbox over Bluetooth (2 / 4)
 
 > **Why.** The `xbox` map (1.7) was measured over USB, on the `xpad` driver.
 > Over Bluetooth the same pad is driven by `hid-microsoft` and reports
@@ -698,13 +698,14 @@ must land together to keep the templates working.
       range, and writes JSON. Adds a **redo** option (`r` after a step's result)
       so a fumbled step can be repeated without starting over. Tests drive it
       with a fake device and scripted input.
-- [ ] **7.2** STOP_VEHICLE on a chord of two axes. A new `AxisChord` part
-      outputs true on the one pass where both axes are past a threshold (0.8
-      of full travel), whichever was squeezed first — so the order the triggers
-      go in does not matter, and holding them does not fire twice.
-      `complete.py` uses it when STOP_VEHICLE and its modifier are both bound to
-      axes, and keeps the button path otherwise. A trigger with no value yet in
-      memory counts as released (`TRIGGER_RESTING`), not half squeezed.
+- [x] **7.2** STOP_VEHICLE on a chord of two axes. A new `AxisChord` part
+      outputs true on the one pass where both axes are past +0.6 (80% of a
+      trigger's squeeze from rest), whichever was squeezed first — so the order
+      the triggers go in does not matter, and holding them does not fire twice.
+      `complete.py` uses it when STOP_VEHICLE is bound to an axis, and keeps the
+      button path otherwise: wired the button way, a released trigger's -1.0
+      is truthy and would stop the car on the first pass — a test pins that.
+      A trigger with no value yet in memory counts as released.
 - [ ] **7.3** Add `xbox-usb`: the 1.7 map, unchanged, as `XboxOneUsbJoystick`
       with its existing behavior map. The tests that cross-check other `xpad`
       pads (F710) and conventional layouts against "the Xbox pad" now name the

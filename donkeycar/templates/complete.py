@@ -33,6 +33,7 @@ from donkeycar.parts.controller import LocalWebController, WebFpv
 from donkeycar.parts.controls import (
     AdjustMaxThrottle,
     AxisButton,
+    AxisChord,
     BehaviorEventMapper,
     ChaosMonkey,
     ConstantThrottle,
@@ -827,9 +828,38 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
     # End the drive loop.  Bound with a modifier so it cannot happen by
     # accident, since there is no undo.
     #
-    V.add(StopVehicle(V),
-          inputs=[behaviors.STOP_VEHICLE_MODIFIER],
-          run_condition=behaviors.STOP_VEHICLE)
+    _add_stop_vehicle(V, cfg)
+
+
+def _add_stop_vehicle(V, cfg):
+    """
+    Bind ending the drive loop.
+
+    Usually a button pressed while another is held.  A pad whose spare
+    controls are axes -- an Xbox pad over Bluetooth, which squeezes both
+    triggers -- binds both behaviors to axis states instead, and an axis
+    state is a position, not a press: a released trigger reads -1.0, which
+    is true.  Wired the button way, that would stop the car on the first
+    pass.  So axes go through a chord, which fires once both are squeezed
+    in whatever order.
+    """
+    behavior_map = get_behavior_map(cfg)
+    controls = behavior_map.get(behaviors.STOP_VEHICLE)
+    if controls is None:
+        return  # this controller has nothing spare to bind it to
+
+    control = controls if isinstance(controls, str) else next(iter(controls), '')
+    if control.startswith(AXIS_STATE):
+        axes = [behaviors.STOP_VEHICLE]
+        if behaviors.STOP_VEHICLE_MODIFIER in behavior_map:
+            axes.append(behaviors.STOP_VEHICLE_MODIFIER)
+        pressed = f'{behaviors.STOP_VEHICLE}/pressed'
+        V.add(AxisChord(), inputs=axes, outputs=[pressed])
+        V.add(StopVehicle(V), run_condition=pressed)
+    else:
+        V.add(StopVehicle(V),
+              inputs=[behaviors.STOP_VEHICLE_MODIFIER],
+              run_condition=behaviors.STOP_VEHICLE)
 
 
 def _add_throttle_limit(V, cfg, behavior, direction):
