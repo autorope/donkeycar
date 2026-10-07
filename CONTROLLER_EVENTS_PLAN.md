@@ -1,12 +1,12 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 37 / 37 tasks.**
+**38 / 41 tasks — Phase 7 (Xbox over Bluetooth) in progress.**
 
-39 commits in total: the 37 tasks below, plus one for the dead-zone default
+39 commits in total for Phases 0–6: the 37 tasks below, plus one for the dead-zone default
 change (folded into 3.1's note) and one correcting this checklist, whose
 Phase 2 and Phase 6 boxes had been left unticked while their work was done.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓░░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -666,6 +666,55 @@ Ordering constraint: 5.1 must land before 5.2 and 5.3, since both import
 **Total: 38 commits.** Phases 0–2 were mergeable independently; Phases 5–6
 landed together as planned, except that 6.1 and 6.2 had to swap. Phases 0–2 are mergeable independently; Phases 5–6
 must land together to keep the templates working.
+
+### Phase 7 — Xbox over Bluetooth (1 / 4)
+
+> **Why.** The `xbox` map (1.7) was measured over USB, on the `xpad` driver.
+> Over Bluetooth the same pad is driven by `hid-microsoft` and reports
+> different codes — and Bluetooth is how nearly everyone connects it.
+> Measured on a 'Xbox Wireless Controller' (045e:02fd) on Debian trixie,
+> kernel 6.18, 2026-10-07, each control moved in isolation:
+>
+> | Control | USB (`xpad`) | Bluetooth (`hid-microsoft`) |
+> |---|---|---|
+> | right stick horz / vert | 0x03 / 0x04 | **0x02 / 0x05** |
+> | left trigger / right trigger | 0x02 / 0x05 | **0x0A / 0x09** (rest −1.0) |
+> | left stick, dpad | 0x00/0x01, 0x10/0x11 | same |
+> | A B X Y LB RB menu, stick clicks | 0x130…0x13E | same |
+> | view, xbox | 0x13A, 0x13C | **not on js0 at all** |
+>
+> The driver also declares 0x132, 0x135, 0x138, 0x139, 0x13A and 0x13C, but
+> none of them moved. View and Xbox appear to be sent as keyboard keys
+> (the device advertises `KEY_BACK` and `KEY_HOMEPAGE`), which `joydev` does
+> not carry — so over Bluetooth they cannot be bound at all.
+>
+> That breaks the `xbox` STOP_VEHICLE gesture (Xbox while holding View).
+> **Decided:** over Bluetooth, STOP_VEHICLE is *both triggers squeezed fully*.
+> Nothing else is bound to the triggers by default, and squeezing both at once
+> is deliberate.
+
+- [x] **7.1** Save the capture tool as `python -m donkeycar.parts.controls.capture`.
+      It walks through each control, records which code moved and over what
+      range, and writes JSON. Adds a **redo** option (`r` after a step's result)
+      so a fumbled step can be repeated without starting over. Tests drive it
+      with a fake device and scripted input.
+- [ ] **7.2** STOP_VEHICLE on a chord of two axes. A new `AxisChord` part
+      outputs true on the one pass where both axes are past a threshold (0.8
+      of full travel), whichever was squeezed first — so the order the triggers
+      go in does not matter, and holding them does not fire twice.
+      `complete.py` uses it when STOP_VEHICLE and its modifier are both bound to
+      axes, and keeps the button path otherwise. A trigger with no value yet in
+      memory counts as released (`TRIGGER_RESTING`), not half squeezed.
+- [ ] **7.3** Add `xbox-usb`: the 1.7 map, unchanged, as `XboxOneUsbJoystick`
+      with its existing behavior map. The tests that cross-check other `xpad`
+      pads (F710) and conventional layouts against "the Xbox pad" now name the
+      USB class, which is the one they meant. `xbox` is unchanged in this commit.
+- [ ] **7.4** Make `xbox` the Bluetooth map: `XboxOneJoystick` gets the measured
+      codes above and names neither view nor xbox; its behavior map moves
+      STOP_VEHICLE to the triggers. `xboxswapped` follows `xbox` (it is a
+      binding, not hardware). The docstring's "Bluetooth does not work" note
+      becomes the trixie pairing note. Migration guide, the `CONTROLLER_TYPE`
+      option lists in the templates, and `events.py --type` help updated.
 
 ---
 

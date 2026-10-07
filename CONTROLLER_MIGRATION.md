@@ -357,5 +357,17 @@ python -m donkeycar.parts.controls.events --type xbox
 It prints every event as it happens, at the rate a car runs, so the timing
 you see is the timing a behavior will get.
 
+To find out which driver code each control on your pad reports — when a
+built-in map seems to have the wrong stick, or you are writing a map for a
+new pad or driver:
+
+```bash
+python -m donkeycar.parts.controls.capture --out pad.json
+```
+
+It asks for each control in turn, records what moved and how far, and saves
+the result.  Type `s` to skip a control your pad lacks, and `r` after a
+step's result to redo it.  Attach `pad.json` when reporting a wrong map.
+
 If something here is wrong or missing, say so on
 [#1097](https://github.com/autorope/donkeycar/issues/1097).
