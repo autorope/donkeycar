@@ -114,6 +114,49 @@ donkey = "donkeycar.management.base:execute_from_command_line"
 [project.urls]
 Homepage = "https://github.com/autorope/donkeycar"
 
+[tool.mypy]
+# Strict typing is being introduced module by module as the game-controller
+# event system lands (see CONTROLLER_EVENTS_PLAN.md).  Add each new module to
+# `files` in the commit that types it; the per-module block below carries the
+# `strict` flag set, which mypy does not accept as a per-module option.
+python_version = "3.12"
+files = [
+    "donkeycar/memory.py",
+    "donkeycar/events.py",
+    "donkeycar/parts/controls/",
+    "donkeycar/tests/fake_js.py",
+    "donkeycar/tests/fake_pygame.py",
+    "donkeycar/tests/fake_rc.py",
+]
+ignore_missing_imports = true
+# analyse imported modules for type information but do not report their
+# errors -- only modules listed in `files` are held to the strict standard
+follow_imports = "silent"
+warn_redundant_casts = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "donkeycar.memory",
+    "donkeycar.events",
+    "donkeycar.parts.controls.*",
+    "donkeycar.tests.fake_js",
+    "donkeycar.tests.fake_pygame",
+    "donkeycar.tests.fake_rc",
+]
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_reexport = true
+strict_equality = true
+extra_checks = true
+
 [tool.setuptools.dynamic]
 version = {attr = "donkeycar.__version__"}
 

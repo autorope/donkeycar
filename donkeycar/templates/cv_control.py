@@ -23,12 +23,14 @@ from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.line_follower import LineFollower
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_drivetrain, add_simulator, add_imu, DriveMode, \
-    UserPilotCondition, ToggleRecording
+    add_user_controller, add_controller_behaviors, add_drivetrain, \
+    add_simulator, add_imu, DriveMode, UserPilotCondition
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
-from donkeycar.parts.controller import JoystickController
+from donkeycar.parts.controls import AdjustPid
+from donkeycar.parts.controls.behaviors import AutoRecordOnThrottle
+from donkeycar.parts.controls import mapping as behaviors
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -82,22 +84,6 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     # PID controller to be used with cv_controller
     #
     pid = PID(Kp=cfg.PID_P, Ki=cfg.PID_I, Kd=cfg.PID_D)
-    def dec_pid_d():
-        pid.Kd -= cfg.PID_D_DELTA
-        logging.info("pid: d- %f" % pid.Kd)
-
-    def inc_pid_d():
-        pid.Kd += cfg.PID_D_DELTA
-        logging.info("pid: d+ %f" % pid.Kd)
-
-    def dec_pid_p():
-        pid.Kp -= cfg.PID_P_DELTA
-        logging.info("pid: p- %f" % pid.Kp)
-
-    def inc_pid_p():
-        pid.Kp += cfg.PID_P_DELTA
-        logging.info("pid: p+ %f" % pid.Kp)
-
     #
     # Computer Vision Controller
     #
@@ -108,55 +94,36 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
                       cfg.CV_CONTROLLER_OUTPUTS,
                       cfg.CV_CONTROLLER_CONDITION)
 
-    recording_control = ToggleRecording(cfg.AUTO_RECORD_ON_THROTTLE, cfg.RECORD_DURING_AI)
-    V.add(recording_control, inputs=['user/mode', "recording"], outputs=["recording"])
+    #
+    # Recording follows the throttle, or a button toggles it -- never both,
+    # since both write 'recording' and whichever ran later would win.
+    # add_controller_behaviors adds the button when auto-record is off.
+    #
+    if cfg.AUTO_RECORD_ON_THROTTLE:
+        V.add(AutoRecordOnThrottle(
+                  dead_zone=cfg.JOYSTICK_DEADZONE,
+                  record_in_autopilot=getattr(cfg, 'RECORD_DURING_AI', False)),
+              inputs=['user/throttle', 'user/mode'],
+              outputs=['recording'])
 
 
     #
-    # Add buttons for handling various user actions
-    # The button names are in configuration.
-    # They may refer to game controller (joystick) buttons OR web ui buttons
+    # Tuning the PID while driving.  Each is bound to a behavior rather
+    # than to a button, so a gamepad button and a web button reach it the
+    # same way -- which is why this is no longer written twice per binding,
+    # once for each route in.  Which control drives each one is
+    # CONTROLLER_BEHAVIOR_MAP in myconfig.py.
     #
-    # There are 5 programmable webui buttons, "web/w1" to "web/w5"
-    # adding a button handler for a webui button
-    # is just adding a part with a run_condition set to
-    # the button's name, so it runs when button is pressed.
-    #
-    have_joystick = ctr is not None and isinstance(ctr, JoystickController)
-
-    # button to toggle recording
-    if cfg.TOGGLE_RECORDING_BTN:
-        print(f"Toggle recording button is {cfg.TOGGLE_RECORDING_BTN}")
-        if cfg.TOGGLE_RECORDING_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: recording_control.toggle_recording()), run_condition=cfg.TOGGLE_RECORDING_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.TOGGLE_RECORDING_BTN, recording_control.toggle_recording)
-
-    # Buttons to tune PID constants
-    if cfg.DEC_PID_P_BTN and cfg.PID_P_DELTA:
-        print(f"Decrement PID P button is {cfg.DEC_PID_P_BTN}")
-        if cfg.DEC_PID_P_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: dec_pid_p()), run_condition=cfg.DEC_PID_P_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.DEC_PID_P_BTN, dec_pid_p)
-    if cfg.INC_PID_P_BTN and cfg.PID_P_DELTA:
-        print(f"Increment PID P button is {cfg.INC_PID_P_BTN}")
-        if cfg.INC_PID_P_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: inc_pid_p()), run_condition=cfg.INC_PID_P_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.INC_PID_P_BTN, inc_pid_p)
-    if cfg.DEC_PID_D_BTN and cfg.PID_D_DELTA:
-        print(f"Decrement PID D button is {cfg.DEC_PID_D_BTN}")
-        if cfg.DEC_PID_D_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: dec_pid_d()), run_condition=cfg.DEC_PID_D_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.DEC_PID_D_BTN, dec_pid_d)
-    if cfg.INC_PID_D_BTN and cfg.PID_D_DELTA:
-        print(f"Increment PID D button is {cfg.INC_PID_D_BTN}")
-        if cfg.INC_PID_D_BTN.startswith("web/w"):
-            V.add(Lambda(lambda: inc_pid_d()), run_condition=cfg.INC_PID_D_BTN)
-        elif have_joystick:
-            ctr.set_button_down_trigger(cfg.INC_PID_D_BTN, inc_pid_d)
+    if cfg.PID_P_DELTA:
+        V.add(AdjustPid(pid, 'Kp', +cfg.PID_P_DELTA),
+              run_condition=behaviors.INCREASE_PID_P)
+        V.add(AdjustPid(pid, 'Kp', -cfg.PID_P_DELTA),
+              run_condition=behaviors.DECREASE_PID_P)
+    if cfg.PID_D_DELTA:
+        V.add(AdjustPid(pid, 'Kd', +cfg.PID_D_DELTA),
+              run_condition=behaviors.INCREASE_PID_D)
+        V.add(AdjustPid(pid, 'Kd', -cfg.PID_D_DELTA),
+              run_condition=behaviors.DECREASE_PID_D)
 
     #
     # Decide what inputs should change the car's steering and throttle
@@ -208,9 +175,12 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
         print("You can now go to <your hostname.local>:%d to drive your car." % cfg.WEB_CONTROL_PORT)
     if has_input_controller:
         print("You can now move your controller to drive your car.")
-        if isinstance(ctr, JoystickController):
-            ctr.set_tub(tub_writer.tub)
-            ctr.print_controls()
+
+    #
+    # The parts a controller drives, bound to behaviors rather than to
+    # buttons.  Added last because some of them need the tub.
+    #
+    add_controller_behaviors(V, cfg, tub=tub_writer.tub)
 
     #
     # run the vehicle

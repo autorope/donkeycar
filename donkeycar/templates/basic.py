@@ -17,7 +17,23 @@ import os
 import donkeycar as dk
 from donkeycar.parts.tub_v2 import TubWriter, TubWiper
 from donkeycar.parts.datastore import TubHandler
-from donkeycar.parts.controller import LocalWebController, RCReceiver
+from donkeycar.parts.controller import LocalWebController
+from donkeycar.parts.controls import (
+    AxisButton,
+    BehaviorEventMapper,
+    InputControllerEvents,
+    NetworkedController,
+    RCReceiver,
+    TogglePilotMode,
+    ToggleRecording,
+    UserSteering,
+    UserThrottle,
+    ZmqSubscriber,
+    get_behavior_map,
+    get_input_controller,
+)
+from donkeycar.parts.controls import mapping as behaviors
+from donkeycar.parts.controls.events import format_axis_event
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.pipeline.augmentations import ImageAugmentation
 
@@ -46,6 +62,54 @@ class PilotCondition:
     """ Helper class to determine who is in charge of driving"""
     def run(self, mode):
         return mode != 'user'
+
+
+def add_rc_receiver(cfg):
+    """
+    The RC receiver, reading steering, throttle and the data wiper.
+
+    One part reading all three channels rather than one part per channel.
+    The per-channel form this template used called RCReceiver with a pin
+    where it expected a config, and with jitter= and no_action= arguments
+    that class has never had, so USE_RC raised TypeError on startup.  It
+    also bound two outputs to a run() returning four.  It was written
+    against an older receiver and had not worked in a long time.
+    """
+    return RCReceiver(
+        pins=(cfg.STEERING_RC_GPIO, cfg.THROTTLE_RC_GPIO,
+              cfg.DATA_WIPER_RC_GPIO),
+        invert=getattr(cfg, 'PIGPIO_INVERT', False),
+        axis_epsilon=getattr(cfg, 'PIGPIO_JITTER', 0.01))
+
+
+def add_rc_behaviors(car, cfg):
+    """
+    What the RC transmitter's three channels do.
+
+    Bound straight to the channels rather than through a behavior map: this
+    transmitter has two channels and a switch, so there is nothing to remap
+    and nothing to choose between.
+    """
+    steering = format_axis_event('steering')
+    throttle = format_axis_event('throttle')
+
+    car.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+                         dead_zone=cfg.JOYSTICK_DEADZONE),
+            inputs=[steering], outputs=['user/angle'],
+            run_condition=steering)
+    car.add(UserThrottle(direction=1.0,
+                         scale=cfg.JOYSTICK_MAX_THROTTLE,
+                         dead_zone=cfg.JOYSTICK_DEADZONE),
+            inputs=[throttle], outputs=['user/throttle'],
+            run_condition=throttle)
+
+    #
+    # The wiper channel is a switch, so it is on or off rather than a
+    # position.  TubWiper erases for as long as its input is true, so this
+    # reports the moment the switch is thrown rather than that it is held.
+    #
+    car.add(AxisButton(direction=1), inputs=['/axis/switch'],
+            outputs=['user/wiper_on'])
 
 
 def drive(cfg, model_path=None, model_type=None):
@@ -106,32 +170,64 @@ def drive(cfg, model_path=None, model_type=None):
 
     # add controller
     if cfg.USE_RC:
-        rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
-        rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
-        rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
-        car.add(rc_steering, outputs=['user/angle', 'user/angle_on'])
-        car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
-        car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+        #
+        # An RC receiver read straight off the GPIO pins.  It reports its
+        # three channels and nothing else; the parts below decide what they
+        # mean, which is how every other controller works now too.
+        #
+        car.add(InputControllerEvents(car.mem, add_rc_receiver(cfg)),
+                threaded=True)
+        add_rc_behaviors(car, cfg)
+
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
                                  mode=cfg.WEB_INIT_MODE)
-        # web controller sets user mode, its angle, throttle are not used.
+        # the web controller sets the mode; its angle and throttle are unused
+        car.add(ctr, inputs=['cam/image_array'],
+                outputs=['webcontroller/angle', 'webcontroller/throttle',
+                         'user/mode', 'recording'],
+                threaded=True)
+
+    elif cfg.USE_JOYSTICK_AS_DEFAULT:
+        if cfg.USE_NETWORKED_JS:
+            controller = NetworkedController(
+                ZmqSubscriber(cfg.NETWORK_JS_SERVER_IP))
+        else:
+            controller = get_input_controller(cfg)
+        car.add(InputControllerEvents(car.mem, controller), threaded=True)
+
+        mapper = BehaviorEventMapper(car.mem, get_behavior_map(cfg))
+        mapper.show_map()
+        car.add(mapper)
+
+        #
+        # This template calls its steering 'user/angle' rather than
+        # 'user/steering', so it binds the driving parts itself instead of
+        # using complete.py's.
+        #
+        car.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+                             dead_zone=cfg.JOYSTICK_DEADZONE),
+                inputs=[behaviors.STEERING], outputs=['user/angle'],
+                run_condition=behaviors.STEERING)
+        car.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
+                             scale=cfg.JOYSTICK_MAX_THROTTLE,
+                             dead_zone=cfg.JOYSTICK_DEADZONE),
+                inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
+                run_condition=behaviors.THROTTLE)
+        car.add(TogglePilotMode(), inputs=['user/mode'], outputs=['user/mode'],
+                run_condition=behaviors.TOGGLE_PILOT_MODE)
+        car.add(ToggleRecording(), inputs=['recording'], outputs=['recording'],
+                run_condition=behaviors.TOGGLE_RECORDING)
+
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                 mode=cfg.WEB_INIT_MODE)
         car.add(ctr, inputs=['cam/image_array'],
                 outputs=['webcontroller/angle', 'webcontroller/throttle',
                          'user/mode', 'recording'],
                 threaded=True)
 
     else:
-        if cfg.USE_JOYSTICK_AS_DEFAULT:
-            from donkeycar.parts.controller import get_js_controller
-            ctr = get_js_controller(cfg)
-            if cfg.USE_NETWORKED_JS:
-                from donkeycar.parts.controller import JoyStickSub
-                netwkJs = JoyStickSub(cfg.NETWORK_JS_SERVER_IP)
-                car.add(netwkJs, threaded=True)
-                ctr.js = netwkJs
-        else:
-            ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
-                                     mode=cfg.WEB_INIT_MODE)
+        ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
+                                 mode=cfg.WEB_INIT_MODE)
         car.add(ctr,
                 inputs=['cam/image_array'],
                 outputs=['user/angle', 'user/throttle', 'user/mode',
@@ -198,6 +294,11 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(tub_writer, inputs=inputs, outputs=["tub/num_records"],
                 run_condition='recording')
     if not model_path and cfg.USE_RC:
+        #
+        # The wiper channel throws away the last second of records.  It is
+        # an edge, not a level: TubWiper erases while its input is true, so
+        # a held switch would take the whole tub.
+        #
         tub_wiper = TubWiper(tub_writer.tub, num_records=cfg.DRIVE_LOOP_HZ)
         car.add(tub_wiper, inputs=['user/wiper_on'])
     # start the car
@@ -216,24 +317,17 @@ def calibrate(cfg):
     donkey_car = dk.vehicle.Vehicle()
 
     # create the RC receiver
-    rc_steering = RCReceiver(cfg.STEERING_RC_GPIO, invert=True)
-    rc_throttle = RCReceiver(cfg.THROTTLE_RC_GPIO)
-    rc_wiper = RCReceiver(cfg.DATA_WIPER_RC_GPIO, jitter=0.05, no_action=0)
-    donkey_car.add(rc_steering, outputs=['user/angle', 'user/steering_on'])
-    donkey_car.add(rc_throttle, outputs=['user/throttle', 'user/throttle_on'])
-    donkey_car.add(rc_wiper, outputs=['user/wiper', 'user/wiper_on'])
+    donkey_car.add(InputControllerEvents(donkey_car.mem, add_rc_receiver(cfg)),
+                   threaded=True)
 
-    # create plotter part for printing into the shell
+    # print each channel as it is read
     class Plotter:
-        def run(self, angle, steering_on, throttle, throttle_on, wiper, wiper_on):
-            print('angle=%+5.4f, steering_on=%1d, throttle=%+5.4f, '
-                  'throttle_on=%1d wiper=%+5.4f, wiper_on=%1d' %
-                  (angle, steering_on, throttle, throttle_on, wiper, wiper_on))
+        def run(self, steering, throttle, wiper):
+            print('steering=%+5.4f, throttle=%+5.4f, wiper=%+5.4f'
+                  % (steering or 0.0, throttle or 0.0, wiper or 0.0))
 
-    # add plotter part
-    donkey_car.add(Plotter(), inputs=['user/angle', 'user/steering_on',
-                                      'user/throttle', 'user/throttle_on',
-                                      'user/wiper', 'user/wiper_on'])
+    donkey_car.add(Plotter(), inputs=['/axis/steering', '/axis/throttle',
+                                      '/axis/switch'])
     # run the vehicle at 5Hz to keep network traffic down
     donkey_car.start(rate_hz=10, max_loop_count=cfg.MAX_LOOPS)
 
