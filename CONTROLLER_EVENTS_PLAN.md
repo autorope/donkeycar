@@ -898,6 +898,15 @@ must land together to keep the templates working.
       `complete.drive()`: T4.5 as written — stick held, constant throttle on
       then off — gives zero, not the stick's value.
 
+> **Verified on hardware (Ed, 2026-10-13)**, Phases 9 and 10 together at
+> `160aa3da`: a fresh `complete` car (`~/mycar1249`, wheels off the ground),
+> an Xbox Wireless Controller over Bluetooth (`CONTROLLER_TYPE = 'xbox'`),
+> Raspberry Pi on Debian trixie. All passed — a held stick keeps the motor
+> running; Y brakes and the motor stays stopped with the stick still held,
+> then drives again once it moves; T4.5, constant throttle off gives zero;
+> both triggers end the loop; and T5.5, switching the pad off logs the
+> disconnect, stops the motor and ends the loop.
+
 ---
 
 ## 5. Type-hint and test standards
