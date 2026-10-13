@@ -22,5 +22,7 @@ jobs:
         run: uv venv --python ${{ matrix.python-version }}
       - name: Install donkey
         run: uv pip install -e ".[pc,dev]"
+      - name: Type check
+        run: uv run --no-sync mypy
       - name: Run tests
         run: uv run --no-sync pytest
