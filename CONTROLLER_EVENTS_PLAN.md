@@ -943,6 +943,11 @@ must land together to keep the templates working.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 
+> **Postponed (Ed, 2026-10-13).** `basic` is not an important template, and
+> the templates may be thinned out in a separate PR — which could remove
+> `basic.py` rather than fix it. Nothing below is to be done on this branch;
+> it stays here so that PR has the findings.
+
 > **Found (Ed, 2026-10-13)** while trying 11.1 on hardware: a new `basic`
 > car (`~/mycar-basic-1249`) fails at startup, before any controller code
 > runs:
@@ -979,7 +984,7 @@ must land together to keep the templates working.
 >    recognise, detection always answered 1; where it does not, it fails. So
 >    this keeps what worked and fixes what did not, and anyone on a
 >    different bus overrides it in `myconfig.py` as they already must.
->    **Recommended now**, as a one-line PR to `main` like #1254.
+>    Recommended if `basic.py` is kept, as a one-line PR to `main` like #1254.
 > 2. **Fall back to bus 1 in `parts/actuator.py`'s `PCA9685`** when no bus is
 >    given and detection fails. **Not recommended**: that class is shared
 >    and deprecated, and its bus override works by replacing
@@ -999,9 +1004,9 @@ must land together to keep the templates working.
 >
 > Neither 1 nor 3 depends on this branch.
 
-- [ ] *(proposed, option 1)* PR to `main`: `PCA9685_I2C_BUSNUM = 1` in
+- [ ] *(postponed, option 1)* PR to `main`: `PCA9685_I2C_BUSNUM = 1` in
       `cfg_basic.py`, with a comment saying why and how to override it.
-- [ ] *(proposed, option 3 — open decision)* `basic.py` uses
+- [ ] *(postponed, option 3 — open decision)* `basic.py` uses
       `add_drivetrain()`, with a compatibility path for existing configs.
 
 ---
