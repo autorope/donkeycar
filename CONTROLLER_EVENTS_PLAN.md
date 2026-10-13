@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**46 / 47 tasks — Phase 10 (letting go of a held stick) in progress.**
+**COMPLETE — 47 / 47 tasks.**
 
-47 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+49 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
-their work was done.  Phase 7 took 4, and Phases 8 and 9 took 2 each, one per task.
+their work was done.  Phase 7 took 4, and Phases 8, 9 and 10 took 2 each, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -851,7 +851,7 @@ must land together to keep the templates working.
       The 8.2 RC test moved onto the same harness, so it too checks the
       drivetrain rather than memory.
 
-### Phase 10 — Letting go of a held stick (1 / 2)
+### Phase 10 — Letting go of a held stick (2 / 2) ✅
 
 > **Why.** Copilot review of `352d9d7d`
 > ([r4242814034](https://github.com/autorope/donkeycar/pull/1249#discussion_r4242814034)):
@@ -889,7 +889,7 @@ must land together to keep the templates working.
       disconnect and not on a shutdown; through `complete.drive()`, a pad
       lost mid-acceleration gives the drivetrain 0.0 and the loop ends, in
       autopilot too. The migration guide says so, since `main` carried on.
-- [ ] **10.2** A held stick is released whenever something else takes the
+- [x] **10.2** A held stick is released whenever something else takes the
       throttle. 9.2 gave `UserThrottle` one such signal, the emergency stop;
       it becomes a general "let go" input taking any number of them —
       emergency stop, constant throttle on, controller lost — and forgets

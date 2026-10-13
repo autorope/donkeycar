@@ -174,6 +174,32 @@ class TestTheEmergencyStop(DrivingTest):
         assert throttles[-6:] == [0.0] * 6
 
 
+class TestConstantThrottle(DrivingTest):
+
+    def test_turning_it_off_gives_zero_not_the_stick(self):
+        """
+        The PR's hardware test plan, T4.5: "turning it off gives zero, not a
+        lurch to whatever the stick reads".  With the stick's position held
+        between events, turning it off with the stick at 60% gave 0.0 for a
+        pass and then 0.3.
+        """
+        throttles = self.throttles(
+            self.stick('right_stick_vert', -0.6),
+            self.press('menu'), self.idle,
+            self.press('menu'), self.idle, self.idle)
+
+        assert throttles[0] == 0.6 * SCALE
+        assert throttles[1:3] == [SCALE, SCALE]
+        assert throttles[3:] == [0.0, 0.0, 0.0]
+
+    def test_the_stick_drives_again_once_it_moves(self):
+        throttles = self.throttles(
+            self.press('menu'), self.idle, self.press('menu'), self.idle,
+            self.stick('right_stick_vert', -1.0), self.idle)
+
+        assert throttles[-2:] == [SCALE, SCALE]
+
+
 class TestALostControllerStopsTheCar(DrivingTest):
     """
     Found by Copilot review: a disconnect only stopped the polling thread.

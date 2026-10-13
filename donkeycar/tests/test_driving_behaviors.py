@@ -97,6 +97,34 @@ class TestUserThrottle(unittest.TestCase):
         assert throttle.run(None) == 0.5
         assert throttle.run(None) == 0.5
 
+    def test_it_lets_go_while_something_else_has_the_throttle(self):
+        """
+        An emergency stop, constant throttle, a lost controller: while any
+        of them has the throttle, the stick is let go.
+        """
+        throttle = UserThrottle(direction=1.0, scale=1.0)
+        throttle.run(0.6)
+
+        assert throttle.run(None, None, False, True, None) is None
+
+    def test_after_letting_go_it_waits_for_the_stick_to_move(self):
+        """
+        Legacy left the throttle at zero until the stick moved.  Holding the
+        old position instead drove the car off again after a stop, and
+        lurched when constant throttle was turned off.
+        """
+        throttle = UserThrottle(direction=1.0, scale=1.0)
+        throttle.run(0.6)
+        throttle.run(None, None, True)
+
+        assert throttle.run(None, None, False) is None
+        assert throttle.run(0.4, None, False) == 0.4
+
+    def test_no_signals_change_nothing(self):
+        throttle = UserThrottle(direction=1.0, scale=1.0)
+
+        assert throttle.run(0.6, None, False, None, False) == 0.6
+
     def test_a_limit_changed_while_holding_takes_effect(self):
         """
         The position is held, not the throttle, so AdjustMaxThrottle still

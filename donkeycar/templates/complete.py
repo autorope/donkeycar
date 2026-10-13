@@ -783,7 +783,9 @@ def add_driving_behaviors(V, cfg):
     V.add(UserThrottle(direction=scaling.throttle_direction,
                        scale=scaling.throttle_scale,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
-          inputs=[behaviors.THROTTLE, 'user/throttle_scale', 'user/estop'],
+          inputs=[behaviors.THROTTLE, 'user/throttle_scale',
+                  # whatever else can take the throttle; see UserThrottle
+                  'user/estop', 'user/constant_throttle', CONTROLLER_LOST],
           outputs=['user/throttle'])
 
     #

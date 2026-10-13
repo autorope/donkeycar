@@ -109,12 +109,15 @@ class UserThrottle:
     keep the car moving.  It answers None until the control has reported
     anything.
 
-    An emergency stop lets go of the stick.  Give it EmergencyStop's
-    'user/estop' as its third input: while a stop is in progress it forgets
-    the held position, so when the stop ends the throttle stays at zero
-    until the stick actually moves again -- as legacy did.  Without that,
-    a stick still held forward drove the car off again the moment the stop
-    finished.
+    It lets go of the stick whenever something else takes the throttle.
+    Any inputs after the scale are such signals -- in the templates the
+    emergency stop in progress ('user/estop'), constant throttle being on,
+    and the controller being lost.  While any is true it forgets the held
+    position and answers None, so when they end the throttle stays at zero
+    until the stick actually moves again, as legacy did.  Without that, a
+    stick still held forward drove the car off again the moment a stop
+    finished, and turning constant throttle off lurched to whatever the
+    stick had last read instead of giving zero.
 
     The scale is taken as an input as well as a constructor argument so
     that AdjustMaxThrottle can change it while driving.  On a car that
@@ -146,11 +149,11 @@ class UserThrottle:
         self,
         axis_value: float | None = None,
         throttle_scale: float | None = None,
-        stopping: bool | None = None,
+        *let_go: Any,
     ) -> float | None:
-        if stopping:
-            # let go, and ignore the stick until the stop is over; the
-            # emergency stop is deciding the throttle meanwhile
+        if any(let_go):
+            # something else has the throttle; let go, and ignore the stick
+            # until it is done
             self._position = None
             return None
         if axis_value is not None:
