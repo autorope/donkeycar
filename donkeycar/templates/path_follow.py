@@ -64,7 +64,7 @@ from donkeycar.parts.path import CsvThrottlePath, PathPlot, CTE, PID_Pilot, \
 from donkeycar.parts.transform import PIDController
 from donkeycar.parts.kinematics import TwoWheelSteeringThrottle
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_controller_behaviors, add_drivetrain, \
+    add_user_controller, add_driving_behaviors, add_drivetrain, \
     add_simulator, add_imu, DriveMode, UserPilotCondition
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
@@ -177,6 +177,13 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     has_input_controller = hasattr(cfg, "CONTROLLER_TYPE") and cfg.CONTROLLER_TYPE != "mock"
     ctr = add_user_controller(V, cfg, use_joystick, input_image = 'map/image')
+
+    #
+    # What the controller drives, straight after the controller so that its
+    # steering and throttle are in memory before anything reads them; see
+    # add_driving_behaviors.
+    #
+    add_driving_behaviors(V, cfg)
 
     #
     # explode the web buttons into their own key/values in memory
@@ -368,12 +375,6 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         oled_part = OLEDPart(cfg.SSD1306_128_32_I2C_ROTATION, cfg.SSD1306_RESOLUTION, auto_record_on_throttle)
         V.add(oled_part, inputs=['recording', 'tub/num_records', 'user/mode'], outputs=[], threaded=True)
 
-
-    #
-    # The parts a controller drives.  The behavior map was printed when it
-    # was added, so a driver can already see what their controller does.
-    #
-    add_controller_behaviors(V, cfg)
 
     #
     # draw a map image as the vehicle moves

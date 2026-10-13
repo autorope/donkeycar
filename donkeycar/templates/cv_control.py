@@ -23,7 +23,8 @@ from donkeycar.parts.tub_v2 import TubWriter
 from donkeycar.parts.datastore import TubHandler
 from donkeycar.parts.line_follower import LineFollower
 from donkeycar.templates.complete import add_odometry, add_camera, \
-    add_user_controller, add_controller_behaviors, add_drivetrain, \
+    add_user_controller, add_driving_behaviors, add_record_behaviors, \
+    add_drivetrain, \
     add_simulator, add_imu, DriveMode, UserPilotCondition
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
@@ -69,6 +70,13 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     ctr = add_user_controller(V, cfg, use_joystick, input_image = 'ui/image_array')
 
     #
+    # What the controller drives, straight after the controller so that its
+    # steering and throttle are in memory before anything reads them; see
+    # add_driving_behaviors.
+    #
+    add_driving_behaviors(V, cfg)
+
+    #
     # explode the web buttons into their own key/values in memory
     #
     V.add(ExplodeDict(V.mem, "web/"), inputs=['web/buttons'])
@@ -97,7 +105,7 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     #
     # Recording follows the throttle, or a button toggles it -- never both,
     # since both write 'recording' and whichever ran later would win.
-    # add_controller_behaviors adds the button when auto-record is off.
+    # add_driving_behaviors adds the button when auto-record is off.
     #
     if cfg.AUTO_RECORD_ON_THROTTLE:
         V.add(AutoRecordOnThrottle(
@@ -177,10 +185,9 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
         print("You can now move your controller to drive your car.")
 
     #
-    # The parts a controller drives, bound to behaviors rather than to
-    # buttons.  Added last because some of them need the tub.
+    # The controller's record keeping, which needs the tub.
     #
-    add_controller_behaviors(V, cfg, tub=tub_writer.tub)
+    add_record_behaviors(V, cfg, tub=tub_writer.tub)
 
     #
     # run the vehicle

@@ -158,6 +158,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     ctr = add_user_controller(V, cfg, use_joystick)
 
     #
+    # What the controller drives.  Straight after the controller, so that
+    # its steering and throttle -- and the emergency stop's braking -- are
+    # in memory before anything that reads them: the throttle filter, the
+    # drive mode, the drivetrain and the tub.  Added later, they landed
+    # after the drivetrain had run, and the web controller overwrote them at
+    # the start of the next pass, so a physical controller never drove.
+    #
+    add_driving_behaviors(V, cfg)
+
+    #
     # convert 'user/steering' to 'user/angle' to be backward compatible with deep learning data
     #
     V.add(Pipe(), inputs=['user/steering'], outputs=['user/angle'])
@@ -277,7 +287,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
 
     #
     # Announcing the record count is now bound like anything else, in
-    # add_controller_behaviors below.  The legacy template hijacked the
+    # add_record_behaviors below.  The legacy template hijacked the
     # circle button for it whenever auto-record-on-throttle had made manual
     # recording unavailable, on the reasoning that the button was spare.
     #
@@ -479,7 +489,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
     # Recording.  Either the throttle decides it or a button toggles it;
     # both writing 'recording' would mean whichever ran later won and the
     # button appeared to do nothing.  ToggleRecording is added instead, in
-    # add_controller_behaviors, when auto-record is off.
+    # add_driving_behaviors, when auto-record is off.
     #
     if cfg.AUTO_RECORD_ON_THROTTLE:
         V.add(AutoRecordOnThrottle(
@@ -590,12 +600,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
         print("You can now move your controller to drive your car.")
 
     #
-    # The parts a controller drives.  Added last because some of them need
-    # the tub, and after the drivetrain so that the emergency stop and the
-    # chaos monkey override what the driver asked for.
+    # The controller's record keeping, which needs the tub.  Nothing here
+    # feeds the drivetrain, so it can come last.
     #
-    add_controller_behaviors(V, cfg, tub=tub_writer.tub,
-                             record_tracker=rec_tracker_part)
+    add_record_behaviors(V, cfg, tub=tub_writer.tub,
+                         record_tracker=rec_tracker_part)
 
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ, max_loop_count=cfg.MAX_LOOPS)
@@ -739,9 +748,20 @@ def add_behavior_mapping(V, cfg):
     return mapper
 
 
-def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
+def add_driving_behaviors(V, cfg):
     """
-    The parts a controller drives.
+    The parts a controller drives: steering, throttle, the pilot mode and
+    the safety behaviors.
+
+    Add these straight after add_user_controller and before anything that
+    reads 'user/steering' or 'user/throttle' -- the drive mode, the
+    drivetrain, the tub.  The web controller writes both at the start of
+    every pass, so anything these write after their readers have run is
+    simply overwritten.
+
+    Within this function the order matters too: the emergency stop, the
+    constant throttle and the chaos monkey come after steering and throttle
+    so that they can override what the driver asked for.
 
     Each is bound to a behavior rather than to a control, so this does not
     change when someone plugs in a different make of controller.
@@ -763,7 +783,7 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
     V.add(UserThrottle(direction=scaling.throttle_direction,
                        scale=scaling.throttle_scale,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
-          inputs=[behaviors.THROTTLE, 'user/throttle_scale'],
+          inputs=[behaviors.THROTTLE, 'user/throttle_scale', 'user/estop'],
           outputs=['user/throttle'])
 
     #
@@ -806,18 +826,6 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
           outputs=['user/steering'])
 
     #
-    # Records.  Erasing cannot be undone, so it is worth binding to a click
-    # or a double-click rather than a press; that is the behavior map's
-    # decision, not this one's.
-    #
-    if tub is not None:
-        V.add(EraseLastNRecords(tub, getattr(cfg, 'ERASE_LAST_N_RECORDS', 100)),
-              run_condition=behaviors.ERASE_RECORDS)
-    if record_tracker is not None:
-        V.add(ShowRecordCount(record_tracker),
-              run_condition=behaviors.SHOW_RECORD_COUNT)
-
-    #
     # Stop the car.  Takes the event as an input rather than a run
     # condition, because stopping spans many passes through the loop and a
     # run condition would abandon it after the first -- which is to say it
@@ -829,10 +837,38 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
           outputs=['user/throttle', 'user/mode', 'recording', 'user/estop'])
 
     #
+    # And it ends constant throttle, as legacy's did; otherwise the car
+    # drives off again the moment the stop finishes.  UserThrottle reads
+    # 'user/estop' too, and lets go of a stick held forward.
+    #
+    V.add(Lambda(lambda: False), outputs=['user/constant_throttle'],
+          run_condition='user/estop')
+
+    #
     # End the drive loop.  Bound with a modifier so it cannot happen by
     # accident, since there is no undo.
     #
     _add_stop_vehicle(V, cfg)
+
+
+def add_record_behaviors(V, cfg, tub=None, record_tracker=None):
+    """
+    The controller's record keeping: erasing records and showing the count.
+
+    Separate from add_driving_behaviors because these need the tub, which
+    a template creates late, and nothing they do feeds the drivetrain.
+    """
+    #
+    # Erasing cannot be undone, so it is worth binding to a click or a
+    # double-click rather than a press; that is the behavior map's
+    # decision, not this one's.
+    #
+    if tub is not None:
+        V.add(EraseLastNRecords(tub, getattr(cfg, 'ERASE_LAST_N_RECORDS', 100)),
+              run_condition=behaviors.ERASE_RECORDS)
+    if record_tracker is not None:
+        V.add(ShowRecordCount(record_tracker),
+              run_condition=behaviors.SHOW_RECORD_COUNT)
 
 
 def _add_stop_vehicle(V, cfg):

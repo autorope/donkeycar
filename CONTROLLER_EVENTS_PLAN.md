@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**44 / 45 tasks — Phase 9 (controller input reaches the drivetrain) in progress.**
+**COMPLETE — 45 / 45 tasks.**
 
-45 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+47 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
-their work was done.  Phase 7 took 4 and Phase 8 took 2, one per task.
+their work was done.  Phase 7 took 4, and Phases 8 and 9 took 2 each, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -778,7 +778,7 @@ must land together to keep the templates working.
       this through. `RC_RECEIVER_TYPES` names each receiver's class, so the
       existing check that a map binds only real controls now covers these too.
 
-### Phase 9 — Controller input reaches the drivetrain (1 / 2)
+### Phase 9 — Controller input reaches the drivetrain (2 / 2) ✅
 
 > **Why.** Reported in review at `13e9c22b`, and reproduced by running
 > `complete.drive()` itself with a scripted gamepad and a recording
@@ -828,7 +828,7 @@ must land together to keep the templates working.
       order still puts these parts after their consumers (checked: a held
       stick now survives every pass in memory, and the drivetrain still
       receives 0.0).
-- [ ] **9.2** Driving and safety behaviors run before their consumers.
+- [x] **9.2** Driving and safety behaviors run before their consumers.
       `add_controller_behaviors()` splits in two: `add_driving_behaviors()` —
       steering, throttle, constant throttle, chaos monkey, throttle limits,
       emergency stop, pilot mode, the recording toggle and stop-vehicle — is
@@ -839,7 +839,17 @@ must land together to keep the templates working.
       scripted gamepad and a recording drivetrain: a held stick reaches the
       drivetrain on every pass, centring it returns to neutral, and the
       emergency-stop sequence reaches the drivetrain. The same test checks
-      `cv_control` and `path_follow` put the driving parts before `DriveMode`.
+      `cv_control` and `path_follow` put the driving parts before `DriveMode`
+      (`path_follow` from its source, since it imports `distutils` and
+      cannot be imported on Python 3.12+).
+      **Found while testing it:** with 9.1's held position, a stick still
+      held forward drove the car off again the moment an emergency stop
+      finished, and so did constant throttle. Legacy's stop set the throttle
+      to zero until the stick moved and turned constant throttle off.
+      `UserThrottle` now takes `user/estop` and lets go of the stick while a
+      stop is in progress, and the stop clears `user/constant_throttle`.
+      The 8.2 RC test moved onto the same harness, so it too checks the
+      drivetrain rather than memory.
 
 ---
 
