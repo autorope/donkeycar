@@ -174,6 +174,42 @@ class TestTheEmergencyStop(DrivingTest):
         assert throttles[-6:] == [0.0] * 6
 
 
+class TestALostControllerStopsTheCar(DrivingTest):
+    """
+    Found by Copilot review: a disconnect only stopped the polling thread.
+    The stick's position is held between events, so a pad lost
+    mid-acceleration left the car driving indefinitely.  The PR's hardware
+    test plan, T5.5, expects the loop to stop.
+    """
+
+    def lose_the_pad(self) -> None:
+        self.pad.poll_error = OSError('/dev/input/js0 disconnected')
+
+    def test_the_last_command_is_neutral_and_the_loop_ends(self):
+        received = self.drive(
+            self.stick('right_stick_vert', -1.0),
+            self.stick('left_stick_horz', 0.5),
+            self.lose_the_pad, self.idle, self.idle, self.idle)
+
+        assert received[:2] == [(0.0, SCALE), (0.5, SCALE)]
+        assert received[2:] == [(0.0, 0.0)]  # one neutral pass, then no more
+
+    def test_it_stops_an_autopilot_run_too(self):
+        """
+        The pad was the way to stop the pilot; without it, the run ends.
+        """
+        def autopilot(parts) -> None:
+            for part in parts:
+                if isinstance(part, LocalWebController):
+                    part.mode = 'local'
+
+        received = self.drive(self.idle, self.lose_the_pad,
+                              self.idle, self.idle, on_start=autopilot)
+
+        assert received[-1] == (0.0, 0.0)
+        assert len(received) == 2
+
+
 class TestCvControl(DrivingTest):
     """
     cv_control.py calls the same functions, so it had the same defect.

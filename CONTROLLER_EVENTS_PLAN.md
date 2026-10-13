@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 45 / 45 tasks.**
+**46 / 47 tasks — Phase 10 (letting go of a held stick) in progress.**
 
 47 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, and Phases 8 and 9 took 2 each, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -850,6 +850,53 @@ must land together to keep the templates working.
       stop is in progress, and the stop clears `user/constant_throttle`.
       The 8.2 RC test moved onto the same harness, so it too checks the
       drivetrain rather than memory.
+
+### Phase 10 — Letting go of a held stick (1 / 2)
+
+> **Why.** Copilot review of `352d9d7d`
+> ([r4242814034](https://github.com/autorope/donkeycar/pull/1249#discussion_r4242814034)):
+> a disconnected controller only stops its polling thread. Reproduced with
+> the drive harness: stick forward, then the pad's `poll()` raises `OSError`
+> — the drivetrain keeps receiving +0.5 indefinitely. 9.1 made this
+> dangerous: `UserThrottle` now holds the stick's last position, so a lost
+> pad's last throttle is held for ever. The PR's hardware test plan, T5.5,
+> expects "a log line saying the controller disconnected, and the loop
+> stops".
+>
+> The same cause breaks T4.5 ("turning [constant throttle] off gives zero,
+> not a lurch to whatever the stick reads"). Reproduced: stick held at 60%,
+> constant throttle on, then off — the drivetrain gets 0.0 for one pass and
+> then lurches back to 0.3. Legacy set the throttle to 0 until the stick
+> moved. 9.2 already fixed the emergency-stop case of this; these are the
+> other two.
+>
+> **Decided (Ed, 2026-10-13): a lost controller stops the vehicle**, rather
+> than a failsafe that keeps the loop running. A Bluetooth pad that goes to
+> sleep mid-run therefore ends the program.
+>
+> **Out of scope, recorded:** `Vehicle.stop()` relies on each drivetrain's
+> `shutdown()` to leave the motor at neutral. `PWMThrottle` does; some
+> others do nothing. That affects every way the loop ends, not just this
+> one, so here the last pass is made to send zero throttle explicitly.
+
+- [x] **10.1** A lost controller stops the vehicle. `InputControllerEvents`
+      publishes `CONTROLLER_LOST` once its device fails — an `OSError` from
+      `poll()`, or any error that ends polling — distinct from an ordinary
+      shutdown. `add_driving_behaviors()` binds it: on that pass the user
+      throttle and steering go to 0.0 and the mode to `user`, so the
+      drivetrain's last command is neutral whatever was driving, and
+      `StopVehicle` ends the loop. Tests: the event pump publishes it on a
+      disconnect and not on a shutdown; through `complete.drive()`, a pad
+      lost mid-acceleration gives the drivetrain 0.0 and the loop ends, in
+      autopilot too. The migration guide says so, since `main` carried on.
+- [ ] **10.2** A held stick is released whenever something else takes the
+      throttle. 9.2 gave `UserThrottle` one such signal, the emergency stop;
+      it becomes a general "let go" input taking any number of them —
+      emergency stop, constant throttle on, controller lost — and forgets
+      the held position while any is true, so afterwards the throttle stays
+      at zero until the stick moves, as legacy did. Test through
+      `complete.drive()`: T4.5 as written — stick held, constant throttle on
+      then off — gives zero, not the stick's value.
 
 ---
 

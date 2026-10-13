@@ -28,6 +28,13 @@ AXIS_EVENT = '/event/axis/'
 BUTTON_STATE = '/button/'
 AXIS_STATE = '/axis/'
 
+#: Published, as a one-shot event carrying the time, on the pass after the
+#: controller's device fails -- unplugged, switched off, a Bluetooth pad
+#: gone to sleep -- and polling stops.  Not published by an ordinary
+#: shutdown.  A template binds it to stopping the car, since otherwise the
+#: last thing the controller asked for goes on being asked for.
+CONTROLLER_LOST = '/event/controller/lost'
+
 
 def format_button_event(button: str, event: str) -> str:
     """
@@ -193,7 +200,7 @@ class InputControllerEvents:
             # a bare `except:` here would also swallow KeyboardInterrupt and
             # stop the car with nothing in the log to say why
             logger.exception('Input controller polling stopped.')
-            self.running = False
+            self._lose_controller()
 
     def poll(self) -> None:
         """
@@ -206,7 +213,7 @@ class InputControllerEvents:
             change = self._controller.poll()
         except OSError as e:
             logger.error(f'Input controller disconnected: {e}')
-            self.running = False
+            self._lose_controller()
             return
 
         if change.button is None and change.axis is None:
@@ -243,6 +250,18 @@ class InputControllerEvents:
         self.running = False
         self._controller.shutdown()
         self._one_shot.clear()
+
+    def _lose_controller(self) -> None:
+        """
+        Stop polling a device that has failed, and say so in memory.
+
+        Stopping quietly is not enough: the controls' states persist, and
+        the parts holding a stick's position go on holding it, so a car
+        whose pad vanished mid-acceleration would drive on indefinitely.
+        """
+        self.running = False
+        with self._lock:
+            self._events[CONTROLLER_LOST] = self._clock()
 
     def _on_axis(self, axis: str, value: float) -> None:
         if self._axis_states.get(axis) == value:

@@ -84,6 +84,18 @@ On Debian trixie, pairing needs `ClassicBondedOnly=false` and
 Without them the pad bonds and lights up solid, but no `/dev/input/js0`
 appears.
 
+### Losing the controller stops the car
+
+If the controller's device goes away while the car is running — unplugged,
+switched off, or a Bluetooth pad going to sleep — the car now stops: the
+last command to the drivetrain is neutral, the mode drops to `user`, and
+the drive loop ends with `Input controller disconnected` in the log.  This
+happens in autopilot too, since the pad was the way to stop the pilot.
+
+On `main` the loss went unnoticed and the car carried on with whatever the
+controller had last asked for.  A Bluetooth pad that sleeps when idle will
+now end a long session, so wake it, or keep it awake, before relying on it.
+
 ### Recording is either automatic or a button, never both
 
 `AUTO_RECORD_ON_THROTTLE = True` used to silently disable the manual

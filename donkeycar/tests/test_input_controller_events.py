@@ -7,6 +7,7 @@ import pytest
 from donkeycar.memory import Memory
 from donkeycar.parts.controls import ControlChange
 from donkeycar.parts.controls.events import (
+    CONTROLLER_LOST,
     BUTTON_DOWN,
     BUTTON_HOLD,
     BUTTON_UP,
@@ -510,6 +511,42 @@ class TestFailureHandling(unittest.TestCase):
         fix.part.poll()
 
         assert fix.part.running is False
+
+    def test_a_disconnected_device_is_reported_as_lost(self):
+        """
+        Stopping quietly left the car driving on whatever the controller
+        last asked for, so the loss is published for a template to act on.
+        """
+        fix = EventsFixture()
+        fix.controller.poll_error = OSError('device disconnected')
+        fix.part.poll()
+        fix.tick()
+
+        assert CONTROLLER_LOST in fix.keys()
+
+    def test_the_loss_is_a_one_shot_event(self):
+        fix = EventsFixture()
+        fix.controller.poll_error = OSError('device disconnected')
+        fix.part.poll()
+        fix.tick()
+        fix.tick()
+
+        assert CONTROLLER_LOST not in fix.keys()
+
+    def test_an_unexpected_error_is_reported_as_lost_too(self):
+        fix = EventsFixture()
+        fix.controller.poll_error = ValueError('driver went sideways')
+        fix.part.update()
+        fix.tick()
+
+        assert CONTROLLER_LOST in fix.keys()
+
+    def test_an_ordinary_shutdown_is_not_a_loss(self):
+        fix = EventsFixture()
+        fix.part.shutdown()
+        fix.tick()
+
+        assert CONTROLLER_LOST not in fix.keys()
 
     def test_keyboard_interrupt_is_not_swallowed(self):
         """

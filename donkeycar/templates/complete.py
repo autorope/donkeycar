@@ -58,7 +58,7 @@ from donkeycar.parts.controls.behaviors import (
     DEFAULT_THROTTLE_STEP,
     AutoRecordOnThrottle,
 )
-from donkeycar.parts.controls.events import AXIS_STATE
+from donkeycar.parts.controls.events import AXIS_STATE, CONTROLLER_LOST
 from donkeycar.parts.throttle_filter import ThrottleFilter
 from donkeycar.parts.behavior import BehaviorPart
 from donkeycar.parts.file_watcher import FileWatcher
@@ -849,6 +849,20 @@ def add_driving_behaviors(V, cfg):
     # accident, since there is no undo.
     #
     _add_stop_vehicle(V, cfg)
+
+    #
+    # A controller whose device fails -- unplugged, switched off, a
+    # Bluetooth pad gone to sleep -- stops the car.  Otherwise the last
+    # thing it asked for goes on being asked for: a pad lost mid-throttle
+    # left the car driving indefinitely.  Last in this group so that it
+    # overrides everything above: the drivetrain's final command is neutral
+    # whatever was driving, including the pilot, since some drivetrains do
+    # not return to neutral on shutdown.
+    #
+    V.add(Lambda(lambda: (0.0, 0.0, 'user')),
+          outputs=['user/throttle', 'user/steering', 'user/mode'],
+          run_condition=CONTROLLER_LOST)
+    V.add(StopVehicle(V), run_condition=CONTROLLER_LOST)
 
 
 def add_record_behaviors(V, cfg, tub=None, record_tracker=None):

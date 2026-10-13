@@ -95,7 +95,10 @@ def driving(
             assert pump._controller.init()
         if on_start is not None:
             on_start(parts)
+        self.on = True
         for step in steps:
+            if not self.on:
+                break  # something stopped the vehicle, as the real loop would
             step()
             for pump in pumps:
                 for _ in range(4):  # one poll per channel, and one to spare
