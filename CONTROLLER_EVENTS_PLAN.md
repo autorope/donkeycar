@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 41 / 41 tasks.**
+**42 / 43 tasks — Phase 8 (RC receivers in the templates) in progress.**
 
 43 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -719,6 +719,59 @@ must land together to keep the templates working.
       option lists in the templates updated. A new test checks that every
       default map binds only controls its pad names — the check that would
       have caught the Bluetooth map still binding View and Xbox.
+
+### Phase 8 — RC receivers in the templates (1 / 2)
+
+> **Why.** Reported on the PR by someone testing an MM1 at `896353f7`, and
+> reproduced here through the real `add_user_controller()` /
+> `add_controller_behaviors()` wiring. `MM1` and `pigpio_rc` are both RC
+> receivers that the templates build themselves rather than through
+> `get_input_controller()`, so neither ever got a default behavior map —
+> and `test_all_but_custom_have_a_behavior_map` never listed them.
+>
+> | Forward stick at +0.5 | Default config | Bindings added by hand |
+> |---|---|---|
+> | MM1 → `user/throttle` | 0.0 — never arrives | **−0.25** — reversed |
+> | pigpio_rc → `user/throttle` | 0.0 — never arrives | **−0.25** — reversed |
+>
+> Two defects. No map, so input stops at the event layer. And once bound,
+> throttle goes through `UserThrottle(direction=JOYSTICK_THROTTLE_DIR)`,
+> whose default −1.0 exists because a gamepad stick reads negative when
+> pushed *up*. An RC receiver already reads positive-forward; legacy never
+> applied the joystick inversion to either.
+>
+> Legacy also wrote RC input to `user/throttle` unscaled. Now it is
+> multiplied by `JOYSTICK_MAX_THROTTLE` (0.5 by default), so even with the
+> sign fixed an upgraded RC car would run at half power.
+>
+> **Out of scope, recorded:** `cfg_complete.py` lists `pigpio_rc` but has had
+> no `STEERING_RC_GPIO` / `THROTTLE_RC_GPIO` / `DATA_WIPER_RC_GPIO` /
+> `PIGPIO_*` since #1220 on `main`, so `pigpio_rc` on the complete template
+> raises `AttributeError` at startup — on `main` too. Legacy `pigpio_rc` also
+> held the pilot mode at `local` while the third-channel switch was up; that
+> switch stays unbound here, since binding an axis state straight to
+> `TOGGLE_PILOT_MODE` would toggle the mode on every pass.
+
+- [x] **8.1** RC throttle is forward-positive. `get_control_scaling(cfg)`,
+      next to `get_behavior_map()`, returns direction +1.0 and scales of 1.0
+      for `MM1` and `pigpio_rc`, and the `JOYSTICK_*` settings for everything
+      else; `complete.py` and `simulator.py` use it. Same for the scale: RC throttle and steering are
+      not scaled by `JOYSTICK_MAX_THROTTLE` / `JOYSTICK_STEERING_SCALE`, as in
+      legacy — the transmitter's endpoints and `MM1_MAX_FORWARD` are the
+      limits. `basic.py`'s RC path changes to match. A deliberately reversed
+      receiver is fixed where legacy fixed it: the transmitter's reverse
+      switch, or `PIGPIO_INVERT`. The config templates say
+      `JOYSTICK_THROTTLE_DIR` and `JOYSTICK_MAX_THROTTLE` are for gamepads.
+      Unit tests, plus `basic.py`'s RC path through a real drive loop (skipped
+      where `albumentations` is missing, since `basic.py` imports it).
+- [ ] **8.2** Default behavior maps for `MM1` and `pigpio_rc`: steering and
+      throttle. A template integration test, as the reviewer asked, feeds
+      MM1 serial lines and `pigpio_rc` pulse widths through the real template
+      wiring with **no custom map**, and asserts propagation to
+      `user/steering` / `user/throttle`, forward and reverse signs, and return
+      to neutral. The behavior-map test now covers every `CONTROLLER_TYPE`
+      the config templates list, not just the factory's, which is the gap
+      that let this through.
 
 ---
 

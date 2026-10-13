@@ -40,6 +40,7 @@ from donkeycar.parts.controls import (
     UserThrottle,
     ZmqSubscriber,
     get_behavior_map,
+    get_control_scaling,
     get_input_controller,
 )
 from donkeycar.parts.controls import mapping as behaviors
@@ -117,12 +118,16 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         # This template calls its steering 'user/angle', so it binds the
         # driving parts itself rather than using complete.py's.
         #
-        V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+        # An RC receiver is neither inverted nor scaled the way a gamepad
+        # is; see get_control_scaling.
+        #
+        scaling = get_control_scaling(cfg)
+        V.add(UserSteering(scale=scaling.steering_scale,
                            dead_zone=cfg.JOYSTICK_DEADZONE),
               inputs=[behaviors.STEERING], outputs=['user/angle'],
               run_condition=behaviors.STEERING)
-        V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
-                           scale=cfg.JOYSTICK_MAX_THROTTLE,
+        V.add(UserThrottle(direction=scaling.throttle_direction,
+                           scale=scaling.throttle_scale,
                            dead_zone=cfg.JOYSTICK_DEADZONE),
               inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
               run_condition=behaviors.THROTTLE)

@@ -93,12 +93,14 @@ def add_rc_behaviors(car, cfg):
     steering = format_axis_event('steering')
     throttle = format_axis_event('throttle')
 
-    car.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
-                         dead_zone=cfg.JOYSTICK_DEADZONE),
+    # Neither inverted nor scaled: the receiver already reads positive for
+    # forward, and the transmitter's endpoints are its limits.  The
+    # JOYSTICK_* settings are for gamepads.  See get_control_scaling.
+    #
+    car.add(UserSteering(scale=1.0, dead_zone=cfg.JOYSTICK_DEADZONE),
             inputs=[steering], outputs=['user/angle'],
             run_condition=steering)
-    car.add(UserThrottle(direction=1.0,
-                         scale=cfg.JOYSTICK_MAX_THROTTLE,
+    car.add(UserThrottle(direction=1.0, scale=1.0,
                          dead_zone=cfg.JOYSTICK_DEADZONE),
             inputs=[throttle], outputs=['user/throttle'],
             run_condition=throttle)

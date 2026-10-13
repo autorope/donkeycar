@@ -9,7 +9,9 @@ from donkeycar.parts.controls.behaviors import AxisButton
 from donkeycar.parts.controls.factory import (
     CONTROLLER_TYPES,
     DEFAULT_BEHAVIOR_MAPS,
+    ControlScaling,
     get_behavior_map,
+    get_control_scaling,
     get_input_controller,
 )
 from donkeycar.parts.controls.gamepads import (
@@ -337,3 +339,35 @@ class TestDefaultMapsBindRealControls(unittest.TestCase):
             del behavior_map[STOP_VEHICLE], behavior_map[STOP_VEHICLE_MODIFIER]
 
         assert bluetooth == usb
+
+
+class TestControlScaling(unittest.TestCase):
+    """
+    A gamepad stick reads negative when pushed forward, so the default
+    JOYSTICK_THROTTLE_DIR of -1.0 turns it round.  An RC receiver already
+    reads positive for forward; applying the same inversion reversed MM1
+    and pigpio_rc cars, and the scale halved their power.
+    """
+
+    def config(self, controller_type):
+        return FakeConfig(CONTROLLER_TYPE=controller_type,
+                          JOYSTICK_STEERING_SCALE=0.8,
+                          JOYSTICK_MAX_THROTTLE=0.5,
+                          JOYSTICK_THROTTLE_DIR=-1.0)
+
+    def test_a_gamepad_uses_the_joystick_settings(self):
+        assert get_control_scaling(self.config('xbox')) == ControlScaling(
+            steering_scale=0.8, throttle_scale=0.5, throttle_direction=-1.0)
+
+    def test_rc_receivers_are_neither_flipped_nor_scaled(self):
+        for controller_type in ('MM1', 'pigpio_rc'):
+            assert get_control_scaling(self.config(controller_type)) == (
+                ControlScaling(steering_scale=1.0, throttle_scale=1.0,
+                               throttle_direction=1.0)), controller_type
+
+    def test_rc3_is_a_gamepad_device_and_keeps_the_joystick_settings(self):
+        """
+        A transmitter read through the joystick device, as legacy treated
+        it, unlike the receivers the templates read directly.
+        """
+        assert get_control_scaling(self.config('rc3')).throttle_direction == -1.0

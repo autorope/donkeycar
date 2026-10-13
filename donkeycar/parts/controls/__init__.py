@@ -51,6 +51,7 @@ from donkeycar.parts.controls.factory import (
     CONTROLLER_TYPES as CONTROLLER_TYPES,
     DEFAULT_BEHAVIOR_MAPS as DEFAULT_BEHAVIOR_MAPS,
     get_behavior_map as get_behavior_map,
+    get_control_scaling as get_control_scaling,
     get_input_controller as get_input_controller,
 )
 from donkeycar.parts.controls.gamepads import (
@@ -177,6 +178,7 @@ __all__ = [
     'format_axis_event',
     'format_behavior',
     'get_behavior_map',
+    'get_control_scaling',
     'get_input_controller',
     'format_axis_key',
     'format_button_click_event',

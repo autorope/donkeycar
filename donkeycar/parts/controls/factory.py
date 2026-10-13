@@ -13,7 +13,7 @@ sends -- the note says so.
 """
 
 import logging
-from typing import Any
+from typing import Any, NamedTuple
 
 from donkeycar.parts.controls.device import (
     AbstractInputController,
@@ -371,3 +371,48 @@ def get_behavior_map(cfg: Any) -> BehaviorMap:
         )
         return {}
     return behavior_map
+
+
+#: RC receivers the templates build themselves.  They report what the
+#: transmitter is asking for, already the right way round and already
+#: limited by the transmitter's endpoints, so the gamepad settings for
+#: direction and scale do not apply to them.
+RC_RECEIVER_TYPES = frozenset({'MM1', 'pigpio_rc'})
+
+
+class ControlScaling(NamedTuple):
+    """
+    How the driving parts turn a control's position into steering and
+    throttle.
+    """
+
+    steering_scale: float
+    throttle_scale: float
+    throttle_direction: float
+
+
+def get_control_scaling(cfg: Any) -> ControlScaling:
+    """
+    The scale and direction a configuration's controller wants.
+
+    A gamepad gets JOYSTICK_STEERING_SCALE, JOYSTICK_MAX_THROTTLE and
+    JOYSTICK_THROTTLE_DIR.  The direction exists because a stick pushed
+    forward reads negative, and the default of -1.0 turns that round.
+
+    An RC receiver gets none of them.  It already reads positive for
+    forward, so the gamepad inversion would reverse the car, and its
+    transmitter's endpoints -- and MM1_MAX_FORWARD on an MM1 -- already
+    limit how hard it drives, so scaling it again would halve the car's
+    power by default.  Legacy passed RC input straight through, and this
+    keeps that.  A receiver that genuinely reads backwards is fixed where
+    it always was: the transmitter's reverse switch, or PIGPIO_INVERT.
+    """
+    if getattr(cfg, 'CONTROLLER_TYPE', None) in RC_RECEIVER_TYPES:
+        return ControlScaling(
+            steering_scale=1.0, throttle_scale=1.0, throttle_direction=1.0)
+
+    return ControlScaling(
+        steering_scale=cfg.JOYSTICK_STEERING_SCALE,
+        throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
+        throttle_direction=cfg.JOYSTICK_THROTTLE_DIR,
+    )

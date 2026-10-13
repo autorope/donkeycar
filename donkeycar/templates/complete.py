@@ -49,6 +49,7 @@ from donkeycar.parts.controls import (
     UserThrottle,
     WebButtonController,
     get_behavior_map,
+    get_control_scaling,
     get_input_controller,
 )
 from donkeycar.parts.controls import mapping as behaviors
@@ -750,13 +751,17 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
     # run condition, so the part runs only when the control moves and gets
     # the new position when it does.
     #
-    V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
+    # An RC receiver is neither inverted nor scaled the way a gamepad is;
+    # see get_control_scaling.
+    #
+    scaling = get_control_scaling(cfg)
+    V.add(UserSteering(scale=scaling.steering_scale,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
           inputs=[behaviors.STEERING],
           outputs=['user/steering'],
           run_condition=behaviors.STEERING)
-    V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
-                       scale=cfg.JOYSTICK_MAX_THROTTLE,
+    V.add(UserThrottle(direction=scaling.throttle_direction,
+                       scale=scaling.throttle_scale,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
           inputs=[behaviors.THROTTLE, 'user/throttle_scale'],
           outputs=['user/throttle'],

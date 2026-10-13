@@ -106,6 +106,11 @@ SSD1306_RESOLUTION = 1
 # If True, the joystick is enabled by default without needing '--js' flag.
 USE_JOYSTICK_AS_DEFAULT = True
 
+# JOYSTICK_MAX_THROTTLE, JOYSTICK_STEERING_SCALE and JOYSTICK_THROTTLE_DIR are
+# for game controllers.  An RC receiver (MM1, pigpio_rc) already reads
+# positive for forward and is limited by its transmitter, so it is neither
+# scaled nor flipped; reverse a channel on the transmitter instead.
+
 # The maximum throttle output (0.0 to 1.0) allowed by the joystick.
 # Useful for limiting speed for beginners.
 JOYSTICK_MAX_THROTTLE = 0.5
