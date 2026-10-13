@@ -42,6 +42,8 @@ from donkeycar.parts.controls.gamepads import (
     XboxOneUsbJoystick,
 )
 from donkeycar.parts.controls.pygame_device import PyGamePS4Joystick
+from donkeycar.parts.controls.rc import RCReceiver
+from donkeycar.parts.controls.robohat import RoboHATController
 from donkeycar.parts.controls.mapping import (
     CHAOS_MONKEY_LEFT,
     CHAOS_MONKEY_RIGHT,
@@ -270,6 +272,22 @@ DEFAULT_BEHAVIOR_MAPS: dict[str, BehaviorMap] = {
         **_BOTH_TRIGGERS_STOP,
     },
     #
+    # The RC receivers the templates read directly.  Each reports its
+    # channels as the axes steering and throttle, already positive for
+    # forward; get_control_scaling keeps the gamepad inversion off them.
+    # pigpio_rc's third channel, the switch, is left unbound: legacy held
+    # the pilot mode at 'local' while it was up, and an axis state bound
+    # straight to a toggle would toggle on every pass.
+    #
+    'MM1': {
+        STEERING: format_axis_event('steering'),
+        THROTTLE: format_axis_event('throttle'),
+    },
+    'pigpio_rc': {
+        STEERING: format_axis_event('steering'),
+        THROTTLE: format_axis_event('throttle'),
+    },
+    #
     # A DualShock 4 through PyGame.  PyGame numbers the controls itself, so
     # this pad's names come from a different map to the evdev one, but the
     # names are the same and so this map reads the same.
@@ -373,11 +391,16 @@ def get_behavior_map(cfg: Any) -> BehaviorMap:
     return behavior_map
 
 
-#: RC receivers the templates build themselves.  They report what the
-#: transmitter is asking for, already the right way round and already
-#: limited by the transmitter's endpoints, so the gamepad settings for
-#: direction and scale do not apply to them.
-RC_RECEIVER_TYPES = frozenset({'MM1', 'pigpio_rc'})
+#: RC receivers, by the name a configuration uses.  The templates build
+#: these themselves, since each needs its own settings, rather than through
+#: get_input_controller.  They report what the transmitter is asking for,
+#: already the right way round and already limited by the transmitter's
+#: endpoints, so the gamepad settings for direction and scale do not apply
+#: to them.
+RC_RECEIVER_TYPES: dict[str, type[AbstractInputController]] = {
+    'MM1': RoboHATController,
+    'pigpio_rc': RCReceiver,
+}
 
 
 class ControlScaling(NamedTuple):

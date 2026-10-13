@@ -9,6 +9,7 @@ from donkeycar.parts.controls.behaviors import AxisButton
 from donkeycar.parts.controls.factory import (
     CONTROLLER_TYPES,
     DEFAULT_BEHAVIOR_MAPS,
+    RC_RECEIVER_TYPES,
     ControlScaling,
     get_behavior_map,
     get_control_scaling,
@@ -127,6 +128,8 @@ class TestTheDefaultMapsAreSound(unittest.TestCase):
         The names a controller can report, or None if it does not declare
         any -- the mock controller makes its up rather than reading a pad.
         """
+        if controller_type in RC_RECEIVER_TYPES:
+            return set(RC_RECEIVER_TYPES[controller_type].CHANNEL_NAMES)
         controller_class = CONTROLLER_TYPES[controller_type]
         if not hasattr(controller_class, 'AXIS_NAMES'):
             return None
@@ -292,34 +295,12 @@ class TestAxisButton(unittest.TestCase):
         assert (up.run(1.0), down.run(1.0)) == (False, True)
 
 
-def _bound_control_names(behavior_map) -> set[str]:
-    """
-    The control names a behavior map binds, from keys like
-    '/event/button/a_button/press', '/button/view' and '/axis/left_trigger'.
-    """
-    names = set()
-    for controls in behavior_map.values():
-        for key in [controls] if isinstance(controls, str) else controls:
-            parts = key.split('/')
-            names.add(parts[3] if parts[1] == 'event' else parts[2])
-    return names
 
-
-class TestDefaultMapsBindRealControls(unittest.TestCase):
+class TestTheXboxStopGestures(unittest.TestCase):
     """
-    A default map that binds a name its pad never reports is a behavior
-    that silently never happens.  The Xbox stop gesture would have been
-    exactly that over Bluetooth, where View and Xbox never arrive.
+    Over Bluetooth, View and Xbox never reach the joystick device, so the
+    two Xbox maps stop the car differently.
     """
-
-    def test_every_bound_control_is_one_the_pad_names(self):
-        for controller_type, behavior_map in DEFAULT_BEHAVIOR_MAPS.items():
-            pad = CONTROLLER_TYPES[controller_type]
-            if not hasattr(pad, 'AXIS_NAMES') or pad.__module__.endswith('pygame_device'):
-                continue  # names come from somewhere other than the class
-            offered = set(pad.AXIS_NAMES.values()) | set(pad.BUTTON_NAMES.values())
-            missing = _bound_control_names(behavior_map) - offered
-            assert missing == set(), (controller_type, missing)
 
     def test_xbox_stops_on_both_triggers(self):
         for controller_type in ('xbox', 'xboxswapped'):
@@ -371,3 +352,42 @@ class TestControlScaling(unittest.TestCase):
         it, unlike the receivers the templates read directly.
         """
         assert get_control_scaling(self.config('rc3')).throttle_direction == -1.0
+
+
+def _offered_controller_types() -> set[str]:
+    """
+    The CONTROLLER_TYPE values cfg_complete.py's comment offers, as a user
+    choosing one would read them.
+    """
+    import re
+
+    import donkeycar.templates.cfg_complete as cfg
+
+    with open(cfg.__file__) as f:
+        source = f.read()
+    block = source[source.index('# Options:'):source.index('\nCONTROLLER_TYPE =')]
+    options = block[:block.index("'custom'") + len("'custom'")]
+    return set(re.findall(r"'([^']+)'", options))
+
+
+class TestEveryOfferedControllerHasAMap(unittest.TestCase):
+    """
+    MM1 and pigpio_rc are built by the templates rather than by
+    get_input_controller, so the checks that walked CONTROLLER_TYPES never
+    saw them, and they shipped with no behavior map: their input reached the
+    event layer and went no further.
+    """
+
+    def test_the_options_were_found(self):
+        assert {'xbox', 'MM1', 'pigpio_rc', 'custom'} <= _offered_controller_types()
+
+    def test_every_offered_type_can_be_built(self):
+        known = set(CONTROLLER_TYPES) | set(RC_RECEIVER_TYPES)
+        assert _offered_controller_types() - known == set()
+
+    def test_every_offered_type_but_custom_has_a_map(self):
+        for controller_type in _offered_controller_types() - {'custom'}:
+            behavior_map = DEFAULT_BEHAVIOR_MAPS.get(controller_type)
+            assert behavior_map, controller_type
+            assert STEERING in behavior_map, controller_type
+            assert THROTTLE in behavior_map, controller_type

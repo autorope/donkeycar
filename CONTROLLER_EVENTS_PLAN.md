@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**42 / 43 tasks — Phase 8 (RC receivers in the templates) in progress.**
+**COMPLETE — 43 / 43 tasks.**
 
-43 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+45 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
-their work was done.  Phase 7 took 4, one per task.
+their work was done.  Phase 7 took 4 and Phase 8 took 2, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -716,11 +716,14 @@ must land together to keep the templates working.
       STOP_VEHICLE to the triggers. `xboxswapped` follows `xbox` (it is a
       binding, not hardware). The docstring's "Bluetooth does not work" note
       becomes the trixie pairing note. Migration guide and the `CONTROLLER_TYPE`
-      option lists in the templates updated. A new test checks that every
-      default map binds only controls its pad names — the check that would
-      have caught the Bluetooth map still binding View and Xbox.
+      option lists in the templates updated. *(Correction, made in 8.2: this
+      also added a test that every default map binds only controls its pad
+      names, and its commit message claimed the Bluetooth map would otherwise
+      have passed every test. Both were wrong —
+      `TestTheDefaultMapsAreSound` already did exactly that check, and does
+      catch View and Xbox. 8.2 removed the duplicate.)*
 
-### Phase 8 — RC receivers in the templates (1 / 2)
+### Phase 8 — RC receivers in the templates (2 / 2) ✅
 
 > **Why.** Reported on the PR by someone testing an MM1 at `896353f7`, and
 > reproduced here through the real `add_user_controller()` /
@@ -764,14 +767,16 @@ must land together to keep the templates working.
       `JOYSTICK_THROTTLE_DIR` and `JOYSTICK_MAX_THROTTLE` are for gamepads.
       Unit tests, plus `basic.py`'s RC path through a real drive loop (skipped
       where `albumentations` is missing, since `basic.py` imports it).
-- [ ] **8.2** Default behavior maps for `MM1` and `pigpio_rc`: steering and
+- [x] **8.2** Default behavior maps for `MM1` and `pigpio_rc`: steering and
       throttle. A template integration test, as the reviewer asked, feeds
       MM1 serial lines and `pigpio_rc` pulse widths through the real template
       wiring with **no custom map**, and asserts propagation to
       `user/steering` / `user/throttle`, forward and reverse signs, and return
-      to neutral. The behavior-map test now covers every `CONTROLLER_TYPE`
-      the config templates list, not just the factory's, which is the gap
-      that let this through.
+      to neutral. A new test reads the `CONTROLLER_TYPE` options
+      `cfg_complete.py` offers and requires each to be buildable and, but for
+      `custom`, to have a map — the factory-only checks are the gap that let
+      this through. `RC_RECEIVER_TYPES` names each receiver's class, so the
+      existing check that a map binds only real controls now covers these too.
 
 ---
 
