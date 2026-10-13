@@ -37,7 +37,6 @@ Starts in user mode.
 
 
 """
-from distutils.log import debug
 import os
 import logging
 
