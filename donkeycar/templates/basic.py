@@ -216,9 +216,16 @@ def drive(cfg, model_path=None, model_type=None):
         car.add(ToggleRecording(), inputs=['recording'], outputs=['recording'],
                 run_condition=behaviors.TOGGLE_RECORDING)
 
+        #
+        # The web page still sets the mode and recording, so it is given
+        # their current values: it adopts a value that changed rather than
+        # writing its own over it.  Given only the image, it undid the
+        # gamepad's toggles in the same pass they happened.
+        #
         ctr = LocalWebController(port=cfg.WEB_CONTROL_PORT,
                                  mode=cfg.WEB_INIT_MODE)
-        car.add(ctr, inputs=['cam/image_array'],
+        car.add(ctr, inputs=['cam/image_array', 'tub/num_records',
+                             'user/mode', 'recording'],
                 outputs=['webcontroller/angle', 'webcontroller/throttle',
                          'user/mode', 'recording'],
                 threaded=True)

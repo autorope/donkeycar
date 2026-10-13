@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 47 / 47 tasks.**
+**COMPLETE — 48 / 48 tasks.**
 
-49 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+50 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
-their work was done.  Phase 7 took 4, and Phases 8, 9 and 10 took 2 each, one per task.
+their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -906,6 +906,40 @@ must land together to keep the templates working.
 > then drives again once it moves; T4.5, constant throttle off gives zero;
 > both triggers end the loop; and T5.5, switching the pad off logs the
 > disconnect, stops the motor and ends the loop.
+
+### Phase 11 — `basic.py`'s gamepad toggles (1 / 1) ✅
+
+> **Why.** Item 3 of the GPT Astra review Ed posted on the PR
+> ([comment](https://github.com/autorope/donkeycar/pull/1249#issuecomment-6154931489)).
+> Reproduced on the car through `basic.drive()` with a scripted Xbox pad:
+> pressing A (toggle pilot mode) and B (toggle recording) changes nothing —
+> `user/mode` stays `'user'` and `recording` stays `False`.
+>
+> `basic.py`'s joystick branch adds a `LocalWebController` after
+> `TogglePilotMode` and `ToggleRecording`, giving it only the camera image as
+> input. It writes its own `user/mode` and `recording` on every pass, so it
+> undoes both toggles in the same pass they happen. Legacy `basic.py` had no
+> web controller in this branch — the gamepad was the controller — so this
+> came in with Phase 5. Its RC branch also adds one that writes the mode, but
+> that is legacy's own wiring and nothing else toggles the mode there.
+>
+> **Open decision — item 4, `simulator.py` starts with no mode (noted, not
+> planned; Ed, 2026-10-13).** In the simulator's joystick branch nothing
+> writes `user/mode` until the first toggle press. Legacy's joystick wrote
+> `'user'` from the start; now `user/mode` is `None`, which `PilotCondition`
+> reads as "not user", so the car starts under the pilot and ignores the
+> sticks until the mode is toggled. Ed: some users may depend on that
+> behaviour, so it is to be decided before anything changes it.
+
+- [x] **11.1** `basic.py`'s web controller takes the current mode and
+      recording state as inputs — `'cam/image_array', 'tub/num_records',
+      'user/mode', 'recording'`, as `complete.py` gives it — so it adopts a
+      toggled value rather than writing its own over it, and the web page
+      shows what the gamepad set. A test drives `basic.drive()` with a
+      scripted pad: A cycles the mode, B toggles recording, and each sticks
+      on the passes after. `basic.py` imports `albumentations`, so the test
+      skips without it and runs on the car — where it fails against the
+      unfixed `basic.py` and passes with the fix.
 
 ---
 
