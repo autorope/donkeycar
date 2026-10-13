@@ -941,6 +941,69 @@ must land together to keep the templates working.
       skips without it and runs on the car — where it fails against the
       unfixed `basic.py` and passes with the fix.
 
+### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
+
+> **Found (Ed, 2026-10-13)** while trying 11.1 on hardware: a new `basic`
+> car (`~/mycar-basic-1249`) fails at startup, before any controller code
+> runs:
+>
+> ```
+> File ".../Adafruit_GPIO/I2C.py", line 55, in get_default_bus
+>     raise RuntimeError('Could not determine default I2C bus for platform.')
+> ```
+>
+> **Not caused by this branch**: `basic.py`'s drivetrain code is identical on
+> `main`. `cfg_basic.py` ships `PCA9685_I2C_BUSNUM = None`, which asks the
+> deprecated Adafruit library to detect the bus, and its platform detection
+> returns "unknown" (0) on a Raspberry Pi 4 Model B on Debian trixie — and on
+> Jetsons, whose users have always had to set the bus. The car's PCA9685 is
+> on bus 1, address 0x40 (`~/mycar` drives it as `PCA9685.1:40`).
+> `complete.py` never hits this, because its pin strings name the bus.
+>
+> Workaround for the hardware check, in `myconfig.py`:
+> `PCA9685_I2C_BUSNUM = 1` (or `DRIVE_TRAIN_TYPE = "MOCK"` to skip the
+> PCA9685 entirely), plus `USE_JOYSTICK_AS_DEFAULT = True` — `basic.py` has
+> no `--js` flag, so without it the gamepad is never used.
+>
+> **A larger defect behind it.** `cfg_basic.py` advertises seven drivetrain
+> types — `SERVO_ESC`, `DC_STEER_THROTTLE`, `DC_TWO_WHEEL`,
+> `SERVO_HBRIDGE_PWM`, `PIGPIO_PWM`, `MM1`, `MOCK` — but `basic.py` checks
+> only for `MOCK` and sends every other value to the deprecated PCA9685
+> servo/ESC path. A `basic` car configured for `DC_TWO_WHEEL` or `MM1`
+> silently tries to drive a PCA9685 it does not have.
+>
+> **Options considered**, smallest first:
+>
+> 1. **Default the bus to 1** — one line in `cfg_basic.py`,
+>    `PCA9685_I2C_BUSNUM = 1`. On the Raspberry Pis the library did
+>    recognise, detection always answered 1; where it does not, it fails. So
+>    this keeps what worked and fixes what did not, and anyone on a
+>    different bus overrides it in `myconfig.py` as they already must.
+>    **Recommended now**, as a one-line PR to `main` like #1254.
+> 2. **Fall back to bus 1 in `parts/actuator.py`'s `PCA9685`** when no bus is
+>    given and detection fails. **Not recommended**: that class is shared
+>    and deprecated, and its bus override works by replacing
+>    `Adafruit_GPIO.I2C.get_default_bus` for the whole process, so the change
+>    reaches past `basic` for no gain over option 1.
+> 3. **Give `basic.py` `complete.py`'s drivetrain** — call `add_drivetrain()`,
+>    which supports every advertised type through the pin-based
+>    `PWM_STEERING_THROTTLE` setup. Needs: mapping `basic.py`'s
+>    `angle`/`throttle` onto the `steering`/`throttle` that `add_drivetrain`
+>    reads (a `Pipe` or renamed `DriveMode` outputs); a `PWM_STEERING_THROTTLE`
+>    block in `cfg_basic.py`; and a compatibility path so existing users'
+>    `STEERING_CHANNEL` / `THROTTLE_CHANNEL` / `PCA9685_I2C_*` keep working —
+>    mapped onto pin strings, or `SERVO_ESC` kept as the legacy path. One or
+>    two commits, but it changes every existing `basic` user's configuration
+>    and `basic` is meant to stay minimal, so it wants its own plan and a
+>    hardware check on more than one drivetrain type. **Open decision.**
+>
+> Neither 1 nor 3 depends on this branch.
+
+- [ ] *(proposed, option 1)* PR to `main`: `PCA9685_I2C_BUSNUM = 1` in
+      `cfg_basic.py`, with a comment saying why and how to override it.
+- [ ] *(proposed, option 3 — open decision)* `basic.py` uses
+      `add_drivetrain()`, with a compatibility path for existing configs.
+
 ---
 
 ## 5. Type-hint and test standards
