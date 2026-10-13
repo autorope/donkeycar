@@ -98,12 +98,10 @@ def add_rc_behaviors(car, cfg):
     # JOYSTICK_* settings are for gamepads.  See get_control_scaling.
     #
     car.add(UserSteering(scale=1.0, dead_zone=cfg.JOYSTICK_DEADZONE),
-            inputs=[steering], outputs=['user/angle'],
-            run_condition=steering)
+            inputs=[steering], outputs=['user/angle'])
     car.add(UserThrottle(direction=1.0, scale=1.0,
                          dead_zone=cfg.JOYSTICK_DEADZONE),
-            inputs=[throttle], outputs=['user/throttle'],
-            run_condition=throttle)
+            inputs=[throttle], outputs=['user/throttle'])
 
     #
     # The wiper channel is a switch, so it is on or off rather than a
@@ -208,13 +206,11 @@ def drive(cfg, model_path=None, model_type=None):
         #
         car.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
                              dead_zone=cfg.JOYSTICK_DEADZONE),
-                inputs=[behaviors.STEERING], outputs=['user/angle'],
-                run_condition=behaviors.STEERING)
+                inputs=[behaviors.STEERING], outputs=['user/angle'])
         car.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
                              scale=cfg.JOYSTICK_MAX_THROTTLE,
                              dead_zone=cfg.JOYSTICK_DEADZONE),
-                inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
-                run_condition=behaviors.THROTTLE)
+                inputs=[behaviors.THROTTLE], outputs=['user/throttle'])
         car.add(TogglePilotMode(), inputs=['user/mode'], outputs=['user/mode'],
                 run_condition=behaviors.TOGGLE_PILOT_MODE)
         car.add(ToggleRecording(), inputs=['recording'], outputs=['recording'],

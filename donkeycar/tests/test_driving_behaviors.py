@@ -23,12 +23,33 @@ class TestUserSteering(unittest.TestCase):
     def test_invert_swaps_left_and_right(self):
         assert UserSteering(invert=True).run(0.5) == -0.5
 
-    def test_nothing_yet_is_centred(self):
+    def test_nothing_yet_leaves_steering_alone(self):
         """
-        Before the control has moved there is no value in memory for it.
+        Before the control has reported there is no value for it.  None is
+        not written by the vehicle loop, so the web page keeps steering
+        until a controller is actually in use.
         """
-        assert UserSteering().run(None) == 0.0
-        assert UserSteering().run() == 0.0
+        assert UserSteering().run(None) is None
+        assert UserSteering().run() is None
+
+    def test_a_held_stick_keeps_steering(self):
+        """
+        The event arrives only on the pass the stick moves.  Answering
+        nothing on the passes between let the web controller's 0.0 win, so
+        a stick held over steered for one pass and then let go.
+        """
+        steering = UserSteering()
+
+        assert steering.run(0.5) == 0.5
+        assert steering.run(None) == 0.5
+        assert steering.run(None) == 0.5
+
+    def test_centring_the_stick_is_held_too(self):
+        steering = UserSteering()
+        steering.run(0.5)
+
+        assert steering.run(0.0) == 0.0
+        assert steering.run(None) == 0.0
 
     def test_the_dead_zone_is_applied_by_default(self):
         """
@@ -65,9 +86,26 @@ class TestUserThrottle(unittest.TestCase):
     def test_scale_limits_the_throttle(self):
         assert UserThrottle(direction=1.0, scale=0.5).run(1.0) == 0.5
 
-    def test_nothing_yet_is_no_throttle(self):
-        assert UserThrottle().run(None) == 0.0
-        assert UserThrottle().run() == 0.0
+    def test_nothing_yet_leaves_throttle_alone(self):
+        assert UserThrottle().run(None) is None
+        assert UserThrottle().run() is None
+
+    def test_a_held_stick_keeps_driving(self):
+        throttle = UserThrottle(direction=-1.0, scale=0.5)
+
+        assert throttle.run(-1.0) == 0.5
+        assert throttle.run(None) == 0.5
+        assert throttle.run(None) == 0.5
+
+    def test_a_limit_changed_while_holding_takes_effect(self):
+        """
+        The position is held, not the throttle, so AdjustMaxThrottle still
+        works on a stick held steady.
+        """
+        throttle = UserThrottle(direction=1.0, scale=1.0)
+        throttle.run(1.0, 0.5)
+
+        assert throttle.run(None, 0.25) == 0.25
 
     def test_the_scale_can_be_changed_while_driving(self):
         """
@@ -101,14 +139,21 @@ class TestTriggerThrottle(unittest.TestCase):
     only correct behavior to establish.
     """
 
-    def test_untouched_triggers_give_no_throttle(self):
+    def test_untouched_triggers_leave_throttle_alone(self):
+        """
+        Neither trigger has reported, so the web page keeps the throttle.
+        """
+        assert TriggerThrottle().run(None, None) is None
+        assert TriggerThrottle().run() is None
+
+    def test_an_untouched_trigger_is_at_rest(self):
         """
         The safety case.  A trigger rests at -1.0 and has no value in memory
         until it first moves; reading that absence as centre would mean half
-        throttle the moment the car started.
+        throttle the moment the other trigger was touched.
         """
-        assert TriggerThrottle().run(None, None) == 0.0
-        assert TriggerThrottle().run() == 0.0
+        assert TriggerThrottle().run(-1.0, None) == 0.0
+        assert TriggerThrottle().run(None, -1.0) == 0.0
 
     def test_a_released_trigger_gives_no_throttle(self):
         assert TriggerThrottle().run(-1.0, -1.0) == 0.0

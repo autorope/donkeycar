@@ -747,9 +747,10 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
     change when someone plugs in a different make of controller.
     """
     #
-    # Steering and throttle.  The behavior is used as both the input and the
-    # run condition, so the part runs only when the control moves and gets
-    # the new position when it does.
+    # Steering and throttle.  These run on every pass and hold the last
+    # position between events, so a stick held still keeps driving; until
+    # the controller has reported anything they write nothing, and the web
+    # page drives.
     #
     # An RC receiver is neither inverted nor scaled the way a gamepad is;
     # see get_control_scaling.
@@ -758,14 +759,12 @@ def add_controller_behaviors(V, cfg, tub=None, record_tracker=None):
     V.add(UserSteering(scale=scaling.steering_scale,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
           inputs=[behaviors.STEERING],
-          outputs=['user/steering'],
-          run_condition=behaviors.STEERING)
+          outputs=['user/steering'])
     V.add(UserThrottle(direction=scaling.throttle_direction,
                        scale=scaling.throttle_scale,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
           inputs=[behaviors.THROTTLE, 'user/throttle_scale'],
-          outputs=['user/throttle'],
-          run_condition=behaviors.THROTTLE)
+          outputs=['user/throttle'])
 
     #
     # Pilot mode and recording.  Both read their current value and return

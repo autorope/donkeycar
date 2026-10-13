@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 43 / 43 tasks.**
+**44 / 45 tasks — Phase 9 (controller input reaches the drivetrain) in progress.**
 
 45 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4 and Phase 8 took 2, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -777,6 +777,69 @@ must land together to keep the templates working.
       `custom`, to have a map — the factory-only checks are the gap that let
       this through. `RC_RECEIVER_TYPES` names each receiver's class, so the
       existing check that a map binds only real controls now covers these too.
+
+### Phase 9 — Controller input reaches the drivetrain (1 / 2)
+
+> **Why.** Reported in review at `13e9c22b`, and reproduced by running
+> `complete.drive()` itself with a scripted gamepad and a recording
+> drivetrain: with the throttle stick pushed forward and held, the
+> drivetrain receives `(0.0, 0.0)` on every pass. **No physical controller
+> can drive a car built from `complete.py`, `cv_control.py` or
+> `path_follow.py` on this branch.**
+>
+> Two defects, and fixing either alone is not enough:
+>
+> 1. **Order.** `add_controller_behaviors()` is called after `DriveMode`,
+>    the drivetrain and the tub writer. The controller's steering and
+>    throttle land in memory after their consumers have run, and the next
+>    pass starts with `LocalWebController` writing its own values (0.0 unless
+>    the web page is driving) over them. The emergency-stop braking sequence
+>    is lost the same way.
+> 2. **A held stick.** `UserSteering`/`UserThrottle` run only on the pass
+>    where the control moves. Moved earlier, a stick held still would drive
+>    for one pass and then lose to the web controller's 0.0 on the next.
+>    Legacy did not have this problem because its joystick part output its
+>    position on every pass, after the web controller.
+>
+> `basic.py` and `simulator.py` are not affected: `basic.py`'s web controller
+> writes `webcontroller/angle`, and `simulator.py` adds no web controller when
+> a physical one is configured.
+>
+> **Precedence, as legacy:** once the physical controller has reported a
+> position it owns steering and throttle, and the web page's sliders do
+> not. Until it has reported anything, the web page drives.
+>
+> **Open decision — Forza mode (deferred by Ed, 2026-10-13).** No template
+> wires `THROTTLE_FORWARD` / `THROTTLE_REVERSE` to `TriggerThrottle`, so the
+> migration guide's "Forza mode" recipe binds behaviors nothing uses and
+> silently does nothing. To decide: wire it in the templates (and how it
+> shares `user/throttle` with `THROTTLE` when both are bound), or drop the
+> recipe and the two behaviors. Note that on `xbox` the triggers are also
+> the default stop gesture.
+
+- [x] **9.1** The driving parts hold their position. `UserSteering`,
+      `UserThrottle` and `TriggerThrottle` run on every pass: on a pass with a
+      new position they compute and remember it, and on a pass without one
+      they return the remembered value — or `None` until the control has
+      reported at all, which the vehicle loop does not write, so the web page
+      drives until then. The templates drop the run condition that made
+      them event-only — in `complete.py`, `simulator.py`, `basic.py` and
+      `arduino_drive.py`. Unit tests; no visible change on its own, since the
+      order still puts these parts after their consumers (checked: a held
+      stick now survives every pass in memory, and the drivetrain still
+      receives 0.0).
+- [ ] **9.2** Driving and safety behaviors run before their consumers.
+      `add_controller_behaviors()` splits in two: `add_driving_behaviors()` —
+      steering, throttle, constant throttle, chaos monkey, throttle limits,
+      emergency stop, pilot mode, the recording toggle and stop-vehicle — is
+      called straight after `add_user_controller()` in `complete.py`,
+      `cv_control.py` and `path_follow.py`; `add_record_behaviors()` — erase
+      records and show record count, which need the tub — stays where the
+      tub exists. An integration test drives `complete.drive()` with a
+      scripted gamepad and a recording drivetrain: a held stick reaches the
+      drivetrain on every pass, centring it returns to neutral, and the
+      emergency-stop sequence reaches the drivetrain. The same test checks
+      `cv_control` and `path_follow` put the driving parts before `DriveMode`.
 
 ---
 

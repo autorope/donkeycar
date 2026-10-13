@@ -124,13 +124,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         scaling = get_control_scaling(cfg)
         V.add(UserSteering(scale=scaling.steering_scale,
                            dead_zone=cfg.JOYSTICK_DEADZONE),
-              inputs=[behaviors.STEERING], outputs=['user/angle'],
-              run_condition=behaviors.STEERING)
+              inputs=[behaviors.STEERING], outputs=['user/angle'])
         V.add(UserThrottle(direction=scaling.throttle_direction,
                            scale=scaling.throttle_scale,
                            dead_zone=cfg.JOYSTICK_DEADZONE),
-              inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
-              run_condition=behaviors.THROTTLE)
+              inputs=[behaviors.THROTTLE], outputs=['user/throttle'])
         V.add(TogglePilotMode(), inputs=['user/mode'], outputs=['user/mode'],
               run_condition=behaviors.TOGGLE_PILOT_MODE)
 

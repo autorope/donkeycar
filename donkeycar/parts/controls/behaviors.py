@@ -48,12 +48,19 @@ class UserSteering:
 
         V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE),
               inputs=[steering_axis],
-              outputs=['user/steering'],
-              run_condition=steering_axis)
+              outputs=['user/steering'])
 
-    Using the axis event as both the input and the run condition means the
-    part runs only when the control actually moves, and gets the new
-    position when it does.
+    Runs on every pass.  The axis event arrives only on the pass where the
+    control moves, so on the passes between it answers with the position
+    it last saw: a stick held still keeps steering.  Answering only when
+    the control moved left the value to whatever else writes
+    'user/steering' -- the web controller writes 0.0 on every pass -- so a
+    held stick steered for one pass and then let go.
+
+    Until the control has reported anything at all it answers None, which
+    the vehicle loop does not write, so another source of steering (the
+    web page) keeps working until a controller is actually in use.  After
+    that the controller owns steering, as legacy did.
 
     The dead zone is applied by default.  The legacy controller applied
     JOYSTICK_DEADZONE only to the decision about whether to record and never
@@ -76,12 +83,15 @@ class UserSteering:
         self.scale = scale
         self.dead_zone = dead_zone
         self.direction = -1.0 if invert else 1.0
+        self._position: float | None = None
 
-    def run(self, axis_value: float | None = None) -> float:
-        if axis_value is None:
-            return 0.0
+    def run(self, axis_value: float | None = None) -> float | None:
+        if axis_value is not None:
+            self._position = axis_value
+        if self._position is None:
+            return None  # never reported; leave steering to anything else
         return self.direction * self.scale * apply_dead_zone(
-            axis_value, self.dead_zone
+            self._position, self.dead_zone
         )
 
 
@@ -92,12 +102,18 @@ class UserThrottle:
         V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
                            scale=cfg.JOYSTICK_MAX_THROTTLE),
               inputs=[throttle_axis, 'user/throttle_scale'],
-              outputs=['user/throttle'],
-              run_condition=throttle_axis)
+              outputs=['user/throttle'])
+
+    Runs on every pass and holds the last position between events, as
+    UserSteering does and for the same reason: a stick held forward has to
+    keep the car moving.  It answers None until the control has reported
+    anything.
 
     The scale is taken as an input as well as a constructor argument so
     that AdjustMaxThrottle can change it while driving.  On a car that
     never adjusts it, leave the input out and the constructor value stands.
+    The position is held rather than the throttle, so a limit changed
+    while the stick is held takes effect at once.
 
     direction exists because a stick pushed forward usually reads negative,
     so the default of -1.0 turns "away from me" into "forwards".
@@ -117,18 +133,21 @@ class UserThrottle:
         self.direction = direction
         self.scale = scale
         self.dead_zone = dead_zone
+        self._position: float | None = None
 
     def run(
         self,
         axis_value: float | None = None,
         throttle_scale: float | None = None,
-    ) -> float:
-        if axis_value is None:
-            return 0.0
+    ) -> float | None:
+        if axis_value is not None:
+            self._position = axis_value
+        if self._position is None:
+            return None  # never reported; leave throttle to anything else
 
         scale = self.scale if throttle_scale is None else throttle_scale
         return self.direction * scale * apply_dead_zone(
-            axis_value, self.dead_zone
+            self._position, self.dead_zone
         )
 
 
@@ -154,7 +173,9 @@ class TriggerThrottle:
 
     Takes the control states rather than their events, because both
     triggers have to be read whenever either moves.  Give it no run
-    condition; it is cheap and needs to see every change.
+    condition; it is cheap and needs to see every change.  States persist,
+    so it already holds a squeezed trigger.  Until either trigger has
+    reported it answers None, so the web page drives until then.
     """
 
     def __init__(
@@ -172,7 +193,10 @@ class TriggerThrottle:
         forward_axis: float | None = None,
         reverse_axis: float | None = None,
         throttle_scale: float | None = None,
-    ) -> float:
+    ) -> float | None:
+        if forward_axis is None and reverse_axis is None:
+            return None  # neither has reported; leave throttle to anything else
+
         scale = self.scale if throttle_scale is None else throttle_scale
         forward = self._squeeze(forward_axis)
         reverse = self._squeeze(reverse_axis)

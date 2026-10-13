@@ -62,13 +62,11 @@ def drive(cfg):
     #
     V.add(UserSteering(scale=cfg.JOYSTICK_STEERING_SCALE,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
-          inputs=[behaviors.STEERING], outputs=['user/angle'],
-          run_condition=behaviors.STEERING)
+          inputs=[behaviors.STEERING], outputs=['user/angle'])
     V.add(UserThrottle(direction=cfg.JOYSTICK_THROTTLE_DIR,
                        scale=cfg.JOYSTICK_MAX_THROTTLE,
                        dead_zone=cfg.JOYSTICK_DEADZONE),
-          inputs=[behaviors.THROTTLE], outputs=['user/throttle'],
-          run_condition=behaviors.THROTTLE)
+          inputs=[behaviors.THROTTLE], outputs=['user/throttle'])
     V.add(TogglePilotMode(), inputs=['user/mode'], outputs=['user/mode'],
           run_condition=behaviors.TOGGLE_PILOT_MODE)
 
