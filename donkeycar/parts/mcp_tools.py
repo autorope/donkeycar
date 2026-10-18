@@ -26,15 +26,18 @@ if TYPE_CHECKING:  # pragma: no cover - import only for type checking
 
 INSTRUCTIONS = (
     "Drive a donkeycar that is following a taped centreline with a computer-vision autopilot. "
-    "The autopilot steers; you set intent. Call get_track_config once to learn the track, then "
-    "poll get_vehicle_state and call set_control to change throttle or lane. Every track has the "
-    "lanes left, center (on the centreline) and right. The track's widths and lap length are "
-    "nominal: the width and the centreline's position vary along the course, so measure from the "
-    "camera frame with measure_ground_point where it matters. Throttle is a ceiling on the "
-    "autopilot's own throttle, so a high value does not make the car corner faster; 0 stops it. "
-    "Commands expire, so keep calling set_control while you want the car to move. Traffic features "
-    "such as stop signs and addresses are not in the track description -- look for them in the "
-    "camera frame."
+    "The autopilot steers; you set intent. Call get_autopilot first: it names the autopilot, and "
+    "that name is the section of get_track_config to read and the namespace of "
+    "get_autopilot_config. Call get_track_config once to learn the track, then poll "
+    "get_vehicle_state and call set_control to change throttle or lane. Every track has the lanes "
+    "left, center (on the centreline) and right. The track's widths and lap length are nominal: the "
+    "width and the centreline's position vary along the course, so measure from the camera frame "
+    "with measure_ground_point where it matters. A tape_color in the track is only a label; "
+    "get_autopilot_config reports the colour window and other settings the autopilot actually runs "
+    "with. Throttle is a ceiling on the autopilot's own throttle, so a high value does not make the "
+    "car corner faster; 0 stops it. Commands expire, so keep calling set_control while you want the "
+    "car to move. Traffic features such as stop signs and addresses are not in the track "
+    "description -- look for them in the camera frame."
 )
 
 
@@ -59,10 +62,31 @@ def build_server(bridge: MCPBridge) -> MCPServer:
     server = MCPServer(name="donkeycar", version=donkeycar.__version__, instructions=INSTRUCTIONS)
 
     @server.tool()
+    def get_autopilot() -> dict[str, Any]:
+        """
+        Name the autopilot driving the car. The name is the section of get_track_config that
+        describes the track for this autopilot, and the namespace of get_autopilot_config.
+        Call this first.
+        """
+        return bridge.autopilot()
+
+    @server.tool()
+    def get_autopilot_config() -> dict[str, Any]:
+        """
+        The settings the autopilot is running with, read from the car's config.py and myconfig.py:
+        the HSV colour window it matches the line with, where in the image it looks, how it steers,
+        and its throttle range. Read-only. `start` reloads the config, so call this again after a
+        restart. A setting the config does not define is null.
+        """
+        return bridge.autopilot_config()
+
+    @server.tool()
     def get_track_config() -> dict[str, Any]:
         """
-        Describe the track: whether it loops, its lap length, the centreline (colour, width, dashed),
-        the side-lines, and the named lanes. Every track has the lanes left, center and right.
+        Describe the track: its name, and a section per autopilot (see get_autopilot). The
+        cv_control section gives whether it loops, its lap length, the centreline (tape_color,
+        width, dashed), the side-lines, and the named lanes. Every track has the lanes left,
+        center and right. A tape_color is only a label.
 
         All distances are NOMINAL -- measured once, as guidance. The track's width and the
         centreline's position vary along the course; for the real values at a given spot, find

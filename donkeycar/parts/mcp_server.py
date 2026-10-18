@@ -37,6 +37,44 @@ from donkeycar.parts.track_config import (
 )
 from donkeycar.utils import arr_to_binary
 
+# The autopilot this bridge drives. Its name keys its section of track.yml and
+# of get_autopilot_config, so an agent asks for it first and reads the matching
+# namespace. Only the computer-vision template is driven today.
+AUTOPILOT = CV_CONTROL
+
+# The config settings that explain what the CV autopilot does on the track:
+# what colour it looks for and where, how it steers, and how fast it goes.
+# Hardware calibration (PWM, pins, joystick) is left out -- it explains nothing
+# an agent can act on.
+CV_AUTOPILOT_SETTINGS = (
+    # line colour, HSV
+    "COLOR_THRESHOLD_LOW",
+    "COLOR_THRESHOLD_HIGH",
+    "CONFIDENCE_THRESHOLD",
+    # where it looks
+    "SCAN_Y",
+    "SCAN_HEIGHT",
+    "IMAGE_W",
+    "IMAGE_H",
+    # steering
+    "TARGET_PIXEL",
+    "TARGET_THRESHOLD",
+    "PID_P",
+    "PID_I",
+    "PID_D",
+    "LOST_LINE_STEERING_DECAY",
+    # speed
+    "THROTTLE_MIN",
+    "THROTTLE_MAX",
+    "THROTTLE_INITIAL",
+    "THROTTLE_STEP",
+    # loop and frame
+    "DRIVE_LOOP_HZ",
+    "OVERLAY_IMAGE",
+    "CV_PIXELS_PER_INCH",
+    "MCP_COMMAND_TIMEOUT_S",
+)
+
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     from mcp.server.mcpserver import MCPServer
 
@@ -491,6 +529,30 @@ class MCPBridge:
 
     def track_config(self) -> dict[str, Any]:
         return self.track.to_dict()
+
+    def autopilot(self) -> dict[str, Any]:
+        return {
+            "autopilot": AUTOPILOT,
+            "note": (
+                f"Read the '{AUTOPILOT}' section of get_track_config, and get_autopilot_config for "
+                "the settings this autopilot is running with."
+            ),
+        }
+
+    def autopilot_config(self) -> dict[str, Any]:
+        """
+        The settings the autopilot is running with, from the current config.
+
+        `start` reloads the config, so this is always what the running car uses
+        rather than what the process launched with. A setting the config does
+        not define is reported as None, so "unset" cannot be mistaken for "not
+        reported".
+        """
+        return {
+            "autopilot": AUTOPILOT,
+            "source": "config.py + myconfig.py",
+            "settings": {name: getattr(self.cfg, name, None) for name in CV_AUTOPILOT_SETTINGS},
+        }
 
     def lane_offset_px_for(self, lane: str) -> int:
         # TrackConfigError is a ValueError, so the tool layer turns it into a

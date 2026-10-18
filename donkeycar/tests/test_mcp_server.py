@@ -401,6 +401,8 @@ def test_build_server_registers_the_tool_surface():
         "stop",
         "emergency_stop",
         "get_calibration",
+        "get_autopilot",
+        "get_autopilot_config",
     }
     assert expected <= names, expected - names
 
@@ -462,6 +464,8 @@ def test_client_sees_the_whole_tool_surface():
         "stop",
         "emergency_stop",
         "get_calibration",
+        "get_autopilot",
+        "get_autopilot_config",
     } <= names
 
 
@@ -542,10 +546,76 @@ def test_agent_is_told_the_track_is_nominal_and_has_no_segments():
 
     server = make_bridge().build_server()
     tool = next(t for t in _tools(server).tools if t.name == "get_track_config")
+    assert "get_autopilot" in INSTRUCTIONS
     for text in (INSTRUCTIONS, tool.description or ""):
         assert "segment" not in text.lower()
         assert "nominal" in text.lower()
         assert "measure_ground_point" in text
+
+
+# ------------------------------------------------------------- autopilot
+
+
+def test_autopilot_names_the_cv_template():
+    assert make_bridge().autopilot()["autopilot"] == "cv_control"
+
+
+def test_autopilot_name_keys_the_track_section():
+    """The name is how an agent knows which section of the track to read."""
+    bridge = make_bridge()
+    assert bridge.autopilot()["autopilot"] in bridge.track_config()
+
+
+def test_autopilot_config_reports_the_live_settings():
+    class Tuned(Cfg):
+        COLOR_THRESHOLD_LOW = (17, 103, 104)
+        COLOR_THRESHOLD_HIGH = (37, 255, 255)
+        SCAN_Y = 100
+
+    report = MCPBridge(Tuned(), serve=False).autopilot_config()
+    assert report["autopilot"] == "cv_control"
+    settings = report["settings"]
+    assert settings["COLOR_THRESHOLD_LOW"] == (17, 103, 104)
+    assert settings["SCAN_Y"] == 100
+    assert settings["CV_PIXELS_PER_INCH"] == 4.0
+
+
+def test_autopilot_config_reports_every_setting_even_unset():
+    """An unset setting is null, so "unset" cannot be mistaken for "not reported"."""
+    from donkeycar.parts.mcp_server import CV_AUTOPILOT_SETTINGS
+
+    settings = make_bridge().autopilot_config()["settings"]
+    assert set(settings) == set(CV_AUTOPILOT_SETTINGS)
+    assert settings["PID_P"] is None
+
+
+def test_autopilot_config_leaves_out_hardware_calibration():
+    settings = make_bridge().autopilot_config()["settings"]
+    assert not any("PWM" in name or "JOYSTICK" in name for name in settings)
+
+
+def test_autopilot_config_follows_a_reloaded_config():
+    class Before(Cfg):
+        SCAN_Y = 100
+
+    class After(Cfg):
+        SCAN_Y = 140
+
+    bridge = MCPBridge(Before(), serve=False)
+    bridge.reload_config(After())
+    assert bridge.autopilot_config()["settings"]["SCAN_Y"] == 140
+
+
+@requires_mcp
+def test_autopilot_tools_through_the_client():
+    server = make_bridge().build_server()
+    name = json.loads(_text(_call(server, "get_autopilot")))["autopilot"]
+    assert name == "cv_control"
+    track = json.loads(_text(_call(server, "get_track_config")))
+    assert name in track
+    report = json.loads(_text(_call(server, "get_autopilot_config")))
+    assert report["autopilot"] == name
+    assert report["settings"]["CV_PIXELS_PER_INCH"] == 4.0
 
 
 @requires_mcp

@@ -69,7 +69,8 @@ NOMINAL_NOTE = (
     "These values are nominal: measured once, as guidance. The track's width and the centreline's "
     "position vary along the course, so where it matters, measure from the camera frame with "
     "measure_ground_point rather than trusting these numbers. A tape_color is only a label: the "
-    "colour the autopilot actually matches is set in the car's config."
+    "colour the autopilot actually matches is COLOR_THRESHOLD_LOW / COLOR_THRESHOLD_HIGH in "
+    "get_autopilot_config."
 )
 
 

@@ -14,10 +14,10 @@ Three follow-ups to `TRACK_CONFIG_PLAN.md`:
 
 ---
 
-## Progress — 1 of 3
+## Progress — 2 of 3
 
 - [x] **S1** — Namespace the CV fields under `cv_control:`, and rename `color` to `tape_color` in each tape block
-- [ ] **S2** — `get_autopilot` and `get_autopilot_config` tools
+- [x] **S2** — `get_autopilot` and `get_autopilot_config` tools
 - [ ] **S3** — Docs and the published user manual
 
 Items 1 and 3 land together in S1: both rewrite the same schema, and doing them apart would mean
@@ -137,10 +137,10 @@ cv_control:
 
 **Acceptance**
 
-- [ ] Over a real MCP client, `get_autopilot` returns `cv_control`, and the same name keys `get_track_config`'s section.
-- [ ] Over a real MCP client, `get_autopilot_config` returns `template: "cv_control"` and every listed setting.
-- [ ] An unset setting is `null`.
-- [ ] After editing the config and calling `stop` then `start`, it reports the new value.
+- [x] Over a real MCP client, `get_autopilot` returns `cv_control`, and the same name keys `get_track_config`'s section.
+- [x] Over a real MCP client, `get_autopilot_config` returns `template: "cv_control"` and every listed setting.
+- [x] An unset setting is `null`.
+- [x] After editing the config and calling `stop` then `start`, it reports the new value.
 
 ## S3 — Docs
 

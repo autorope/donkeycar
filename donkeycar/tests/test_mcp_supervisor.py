@@ -251,13 +251,15 @@ def test_the_bridge_adopts_the_reloaded_config(tmp_path):
         config_path=os.path.join(path, "config.py"),
         car_dir=path,
     )
-    _set_myconfig(path, CV_PIXELS_PER_INCH=8.0, MCP_COMMAND_TIMEOUT_S=5.0)
+    _set_myconfig(path, CV_PIXELS_PER_INCH=8.0, MCP_COMMAND_TIMEOUT_S=5.0, SCAN_HEIGHT=80)
 
     sup.start()
     _wait_until(sup.is_running)
     try:
         assert sup.bridge.pixels_per_inch() == 8.0
         assert sup.bridge.command_timeout_s == 5.0
+        # What get_autopilot_config reports must be the settings the car now runs with.
+        assert sup.bridge.autopilot_config()["settings"]["SCAN_HEIGHT"] == 80
     finally:
         sup.stop()
 
