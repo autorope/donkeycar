@@ -13,31 +13,37 @@
 name: Example track
 description: A yellow centreline with white side-lines that dead-ends.
 
-# true for a loop, false for a track that dead-ends. Required.
-continuous: false
+# Everything below is what the computer-vision autopilot (the cv_control
+# template) needs to know about the track. A template added later gets its own
+# section, so the two cannot collide.
+cv_control:
+  # true for a loop, false for a track that dead-ends. Required.
+  continuous: false
 
-# Length of one lap, measured along the centreline. Omit if not measured.
-# lap_length_inches: 480.0
+  # Where the left and right lanes sit relative to the centreline, in inches.
+  # Required: left is negative, right is positive. The center lane is always
+  # the centreline and is not configured. Together they make
+  # set_control(lane="left" | "center" | "right") work on every track. Further
+  # named lanes are allowed; `set_control(lane_offset_inches=...)` is there for
+  # finer adjustments.
+  lanes:
+    left: -12.0
+    right: 12.0
 
-# The line the autopilot follows.
-centerline:
-  color: yellow
-  width_inches: 1.0
-  dashed: false
+  # Length of one lap, measured along the centreline. Omit if not measured.
+  # lap_length_inches: 480.0
 
-# Lines marking the track edges, as distances from the centreline. Omit the
-# block, or either side, if there are none.
-side_lines:
-  color: white
-  left_inches: 24.0
-  right_inches: 24.0
+  # The line the autopilot follows. tape_color is a label only: the colour
+  # the autopilot actually matches is COLOR_THRESHOLD_LOW / COLOR_THRESHOLD_HIGH
+  # in myconfig.py.
+  centerline:
+    tape_color: yellow
+    width_inches: 1.0
+    dashed: false
 
-# Where the left and right lanes sit relative to the centreline, in inches.
-# Required: left is negative, right is positive. The center lane is always the
-# centreline and is not configured. Together they make
-# set_control(lane="left" | "center" | "right") work on every track. Further
-# named lanes are allowed; `set_control(lane_offset_inches=...)` is there for
-# finer adjustments.
-lanes:
-  left: -12.0
-  right: 12.0
+  # Lines marking the track edges, as distances from the centreline. Omit the
+  # block, or either side, if there are none.
+  side_lines:
+    tape_color: white
+    left_inches: 24.0
+    right_inches: 24.0

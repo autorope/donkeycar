@@ -27,7 +27,14 @@ from typing import TYPE_CHECKING, Any, Protocol
 import numpy as np
 
 from donkeycar.parts.cv_calibration import Calibration, load_calibration
-from donkeycar.parts.track_config import TrackConfig, default_track, find_track_file, load_track, parse_track
+from donkeycar.parts.track_config import (
+    CV_CONTROL,
+    TrackConfig,
+    default_track,
+    find_track_file,
+    load_track,
+    parse_track,
+)
 from donkeycar.utils import arr_to_binary
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
@@ -470,10 +477,12 @@ class MCPBridge:
         lanes = getattr(self.cfg, "TRACK_LANES_INCHES", None)
         if isinstance(lanes, dict) and lanes:
             raw: dict[str, Any] = {
-                "continuous": getattr(self.cfg, "TRACK_CONTINUOUS", False),
-                "lanes": dict(lanes),
-                "lap_length_inches": getattr(self.cfg, "TRACK_LAP_LENGTH_INCHES", None),
                 "description": "Track described by config constants; no track.yml was found.",
+                CV_CONTROL: {
+                    "continuous": getattr(self.cfg, "TRACK_CONTINUOUS", False),
+                    "lanes": dict(lanes),
+                    "lap_length_inches": getattr(self.cfg, "TRACK_LAP_LENGTH_INCHES", None),
+                },
             }
             # Through the same validation as a file, so the lane rules hold
             # whichever way the track was described.
@@ -486,7 +495,7 @@ class MCPBridge:
     def lane_offset_px_for(self, lane: str) -> int:
         # TrackConfigError is a ValueError, so the tool layer turns it into a
         # ToolError carrying the list of lanes that do exist.
-        return self.inches_to_px(self.track.offset_inches(lane))
+        return self.inches_to_px(self.track.cv_control.offset_inches(lane))
 
     def pixels_per_inch(self) -> float | None:
         return self.calibration_data.pixels_per_inch if self.calibration_data else None

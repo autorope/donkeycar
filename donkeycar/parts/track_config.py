@@ -11,6 +11,11 @@ absent: the agent discovers those in the camera frame, which is what the
 learning progression is about, and it means a track can be rearranged or have
 features moved around it without editing this file.
 
+Only `name` and `description` describe the track itself. Everything else is
+what one autopilot needs to know about it, so it sits in that autopilot's
+section -- `cv_control:` for the computer-vision template -- and a template
+added later gets its own section rather than colliding with these fields.
+
 The schema is validated strictly and unknown keys are rejected. A silently
 wrong lane width is a car in the wall, and a typo that reads as "no lanes
 configured" is worse than a refusal to start.
@@ -26,9 +31,15 @@ import yaml
 
 TRACK_FILENAME = "track.yml"
 
-REQUIRED_KEYS = frozenset({"continuous", "lanes"})
-OPTIONAL_KEYS = frozenset({"name", "description", "lap_length_inches", "centerline", "side_lines"})
-ALLOWED_KEYS = REQUIRED_KEYS | OPTIONAL_KEYS
+# The section holding the computer-vision template's view of the track.
+CV_CONTROL = "cv_control"
+
+TOP_LEVEL_KEYS = frozenset({"name", "description", CV_CONTROL})
+REQUIRED_TOP_LEVEL_KEYS = frozenset({CV_CONTROL})
+
+CV_REQUIRED_KEYS = frozenset({"continuous", "lanes"})
+CV_OPTIONAL_KEYS = frozenset({"lap_length_inches", "centerline", "side_lines"})
+CV_KEYS = CV_REQUIRED_KEYS | CV_OPTIONAL_KEYS
 
 # Fields from when the track was modelled as a chain of "T" segments. Real
 # tracks are a centreline with side-lines whose spacing varies, so these no
@@ -45,8 +56,8 @@ RETIRED_KEYS = frozenset(
     }
 )
 
-CENTERLINE_KEYS = frozenset({"color", "width_inches", "dashed"})
-SIDE_LINE_KEYS = frozenset({"color", "left_inches", "right_inches"})
+CENTERLINE_KEYS = frozenset({"tape_color", "width_inches", "dashed"})
+SIDE_LINE_KEYS = frozenset({"tape_color", "left_inches", "right_inches"})
 
 # Every track must answer the same three high-level commands: drive in the left
 # lane, on the centreline, or in the right lane. The centre lane is the
@@ -57,7 +68,8 @@ CENTER_LANE = "center"
 NOMINAL_NOTE = (
     "These values are nominal: measured once, as guidance. The track's width and the centreline's "
     "position vary along the course, so where it matters, measure from the camera frame with "
-    "measure_ground_point rather than trusting these numbers."
+    "measure_ground_point rather than trusting these numbers. A tape_color is only a label: the "
+    "colour the autopilot actually matches is set in the car's config."
 )
 
 
@@ -69,34 +81,32 @@ class TrackConfigError(ValueError):
 class Centerline:
     """The line the autopilot follows."""
 
-    color: str = "yellow"
+    tape_color: str = "yellow"
     width_inches: float = 1.0
     dashed: bool = False
 
     def to_dict(self) -> dict[str, Any]:
-        return {"color": self.color, "width_inches": self.width_inches, "dashed": self.dashed}
+        return {"tape_color": self.tape_color, "width_inches": self.width_inches, "dashed": self.dashed}
 
 
 @dataclass(frozen=True)
 class SideLines:
     """Lines marking the edges of the track, as nominal distances from the centreline."""
 
-    color: str | None = None
+    tape_color: str | None = None
     left_inches: float | None = None
     right_inches: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {"color": self.color, "left_inches": self.left_inches, "right_inches": self.right_inches}
+        return {"tape_color": self.tape_color, "left_inches": self.left_inches, "right_inches": self.right_inches}
 
 
 @dataclass(frozen=True)
-class TrackConfig:
-    """A validated track description. Every distance in it is nominal."""
+class CvTrack:
+    """The computer-vision template's view of the track. Every distance in it is nominal."""
 
     continuous: bool
     lanes: dict[str, float]
-    name: str | None = None
-    description: str | None = None
     lap_length_inches: float | None = None
     centerline: Centerline = field(default_factory=Centerline)
     side_lines: SideLines | None = None
@@ -112,12 +122,7 @@ class TrackConfig:
             raise TrackConfigError(f"Unknown lane {lane!r}. Known lanes: {self.lane_names()}") from None
 
     def to_dict(self) -> dict[str, Any]:
-        """The shape the MCP `get_track_config` tool returns."""
         return {
-            "name": self.name,
-            "description": self.description,
-            "nominal": True,
-            "note": NOMINAL_NOTE,
             "continuous": self.continuous,
             "lap_length_inches": self.lap_length_inches,
             "centerline": self.centerline.to_dict(),
@@ -126,11 +131,29 @@ class TrackConfig:
         }
 
 
+@dataclass(frozen=True)
+class TrackConfig:
+    """A validated track description: the track's name, and each autopilot's section."""
+
+    cv_control: CvTrack
+    name: str | None = None
+    description: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        """The shape the MCP `get_track_config` tool returns."""
+        return {
+            "name": self.name,
+            "description": self.description,
+            "nominal": True,
+            "note": NOMINAL_NOTE,
+            CV_CONTROL: self.cv_control.to_dict(),
+        }
+
+
 def default_track() -> TrackConfig:
     """What to report when a car has no track file."""
     return TrackConfig(
-        continuous=False,
-        lanes={"left": -12.0, CENTER_LANE: 0.0, "right": 12.0},
+        cv_control=CvTrack(continuous=False, lanes={"left": -12.0, CENTER_LANE: 0.0, "right": 12.0}),
         description="Default track description; no track.yml was found.",
     )
 
@@ -162,22 +185,45 @@ def load_track(path: str) -> TrackConfig:
 
 def parse_track(raw: dict[str, Any], source: str = "<track>") -> TrackConfig:
     """Validate an already-parsed mapping."""
-    retired = sorted(set(raw) & RETIRED_KEYS)
-    if retired:
+    _refuse_retired(raw, source)
+
+    # The shape before sections: CV fields at the top level. Named, with where
+    # they belong, so moving them is a one-step fix.
+    unsectioned = sorted(set(raw) & CV_KEYS)
+    if unsectioned:
         raise TrackConfigError(
-            f"{source}: {retired} are no longer used. The track is described by its centreline, "
-            "side-lines and lanes, not by segments; delete these fields. Put the tape's colour and "
-            "width under 'centerline' if you want to keep them."
+            f"{source}: {unsectioned} belong under '{CV_CONTROL}:'. Only 'name' and 'description' sit at "
+            f"the top level; move the rest into a '{CV_CONTROL}:' section."
         )
 
-    unknown = sorted(set(raw) - ALLOWED_KEYS)
+    unknown = sorted(set(raw) - TOP_LEVEL_KEYS)
     if unknown:
-        # This is also what keeps a traffic-feature list out of the schema: it
-        # is not an accepted key, so adding one is an error rather than a
-        # silently ignored section.
-        raise TrackConfigError(f"{source}: unknown field(s) {unknown}. Allowed fields: {sorted(ALLOWED_KEYS)}")
+        # This is also what keeps a traffic-feature list out of the schema, and
+        # what makes a misspelt section an error rather than "no track".
+        raise TrackConfigError(f"{source}: unknown field(s) {unknown}. Allowed fields: {sorted(TOP_LEVEL_KEYS)}")
 
-    missing = sorted(REQUIRED_KEYS - set(raw))
+    missing = sorted(REQUIRED_TOP_LEVEL_KEYS - set(raw))
+    if missing:
+        raise TrackConfigError(f"{source}: missing required section(s) {missing}")
+
+    return TrackConfig(
+        cv_control=parse_cv_track(raw[CV_CONTROL], source=f"{source}: {CV_CONTROL}"),
+        name=_optional_str(raw, "name", source),
+        description=_optional_str(raw, "description", source),
+    )
+
+
+def parse_cv_track(raw: object, source: str = CV_CONTROL) -> CvTrack:
+    """Validate the `cv_control:` section."""
+    if not isinstance(raw, dict):
+        raise TrackConfigError(f"{source} must be a mapping, got {raw!r}")
+    _refuse_retired(raw, source)
+
+    unknown = sorted(set(raw) - CV_KEYS)
+    if unknown:
+        raise TrackConfigError(f"{source}: unknown field(s) {unknown}. Allowed fields: {sorted(CV_KEYS)}")
+
+    missing = sorted(CV_REQUIRED_KEYS - set(raw))
     if missing:
         raise TrackConfigError(f"{source}: missing required field(s) {missing}")
 
@@ -189,20 +235,32 @@ def parse_track(raw: dict[str, Any], source: str = "<track>") -> TrackConfig:
         _positive_number(raw, "lap_length_inches", source) if raw.get("lap_length_inches") is not None else None
     )
 
-    return TrackConfig(
+    return CvTrack(
         continuous=continuous,
         lanes=_lanes(raw["lanes"], source),
-        name=_optional_str(raw, "name", source),
-        description=_optional_str(raw, "description", source),
         lap_length_inches=lap_length,
         centerline=_centerline(raw.get("centerline"), source),
         side_lines=_side_lines(raw.get("side_lines"), source),
     )
 
 
+def _refuse_retired(raw: dict[str, Any], source: str) -> None:
+    retired = sorted(set(raw) & RETIRED_KEYS)
+    if retired:
+        raise TrackConfigError(
+            f"{source}: {retired} are no longer used. The track is described by its centreline, "
+            "side-lines and lanes, not by segments; delete these fields. Put the tape's colour and "
+            f"width under '{CV_CONTROL}: centerline:' as 'tape_color' and 'width_inches' if you want to keep them."
+        )
+
+
 def _block(value: object, key: str, allowed: frozenset[str], source: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise TrackConfigError(f"{source}: '{key}' must be a mapping, got {value!r}")
+    if "color" in value:
+        # Renamed so a tape's colour label cannot be read as the colour the
+        # autopilot matches, which lives in the car's config.
+        raise TrackConfigError(f"{source}: '{key}' field 'color' is now 'tape_color'; rename it.")
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise TrackConfigError(f"{source}: unknown field(s) {unknown} in '{key}'. Allowed fields: {sorted(allowed)}")
@@ -218,7 +276,7 @@ def _centerline(value: object, source: str) -> Centerline:
     if not isinstance(dashed, bool):
         raise TrackConfigError(f"{where}: 'dashed' must be true or false, got {dashed!r}")
     return Centerline(
-        color=_optional_str(block, "color", where) or "yellow",
+        tape_color=_optional_str(block, "tape_color", where) or "yellow",
         width_inches=_positive_number(block, "width_inches", where) if "width_inches" in block else 1.0,
         dashed=dashed,
     )
@@ -230,7 +288,7 @@ def _side_lines(value: object, source: str) -> SideLines | None:
     block = _block(value, "side_lines", SIDE_LINE_KEYS, source)
     where = f"{source}: side_lines"
     return SideLines(
-        color=_optional_str(block, "color", where),
+        tape_color=_optional_str(block, "tape_color", where),
         left_inches=_positive_number(block, "left_inches", where) if block.get("left_inches") is not None else None,
         right_inches=_positive_number(block, "right_inches", where) if block.get("right_inches") is not None else None,
     )

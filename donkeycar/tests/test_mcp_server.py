@@ -343,11 +343,12 @@ def test_no_torn_reads_under_concurrency():
 def test_track_config_reports_geometry_and_lanes():
     bridge = make_bridge()
     track = bridge.track_config()
-    assert track["lap_length_inches"] == 480.0
-    assert track["continuous"] is True
+    section = track["cv_control"]
+    assert section["lap_length_inches"] == 480.0
+    assert section["continuous"] is True
     assert track["nominal"] is True
-    assert set(track["lanes"]) == {"left", "center", "right"}
-    assert not any("segment" in key for key in track)
+    assert set(section["lanes"]) == {"left", "center", "right"}
+    assert not any("segment" in key for key in [*track, *section])
 
 
 def test_config_constant_lanes_are_validated_like_a_file(tmp_path):
@@ -372,8 +373,8 @@ def test_retired_segment_constants_are_ignored(tmp_path, caplog):
     with caplog.at_level("WARNING"):
         bridge = MCPBridge(OldCar(), serve=False, car_dir=str(tmp_path))
     track = bridge.track_config()
-    assert track["continuous"] is True
-    assert not any("segment" in key for key in track)
+    assert track["cv_control"]["continuous"] is True
+    assert not any("segment" in key for key in [*track, *track["cv_control"]])
     assert "TRACK_" not in caplog.text
 
 
@@ -551,7 +552,7 @@ def test_agent_is_told_the_track_is_nominal_and_has_no_segments():
 def test_track_config_through_the_client():
     server = make_bridge().build_server()
     payload = json.loads(_text(_call(server, "get_track_config")))
-    assert payload["continuous"] is True
+    assert payload["cv_control"]["continuous"] is True
     assert payload["nominal"] is True
 
 
@@ -560,10 +561,10 @@ def test_track_config_through_the_client():
 
 def test_bridge_reads_track_yml_from_the_car_directory(tmp_path):
     (tmp_path / "track.yml").write_text(
-        "continuous: true\nlap_length_inches: 300\nlanes:\n  left: -6\n  right: 6\n  outside: 9\n"
+        "cv_control:\n  continuous: true\n  lap_length_inches: 300\n  lanes: {left: -6, right: 6, outside: 9}\n"
     )
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
-    track = bridge.track_config()
+    track = bridge.track_config()["cv_control"]
     assert track["lap_length_inches"] == 300.0
     assert sorted(track["lanes"]) == ["center", "left", "outside", "right"]
     # 9 inches at 4 px/inch, negated into the controller's frame
@@ -573,7 +574,8 @@ def test_bridge_reads_track_yml_from_the_car_directory(tmp_path):
 def test_bridge_falls_back_to_config_constants_without_a_file(tmp_path):
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
     track = bridge.track_config()
-    assert sorted(track["lanes"]) == ["center", "left", "right"]
+    assert sorted(track["cv_control"]["lanes"]) == ["center", "left", "right"]
+    assert track["cv_control"]["lap_length_inches"] == 480.0
     assert "no track.yml" in (track["description"] or "")
 
 
@@ -582,18 +584,22 @@ def test_malformed_track_file_refuses_to_start(tmp_path):
     Driving a track you have mis-described is worse than not starting, so a bad
     file is an error rather than a quiet fallback to defaults.
     """
-    (tmp_path / "track.yml").write_text("continuous: false\nlap_length_inches: -5\nlanes: {left: -12, right: 12}\n")
+    (tmp_path / "track.yml").write_text(
+        "cv_control:\n  continuous: false\n  lap_length_inches: -5\n  lanes: {left: -12, right: 12}\n"
+    )
     with pytest.raises(TrackConfigError, match="positive"):
         MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
 
 
 @requires_mcp
 def test_track_from_a_file_reaches_the_client(tmp_path):
-    (tmp_path / "track.yml").write_text("name: Loop\ncontinuous: true\nlanes: {left: -12, right: 12}\n")
+    (tmp_path / "track.yml").write_text(
+        "name: Loop\ncv_control:\n  continuous: true\n  lanes: {left: -12, right: 12}\n"
+    )
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
     payload = json.loads(_text(_call(bridge.build_server(), "get_track_config")))
     assert payload["name"] == "Loop"
-    assert payload["continuous"] is True
+    assert payload["cv_control"]["continuous"] is True
     assert "features" not in payload
 
 

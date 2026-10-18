@@ -45,8 +45,10 @@ class FakeClock:
 def make_bridge(tmp_path, calibrated=True, lap_length=480):
     """A bridge with a real track and, optionally, a real calibration."""
     path = custom_template(str(tmp_path / "car"), template="cv_control")
-    lap = f"lap_length_inches: {lap_length}\n" if lap_length else ""
-    (tmp_path / "car" / "track.yml").write_text(f"continuous: true\n{lap}lanes:\n  left: -12\n  right: 12\n")
+    lap = f"  lap_length_inches: {lap_length}\n" if lap_length else ""
+    (tmp_path / "car" / "track.yml").write_text(
+        f"cv_control:\n  continuous: true\n{lap}  lanes:\n    left: -12\n    right: 12\n"
+    )
     if calibrated:
         from donkeycar.parts.cv_calibration import calibrate_from_image
 
@@ -85,7 +87,7 @@ def test_policy_reads_the_track_and_starts_the_car(tmp_path):
     bridge, session = session_for(tmp_path)
     policy = LapPolicy(session, ScriptedPerception())
     policy.begin()
-    assert policy.track["continuous"] is True
+    assert policy.track["cv_control"]["continuous"] is True
     assert "started on a loop, about 480 inches a lap" in policy.log
     assert bridge.is_armed() is True
     assert bridge.command().throttle > 0

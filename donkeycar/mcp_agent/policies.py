@@ -19,6 +19,7 @@ from typing import Any
 
 from donkeycar.mcp_agent.perception import Perception, Sighting
 from donkeycar.mcp_agent.session import CarSession
+from donkeycar.parts.track_config import CV_CONTROL
 
 logger = logging.getLogger(__name__)
 
@@ -59,9 +60,14 @@ class Policy:
         self.session.stop()
         self._note("stopped")
 
+    def _cv_track(self) -> dict[str, Any]:
+        """The computer-vision template's section of the track description."""
+        section = self.track.get(CV_CONTROL)
+        return section if isinstance(section, dict) else {}
+
     def _describe_track(self) -> str:
-        shape = "a loop" if self.track.get("continuous") else "a track that dead-ends"
-        lap = self.track.get("lap_length_inches")
+        shape = "a loop" if self._cv_track().get("continuous") else "a track that dead-ends"
+        lap = self._cv_track().get("lap_length_inches")
         return f"{shape}, about {lap:.0f} inches a lap" if lap else shape
 
     def _note(self, message: str) -> None:
@@ -208,7 +214,7 @@ class ObstacleAvoidPolicy(ObstacleHaltPolicy):
         super().handle(state, sightings)
 
     def _passing_lane(self) -> str:
-        lanes = self.track.get("lanes", {})
+        lanes = self._cv_track().get("lanes", {})
         # Prefer a named lane on the far side from the obstacle; "left" is the
         # convention for passing on this track.
         for candidate in ("left", "right"):

@@ -14,9 +14,9 @@ Three follow-ups to `TRACK_CONFIG_PLAN.md`:
 
 ---
 
-## Progress — 0 of 3
+## Progress — 1 of 3
 
-- [ ] **S1** — Namespace the CV fields under `cv_control:`, and rename `color` to `tape_color` in each tape block
+- [x] **S1** — Namespace the CV fields under `cv_control:`, and rename `color` to `tape_color` in each tape block
 - [ ] **S2** — `get_autopilot` and `get_autopilot_config` tools
 - [ ] **S3** — Docs and the published user manual
 
@@ -118,11 +118,11 @@ cv_control:
 
 **Acceptance**
 
-- [ ] The packaged template loads, with every CV field under `cv_control:`.
-- [ ] A file with `continuous` or `lanes` at the top level fails, naming them and `cv_control`.
-- [ ] A misspelt section (`cv_contrl:`) fails as an unknown field.
-- [ ] `tape_color` is accepted in both blocks, and the old `color` key is refused in both.
-- [ ] Lane rules unchanged: `left` < 0 and `right` > 0 required, a configured `center` refused.
+- [x] The packaged template loads, with every CV field under `cv_control:`.
+- [x] A file with `continuous` or `lanes` at the top level fails, naming them and `cv_control`.
+- [x] A misspelt section (`cv_contrl:`) fails as an unknown field.
+- [x] `tape_color` is accepted in both blocks, and the old `color` key is refused in both.
+- [x] Lane rules unchanged: `left` < 0 and `right` > 0 required, a configured `center` refused.
 
 ## S2 — `get_autopilot` and `get_autopilot_config`
 
