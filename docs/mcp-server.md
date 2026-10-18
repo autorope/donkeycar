@@ -64,45 +64,63 @@ obstacle in the road without editing a file.
 you built:
 
 ```yaml
-continuous: false          # required: true for a loop, false for a dead-end
+name: Kitchen loop                 # optional: describe the track itself
+description: Yellow centreline, white side tape, one gentle S-bend.
 
-lap_length_inches: 480.0   # optional: measured along the centreline
+cv_control:                        # required: what the CV autopilot needs to know
+  continuous: false                # required: true for a loop, false for a dead-end
+  lanes:                           # required: offsets from the centreline, inches
+    left: -9.0                     # must be negative
+    right: 9.0                     # must be positive
 
-centerline:                # optional
-  color: yellow
-  width_inches: 1.0
-  dashed: true
+  lap_length_inches: 480.0         # optional: measured along the centreline
 
-side_lines:                # optional; omit either side if it has none
-  color: white
-  left_inches: 18.0        # distance from the centreline
-  right_inches: 18.0
+  centerline:                      # optional
+    tape_color: yellow             # a label only; see below
+    width_inches: 1.0
+    dashed: true
 
-lanes:                     # required: offsets from the centreline, inches
-  left: -9.0               # must be negative
-  right: 9.0               # must be positive
+  side_lines:                      # optional; omit either side if it has none
+    tape_color: white
+    left_inches: 18.0              # distance from the centreline
+    right_inches: 18.0
 ```
+
+**Everything but `name` and `description` lives under `cv_control:`**, the section for the
+computer-vision template. When another template is added to the MCP server it gets its own
+section, so the two cannot collide. The agent learns which section to read from the
+`get_autopilot` tool.
 
 **Every distance here is nominal.** Measure it once at a representative spot. The real
 width and the centreline's position vary along the course, and `get_track_config` tells
 the agent so: where it matters, the agent measures the side-lines in the camera frame
 with `measure_ground_point` instead of trusting these numbers.
 
+**A `tape_color` is only a label.** The colour the follower actually matches is the HSV
+window `COLOR_THRESHOLD_LOW` / `COLOR_THRESHOLD_HIGH` in `myconfig.py`, which the agent can
+read with `get_autopilot_config`.
+
 `lanes` must name `left` and `right`. The `center` lane is always the centreline, and
-configuring it &mdash; even as 0 &mdash; is refused, so `set_control(lane="left")`, `"center"` and `"right"` work on every
-track: the left lane, on the centreline, and the right lane. Further named lanes are
-allowed.
+configuring it &mdash; even as 0 &mdash; is refused, so `set_control(lane="left")`,
+`"center"` and `"right"` work on every track: the left lane, on the centreline, and the
+right lane. Further named lanes are allowed.
 
 Validation is strict and unknown fields are rejected, so a typo fails loudly rather
 than reading as "never set". A silently wrong lane width is a car in the wall, and a
 lane with the wrong sign is refused for the same reason.
 
-**Upgrading from the segment format.** Earlier versions described the track as "T"
-segments. A `track.yml` that still has `segment_length_inches`, `cross_length_inches`,
-`segment_count`, `cross_colors`, `tape_width_inches` or `tape_color` is refused, naming
-each field: delete them, and move the tape's colour and width under `centerline`. Delete
-`center` from `lanes` too. The
-`TRACK_SEGMENT_*` constants in an old `config.py` are simply ignored.
+**Upgrading an older `track.yml`.** A file in an earlier shape is refused, naming what to
+change:
+
+- **Fields at the top level** other than `name` and `description` (`continuous`, `lanes`,
+  `lap_length_inches`, `centerline`, `side_lines`): move them under `cv_control:`.
+- **`color` in `centerline` or `side_lines`**: rename it `tape_color`.
+- **Segment fields** (`segment_length_inches`, `cross_length_inches`, `segment_count`,
+  `cross_colors`, `tape_width_inches`, `tape_color` at the top level): delete them, putting
+  the tape's colour and width under `cv_control: centerline:` if you want to keep them.
+- **`center` in `lanes`**: delete it.
+
+The `TRACK_SEGMENT_*` constants in an old `config.py` are simply ignored.
 
 A lane offset says where **the car** should sit: positive is right of the centreline,
 the way a person would describe it. The controller works in the opposite frame &mdash;
@@ -363,7 +381,9 @@ those needs a real restart, and the server logs a warning saying so. Pass
 
 | Tool | What it does |
 | --- | --- |
-| `get_track_config` | Loop or dead-end, lap length, centreline and side-lines, and the named lanes (always `left`, `center`, `right`). Distances are nominal; `nominal` and `note` say so. Call once. |
+| `get_autopilot` | The name of the autopilot driving the car, `cv_control`. It names the section of `get_track_config` to read. Call first. |
+| `get_autopilot_config` | The settings the autopilot is running with, from `config.py` and `myconfig.py`: HSV colour window, confidence gate, scan row and height, steering and PID, throttle range, loop rate. Read-only; unset settings are `null`. Reloaded on every `start`. |
+| `get_track_config` | The track's name and description, and its `cv_control` section: loop or dead-end, lap length, centreline and side-lines, and the named lanes (always `left`, `center`, `right`). Distances are nominal and tape colours are labels; `nominal` and `note` say so. Call once. |
 | `get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
 | `set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |

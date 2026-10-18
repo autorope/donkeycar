@@ -14,11 +14,11 @@ Three follow-ups to `TRACK_CONFIG_PLAN.md`:
 
 ---
 
-## Progress — 2 of 3
+## Progress — 3 of 3
 
 - [x] **S1** — Namespace the CV fields under `cv_control:`, and rename `color` to `tape_color` in each tape block
 - [x] **S2** — `get_autopilot` and `get_autopilot_config` tools
-- [ ] **S3** — Docs and the published user manual
+- [x] **S3** — Docs and the published user manual
 
 Items 1 and 3 land together in S1: both rewrite the same schema, and doing them apart would mean
 a format that lives for one commit. If you would rather have all of it as one commit, say so and
