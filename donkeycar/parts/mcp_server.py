@@ -9,7 +9,7 @@ Two things in here are load-bearing and easy to get wrong:
 
 * **Throttle is a ceiling, not a command.** The CV controller ramps its own
   throttle and slows itself in corners. An absolute agent value would fight that
-  ramp, so `set_control(throttle=v)` applies `min(v, cv_throttle)` going
+  ramp, so `cv_control-set_control(throttle=v)` applies `min(v, cv_throttle)` going
   forward. Zero is always a hard stop.
 * **State is exchanged under a lock.** `run_threaded` runs on the vehicle loop
   thread and the tool handlers run on the server's event loop thread. A frame
@@ -38,9 +38,17 @@ from donkeycar.parts.track_config import (
 from donkeycar.utils import arr_to_binary
 
 # The autopilot this bridge drives. Its name keys its section of track.yml and
-# of get_autopilot_config, so an agent asks for it first and reads the matching
-# namespace. Only the computer-vision template is driven today.
+# prefixes the tools specific to it, so an agent asks for it first and uses the
+# matching namespace. Only the computer-vision template is driven today.
 AUTOPILOT = CV_CONTROL
+
+# Tools that only make sense for this autopilot carry its name, so a second
+# autopilot can add its own get_track_config without colliding. The separator is
+# a dash because no tool name otherwise contains one: a dash means "prefixed",
+# and a name without one -- start, stop, emergency_stop, measure_ground_point,
+# get_autopilot -- applies to any autopilot. A dot would say the same, but the
+# Claude API allows only letters, digits, _ and - in a tool name.
+CV_TOOL_PREFIX = f"{AUTOPILOT}-"
 
 # The config settings that explain what the CV autopilot does on the track:
 # what colour it looks for and where, how it steers, and how fast it goes.
@@ -533,9 +541,11 @@ class MCPBridge:
     def autopilot(self) -> dict[str, Any]:
         return {
             "autopilot": AUTOPILOT,
+            "tool_prefix": CV_TOOL_PREFIX,
             "note": (
-                f"Read the '{AUTOPILOT}' section of get_track_config, and get_autopilot_config for "
-                "the settings this autopilot is running with."
+                f"Tools specific to this autopilot start with '{CV_TOOL_PREFIX}'. Read the '{AUTOPILOT}' "
+                f"section of {CV_TOOL_PREFIX}get_track_config, and {CV_TOOL_PREFIX}get_autopilot_config "
+                "for the settings this autopilot is running with."
             ),
         }
 

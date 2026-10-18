@@ -70,7 +70,7 @@ NOMINAL_NOTE = (
     "position vary along the course, so where it matters, measure from the camera frame with "
     "measure_ground_point rather than trusting these numbers. A tape_color is only a label: the "
     "colour the autopilot actually matches is COLOR_THRESHOLD_LOW / COLOR_THRESHOLD_HIGH in "
-    "get_autopilot_config."
+    "cv_control-get_autopilot_config."
 )
 
 
@@ -141,7 +141,7 @@ class TrackConfig:
     description: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        """The shape the MCP `get_track_config` tool returns."""
+        """The shape the MCP `cv_control-get_track_config` tool returns."""
         return {
             "name": self.name,
             "description": self.description,

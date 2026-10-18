@@ -20,6 +20,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ImageContent, TextContent
 
 import donkeycar
+from donkeycar.parts.mcp_server import CV_TOOL_PREFIX
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     from donkeycar.parts.mcp_server import MCPBridge
@@ -27,17 +28,18 @@ if TYPE_CHECKING:  # pragma: no cover - import only for type checking
 INSTRUCTIONS = (
     "Drive a donkeycar that is following a taped centreline with a computer-vision autopilot. "
     "The autopilot steers; you set intent. Call get_autopilot first: it names the autopilot, and "
-    "that name is the section of get_track_config to read and the namespace of "
-    "get_autopilot_config. Call get_track_config once to learn the track, then poll "
-    "get_vehicle_state and call set_control to change throttle or lane. Every track has the lanes "
-    "left, center (on the centreline) and right. The track's widths and lap length are nominal: the "
+    "tools specific to that autopilot start with its name and a dash (cv_control-...); a tool "
+    "with no dash in its name applies to any autopilot. Call "
+    "cv_control-get_track_config once to learn the track, then poll cv_control-get_vehicle_state "
+    "and call cv_control-set_control to change throttle or lane. Every track has the lanes left, "
+    "center (on the centreline) and right. The track's widths and lap length are nominal: the "
     "width and the centreline's position vary along the course, so measure from the camera frame "
     "with measure_ground_point where it matters. A tape_color in the track is only a label; "
-    "get_autopilot_config reports the colour window and other settings the autopilot actually runs "
-    "with. Throttle is a ceiling on the autopilot's own throttle, so a high value does not make the "
-    "car corner faster; 0 stops it. Commands expire, so keep calling set_control while you want the "
-    "car to move. Traffic features such as stop signs and addresses are not in the track "
-    "description -- look for them in the camera frame."
+    "cv_control-get_autopilot_config reports the colour window and other settings the autopilot "
+    "actually runs with. Throttle is a ceiling on the autopilot's own throttle, so a high value "
+    "does not make the car corner faster; 0 stops it. Commands expire, so keep calling "
+    "cv_control-set_control while you want the car to move. Traffic features such as stop signs "
+    "and addresses are not in the track description -- look for them in the camera frame."
 )
 
 
@@ -64,13 +66,13 @@ def build_server(bridge: MCPBridge) -> MCPServer:
     @server.tool()
     def get_autopilot() -> dict[str, Any]:
         """
-        Name the autopilot driving the car. The name is the section of get_track_config that
-        describes the track for this autopilot, and the namespace of get_autopilot_config.
-        Call this first.
+        Name the autopilot driving the car. Call this first. Tools specific to that autopilot start
+        with its name -- `tool_prefix`, e.g. cv_control-get_track_config -- and the same name is the
+        section of that tool's result that describes the track for it.
         """
         return bridge.autopilot()
 
-    @server.tool()
+    @server.tool(name=CV_TOOL_PREFIX + "get_autopilot_config")
     def get_autopilot_config() -> dict[str, Any]:
         """
         The settings the autopilot is running with, read from the car's config.py and myconfig.py:
@@ -80,7 +82,7 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         """
         return bridge.autopilot_config()
 
-    @server.tool()
+    @server.tool(name=CV_TOOL_PREFIX + "get_track_config")
     def get_track_config() -> dict[str, Any]:
         """
         Describe the track: its name, and a section per autopilot (see get_autopilot). The
@@ -98,7 +100,7 @@ def build_server(bridge: MCPBridge) -> MCPServer:
     # as content blocks or as structured JSON by inspecting it, and a loose
     # annotation sends the Image down the structured path, where it fails to
     # serialise at request time rather than at import time.
-    @server.tool()
+    @server.tool(name=CV_TOOL_PREFIX + "get_vehicle_state")
     def get_vehicle_state() -> list[TextContent | ImageContent]:
         """
         Return the latest camera frame plus the current throttle, steering, lane
@@ -137,12 +139,12 @@ def build_server(bridge: MCPBridge) -> MCPServer:
             payload["watchdog_note"] = (
                 "The throttle was zeroed because no command arrived for "
                 f"{bridge.command_timeout_s:.0f}s. Reading state does not reset the timer -- "
-                "call set_control again to resume, and keep calling it while driving."
+                "call cv_control-set_control again to resume, and keep calling it while driving."
             )
         if live and state.line_detected is False:
             payload["warning"] = (
                 "The autopilot cannot see the line. Steering is decaying toward centre, "
-                "but the car is driving blind -- consider set_control(throttle=0)."
+                "but the car is driving blind -- consider cv_control-set_control(throttle=0)."
             )
         if not live:
             payload["note"] = (
@@ -157,7 +159,7 @@ def build_server(bridge: MCPBridge) -> MCPServer:
             blocks.append(Image(data=jpeg, format="jpeg").to_image_content())
         return blocks
 
-    @server.tool()
+    @server.tool(name=CV_TOOL_PREFIX + "set_control")
     def set_control(
         throttle: float | None = None,
         lane: str | None = None,
@@ -167,7 +169,7 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         Set the throttle and/or the lane.
 
         throttle is -1..1 and acts as a ceiling on the autopilot's own throttle;
-        0 stops the car. Give either `lane` (a name from get_track_config) or
+        0 stops the car. Give either `lane` (a name from cv_control-get_track_config) or
         `lane_offset_inches` for finer control.
 
         KEEP CALLING THIS WHILE YOU WANT THE CAR TO MOVE. A watchdog zeroes the
@@ -177,7 +179,7 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         only a command resets the timer. Re-send this at least every second
         during a drive; sending the same values again is fine and is the normal
         way to hold a speed. If the car stops for no apparent reason, check
-        `watchdog_tripped` in get_vehicle_state.
+        `watchdog_tripped` in cv_control-get_vehicle_state.
         """
         if lane is not None and lane_offset_inches is not None:
             raise ToolError("Give either lane or lane_offset_inches, not both.")
@@ -234,7 +236,7 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         with _agent_facing_errors():
             return bridge.measure_ground_point(pixel_x, pixel_y)
 
-    @server.tool()
+    @server.tool(name=CV_TOOL_PREFIX + "get_calibration")
     def get_calibration() -> dict[str, Any]:
         """
         Pixels-per-inch and the ground homography, with the settings they were

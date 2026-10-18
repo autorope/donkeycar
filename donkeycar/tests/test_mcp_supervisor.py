@@ -258,7 +258,7 @@ def test_the_bridge_adopts_the_reloaded_config(tmp_path):
     try:
         assert sup.bridge.pixels_per_inch() == 8.0
         assert sup.bridge.command_timeout_s == 5.0
-        # What get_autopilot_config reports must be the settings the car now runs with.
+        # What cv_control-get_autopilot_config reports must be the settings the car now runs with.
         assert sup.bridge.autopilot_config()["settings"]["SCAN_HEIGHT"] == 80
     finally:
         sup.stop()

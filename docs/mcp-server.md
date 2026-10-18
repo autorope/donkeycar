@@ -92,16 +92,16 @@ section, so the two cannot collide. The agent learns which section to read from 
 `get_autopilot` tool.
 
 **Every distance here is nominal.** Measure it once at a representative spot. The real
-width and the centreline's position vary along the course, and `get_track_config` tells
+width and the centreline's position vary along the course, and `cv_control-get_track_config` tells
 the agent so: where it matters, the agent measures the side-lines in the camera frame
 with `measure_ground_point` instead of trusting these numbers.
 
 **A `tape_color` is only a label.** The colour the follower actually matches is the HSV
 window `COLOR_THRESHOLD_LOW` / `COLOR_THRESHOLD_HIGH` in `myconfig.py`, which the agent can
-read with `get_autopilot_config`.
+read with `cv_control-get_autopilot_config`.
 
 `lanes` must name `left` and `right`. The `center` lane is always the centreline, and
-configuring it &mdash; even as 0 &mdash; is refused, so `set_control(lane="left")`,
+configuring it &mdash; even as 0 &mdash; is refused, so `cv_control-set_control(lane="left")`,
 `"center"` and `"right"` work on every track: the left lane, on the centreline, and the
 right lane. Further named lanes are allowed.
 
@@ -258,7 +258,7 @@ you keep the behaviour you had &mdash; nothing breaks on upgrade. Raise it to ar
 0.15 to actually get the protection.
 
 **Recalibrate whenever the camera moves.** The calibration records the `SCAN_Y`,
-image size and camera type it was taken with, and `get_calibration` reports when
+image size and camera type it was taken with, and `cv_control-get_calibration` reports when
 those no longer match — but it cannot tell that someone knocked the camera.
 
 ## 4. Run the server
@@ -369,7 +369,7 @@ Several failure modes look like something else entirely:
 
 1. edit `myconfig.py` (thresholds, `SCAN_Y`, `SCAN_HEIGHT`, lane offsets)
 2. call `stop`, then `start`
-3. look at the next `get_vehicle_state` frame
+3. look at the next `cv_control-get_vehicle_state` frame
 
 A config that will not parse fails the `start` and leaves the previous one in
 place, so a typo does not take the server down with it. `MCP_SERVER_HOST` and
@@ -379,19 +379,24 @@ those needs a real restart, and the server logs a warning saying so. Pass
 
 ## 5. The tools
 
+Tools that only make sense for the computer-vision autopilot start with `cv_control-`, the
+name `get_autopilot` returns, and a dash. A future autopilot adds its own prefixed tools without
+colliding. No tool name otherwise contains a dash, so a name without one &mdash; `get_autopilot`,
+`start`, `stop`, `emergency_stop`, `measure_ground_point` &mdash; applies to any autopilot.
+
 | Tool | What it does |
 | --- | --- |
-| `get_autopilot` | The name of the autopilot driving the car, `cv_control`. It names the section of `get_track_config` to read. Call first. |
-| `get_autopilot_config` | The settings the autopilot is running with, from `config.py` and `myconfig.py`: HSV colour window, confidence gate, scan row and height, steering and PID, throttle range, loop rate. Read-only; unset settings are `null`. Reloaded on every `start`. |
-| `get_track_config` | The track's name and description, and its `cv_control` section: loop or dead-end, lap length, centreline and side-lines, and the named lanes (always `left`, `center`, `right`). Distances are nominal and tape colours are labels; `nominal` and `note` say so. Call once. |
-| `get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
-| `set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
+| `get_autopilot` | The name of the autopilot driving the car, `cv_control`, and its `tool_prefix`, `cv_control-`. The name is also the section of `cv_control-get_track_config` to read. Call first. |
+| `cv_control-get_autopilot_config` | The settings the autopilot is running with, from `config.py` and `myconfig.py`: HSV colour window, confidence gate, scan row and height, steering and PID, throttle range, loop rate. Read-only; unset settings are `null`. Reloaded on every `start`. |
+| `cv_control-get_track_config` | The track's name and description, and its `cv_control` section: loop or dead-end, lap length, centreline and side-lines, and the named lanes (always `left`, `center`, `right`). Distances are nominal and tape colours are labels; `nominal` and `note` say so. Call once. |
+| `cv_control-get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
+| `cv_control-set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |
 | `start` / `stop` | Begin and end driving. `start` re-reads `config.py` and `myconfig.py` first, so tuning is edit &rarr; stop &rarr; start &rarr; look, with no server restart. |
 | `emergency_stop` | Zero the throttle now, without touching the lifecycle. |
-| `get_calibration` | Scale, homography, and whether either has gone stale. |
+| `cv_control-get_calibration` | Scale, homography, and whether either has gone stale. |
 
-`get_vehicle_state` also reports `line_detected` and `line_confidence`. Watch
+`cv_control-get_vehicle_state` also reports `line_detected` and `line_confidence`. Watch
 them: a hard steering value means something entirely different depending on
 whether the autopilot can see the line. Following a bend and driving blind at the
 lock it last held look identical otherwise &mdash; on a real track that difference
@@ -401,7 +406,7 @@ you set the throttle to 0.
 
 ### Throttle is a ceiling, not a command
 
-`set_control(throttle=0.8)` does **not** drive at 0.8. The autopilot computes its own
+`cv_control-set_control(throttle=0.8)` does **not** drive at 0.8. The autopilot computes its own
 throttle and slows itself in corners; your value caps it. So:
 
 - A high value does not make the car corner faster.
@@ -415,11 +420,11 @@ and stop. There is no way to override it from the tool surface, on purpose.
 
 If no command arrives for `MCP_COMMAND_TIMEOUT_S` (2 seconds by default) the throttle
 goes to zero. Agent silence — a crash, a dropped connection, a long think — stops the
-car rather than letting it continue blind. **Keep calling `set_control` while you want
+car rather than letting it continue blind. **Keep calling `cv_control-set_control` while you want
 the car to move.**
 
 Reading state does **not** reset the timer &mdash; only a command does. So the obvious
-driving loop, command once and then poll `get_vehicle_state` to watch what happens,
+driving loop, command once and then poll `cv_control-get_vehicle_state` to watch what happens,
 gives you a car that moves for two seconds and parks, while the state you are reading
 goes on reporting the throttle you asked for. `watchdog_tripped` in the state payload
 says when this has happened, and sending the same values again is the normal way to

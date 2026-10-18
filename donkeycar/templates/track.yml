@@ -23,8 +23,8 @@ cv_control:
   # Where the left and right lanes sit relative to the centreline, in inches.
   # Required: left is negative, right is positive. The center lane is always
   # the centreline and is not configured. Together they make
-  # set_control(lane="left" | "center" | "right") work on every track. Further
-  # named lanes are allowed; `set_control(lane_offset_inches=...)` is there for
+  # cv_control-set_control(lane="left" | "center" | "right") work on every track. Further
+  # named lanes are allowed; `cv_control-set_control(lane_offset_inches=...)` is there for
   # finer adjustments.
   lanes:
     left: -12.0

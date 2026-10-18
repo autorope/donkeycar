@@ -394,15 +394,15 @@ def test_build_server_registers_the_tool_surface():
     server = bridge.build_server()
     names = {t.name for t in server._tool_manager.list_tools()}
     expected = {
-        "get_track_config",
-        "get_vehicle_state",
-        "set_control",
+        "cv_control-get_track_config",
+        "cv_control-get_vehicle_state",
+        "cv_control-set_control",
         "start",
         "stop",
         "emergency_stop",
-        "get_calibration",
+        "cv_control-get_calibration",
         "get_autopilot",
-        "get_autopilot_config",
+        "cv_control-get_autopilot_config",
     }
     assert expected <= names, expected - names
 
@@ -457,15 +457,15 @@ def test_client_sees_the_whole_tool_surface():
     server = make_bridge().build_server()
     names = {t.name for t in _tools(server).tools}
     assert {
-        "get_track_config",
-        "get_vehicle_state",
-        "set_control",
+        "cv_control-get_track_config",
+        "cv_control-get_vehicle_state",
+        "cv_control-set_control",
         "start",
         "stop",
         "emergency_stop",
-        "get_calibration",
+        "cv_control-get_calibration",
         "get_autopilot",
-        "get_autopilot_config",
+        "cv_control-get_autopilot_config",
     } <= names
 
 
@@ -478,7 +478,7 @@ def test_vehicle_state_returns_text_and_an_image_block():
     """
     bridge = make_bridge()
     bridge.run_threaded(cam_img=frame(), pilot_steering=0.1, pilot_throttle=0.25, user_mode="local_pilot")
-    result = _call(bridge.build_server(), "get_vehicle_state")
+    result = _call(bridge.build_server(), "cv_control-get_vehicle_state")
 
     kinds = [type(b).__name__ for b in result.content]
     assert "TextContent" in kinds
@@ -493,7 +493,7 @@ def test_vehicle_state_returns_text_and_an_image_block():
 
 @requires_mcp
 def test_vehicle_state_without_a_frame_is_still_valid():
-    result = _call(make_bridge().build_server(), "get_vehicle_state")
+    result = _call(make_bridge().build_server(), "cv_control-get_vehicle_state")
     kinds = [type(b).__name__ for b in result.content]
     assert kinds == ["TextContent"]
     assert result.is_error is not True
@@ -515,7 +515,7 @@ def test_start_and_stop_through_the_client():
 def test_set_control_by_lane_name_through_the_client():
     bridge = make_bridge()
     server = bridge.build_server()
-    result = _call(server, "set_control", {"throttle": 0.5, "lane": "right"})
+    result = _call(server, "cv_control-set_control", {"throttle": 0.5, "lane": "right"})
     payload = json.loads(_text(result))
     assert payload["lane_offset_px"] == -48
     assert payload["lane_offset_inches"] == pytest.approx(12.0, abs=0.3)
@@ -526,7 +526,7 @@ def test_set_control_by_lane_name_through_the_client():
 @requires_mcp
 def test_set_control_rejects_both_lane_and_inches():
     server = make_bridge().build_server()
-    result = _call(server, "set_control", {"lane": "right", "lane_offset_inches": 3.0})
+    result = _call(server, "cv_control-set_control", {"lane": "right", "lane_offset_inches": 3.0})
     assert result.is_error is True
     assert "not both" in _text(result)
 
@@ -534,7 +534,7 @@ def test_set_control_rejects_both_lane_and_inches():
 @requires_mcp
 def test_unknown_lane_is_an_error_through_the_client():
     server = make_bridge().build_server()
-    result = _call(server, "set_control", {"lane": "shoulder"})
+    result = _call(server, "cv_control-set_control", {"lane": "shoulder"})
     assert result.is_error is True
     assert "Unknown lane" in _text(result)
 
@@ -545,7 +545,7 @@ def test_agent_is_told_the_track_is_nominal_and_has_no_segments():
     from donkeycar.parts.mcp_tools import INSTRUCTIONS
 
     server = make_bridge().build_server()
-    tool = next(t for t in _tools(server).tools if t.name == "get_track_config")
+    tool = next(t for t in _tools(server).tools if t.name == "cv_control-get_track_config")
     assert "get_autopilot" in INSTRUCTIONS
     for text in (INSTRUCTIONS, tool.description or ""):
         assert "segment" not in text.lower()
@@ -606,14 +606,57 @@ def test_autopilot_config_follows_a_reloaded_config():
     assert bridge.autopilot_config()["settings"]["SCAN_Y"] == 140
 
 
+CV_TOOLS = (
+    "get_autopilot_config",
+    "get_track_config",
+    "get_vehicle_state",
+    "set_control",
+    "get_calibration",
+)
+
+
+@requires_mcp
+def test_cv_specific_tools_are_namespaced_and_shared_ones_are_not():
+    """A future autopilot must be able to add its own get_track_config without colliding."""
+    names = {t.name for t in _tools(make_bridge().build_server()).tools}
+    for tool in CV_TOOLS:
+        assert f"cv_control-{tool}" in names
+        assert tool not in names
+    assert {"get_autopilot", "start", "stop", "emergency_stop"} <= names
+
+
+@requires_mcp
+def test_a_dash_means_prefixed_and_nothing_else():
+    """A tool name without a dash applies to any autopilot; one with a dash belongs to the autopilot it names."""
+    for tool in _tools(make_bridge().build_server()).tools:
+        if "-" in tool.name:
+            prefix, _, rest = tool.name.partition("-")
+            assert prefix == "cv_control", tool.name
+            assert "-" not in rest, tool.name
+
+
+@requires_mcp
+def test_every_tool_name_is_valid_for_the_claude_api():
+    import re
+
+    for tool in _tools(make_bridge().build_server()).tools:
+        assert re.fullmatch(r"[a-zA-Z0-9_-]{1,64}", tool.name), tool.name
+
+
+def test_autopilot_reports_its_tool_prefix():
+    report = make_bridge().autopilot()
+    assert report["tool_prefix"] == "cv_control-"
+    assert report["tool_prefix"] == f"{report['autopilot']}-"
+
+
 @requires_mcp
 def test_autopilot_tools_through_the_client():
     server = make_bridge().build_server()
     name = json.loads(_text(_call(server, "get_autopilot")))["autopilot"]
     assert name == "cv_control"
-    track = json.loads(_text(_call(server, "get_track_config")))
+    track = json.loads(_text(_call(server, "cv_control-get_track_config")))
     assert name in track
-    report = json.loads(_text(_call(server, "get_autopilot_config")))
+    report = json.loads(_text(_call(server, "cv_control-get_autopilot_config")))
     assert report["autopilot"] == name
     assert report["settings"]["CV_PIXELS_PER_INCH"] == 4.0
 
@@ -621,7 +664,7 @@ def test_autopilot_tools_through_the_client():
 @requires_mcp
 def test_track_config_through_the_client():
     server = make_bridge().build_server()
-    payload = json.loads(_text(_call(server, "get_track_config")))
+    payload = json.loads(_text(_call(server, "cv_control-get_track_config")))
     assert payload["cv_control"]["continuous"] is True
     assert payload["nominal"] is True
 
@@ -667,7 +710,7 @@ def test_track_from_a_file_reaches_the_client(tmp_path):
         "name: Loop\ncv_control:\n  continuous: true\n  lanes: {left: -12, right: 12}\n"
     )
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
-    payload = json.loads(_text(_call(bridge.build_server(), "get_track_config")))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_track_config")))
     assert payload["name"] == "Loop"
     assert payload["cv_control"]["continuous"] is True
     assert "features" not in payload
@@ -938,7 +981,7 @@ def test_stopped_vehicle_reports_disarmed_not_frozen_state():
     bridge.set_control(throttle=1.0)
     bridge.run_threaded(cam_img=frame(), pilot_steering=-0.08, pilot_throttle=0.3)
 
-    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_vehicle_state")))
     assert payload["armed"] is True
     assert payload["live"] is True
     assert payload["steering"] == -0.08
@@ -946,7 +989,7 @@ def test_stopped_vehicle_reports_disarmed_not_frozen_state():
     bridge.disarm()
     time.sleep(1.1)  # the loop has stopped writing
 
-    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_vehicle_state")))
     assert payload["armed"] is False, "command state must be current, not frozen"
     assert payload["live"] is False
     assert payload["steering"] is None, "a frozen steering value must not read as current"
@@ -960,7 +1003,7 @@ def test_command_state_stays_current_while_stopped():
     """Lane and throttle intent survive a stop; they are the agent's, not the car's."""
     bridge = make_bridge()
     bridge.set_control(lane_offset_px=48)
-    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_vehicle_state")))
     assert payload["lane_offset_px"] == 48
     assert payload["live"] is False
 
@@ -989,7 +1032,7 @@ def test_a_lost_line_is_reported_with_a_warning():
         cam_img=frame(), pilot_steering=0.9, pilot_throttle=0.15, line_confidence=0.0, line_detected=False
     )
 
-    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_vehicle_state")))
     assert payload["line_detected"] is False
     assert payload["line_confidence"] == 0.0
     assert "warning" in payload
@@ -1001,7 +1044,7 @@ def test_no_warning_while_the_line_is_visible():
     bridge = make_bridge()
     bridge.arm()
     bridge.run_threaded(cam_img=frame(), pilot_throttle=0.3, line_confidence=5000.0, line_detected=True)
-    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state")))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_vehicle_state")))
     assert payload["line_detected"] is True
     assert "warning" not in payload
 
@@ -1037,7 +1080,7 @@ def test_a_tripped_watchdog_says_how_to_recover():
     applied, _, _ = bridge.run_threaded(pilot_throttle=0.5)
     assert applied == 0.0, "the watchdog should have zeroed the throttle"
 
-    payload = json.loads(_text(_call(bridge.build_server(), "get_vehicle_state", {})))
+    payload = json.loads(_text(_call(bridge.build_server(), "cv_control-get_vehicle_state", {})))
     assert payload["watchdog_tripped"] is True
     note = payload.get("watchdog_note", "")
-    assert "set_control" in note, "the agent must be told what resets the watchdog"
+    assert "cv_control-set_control" in note, "the agent must be told what resets the watchdog"

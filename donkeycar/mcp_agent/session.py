@@ -12,6 +12,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Protocol
 
+from donkeycar.parts.mcp_server import CV_TOOL_PREFIX
+
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     from mcp.client.client import Client
     from mcp.types import CallToolResult
@@ -136,10 +138,10 @@ class McpSession:
         return None
 
     def get_track_config(self) -> dict[str, Any]:
-        return self._payload(self._call("get_track_config"))
+        return self._payload(self._call(CV_TOOL_PREFIX + "get_track_config"))
 
     def get_vehicle_state(self) -> tuple[dict[str, Any], bytes | None]:
-        result = self._call("get_vehicle_state")
+        result = self._call(CV_TOOL_PREFIX + "get_vehicle_state")
         return self._payload(result), self._image(result)
 
     def set_control(
@@ -149,7 +151,9 @@ class McpSession:
         lane_offset_inches: float | None = None,
     ) -> dict[str, Any]:
         return self._payload(
-            self._call("set_control", throttle=throttle, lane=lane, lane_offset_inches=lane_offset_inches)
+            self._call(
+                CV_TOOL_PREFIX + "set_control", throttle=throttle, lane=lane, lane_offset_inches=lane_offset_inches
+            )
         )
 
     def measure_ground_point(self, pixel_x: float, pixel_y: float) -> dict[str, Any]:
