@@ -1,5 +1,8 @@
 # Driving a donkeycar with an AI agent
 
+A self-contained user manual for sharing by email or chat is in
+[`mcp-server-manual.html`](mcp-server-manual.html): one file, no external resources.
+
 An MCP server that lets an LLM agent read the car's state and set its intent while
 the computer-vision autopilot follows a taped line. The autopilot steers at 20 Hz;
 the agent decides how fast to go and which lane to hold.

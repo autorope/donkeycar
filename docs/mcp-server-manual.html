@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Donkeycar MCP Server Manual</title>
+<meta name="description" content="User manual for the Donkeycar computer-vision autopilot MCP server: installation, track description, tools, workflows and troubleshooting.">
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --surface: #ffffff;
+    --text: #1f1e1c;
+    --muted: #5f5c57;
+    --border: #e3e0da;
+    --code-bg: #f2f0ec;
+    --accent: #2f6fd6;
+    --accent-tint: rgba(47, 111, 214, 0.12);
+    --warn-bg: #fff6e0;
+    --warn-border: #e8c46a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1b1a19;
+      --surface: #232221;
+      --text: #ecebe8;
+      --muted: #a9a59e;
+      --border: #3a3836;
+      --code-bg: #2c2b29;
+      --accent: #7aa7f0;
+      --accent-tint: rgba(122, 167, 240, 0.16);
+      --warn-bg: #3a3220;
+      --warn-border: #8a6d2a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1a19;
+    --surface: #232221;
+    --text: #ecebe8;
+    --muted: #a9a59e;
+    --border: #3a3836;
+    --code-bg: #2c2b29;
+    --accent: #7aa7f0;
+    --accent-tint: rgba(122, 167, 240, 0.16);
+    --warn-bg: #3a3220;
+    --warn-border: #8a6d2a;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  .page { max-width: 820px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 8px; }
+  .byline { color: var(--muted); font-size: 0.9rem; margin: 0; }
+  h2 { font-size: 1.4rem; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 1.1rem; margin: 28px 0 8px; }
+  p, ul, ol { margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
+  a { color: var(--accent); }
+  code {
+    font: 0.88em/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 0 0 16px;
+  }
+  pre code { background: none; padding: 0; font-size: 0.85rem; overflow-wrap: normal; white-space: pre; }
+  .table-wrap { overflow-x: auto; margin: 0 0 18px; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; background: var(--surface); }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { background: var(--code-bg); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { white-space: nowrap; }
+  nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+  nav.toc strong { display: block; margin-bottom: 4px; }
+  nav.toc ol { margin: 0; padding-left: 20px; }
+  figure { margin: 8px 0 20px; }
+  figure svg { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  figcaption { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; }
+  svg .box { fill: none; stroke: var(--muted); stroke-width: 1.25; }
+  svg .box-accent { fill: var(--accent-tint); stroke: var(--accent); stroke-width: 2; }
+  svg .edge { fill: none; stroke: var(--muted); stroke-width: 1.25; }
+  svg .arrowhead { fill: var(--muted); }
+  svg .t-title { fill: var(--text); font-size: 15px; font-weight: 600; }
+  svg .t-name { fill: var(--text); font-size: 13px; font-weight: 600; }
+  svg .t-sub { fill: var(--muted); font-size: 11.5px; }
+  svg .t-sub-strong { fill: var(--text); font-size: 11.5px; }
+  svg .t-label { fill: var(--muted); font-size: 11.5px; }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  @media (max-width: 560px) {
+    h1 { font-size: 1.5rem; }
+    td:first-child { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>Donkeycar CV Autopilot MCP Server — User Manual</h1>
+  <p class="byline">As of October 17, 2026</p>
+</header>
+
+<nav class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#install">Requirements and installation</a></li>
+    <li><a href="#starting">Starting the server</a></li>
+    <li><a href="#connecting">Connecting a client</a></li>
+    <li><a href="#tools">Tools reference</a></li>
+    <li><a href="#workflows">Typical workflows</a></li>
+    <li><a href="#safety">Safety and field notes</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+  </ol>
+</nav>
+
+<!-- ============================================================ -->
+<h2 id="overview">Overview</h2>
+
+<p>The MCP server lets an AI agent (Claude, or any MCP client) set a donkeycar's <strong>speed and lane</strong> while the computer-vision autopilot does the <strong>steering</strong>. The autopilot follows a yellow tape centreline at 20 Hz; the agent reads the camera and car state, then decides how fast to go, which lane to hold, and when to stop.</p>
+
+<p>The agent is never in the steering loop, on purpose. An agent round trip takes a second or more, and at that cadence a line-following car would always be a segment behind the road.</p>
+
+<p>What the agent can do:</p>
+<ul>
+  <li>Read the track description (loop or dead-end, lap length, centreline, side-lines, named lanes), as nominal guidance.</li>
+  <li>Learn which autopilot is driving and read the settings it runs with (colour window, scan row, steering, throttle range).</li>
+  <li>See the latest camera frame plus steering, throttle, line confidence and drive mode.</li>
+  <li>Set a throttle ceiling and a lane (by name or in inches).</li>
+  <li>Measure how far away something in the image is, in inches on the ground.</li>
+  <li>Start, stop and emergency-stop the car.</li>
+</ul>
+
+<p>What it cannot do: steer directly, or make the car go faster than the autopilot thinks is safe. Traffic features (stop signs, obstacles, addresses) are not configured anywhere; the agent finds them in the camera image.</p>
+
+<figure>
+<svg viewBox="0 0 760 300" role="img" aria-label="The autopilot steers; the agent only caps throttle and picks the lane">
+  <defs>
+    <marker id="arch-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" class="arrowhead"/>
+    </marker>
+  </defs>
+  <text x="24" y="34" class="t-title">The autopilot steers; the agent only caps throttle and picks the lane</text>
+  <g class="edge">
+    <path d="M184 100H278" marker-end="url(#arch-arrow)"/>
+    <path d="M280 122H186" marker-end="url(#arch-arrow)"/>
+    <path d="M184 250H278" marker-end="url(#arch-arrow)"/>
+    <path d="M340 222V140" marker-end="url(#arch-arrow)"/>
+    <path d="M420 138V220" marker-end="url(#arch-arrow)"/>
+    <path d="M480 110H656V154" marker-end="url(#arch-arrow)"/>
+    <path d="M480 250H656V206" marker-end="url(#arch-arrow)"/>
+  </g>
+  <rect x="24" y="82" width="160" height="56" rx="8" class="box"/>
+  <text x="104" y="106" text-anchor="middle" class="t-name">AI agent</text>
+  <text x="104" y="124" text-anchor="middle" class="t-sub">MCP client</text>
+
+  <rect x="280" y="82" width="200" height="56" rx="8" class="box-accent"/>
+  <text x="380" y="106" text-anchor="middle" class="t-name">MCP server + bridge</text>
+  <text x="380" y="124" text-anchor="middle" class="t-sub-strong">caps throttle, sets lane</text>
+
+  <rect x="24" y="222" width="160" height="56" rx="8" class="box"/>
+  <text x="104" y="254" text-anchor="middle" class="t-name">Camera</text>
+
+  <rect x="280" y="222" width="200" height="56" rx="8" class="box"/>
+  <text x="380" y="246" text-anchor="middle" class="t-name">CV autopilot</text>
+  <text x="380" y="264" text-anchor="middle" class="t-sub">follows the tape at 20 Hz</text>
+
+  <rect x="576" y="152" width="160" height="56" rx="8" class="box"/>
+  <text x="656" y="176" text-anchor="middle" class="t-name">Drivetrain</text>
+  <text x="656" y="194" text-anchor="middle" class="t-sub">steering servo + ESC</text>
+
+  <text x="232" y="92" text-anchor="middle" class="t-label">throttle, lane</text>
+  <text x="232" y="138" text-anchor="middle" class="t-label">frame, state</text>
+  <text x="232" y="242" text-anchor="middle" class="t-label">image</text>
+  <text x="332" y="176" text-anchor="end" class="t-label">autopilot throttle,</text>
+  <text x="332" y="191" text-anchor="end" class="t-label">line confidence</text>
+  <text x="428" y="184" class="t-label">lane offset</text>
+  <text x="568" y="102" text-anchor="middle" class="t-label">capped throttle</text>
+  <text x="568" y="266" text-anchor="middle" class="t-label">steering</text>
+</svg>
+<figcaption>How the agent, server and autopilot fit together. The applied throttle is the lower of the agent's ceiling and the autopilot's own throttle; steering never passes through the agent.</figcaption>
+</figure>
+
+<!-- ============================================================ -->
+<h2 id="install">Requirements and installation</h2>
+
+<p>You need a car created from the <code>cv_control</code> template, a taped track, the optional <code>mcp</code> extra installed, and (for lane changes and distance measurement) a camera calibration.</p>
+
+<h3>1. Install the mcp extra</h3>
+<p>The <code>mcp</code> extra (<code>mcp&gt;=2.1,&lt;3</code>) is optional, so a normal car install does not have it. Without it, both server commands stop and tell you to install it.</p>
+<pre><code>uv pip install -e ".[pi,dev,mcp]"     # on the car, from a clone
+uv pip install "donkeycar[pi,mcp]"    # on the car, from PyPI</code></pre>
+<p>Swap <code>pi</code> for <code>pc</code> or <code>macos</code> when running off the car.</p>
+
+<h3>2. Create or update the car</h3>
+<pre><code>donkey createcar --path ~/mycar --template cv_control</code></pre>
+<p>For an existing car, pull the code, then refresh the car's copies of <code>manage.py</code> and <code>config.py</code> from inside the car directory:</p>
+<pre><code>cd ~/mycar
+donkey update --template cv_control</code></pre>
+<p>Without <code>--template</code> it defaults to <code>complete</code>, the wrong app. <code>myconfig.py</code> is left alone, so check it for stale overrides. The one that bites is <code>CV_CONTROLLER_OUTPUTS</code>; it must be:</p>
+<pre><code>CV_CONTROLLER_OUTPUTS = ['pilot/steering', 'pilot/throttle', 'cv/image_array',
+                         'cv/confidence', 'cv/line_detected']</code></pre>
+<p>An older three-item list silently drops line confidence, and every downstream reader sees <code>None</code>.</p>
+
+<h3>3. Describe the track in track.yml</h3>
+<p><code>donkey createcar</code> puts a <code>track.yml</code> in the car directory. Edit it to match the track you built. Validation is strict: unknown fields are rejected.</p>
+<pre><code>name: Kitchen loop                 # optional: describes the track itself
+description: Yellow centreline, white side tape.
+
+cv_control:                        # required: what the CV autopilot needs
+  continuous: false                # required: true for a loop
+  lanes:                           # required: where the CAR sits, inches from the centreline
+    left: -9.0                     # must be negative
+    right: 9.0                     # must be positive
+                                   # center is always 0 and is not configured
+
+  lap_length_inches: 480.0         # optional: measured along the centreline
+
+  centerline:                      # optional
+    tape_color: yellow             # a label only
+    width_inches: 1.0
+    dashed: true
+
+  side_lines:                      # optional; omit either side if it has none
+    tape_color: white
+    left_inches: 18.0              # distance from the centreline
+    right_inches: 18.0</code></pre>
+
+<p>Only <code>name</code> and <code>description</code> sit at the top level. Everything else is under <code>cv_control:</code>, the section for the computer-vision template, so a template added later gets its own section instead of colliding. The agent learns which section to read from <code>get_autopilot</code>.</p>
+
+<p>The track is a centreline, solid or dashed, with optional side-lines. <strong>Every distance is nominal</strong>: measure it once at a representative spot. Width and centreline position vary along the course, so the agent is told to measure real values from the frame with <code>measure_ground_point</code>.</p>
+
+<p><strong>A <code>tape_color</code> is only a label.</strong> The colour the follower actually matches is <code>COLOR_THRESHOLD_LOW</code> / <code>COLOR_THRESHOLD_HIGH</code> in <code>myconfig.py</code>, which the agent reads with <code>cv_control-get_autopilot_config</code>.</p>
+
+<p><code>lanes</code> must name <code>left</code> and <code>right</code>. The <code>center</code> lane is always the centreline (0); configuring it, even as 0, is refused. <code>cv_control-set_control(lane="left" | "center" | "right")</code> works on every track, and further named lanes are allowed. Write offsets as a person sees the track; the server handles the sign flip into the camera's pixel frame, and a lane with the wrong sign is refused.</p>
+
+<p><strong>Upgrading an older car:</strong> a <code>track.yml</code> in an earlier shape is refused, naming what to change:</p>
+<ul>
+  <li>Fields other than <code>name</code> and <code>description</code> at the top level: move them under <code>cv_control:</code>.</li>
+  <li><code>color</code> in <code>centerline</code> or <code>side_lines</code>: rename it <code>tape_color</code>.</li>
+  <li>Segment fields (<code>segment_length_inches</code>, <code>cross_length_inches</code>, <code>segment_count</code>, <code>cross_colors</code>, <code>tape_width_inches</code>, top-level <code>tape_color</code>): delete them.</li>
+  <li><code>center</code> in <code>lanes</code>: delete it.</li>
+</ul>
+
+<h3>4. Calibrate the camera</h3>
+<p>A lane offset in inches only works once the car knows how many pixels an inch is worth. Print <code>assets/checkerboard/calibration-checkerboard-9x6-1in-letter.pdf</code> at <strong>100% / actual size</strong>, check that 10 squares measure 10 inches, and mount it flat on something rigid.</p>
+<pre><code>donkey calibrate-cv --car ~/mycar --forward-inches 24 --lateral-inches 0</code></pre>
+<p>Open <code>http://localhost:8892</code>, lay the board flat on the floor across the blue scan band, wait for green corners, and press <strong>Capture</strong>. It writes <code>cv_calibration.json</code> next to the config.</p>
+<ul>
+  <li>No printer: <code>donkey calibrate-cv --car ~/mycar --tape-separation-inches 10</code> with two tape strips 10 inches apart. This gives scale only, so lanes work but <code>measure_ground_point</code> does not.</li>
+  <li>Centre lane only: no calibration needed, because zero inches is zero pixels.</li>
+  <li>Recalibrate whenever the camera moves.</li>
+</ul>
+<p>To tune the tape colour for your lighting, run <code>donkey calibrate-color --images "~/frames/*.jpg" --compare</code> on a few saved frames and watch the <strong>concentration</strong> figure.</p>
+
+<!-- ============================================================ -->
+<h2 id="starting">Starting the server</h2>
+
+<p>Run <code>donkey mcp --car ~/mycar</code> for normal use; it gives the agent real start/stop control. Either way the server speaks streamable HTTP at <code>http://&lt;host&gt;:8891/mcp</code>, and the car stays still until the agent calls <code>start</code> and then sets a throttle.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Mode</th><th>Command</th><th>What <code>start</code> / <code>stop</code> do</th><th>Use when</th></tr></thead>
+  <tbody>
+    <tr><td>Server owns the vehicle</td><td><code>donkey mcp --car ~/mycar</code></td><td><code>start</code> re-reads config and builds a new vehicle loop; <code>stop</code> tears it down</td><td>Agent-driven sessions and tuning (recommended)</td></tr>
+    <tr><td>Vehicle owns the server</td><td><code>python manage.py drive --mcp</code></td><td>Arm and disarm only; the loop cannot be restarted</td><td>The car is already launched the usual way</td></tr>
+  </tbody>
+</table></div>
+
+<h3>donkey mcp options</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Flag</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>--car PATH</code></td><td>current directory</td><td>Car directory holding <code>config.py</code>, <code>myconfig.py</code>, <code>manage.py</code>, <code>track.yml</code></td></tr>
+    <tr><td><code>--myconfig FILE</code></td><td><code>myconfig.py</code></td><td>Alternative myconfig file</td></tr>
+    <tr><td><code>--host ADDR</code></td><td><code>MCP_SERVER_HOST</code></td><td>Address to bind</td></tr>
+    <tr><td><code>--port N</code></td><td><code>MCP_SERVER_PORT</code></td><td>Port to bind</td></tr>
+    <tr><td><code>--js</code></td><td>off</td><td>Also use a physical joystick</td></tr>
+    <tr><td><code>--camera</code></td><td><code>single</code></td><td><code>single</code> or <code>stereo</code></td></tr>
+    <tr><td><code>--no-reload</code></td><td>off</td><td>Do not re-read the config on each <code>start</code></td></tr>
+  </tbody>
+</table></div>
+<p>The server prefers the car's own <code>manage.py</code> (its <code>build_vehicle()</code>), falling back to the packaged <code>cv_control</code> template if the car's copy predates it.</p>
+
+<h3>Config settings</h3>
+<p>These live in <code>config.py</code>, overridden in <code>myconfig.py</code>.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>MCP_SERVER_HOST</code></td><td><code>"127.0.0.1"</code></td><td>Bind address. Set to the car's LAN address to reach it from a laptop; never <code>0.0.0.0</code></td></tr>
+    <tr><td><code>MCP_SERVER_PORT</code></td><td><code>8891</code></td><td>8887 is the web controller and 8890 the FPV server</td></tr>
+    <tr><td><code>MCP_COMMAND_TIMEOUT_S</code></td><td><code>2.0</code></td><td>Seconds without a command before the throttle is zeroed</td></tr>
+    <tr><td><code>CV_PIXELS_PER_INCH</code></td><td>unset</td><td>Manual scale, if you skip <code>calibrate-cv</code> (lane offsets only)</td></tr>
+  </tbody>
+</table></div>
+
+<h3>Tuning without restarting</h3>
+<p><code>start</code> re-reads <code>config.py</code> and <code>myconfig.py</code>, so the tuning loop is: edit <code>myconfig.py</code> → call <code>stop</code> → call <code>start</code> → look at the next <code>cv_control-get_vehicle_state</code>. A config that fails to parse fails the <code>start</code> and keeps the previous settings.</p>
+<p>Two things need a real process restart (<code>pkill -f "donkey mcp"</code>, then relaunch):</p>
+<ul>
+  <li>Changing <code>MCP_SERVER_HOST</code> or <code>MCP_SERVER_PORT</code>, because the socket is already bound.</li>
+  <li>Changing <code>manage.py</code>, because the builder module is imported once. Config values reload; code does not.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="connecting">Connecting a client</h2>
+
+<p>Any MCP client that supports the streamable HTTP transport can connect to <code>http://&lt;car-address&gt;:8891/mcp</code>. The server registers as <code>donkeycar</code> and sends instructions describing the rules below, so a capable agent learns them on connect.</p>
+
+<p><strong>From a laptop</strong>, first make the car reachable by binding to its LAN address:</p>
+<pre><code>donkey mcp --car ~/mycar --host 192.168.1.42</code></pre>
+
+<p><strong>Claude Code:</strong></p>
+<pre><code>claude mcp add --transport http donkeycar http://192.168.1.42:8891/mcp</code></pre>
+
+<p><strong>Other clients</strong> (Claude Desktop, MCP Inspector, custom code) take the same URL with the HTTP transport. A minimal JSON config entry:</p>
+<pre><code>{
+  "mcpServers": {
+    "donkeycar": { "type": "http", "url": "http://192.168.1.42:8891/mcp" }
+  }
+}</code></pre>
+
+<p><strong>Python, scripted:</strong> the bundled runner drives one of the reference activities over MCP:</p>
+<pre><code>python -m donkeycar.mcp_agent.runner --activity lap --url http://192.168.1.42:8891/mcp</code></pre>
+<p>Runner options: <code>--activity</code> (<code>lap</code>, <code>stop-signs</code>, <code>obstacle-halt</code>, <code>obstacle-avoid</code>, <code>address</code>), <code>--destination</code> (for <code>address</code>), <code>--demo-script</code> (JSON of scripted sightings), <code>--ticks</code> (default 200), <code>--interval</code> (seconds between ticks, default 0.5).</p>
+
+<h3>Security</h3>
+<p>The port can make a vehicle move; treat it as a control surface.</p>
+<ul>
+  <li><strong>Bind narrowly.</strong> Default is <code>127.0.0.1</code>. Use the car's LAN address, never <code>0.0.0.0</code>.</li>
+  <li><strong>Keep DNS-rebinding protection on</strong> (the default). Set allowed hosts and origins explicitly instead of turning it off.</li>
+  <li><strong>Add a token on shared networks.</strong> The server accepts a token verifier; it is the only thing between a guest on the WiFi and the throttle.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="tools">Tools reference</h2>
+
+<p>The server exposes ten tools. Those specific to the computer-vision autopilot start with <code>cv_control-</code> (its name and a dash), so a future autopilot can add its own without colliding. No other tool name contains a dash, so a name without one (<code>get_autopilot</code>, <code>start</code>, <code>stop</code>, <code>emergency_stop</code>, <code>measure_ground_point</code>) applies to any autopilot. Errors the agent can fix (an unknown lane, a missing calibration, a pixel outside the frame) come back as readable tool errors that say what to do.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Tool</th><th>Parameters</th><th>Returns</th></tr></thead>
+  <tbody>
+    <tr><td><code>get_autopilot</code></td><td>none</td><td><code>autopilot</code>: the name of the autopilot driving the car (<code>cv_control</code>), and its <code>tool_prefix</code> (<code>cv_control-</code>). The name is also the <code>cv_control-get_track_config</code> section to read. Call first.</td></tr>
+    <tr><td><code>cv_control-get_autopilot_config</code></td><td>none</td><td><code>autopilot</code>, <code>source</code> and <code>settings</code>: the live config values the autopilot runs with (HSV colour window, confidence gate, scan row and height, steering and PID, throttle range, loop rate). Read-only; unset values are <code>null</code>; reloaded on every <code>start</code>.</td></tr>
+    <tr><td><code>cv_control-get_track_config</code></td><td>none</td><td><code>name</code>, <code>description</code>, <code>nominal: true</code>, a <code>note</code>, and the <code>cv_control</code> section: <code>continuous</code>, lap length, centreline, side-lines, named lanes (always <code>left</code>, <code>center</code>, <code>right</code>). Call once.</td></tr>
+    <tr><td><code>cv_control-get_vehicle_state</code></td><td>none</td><td>JSON state (below) plus the latest camera frame as a JPEG image.</td></tr>
+    <tr><td><code>cv_control-set_control</code></td><td><code>throttle</code> (-1..1), <code>lane</code> (name) <strong>or</strong> <code>lane_offset_inches</code></td><td>The accepted <code>throttle</code>, <code>lane_offset_px</code>, <code>lane_offset_inches</code>, <code>armed</code>.</td></tr>
+    <tr><td><code>start</code></td><td>none</td><td><code>result</code> (<code>started</code>, <code>started (config reloaded)</code>, <code>already running</code>) and <code>running</code>. Re-reads config first.</td></tr>
+    <tr><td><code>stop</code></td><td>none</td><td><code>result</code> (<code>stopped</code>, <code>not running</code>, <code>stop timed out</code>) and <code>running</code>. Zeroes throttle first.</td></tr>
+    <tr><td><code>emergency_stop</code></td><td>none</td><td><code>throttle</code> (0) and <code>armed</code>. Zeroes throttle without stopping the loop.</td></tr>
+    <tr><td><code>measure_ground_point</code></td><td><code>pixel_x</code>, <code>pixel_y</code></td><td><code>lateral_inches</code> (+ right) and <code>forward_inches</code> (+ away from the car). Needs a checkerboard calibration.</td></tr>
+    <tr><td><code>cv_control-get_calibration</code></td><td>none</td><td>Pixels per inch, homography, the settings captured under, <code>stale</code> + <code>stale_reasons</code>, <code>can_measure_points</code>.</td></tr>
+  </tbody>
+</table></div>
+
+<h3>cv_control-get_vehicle_state fields</h3>
+<div class="table-wrap"><table>
+  <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>running</code></td><td>The vehicle loop exists</td></tr>
+    <tr><td><code>live</code></td><td>The loop is still writing state. When false, car-derived fields are null and there is no frame, so a stopped car cannot look like a running one</td></tr>
+    <tr><td><code>armed</code></td><td>The bridge will pass throttle through</td></tr>
+    <tr><td><code>commanded_throttle</code></td><td>What the agent last asked for (the ceiling)</td></tr>
+    <tr><td><code>throttle</code></td><td>What is actually applied to the motor</td></tr>
+    <tr><td><code>autopilot_throttle</code></td><td>What the CV autopilot wanted</td></tr>
+    <tr><td><code>steering</code></td><td>Current steering, -1..1</td></tr>
+    <tr><td><code>lane_offset_px</code>, <code>lane_offset_inches</code></td><td>Current lane target</td></tr>
+    <tr><td><code>line_detected</code>, <code>line_confidence</code></td><td>Whether the autopilot can see the tape, and how strongly (0..1)</td></tr>
+    <tr><td><code>watchdog_tripped</code></td><td>Throttle was zeroed because no command arrived in time</td></tr>
+    <tr><td><code>loop_count</code>, <code>timestamp</code></td><td><code>loop_count</code> rises every loop; compare across calls to tell a fresh frame from a stale one</td></tr>
+    <tr><td><code>user_mode</code></td><td>Drive mode: <code>local_pilot</code> once armed (autopilot runs), <code>user</code> after stop</td></tr>
+    <tr><td><code>warning</code>, <code>watchdog_note</code>, <code>note</code></td><td>Plain-language hints added when the line is lost, the watchdog fired, or the loop is not running</td></tr>
+  </tbody>
+</table></div>
+
+<h3>The camera frame</h3>
+<p>The frame is not a field in the JSON. <code>cv_control-get_vehicle_state</code> returns a list of MCP content blocks:</p>
+<ol>
+  <li>A <strong>text block</strong> holding the JSON state above.</li>
+  <li>An <strong>image block</strong> (<code>type: "image"</code>, <code>mimeType: "image/jpeg"</code>, base64 <code>data</code>) holding the latest frame.</li>
+</ol>
+<p>The image block is left out when the loop is not live (<code>live: false</code>) or no frame has arrived yet, so a stopped car never shows a stale picture. Check for it rather than assuming it is there.</p>
+<ul>
+  <li><strong>Which image:</strong> the CV controller's output (<code>cv/image_array</code>) when present, otherwise the raw camera (<code>cam/image_array</code>). With <code>OVERLAY_IMAGE = True</code> it carries the follower's scan-band overlay.</li>
+  <li><strong>Size:</strong> the camera's native resolution (320×240 on a stock car). Use these pixel coordinates for <code>measure_ground_point</code>.</li>
+  <li><strong>Freshness:</strong> it is encoded on each request, not every loop. Compare <code>loop_count</code> between calls to tell a new frame from a repeat.</li>
+</ul>
+
+<h3>Three rules every agent must follow</h3>
+<ol>
+  <li><strong>Throttle is a ceiling, not a command.</strong> The applied throttle is <code>min(your throttle, autopilot throttle)</code>. A high value does not make the car corner faster; a low value slows it; <code>0</code> always stops it. Negative (reverse) passes through uncapped.</li>
+  <li><strong>Commands expire.</strong> If no <code>cv_control-set_control</code> arrives for <code>MCP_COMMAND_TIMEOUT_S</code> (2 s), throttle goes to zero. Reading state does <strong>not</strong> reset the timer. Re-send <code>cv_control-set_control</code> at least once a second while driving; re-sending the same values is the normal way to hold speed.</li>
+  <li><strong>Check <code>line_detected</code> before trusting steering.</strong> Full lock means "following a bend" when the line is visible and "driving blind" when it is not. While blind, steering decays to centre but the car keeps moving until you set throttle to 0.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="workflows">Typical workflows</h2>
+
+<h3>A first drive</h3>
+<ol>
+  <li><code>get_autopilot</code>, then <code>cv_control-get_track_config</code> once, to learn lanes and whether the track loops.</li>
+  <li><code>cv_control-get_calibration</code>: check <code>calibrated</code>, <code>stale</code> and <code>can_measure_points</code>.</li>
+  <li><code>start</code>. The car arms in autopilot mode with throttle 0.</li>
+  <li><code>cv_control-get_vehicle_state</code> until <code>line_detected</code> is true. Camera auto-exposure can take a few seconds to settle after start.</li>
+  <li><code>cv_control-set_control(throttle=0.3)</code>, then re-send it at least every second.</li>
+  <li>Each tick: read state, look at the frame, re-send <code>cv_control-set_control</code>.</li>
+  <li>To finish: <code>cv_control-set_control(throttle=0)</code>, then <code>stop</code>.</li>
+</ol>
+
+<h3>Changing lane</h3>
+<pre><code>cv_control-set_control(throttle=0.3, lane="right")
+cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
+<p>Give <code>lane</code> or <code>lane_offset_inches</code>, never both. Any non-zero offset needs a pixels-per-inch calibration.</p>
+
+<h3>Stopping for something in the image</h3>
+<ol>
+  <li>Spot the sign or obstacle in the frame from <code>cv_control-get_vehicle_state</code>.</li>
+  <li>Call <code>measure_ground_point</code> on the pixel where it meets the floor (its base, not its middle) to get <code>forward_inches</code>.</li>
+  <li>Lower the throttle as distance falls, then <code>cv_control-set_control(throttle=0)</code> at your stopping distance.</li>
+  <li>Keep sending <code>throttle=0</code> while waiting, then resume with a positive value.</li>
+</ol>
+<p>Accuracy drops toward the frame edges, since one homography assumes no lens distortion.</p>
+
+<h3>Tuning loop</h3>
+<p>Edit <code>myconfig.py</code> → <code>stop</code> → <code>start</code> → <code>cv_control-get_vehicle_state</code>. Useful knobs: <code>COLOR_THRESHOLD_LOW/HIGH</code>, <code>CONFIDENCE_THRESHOLD</code> (fraction of the scan column, default 0.15), <code>SCAN_Y</code>, <code>SCAN_HEIGHT</code>, <code>TARGET_PIXEL</code>, <code>TARGET_THRESHOLD</code>, <code>THROTTLE_MIN/MAX</code>. <code>cv_control-get_autopilot_config</code> shows the values the car is actually running with.</p>
+
+<h3>Reference activities</h3>
+<p><code>donkeycar/mcp_agent/policies.py</code> has five progressively harder policies: <code>lap</code>, <code>stop-signs</code> (wait 5 s at each), <code>obstacle-halt</code>, <code>obstacle-avoid</code>, <code>address</code>. They handle throttle, lanes and braking; you supply vision by implementing <code>Perception.observe(frame, state) -&gt; list[Sighting]</code>.</p>
+<pre><code>from donkeycar.mcp_agent import McpSession, build_policy
+
+class MyEyes:
+    def observe(self, frame, state):
+        return [...]   # ask your vision model what is in frame
+
+policy = build_policy("stop-signs", McpSession(client), MyEyes())
+policy.begin()
+while not policy.finished:
+    policy.step()
+policy.end()</code></pre>
+
+<h3>Testing without a car</h3>
+<p>Set <code>CAMERA_TYPE = 'MOCK'</code> (or <code>'IMAGE_LIST'</code> with recorded footage) and <code>DRIVE_TRAIN_TYPE = 'None'</code>. Replay scripted sightings with <code>python -m donkeycar.mcp_agent.runner --activity lap --demo-script sightings.json</code>.</p>
+
+<!-- ============================================================ -->
+<h2 id="safety">Safety and field notes</h2>
+
+<p>The server is built so that silence, errors and stops all end with throttle at zero.</p>
+<ul>
+  <li><strong>Nothing moves until <code>start</code> and a positive throttle.</strong> <code>start</code> arms with throttle 0.</li>
+  <li><strong><code>stop</code> zeroes throttle before tearing down</strong>, so the car cannot coast on its last value while parts shut down.</li>
+  <li><strong><code>emergency_stop</code> is instant</strong> and leaves the loop running, so you can resume without a rebuild.</li>
+  <li><strong>No throttle before the autopilot has one.</strong> Until the CV controller produces a throttle, the ceiling resolves to 0.</li>
+  <li><strong>There is no way to bypass the ceiling from the tool surface</strong>, deliberately.</li>
+  <li><strong>Keep a hand near the car</strong> for the first runs. The watchdog covers agent silence, not a bad decision.</li>
+</ul>
+<p>Lessons from a real track:</p>
+<ul>
+  <li>A car that will not move or will not turn is usually a PWM range too narrow for the hardware. Convert PWM counts to microseconds before changing anything else.</li>
+  <li>Too low a <code>THROTTLE_MIN</code> lets the car stop in a corner and fail to restart, because starting needs more than rolling.</li>
+  <li>Print the track cards and checkerboard on <strong>matte</strong> paper; glossy stock throws a highlight that blows out the detail a camera needs.</li>
+  <li>Dashed tape never fills the scan band, so confidence sits lower than solid tape; check real frames before lowering <code>CONFIDENCE_THRESHOLD</code>.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p class="note">Older cars: if the server refuses to launch, naming fields in <code>track.yml</code>, the file predates the current format. Make the change the message names; see <a href="#install">Requirements, step 3</a>.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Symptom</th><th>Likely cause and fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>donkey mcp</code> exits asking you to install something</td><td>The <code>mcp</code> extra is missing. Install <code>donkeycar[pi,mcp]</code> (or <code>pc</code> / <code>macos</code>).</td></tr>
+    <tr><td>Client cannot connect from a laptop</td><td>Server bound to <code>127.0.0.1</code>. Restart with <code>--host &lt;car LAN address&gt;</code>.</td></tr>
+    <tr><td>Car drives about 2 s then stops</td><td>The watchdog. <code>watchdog_tripped</code> is true; keep re-sending <code>cv_control-set_control</code>. Reading state does not count.</td></tr>
+    <tr><td>Car never moves after <code>cv_control-set_control</code></td><td>Not armed (call <code>start</code>), autopilot not producing throttle (check <code>autopilot_throttle</code>, and that the controller switched to <code>local_pilot</code>; otherwise set <code>WEB_INIT_MODE = 'local_pilot'</code>), or ESC deadband (PWM range too narrow).</td></tr>
+    <tr><td>No line for the first seconds after <code>start</code></td><td>Camera auto-exposure settling. Wait for <code>line_detected</code> before judging.</td></tr>
+    <tr><td><code>line_detected</code> true on ~100% of samples, steering barely varying</td><td>The car is not actually moving (e.g. ESC unpowered); a still camera sees the same tape every frame.</td></tr>
+    <tr><td>Steering pinned at full lock</td><td>Check <code>line_detected</code>. If false, the car is blind; set throttle 0. If true, widen the steering PWM range.</td></tr>
+    <tr><td>Lane change refused: no pixels-per-inch</td><td>Run <code>donkey calibrate-cv</code>, or set <code>CV_PIXELS_PER_INCH</code>.</td></tr>
+    <tr><td>"right" lane drives on the left</td><td>Old code or a hand-edited sign. Lane inches are car-relative, positive right; let the server convert.</td></tr>
+    <tr><td><code>cv_control-get_calibration</code> says <code>stale</code></td><td><code>SCAN_Y</code>, image size or camera type changed since capture. Recalibrate.</td></tr>
+    <tr><td><code>line_confidence</code> always <code>None</code></td><td>Stale <code>CV_CONTROLLER_OUTPUTS</code> in <code>myconfig.py</code>; use the five-item list.</td></tr>
+    <tr><td>New behaviour after <code>git pull</code> does not appear</td><td>The car has old copies. Run <code>donkey update --template cv_control</code> in the car directory, then restart <code>donkey mcp</code>.</td></tr>
+    <tr><td>Calibration preview says NO BOARD</td><td>Board too small in frame. Move it closer, flat on the floor, straddling the scan band.</td></tr>
+    <tr><td>Tape looks off-centre at the scan row on a bend</td><td>Expected: <code>SCAN_Y</code> looks tens of inches ahead, mixing offset, heading and curvature.</td></tr>
+  </tbody>
+</table></div>
+
+<p>For more depth (track building, the worked example of one car's tuned settings), see <code>docs/mcp-server.md</code> in the repository.</p>
+
+</div>
+</body>
+</html>
