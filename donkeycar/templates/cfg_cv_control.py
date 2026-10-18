@@ -642,17 +642,16 @@ MCP_COMMAND_TIMEOUT_S = 2.0     # zero the throttle if the agent goes quiet for 
 
 #
 # TRACK
-# Geometry of the taped track. Traffic features (stop signs, addresses) are not
-# listed here: the agent discovers those visually from the camera frame.
+# Used only when the car directory has no track.yml, which is the better place
+# to describe the track. Distances are nominal: the track's width varies along
+# the course, and the agent can measure it from the camera frame. Traffic
+# features (stop signs, addresses) are not listed here: the agent discovers
+# those visually.
 #
-TRACK_SEGMENT_LENGTH_INCHES = 36.0  # length of one tape segment (the stem of the T)
-TRACK_CROSS_LENGTH_INCHES = 12.0    # length of the perpendicular tick at the end of a segment
-TRACK_TAPE_WIDTH_INCHES = 1.0       # width of the tape itself
-TRACK_SEGMENT_COUNT = None          # how many segments make up the track, or None if unknown
 TRACK_CONTINUOUS = False            # True for a loop, False for a track that dead-ends
-TRACK_LANES_INCHES = {              # named lane offsets from the centreline, negative is left
+TRACK_LAP_LENGTH_INCHES = None      # measured length of one lap along the centreline, or None
+TRACK_LANES_INCHES = {              # must name left (< 0) and right (> 0); center is always 0
     "left": -12.0,
-    "center": 0.0,
     "right": 12.0,
 }
 

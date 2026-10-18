@@ -52,12 +52,17 @@ class Policy:
         self.track = self.session.get_track_config()
         self.session.start()
         self.session.set_control(throttle=CRUISE_THROTTLE, lane="center")
-        self._note(f"started on a track of {self.track.get('segment_count')} segments")
+        self._note(f"started on {self._describe_track()}")
 
     def end(self) -> None:
         self.session.set_control(throttle=0.0)
         self.session.stop()
         self._note("stopped")
+
+    def _describe_track(self) -> str:
+        shape = "a loop" if self.track.get("continuous") else "a track that dead-ends"
+        lap = self.track.get("lap_length_inches")
+        return f"{shape}, about {lap:.0f} inches a lap" if lap else shape
 
     def _note(self, message: str) -> None:
         self.log.append(message)

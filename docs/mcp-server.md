@@ -12,26 +12,26 @@ segment behind the road.
 
 ## 1. Build a track
 
-The track is **1 inch yellow tape**, laid as a centreline in segments. Each segment
-is a "T":
-
-- a **3 foot stem** along the direction of travel, and
-- a **1 foot cross** of red or blue tape at the end of the stem.
+The track is a **centreline of tape** &mdash; 1 inch yellow by default &mdash; with optional
+**side-lines** marking its edges:
 
 ```
-        ══════════            <- 1 ft cross tape (red or blue)
-             │
-             │                <- 3 ft stem, 1 in yellow tape
-             │
-        ══════════
+   │         ┊         │
+   │         ┊         │      <- side-lines (optional), e.g. white
+   │         ┊         │
+   │         ┊         │      <- centreline, solid or dashed, e.g. yellow
+   │         ┊         │
 ```
 
 Rules of thumb:
 
-- Join segments end to end. Avoid crossings, and keep turns gentle — the follower
-  loses the line on tight ones.
-- There are no track edges to lay. The centreline is the whole track, which is what
-  makes one quick to build.
+- Avoid crossings, and keep turns gentle &mdash; the follower loses the line on tight ones.
+- The centreline may be dashed. Dashes score lower confidence than solid tape; see
+  **CONFIDENCE_THRESHOLD** below before tuning around it.
+- Use a side-line colour well away from the centreline's, so the follower's colour
+  window cannot match it.
+- The width and the centreline's position are allowed to vary along the course. Nothing
+  assumes they are constant.
 - Start with a straight line that dead-ends, then close it into a loop.
 
 ### Traffic features
@@ -51,8 +51,8 @@ and under overhead lights a glossy stop sign throws a specular highlight that bl
 out exactly the region a vision model needs. Assembly, paper weights and printer
 settings are in [`assets/track-cards/README.md`](../assets/track-cards/README.md).
 
-Put a feature at the cross-tape end of a segment to begin with, so the follower has an
-obvious place to stop.
+Put a feature beside a straight stretch to begin with, so the car has room to see it and
+stop.
 
 **Features are not configured anywhere.** The agent finds them in the camera image.
 That is the point of the exercise, and it means you can move a sign or drop an
@@ -64,19 +64,45 @@ obstacle in the road without editing a file.
 you built:
 
 ```yaml
-segment_length_inches: 36.0
-cross_length_inches: 12.0
-segment_count: 4
-continuous: false          # true once you close the loop
+continuous: false          # required: true for a loop, false for a dead-end
 
-lanes:                     # offsets from the centreline, inches
-  left: -12.0
-  center: 0.0
-  right: 12.0
+lap_length_inches: 480.0   # optional: measured along the centreline
+
+centerline:                # optional
+  color: yellow
+  width_inches: 1.0
+  dashed: true
+
+side_lines:                # optional; omit either side if it has none
+  color: white
+  left_inches: 18.0        # distance from the centreline
+  right_inches: 18.0
+
+lanes:                     # required: offsets from the centreline, inches
+  left: -9.0               # must be negative
+  right: 9.0               # must be positive
 ```
 
+**Every distance here is nominal.** Measure it once at a representative spot. The real
+width and the centreline's position vary along the course, and `get_track_config` tells
+the agent so: where it matters, the agent measures the side-lines in the camera frame
+with `measure_ground_point` instead of trusting these numbers.
+
+`lanes` must name `left` and `right`. The `center` lane is always the centreline, and
+configuring it &mdash; even as 0 &mdash; is refused, so `set_control(lane="left")`, `"center"` and `"right"` work on every
+track: the left lane, on the centreline, and the right lane. Further named lanes are
+allowed.
+
 Validation is strict and unknown fields are rejected, so a typo fails loudly rather
-than reading as "never set". A silently wrong lane width is a car in the wall.
+than reading as "never set". A silently wrong lane width is a car in the wall, and a
+lane with the wrong sign is refused for the same reason.
+
+**Upgrading from the segment format.** Earlier versions described the track as "T"
+segments. A `track.yml` that still has `segment_length_inches`, `cross_length_inches`,
+`segment_count`, `cross_colors`, `tape_width_inches` or `tape_color` is refused, naming
+each field: delete them, and move the tape's colour and width under `centerline`. Delete
+`center` from `lanes` too. The
+`TRACK_SEGMENT_*` constants in an old `config.py` are simply ignored.
 
 A lane offset says where **the car** should sit: positive is right of the centreline,
 the way a person would describe it. The controller works in the opposite frame &mdash;
@@ -337,7 +363,7 @@ those needs a real restart, and the server logs a warning saying so. Pass
 
 | Tool | What it does |
 | --- | --- |
-| `get_track_config` | Segment geometry, how many, loop or dead-end, and the named lanes. Call once. |
+| `get_track_config` | Loop or dead-end, lap length, centreline and side-lines, and the named lanes (always `left`, `center`, `right`). Distances are nominal; `nominal` and `note` say so. Call once. |
 | `get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
 | `set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |

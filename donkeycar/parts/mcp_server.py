@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 import numpy as np
 
 from donkeycar.parts.cv_calibration import Calibration, load_calibration
-from donkeycar.parts.track_config import TrackConfig, default_track, find_track_file, load_track
+from donkeycar.parts.track_config import TrackConfig, default_track, find_track_file, load_track, parse_track
 from donkeycar.utils import arr_to_binary
 
 if TYPE_CHECKING:  # pragma: no cover - import only for type checking
@@ -464,17 +464,20 @@ class MCPBridge:
             logger.info("Loaded track description from %s", path)
             return track
 
+        # Only the constants the track is described by are read. Older cars'
+        # config.py copies also carry TRACK_SEGMENT_* and the like; they
+        # describe nothing now and are simply never looked at.
         lanes = getattr(self.cfg, "TRACK_LANES_INCHES", None)
         if isinstance(lanes, dict) and lanes:
-            return TrackConfig(
-                segment_length_inches=float(getattr(self.cfg, "TRACK_SEGMENT_LENGTH_INCHES", 36.0)),
-                cross_length_inches=float(getattr(self.cfg, "TRACK_CROSS_LENGTH_INCHES", 12.0)),
-                continuous=bool(getattr(self.cfg, "TRACK_CONTINUOUS", False)),
-                lanes={str(k): float(v) for k, v in lanes.items()},
-                tape_width_inches=float(getattr(self.cfg, "TRACK_TAPE_WIDTH_INCHES", 1.0)),
-                segment_count=getattr(self.cfg, "TRACK_SEGMENT_COUNT", None),
-                description="Track described by config constants; no track.yml was found.",
-            )
+            raw: dict[str, Any] = {
+                "continuous": getattr(self.cfg, "TRACK_CONTINUOUS", False),
+                "lanes": dict(lanes),
+                "lap_length_inches": getattr(self.cfg, "TRACK_LAP_LENGTH_INCHES", None),
+                "description": "Track described by config constants; no track.yml was found.",
+            }
+            # Through the same validation as a file, so the lane rules hold
+            # whichever way the track was described.
+            return parse_track(raw, source="config TRACK_* constants")
         return default_track()
 
     def track_config(self) -> dict[str, Any]:

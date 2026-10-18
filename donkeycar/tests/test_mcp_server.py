@@ -37,11 +37,9 @@ class Cfg:
     MCP_SERVER_PORT = 8891
     MCP_COMMAND_TIMEOUT_S = 0.2
     CV_PIXELS_PER_INCH = 4.0
-    TRACK_SEGMENT_LENGTH_INCHES = 36.0
-    TRACK_CROSS_LENGTH_INCHES = 12.0
-    TRACK_SEGMENT_COUNT = 8
     TRACK_CONTINUOUS = True
-    TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"left": -12.0, "center": 0.0, "right": 12.0}
+    TRACK_LAP_LENGTH_INCHES = 480.0
+    TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"left": -12.0, "right": 12.0}
 
 
 def make_bridge(**kwargs):
@@ -345,11 +343,38 @@ def test_no_torn_reads_under_concurrency():
 def test_track_config_reports_geometry_and_lanes():
     bridge = make_bridge()
     track = bridge.track_config()
-    assert track["segment_length_inches"] == 36.0
-    assert track["cross_length_inches"] == 12.0
-    assert track["segment_count"] == 8
+    assert track["lap_length_inches"] == 480.0
     assert track["continuous"] is True
+    assert track["nominal"] is True
     assert set(track["lanes"]) == {"left", "center", "right"}
+    assert not any("segment" in key for key in track)
+
+
+def test_config_constant_lanes_are_validated_like_a_file(tmp_path):
+    """A track described in config.py must obey the same lane rules as track.yml."""
+
+    class OneLane(Cfg):
+        TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"right": 12.0}
+
+    with pytest.raises(TrackConfigError, match="left"):
+        MCPBridge(OneLane(), serve=False, car_dir=str(tmp_path))
+
+
+def test_retired_segment_constants_are_ignored(tmp_path, caplog):
+    """Every older car has these in its config.py copy; they must neither stop it nor warn."""
+
+    class OldCar(Cfg):
+        TRACK_SEGMENT_LENGTH_INCHES = 36.0
+        TRACK_CROSS_LENGTH_INCHES = 12.0
+        TRACK_SEGMENT_COUNT = 8
+        TRACK_TAPE_WIDTH_INCHES = 1.0
+
+    with caplog.at_level("WARNING"):
+        bridge = MCPBridge(OldCar(), serve=False, car_dir=str(tmp_path))
+    track = bridge.track_config()
+    assert track["continuous"] is True
+    assert not any("segment" in key for key in track)
+    assert "TRACK_" not in caplog.text
 
 
 def test_track_config_carries_no_traffic_feature_list():
@@ -510,11 +535,24 @@ def test_unknown_lane_is_an_error_through_the_client():
 
 
 @requires_mcp
+def test_agent_is_told_the_track_is_nominal_and_has_no_segments():
+    """The instructions and the tool description are what an agent reads before calling anything."""
+    from donkeycar.parts.mcp_tools import INSTRUCTIONS
+
+    server = make_bridge().build_server()
+    tool = next(t for t in _tools(server).tools if t.name == "get_track_config")
+    for text in (INSTRUCTIONS, tool.description or ""):
+        assert "segment" not in text.lower()
+        assert "nominal" in text.lower()
+        assert "measure_ground_point" in text
+
+
+@requires_mcp
 def test_track_config_through_the_client():
     server = make_bridge().build_server()
     payload = json.loads(_text(_call(server, "get_track_config")))
-    assert payload["segment_count"] == 8
     assert payload["continuous"] is True
+    assert payload["nominal"] is True
 
 
 # ------------------------------------------------------------- track loading
@@ -522,19 +560,12 @@ def test_track_config_through_the_client():
 
 def test_bridge_reads_track_yml_from_the_car_directory(tmp_path):
     (tmp_path / "track.yml").write_text(
-        "segment_length_inches: 24\n"
-        "cross_length_inches: 6\n"
-        "continuous: true\n"
-        "segment_count: 12\n"
-        "lanes:\n"
-        "  center: 0\n"
-        "  outside: 9\n"
+        "continuous: true\nlap_length_inches: 300\nlanes:\n  left: -6\n  right: 6\n  outside: 9\n"
     )
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
     track = bridge.track_config()
-    assert track["segment_length_inches"] == 24.0
-    assert track["segment_count"] == 12
-    assert sorted(track["lanes"]) == ["center", "outside"]
+    assert track["lap_length_inches"] == 300.0
+    assert sorted(track["lanes"]) == ["center", "left", "outside", "right"]
     # 9 inches at 4 px/inch, negated into the controller's frame
     assert bridge.lane_offset_px_for("outside") == -36
 
@@ -551,18 +582,14 @@ def test_malformed_track_file_refuses_to_start(tmp_path):
     Driving a track you have mis-described is worse than not starting, so a bad
     file is an error rather than a quiet fallback to defaults.
     """
-    (tmp_path / "track.yml").write_text(
-        "segment_length_inches: -5\ncross_length_inches: 12\ncontinuous: false\nlanes: {center: 0}\n"
-    )
+    (tmp_path / "track.yml").write_text("continuous: false\nlap_length_inches: -5\nlanes: {left: -12, right: 12}\n")
     with pytest.raises(TrackConfigError, match="positive"):
         MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
 
 
 @requires_mcp
 def test_track_from_a_file_reaches_the_client(tmp_path):
-    (tmp_path / "track.yml").write_text(
-        "name: Loop\nsegment_length_inches: 36\ncross_length_inches: 12\ncontinuous: true\nlanes: {center: 0}\n"
-    )
+    (tmp_path / "track.yml").write_text("name: Loop\ncontinuous: true\nlanes: {left: -12, right: 12}\n")
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
     payload = json.loads(_text(_call(bridge.build_server(), "get_track_config")))
     assert payload["name"] == "Loop"

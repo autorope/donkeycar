@@ -25,13 +25,16 @@ if TYPE_CHECKING:  # pragma: no cover - import only for type checking
     from donkeycar.parts.mcp_server import MCPBridge
 
 INSTRUCTIONS = (
-    "Drive a donkeycar that is following a yellow tape line with a computer-vision autopilot. "
+    "Drive a donkeycar that is following a taped centreline with a computer-vision autopilot. "
     "The autopilot steers; you set intent. Call get_track_config once to learn the track, then "
-    "poll get_vehicle_state and call set_control to change throttle or lane. Throttle is a "
-    "ceiling on the autopilot's own throttle, so a high value does not make the car corner "
-    "faster; 0 stops it. Commands expire, so keep calling set_control while you want the car to "
-    "move. Traffic features such as stop signs and addresses are not in the track description -- "
-    "look for them in the camera frame."
+    "poll get_vehicle_state and call set_control to change throttle or lane. Every track has the "
+    "lanes left, center (on the centreline) and right. The track's widths and lap length are "
+    "nominal: the width and the centreline's position vary along the course, so measure from the "
+    "camera frame with measure_ground_point where it matters. Throttle is a ceiling on the "
+    "autopilot's own throttle, so a high value does not make the car corner faster; 0 stops it. "
+    "Commands expire, so keep calling set_control while you want the car to move. Traffic features "
+    "such as stop signs and addresses are not in the track description -- look for them in the "
+    "camera frame."
 )
 
 
@@ -57,7 +60,14 @@ def build_server(bridge: MCPBridge) -> MCPServer:
 
     @server.tool()
     def get_track_config() -> dict[str, Any]:
-        """Describe the track: segment geometry, how many segments, whether it loops, and the named lanes."""
+        """
+        Describe the track: whether it loops, its lap length, the centreline (colour, width, dashed),
+        the side-lines, and the named lanes. Every track has the lanes left, center and right.
+
+        All distances are NOMINAL -- measured once, as guidance. The track's width and the
+        centreline's position vary along the course; for the real values at a given spot, find
+        the side-lines in the camera frame and call measure_ground_point on them.
+        """
         return bridge.track_config()
 
     # The return annotation matters. The SDK decides whether to render a result

@@ -18,13 +18,14 @@ from donkeycar.parts.track_config import (
 
 GOOD = {
     "name": "Test track",
-    "segment_length_inches": 36.0,
-    "cross_length_inches": 12.0,
-    "tape_width_inches": 1.0,
-    "segment_count": 8,
     "continuous": True,
-    "lanes": {"left": -12.0, "center": 0.0, "right": 12.0},
+    "lap_length_inches": 480.0,
+    "centerline": {"color": "yellow", "width_inches": 1.0, "dashed": True},
+    "side_lines": {"color": "white", "left_inches": 18.0, "right_inches": 18.0},
+    "lanes": {"left": -9.0, "right": 9.0},
 }
+
+MINIMAL = {"continuous": False, "lanes": {"left": -12.0, "right": 12.0}}
 
 
 def write(tmp_path, text):
@@ -38,25 +39,29 @@ def write(tmp_path, text):
 
 def test_parses_a_complete_track():
     track = parse_track(dict(GOOD))
-    assert track.segment_length_inches == 36.0
-    assert track.cross_length_inches == 12.0
-    assert track.segment_count == 8
     assert track.continuous is True
+    assert track.lap_length_inches == 480.0
+    assert track.centerline.dashed is True
+    assert track.side_lines is not None
+    assert track.side_lines.left_inches == 18.0
     assert track.lane_names() == ["center", "left", "right"]
 
 
 def test_optional_fields_have_sensible_defaults():
-    minimal = {
-        "segment_length_inches": 36.0,
-        "cross_length_inches": 12.0,
-        "continuous": False,
-        "lanes": {"center": 0.0},
-    }
-    track = parse_track(minimal)
-    assert track.tape_width_inches == 1.0
-    assert track.tape_color == "yellow"
-    assert track.cross_colors == ["red", "blue"]
-    assert track.segment_count is None
+    track = parse_track(dict(MINIMAL))
+    assert track.lap_length_inches is None
+    assert track.centerline.color == "yellow"
+    assert track.centerline.width_inches == 1.0
+    assert track.centerline.dashed is False
+    assert track.side_lines is None
+
+
+def test_side_lines_may_give_only_one_side():
+    raw = dict(MINIMAL, side_lines={"right_inches": 20.0})
+    track = parse_track(raw)
+    assert track.side_lines is not None
+    assert track.side_lines.left_inches is None
+    assert track.side_lines.right_inches == 20.0
 
 
 def test_shipped_example_track_is_valid():
@@ -71,9 +76,24 @@ def test_shipped_example_track_is_valid():
 def test_round_trips_through_the_tool_shape():
     track = parse_track(dict(GOOD))
     payload = track.to_dict()
-    assert payload["segment_length_inches"] == 36.0
-    assert payload["lanes"]["right"] == 12.0
+    assert payload["lanes"]["right"] == 9.0
     assert payload["continuous"] is True
+    assert payload["lap_length_inches"] == 480.0
+    assert payload["centerline"] == {"color": "yellow", "width_inches": 1.0, "dashed": True}
+    assert payload["side_lines"]["left_inches"] == 18.0
+
+
+def test_tool_shape_says_the_values_are_nominal():
+    """The agent must not read a single measured width as true along the whole track."""
+    payload = parse_track(dict(MINIMAL)).to_dict()
+    assert payload["nominal"] is True
+    assert "measure_ground_point" in payload["note"]
+    assert payload["side_lines"] is None
+
+
+def test_tool_shape_has_no_segment_fields():
+    payload = parse_track(dict(GOOD)).to_dict()
+    assert not any("segment" in key or "cross" in key for key in payload)
 
 
 # ------------------------------------------------------------------- schema
@@ -85,20 +105,53 @@ def test_no_traffic_feature_list_is_accepted():
     than a silently ignored one, so a file that tries to list them fails loudly.
     """
     raw = dict(GOOD)
-    raw["features"] = [{"kind": "stop_sign", "segment": 2}]
+    raw["features"] = [{"kind": "stop_sign"}]
     with pytest.raises(TrackConfigError, match="unknown field"):
         parse_track(raw)
 
 
 def test_typo_in_a_field_name_is_rejected():
     raw = dict(GOOD)
-    raw["segment_lenght_inches"] = raw.pop("segment_length_inches")
+    raw["lap_lenght_inches"] = raw.pop("lap_length_inches")
     with pytest.raises(TrackConfigError) as exc:
         parse_track(raw)
-    assert "segment_lenght_inches" in str(exc.value)
+    assert "lap_lenght_inches" in str(exc.value)
 
 
-@pytest.mark.parametrize("missing", sorted(["segment_length_inches", "cross_length_inches", "continuous", "lanes"]))
+@pytest.mark.parametrize(
+    "key",
+    [
+        "segment_length_inches",
+        "cross_length_inches",
+        "segment_count",
+        "cross_colors",
+        "tape_width_inches",
+        "tape_color",
+    ],
+)
+def test_retired_segment_fields_are_refused_by_name(key):
+    """An upgraded car's old track.yml must say exactly what to delete."""
+    raw = dict(MINIMAL)
+    raw[key] = 36.0
+    with pytest.raises(TrackConfigError) as exc:
+        parse_track(raw)
+    message = str(exc.value)
+    assert key in message
+    assert "no longer used" in message
+
+
+def test_an_old_segment_file_fails_to_load(tmp_path):
+    path = write(
+        tmp_path,
+        "segment_length_inches: 36\ncross_length_inches: 12\ncontinuous: false\nlanes: {left: -12, right: 12}\n",
+    )
+    with pytest.raises(TrackConfigError) as exc:
+        load_track(path)
+    assert "cross_length_inches" in str(exc.value)
+    assert "segment_length_inches" in str(exc.value)
+
+
+@pytest.mark.parametrize("missing", ["continuous", "lanes"])
 def test_missing_required_field_names_it(missing):
     raw = dict(GOOD)
     del raw[missing]
@@ -107,39 +160,52 @@ def test_missing_required_field_names_it(missing):
     assert missing in str(exc.value)
 
 
-@pytest.mark.parametrize("key", ["segment_length_inches", "cross_length_inches", "tape_width_inches"])
-def test_non_positive_lengths_are_rejected(key):
-    raw = dict(GOOD)
-    raw[key] = -5.0
+def test_non_positive_lap_length_is_rejected():
+    raw = dict(GOOD, lap_length_inches=-5.0)
     with pytest.raises(TrackConfigError) as exc:
         parse_track(raw)
-    assert key in str(exc.value)
+    assert "lap_length_inches" in str(exc.value)
     assert "positive" in str(exc.value)
 
 
-@pytest.mark.parametrize("key", ["segment_length_inches", "cross_length_inches"])
-def test_non_numeric_lengths_are_rejected(key):
-    raw = dict(GOOD)
-    raw[key] = "three feet"
+def test_non_numeric_lap_length_is_rejected():
+    raw = dict(GOOD, lap_length_inches="forty feet")
+    with pytest.raises(TrackConfigError, match="lap_length_inches"):
+        parse_track(raw)
+
+
+@pytest.mark.parametrize(
+    ("block", "value", "field"),
+    [
+        ("centerline", {"width_inches": 0}, "width_inches"),
+        ("centerline", {"dashed": "sometimes"}, "dashed"),
+        ("centerline", {"colour": "yellow"}, "colour"),
+        ("side_lines", {"left_inches": -18}, "left_inches"),
+        ("side_lines", {"right_inches": "wide"}, "right_inches"),
+        ("side_lines", {"middle_inches": 4}, "middle_inches"),
+    ],
+)
+def test_bad_centerline_and_side_line_fields_are_named(block, value, field):
+    raw = dict(MINIMAL)
+    raw[block] = value
     with pytest.raises(TrackConfigError) as exc:
         parse_track(raw)
-    assert key in str(exc.value)
+    assert block in str(exc.value)
+    assert field in str(exc.value)
+
+
+@pytest.mark.parametrize("block", ["centerline", "side_lines"])
+def test_blocks_must_be_mappings(block):
+    raw = dict(MINIMAL)
+    raw[block] = "yellow"
+    with pytest.raises(TrackConfigError, match="mapping"):
+        parse_track(raw)
 
 
 def test_continuous_must_be_a_boolean():
     raw = dict(GOOD)
     raw["continuous"] = "yes"
     with pytest.raises(TrackConfigError, match="continuous"):
-        parse_track(raw)
-
-
-def test_segment_count_must_be_a_positive_whole_number():
-    raw = dict(GOOD)
-    raw["segment_count"] = 0
-    with pytest.raises(TrackConfigError, match="segment_count"):
-        parse_track(raw)
-    raw["segment_count"] = 2.5
-    with pytest.raises(TrackConfigError, match="segment_count"):
         parse_track(raw)
 
 
@@ -155,7 +221,7 @@ def test_lanes_cannot_be_empty():
 
 def test_lane_offset_must_be_a_number():
     raw = dict(GOOD)
-    raw["lanes"] = {"left": "twelve"}
+    raw["lanes"] = {"left": "twelve", "right": 12}
     with pytest.raises(TrackConfigError) as exc:
         parse_track(raw)
     assert "left" in str(exc.value)
@@ -164,9 +230,57 @@ def test_lane_offset_must_be_a_number():
 def test_duplicate_lane_names_are_rejected():
     """YAML cannot repeat a key, but a case difference reads as a duplicate."""
     raw = dict(GOOD)
-    raw["lanes"] = {"Left": -12.0, "left": -6.0}
+    raw["lanes"] = {"Left": -12.0, "left": -6.0, "right": 12.0}
     with pytest.raises(TrackConfigError, match="duplicate lane"):
         parse_track(raw)
+
+
+@pytest.mark.parametrize("absent", ["left", "right"])
+def test_left_and_right_lanes_are_required(absent):
+    """Every track must answer the same three high-level lane commands."""
+    lanes = {"left": -12.0, "right": 12.0}
+    del lanes[absent]
+    with pytest.raises(TrackConfigError) as exc:
+        parse_track(dict(MINIMAL, lanes=lanes))
+    assert absent in str(exc.value)
+    assert "missing" in str(exc.value)
+
+
+@pytest.mark.parametrize(
+    ("lanes", "named"),
+    [
+        ({"left": 12.0, "right": 12.0}, "left"),
+        ({"left": 0.0, "right": 12.0}, "left"),
+        ({"left": -12.0, "right": -12.0}, "right"),
+    ],
+)
+def test_lane_signs_are_checked(lanes, named):
+    """Backwards signs put the car on the wrong side of the track."""
+    with pytest.raises(TrackConfigError) as exc:
+        parse_track(dict(MINIMAL, lanes=lanes))
+    assert f"'{named}'" in str(exc.value)
+
+
+def test_center_is_always_the_centreline_without_being_configured():
+    track = parse_track(dict(MINIMAL))
+    assert track.offset_inches("center") == 0.0
+    assert track.lane_names() == ["center", "left", "right"]
+
+
+@pytest.mark.parametrize("name", ["center", "Center"])
+@pytest.mark.parametrize("offset", [0, 0.0, 2.0])
+def test_configuring_center_is_refused(name, offset):
+    """Center is the centreline by definition; configuring it, even at 0, is an error."""
+    with pytest.raises(TrackConfigError) as exc:
+        parse_track(dict(MINIMAL, lanes={"left": -12.0, name: offset, "right": 12.0}))
+    assert "'center'" in str(exc.value)
+    assert "remove it" in str(exc.value)
+
+
+def test_further_named_lanes_are_allowed():
+    lanes = {"left": -12.0, "right": 12.0, "wide_right": 18.0}
+    track = parse_track(dict(MINIMAL, lanes=lanes))
+    assert track.offset_inches("wide_right") == 18.0
 
 
 def test_unknown_lane_lookup_lists_the_real_ones():
@@ -180,7 +294,7 @@ def test_unknown_lane_lookup_lists_the_real_ones():
 
 def test_known_lane_lookup():
     track = parse_track(dict(GOOD))
-    assert track.offset_inches("right") == 12.0
+    assert track.offset_inches("right") == 9.0
     assert track.offset_inches("center") == 0.0
 
 
@@ -191,34 +305,39 @@ def test_loads_from_a_file(tmp_path):
     path = write(
         tmp_path,
         """
-segment_length_inches: 36
-cross_length_inches: 12
 continuous: true
+lap_length_inches: 480
+centerline:
+  dashed: true
+side_lines:
+  color: white
+  left_inches: 18
+  right_inches: 18
 lanes:
-  center: 0
+  left: -9
+  right: 9
   wide_right: 18
 """,
     )
     track = load_track(path)
     assert track.continuous is True
+    assert track.centerline.dashed is True
     assert track.offset_inches("wide_right") == 18.0
 
 
 def test_swapping_the_file_changes_the_description(tmp_path):
     """A different track must need no code change."""
-    first = load_track(
-        write(tmp_path, "segment_length_inches: 36\ncross_length_inches: 12\ncontinuous: false\nlanes: {center: 0}\n")
-    )
-    second = load_track(
-        write(tmp_path, "segment_length_inches: 24\ncross_length_inches: 6\ncontinuous: true\nlanes: {center: 0}\n")
-    )
-    assert first.segment_length_inches == 36.0
-    assert second.segment_length_inches == 24.0
+    lanes = "lanes: {left: -12, right: 12}\n"
+    first = load_track(write(tmp_path, "continuous: false\n" + lanes))
+    second = load_track(write(tmp_path, "continuous: true\nlap_length_inches: 300\n" + lanes))
+    assert first.continuous is False
+    assert first.lap_length_inches is None
     assert second.continuous is True
+    assert second.lap_length_inches == 300.0
 
 
 def test_malformed_yaml_is_reported_with_the_path(tmp_path):
-    path = write(tmp_path, "segment_length_inches: [unclosed\n")
+    path = write(tmp_path, "lanes: [unclosed\n")
     with pytest.raises(TrackConfigError) as exc:
         load_track(path)
     assert path in str(exc.value)
