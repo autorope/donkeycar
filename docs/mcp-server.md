@@ -433,44 +433,7 @@ goes on reporting the throttle you asked for. `watchdog_tripped` in the state pa
 says when this has happened, and sending the same values again is the normal way to
 hold a speed.
 
-## 6. The activities
-
-A progression, each building on the last. Reference implementations are in
-`donkeycar/mcp_agent/policies.py`.
-
-1. **`lap`** — drive once around the track and stop.
-2. **`stop-signs`** — also stop 5 seconds at every stop sign.
-3. **`obstacle-halt`** — also wait at obstacles until they are removed.
-4. **`obstacle-avoid`** — drive around the obstacles that can be passed. Which ones
-   those are is your judgement from the image, not something the track file declares.
-5. **`address`** — stop at a numbered address and wait to be told to continue.
-
-The policies handle throttle, lanes and braking distance. What they do **not** do is
-see: `Perception.observe(frame, state) -> list[Sighting]` is the seam where your
-vision model goes.
-
-```python
-from donkeycar.mcp_agent import McpSession, build_policy
-
-class MyEyes:
-    def observe(self, frame, state):
-        # ask your model what is in `frame`
-        return [...]
-
-policy = build_policy("stop-signs", McpSession(client), MyEyes())
-policy.begin()
-while not policy.finished:
-    policy.step()
-policy.end()
-```
-
-To watch the loop work without a vision model, replay scripted sightings:
-
-```
-python -m donkeycar.mcp_agent.runner --activity lap --demo-script sightings.json
-```
-
-## 7. Security
+## 6. Security
 
 The server can make a vehicle move, so treat the port as a control surface.
 
@@ -481,7 +444,7 @@ The server can make a vehicle move, so treat the port as a control surface.
 - **Add a token** if the network is shared. The server accepts a token verifier, and
   that token is the only thing between a guest on the WiFi and the throttle.
 
-## 8. A worked example
+## 7. A worked example
 
 These are the settings one car ended up with after a session of tuning on a real
 indoor track. **The numbers are that car's, not yours** &mdash; they depend on its
@@ -577,7 +540,7 @@ both cases the software was working perfectly and commanding values the hardware
 could not act on. If a car will not move, or will not turn, convert the PWM
 numbers to microseconds before touching anything else.
 
-## 9. Testing without a car
+## 8. Testing without a car
 
 Everything above is exercisable on a laptop.
 
@@ -587,5 +550,3 @@ DRIVE_TRAIN_TYPE = 'None'
 ```
 
 `IMAGE_LIST` plus a recorded tub gives deterministic replays against real footage.
-The test suite drives all five activities against a real vehicle loop this way, with
-scripted perception standing in for the vision model.

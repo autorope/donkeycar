@@ -111,7 +111,7 @@
 
 <header>
   <h1>Donkeycar CV Autopilot MCP Server — User Manual</h1>
-  <p class="byline">As of October 17, 2026</p>
+  <p class="byline">As of October 18, 2026</p>
 </header>
 
 <nav class="toc">
@@ -333,10 +333,6 @@ cv_control:                        # required: what the CV autopilot needs
   }
 }</code></pre>
 
-<p><strong>Python, scripted:</strong> the bundled runner drives one of the reference activities over MCP:</p>
-<pre><code>python -m donkeycar.mcp_agent.runner --activity lap --url http://192.168.1.42:8891/mcp</code></pre>
-<p>Runner options: <code>--activity</code> (<code>lap</code>, <code>stop-signs</code>, <code>obstacle-halt</code>, <code>obstacle-avoid</code>, <code>address</code>), <code>--destination</code> (for <code>address</code>), <code>--demo-script</code> (JSON of scripted sightings), <code>--ticks</code> (default 200), <code>--interval</code> (seconds between ticks, default 0.5).</p>
-
 <h3>Security</h3>
 <p>The port can make a vehicle move; treat it as a control surface.</p>
 <ul>
@@ -437,22 +433,8 @@ cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
 <h3>Tuning loop</h3>
 <p>Edit <code>myconfig.py</code> → <code>stop</code> → <code>start</code> → <code>cv_control-get_vehicle_state</code>. Useful knobs: <code>COLOR_THRESHOLD_LOW/HIGH</code>, <code>CONFIDENCE_THRESHOLD</code> (fraction of the scan column, default 0.15), <code>SCAN_Y</code>, <code>SCAN_HEIGHT</code>, <code>TARGET_PIXEL</code>, <code>TARGET_THRESHOLD</code>, <code>THROTTLE_MIN/MAX</code>. <code>cv_control-get_autopilot_config</code> shows the values the car is actually running with.</p>
 
-<h3>Reference activities</h3>
-<p><code>donkeycar/mcp_agent/policies.py</code> has five progressively harder policies: <code>lap</code>, <code>stop-signs</code> (wait 5 s at each), <code>obstacle-halt</code>, <code>obstacle-avoid</code>, <code>address</code>. They handle throttle, lanes and braking; you supply vision by implementing <code>Perception.observe(frame, state) -&gt; list[Sighting]</code>.</p>
-<pre><code>from donkeycar.mcp_agent import McpSession, build_policy
-
-class MyEyes:
-    def observe(self, frame, state):
-        return [...]   # ask your vision model what is in frame
-
-policy = build_policy("stop-signs", McpSession(client), MyEyes())
-policy.begin()
-while not policy.finished:
-    policy.step()
-policy.end()</code></pre>
-
 <h3>Testing without a car</h3>
-<p>Set <code>CAMERA_TYPE = 'MOCK'</code> (or <code>'IMAGE_LIST'</code> with recorded footage) and <code>DRIVE_TRAIN_TYPE = 'None'</code>. Replay scripted sightings with <code>python -m donkeycar.mcp_agent.runner --activity lap --demo-script sightings.json</code>.</p>
+<p>Set <code>CAMERA_TYPE = 'MOCK'</code> (or <code>'IMAGE_LIST'</code> with recorded footage) and <code>DRIVE_TRAIN_TYPE = 'None'</code>, then connect a client to the server as usual.</p>
 
 <!-- ============================================================ -->
 <h2 id="safety">Safety and field notes</h2>
