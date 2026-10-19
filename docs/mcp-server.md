@@ -298,6 +298,8 @@ donkey mcp --car ~/mycar
 
 Either way the tools are at `http://<host>:8891/mcp`. Nothing is running until the
 agent calls `start`, and the car does not move until it also sets a throttle.
+Before making the server reachable from another machine, set `MCP_SERVER_TOKEN`;
+see **6. Security**.
 
 ### Upgrading a car that already exists
 
@@ -435,14 +437,57 @@ hold a speed.
 
 ## 6. Security
 
-The server can make a vehicle move, so treat the port as a control surface.
+The server can make a vehicle move, so treat the port as a control surface. Two
+things guard it.
 
-- **Bind narrowly.** The default is `127.0.0.1`. Set `MCP_SERVER_HOST` to the car's
-  LAN address to reach it from a laptop — never `0.0.0.0`.
-- **Keep DNS-rebinding protection on.** It is on by default. Set the allowed hosts
-  and origins explicitly rather than turning it off to make a client connect.
-- **Add a token** if the network is shared. The server accepts a token verifier, and
-  that token is the only thing between a guest on the WiFi and the throttle.
+**A token.** Set one in `myconfig.py` before the server is reachable from the
+network:
+
+```python
+MCP_SERVER_TOKEN = "a-long-random-string"   # e.g. from: python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Every request must then carry `Authorization: Bearer <token>`; anything else gets
+`401`. Without a token, anyone who can reach the port can drive the car, and the
+server says so in a warning at startup when it is bound beyond `127.0.0.1`. Keep the
+token in `myconfig.py` only &mdash; there is deliberately no command-line flag, which
+would put it in `ps` output and shell history. Changing it needs a restart.
+
+Clients send it as a header:
+
+```zsh
+claude mcp add --transport http donkeycar http://<car>:8891/mcp \
+  --header "Authorization: Bearer <token>"
+```
+
+```json
+{
+  "mcpServers": {
+    "donkeycar": {
+      "type": "http",
+      "url": "http://<car>:8891/mcp",
+      "headers": { "Authorization": "Bearer <token>" }
+    }
+  }
+}
+```
+
+**A host check.** Every request's `Host` header must be a name this car answers
+to: `localhost`, `127.0.0.1`, the machine's hostname with and without `.local`, and
+the bind address &mdash; or, bound to `0.0.0.0`, every address the machine reports
+for itself. This is DNS-rebinding protection: it stops a web page in someone's
+browser from pointing its own domain at the car and calling the tools. A client
+that reaches the car by another name gets `421` with that name and the fix, which
+is to add it to `MCP_SERVER_ALLOWED_HOSTS`:
+
+```python
+MCP_SERVER_ALLOWED_HOSTS = ["racecar.example"]
+```
+
+**What it does not do.** The server speaks plain HTTP, so the token crosses the
+network unencrypted. It keeps out a guest on the WiFi, not someone capturing its
+traffic. Prefer binding to the car's LAN address over `0.0.0.0`, and keep the car on
+a network you trust.
 
 ## 7. A worked example
 

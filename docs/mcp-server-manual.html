@@ -300,9 +300,11 @@ cv_control:                        # required: what the CV autopilot needs
 <div class="table-wrap"><table>
   <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
   <tbody>
-    <tr><td><code>MCP_SERVER_HOST</code></td><td><code>"127.0.0.1"</code></td><td>Bind address. Set to the car's LAN address to reach it from a laptop; never <code>0.0.0.0</code></td></tr>
+    <tr><td><code>MCP_SERVER_HOST</code></td><td><code>"127.0.0.1"</code></td><td>Bind address. Set to the car's LAN address to reach it from a laptop (preferred over <code>0.0.0.0</code>). Used by both <code>donkey mcp</code> and <code>drive --mcp</code></td></tr>
     <tr><td><code>MCP_SERVER_PORT</code></td><td><code>8891</code></td><td>8887 is the web controller and 8890 the FPV server</td></tr>
     <tr><td><code>MCP_COMMAND_TIMEOUT_S</code></td><td><code>2.0</code></td><td>Seconds without a command before the throttle is zeroed</td></tr>
+    <tr><td><code>MCP_SERVER_TOKEN</code></td><td><code>None</code></td><td>Shared secret. When set, every request must send <code>Authorization: Bearer &lt;token&gt;</code>. Set it before the server is reachable from the network. Needs a restart to change</td></tr>
+    <tr><td><code>MCP_SERVER_ALLOWED_HOSTS</code></td><td><code>[]</code></td><td>Extra names or addresses clients use to reach the car. Loopback, the machine's hostname and the bind address are always allowed. Needs a restart to change</td></tr>
     <tr><td><code>CV_PIXELS_PER_INCH</code></td><td>unset</td><td>Manual scale, if you skip <code>calibrate-cv</code> (lane offsets only)</td></tr>
   </tbody>
 </table></div>
@@ -311,7 +313,7 @@ cv_control:                        # required: what the CV autopilot needs
 <p><code>start</code> re-reads <code>config.py</code> and <code>myconfig.py</code>, so the tuning loop is: edit <code>myconfig.py</code> → call <code>stop</code> → call <code>start</code> → look at the next <code>cv_control-get_vehicle_state</code>. A config that fails to parse fails the <code>start</code> and keeps the previous settings.</p>
 <p>Two things need a real process restart (<code>pkill -f "donkey mcp"</code>, then relaunch):</p>
 <ul>
-  <li>Changing <code>MCP_SERVER_HOST</code> or <code>MCP_SERVER_PORT</code>, because the socket is already bound.</li>
+  <li>Changing <code>MCP_SERVER_HOST</code>, <code>MCP_SERVER_PORT</code>, <code>MCP_SERVER_TOKEN</code> or <code>MCP_SERVER_ALLOWED_HOSTS</code>, because the server is already listening with the old ones.</li>
   <li>Changing <code>manage.py</code>, because the builder module is imported once. Config values reload; code does not.</li>
 </ul>
 
@@ -320,26 +322,32 @@ cv_control:                        # required: what the CV autopilot needs
 
 <p>Any MCP client that supports the streamable HTTP transport can connect to <code>http://&lt;car-address&gt;:8891/mcp</code>. The server registers as <code>donkeycar</code> and sends instructions describing the rules below, so a capable agent learns them on connect.</p>
 
-<p><strong>From a laptop</strong>, first make the car reachable by binding to its LAN address:</p>
+<p><strong>From a laptop</strong>, first set a token in the car's <code>myconfig.py</code>, then make the car reachable by binding to its LAN address:</p>
+<pre><code>MCP_SERVER_TOKEN = "a-long-random-string"   # e.g. python -c "import secrets; print(secrets.token_urlsafe(32))"</code></pre>
 <pre><code>donkey mcp --car ~/mycar --host 192.168.1.42</code></pre>
 
 <p><strong>Claude Code:</strong></p>
-<pre><code>claude mcp add --transport http donkeycar http://192.168.1.42:8891/mcp</code></pre>
+<pre><code>claude mcp add --transport http donkeycar http://192.168.1.42:8891/mcp \
+  --header "Authorization: Bearer a-long-random-string"</code></pre>
 
 <p><strong>Other clients</strong> (Claude Desktop, MCP Inspector, custom code) take the same URL with the HTTP transport. A minimal JSON config entry:</p>
 <pre><code>{
   "mcpServers": {
-    "donkeycar": { "type": "http", "url": "http://192.168.1.42:8891/mcp" }
+    "donkeycar": {
+      "type": "http",
+      "url": "http://192.168.1.42:8891/mcp",
+      "headers": { "Authorization": "Bearer a-long-random-string" }
+    }
   }
 }</code></pre>
 
 <h3>Security</h3>
-<p>The port can make a vehicle move; treat it as a control surface.</p>
+<p>The port can make a vehicle move; treat it as a control surface. Two things guard it.</p>
 <ul>
-  <li><strong>Bind narrowly.</strong> Default is <code>127.0.0.1</code>. Use the car's LAN address, never <code>0.0.0.0</code>.</li>
-  <li><strong>Keep DNS-rebinding protection on</strong> (the default). Set allowed hosts and origins explicitly instead of turning it off.</li>
-  <li><strong>Add a token on shared networks.</strong> The server accepts a token verifier; it is the only thing between a guest on the WiFi and the throttle.</li>
+  <li><strong>A token.</strong> With <code>MCP_SERVER_TOKEN</code> set, every request must carry <code>Authorization: Bearer &lt;token&gt;</code>; anything else gets <code>401</code>. Without one, anyone who can reach the port can drive the car, and the server warns at startup when it is bound beyond <code>127.0.0.1</code>. Keep the token in <code>myconfig.py</code> only: there is deliberately no command-line flag, which would put it in <code>ps</code> output and shell history.</li>
+  <li><strong>A host check.</strong> A request's <code>Host</code> header must be a name the car answers to: <code>localhost</code>, <code>127.0.0.1</code>, the machine's hostname with and without <code>.local</code>, and the bind address (or, bound to <code>0.0.0.0</code>, every address the machine reports for itself). This is DNS-rebinding protection: it stops a web page in someone's browser from pointing its own domain at the car. A client using another name gets <code>421</code> naming it; add that name to <code>MCP_SERVER_ALLOWED_HOSTS</code>.</li>
 </ul>
+<p class="note">The server speaks plain HTTP, so the token crosses the network unencrypted. It keeps out a guest on the WiFi, not someone capturing its traffic. Prefer the car's LAN address over <code>0.0.0.0</code>, and keep the car on a network you trust.</p>
 
 <!-- ============================================================ -->
 <h2 id="tools">Tools reference</h2>
@@ -466,6 +474,9 @@ cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
   <tbody>
     <tr><td><code>donkey mcp</code> exits asking you to install something</td><td>The <code>mcp</code> extra is missing. Install <code>donkeycar[pi,mcp]</code> (or <code>pc</code> / <code>macos</code>).</td></tr>
     <tr><td>Client cannot connect from a laptop</td><td>Server bound to <code>127.0.0.1</code>. Restart with <code>--host &lt;car LAN address&gt;</code>.</td></tr>
+    <tr><td>Client gets <code>401</code></td><td><code>MCP_SERVER_TOKEN</code> is set and the client sent no token or the wrong one. Add <code>Authorization: Bearer &lt;token&gt;</code> to the client's headers. If you just changed the token, restart <code>donkey mcp</code>.</td></tr>
+    <tr><td>Client gets <code>421</code> "not one this car answers to"</td><td>The client reaches the car by a name or address the server does not know. Add the name from the message to <code>MCP_SERVER_ALLOWED_HOSTS</code> and restart.</td></tr>
+    <tr><td>Startup warning "NO TOKEN"</td><td>The server is reachable from the network with no token. Set <code>MCP_SERVER_TOKEN</code> in <code>myconfig.py</code> and restart.</td></tr>
     <tr><td>Car drives about 2 s then stops</td><td>The watchdog. <code>watchdog_tripped</code> is true; keep re-sending <code>cv_control-set_control</code>. Reading state does not count.</td></tr>
     <tr><td>Car never moves after <code>cv_control-set_control</code></td><td>Not armed (call <code>start</code>), autopilot not producing throttle (check <code>autopilot_throttle</code>, and that the controller switched to <code>local_pilot</code>; otherwise set <code>WEB_INIT_MODE = 'local_pilot'</code>), or ESC deadband (PWM range too narrow).</td></tr>
     <tr><td>No line for the first seconds after <code>start</code></td><td>Camera auto-exposure settling. Wait for <code>line_detected</code> before judging.</td></tr>

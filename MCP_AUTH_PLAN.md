@@ -8,11 +8,11 @@ and `cv_control-set_control`. This plan adds both, and makes the docs describe w
 
 ---
 
-## Progress — 2 of 3
+## Progress — 3 of 3
 
 - [x] **A1** — One place that starts the HTTP server, with DNS-rebinding protection for the bound address
 - [x] **A2** — `MCP_SERVER_TOKEN`: requests without the right bearer token are refused
-- [ ] **A3** — Docs: guide and HTML manual, including how each client sends the token
+- [x] **A3** — Docs: guide and HTML manual, including how each client sends the token
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
 every commit.
