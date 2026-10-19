@@ -1,6 +1,6 @@
 """
 Tests for serving MCP over HTTP: the host check that guards against DNS
-rebinding.
+rebinding, and the MCP_SERVER_TOKEN bearer token.
 
 The live tests start a real uvicorn server on a free port and talk to it over
 a socket, because the point is what a request from the network gets back.
@@ -30,6 +30,14 @@ class Cfg:
     TRACK_CONTINUOUS = True
     TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"left": -12.0, "right": 12.0}
     MCP_SERVER_ALLOWED_HOSTS: ClassVar[list[str]] = []
+    MCP_SERVER_TOKEN = None
+
+
+TOKEN = "correct-horse-battery-staple"
+
+
+class WithToken(Cfg):
+    MCP_SERVER_TOKEN = TOKEN
 
 
 def _free_port():
@@ -50,7 +58,9 @@ class LiveServer:
         self.cfg = cfg or Cfg()
         self.bridge = MCPBridge(self.cfg, serve=False)
         self.port = _free_port()
-        app = build_app(self.bridge.build_server(), bind_host, self.cfg.MCP_SERVER_ALLOWED_HOSTS)
+        app = build_app(
+            self.bridge.build_server(), bind_host, self.cfg.MCP_SERVER_ALLOWED_HOSTS, self.cfg.MCP_SERVER_TOKEN
+        )
         # Listen on loopback whatever the bind host the app was built for, so
         # the tests never open a port on the network.
         self.server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=self.port, log_level="warning"))
@@ -199,3 +209,79 @@ def test_a_foreign_browser_origin_is_refused():
     with LiveServer() as live:
         status, _ = live.post(f"127.0.0.1:{live.port}", headers={"Origin": "http://evil.example"})
     assert status == 403
+
+
+# ------------------------------------------------------------------ token
+
+
+@pytest.mark.parametrize(
+    "headers",
+    [
+        {},
+        {"Authorization": "Bearer not-the-token"},
+        {"Authorization": f"Basic {TOKEN}"},
+        {"Authorization": TOKEN},
+        {"Authorization": f"Bearer {TOKEN}x"},
+    ],
+    ids=["missing", "wrong", "not-bearer", "no-scheme", "longer"],
+)
+def test_requests_without_the_right_token_are_refused(headers):
+    with LiveServer(WithToken()) as live:
+        status, body = live.post(f"127.0.0.1:{live.port}", headers=headers)
+    assert status == 401
+    assert "Authorization: Bearer" in body
+    assert TOKEN not in body
+
+
+def test_the_right_token_reaches_a_real_tool_call():
+    with LiveServer(WithToken()) as live:
+        result = call_tool(live.url, "get_autopilot", headers={"Authorization": f"Bearer {TOKEN}"})
+    assert result.is_error is False
+
+
+def test_a_refused_token_is_not_logged(caplog):
+    """Logs get pasted into issues; a token in them is a token given away."""
+    with caplog.at_level("WARNING"), LiveServer(WithToken()) as live:
+        live.post(f"127.0.0.1:{live.port}", headers={"Authorization": "Bearer guessed-wrong"})
+    assert "Refused a request with a wrong token" in caplog.text
+    assert "guessed-wrong" not in caplog.text
+    assert TOKEN not in caplog.text
+
+
+def test_the_host_check_comes_before_the_token():
+    """A rebinding page with a stolen token is still refused for its Host."""
+    with LiveServer(WithToken()) as live:
+        status, _ = live.post("evil.example", headers={"Authorization": f"Bearer {TOKEN}"})
+    assert status == 421
+
+
+def _serve_without_listening(monkeypatch, host, token):
+    """Run serve_http's startup logging without binding a socket."""
+    import uvicorn
+
+    from donkeycar.parts.mcp_http import serve_http
+    from donkeycar.parts.mcp_server import MCPBridge
+
+    monkeypatch.setattr(uvicorn.Server, "run", lambda self: None)
+    serve_http(MCPBridge(Cfg(), serve=False).build_server(), host, _free_port(), token=token)
+
+
+def test_a_network_bind_without_a_token_warns(monkeypatch, caplog):
+    with caplog.at_level("WARNING"):
+        _serve_without_listening(monkeypatch, "0.0.0.0", None)
+    assert "NO TOKEN" in caplog.text
+    assert "MCP_SERVER_TOKEN" in caplog.text
+
+
+def test_a_loopback_bind_without_a_token_does_not_warn(monkeypatch, caplog):
+    with caplog.at_level("WARNING"):
+        _serve_without_listening(monkeypatch, "127.0.0.1", None)
+    assert "NO TOKEN" not in caplog.text
+
+
+def test_a_network_bind_with_a_token_does_not_warn(monkeypatch, caplog):
+    with caplog.at_level("INFO"):
+        _serve_without_listening(monkeypatch, "0.0.0.0", TOKEN)
+    assert "NO TOKEN" not in caplog.text
+    assert "must carry the MCP_SERVER_TOKEN" in caplog.text
+    assert TOKEN not in caplog.text

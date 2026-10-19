@@ -178,6 +178,14 @@ class VehicleSupervisor:
                     name,
                 )
 
+        # Separate from the loop above: that one logs the values, and this one
+        # is a secret.
+        if getattr(self.cfg, "MCP_SERVER_TOKEN", None) != getattr(cfg, "MCP_SERVER_TOKEN", None):
+            logger.warning(
+                "MCP_SERVER_TOKEN changed, but the server checks the token it started with; "
+                "restart `donkey mcp` to use the new one."
+            )
+
         self.bridge.reload_config(cfg)
         self.cfg = cfg
         logger.info("Reloaded config from %s", self.config_path)

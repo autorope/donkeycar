@@ -8,10 +8,10 @@ and `cv_control-set_control`. This plan adds both, and makes the docs describe w
 
 ---
 
-## Progress — 1 of 3
+## Progress — 2 of 3
 
 - [x] **A1** — One place that starts the HTTP server, with DNS-rebinding protection for the bound address
-- [ ] **A2** — `MCP_SERVER_TOKEN`: requests without the right bearer token are refused
+- [x] **A2** — `MCP_SERVER_TOKEN`: requests without the right bearer token are refused
 - [ ] **A3** — Docs: guide and HTML manual, including how each client sends the token
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
@@ -64,9 +64,9 @@ Settled with Ed before A1 started.
 
 **Acceptance**
 
-- [ ] No header, a wrong token, and a non-Bearer scheme each get `401`; the right token gets through to a real tool call.
-- [ ] With no token configured, requests succeed as before.
-- [ ] The warning appears for a LAN bind without a token, and not for `127.0.0.1`.
+- [x] No header, a wrong token, and a non-Bearer scheme each get `401`; the right token gets through to a real tool call.
+- [x] With no token configured, requests succeed as before.
+- [x] The warning appears for a LAN bind without a token, and not for `127.0.0.1`.
 
 ## A3 — Docs
 

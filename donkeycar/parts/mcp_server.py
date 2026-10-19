@@ -509,7 +509,13 @@ class MCPBridge:
         """
         from donkeycar.parts.mcp_http import serve_http
 
-        serve_http(server, host, port, extra_allowed_hosts=getattr(self.cfg, "MCP_SERVER_ALLOWED_HOSTS", None) or ())
+        serve_http(
+            server,
+            host,
+            port,
+            extra_allowed_hosts=getattr(self.cfg, "MCP_SERVER_ALLOWED_HOSTS", None) or (),
+            token=getattr(self.cfg, "MCP_SERVER_TOKEN", None) or None,
+        )
 
     # ------------------------------------------------------------------
     # track and calibration

@@ -321,3 +321,23 @@ def test_changing_the_bound_port_warns_rather_than_pretending(tmp_path, caplog):
         assert "restart `donkey mcp`" in caplog.text
     finally:
         sup.stop()
+
+
+def test_changing_the_token_warns_without_logging_it(tmp_path, caplog):
+    """The server checks the token it started with; say so, and never print the secret."""
+    cfg, path = _headless_cfg(tmp_path)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+    )
+    _set_myconfig(path, MCP_SERVER_TOKEN="s3cret-new-token")
+    sup.start()
+    _wait_until(sup.is_running)
+    try:
+        assert "MCP_SERVER_TOKEN changed" in caplog.text
+        assert "s3cret-new-token" not in caplog.text
+    finally:
+        sup.stop()

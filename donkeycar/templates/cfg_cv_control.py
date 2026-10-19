@@ -639,6 +639,8 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 MCP_SERVER_HOST = "127.0.0.1"   # bind address; set to the car's LAN address to reach it from a laptop
 MCP_SERVER_PORT = 8891          # 8887 is the web controller and 8890 is the FPV server
 MCP_COMMAND_TIMEOUT_S = 2.0     # zero the throttle if the agent goes quiet for this long
+MCP_SERVER_TOKEN = None         # shared secret; when set, every request must send "Authorization: Bearer <token>".
+                                # Set it before binding beyond 127.0.0.1, and only in myconfig.py, never in git.
 MCP_SERVER_ALLOWED_HOSTS = []   # extra names or addresses clients use to reach the car (Host header);
                                 # localhost, this machine's hostname and the bind address are always allowed
 
