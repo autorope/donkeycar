@@ -163,7 +163,11 @@ class VehicleSupervisor:
         except Exception as exc:
             raise ValueError(f"Could not reload {self.config_path}: {exc}. Keeping the previous config.") from exc
 
-        for attr, name in (("MCP_SERVER_HOST", "host"), ("MCP_SERVER_PORT", "port")):
+        for attr, name in (
+            ("MCP_SERVER_HOST", "host"),
+            ("MCP_SERVER_PORT", "port"),
+            ("MCP_SERVER_ALLOWED_HOSTS", "allowed hosts"),
+        ):
             was, now = getattr(self.cfg, attr, None), getattr(cfg, attr, None)
             if was != now:
                 logger.warning(
@@ -225,10 +229,9 @@ class VehicleSupervisor:
             server = self.bridge.build_server()
         except MCPNotInstalledError as exc:
             raise SystemExit(str(exc)) from exc
-        logger.info("MCP server listening on http://%s:%d/mcp", host, port)
         logger.info("The vehicle is not running yet; call the `start` tool to begin.")
         try:
-            server.run(transport="streamable-http", host=host, port=port)
+            self.bridge.serve_http(server, host, port)
         finally:
             self.stop()
 

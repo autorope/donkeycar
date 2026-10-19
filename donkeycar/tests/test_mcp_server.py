@@ -1096,3 +1096,13 @@ def test_a_tripped_watchdog_says_how_to_recover():
     assert payload["watchdog_tripped"] is True
     note = payload.get("watchdog_note", "")
     assert "cv_control-set_control" in note, "the agent must be told what resets the watchdog"
+
+
+def test_the_bridge_binds_the_configured_host():
+    """`drive --mcp` builds the bridge from the config alone, so MCP_SERVER_HOST must reach it."""
+
+    class OnTheLan(Cfg):
+        MCP_SERVER_HOST = "192.168.1.42"
+
+    assert MCPBridge(OnTheLan(), serve=False).host == "192.168.1.42"
+    assert MCPBridge(Cfg(), serve=False).host == "127.0.0.1"

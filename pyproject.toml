@@ -192,6 +192,7 @@ follow_imports = "silent"
 module = [
     "donkeycar.parts.mcp_server",
     "donkeycar.parts.mcp_tools",
+    "donkeycar.parts.mcp_http",
     "donkeycar.parts.track_config",
     "donkeycar.parts.cv_calibration",
     "donkeycar.management.mcp",

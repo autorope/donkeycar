@@ -8,9 +8,9 @@ and `cv_control-set_control`. This plan adds both, and makes the docs describe w
 
 ---
 
-## Progress — 0 of 3
+## Progress — 1 of 3
 
-- [ ] **A1** — One place that starts the HTTP server, with DNS-rebinding protection for the bound address
+- [x] **A1** — One place that starts the HTTP server, with DNS-rebinding protection for the bound address
 - [ ] **A2** — `MCP_SERVER_TOKEN`: requests without the right bearer token are refused
 - [ ] **A3** — Docs: guide and HTML manual, including how each client sends the token
 
@@ -37,23 +37,24 @@ Settled with Ed before A1 started.
 
 ## A1 — One server start, with DNS-rebinding protection
 
-**Files:** `donkeycar/parts/mcp_tools.py` (new `serve_http`), `donkeycar/parts/mcp_server.py`,
+**Files:** `donkeycar/parts/mcp_http.py` (new, `serve_http`), `donkeycar/parts/mcp_server.py`,
 `donkeycar/management/mcp.py`, `donkeycar/templates/cfg_cv_control.py`, tests.
 
 - `serve_http(server, host, port, token, extra_allowed_hosts)` builds the SDK's streamable-HTTP app
   with `TransportSecuritySettings(enable_dns_rebinding_protection=True, allowed_hosts=..., allowed_origins=...)`
   and runs it with uvicorn. Both run modes call it.
 - New setting `MCP_SERVER_ALLOWED_HOSTS = []`.
+- Found on the way: the bridge ignored `MCP_SERVER_HOST`, so `drive --mcp` always bound `127.0.0.1`. It now reads the config.
 
 **Acceptance**
 
-- [ ] A request whose `Host` header is the bound address succeeds; one with a foreign `Host` is refused.
-- [ ] With `0.0.0.0`, `localhost` and the machine's hostname are accepted.
-- [ ] A name added to `MCP_SERVER_ALLOWED_HOSTS` is accepted.
+- [x] A request whose `Host` header is the bound address succeeds; one with a foreign `Host` is refused.
+- [x] With `0.0.0.0`, `localhost` and the machine's hostname are accepted.
+- [x] A name added to `MCP_SERVER_ALLOWED_HOSTS` is accepted.
 
 ## A2 — `MCP_SERVER_TOKEN`
 
-**Files:** `donkeycar/parts/mcp_tools.py`, `donkeycar/management/mcp.py`,
+**Files:** `donkeycar/parts/mcp_http.py`, `donkeycar/management/mcp.py`,
 `donkeycar/templates/cfg_cv_control.py`, tests.
 
 - Middleware refuses requests without the right `Authorization: Bearer` header with `401` and a

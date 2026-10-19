@@ -213,7 +213,7 @@ class MCPBridge:
         self,
         cfg: CarConfig,
         lifecycle: Lifecycle | None = None,
-        host: str = "127.0.0.1",
+        host: str | None = None,
         port: int | None = None,
         command_timeout_s: float | None = None,
         serve: bool = True,
@@ -221,7 +221,9 @@ class MCPBridge:
         car_dir: str | None = None,
     ) -> None:
         self.cfg = cfg
-        self.host = host
+        # From the config, like the port. A fixed default here meant
+        # `drive --mcp` always bound 127.0.0.1 whatever MCP_SERVER_HOST said.
+        self.host = host if host is not None else getattr(cfg, "MCP_SERVER_HOST", "127.0.0.1")
         self.port = port if port is not None else getattr(cfg, "MCP_SERVER_PORT", DEFAULT_MCP_PORT)
         self.command_timeout_s = (
             command_timeout_s
@@ -337,8 +339,7 @@ class MCPBridge:
             # The vehicle keeps driving; only the agent interface is missing.
             logger.error("%s", exc)
             return
-        logger.info("Starting MCP server on http://%s:%d/mcp", self.host, self.port)
-        server.run(transport="streamable-http", host=self.host, port=self.port)
+        self.serve_http(server, self.host, self.port)
 
     def shutdown(self) -> None:
         self._running = False
@@ -497,6 +498,18 @@ class MCPBridge:
         server = build_server(self)
         self._server = server
         return server
+
+    def serve_http(self, server: MCPServer, host: str, port: int) -> None:
+        """
+        Serve `server` over HTTP until stopped, behind the host check.
+
+        The one place either run mode starts the server, so protection cannot
+        differ between them. Settings are read from the config the process
+        started with: the socket is bound once.
+        """
+        from donkeycar.parts.mcp_http import serve_http
+
+        serve_http(server, host, port, extra_allowed_hosts=getattr(self.cfg, "MCP_SERVER_ALLOWED_HOSTS", None) or ())
 
     # ------------------------------------------------------------------
     # track and calibration
