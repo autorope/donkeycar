@@ -182,6 +182,18 @@ def test_named_lane_converts_to_pixels():
     assert bridge.lane_offset_px_for("center") == 0
 
 
+def test_the_center_lane_needs_no_calibration():
+    """Zero inches is zero pixels at any scale, so an uncalibrated car can still hold the centreline."""
+
+    class Uncalibrated(Cfg):
+        CV_PIXELS_PER_INCH = None
+
+    bridge = MCPBridge(Uncalibrated(), serve=False)
+    assert bridge.lane_offset_px_for("center") == 0
+    with pytest.raises(ValueError, match="pixels-per-inch"):
+        bridge.lane_offset_px_for("right")
+
+
 def test_a_lane_offset_round_trips_back_to_the_same_inches():
     bridge = make_bridge()
     assert bridge.px_to_inches(bridge.inches_to_px(12.0)) == pytest.approx(12.0, abs=0.3)
