@@ -264,6 +264,32 @@ def test_the_bridge_adopts_the_reloaded_config(tmp_path):
         sup.stop()
 
 
+def test_the_chosen_track_file_survives_a_config_reload(tmp_path):
+    """
+    `start` re-reads config.py and myconfig.py. A --track kept in the config
+    would be lost there, and the car directory's track.yml used instead.
+    """
+    cfg, path = _headless_cfg(tmp_path)
+    with open(os.path.join(path, "office.yml"), "w") as handle:
+        handle.write("name: Office\ncv_control:\n  continuous: true\n  lanes: {left: -12, right: 12}\n")
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+        track_file="office.yml",
+    )
+    assert sup.bridge.track_config()["name"] == "Office"
+
+    assert sup.start() == "started (config reloaded)"
+    _wait_until(sup.is_running)
+    try:
+        assert sup.bridge.track_config()["name"] == "Office"
+    finally:
+        sup.stop()
+
+
 def test_a_broken_config_fails_the_start_and_keeps_the_old_one(tmp_path):
     """Better to keep running on the last good settings than half-apply a typo."""
     cfg, path = _headless_cfg(tmp_path)

@@ -716,6 +716,55 @@ def test_malformed_track_file_refuses_to_start(tmp_path):
         MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
 
 
+def _write_track(path, lap_length):
+    path.write_text(
+        f"cv_control:\n  continuous: true\n  lap_length_inches: {lap_length}\n  lanes: {{left: -12, right: 12}}\n"
+    )
+
+
+def test_a_chosen_track_file_wins_over_track_yml(tmp_path):
+    _write_track(tmp_path / "track.yml", 100)
+    _write_track(tmp_path / "office.yml", 200)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path), track_file="office.yml")
+    assert bridge.track_config()["cv_control"]["lap_length_inches"] == 200.0
+
+
+def test_a_relative_track_file_is_taken_from_the_car_directory(tmp_path, monkeypatch):
+    car = tmp_path / "car"
+    car.mkdir()
+    _write_track(car / "office.yml", 200)
+    # A same-named file in the working directory must not be the one read
+    _write_track(tmp_path / "office.yml", 300)
+    monkeypatch.chdir(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(car), track_file="office.yml")
+    assert bridge.track_config()["cv_control"]["lap_length_inches"] == 200.0
+
+
+def test_an_absolute_track_file_is_used_as_given(tmp_path):
+    elsewhere = tmp_path / "tracks"
+    elsewhere.mkdir()
+    _write_track(elsewhere / "office.yml", 200)
+    car = tmp_path / "car"
+    car.mkdir()
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(car), track_file=str(elsewhere / "office.yml"))
+    assert bridge.track_config()["cv_control"]["lap_length_inches"] == 200.0
+
+
+def test_a_missing_chosen_track_file_refuses_to_start(tmp_path):
+    """Asked for by name, so the default track would be the wrong track."""
+    _write_track(tmp_path / "track.yml", 100)
+    with pytest.raises(TrackConfigError, match=str(tmp_path / "office.yml")):
+        MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path), track_file="office.yml")
+
+
+def test_a_chosen_track_file_is_reread_on_reload(tmp_path):
+    _write_track(tmp_path / "office.yml", 200)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path), track_file="office.yml")
+    _write_track(tmp_path / "office.yml", 250)
+    bridge.reload_config(Cfg())
+    assert bridge.track_config()["cv_control"]["lap_length_inches"] == 250.0
+
+
 @requires_mcp
 def test_track_from_a_file_reaches_the_client(tmp_path):
     (tmp_path / "track.yml").write_text(

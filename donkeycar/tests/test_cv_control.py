@@ -147,6 +147,19 @@ def test_mcp_bridge_present_when_enabled(tmp_path):
         v.stop()
 
 
+def test_mcp_bridge_uses_the_chosen_track_file(tmp_path):
+    """manage.py drive --mcp --track=<file> reaches the bridge the template builds."""
+    cfg = _headless_cfg(tmp_path)
+    with open(os.path.join(cfg.CAR_PATH, "office.yml"), "w") as handle:
+        handle.write("name: Office\ncv_control:\n  continuous: true\n  lanes: {left: -12, right: 12}\n")
+    v = cv_control.build_vehicle(cfg, enable_mcp=True, track_file="office.yml")
+    try:
+        bridge = next(e["part"] for e in v.parts if e["part"].__class__.__name__ == "MCPBridge")
+        assert bridge.track_config()["name"] == "Office"
+    finally:
+        v.stop()
+
+
 def test_mcp_pipeline_runs_and_holds_the_car_until_started(tmp_path):
     """
     End to end through the real vehicle loop: with the bridge added but never

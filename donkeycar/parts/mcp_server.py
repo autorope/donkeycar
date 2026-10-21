@@ -19,6 +19,7 @@ Two things in here are load-bearing and easy to get wrong:
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
 from dataclasses import dataclass, field, replace
@@ -30,6 +31,7 @@ from donkeycar.parts.cv_calibration import Calibration, load_calibration
 from donkeycar.parts.track_config import (
     CV_CONTROL,
     TrackConfig,
+    TrackConfigError,
     default_track,
     find_track_file,
     load_track,
@@ -199,6 +201,21 @@ def resolve_throttle(command: AgentCommand, cv_throttle: float | None) -> float:
     return min(command.throttle, cv_throttle)
 
 
+def _resolve_track_file(track_file: str, car_dir: str | None) -> str:
+    """
+    Where a --track file is. A relative path is taken from the car directory,
+    so `donkey mcp --car ~/mycar --track office.yml` means ~/mycar/office.yml.
+    A file asked for by name that is not there is an error: falling back to
+    the default track would be driving a track other than the one you chose.
+    """
+    path = os.path.expanduser(track_file)
+    if not os.path.isabs(path):
+        path = os.path.join(os.path.expanduser(car_dir) if car_dir else os.getcwd(), path)
+    if not os.path.isfile(path):
+        raise TrackConfigError(f"Track file {path} does not exist (from --track {track_file}).")
+    return path
+
+
 class MCPBridge:
     """
     Donkeycar part that carries agent intent into the vehicle loop and vehicle
@@ -219,6 +236,7 @@ class MCPBridge:
         serve: bool = True,
         track: TrackConfig | None = None,
         car_dir: str | None = None,
+        track_file: str | None = None,
     ) -> None:
         self.cfg = cfg
         # From the config, like the port. A fixed default here meant
@@ -244,8 +262,11 @@ class MCPBridge:
         # In part mode the bridge is its own lifecycle: start/stop arm/disarm.
         self.lifecycle: Lifecycle = lifecycle if lifecycle is not None else _BridgeArming(self)
 
-        self.track = track if track is not None else self._load_track(car_dir)
         self.car_dir = car_dir
+        # Held here rather than in cfg: `donkey mcp` re-reads the config on
+        # every start, which would quietly drop a --track given at launch.
+        self.track_file = track_file
+        self.track = track if track is not None else self._load_track(car_dir)
         # The user controller, when there is one. Needed to put the car into
         # autopilot mode: the CV controller only runs when run_pilot is set,
         # and that comes from user/mode.
@@ -526,11 +547,12 @@ class MCPBridge:
 
     def _load_track(self, car_dir: str | None) -> TrackConfig:
         """
-        Prefer a track.yml beside the car's config, then the config constants,
-        then a default. A malformed file is an error, not a silent fallback:
+        Prefer the --track file if one was given, else a track.yml beside the
+        car's config, then the config constants, then a default. A malformed file is an error, not a silent fallback:
         driving a track you have mis-described is worse than not starting.
         """
-        path = getattr(self.cfg, "TRACK_FILE", None) or find_track_file(car_dir or getattr(self.cfg, "CAR_PATH", None))
+        car_dir = car_dir or getattr(self.cfg, "CAR_PATH", None)
+        path = _resolve_track_file(self.track_file, car_dir) if self.track_file else find_track_file(car_dir)
         if path:
             track = load_track(path)
             logger.info("Loaded track description from %s", path)

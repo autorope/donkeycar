@@ -4,13 +4,15 @@
 Scripts to drive on autopilot using computer vision
 
 Usage:
-    manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)] [--myconfig=<filename>] [--mcp]
+    manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)] [--myconfig=<filename>] [--mcp] [--track=<file>]
 
 
 Options:
     -h --help          Show this screen.
     --js               Use physical joystick.
     --mcp              Serve an MCP server so an AI agent can drive the car.
+    --track=filename   Track file for the MCP server to use instead of track.yml.
+                       A relative path is taken from the car directory.
     --myconfig=filename     Specify myconfig file to use.
                             [default: myconfig.py]
 """
@@ -57,6 +59,7 @@ def build_vehicle(
     meta: list[str] | None = None,
     enable_mcp: bool = False,
     mcp_bridge: "MCPBridge | None" = None,
+    track_file: str | None = None,
 ) -> Vehicle:
     """
     Construct a working robotic vehicle from many parts, but do NOT start it.
@@ -159,7 +162,8 @@ def build_vehicle(
         # The supervisor passes in a bridge that outlives the vehicle, so the
         # agent keeps its connection across a stop/start. Left to itself the
         # template builds its own and serves from the part's thread.
-        bridge = mcp_bridge if mcp_bridge is not None else MCPBridge(cfg)
+        # track_file is for that bridge only; the supervisor's was given its own.
+        bridge = mcp_bridge if mcp_bridge is not None else MCPBridge(cfg, track_file=track_file)
         # The bridge needs the controller to switch into autopilot mode; the CV
         # controller only runs when run_pilot is set, which comes from user/mode.
         bridge.attach_controller(ctr)
@@ -286,13 +290,21 @@ def drive(
     camera_type: str = "single",
     meta: list[str] | None = None,
     enable_mcp: bool = False,
+    track_file: str | None = None,
 ) -> Vehicle:
     """
     Assemble the vehicle and run it on the calling thread.
     This is the entry point used by `manage.py drive` and its behaviour is
     unchanged: it blocks until the loop stops or the user interrupts.
     """
-    V = build_vehicle(cfg, use_joystick=use_joystick, camera_type=camera_type, meta=meta, enable_mcp=enable_mcp)
+    V = build_vehicle(
+        cfg,
+        use_joystick=use_joystick,
+        camera_type=camera_type,
+        meta=meta,
+        enable_mcp=enable_mcp,
+        track_file=track_file,
+    )
 
     #
     # run the vehicle
@@ -355,4 +367,5 @@ if __name__ == "__main__":
             use_joystick=args["--js"],
             camera_type=args["--camera"],
             enable_mcp=bool(args["--mcp"]),
+            track_file=args["--track"],
         )

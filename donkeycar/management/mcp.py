@@ -100,6 +100,7 @@ class VehicleSupervisor:
         config_path: str | None = None,
         myconfig: str = "myconfig.py",
         reload_config: bool = True,
+        track_file: str | None = None,
     ) -> None:
         self.cfg = cfg
         # Remembered so `start` can re-read them. Without this, editing
@@ -114,7 +115,7 @@ class VehicleSupervisor:
         self.use_joystick = use_joystick
         self.camera_type = camera_type
 
-        self.bridge = MCPBridge(cfg, lifecycle=self, serve=False, car_dir=car_dir)
+        self.bridge = MCPBridge(cfg, lifecycle=self, serve=False, car_dir=car_dir, track_file=track_file)
 
         self._vehicle: Vehicle | None = None
         self._thread: threading.Thread | None = None
@@ -249,6 +250,11 @@ def run(args: list[str]) -> None:
     parser = argparse.ArgumentParser(prog="mcp", usage="%(prog)s [options]")
     parser.add_argument("--car", default=None, help="path to the car directory, e.g. ~/mycar")
     parser.add_argument("--myconfig", default="myconfig.py", help="myconfig file to use")
+    parser.add_argument(
+        "--track",
+        default=None,
+        help="track file to use instead of track.yml; a relative path is taken from the car directory",
+    )
     parser.add_argument("--host", default=None, help="address to bind (default from config)")
     parser.add_argument("--port", type=int, default=None, help="port to bind (default from config)")
     parser.add_argument("--js", action="store_true", help="use a physical joystick as well")
@@ -280,6 +286,7 @@ def run(args: list[str]) -> None:
         config_path=config_path,
         myconfig=parsed.myconfig,
         reload_config=not parsed.no_reload,
+        track_file=parsed.track,
     )
 
     host = parsed.host or getattr(cfg, "MCP_SERVER_HOST", "127.0.0.1")
