@@ -15,11 +15,11 @@ can be pointed at one of several track files without editing anything.
 
 ---
 
-## Progress — 2 of 3
+## Progress — 3 of 3
 
 - [x] **F1** — `--track` option on `manage.py drive` and `donkey mcp`
 - [x] **F2** — Retire the `TRACK_*` constants; warn when falling back to the default track
-- [ ] **F3** — Docs and the published user manual
+- [x] **F3** — Docs and the published user manual
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
 every commit.

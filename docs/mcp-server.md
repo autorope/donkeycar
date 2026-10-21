@@ -64,7 +64,8 @@ obstacle in the road without editing a file.
 ## 2. Describe the track
 
 `donkey createcar` puts a `track.yml` in the car directory. Edit it to match what
-you built:
+you built. This file is the only place the track is described; nothing in
+`config.py` or `myconfig.py` describes it.
 
 ```yaml
 name: Kitchen loop                 # optional: describe the track itself
@@ -112,6 +113,22 @@ Validation is strict and unknown fields are rejected, so a typo fails loudly rat
 than reading as "never set". A silently wrong lane width is a car in the wall, and a
 lane with the wrong sign is refused for the same reason.
 
+**More than one track.** Keep a file per track beside `track.yml` &mdash; say
+`track-garage.yml` and `track-office.yml` &mdash; and choose one when the car starts:
+
+```
+python manage.py drive --mcp --track=track-office.yml
+donkey mcp --car ~/mycar --track track-office.yml
+```
+
+A relative path is taken from the car directory; an absolute path is used as given.
+A `--track` file that is not there stops the server from starting, naming the path it
+looked for, rather than quietly driving some other track.
+
+**No track file at all.** The server still starts, gives the agent a default track
+with generic `left`, `center` and `right` lanes, and logs a warning naming the
+`track.yml` it looked for.
+
 **Upgrading an older `track.yml`.** A file in an earlier shape is refused, naming what to
 change:
 
@@ -123,7 +140,10 @@ change:
   the tape's colour and width under `cv_control: centerline:` if you want to keep them.
 - **`center` in `lanes`**: delete it.
 
-The `TRACK_SEGMENT_*` constants in an old `config.py` are simply ignored.
+The `TRACK_SEGMENT_*` constants in an old `config.py` are simply ignored. So are
+`TRACK_CONTINUOUS`, `TRACK_LAP_LENGTH_INCHES` and `TRACK_LANES_INCHES` in an old
+`config.py` or `myconfig.py`, which once described the track when there was no
+`track.yml`: move their values into `track.yml` and delete them.
 
 A lane offset says where **the car** should sit: positive is right of the centreline,
 the way a person would describe it. The controller works in the opposite frame &mdash;
@@ -296,7 +316,8 @@ because returning from the drive loop ends the program.
 donkey mcp --car ~/mycar
 ```
 
-Either way the tools are at `http://<host>:8891/mcp`. Nothing is running until the
+Either way, add `--track <file>` to use a track file other than `track.yml`; see
+**2. Describe the track**. The tools are at `http://<host>:8891/mcp`. Nothing is running until the
 agent calls `start`, and the car does not move until it also sets a throttle.
 Before making the server reachable from another machine, set `MCP_SERVER_TOKEN`;
 see **6. Security**.

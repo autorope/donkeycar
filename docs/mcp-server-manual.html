@@ -111,7 +111,7 @@
 
 <header>
   <h1>Donkeycar CV Autopilot MCP Server — User Manual</h1>
-  <p class="byline">As of October 18, 2026</p>
+  <p class="byline">As of October 21, 2026</p>
 </header>
 
 <nav class="toc">
@@ -217,7 +217,7 @@ donkey update --template cv_control</code></pre>
 <p>An older three-item list silently drops line confidence, and every downstream reader sees <code>None</code>.</p>
 
 <h3>3. Describe the track in track.yml</h3>
-<p><code>donkey createcar</code> puts a <code>track.yml</code> in the car directory. Edit it to match the track you built. Validation is strict: unknown fields are rejected.</p>
+<p><code>donkey createcar</code> puts a <code>track.yml</code> in the car directory. Edit it to match the track you built. It is the only place the track is described: nothing in <code>config.py</code> or <code>myconfig.py</code> describes it. Validation is strict: unknown fields are rejected.</p>
 <pre><code>name: Kitchen loop                 # optional: describes the track itself
 description: Yellow centreline, white side tape.
 
@@ -248,6 +248,13 @@ cv_control:                        # required: what the CV autopilot needs
 
 <p><code>lanes</code> must name <code>left</code> and <code>right</code>. The <code>center</code> lane is always the centreline (0); configuring it, even as 0, is refused. <code>cv_control-set_control(lane="left" | "center" | "right")</code> works on every track, and further named lanes are allowed. Write offsets as a person sees the track; the server handles the sign flip into the camera's pixel frame, and a lane with the wrong sign is refused.</p>
 
+<p><strong>More than one track:</strong> keep a file per track beside <code>track.yml</code>, such as <code>track-garage.yml</code> and <code>track-office.yml</code>, and choose one at start-up:</p>
+<pre><code>python manage.py drive --mcp --track=track-office.yml
+donkey mcp --car ~/mycar --track track-office.yml</code></pre>
+<p>A relative path is taken from the car directory; an absolute path is used as given. A <code>--track</code> file that is not there stops the server from starting, naming the path it looked for.</p>
+
+<p><strong>No track file at all:</strong> the server still starts, gives the agent a default track with generic <code>left</code>, <code>center</code> and <code>right</code> lanes, and logs a warning naming the <code>track.yml</code> it looked for.</p>
+
 <p><strong>Upgrading an older car:</strong> a <code>track.yml</code> in an earlier shape is refused, naming what to change:</p>
 <ul>
   <li>Fields other than <code>name</code> and <code>description</code> at the top level: move them under <code>cv_control:</code>.</li>
@@ -255,6 +262,7 @@ cv_control:                        # required: what the CV autopilot needs
   <li>Segment fields (<code>segment_length_inches</code>, <code>cross_length_inches</code>, <code>segment_count</code>, <code>cross_colors</code>, <code>tape_width_inches</code>, top-level <code>tape_color</code>): delete them.</li>
   <li><code>center</code> in <code>lanes</code>: delete it.</li>
 </ul>
+<p><code>TRACK_CONTINUOUS</code>, <code>TRACK_LAP_LENGTH_INCHES</code> and <code>TRACK_LANES_INCHES</code> in an old <code>config.py</code> or <code>myconfig.py</code> once described the track when there was no <code>track.yml</code>. They are ignored now: move their values into <code>track.yml</code> and delete them. The <code>TRACK_SEGMENT_*</code> constants are ignored too.</p>
 
 <h3>4. Calibrate the camera</h3>
 <p>A lane offset in inches only works once the car knows how many pixels an inch is worth. Print <code>assets/checkerboard/calibration-checkerboard-9x6-1in-letter.pdf</code> at <strong>100% / actual size</strong>, check that 10 squares measure 10 inches, and mount it flat on something rigid.</p>
@@ -286,6 +294,7 @@ cv_control:                        # required: what the CV autopilot needs
   <tbody>
     <tr><td><code>--car PATH</code></td><td>current directory</td><td>Car directory holding <code>config.py</code>, <code>myconfig.py</code>, <code>manage.py</code>, <code>track.yml</code></td></tr>
     <tr><td><code>--myconfig FILE</code></td><td><code>myconfig.py</code></td><td>Alternative myconfig file</td></tr>
+    <tr><td><code>--track FILE</code></td><td><code>track.yml</code></td><td>Track file to use; a relative path is taken from the car directory. <code>manage.py drive --mcp</code> takes it as <code>--track=FILE</code></td></tr>
     <tr><td><code>--host ADDR</code></td><td><code>MCP_SERVER_HOST</code></td><td>Address to bind</td></tr>
     <tr><td><code>--port N</code></td><td><code>MCP_SERVER_PORT</code></td><td>Port to bind</td></tr>
     <tr><td><code>--js</code></td><td>off</td><td>Also use a physical joystick</td></tr>
