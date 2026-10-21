@@ -314,7 +314,7 @@ donkey mcp --car ~/mycar --track track-office.yml</code></pre>
     <tr><td><code>MCP_COMMAND_TIMEOUT_S</code></td><td><code>2.0</code></td><td>Seconds without a command before the throttle is zeroed</td></tr>
     <tr><td><code>MCP_SERVER_TOKEN</code></td><td><code>None</code></td><td>Shared secret. When set, every request must send <code>Authorization: Bearer &lt;token&gt;</code>. Set it before the server is reachable from the network. Needs a restart to change</td></tr>
     <tr><td><code>MCP_SERVER_ALLOWED_HOSTS</code></td><td><code>[]</code></td><td>Extra names or addresses clients use to reach the car. Loopback, the machine's hostname and the bind address are always allowed. Needs a restart to change</td></tr>
-    <tr><td><code>CV_PIXELS_PER_INCH</code></td><td>unset</td><td>Manual scale, if you skip <code>calibrate-cv</code> (lane offsets only)</td></tr>
+    <tr><td><code>CV_PIXELS_PER_INCH</code></td><td>unset</td><td>Manual scale, if you skip <code>calibrate-cv</code> (lane offsets only). Ignored when <code>cv_calibration.json</code> exists. About 3.43 for a standard 1/16 scale car (PiCamera, 320x240, <code>SCAN_Y = 100</code>)</td></tr>
   </tbody>
 </table></div>
 
@@ -375,7 +375,7 @@ donkey mcp --car ~/mycar --track track-office.yml</code></pre>
     <tr><td><code>stop</code></td><td>none</td><td><code>result</code> (<code>stopped</code>, <code>not running</code>, <code>stop timed out</code>) and <code>running</code>. Zeroes throttle first.</td></tr>
     <tr><td><code>emergency_stop</code></td><td>none</td><td><code>throttle</code> (0) and <code>armed</code>. Zeroes throttle without stopping the loop.</td></tr>
     <tr><td><code>measure_ground_point</code></td><td><code>pixel_x</code>, <code>pixel_y</code></td><td><code>lateral_inches</code> (+ right) and <code>forward_inches</code> (+ away from the car). Needs a checkerboard calibration.</td></tr>
-    <tr><td><code>cv_control-get_calibration</code></td><td>none</td><td>Pixels per inch, homography, the settings captured under, <code>stale</code> + <code>stale_reasons</code>, <code>can_measure_points</code>.</td></tr>
+    <tr><td><code>cv_control-get_calibration</code></td><td>none</td><td>Pixels per inch, homography, the settings captured under, <code>stale</code> + <code>stale_reasons</code>, <code>can_measure_points</code>, and <code>loaded_from</code>: the calibration file's path, or <code>CV_PIXELS_PER_INCH</code> when there is no file.</td></tr>
   </tbody>
 </table></div>
 

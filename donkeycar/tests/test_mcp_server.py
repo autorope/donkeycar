@@ -824,9 +824,18 @@ def test_manual_calibration_converts_lanes_but_cannot_measure(tmp_path):
     payload = bridge.calibration()
     assert payload["calibrated"] is True
     assert payload["source"] == "config"
+    assert payload["loaded_from"] == "CV_PIXELS_PER_INCH in config.py / myconfig.py"
     assert payload["can_measure_points"] is False
     with pytest.raises(ValueError, match="no homography"):
         bridge.measure_ground_point(10, 10)
+
+
+def test_calibration_file_says_where_it_was_read_from(tmp_path):
+    """A file beats CV_PIXELS_PER_INCH, so the payload must say which one is in use."""
+    _write_calibration(tmp_path)
+    payload = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path)).calibration()
+    assert payload["loaded_from"] == str(tmp_path / "cv_calibration.json")
+    assert payload["pixels_per_inch"] != Cfg.CV_PIXELS_PER_INCH
 
 
 def test_board_calibration_enables_ground_measurement(tmp_path):

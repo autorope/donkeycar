@@ -241,6 +241,8 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         """
         Pixels-per-inch and the ground homography, with the settings they were
         captured under so you can tell whether they are still valid.
+        `loaded_from` says where the values came from: the calibration file's
+        path, or the CV_PIXELS_PER_INCH config setting when there is no file.
         """
         return bridge.calibration()
 

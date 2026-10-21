@@ -647,6 +647,11 @@ MCP_SERVER_ALLOWED_HOSTS = []   # extra names or addresses clients use to reach 
 #
 # CV CALIBRATION
 # Pixels per inch on the ground at SCAN_Y. Run `donkey calibrate-cv` to measure
-# it, or set it by hand from a tape measure.
+# it, or set it by hand from a tape measure. Used only when the car directory
+# has no cv_calibration.json; a calibration file always wins.
+#
+# A standard 1/16 scale Donkeycar (PiCamera at 320x240, SCAN_Y = 100) measures
+# about 3.43, which is a good starting point for a car built to the standard
+# design.
 #
 CV_PIXELS_PER_INCH = None

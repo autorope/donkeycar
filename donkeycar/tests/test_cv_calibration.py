@@ -6,6 +6,8 @@ with no camera and no printed target while still exercising the real detector
 and the real homography solve.
 """
 
+import json
+
 import cv2
 import numpy as np
 import pytest
@@ -328,6 +330,18 @@ def test_saves_and_loads(tmp_path):
     assert loaded.source == "chessboard"
     assert loaded.homography is not None
     assert loaded.image_to_ground(160, 120) == pytest.approx(original.image_to_ground(160, 120))
+
+
+def test_where_it_was_loaded_from_is_reported_but_not_saved(tmp_path):
+    path = tmp_path / "cv_calibration.json"
+    calibrate_from_image(camera_view(), Cfg(), (COLS, ROWS), SQUARE_INCHES).save(str(path))
+    assert "loaded_from" not in json.loads(path.read_text())
+
+    loaded = Calibration.load(str(path))
+    assert loaded.loaded_from == str(path)
+    # Saving what was loaded must not write the path into the file either
+    loaded.save(str(path))
+    assert "loaded_from" not in json.loads(path.read_text())
 
 
 def test_load_rejects_unknown_fields(tmp_path):

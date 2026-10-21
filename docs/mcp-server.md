@@ -280,6 +280,11 @@ If your config still has a value near 0.0015, the gate stays effectively open an
 you keep the behaviour you had &mdash; nothing breaks on upgrade. Raise it to around
 0.15 to actually get the protection.
 
+**A calibration file always wins.** `CV_PIXELS_PER_INCH` in `myconfig.py` is used only
+when the car directory has no `cv_calibration.json`. Without a capture, a standard 1/16
+scale Donkeycar (PiCamera at 320x240, `SCAN_Y = 100`) measures about 3.43, a good
+starting value for a car built to the standard design.
+
 **Recalibrate whenever the camera moves.** The calibration records the `SCAN_Y`,
 image size and camera type it was taken with, and `cv_control-get_calibration` reports when
 those no longer match — but it cannot tell that someone knocked the camera.
@@ -420,7 +425,7 @@ colliding. No tool name otherwise contains a dash, so a name without one &mdash;
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |
 | `start` / `stop` | Begin and end driving. `start` re-reads `config.py` and `myconfig.py` first, so tuning is edit &rarr; stop &rarr; start &rarr; look, with no server restart. |
 | `emergency_stop` | Zero the throttle now, without touching the lifecycle. |
-| `cv_control-get_calibration` | Scale, homography, and whether either has gone stale. |
+| `cv_control-get_calibration` | Scale, homography, whether either has gone stale, and `loaded_from`: the calibration file's path, or `CV_PIXELS_PER_INCH` when there is no file. |
 
 `cv_control-get_vehicle_state` also reports `line_detected` and `line_confidence`. Watch
 them: a hard steering value means something entirely different depending on

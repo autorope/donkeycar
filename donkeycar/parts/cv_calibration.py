@@ -41,6 +41,8 @@ logger = logging.getLogger(__name__)
 CarConfig = Any
 
 CALIBRATION_FILENAME = "cv_calibration.json"
+#: `loaded_from` for a scale set by hand rather than read from a file
+CONFIG_SOURCE = "CV_PIXELS_PER_INCH in config.py / myconfig.py"
 
 # Inner-corner counts, not squares: a board of N x M squares has (N-1) x (M-1).
 DEFAULT_PATTERN = (9, 6)
@@ -74,6 +76,9 @@ class Calibration:
     captured_at: float = field(default_factory=time.time)
     reprojection_error_px: float | None = None
     note: str = ""
+    # Where this calibration was read from: the file's path, or the config
+    # setting it was built from. Reported, never saved.
+    loaded_from: str | None = None
 
     # ------------------------------------------------------------- persistence
 
@@ -81,8 +86,10 @@ class Calibration:
         return asdict(self)
 
     def save(self, path: str) -> None:
+        saved = self.to_dict()
+        del saved["loaded_from"]
         with open(path, "w") as handle:
-            json.dump(self.to_dict(), handle, indent=2, sort_keys=True)
+            json.dump(saved, handle, indent=2, sort_keys=True)
         logger.info("Wrote calibration to %s", path)
 
     @classmethod
@@ -95,14 +102,14 @@ class Calibration:
         except json.JSONDecodeError as exc:
             raise CalibrationError(f"{path} is not valid JSON: {exc}") from exc
 
-        known = {f for f in cls.__dataclass_fields__}
+        known = {f for f in cls.__dataclass_fields__} - {"loaded_from"}
         unknown = sorted(set(raw) - known)
         if unknown:
             raise CalibrationError(f"{path}: unknown field(s) {unknown}")
         missing = sorted({"pixels_per_inch", "scan_y", "image_w", "image_h", "camera_type", "source"} - set(raw))
         if missing:
             raise CalibrationError(f"{path}: missing required field(s) {missing}")
-        return cls(**raw)
+        return cls(**raw, loaded_from=os.path.abspath(path))
 
     # ---------------------------------------------------------------- staleness
 
@@ -413,6 +420,7 @@ def load_calibration(car_dir: str | None, cfg: CarConfig) -> Calibration | None:
             camera_type=str(getattr(cfg, "CAMERA_TYPE", "unknown")),
             source="config",
             note="Set by hand as CV_PIXELS_PER_INCH; no homography, so points cannot be measured.",
+            loaded_from=CONFIG_SOURCE,
         )
     return None
 
