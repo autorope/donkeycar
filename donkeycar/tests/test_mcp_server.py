@@ -21,7 +21,7 @@ from donkeycar.parts.mcp_server import (
     MCPBridge,
     resolve_throttle,
 )
-from donkeycar.parts.track_config import TrackConfigError
+from donkeycar.parts.track_config import TrackConfigError, parse_track
 
 # The bridge itself works without the `mcp` package -- that separation is the
 # point of splitting mcp_server from mcp_tools -- so only the tests that build a
@@ -37,12 +37,16 @@ class Cfg:
     MCP_SERVER_PORT = 8891
     MCP_COMMAND_TIMEOUT_S = 0.2
     CV_PIXELS_PER_INCH = 4.0
-    TRACK_CONTINUOUS = True
-    TRACK_LAP_LENGTH_INCHES = 480.0
-    TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"left": -12.0, "right": 12.0}
+
+
+TRACK = parse_track(
+    {"cv_control": {"continuous": True, "lap_length_inches": 480.0, "lanes": {"left": -12.0, "right": 12.0}}},
+    source="test track",
+)
 
 
 def make_bridge(**kwargs):
+    kwargs.setdefault("track", TRACK)
     return MCPBridge(Cfg(), serve=False, **kwargs)
 
 
@@ -363,29 +367,29 @@ def test_track_config_reports_geometry_and_lanes():
     assert not any("segment" in key for key in [*track, *section])
 
 
-def test_config_constant_lanes_are_validated_like_a_file(tmp_path):
-    """A track described in config.py must obey the same lane rules as track.yml."""
-
-    class OneLane(Cfg):
-        TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"right": 12.0}
-
-    with pytest.raises(TrackConfigError, match="left"):
-        MCPBridge(OneLane(), serve=False, car_dir=str(tmp_path))
-
-
-def test_retired_segment_constants_are_ignored(tmp_path, caplog):
-    """Every older car has these in its config.py copy; they must neither stop it nor warn."""
+def test_retired_track_constants_are_ignored(tmp_path, caplog):
+    """
+    Every older car has these in its config.py copy. They must neither stop it
+    nor warn, and must not be read: the track file is what describes the track.
+    """
 
     class OldCar(Cfg):
         TRACK_SEGMENT_LENGTH_INCHES = 36.0
         TRACK_CROSS_LENGTH_INCHES = 12.0
         TRACK_SEGMENT_COUNT = 8
         TRACK_TAPE_WIDTH_INCHES = 1.0
+        TRACK_CONTINUOUS = False
+        TRACK_LAP_LENGTH_INCHES = 999.0
+        TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"right": 12.0}
 
+    (tmp_path / "track.yml").write_text(
+        "cv_control:\n  continuous: true\n  lap_length_inches: 480\n  lanes: {left: -12, right: 12}\n"
+    )
     with caplog.at_level("WARNING"):
         bridge = MCPBridge(OldCar(), serve=False, car_dir=str(tmp_path))
     track = bridge.track_config()
     assert track["cv_control"]["continuous"] is True
+    assert track["cv_control"]["lap_length_inches"] == 480.0
     assert not any("segment" in key for key in [*track, *track["cv_control"]])
     assert "TRACK_" not in caplog.text
 
@@ -696,12 +700,25 @@ def test_bridge_reads_track_yml_from_the_car_directory(tmp_path):
     assert bridge.lane_offset_px_for("outside") == -36
 
 
-def test_bridge_falls_back_to_config_constants_without_a_file(tmp_path):
-    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+def test_without_a_track_file_the_default_track_is_used_with_a_warning(tmp_path, caplog):
+    """The track constants an older config.py carries are not a substitute for the file."""
+
+    class OldCar(Cfg):
+        TRACK_CONTINUOUS = True
+        TRACK_LAP_LENGTH_INCHES = 480.0
+        TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"left": -6.0, "right": 6.0}
+
+    with caplog.at_level("WARNING"):
+        bridge = MCPBridge(OldCar(), serve=False, car_dir=str(tmp_path))
     track = bridge.track_config()
-    assert sorted(track["cv_control"]["lanes"]) == ["center", "left", "right"]
-    assert track["cv_control"]["lap_length_inches"] == 480.0
+    assert track["cv_control"]["continuous"] is False
+    assert track["cv_control"]["lap_length_inches"] is None
+    assert track["cv_control"]["lanes"] == {"left": -12.0, "center": 0.0, "right": 12.0}
     assert "no track.yml" in (track["description"] or "")
+
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert str(tmp_path / "track.yml") in warnings[0].getMessage()
 
 
 def test_malformed_track_file_refuses_to_start(tmp_path):

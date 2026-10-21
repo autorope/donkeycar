@@ -30,12 +30,12 @@ import numpy as np
 from donkeycar.parts.cv_calibration import Calibration, load_calibration
 from donkeycar.parts.track_config import (
     CV_CONTROL,
+    TRACK_FILENAME,
     TrackConfig,
     TrackConfigError,
     default_track,
     find_track_file,
     load_track,
-    parse_track,
 )
 from donkeycar.utils import arr_to_binary
 
@@ -540,16 +540,17 @@ class MCPBridge:
 
     # ------------------------------------------------------------------
     # track and calibration
-    #
-    # M4 and M5 replace these with a track.yml loader and a real calibration.
-    # Until then they answer from config so the tool surface is complete.
     # ------------------------------------------------------------------
 
     def _load_track(self, car_dir: str | None) -> TrackConfig:
         """
         Prefer the --track file if one was given, else a track.yml beside the
-        car's config, then the config constants, then a default. A malformed file is an error, not a silent fallback:
-        driving a track you have mis-described is worse than not starting.
+        car's config, else a default. A malformed file is an error, not a
+        silent fallback: driving a track you have mis-described is worse than
+        not starting.
+
+        The track is described only by a file. The TRACK_* constants older
+        cars' config.py copies carry are never looked at.
         """
         car_dir = car_dir or getattr(self.cfg, "CAR_PATH", None)
         path = _resolve_track_file(self.track_file, car_dir) if self.track_file else find_track_file(car_dir)
@@ -558,22 +559,13 @@ class MCPBridge:
             logger.info("Loaded track description from %s", path)
             return track
 
-        # Only the constants the track is described by are read. Older cars'
-        # config.py copies also carry TRACK_SEGMENT_* and the like; they
-        # describe nothing now and are simply never looked at.
-        lanes = getattr(self.cfg, "TRACK_LANES_INCHES", None)
-        if isinstance(lanes, dict) and lanes:
-            raw: dict[str, Any] = {
-                "description": "Track described by config constants; no track.yml was found.",
-                CV_CONTROL: {
-                    "continuous": getattr(self.cfg, "TRACK_CONTINUOUS", False),
-                    "lanes": dict(lanes),
-                    "lap_length_inches": getattr(self.cfg, "TRACK_LAP_LENGTH_INCHES", None),
-                },
-            }
-            # Through the same validation as a file, so the lane rules hold
-            # whichever way the track was described.
-            return parse_track(raw, source="config TRACK_* constants")
+        expected = os.path.join(os.path.expanduser(car_dir), TRACK_FILENAME) if car_dir else TRACK_FILENAME
+        logger.warning(
+            "No track file at %s; the agent gets the default track, with generic left, center and right lanes. "
+            "Describe the track in %s, or choose a file with --track.",
+            expected,
+            TRACK_FILENAME,
+        )
         return default_track()
 
     def track_config(self) -> dict[str, Any]:

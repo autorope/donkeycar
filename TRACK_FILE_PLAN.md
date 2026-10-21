@@ -15,10 +15,10 @@ can be pointed at one of several track files without editing anything.
 
 ---
 
-## Progress — 1 of 3
+## Progress — 2 of 3
 
 - [x] **F1** — `--track` option on `manage.py drive` and `donkey mcp`
-- [ ] **F2** — Retire the `TRACK_*` constants; warn when falling back to the default track
+- [x] **F2** — Retire the `TRACK_*` constants; warn when falling back to the default track
 - [ ] **F3** — Docs and the published user manual
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
@@ -82,13 +82,13 @@ every commit.
 
 **Acceptance**
 
-- [ ] No `TRACK_CONTINUOUS`, `TRACK_LAP_LENGTH_INCHES` or `TRACK_LANES_INCHES` remains in
+- [x] No `TRACK_CONTINUOUS`, `TRACK_LAP_LENGTH_INCHES` or `TRACK_LANES_INCHES` remains in
       `donkeycar/` outside tests that check they are ignored.
-- [ ] A config that still sets the `TRACK_*` constants, with no track file, gets the default track
+- [x] A config that still sets the `TRACK_*` constants, with no track file, gets the default track
       and the warning: the constants are not read.
-- [ ] With no track file, a warning is logged once per load and `get_track_config` reports the
+- [x] With no track file, a warning is logged once per load and `get_track_config` reports the
       default track.
-- [ ] A malformed `track.yml` still refuses to start.
+- [x] A malformed `track.yml` still refuses to start.
 
 ## F3 — Docs
 

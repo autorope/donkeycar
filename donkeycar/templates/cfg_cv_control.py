@@ -645,21 +645,6 @@ MCP_SERVER_ALLOWED_HOSTS = []   # extra names or addresses clients use to reach 
                                 # localhost, this machine's hostname and the bind address are always allowed
 
 #
-# TRACK
-# Used only when the car directory has no track.yml, which is the better place
-# to describe the track. Distances are nominal: the track's width varies along
-# the course, and the agent can measure it from the camera frame. Traffic
-# features (stop signs, addresses) are not listed here: the agent discovers
-# those visually.
-#
-TRACK_CONTINUOUS = False            # True for a loop, False for a track that dead-ends
-TRACK_LAP_LENGTH_INCHES = None      # measured length of one lap along the centreline, or None
-TRACK_LANES_INCHES = {              # must name left (< 0) and right (> 0); center is always 0
-    "left": -12.0,
-    "right": 12.0,
-}
-
-#
 # CV CALIBRATION
 # Pixels per inch on the ground at SCAN_Y. Run `donkey calibrate-cv` to measure
 # it, or set it by hand from a tape measure.

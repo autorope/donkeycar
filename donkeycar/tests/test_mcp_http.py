@@ -27,8 +27,6 @@ pytestmark = requires_mcp
 class Cfg:
     MCP_COMMAND_TIMEOUT_S = 2.0
     CV_PIXELS_PER_INCH = 4.0
-    TRACK_CONTINUOUS = True
-    TRACK_LANES_INCHES: ClassVar[dict[str, float]] = {"left": -12.0, "right": 12.0}
     MCP_SERVER_ALLOWED_HOSTS: ClassVar[list[str]] = []
     MCP_SERVER_TOKEN = None
 
