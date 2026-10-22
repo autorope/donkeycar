@@ -16,10 +16,10 @@ capture. Without a camera calibration, both new tools answer "unknown".
 
 ---
 
-## Progress — 1 of 7
+## Progress — 2 of 7
 
 - [x] **O1** — Camera intrinsics: model, solver and `camera_intrinsics.json`
-- [ ] **O2** — `donkey calibrate-cv --intrinsics`: capture page and headless `--from-images`
+- [x] **O2** — `donkey calibrate-cv --intrinsics`: capture page and headless `--from-images`
 - [ ] **O3** — Bridge loads the intrinsics; `get_calibration` reports them
 - [ ] **O4** — `measure_object_distance` tool
 - [ ] **O5** — `estimate_speed_from_object` tool
@@ -94,16 +94,16 @@ All settled with Ed on 2026-10-22, before O1 started.
 
 **Acceptance**
 
-- [ ] `--from-images` on synthetic board images writes a file that loads.
-- [ ] Add view with no board visible is refused and adds nothing.
-- [ ] Solve before 12 views is refused, saying how many more are needed.
-- [ ] The default ground capture still writes only `cv_calibration.json`.
-- [ ] Every view added is saved as a PNG in a new timestamped folder under
+- [x] `--from-images` on synthetic board images writes a file that loads.
+- [x] Add view with no board visible is refused and adds nothing.
+- [x] Solve before 12 views is refused, saying how many more are needed.
+- [x] The default ground capture still writes only `cv_calibration.json`.
+- [x] Every view added is saved as a PNG in a new timestamped folder under
       `camera_calibration_views/`, including views the solve rejects.
-- [ ] `views.json` lists every view with whether it was used and its reprojection error, and is
+- [x] `views.json` lists every view with whether it was used and its reprojection error, and is
       written for a refused solve as well as a successful one.
-- [ ] A second capture writes a second folder and leaves the first untouched.
-- [ ] `--from-images` pointed at a saved folder reproduces that capture's focal length and
+- [x] A second capture writes a second folder and leaves the first untouched.
+- [x] `--from-images` pointed at a saved folder reproduces that capture's focal length and
       RMS error.
 
 ## O3 — Bridge and `get_calibration`

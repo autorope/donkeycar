@@ -58,6 +58,18 @@ DISTORTION_COEFFICIENTS = 5
 _REQUIRED = {"fx", "fy", "cx", "cy", "distortion", "image_w", "image_h", "camera_type"}
 
 
+class IntrinsicsRefused(CalibrationError):
+    """
+    A capture solve_intrinsics will not accept. `view_errors` carries each
+    view's error when the solve got far enough to measure them, so a refused
+    capture can still be recorded view by view.
+    """
+
+    def __init__(self, message: str, view_errors: list[float] | None = None) -> None:
+        super().__init__(message)
+        self.view_errors = view_errors
+
+
 @dataclass
 class CameraIntrinsics:
     """
@@ -209,10 +221,10 @@ def solve_intrinsics(
     Returns the intrinsics and each view's RMS reprojection error in pixels, in
     the order given, so a capture can say which views fit badly. Refuses, with
     the reason, too few views, a frame quadrant no view reaches, or an overall
-    error above MAX_RMS_PX.
+    error above MAX_RMS_PX; the last carries the view errors too.
     """
     if len(corner_sets) < MIN_VIEWS:
-        raise CalibrationError(
+        raise IntrinsicsRefused(
             f"{len(corner_sets)} view(s) collected; at least {MIN_VIEWS} are needed, "
             f"so add {MIN_VIEWS - len(corner_sets)} more, tilting the board a different way each time."
         )
@@ -220,13 +232,13 @@ def solve_intrinsics(
     expected = pattern[0] * pattern[1]
     for index, corners in enumerate(corner_sets):
         if len(corners) != expected:
-            raise CalibrationError(
+            raise IntrinsicsRefused(
                 f"View {index + 1} has {len(corners)} corners; a {pattern[0]}x{pattern[1]} board has {expected}."
             )
 
     empty = missing_quadrants(corner_sets, image_w, image_h)
     if empty:
-        raise CalibrationError(
+        raise IntrinsicsRefused(
             f"No view reaches the {', '.join(empty)} of the frame. Add views with the board there: "
             "distortion is strongest near the corners, and an uncovered one is left unconstrained."
         )
@@ -246,9 +258,10 @@ def solve_intrinsics(
 
     if rms > MAX_RMS_PX:
         worst = int(np.argmax(view_errors))
-        raise CalibrationError(
+        raise IntrinsicsRefused(
             f"RMS reprojection error {rms:.2f} px is over {MAX_RMS_PX} px. The worst view is "
-            f"{worst + 1} ({view_errors[worst]:.2f} px): a blurred or moving board is the usual cause."
+            f"{worst + 1} ({view_errors[worst]:.2f} px): a blurred or moving board is the usual cause.",
+            view_errors,
         )
 
     intrinsics = CameraIntrinsics(
