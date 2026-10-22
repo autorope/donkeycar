@@ -29,6 +29,7 @@ import numpy as np
 
 from donkeycar.parts.camera_intrinsics import CameraIntrinsics, load_intrinsics
 from donkeycar.parts.cv_calibration import Calibration, load_calibration
+from donkeycar.parts.object_distance import check_sizes, measure_object, parse_box, unknown
 from donkeycar.parts.track_config import (
     CV_CONTROL,
     TRACK_FILENAME,
@@ -713,6 +714,41 @@ class MCPBridge:
                 "assumes no lens distortion."
             ),
         }
+
+    def _intrinsics_problem(self) -> str | None:
+        """Why the camera calibration cannot be used, or None when it can."""
+        if self.intrinsics is None:
+            return (
+                "No camera calibration, so distance from an object's size is unknown. Run "
+                "`donkey calibrate-cv --intrinsics`, or use measure_ground_point at the object's base."
+            )
+        stale = self.intrinsics.stale_reasons(self.cfg)
+        if stale:
+            return (
+                f"The camera calibration no longer matches the config ({'; '.join(stale)}), so distance "
+                "from an object's size is unknown. Re-run `donkey calibrate-cv --intrinsics`."
+            )
+        return None
+
+    def measure_object_distance(
+        self,
+        box: object,
+        width_inches: float | None = None,
+        height_inches: float | None = None,
+    ) -> dict[str, Any]:
+        """
+        How far away an object of known size is, from its bounding box.
+
+        A malformed request is refused whatever the calibration; a well-formed
+        one without a usable camera calibration is answered "unknown", which an
+        agent can act on by falling back to measure_ground_point.
+        """
+        parsed = parse_box(box)
+        check_sizes(width_inches, height_inches)
+        problem = self._intrinsics_problem()
+        if problem is not None or self.intrinsics is None:
+            return unknown(problem or "")
+        return measure_object(parsed, self.intrinsics, width_inches, height_inches, ground=self.calibration_data)
 
 
 class _BridgeArming:

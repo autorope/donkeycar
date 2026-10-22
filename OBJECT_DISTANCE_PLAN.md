@@ -16,12 +16,12 @@ capture. Without a camera calibration, both new tools answer "unknown".
 
 ---
 
-## Progress — 3 of 7
+## Progress — 4 of 7
 
 - [x] **O1** — Camera intrinsics: model, solver and `camera_intrinsics.json`
 - [x] **O2** — `donkey calibrate-cv --intrinsics`: capture page and headless `--from-images`
 - [x] **O3** — Bridge loads the intrinsics; `get_calibration` reports them
-- [ ] **O4** — `measure_object_distance` tool
+- [x] **O4** — `measure_object_distance` tool
 - [ ] **O5** — `estimate_speed_from_object` tool
 - [ ] **O6** — Docs, the published user manual, and the agent instructions
 - [ ] **O7** — Record the hardware check on the car
@@ -129,10 +129,15 @@ All settled with Ed on 2026-10-22, before O1 started.
 
 - Input: `box` (`x_min`, `y_min`, `x_max`, `y_max` in pixels of the camera frame) and
   `width_inches` and/or `height_inches` (D7).
-- Method: undistort the box corners, take depth along the optical axis from each known size,
-  and turn depth into `range_inches` through the box centre's direction. With a ground
-  calibration too, the camera's height and tilt come from the homography and the intrinsics, and
-  give `forward_inches` / `lateral_inches` (D8).
+- Method: undistort the midpoints of the box's edges into rays, and take the range at which the
+  known size subtends the angle between opposite rays. With both sizes, the two ranges are
+  combined weighted by their uncertainty. With a ground calibration too, the camera's height and
+  tilt come from the homography and the intrinsics (`solvePnP` on floor points the homography
+  knows), and give `forward_inches` / `lateral_inches` (D8).
+- *Changed while building O4:* the plan first said "depth along the optical axis", a span on the
+  image plane. Prototyping showed that is off by up to 6% for an upright sign when the camera is
+  pitched 20° down, because the image plane is tilted and the sign is not. The angle between rays
+  does not depend on the pitch, so it is used instead.
 - Output: `known`, `range_inches`, `range_from_width_inches`, `range_from_height_inches`, their
   disagreement as a fraction, `range_uncertainty_inches` (D12), the floor position when
   available, and a note: the object should be upright and roughly facing the camera, the box
@@ -141,13 +146,16 @@ All settled with Ed on 2026-10-22, before O1 started.
 
 **Acceptance**
 
-- [ ] A synthetic object of known size rendered at 24, 60 and 120 inches through a known camera
-      measures within 3%, with and without distortion.
-- [ ] Width-only, height-only and both give consistent answers; both report the disagreement.
-- [ ] Neither size given is refused, naming the two fields.
-- [ ] A box outside the frame, or with zero width or height, is refused.
-- [ ] No intrinsics: `known: false`, values `null`, the reason names `calibrate-cv --intrinsics`.
-- [ ] With a ground calibration as well, the floor position agrees with `measure_ground_point`
+- [x] A synthetic object of known size rendered at 24, 60 and 120 inches through a known camera
+      measures within 3%, with and without distortion. *Changed while building O4:* within 3% at
+      60 and 120 inches, and **5% at 24 inches**, for a sign turned toward a camera pitched 10°
+      down, centred or 6 inches to the side. Close up, an axis-aligned box cannot say which row of
+      the tilted sign set its width; at 24 inches the width estimate is off by up to 4%.
+- [x] Width-only, height-only and both give consistent answers; both report the disagreement.
+- [x] Neither size given is refused, naming the two fields.
+- [x] A box outside the frame, or with zero width or height, is refused.
+- [x] No intrinsics: `known: false`, values `null`, the reason names `calibrate-cv --intrinsics`.
+- [x] With a ground calibration as well, the floor position agrees with `measure_ground_point`
       at the object's base within 5%.
 
 ## O5 — `estimate_speed_from_object`

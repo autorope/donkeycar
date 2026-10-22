@@ -419,6 +419,7 @@ def test_build_server_registers_the_tool_surface():
         "cv_control-get_calibration",
         "get_autopilot",
         "cv_control-get_autopilot_config",
+        "measure_object_distance",
     }
     assert expected <= names, expected - names
 
@@ -482,6 +483,7 @@ def test_client_sees_the_whole_tool_surface():
         "cv_control-get_calibration",
         "get_autopilot",
         "cv_control-get_autopilot_config",
+        "measure_object_distance",
     } <= names
 
 
@@ -1256,3 +1258,63 @@ def test_the_bridge_binds_the_configured_host():
 
     assert MCPBridge(OnTheLan(), serve=False).host == "192.168.1.42"
     assert MCPBridge(Cfg(), serve=False).host == "127.0.0.1"
+
+
+# ----------------------------------------------------- object distance
+
+
+A_BOX = {"x_min": 140.0, "y_min": 90.0, "x_max": 180.0, "y_max": 130.0}
+
+
+def test_object_distance_is_unknown_without_a_camera_calibration(tmp_path):
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    answer = bridge.measure_object_distance(A_BOX, height_inches=6.0)
+    assert answer["known"] is False and answer["range_inches"] is None
+    assert "calibrate-cv --intrinsics" in answer["reason"]
+    assert "measure_ground_point" in answer["reason"]
+
+
+def test_object_distance_is_unknown_with_a_stale_camera_calibration(tmp_path):
+    class Wider(Cfg):
+        IMAGE_W = 640
+
+    _write_intrinsics(tmp_path)
+    answer = MCPBridge(Wider(), serve=False, car_dir=str(tmp_path)).measure_object_distance(A_BOX, height_inches=6.0)
+    assert answer["known"] is False
+    assert "image_w was 320" in answer["reason"]
+
+
+def test_a_malformed_request_is_refused_even_without_a_camera_calibration(tmp_path):
+    """Unknown is an answer to a good question, not a cover for a bad one."""
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    with pytest.raises(ValueError, match="width_inches, height_inches, or both"):
+        bridge.measure_object_distance(A_BOX)
+    with pytest.raises(ValueError, match="missing y_max"):
+        bridge.measure_object_distance({"x_min": 1, "y_min": 1, "x_max": 5}, height_inches=6.0)
+
+
+def test_object_distance_with_a_camera_calibration(tmp_path):
+    _write_intrinsics(tmp_path)
+    answer = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path)).measure_object_distance(A_BOX, height_inches=6.0)
+    assert answer["known"] is True
+    # 40 px tall through a 230 px lens with this distortion: roughly 35 inches
+    assert 25 < answer["range_inches"] < 45
+    assert answer["range_uncertainty_inches"] > 0
+
+
+@requires_mcp
+def test_object_distance_through_the_client(tmp_path):
+    _write_intrinsics(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    result = _call(bridge.build_server(), "measure_object_distance", {"box": A_BOX, "height_inches": 6.0})
+    assert result.is_error is not True
+    payload = json.loads(_text(result))
+    assert payload["known"] is True and payload["range_inches"] > 0
+
+
+@requires_mcp
+def test_object_distance_refusals_reach_the_agent(tmp_path):
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    result = _call(bridge.build_server(), "measure_object_distance", {"box": A_BOX})
+    assert result.is_error is True
+    assert "width_inches, height_inches, or both" in _text(result)

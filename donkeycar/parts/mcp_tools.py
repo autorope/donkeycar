@@ -236,6 +236,30 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         with _agent_facing_errors():
             return bridge.measure_ground_point(pixel_x, pixel_y)
 
+    @server.tool()
+    def measure_object_distance(
+        box: dict[str, float],
+        width_inches: float | None = None,
+        height_inches: float | None = None,
+    ) -> dict[str, Any]:
+        """
+        How far away an object of known size is: a stop sign, a cone, a card.
+
+        `box` is the object's bounding box in pixels of the camera frame, as
+        {x_min, y_min, x_max, y_max}; draw it tight. Give the object's real
+        `width_inches`, `height_inches`, or both -- both is better, because
+        their `size_disagreement` shows when the box is poor.
+
+        Returns `range_inches`, the straight-line distance from the camera to
+        the object, with `range_uncertainty_inches`. With a floor calibration
+        too, `forward_inches` and `lateral_inches` say where on the floor the
+        object stands. Needs the camera calibration; without it `known` is
+        false and `reason` says what to do -- measure_ground_point at the
+        object's base is the fallback.
+        """
+        with _agent_facing_errors():
+            return bridge.measure_object_distance(box, width_inches, height_inches)
+
     @server.tool(name=CV_TOOL_PREFIX + "get_calibration")
     def get_calibration() -> dict[str, Any]:
         """
