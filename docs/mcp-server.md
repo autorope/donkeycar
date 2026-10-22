@@ -220,6 +220,48 @@ donkey calibrate-cv --car ~/mycar --tape-separation-inches 10
 That gives the scale but no homography, so lane changes work and distance
 measurement does not.
 
+### Calibrating the camera itself (optional)
+
+Everything above calibrates the **floor**: how pixels map to the ground in front of the
+car. That is all lane changes and `measure_ground_point` need. Measuring an object by its
+known size &mdash; "this stop sign is 6 inches tall and 40 pixels high, so it is about 35
+inches away" &mdash; also needs the camera's focal length and lens distortion, which the
+floor calibration cannot supply: on one car, the two ways of recovering a focal length from
+the floor homography disagreed by 40%. So there is a second, optional calibration. Without
+it, `measure_object_distance` and `estimate_speed_from_object` answer `known: false`.
+
+```
+donkey calibrate-cv --car ~/mycar --intrinsics
+```
+
+Open `http://localhost:8892`. This time **hold the board up** in front of the camera,
+the opposite of the floor capture:
+
+1. Hold it still until the corners turn green, then press **Add view**.
+2. Move or tilt it and add another. Tilt it left, right, up and down, near and far, and
+   put it in every part of the frame, **corners included**: the lens bends most at the
+   corners, and the grid on the page shows which quadrants have no views yet.
+3. After at least 12 views (15&ndash;20 is better), press **Solve**. It writes
+   `camera_intrinsics.json` beside your config and shows the focal length and RMS error.
+
+A good capture at 320&times;240 lands well under 0.5 px RMS. Solve refuses, saying what to
+fix, with fewer than 12 views, an empty quadrant, or more than 1 px RMS &mdash; usually a
+blurred or moving board.
+
+**Every view is kept.** Each capture writes its frames to
+`camera_calibration_views/<date-time>/view_NN.png` in the car directory, with a `views.json`
+recording each view's error and the outcome, refused or not. Nothing deletes old folders. To
+solve again from a saved folder, on the car or a laptop, with no camera:
+
+```
+donkey calibrate-cv --car ~/mycar --from-images ~/mycar/camera_calibration_views/2026-10-22T14-05-00
+```
+
+**When to redo it.** This calibration describes the camera, lens and resolution, not how the
+camera is mounted, so re-mounting needs only the floor calibration. Redo it after changing
+`IMAGE_W`, `IMAGE_H` or `CAMERA_TYPE` (`cv_control-get_calibration` then reports the camera
+section `stale`), or after swapping the camera or lens, which it cannot detect.
+
 ### Tuning the line colour
 
 The follower finds the tape by thresholding hue, saturation and value, and the
@@ -413,7 +455,8 @@ those needs a real restart, and the server logs a warning saying so. Pass
 Tools that only make sense for the computer-vision autopilot start with `cv_control-`, the
 name `get_autopilot` returns, and a dash. A future autopilot adds its own prefixed tools without
 colliding. No tool name otherwise contains a dash, so a name without one &mdash; `get_autopilot`,
-`start`, `stop`, `emergency_stop`, `measure_ground_point` &mdash; applies to any autopilot.
+`start`, `stop`, `emergency_stop`, `measure_ground_point`, `measure_object_distance`,
+`estimate_speed_from_object` &mdash; applies to any autopilot.
 
 | Tool | What it does |
 | --- | --- |
@@ -423,9 +466,11 @@ colliding. No tool name otherwise contains a dash, so a name without one &mdash;
 | `cv_control-get_vehicle_state` | Camera frame plus throttle, steering, lane, mode. `live` says whether the vehicle loop is still writing; when it is false the car-derived fields are null and there is no frame, so a stopped car cannot look like a running one. `loop_count` rises every loop. |
 | `cv_control-set_control` | Set throttle and/or lane. Give `lane` by name, or `lane_offset_inches` for finer control. |
 | `measure_ground_point` | Turn a pixel into a position on the ground, in inches. This is how you know when to brake. |
+| `measure_object_distance` | The range to an object of known size from its bounding box: `box` (`x_min`, `y_min`, `x_max`, `y_max` in pixels) and `width_inches` and/or `height_inches`. Returns `range_inches` with `range_uncertainty_inches`, each size's own estimate and their `size_disagreement`, and with a floor calibration `forward_inches` / `lateral_inches`. Needs the camera calibration, else `known: false`. |
+| `estimate_speed_from_object` | The car's closing speed on a stationary object of known size, from two or more `observations`, each `{timestamp, box}` with the `timestamp` `cv_control-get_vehicle_state` returned. Returns `closing_speed_inches_per_s` (positive is closer) with its uncertainty and a `warning` when the frames are under 0.5 s apart or the answer is too rough to use. Needs the camera calibration, else `known: false`. |
 | `start` / `stop` | Begin and end driving. `start` re-reads `config.py` and `myconfig.py` first, so tuning is edit &rarr; stop &rarr; start &rarr; look, with no server restart. |
 | `emergency_stop` | Zero the throttle now, without touching the lifecycle. |
-| `cv_control-get_calibration` | Scale, homography, whether either has gone stale, and `loaded_from`: the calibration file's path, or `CV_PIXELS_PER_INCH` when there is no file. |
+| `cv_control-get_calibration` | Scale, homography, whether either has gone stale, and `loaded_from`: the calibration file's path, or `CV_PIXELS_PER_INCH` when there is no file. A `camera` section carries the optional camera calibration, or `calibrated: false`. |
 
 `cv_control-get_vehicle_state` also reports `line_detected` and `line_confidence`. Watch
 them: a hard steering value means something entirely different depending on
@@ -434,6 +479,20 @@ lock it last held look identical otherwise &mdash; on a real track that differen
 put a car off the course. When the line is lost the payload carries a `warning`
 and the follower decays steering back toward centre, but it keeps moving until
 you set the throttle to 0.
+
+### Measuring an object of known size
+
+`measure_object_distance` assumes the object is upright and turned roughly toward the
+camera, and that the box is tight. Give both sizes when you know them: a large
+`size_disagreement` means the box is loose or the size is wrong. On synthetic tests with a
+camera pitched 10&deg; down it is within 3% at 5 and 10 feet and 5% at 2 feet, before any
+error in the box itself. `range_uncertainty_inches` assumes each box edge is within 1 pixel;
+a box drawn by a language model is often rougher, so widen it accordingly.
+
+For speed, more frames further apart beat two close together. Frames 0.1 s apart move the car
+about as far as the box wobbles, and box noise then inflates the speed and its uncertainty
+together &mdash; which is why anything under half a second carries a `warning` whatever the
+numbers say.
 
 ### Throttle is a ceiling, not a command
 

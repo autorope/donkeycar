@@ -111,7 +111,7 @@
 
 <header>
   <h1>Donkeycar CV Autopilot MCP Server — User Manual</h1>
-  <p class="byline">As of October 21, 2026</p>
+  <p class="byline">As of October 22, 2026</p>
 </header>
 
 <nav class="toc">
@@ -273,6 +273,15 @@ donkey mcp --car ~/mycar --track track-office.yml</code></pre>
   <li>Centre lane only: no calibration needed, because zero inches is zero pixels.</li>
   <li>Recalibrate whenever the camera moves.</li>
 </ul>
+<p><strong>Optional: calibrate the camera itself.</strong> The floor calibration above is all lane changes and <code>measure_ground_point</code> need. Measuring an object by its known size also needs the camera's focal length and lens distortion; without this calibration, <code>measure_object_distance</code> and <code>estimate_speed_from_object</code> answer <code>known: false</code>.</p>
+<pre><code>donkey calibrate-cv --car ~/mycar --intrinsics</code></pre>
+<p>Open <code>http://localhost:8892</code> and <strong>hold the board up</strong> in front of the camera, not flat on the floor. Press <strong>Add view</strong> when the corners turn green, then move or tilt it and add another: tilted every way, near and far, in every part of the frame, corners included. After at least 12 views (15&ndash;20 is better), press <strong>Solve</strong>; it writes <code>camera_intrinsics.json</code>.</p>
+<ul>
+  <li>A good capture is well under 0.5 px RMS. Solve refuses, saying what to fix, with fewer than 12 views, an empty quadrant of the frame, or over 1 px RMS.</li>
+  <li>Every view is kept in <code>camera_calibration_views/&lt;date-time&gt;/</code> in the car directory, with a <code>views.json</code> recording each view's error. Nothing deletes old folders.</li>
+  <li>Re-solve from a saved folder, with no camera: <code>donkey calibrate-cv --car ~/mycar --from-images &lt;folder&gt;</code>.</li>
+  <li>Re-mounting the camera needs only the floor calibration. Redo this one after changing <code>IMAGE_W</code>, <code>IMAGE_H</code> or <code>CAMERA_TYPE</code>, or swapping the camera or lens.</li>
+</ul>
 <p>To tune the tape colour for your lighting, run <code>donkey calibrate-color --images "~/frames/*.jpg" --compare</code> on a few saved frames and watch the <strong>concentration</strong> figure.</p>
 
 <!-- ============================================================ -->
@@ -375,7 +384,9 @@ donkey mcp --car ~/mycar --track track-office.yml</code></pre>
     <tr><td><code>stop</code></td><td>none</td><td><code>result</code> (<code>stopped</code>, <code>not running</code>, <code>stop timed out</code>) and <code>running</code>. Zeroes throttle first.</td></tr>
     <tr><td><code>emergency_stop</code></td><td>none</td><td><code>throttle</code> (0) and <code>armed</code>. Zeroes throttle without stopping the loop.</td></tr>
     <tr><td><code>measure_ground_point</code></td><td><code>pixel_x</code>, <code>pixel_y</code></td><td><code>lateral_inches</code> (+ right) and <code>forward_inches</code> (+ away from the car). Needs a checkerboard calibration.</td></tr>
-    <tr><td><code>cv_control-get_calibration</code></td><td>none</td><td>Pixels per inch, homography, the settings captured under, <code>stale</code> + <code>stale_reasons</code>, <code>can_measure_points</code>, and <code>loaded_from</code>: the calibration file's path, or <code>CV_PIXELS_PER_INCH</code> when there is no file.</td></tr>
+    <tr><td><code>measure_object_distance</code></td><td><code>box</code> (<code>x_min</code>, <code>y_min</code>, <code>x_max</code>, <code>y_max</code>, pixels), <code>width_inches</code> and/or <code>height_inches</code></td><td><code>known</code>, <code>range_inches</code> and <code>range_uncertainty_inches</code>, each size's own range and their <code>size_disagreement</code>, and with a floor calibration <code>forward_inches</code> / <code>lateral_inches</code>. Needs the camera calibration; otherwise <code>known: false</code> and a <code>reason</code>.</td></tr>
+    <tr><td><code>estimate_speed_from_object</code></td><td><code>observations</code>: two or more <code>{timestamp, box}</code>, with the <code>timestamp</code> from <code>cv_control-get_vehicle_state</code>; <code>width_inches</code> and/or <code>height_inches</code></td><td><code>known</code>, <code>closing_speed_inches_per_s</code> (+ is closer) and its uncertainty, <code>span_s</code>, each frame's range, and a <code>warning</code> when the frames span under 0.5 s or the speed is known only to within half of itself. Needs the camera calibration.</td></tr>
+    <tr><td><code>cv_control-get_calibration</code></td><td>none</td><td>Pixels per inch, homography, the settings captured under, <code>stale</code> + <code>stale_reasons</code>, <code>can_measure_points</code>, and <code>loaded_from</code>: the calibration file's path, or <code>CV_PIXELS_PER_INCH</code> when there is no file. A <code>camera</code> section carries the optional camera calibration, or <code>calibrated: false</code>.</td></tr>
   </tbody>
 </table></div>
 
@@ -440,12 +451,13 @@ cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
 
 <h3>Stopping for something in the image</h3>
 <ol>
-  <li>Spot the sign or obstacle in the frame from <code>cv_control-get_vehicle_state</code>.</li>
-  <li>Call <code>measure_ground_point</code> on the pixel where it meets the floor (its base, not its middle) to get <code>forward_inches</code>.</li>
+  <li>Spot the sign or obstacle in the frame from <code>cv_control-get_vehicle_state</code>, and note that call's <code>timestamp</code>.</li>
+  <li>If you know its size, call <code>measure_object_distance</code> with a tight box round it. If that answers <code>known: false</code>, call <code>measure_ground_point</code> on the pixel where it meets the floor (its base, not its middle) to get <code>forward_inches</code>.</li>
+  <li>For speed, box it again in a frame at least half a second later and call <code>estimate_speed_from_object</code> with both <code>{timestamp, box}</code> pairs.</li>
   <li>Lower the throttle as distance falls, then <code>cv_control-set_control(throttle=0)</code> at your stopping distance.</li>
   <li>Keep sending <code>throttle=0</code> while waiting, then resume with a positive value.</li>
 </ol>
-<p>Accuracy drops toward the frame edges, since one homography assumes no lens distortion.</p>
+<p>Accuracy drops toward the frame edges for both tools. <code>measure_object_distance</code> assumes the object is upright and turned roughly toward the camera, and its uncertainty assumes each box edge is within 1 pixel; widen it for a rougher box.</p>
 
 <h3>Tuning loop</h3>
 <p>Edit <code>myconfig.py</code> → <code>stop</code> → <code>start</code> → <code>cv_control-get_vehicle_state</code>. Useful knobs: <code>COLOR_THRESHOLD_LOW/HIGH</code>, <code>CONFIDENCE_THRESHOLD</code> (fraction of the scan column, default 0.15), <code>SCAN_Y</code>, <code>SCAN_HEIGHT</code>, <code>TARGET_PIXEL</code>, <code>TARGET_THRESHOLD</code>, <code>THROTTLE_MIN/MAX</code>. <code>cv_control-get_autopilot_config</code> shows the values the car is actually running with.</p>
@@ -496,6 +508,8 @@ cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
     <tr><td><code>cv_control-get_calibration</code> says <code>stale</code></td><td><code>SCAN_Y</code>, image size or camera type changed since capture. Recalibrate.</td></tr>
     <tr><td><code>line_confidence</code> always <code>None</code></td><td>Stale <code>CV_CONTROLLER_OUTPUTS</code> in <code>myconfig.py</code>; use the five-item list.</td></tr>
     <tr><td>New behaviour after <code>git pull</code> does not appear</td><td>The car has old copies. Run <code>donkey update --template cv_control</code> in the car directory, then restart <code>donkey mcp</code>.</td></tr>
+    <tr><td><code>measure_object_distance</code> says <code>known: false</code></td><td>No camera calibration, or a stale one: the <code>reason</code> says which. Run <code>donkey calibrate-cv --intrinsics</code>, or use <code>measure_ground_point</code> at the object's base.</td></tr>
+    <tr><td>Camera calibration Solve refused</td><td>The message names the fix: more views, views in an empty quadrant, or a steadier board. <code>views.json</code> in the capture's folder shows each view's error.</td></tr>
     <tr><td>Calibration preview says NO BOARD</td><td>Board too small in frame. Move it closer, flat on the floor, straddling the scan band.</td></tr>
     <tr><td>Tape looks off-centre at the scan row on a bend</td><td>Expected: <code>SCAN_Y</code> looks tens of inches ahead, mixing offset, heading and curvature.</td></tr>
   </tbody>

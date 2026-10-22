@@ -1362,3 +1362,11 @@ def test_speed_through_the_client(tmp_path):
     assert result.is_error is not True
     payload = json.loads(_text(result))
     assert payload["known"] is True and payload["span_s"] == 0.5
+
+
+def test_agent_is_told_how_to_measure_an_object_and_what_to_fall_back_to():
+    from donkeycar.parts.mcp_tools import INSTRUCTIONS
+
+    assert "measure_object_distance" in INSTRUCTIONS
+    assert "known: false" in INSTRUCTIONS and "measure_ground_point at the object's base" in INSTRUCTIONS
+    assert "estimate_speed_from_object" in INSTRUCTIONS and "half a second" in INSTRUCTIONS

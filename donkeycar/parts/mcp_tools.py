@@ -39,7 +39,12 @@ INSTRUCTIONS = (
     "actually runs with. Throttle is a ceiling on the autopilot's own throttle, so a high value "
     "does not make the car corner faster; 0 stops it. Commands expire, so keep calling "
     "cv_control-set_control while you want the car to move. Traffic features such as stop signs "
-    "and addresses are not in the track description -- look for them in the camera frame."
+    "and addresses are not in the track description -- look for them in the camera frame. For an "
+    "object of known size, such as a stop sign, measure_object_distance gives its range from a tight "
+    "bounding box; when it answers known: false, use measure_ground_point at the object's base instead. "
+    "estimate_speed_from_object gives the car's closing speed on a stationary object from two or more "
+    "frames: pass the timestamp cv_control-get_vehicle_state returned with each frame, and use frames "
+    "at least half a second apart."
 )
 
 

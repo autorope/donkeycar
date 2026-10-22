@@ -16,14 +16,14 @@ capture. Without a camera calibration, both new tools answer "unknown".
 
 ---
 
-## Progress — 5 of 7
+## Progress — 6 of 7
 
 - [x] **O1** — Camera intrinsics: model, solver and `camera_intrinsics.json`
 - [x] **O2** — `donkey calibrate-cv --intrinsics`: capture page and headless `--from-images`
 - [x] **O3** — Bridge loads the intrinsics; `get_calibration` reports them
 - [x] **O4** — `measure_object_distance` tool
 - [x] **O5** — `estimate_speed_from_object` tool
-- [ ] **O6** — Docs, the published user manual, and the agent instructions
+- [x] **O6** — Docs, the published user manual, and the agent instructions
 - [ ] **O7** — Record the hardware check on the car
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
