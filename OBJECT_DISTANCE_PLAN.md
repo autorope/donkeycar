@@ -203,10 +203,116 @@ All settled with Ed on 2026-10-22, before O1 started.
 
 ## O7 — Hardware check
 
-Run on the car by Ed, with the steps written into this plan before he starts so they need no
-other context: capture the intrinsics, then measure a stop sign card at three tape-measured
-distances and compare, then roll the car toward it by hand and compare the speed with a
-stopwatch. The commit records the results and any fixes.
+Run on the car by Ed, with Claude driving the MCP calls from the Mac. The steps below assume no
+other context. The commit records the results and any fixes.
+
+**The car:** `murmurpi64.local`, user `ed`, car directory `~/mycar`, donkeycar checkout
+`~/projects/donkeycar`. It was at `10.0.0.32` on 2026-10-21; run `hostname -I` on the car to
+check, and use whatever it prints wherever `10.0.0.32` appears below. **Keep the ESC unpowered
+throughout**: nothing here needs the motor, and the car is rolled by hand.
+
+### You will need
+
+- The checkerboard, `assets/checkerboard/calibration-checkerboard-9x6-1in-letter.pdf`, printed
+  at **100% / actual size** (not "fit to page"). Check with a ruler that one square is exactly
+  1 inch. Tape it flat to something rigid: a clipboard, foam board or a book cover. It has 10×7
+  squares, which is 9×6 inner corners, the tool's default.
+- The stop sign tent card from `assets/track-cards/track-cards.pdf`, folded and standing.
+  **Measure the octagon's width across its flat sides with a ruler** and write it down: this is
+  the `width_inches` used below. Use the width only. The tent's face leans back, so the sign looks
+  shorter to the camera than it is printed, but its width is unaffected.
+- A tape measure, a stopwatch (a phone is fine), and masking tape to mark the floor.
+- A laptop or phone browser on the same network as the car.
+
+### Step 1 — Deploy
+
+1. On the Mac, push `mcp-server` (or ask Claude to).
+2. On the car: `cd ~/projects/donkeycar && git pull --ff-only`. Check `git log --oneline -1`
+   shows the commit that ticked O6 or later.
+3. If a `donkey mcp` server is running, stop it with Ctrl-C. The calibration in step 2 needs the
+   camera to itself.
+
+### Step 2 — Capture the camera calibration
+
+1. On the car: `cd ~/mycar && donkey calibrate-cv --car ~/mycar --intrinsics`
+2. In the browser, open `http://10.0.0.32:8892`. The page should say "Camera calibration" and
+   show the live camera.
+3. Hold the board up in front of the camera, 1–3 feet away, and keep it still. When the corners
+   are drawn on the preview, press **Add view**. If it says "No 9x6 board found", move the board
+   closer or into better light and try again.
+4. Repeat until there are at least 15 views, changing something each time: move the board to the
+   left, right, top and bottom of the frame and into all four corners; tilt it left, right,
+   forward and back by about 30°; hold it near and far. The grid under the buttons shows how many
+   views reach each quadrant of the frame. Every square needs at least 3.
+5. Press **Solve**. A good result shows `"ok": true` and `rms_error_px` under 0.5. If it is
+   refused, the message says what to fix; add the views it asks for and press Solve again.
+6. Stop the page with Ctrl-C.
+
+**Record:** `fx`, `fy`, `cx`, `cy`, the five `distortion` values, `rms_error_px`, `view_count`,
+and the views folder's path. Check by eye that `fx` and `fy` agree within about 2%, and that `cx`
+and `cy` are within about 20 px of 160 and 120.
+
+### Step 3 — Start the server
+
+On the car, from `~/mycar`:
+
+```
+PYTHONUNBUFFERED=1 donkey mcp --car ~/mycar --host 10.0.0.32 --port 8891 2>&1 | tee -ia ~/mcp.log
+```
+
+Claude then calls `cv_control-get_calibration`. **Record:** whether the `camera` section shows
+`calibrated: true`, `stale: false`, and a `loaded_from` of `/home/ed/mycar/camera_intrinsics.json`.
+
+### Step 4 — Distance at three ranges
+
+1. Put the car on the floor where it can see down a clear stretch. Mark the floor directly
+   below the camera lens with tape. Measure the lens's height above the floor and write it down.
+2. Stand the stop sign straight ahead of the car, facing it, with the front of its base on a
+   tape mark at **24 inches** from the mark under the lens, measured along the floor.
+3. Tell Claude it is in place. Claude calls `start`, takes a frame with
+   `cv_control-get_vehicle_state`, finds the sign's box, calls `measure_object_distance` with
+   your `width_inches`, and then calls `stop`. The car stays still: the throttle stays 0.
+4. Repeat at **60 inches** and **120 inches**.
+5. Repeat at 60 inches with the sign about 12 inches to the left of straight ahead, still facing
+   the car.
+
+Claude boxes the sign two ways each time: by colour (a red mask on the saved frame, which is
+pixel-tight), and by eye from the image (rough, the way an agent would). This separates the
+tool's accuracy from the box's.
+
+**Record, for each placement:** the floor distance; the true range, which Claude works out from
+the floor distance, the lens height and the sign's centre height; `range_inches` and
+`range_uncertainty_inches` for both boxes; and the percentage error. **Pass:** the colour-box
+range within 5% at 60 and 120 inches and within 8% at 24 inches, and the true range inside about
+twice `range_uncertainty_inches`. The real lens and a printed card are rougher than the synthetic
+tests, so these targets are looser than O4's; a miss beyond them is a finding to fix, not a fail
+to wave through.
+
+### Step 5 — Speed, rolled by hand
+
+1. Stand the sign at the 24-inch mark again. Mark the floor at **120 inches** and **48 inches**
+   from the sign: a 72-inch run.
+2. Put the car at the 120-inch mark, pointing at the sign. Tell Claude, who calls `start` and
+   begins taking frames with their timestamps, about every half second.
+3. Start the stopwatch and push the car steadily and straight toward the sign. Stop it at the
+   48-inch mark and stop the stopwatch. Aim for 3–5 seconds over the run. Tell Claude the time.
+4. Claude calls `estimate_speed_from_object` on the frames from the run, then `stop`.
+5. Repeat twice: once with every frame, and once with only two frames about a second apart. Then
+   leave the car still for 3 seconds and estimate again.
+
+**Record:** the stopwatch speed (72 inches ÷ seconds); `closing_speed_inches_per_s`, its
+uncertainty, `span_s` and any `warning` for each estimate; and the stationary estimate.
+**Pass:** the all-frames speed within 15% of the stopwatch speed (hand-pushing is not steady,
+and a stopwatch is good to about 0.2 s), the stationary estimate within its own uncertainty of
+zero, and no `warning` on the full run.
+
+### Step 6 — Wrap up
+
+1. Stop the server with Ctrl-C.
+2. Keep the views folder: it is the first real-lens test data. Claude asks before copying any of
+   it into the repository.
+3. Claude writes the results into this section, ticks O7, and commits. Any failure gets a fix,
+   or a note here on why it is accepted.
 
 ---
 
