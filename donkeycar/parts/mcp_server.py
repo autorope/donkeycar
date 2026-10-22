@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 import numpy as np
 
+from donkeycar.parts.camera_intrinsics import CameraIntrinsics, load_intrinsics
 from donkeycar.parts.cv_calibration import Calibration, load_calibration
 from donkeycar.parts.track_config import (
     CV_CONTROL,
@@ -272,6 +273,9 @@ class MCPBridge:
         # and that comes from user/mode.
         self._controller: object = None
         self.calibration_data: Calibration | None = load_calibration(car_dir, cfg)
+        # Optional: only the object-distance tools need it, and they say so
+        # when it is missing rather than failing.
+        self.intrinsics: CameraIntrinsics | None = load_intrinsics(car_dir, cfg)
 
     # ------------------------------------------------------------------
     # vehicle loop side
@@ -401,16 +405,18 @@ class MCPBridge:
         The bridge outlives the vehicle, so a rebuilt vehicle on new settings
         would otherwise leave the bridge answering from the old ones -- lane
         offsets, pixels-per-inch and the track all come from here. Track and
-        calibration are re-read too, so a malformed track.yml surfaces now
-        rather than at the next tool call.
+        both calibrations are re-read too, so a malformed track.yml or
+        calibration file surfaces now rather than at the next tool call.
         """
         track = self._load_track(self.car_dir) if cfg is not None else self.track
         calibration = load_calibration(self.car_dir, cfg)
-        # Only commit once both have parsed: a half-applied config is worse
-        # than the old one.
+        intrinsics = load_intrinsics(self.car_dir, cfg)
+        # Only commit once all three have parsed: a half-applied config is
+        # worse than the old one.
         self.cfg = cfg
         self.track = track
         self.calibration_data = calibration
+        self.intrinsics = intrinsics
         self.command_timeout_s = getattr(cfg, "MCP_COMMAND_TIMEOUT_S", DEFAULT_COMMAND_TIMEOUT_S)
         logger.info("Bridge adopted reloaded config")
 
@@ -647,6 +653,7 @@ class MCPBridge:
                     "No calibration. Run `donkey calibrate-cv` with a checkerboard, or set "
                     "CV_PIXELS_PER_INCH by hand for lane offsets only."
                 ),
+                "camera": self.camera_calibration(),
             }
         stale = self.calibration_data.stale_reasons(self.cfg)
         payload = self.calibration_data.to_dict()
@@ -654,6 +661,28 @@ class MCPBridge:
         payload["stale"] = bool(stale)
         payload["stale_reasons"] = stale
         payload["can_measure_points"] = self.calibration_data.homography is not None
+        payload["camera"] = self.camera_calibration()
+        return payload
+
+    def camera_calibration(self) -> dict[str, Any]:
+        """
+        The optional camera calibration: focal length, principal point and lens
+        distortion. A separate calibration from the ground plane's, with its
+        own file and its own staleness.
+        """
+        if self.intrinsics is None:
+            return {
+                "calibrated": False,
+                "reason": (
+                    "No camera calibration, so objects cannot be measured by their size. "
+                    "Run `donkey calibrate-cv --intrinsics` with a checkerboard held up to the camera."
+                ),
+            }
+        stale = self.intrinsics.stale_reasons(self.cfg)
+        payload = self.intrinsics.to_dict()
+        payload["calibrated"] = True
+        payload["stale"] = bool(stale)
+        payload["stale_reasons"] = stale
         return payload
 
     def measure_ground_point(self, u: float, v: float) -> dict[str, Any]:

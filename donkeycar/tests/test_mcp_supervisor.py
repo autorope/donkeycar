@@ -290,6 +290,35 @@ def test_the_chosen_track_file_survives_a_config_reload(tmp_path):
         sup.stop()
 
 
+def test_stop_then_start_picks_up_an_edited_camera_calibration(tmp_path):
+    from donkeycar.parts.camera_intrinsics import INTRINSICS_FILENAME, CameraIntrinsics
+
+    cfg, path = _headless_cfg(tmp_path)
+
+    def write(fx):
+        CameraIntrinsics(
+            fx=fx, fy=fx, cx=160.0, cy=120.0, distortion=[0.0] * 5, image_w=320, image_h=240, camera_type="MOCK"
+        ).save(os.path.join(path, INTRINSICS_FILENAME))
+
+    write(230.0)
+    sup = VehicleSupervisor(
+        cfg,
+        cv_control.build_vehicle,
+        builder_source="test",
+        config_path=os.path.join(path, "config.py"),
+        car_dir=path,
+    )
+    assert sup.bridge.calibration()["camera"]["fx"] == 230.0
+
+    write(250.0)
+    sup.start()
+    _wait_until(sup.is_running)
+    try:
+        assert sup.bridge.calibration()["camera"]["fx"] == 250.0
+    finally:
+        sup.stop()
+
+
 def test_a_broken_config_fails_the_start_and_keeps_the_old_one(tmp_path):
     """Better to keep running on the last good settings than half-apply a typo."""
     cfg, path = _headless_cfg(tmp_path)

@@ -880,6 +880,81 @@ def test_stale_calibration_is_flagged_not_silently_used(tmp_path):
 
 
 @requires_mcp
+def _write_intrinsics(tmp_path, fx=230.0, image_w=320):
+    from donkeycar.parts.camera_intrinsics import INTRINSICS_FILENAME, CameraIntrinsics
+
+    path = tmp_path / INTRINSICS_FILENAME
+    CameraIntrinsics(
+        fx=fx,
+        fy=fx,
+        cx=160.0,
+        cy=120.0,
+        distortion=[-0.3, 0.09, 0.0, 0.0, -0.01],
+        image_w=image_w,
+        image_h=240,
+        camera_type="MOCK",
+        rms_error_px=0.2,
+        view_count=15,
+    ).save(str(path))
+    return path
+
+
+def test_without_a_camera_calibration_the_camera_section_says_so(tmp_path):
+    """The camera calibration is optional, so its absence changes nothing else."""
+    _write_calibration(tmp_path)
+    payload = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path)).calibration()
+    camera = payload.pop("camera")
+    assert camera["calibrated"] is False
+    assert "calibrate-cv --intrinsics" in camera["reason"]
+    assert payload["calibrated"] is True and payload["can_measure_points"] is True
+
+
+def test_the_camera_section_is_present_with_no_ground_calibration_either(tmp_path):
+    class NoCal(Cfg):
+        CV_PIXELS_PER_INCH = None
+
+    _write_intrinsics(tmp_path)
+    payload = MCPBridge(NoCal(), serve=False, car_dir=str(tmp_path)).calibration()
+    assert payload["calibrated"] is False
+    assert payload["camera"]["calibrated"] is True
+
+
+def test_a_camera_calibration_is_reported_with_where_it_came_from(tmp_path):
+    path = _write_intrinsics(tmp_path)
+    camera = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path)).calibration()["camera"]
+    assert camera["calibrated"] is True
+    assert camera["fx"] == 230.0 and camera["view_count"] == 15
+    assert camera["loaded_from"] == str(path)
+    assert camera["stale"] is False and camera["stale_reasons"] == []
+
+
+def test_a_camera_calibration_at_another_resolution_is_stale(tmp_path):
+    class Wider(Cfg):
+        IMAGE_W = 640
+
+    _write_intrinsics(tmp_path)
+    camera = MCPBridge(Wider(), serve=False, car_dir=str(tmp_path)).calibration()["camera"]
+    assert camera["stale"] is True
+    assert camera["stale_reasons"][0].startswith("image_w")
+
+
+def test_a_malformed_camera_calibration_refuses_to_start(tmp_path):
+    from donkeycar.parts.camera_intrinsics import INTRINSICS_FILENAME
+    from donkeycar.parts.cv_calibration import CalibrationError
+
+    (tmp_path / INTRINSICS_FILENAME).write_text('{"fx": 230}')
+    with pytest.raises(CalibrationError, match="missing required field"):
+        MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+
+
+def test_reload_rereads_the_camera_calibration(tmp_path):
+    _write_intrinsics(tmp_path, fx=230.0)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    _write_intrinsics(tmp_path, fx=250.0)
+    bridge.reload_config(Cfg())
+    assert bridge.calibration()["camera"]["fx"] == 250.0
+
+
 def test_measure_ground_point_through_the_client(tmp_path):
     _write_calibration(tmp_path)
     bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))

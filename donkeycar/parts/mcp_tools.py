@@ -243,6 +243,9 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         captured under so you can tell whether they are still valid.
         `loaded_from` says where the values came from: the calibration file's
         path, or the CV_PIXELS_PER_INCH config setting when there is no file.
+        The `camera` section is the separate, optional camera calibration
+        (focal length and lens distortion) that measuring an object by its
+        size needs; `camera.calibrated` is false when it has not been captured.
         """
         return bridge.calibration()
 

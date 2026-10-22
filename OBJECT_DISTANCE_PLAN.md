@@ -16,11 +16,11 @@ capture. Without a camera calibration, both new tools answer "unknown".
 
 ---
 
-## Progress — 2 of 7
+## Progress — 3 of 7
 
 - [x] **O1** — Camera intrinsics: model, solver and `camera_intrinsics.json`
 - [x] **O2** — `donkey calibrate-cv --intrinsics`: capture page and headless `--from-images`
-- [ ] **O3** — Bridge loads the intrinsics; `get_calibration` reports them
+- [x] **O3** — Bridge loads the intrinsics; `get_calibration` reports them
 - [ ] **O4** — `measure_object_distance` tool
 - [ ] **O5** — `estimate_speed_from_object` tool
 - [ ] **O6** — Docs, the published user manual, and the agent instructions
@@ -117,10 +117,10 @@ All settled with Ed on 2026-10-22, before O1 started.
 
 **Acceptance**
 
-- [ ] With no `camera_intrinsics.json`, `get_calibration` reports `camera.calibrated: false` and
+- [x] With no `camera_intrinsics.json`, `get_calibration` reports `camera.calibrated: false` and
       the rest of the payload is unchanged.
-- [ ] With one, the `camera` section carries the values and its `loaded_from` path.
-- [ ] Editing the file and calling `stop` then `start` reports the new values.
+- [x] With one, the `camera` section carries the values and its `loaded_from` path.
+- [x] Editing the file and calling `stop` then `start` reports the new values.
 
 ## O4 — `measure_object_distance`
 
