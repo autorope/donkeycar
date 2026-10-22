@@ -217,10 +217,14 @@ throughout**: nothing here needs the motor, and the car is rolled by hand.
   at **100% / actual size** (not "fit to page"). Check with a ruler that one square is exactly
   1 inch. Tape it flat to something rigid: a clipboard, foam board or a book cover. It has 10×7
   squares, which is 9×6 inner corners, the tool's default.
-- The stop sign tent card from `assets/track-cards/track-cards.pdf`, folded and standing.
-  **Measure the octagon's width across its flat sides with a ruler** and write it down: this is
-  the `width_inches` used below. Use the width only. The tent's face leans back, so the sign looks
-  shorter to the camera than it is printed, but its width is unaffected.
+- The stop sign from `assets/track-cards/track-cards.pdf`: cut out one face (a 3-inch panel)
+  rather than folding the tent, and stand it **upright** in a card stand, the kind used for
+  trading cards. Check by eye from the side that it is vertical, not leaning back.
+  **Measure the octagon's width and its height across its flat sides with a ruler**, and write
+  both down: these are the `width_inches` and `height_inches` used below. Also measure the height
+  of the octagon's centre above the floor, in the stand. (A folded tent would lean back, which
+  makes the sign look shorter to the camera than it is; the stand avoids that, so both sizes can
+  be used.)
 - A tape measure, a stopwatch (a phone is fine), and masking tape to mark the floor.
 - A laptop or phone browser on the same network as the car.
 
@@ -271,7 +275,8 @@ Claude then calls `cv_control-get_calibration`. **Record:** whether the `camera`
    tape mark at **24 inches** from the mark under the lens, measured along the floor.
 3. Tell Claude it is in place. Claude calls `start`, takes a frame with
    `cv_control-get_vehicle_state`, finds the sign's box, calls `measure_object_distance` with
-   your `width_inches`, and then calls `stop`. The car stays still: the throttle stays 0.
+   your `width_inches` and `height_inches`, and then calls `stop`. The car stays still: the
+   throttle stays 0.
 4. Repeat at **60 inches** and **120 inches**.
 5. Repeat at 60 inches with the sign about 12 inches to the left of straight ahead, still facing
    the car.
@@ -281,10 +286,12 @@ pixel-tight), and by eye from the image (rough, the way an agent would). This se
 tool's accuracy from the box's.
 
 **Record, for each placement:** the floor distance; the true range, which Claude works out from
-the floor distance, the lens height and the sign's centre height; `range_inches` and
-`range_uncertainty_inches` for both boxes; and the percentage error. **Pass:** the colour-box
+the floor distance, the lens height and the sign's centre height; `range_inches`,
+`range_uncertainty_inches`, `range_from_width_inches`, `range_from_height_inches` and
+`size_disagreement` for both boxes; and the percentage error. **Pass:** the colour-box
 range within 5% at 60 and 120 inches and within 8% at 24 inches, and the true range inside about
-twice `range_uncertainty_inches`. The real lens and a printed card are rougher than the synthetic
+twice `range_uncertainty_inches`, and `size_disagreement` under 0.1 for the colour box. The
+real lens and a printed card are rougher than the synthetic
 tests, so these targets are looser than O4's; a miss beyond them is a finding to fix, not a fail
 to wave through.
 
