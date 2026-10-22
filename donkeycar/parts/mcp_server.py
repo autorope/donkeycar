@@ -29,7 +29,15 @@ import numpy as np
 
 from donkeycar.parts.camera_intrinsics import CameraIntrinsics, load_intrinsics
 from donkeycar.parts.cv_calibration import Calibration, load_calibration
-from donkeycar.parts.object_distance import check_sizes, measure_object, parse_box, unknown
+from donkeycar.parts.object_distance import (
+    check_sizes,
+    estimate_speed,
+    measure_object,
+    parse_box,
+    parse_observations,
+    unknown,
+    unknown_speed,
+)
 from donkeycar.parts.track_config import (
     CV_CONTROL,
     TRACK_FILENAME,
@@ -749,6 +757,24 @@ class MCPBridge:
         if problem is not None or self.intrinsics is None:
             return unknown(problem or "")
         return measure_object(parsed, self.intrinsics, width_inches, height_inches, ground=self.calibration_data)
+
+    def estimate_speed_from_object(
+        self,
+        observations: object,
+        width_inches: float | None = None,
+        height_inches: float | None = None,
+    ) -> dict[str, Any]:
+        """
+        How fast the car is closing on a stationary object of known size, from
+        its box in two or more frames. Refused and "unknown" as
+        measure_object_distance is.
+        """
+        parsed = parse_observations(observations)
+        check_sizes(width_inches, height_inches)
+        problem = self._intrinsics_problem()
+        if problem is not None or self.intrinsics is None:
+            return unknown_speed(problem or "")
+        return estimate_speed(parsed, self.intrinsics, width_inches, height_inches)
 
 
 class _BridgeArming:

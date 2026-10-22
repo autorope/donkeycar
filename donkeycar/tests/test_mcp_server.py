@@ -420,6 +420,7 @@ def test_build_server_registers_the_tool_surface():
         "get_autopilot",
         "cv_control-get_autopilot_config",
         "measure_object_distance",
+        "estimate_speed_from_object",
     }
     assert expected <= names, expected - names
 
@@ -484,6 +485,7 @@ def test_client_sees_the_whole_tool_surface():
         "get_autopilot",
         "cv_control-get_autopilot_config",
         "measure_object_distance",
+        "estimate_speed_from_object",
     } <= names
 
 
@@ -1318,3 +1320,45 @@ def test_object_distance_refusals_reach_the_agent(tmp_path):
     result = _call(bridge.build_server(), "measure_object_distance", {"box": A_BOX})
     assert result.is_error is True
     assert "width_inches, height_inches, or both" in _text(result)
+
+
+# -------------------------------------------------------------- speed
+
+
+def _observations(boxes):
+    return [{"timestamp": 100.0 + i * 0.5, "box": box} for i, box in enumerate(boxes)]
+
+
+NEAR_BOX = {"x_min": 130.0, "y_min": 80.0, "x_max": 190.0, "y_max": 140.0}
+
+
+def test_speed_is_unknown_without_a_camera_calibration(tmp_path):
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    answer = bridge.estimate_speed_from_object(_observations([A_BOX, NEAR_BOX]), height_inches=6.0)
+    assert answer["known"] is False and answer["closing_speed_inches_per_s"] is None
+    assert "calibrate-cv --intrinsics" in answer["reason"]
+
+
+def test_a_malformed_speed_request_is_refused_even_without_a_camera_calibration(tmp_path):
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    with pytest.raises(ValueError, match="at least two"):
+        bridge.estimate_speed_from_object(_observations([A_BOX]), height_inches=6.0)
+
+
+def test_a_growing_box_is_a_closing_speed(tmp_path):
+    _write_intrinsics(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    answer = bridge.estimate_speed_from_object(_observations([A_BOX, NEAR_BOX]), height_inches=6.0)
+    assert answer["known"] is True
+    assert answer["closing_speed_inches_per_s"] > 0
+
+
+@requires_mcp
+def test_speed_through_the_client(tmp_path):
+    _write_intrinsics(tmp_path)
+    bridge = MCPBridge(Cfg(), serve=False, car_dir=str(tmp_path))
+    args = {"observations": _observations([A_BOX, NEAR_BOX]), "height_inches": 6.0}
+    result = _call(bridge.build_server(), "estimate_speed_from_object", args)
+    assert result.is_error is not True
+    payload = json.loads(_text(result))
+    assert payload["known"] is True and payload["span_s"] == 0.5

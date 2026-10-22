@@ -260,6 +260,29 @@ def build_server(bridge: MCPBridge) -> MCPServer:
         with _agent_facing_errors():
             return bridge.measure_object_distance(box, width_inches, height_inches)
 
+    @server.tool()
+    def estimate_speed_from_object(
+        observations: list[dict[str, Any]],
+        width_inches: float | None = None,
+        height_inches: float | None = None,
+    ) -> dict[str, Any]:
+        """
+        How fast the car is closing on a stationary object of known size.
+
+        `observations` is two or more frames, each {timestamp, box}: the
+        `timestamp` cv_control-get_vehicle_state returned with that frame, and
+        the object's bounding box in it, as for measure_object_distance. Give
+        the object's real `width_inches`, `height_inches`, or both.
+
+        Returns `closing_speed_inches_per_s` (positive means getting closer)
+        with its uncertainty, the time spanned, and each frame's range. Use
+        frames at least half a second apart; a `warning` says when they are too
+        close, or the boxes too rough, to tell. Needs the camera calibration;
+        without it `known` is false and `reason` says what to do.
+        """
+        with _agent_facing_errors():
+            return bridge.estimate_speed_from_object(observations, width_inches, height_inches)
+
     @server.tool(name=CV_TOOL_PREFIX + "get_calibration")
     def get_calibration() -> dict[str, Any]:
         """

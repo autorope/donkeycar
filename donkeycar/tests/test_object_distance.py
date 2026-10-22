@@ -15,10 +15,14 @@ from donkeycar.parts.camera_intrinsics import CameraIntrinsics
 from donkeycar.parts.cv_calibration import Calibration
 from donkeycar.parts.object_distance import (
     Box,
+    Observation,
     camera_pose_on_ground,
+    estimate_speed,
     measure_object,
     parse_box,
+    parse_observations,
     unknown,
+    unknown_speed,
 )
 
 IMAGE_W, IMAGE_H = 320, 240
@@ -217,3 +221,124 @@ def test_the_floor_position_agrees_with_measuring_the_base(forward, lateral):
     assert result["forward_inches"] == pytest.approx(forward, rel=0.05)
     assert result["lateral_inches"] == pytest.approx(lateral, abs=0.05 * forward)
     assert result["lateral_inches"] == pytest.approx(base_lateral, abs=0.05 * forward)
+
+
+# ------------------------------------------------------------------- speed
+
+
+def approach(speed, start=120.0, frames=7, every_s=0.5, noise_px=0.0, seed=0, dist=NO_LENS):
+    """Frames of the sign as the car drives toward it at `speed` inches per second."""
+    rng = np.random.default_rng(seed)
+    observations = []
+    for i in range(frames):
+        t = 1_000.0 + i * every_s
+        box, _ = sign_box(start - speed * i * every_s, dist=dist)
+        if noise_px:
+            box = Box(*(np.array(box) + rng.normal(0.0, noise_px, 4)))
+        observations.append(Observation(t, box))
+    return observations
+
+
+@pytest.mark.parametrize("dist", [NO_LENS, WIDE_LENS], ids=["pinhole", "wide-angle"])
+def test_an_approach_at_a_known_speed_measures_that_speed(dist):
+    result = estimate_speed(approach(24.0, dist=dist), intrinsics(dist), width_inches=SIGN, height_inches=SIGN)
+    assert result["known"] is True
+    assert result["closing_speed_inches_per_s"] == pytest.approx(24.0, rel=0.05)
+    assert result["span_s"] == 3.0
+    assert "warning" not in result
+
+
+def test_two_frames_are_enough():
+    result = estimate_speed(approach(24.0, frames=2, every_s=2.0), intrinsics(), height_inches=SIGN)
+    assert result["closing_speed_inches_per_s"] == pytest.approx(24.0, rel=0.05)
+    assert len(result["observations"]) == 2
+
+
+def test_a_receding_object_gives_a_negative_speed():
+    result = estimate_speed(approach(-18.0, start=48.0), intrinsics(), height_inches=SIGN)
+    assert result["closing_speed_inches_per_s"] == pytest.approx(-18.0, rel=0.05)
+
+
+def test_a_stationary_car_gives_about_zero():
+    result = estimate_speed(approach(0.0, start=60.0), intrinsics(), height_inches=SIGN)
+    assert abs(result["closing_speed_inches_per_s"]) < 0.5
+
+
+def test_frames_too_close_together_are_answered_with_a_warning():
+    """0.1 s apart with 2 px of box noise: the car moves less than the measurement wobbles."""
+    observations = approach(12.0, start=60.0, frames=2, every_s=0.1, noise_px=2.0, seed=4)
+    result = estimate_speed(observations, intrinsics(), width_inches=SIGN, height_inches=SIGN)
+    assert result["known"] is True
+    assert "too close together" in result["warning"]
+
+
+@pytest.mark.parametrize("seed", range(20))
+def test_frames_too_close_together_always_warn(seed):
+    """Whatever the noise does to the numbers, a short span is never presented as a clean answer."""
+    observations = approach(12.0, start=60.0, frames=2, every_s=0.1, noise_px=2.0, seed=seed)
+    result = estimate_speed(observations, intrinsics(), width_inches=SIGN, height_inches=SIGN)
+    assert "warning" in result
+
+
+def test_a_rough_measurement_over_a_good_span_warns():
+    """Far away, two frames, rough boxes: the span is fine but the speed is not known to half of itself."""
+    observations = approach(6.0, start=120.0, frames=2, every_s=0.6, noise_px=1.0, seed=1)
+    result = estimate_speed(observations, intrinsics(), height_inches=SIGN)
+    assert result["closing_speed_uncertainty_inches_per_s"] > 0.5 * abs(result["closing_speed_inches_per_s"])
+    assert "more than half the speed" in result["warning"]
+
+
+def test_scatter_widens_the_uncertainty():
+    clean = estimate_speed(approach(24.0), intrinsics(), height_inches=SIGN)
+    noisy = estimate_speed(approach(24.0, noise_px=3.0, seed=2), intrinsics(), height_inches=SIGN)
+    assert noisy["closing_speed_uncertainty_inches_per_s"] > clean["closing_speed_uncertainty_inches_per_s"]
+
+
+def test_out_of_order_observations_give_the_same_answer():
+    observations = approach(24.0)
+    shuffled = [o._asdict() | {"box": o.box._asdict()} for o in reversed(observations)]
+    in_order = [o._asdict() | {"box": o.box._asdict()} for o in observations]
+    a = estimate_speed(parse_observations(shuffled), intrinsics(), height_inches=SIGN)
+    b = estimate_speed(parse_observations(in_order), intrinsics(), height_inches=SIGN)
+    assert a == b
+
+
+def test_fewer_than_two_observations_is_refused():
+    one = [{"timestamp": 1.0, "box": {"x_min": 1, "y_min": 1, "x_max": 9, "y_max": 9}}]
+    with pytest.raises(ValueError, match="at least two"):
+        parse_observations(one)
+    with pytest.raises(ValueError, match="at least two"):
+        parse_observations("not a list")
+
+
+def test_two_observations_at_the_same_time_are_refused():
+    box = {"x_min": 1, "y_min": 1, "x_max": 9, "y_max": 9}
+    with pytest.raises(ValueError, match=r"share timestamp 5\.0"):
+        parse_observations([{"timestamp": 5.0, "box": box}, {"timestamp": 5.0, "box": box}])
+
+
+@pytest.mark.parametrize(
+    ("item", "message"),
+    [
+        ({"timestamp": 1.0}, "observation 2 must be exactly"),
+        ({"timestamp": "soon", "box": {"x_min": 1, "y_min": 1, "x_max": 9, "y_max": 9}}, "timestamp must be a number"),
+        ({"timestamp": 1.0, "box": {"x_min": 1, "y_min": 1, "x_max": 9}}, "observation 2: box needs"),
+    ],
+)
+def test_a_malformed_observation_is_refused_naming_it(item, message):
+    first = {"timestamp": 0.0, "box": {"x_min": 1, "y_min": 1, "x_max": 9, "y_max": 9}}
+    with pytest.raises(ValueError, match=message):
+        parse_observations([first, item])
+
+
+def test_a_box_outside_the_frame_names_its_observation():
+    observations = approach(24.0, frames=2)
+    observations[1] = observations[1]._replace(box=Box(300, 10, 330, 40))
+    with pytest.raises(ValueError, match=r"observation 2: box .* outside the 320x240 frame"):
+        estimate_speed(observations, intrinsics(), height_inches=SIGN)
+
+
+def test_unknown_speed_has_every_value_null():
+    answer = unknown_speed("no camera calibration")
+    assert answer["known"] is False
+    assert all(v is None for k, v in answer.items() if k not in ("known", "reason"))

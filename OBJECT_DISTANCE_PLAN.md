@@ -16,13 +16,13 @@ capture. Without a camera calibration, both new tools answer "unknown".
 
 ---
 
-## Progress — 4 of 7
+## Progress — 5 of 7
 
 - [x] **O1** — Camera intrinsics: model, solver and `camera_intrinsics.json`
 - [x] **O2** — `donkey calibrate-cv --intrinsics`: capture page and headless `--from-images`
 - [x] **O3** — Bridge loads the intrinsics; `get_calibration` reports them
 - [x] **O4** — `measure_object_distance` tool
-- [ ] **O5** — `estimate_speed_from_object` tool
+- [x] **O5** — `estimate_speed_from_object` tool
 - [ ] **O6** — Docs, the published user manual, and the agent instructions
 - [ ] **O7** — Record the hardware check on the car
 
@@ -169,16 +169,24 @@ All settled with Ed on 2026-10-22, before O1 started.
   against time gives `closing_speed_inches_per_s` and its uncertainty (D10, D12).
 - Output: `known`, the speed and uncertainty, `span_s`, each observation's range, and a warning
   when the uncertainty is larger than the speed (D11). It says the object is assumed stationary.
+- *Changed while building O5:* the warning fires when the frames span **under 0.5 s**, or when
+  the uncertainty is **more than half** the speed. "Uncertainty larger than the speed" alone
+  missed two in three of the cases it was meant for: on a short span, box noise inflates the
+  measured speed as much as its uncertainty, so the two look consistent while both are wrong
+  (frames 0.1 s apart with 2 px noise: 34% warned under the old rule, 100% under the new; frames
+  0.5 s apart, seven of them, 1 px noise: 0% under both). With three or more frames, the
+  uncertainty is also widened when the points scatter more than 1 px per edge explains.
 - Without intrinsics: `known: false` and the reason (D6).
 
 **Acceptance**
 
-- [ ] Synthetic observations of an approaching object at a known speed give that speed within 5%.
-- [ ] A receding object gives a negative closing speed; a stationary one gives about zero.
-- [ ] Fewer than two observations, or two with the same timestamp, is refused.
-- [ ] Observations 0.1 s apart with ±2 px box noise return a speed with the noise warning.
-- [ ] Observations out of time order give the same answer as the sorted ones.
-- [ ] No intrinsics: `known: false`, the reason names `calibrate-cv --intrinsics`.
+- [x] Synthetic observations of an approaching object at a known speed give that speed within 5%.
+- [x] A receding object gives a negative closing speed; a stationary one gives about zero.
+- [x] Fewer than two observations, or two with the same timestamp, is refused.
+- [x] Observations 0.1 s apart with ±2 px box noise return a speed with the noise warning
+      (checked over 20 noise seeds, every one warned).
+- [x] Observations out of time order give the same answer as the sorted ones.
+- [x] No intrinsics: `known: false`, the reason names `calibrate-cv --intrinsics`.
 
 ## O6 — Docs
 
