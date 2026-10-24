@@ -1,0 +1,139 @@
+# Track cards for the camera — Plan
+
+The track cards (`assets/track-cards/`) were drawn to look good to a person: a cream background,
+pastels, and a stop sign in crimson with a dark red border. On the car they are harder to read than
+they need to be. In the O7 hardware check (`OBJECT_DISTANCE_PLAN.md`), under ordinary room
+light at 640×480, the large stop sign's dark red border came out too dark for a red colour mask,
+so the mask boxed the octagon 3 px small and `measure_object_distance` read 12% long. The
+crimson also landed at OpenCV hue 165–177, toward the purple that the venue's decorations share
+(see the field notes), and a red object on a shelf was a bigger "red" blob than the sign.
+
+This plan redraws the cards so a camera, not just a person, can pick each one out and measure it:
+plain white backgrounds, strong outlines, saturated colours chosen to be far apart in hue from
+each other and from the track, and no detail too small to survive 320×240.
+
+**Branch:** `mcp-server`
+
+---
+
+## Progress — 0 of 5
+
+- [ ] **C1** — Legibility check: a script that scores every card as the camera would see it
+- [ ] **C2** — Stop signs: the track card and the large sign
+- [ ] **C3** — Traffic lights
+- [ ] **C4** — People, dog, vehicles and houses
+- [ ] **C5** — PDFs, README and the docs
+
+Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
+every commit.
+
+---
+
+## Decisions
+
+| # | Question | Proposal | Why |
+| --- | --- | --- | --- |
+| D1 | Background | **Pure white**, `#ffffff`, on every card face | The cream (`#fdf7ee`) lowers contrast against every colour on the card and tints the white a camera white-balances against. White paper is as bright as print gets. |
+| D2 | Outlines | Every figure gets a **black outline**, at least 8 of the card's 300 units (0.08 in on a 3 in card) | An object's edge is where a box is drawn and a size is measured. Black against white is the strongest edge print can make, whatever the colour inside it. |
+| D3 | Stop sign colours | **Black outer border, signal red face** (about `#e3170a`, OpenCV hue near 2), **white** inner ring and lettering. The dark red border goes | The dark red border was the part the camera lost. A black border keeps the octagon's true outer edge sharp, and a red nearer orange moves the face away from the purple at the venue and the magenta the crimson drifted toward. |
+| D4 | Hues across the set | One hue family per kind of thing, chosen to be **at least 25° apart** in hue from each other and from the track's **yellow** centreline, plus white for side tape | So a colour mask for one prop does not catch another, or the track. The palette, with OpenCV hue values, is fixed in C1 before any card is redrawn. |
+| D5 | Saturation and brightness | Colour fills at **saturation ≥ 70%**, and no fill within 15% brightness of the white background | Pastels (the light blues, tans and greens now used) wash out under room light and auto-exposure. |
+| D6 | Fine detail | Nothing narrower than **6 of 300 units** (about 2 px at 320×240 from 2 ft); text at least **40 units** tall, heavy weight | Detail below a couple of pixels turns to noise, or vanishes in JPEG. |
+| D7 | Recognisability for a person | Kept: each card still reads at a glance as what it is | The agent is a vision model and reasons the way a person would; a card that stops looking like a stop sign is worse for it, not better. |
+| D8 | Sizes | **Unchanged**: 3 in faces, the same tent geometry; the large sign's octagon stays 4.5 in | The O7 measurements and the docs' reference dimensions stay valid; only the artwork changes. |
+| D9 | How "better" is checked | A script (C1) renders each card, then simulates the camera: dim light, auto-exposure, blur and JPEG at 320×240 and 640×480. It reports contrast, hue and the size a colour-plus-edge box measures, against fixed targets | Judging by eye on a monitor is what produced the current cards. A number that improves is a check; "looks punchier" is not. |
+| D10 | When the O7 check uses them | **O7 finishes with the sign already printed**, with the edge-based box; the new sign is checked afterwards in C2 | O7 tests the tools, and its data so far is valid. Swapping the sign mid-check would mix two variables. |
+
+---
+
+## C1 — Legibility check
+
+**Files:** `assets/track-cards/check_legibility.py` (new), `donkeycar/tests/test_track_cards.py` (new).
+
+- Renders each card face from `track-cards.html` and `stop-sign-large.html` with headless Chrome,
+  or from the SVG directly, to a known pixel size.
+- Simulates the camera: brightness scaled to 50% and 30%, a 1 px blur, JPEG quality 75, at
+  320×240 and 640×480 for a 3 in face at 2 ft and 4 ft.
+- Reports per card: contrast ratio of the figure's outline against the background; the hue and
+  saturation of each main colour after the simulation; for the stop signs, the box a red mask
+  followed by an edge refinement finds, against the octagon's true size in pixels.
+- Fixes the palette for D4 and D5 as a table in this plan, with OpenCV hue values.
+
+**Acceptance**
+
+- [ ] Run on the current cards, it reproduces the field result: the stop sign's colour-mask box
+      is at least 2 px small at 640×480 at 2 ft under 50% brightness.
+- [ ] It prints a per-card table and exits non-zero when any card misses a target, so C2–C4 can
+      be checked by running it.
+
+## C2 — Stop signs
+
+**Files:** `assets/track-cards/track-cards.html`, `assets/track-cards/stop-sign-large.html`.
+
+- Both signs redrawn per D2, D3 and D6: black outer border, signal red face, white ring and
+  lettering, white background. The large sign shares the same artwork.
+- `measure_object_distance` takes the octagon's size across the flats including the black
+  border, as before.
+
+**Acceptance**
+
+- [ ] Under the C1 simulation, the colour-plus-edge box is within 1 px of the true octagon at
+      both resolutions and both distances, at 50% and 30% brightness.
+- [ ] The face's hue is outside the 140–170 OpenCV range (purple and magenta) after simulation.
+- [ ] A person shown the card without context calls it a stop sign.
+
+## C3 — Traffic lights
+
+**Files:** `assets/track-cards/track-cards.html`.
+
+- Red, yellow and green lights redrawn per D2–D6: a black housing with a white outline, so the
+  housing's edge shows against white; the lit lamp in a saturated colour from the D4 palette; the
+  unlit lamps dark grey, not tinted.
+- The lit lamp's colour is the one thing that tells the three apart, so their hues are the
+  furthest apart in the palette; the yellow is kept distinguishable from the yellow centreline by
+  shape and housing, since a yellow light must be yellow.
+
+**Acceptance**
+
+- [ ] Under simulation, each lit lamp is classified as its own colour and no other, by hue alone.
+- [ ] Each card's housing passes the outline contrast target.
+
+## C4 — People, dog, vehicles and houses
+
+**Files:** `assets/track-cards/track-cards.html`.
+
+- Each figure redrawn per D2, D5 and D6: black outlines, the pastels replaced by saturated fills
+  from the palette, small details (faces, wheels' spokes, window frames) simplified or thickened
+  to D6.
+- Vehicles and houses keep a colour family each (D4). House numbers: black, heavy, at least 40
+  units tall, on a white panel.
+
+**Acceptance**
+
+- [ ] Every card passes the C1 outline contrast and minimum-detail targets.
+- [ ] House numbers are readable by OCR (Tesseract, if installed; otherwise by the vision model
+      the agent uses) at 640×480 from 2 ft.
+
+## C5 — PDFs and docs
+
+**Files:** `assets/track-cards/track-cards.pdf`, `assets/track-cards/stop-sign-large.pdf`,
+`assets/track-cards/README.md`, `docs/mcp-server.md`, `docs/mcp-server-manual.html`.
+
+- Both PDFs regenerated with headless Chrome and checked by rendering, as the README describes.
+- The README gains the design rules (D1–D6) and how to run the legibility check, so a new card
+  can be held to the same standard.
+- The docs' reference dimensions say the stop sign's border is black.
+
+**Acceptance**
+
+- [ ] Both PDFs are one Letter page per sheet at 100% and match the HTML.
+- [ ] `check_legibility.py` passes on every card.
+
+---
+
+## Out of scope
+
+- Changing card sizes or the tent geometry (D8).
+- Teaching the server to detect props itself. The agent still finds and boxes them.
+- Reprinting: Ed prints the new sheets; the check in C2 is on the render, and on the car once
+  printed.

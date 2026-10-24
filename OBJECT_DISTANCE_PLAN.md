@@ -394,6 +394,25 @@ Magnet chassis), so the lens is 4 5/8 in above the sign's centre, and the true r
 √(floor distance² + 4.625²): 24.44 in at 24, 60.18 at 60, 120.09 at 120, and 61.36 at 60 with
 the sign 12 in to the left.
 
+**Step 4, 24 inches, 2026-10-24.** The sign's face was at 24 in from the lens mark (Ed placed
+the sign itself, not the base, on the mark); true range 24.44 in. The floor calibration alone
+put the card's base 24.14 in ahead and 0.3 in right, which checks it independently.
+
+| Box | Range | Error | Width / height ranges | Disagreement | Floor (fwd, lat) |
+| --- | --- | --- | --- | --- | --- |
+| Edge (outer edge of the dark border, from the card-to-border brightness step) | 25.71 ± 0.46 | +5.2% | 25.44 / 26.01 | 0.022 | 24.66, +0.31 |
+| By eye | 25.48 ± 0.45 | +4.3% | 25.30 / 25.68 | 0.015 | 24.42, +0.38 |
+| Colour mask | 27.41 ± 0.52 | +12.2% | 26.74 / 28.26 | 0.055 | 26.33, +0.47 |
+
+The colour mask first boxed a red object on a shelf (the largest red blob), then, once restricted
+to the octagon, left out the dark red border, which is too dark in room light to count as red:
+3 px small and +12%. This is what led to `TRACK_CARDS_CV_PLAN.md`. The edge and eye boxes pass
+the 8% target at 24 in and the disagreement target, but miss the "true range within twice the
+uncertainty" target: both read 4–5% long, in width and height alike, so the error is systematic.
+Placement is ruled out. The candidates are a focal length a few percent off, or box edges a pixel
+or two inside the true edge; the 60 and 120 in placements separate them, since a focal-length
+error is the same fraction at every range and a fixed pixel error grows as the sign shrinks.
+
 ---
 
 ## Out of scope
