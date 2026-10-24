@@ -16,10 +16,10 @@ each other and from the track, and no detail too small to survive 320×240.
 
 ---
 
-## Progress — 1 of 5
+## Progress — 2 of 5
 
 - [x] **C1** — Legibility check: a script that scores every card as the camera would see it
-- [ ] **C2** — Stop signs: the track card and the large sign
+- [x] **C2** — Stop signs: the track card and the large sign
 - [ ] **C3** — Traffic lights
 - [ ] **C4** — People, dog, vehicles and houses
 - [ ] **C5** — PDFs, README and the docs
@@ -148,7 +148,7 @@ hue. `#e3170a` was the best of both.
       *(172–177 throughout. Changed while building C2: not checked for octagons under 10 px, where
       a dozen coloured pixels are mostly noise; that is only the 3 in card at 320×240 from 4 ft,
       6.8 px, which read 163 in dim light.)*
-- [ ] A person shown the card without context calls it a stop sign. *(For Ed.)*
+- [x] A person shown the card without context calls it a stop sign. *(Ed, 2026-10-24: "It looks like a stop sign.")*
 
 ## C3 — Traffic lights
 
