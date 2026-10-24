@@ -655,6 +655,9 @@ def run(args: list[str]) -> None:
             "negative only if it is to the right"
         ),
     )
+    # Renamed to --left-inches, which takes the opposite sign. Kept, hidden, so
+    # the old name says what replaced it instead of "unrecognized arguments".
+    parser.add_argument("--lateral-inches", type=float, default=None, help=argparse.SUPPRESS)
     parser.add_argument(
         "--tape-separation-inches",
         type=float,
@@ -673,6 +676,12 @@ def run(args: list[str]) -> None:
         help="solve the camera calibration from saved frames, or a saved views folder, with no camera",
     )
     parsed = parser.parse_args(args)
+    if parsed.lateral_inches is not None:
+        parser.error(
+            "--lateral-inches was replaced by --left-inches: how far the reference corner is to the LEFT of the "
+            f"car's centreline, as a positive number. For a corner {abs(parsed.lateral_inches):g} inches to the "
+            f"left, use --left-inches {abs(parsed.lateral_inches):g}."
+        )
 
     car_dir = os.path.expanduser(parsed.car) if parsed.car else os.getcwd()
     cfg = dk.load_config(config_path=os.path.join(car_dir, "config.py"), myconfig=parsed.myconfig)

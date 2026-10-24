@@ -355,3 +355,14 @@ def test_a_refused_tape_capture_keeps_its_frame(tmp_path):
     with open(folder / FLOOR_CAPTURE_MANIFEST) as handle:
         assert json.load(handle)["result"]["ok"] is False
     assert not (tmp_path / CALIBRATION_FILENAME).exists()
+
+
+def test_the_old_lateral_flag_says_what_replaced_it(capsys):
+    """Someone with the old instructions should be told the new name, not just 'unrecognized arguments'."""
+    from donkeycar.management.calibrate_cv import run
+
+    with pytest.raises(SystemExit):
+        run(["--forward-inches", "8.6", "--lateral-inches", "4"])
+    message = capsys.readouterr().err
+    assert "replaced by --left-inches" in message
+    assert "use --left-inches 4" in message
