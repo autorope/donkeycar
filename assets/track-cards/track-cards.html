@@ -98,11 +98,14 @@
 <defs>
 
 <!-- ---------- STOP SIGN ---------- -->
+<!-- Signal red to the edge, with no dark rim: a rim that is not red drops out
+     of a red colour mask, so the sign is boxed small (TRACK_CARDS_CV_PLAN.md, D3).
+     The octagon's outer edge, stroke included, still spans 47 to 253. -->
 <symbol id="art-stop" viewBox="0 0 300 300">
-  <rect width="300" height="300" fill="#fdf7ee"/>
-  <rect x="140" y="196" width="20" height="92" fill="#9aa5ad" stroke="#5b666e" stroke-width="4"/>
+  <rect width="300" height="300" fill="#ffffff"/>
+  <rect x="140" y="196" width="20" height="92" fill="#7a7a7a" stroke="#111111" stroke-width="6"/>
   <polygon points="108.6,40 191.4,40 250,98.6 250,181.4 191.4,240 108.6,240 50,181.4 50,98.6"
-           fill="#d3232f" stroke="#7a1119" stroke-width="6"/>
+           fill="#e3170a" stroke="#e3170a" stroke-width="6"/>
   <polygon points="120.5,58 179.5,58 232,110.5 232,169.5 179.5,222 120.5,222 68,169.5 68,110.5"
            fill="none" stroke="#ffffff" stroke-width="8"/>
   <text x="150" y="158" text-anchor="middle" fill="#ffffff"

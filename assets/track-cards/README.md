@@ -18,7 +18,8 @@ The implementation plan, with acceptance criteria per milestone, is in
 [`MCP_SERVER_PLAN.md`](../../MCP_SERVER_PLAN.md).
 
 Measured sizes, for `measure_object_distance`: the track card's stop-sign octagon is
-2 1/16″ across its flats, border included; the large sign's is 4.5″. Standing in a
+2 1/16″ across its flats, edge to edge; the large sign's is 4.5″. Both are signal red to
+the edge on white, with no dark rim (`TRACK_CARDS_CV_PLAN.md`, D3). Standing in a
 trading-card stand, the large sign's top is 5 1/8″ and its centre 2 7/8″ above the floor.
 On a standard Donkeycar on the Exceed Magnet chassis the camera lens is 7.5″ above the
 floor.

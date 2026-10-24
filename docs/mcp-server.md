@@ -524,9 +524,13 @@ the props in `assets/track-cards/`:
 | What | Size |
 | --- | --- |
 | Camera lens above the floor | 7.5 in |
-| Track-card stop sign (`track-cards.pdf`, 3 in face) | octagon 2 1/16 in across the flats, border included |
-| Large stop sign (`stop-sign-large.pdf`) | octagon 4.5 in across the flats, border included |
+| Track-card stop sign (`track-cards.pdf`, 3 in face) | octagon 2 1/16 in across the flats, edge to edge |
+| Large stop sign (`stop-sign-large.pdf`) | octagon 4.5 in across the flats, edge to edge |
 | Large stop sign standing in a trading-card stand | top 5 1/8 in, centre 2 7/8 in above the floor |
+
+The stop signs are signal red to the edge on white, with no dark rim: a rim that is not red
+drops out of a red colour mask and the sign is boxed small. Prints from before 2026-10-24
+have a dark red rim; their size is the same, rim included.
 
 Give the octagon's size as both `width_inches` and `height_inches`. The range the tool reports
 is straight-line, lens to the sign's centre, so it is a little longer than the floor distance:

@@ -35,7 +35,7 @@ every commit.
 | --- | --- | --- | --- |
 | D1 | Background | **Pure white**, `#ffffff`, on every card face | The cream (`#fdf7ee`) lowers contrast against every colour on the card and tints the white a camera white-balances against. White paper is as bright as print gets. |
 | D2 | Outlines | Every figure gets a **black outline**, at least 8 of the card's 300 units (0.08 in on a 3 in card) | An object's edge is where a box is drawn and a size is measured. Black against white is the strongest edge print can make, whatever the colour inside it. |
-| D3 | Stop sign colours | **Black outer border, signal red face** (about `#e3170a`, OpenCV hue near 2), **white** inner ring and lettering. The dark red border goes | The dark red border was the part the camera lost. A black border keeps the octagon's true outer edge sharp, and a red nearer orange moves the face away from the purple at the venue and the magenta the crimson drifted toward. |
+| D3 | Stop sign colours | **Signal red to the edge** (`#e3170a`, OpenCV hue 2) on the white card, with **no dark or black rim**; **white** inner ring and lettering. D2's black outline does not apply to the stop sign. *Changed by Ed, 2026-10-24, from "black outer border", after C1's comparison* | The dark red border was the part the camera lost, and C1 showed a black one is worse still for a colour mask: a rim that is not red is not in a red mask. Red to the edge boxes best by colour and by edge. A red nearer orange moves the face away from the purple at the venue and the magenta the crimson drifted toward. |
 | D4 | Hues across the set | One hue family per kind of thing, chosen to be **at least 25° apart** in hue from each other and from the track's **yellow** centreline, plus white for side tape | So a colour mask for one prop does not catch another, or the track. The palette, with OpenCV hue values, is fixed in C1 before any card is redrawn. |
 | D5 | Saturation and brightness | Colour fills at **saturation ≥ 70%**, and no fill within 15% brightness of the white background | Pastels (the light blues, tans and greens now used) wash out under room light and auto-exposure. |
 | D6 | Fine detail | Nothing narrower than **6 of 300 units** (about 2 px at 320×240 from 2 ft); text at least **40 units** tall, heavy weight | Detail below a couple of pixels turns to noise, or vanishes in JPEG. |
@@ -130,12 +130,25 @@ but not to the stop sign.
 - `measure_object_distance` takes the octagon's size across the flats including the black
   border, as before.
 
+*As built:* both signs are signal red `#e3170a` to the edge (the octagon's stroke is the face
+colour, so its outer edge still spans 47–253 and the sizes are unchanged), white ring and
+lettering, white background. The track card's post is mid grey with a 6-unit black outline. Both
+stop signs are exempt from the black-outline rule (D3). `stop-sign-large.pdf` is regenerated here,
+so the new large sign can be printed for O7; `track-cards.pdf` waits for C5. Orange-leaning reds
+(`#ee2200`, `#f02800`, `#e83a00`) kept the face further from purple but lost up to 0.8 px of edge
+accuracy on the 3 in card at 320×240; darker ones (`#c81e00`–`#dc2400`) kept the edge but not the
+hue. `#e3170a` was the best of both.
+
 **Acceptance**
 
-- [ ] Under the C1 simulation, the colour-plus-edge box is within 1 px of the true octagon at
-      both resolutions and both distances, at 50% and 30% brightness.
-- [ ] The face's hue is outside the 140–170 OpenCV range (purple and magenta) after simulation.
-- [ ] A person shown the card without context calls it a stop sign.
+- [x] Under the C1 simulation, the colour-plus-edge box is within 1 px of the true octagon at
+      both resolutions and both distances, at 50% and 30% brightness. *(Worst +1.0 px over all 16
+      cases; the "room" and "dim" responses stand for the two light levels.)*
+- [x] The face's hue is outside the 140–170 OpenCV range (purple and magenta) after simulation.
+      *(172–177 throughout. Changed while building C2: not checked for octagons under 10 px, where
+      a dozen coloured pixels are mostly noise; that is only the 3 in card at 320×240 from 4 ft,
+      6.8 px, which read 163 in dim light.)*
+- [ ] A person shown the card without context calls it a stop sign. *(For Ed.)*
 
 ## C3 — Traffic lights
 

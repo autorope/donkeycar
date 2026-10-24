@@ -64,6 +64,15 @@ MAX_COLOUR_LUMINANCE = 0.85  # of white's; a colour this light reads as white un
 MIN_STROKE_UNITS = 6.0  # of a 300-unit, 3-inch face: 0.06 in
 MIN_OUTLINE_UNITS = 8.0
 MIN_TEXT_UNITS = 40.0
+# The stop signs are red to the edge on purpose: a black or dark rim drops out
+# of a red colour mask and boxes the sign small (plan D3).
+OUTLINE_EXEMPT = {"art-stop", "art-stop-large"}
+# After the camera, a stop sign's face must stay clear of purple and magenta,
+# which the venue's decorations share and the old crimson drifted toward.
+FACE_HUE_FORBIDDEN = (140.0, 170.0)
+# Below this an octagon is a dozen coloured pixels, and their hue is mostly noise
+# (a 3 in card at 4 ft at 320x240 is 6.8 px); only its size is checked.
+MIN_FACE_HUE_PX = 10.0
 
 # --------------------------------------------------------------------- camera
 #
@@ -195,7 +204,7 @@ def check_rules(card: Card) -> list[str]:
         size = element.get("font-size")
         if size is not None and float(size) * scale < MIN_TEXT_UNITS:
             problems.append(f"text {size} units tall, under {MIN_TEXT_UNITS:.0f}")
-    if not outlined:
+    if not outlined and card.name not in OUTLINE_EXEMPT:
         problems.append(f"no black (#111111) outline of at least {MIN_OUTLINE_UNITS:.0f} units")
     return sorted(set(problems))
 
@@ -376,7 +385,25 @@ def measure_sign(card: Card, resolution: str, distance_in: float, light: str) ->
     for name, finder in (("colour", colour_box), ("edge", edge_box)):
         box = finder(frame)
         out[name] = None if box is None else ((box[2] - box[0]) + (box[3] - box[1])) / 2 - true_px
+    out["face_hue"] = face_hue(frame)
     return out
+
+
+def face_hue(bgr: np.ndarray) -> float | None:
+    """The stop sign face's hue after the camera: the circular mean over its red pixels."""
+    box = colour_box(bgr)
+    if box is None:
+        return None
+    x0, y0, x1, y1 = (int(v) for v in box)
+    hsv = cv2.cvtColor(bgr[y0 : y1 + 1, x0 : x1 + 1], cv2.COLOR_BGR2HSV).reshape(-1, 3).astype(float)
+    # The face's saturated core only: blurred edge pixels are part white card,
+    # and the card is blue under room light, so they drag the hue toward purple.
+    reddish = hsv[hsv[:, 1] >= 60]
+    if len(reddish) == 0:
+        return None
+    red = reddish[reddish[:, 1] >= np.percentile(reddish[:, 1], 67)]
+    angle = red[:, 0] * np.pi / 90
+    return float((np.degrees(np.arctan2(np.sin(angle).mean(), np.cos(angle).mean())) / 2) % 180)
 
 
 # ------------------------------------------------------------------- the lamps
@@ -431,12 +458,18 @@ def run(cards: list[Card]) -> int:
             for dist in DISTANCES_IN:
                 for light in LIGHTS:
                     m = measure_sign(card, res, dist, light)
-                    edge_ok = m["edge"] is not None and abs(m["edge"]) <= 1.0
+                    hue = m["face_hue"]
+                    too_small = (m["true_px"] or 0.0) < MIN_FACE_HUE_PX
+                    in_purple = hue is None or FACE_HUE_FORBIDDEN[0] <= hue <= FACE_HUE_FORBIDDEN[1]
+                    hue_ok = too_small or not in_purple
+                    edge_ok = m["edge"] is not None and abs(m["edge"]) <= 1.0 and hue_ok
                     failures += not edge_ok
                     fmt = lambda v: "none" if v is None else f"{v:+.1f}"  # noqa: E731
                     print(
                         f"{card.name:16s} {res} {dist:3.0f} {light:4s}: true {m['true_px']:5.1f}  "
-                        f"colour {fmt(m['colour'])}  edge {fmt(m['edge'])}  {'ok' if edge_ok else 'MISS'}"
+                        f"colour {fmt(m['colour'])}  edge {fmt(m['edge'])}  "
+                        f"face hue {'too small' if too_small else fmt(hue)}  "
+                        f"{'ok' if edge_ok else 'MISS'}"
                     )
 
     lights = {"art-red": "red", "art-yellow": "amber", "art-green": "green"}

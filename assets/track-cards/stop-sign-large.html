@@ -21,14 +21,14 @@
      folded in half across the middle into two 8in x 5.25in faces. */
   .page {
     box-sizing: border-box; position: relative;
-    width: 8in; height: 10.5in; margin: 24px auto; background: #fdf7ee;
+    width: 8in; height: 10.5in; margin: 24px auto; background: #ffffff;
     overflow: hidden;
   }
   .face { position: absolute; left: 0; width: 8in; height: 5.25in; }
   .face.top { top: 0; transform: rotate(180deg); }  /* reads upright once folded */
   .face.bottom { top: 5.25in; }
 
-  /* The octagon, 4.5in across its flats including the dark red border, sits
+  /* The octagon, 4.5in across its flats edge to edge, sits
      0.15in below the fold and leaves 0.6in at the open edge for a stand to grip. */
   .sign { position: absolute; left: 1.75in; top: 0.15in; width: 4.5in; height: 4.5in; display: block; }
   .label {
@@ -42,7 +42,7 @@
   }
   .fold::after {
     content: "FOLD"; position: absolute; right: 0.1in; top: -0.08in;
-    font-size: 7pt; letter-spacing: 0.12em; color: #b0b0b0; background: #fdf7ee; padding: 0 0.05in;
+    font-size: 7pt; letter-spacing: 0.12em; color: #b0b0b0; background: #ffffff; padding: 0 0.05in;
   }
 
   @media print {
@@ -62,7 +62,7 @@
     <li><strong>Print at 100% / "Actual size"</strong> on one sheet of US Letter, with background
       graphics on. Turn off "fit to page".</li>
     <li>Check with a ruler that the octagon measures <strong>4.5 inches across its flat sides</strong>,
-      dark red border included. Write down what you measure: that is the size to give
+      edge to edge. Write down what you measure: that is the size to give
       <code>measure_object_distance</code>.</li>
     <li><strong>Fold in half</strong> on the dashed line, printed side out. Both faces read upright.</li>
     <li>Stand it in a card stand with the fold at the top. The stand grips the 0.6 inches below each
@@ -72,12 +72,14 @@
 
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <!-- The track cards' stop sign (track-cards.html, #art-stop), cropped to the
+    <!-- The track cards' stop sign (track-cards.html, #art-stop): signal red to
+         the edge on white, with no dark rim, so a red colour mask takes in the
+         whole octagon (TRACK_CARDS_CV_PLAN.md, D3). Cropped to the
          octagon: its outer edge, stroke included, runs from 47 to 253, which is
          this 206-unit viewBox exactly. -->
     <symbol id="art-stop-large" viewBox="47 37 206 206">
       <polygon points="108.6,40 191.4,40 250,98.6 250,181.4 191.4,240 108.6,240 50,181.4 50,98.6"
-               fill="#d3232f" stroke="#7a1119" stroke-width="6"/>
+               fill="#e3170a" stroke="#e3170a" stroke-width="6"/>
       <polygon points="120.5,58 179.5,58 232,110.5 232,169.5 179.5,222 120.5,222 68,169.5 68,110.5"
                fill="none" stroke="#ffffff" stroke-width="8"/>
       <text x="150" y="158" text-anchor="middle" fill="#ffffff"
@@ -90,12 +92,12 @@
 <div class="page">
   <div class="face top">
     <svg class="sign" viewBox="0 0 206 206"><use href="#art-stop-large" width="206" height="206"/></svg>
-    <div class="label">STOP SIGN &middot; 4.5 in across the flats, border included &middot; check with a ruler</div>
+    <div class="label">STOP SIGN &middot; 4.5 in across the flats, edge to edge &middot; check with a ruler</div>
   </div>
   <div class="fold"></div>
   <div class="face bottom">
     <svg class="sign" viewBox="0 0 206 206"><use href="#art-stop-large" width="206" height="206"/></svg>
-    <div class="label">STOP SIGN &middot; 4.5 in across the flats, border included &middot; check with a ruler</div>
+    <div class="label">STOP SIGN &middot; 4.5 in across the flats, edge to edge &middot; check with a ruler</div>
   </div>
 </div>
 
