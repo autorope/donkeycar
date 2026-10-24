@@ -209,7 +209,9 @@ def detect_board(image: np.ndarray, pattern: tuple[int, int] = DEFAULT_PATTERN) 
         found, corners = cv2.findChessboardCornersSB(probe, pattern, flags=cv2.CALIB_CB_EXHAUSTIVE)
         if found and corners is not None:
             if scale != 1:
-                logger.info("Board found at %dx upscale; the board is small in frame for a %s pattern", scale, pattern)
+                # Debug, not info: the preview detects on every frame, and a
+                # line per frame buries everything else in the terminal.
+                logger.debug("Board found at %dx upscale; the board is small in frame for a %s pattern", scale, pattern)
             # Back to native pixel coordinates: everything downstream -- the
             # homography, SCAN_Y, the lane offsets -- is in the camera's own
             # frame, so corners measured on a magnified copy must be divided
@@ -274,7 +276,9 @@ def orient_homography(matrix: np.ndarray, image_w: int, image_h: int) -> np.ndar
     if flip_x > 0 and flip_y > 0:
         return matrix
 
-    logger.info("Reorienting the board frame to the camera's (x %+.0f, y %+.0f)", flip_x, flip_y)
+    # Debug for the same reason: the preview orients on every frame to find
+    # the reference corner. A flip is the normal correction, not a problem.
+    logger.debug("Reorienting the board frame to the camera's (x %+.0f, y %+.0f)", flip_x, flip_y)
     return np.asarray(np.diag([flip_x, flip_y, 1.0]) @ matrix, dtype=np.float64)
 
 
