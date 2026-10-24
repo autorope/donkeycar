@@ -59,7 +59,8 @@ class Calibration:
     A ground-plane calibration plus the settings it was captured under.
 
     `homography` maps image pixels to inches on the ground. The frame's origin
-    is the board's first inner corner unless `origin_forward_inches` /
+    is the board's reference corner -- the inner corner nearest the car and
+    furthest left, as the camera sees it -- unless `origin_forward_inches` /
     `origin_lateral_inches` say where that corner sat relative to the car, in
     which case measurements come back in car coordinates.
     """
@@ -277,6 +278,59 @@ def orient_homography(matrix: np.ndarray, image_w: int, image_h: int) -> np.ndar
     return np.asarray(np.diag([flip_x, flip_y, 1.0]) @ matrix, dtype=np.float64)
 
 
+def reference_corner(corners: np.ndarray, matrix: np.ndarray, pattern: tuple[int, int] = DEFAULT_PATTERN) -> int:
+    """
+    The index of the board's reference corner: of the four inner corners at the
+    ends of the grid, the one nearest the car, and of those the furthest left.
+
+    Defined by where the corner is on the floor, not by the order the detector
+    reported the corners in, which depends on how the board happened to lie. A
+    person measuring to "the corner the detector called first" cannot know
+    which one that is; they can find this one.
+
+    `matrix` must already be oriented (see orient_homography), so that forward
+    and left mean what they say.
+    """
+    cols, rows = pattern
+    ends = [0, cols - 1, (rows - 1) * cols, rows * cols - 1]
+    floor = cv2.perspectiveTransform(corners[ends].reshape(-1, 1, 2), matrix).reshape(-1, 2)
+    # The near pair, then the leftmost of it
+    near = sorted(range(4), key=lambda i: floor[i][1])[:2]
+    return ends[min(near, key=lambda i: floor[i][0])]
+
+
+def anchor_homography(
+    matrix: np.ndarray, corners: np.ndarray, pattern: tuple[int, int] = DEFAULT_PATTERN
+) -> np.ndarray:
+    """Shift the floor frame so the reference corner is its origin."""
+    index = reference_corner(corners, matrix, pattern)
+    x0, y0 = cv2.perspectiveTransform(corners[index].reshape(1, 1, 2), matrix).reshape(2)
+    shift = np.array([[1.0, 0.0, -x0], [0.0, 1.0, -y0], [0.0, 0.0, 1.0]])
+    return np.asarray(shift @ matrix, dtype=np.float64)
+
+
+def find_reference_corner(
+    corners: np.ndarray | None,
+    image_w: int,
+    image_h: int,
+    pattern: tuple[int, int] = DEFAULT_PATTERN,
+    square_inches: float = DEFAULT_SQUARE_INCHES,
+) -> tuple[float, float] | None:
+    """
+    Where the reference corner is in the image, for the preview to mark, or
+    None when there is no board or no usable fit.
+    """
+    if corners is None:
+        return None
+    try:
+        matrix, _error = solve_homography(corners, pattern, square_inches)
+    except CalibrationError:
+        return None
+    matrix = orient_homography(matrix, image_w, image_h)
+    u, v = corners[reference_corner(corners, matrix, pattern)]
+    return float(u), float(v)
+
+
 def pixels_per_inch_at_row(matrix: np.ndarray, row: int, image_w: int, span_px: int = 40) -> float:
     """
     How many pixels make an inch on the ground, along one image row.
@@ -317,6 +371,7 @@ def calibrate_from_image(
     matrix, error = solve_homography(corners, pattern, square_inches)
     height, width = image.shape[:2]
     matrix = orient_homography(matrix, width, height)
+    matrix = anchor_homography(matrix, corners, pattern)
     scan_y = int(getattr(cfg, "SCAN_Y", height // 2))
     ppi = pixels_per_inch_at_row(matrix, scan_y, width)
 
@@ -430,12 +485,15 @@ def overlay_calibration(
     corners: np.ndarray | None,
     scan_y: int,
     scan_height: int,
+    reference: tuple[float, float] | None = None,
 ) -> np.ndarray:
     """
-    Draw the scan band and any detected corners.
+    Draw the scan band, any detected corners, and the reference corner.
 
     This is what turns lining the board up into "make the green line cross the
-    board" instead of a geometry problem solved over SSH.
+    board" instead of a geometry problem solved over SSH. The reference corner
+    is ringed because it is the one --forward-inches and --lateral-inches are
+    measured to.
     """
     canvas = np.copy(image)
     height, width = canvas.shape[:2]
@@ -454,6 +512,13 @@ def overlay_calibration(
     else:
         label = "NO BOARD - lay it flat, cross the blue band"
         colour = (255, 0, 0)
+
+    if reference is not None:
+        centre = (round(reference[0]), round(reference[1]))
+        cv2.circle(canvas, centre, 7, (255, 0, 0), 2)
+        cv2.putText(
+            canvas, "measure to here", (centre[0] + 9, centre[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0)
+        )
 
     cv2.putText(canvas, label, (6, 14), cv2.FONT_HERSHEY_SIMPLEX, 0.4, colour)
     return canvas

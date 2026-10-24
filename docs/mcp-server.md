@@ -179,10 +179,20 @@ The same corners also solve a ground homography, which is what lets the agent as
 network round trip while the car keeps moving.
 
 To get answers in car coordinates rather than the board's own frame, say where the
-board was:
+board was. Measurements are taken to the board's **reference corner**: of the points where
+four squares meet, the one nearest the car and furthest left, as the camera sees it. The
+preview rings it and labels it "measure to here". It is one square in from the board's
+near-left edge, not the board's outer corner.
+
+1. Put a tape mark on the floor directly below the camera lens.
+2. `--forward-inches` is the floor distance **straight ahead**, parallel to the car's
+   centreline, from that mark to the reference corner's row. Do not measure diagonally.
+3. `--lateral-inches` is the reference corner's distance **sideways** from the car's
+   centreline, negative to the left. A 9&times;6-corner board centred in front of the car
+   puts it at about &minus;4.
 
 ```
-donkey calibrate-cv --car ~/mycar --forward-inches 24 --lateral-inches 0
+donkey calibrate-cv --car ~/mycar --forward-inches 15 --lateral-inches -4
 ```
 
 ### Where to put the board
@@ -205,11 +215,13 @@ covered. Straddle the scan line if the board can still be found there. If it can
 is usually tolerable &mdash; a 6 inch lane offset still lands within a pixel &mdash; but
 that is the weakest number in the calibration and worth knowing about.
 
-**Lateral zero is the board's corner, not the car's centreline.** Unless you pass
-`--lateral-inches`, `measure_ground_point` reports lateral distance from wherever the
-board's first corner happened to be, so the middle of the frame will not read zero: on
-one capture it read &minus;2.8 inches. Scale is unaffected, so lane offsets are right
-either way; only absolute positions shift.
+**Without the offsets, zero is the reference corner, not the car.** Leave
+`--forward-inches` and `--lateral-inches` at 0 and `measure_ground_point` measures from the
+reference corner, so the middle of the frame will not read zero laterally, and forward
+distances are short by however far ahead the board was. Scale is unaffected, so lane
+offsets are right either way; only absolute positions shift. Calibrations captured before
+the reference corner was defined measured from whichever corner the detector reported
+first, which could be any of the four; recapture to get a known origin.
 
 **No printer?** Lay two strips of the follow-tape a known distance apart:
 

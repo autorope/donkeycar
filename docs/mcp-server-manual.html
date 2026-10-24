@@ -266,7 +266,8 @@ donkey mcp --car ~/mycar --track track-office.yml</code></pre>
 
 <h3>4. Calibrate the camera</h3>
 <p>A lane offset in inches only works once the car knows how many pixels an inch is worth. Print <code>assets/checkerboard/calibration-checkerboard-9x6-1in-letter.pdf</code> at <strong>100% / actual size</strong>, check that 10 squares measure 10 inches, and mount it flat on something rigid.</p>
-<pre><code>donkey calibrate-cv --car ~/mycar --forward-inches 24 --lateral-inches 0</code></pre>
+<pre><code>donkey calibrate-cv --car ~/mycar --forward-inches 15 --lateral-inches -4</code></pre>
+<p>The two offsets say where the board's <strong>reference corner</strong> is: of the points where four squares meet, the one nearest the car and furthest left, ringed on the preview as "measure to here" (one square in from the board's near-left edge). Put a tape mark on the floor under the camera lens. <code>--forward-inches</code> is the distance straight ahead, parallel to the car's centreline, from the mark to the corner's row; <code>--lateral-inches</code> is its distance sideways from the centreline, negative to the left. Left at 0, distances are measured from the corner instead of the car.</p>
 <p>Open <code>http://localhost:8892</code>, lay the board flat on the floor across the blue scan band, wait for green corners, and press <strong>Capture</strong>. It writes <code>cv_calibration.json</code> next to the config.</p>
 <ul>
   <li>No printer: <code>donkey calibrate-cv --car ~/mycar --tape-separation-inches 10</code> with two tape strips 10 inches apart. This gives scale only, so lanes work but <code>measure_ground_point</code> does not.</li>

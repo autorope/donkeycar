@@ -20,6 +20,7 @@ from donkeycar.parts.cv_calibration import (
     calibrate_from_tape,
     detect_board,
     find_calibration_file,
+    find_reference_corner,
     load_calibration,
     overlay_calibration,
     pixels_per_inch_at_row,
@@ -462,3 +463,58 @@ def test_overlay_without_a_board_still_draws_the_band():
     painted = overlay_calibration(blank, None, Cfg.SCAN_Y, Cfg.SCAN_HEIGHT)
     assert painted.shape == blank.shape
     assert painted.any(), "expected the scan band and centre line to be drawn"
+
+
+# ------------------------------------------------------------ reference corner
+
+
+def _reference_and_calibration(view, **kwargs):
+    calibration = calibrate_from_image(view, Cfg(), (COLS, ROWS), SQUARE_INCHES, **kwargs)
+    corners = detect_board(view, (COLS, ROWS))
+    reference = find_reference_corner(corners, IMAGE_W, IMAGE_H, (COLS, ROWS), SQUARE_INCHES)
+    return calibration, corners, reference
+
+
+def test_the_origin_is_the_reference_corner():
+    calibration, _corners, reference = _reference_and_calibration(camera_view())
+    assert calibration.image_to_ground(*reference) == pytest.approx((0.0, 0.0), abs=0.05)
+
+
+def test_the_reference_corner_is_nearest_the_car_and_furthest_left():
+    """From it, every other inner corner is ahead of it and to its right, inside the 8 x 5 inch grid."""
+    calibration, corners, _reference = _reference_and_calibration(camera_view())
+    floor = np.array([calibration.image_to_ground(u, v) for u, v in corners])
+    assert floor[:, 0].min() == pytest.approx(0.0, abs=0.05) and floor[:, 0].max() == pytest.approx(8.0, abs=0.1)
+    assert floor[:, 1].min() == pytest.approx(0.0, abs=0.05) and floor[:, 1].max() == pytest.approx(5.0, abs=0.1)
+    # In the image: the near row is the lower one, and left is left
+    near_row = corners[np.isclose(floor[:, 1], 0.0, atol=0.05)]
+    assert len(near_row) == COLS
+
+
+def test_turning_the_board_round_keeps_the_same_reference_corner():
+    """The detector numbers the corners from the other end, but the corner on the floor is the same one."""
+    _, as_laid, reference = _reference_and_calibration(camera_view())
+    _, turned, turned_reference = _reference_and_calibration(camera_view(np.rot90(board_image(), 2).copy()))
+    assert not np.allclose(as_laid[0], turned[0], atol=1.0), "the test needs the detector's order to differ"
+    assert turned_reference == pytest.approx(reference, abs=0.5)
+
+
+def test_the_forward_and_lateral_offsets_place_the_reference_corner():
+    calibration, _corners, reference = _reference_and_calibration(
+        camera_view(), origin_forward_inches=15.0, origin_lateral_inches=-4.0
+    )
+    assert calibration.image_to_ground(*reference) == pytest.approx((-4.0, 15.0), abs=0.05)
+
+
+def test_the_preview_rings_the_reference_corner():
+    view = camera_view()
+    corners = detect_board(view, (COLS, ROWS))
+    reference = find_reference_corner(corners, IMAGE_W, IMAGE_H, (COLS, ROWS), SQUARE_INCHES)
+    painted = overlay_calibration(view, corners, Cfg.SCAN_Y, Cfg.SCAN_HEIGHT, reference)
+    u, v = round(reference[0]), round(reference[1])
+    ring = painted[v - 8 : v + 9, u - 8 : u + 9]
+    assert ((ring[..., 0] == 255) & (ring[..., 1] == 0) & (ring[..., 2] == 0)).any()
+
+
+def test_no_reference_corner_without_a_board():
+    assert find_reference_corner(None, IMAGE_W, IMAGE_H) is None

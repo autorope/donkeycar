@@ -49,6 +49,7 @@ from donkeycar.parts.cv_calibration import (
     calibrate_from_image,
     calibrate_from_tape,
     detect_board,
+    find_reference_corner,
     overlay_calibration,
 )
 from donkeycar.utils import arr_to_binary
@@ -82,6 +83,12 @@ PAGE = """<!doctype html>
   Lay the checkerboard <strong>flat on the floor</strong> in front of the car.
   Slide it until the blue band crosses the board and the corners turn green,
   then capture. A board held upright gives meaningless numbers.
+</p>
+<p>
+  The ringed corner, <strong>measure to here</strong>, is the reference corner: the inner corner
+  nearest the car and furthest left. <code>--forward-inches</code> is the floor distance straight
+  ahead from the mark under the camera lens to it, and <code>--lateral-inches</code> its distance
+  sideways from the car's centreline, negative to the left.
 </p>
 <p>Board: {cols}&times;{rows} inner corners, {square} inch squares.</p>
 <img src="/video" alt="camera preview with the scan band and detected corners">
@@ -125,7 +132,9 @@ class VideoHandler(tornado.web.RequestHandler):
                 continue
             corners = detect_board(frame, app.pattern)
             app.last_corners = corners
-            painted = overlay_calibration(frame, corners, app.scan_y, app.scan_height)
+            height, width = frame.shape[:2]
+            reference = find_reference_corner(corners, width, height, app.pattern, app.square_inches)
+            painted = overlay_calibration(frame, corners, app.scan_y, app.scan_height, reference)
             jpeg = arr_to_binary(painted)
             self.write(boundary)
             self.write("Content-type: image/jpeg\r\n")
@@ -535,10 +544,16 @@ def run(args: list[str]) -> None:
         "--forward-inches",
         type=float,
         default=0.0,
-        help="distance from the car to the board's first corner; leave 0 to measure in the board's own frame",
+        help=(
+            "floor distance straight ahead from the mark under the camera lens to the board's reference corner "
+            "(the inner corner nearest the car and furthest left, ringed on the preview); 0 measures from the corner"
+        ),
     )
     parser.add_argument(
-        "--lateral-inches", type=float, default=0.0, help="offset of the board's first corner from the centreline"
+        "--lateral-inches",
+        type=float,
+        default=0.0,
+        help="sideways distance from the car's centreline to the reference corner, negative to the left",
     )
     parser.add_argument(
         "--tape-separation-inches",
