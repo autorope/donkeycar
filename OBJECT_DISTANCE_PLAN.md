@@ -217,9 +217,11 @@ throughout**: nothing here needs the motor, and the car is rolled by hand.
   at **100% / actual size** (not "fit to page"). Check with a ruler that one square is exactly
   1 inch. Tape it flat to something rigid: a clipboard, foam board or a book cover. It has 10×7
   squares, which is 9×6 inner corners, the tool's default.
-- The stop sign from `assets/track-cards/track-cards.pdf`: cut out one face (a 3-inch panel)
-  rather than folding the tent, and stand it **upright** in a card stand, the kind used for
-  trading cards. Check by eye from the side that it is vertical, not leaning back.
+- The large stop sign, `assets/track-cards/stop-sign-large.pdf`: one Letter sheet, printed at
+  100%, folded in half on the dashed line, and stood **upright** in a card stand, the kind used
+  for trading cards, fold at the top. Its octagon is 4.5 inches across. The 3-inch track card's
+  octagon (2 1/16 inches) is about 5 px across at 120 inches at 640×480, too small for a
+  one-pixel box error not to dominate; it can still be used at 12, 24 and 48 inches. Check by eye from the side that it is vertical, not leaning back.
   **Measure the octagon's width and its height across its flat sides with a ruler**, and write
   both down: these are the `width_inches` and `height_inches` used below. Also measure the height
   of the octagon's centre above the floor, in the stand. (A folded tent would lean back, which

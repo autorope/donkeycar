@@ -10,11 +10,15 @@ props the car has to recognize and react to.
 | --- | --- |
 | `track-cards.html` | Source for the printable props. Self-contained — inline SVG, no external assets, no build step. Open it in a browser to see setup instructions and a preview. |
 | `track-cards.pdf` | Print this. 7 sheets, US Letter, generated from the HTML. |
+| `stop-sign-large.html` / `stop-sign-large.pdf` | The same stop sign with a 4.5″ octagon, on one Letter sheet folded in half. For measuring distance with `measure_object_distance`: the 3″ card's 2 1/16″ octagon is only about 5 px across at 10 feet at 640×480, too small to measure. Print at 100%, check the octagon is 4.5″ across its flats, fold on the dashed line, and stand it in a card stand with the fold at the top. |
 
 The track layout, the CV autopilot, the MCP server the agent drives through and the
 progression of activities are all in [`docs/mcp-server.md`](../../docs/mcp-server.md).
 The implementation plan, with acceptance criteria per milestone, is in
 [`MCP_SERVER_PLAN.md`](../../MCP_SERVER_PLAN.md).
+
+Regenerate `stop-sign-large.pdf` the same way as `track-cards.pdf` (below), with
+`stop-sign-large.html` and `--print-to-pdf=assets/track-cards/stop-sign-large.pdf`.
 
 ## The props
 

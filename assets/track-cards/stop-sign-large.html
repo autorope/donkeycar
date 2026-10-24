@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Donkeycar Large Stop Sign &mdash; 4.5in, Fold in Half</title>
+<style>
+  @page { size: letter portrait; margin: 0.25in; }
+
+  html, body { margin: 0; padding: 0; background: #55606a; }
+  body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; }
+
+  .howto {
+    background: #fff; color: #222; max-width: 8in; margin: 24px auto;
+    padding: 20px 28px; border-radius: 8px; line-height: 1.5; font-size: 14px;
+  }
+  .howto h1 { font-size: 20px; margin: 0 0 8px; }
+  .howto ol { margin: 8px 0 0 18px; padding: 0; }
+  .howto li { margin-bottom: 6px; }
+
+  /* The printable area of a Letter sheet with 0.25in margins: 8in x 10.5in,
+     folded in half across the middle into two 8in x 5.25in faces. */
+  .page {
+    box-sizing: border-box; position: relative;
+    width: 8in; height: 10.5in; margin: 24px auto; background: #fdf7ee;
+    overflow: hidden;
+  }
+  .face { position: absolute; left: 0; width: 8in; height: 5.25in; }
+  .face.top { top: 0; transform: rotate(180deg); }  /* reads upright once folded */
+  .face.bottom { top: 5.25in; }
+
+  /* The octagon, 4.5in across its flats including the dark red border, sits
+     0.15in below the fold and leaves 0.6in at the open edge for a stand to grip. */
+  .sign { position: absolute; left: 1.75in; top: 0.15in; width: 4.5in; height: 4.5in; display: block; }
+  .label {
+    position: absolute; left: 0; right: 0; bottom: 0.18in; text-align: center;
+    font-size: 9pt; color: #7a7a7a;
+  }
+
+  .fold {
+    position: absolute; left: 0; right: 0; top: 5.25in; height: 0;
+    border-top: 1px dashed #b0b0b0;
+  }
+  .fold::after {
+    content: "FOLD"; position: absolute; right: 0.1in; top: -0.08in;
+    font-size: 7pt; letter-spacing: 0.12em; color: #b0b0b0; background: #fdf7ee; padding: 0 0.05in;
+  }
+
+  @media print {
+    html, body { background: none; }
+    .howto { display: none; }
+    .page { margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="howto">
+  <h1>Large stop sign, for measuring distance</h1>
+  The same stop sign as the track cards, with the octagon 4.5 inches across its flats
+  instead of 2 1/16, so the car's camera can measure it from further away.
+  <ol>
+    <li><strong>Print at 100% / "Actual size"</strong> on one sheet of US Letter, with background
+      graphics on. Turn off "fit to page".</li>
+    <li>Check with a ruler that the octagon measures <strong>4.5 inches across its flat sides</strong>,
+      dark red border included. Write down what you measure: that is the size to give
+      <code>measure_object_distance</code>.</li>
+    <li><strong>Fold in half</strong> on the dashed line, printed side out. Both faces read upright.</li>
+    <li>Stand it in a card stand with the fold at the top. The stand grips the 0.6 inches below each
+      sign, so the octagon stays fully in view. Check from the side that it stands vertical.</li>
+  </ol>
+</div>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- The track cards' stop sign (track-cards.html, #art-stop), cropped to the
+         octagon: its outer edge, stroke included, runs from 47 to 253, which is
+         this 206-unit viewBox exactly. -->
+    <symbol id="art-stop-large" viewBox="47 37 206 206">
+      <polygon points="108.6,40 191.4,40 250,98.6 250,181.4 191.4,240 108.6,240 50,181.4 50,98.6"
+               fill="#d3232f" stroke="#7a1119" stroke-width="6"/>
+      <polygon points="120.5,58 179.5,58 232,110.5 232,169.5 179.5,222 120.5,222 68,169.5 68,110.5"
+               fill="none" stroke="#ffffff" stroke-width="8"/>
+      <text x="150" y="158" text-anchor="middle" fill="#ffffff"
+            font-family="'Arial Black',Arial,Helvetica,sans-serif" font-weight="900"
+            font-size="48" letter-spacing="0">STOP</text>
+    </symbol>
+  </defs>
+</svg>
+
+<div class="page">
+  <div class="face top">
+    <svg class="sign" viewBox="0 0 206 206"><use href="#art-stop-large" width="206" height="206"/></svg>
+    <div class="label">STOP SIGN &middot; 4.5 in across the flats, border included &middot; check with a ruler</div>
+  </div>
+  <div class="fold"></div>
+  <div class="face bottom">
+    <svg class="sign" viewBox="0 0 206 206"><use href="#art-stop-large" width="206" height="206"/></svg>
+    <div class="label">STOP SIGN &middot; 4.5 in across the flats, border included &middot; check with a ruler</div>
+  </div>
+</div>
+
+</body>
+</html>
