@@ -191,6 +191,12 @@ four squares meet, the one nearest the car and furthest left, as the camera sees
 preview rings it and labels it "measure to here". It is one square in from the board's
 near-left edge, not the board's outer corner.
 
+![Floor calibration: what to measure, seen from above](floor-calibration-measurements.png)
+
+[`floor-calibration-measurements.png`](floor-calibration-measurements.png), drawn by
+[`floor_calibration_diagram.py`](floor_calibration_diagram.py), shows both measurements from
+above.
+
 1. Put a tape mark on the floor directly below the camera lens.
 2. `--forward-inches` is the floor distance **straight ahead**, parallel to the car's
    centreline, from that mark to the reference corner's row. Do not measure diagonally.
