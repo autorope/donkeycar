@@ -16,9 +16,9 @@ each other and from the track, and no detail too small to survive 320×240.
 
 ---
 
-## Progress — 0 of 5
+## Progress — 1 of 5
 
-- [ ] **C1** — Legibility check: a script that scores every card as the camera would see it
+- [x] **C1** — Legibility check: a script that scores every card as the camera would see it
 - [ ] **C2** — Stop signs: the track card and the large sign
 - [ ] **C3** — Traffic lights
 - [ ] **C4** — People, dog, vehicles and houses
@@ -42,9 +42,34 @@ every commit.
 | D7 | Recognisability for a person | Kept: each card still reads at a glance as what it is | The agent is a vision model and reasons the way a person would; a card that stops looking like a stop sign is worse for it, not better. |
 | D8 | Sizes | **Unchanged**: 3 in faces, the same tent geometry; the large sign's octagon stays 4.5 in | The O7 measurements and the docs' reference dimensions stay valid; only the artwork changes. |
 | D9 | How "better" is checked | A script (C1) renders each card, then simulates the camera: dim light, auto-exposure, blur and JPEG at 320×240 and 640×480. It reports contrast, hue and the size a colour-plus-edge box measures, against fixed targets | Judging by eye on a monitor is what produced the current cards. A number that improves is a check; "looks punchier" is not. |
-| D10 | When the O7 check uses them | **O7 finishes with the sign already printed**, with the edge-based box; the new sign is checked afterwards in C2 | O7 tests the tools, and its data so far is valid. Swapping the sign mid-check would mix two variables. |
+| D10 | When the O7 check uses them | ~~O7 finishes with the sign already printed~~ **Changed by Ed, 2026-10-24: the new sign and cards come first**, and O7's 24 in placement is redone with the new large sign | Ed's call, after re-measuring the lens mark: the 24 in placement is being redone anyway. |
 
 ---
+
+## Palette
+
+Fixed in C1 (D4, D5). OpenCV hue is 0–179; the car's yellow tape window is 17–37
+(`COLOR_THRESHOLD_LOW/HIGH` in `~/mycar/myconfig.py`). Red, amber and green are reserved for the
+stop sign and the lamps, so a colour mask for one cannot catch another prop.
+
+| Colour | Hex | Hue | Use |
+| --- | --- | --- | --- |
+| White | `#ffffff` | — | backgrounds, lettering, number panels |
+| Black | `#111111` | — | outlines, lettering, housings |
+| Dark grey | `#3c3c3c` | — | unlit lamps, tyres, shadows |
+| Mid grey | `#7a7a7a` | — | roads, posts, details |
+| Signal red | `#e3170a` | 2 | **reserved**: stop sign, red lamp |
+| Amber | `#ff7000` | 13 | **reserved**: yellow lamp |
+| Green | `#00b050` | 74 | **reserved**: green lamp |
+| Blue | `#1e5bd6` | 110 | car, clothing |
+| Teal | `#009a9a` | 90 | truck, clothing |
+| Brown | `#7b3f12` | 13 | hair, dog, wood |
+| Skin | `#e0a070` | 12 | skin |
+
+Two exceptions, on purpose. **Amber** sits 4 below the tape window, not 25° clear (D4): a yellow
+lamp has to look yellow, and every yellow is in the tape window. It is small, ringed by a black
+housing, and only ever lit on its own. **Skin** is under the 70% saturation floor (D5): skin has
+to look like skin, and a person is told apart by shape, not by a colour mask.
 
 ## C1 — Legibility check
 
@@ -59,12 +84,42 @@ every commit.
   followed by an edge refinement finds, against the octagon's true size in pixels.
 - Fixes the palette for D4 and D5 as a table in this plan, with OpenCV hue values.
 
+*As built:* the drawing rules are checked from each card's SVG source (background, palette,
+translucency, black outline, stroke and text sizes), so they need no rendering. The stop signs and
+lamps, which are only polygons, circles and rectangles, are drawn directly with OpenCV rather than
+through a browser, so the check runs anywhere, including CI. The camera's colour response is
+**fitted to the O7 frame** of the printed large sign at 24 in, rather than assumed: per BGR channel
+in linear light, `out = flare + gain × printed`, matched to that frame's white card (blue: gray
+153, hue 101, saturation 96 of 255), crimson face (hue 172) and dark red border (hue 110–160,
+saturation 61–85). A first, assumed response kept the border red and did not reproduce the field
+result. `donkeycar/tests/test_track_cards.py` tests the checker on cards written in the test, not
+on the real cards.
+
+*Finding, for C2 (D3):* the checker compared three stop sign designs before any was drawn. Error in
+px of the box against the true octagon, over both resolutions, both distances and both light
+levels:
+
+| Design | Large sign, colour box (worst) | Large sign, edge box (worst) | 3 in card, colour (worst) | 3 in card, edge (worst) |
+| --- | --- | --- | --- | --- |
+| Current: crimson, dark red rim | −5.7 (−9.0) | +0.9 (+1.3) | −4.6 (−7.0) | +0.5 (+1.1) |
+| A: signal red, **black rim** 12 units (D3 as written) | −9.3 (−16.8) | +1.5 (+1.8) | −5.3 (−7.8) | +1.2 (+1.6) |
+| B: signal red **to the edge**, no dark rim | **−2.4 (−5.5)** | **+0.7 (+0.9)** | **−2.6 (−4.0)** | **+0.4 (+0.9)** |
+
+A black rim is the worst of the three for a colour mask, for the same reason the dark red one
+failed in the field: a rim that is not red is not in a red mask. It does not sharpen the edge box
+either. **Proposed change to D3, for Ed to decide:** design B, red to the edge on white, with the
+white ring and lettering, and no black or dark rim; D2's black outline applies to the other cards
+but not to the stop sign.
+
 **Acceptance**
 
-- [ ] Run on the current cards, it reproduces the field result: the stop sign's colour-mask box
-      is at least 2 px small at 640×480 at 2 ft under 50% brightness.
-- [ ] It prints a per-card table and exits non-zero when any card misses a target, so C2–C4 can
-      be checked by running it.
+- [x] Run on the current cards, it reproduces the field result: the stop sign's colour-mask box
+      is at least 2 px small at 640×480 at 2 ft under 50% brightness. *(As built, the light levels
+      are the fitted "room" response and "dim" at 60% of it: −2.1 px for the large sign and
+      −7.0 px for the 3 in card at 640×480, 24 in, room light.)*
+- [x] It prints a per-card table and exits non-zero when any card misses a target, so C2–C4 can
+      be checked by running it. *(On the current cards: 35 misses, and all 14 fail the drawing
+      rules.)*
 
 ## C2 — Stop signs
 
