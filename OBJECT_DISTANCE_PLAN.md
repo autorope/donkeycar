@@ -249,7 +249,12 @@ throughout**: nothing here needs the motor, and the car is rolled by hand.
    **Local Network** permission to reach devices on the local network, and without it every
    local address fails this way, while Terminal and `curl` still connect. To fix it, open
    **System Settings → Privacy & Security → Local Network**, turn on the browser, quit it
-   completely (Cmd-Q), and reopen it. If the browser is not listed, try Safari. On a laptop
+   completely (Cmd-Q), and reopen it. If the browser is not listed, try Safari. Seen on
+   2026-10-23 on Ed's Mac: Chrome was ticked, but listed **twice**, and still could not connect
+   while Firefox, Terminal and `curl` could. A duplicate usually means a stale entry left by a
+   Chrome update, and the permission that counts can be on the other one: turn both entries off
+   and back on, then quit Chrome with Cmd-Q, since closing its windows can leave it running.
+   Firefox is a fine alternative for the whole check. On a laptop
    other than the Mac, check it is on the same network as the car, not a guest network or a
    VPN: `curl -I http://10.0.0.32:8892/` from its terminal shows whether it can reach the car
    at all. This applies to every page on the car, including the MCP server on port 8891.
