@@ -338,6 +338,31 @@ zero, and no `warning` on the full run.
 3. Claude writes the results into this section, ticks O7, and commits. Any failure gets a fix,
    or a note here on why it is accepted.
 
+### Results
+
+**Resolution.** Ed changed the camera to **640×480** (`IMAGE_W`/`IMAGE_H` in `myconfig.py`)
+before the check, so the step 2 rules of thumb scale up: the principal point near (320, 240)
+rather than (160, 120), and RMS errors in pixels about twice the 320×240 figures. The floor
+calibration in `~/mycar/cv_calibration.json` was captured at 320×240 and is now stale; it needs
+recapturing at 640×480 before anything that uses it (lane offsets, `measure_ground_point`, the
+floor position from `measure_object_distance`).
+
+**Step 2, 2026-10-23.** Passed. 22 views, all used; folder
+`~/mycar/camera_calibration_views/2026-10-23T17-21-34/`.
+
+| Value | Result | Check |
+| --- | --- | --- |
+| `fx`, `fy` | 315.34, 314.71 px | agree within 0.2% (target 2%) |
+| `cx`, `cy` | 311.81, 226.46 px | 8 and 14 px from the frame centre (target about 20 at 320×240, so 40 here) |
+| distortion | k1 −0.348, k2 0.157, p1 −0.0001, p2 0.0010, k3 −0.038 | strong barrel distortion, as expected of a wide lens |
+| `rms_error_px` | 0.185 | well under 0.5 |
+| per-view error | 0.140–0.219 px, median 0.189 | no outlier view |
+
+A focal length of 315 px at 640 px wide is a horizontal field of view of about 91°. For
+comparison, the two estimates recovered from the floor homography at 320×240 (224 and 162 px,
+which would be 448 and 324 px at this size) were 42% and 3% off: this is why the size-based
+tools needed a real camera calibration.
+
 ---
 
 ## Out of scope
