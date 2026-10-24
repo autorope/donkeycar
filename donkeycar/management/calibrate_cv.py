@@ -45,6 +45,7 @@ from donkeycar.parts.cv_calibration import (
     CALIBRATION_FILENAME,
     DEFAULT_PATTERN,
     DEFAULT_SQUARE_INCHES,
+    Calibration,
     CalibrationError,
     calibrate_from_image,
     calibrate_from_tape,
@@ -60,6 +61,9 @@ CarConfig = Any
 
 #: Where `--intrinsics` keeps each capture's views, inside the car directory
 VIEWS_DIRNAME = "camera_calibration_views"
+#: Where each floor capture keeps its frame and settings, inside the car directory
+FLOOR_CAPTURES_DIRNAME = "cv_calibration_captures"
+FLOOR_CAPTURE_MANIFEST = "capture.json"
 VIEWS_MANIFEST = "views.json"
 
 
@@ -82,7 +86,8 @@ PAGE = """<!doctype html>
 <p>
   Lay the checkerboard <strong>flat on the floor</strong> in front of the car.
   Slide it until the blue band crosses the board and the corners turn green,
-  then capture. A board held upright gives meaningless numbers.
+  then capture. A board held upright gives meaningless numbers. Every capture keeps its
+  frame and settings in <code>cv_calibration_captures/</code> in the car directory.
 </p>
 <p>
   The ringed corner, <strong>measure to here</strong>, is the reference corner: the inner corner
@@ -147,6 +152,61 @@ class VideoHandler(tornado.web.RequestHandler):
             await asyncio.sleep(0.1)
 
 
+def save_floor_capture(
+    car_dir: str,
+    frame: np.ndarray,
+    inputs: dict[str, Any],
+    result: dict[str, Any],
+    calibration: Calibration | None = None,
+    corners: np.ndarray | None = None,
+    reference: tuple[float, float] | None = None,
+    scan: tuple[int, int] | None = None,
+    clock: Callable[[], float] = time.time,
+) -> str:
+    """
+    Keep what a floor capture saw and was told, so it can be checked later.
+
+    Written for every capture, refused or not: a refused capture's frame is
+    what shows why. `frame.png` is the frame as captured, `preview.png` the
+    same with the scan band, corners and reference corner drawn on, and
+    `capture.json` the measurements entered, the corners found, the outcome
+    and the calibration exactly as written. Nothing deletes old folders.
+    """
+    now = clock()
+    stamp = time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime(now))
+    folder = os.path.join(car_dir, FLOOR_CAPTURES_DIRNAME, stamp)
+    suffix = 2
+    while os.path.exists(folder):
+        folder = os.path.join(car_dir, FLOOR_CAPTURES_DIRNAME, f"{stamp}-{suffix}")
+        suffix += 1
+    os.makedirs(folder)
+
+    # Camera parts hand back RGB; OpenCV writes BGR
+    cv2.imwrite(os.path.join(folder, "frame.png"), cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
+    if scan is not None:
+        painted = overlay_calibration(frame, corners, scan[0], scan[1], reference)
+        cv2.imwrite(os.path.join(folder, "preview.png"), cv2.cvtColor(painted, cv2.COLOR_RGB2BGR))
+
+    height, width = frame.shape[:2]
+    manifest = {
+        "captured_at": now,
+        "image_w": width,
+        "image_h": height,
+        "inputs": inputs,
+        "scan_y": scan[0] if scan else None,
+        "scan_height": scan[1] if scan else None,
+        "corners_px": corners.round(3).tolist() if corners is not None else None,
+        "reference_corner_px": list(reference) if reference is not None else None,
+        "result": result,
+        "calibration": calibration.to_dict() if calibration is not None else None,
+    }
+    if manifest["calibration"] is not None:
+        del manifest["calibration"]["loaded_from"]
+    with open(os.path.join(folder, FLOOR_CAPTURE_MANIFEST), "w") as handle:
+        json.dump(manifest, handle, indent=2)
+    return folder
+
+
 class CaptureHandler(tornado.web.RequestHandler):
     def post(self) -> None:
         app = cast(CalibrationApp, self.application)
@@ -155,6 +215,29 @@ class CaptureHandler(tornado.web.RequestHandler):
             self.set_status(503)
             self.write({"ok": False, "error": "No camera frame yet."})
             return
+
+        height, width = frame.shape[:2]
+        corners = detect_board(frame, app.pattern)
+        reference = find_reference_corner(corners, width, height, app.pattern, app.square_inches)
+        inputs = {
+            "forward_inches": app.origin_forward_inches,
+            "left_inches": -app.origin_lateral_inches,
+            "pattern": list(app.pattern),
+            "square_inches": app.square_inches,
+        }
+
+        def keep(result: dict[str, Any], calibration: Calibration | None = None) -> str:
+            return save_floor_capture(
+                os.path.dirname(app.output_path),
+                frame,
+                inputs,
+                result,
+                calibration=calibration,
+                corners=corners,
+                reference=reference,
+                scan=(app.scan_y, app.scan_height),
+            )
+
         try:
             calibration = calibrate_from_image(
                 frame,
@@ -165,20 +248,22 @@ class CaptureHandler(tornado.web.RequestHandler):
                 origin_lateral_inches=app.origin_lateral_inches,
             )
         except CalibrationError as exc:
+            result = {"ok": False, "error": str(exc)}
+            folder = keep(result)
             self.set_status(400)
-            self.write({"ok": False, "error": str(exc)})
+            self.write({**result, "capture_folder": folder})
             return
 
         calibration.save(app.output_path)
-        self.write(
-            {
-                "ok": True,
-                "written_to": app.output_path,
-                "pixels_per_inch": round(calibration.pixels_per_inch, 3),
-                "reprojection_error_inches": round(calibration.reprojection_error_px or 0.0, 4),
-                "scan_y": calibration.scan_y,
-            }
-        )
+        result = {
+            "ok": True,
+            "written_to": app.output_path,
+            "pixels_per_inch": round(calibration.pixels_per_inch, 3),
+            "reprojection_error_inches": round(calibration.reprojection_error_px or 0.0, 4),
+            "scan_y": calibration.scan_y,
+        }
+        folder = keep(result, calibration)
+        self.write({**result, "capture_folder": folder})
 
 
 class CalibrationApp(tornado.web.Application):
@@ -645,8 +730,19 @@ def _capture_from_tape(camera: CameraPart, cfg: CarConfig, separation_inches: fl
     frame = camera.run_threaded() if hasattr(camera, "run_threaded") else camera.run()
     if frame is None:
         raise SystemExit("No camera frame; is the camera configured?")
-    calibration = calibrate_from_tape(frame, cfg, separation_inches)
+    car_dir = os.path.dirname(output_path)
+    inputs = {"tape_separation_inches": separation_inches}
+    try:
+        calibration = calibrate_from_tape(frame, cfg, separation_inches)
+    except CalibrationError as exc:
+        folder = save_floor_capture(car_dir, frame, inputs, {"ok": False, "error": str(exc)})
+        raise SystemExit(f"{exc} (frame kept in {folder})") from exc
     calibration.save(output_path)
+    result = {"ok": True, "written_to": output_path, "pixels_per_inch": round(calibration.pixels_per_inch, 3)}
+    folder = save_floor_capture(car_dir, frame, inputs, result, calibration=calibration)
     logger.info(
-        "Wrote %s: %.3f pixels per inch (scale only, no ground measurements)", output_path, calibration.pixels_per_inch
+        "Wrote %s: %.3f pixels per inch (scale only, no ground measurements); frame kept in %s",
+        output_path,
+        calibration.pixels_per_inch,
+        folder,
     )

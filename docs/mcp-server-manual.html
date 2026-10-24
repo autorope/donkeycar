@@ -273,6 +273,7 @@ donkey mcp --car ~/mycar --track track-office.yml</code></pre>
   <li>No printer: <code>donkey calibrate-cv --car ~/mycar --tape-separation-inches 10</code> with two tape strips 10 inches apart. This gives scale only, so lanes work but <code>measure_ground_point</code> does not.</li>
   <li>Centre lane only: no calibration needed, because zero inches is zero pixels.</li>
   <li>Recalibrate whenever the camera moves.</li>
+  <li>Every capture, refused or not, is kept in <code>cv_calibration_captures/&lt;date-time&gt;/</code> in the car directory: the frame, the preview with the reference corner drawn on, and a <code>capture.json</code> with what you entered, the corners found, the outcome and the calibration as written.</li>
 </ul>
 <p><strong>Optional: calibrate the camera itself.</strong> The floor calibration above is all lane changes and <code>measure_ground_point</code> need. Measuring an object by its known size also needs the camera's focal length and lens distortion; without this calibration, <code>measure_object_distance</code> and <code>estimate_speed_from_object</code> answer <code>known: false</code>.</p>
 <pre><code>donkey calibrate-cv --car ~/mycar --intrinsics</code></pre>

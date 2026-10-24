@@ -174,6 +174,13 @@ Then open `http://localhost:8892`:
    blue band is the strip the follower actually samples.
 3. Press **Capture**. It writes `cv_calibration.json` beside your config.
 
+**Every capture is kept**, refused or not, in its own folder,
+`cv_calibration_captures/<date-time>/` in the car directory: `frame.png` as the camera saw it,
+`preview.png` with the scan band, corners and reference corner drawn on, and `capture.json`
+with what you entered (`--forward-inches`, `--left-inches`, board and square size), the scan
+row, every corner found, the outcome, and the calibration exactly as written. A refused
+capture's frame is what shows why it was refused. Nothing deletes old folders.
+
 The same corners also solve a ground homography, which is what lets the agent ask
 "how far ahead is that?". Without it the only cue is apparent size, guessed over a
 network round trip while the car keeps moving.

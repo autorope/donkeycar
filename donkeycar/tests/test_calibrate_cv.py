@@ -15,6 +15,8 @@ import pytest
 from tornado.testing import AsyncHTTPTestCase
 
 from donkeycar.management.calibrate_cv import (
+    FLOOR_CAPTURE_MANIFEST,
+    FLOOR_CAPTURES_DIRNAME,
     VIEWS_DIRNAME,
     VIEWS_MANIFEST,
     CalibrationApp,
@@ -262,18 +264,60 @@ class TestIntrinsicsPages(AsyncHTTPTestCase):
         assert b"Hold the checkerboard" in self.fetch("/").body
 
 
-class TestGroundCaptureUnchanged(AsyncHTTPTestCase):
+class TestGroundCapture(AsyncHTTPTestCase):
     def get_app(self):
         import tempfile
 
         self.car_dir = tempfile.mkdtemp()
+        self.camera = FakeCamera(camera_view())
         output = os.path.join(self.car_dir, CALIBRATION_FILENAME)
-        return CalibrationApp(FakeCamera(camera_view()), Cfg(), output, (COLS, ROWS), 1.0, 0.0, 0.0)
+        # 15 inches ahead and 4 to the left, as --forward-inches 15 --left-inches 4 gives
+        return CalibrationApp(self.camera, Cfg(), output, (COLS, ROWS), 1.0, 15.0, -4.0)
 
-    def test_the_ground_capture_writes_only_its_own_file(self):
+    def _captures(self):
+        root = os.path.join(self.car_dir, FLOOR_CAPTURES_DIRNAME)
+        return sorted(os.listdir(root)) if os.path.isdir(root) else []
+
+    def _manifest(self, folder):
+        with open(os.path.join(folder, FLOOR_CAPTURE_MANIFEST)) as handle:
+            return json.load(handle)
+
+    def test_the_ground_capture_writes_its_calibration_and_no_camera_files(self):
         response = self.fetch("/capture", method="POST", body="")
         assert response.code == 200, response.body
-        assert sorted(os.listdir(self.car_dir)) == [CALIBRATION_FILENAME]
+        assert sorted(os.listdir(self.car_dir)) == [CALIBRATION_FILENAME, FLOOR_CAPTURES_DIRNAME]
+
+    def test_a_capture_keeps_its_frame_preview_and_settings(self):
+        body = json.loads(self.fetch("/capture", method="POST", body="").body)
+        folder = body["capture_folder"]
+        assert sorted(os.listdir(folder)) == [FLOOR_CAPTURE_MANIFEST, "frame.png", "preview.png"]
+
+        saved = cv2.cvtColor(cv2.imread(os.path.join(folder, "frame.png")), cv2.COLOR_BGR2RGB)
+        assert np.array_equal(saved, self.camera.frame)
+
+        manifest = self._manifest(folder)
+        expected = {"forward_inches": 15.0, "left_inches": 4.0, "pattern": [COLS, ROWS], "square_inches": 1.0}
+        assert manifest["inputs"] == expected
+        assert manifest["result"]["ok"] is True
+        assert len(manifest["corners_px"]) == COLS * ROWS
+        assert manifest["reference_corner_px"] is not None
+        with open(os.path.join(self.car_dir, CALIBRATION_FILENAME)) as handle:
+            assert manifest["calibration"] == json.load(handle)
+
+    def test_a_refused_capture_keeps_its_frame_and_writes_no_calibration(self):
+        self.camera.frame = _blank()
+        response = self.fetch("/capture", method="POST", body="")
+        assert response.code == 400
+        folder = json.loads(response.body)["capture_folder"]
+        manifest = self._manifest(folder)
+        assert manifest["result"]["ok"] is False and "checkerboard" in manifest["result"]["error"]
+        assert manifest["calibration"] is None and manifest["corners_px"] is None
+        assert not os.path.exists(os.path.join(self.car_dir, CALIBRATION_FILENAME))
+
+    def test_each_capture_gets_its_own_folder(self):
+        self.fetch("/capture", method="POST", body="")
+        self.fetch("/capture", method="POST", body="")
+        assert len(self._captures()) == 2
 
 
 def test_left_inches_become_a_negative_lateral_origin():
@@ -282,3 +326,32 @@ def test_left_inches_become_a_negative_lateral_origin():
 
     assert origin_offsets(15.0, 4.0) == (15.0, -4.0)
     assert origin_offsets(15.0, -2.0) == (15.0, 2.0)
+
+
+def test_the_tape_capture_keeps_its_frame_and_settings(tmp_path):
+    from donkeycar.management.calibrate_cv import _capture_from_tape
+
+    from .test_cv_calibration import Cfg as TapeCfg
+    from .test_cv_calibration import tape_image
+
+    output = tmp_path / CALIBRATION_FILENAME
+    _capture_from_tape(FakeCamera(tape_image(90, 190)), TapeCfg(), 10.0, str(output))
+    (folder,) = (tmp_path / FLOOR_CAPTURES_DIRNAME).iterdir()
+    assert sorted(p.name for p in folder.iterdir()) == [FLOOR_CAPTURE_MANIFEST, "frame.png"]
+    with open(folder / FLOOR_CAPTURE_MANIFEST) as handle:
+        manifest = json.load(handle)
+    assert manifest["inputs"] == {"tape_separation_inches": 10.0}
+    assert manifest["result"]["ok"] is True and manifest["calibration"]["source"] == "tape"
+
+
+def test_a_refused_tape_capture_keeps_its_frame(tmp_path):
+    from donkeycar.management.calibrate_cv import _capture_from_tape
+
+    from .test_cv_calibration import Cfg as TapeCfg
+
+    with pytest.raises(SystemExit, match="frame kept in"):
+        _capture_from_tape(FakeCamera(_blank()), TapeCfg(), 10.0, str(tmp_path / CALIBRATION_FILENAME))
+    (folder,) = (tmp_path / FLOOR_CAPTURES_DIRNAME).iterdir()
+    with open(folder / FLOOR_CAPTURE_MANIFEST) as handle:
+        assert json.load(handle)["result"]["ok"] is False
+    assert not (tmp_path / CALIBRATION_FILENAME).exists()
