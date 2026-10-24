@@ -240,7 +240,19 @@ throughout**: nothing here needs the motor, and the car is rolled by hand.
 
 1. On the car: `cd ~/mycar && donkey calibrate-cv --car ~/mycar --intrinsics`
 2. In the browser, open `http://10.0.0.32:8892`. The page should say "Camera calibration" and
-   show the live camera.
+   show the live camera. Use the car's address, not `localhost`, even though the command's
+   startup message prints `http://localhost:8892`: on the laptop, `localhost` is the laptop.
+
+   **If the browser says `ERR_ADDRESS_UNREACHABLE`** (Chrome) or cannot connect, first check the
+   command is still running in the SSH session; if it exited, the terminal says why. If it is
+   running, the browser is probably being blocked by macOS. Since macOS 15, each app needs
+   **Local Network** permission to reach devices on the local network, and without it every
+   local address fails this way, while Terminal and `curl` still connect. To fix it, open
+   **System Settings → Privacy & Security → Local Network**, turn on the browser, quit it
+   completely (Cmd-Q), and reopen it. If the browser is not listed, try Safari. On a laptop
+   other than the Mac, check it is on the same network as the car, not a guest network or a
+   VPN: `curl -I http://10.0.0.32:8892/` from its terminal shows whether it can reach the car
+   at all. This applies to every page on the car, including the MCP server on port 8891.
 3. Hold the board up in front of the camera, 1–3 feet away, and keep it still. When the corners
    are drawn on the preview, press **Add view**. If it says "No 9x6 board found", move the board
    closer or into better light and try again.
