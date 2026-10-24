@@ -363,6 +363,28 @@ comparison, the two estimates recovered from the floor homography at 320×240 (2
 which would be 448 and 324 px at this size) were 42% and 3% off: this is why the size-based
 tools needed a real camera calibration.
 
+**Before step 3, 2026-10-23 and 24: the floor calibration and line-follower settings for
+640×480.** The floor calibration was recaptured twice. The first recapture, at `SCAN_Y = 100`,
+went in with `--lateral-inches 4` for a centred board, when that flag wanted left as negative.
+That put the straight-ahead column 8 inches right of the centreline, and led to renaming the flag
+`--left-inches` (positive to the left). The line follower's pixel settings in `~/mycar/myconfig.py`
+were then scaled for 640×480: `SCAN_Y` 100→200, `SCAN_HEIGHT` 80→160, `TARGET_PIXEL` 160→320,
+`TARGET_THRESHOLD` 20→40, `PID_P` −0.01→−0.005, `PID_D` −0.0001→−0.00005, and the two PID step
+sizes halved. They are not yet checked on a drive. The second recapture, at `SCAN_Y = 200`, left the
+left offset out, because the old flag name had stopped working; `origin_lateral_inches` was set to
+−4.0 by hand for the centred board, putting the straight-ahead column at 0 lateral. The old flag
+name now says what replaced it. Saved capture: `~/mycar/cv_calibration_captures/2026-10-24T11-58-44/`.
+
+**Step 3, 2026-10-24.** Passed. `cv_control-get_calibration` on the running server:
+
+| | Floor | Camera |
+| --- | --- | --- |
+| `calibrated` / `stale` | true / false | true / false |
+| `loaded_from` | `/home/ed/mycar/cv_calibration.json` | `/home/ed/mycar/camera_intrinsics.json` |
+| Size | 640×480 | 640×480 |
+| Values | 8.135 px/in at `SCAN_Y` 200; origin 8.625 in forward, −4.0 lateral | `fx` 315.34, `fy` 314.71, centre (311.81, 226.46) |
+| Quality | 0.089 px fit; `can_measure_points` true | 0.185 px RMS over 22 views |
+
 ---
 
 ## Out of scope
