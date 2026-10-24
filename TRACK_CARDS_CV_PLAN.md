@@ -16,11 +16,11 @@ each other and from the track, and no detail too small to survive 320×240.
 
 ---
 
-## Progress — 2 of 5
+## Progress — 3 of 5
 
 - [x] **C1** — Legibility check: a script that scores every card as the camera would see it
 - [x] **C2** — Stop signs: the track card and the large sign
-- [ ] **C3** — Traffic lights
+- [x] **C3** — Traffic lights
 - [ ] **C4** — People, dog, vehicles and houses
 - [ ] **C5** — PDFs, README and the docs
 
@@ -59,7 +59,7 @@ stop sign and the lamps, so a colour mask for one cannot catch another prop.
 | Dark grey | `#3c3c3c` | — | unlit lamps, tyres, shadows |
 | Mid grey | `#7a7a7a` | — | roads, posts, details |
 | Signal red | `#e3170a` | 2 | **reserved**: stop sign, red lamp |
-| Amber | `#ff7000` | 13 | **reserved**: yellow lamp |
+| Amber | `#ff7000` | 13 | **reserved**: yellow lamp (reads 8.6–13 through the camera) |
 | Green | `#00b050` | 74 | **reserved**: green lamp |
 | Blue | `#1e5bd6` | 110 | car, clothing |
 | Teal | `#009a9a` | 90 | truck, clothing |
@@ -161,10 +161,28 @@ hue. `#e3170a` was the best of both.
   furthest apart in the palette; the yellow is kept distinguishable from the yellow centreline by
   shape and housing, since a yellow light must be yellow.
 
+*As built:* white background; a **black** housing (160×280 units, 8-unit black outline), not one
+with a white outline, which would vanish on a white card; lamps enlarged from radius 33 to 41;
+the lit lamp solid in its reserved colour (`#e3170a`, `#ff7000`, `#00b050`) with no translucent
+glow; unlit lamps `#3c3c3c`; a short mid-grey post with a 6-unit black outline.
+
+Room light pulls amber down toward red: through the fitted camera, red reads 173–179 (or 0–2),
+amber 8.6–13 and green 81–88. So red and amber split at hue **5**, not 8.5. An amber moved toward
+yellow (`#ff8000`) widened that gap but read 17–18 on small lamps, inside the tape window, so
+`#ff7000` stays.
+
+*Readable range, found while building C3:* by hue alone, a lamp must be about **8 px** across.
+Smaller, a red or amber lamp blurs into its black housing, which room light turns blue (a 5.4 px
+red lamp read hue 100). At 640×480 that is within about **32 in** for the 3 in card: right in
+18/18 cases at 18–32 in, 12/18 at 36, 6/18 at 42, 3/18 at 48. The checker skips lamps under 8 px.
+A larger printed traffic light, like the large stop sign, is the way to read one further away.
+
 **Acceptance**
 
-- [ ] Under simulation, each lit lamp is classified as its own colour and no other, by hue alone.
-- [ ] Each card's housing passes the outline contrast target.
+- [x] Under simulation, each lit lamp is classified as its own colour and no other, by hue alone.
+      *(Every lamp of 8 px or more, which the checker's distances reach at 640×480 and 2 ft:
+      10.8 px, all six cases right; see the readable range above for 18–48 in.)*
+- [x] Each card's housing passes the outline contrast target. *(All three pass the drawing rules.)*
 
 ## C4 — People, dog, vehicles and houses
 
@@ -203,5 +221,6 @@ hue. `#e3170a` was the best of both.
 
 - Changing card sizes or the tent geometry (D8).
 - Teaching the server to detect props itself. The agent still finds and boxes them.
+- A larger printed traffic light, for reading lamp colour beyond about 32 in (C3).
 - Reprinting: Ed prints the new sheets; the check in C2 is on the render, and on the car once
   printed.

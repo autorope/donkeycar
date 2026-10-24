@@ -156,7 +156,9 @@ def test_the_simulated_white_card_is_blue_as_in_the_field(cl):
 
 
 @pytest.mark.parametrize(
-    ("hue", "called"), [(2.0, "red"), (176.0, "red"), (13.0, "amber"), (74.0, "green"), (110.0, "unknown")]
+    ("hue", "called"),
+    # Room light pulls amber down toward red, so the split is at 5: amber read 8.6 through the camera
+    [(2.0, "red"), (176.0, "red"), (8.6, "amber"), (13.0, "amber"), (74.0, "green"), (110.0, "unknown")],
 )
 def test_lamp_colour_by_hue(cl, hue, called):
     assert cl.lamp_colour(hue) == called
