@@ -274,3 +274,11 @@ class TestGroundCaptureUnchanged(AsyncHTTPTestCase):
         response = self.fetch("/capture", method="POST", body="")
         assert response.code == 200, response.body
         assert sorted(os.listdir(self.car_dir)) == [CALIBRATION_FILENAME]
+
+
+def test_left_inches_become_a_negative_lateral_origin():
+    """The reference corner is on the left, so people give a positive number; lateral is positive right."""
+    from donkeycar.management.calibrate_cv import origin_offsets
+
+    assert origin_offsets(15.0, 4.0) == (15.0, -4.0)
+    assert origin_offsets(15.0, -2.0) == (15.0, 2.0)

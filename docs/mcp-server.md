@@ -187,13 +187,17 @@ near-left edge, not the board's outer corner.
 1. Put a tape mark on the floor directly below the camera lens.
 2. `--forward-inches` is the floor distance **straight ahead**, parallel to the car's
    centreline, from that mark to the reference corner's row. Do not measure diagonally.
-3. `--lateral-inches` is the reference corner's distance **sideways** from the car's
-   centreline, negative to the left. A 9&times;6-corner board centred in front of the car
-   puts it at about &minus;4.
+3. `--left-inches` is how far the reference corner is **to the left** of the car's
+   centreline. A 9&times;6-corner board centred in front of the car puts it at about 4. Give a
+   negative number only if the corner is to the right of the centreline.
 
 ```
-donkey calibrate-cv --car ~/mycar --forward-inches 15 --lateral-inches -4
+donkey calibrate-cv --car ~/mycar --forward-inches 15 --left-inches 4
 ```
+
+Everything the tools report counts lateral as positive to the *right*; the flag is the other
+way round only because the corner is nearly always on the left, and is converted on the way
+in.
 
 ### Where to put the board
 
@@ -216,7 +220,7 @@ is usually tolerable &mdash; a 6 inch lane offset still lands within a pixel &md
 that is the weakest number in the calibration and worth knowing about.
 
 **Without the offsets, zero is the reference corner, not the car.** Leave
-`--forward-inches` and `--lateral-inches` at 0 and `measure_ground_point` measures from the
+`--forward-inches` and `--left-inches` at 0 and `measure_ground_point` measures from the
 reference corner, so the middle of the frame will not read zero laterally, and forward
 distances are short by however far ahead the board was. Scale is unaffected, so lane
 offsets are right either way; only absolute positions shift. Calibrations captured before

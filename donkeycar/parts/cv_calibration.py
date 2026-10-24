@@ -496,7 +496,7 @@ def overlay_calibration(
 
     This is what turns lining the board up into "make the green line cross the
     board" instead of a geometry problem solved over SSH. The reference corner
-    is ringed because it is the one --forward-inches and --lateral-inches are
+    is ringed because it is the one --forward-inches and --left-inches are
     measured to.
     """
     canvas = np.copy(image)

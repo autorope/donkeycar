@@ -87,8 +87,8 @@ PAGE = """<!doctype html>
 <p>
   The ringed corner, <strong>measure to here</strong>, is the reference corner: the inner corner
   nearest the car and furthest left. <code>--forward-inches</code> is the floor distance straight
-  ahead from the mark under the camera lens to it, and <code>--lateral-inches</code> its distance
-  sideways from the car's centreline, negative to the left.
+  ahead from the mark under the camera lens to it, and <code>--left-inches</code> how far it is to
+  the left of the car's centreline: about 4 for a board centred in front of the car.
 </p>
 <p>Board: {cols}&times;{rows} inner corners, {square} inch squares.</p>
 <img src="/video" alt="camera preview with the scan band and detected corners">
@@ -531,6 +531,18 @@ def _expand_images(pattern: str) -> list[str]:
     return glob.glob(path)
 
 
+def origin_offsets(forward_inches: float, left_inches: float) -> tuple[float, float]:
+    """
+    The calibration's (forward, lateral) origin from what a person measured.
+
+    People measure the reference corner as some distance to the *left* -- it is
+    the near-left corner, so it nearly always is -- and asking them for a
+    negative number got the sign wrong on the first real capture. Everything
+    downstream counts lateral as positive to the right, so it flips here.
+    """
+    return forward_inches, -left_inches
+
+
 def run(args: list[str]) -> None:
     """Entry point for `donkey calibrate-cv`."""
     parser = argparse.ArgumentParser(prog="calibrate-cv", usage="%(prog)s [options]")
@@ -550,10 +562,13 @@ def run(args: list[str]) -> None:
         ),
     )
     parser.add_argument(
-        "--lateral-inches",
+        "--left-inches",
         type=float,
         default=0.0,
-        help="sideways distance from the car's centreline to the reference corner, negative to the left",
+        help=(
+            "how far the reference corner is to the LEFT of the car's centreline, about 4 for a centred board; "
+            "negative only if it is to the right"
+        ),
     )
     parser.add_argument(
         "--tape-separation-inches",
@@ -618,8 +633,7 @@ def run(args: list[str]) -> None:
         output_path,
         pattern,
         parsed.square_inches,
-        parsed.forward_inches,
-        parsed.lateral_inches,
+        *origin_offsets(parsed.forward_inches, parsed.left_inches),
     )
     logger.info("Calibration preview on http://localhost:%d -- lay the board flat and capture.", parsed.port)
     asyncio.set_event_loop(asyncio.new_event_loop())
