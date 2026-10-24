@@ -518,6 +518,23 @@ camera pitched 10&deg; down it is within 3% at 5 and 10 feet and 5% at 2 feet, b
 error in the box itself. `range_uncertainty_inches` assumes each box edge is within 1 pixel;
 a box drawn by a language model is often rougher, so widen it accordingly.
 
+**Reference dimensions.** Measured on a standard Donkeycar on the Exceed Magnet chassis, with
+the props in `assets/track-cards/`:
+
+| What | Size |
+| --- | --- |
+| Camera lens above the floor | 7.5 in |
+| Track-card stop sign (`track-cards.pdf`, 3 in face) | octagon 2 1/16 in across the flats, border included |
+| Large stop sign (`stop-sign-large.pdf`) | octagon 4.5 in across the flats, border included |
+| Large stop sign standing in a trading-card stand | top 5 1/8 in, centre 2 7/8 in above the floor |
+
+Give the octagon's size as both `width_inches` and `height_inches`. The range the tool reports
+is straight-line, lens to the sign's centre, so it is a little longer than the floor distance:
+with the lens 7.5 in up and the large sign's centre 2 7/8 in up, the 4 5/8 in height
+difference adds 0.4 in at 2 ft and under 0.1 in beyond 5 ft. At 640&times;480, a 2 1/16 in
+octagon is only about 5 px across at 10 ft, where a 1 px box error moves the range by a
+quarter; use the large sign beyond about 4 ft.
+
 For speed, more frames further apart beat two close together. Frames 0.1 s apart move the car
 about as far as the box wobbles, and box noise then inflates the speed and its uncertainty
 together &mdash; which is why anything under half a second carries a `warning` whatever the

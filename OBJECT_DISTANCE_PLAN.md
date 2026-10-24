@@ -387,6 +387,13 @@ name now says what replaced it. Saved capture: `~/mycar/cv_calibration_captures/
 | Values | 8.135 px/in at `SCAN_Y` 200; origin 8.625 in forward, −4.0 lateral | `fx` 315.34, `fy` 314.71, centre (311.81, 226.46) |
 | Quality | 0.089 px fit; `can_measure_points` true | 0.185 px RMS over 22 views |
 
+**Step 4 set-up, 2026-10-24.** The large stop sign, octagon measured at **4.5 in** across the
+flats both ways, stands in a card stand with its top 5 1/8 in and its centre **2 7/8 in** above
+the floor. The camera lens is **7.5 in** above the floor (a standard Donkeycar on the Exceed
+Magnet chassis), so the lens is 4 5/8 in above the sign's centre, and the true range is
+√(floor distance² + 4.625²): 24.44 in at 24, 60.18 at 60, 120.09 at 120, and 61.36 at 60 with
+the sign 12 in to the left.
+
 ---
 
 ## Out of scope

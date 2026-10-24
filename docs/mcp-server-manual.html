@@ -464,6 +464,17 @@ cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
   <li>Keep sending <code>throttle=0</code> while waiting, then resume with a positive value.</li>
 </ol>
 <p>Accuracy drops toward the frame edges for both tools. <code>measure_object_distance</code> assumes the object is upright and turned roughly toward the camera, and its uncertainty assumes each box edge is within 1 pixel; widen it for a rougher box.</p>
+<p><strong>Reference dimensions</strong>, on a standard Donkeycar on the Exceed Magnet chassis:</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>What</th><th>Size</th></tr></thead>
+  <tbody>
+    <tr><td>Camera lens above the floor</td><td>7.5 in</td></tr>
+    <tr><td>Track-card stop sign (<code>track-cards.pdf</code>)</td><td>octagon 2 1/16 in across the flats, border included</td></tr>
+    <tr><td>Large stop sign (<code>stop-sign-large.pdf</code>)</td><td>octagon 4.5 in across the flats, border included</td></tr>
+    <tr><td>Large stop sign in a trading-card stand</td><td>top 5 1/8 in, centre 2 7/8 in above the floor</td></tr>
+  </tbody>
+</table></div>
+<p>Give the octagon's size as both <code>width_inches</code> and <code>height_inches</code>. The range is straight-line from the lens to the sign's centre, a little longer than the floor distance. At 640&times;480 the small card's octagon is only about 5 px across at 10 ft, so use the large sign beyond about 4 ft.</p>
 
 <h3>Tuning loop</h3>
 <p>Edit <code>myconfig.py</code> → <code>stop</code> → <code>start</code> → <code>cv_control-get_vehicle_state</code>. Useful knobs: <code>COLOR_THRESHOLD_LOW/HIGH</code>, <code>CONFIDENCE_THRESHOLD</code> (fraction of the scan column, default 0.15), <code>SCAN_Y</code>, <code>SCAN_HEIGHT</code>, <code>TARGET_PIXEL</code>, <code>TARGET_THRESHOLD</code>, <code>THROTTLE_MIN/MAX</code>. <code>cv_control-get_autopilot_config</code> shows the values the car is actually running with.</p>

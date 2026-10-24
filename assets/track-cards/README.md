@@ -17,6 +17,12 @@ progression of activities are all in [`docs/mcp-server.md`](../../docs/mcp-serve
 The implementation plan, with acceptance criteria per milestone, is in
 [`MCP_SERVER_PLAN.md`](../../MCP_SERVER_PLAN.md).
 
+Measured sizes, for `measure_object_distance`: the track card's stop-sign octagon is
+2 1/16″ across its flats, border included; the large sign's is 4.5″. Standing in a
+trading-card stand, the large sign's top is 5 1/8″ and its centre 2 7/8″ above the floor.
+On a standard Donkeycar on the Exceed Magnet chassis the camera lens is 7.5″ above the
+floor.
+
 Regenerate `stop-sign-large.pdf` the same way as `track-cards.pdf` (below), with
 `stop-sign-large.html` and `--print-to-pdf=assets/track-cards/stop-sign-large.pdf`.
 
