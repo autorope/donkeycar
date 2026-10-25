@@ -16,12 +16,12 @@ each other and from the track, and no detail too small to survive 320×240.
 
 ---
 
-## Progress — 3 of 5
+## Progress — 4 of 5
 
 - [x] **C1** — Legibility check: a script that scores every card as the camera would see it
 - [x] **C2** — Stop signs: the track card and the large sign
 - [x] **C3** — Traffic lights
-- [ ] **C4** — People, dog, vehicles and houses
+- [x] **C4** — People, dog, vehicles and houses
 - [ ] **C5** — PDFs, README and the docs
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
@@ -202,11 +202,30 @@ A larger printed traffic light, like the large stop sign, is the way to read one
 - Vehicles and houses keep a colour family each (D4). House numbers: black, heavy, at least 40
   units tall, on a white panel.
 
+*As built:* every figure on white with an 8-unit black outline; limbs are a coloured stroke over
+a black one 16 units wider, drawn before the clothes so the clothes cover the joints. Colours
+from the palette only, so the reserved red, amber and green are gone from these cards: the
+child's ball and shorts are blue (they were orange and red), the dog's collar blue (red), the
+truck teal (red), the roofs brown (red, blue and green). The mother's hair is brown, not blonde,
+which sat in the tape's hue window. People wear blue and teal, with dark grey trousers; the
+elderly man's beard is white with a black outline. Grass strips are gone; the vehicles keep a
+mid-grey road. Windows and wheel hubs are light grey.
+
+*Houses:* the first redraw kept the old layout, a 64-unit number on a panel above a door and
+windows. Through the simulated camera at 640×480 from 2 ft it could not be read: the whole 3 in
+card is only 39 px across there, so the digits were about 6 px tall. The number now fills the
+wall: Arial Black at 116 units (digits about 0.85 in, 11 px at 2 ft), the white wall its panel,
+under a brown roof and grey chimney, with no door or windows. Read through the simulation: all
+three clearly at 2 ft, just at 3 ft. All three houses share one design and are told apart by
+number.
+
 **Acceptance**
 
-- [ ] Every card passes the C1 outline contrast and minimum-detail targets.
-- [ ] House numbers are readable by OCR (Tesseract, if installed; otherwise by the vision model
-      the agent uses) at 640×480 from 2 ft.
+- [x] Every card passes the C1 outline contrast and minimum-detail targets. *(All 14 pass the
+      drawing rules; the checker reports 0 misses.)*
+- [x] House numbers are readable by OCR (Tesseract, if installed; otherwise by the vision model
+      the agent uses) at 640×480 from 2 ft. *(Tesseract is not installed; read by Claude from the
+      simulated camera frames, all three correctly at 2 ft.)*
 
 ## C5 — PDFs and docs
 
