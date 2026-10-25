@@ -28,12 +28,15 @@
   .face.top { top: 0; transform: rotate(180deg); }  /* reads upright once folded */
   .face.bottom { top: 5.25in; }
 
-  /* The octagon, 4.5in across its flats edge to edge, sits
-     0.15in below the fold and leaves 0.6in at the open edge for a stand to grip. */
-  .sign { position: absolute; left: 1.75in; top: 0.15in; width: 4.5in; height: 4.5in; display: block; }
+  /* The octagon, 4.5in across its flats edge to edge, sits 0.35in below the fold
+     and leaves 0.4in at the open edge for a stand to grip. The white above it is the
+     edge the camera boxes the top against: at 0.15in, as first drawn, the card above
+     the octagon was a 1-2 px strip against a dark room, and the height read wrong. */
+  .sign { position: absolute; left: 1.75in; top: 0.35in; width: 4.5in; height: 4.5in; display: block; }
+  /* In a corner, clear of the octagon, so no text sits next to an edge being measured */
   .label {
-    position: absolute; left: 0; right: 0; bottom: 0.18in; text-align: center;
-    font-size: 9pt; color: #7a7a7a;
+    position: absolute; right: 0.2in; bottom: 0.15in; width: 1.35in; text-align: right;
+    font-size: 8pt; line-height: 1.25; color: #7a7a7a;
   }
 
   .fold {
@@ -65,8 +68,9 @@
       edge to edge. Write down what you measure: that is the size to give
       <code>measure_object_distance</code>.</li>
     <li><strong>Fold in half</strong> on the dashed line, printed side out. Both faces read upright.</li>
-    <li>Stand it in a card stand with the fold at the top. The stand grips the 0.6 inches below each
-      sign, so the octagon stays fully in view. Check from the side that it stands vertical.</li>
+    <li>Stand it in a card stand with the fold at the top. The stand grips the 0.4 inches below each
+      sign; check that its front lip is lower than the octagon, so the octagon stays fully in view.
+      Check from the side that it stands vertical.</li>
   </ol>
 </div>
 
@@ -92,12 +96,12 @@
 <div class="page">
   <div class="face top">
     <svg class="sign" viewBox="0 0 206 206"><use href="#art-stop-large" width="206" height="206"/></svg>
-    <div class="label">STOP SIGN &middot; 4.5 in across the flats, edge to edge &middot; check with a ruler</div>
+    <div class="label">STOP SIGN &middot; 4.5 in across the flats, edge to edge</div>
   </div>
   <div class="fold"></div>
   <div class="face bottom">
     <svg class="sign" viewBox="0 0 206 206"><use href="#art-stop-large" width="206" height="206"/></svg>
-    <div class="label">STOP SIGN &middot; 4.5 in across the flats, edge to edge &middot; check with a ruler</div>
+    <div class="label">STOP SIGN &middot; 4.5 in across the flats, edge to edge</div>
   </div>
 </div>
 

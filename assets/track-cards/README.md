@@ -19,10 +19,12 @@ The implementation plan, with acceptance criteria per milestone, is in
 
 Measured sizes, for `measure_object_distance`: the track card's stop-sign octagon is
 2 1/16″ across its flats, edge to edge; the large sign's is 4.5″. Both are signal red to
-the edge on white, with no dark rim (`TRACK_CARDS_CV_PLAN.md`, D3). Standing in a
-trading-card stand, the large sign's bottom is 5/8″, its top 5 1/8″ and its centre 2 7/8″ above the floor.
-On a standard Donkeycar on the Exceed Magnet chassis the camera lens is 7.5″ above the
-floor.
+the edge on white, with no dark rim (`TRACK_CARDS_CV_PLAN.md`, D3). The large sign's octagon
+sits 0.35″ below the fold, so the camera sees white above it, and 0.4″ above the open edge.
+Standing in a trading-card stand, that puts its bottom about 7/16″, its centre about 2 11/16″
+and its top about 4 15/16″ above the floor; measure your own print. (Prints from before this
+change had the octagon 0.15″ below the fold: bottom 5/8″, centre 2 7/8″, top 5 1/8″.) On a
+standard Donkeycar on the Exceed Magnet chassis the camera lens is 7.5″ above the floor.
 
 Regenerate `stop-sign-large.pdf` the same way as `track-cards.pdf` (below), with
 `stop-sign-large.html` and `--print-to-pdf=assets/track-cards/stop-sign-large.pdf`.
@@ -107,6 +109,51 @@ For maximum stability against a car that nudges them, print on the 167 gsm matte
 and tape the two base tabs to a scrap of cereal-box chipboard — light, rigid, and
 it won't slide.
 
+## Designing for the camera
+
+The cards are drawn to be read by the car's camera at 320×240 or 640×480 under room light,
+not just by a person. The rules (`TRACK_CARDS_CV_PLAN.md`, D1–D7):
+
+- **White background**, `#ffffff`, on every face.
+- **A black outline** (`#111111`) of at least 8 of the face's 300 units round every figure.
+  The stop signs are the exception: red to the edge, because a rim that is not red drops out
+  of a red colour mask.
+- **Colours from the palette only**, at 70% saturation or more, none close to white, and
+  nothing translucent. Red, amber and green are reserved for the stop sign and the three lamps,
+  so a colour mask for one can't catch another prop. Nothing yellow: the tape is yellow.
+- **No detail under 6 units** (about 2 px at 320×240 from 2 ft), and **text at least 40 units**
+  tall in a heavy face. A 3″ card is only 39 px across at 640×480 from 2 ft, so anything
+  meant to be read, like a house number, has to fill most of the card.
+- **Still recognisable** to a person at a glance: the agent is a vision model and reads the
+  card the way a person would.
+
+| Colour | Hex | Use |
+| --- | --- | --- |
+| White | `#ffffff` | backgrounds, lettering, walls |
+| Black | `#111111` | outlines, lettering, housings, wheels |
+| Dark grey | `#3c3c3c` | trousers, doors, shadows |
+| Mid grey | `#7a7a7a` | roads, posts, chimneys |
+| Light grey | `#b4b4b4` | unlit lamps, windows, wheel hubs |
+| Signal red | `#e3170a` | **reserved**: stop sign, red lamp |
+| Amber | `#ff7000` | **reserved**: yellow lamp |
+| Green | `#00b050` | **reserved**: green lamp |
+| Blue | `#1e5bd6` | car, clothing, ball |
+| Teal | `#009a9a` | truck, clothing |
+| Brown | `#7b3f12` | hair, dog, roofs, cane |
+| Skin | `#e0a070` | skin |
+
+`check_legibility.py` checks every card against these rules from its SVG source, then runs the
+stop signs and traffic lights through a camera simulation fitted to a real frame from the car:
+it boxes each stop sign by colour and by edge, and checks each lit lamp reads as its own colour
+and is clearly more saturated than the unlit ones. Run it after any change to a card; it exits
+non-zero if a card misses:
+
+```bash
+python assets/track-cards/check_legibility.py
+```
+
+It needs OpenCV and NumPy, which the donkeycar install already has.
+
 ## Adding a card
 
 ### With Claude Code
@@ -141,9 +188,10 @@ same thing:
   assets/track-cards/track-cards.html
 ```
 
-Look at the result before committing to new artwork — SVG drawn blind is usually
+Run `check_legibility.py` (see [Designing for the camera](#designing-for-the-camera)),
+then look at the result before committing to new artwork — SVG drawn blind is usually
 wrong on the first pass in ways only a render reveals.
 
 If you have the `add-track-card` skill installed, its `scripts/build.sh` wraps this
-with a contact sheet and per-page previews, and `SKILL.md` carries the drawing
-conventions: palette, stroke weights, and the legibility rules for the car's camera.
+with a contact sheet and per-page previews. Its `SKILL.md` drawing conventions may
+predate the rules above; where they differ, the rules above and the checker win.

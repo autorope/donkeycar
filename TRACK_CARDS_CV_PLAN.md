@@ -16,13 +16,13 @@ each other and from the track, and no detail too small to survive 320×240.
 
 ---
 
-## Progress — 4 of 5
+## Progress — 5 of 5
 
 - [x] **C1** — Legibility check: a script that scores every card as the camera would see it
 - [x] **C2** — Stop signs: the track card and the large sign
 - [x] **C3** — Traffic lights
 - [x] **C4** — People, dog, vehicles and houses
-- [ ] **C5** — PDFs, README and the docs
+- [x] **C5** — PDFs, README and the docs
 
 Each box is ticked in the commit that does the work. Ruff, mypy and the full test suite pass on
 every commit.
@@ -235,12 +235,24 @@ number.
 - Both PDFs regenerated with headless Chrome and checked by rendering, as the README describes.
 - The README gains the design rules (D1–D6) and how to run the legibility check, so a new card
   can be held to the same standard.
-- The docs' reference dimensions say the stop sign's border is black.
+- ~~The docs' reference dimensions say the stop sign's border is black.~~ Superseded by D3:
+  the docs say the signs are red to the edge, which they have since C2.
+
+*As built:* at Ed's request, the large sign's octagon moved down from 0.15 in to **0.35 in**
+below the fold, so the camera sees white above its top edge. At 0.15 in, the card above the
+octagon was a 1–2 px strip against a dark room in the O7 frames, and the height read wrong.
+The room came out of the stand margin, now 0.4 in, so in a stand the octagon is about 0.2 in
+lower: bottom about 7/16 in, centre about 2 11/16 in, top about 4 15/16 in. The docs give those as
+approximate, with the old print's heights alongside, until a reprint is measured. The label
+moved to the corner, clear of the octagon's edges. The README gains "Designing for the camera":
+the rules, the palette and how to run the checker. The docs also say the range is measured from
+the camera's optical centre, 0.5–0.9 in behind the lens front on this car (O7).
 
 **Acceptance**
 
-- [ ] Both PDFs are one Letter page per sheet at 100% and match the HTML.
-- [ ] `check_legibility.py` passes on every card.
+- [x] Both PDFs are one Letter page per sheet at 100% and match the HTML. *(track-cards.pdf
+      7 pages, stop-sign-large.pdf 1 page, both 612×792 pt; every page checked in a render.)*
+- [x] `check_legibility.py` passes on every card. *(0 misses.)*
 
 ---
 

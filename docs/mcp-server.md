@@ -526,16 +526,21 @@ the props in `assets/track-cards/`:
 | Camera lens above the floor | 7.5 in |
 | Track-card stop sign (`track-cards.pdf`, 3 in face) | octagon 2 1/16 in across the flats, edge to edge |
 | Large stop sign (`stop-sign-large.pdf`) | octagon 4.5 in across the flats, edge to edge |
-| Large stop sign standing in a trading-card stand | bottom 5/8 in, top 5 1/8 in, centre 2 7/8 in above the floor |
+| Large stop sign standing in a trading-card stand | bottom about 7/16 in, centre about 2 11/16 in, top about 4 15/16 in above the floor |
 
 The stop signs are signal red to the edge on white, with no dark rim: a rim that is not red
 drops out of a red colour mask and the sign is boxed small. Prints from before 2026-10-24
-have a dark red rim; their size is the same, rim included.
+have a dark red rim; their size is the same, rim included. The large sign's octagon sits 0.35 in
+below the fold, so there is white above it to box its top against; older prints have it 0.15 in
+below and stand 0.2 in higher (bottom 5/8 in, centre 2 7/8 in). Measure your own print in its
+stand.
 
 Give the octagon's size as both `width_inches` and `height_inches`. The range the tool reports
 is straight-line, lens to the sign's centre, so it is a little longer than the floor distance:
-with the lens 7.5 in up and the large sign's centre 2 7/8 in up, the 4 5/8 in height
-difference adds 0.4 in at 2 ft and under 0.1 in beyond 5 ft. At 640&times;480, a 2 1/16 in
+with the lens 7.5 in up and the large sign's centre about 2 11/16 in up, the height difference
+adds about 0.5 in at 2 ft and under 0.2 in beyond 5 ft. It is measured from the camera's optical
+centre, which sits inside the lens: on the Exceed Magnet car, about 0.5–0.9 in behind the front
+of the lens (`OBJECT_DISTANCE_PLAN.md`, O7). At 640&times;480, a 2 1/16 in
 octagon is only about 5 px across at 10 ft, where a 1 px box error moves the range by a
 quarter; use the large sign beyond about 4 ft.
 

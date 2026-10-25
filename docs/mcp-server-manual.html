@@ -471,10 +471,10 @@ cv_control-set_control(throttle=0.3, lane_offset_inches=6)</code></pre>
     <tr><td>Camera lens above the floor</td><td>7.5 in</td></tr>
     <tr><td>Track-card stop sign (<code>track-cards.pdf</code>)</td><td>octagon 2 1/16 in across the flats, edge to edge</td></tr>
     <tr><td>Large stop sign (<code>stop-sign-large.pdf</code>)</td><td>octagon 4.5 in across the flats, edge to edge</td></tr>
-    <tr><td>Large stop sign in a trading-card stand</td><td>bottom 5/8 in, top 5 1/8 in, centre 2 7/8 in above the floor</td></tr>
+    <tr><td>Large stop sign in a trading-card stand</td><td>bottom about 7/16 in, centre about 2 11/16 in, top about 4 15/16 in above the floor (earlier prints, with the octagon 0.15 in below the fold: 5/8, 2 7/8 and 5 1/8 in)</td></tr>
   </tbody>
 </table></div>
-<p>Give the octagon's size as both <code>width_inches</code> and <code>height_inches</code>. The range is straight-line from the lens to the sign's centre, a little longer than the floor distance. At 640&times;480 the small card's octagon is only about 5 px across at 10 ft, so use the large sign beyond about 4 ft.</p>
+<p>Give the octagon's size as both <code>width_inches</code> and <code>height_inches</code>. The range is straight-line from the lens to the sign's centre, a little longer than the floor distance, and measured from the camera's optical centre, about 0.5&ndash;0.9 in behind the front of the lens on this car. At 640&times;480 the small card's octagon is only about 5 px across at 10 ft, so use the large sign beyond about 4 ft.</p>
 
 <h3>Tuning loop</h3>
 <p>Edit <code>myconfig.py</code> → <code>stop</code> → <code>start</code> → <code>cv_control-get_vehicle_state</code>. Useful knobs: <code>COLOR_THRESHOLD_LOW/HIGH</code>, <code>CONFIDENCE_THRESHOLD</code> (fraction of the scan column, default 0.15), <code>SCAN_Y</code>, <code>SCAN_HEIGHT</code>, <code>TARGET_PIXEL</code>, <code>TARGET_THRESHOLD</code>, <code>THROTTLE_MIN/MAX</code>. <code>cv_control-get_autopilot_config</code> shows the values the car is actually running with.</p>
