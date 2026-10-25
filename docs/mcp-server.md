@@ -526,7 +526,7 @@ the props in `assets/track-cards/`:
 | Camera lens above the floor | 7.5 in |
 | Track-card stop sign (`track-cards.pdf`, 3 in face) | octagon 2 1/16 in across the flats, edge to edge |
 | Large stop sign (`stop-sign-large.pdf`) | octagon 4.5 in across the flats, edge to edge |
-| Large stop sign standing in a trading-card stand | top 5 1/8 in, centre 2 7/8 in above the floor |
+| Large stop sign standing in a trading-card stand | bottom 5/8 in, top 5 1/8 in, centre 2 7/8 in above the floor |
 
 The stop signs are signal red to the edge on white, with no dark rim: a rim that is not red
 drops out of a red colour mask and the sign is boxed small. Prints from before 2026-10-24
