@@ -441,9 +441,32 @@ box rule matters as much as the optics.
 `measure_ground_point` at the card's base read about 42.5 in, not about 60. solvePnP on the
 chessboard in this frame and in the floor capture's saved frame shows why: the lens is
 7.36 in up now and 7.41 in then, but its axis is **12.5°** below level now and **14.7°** then.
-The car had been moved since the floor capture. A 2.2° change in pitch is a few pixels near the
+The car had been moved since the floor capture, though Ed placed the board exactly as before, so
+the car sits at a different angle to the floor there. A 2.2° change in pitch is a few pixels near the
 car, but at 60 in it moves the floor reading by 18 in. The angular range doesn't depend on
 pitch, so it is unaffected.
+
+**Step 4, 24 inches redone, 2026-10-24.** The reprinted sign, in the same dark room (card cyan,
+red purple). Boxed where brightness crosses halfway from the card to the octagon's outer band:
+297.4–353.1 × 185.3–239.6 px. The octagon's top is only 0.15 in below the fold, so above it
+the card shows as a 1–2 px strip that never reaches full brightness, and the height is the less
+trustworthy of the two.
+
+| Sizes given | Range | Error vs 24.44 | Width / height ranges | Disagreement |
+| --- | --- | --- | --- | --- |
+| Width and height | 25.71 ± 0.46 | +5.2% | 25.42 / 26.02 | 0.023 |
+| Width only | 25.42 ± 0.64 | +4.0% | 25.42 / — | — |
+
+The same +5.2% as the old sign, so the dark rim was not the cause. Across 24 and 60 in, the error
+is about the same in **inches** (+1.3 and +1.5), not the same fraction, which points to the
+range's origin sitting behind the lens mark rather than to the focal length or the box.
+
+solvePnP on the chessboard checks this independently. In all four frames with the board (the
+floor capture, both 24 in runs and the 60 in run), it puts the camera's optical centre
+**9.84–10.05 in** behind the reference corner, against the 9 1/16 in Ed measured to the lens
+mark: the optical centre is about **0.9 in behind the mark**. Measured from there, the true ranges
+are 25.36 in at 24 and 61.11 in at 60, and the errors become **+1.4%** (width only +0.2%) and
+**+0.9%**.
 
 ---
 
