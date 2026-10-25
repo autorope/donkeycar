@@ -56,8 +56,9 @@ stop sign and the lamps, so a colour mask for one cannot catch another prop.
 | --- | --- | --- | --- |
 | White | `#ffffff` | — | backgrounds, lettering, number panels |
 | Black | `#111111` | — | outlines, lettering, housings |
-| Dark grey | `#3c3c3c` | — | unlit lamps, tyres, shadows |
+| Dark grey | `#3c3c3c` | — | tyres, shadows |
 | Mid grey | `#7a7a7a` | — | roads, posts, details |
+| Light grey | `#b4b4b4` | — | unlit lamps |
 | Signal red | `#e3170a` | 2 | **reserved**: stop sign, red lamp |
 | Amber | `#ff7000` | 13 | **reserved**: yellow lamp (reads 8.6–13 through the camera) |
 | Green | `#00b050` | 74 | **reserved**: green lamp |
@@ -164,7 +165,14 @@ hue. `#e3170a` was the best of both.
 *As built:* white background; a **black** housing (160×280 units, 8-unit black outline), not one
 with a white outline, which would vanish on a white card; lamps enlarged from radius 33 to 41;
 the lit lamp solid in its reserved colour (`#e3170a`, `#ff7000`, `#00b050`) with no translucent
-glow; unlit lamps `#3c3c3c`; a short mid-grey post with a 6-unit black outline.
+glow; unlit lamps light grey `#b4b4b4`; a short mid-grey post with a 6-unit black outline.
+
+*Unlit lamps, changed 2026-10-24:* they were dark grey `#3c3c3c` at first, which Ed found looked
+almost black on the printed card. It was worse for the camera: under room light dark grey and
+black both come out dark blue, and the unlit lamps were within 42–52 of the lit amber lamp's
+saturation. The checker now samples each lamp on its own, after balancing the frame on the
+card's white, and requires the lit lamp to beat the most saturated unlit one by 60 (of 255).
+Light grey `#b4b4b4` passes by 138 or more: red 161, amber 138, green 238.
 
 Room light pulls amber down toward red: through the fitted camera, red reads 173–179 (or 0–2),
 amber 8.6–13 and green 81–88. So red and amber split at hue **5**, not 8.5. An amber moved toward

@@ -162,3 +162,22 @@ def test_the_simulated_white_card_is_blue_as_in_the_field(cl):
 )
 def test_lamp_colour_by_hue(cl, hue, called):
     assert cl.lamp_colour(hue) == called
+
+
+def traffic_light(cl, lit, unlit):
+    lamps = "".join(
+        f'<circle cx="150" cy="{cy}" r="41" fill="{lit if i == 1 else unlit}"/>' for i, cy in enumerate((61, 150, 239))
+    )
+    housing = '<rect x="70" y="10" width="160" height="280" rx="30" fill="#111111" stroke="#111111" stroke-width="8"/>'
+    return card(cl, housing + lamps)
+
+
+def test_a_light_grey_unlit_lamp_leaves_the_lit_one_clear(cl):
+    hue, _lamp_px, margin = cl.lit_lamp(traffic_light(cl, "#ff7000", "#b4b4b4"), "640x480", 24.0, "room")
+    assert cl.lamp_colour(hue) == "amber" and margin >= cl.MIN_LAMP_MARGIN, (hue, margin)
+
+
+def test_a_dark_grey_unlit_lamp_crowds_the_amber_one(cl):
+    """Under room light dark grey and black both come out dark blue, nearly as saturated as amber."""
+    _hue, _lamp_px, margin = cl.lit_lamp(traffic_light(cl, "#ff7000", "#3c3c3c"), "640x480", 24.0, "room")
+    assert margin < cl.MIN_LAMP_MARGIN, margin

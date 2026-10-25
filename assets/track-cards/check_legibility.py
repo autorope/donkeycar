@@ -45,8 +45,9 @@ LARGE_SIGN_HTML = HERE / "stop-sign-large.html"
 PALETTE: dict[str, str] = {
     "#ffffff": "white: backgrounds, lettering, number panels",
     "#111111": "black: outlines, lettering, housings",
-    "#3c3c3c": "dark grey: unlit lamps, tyres, shadows",
+    "#3c3c3c": "dark grey: tyres, shadows",
     "#7a7a7a": "mid grey: roads, posts, details",
+    "#b4b4b4": "light grey: unlit lamps (dark grey ones read the same blue as the housing)",
     "#e3170a": "signal red, reserved: stop sign, red lamp (hue 2)",
     "#ff7000": "amber, reserved: yellow lamp (hue 13, 4 below the tape window)",
     "#00b050": "green, reserved: green lamp (hue 74)",
@@ -55,7 +56,7 @@ PALETTE: dict[str, str] = {
     "#7b3f12": "brown: hair, dog, wood (hue 13, too dark for the tape window)",
     "#e0a070": "skin (hue 12; below the saturation floor on purpose: skin must look like skin)",
 }
-NEUTRAL = {"#ffffff", "#111111", "#3c3c3c", "#7a7a7a"}
+NEUTRAL = {"#ffffff", "#111111", "#3c3c3c", "#7a7a7a", "#b4b4b4"}
 EXEMPT_SATURATION = {"#e0a070"}
 TAPE_HUE = (17, 37)
 
@@ -77,6 +78,9 @@ MIN_FACE_HUE_PX = 10.0
 # turns blue, and hue alone cannot tell it: at 5.4 px (a 3 in card at 4 ft at
 # 640x480) red read as hue 100. Every lamp read right at 10.8 px.
 MIN_LAMP_PX = 8.0
+# The lit lamp must out-saturate the most saturated unlit lamp by this much
+# (of 255) after the camera, or which lamp is lit is a guess.
+MIN_LAMP_MARGIN = 60.0
 
 # --------------------------------------------------------------------- camera
 #
@@ -422,41 +426,52 @@ def lamp_colour(hue: float) -> str:
     return "red" if hue >= 165 else "unknown"
 
 
-def lit_lamp(card: Card, resolution: str, distance_in: float, light: str) -> tuple[float | None, float]:
+def lit_lamp(card: Card, resolution: str, distance_in: float, light: str) -> tuple[float | None, float, float]:
     """
-    The lit lamp's hue after the camera simulation, and the lamp's diameter in
-    pixels. The lit lamp is the card's most saturated bright colour, as an
-    agent looking at the whole card would see it: the housing and unlit lamps
-    are neutral, and the white card is only faintly blue.
+    The lit lamp's hue after the camera simulation, the lamp's diameter in
+    pixels, and how much more saturated the lit lamp is than the most
+    saturated unlit one (0..255). The lamps are found the way a helper that
+    knows the housing would find them: each of the three is sampled on its own
+    and the lit one is the most saturated. Room light turns every grey blue
+    (the white card reads saturation 96 of 255 in the field), and the amber
+    lamp comes out barely more saturated than that, so saturation is judged
+    after balancing the frame on the card's own white beside the housing. The
+    hue reported is the unbalanced one, as the car's tape mask would see it.
     """
     width, height, focal = RESOLUTIONS[resolution]
     px_per_unit = focal * card.face_inches / distance_in / card.viewbox[2]
     face_px = round(card.viewbox[2] * px_per_unit)
-    lamp_px = 2 * max(_num(c, "r") for c in card.root.iter("circle")) * px_per_unit
+    lamps = [c for c in card.root.iter("circle") if _num(c, "r") >= 30]
+    lamp_px = 2 * max(_num(c, "r") for c in lamps) * px_per_unit
     frame = simulate(render(card, face_px), width, height, light)
     top, left = (height - face_px) // 2, (width - face_px) // 2
-    # Inside the housing only: under room light the white card is blue enough
-    # (saturation 96 of 255 in the field) to pass for a coloured lamp.
-    housing = max(
-        card.root.iter("rect"), key=lambda r: _num(r, "width") * _num(r, "height") * (r.get("fill") != "#ffffff")
-    )
-    hx0 = left + round((_num(housing, "x") + 10) * px_per_unit)
-    hy0 = top + round((_num(housing, "y") + 10) * px_per_unit)
-    hx1 = left + round((_num(housing, "x") + _num(housing, "width") - 10) * px_per_unit)
-    hy1 = top + round((_num(housing, "y") + _num(housing, "height") - 10) * px_per_unit)
-    face = cv2.cvtColor(frame[hy0:hy1, hx0:hx1], cv2.COLOR_BGR2HSV)
-    pixels = face.reshape(-1, 3).astype(float)
-    # Lit means brighter than the housing: the black housing comes out a dark,
-    # fairly saturated blue under room light, so saturation alone picks it up.
-    # Relative, so dim light, which lowers everything, does not hide the lamp.
-    bright = max(60.0, float(np.percentile(pixels[:, 2], 50)) + 25.0)
-    lit = pixels[(pixels[:, 1] >= 80) & (pixels[:, 2] >= bright)]
-    if len(lit) < 4:
-        return None, lamp_px
-    lit = lit[lit[:, 1] >= np.percentile(lit[:, 1], 67)]
+    # White card between its left edge and the housing (x 10..50 of 300)
+    white = frame[
+        top + round(100 * px_per_unit) : top + round(200 * px_per_unit),
+        left + round(10 * px_per_unit) : left + round(50 * px_per_unit),
+    ]
+    white_bgr = white.reshape(-1, 3).astype(float).mean(axis=0)
+    balanced = np.clip(frame * (white_bgr.max() / white_bgr), 0, 255).astype(np.uint8)
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    balanced_sat = cv2.cvtColor(balanced, cv2.COLOR_BGR2HSV)[:, :, 1]
+    ys, xs = np.mgrid[0:height, 0:width]
+    sampled, saturation = [], []
+    for lamp in lamps:
+        cx = left + _num(lamp, "cx") * px_per_unit
+        cy = top + _num(lamp, "cy") * px_per_unit
+        # The middle 60% of the lamp, clear of the housing blurred over its rim
+        inside = (xs - cx) ** 2 + (ys - cy) ** 2 <= (0.6 * _num(lamp, "r") * px_per_unit) ** 2
+        sampled.append(hsv[inside].astype(float))
+        saturation.append(float(np.median(balanced_sat[inside])) if inside.any() else 0.0)
+    if any(len(s) < 4 for s in sampled):
+        return None, lamp_px, 0.0
+    order = np.argsort(saturation)
+    lit = sampled[order[-1]]
+    margin = saturation[order[-1]] - saturation[order[-2]]
     # Hue is circular; average it as an angle so reds near 0 and 179 agree
     angle = lit[:, 0] * np.pi / 90
-    return float((np.degrees(np.arctan2(np.sin(angle).mean(), np.cos(angle).mean())) / 2) % 180), lamp_px
+    hue = float((np.degrees(np.arctan2(np.sin(angle).mean(), np.cos(angle).mean())) / 2) % 180)
+    return hue, lamp_px, margin
 
 
 # ------------------------------------------------------------------- the report
@@ -499,18 +514,19 @@ def run(cards: list[Card]) -> int:
         for res in RESOLUTIONS:
             for dist in DISTANCES_IN:
                 for light in LIGHTS:
-                    hue, lamp_px = lit_lamp(card, res, dist, light)
+                    hue, lamp_px, margin = lit_lamp(card, res, dist, light)
                     if lamp_px < MIN_LAMP_PX:
                         print(f"{card.name:12s} {res} {dist:3.0f} {light:4s}: lamp {lamp_px:4.1f} px, too small  ok")
                         continue
                     called = "unknown" if hue is None else lamp_colour(hue)
                     in_tape = hue is not None and TAPE_HUE[0] <= hue <= TAPE_HUE[1]
-                    ok = called == lights[card.name] and not in_tape
+                    ok = called == lights[card.name] and not in_tape and margin >= MIN_LAMP_MARGIN
                     failures += not ok
                     shown = "none" if hue is None else f"{hue:5.1f}"
                     verdict = "ok" if ok else "MISS"
                     where = f"{card.name:12s} {res} {dist:3.0f} {light:4s}"
-                    print(f"{where}: lamp {lamp_px:4.1f} px, hue {shown} -> {called:7s} {verdict}")
+                    label = f"{called:7s} by {margin:3.0f} sat"
+                    print(f"{where}: lamp {lamp_px:4.1f} px, hue {shown} -> {label}  {verdict}")
 
     print(f"\n{failures} miss(es)")
     return 1 if failures else 0
