@@ -421,6 +421,26 @@ was about 24 5/16 in from the lens (true range about 24.75 in), which accounts f
 points of the +5.2%. The 24 in placement is to be redone, measured from the corrected mark,
 with the reprinted red-to-the-edge sign.
 
+**Step 4, 60 inches, 2026-10-24.** The reprinted sign, measured from the corrected lens mark;
+true range 60.18 in. The room was dark and the card brightly lit, so it came out cyan and the
+red octagon purple-blue (OpenCV hue 115–125). No red mask finds it in that light. Boxed instead
+where the hue crosses halfway from the card (about 93) to the octagon (about 118):
+
+| Box | Range | Error | Width / height ranges | Disagreement | Floor (fwd, lat) |
+| --- | --- | --- | --- | --- | --- |
+| Hue halfway, 23 × 23 px | 61.69 ± 2.57 | +2.5% | 61.88 / 61.50 | 0.006 | 60.94, +1.78 |
+| Hue core only, 20 × 20 px | 70.95 ± 3.38 | +17.9% | 71.17 / 70.73 | 0.006 | 70.12, +1.97 |
+
+The halfway box passes all three targets. At 23 px a 1 px box error is 4% of range, so the
+box rule matters as much as the optics.
+
+`measure_ground_point` at the card's base read about 42.5 in, not about 60. solvePnP on the
+chessboard in this frame and in the floor capture's saved frame shows why: the lens is
+7.36 in up now and 7.41 in then, but its axis is **12.5°** below level now and **14.7°** then.
+The car had been moved since the floor capture. A 2.2° change in pitch is a few pixels near the
+car, but at 60 in it moves the floor reading by 18 in. The angular range doesn't depend on
+pitch, so it is unaffected.
+
 ---
 
 ## Out of scope
