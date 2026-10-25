@@ -418,8 +418,8 @@ way): the floor calibration's reference corner is **9 1/16 in** ahead of the len
 (first reported as 8 15/16, then corrected). `origin_forward_inches` in the car's
 `cv_calibration.json` is now 9.0625 (backups kept). The lens is 7/16 in further back than the
 mark used for the 24 in placement above, so that sign was about 24 7/16 in from the lens (true
-range about 24.87 in), which accounts for about 1.8 points of the +5.2%. The 24 in placement is to be redone, measured from the corrected mark,
-with the reprinted red-to-the-edge sign.
+range about 24.87 in), which accounts for about 1.8 points of the +5.2%. The 24 in placement is
+to be redone, measured from the corrected mark, with the reprinted red-to-the-edge sign.
 
 **Step 4, 60 inches, 2026-10-24.** The reprinted sign, measured from the corrected lens mark;
 true range 60.18 in. The room was dark and the card brightly lit, so it came out cyan and the
