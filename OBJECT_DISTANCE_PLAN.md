@@ -414,11 +414,11 @@ or two inside the true edge; the 60 and 120 in placements separate them, since a
 error is the same fraction at every range and a fixed pixel error grows as the sign shrinks.
 
 **Lens mark corrected, 2026-10-24.** Ed re-measured the lens position (the bumper had been in the
-way): the floor calibration's reference corner is **8 15/16 in** ahead of the lens, not 8 5/8.
-`origin_forward_inches` in the car's `cv_calibration.json` is now 8.9375 (backup kept). The
-lens is 5/16 in further back than the mark used for the 24 in placement above, so that sign
-was about 24 5/16 in from the lens (true range about 24.75 in), which accounts for about 1.3
-points of the +5.2%. The 24 in placement is to be redone, measured from the corrected mark,
+way): the floor calibration's reference corner is **9 1/16 in** ahead of the lens, not 8 5/8
+(first reported as 8 15/16, then corrected). `origin_forward_inches` in the car's
+`cv_calibration.json` is now 9.0625 (backups kept). The lens is 7/16 in further back than the
+mark used for the 24 in placement above, so that sign was about 24 7/16 in from the lens (true
+range about 24.87 in), which accounts for about 1.8 points of the +5.2%. The 24 in placement is to be redone, measured from the corrected mark,
 with the reprinted red-to-the-edge sign.
 
 **Step 4, 60 inches, 2026-10-24.** The reprinted sign, measured from the corrected lens mark;
