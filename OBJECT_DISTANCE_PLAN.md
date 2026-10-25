@@ -296,9 +296,12 @@ Claude then calls `cv_control-get_calibration`. **Record:** whether the `camera`
    `cv_control-get_vehicle_state`, finds the sign's box, calls `measure_object_distance` with
    your `width_inches` and `height_inches`, and then calls `stop`. The car stays still: the
    throttle stays 0.
-4. Repeat at **60 inches** and **120 inches**.
-5. Repeat at 60 inches with the sign about 12 inches to the left of straight ahead, still facing
-   the car.
+4. Repeat at **36**, **48** and **60 inches**. *(Changed 2026-10-24: the room has only 60 inches
+   of clear floor, so 120 inches is out. 24 to 60 inches still spans 2.5× in range, enough to
+   tell an error that is the same fraction at every range from one that grows as the sign shrinks.)*
+5. Repeat at **36 inches** with the sign **12 inches to the left** of straight ahead, still
+   facing the car. *(Was 60 inches; at 36 the sign sits about 18° off-axis, further out in the
+   frame, which is the harder case.)*
 
 Claude boxes the sign two ways each time: by colour (a red mask on the saved frame, which is
 pixel-tight), and by eye from the image (rough, the way an agent would). This separates the
@@ -308,7 +311,7 @@ tool's accuracy from the box's.
 the floor distance, the lens height and the sign's centre height; `range_inches`,
 `range_uncertainty_inches`, `range_from_width_inches`, `range_from_height_inches` and
 `size_disagreement` for both boxes; and the percentage error. **Pass:** the colour-box
-range within 5% at 60 and 120 inches and within 8% at 24 inches, and the true range inside about
+range within 5% at 48 and 60 inches and within 8% at 24 and 36 inches, and the true range inside about
 twice `range_uncertainty_inches`, and `size_disagreement` under 0.1 for the colour box. The
 real lens and a printed card are rougher than the synthetic
 tests, so these targets are looser than O4's; a miss beyond them is a finding to fix, not a fail
@@ -316,17 +319,18 @@ to wave through.
 
 ### Step 5 — Speed, rolled by hand
 
-1. Stand the sign at the 24-inch mark again. Mark the floor at **120 inches** and **48 inches**
-   from the sign: a 72-inch run.
-2. Put the car at the 120-inch mark, pointing at the sign. Tell Claude, who calls `start` and
-   begins taking frames with their timestamps, about every half second.
-3. Start the stopwatch and push the car steadily and straight toward the sign. Stop it at the
-   48-inch mark and stop the stopwatch. Aim for 3–5 seconds over the run. Tell Claude the time.
+1. Stand the sign at one end of the clear floor. Mark the floor at **60 inches** and **24 inches**
+   from the sign: a 36-inch run. *(Was 120 to 48 inches; the room has 60 inches.)*
+2. Put the car with its lens over the 60-inch mark, pointing at the sign. Tell Claude, who calls
+   `start` and begins taking frames with their timestamps, about every half second.
+3. Start the stopwatch and push the car steadily and straight toward the sign. Stop it with the
+   lens over the 24-inch mark and stop the stopwatch. Aim for 3–4 seconds over the run, so there
+   are six frames or more. Tell Claude the time.
 4. Claude calls `estimate_speed_from_object` on the frames from the run, then `stop`.
 5. Repeat twice: once with every frame, and once with only two frames about a second apart. Then
    leave the car still for 3 seconds and estimate again.
 
-**Record:** the stopwatch speed (72 inches ÷ seconds); `closing_speed_inches_per_s`, its
+**Record:** the stopwatch speed (36 inches ÷ seconds); `closing_speed_inches_per_s`, its
 uncertainty, `span_s` and any `warning` for each estimate; and the stationary estimate.
 **Pass:** the all-frames speed within 15% of the stopwatch speed (hand-pushing is not steady,
 and a stopwatch is good to about 0.2 s), the stationary estimate within its own uncertainty of
@@ -391,8 +395,8 @@ name now says what replaced it. Saved capture: `~/mycar/cv_calibration_captures/
 flats both ways, stands in a card stand with its bottom 5/8 in, its top 5 1/8 in and its centre **2 7/8 in** above
 the floor. The camera lens is **7.5 in** above the floor (a standard Donkeycar on the Exceed
 Magnet chassis), so the lens is 4 5/8 in above the sign's centre, and the true range is
-√(floor distance² + 4.625²): 24.44 in at 24, 60.18 at 60, 120.09 at 120, and 61.36 at 60 with
-the sign 12 in to the left.
+√(floor distance² + 4.625²): 24.44 in at 24, 36.30 at 36, 48.22 at 48, 60.18 at 60,
+and 38.23 at 36 with the sign 12 in to the left.
 
 **Step 4, 24 inches, 2026-10-24.** The sign's face was at 24 in from the lens mark (Ed placed
 the sign itself, not the base, on the mark); true range 24.44 in. The floor calibration alone
@@ -410,7 +414,7 @@ to the octagon, left out the dark red border, which is too dark in room light to
 the 8% target at 24 in and the disagreement target, but miss the "true range within twice the
 uncertainty" target: both read 4–5% long, in width and height alike, so the error is systematic.
 Placement is ruled out. The candidates are a focal length a few percent off, or box edges a pixel
-or two inside the true edge; the 60 and 120 in placements separate them, since a focal-length
+or two inside the true edge; the 36 to 60 in placements separate them, since a focal-length
 error is the same fraction at every range and a fixed pixel error grows as the sign shrinks.
 
 **Lens mark corrected, 2026-10-24.** Ed re-measured the lens position (the bumper had been in the
