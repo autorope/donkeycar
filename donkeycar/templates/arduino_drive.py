@@ -49,11 +49,12 @@ def drive(cfg):
     # decide what that means, so which button does what is
     # CONTROLLER_BEHAVIOR_MAP in myconfig.py rather than an edit here.
     #
-    V.add(InputControllerEvents(V.mem, get_input_controller(cfg)),
-          threaded=True)
-
+    # what each control does is printed once the controller is found, so
+    # the user sees it after the start-up logs rather than buried in them
     mapper = BehaviorEventMapper(V.mem, get_behavior_map(cfg))
-    mapper.show_map()
+    V.add(InputControllerEvents(V.mem, get_input_controller(cfg),
+                                on_ready=mapper.show_map),
+          threaded=True)
     V.add(mapper)
 
     #

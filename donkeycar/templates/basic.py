@@ -193,10 +193,11 @@ def drive(cfg, model_path=None, model_type=None):
                 ZmqSubscriber(cfg.NETWORK_JS_SERVER_IP))
         else:
             controller = get_input_controller(cfg)
-        car.add(InputControllerEvents(car.mem, controller), threaded=True)
-
+        # what each control does is printed once the controller is found
         mapper = BehaviorEventMapper(car.mem, get_behavior_map(cfg))
-        mapper.show_map()
+        car.add(InputControllerEvents(car.mem, controller,
+                                      on_ready=mapper.show_map),
+                threaded=True)
         car.add(mapper)
 
         #

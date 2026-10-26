@@ -694,11 +694,22 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     #
     web_buttons = WebButtonController()
     V.add(web_buttons, inputs=['web/buttons'])
-    V.add(InputControllerEvents(V.mem, web_buttons), threaded=True)
+
+    #
+    # What each control does is printed once the controller is found, so
+    # the user sees which device is in use, and sees it after the start-up
+    # logs rather than buried in them.
+    #
+    mapper = BehaviorEventMapper(V.mem, get_behavior_map(cfg))
 
     if not (use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT):
-        add_behavior_mapping(V, cfg)
+        V.add(InputControllerEvents(V.mem, web_buttons,
+                                    on_ready=mapper.show_map),
+              threaded=True)
+        V.add(mapper)
         return ctr
+
+    V.add(InputControllerEvents(V.mem, web_buttons), threaded=True)
 
     #
     # Build the configured controller.  Each of these reports control
@@ -730,23 +741,15 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
     else:
         controller = get_input_controller(cfg)
 
-    V.add(InputControllerEvents(V.mem, controller), threaded=True)
-    add_behavior_mapping(V, cfg)
-    return ctr
-
-
-def add_behavior_mapping(V, cfg):
-    """
-    Translate control events into the behaviors this template binds to.
-
-    Added straight after the controllers so a behavior lands in the same
-    pass as the event that caused it.
-    """
-    behavior_map = get_behavior_map(cfg)
-    mapper = BehaviorEventMapper(V.mem, behavior_map)
-    mapper.show_map()
+    # shown with the web buttons, since the map binds both, but only once
+    V.add(InputControllerEvents(
+              V.mem, controller,
+              on_ready=lambda found: mapper.show_map(found, web_buttons)),
+          threaded=True)
+    # straight after the controllers, so a behavior lands in the same pass
+    # as the event that caused it
     V.add(mapper)
-    return mapper
+    return ctr
 
 
 def add_driving_behaviors(V, cfg):

@@ -12,13 +12,16 @@ because they all looked at memory at the end of a pass rather than at what
 the drivetrain received.  These look at the drivetrain.
 """
 
+import io
 import logging
 import tempfile
 import unittest
+from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
 from donkeycar.parts.controls.device import ControlChange
+from donkeycar.parts.controls.events import InputControllerEvents
 from donkeycar.parts.web_controller.web import LocalWebController
 from donkeycar.templates import complete, cv_control
 from donkeycar.tests.drive_harness import driving, load_template_config
@@ -277,6 +280,41 @@ class TestALostControllerStopsTheCar(DrivingTest):
 
         assert received[-1] == (0.0, 0.0)
         assert len(received) == 2
+
+
+class TestTheControlsAreShown(DrivingTest):
+    """
+    Found by Ed on hardware: the user could not see which control did
+    what.  The map was printed while the car was assembled -- before the
+    pad was found, and buried by the start-up logs that followed -- and as
+    behavior and memory key rather than control and action.
+    """
+
+    TABLE_HEADER = '| control'
+
+    def printed(self, *patches) -> str:
+        out = io.StringIO()
+        with redirect_stdout(out), ExitStack() as stack:
+            for patch in patches:
+                stack.enter_context(patch)
+            self.drive(self.idle)
+        return out.getvalue()
+
+    def test_once_the_pad_is_found_it_says_what_each_control_does(self):
+        printed = self.printed()
+        rows = printed.splitlines()
+
+        assert 'Input controller: FakeInputController' in printed
+        assert 'Input controller: WebButtonController' in printed
+        assert printed.count(self.TABLE_HEADER) == 1
+        assert any('right_stick_vert' in row and 'throttle' in row
+                   for row in rows)
+        assert any('left_stick_horz' in row and 'steering' in row
+                   for row in rows)
+
+    def test_nothing_is_shown_until_the_pad_is_found(self):
+        never_found = mock.patch.object(InputControllerEvents, '_ready')
+        assert self.TABLE_HEADER not in self.printed(never_found)
 
 
 class TestCvControl(DrivingTest):

@@ -108,10 +108,11 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None, camera_type
         else:
             controller = get_input_controller(cfg)
 
-        V.add(InputControllerEvents(V.mem, controller), threaded=True)
-
+        # what each control does is printed once the controller is found
         mapper = BehaviorEventMapper(V.mem, get_behavior_map(cfg))
-        mapper.show_map()
+        V.add(InputControllerEvents(V.mem, controller,
+                                    on_ready=mapper.show_map),
+              threaded=True)
         V.add(mapper)
 
         #

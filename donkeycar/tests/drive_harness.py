@@ -93,6 +93,7 @@ def driving(
                  and not isinstance(p._controller, WebButtonController)]
         for pump in pumps:
             assert pump._controller.init()
+            pump._ready()  # as its thread does once the device is found
         if on_start is not None:
             on_start(parts)
         self.on = True
