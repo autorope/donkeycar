@@ -104,6 +104,27 @@ class TestInit(unittest.TestCase):
         assert make_pad().show_map() is True
 
 
+class TestSayingWhatItIs(unittest.TestCase):
+
+    def test_it_names_the_class_and_the_driver(self):
+        assert make_pad().description == 'PadUnderTest "Pad Under Test"'
+
+    def test_it_names_the_device_node_it_opened(self):
+        pad = PadUnderTest(dev_fn='/dev/input/js1')
+        assert pad.description == 'PadUnderTest on /dev/input/js1'
+
+    def test_it_knows_its_controls_once_initialized(self):
+        pad = make_pad()
+        assert pad.has_control('left_stick_vert') is True
+        assert pad.has_control('B') is True
+        assert pad.has_control('dpad_up') is False
+
+    def test_it_cannot_say_before_it_is_initialized(self):
+        pad = PadUnderTest(device=FakeJsDevice(open_error=OSError('nope')))
+        pad.init()
+        assert pad.has_control('A') is None
+
+
 class TestControlNaming(unittest.TestCase):
 
     def test_unmapped_controls_get_default_names(self):

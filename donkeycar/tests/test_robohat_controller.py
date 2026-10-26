@@ -219,6 +219,16 @@ class TestReporting(unittest.TestCase):
         assert controller.poll() == NO_CHANGE
 
 
+class TestSayingWhatItIs(unittest.TestCase):
+
+    def test_it_has_steering_and_throttle_and_nothing_else(self):
+        controller, _ = make_controller()
+        assert controller.description == 'RoboHATController'
+        assert controller.has_control('steering') is True
+        assert controller.has_control('throttle') is True
+        assert controller.has_control('switch') is False
+
+
 class TestLifecycle(unittest.TestCase):
 
     def test_init_opens_the_port(self):

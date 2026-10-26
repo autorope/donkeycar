@@ -82,6 +82,11 @@ class WebButtonController(AbstractInputController):
     def init(self) -> bool:
         return True
 
+    def has_control(self, name: str) -> bool | None:
+        # every web button carries the prefix, though which ones the page
+        # has is only learned as they are pushed
+        return name.startswith(self._prefix)
+
     def show_map(self) -> bool:
         pushed = self.button_map
         if pushed:

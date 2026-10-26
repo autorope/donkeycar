@@ -1,13 +1,14 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 50 / 50 tasks.**
+**51 / 53 tasks.**
 
-50 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+54 commits so far.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
-their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.
+their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phase 12 took 2, plus one recording its
+hardware check.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓░░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -1011,6 +1012,73 @@ must land together to keep the templates working.
 > about half, Y gives a short reverse kick and the motor stays stopped with
 > the stick still held; released 2 s before, Y gives no movement; released
 > just before, Y gives a weaker kick.
+
+### Phase 13 — Say which controller is active and what its controls do (1 / 3)
+
+> **Why.** Found by Ed on hardware, 2026-10-26. When the car starts, the user
+> can't see which button or axis does what. Legacy printed a "Joystick
+> Controls" table (control → action) once the pad was found
+> (`JoystickController.print_controls`). This branch prints
+> `BehaviorEventMapper.show_map()`, but:
+> - It prints while the template is being assembled, before the pad has
+>   been found, so the camera and TensorFlow start-up logs bury it.
+> - It lists behavior → event key (`/event/button/cross/press`), the reverse
+>   of what a user holding the pad wants to know.
+> - It never says which device it found, or whether the map's controls
+>   exist on that device.
+>
+> **Asked (Ed, 2026-10-26):** once the framework has found a controller and
+> checked it against the configuration, it should say which input device
+> is active and what the mappings are.
+>
+> **Design.**
+> - `AbstractInputController` gains two non-abstract members:
+>   - `description`: which device this is. It defaults to the class name.
+>     The joystick-device controllers add the driver's name and the device
+>     node, e.g. `PS3Joystick "Sony PLAYSTATION(R)3 Controller" on
+>     /dev/input/js0`.
+>   - `has_control(name)`: True or False, or None when the device can't
+>     know in advance (a networked controller before it reports, the mock).
+> - `InputControllerEvents` takes an optional `on_ready(controller)`, called
+>   once on its thread after `init()` succeeds and the device's own
+>   `show_map()` has run. A failure inside it is logged, and must not stop
+>   polling: if it did, the car would lose its controller over a printing
+>   bug.
+> - `BehaviorEventMapper.show_map(controller=None)` prints:
+>   - a header naming the device;
+>   - a PrettyTable, as legacy did, with one row per bound control, sorted:
+>     control | action (press, release, click ×2, hold, move, held) |
+>     behavior (without the `/behavior/` prefix);
+>   - a warning for each bound control the device says it does not have.
+>   Web buttons (`web_*`) are listed, but they aren't checked against the
+>   pad.
+> - Templates stop printing the map during assembly and pass
+>   `mapper.show_map` as `on_ready`. With only the web controller, the web
+>   buttons' events part passes it; with a pad, only the pad's events part
+>   does, so the table prints once.
+>
+> **Out of scope:** the output stays on `print`, as legacy's did, not the
+> logger. A pad that reconnects doesn't reprint the table, because
+> polling stops when the controller is lost (Phase 10).
+
+- [x] **13.1** Controllers say what they are and which controls they have.
+      `description` and `has_control` on `AbstractInputController`, with
+      overrides in the Linux joystick, PyGame, RC, MM1, web and networked
+      controllers. Unit tests for each override, including `None` before
+      `init()`.
+- [ ] **13.2** The mapper prints control → behavior once the controller is
+      ready. `show_map(controller)` prints the table and flags missing
+      controls; `InputControllerEvents` gets `on_ready`, guarded. Unit
+      tests: rows and action names for every kind of key; a control the pad
+      lacks is warned about; `on_ready` runs once, only after `init()`
+      succeeds; a raising `on_ready` leaves polling running.
+- [ ] **13.3** Templates show the table when the controller is found:
+      `complete.py` (and through it `cv_control.py` and `path_follow.py`),
+      `basic.py`, `simulator.py` and `arduino_drive.py`. Test through
+      `complete.drive()`: nothing is printed before the pad is ready, and
+      afterwards the table is printed once, naming the throttle and steering
+      controls. Hardware check for Ed: start `~/mycar1249` and see the
+      device and the table after the start-up logs.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 

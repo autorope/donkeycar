@@ -6,6 +6,7 @@ import pytest
 
 from donkeycar.memory import Memory
 from donkeycar.parts.controls.behaviors import AxisButton
+from donkeycar.parts.controls.device import MockInputController
 from donkeycar.parts.controls.factory import (
     CONTROLLER_TYPES,
     DEFAULT_BEHAVIOR_MAPS,
@@ -391,3 +392,15 @@ class TestEveryOfferedControllerHasAMap(unittest.TestCase):
             assert behavior_map, controller_type
             assert STEERING in behavior_map, controller_type
             assert THROTTLE in behavior_map, controller_type
+
+
+class TestADeviceThatCannotSaySaysNothing(unittest.TestCase):
+    """
+    The defaults every controller inherits: its class name, and no opinion
+    on which controls it has, so a map is never checked against a guess.
+    """
+
+    def test_the_mock_controller(self):
+        mock = MockInputController()
+        assert mock.description == 'MockInputController'
+        assert mock.has_control('right_stick_vert') is None

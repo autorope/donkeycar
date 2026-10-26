@@ -337,6 +337,20 @@ class LinuxGameController(AbstractInputController):
         self._initialized = True
         return True
 
+    @property
+    def description(self) -> str:
+        named = f' "{self._name}"' if self._name else ''
+        where = (
+            f' on {self._device.dev_fn}'
+            if isinstance(self._device, LinuxJsDevice) else ''
+        )
+        return f'{type(self).__name__}{named}{where}'
+
+    def has_control(self, name: str) -> bool | None:
+        if not self._initialized:
+            return None
+        return name in self._axis_map or name in self._button_map
+
     def show_map(self) -> bool:
         if not self._initialized:
             return False

@@ -102,6 +102,15 @@ class TestDiscovery(unittest.TestCase):
 
         assert controller.button_map == ('web_w1', 'web_w5')
 
+    def test_every_web_button_is_its_own_before_it_is_pushed(self):
+        """
+        The page does not say which buttons it has, but they all carry the
+        prefix, so a map binding one is not flagged as wrong.
+        """
+        controller = WebButtonController(poll_timeout=0.0)
+        assert controller.has_control('web_w3') is True
+        assert controller.has_control('cross') is False
+
 
 class TestLifecycle(unittest.TestCase):
 

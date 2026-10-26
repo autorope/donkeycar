@@ -171,6 +171,9 @@ class RoboHATController(AbstractInputController):
     def axis_map(self) -> tuple[str, ...]:
         return self.CHANNEL_NAMES
 
+    def has_control(self, name: str) -> bool | None:
+        return name in self.CHANNEL_NAMES
+
     def init(self) -> bool:
         if self._initialized:
             return True

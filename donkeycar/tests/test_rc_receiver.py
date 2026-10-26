@@ -180,6 +180,18 @@ class TestChannelNaming(unittest.TestCase):
             receiver.init()
 
 
+class TestSayingWhatItIs(unittest.TestCase):
+
+    def test_it_names_its_pins(self):
+        receiver, _ = make_receiver()
+        assert receiver.description == 'RCReceiver on GPIO 5, 6, 13'
+
+    def test_its_channels_are_known_before_init(self):
+        receiver = RCReceiver(pins=PINS, device=FakePigpioDevice(num_channels=3))
+        assert receiver.has_control('throttle') is True
+        assert receiver.has_control('right_stick_vert') is False
+
+
 class TestLifecycle(unittest.TestCase):
 
     def test_init_watches_the_given_pins(self):

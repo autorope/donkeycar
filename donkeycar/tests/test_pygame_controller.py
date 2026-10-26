@@ -215,6 +215,24 @@ class TestNaming(unittest.TestCase):
         assert device.closed is True
 
 
+class TestSayingWhatItIs(unittest.TestCase):
+
+    def test_it_names_the_class_the_pad_and_its_index(self):
+        pad = PyGameController(device=FakePyGameDevice(), which_js=1)
+        pad.init()
+        assert pad.description == 'PyGameController "Fake PyGame Pad" (joystick 1)'
+
+    def test_it_knows_its_controls_once_initialized(self):
+        device = FakePyGameDevice(num_axes=2, num_buttons=2, num_hats=0)
+        pad = PyGameController(device=device)
+        assert pad.has_control('axis(0)') is None
+
+        pad.init()
+        assert pad.has_control('axis(0)') is True
+        assert pad.has_control('button(1)') is True
+        assert pad.has_control('button(2)') is False
+
+
 class TestPS4MapIsSound(GamepadMapChecks, unittest.TestCase):
     PAD = PyGamePS4Joystick
 

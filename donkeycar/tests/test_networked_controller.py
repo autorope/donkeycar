@@ -186,6 +186,16 @@ class TestRemoteControlsAreDiscovered(unittest.TestCase):
 
         assert controller.seen_controls == ('a_button', 'steering')
 
+    def test_a_control_not_seen_yet_may_still_be_there(self):
+        controller, _ = make_controller([
+            encode(ControlChange(button='a_button', button_state=1)),
+        ])
+        while controller.poll() != NO_CHANGE:
+            pass
+
+        assert controller.has_control('a_button') is True
+        assert controller.has_control('b_button') is None
+
 
 class TestLifecycle(unittest.TestCase):
 

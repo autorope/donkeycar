@@ -70,6 +70,25 @@ class AbstractInputController(abc.ABC):
         which case there is nothing to print.
         """
 
+    @property
+    def description(self) -> str:
+        """
+        Which device this is, for telling the user what was found.  More
+        specific once init() has succeeded, where a device can say more.
+        """
+        return type(self).__name__
+
+    def has_control(self, name: str) -> bool | None:
+        """
+        Whether this device has a button or axis of this name.
+
+        None when the device cannot know in advance -- one that is not
+        initialized yet, or whose controls are only learned as they report
+        -- so that a caller checking a map against it says nothing rather
+        than something wrong.
+        """
+        return None
+
     @abc.abstractmethod
     def poll(self) -> ControlChange:
         """

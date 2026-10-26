@@ -211,6 +211,11 @@ class NetworkedController(AbstractInputController):
         """
         return tuple(sorted(self._seen_controls))
 
+    def has_control(self, name: str) -> bool | None:
+        # a remote controller's controls are learned as they report, so one
+        # not seen yet may still be there
+        return True if name in self._seen_controls else None
+
     def init(self) -> bool:
         if self._initialized:
             return True

@@ -183,6 +183,14 @@ class RCReceiver(AbstractInputController):
     def axis_map(self) -> tuple[str, ...]:
         return self._names
 
+    @property
+    def description(self) -> str:
+        pins = ', '.join(str(pin) for pin in self._pins)
+        return f'{type(self).__name__} on GPIO {pins}'
+
+    def has_control(self, name: str) -> bool | None:
+        return name in self._names
+
     def init(self) -> bool:
         if self._initialized:
             return True
