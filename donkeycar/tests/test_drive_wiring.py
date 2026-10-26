@@ -173,6 +173,49 @@ class TestTheEmergencyStop(DrivingTest):
         assert throttles[:2] == [SCALE, SCALE]
         assert throttles[-6:] == [0.0] * 6
 
+    def test_at_a_standstill_it_never_reverses(self):
+        """
+        Found on hardware: wheels off the ground at zero throttle, the
+        stop's reverse pulses spun the motor, because that car's ESC drives
+        reverse directly rather than braking.
+        """
+        throttles = self.throttles(
+            self.stick('right_stick_vert', 0.0),
+            self.press('y_button'), *[self.idle] * 10)
+
+        assert throttles == [0.0] * 12
+
+    def test_it_brakes_as_hard_as_the_car_was_driven(self):
+        throttles = self.throttles(
+            self.stick('right_stick_vert', -0.6),
+            self.press('y_button'), *[self.idle] * 12)
+
+        assert throttles[0] == 0.6 * SCALE
+        assert throttles[1] == -0.6 * SCALE
+        assert min(throttles) == -0.6 * SCALE
+        assert throttles[-1] == 0.0
+
+    def test_under_the_pilot_it_brakes_for_the_pilots_throttle(self):
+        """
+        Under the pilot the user's throttle is zero while the car drives,
+        so the stop has to read what the drivetrain was given.
+        """
+        def autopilot(parts) -> None:
+            for part in parts:
+                if isinstance(part, LocalWebController):
+                    part.mode = 'local'
+                if isinstance(part, complete.DriveMode):
+                    part.run = lambda mode, us, ut, ps, pt, drive=part.run: (
+                        drive(mode, us, ut, ps, 0.4))
+
+        throttles = self.throttles(
+            self.idle, self.press('y_button'), *[self.idle] * 12,
+            on_start=autopilot)
+
+        assert throttles[0] == 0.4
+        assert throttles[1] == -0.4
+        assert throttles[-1] == 0.0
+
 
 class TestConstantThrottle(DrivingTest):
 

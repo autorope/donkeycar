@@ -55,6 +55,7 @@ from donkeycar.parts.controls import (
 from donkeycar.parts.controls import mapping as behaviors
 from donkeycar.parts.controls.behaviors import (
     DEFAULT_CHAOS_STEERING,
+    DEFAULT_ESTOP_COAST_TIME,
     DEFAULT_THROTTLE_STEP,
     AutoRecordOnThrottle,
 )
@@ -833,9 +834,14 @@ def add_driving_behaviors(V, cfg):
     # run condition would abandon it after the first -- which is to say it
     # would leave the car in reverse.
     #
-    V.add(EmergencyStop(),
+    # It brakes as hard as the car was recently driven, so it reads
+    # 'throttle' -- what DriveMode gave the drivetrain on the previous pass
+    # -- which covers the pilot and constant throttle as well as the stick.
+    #
+    coast_time = getattr(cfg, 'ESTOP_COAST_TIME', DEFAULT_ESTOP_COAST_TIME)
+    V.add(EmergencyStop(coast_time=coast_time),
           inputs=[behaviors.EMERGENCY_STOP, 'user/throttle',
-                  'user/mode', 'recording'],
+                  'user/mode', 'recording', 'throttle'],
           outputs=['user/throttle', 'user/mode', 'recording', 'user/estop'])
 
     #

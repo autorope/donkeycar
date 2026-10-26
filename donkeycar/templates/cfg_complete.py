@@ -189,6 +189,12 @@ THROTTLE_STEP = 0.01
 # held, to knock the car off its line and see whether the pilot recovers.
 CHAOS_MONKEY_STEERING = 0.2
 
+# How long, in seconds, the car may still be coasting after the throttle is
+# released. The emergency stop brakes as hard as the car was recently driven,
+# fading to no brake at all over this time, so stopping a car that is
+# standing still does not pulse the motor in reverse.
+ESTOP_COAST_TIME = 1.0
+
 # Enable listening for remote joystick control over the network.
 USE_NETWORKED_JS = False
 NETWORK_JS_SERVER_IP = None

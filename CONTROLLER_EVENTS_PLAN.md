@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**49 / 50 tasks.** Phase 12 (emergency stop) is in progress.
+**50 / 50 tasks.** Phase 12's hardware check is still to do.
 
 50 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -943,7 +943,7 @@ must land together to keep the templates working.
       skips without it and runs on the car — where it fails against the
       unfixed `basic.py` and passes with the fix.
 
-### Phase 12 — An emergency stop that brakes only what is moving (1 / 2)
+### Phase 12 — An emergency stop that brakes only what is moving (2 / 2) ✅
 
 > **Why.** Found by Ed on hardware, 2026-10-26: `~/mycar1249`, wheels off
 > the ground, throttle at zero, with both a PS3 pad and the Xbox pad —
@@ -993,7 +993,7 @@ must land together to keep the templates working.
       back to zero; released half the coast time ago gives −0.25; the pilot's
       throttle counts as well as the user's; and a stop still sets the mode,
       recording and `user/estop` as before.
-- [ ] **12.2** `complete.py` passes `throttle` to the stop and
+- [x] **12.2** `complete.py` passes `throttle` to the stop and
       `ESTOP_COAST_TIME` from the config (`cfg_complete.py` gets the
       setting, and the template reads it with a default so older car
       directories still start). Tests through `complete.drive()`: at a
@@ -1002,6 +1002,8 @@ must land together to keep the templates working.
       brakes with the pilot's throttle. Hardware check for Ed: wheels off
       the ground, e-stop at zero throttle gives no movement; stick forward,
       then e-stop, gives a short reverse kick.
+
+> **Hardware check: not yet done.**
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 
