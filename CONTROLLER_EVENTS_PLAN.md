@@ -2,11 +2,11 @@
 
 **COMPLETE — 53 / 53 tasks.**
 
-56 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+57 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
-their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phase 12 took 2, plus one recording its
-hardware check.
+their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phases 12 and 13 took 2 and 3, each plus one
+recording its hardware check.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
 Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓
 
@@ -1079,6 +1079,12 @@ must land together to keep the templates working.
       afterwards the table is printed once, naming the throttle and steering
       controls. Hardware check for Ed: start `~/mycar1249` and see the
       device and the table after the start-up logs.
+
+> **Verified on hardware (Ed, 2026-10-26)** at `3e112a29`: `~/mycar1249`
+> with `CONTROLLER_TYPE = 'xbox'`, Raspberry Pi on Debian trixie. The car
+> directory's `manage.py` was first given the new `add_user_controller`
+> wiring. `python manage.py drive --js` printed the device and the
+> control → behavior table once the pad was found.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 
