@@ -13,6 +13,8 @@ behaviors could not be moved to different buttons.
 """
 
 import logging
+import time
+from collections.abc import Callable
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -553,6 +555,10 @@ class ConstantThrottle:
 #: about half a second.
 DEFAULT_ESTOP_RECOVERY_STEP = 0.05
 
+#: How long, in seconds, a car may still be coasting after its throttle is
+#: released.  The emergency stop's brake fades to nothing over this time.
+DEFAULT_ESTOP_COAST_TIME = 1.0
+
 #: The brief forward blip between the two reverse pulses.  Many RC speed
 #: controllers read a single reverse request as "brake" and only engage
 #: reverse on a second one, so the sequence is reverse, neutral, reverse.
@@ -568,8 +574,8 @@ class EmergencyStop:
 
         V.add(EmergencyStop(),
               inputs=[format_button_event('y_button', BUTTON_DOWN),
-                      'user/throttle', 'user/throttle_scale',
-                      'user/mode', 'recording'],
+                      'user/throttle', 'user/mode', 'recording',
+                      'throttle'],
               outputs=['user/throttle', 'user/mode', 'recording',
                        'user/estop'])
 
@@ -579,12 +585,23 @@ class EmergencyStop:
     where the button was pressed.  So it runs every pass and watches for
     the event itself.
 
-    The stop is a sequence, not a single value, because many RC speed
+    The stop brakes only as hard as the car was recently driven.  It reads
+    the throttle the drivetrain was given on the previous pass -- 'throttle',
+    which covers the pilot and constant throttle as well as the stick -- and
+    keeps the recent forward peak, fading it to nothing over `coast_time`
+    seconds once the throttle drops, since a fast car keeps rolling after
+    it is released.  A template that does not pass 'throttle' gets the
+    user's throttle instead, which misses the pilot.
+
+    The brake is a sequence, not a single value, because many RC speed
     controllers read one reverse request as "brake" and only engage reverse
-    on a second one.  So it sends full reverse, a brief forward blip,
-    full reverse again, and then winds back up to zero rather than leaving
-    the car sitting in reverse.  Add it after the parts that set the
-    throttle, since it overrides them while it is stopping.
+    on a second one.  So it sends that much reverse, a brief forward blip,
+    the same reverse again, and then winds back up to zero rather than
+    leaving the car sitting in reverse.  A car that has stood still for
+    `coast_time`, or was driving backwards, gets no reverse at all: on an
+    ESC that drives reverse directly, a brake pulse would move a stopped
+    car.  Add it after the parts that set the throttle, since it overrides
+    them while it is stopping.
 
     It also puts the car back in manual and stops recording, because
     whatever the pilot was doing is what is being stopped, and a recording
@@ -594,19 +611,26 @@ class EmergencyStop:
     def __init__(
         self,
         recovery_step: float = DEFAULT_ESTOP_RECOVERY_STEP,
-        default_scale: float = MAX_THROTTLE_SCALE,
+        coast_time: float = DEFAULT_ESTOP_COAST_TIME,
         user_mode: str = DEFAULT_PILOT_MODE,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         """
         recovery_step: how much throttle to give back per pass at the end
-        default_scale: throttle limit to assume when nothing has set one
+        coast_time:    seconds for the brake to fade to nothing once the
+                       throttle is released
         user_mode:     the mode to drop back to
+        clock:         seconds, for measuring how long the car has coasted
         """
         self.recovery_step = recovery_step
-        self.default_scale = default_scale
+        self.coast_time = coast_time
         self.user_mode = user_mode
+        self.clock = clock
         self._stage = 0
         self._throttle = 0.0
+        self._brake = 0.0
+        self._peak = 0.0
+        self._peak_at = 0.0
 
     @property
     def stopping(self) -> bool:
@@ -616,18 +640,29 @@ class EmergencyStop:
         self,
         estop_event: float | None = None,
         throttle: float | None = None,
-        throttle_scale: float | None = None,
         mode: str | None = None,
         recording: bool | None = None,
+        drive_throttle: float | None = None,
     ) -> tuple[float, str, bool, bool]:
         """
         Returns the throttle, pilot mode, whether to record, and whether a
         stop is in progress.
+
+        throttle:       the user's throttle, passed through when not stopping
+        drive_throttle: what the drivetrain was given on the previous pass
         """
-        scale = self.default_scale if throttle_scale is None else throttle_scale
+        now = self.clock()
+        if not self.stopping:
+            driven = throttle if drive_throttle is None else drive_throttle
+            self._track(driven or 0.0, now)
 
         if estop_event is not None and not self.stopping:
-            logger.warning('emergency stop')
+            self._brake = self._recent_forward(now)
+            self._peak = 0.0
+            logger.warning('emergency stop, braking at %.2f', self._brake)
+            if self._brake <= 0.0:
+                # nothing to brake; stop here, but say so for this pass
+                return 0.0, self.user_mode, False, True
             self._stage = 1
 
         if not self.stopping:
@@ -639,16 +674,35 @@ class EmergencyStop:
                 False,
             )
 
-        self._throttle = self._next_throttle(scale)
+        self._throttle = self._next_throttle(self._brake)
         return self._throttle, self.user_mode, False, True
 
-    def _next_throttle(self, scale: float) -> float:
+    def _track(self, driven: float, now: float) -> None:
+        """
+        Take any forward throttle at least as high as the faded peak as the
+        new peak.
+        """
+        forward = max(0.0, driven)
+        if forward >= self._recent_forward(now):
+            self._peak = forward
+            self._peak_at = now
+
+    def _recent_forward(self, now: float) -> float:
+        """
+        The forward peak, faded linearly to nothing over the coast time.
+        """
+        if self.coast_time <= 0.0:
+            return self._peak if now <= self._peak_at else 0.0
+        fade = 1.0 - (now - self._peak_at) / self.coast_time
+        return self._peak * max(0.0, fade)
+
+    def _next_throttle(self, brake: float) -> float:
         """
         The next step of the stopping sequence.
         """
         if self._stage == 1:
             self._stage = 2
-            return -scale
+            return -brake
 
         if self._stage == 2:
             self._stage = 3
@@ -656,7 +710,7 @@ class EmergencyStop:
 
         if self._stage == 3:
             self._stage = 4
-            return -scale
+            return -brake
 
         # winding back up to zero, so the car does not sit in reverse
         throttle = self._throttle + self.recovery_step

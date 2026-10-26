@@ -833,9 +833,9 @@ def add_driving_behaviors(V, cfg):
     # run condition would abandon it after the first -- which is to say it
     # would leave the car in reverse.
     #
-    V.add(EmergencyStop(default_scale=cfg.JOYSTICK_MAX_THROTTLE),
+    V.add(EmergencyStop(),
           inputs=[behaviors.EMERGENCY_STOP, 'user/throttle',
-                  'user/throttle_scale', 'user/mode', 'recording'],
+                  'user/mode', 'recording'],
           outputs=['user/throttle', 'user/mode', 'recording', 'user/estop'])
 
     #

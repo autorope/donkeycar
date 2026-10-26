@@ -16,21 +16,49 @@ class FakeVehicle:
         self.on = True
 
 
-def run_to_completion(estop: EmergencyStop, scale: float = 1.0) -> list[float]:
+class FakeClock:
+    """
+    Seconds that only move when a test moves them.
+    """
+
+    def __init__(self) -> None:
+        self.now = 100.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+def drive_at(estop: EmergencyStop, throttle: float) -> None:
+    """
+    One pass with the drivetrain at this throttle and no stop pressed.
+    """
+    estop.run(drive_throttle=throttle)
+
+
+def run_to_completion(estop: EmergencyStop) -> list[float]:
     """
     Every throttle the stop asks for, from the press until it is done.
     """
-    throttles = [estop.run(estop_event=1.0, throttle_scale=scale)[0]]
+    throttles = [estop.run(estop_event=1.0)[0]]
     while estop.stopping:
-        throttles.append(estop.run(throttle_scale=scale)[0])
+        throttles.append(estop.run()[0])
     return throttles
+
+
+def braking_from(throttle: float, **kwargs) -> list[float]:
+    """
+    The stop's sequence after one pass driven at this throttle.
+    """
+    estop = EmergencyStop(clock=FakeClock(), **kwargs)
+    drive_at(estop, throttle)
+    return [round(v, 4) for v in run_to_completion(estop)]
 
 
 class TestEmergencyStop(unittest.TestCase):
 
     def test_it_passes_everything_through_when_idle(self):
         throttle, mode, recording, stopping = EmergencyStop().run(
-            None, 0.5, 1.0, 'local', True
+            None, 0.5, 'local', True
         )
 
         assert throttle == 0.5
@@ -39,20 +67,20 @@ class TestEmergencyStop(unittest.TestCase):
         assert stopping is False
 
     def test_the_event_starts_the_stop(self):
-        estop = EmergencyStop()
+        estop = EmergencyStop(clock=FakeClock())
+        drive_at(estop, 0.5)
         assert estop.stopping is False
 
-        estop.run(estop_event=1.0, throttle_scale=1.0)
+        estop.run(estop_event=1.0)
         assert estop.stopping is True
 
     def test_it_sends_reverse_neutral_reverse(self):
         """
         Many RC speed controllers read a single reverse request as brake
-        and only engage reverse on a second one, so one full-reverse pulse
-        would slow the car rather than stopping it.
+        and only engage reverse on a second one, so one reverse pulse would
+        slow the car rather than stopping it.
         """
-        estop = EmergencyStop()
-        sequence = run_to_completion(estop, scale=1.0)
+        sequence = braking_from(1.0)
 
         assert sequence[0] == -1.0
         assert sequence[1] == ESTOP_NEUTRAL_THROTTLE
@@ -62,68 +90,155 @@ class TestEmergencyStop(unittest.TestCase):
         """
         Otherwise the car is left sitting in reverse once it has stopped.
         """
-        estop = EmergencyStop(recovery_step=0.25)
-        sequence = run_to_completion(estop, scale=1.0)
+        estop = EmergencyStop(recovery_step=0.25, clock=FakeClock())
+        drive_at(estop, 1.0)
+        sequence = run_to_completion(estop)
 
         assert sequence[-1] == 0.0
         assert estop.stopping is False
 
     def test_the_wind_up_is_gradual(self):
-        estop = EmergencyStop(recovery_step=0.25)
-        sequence = run_to_completion(estop, scale=1.0)
+        sequence = braking_from(1.0, recovery_step=0.25)
 
         # after the second reverse pulse, back up in steps
         assert sequence[3:] == [-0.75, -0.5, -0.25, 0.0]
 
-    def test_the_whole_sequence_matches_the_legacy_one(self):
+    def test_braking_from_full_throttle_matches_the_legacy_sequence(self):
         """
         Every throttle the legacy four-state machine produced, in order, at
-        full scale and the default recovery step.  How hard a car brakes is
-        not something to change while moving it into a part.
+        full scale and the default recovery step.  A car stopped from full
+        throttle brakes exactly as it always did.
         """
-        estop = EmergencyStop()
-        sequence = [round(v, 4) for v in run_to_completion(estop, scale=1.0)]
-
-        assert sequence == [
+        assert braking_from(1.0) == [
             -1.0, 0.01, -1.0,
             -0.95, -0.9, -0.85, -0.8, -0.75, -0.7, -0.65, -0.6, -0.55,
             -0.5, -0.45, -0.4, -0.35, -0.3, -0.25, -0.2, -0.15, -0.1,
             -0.05, 0.0,
         ]
 
-    def test_it_uses_the_throttle_limit_for_the_reverse_pulse(self):
-        """
-        A car limited to a quarter throttle cannot brake at full reverse.
-        """
-        estop = EmergencyStop()
-        sequence = run_to_completion(estop, scale=0.25)
+    def test_it_brakes_as_hard_as_the_car_was_driven(self):
+        sequence = braking_from(0.5)
 
-        assert sequence[0] == -0.25
-        assert sequence[2] == -0.25
+        assert sequence[:3] == [-0.5, ESTOP_NEUTRAL_THROTTLE, -0.5]
+        assert sequence[3] == -0.45
+        assert min(sequence) == -0.5
+
+    def test_a_car_that_never_moved_gets_no_reverse(self):
+        """
+        Found on hardware: wheels off the ground at zero throttle, the
+        stop's reverse pulses spun the motor, because that car's ESC drives
+        reverse directly rather than braking.
+        """
+        estop = EmergencyStop(clock=FakeClock())
+        drive_at(estop, 0.0)
+
+        throttle, mode, recording, stopping = estop.run(
+            estop_event=1.0, mode='local', recording=True)
+
+        assert throttle == 0.0
+        assert mode == 'user'
+        assert recording is False
+        assert stopping is True
+        assert estop.stopping is False
+
+    def test_the_brake_fades_while_the_car_coasts(self):
+        """
+        A fast car keeps rolling after the throttle is released, so the
+        brake fades over the coast time rather than vanishing at once.
+        """
+        clock = FakeClock()
+        estop = EmergencyStop(coast_time=1.0, clock=clock)
+        drive_at(estop, 0.5)
+        clock.now += 0.5
+        drive_at(estop, 0.0)
+
+        assert estop.run(estop_event=1.0)[0] == -0.25
+
+    def test_after_the_coast_time_there_is_nothing_to_brake(self):
+        clock = FakeClock()
+        estop = EmergencyStop(coast_time=1.0, clock=clock)
+        drive_at(estop, 0.5)
+        clock.now += 1.5
+        drive_at(estop, 0.0)
+
+        assert run_to_completion(estop) == [0.0]
+
+    def test_easing_off_fades_from_the_peak(self):
+        """
+        Dropping from full throttle to a little does not stop the car at
+        once either, so the brake follows the fading peak while that is
+        higher than the throttle now.
+        """
+        clock = FakeClock()
+        estop = EmergencyStop(coast_time=1.0, clock=clock)
+        drive_at(estop, 1.0)
+        clock.now += 0.5
+        drive_at(estop, 0.2)
+
+        assert estop.run(estop_event=1.0)[0] == -0.5
+
+    def test_steady_driving_keeps_the_brake_at_the_throttle(self):
+        clock = FakeClock()
+        estop = EmergencyStop(coast_time=1.0, clock=clock)
+        for _ in range(30):
+            drive_at(estop, 0.4)
+            clock.now += 0.1
+
+        # the pass with the press still carries the drivetrain's throttle
+        assert estop.run(estop_event=1.0, drive_throttle=0.4)[0] == -0.4
+
+    def test_the_pilots_throttle_counts(self):
+        """
+        Under the pilot the user's throttle is zero while the car drives,
+        so the stop reads what the drivetrain was given.
+        """
+        estop = EmergencyStop(clock=FakeClock())
+        estop.run(throttle=0.0, drive_throttle=0.6)
+
+        assert estop.run(estop_event=1.0, throttle=0.0)[0] == -0.6
+
+    def test_without_the_drivetrain_throttle_it_uses_the_users(self):
+        estop = EmergencyStop(clock=FakeClock())
+        estop.run(throttle=0.3)
+
+        assert estop.run(estop_event=1.0, throttle=0.3)[0] == -0.3
+
+    def test_a_car_driving_backwards_gets_no_brake_pulse(self):
+        """
+        Legacy did not brake reverse either; a forward pulse would be a
+        lurch towards whatever is in front.
+        """
+        estop = EmergencyStop(clock=FakeClock())
+        drive_at(estop, -0.5)
+
+        assert run_to_completion(estop) == [0.0]
 
     def test_it_drops_back_to_manual(self):
         """
         Whatever the pilot was doing is the thing being stopped.
         """
-        _, mode, _, _ = EmergencyStop().run(
-            estop_event=1.0, mode='local', throttle_scale=1.0
-        )
+        estop = EmergencyStop(clock=FakeClock())
+        drive_at(estop, 0.5)
+
+        _, mode, _, _ = estop.run(estop_event=1.0, mode='local')
         assert mode == 'user'
 
     def test_it_stops_recording(self):
         """
         A recording of an emergency is not training data.
         """
-        _, _, recording, _ = EmergencyStop().run(
-            estop_event=1.0, recording=True, throttle_scale=1.0
-        )
+        estop = EmergencyStop(clock=FakeClock())
+        drive_at(estop, 0.5)
+
+        _, _, recording, _ = estop.run(estop_event=1.0, recording=True)
         assert recording is False
 
     def test_it_overrides_the_throttle_while_stopping(self):
-        estop = EmergencyStop()
-        estop.run(estop_event=1.0, throttle_scale=1.0)
+        estop = EmergencyStop(clock=FakeClock())
+        drive_at(estop, 0.5)
+        estop.run(estop_event=1.0)
 
-        throttle, _, _, _ = estop.run(throttle=0.9, throttle_scale=1.0)
+        throttle, _, _, _ = estop.run(throttle=0.9, drive_throttle=0.9)
         assert throttle != 0.9
 
     def test_pressing_again_mid_stop_does_not_restart_it(self):
@@ -131,25 +246,34 @@ class TestEmergencyStop(unittest.TestCase):
         A frightened driver presses more than once.  Restarting would send
         the car through another reverse pulse each time and never finish.
         """
-        estop = EmergencyStop(recovery_step=0.25)
-        estop.run(estop_event=1.0, throttle_scale=1.0)
+        estop = EmergencyStop(recovery_step=0.25, clock=FakeClock())
+        drive_at(estop, 1.0)
+        estop.run(estop_event=1.0)
 
         stages = []
         for _ in range(3):
-            stages.append(estop.run(estop_event=1.0, throttle_scale=1.0)[0])
+            stages.append(estop.run(estop_event=1.0)[0])
 
         assert stages == [ESTOP_NEUTRAL_THROTTLE, -1.0, -0.75]
 
+    def test_a_second_stop_does_not_brake_for_the_first_drive(self):
+        """
+        The first stop brought the car to rest, so pressing again straight
+        afterwards has nothing to brake.
+        """
+        estop = EmergencyStop(recovery_step=0.5, clock=FakeClock())
+        drive_at(estop, 1.0)
+        run_to_completion(estop)
+
+        assert run_to_completion(estop) == [0.0]
+
     def test_it_can_be_used_again_afterwards(self):
-        estop = EmergencyStop(recovery_step=0.5)
-        run_to_completion(estop, scale=1.0)
+        estop = EmergencyStop(recovery_step=0.5, clock=FakeClock())
+        drive_at(estop, 1.0)
+        run_to_completion(estop)
+        drive_at(estop, 1.0)
 
-        assert estop.stopping is False
-        assert estop.run(estop_event=1.0, throttle_scale=1.0)[0] == -1.0
-
-    def test_no_throttle_limit_set_yet_uses_the_default(self):
-        estop = EmergencyStop(default_scale=0.5)
-        assert estop.run(estop_event=1.0)[0] == -0.5
+        assert estop.run(estop_event=1.0)[0] == -1.0
 
     def test_nothing_set_yet_is_not_a_crash(self):
         throttle, mode, recording, stopping = EmergencyStop().run()

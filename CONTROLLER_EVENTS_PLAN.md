@@ -1,13 +1,13 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 48 / 48 tasks.**
+**49 / 50 tasks.** Phase 12 (emergency stop) is in progress.
 
 50 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -942,6 +942,66 @@ must land together to keep the templates working.
       on the passes after. `basic.py` imports `albumentations`, so the test
       skips without it and runs on the car — where it fails against the
       unfixed `basic.py` and passes with the fix.
+
+### Phase 12 — An emergency stop that brakes only what is moving (1 / 2)
+
+> **Why.** Found by Ed on hardware, 2026-10-26: `~/mycar1249`, wheels off
+> the ground, throttle at zero, with both a PS3 pad and the Xbox pad —
+> pressing the emergency stop spins the motor on and off. The car was
+> standing still, so there was nothing to stop.
+>
+> `EmergencyStop` sends the sequence legacy did, whatever the car is doing:
+> full reverse at the throttle limit (−0.5 on this car), +0.01, full
+> reverse again, then back to zero in steps of 0.05 — about 0.65 s at
+> 20 Hz. It assumes an ESC that reads reverse as "brake" while moving
+> forward. This car's ESC drives reverse directly, and its motor turns past
+> about ±0.25, so the sequence becomes roughly half a second of reverse
+> drive.
+>
+> **Decided (Ed, 2026-10-26):** the reverse should be proportional to the
+> forward throttle, and allow for a fast car that is still coasting after
+> the throttle is released. Once the throttle has been at zero for long
+> enough, an emergency stop applies no reverse at all.
+>
+> **Design.** `EmergencyStop` keeps a decaying estimate of how hard the car
+> was recently driven forward. On each pass it reads the throttle the drivetrain was
+> given on the previous pass (`throttle`, written by `DriveMode`), so it
+> covers the pilot and constant throttle as well as the stick; templates
+> that do not pass it fall back to `user/throttle`. The estimate takes any
+> new forward throttle at once, and otherwise falls linearly to zero over
+> `ESTOP_COAST_TIME` seconds (default 1.0) from its last peak. On a stop,
+> the brake level *b* is the estimate at that moment: the sequence is −*b*,
+> neutral, −*b*, then back to zero in `recovery_step` steps. If *b* is 0,
+> the throttle goes straight to 0. Either way the mode drops to `user`,
+> recording stops and `user/estop` is true for that pass, so `UserThrottle`
+> still releases a held stick (10.2). The reverse no longer depends on the
+> throttle limit, so `user/throttle_scale` and `default_scale` go.
+>
+> **Out of scope, recorded:** a car driving *backwards* gets a plain stop
+> (throttle 0), not a forward brake pulse — legacy did not brake reverse
+> either. `~/mycar1249/manage.py` is a copy of the template and Ed's to
+> edit; until it passes `throttle` to the stop, it falls back to
+> `user/throttle` and so does not brake for the pilot.
+
+- [x] **12.1** `EmergencyStop` brakes in proportion to recent forward
+      throttle. New input for the drivetrain's last throttle, a
+      `coast_time` and an injectable clock; `default_scale` and the
+      throttle-scale input removed, and `complete.py`'s call drops them in
+      the same commit so the inputs still line up. Unit tests with a fake clock: standing
+      still (never driven, or released longer ago than `coast_time`) gives
+      0.0 and no reverse; driving at 0.5 gives −0.5, neutral, −0.5, then
+      back to zero; released half the coast time ago gives −0.25; the pilot's
+      throttle counts as well as the user's; and a stop still sets the mode,
+      recording and `user/estop` as before.
+- [ ] **12.2** `complete.py` passes `throttle` to the stop and
+      `ESTOP_COAST_TIME` from the config (`cfg_complete.py` gets the
+      setting, and the template reads it with a default so older car
+      directories still start). Tests through `complete.drive()`: at a
+      standstill the drivetrain never gets a negative throttle; with the
+      stick held at 0.5 it gets −0.5 then returns to zero; in autopilot it
+      brakes with the pilot's throttle. Hardware check for Ed: wheels off
+      the ground, e-stop at zero throttle gives no movement; stick forward,
+      then e-stop, gives a short reverse kick.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 
