@@ -1,6 +1,6 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**50 / 50 tasks.** Phase 12's hardware check is still to do.
+**COMPLETE — 50 / 50 tasks.**
 
 50 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
@@ -1003,7 +1003,14 @@ must land together to keep the templates working.
       the ground, e-stop at zero throttle gives no movement; stick forward,
       then e-stop, gives a short reverse kick.
 
-> **Hardware check: not yet done.**
+> **Verified on hardware (Ed, 2026-10-26)** at `cc771771`: `~/mycar1249`,
+> wheels off the ground, an Xbox Wireless Controller over Bluetooth
+> (`CONTROLLER_TYPE = 'xbox'`), Raspberry Pi on Debian trixie. The car
+> directory's `manage.py` was given the new e-stop wiring first. All four
+> passed: at zero throttle Y leaves the motor still; with the stick held at
+> about half, Y gives a short reverse kick and the motor stays stopped with
+> the stick still held; released 2 s before, Y gives no movement; released
+> just before, Y gives a weaker kick.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 
