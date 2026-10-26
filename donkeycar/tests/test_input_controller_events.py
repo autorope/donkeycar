@@ -503,6 +503,55 @@ class TestLifecycle(unittest.TestCase):
         assert fix.keys() == set()
 
 
+class TestOnReady(unittest.TestCase):
+    """
+    The hook a template uses to tell the user what was found, once it has
+    been found rather than while the car is being assembled.
+    """
+
+    def run_until_first_poll(self, fix: EventsFixture) -> list[str]:
+        polled = []
+
+        def stop_on_first_poll() -> None:
+            polled.append('poll')
+            fix.part.running = False
+
+        fix.part.poll = stop_on_first_poll
+        fix.part.update()
+        return polled
+
+    def test_it_is_called_once_the_device_is_ready(self):
+        calls = []
+        fix = EventsFixture(on_ready=lambda controller: calls.append(
+            (controller, controller.init_count)))
+        fix.controller.init_results = [False, False, True]
+
+        self.run_until_first_poll(fix)
+
+        assert calls == [(fix.controller, 3)]
+
+    def test_it_is_not_called_if_the_device_never_comes(self):
+        calls = []
+        fix = EventsFixture(on_ready=calls.append)
+        fix.controller.init_results = [False] * 10
+        fix.part.running = False
+        fix.part.update()
+
+        assert calls == []
+
+    def test_a_failing_report_does_not_lose_the_controller(self):
+        def broken(controller) -> None:
+            raise ValueError('cannot print')
+
+        fix = EventsFixture(on_ready=broken)
+        with self.assertLogs('donkeycar.parts.controls.events', 'ERROR'):
+            polled = self.run_until_first_poll(fix)
+        fix.tick()
+
+        assert polled == ['poll']
+        assert CONTROLLER_LOST not in fix.events()
+
+
 class TestFailureHandling(unittest.TestCase):
 
     def test_a_disconnected_device_stops_polling(self):

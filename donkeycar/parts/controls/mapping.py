@@ -16,8 +16,18 @@ import logging
 from collections.abc import Iterable, Mapping
 from typing import Any
 
+from prettytable import PrettyTable
+
 from donkeycar.events import OneShotEvents
 from donkeycar.memory import Memory
+from donkeycar.parts.controls.device import AbstractInputController
+from donkeycar.parts.controls.events import (
+    AXIS_EVENT,
+    AXIS_STATE,
+    BUTTON_CLICK,
+    BUTTON_EVENT,
+    BUTTON_STATE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +98,35 @@ KNOWN_BEHAVIORS = frozenset({
 
 #: A behavior may be bound to one control or to several.
 BehaviorMap = Mapping[str, str | Iterable[str]]
+
+
+def describe_binding(key: str) -> tuple[str, str]:
+    """
+    The control a memory key belongs to and what about it a behavior is
+    bound to, as a user holding the controller would put it::
+
+        '/event/button/cross/press'    -> ('cross', 'press')
+        '/event/button/cross/click/2'  -> ('cross', 'click x2')
+        '/event/axis/left_stick_horz'  -> ('left_stick_horz', 'move')
+        '/button/view'                 -> ('view', 'held')
+        '/axis/right_trigger'          -> ('right_trigger', 'position')
+
+    A key of no recognised form is its own control with no action, so a
+    template's own bindings are still listed.
+    """
+    if key.startswith(BUTTON_EVENT):
+        button, _, event = key[len(BUTTON_EVENT):].partition('/')
+        kind, _, clicks = event.partition('/')
+        if kind == BUTTON_CLICK and clicks not in ('', '1'):
+            return button, f'{BUTTON_CLICK} x{clicks}'
+        return button, kind
+    if key.startswith(AXIS_EVENT):
+        return key[len(AXIS_EVENT):], 'move'
+    if key.startswith(BUTTON_STATE):
+        return key[len(BUTTON_STATE):], 'held'
+    if key.startswith(AXIS_STATE):
+        return key[len(AXIS_STATE):], 'position'
+    return key, ''
 
 
 class BehaviorEventMapper:
@@ -170,19 +209,48 @@ class BehaviorEventMapper:
         """
         return tuple(sorted(KNOWN_BEHAVIORS - set(self._bindings)))
 
-    def show_map(self) -> None:
+    def show_map(self, *controllers: AbstractInputController) -> None:
         """
-        Print the bindings, so that a user can see what their controller
-        actually does without reading the template.
+        Print which controllers are in use and what each of their controls
+        does, so that a user can see it without reading the template.
+
+        Call it once the controllers are found -- InputControllerEvents'
+        on_ready -- so that it names the device actually found, and so that
+        it comes after the start-up logs rather than buried in them.
+
+        A bound control that no controller has is warned about, since
+        pressing it does nothing.  A controller that cannot say whether it
+        has a control is taken to have it.
         """
+        for controller in controllers:
+            print(f'Input controller: {controller.description}')
+
         if not self._bindings:
             print('No behaviors are bound to this controller.')
             return
 
-        print('Controller behaviors:')
-        for behavior in sorted(self._bindings):
-            controls = ', '.join(self._bindings[behavior])
-            print(f'  {behavior:<40} {controls}')
+        table = PrettyTable()
+        table.field_names = ['control', 'action', 'behavior']
+        table.align = 'l'
+        missing: set[str] = set()
+        rows = []
+        for behavior, controls in self._bindings.items():
+            for key in controls:
+                control, action = describe_binding(key)
+                rows.append((control, action, behavior.removeprefix(BEHAVIOR)))
+                if controllers and all(
+                    controller.has_control(control) is False
+                    for controller in controllers
+                ):
+                    missing.add(control)
+        table.add_rows([list(row) for row in sorted(rows)])
+        print(table)
+
+        if missing:
+            logger.warning(
+                f'These controls are bound but the controller does not have '
+                f'them, so they do nothing: {", ".join(sorted(missing))}'
+            )
 
         unknown = self.unknown_behaviors()
         if unknown:

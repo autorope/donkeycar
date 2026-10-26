@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import io
 import unittest
+from contextlib import redirect_stdout
 
 from donkeycar.memory import Memory
 from donkeycar.parts.controls.events import (
@@ -16,6 +18,7 @@ from donkeycar.parts.controls.mapping import (
     TOGGLE_PILOT_MODE,
     TOGGLE_RECORDING,
     BehaviorEventMapper,
+    describe_binding,
 )
 from donkeycar.parts.controls.device import ControlChange
 from donkeycar.tests.fake_js import FakeClock, FakeInputController
@@ -192,6 +195,88 @@ class TestCheckingAMap(unittest.TestCase):
 
     def test_every_known_behavior_is_under_the_behavior_prefix(self):
         assert all(b.startswith('/behavior/') for b in KNOWN_BEHAVIORS)
+
+
+class TestDescribingABinding(unittest.TestCase):
+
+    def test_button_events(self):
+        assert describe_binding('/event/button/cross/press') == ('cross', 'press')
+        assert describe_binding('/event/button/cross/release') == (
+            'cross', 'release')
+        assert describe_binding('/event/button/cross/hold') == ('cross', 'hold')
+
+    def test_clicks_say_how_many(self):
+        assert describe_binding('/event/button/A/click/1') == ('A', 'click')
+        assert describe_binding('/event/button/A/click/2') == ('A', 'click x2')
+
+    def test_axes(self):
+        assert describe_binding('/event/axis/left_stick_horz') == (
+            'left_stick_horz', 'move')
+        assert describe_binding('/axis/right_trigger') == (
+            'right_trigger', 'position')
+
+    def test_a_held_button(self):
+        assert describe_binding('/button/view') == ('view', 'held')
+
+    def test_a_key_of_a_template_s_own_is_listed_as_it_is(self):
+        assert describe_binding('/my/own/key') == ('/my/own/key', '')
+
+
+SHOWN_BINDINGS = {
+    TOGGLE_RECORDING: [format_button_event('circle', BUTTON_DOWN),
+                       format_button_event('web_w1', BUTTON_DOWN)],
+    STEERING: format_axis_event('left_stick_horz'),
+}
+
+
+class TestShowingTheMap(unittest.TestCase):
+    """
+    What a user sees once their controller is found.  Legacy printed a
+    table of control and action; the first version of this printed
+    behavior and memory key, before the pad was found.
+    """
+
+    def shown(self, *controllers) -> str:
+        out = io.StringIO()
+        with redirect_stdout(out):
+            BehaviorEventMapper(Memory(), SHOWN_BINDINGS).show_map(*controllers)
+        return out.getvalue()
+
+    def test_it_names_the_controller_found(self):
+        assert 'Input controller: FakeInputController' in self.shown(
+            FakeInputController())
+
+    def test_a_row_per_control_saying_what_it_does(self):
+        lines = self.shown().splitlines()
+
+        assert any('circle' in line and 'press' in line
+                   and 'toggle_recording' in line for line in lines)
+        assert any('web_w1' in line and 'toggle_recording' in line
+                   for line in lines)
+        assert any('left_stick_horz' in line and 'move' in line
+                   and 'steering' in line for line in lines)
+        assert '/behavior/' not in '\n'.join(lines)
+
+    def test_a_control_the_pad_lacks_is_warned_about(self):
+        pad = FakeInputController(controls={'left_stick_horz'})
+        web = FakeInputController(controls={'web_w1'})
+
+        with self.assertLogs('donkeycar.parts.controls.mapping', 'WARNING') as log:
+            self.shown(pad, web)
+
+        assert len(log.output) == 1
+        assert 'circle' in log.output[0]
+
+    def test_nothing_is_warned_about_when_every_control_is_there(self):
+        pad = FakeInputController(controls={'circle', 'left_stick_horz'})
+        web = FakeInputController(controls={'web_w1'})
+
+        with self.assertNoLogs('donkeycar.parts.controls.mapping', 'WARNING'):
+            self.shown(pad, web)
+
+    def test_a_controller_that_cannot_say_is_not_second_guessed(self):
+        with self.assertNoLogs('donkeycar.parts.controls.mapping', 'WARNING'):
+            self.shown(FakeInputController())
 
 
 class TestThroughTheWholeChain(unittest.TestCase):

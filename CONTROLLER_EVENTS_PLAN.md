@@ -1,14 +1,14 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**51 / 53 tasks.**
+**52 / 53 tasks.**
 
-54 commits so far.  Phases 0–6 took 39: their 37 tasks, plus one for the
+55 commits so far.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phase 12 took 2, plus one recording its
 hardware check.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓░░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -1013,7 +1013,7 @@ must land together to keep the templates working.
 > the stick still held; released 2 s before, Y gives no movement; released
 > just before, Y gives a weaker kick.
 
-### Phase 13 — Say which controller is active and what its controls do (1 / 3)
+### Phase 13 — Say which controller is active and what its controls do (2 / 3)
 
 > **Why.** Found by Ed on hardware, 2026-10-26. When the car starts, the user
 > can't see which button or axis does what. Legacy printed a "Joystick
@@ -1066,7 +1066,7 @@ must land together to keep the templates working.
       overrides in the Linux joystick, PyGame, RC, MM1, web and networked
       controllers. Unit tests for each override, including `None` before
       `init()`.
-- [ ] **13.2** The mapper prints control → behavior once the controller is
+- [x] **13.2** The mapper prints control → behavior once the controller is
       ready. `show_map(controller)` prints the table and flags missing
       controls; `InputControllerEvents` gets `on_ready`, guarded. Unit
       tests: rows and action names for every kind of key; a control the pad

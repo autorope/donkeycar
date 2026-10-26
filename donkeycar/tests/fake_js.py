@@ -83,16 +83,19 @@ class FakeInputController(AbstractInputController):
         changes: Iterable[ControlChange] = (),
         init_results: Iterable[bool] = (),
         poll_error: BaseException | None = None,
+        controls: Iterable[str] | None = None,
     ) -> None:
         """
         changes:      state changes poll() will return, in order
         init_results: results init() will return before settling on True,
                       to simulate a device that is not ready yet
         poll_error:   raised by the next call to poll(), once
+        controls:     the controls it has, or None if it cannot say
         """
         self.changes = list(changes)
         self.init_results = list(init_results)
         self.poll_error = poll_error
+        self.controls = None if controls is None else set(controls)
         self.init_count = 0
         self.showed_map = False
         self.closed = False
@@ -106,6 +109,11 @@ class FakeInputController(AbstractInputController):
     def show_map(self) -> bool:
         self.showed_map = True
         return True
+
+    def has_control(self, name: str) -> bool | None:
+        if self.controls is None:
+            return None
+        return name in self.controls
 
     def poll(self) -> ControlChange:
         if self.poll_error is not None:

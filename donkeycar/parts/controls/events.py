@@ -143,6 +143,7 @@ class InputControllerEvents:
         init_retry_time: float = 1.0,
         clock: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
+        on_ready: Callable[[AbstractInputController], None] | None = None,
     ) -> None:
         """
         memory:          vehicle memory to publish into
@@ -153,6 +154,9 @@ class InputControllerEvents:
         init_retry_time: seconds between attempts to reach the device
         clock:           source of the current time, for testing
         sleep:           how to wait between init attempts, for testing
+        on_ready:        called once with the controller when it is found,
+                         on the polling thread -- to tell the user what it
+                         does, say
         """
         self._memory = memory
         self._controller = controller
@@ -162,6 +166,7 @@ class InputControllerEvents:
         self._init_retry_time = init_retry_time
         self._clock = clock
         self._sleep = sleep
+        self._on_ready = on_ready
 
         self._one_shot = OneShotEvents(memory)
         self._lock = threading.Lock()
@@ -194,6 +199,7 @@ class InputControllerEvents:
                 return
 
             self._controller.show_map()
+            self._ready()
             while self.running:
                 self.poll()
         except Exception:
@@ -201,6 +207,16 @@ class InputControllerEvents:
             # stop the car with nothing in the log to say why
             logger.exception('Input controller polling stopped.')
             self._lose_controller()
+
+    def _ready(self) -> None:
+        if self._on_ready is None:
+            return
+        try:
+            self._on_ready(self._controller)
+        except Exception:
+            # only a report for the user; failing it must not lose the
+            # controller, which would stop the car
+            logger.exception('Could not report the input controller found.')
 
     def poll(self) -> None:
         """
