@@ -344,7 +344,9 @@ wrong device — which is exactly how the legacy Xbox map passed for years.
       measurement instead: the F710 in XInput mode runs on the same `xpad` driver,
       so shared codes must mean the same thing on both pads. That check fails if
       the legacy Xbox defect is reintroduced, so it is not inert.
-- [x] **1.2** `PS3` — `hid-sony`. **Not verified against hardware.** Differs in
+- [x] **1.2** `PS3` — `hid-sony`. **Partly verified on 2026-10-26** against a
+      third-party clone over Bluetooth: the right stick's vertical axis, the left
+      stick's horizontal axis and both triggers (see the docstring). Differs in
       shape from the Xbox-style pads: the dpad is four buttons rather than an axis
       pair, and each trigger reports twice (analog axis *and* digital button). The
       axis cross-check against the measured pad is weaker here than for the F710,

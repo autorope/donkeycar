@@ -48,12 +48,29 @@ class PS3Joystick(LinuxGameController):
     right_trigger_button).  A squeeze produces both.  Use the axis for
     proportional control and the button for a simple press.
 
-    NOT VERIFIED against hardware -- no DualShock 3 was available.  The
-    codes come from the map Donkeycar has shipped for years.  Its axis
-    layout agrees with the Xbox pad that was measured, which is reassuring
-    but not proof: the ABS codes are kernel-wide constants with conventional
-    meanings, and `hid-sony` follows the same convention `xpad` does, but
-    nothing forces a driver to.  Worth confirming on a real pad.
+    Partly verified, and not against a genuine Sony pad.  On 2026-10-26 a
+    third-party clone (a 'Mo Vone' wireless controller, which identifies
+    itself as 054c:0268, 'Sony PLAYSTATION(R)3 Controller') was paired over
+    Bluetooth on Debian trixie, kernel 6.18, and each control below was
+    moved in isolation while the raw joystick events were logged:
+
+        right stick up/down    0x04, rests at 0.0, -1.0 is up
+        left stick left/right  0x00, rests at 0.0
+        right trigger          0x05, rests at -1.0, and button 0x139
+        left trigger           0x02, rests at -1.0, and button 0x138
+
+    The button names were checked by hand with
+    `python -m donkeycar.parts.controls.events --type ps3`, without a saved
+    capture.  The right stick left/right, the left stick up/down and the
+    dpad were not measured; they come from the map Donkeycar has shipped
+    for years, as everything here did before.  A genuine DualShock 3 may
+    still differ, since `hid-sony` applies the same report layout to any
+    pad that claims to be one.
+
+    The triggers rest at -1.0, as on the Xbox pads.  The same pad read
+    through the Xbox Bluetooth map ('xbox') drives with the right trigger,
+    because that map names 0x05 right_stick_vert, and a released trigger
+    then reads as full throttle.
     """
 
     AXIS_NAMES = {
