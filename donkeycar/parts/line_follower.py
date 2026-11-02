@@ -32,6 +32,18 @@ class LineFollower:
 
         self.pid_st = pid
 
+        # Optional robustness controls. Both default to a no-op via getattr so
+        # existing myconfig.py files and the current behavior are unchanged.
+        #
+        # CROP_TOP_FRACTION > 0 ignores any masked pixels above this fraction of
+        # the image height, so line-colored clutter high in the frame (people,
+        # banners, walls) cannot bias the detected line position.
+        self.crop_top_fraction = getattr(cfg, 'CROP_TOP_FRACTION', 0.0)
+        # MASK_MORPH_KERNEL > 0 (odd) denoises the mask with a morphological
+        # open then close, using an elliptical kernel of this size to remove
+        # speckle and fill small gaps before the histogram is taken.
+        self.mask_morph_kernel = getattr(cfg, 'MASK_MORPH_KERNEL', 0)
+
 
     def get_i_color(self, cam_img):
         '''
@@ -48,6 +60,22 @@ class LineFollower:
 
         # make a mask of the colors in our range we are looking for
         mask = cv2.inRange(img_hsv, self.color_thr_low, self.color_thr_hi)
+
+        # optionally ignore the part of the scan band that lies above the ROI
+        # crop line, so line-colored clutter in the upper frame is excluded
+        if self.crop_top_fraction > 0.0:
+            crop_row = int(self.crop_top_fraction * cam_img.shape[0])
+            rows_above = max(0, min(mask.shape[0], crop_row - iSlice))
+            if rows_above:
+                mask[:rows_above, :] = 0
+
+        # optionally denoise the mask with a morphological open then close
+        if self.mask_morph_kernel > 0:
+            kernel = cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE,
+                (self.mask_morph_kernel, self.mask_morph_kernel))
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
         # which index of the range has the highest amount of yellow?
         hist = np.sum(mask, axis=0)
