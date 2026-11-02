@@ -43,7 +43,7 @@ dependencies = [
 
 [project.optional-dependencies]
 pi = [
-    "Adafruit_PCA9685",
+    "adafruit-circuitpython-pca9685",
     "adafruit-circuitpython-ssd1306",
     "adafruit-circuitpython-rplidar",
     "adafruit-circuitpython-mpu6050",
@@ -60,7 +60,7 @@ pi = [
     "albumentations",
 ]
 nano = [
-    "Adafruit_PCA9685",
+    "adafruit-circuitpython-pca9685",
     "adafruit-circuitpython-ssd1306",
     "adafruit-circuitpython-rplidar",
     "Jetson.GPIO",

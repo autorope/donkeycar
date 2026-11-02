@@ -125,60 +125,42 @@ class PulseController:
 
 
 @deprecated("Deprecated in favor or PulseController.  This will be removed in a future release")
-class PCA9685:
-    ''' 
-    PWM motor controler using PCA9685 boards. 
-    This is used for most RC Cars
+class PCA9685(PulseController):
     '''
-    def __init__(self, channel, address=0x40, frequency=60, busnum=None, init_delay=0.1):
+    PWM motor controler using PCA9685 boards.
+    This is used for most RC Cars.
 
-        self.default_freq = 60
-        self.pwm_scale = frequency / self.default_freq
+    Kept as a thin PulseController over a PwmPinPCA9685 so that the pulse
+    scaling, clamping and start-on-first-use behaviour live in one place.
+    '''
+    def __init__(self, channel, address=0x40, frequency=60, busnum=1,
+                 init_delay=0.1):
+        from donkeycar.parts.pins import PwmPinPCA9685
 
-        import Adafruit_PCA9685
-        # Initialise the PCA9685 using the default address (0x40).
-        if busnum is not None:
-            from Adafruit_GPIO import I2C
-            # replace the get_bus function with our own
-            def get_bus():
-                return busnum
-            I2C.get_default_bus = get_bus
-        self.pwm = Adafruit_PCA9685.PCA9685(address=address)
-        self.pwm.set_pwm_freq(frequency)
+        if busnum is None:
+            # The old implementation took None to mean "whichever bus the
+            # Adafruit_GPIO default happened to be".  There is no such
+            # default now, and a pin id always carries a bus number, so be
+            # explicit rather than guessing.
+            busnum = 1
+            logger.warning("PCA9685 busnum was None; defaulting to bus 1. "
+                           "Set busnum explicitly (see PCA9685_I2C_BUSNUM).")
+        pwm_pin = PwmPinPCA9685(channel, busnum, address, frequency)
+        super().__init__(pwm_pin, frequency / 60, False)
         self.channel = channel
         time.sleep(init_delay) # "Tamiya TBLE-02" makes a little leap otherwise
 
     def set_high(self):
-        self.pwm.set_pwm(self.channel, 4096, 0)
+        self.pwm_pin.pca_pin.set_high()
 
     def set_low(self):
-        self.pwm.set_pwm(self.channel, 0, 4096)
+        self.pwm_pin.pca_pin.set_low()
 
     def set_duty_cycle(self, duty_cycle):
         if duty_cycle < 0 or duty_cycle > 1:
             logging.error("duty_cycle must be in range 0 to 1")
             duty_cycle = clamp(duty_cycle, 0, 1)
-            
-        if duty_cycle == 1:
-            self.set_high()
-        elif duty_cycle == 0:
-            self.set_low()
-        else:
-            # duty cycle is fraction of the 12 bits
-            pulse = int(4096 * duty_cycle)
-            try:
-                self.pwm.set_pwm(self.channel, 0, pulse)
-            except:
-                self.pwm.set_pwm(self.channel, 0, pulse)
-
-    def set_pulse(self, pulse):
-        try:
-            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
-        except:
-            self.pwm.set_pwm(self.channel, 0, int(pulse * self.pwm_scale))
-
-    def run(self, pulse):
-        self.set_pulse(pulse)
+        self.pwm_pin.pca_pin.set_duty_cycle(duty_cycle)
 
 
 class VESC:
@@ -401,7 +383,21 @@ class JHat:
     '''
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
         logger.info("Firing up the Hat")
-        import Adafruit_PCA9685
+        # Adafruit_PCA9685 is deprecated and is no longer installed by any
+        # extra, because its Adafruit-GPIO -> spidev dependency has to be
+        # compiled.  This class drives a Teensy emulating a PCA9685 through
+        # Adafruit_GPIO internals that the CircuitPython driver does not
+        # expose, so it has not been ported.  Install it by hand if needed:
+        #     pip install Adafruit_PCA9685
+        try:
+            import Adafruit_PCA9685
+        except ImportError as e:
+            raise ImportError(
+                f"{type(self).__name__} needs the deprecated Adafruit_PCA9685 "
+                "library, which donkeycar no longer installs. Install it with "
+                "'pip install Adafruit_PCA9685' (it needs build-essential and "
+                "python3-dev), or use PinProvider.PCA9685 instead."
+            ) from e
         LED0_OFF_L = 0x08
         # Initialise the PCA9685 using the default address (0x40).
         if busnum is not None:
@@ -444,7 +440,21 @@ class JHatReader:
     Read RC controls from teensy 
     '''
     def __init__(self, channel, address=0x40, frequency=60, busnum=None):
-        import Adafruit_PCA9685
+        # Adafruit_PCA9685 is deprecated and is no longer installed by any
+        # extra, because its Adafruit-GPIO -> spidev dependency has to be
+        # compiled.  This class drives a Teensy emulating a PCA9685 through
+        # Adafruit_GPIO internals that the CircuitPython driver does not
+        # expose, so it has not been ported.  Install it by hand if needed:
+        #     pip install Adafruit_PCA9685
+        try:
+            import Adafruit_PCA9685
+        except ImportError as e:
+            raise ImportError(
+                f"{type(self).__name__} needs the deprecated Adafruit_PCA9685 "
+                "library, which donkeycar no longer installs. Install it with "
+                "'pip install Adafruit_PCA9685' (it needs build-essential and "
+                "python3-dev), or use PinProvider.PCA9685 instead."
+            ) from e
         self.pwm = Adafruit_PCA9685.PCA9685(address=address)
         self.pwm.set_pwm_freq(frequency)
         self.register = 0 #i2c read doesn't take an address
