@@ -410,5 +410,34 @@ It asks for each control in turn, records what moved and how far, and saves
 the result.  Type `s` to skip a control your pad lacks, and `r` after a
 step's result to redo it.  Attach `pad.json` when reporting a wrong map.
 
+### Seeing what the controller does while driving
+
+The tools above run without the car.  When the car is running and moving a
+stick seems to do nothing, turn on the controller trace:
+
+```bash
+DONKEY_CONTROLLER_DEBUG=1 python manage.py drive --js
+```
+
+`1`, `true`, `yes` and `on` turn it on, in any case.  It is read when the
+car starts, so set it on the command line rather than changing it while
+the car runs.  The lines go to the `donkeycar.parts.controls.trace` logger
+at INFO, so they appear with the default logging, and `LOGLEVEL=DEBUG`
+isn't needed.
+
+Every control change the pad delivers is logged as it arrives:
+
+```
+INFO:donkeycar.parts.controls.trace:axis left_stick_horz -0.531
+INFO:donkeycar.parts.controls.trace:button cross press
+INFO:donkeycar.parts.controls.trace:button cross release
+INFO:donkeycar.parts.controls.trace:button cross click x1
+INFO:donkeycar.parts.controls.trace:button cross hold
+INFO:donkeycar.parts.controls.trace:controller lost
+```
+
+If a stick moves and no `axis` line appears, the pad isn't reaching the car:
+check the device, the pairing, and `CONTROLLER_TYPE`.
+
 If something here is wrong or missing, say so on
 [#1097](https://github.com/autorope/donkeycar/issues/1097).

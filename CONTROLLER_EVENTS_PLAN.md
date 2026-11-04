@@ -1,14 +1,14 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 53 / 53 tasks.**
+**IN PROGRESS — 54 / 55 tasks** (Phase 14 open).
 
-57 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+58 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phases 12 and 13 took 2 and 3, each plus one
-recording its hardware check.
+recording its hardware check.  Phase 14 has taken 1 so far.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓ · Phase 14 ▓░
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -1085,6 +1085,68 @@ must land together to keep the templates working.
 > directory's `manage.py` was first given the new `add_user_controller`
 > wiring. `python manage.py drive --js` printed the device and the
 > control → behavior table once the pad was found.
+
+### Phase 14 — Show what the controller is doing, on request (1 / 2)
+
+> **Why.** Found by Ed on hardware, 2026-11-03. Driving `~/mycar1249` with
+> a pad, moving a stick prints nothing, so there is no way to tell from the
+> console whether the pad's events arrive, whether a behavior turned them
+> into steering or throttle, or neither. Nothing on this branch logs either:
+> `InputControllerEvents` and the driving behaviors are silent by design,
+> since they run on every pass.
+>
+> **Asked (Ed, 2026-11-03):** debug output that can be toggled with an
+> environment variable.
+>
+> **Design.**
+> - One variable, `DONKEY_CONTROLLER_DEBUG`. Set to `1`, `true`, `yes` or
+>   `on` (any case), the trace is on; unset or anything else, it is off and
+>   costs one boolean test per call. It is read when each part is
+>   constructed, so it is set on the command line:
+>   `DONKEY_CONTROLLER_DEBUG=1 python manage.py drive --js`.
+> - The trace goes to the logger at INFO, so it shows with the templates'
+>   default logging and needs no `LOGLEVEL=DEBUG`, which would also turn on
+>   every other library's debug output. It goes to its own logger,
+>   `donkeycar.parts.controls.trace`, so it can also be silenced or
+>   redirected on its own.
+> - The helper lives in a new `donkeycar/parts/controls/trace.py`:
+>   `trace_enabled() -> bool` and the `trace` logger.
+> - Two layers, so a silent car can be pinned to one of them:
+>   1. **The pad.** `InputControllerEvents` logs every control change it
+>      publishes: `axis left_stick_horz -0.531`, `button cross press`,
+>      `button cross click x2`, `button cross hold`, and the controller
+>      being lost. Nothing here means the pad isn't reaching the car (the
+>      device, pairing, or the map's control names).
+>   2. **The behaviors.** `UserSteering`, `UserThrottle` and
+>      `TriggerThrottle` log their output **when it changes**, rounded to
+>      3 places, not every pass: `steering -0.42 (axis -0.531)`,
+>      `throttle 0.25 (axis -0.5, scale 0.5)`. `UserThrottle` also logs
+>      letting go of the stick, once per let-go. Events here but no
+>      behavior lines means the map doesn't bind that control to the
+>      behavior.
+> - Toggle and mode behaviors already log at INFO (`pilot mode: ...`,
+>   `recording: ...`) and are left alone.
+> - Docs: a "Seeing what the controller does while driving" section
+>   under "Getting help" in `CONTROLLER_MIGRATION.md`.
+>
+> **Out of scope:** the value that finally reaches the drivetrain. In
+> `local_angle` or `local` mode the pilot's values replace the user's after
+> the behaviors run, so a behavior line is what the controller asked for,
+> not necessarily what the wheels got. Tracing that means touching each
+> template's drive-mode wiring; it can be a later task if the two layers
+> above aren't enough.
+
+- [x] **14.1** The pad layer. `trace.py` with `trace_enabled()` and the
+      logger; `InputControllerEvents` logs axis, button, click, hold and
+      lost when enabled. Unit tests: the variable's accepted spellings and
+      default; each event kind is logged when on; nothing is logged when
+      off; an unchanged axis value logs nothing. Docs section started.
+- [ ] **14.2** The behavior layer. `UserSteering`, `UserThrottle` and
+      `TriggerThrottle` log changed output, and `UserThrottle` logs a
+      let-go once. Unit tests: a held stick logs once, not every pass; a
+      change logs again; a let-go logs once; nothing when off. Docs section
+      finished. Hardware check for Ed: with the variable set, moving each
+      stick on `~/mycar1249` prints both layers' lines.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 

@@ -15,6 +15,7 @@ from typing import Any, NamedTuple
 from donkeycar.events import OneShotEvents
 from donkeycar.memory import Memory
 from donkeycar.parts.controls.device import AbstractInputController
+from donkeycar.parts.controls.trace import trace, trace_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -131,6 +132,9 @@ class InputControllerEvents:
     A press held past long_press_time publishes a hold, and that press will
     not go on to publish a click -- a long press is a gesture of its own,
     not a slow click.
+
+    With DONKEY_CONTROLLER_DEBUG set, every event is also logged as it is
+    buffered -- see donkeycar.parts.controls.trace.
     """
 
     def __init__(
@@ -167,6 +171,7 @@ class InputControllerEvents:
         self._clock = clock
         self._sleep = sleep
         self._on_ready = on_ready
+        self._trace = trace_enabled()
 
         self._one_shot = OneShotEvents(memory)
         self._lock = threading.Lock()
@@ -276,6 +281,8 @@ class InputControllerEvents:
         whose pad vanished mid-acceleration would drive on indefinitely.
         """
         self.running = False
+        if self._trace:
+            trace('controller lost')
         with self._lock:
             self._events[CONTROLLER_LOST] = self._clock()
 
@@ -283,6 +290,8 @@ class InputControllerEvents:
         if self._axis_states.get(axis) == value:
             return
         self._axis_states[axis] = value
+        if self._trace:
+            trace(f'axis {axis} {value:.3f}')
         self._events[format_axis_event(axis)] = value
         self._state_changes[format_axis_key(axis)] = value
 
@@ -298,6 +307,8 @@ class InputControllerEvents:
             self._on_release(button, now)
 
     def _on_press(self, button: str, now: float) -> None:
+        if self._trace:
+            trace(f'button {button} {BUTTON_DOWN}')
         self._events[format_button_event(button, BUTTON_DOWN)] = now
 
         # a press this soon after the last release continues that burst of
@@ -314,6 +325,8 @@ class InputControllerEvents:
         self._held.discard(button)
 
     def _on_release(self, button: str, now: float) -> None:
+        if self._trace:
+            trace(f'button {button} {BUTTON_UP}')
         self._events[format_button_event(button, BUTTON_UP)] = now
         self._last_release[button] = now
         self._pending_holds.pop(button, None)
@@ -329,7 +342,7 @@ class InputControllerEvents:
         if self._defer_clicks:
             self._pending_clicks[button] = _PendingClick(count, now)
         else:
-            self._events[format_button_click_event(button, count)] = now
+            self._click(button, count, now)
 
     def _expire_pending(self, now: float) -> None:
         """
@@ -337,8 +350,7 @@ class InputControllerEvents:
         """
         for button, pending in list(self._pending_clicks.items()):
             if now - pending.released_at >= self._fast_click_time:
-                key = format_button_click_event(button, pending.clicks)
-                self._events[key] = pending.released_at
+                self._click(button, pending.clicks, pending.released_at)
                 del self._pending_clicks[button]
 
         for button, pressed_at in list(self._pending_holds.items()):
@@ -346,9 +358,16 @@ class InputControllerEvents:
             if now >= due:
                 # the due time, not `now`, so the value does not depend on
                 # when the vehicle loop happened to get here
+                if self._trace:
+                    trace(f'button {button} {BUTTON_HOLD}')
                 self._events[format_button_event(button, BUTTON_HOLD)] = due
                 del self._pending_holds[button]
                 self._held.add(button)
+
+    def _click(self, button: str, count: int, released_at: float) -> None:
+        if self._trace:
+            trace(f'button {button} {BUTTON_CLICK} x{count}')
+        self._events[format_button_click_event(button, count)] = released_at
 
 
 _FOREVER = float('inf')
