@@ -2,11 +2,11 @@
 
 **COMPLETE — 55 / 55 tasks.**
 
-59 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+60 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phases 12 and 13 took 2 and 3, each plus one
-recording its hardware check.  Phase 14 took 2, one per task.
+recording its hardware check.  Phase 14 took 2, plus one recording its hardware check.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
 Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓ · Phase 14 ▓▓
 
@@ -1149,6 +1149,13 @@ must land together to keep the templates working.
       change logs again; a let-go logs once; nothing when off. Docs section
       finished. Hardware check for Ed: with the variable set, moving each
       stick on `~/mycar1249` prints both layers' lines.
+
+> **Verified on hardware (Ed, 2026-11-03)** at `94f9c755`: Raspberry Pi on
+> Debian trixie, PS3 pad with `CONTROLLER_TYPE = 'ps3'`, run with
+> `DONKEY_CONTROLLER_DEBUG=1 python manage.py drive --js` from three car
+> directories: `~/mycar1249`, `~/mycar-cv-control-1249` and
+> `~/mycar-path-follow-1249`. In each, the trace logged the pad's events and
+> the steering and throttle behaviors' output.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 
