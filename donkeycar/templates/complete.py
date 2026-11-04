@@ -251,8 +251,8 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
             rec_tracker_part.last_num_rec_print = 0
             rec_tracker_part.force_alert = 1
 
-        if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (
-                cfg.CONTROLLER_TYPE != "MM1"):  # these controllers don't use the joystick class
+        if cfg.CONTROLLER_TYPE not in ("pigpio_rc", "MM1", "UNOQ"):
+            # these controllers don't use the joystick class
             if isinstance(ctr, JoystickController):
                 ctr.set_button_down_trigger('circle',
                                             show_record_count_status)  # then we are not using the circle button. hijack that to force a record count indication
@@ -452,7 +452,7 @@ def drive(cfg, model_path=None, use_joystick=False, model_type=None,
                   'pilot/angle', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
-    if (cfg.CONTROLLER_TYPE != "pigpio_rc") and (cfg.CONTROLLER_TYPE != "MM1"):
+    if cfg.CONTROLLER_TYPE not in ("pigpio_rc", "MM1", "UNOQ"):
         if isinstance(ctr, JoystickController):
             ctr.set_button_down_trigger(cfg.AI_LAUNCH_ENABLE_BUTTON, aiLauncher.enable_ai_launch)
 
@@ -729,6 +729,9 @@ def add_user_controller(V, cfg, use_joystick, input_image='ui/image_array'):
             elif cfg.CONTROLLER_TYPE == "MM1":
                 from donkeycar.parts.robohat import RoboHATController
                 ctr = RoboHATController(cfg)
+            elif cfg.CONTROLLER_TYPE == "UNOQ":
+                from donkeycar.parts.unoq import UnoQRcHatController
+                ctr = UnoQRcHatController(cfg)
             elif cfg.CONTROLLER_TYPE == "mock":
                 from donkeycar.parts.controller import MockController
                 ctr = MockController(steering=cfg.MOCK_JOYSTICK_STEERING,
@@ -1113,6 +1116,16 @@ def add_drivetrain(V, cfg):
             from donkeycar.parts.robohat import RoboHATDriver
             # Share serial port with controller to avoid opening the same port twice
             V.add(RoboHATDriver(cfg), inputs=['steering', 'throttle'])
+
+        elif cfg.DRIVE_TRAIN_TYPE == "UNOQ":
+            #
+            # Arduino UNO Q: the header pins belong to the board's MCU, not to
+            # Linux, so the servo and ESC are driven through it.  The bridge
+            # connection is shared with UnoQRcHatController if that is also in
+            # use, so only one is opened.
+            #
+            from donkeycar.parts.unoq import UnoQRcHatDriver
+            V.add(UnoQRcHatDriver(cfg), inputs=['steering', 'throttle'])
 
         elif cfg.DRIVE_TRAIN_TYPE == "PIGPIO_PWM":
             #
