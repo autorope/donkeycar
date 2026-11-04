@@ -436,8 +436,30 @@ INFO:donkeycar.parts.controls.trace:button cross hold
 INFO:donkeycar.parts.controls.trace:controller lost
 ```
 
-If a stick moves and no `axis` line appears, the pad isn't reaching the car:
-check the device, the pairing, and `CONTROLLER_TYPE`.
+The steering and throttle the driving behaviors produce are logged too,
+but only when they change, so a stick held still logs once:
+
+```
+INFO:donkeycar.parts.controls.trace:steering -0.420 (axis -0.840)
+INFO:donkeycar.parts.controls.trace:throttle 0.250 (axis -0.500, scale 0.500)
+INFO:donkeycar.parts.controls.trace:throttle released (something else took the throttle)
+INFO:donkeycar.parts.controls.trace:throttle 0.500 (forward 0.500, reverse 0.000, scale 1.000)
+```
+
+`released` means an emergency stop, constant throttle or a lost controller
+took the throttle; it stays at zero until the stick moves again.  The last
+line is from trigger throttle (`THROTTLE_FORWARD` / `THROTTLE_REVERSE`).
+
+Reading the two together:
+
+- **No `axis` line when a stick moves:** the pad isn't reaching the car.
+  Check the device, the pairing, and `CONTROLLER_TYPE`.
+- **`axis` lines but no `steering` or `throttle`:** that axis isn't bound
+  to the behavior.  Compare its name with the control → behavior table
+  printed at startup, and with `CONTROLLER_BEHAVIOR_MAP`.
+- **`steering` and `throttle` lines but the car doesn't respond:** the
+  controller is doing its part.  Check the pilot mode (`local_angle` and
+  `local` replace the user's values), then the drivetrain and the ESC.
 
 If something here is wrong or missing, say so on
 [#1097](https://github.com/autorope/donkeycar/issues/1097).

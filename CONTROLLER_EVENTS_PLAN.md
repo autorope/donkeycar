@@ -1,14 +1,14 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**IN PROGRESS — 54 / 55 tasks** (Phase 14 open).
+**COMPLETE — 55 / 55 tasks.**
 
-58 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+59 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phases 12 and 13 took 2 and 3, each plus one
-recording its hardware check.  Phase 14 has taken 1 so far.
+recording its hardware check.  Phase 14 took 2, one per task.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓ · Phase 14 ▓░
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓ · Phase 14 ▓▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -1086,7 +1086,7 @@ must land together to keep the templates working.
 > wiring. `python manage.py drive --js` printed the device and the
 > control → behavior table once the pad was found.
 
-### Phase 14 — Show what the controller is doing, on request (1 / 2)
+### Phase 14 — Show what the controller is doing, on request (2 / 2) ✅
 
 > **Why.** Found by Ed on hardware, 2026-11-03. Driving `~/mycar1249` with
 > a pad, moving a stick prints nothing, so there is no way to tell from the
@@ -1119,9 +1119,11 @@ must land together to keep the templates working.
 >      device, pairing, or the map's control names).
 >   2. **The behaviors.** `UserSteering`, `UserThrottle` and
 >      `TriggerThrottle` log their output **when it changes**, rounded to
->      3 places, not every pass: `steering -0.42 (axis -0.531)`,
->      `throttle 0.25 (axis -0.5, scale 0.5)`. `UserThrottle` also logs
->      letting go of the stick, once per let-go. Events here but no
+>      3 places, not every pass: `steering -0.420 (axis -0.840)`,
+>      `throttle 0.250 (axis -0.500, scale 0.500)`. `UserThrottle` also
+>      logs letting go of the stick, once per let-go:
+>      `throttle released (something else took the throttle)`. A shared
+>      `ChangeTrace` in `trace.py` does the change detection. Events here but no
 >      behavior lines means the map doesn't bind that control to the
 >      behavior.
 > - Toggle and mode behaviors already log at INFO (`pilot mode: ...`,
@@ -1141,7 +1143,7 @@ must land together to keep the templates working.
       lost when enabled. Unit tests: the variable's accepted spellings and
       default; each event kind is logged when on; nothing is logged when
       off; an unchanged axis value logs nothing. Docs section started.
-- [ ] **14.2** The behavior layer. `UserSteering`, `UserThrottle` and
+- [x] **14.2** The behavior layer. `UserSteering`, `UserThrottle` and
       `TriggerThrottle` log changed output, and `UserThrottle` logs a
       let-go once. Unit tests: a held stick logs once, not every pass; a
       change logs again; a let-go logs once; nothing when off. Docs section

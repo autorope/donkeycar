@@ -9,6 +9,9 @@ point of the whole exercise.  The legacy JoystickController held all of
 this as methods on one object sharing mutable fields, which is why its
 behaviors could not be moved to different buttons.
 
+With DONKEY_CONTROLLER_DEBUG set, the driving behaviors log their steering
+and throttle whenever it changes -- see donkeycar.parts.controls.trace.
+
 @author: ezward
 """
 
@@ -16,6 +19,8 @@ import logging
 import time
 from collections.abc import Callable
 from typing import Any
+
+from donkeycar.parts.controls.trace import ChangeTrace, trace_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -86,15 +91,19 @@ class UserSteering:
         self.dead_zone = dead_zone
         self.direction = -1.0 if invert else 1.0
         self._position: float | None = None
+        self._trace = ChangeTrace('steering') if trace_enabled() else None
 
     def run(self, axis_value: float | None = None) -> float | None:
         if axis_value is not None:
             self._position = axis_value
         if self._position is None:
             return None  # never reported; leave steering to anything else
-        return self.direction * self.scale * apply_dead_zone(
+        steering = self.direction * self.scale * apply_dead_zone(
             self._position, self.dead_zone
         )
+        if self._trace:
+            self._trace.report(steering, f'axis {self._position:.3f}')
+        return steering
 
 
 class UserThrottle:
@@ -146,6 +155,7 @@ class UserThrottle:
         self.scale = scale
         self.dead_zone = dead_zone
         self._position: float | None = None
+        self._trace = ChangeTrace('throttle') if trace_enabled() else None
 
     def run(
         self,
@@ -156,6 +166,8 @@ class UserThrottle:
         if any(let_go):
             # something else has the throttle; let go, and ignore the stick
             # until it is done
+            if self._trace and self._position is not None:
+                self._trace.release('something else took the throttle')
             self._position = None
             return None
         if axis_value is not None:
@@ -164,9 +176,14 @@ class UserThrottle:
             return None  # never reported; leave throttle to anything else
 
         scale = self.scale if throttle_scale is None else throttle_scale
-        return self.direction * scale * apply_dead_zone(
+        throttle = self.direction * scale * apply_dead_zone(
             self._position, self.dead_zone
         )
+        if self._trace:
+            self._trace.report(
+                throttle, f'axis {self._position:.3f}, scale {scale:.3f}'
+            )
+        return throttle
 
 
 class TriggerThrottle:
@@ -205,6 +222,7 @@ class TriggerThrottle:
         """
         self.scale = scale
         self.dead_zone = dead_zone
+        self._trace = ChangeTrace('throttle') if trace_enabled() else None
 
     def run(
         self,
@@ -218,7 +236,14 @@ class TriggerThrottle:
         scale = self.scale if throttle_scale is None else throttle_scale
         forward = self._squeeze(forward_axis)
         reverse = self._squeeze(reverse_axis)
-        return scale * (forward - reverse)
+        throttle = scale * (forward - reverse)
+        if self._trace:
+            self._trace.report(
+                throttle,
+                f'forward {forward:.3f}, reverse {reverse:.3f}, '
+                f'scale {scale:.3f}',
+            )
+        return throttle
 
     def _squeeze(self, axis_value: float | None) -> float:
         """

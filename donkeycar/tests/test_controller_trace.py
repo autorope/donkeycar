@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-The opt-in controller trace: the switch, and what the event pump logs.
+The opt-in controller trace: the switch, what the event pump logs, and
+what the driving behaviors log.
 """
 import logging
 
@@ -9,6 +10,11 @@ import pytest
 
 from donkeycar.memory import Memory
 from donkeycar.parts.controls import ControlChange
+from donkeycar.parts.controls.behaviors import (
+    TriggerThrottle,
+    UserSteering,
+    UserThrottle,
+)
 from donkeycar.parts.controls.events import InputControllerEvents
 from donkeycar.parts.controls.trace import (
     TRACE_ENV,
@@ -171,4 +177,98 @@ def test_the_switch_is_read_at_construction(trace_off, monkeypatch, caplog):
     pump = Pump()
     monkeypatch.setenv(TRACE_ENV, '1')
     pump.send(ControlChange(axis='left_stick_horz', axis_value=0.5))
+    assert trace_lines(caplog) == []
+
+
+# --- the behavior layer -------------------------------------------------
+
+def test_a_held_stick_logs_its_steering_once(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    steering = UserSteering(scale=0.5)
+    steering.run(-0.84)
+    for _ in range(20):
+        steering.run(None)  # passes between events, stick held
+    assert trace_lines(caplog) == ['steering -0.420 (axis -0.840)']
+
+
+def test_a_change_in_steering_logs_again(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    steering = UserSteering()
+    steering.run(0.5)
+    steering.run(0.5)
+    steering.run(0.25)
+    assert trace_lines(caplog) == [
+        'steering 0.500 (axis 0.500)',
+        'steering 0.250 (axis 0.250)',
+    ]
+
+
+def test_steering_before_the_stick_reports_logs_nothing(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    UserSteering().run(None)
+    assert trace_lines(caplog) == []
+
+
+def test_throttle_logs_its_value_and_scale(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    throttle = UserThrottle(direction=-1.0, scale=0.5)
+    throttle.run(-1.0)
+    throttle.run(None)
+    assert trace_lines(caplog) == [
+        'throttle 0.500 (axis -1.000, scale 0.500)'
+    ]
+
+
+def test_a_new_throttle_scale_logs_again(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    throttle = UserThrottle(direction=-1.0, scale=0.5)
+    throttle.run(-1.0)
+    throttle.run(None, 0.25)
+    assert trace_lines(caplog)[-1] == (
+        'throttle 0.250 (axis -1.000, scale 0.250)'
+    )
+
+
+def test_letting_go_logs_once_and_the_next_value_logs(trace_on, caplog):
+    """
+    A let-go lasts many passes -- an emergency stop, say -- but is one
+    thing that happened.  Afterwards the throttle logs even if it returns
+    to the value it had before.
+    """
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    throttle = UserThrottle(direction=-1.0, scale=1.0)
+    throttle.run(-0.5)
+    for _ in range(10):
+        throttle.run(None, None, True)
+    throttle.run(-0.5)
+    assert trace_lines(caplog) == [
+        'throttle 0.500 (axis -0.500, scale 1.000)',
+        'throttle released (something else took the throttle)',
+        'throttle 0.500 (axis -0.500, scale 1.000)',
+    ]
+
+
+def test_letting_go_of_an_untouched_stick_logs_nothing(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    UserThrottle().run(None, None, True)
+    assert trace_lines(caplog) == []
+
+
+def test_trigger_throttle_logs_both_triggers(trace_on, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    throttle = TriggerThrottle(scale=1.0)
+    throttle.run(0.0, None)   # forward half squeezed, reverse untouched
+    throttle.run(0.0, None)
+    assert trace_lines(caplog) == [
+        'throttle 0.500 (forward 0.500, reverse 0.000, scale 1.000)'
+    ]
+
+
+def test_behaviors_log_nothing_when_off(trace_off, caplog):
+    caplog.set_level(logging.INFO, logger=TRACE_LOGGER)
+    UserSteering().run(0.5)
+    throttle = UserThrottle()
+    throttle.run(-0.5)
+    throttle.run(None, None, True)
+    TriggerThrottle().run(0.0, None)
     assert trace_lines(caplog) == []
