@@ -682,19 +682,18 @@ REALSENSE_T265_ID = None # serial number of camera or None if you only have one 
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
 
 
-# MightyCamera VIO source for indoor GPS path following.
-GPS_SOURCE = 'serial'  # 'serial' or 'mighty'; requires HAVE_GPS = True
-MIGHTY_GPS_URL = 'http://192.168.7.1'
-MIGHTY_GPS_START_VIO = True
-MIGHTY_GPS_LAT = 37.0  # synthetic UTM anchor, not a measured GPS location
-MIGHTY_GPS_LON = -122.0
-MIGHTY_GPS_YAW = 0.0  # degrees CCW from local XY into UTM east/north
-MIGHTY_GPS_MAX_AGE = 0.5  # seconds before tracking is considered stale
-
-
-# Optional live orientation, predicted poses and finite-route look-ahead control.
+# MightyCamera is an independent local pose source, like the T265.
+# When enabled it supplies the driving pose; serial GPS may still collect data.
+HAVE_MIGHTY = False
+MIGHTY_URL = 'http://192.168.7.1'
+MIGHTY_START_VIO = True
+MIGHTY_MAX_AGE = 0.5  # seconds since the newest accepted pose arrived
+MIGHTY_YAW_DEGREES = 0.0  # rotate local XY and heading, degrees CCW
 MIGHTY_HEADING_OFFSET_DEGREES = 0.0  # body-forward axis: +X=0, +Y=90
 MIGHTY_HIGH_RATE_POSE = False  # request firmware-dependent 60 Hz predicted poses
+MIGHTY_LOG_DIRECTORY = 'logs'
+
+# Optional finite-route look-ahead control.
 PATH_CLOSED = True  # False clamps PID segments and stops at a finite route end
 PATH_FINISH_RADIUS = 0.25  # metres
 PATH_USE_LOOKAHEAD = False  # experimental finite-route pure-pursuit controller

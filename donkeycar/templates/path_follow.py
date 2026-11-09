@@ -2,7 +2,7 @@
 """
 Scripts to record a path by driving a donkey car
 and using an autopilot to drive the recoded path.
-Works with GPS, including Mighty Camera VIO, wheel encoders and/or Intel T265
+Works with MightyCamera VIO, GPS, wheel encoders and/or Intel T265
 
 Usage:
     manage.py (drive) [--js] [--log=INFO] [--camera=(single|stereo)]
@@ -83,6 +83,11 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     passing named outputs to parts requesting the same named input.
     '''
 
+    if getattr(cfg, 'GPS_SOURCE', None) == 'mighty':
+        raise ValueError("Mighty now uses HAVE_MIGHTY=True with MIGHTY_URL, "
+                         "MIGHTY_START_VIO, MIGHTY_MAX_AGE and MIGHTY_YAW_DEGREES; "
+                         "remove GPS_SOURCE='mighty'. HAVE_GPS is only for serial GPS.")
+
     is_differential_drive = cfg.DRIVE_TRAIN_TYPE.startswith("DC_TWO_WHEEL")
 
     #Initialize car
@@ -162,7 +167,12 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     #
     # gps outputs ['pos/x', 'pos/y']
     #
-    gps_player = add_gps(V, cfg)
+    have_mighty = getattr(cfg, 'HAVE_MIGHTY', False)
+    # Keep GPS measurements available independently; Mighty owns the driving pose
+    # when enabled. No automatic fallback between geographic and local frames.
+    gps_player = add_gps(V, cfg, publish_pose=not have_mighty)
+    if have_mighty:
+        add_mighty(V, cfg)
 
     #
     # setup primary camera
@@ -203,9 +213,9 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     # at least cfg.PATH_MIN_DIST meters. Except when we are in follow mode, see below...
     path = CsvThrottlePath(min_dist=cfg.PATH_MIN_DIST)
     path_recording = 'recording'
-    if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
-        from donkeycar.parts.mighty_gps import GpsRecordingGate
-        V.add(GpsRecordingGate(), inputs=['recording', 'gps/valid'],
+    if have_mighty:
+        from donkeycar.parts.mighty import PoseRecordingGate
+        V.add(PoseRecordingGate(), inputs=['recording', 'mighty/valid'],
               outputs=['path/recording'])
         path_recording = 'path/recording'
     V.add(path, inputs=[path_recording, 'pos/x', 'pos/y', 'user/throttle'], outputs=['path', 'throttles'])
@@ -303,12 +313,12 @@ def drive(cfg, use_joystick=False, camera_type='single'):
             steering_gain=getattr(cfg, 'PATH_STEERING_GAIN', 1.0),
             max_error=getattr(cfg, 'PATH_MAX_ERROR_METERS', 0.75),
             corner_min_factor=getattr(cfg, 'PATH_CORNER_MIN_THROTTLE_FACTOR', 0.7),
-            require_heading=(cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty'),
+            require_heading=have_mighty,
             throttle=cfg.PID_THROTTLE)
         inputs = ['path', 'pos/x', 'pos/y', 'user/mode', 'cte/closest_pt']
-        if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
-            inputs.append('gps/valid')
-            inputs.append('gps/heading')
+        if have_mighty:
+            inputs.append('mighty/valid')
+            inputs.append('pos/angle')
         V.add(pilot, inputs=inputs,
               outputs=['pilot/steering', 'pilot/throttle', 'cte/closest_pt'])
     else:
@@ -438,12 +448,12 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                       'user/mode', 'steering', 'throttle'],
               outputs=['steering', 'throttle'])
 
-    if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
-        from donkeycar.parts.mighty_gps import GpsDriveGate
-        V.add(GpsDriveGate(), inputs=['user/mode', 'steering', 'throttle', 'gps/valid'],
+    if have_mighty:
+        from donkeycar.parts.mighty import PoseDriveGate
+        V.add(PoseDriveGate(), inputs=['user/mode', 'steering', 'throttle', 'mighty/valid'],
               outputs=['steering', 'throttle'])
 
-    if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
+    if have_mighty:
         import time
         last_telemetry = [0.0]
         last_steering = [None]
@@ -456,7 +466,7 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                              now, mode, x, y, heading, valid, steering, throttle)
                 logging.info('DrivePoseTiming: t=%.6f timing=%s', now, timing)
         V.add(Lambda(log_drive),
-              inputs=['user/mode', 'pos/x', 'pos/y', 'gps/heading', 'gps/valid', 'steering', 'throttle', 'gps/timing'])
+              inputs=['user/mode', 'pos/x', 'pos/y', 'pos/angle', 'mighty/valid', 'steering', 'throttle', 'mighty/timing'])
 
     # V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
 
@@ -503,7 +513,21 @@ def drive(cfg, use_joystick=False, camera_type='single'):
         max_loop_count=cfg.MAX_LOOPS)
 
 
-def add_gps(V, cfg):
+def add_mighty(V, cfg):
+    from donkeycar.parts.mighty import MightyPose, MightyPoseTransform
+    transform = MightyPoseTransform(yaw=cfg.MIGHTY_YAW_DEGREES,
+                                   heading_offset=cfg.MIGHTY_HEADING_OFFSET_DEGREES)
+    reader = MightyPose(url=cfg.MIGHTY_URL, start_vio=cfg.MIGHTY_START_VIO,
+                        max_age=cfg.MIGHTY_MAX_AGE,
+                        high_rate_pose=cfg.MIGHTY_HIGH_RATE_POSE,
+                        log_directory=cfg.MIGHTY_LOG_DIRECTORY)
+    V.add(reader, outputs=['mighty/pose', 'mighty/fresh', 'mighty/timing'], threaded=True)
+    V.add(transform,
+          inputs=['mighty/pose', 'mighty/fresh'],
+          outputs=['pos/x', 'pos/y', 'pos/angle', 'mighty/valid'])
+
+
+def add_gps(V, cfg, publish_pose=True):
     if cfg.HAVE_GPS:
         from donkeycar.parts.serial_port import SerialPort, SerialLineReader
         from donkeycar.parts.gps import GpsNmeaPositions, GpsLatestPosition, GpsPlayer
@@ -517,24 +541,23 @@ def add_gps(V, cfg):
         # - convert nmea lines to positions
         # - retrieve the most recent position
         #
-        if getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
-            from donkeycar.parts.mighty_gps import MightyGpsReader
-            nmea_reader = MightyGpsReader(cfg)
-            V.add(nmea_reader, outputs=['gps/nmea', 'gps/valid', 'gps/heading', 'gps/timing'], threaded=True)
-        else:
-            serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
-            nmea_reader = SerialLineReader(serial_port)
-            V.add(nmea_reader, outputs=['gps/nmea'], threaded=True)
+        serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
+        nmea_reader = SerialLineReader(serial_port)
+        V.add(nmea_reader, outputs=['gps/nmea'], threaded=True)
 
         # part to save nmea sentences for later playback
         nmea_player = None
-        if cfg.GPS_NMEA_PATH and getattr(cfg, 'GPS_SOURCE', 'serial') != 'mighty':
+        if cfg.GPS_NMEA_PATH:
             nmea_writer = CsvLogger(cfg.GPS_NMEA_PATH, separator='\t', field_count=2)
             V.add(nmea_writer, inputs=['recording', 'gps/nmea'],
                       outputs=['gps/recorded/nmea'])  # only record nmea sentences in user mode
-            nmea_player = GpsPlayer(nmea_writer)
-            V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'],
-                      outputs=['gps/playing', 'gps/nmea'])  # only play nmea sentences in autopilot mode
+            # A simultaneous GPS source can log live measurements, but playback
+            # must not replace those measurements while Mighty drives the car.
+            if publish_pose:
+                nmea_player = GpsPlayer(nmea_writer)
+                V.add(nmea_player, inputs=['run_pilot', 'gps/nmea'],
+                      outputs=['gps/playing', 'gps/nmea'])
+
 
         gps_positions = GpsNmeaPositions(debug=cfg.GPS_DEBUG)
         V.add(gps_positions, inputs=['gps/nmea'], outputs=['gps/positions'])
@@ -566,12 +589,14 @@ def add_gps(V, cfg):
             # Fusion consumes exactly 4 tuple inputs.
             V.add(fusion,
                   inputs=['gps/pos', 'imu/accel', 'imu/gyro', quat_key],
-                  outputs=['pos/x', 'pos/y', 'pos/yaw'],
+                  outputs=(['pos/x', 'pos/y', 'pos/yaw'] if publish_pose else
+                           ['gps/fused/x', 'gps/fused/y', 'gps/fused/yaw']),
                   threaded=False)
             return None
         else:
             # rename gps utm position to pose values
-            V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
+            if publish_pose:
+                V.add(Pipe(), inputs=['gps/utm/longitude', 'gps/utm/latitude'], outputs=['pos/x', 'pos/y'])
             return nmea_player
 
     return None

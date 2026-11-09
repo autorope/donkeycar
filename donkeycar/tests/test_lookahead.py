@@ -1,9 +1,8 @@
-"""Hardware-free checks: /home/chris/env/bin/python -m unittest test_lookahead."""
+"""Hardware-free look-ahead steering and finite-route stop checks."""
 import math
 import unittest
 
 from donkeycar.parts.open_path import LookAheadPilot, OpenPathFinish
-from donkeycar.parts.mighty_gps import PoseGps
 
 
 class LookAheadTests(unittest.TestCase):
@@ -27,46 +26,6 @@ class LookAheadTests(unittest.TestCase):
         self.assertLess(left, 0)
         self.assertGreater(right, 0)
         self.assertEqual(pilot.run(self.path, 0, 0, 'local', 0, True, float('nan'))[:2], (0., 0.))
-
-    def test_orientation_conversion_and_freshness(self):
-        pose = {'position_m': [0, 0, 0], 'confidence': 1,
-                'orientation_xyzw': [0, 0, math.sqrt(.5), math.sqrt(.5)]}
-        converter = PoseGps(37, -122, yaw=20, heading_offset=30)
-        converter.on_pose(pose)
-        sentence, heading = converter.sample()
-        self.assertEqual(sentence.split(',')[2], 'A')
-        self.assertAlmostEqual(heading, math.radians(140))
-        self.assertIsNone(converter.sample(False)[1])
-        with converter.lock:
-            x, y, timestamp, heading = converter.latest
-            converter.latest = (x, y, timestamp-10, heading)
-        self.assertIsNone(converter.sample()[1])
-        for q in ([0, 0, 0, 0], [0, 0, float('nan'), 1], None):
-            converter.on_pose(dict(pose, orientation_xyzw=q))
-            self.assertIsNone(converter.sample()[1])
-        converter.on_pose(pose)
-        converter.on_state({'state': 0})
-        self.assertIsNone(converter.sample()[1])
-
-    def test_reader_exposes_heading(self):
-        from donkeycar.parts.mighty_gps import MightyGpsReader
-        from unittest.mock import Mock
-        reader = MightyGpsReader.__new__(MightyGpsReader)
-        reader.converter = PoseGps(37, -122)
-        reader.converter.on_pose({'position_m': [0, 0, 0], 'confidence': 1,
-                                 'orientation_xyzw': [0, 0, 0, 1]})
-        reader.client = Mock()
-        reader.client.is_connected.return_value = True
-        reader.last_valid = None
-        import threading
-        reader.pose_lock = threading.Lock()
-        reader.timing = Mock()
-        reader.timing.snapshot.return_value = {}
-        reader.last_stats = float('inf')
-        nmea, valid, heading, timing = reader.run_threaded()
-        self.assertTrue(valid)
-        self.assertEqual(heading, 0)
-        self.assertEqual(nmea[0][1].split(',')[2], 'A')
 
     def test_recovers_from_position_and_heading_offsets(self):
         # Bicycle model: negative MM1 steering corresponds to a left turn.
