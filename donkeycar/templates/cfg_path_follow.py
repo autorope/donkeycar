@@ -680,3 +680,27 @@ DEC_PID_P_BTN = "L2"            # button to change PID 'P' constant by -PID_P_DE
 # Intel Realsense T265 tracking camera
 REALSENSE_T265_ID = None # serial number of camera or None if you only have one camera (it will autodetect)
 WHEEL_ODOM_CALIB = "calibration_odometry.json"
+
+
+# MightyCamera is an independent local pose source, like the T265.
+# When enabled it supplies the driving pose; serial GPS may still collect data.
+HAVE_MIGHTY = False
+MIGHTY_URL = 'http://192.168.7.1'
+MIGHTY_START_VIO = True
+MIGHTY_MAX_AGE = 0.5  # seconds since the newest accepted pose arrived
+MIGHTY_YAW_DEGREES = 0.0  # rotate local XY and heading, degrees CCW
+MIGHTY_HEADING_OFFSET_DEGREES = 0.0  # body-forward axis: +X=0, +Y=90
+MIGHTY_HIGH_RATE_POSE = False  # request firmware-dependent 60 Hz predicted poses
+MIGHTY_LOG_DIRECTORY = 'logs'
+
+# Optional finite-route look-ahead control.
+PATH_CLOSED = True  # False clamps PID segments and stops at a finite route end
+PATH_FINISH_RADIUS = 0.25  # metres
+PATH_USE_LOOKAHEAD = False  # experimental finite-route pure-pursuit controller
+PATH_LOOKAHEAD_METERS = 1.5
+PATH_WHEELBASE_METERS = 0.25  # set to actual axle spacing
+PATH_MAX_STEERING_DEGREES = 30.0  # set to measured full steering angle
+PATH_STEERING_SIGN = -1.0
+PATH_STEERING_GAIN = 0.75
+PATH_MAX_ERROR_METERS = 0.75  # latched stop; manual mode rearms
+PATH_CORNER_MIN_THROTTLE_FACTOR = 0.7
