@@ -690,3 +690,18 @@ MIGHTY_GPS_LAT = 37.0  # synthetic UTM anchor, not a measured GPS location
 MIGHTY_GPS_LON = -122.0
 MIGHTY_GPS_YAW = 0.0  # degrees CCW from local XY into UTM east/north
 MIGHTY_GPS_MAX_AGE = 0.5  # seconds before tracking is considered stale
+
+
+# Optional live orientation, predicted poses and finite-route look-ahead control.
+MIGHTY_HEADING_OFFSET_DEGREES = 0.0  # body-forward axis: +X=0, +Y=90
+MIGHTY_HIGH_RATE_POSE = False  # request firmware-dependent 60 Hz predicted poses
+PATH_CLOSED = True  # False clamps PID segments and stops at a finite route end
+PATH_FINISH_RADIUS = 0.25  # metres
+PATH_USE_LOOKAHEAD = False  # experimental finite-route pure-pursuit controller
+PATH_LOOKAHEAD_METERS = 1.5
+PATH_WHEELBASE_METERS = 0.25  # set to actual axle spacing
+PATH_MAX_STEERING_DEGREES = 30.0  # set to measured full steering angle
+PATH_STEERING_SIGN = -1.0
+PATH_STEERING_GAIN = 0.75
+PATH_MAX_ERROR_METERS = 0.75  # latched stop; manual mode rearms
+PATH_CORNER_MIN_THROTTLE_FACTOR = 0.7

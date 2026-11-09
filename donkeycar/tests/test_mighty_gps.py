@@ -98,7 +98,7 @@ class TestMightyGps(unittest.TestCase):
             reader = MightyGpsReader(cfg)
         reader.converter.on_pose(self.pose())
         reader.client.is_connected.return_value = True
-        lines, valid = reader.run_threaded()
+        lines, valid, heading, timing = reader.run_threaded()
         self.assertTrue(valid)
         self.assertEqual(pynmea2.parse(lines[0][1], check=True).status, 'A')
         reader.shutdown()
@@ -112,3 +112,4 @@ class TestMightyGps(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

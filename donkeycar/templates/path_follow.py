@@ -67,6 +67,7 @@ from donkeycar.templates.complete import add_odometry, add_camera, \
 from donkeycar.parts.logger import LoggerPart
 from donkeycar.parts.transform import Lambda
 from donkeycar.parts.explode import ExplodeDict
+from donkeycar.parts.open_path import OpenPathCTE, OpenPathFinish, LookAheadPilot
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -284,13 +285,34 @@ def drive(cfg, use_joystick=False, camera_type='single'):
     V.add(plot, inputs=['map/image', 'path'], outputs=['map/image'])
 
     # This will use path and current position to output cross track error
-    cte = CTE(look_ahead=cfg.PATH_LOOK_AHEAD, look_behind=cfg.PATH_LOOK_BEHIND, num_pts=cfg.PATH_SEARCH_LENGTH)
-    V.add(cte, inputs=['path', 'pos/x', 'pos/y', 'cte/closest_pt'], outputs=['cte/error', 'cte/closest_pt'], run_condition='run_pilot')
+    cte_class = CTE if getattr(cfg, 'PATH_CLOSED', False) else OpenPathCTE
+    cte = cte_class(look_ahead=cfg.PATH_LOOK_AHEAD, look_behind=cfg.PATH_LOOK_BEHIND, num_pts=cfg.PATH_SEARCH_LENGTH)
+    use_lookahead = getattr(cfg, 'PATH_USE_LOOKAHEAD', False)
+    if not use_lookahead:
+        V.add(cte, inputs=['path', 'pos/x', 'pos/y', 'cte/closest_pt'], outputs=['cte/error', 'cte/closest_pt'], run_condition='run_pilot')
 
     # This will use the cross track error and PID constants to try to steer back towards the path.
     pid = PIDController(p=cfg.PID_P, i=cfg.PID_I, d=cfg.PID_D)
     pilot = PID_Pilot(pid, cfg.PID_THROTTLE, cfg.USE_CONSTANT_THROTTLE, min_throttle=cfg.PID_THROTTLE)
-    V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/steering', 'pilot/throttle'], run_condition="run_pilot")
+    if use_lookahead:
+        pilot = LookAheadPilot(
+            lookahead=cfg.PATH_LOOKAHEAD_METERS,
+            wheelbase=cfg.PATH_WHEELBASE_METERS,
+            max_angle=cfg.PATH_MAX_STEERING_DEGREES,
+            steering_sign=cfg.PATH_STEERING_SIGN,
+            steering_gain=getattr(cfg, 'PATH_STEERING_GAIN', 1.0),
+            max_error=getattr(cfg, 'PATH_MAX_ERROR_METERS', 0.75),
+            corner_min_factor=getattr(cfg, 'PATH_CORNER_MIN_THROTTLE_FACTOR', 0.7),
+            require_heading=(cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty'),
+            throttle=cfg.PID_THROTTLE)
+        inputs = ['path', 'pos/x', 'pos/y', 'user/mode', 'cte/closest_pt']
+        if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
+            inputs.append('gps/valid')
+            inputs.append('gps/heading')
+        V.add(pilot, inputs=inputs,
+              outputs=['pilot/steering', 'pilot/throttle', 'cte/closest_pt'])
+    else:
+        V.add(pilot, inputs=['cte/error', 'throttles', 'cte/closest_pt'], outputs=['pilot/steering', 'pilot/throttle'], run_condition="run_pilot")
 
     def dec_pid_d():
         pid.Kd -= cfg.PID_D_DELTA
@@ -404,10 +426,37 @@ def drive(cfg, use_joystick=False, camera_type='single'):
                   'pilot/steering', 'pilot/throttle'],
           outputs=['steering', 'throttle'])
 
+    if use_lookahead:
+        # Also stop in assisted steering mode, where DriveMode uses manual throttle.
+        V.add(Lambda(lambda mode, steering, throttle:
+                     (0.0, 0.0) if mode != 'user' and pilot.stopped else (steering, throttle)),
+              inputs=['user/mode', 'steering', 'throttle'], outputs=['steering', 'throttle'])
+
+    if not getattr(cfg, 'PATH_CLOSED', False):
+        V.add(OpenPathFinish(getattr(cfg, 'PATH_FINISH_RADIUS', 0.25)),
+              inputs=['path', 'cte/closest_pt', 'pos/x', 'pos/y',
+                      'user/mode', 'steering', 'throttle'],
+              outputs=['steering', 'throttle'])
+
     if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
         from donkeycar.parts.mighty_gps import GpsDriveGate
         V.add(GpsDriveGate(), inputs=['user/mode', 'steering', 'throttle', 'gps/valid'],
               outputs=['steering', 'throttle'])
+
+    if cfg.HAVE_GPS and getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
+        import time
+        last_telemetry = [0.0]
+        last_steering = [None]
+        def log_drive(mode, x, y, heading, valid, steering, throttle, timing):
+            now = time.monotonic()
+            if now - last_telemetry[0] >= 0.2 or steering != last_steering[0]:
+                last_telemetry[0] = now
+                last_steering[0] = steering
+                logging.info('DriveTelemetry: t=%.3f mode=%s x=%s y=%s heading=%s valid=%s steering=%s throttle=%s',
+                             now, mode, x, y, heading, valid, steering, throttle)
+                logging.info('DrivePoseTiming: t=%.6f timing=%s', now, timing)
+        V.add(Lambda(log_drive),
+              inputs=['user/mode', 'pos/x', 'pos/y', 'gps/heading', 'gps/valid', 'steering', 'throttle', 'gps/timing'])
 
     # V.add(LoggerPart(['user/mode', 'steering', 'throttle'], logger="drivemode"), inputs=['user/mode', 'steering', 'throttle'])
 
@@ -471,7 +520,7 @@ def add_gps(V, cfg):
         if getattr(cfg, 'GPS_SOURCE', 'serial') == 'mighty':
             from donkeycar.parts.mighty_gps import MightyGpsReader
             nmea_reader = MightyGpsReader(cfg)
-            V.add(nmea_reader, outputs=['gps/nmea', 'gps/valid'], threaded=True)
+            V.add(nmea_reader, outputs=['gps/nmea', 'gps/valid', 'gps/heading', 'gps/timing'], threaded=True)
         else:
             serial_port = SerialPort(cfg.GPS_SERIAL, cfg.GPS_SERIAL_BAUDRATE)
             nmea_reader = SerialLineReader(serial_port)
@@ -540,3 +589,4 @@ if __name__ == '__main__':
 
     if args['drive']:
         drive(cfg, use_joystick=args['--js'], camera_type=args['--camera'])
+
