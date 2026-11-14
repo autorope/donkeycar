@@ -123,7 +123,7 @@ class RoboHATController:
                     self.recording = self.throttle > self.DEAD_ZONE
                     if was_recording != self.recording:
                         self.recording_latch = self.recording
-                        logger.debug(f"JoystickController::on_throttle_changes() setting recording = {self.recording}")
+                        logger.debug(f"RoboHATController: setting recording = {self.recording}")
 
                 time.sleep(0.01)
 

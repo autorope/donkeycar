@@ -106,6 +106,11 @@ SSD1306_RESOLUTION = 1
 # If True, the joystick is enabled by default without needing '--js' flag.
 USE_JOYSTICK_AS_DEFAULT = True
 
+# JOYSTICK_MAX_THROTTLE, JOYSTICK_STEERING_SCALE and JOYSTICK_THROTTLE_DIR are
+# for game controllers.  An RC receiver (MM1, pigpio_rc) already reads
+# positive for forward and is limited by its transmitter, so it is neither
+# scaled nor flipped; reverse a channel on the transmitter instead.
+
 # The maximum throttle output (0.0 to 1.0) allowed by the joystick.
 # Useful for limiting speed for beginners.
 JOYSTICK_MAX_THROTTLE = 0.5
@@ -123,8 +128,72 @@ JOYSTICK_THROTTLE_DIR = -1.0
 JOYSTICK_DEVICE_FILE = "/dev/input/js0"
 
 # The type of controller being used.
-# Options: 'ps3', 'ps4', 'xbox', 'nimbus', 'wiiu', 'F710', 'rc3', 'MM1 (use for RC Hat)', 'custom'
+# Options: 'ps3', 'ps3sixad', 'ps3old', 'ps3pc', 'ps4', 'xbox', 'xbox-usb',
+#          'nimbus', 'wiiu', 'F710', 'rc3', 'MM1' (use for RC Hat),
+#          'pigpio_rc', 'custom'
+# 'xbox' is an Xbox pad paired over Bluetooth, which squeezes both triggers
+# to stop the car; 'xbox-usb' is one on a USB cable, which reports different
+# codes for the right stick and the triggers.
+# Note the ps3 variants differ by driver, not by pad: 'ps3' for the current
+# in-kernel driver, 'ps3sixad' when using sixad (Jetson Nano), 'ps3old' for
+# Raspbian Jessie-era drivers, 'ps3pc' on a PC. Reporting differs between
+# them, so a pad set to the wrong one will name its controls incorrectly.
 CONTROLLER_TYPE = 'xbox'
+
+# Movement smaller than this on an axis is not reported at all, which keeps
+# a resting stick's jitter out of the event stream. Distinct from
+# JOYSTICK_DEADZONE, which is a deadband around centre applied to steering
+# and throttle; this is a deadband on *change*.
+JOYSTICK_AXIS_EPSILON = 0.0
+
+# Rename individual controls on your controller, by the driver's code for
+# each. Run the car once and read the control map it prints to see the
+# codes. Anything left out keeps its built-in or default name, so only the
+# controls you want to rename need listing. Required for CONTROLLER_TYPE =
+# 'custom', where nothing is named to begin with.
+#   JOYSTICK_BUTTON_NAMES = {0x133: 'red_button'}
+#   JOYSTICK_AXIS_NAMES = {0x03: 'throttle_lever'}
+JOYSTICK_BUTTON_NAMES = None
+JOYSTICK_AXIS_NAMES = None
+
+# Which control drives which behavior. Leave as None to use the default
+# layout for your CONTROLLER_TYPE, which follows what that controller has
+# always done in Donkeycar. Setting it replaces the default outright, so
+# list every binding you want rather than only the ones you are changing.
+#
+# The key is the behavior and the value is the control, because that is the
+# question you are answering -- "what toggles recording?" -- and because a
+# behavior can take a list, so a gamepad button and a web button can both
+# drive it:
+#
+#   from donkeycar.parts.controls.mapping import (
+#       TOGGLE_RECORDING, TOGGLE_PILOT_MODE, STEERING, THROTTLE)
+#   CONTROLLER_BEHAVIOR_MAP = {
+#       TOGGLE_RECORDING: ['/event/button/b_button/press',
+#                          '/event/button/web_w1/press'],
+#       TOGGLE_PILOT_MODE: '/event/button/a_button/press',
+#       STEERING: '/event/axis/left_stick_horz',
+#       THROTTLE: '/event/axis/right_stick_vert',
+#   }
+CONTROLLER_BEHAVIOR_MAP = None
+
+# How many records the erase-records behavior throws away each time. This
+# cannot be undone, so it is worth binding that behavior to a click or a
+# double-click rather than a press; see CONTROLLER_BEHAVIOR_MAP.
+ERASE_LAST_N_RECORDS = 100
+
+# How much one press changes the maximum throttle.
+THROTTLE_STEP = 0.01
+
+# How hard the chaos monkey pulls the steering aside while its button is
+# held, to knock the car off its line and see whether the pilot recovers.
+CHAOS_MONKEY_STEERING = 0.2
+
+# How long, in seconds, the car may still be coasting after the throttle is
+# released. The emergency stop brakes as hard as the car was recently driven,
+# fading to no brake at all over this time, so stopping a car that is
+# standing still does not pulse the motor in reverse.
+ESTOP_COAST_TIME = 1.0
 
 # Enable listening for remote joystick control over the network.
 USE_NETWORKED_JS = False
