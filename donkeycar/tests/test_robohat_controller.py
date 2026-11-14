@@ -3,7 +3,11 @@
 import unittest
 
 from donkeycar.parts.controls.device import NO_CHANGE
-from donkeycar.parts.controls.robohat import RoboHATController, SerialPort
+from donkeycar.parts.controls.robohat import (
+    RealSerialPort,
+    RoboHATController,
+    SerialPort,
+)
 
 
 class FakeSerialPort:
@@ -253,3 +257,54 @@ class TestLifecycle(unittest.TestCase):
 
         assert port.closed is True
         assert controller.poll() == NO_CHANGE
+
+
+class PySerialStandIn:
+    """
+    Stands in for a pyserial Serial, whose read fails once it is closed.
+    """
+
+    def __init__(self, owner: RealSerialPort | None = None) -> None:
+        self.owner = owner
+        self.closed = False
+
+    def readline(self) -> bytes:
+        if self.owner is not None:
+            # the vehicle's thread closes the port while this read waits
+            self.owner.close()
+        raise OSError('read failed: [Errno 9] Bad file descriptor')
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class TestRealSerialPort(unittest.TestCase):
+
+    def test_a_read_failing_because_the_port_was_closed_returns_nothing(self):
+        """
+        Regression: closing the port under a waiting read is how the
+        vehicle shuts the controller down, and was reported as the MM1
+        disconnecting.
+        """
+        port = RealSerialPort('/dev/serial0')
+        serial = PySerialStandIn(owner=port)
+        port._serial = serial
+
+        assert port.readline() == ''
+        assert serial.closed is True
+
+    def test_a_read_failing_while_the_port_is_open_still_raises(self):
+        port = RealSerialPort('/dev/serial0')
+        port._serial = PySerialStandIn()
+
+        with self.assertRaises(OSError):
+            port.readline()
+
+    def test_close_is_safe_to_call_twice(self):
+        port = RealSerialPort('/dev/serial0')
+        serial = PySerialStandIn()
+        port._serial = serial
+        port.close()
+        port.close()
+
+        assert serial.closed is True

@@ -1,14 +1,14 @@
 # Plan: finish the game-controller event refactor (#1097)
 
-**COMPLETE — 55 / 55 tasks.**
+**COMPLETE — 56 / 56 tasks.**
 
-60 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
+61 commits in total.  Phases 0–6 took 39: their 37 tasks, plus one for the
 dead-zone default change (folded into 3.1's note) and one correcting this
 checklist, whose Phase 2 and Phase 6 boxes had been left unticked while
 their work was done.  Phase 7 took 4, Phases 8, 9 and 10 took 2 each, and Phase 11 took 1, one per task.  Phases 12 and 13 took 2 and 3, each plus one
-recording its hardware check.  Phase 14 took 2, plus one recording its hardware check.
+recording its hardware check.  Phase 14 took 2, plus one recording its hardware check.  Phase 15 took 1.
 Phase 0 ▓▓▓▓ · Phase 1 ▓▓▓▓▓▓▓▓▓▓▓ · Phase 2 ▓▓▓▓▓ · Phase 3 ▓▓▓▓▓ ·
-Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓ · Phase 14 ▓▓
+Phase 4 ▓▓ · Phase 5 ▓▓▓▓▓▓▓ · Phase 6 ▓▓▓ · Phase 7 ▓▓▓▓ · Phase 8 ▓▓ · Phase 9 ▓▓ · Phase 10 ▓▓ · Phase 11 ▓ · Phase 12 ▓▓ · Phase 13 ▓▓▓ · Phase 14 ▓▓ · Phase 15 ▓
 
 > Convention: tick a box in §4 in the same commit that does the work, so the
 > checklist and the git history never disagree. Update the counter above too.
@@ -1156,6 +1156,44 @@ must land together to keep the templates working.
 > directories: `~/mycar1249`, `~/mycar-cv-control-1249` and
 > `~/mycar-path-follow-1249`. In each, the trace logged the pad's events and
 > the steering and throttle behaviors' output.
+
+### Phase 15 — Shutting down is not losing the controller (1 / 1) ✅
+
+> **Why.** Found by a tester on hardware, 2026-11-13, with a RoboHAT MM1
+> (`CONTROLLER_TYPE = 'MM1'`) on the `complete` template. Ctrl-C logged
+>
+>     ERROR:donkeycar.parts.controls.events:Input controller disconnected:
+>     read failed: [Errno 9] Bad file descriptor
+>
+> between the camera stopping and the tub closing. The car was shutting
+> down normally; nothing was disconnected.
+>
+> **Cause.** `InputControllerEvents`' polling thread spends almost all its
+> time inside `RealSerialPort.readline()`, waiting on pyserial.
+> `InputControllerEvents.shutdown()` closes the port from the vehicle's
+> thread, and pyserial's read, still running on the polling thread, fails
+> with `SerialException('read failed: [Errno 9] ...')` -- an `OSError`,
+> which `poll()` reports as a disconnect. `LinuxJsDevice` already guards
+> this race (it clears its descriptor before closing it, and a read that
+> fails once the descriptor is cleared is shutdown, not failure);
+> `RealSerialPort` did not.
+>
+> **Fix, at both layers.**
+> - `RealSerialPort.close()` clears `_serial` before closing it, and
+>   `readline()` returns `''` for a read that fails after that -- the same
+>   guard as `LinuxJsDevice`.
+> - `InputControllerEvents.poll()` treats an `OSError` raised once
+>   `running` is already false as shutdown: no error logged and no
+>   `controller/lost` published. `shutdown()` clears `running` before it
+>   closes the device, so this covers every device type, including ones
+>   that don't guard the race themselves.
+
+- [x] **15.1** Both guards. Unit tests: a serial read failing because the
+      port was closed under it returns no line; one failing while the port
+      is open still raises; a device error raised during shutdown logs
+      nothing and publishes no loss; one raised while running is still a
+      loss. Hardware check for the tester: Ctrl-C on an MM1 car logs no
+      `Input controller disconnected` line.
 
 ### Proposed follow-up — `basic.py`'s drivetrain (not started; outside the task count)
 

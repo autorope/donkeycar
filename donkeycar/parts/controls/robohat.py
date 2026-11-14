@@ -86,15 +86,27 @@ class RealSerialPort:
             raise OSError(f'Could not open {self._port}: {e}') from e
 
     def readline(self) -> str:
-        if self._serial is None:
+        port = self._serial
+        if port is None:
             return ''
-        line: bytes = self._serial.readline()
+        try:
+            line: bytes = port.readline()
+        except OSError:
+            # pyserial's SerialException is an OSError.  A read that fails
+            # because close() took the port away from under it -- which is
+            # how the vehicle shuts the controller down, from another thread
+            # -- is shutdown, not a lost controller.
+            if self._serial is None:
+                return ''
+            raise
         return line.decode(errors='replace').strip()
 
     def close(self) -> None:
-        if self._serial is not None:
-            self._serial.close()
-            self._serial = None
+        # clear the port before closing it, so a reader waiting in
+        # readline() can tell that its read failed because of this
+        port, self._serial = self._serial, None
+        if port is not None:
+            port.close()
 
 
 class RoboHATController(AbstractInputController):

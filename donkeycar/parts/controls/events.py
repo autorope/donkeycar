@@ -233,6 +233,10 @@ class InputControllerEvents:
         try:
             change = self._controller.poll()
         except OSError as e:
+            if not self.running:
+                # shutdown() closed the device while this read was waiting
+                # on it; the error is the close, not a disconnect
+                return
             logger.error(f'Input controller disconnected: {e}')
             self._lose_controller()
             return

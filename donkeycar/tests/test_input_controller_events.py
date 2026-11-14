@@ -590,6 +590,26 @@ class TestFailureHandling(unittest.TestCase):
 
         assert CONTROLLER_LOST in fix.keys()
 
+    def test_a_device_error_during_shutdown_is_not_a_loss(self):
+        """
+        Regression: shutdown() closes the device from the vehicle's thread
+        while the polling thread waits in a read, which then fails.  On an
+        MM1 that logged 'Input controller disconnected: read failed:
+        [Errno 9] Bad file descriptor' at every Ctrl-C.
+        """
+        fix = EventsFixture()
+
+        def closed_underneath() -> ControlChange:
+            fix.part.shutdown()
+            raise OSError('read failed: [Errno 9] Bad file descriptor')
+
+        fix.controller.poll = closed_underneath
+        with self.assertNoLogs('donkeycar.parts.controls.events', 'ERROR'):
+            fix.part.poll()
+        fix.tick()
+
+        assert CONTROLLER_LOST not in fix.keys()
+
     def test_an_ordinary_shutdown_is_not_a_loss(self):
         fix = EventsFixture()
         fix.part.shutdown()
