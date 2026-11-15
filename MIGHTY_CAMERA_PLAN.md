@@ -530,8 +530,11 @@ Each box is ticked only after the checks listed under it pass (D2).
       - the drive exited cleanly;
       - the rate warnings described in F27.
 
-    The expected output in the docs is these real lines. Still pending:
-    Ed's own check in the web UI, after the push.
+    The expected output in the docs is these real lines.
+  - *Car, 2026-11-15, at `1661a6e6`:* the car was up to date with origin,
+    `docs/mighty.md` on the car matched origin, and the Mighty, template and
+    look-ahead tests passed: 117 passed. Still pending: Ed's own check in the
+    web UI (and pose `fresh` with the image).
 - [ ] **13. Docstrings for `MightyTiming`.** Ed: "It's not clear what class
   MightyTiming does; can you add a clear doc string?" This commit adds
   docstrings only, with no behaviour change:
@@ -544,6 +547,10 @@ Each box is ticked only after the checks listed under it pass (D2).
   - *Verify:* Ed reads it and finds it clear.
   - *Verify:* `test_mighty_timing.py` and `test_mighty.py` pass on the Mac
     and on the car. On the Mac, 2026-11-15: 26 passed.
+  - *Car, 2026-11-15, at `1661a6e6`:* the car was up to date with origin,
+    the Mighty, timing and template tests passed (117 passed), and the class
+    docstring is importable there ("Decides which Mighty poses are in order,
+    and logs their timing to a file."). Still pending: Ed's reading.
 
 ## Not in this plan
 
