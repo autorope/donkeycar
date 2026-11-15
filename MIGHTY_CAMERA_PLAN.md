@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 7 / 11 commits verified**
+**Progress: 8 / 11 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -310,7 +310,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     - Ed ran `mycar_mighty_path_follow` (640×400, `HAVE_MIGHTY = True`) on
       this code. It started at `CAMERA_FRAMERATE = 12` after 15 was refused
       at 12.8–13.8 fps (F23).
-- [ ] **8. `path_follow` template.** Updates `cfg_path_follow.py`:
+- [x] **8. `path_follow` template.** Updates `cfg_path_follow.py`:
   - `MIGHTY` joins the camera types list;
   - `MIGHTY_READ_CHUNK_BYTES` joins the pose settings, since `add_mighty`
     already reads it from commit 7;
@@ -338,6 +338,20 @@ Each box is ticked only after the checks listed under it pass (D2).
 
     All 11 `path_follow` tests pass. The full suite gives 216 passed, plus
     the F9 failure.
+  - *Verified 2026-11-14 on murmurpi64 at `bb0ef25a`:*
+    - The car was up to date with origin.
+    - The Mighty, template and look-ahead tests passed: 101 passed.
+    - Claude ran a 40 s `manage.py drive` in `~/mycar_mighty_path_follow`
+      (Ed's settings: `CAMERA_TYPE = "MIGHTY"`, 640×400,
+      `CAMERA_FRAMERATE = 12`, `HAVE_MIGHTY = True`). It added
+      `MightyPose`, `MightyPoseTransform` and `MightyCamera`.
+    - It logged "MightyCamera ready: 640x400 depth 3 … camera at 15.8 fps,
+      publishing up to 12 fps", and `start_vio` returned `started`.
+    - `ss -tnp` counted exactly 1 TCP connection to `192.168.7.1:80` at
+      every 5 s sample from 5 s to 35 s.
+    - The run had no tracebacks or camera warnings, and it exited cleanly.
+    - The pose stream stayed "waiting for tracking", as expected with the
+      camera standing still (F10).
 - [ ] **9. `cv_control` template.** Updates `cfg_cv_control.py`; the template
   already goes through `add_camera`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
