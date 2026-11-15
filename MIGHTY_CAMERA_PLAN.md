@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 10 / 13 commits verified**
+**Progress: 11 / 13 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -443,7 +443,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     `IMAGE_DEPTH = 1`. On 2026-11-15 they still lacked it. Ed created
     `~/mycar_mighty_cv_control` (`MIGHTY`, 640×400, `IMAGE_DEPTH = 1`,
     `CAMERA_FRAMERATE = 12`); commit 11 will make `cv_control` refuse it.
-- [ ] **11. `cv_control` refuses a monochrome camera (D18).** `cv_control.drive`
+- [x] **11. `cv_control` refuses a monochrome camera (D18).** `cv_control.drive`
   checks before building any part. With the default colour `LineFollower`,
   `CAMERA_TYPE = "MIGHTY"` or `IMAGE_DEPTH = 1` fails with an error saying
   why, and what to use instead.
@@ -474,6 +474,17 @@ Each box is ticked only after the checks listed under it pass (D2).
     - `cfg_cv_control.py`'s comment now says it refuses to start.
     - All 17 template tests pass. The full suite gives 232 passed, plus the
       F9 failure.
+  - *Verified 2026-11-15 on murmurpi64 at `0a4a59f5`:*
+    - The car was up to date with origin.
+    - The Mighty, template and look-ahead tests passed: 117 passed.
+    - The committed template, run from inside `~/mycar_mighty_cv_control`
+      (`MIGHTY`, 640×400, `IMAGE_DEPTH = 1`), raised the `ValueError` with
+      the full message and exited 1.
+    - `ss` counted 0 connections to `192.168.7.1:80` at each 1 s sample over
+      6 s.
+    - The car directory's `myconfig.py`, `manage.py` and `config.py` kept
+      their checksums: nothing there changed. Its `manage.py` is still the
+      old copy until Ed runs `donkey update --template cv_control`.
 - [ ] **12. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
   `templates/basic.py`, and updates `cfg_basic.py`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
