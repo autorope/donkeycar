@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 4 / 9 commits verified**
+**Progress: 5 / 9 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -185,7 +185,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     - With no size given, it saved a 640×400 RGB frame and received 15.0 fps.
     - A plain SDK client measured 14.8 fps right afterwards, with VIO still
       DEGRADED.
-- [ ] **5. `complete` template.** Adds a `MIGHTY` branch to `get_camera()` in
+- [x] **5. `complete` template.** Adds a `MIGHTY` branch to `get_camera()` in
   `templates/complete.py`, and updates `cfg_complete.py`.
   - *Verify:* a test that `get_camera` builds a `MightyCamera` from config,
     with the SDK mocked.
@@ -201,7 +201,9 @@ Each box is ticked only after the checks listed under it pass (D2).
       disconnects at shutdown.
 
     The full suite gives 185 passed, plus the same unrelated F9 failure.
-    Still pending: the tests on the car.
+  - *Verified 2026-11-14 on murmurpi64 at `de143d3e`:* the Mighty, template
+    and look-ahead tests, including `test_template.py`, passed on the car: 70
+    passed.
 - [ ] **6. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
   types list and the warm-up setting. `MIGHTY_URL` is already there.
   - *Verify:* `test_path_follow_mighty.py` gains a case with `HAVE_MIGHTY` and
