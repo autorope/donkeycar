@@ -5,7 +5,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from donkeycar.parts.mighty import MightyPose, MightyPoseTransform, PoseDriveGate, PoseRecordingGate
+from donkeycar.parts.mighty import (MightyLink, MightyPose, MightyPoseTransform,
+                                    PoseDriveGate, PoseRecordingGate, SDK_INSTALL_HINT)
 
 
 def body_pose(**changes):
@@ -133,6 +134,97 @@ class ReaderTests(unittest.TestCase):
         self.reader.update()
         self.reader.client.start_vio.assert_not_called()
         self.reader.client.command.assert_called_once_with('high_rate_imu', b'status')
+
+
+class LinkTests(unittest.TestCase):
+    """One SDK connection per URL, shared by every Mighty part (plan D5)."""
+    URL = 'http://192.168.7.1'
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.sdk = SimpleNamespace(MightyClient=MagicMock(), MightyWebDevice=MagicMock())
+        patcher = patch.dict('sys.modules', mighty_sdk=self.sdk)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(self.assertEqual, MightyLink._links, {})
+
+    def test_same_url_shares_one_client(self):
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire(self.URL + '/')
+        self.assertIs(a, b)
+        self.assertEqual(a.users, 2)
+        self.sdk.MightyClient.assert_called_once_with(
+            self.sdk.MightyWebDevice.return_value, auto_reconnect=True)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL)
+        a.release()
+        b.release()
+
+    def test_different_urls_get_different_links(self):
+        self.sdk.MightyClient.side_effect = lambda *args, **kwargs: MagicMock()
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire('http://localhost:8080')
+        self.assertIsNot(a.client, b.client)
+        a.release()
+        b.release()
+
+    def test_first_connect_connects_and_last_release_disconnects(self):
+        a = MightyLink.acquire(self.URL)
+        b = MightyLink.acquire(self.URL)
+        a.connect()
+        b.connect()
+        a.client.connect.assert_called_once()
+        a.release()
+        a.client.disconnect.assert_not_called()
+        self.assertIs(MightyLink.acquire(self.URL), b)
+        b.release()
+        a.client.disconnect.assert_not_called()
+        b.release()
+        a.client.disconnect.assert_called_once()
+        self.assertEqual(MightyLink._links, {})
+
+    def test_link_after_last_release_is_new(self):
+        self.sdk.MightyClient.side_effect = lambda *args, **kwargs: MagicMock()
+        first = MightyLink.acquire(self.URL)
+        first.release()
+        second = MightyLink.acquire(self.URL)
+        self.assertIsNot(first, second)
+        self.assertIsNot(first.client, second.client)
+        second.release()
+
+    def test_missing_sdk_gives_install_hint(self):
+        with patch.dict('sys.modules', mighty_sdk=None):
+            with self.assertRaisesRegex(ImportError, 'mighty-protocol'):
+                MightyLink.acquire(self.URL)
+        self.assertIn('pip install', SDK_INSTALL_HINT)
+
+    def test_pose_readers_share_and_release_their_link(self):
+        readers = [MightyPose(log_directory=self.temp.name) for _ in range(2)]
+        for reader in readers:
+            self.addCleanup(reader.shutdown)
+        client = readers[0].client
+        self.assertIs(readers[1].client, client)
+        self.assertIs(readers[0].link, readers[1].link)
+        self.sdk.MightyClient.assert_called_once()
+        for reader in readers:
+            reader.link.connect()
+        client.connect.assert_called_once()
+        unsubscribe = client.on_pose.return_value
+        readers[0].shutdown()
+        readers[0].shutdown()
+        self.assertEqual(unsubscribe.call_count, 1)
+        client.disconnect.assert_not_called()
+        readers[1].shutdown()
+        client.disconnect.assert_called_once()
+
+    def test_update_exit_releases_its_share(self):
+        reader = MightyPose(log_directory=self.temp.name, start_vio=False)
+        self.addCleanup(reader.shutdown)
+        reader.stop.set()
+        reader.update()
+        reader.client.disconnect.assert_called_once()
+        reader.shutdown()
+        reader.client.disconnect.assert_called_once()
 
 
 if __name__ == '__main__':

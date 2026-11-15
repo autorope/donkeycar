@@ -1,13 +1,79 @@
 """MightyCamera raw body poses and a separate planar pose transform."""
+from __future__ import annotations
+
 from copy import deepcopy
 import logging
 import math
 import threading
 import time
+from typing import Any, Callable, ClassVar
 
 from donkeycar.parts.mighty_timing import MightyTiming
 
 logger = logging.getLogger(__name__)
+
+SDK_INSTALL_HINT = ('Mighty requires the SDK: python -m pip install '
+                    'git+https://github.com/asadm/mighty-protocol.git')
+
+
+class MightyLink:
+    """One shared, reference-counted SDK connection per camera URL.
+
+    The pose reader and the image camera each ``acquire`` the link for their
+    URL and register their own callbacks on ``client``. The camera streams
+    poses and images over a single HTTP connection, and two connections each
+    run at a reduced frame rate, so every part for one URL shares this one.
+    The first ``connect`` opens the stream; the last ``release`` closes it and
+    forgets the link, so a later ``acquire`` starts a fresh connection.
+    """
+    _links: ClassVar[dict[str, MightyLink]] = {}
+    _registry_lock: ClassVar[threading.Lock] = threading.Lock()
+
+    def __init__(self, url: str, client: Any) -> None:
+        self.url = url
+        self.client = client
+        self.users = 0
+        self.connected = False
+        self.lock = threading.Lock()
+
+    @staticmethod
+    def key(url: str) -> str:
+        return url.strip().rstrip('/')
+
+    @classmethod
+    def acquire(cls, url: str) -> MightyLink:
+        """Return the link for ``url``, creating its client on first use."""
+        key = cls.key(url)
+        with cls._registry_lock:
+            link = cls._links.get(key)
+            if link is None:
+                try:
+                    from mighty_sdk import MightyClient, MightyWebDevice
+                except ImportError as exc:
+                    raise ImportError(SDK_INSTALL_HINT) from exc
+                client = MightyClient(MightyWebDevice(base_url=key), auto_reconnect=True)
+                link = cls._links[key] = cls(key, client)
+            link.users += 1
+            return link
+
+    def connect(self) -> None:
+        """Open the stream unless another user already has."""
+        with self.lock:
+            if not self.connected:
+                self.client.connect()
+                self.connected = True
+
+    def release(self) -> None:
+        """Drop one user; the last one disconnects and forgets the link."""
+        with MightyLink._registry_lock:
+            self.users -= 1
+            if self.users > 0:
+                return
+            if MightyLink._links.get(self.url) is self:
+                del MightyLink._links[self.url]
+        with self.lock:
+            self.connected = False
+            self.client.disconnect()
 
 
 class MightyPose:
@@ -21,14 +87,9 @@ class MightyPose:
                  max_age=0.5, high_rate_pose=False, log_directory='logs'):
         if not math.isfinite(max_age) or max_age <= 0:
             raise ValueError('Mighty max_age must be finite and positive')
-        try:
-            from mighty_sdk import MightyClient, MightyWebDevice
-        except ImportError as exc:
-            raise ImportError(
-                'Mighty requires the SDK: python -m pip install '
-                'git+https://github.com/asadm/mighty-protocol.git'
-            ) from exc
-        self.client = MightyClient(MightyWebDevice(base_url=url), auto_reconnect=True)
+        self.link = MightyLink.acquire(url)
+        self.client = self.link.client
+        self.released = False
         self.timing = MightyTiming(log_directory)
         self.pose_lock = threading.Lock()
         self.latest = None
@@ -40,10 +101,13 @@ class MightyPose:
         self.stop = threading.Event()
         self.last_valid = None
         self.last_stats = 0.0
-        self.client.on_pose(self.on_pose)
-        self.client.on_vio_state(self.on_state)
-        self.client.on_reset(self.on_reset)
-        self.client.on_error(lambda error: logger.warning('Mighty: %s', error))
+        # Keep the unsubscribers: the client may outlive this part when shared.
+        self.unsubscribers: list[Callable[[], None]] = [
+            self.client.on_pose(self.on_pose),
+            self.client.on_vio_state(self.on_state),
+            self.client.on_reset(self.on_reset),
+            self.client.on_error(lambda error: logger.warning('Mighty: %s', error)),
+        ]
 
     def on_pose(self, pose):
         if not isinstance(pose, dict):
@@ -74,7 +138,7 @@ class MightyPose:
 
     def update(self):
         try:
-            self.client.connect()
+            self.link.connect()
             result = self.client.command('high_rate_imu', b'on' if self.high_rate_pose else b'status')
             self.timing.record('high_rate_pose', requested=self.high_rate_pose, result=result)
             logger.info('Mighty high-rate pose (requested=%s): %s', self.high_rate_pose, result)
@@ -85,7 +149,7 @@ class MightyPose:
                     logger.error('Start VIO in the Mighty visualizer to obtain a pose')
             self.stop.wait()
         finally:
-            self.client.disconnect()
+            self.release()
 
     def run_threaded(self):
         with self.pose_lock:
@@ -104,10 +168,21 @@ class MightyPose:
             self.last_valid = valid
         return pose, valid, timing
 
+    def release(self) -> None:
+        """Unsubscribe and give up this part's share of the link, once."""
+        with self.pose_lock:
+            if self.released:
+                return
+            self.released = True
+        for unsubscribe in self.unsubscribers:
+            if callable(unsubscribe):
+                unsubscribe()
+        self.link.release()
+
     def shutdown(self):
         self.stop.set()
         try:
-            self.client.disconnect()
+            self.release()
         finally:
             self.timing.close()
 
