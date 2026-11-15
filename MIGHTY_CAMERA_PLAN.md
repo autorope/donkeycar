@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 2 / 9 commits verified**
+**Progress: 3 / 9 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -61,6 +61,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F6 | 2026-11-14 | The SDK skips JPEG handling when no image listener is registered, so a pose-only setup costs nothing extra. | `mighty_sdk/client.py` |
 | F8 | 2026-11-14 | The SDK has no resolution setting. `config_get` and `config_set` take free-form keys, and none is listed for image size. Only the frames themselves carry `width` and `height` (and, for JPEG, the encoded size). The camera's size must therefore be read from a received frame. | `mighty_sdk/client.py`, `mighty_protocol.py` |
 | F9 | 2026-11-14 | `test_scripts.py::test_bad_command_fails` fails on the Mac with or without this branch's changes. It is not related to Mighty, and this plan leaves it alone. | `pytest` on Mac, with changes stashed and restored |
+| F10 | 2026-11-14 | Standing still on the bench, VIO went OFF → INITIALIZING → TRACKING (confidence 0.66, 183 features) within about 2 s of `start_vio`. About 1 s later it dropped to DEGRADED (state 3, flag `LOW_TRANSLATION_OBSERVABILITY`) and stayed there for the remaining 35 s, while poses kept arriving. `MightyPose` accepts only state 2, so `mighty/valid` was False from then on. This behaviour predates this plan, which leaves it unchanged. It means a parked car shows `fresh` only briefly; the camera has to move to show sustained tracking. | 40 s `path_follow` run on murmurpi64, `logs/mighty-timing-*.jsonl` |
 | F7 | 2026-11-14 | `templates/path_follow.py` has an unused `from distutils.log import debug`. It stops `test_path_follow_mighty.py` from importing on the Mac's Python 3.12+ venv. The test passes on the car (15 passed) only because setuptools provides a `distutils` shim. | `pytest` on Mac and car |
 
 ## Design
@@ -101,7 +102,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     Mac and on the car.
   - *Verified 2026-11-14:* the Mac run passed (29 passed). Ed ruled the change
     trivial and declared it verified without a car run.
-- [ ] **3. Add the `MightyLink` shared connection, and switch `MightyPose` to
+- [x] **3. Add the `MightyLink` shared connection, and switch `MightyPose` to
   it (D5).**
   - *Verify:* new tests pass: the first acquire connects, the last release
     disconnects, and the same URL returns the same client.
@@ -115,7 +116,18 @@ Each box is ticked only after the checks listed under it pass (D2).
     - The full `donkeycar/tests` run gives 154 passed and 1 failed. The
       failure is `test_scripts.py::test_bad_command_fails`, which also fails
       without these changes (F9).
-    - Still pending: the car checks.
+  - *Verified 2026-11-14 on murmurpi64 at `d133510b`:*
+    - The same tests passed on the car: 36 passed.
+    - Claude ran `manage.py drive` for 40 s in `~/mycar_mighty_path_follow`,
+      with Ed's permission, after setting `HAVE_MIGHTY = True` and
+      `CAMERA_TYPE = "MOCK"`. The car has no USB webcam for its `CVCAM`
+      setting. The original file is backed up as `myconfig.py.bak-2026-11-14`.
+    - Through the shared link, the run connected, ran the high-rate command
+      and `start_vio` (`started`), and received 2110 poses and both camera
+      resets.
+    - It logged `Mighty pose stream: fresh` with `valid=True`.
+    - Shutdown was clean: no traceback, and no process left running.
+    - Tracking then degraded with the camera standing still (F10).
 - [ ] **4. Add the `MightyCamera` part, unit tests, and a `snapshot` CLI.**
   - The CLI runs as
     `python -m donkeycar.parts.mighty snapshot --url ... --out frame.jpg --seconds 5`.
