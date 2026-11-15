@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 6 / 11 commits verified**
+**Progress: 7 / 11 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -78,6 +78,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F20 | 2026-11-14 | Ed's car pull for commit 6's fix ran before the push reached origin, so the car stayed one commit behind (`c8d31c73` instead of `bfdbff16`). The first verification run there reproduced the old bug: `CAMERA_FRAMERATE = 15` was rejected at 13.5 and 14.0 fps. Before verifying, run `git fetch` and `git status -sb` on the car and check it isn't behind. | Commit 6 verification on murmurpi64 |
 | F21 | 2026-11-14 | `MightyLink`'s registry is shared across the whole class, so one test failing before it released its link leaked a link for `http://192.168.7.1`. Every later test then reused it, and about 40 tests failed (camera warm-up timeouts, registry assertions). Test classes now register `MightyLink._links.clear` as a cleanup that runs after the empty-registry assertion. | Commit 7 Mac test run |
 | F22 | 2026-11-14 | Giving any parameter of `MightyPose.__init__` a type annotation makes `mypy` check the body. Its attributes initialised to `None` (`latest`, `received_at`, `state`, `last_valid`) then failed on later assignments, so commit 7 gave them `Optional` types. | `mypy --check-untyped-defs` on the Mac |
+| F23 | 2026-11-14 | The camera's own rate drifts down over a session. In the evening, with VIO still DEGRADED from the commit 3 drive hours earlier (flag 2, about 146 features), the camera reported `fps_current` 14 (it had reported 15–16 earlier) and delivered 13.2–13.8 fps. Ed's `path_follow` start refused `CAMERA_FRAMERATE = 15` at 12.8–13.8 fps, and 12 started. The drop is on the camera side, not the Pi's, since `fps_current` is the camera's own figure. The cause is unknown; heat, or the long-running VIO session, are guesses. A `CAMERA_FRAMERATE` near the edge can therefore pass on one start and fail on a later one; leaving a few fps of margin avoids that. | VIO status and snapshot runs on murmurpi64; Ed's `path_follow` run |
 
 ## Design
 
@@ -267,7 +268,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     - `snapshot --framerate 20` printed the error, suggesting 16 at 15.9 fps.
     - Five runs at `--framerate 15` all started and saved a frame, measuring
       15.1–15.9 fps.
-- [ ] **7. Read the SDK stream in small chunks (D15, F15).** `MightyLink`
+- [x] **7. Read the SDK stream in small chunks (D15, F15).** `MightyLink`
   creates `MightyWebDevice` with `read_chunk_size` (default 1024 bytes;
   `MIGHTY_READ_CHUNK_BYTES`). `MightyPose`, `MightyCamera`,
   `get_mighty_camera` and `path_follow`'s `add_mighty` pass it through, and
@@ -300,7 +301,15 @@ Each box is ticked only after the checks listed under it pass (D2).
     | 65536 | 12.4 fps | 4.6 /s |
     | 1024 | 13.2 fps | 13.4 /s |
 
-    - Still pending: the same checks from the committed code after the push.
+  - *Verified 2026-11-14 on murmurpi64 at `ae90ab30`:*
+    - The car was checked as up to date with origin first (F20).
+    - The Mighty, template and look-ahead tests passed: 97 passed.
+    - `snapshot --framerate 12` published 5.0 distinct images per second at
+      `--chunk 65536` and 12.5 at the 1024 default, with 13.5 fps received
+      in both runs.
+    - Ed ran `mycar_mighty_path_follow` (640×400, `HAVE_MIGHTY = True`) on
+      this code. It started at `CAMERA_FRAMERATE = 12` after 15 was refused
+      at 12.8–13.8 fps (F23).
 - [ ] **8. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
   types list and the warm-up setting. `MIGHTY_URL` is already there.
   - *Verify:* `test_path_follow_mighty.py` gains a case with `HAVE_MIGHTY` and
