@@ -79,6 +79,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F21 | 2026-11-14 | `MightyLink`'s registry is shared across the whole class, so one test failing before it released its link leaked a link for `http://192.168.7.1`. Every later test then reused it, and about 40 tests failed (camera warm-up timeouts, registry assertions). Test classes now register `MightyLink._links.clear` as a cleanup that runs after the empty-registry assertion. | Commit 7 Mac test run |
 | F22 | 2026-11-14 | Giving any parameter of `MightyPose.__init__` a type annotation makes `mypy` check the body. Its attributes initialised to `None` (`latest`, `received_at`, `state`, `last_valid`) then failed on later assignments, so commit 7 gave them `Optional` types. | `mypy --check-untyped-defs` on the Mac |
 | F23 | 2026-11-14 | The camera's own rate drifts down over a session. In the evening, with VIO still DEGRADED from the commit 3 drive hours earlier (flag 2, about 146 features), the camera reported `fps_current` 14 (it had reported 15–16 earlier) and delivered 13.2–13.8 fps. Ed's `path_follow` start refused `CAMERA_FRAMERATE = 15` at 12.8–13.8 fps, and 12 started. The drop is on the camera side, not the Pi's, since `fps_current` is the camera's own figure. The cause is unknown; heat, or the long-running VIO session, are guesses. A `CAMERA_FRAMERATE` near the edge can therefore pass on one start and fail on a later one; leaving a few fps of margin avoids that. | VIO status and snapshot runs on murmurpi64; Ed's `path_follow` run |
+| F24 | 2026-11-14 | `cv_control`'s default autopilot, `LineFollower`, finds the line by colour. Its pixels must fall in HSV `COLOR_THRESHOLD_LOW` (0, 50, 50) to `COLOR_THRESHOLD_HIGH` (50, 255, 255), so saturation must be at least 50. The Mighty's frames are grey (F2), so their saturation is 0 and the mask is always empty: the default line follower cannot follow tape with `CAMERA_TYPE = "MIGHTY"`. Following tape would need a controller or thresholds based on brightness. This plan only documents it, and leaves the line follower unchanged. | `cfg_cv_control.py`; test `test_mono_frames_never_match_the_default_line_colour` |
 
 ## Design
 
@@ -352,9 +353,28 @@ Each box is ticked only after the checks listed under it pass (D2).
     - The run had no tracebacks or camera warnings, and it exited cleanly.
     - The pose stream stayed "waiting for tracking", as expected with the
       camera standing still (F10).
-- [ ] **9. `cv_control` template.** Updates `cfg_cv_control.py`; the template
-  already goes through `add_camera`.
+- [ ] **9. `cv_control` template.** Updates `cfg_cv_control.py` (the template
+  already goes through `add_camera`):
+  - `MIGHTY` joins the camera types list;
+  - a Mighty block adds `MIGHTY_URL`, the warm-up, frame-rate-check and
+    read-chunk settings, and warns that the default `LineFollower` cannot
+    see the line in the Mighty's grey frames (F24);
+  - it notes that the template's 320×240 must become a 16:10 size such as
+    320×200, and that `SCAN_Y` and `TARGET_PIXEL` are in pixels of that
+    image.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
+  - *Mac, 2026-11-14:* 4 new tests in `test_mighty_templates.py`:
+    - the settings are in a `cv_control` car's config;
+    - the template's default 320×240 fails, suggesting 384×240 and the full
+      frame;
+    - a 10-loop `cv_control.drive()` at 320×200 builds the camera on
+      `cam/image_array`, connects, and disconnects at shutdown;
+    - the camera's grey frames give HSV saturation 0, and the default yellow
+      `COLOR_THRESHOLD_*` mask stays empty.
+
+    Each template test now gets its own temporary car directory: a tub left
+    by the `complete` tests made `cv_control`'s tub writer fail on its
+    different fields. The full suite gives 220 passed, plus the F9 failure.
 - [ ] **10. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
   `templates/basic.py`, and updates `cfg_basic.py`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.

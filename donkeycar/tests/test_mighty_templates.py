@@ -1,6 +1,6 @@
 """CAMERA_TYPE = "MIGHTY" in each template, with the Mighty SDK mocked (plan commits 5, 6 and 7-9)."""
 import os
-from tempfile import gettempdir
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import MagicMock, patch
@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import donkeycar as dk
 from donkeycar.parts.camera import CameraError
 from donkeycar.parts.mighty import MightyCamera, MightyLink
-from donkeycar.templates import complete
+from donkeycar.templates import complete, cv_control
 from donkeycar.tests import test_mighty_camera as camera_tests
 from donkeycar.tests.setup import custom_template, d2_path
 
@@ -50,8 +50,14 @@ class MightyTemplateCase(unittest.TestCase):
         self.addCleanup(self.assertEqual, MightyLink._links, {})
 
     def car_config(self, template, **settings):
-        """A car directory made by `donkey createcar`, with settings in myconfig.py."""
-        path = custom_template(d2_path(gettempdir()), template=template)
+        """A fresh car directory made by `donkey createcar`, with settings in myconfig.py.
+
+        Each test gets its own directory: a data tub left by another template
+        has different fields and stops the tub writer.
+        """
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        path = custom_template(d2_path(temp.name), template=template)
         with open(os.path.join(path, 'myconfig.py'), 'wt') as myconfig:
             for name, value in settings.items():
                 myconfig.write(f'{name} = {value!r}\n')
@@ -134,6 +140,60 @@ class CompleteTemplateTests(MightyTemplateCase):
         client.connect.assert_called_once()
         client.unsubscribe_image.assert_called_once()
         client.disconnect.assert_called_once()
+
+
+class CvControlTemplateTests(MightyTemplateCase):
+    def config(self, **settings):
+        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=320, IMAGE_H=200,
+                             CAMERA_FRAMERATE=12), **settings)
+        return self.car_config('cv_control', **settings)
+
+    def test_template_config_has_the_mighty_settings(self):
+        cfg = self.config()
+        self.assertEqual(cfg.MIGHTY_URL, URL)
+        self.assertEqual(cfg.MIGHTY_CAMERA_WARMUP_SECS, 5.0)
+        self.assertEqual(cfg.MIGHTY_CAMERA_FPS_CHECK_SECS, 2.0)
+        self.assertEqual(cfg.MIGHTY_READ_CHUNK_BYTES, 1024)
+
+    def test_template_default_size_fails_with_the_fix(self):
+        # cv_control's default 320x240 is 4:3.
+        cfg = self.config(IMAGE_W=320, IMAGE_H=240)
+        with self.assertRaisesRegex(CameraError, 'IMAGE_W = 384 and IMAGE_H = 240'):
+            complete.get_camera(cfg)
+
+    def test_drive_runs_with_the_mighty_camera(self):
+        cfg = self.config(USE_SSD1306_128_32=False, DRIVE_TRAIN_TYPE='None')
+        cfg.MAX_LOOPS = 10
+        vehicle_class = dk.vehicle.Vehicle
+        parts = []
+
+        def record(*args, **kwargs):
+            vehicle = vehicle_class(*args, **kwargs)
+            add = vehicle.add
+            vehicle.add = lambda part, *a, **k: (parts.append((part, k)), add(part, *a, **k))[1]
+            return vehicle
+
+        with patch.object(cv_control.dk.vehicle, 'Vehicle', side_effect=record):
+            cv_control.drive(cfg)
+        [(camera, options)] = [(p, k) for p, k in parts if isinstance(p, MightyCamera)]
+        self.assertEqual(options['outputs'], ['cam/image_array'])
+        self.assertEqual(camera.size, (320, 200))
+        [client] = self.clients
+        client.connect.assert_called_once()
+        client.disconnect.assert_called_once()
+
+    def test_mono_frames_never_match_the_default_line_colour(self):
+        # Documents the config comment: LineFollower's default yellow HSV
+        # range needs saturation >= 50, and the Mighty's frames are grey.
+        import cv2
+        import numpy as np
+        cfg = self.config()
+        camera = complete.get_camera(cfg)
+        self.addCleanup(camera.shutdown)
+        hsv = cv2.cvtColor(camera.run_threaded(), cv2.COLOR_RGB2HSV)
+        self.assertEqual(int(hsv[..., 1].max()), 0)
+        mask = cv2.inRange(hsv, np.array(cfg.COLOR_THRESHOLD_LOW), np.array(cfg.COLOR_THRESHOLD_HIGH))
+        self.assertEqual(int(mask.max()), 0)
 
 
 if __name__ == '__main__':
