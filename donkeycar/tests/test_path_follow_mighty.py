@@ -51,7 +51,7 @@ class TemplateTests(unittest.TestCase):
 
     def build(self):
         vehicle = VehicleGraph()
-        sdk = SimpleNamespace(MightyClient=MagicMock(), MightyWebDevice=MagicMock())
+        sdk = self.sdk = SimpleNamespace(MightyClient=MagicMock(), MightyWebDevice=MagicMock())
         fusion = SimpleNamespace(EKFFusion=MagicMock())
         with ExitStack() as stack:
             stack.enter_context(patch.dict('sys.modules', mighty_sdk=sdk,
@@ -98,6 +98,17 @@ class TemplateTests(unittest.TestCase):
         for mode in ['local', 'local_angle']:
             self.assertEqual(drive['part'].run(mode, .3, .4, valid), (0, 0))
         self.assertEqual(drive['part'].run('user', .3, .4, valid), (.3, .4))
+
+    def test_pose_reader_reads_small_chunks_by_default(self):
+        self.build()
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url='http://192.168.7.1',
+                                                         read_chunk_size=1024)
+
+    def test_read_chunk_size_reaches_the_pose_reader(self):
+        self.cfg.MIGHTY_READ_CHUNK_BYTES = 4096
+        self.build()
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url='http://192.168.7.1',
+                                                         read_chunk_size=4096)
 
     def test_simultaneous_gps_is_separate_and_does_not_replay(self):
         self.cfg.HAVE_GPS = True

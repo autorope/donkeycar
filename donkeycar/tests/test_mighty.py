@@ -147,6 +147,7 @@ class LinkTests(unittest.TestCase):
         patcher = patch.dict('sys.modules', mighty_sdk=self.sdk)
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.addCleanup(MightyLink._links.clear)  # runs last: a failure cannot leak a link
         self.addCleanup(self.assertEqual, MightyLink._links, {})
 
     def test_same_url_shares_one_client(self):
@@ -156,7 +157,7 @@ class LinkTests(unittest.TestCase):
         self.assertEqual(a.users, 2)
         self.sdk.MightyClient.assert_called_once_with(
             self.sdk.MightyWebDevice.return_value, auto_reconnect=True)
-        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL, read_chunk_size=1024)
         a.release()
         b.release()
 
@@ -191,6 +192,33 @@ class LinkTests(unittest.TestCase):
         self.assertIsNot(first, second)
         self.assertIsNot(first.client, second.client)
         second.release()
+
+    def test_read_chunk_size_reaches_the_sdk_device(self):
+        link = MightyLink.acquire(self.URL, read_chunk_size=4096)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL, read_chunk_size=4096)
+        self.assertEqual(link.read_chunk_size, 4096)
+        link.release()
+
+    def test_later_user_with_another_chunk_size_is_warned(self):
+        first = MightyLink.acquire(self.URL)
+        with self.assertLogs('donkeycar.parts.mighty', 'WARNING') as logs:
+            second = MightyLink.acquire(self.URL, read_chunk_size=65536)
+        self.assertIs(first, second)
+        self.assertEqual(second.read_chunk_size, 1024)
+        self.assertIn('already open with read_chunk_size 1024; ignoring 65536', logs.output[0])
+        first.release()
+        second.release()
+
+    def test_invalid_read_chunk_size(self):
+        for size in [0, -1, 1.5, True, '1024', None]:
+            with self.subTest(size=size), self.assertRaises(ValueError):
+                MightyLink.acquire(self.URL, read_chunk_size=size)
+        self.assertEqual(MightyLink._links, {})
+
+    def test_pose_reader_passes_its_chunk_size(self):
+        reader = MightyPose(log_directory=self.temp.name, read_chunk_size=2048)
+        self.addCleanup(reader.shutdown)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=self.URL, read_chunk_size=2048)
 
     def test_missing_sdk_gives_install_hint(self):
         with patch.dict('sys.modules', mighty_sdk=None):

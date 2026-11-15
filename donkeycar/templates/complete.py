@@ -839,7 +839,8 @@ def get_mighty_camera(cfg):
                         image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
                         warmup_secs=getattr(cfg, 'MIGHTY_CAMERA_WARMUP_SECS', 5.0),
                         framerate=getattr(cfg, 'CAMERA_FRAMERATE', None),
-                        fps_check_secs=getattr(cfg, 'MIGHTY_CAMERA_FPS_CHECK_SECS', 2.0))
+                        fps_check_secs=getattr(cfg, 'MIGHTY_CAMERA_FPS_CHECK_SECS', 2.0),
+                        read_chunk_size=getattr(cfg, 'MIGHTY_READ_CHUNK_BYTES', 1024))
 
 
 def add_camera(V, cfg, camera_type):

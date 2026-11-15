@@ -275,6 +275,26 @@ Each box is ticked only after the checks listed under it pass (D2).
   - *Verify:* the tests pass on the Mac and on the car.
   - *Verify:* on the car, `snapshot --chunk 65536` publishes about 5 images
     per second, and the default publishes roughly the camera's rate.
+  - *Mac, 2026-11-14:*
+    - 10 new tests, covering the link, the camera, the CLI, the `complete`
+      template and the `path_follow` template.
+    - The test classes now clear the link registry in cleanup. Before this,
+      one failing test leaked its link and failed about 40 later tests.
+    - `MightyPose`'s attributes gained types, because its typed parameter
+      made `mypy` check its body.
+    - `mypy --check-untyped-defs` is clean. The full suite gives 212 passed,
+      plus the F9 failure.
+  - *Car pre-check, 2026-11-14 (before commit, `/tmp` copy, `--framerate 15`,
+    5 s runs):*
+
+    | Chunk | Received | Distinct images published |
+    |---|---|---|
+    | 65536 | 14.5 fps | 5.2 /s |
+    | 1024 | 14.7 fps | 14.9 /s |
+    | 65536 | 12.4 fps | 4.6 /s |
+    | 1024 | 13.2 fps | 13.4 /s |
+
+    - Still pending: the same checks from the committed code after the push.
 - [ ] **8. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
   types list and the warm-up setting. `MIGHTY_URL` is already there.
   - *Verify:* `test_path_follow_mighty.py` gains a case with `HAVE_MIGHTY` and

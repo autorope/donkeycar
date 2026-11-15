@@ -519,7 +519,8 @@ def add_mighty(V, cfg):
     reader = MightyPose(url=cfg.MIGHTY_URL, start_vio=cfg.MIGHTY_START_VIO,
                         max_age=cfg.MIGHTY_MAX_AGE,
                         high_rate_pose=cfg.MIGHTY_HIGH_RATE_POSE,
-                        log_directory=cfg.MIGHTY_LOG_DIRECTORY)
+                        log_directory=cfg.MIGHTY_LOG_DIRECTORY,
+                        read_chunk_size=getattr(cfg, 'MIGHTY_READ_CHUNK_BYTES', 1024))
     V.add(reader, outputs=['mighty/pose', 'mighty/fresh', 'mighty/timing'], threaded=True)
     V.add(transform,
           inputs=['mighty/pose', 'mighty/fresh'],

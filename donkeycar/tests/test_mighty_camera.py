@@ -131,6 +131,7 @@ class CameraTests(unittest.TestCase):
         patcher = patch.dict('sys.modules', mighty_sdk=self.sdk)
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.addCleanup(MightyLink._links.clear)  # runs last: a failure cannot leak a link
         self.addCleanup(self.assertEqual, MightyLink._links, {})
 
     def camera(self, **kwargs):
@@ -170,6 +171,16 @@ class CameraTests(unittest.TestCase):
         self.assertTrue(camera.poll())
         self.assertAlmostEqual(float(camera.run_threaded().mean()), 240, delta=3)
         self.assertFalse(camera.poll())
+
+    def test_chunk_size_and_published_count(self):
+        camera = self.camera(read_chunk_size=2048)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL, read_chunk_size=2048)
+        self.assertEqual(camera.frames_published, 1)  # the warm-up frame
+        for _ in range(3):
+            self.clients[0].emit(jpeg())
+        self.assertTrue(camera.poll())
+        self.assertFalse(camera.poll())
+        self.assertEqual((camera.frames_received, camera.frames_published), (4, 2))
 
     def test_run_polls_without_a_thread(self):
         camera = self.camera(image_d=1)
@@ -310,6 +321,7 @@ class FramerateCameraTests(unittest.TestCase):
         self.now = 100.0
         patch('donkeycar.parts.mighty.time.monotonic', side_effect=lambda: self.now).start()
         self.addCleanup(patch.stopall)
+        self.addCleanup(MightyLink._links.clear)  # runs last: a failure cannot leak a link
         self.addCleanup(self.assertEqual, MightyLink._links, {})
 
     def camera(self, framerate, measured=17.8):
@@ -442,6 +454,7 @@ class SnapshotCliTests(unittest.TestCase):
         patcher = patch.dict('sys.modules', mighty_sdk=self.sdk)
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.addCleanup(MightyLink._links.clear)  # runs last: a failure cannot leak a link
         self.addCleanup(self.assertEqual, MightyLink._links, {})
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -454,7 +467,17 @@ class SnapshotCliTests(unittest.TestCase):
         self.assertEqual(code, 0)
         with Image.open(out) as saved:
             self.assertEqual(saved.size, (160, 100))
-        self.assertIn('Camera frames 640x400 (16:10); saved 160x100 depth 3', printed.call_args[0][0])
+        report = printed.call_args[0][0]
+        self.assertIn('Camera frames 640x400 (16:10); saved 160x100 depth 3', report)
+        self.assertIn('distinct images published per second', report)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL, read_chunk_size=1024)
+
+    def test_snapshot_chunk_option(self):
+        out = os.path.join(self.temp.name, 'frame.jpg')
+        with patch('builtins.print'):
+            self.assertEqual(mighty.main(['snapshot', '--out', out, '--seconds', '0.05',
+                                          '--chunk', '65536']), 0)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL, read_chunk_size=65536)
 
     def test_snapshot_full_frame_by_default(self):
         out = os.path.join(self.temp.name, 'full.jpg')

@@ -46,6 +46,7 @@ class MightyTemplateCase(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.measure = patch.object(MightyCamera, 'measure_fps', return_value=MEASURED_FPS).start()
         self.addCleanup(patch.stopall)
+        self.addCleanup(MightyLink._links.clear)  # runs last: a failure cannot leak a link
         self.addCleanup(self.assertEqual, MightyLink._links, {})
 
     def car_config(self, template, **settings):
@@ -71,6 +72,12 @@ class CompleteTemplateTests(MightyTemplateCase):
         self.assertEqual(cfg.MIGHTY_URL, URL)
         self.assertEqual(cfg.MIGHTY_CAMERA_WARMUP_SECS, 5.0)
         self.assertEqual(cfg.MIGHTY_CAMERA_FPS_CHECK_SECS, 2.0)
+        self.assertEqual(cfg.MIGHTY_READ_CHUNK_BYTES, 1024)
+
+    def test_read_chunk_size_is_passed_through(self):
+        camera = complete.get_camera(self.config(MIGHTY_READ_CHUNK_BYTES=4096))
+        self.addCleanup(camera.shutdown)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL, read_chunk_size=4096)
 
     def test_get_camera_builds_a_mighty_camera_from_config(self):
         cfg = self.config(IMAGE_DEPTH=1, MIGHTY_CAMERA_WARMUP_SECS=2.5)
@@ -82,7 +89,7 @@ class CompleteTemplateTests(MightyTemplateCase):
         self.assertEqual(camera.run_threaded().shape, (100, 160))
         self.assertEqual(camera.framerate, 15)
         self.measure.assert_called_once_with(2.0)
-        self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL)
+        self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL, read_chunk_size=1024)
 
     def test_settings_default_when_an_older_config_lacks_them(self):
         cfg = SimpleNamespace(DONKEY_GYM=False, CAMERA_TYPE='MIGHTY',
@@ -90,6 +97,7 @@ class CompleteTemplateTests(MightyTemplateCase):
         camera = complete.get_camera(cfg)
         self.addCleanup(camera.shutdown)
         self.assertEqual(camera.url, URL)
+        self.assertEqual(camera.link.read_chunk_size, 1024)
         self.assertEqual(camera.run_threaded().shape, (200, 320, 3))
         self.assertIsNone(camera.framerate)
         self.measure.assert_not_called()

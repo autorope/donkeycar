@@ -89,6 +89,7 @@ OAKD_RGB_SENSOR_CROP_Y = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
 MIGHTY_URL = 'http://192.168.7.1'   # the camera's USB Ethernet address
 MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
 MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0  # how long startup measures the frame rate
+MIGHTY_READ_CHUNK_BYTES = 1024      # SDK stream read size; 65536 (the SDK default) bunches frames 3 at a time
 
 
 # ------------------------------------------------------------------------------

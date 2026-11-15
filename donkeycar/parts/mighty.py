@@ -23,6 +23,12 @@ logger = logging.getLogger(__name__)
 SDK_INSTALL_HINT = ('Mighty requires the SDK: python -m pip install '
                     'git+https://github.com/asadm/mighty-protocol.git')
 
+# The SDK's HTTP reader waits for a full read_chunk_size block (64 KiB by
+# default) before parsing, so ~19 KB frames arrive three at a time about every
+# 200 ms and poses bunch up with them. Small reads deliver each frame and pose
+# as it arrives, at no measurable CPU cost (plan F15, D15).
+READ_CHUNK_BYTES = 1024
+
 
 class MightyLink:
     """One shared, reference-counted SDK connection per camera URL.
@@ -33,13 +39,16 @@ class MightyLink:
     run at a reduced frame rate, so every part for one URL shares this one.
     The first ``connect`` opens the stream; the last ``release`` closes it and
     forgets the link, so a later ``acquire`` starts a fresh connection.
+    The stream is read ``read_chunk_size`` bytes at a time; the first user's
+    size is used, and a later user asking for another one is warned.
     """
     _links: ClassVar[dict[str, MightyLink]] = {}
     _registry_lock: ClassVar[threading.Lock] = threading.Lock()
 
-    def __init__(self, url: str, client: Any) -> None:
+    def __init__(self, url: str, client: Any, read_chunk_size: int) -> None:
         self.url = url
         self.client = client
+        self.read_chunk_size = read_chunk_size
         self.users = 0
         self.connected = False
         self.lock = threading.Lock()
@@ -49,8 +58,12 @@ class MightyLink:
         return url.strip().rstrip('/')
 
     @classmethod
-    def acquire(cls, url: str) -> MightyLink:
+    def acquire(cls, url: str, read_chunk_size: int = READ_CHUNK_BYTES) -> MightyLink:
         """Return the link for ``url``, creating its client on first use."""
+        if isinstance(read_chunk_size, bool) or not isinstance(read_chunk_size, int) \
+                or read_chunk_size < 1:
+            raise ValueError('Mighty read_chunk_size (MIGHTY_READ_CHUNK_BYTES) must be '
+                             'a positive whole number of bytes')
         key = cls.key(url)
         with cls._registry_lock:
             link = cls._links.get(key)
@@ -59,8 +72,12 @@ class MightyLink:
                     from mighty_sdk import MightyClient, MightyWebDevice
                 except ImportError as exc:
                     raise ImportError(SDK_INSTALL_HINT) from exc
-                client = MightyClient(MightyWebDevice(base_url=key), auto_reconnect=True)
-                link = cls._links[key] = cls(key, client)
+                device = MightyWebDevice(base_url=key, read_chunk_size=read_chunk_size)
+                client = MightyClient(device, auto_reconnect=True)
+                link = cls._links[key] = cls(key, client, read_chunk_size)
+            elif link.read_chunk_size != read_chunk_size:
+                logger.warning('Mighty %s is already open with read_chunk_size %d; '
+                               'ignoring %d', key, link.read_chunk_size, read_chunk_size)
             link.users += 1
             return link
 
@@ -92,22 +109,23 @@ class MightyPose:
     happens here. A fresh sample also requires a connected, tracking camera.
     """
     def __init__(self, url='http://192.168.7.1', start_vio=True,
-                 max_age=0.5, high_rate_pose=False, log_directory='logs'):
+                 max_age=0.5, high_rate_pose=False, log_directory='logs',
+                 read_chunk_size: int = READ_CHUNK_BYTES):
         if not math.isfinite(max_age) or max_age <= 0:
             raise ValueError('Mighty max_age must be finite and positive')
-        self.link = MightyLink.acquire(url)
+        self.link = MightyLink.acquire(url, read_chunk_size)
         self.client = self.link.client
         self.released = False
         self.timing = MightyTiming(log_directory)
         self.pose_lock = threading.Lock()
-        self.latest = None
-        self.received_at = None
-        self.state = None
+        self.latest: Optional[dict[str, Any]] = None
+        self.received_at: Optional[float] = None
+        self.state: Optional[int] = None
         self.max_age = max_age
         self.start_vio = start_vio
         self.high_rate_pose = high_rate_pose
         self.stop = threading.Event()
-        self.last_valid = None
+        self.last_valid: Optional[bool] = None
         self.last_stats = 0.0
         # Keep the unsubscribers: the client may outlive this part when shared.
         self.unsubscribers: list[Callable[[], None]] = [
@@ -425,7 +443,8 @@ class MightyCamera:
                  image_w: Optional[int] = 160, image_h: Optional[int] = 120,
                  image_d: int = 3, warmup_secs: float = 5.0,
                  stale_secs: float = 1.0, framerate: Optional[float] = None,
-                 fps_check_secs: float = 2.0) -> None:
+                 fps_check_secs: float = 2.0,
+                 read_chunk_size: int = READ_CHUNK_BYTES) -> None:
         if image_d not in (1, 3):
             raise ValueError('MightyCamera image_d must be 1 (mono) or 3 (RGB)')
         if not all(math.isfinite(v) and v > 0 for v in (warmup_secs, stale_secs, fps_check_secs)):
@@ -446,6 +465,7 @@ class MightyCamera:
         self.pending: Optional[dict[str, Any]] = None
         self.received_at: Optional[float] = None
         self.frames_received = 0
+        self.frames_published = 0
         # (Pi arrival time, camera capture timestamp_ns or None), newest last.
         self.arrivals: deque[tuple[float, Optional[int]]] = deque(maxlen=256)
         self.frame: Optional[np.ndarray] = None
@@ -454,7 +474,7 @@ class MightyCamera:
         self.warned_stale = False
         self.warned_size = False
         self.warned_decode = False
-        self.link = MightyLink.acquire(url)
+        self.link = MightyLink.acquire(url, read_chunk_size)
         self.client = self.link.client
         self.unsubscribers: list[Callable[[], None]] = [self.client.on_image(self.on_image)]
         try:
@@ -590,6 +610,7 @@ class MightyCamera:
                 picture = picture.resize(self.size, Image.Resampling.BOX)
             self.frame = np.asarray(picture, dtype=np.uint8)
             self.last_published = now
+            self.frames_published += 1
             return True
         except (OSError, ValueError, KeyError, TypeError) as exc:
             if not self.warned_decode:
@@ -633,17 +654,20 @@ def snapshot(args: argparse.Namespace) -> int:
     try:
         camera = MightyCamera(url=args.url, image_w=args.width, image_h=args.height,
                               image_d=args.depth, warmup_secs=args.warmup,
-                              framerate=args.framerate, fps_check_secs=args.fps_check)
+                              framerate=args.framerate, fps_check_secs=args.fps_check,
+                              read_chunk_size=args.chunk)
     except CameraError as exc:
         print(exc, file=sys.stderr)
         return 1
     try:
-        start, started = camera.frames_received, time.monotonic()
+        start, published, started = (camera.frames_received, camera.frames_published,
+                                     time.monotonic())
         thread = threading.Thread(target=camera.update, daemon=True)
         thread.start()
         time.sleep(args.seconds)
         elapsed = time.monotonic() - started
         fps = (camera.frames_received - start) / elapsed
+        published_fps = (camera.frames_published - published) / elapsed
         camera.running = False
         thread.join(1.0)
         assert camera.frame is not None
@@ -651,7 +675,8 @@ def snapshot(args: argparse.Namespace) -> int:
         print(f'Camera frames {camera.native[0]}x{camera.native[1]} '
               f'({aspect_name(*camera.native)}); saved {camera.size[0]}x{camera.size[1]} '
               f'depth {camera.image_d} to {args.out}; '
-              f'{fps:.1f} fps received over {elapsed:.1f} s')
+              f'{fps:.1f} fps received, {published_fps:.1f} distinct images published '
+              f'per second over {elapsed:.1f} s')
         return 0
     finally:
         camera.shutdown()
@@ -671,6 +696,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     snap.add_argument('--warmup', type=float, default=5.0)
     snap.add_argument('--framerate', type=float, default=None,
                       help='CAMERA_FRAMERATE to test (default: no frame-rate check)')
+    snap.add_argument('--chunk', type=int, default=READ_CHUNK_BYTES,
+                      help='SDK stream read size in bytes (MIGHTY_READ_CHUNK_BYTES)')
     snap.add_argument('--fps-check', type=float, default=2.0,
                       help='seconds to measure the rate for the --framerate check')
     args = parser.parse_args(argv)
