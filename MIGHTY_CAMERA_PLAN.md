@@ -452,6 +452,28 @@ Each box is ticked only after the checks listed under it pass (D2).
     - `IMAGE_DEPTH = 1` is refused;
     - a custom `CV_CONTROLLER_*` is allowed through.
   - *Verify:* the tests pass on the Mac and on the car.
+  - *Verify:* on the car, running the committed template from Ed's car
+    directory (`cd ~/mycar_mighty_cv_control && python
+    ~/projects/donkeycar/donkeycar/templates/cv_control.py drive`) prints
+    the refusal and opens no connection to the camera.
+  - *Note:* `donkey createcar` copies the template into each car directory
+    as `manage.py`. An existing `cv_control` car directory picks up the
+    check only after `donkey update --template cv_control`, run inside it.
+    That overwrites `manage.py`, `config.py`, `train.py` and `calibrate.py`
+    but keeps `myconfig.py`.
+  - *Mac, 2026-11-15:*
+    - The check is `colour_camera_error(cfg)` in `templates/cv_control.py`,
+      called first in `drive()`. `line_follower.py` is unchanged.
+    - The `cv_control` drive test was replaced by 4 tests:
+      - `MIGHTY` refused with the exact message, with no `Vehicle` and no
+        SDK client created;
+      - `IMAGE_DEPTH = 1` refused with a `MOCK` camera;
+      - a colour camera allowed;
+      - a custom greyscale `GreyController` running a 10-loop drive with
+        the Mighty camera.
+    - `cfg_cv_control.py`'s comment now says it refuses to start.
+    - All 17 template tests pass. The full suite gives 232 passed, plus the
+      F9 failure.
 - [ ] **12. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
   `templates/basic.py`, and updates `cfg_basic.py`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.

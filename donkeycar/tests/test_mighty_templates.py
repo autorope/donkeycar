@@ -15,6 +15,16 @@ from donkeycar.tests.setup import custom_template, d2_path
 URL = 'http://192.168.7.1'
 
 
+class GreyController:
+    """A stand-in for a custom CV_CONTROLLER that works on greyscale images."""
+    def __init__(self, pid, cfg):
+        self.calls = 0
+
+    def run(self, image):
+        self.calls += 1
+        return 0.0, 0.0, image
+
+
 class VehicleGraph:
     def __init__(self):
         self.parts = []
@@ -174,8 +184,39 @@ class CvControlTemplateTests(MightyTemplateCase):
         with self.assertRaisesRegex(CameraError, 'IMAGE_W = 384 and IMAGE_H = 240'):
             complete.get_camera(cfg)
 
-    def test_drive_runs_with_the_mighty_camera(self):
+    def test_mighty_is_refused_before_connecting(self):
         cfg = self.config(USE_SSD1306_128_32=False, DRIVE_TRAIN_TYPE='None')
+        with patch.object(cv_control.dk.vehicle, 'Vehicle') as vehicle:
+            with self.assertRaises(ValueError) as caught:
+                cv_control.drive(cfg)
+        self.assertEqual(
+            str(caught.exception),
+            'cv_control cannot start: its autopilot, donkeycar.parts.line_follower.'
+            'LineFollower, finds the line by colour (COLOR_THRESHOLD_LOW/HIGH), but '
+            'CAMERA_TYPE = "MIGHTY" is a monochrome camera. In myconfig.py choose a colour '
+            'camera (e.g. PICAM, WEBCAM or CVCAM) with IMAGE_DEPTH = 3, or set '
+            'CV_CONTROLLER_MODULE and CV_CONTROLLER_CLASS to a controller that works on '
+            'greyscale images.')
+        vehicle.assert_not_called()
+        self.sdk.MightyClient.assert_not_called()
+
+    def test_depth_one_is_refused_for_any_camera(self):
+        cfg = self.config(CAMERA_TYPE='MOCK', IMAGE_DEPTH=1)
+        with patch.object(cv_control.dk.vehicle, 'Vehicle') as vehicle:
+            with self.assertRaisesRegex(ValueError, 'IMAGE_DEPTH = 1 gives greyscale images. '
+                                                    'In myconfig.py set IMAGE_DEPTH = 3,'):
+                cv_control.drive(cfg)
+        vehicle.assert_not_called()
+
+    def test_colour_camera_is_allowed(self):
+        cfg = self.config(CAMERA_TYPE='MOCK', IMAGE_DEPTH=3)
+        self.assertIsNone(cv_control.colour_camera_error(cfg))
+
+    def test_custom_controller_runs_with_the_mighty_camera(self):
+        cfg = self.config(USE_SSD1306_128_32=False, DRIVE_TRAIN_TYPE='None',
+                          CV_CONTROLLER_MODULE='donkeycar.tests.test_mighty_templates',
+                          CV_CONTROLLER_CLASS='GreyController')
+        self.assertIsNone(cv_control.colour_camera_error(cfg))
         cfg.MAX_LOOPS = 10
         vehicle_class = dk.vehicle.Vehicle
         parts = []
@@ -188,6 +229,7 @@ class CvControlTemplateTests(MightyTemplateCase):
 
         with patch.object(cv_control.dk.vehicle, 'Vehicle', side_effect=record):
             cv_control.drive(cfg)
+        self.assertEqual(len([p for p, _ in parts if isinstance(p, GreyController)]), 1)
         [(camera, options)] = [(p, k) for p, k in parts if isinstance(p, MightyCamera)]
         self.assertEqual(options['outputs'], ['cam/image_array'])
         self.assertEqual(camera.size, (320, 200))

@@ -48,7 +48,8 @@ PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 # For MIGHTY camera (the Mighty VIO camera over USB Ethernet); see docs/mighty.md.
 # Its frames are 640x400 MONO. The default LineFollower finds the line by HSV
 # colour (COLOR_THRESHOLD_* below, saturation >= 50), which grey images never
-# match, so with this camera it needs a controller that works on brightness.
+# match, so cv_control refuses to start with MIGHTY (or IMAGE_DEPTH = 1) unless
+# CV_CONTROLLER_MODULE/CLASS name a controller that works on greyscale.
 # IMAGE_W x IMAGE_H must be 16:10 and no larger, e.g. 320x200 instead of the
 # default 320x240, or startup fails with the closest sizes; SCAN_Y and
 # TARGET_PIXEL are in pixels of that image. IMAGE_DEPTH must be 1, since the

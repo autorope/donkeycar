@@ -34,6 +34,36 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+LINE_FOLLOWER = ("donkeycar.parts.line_follower", "LineFollower")
+
+
+def colour_camera_error(cfg):
+    """
+    The reason cv_control cannot start with this camera, or None (plan D18).
+
+    The default autopilot, LineFollower, finds the line by HSV colour
+    (COLOR_THRESHOLD_LOW/HIGH) and cannot run on greyscale images, so it
+    needs a colour camera with IMAGE_DEPTH = 3. A custom CV_CONTROLLER_* may
+    work on greyscale, so it is not checked.
+    """
+    controller = (getattr(cfg, "CV_CONTROLLER_MODULE", LINE_FOLLOWER[0]),
+                  getattr(cfg, "CV_CONTROLLER_CLASS", LINE_FOLLOWER[1]))
+    if controller != LINE_FOLLOWER:
+        return None
+    reason = ("its autopilot, donkeycar.parts.line_follower.LineFollower, finds the line "
+              "by colour (COLOR_THRESHOLD_LOW/HIGH)")
+    alternative = ("or set CV_CONTROLLER_MODULE and CV_CONTROLLER_CLASS to a controller "
+                   "that works on greyscale images.")
+    if getattr(cfg, "CAMERA_TYPE", None) == "MIGHTY":
+        return (f'cv_control cannot start: {reason}, but CAMERA_TYPE = "MIGHTY" is a '
+                f'monochrome camera. In myconfig.py choose a colour camera (e.g. PICAM, '
+                f'WEBCAM or CVCAM) with IMAGE_DEPTH = 3, {alternative}')
+    if getattr(cfg, "IMAGE_DEPTH", 3) == 1:
+        return (f'cv_control cannot start: {reason}, but IMAGE_DEPTH = 1 gives greyscale '
+                f'images. In myconfig.py set IMAGE_DEPTH = 3, {alternative}')
+    return None
+
+
 def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     '''
     Construct a working robotic vehicle from many parts.
@@ -45,6 +75,11 @@ def drive(cfg, use_joystick=False, camera_type='single', meta=[]):
     to parts requesting the same named input.
     '''
     
+    # Refuse a monochrome camera before connecting to any hardware.
+    error = colour_camera_error(cfg)
+    if error:
+        raise ValueError(error)
+
     #Initialize car
     V = dk.vehicle.Vehicle()
 
