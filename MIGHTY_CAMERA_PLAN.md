@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 9 / 13 commits verified**
+**Progress: 10 / 13 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -388,7 +388,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     - `cv_control` itself was not run on the car. `~/mycar` uses that
       template for Ed's MCP server, and the line follower couldn't see tape
       anyway (F24).
-- [ ] **10. `IMAGE_DEPTH` check and one combined startup error (D16, D17).**
+- [x] **10. `IMAGE_DEPTH` check and one combined startup error (D16, D17).**
   - `MightyCamera` decides from the first frame whether the camera is
     monochrome, and refuses `IMAGE_DEPTH = 3` if so.
   - Size, depth and frame-rate problems are reported together in one
@@ -430,11 +430,19 @@ Each box is ticked only after the checks listed under it pass (D2).
       14.8 fps).
     - At depth 1, 160×100 and 12 fps it started, logging "monochrome
       frames", and saved a 160×100 mode `L` image.
-    - Still pending: the same checks from the committed code after the push.
+  - *Verified 2026-11-15 on murmurpi64 at `e66ed6b9`:*
+    - The car was up to date with origin.
+    - The Mighty, template and look-ahead tests passed: 114 passed.
+    - `snapshot --depth 3` printed the depth error.
+    - `--width 160 --height 120 --depth 3 --framerate 20` printed "cannot
+      start: 3 settings…" with the size, depth and rate fixes (rate 13.6 fps
+      that time).
   - *Car directories:* `~/mycar_mighty_path_follow` and
     `~/mycar_mighty_complete` don't set `IMAGE_DEPTH`, so they get the
     template's 3 and will refuse to start after this commit until Ed adds
-    `IMAGE_DEPTH = 1`.
+    `IMAGE_DEPTH = 1`. On 2026-11-15 they still lacked it. Ed created
+    `~/mycar_mighty_cv_control` (`MIGHTY`, 640×400, `IMAGE_DEPTH = 1`,
+    `CAMERA_FRAMERATE = 12`); commit 11 will make `cv_control` refuse it.
 - [ ] **11. `cv_control` refuses a monochrome camera (D18).** `cv_control.drive`
   checks before building any part. With the default colour `LineFollower`,
   `CAMERA_TYPE = "MIGHTY"` or `IMAGE_DEPTH = 1` fails with an error saying
