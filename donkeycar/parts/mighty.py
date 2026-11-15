@@ -326,6 +326,25 @@ def image_size_error(width: int, height: int, native: Size) -> Optional[str]:
             f'Any {ratio} size up to {native_w}x{native_h} works.')
 
 
+def framerate_error(requested: float, measured: float) -> Optional[str]:
+    """None if the camera keeps up with CAMERA_FRAMERATE, else the fix (plan D14).
+
+    The camera sets its own rate, so the most donkeycar can ask for is the
+    measured rate rounded down to a whole frame per second.
+    """
+    supported = math.floor(measured)
+    if requested <= supported:
+        return None
+    if supported < 1:
+        return (f'MightyCamera is sending only {measured:.1f} fps, too slow for '
+                f'CAMERA_FRAMERATE = {requested:g}. Check the camera connection; '
+                f'images should arrive at about 15-18 fps.')
+    return (f'MightyCamera cannot deliver CAMERA_FRAMERATE = {requested:g}: the camera is '
+            f'sending {measured:.1f} fps. The camera sets its own rate, and it drops to '
+            f'about 15 fps while VIO runs. In myconfig.py set '
+            f'CAMERA_FRAMERATE = {supported}, or anything lower.')
+
+
 def primary_image(image: Any) -> Optional[dict[str, Any]]:
     """The mono/primary member of an SDK image event, as the SDK selects it.
 
@@ -383,18 +402,35 @@ class MightyCamera:
     ratio: a size the camera cannot return raises CameraError naming the
     myconfig.py change that fixes it. image_w/image_h of None mean the full
     frame. Output is uint8 RGB (H, W, 3) for image_d=3, or (H, W) for 1.
+
+    The camera sets its own frame rate. With a framerate (CAMERA_FRAMERATE),
+    startup measures the received rate for fps_check_secs and fails if the
+    camera cannot keep up; images are then published at most that often, and
+    a rate that later falls short (VIO starting, say) logs one warning.
     """
+    RATE_WINDOW_SECS: ClassVar[float] = 5.0
+    DUE_FRACTION: ClassVar[float] = 0.9  # of a period; absorbs camera jitter
+
     def __init__(self, url: str = 'http://192.168.7.1',
                  image_w: Optional[int] = 160, image_h: Optional[int] = 120,
                  image_d: int = 3, warmup_secs: float = 5.0,
-                 stale_secs: float = 1.0) -> None:
+                 stale_secs: float = 1.0, framerate: Optional[float] = None,
+                 fps_check_secs: float = 2.0) -> None:
         if image_d not in (1, 3):
             raise ValueError('MightyCamera image_d must be 1 (mono) or 3 (RGB)')
-        if not all(math.isfinite(v) and v > 0 for v in (warmup_secs, stale_secs)):
-            raise ValueError('MightyCamera warmup_secs and stale_secs must be finite and positive')
+        if not all(math.isfinite(v) and v > 0 for v in (warmup_secs, stale_secs, fps_check_secs)):
+            raise ValueError('MightyCamera warmup_secs, stale_secs and fps_check_secs '
+                             'must be finite and positive')
+        if framerate is not None and not (math.isfinite(framerate) and framerate > 0):
+            raise ValueError('MightyCamera framerate (CAMERA_FRAMERATE) must be finite and positive')
         self.url = url
         self.image_d = image_d
         self.stale_secs = stale_secs
+        self.framerate = framerate
+        self.measured_fps: Optional[float] = None
+        self.last_published: Optional[float] = None
+        self.rate_window: Optional[tuple[float, int]] = None
+        self.warned_rate = False
         self.lock = threading.Lock()
         self.new_frame = threading.Event()
         self.pending: Optional[dict[str, Any]] = None
@@ -426,11 +462,60 @@ class MightyCamera:
                 raise CameraError(error)
             if not self.poll():
                 raise CameraError(f'MightyCamera could not decode its first image from {url}')
+            if framerate is not None:
+                self.measured_fps = self.measure_fps(fps_check_secs)
+                error = framerate_error(framerate, self.measured_fps)
+                if error:
+                    raise CameraError(error)
         except BaseException:
             self.release()
             raise
-        logger.info('MightyCamera ready: %dx%d depth %d from %dx%d frames',
-                    self.size[0], self.size[1], image_d, *self.native)
+        logger.info('MightyCamera ready: %dx%d depth %d from %dx%d frames%s',
+                    self.size[0], self.size[1], image_d, *self.native,
+                    '' if framerate is None else
+                    f'; camera at {self.measured_fps:.1f} fps, publishing up to {framerate:g} fps')
+
+    def measure_fps(self, seconds: float) -> float:
+        """Frames per second received over the next `seconds`."""
+        with self.lock:
+            count, started = self.frames_received, time.monotonic()
+        time.sleep(seconds)
+        with self.lock:
+            count, ended = self.frames_received - count, time.monotonic()
+        return count / (ended - started) if ended > started else 0.0
+
+    def seconds_until_due(self, now: float) -> float:
+        """How long until the next image may be published under framerate."""
+        if self.framerate is None or self.last_published is None:
+            return 0.0
+        return self.last_published + self.DUE_FRACTION / self.framerate - now
+
+    def check_rate(self, now: float) -> None:
+        """Every RATE_WINDOW_SECS, warn once if the camera falls below framerate."""
+        if self.framerate is None:
+            return
+        with self.lock:
+            received = self.frames_received
+        if self.rate_window is None:
+            self.rate_window = (now, received)
+            return
+        started, count = self.rate_window
+        elapsed = now - started
+        if elapsed < self.RATE_WINDOW_SECS:
+            return
+        self.rate_window = (now, received)
+        rate = (received - count) / elapsed
+        if framerate_error(self.framerate, rate):
+            if not self.warned_rate:
+                logger.warning('MightyCamera: the camera is now sending %.1f fps, below '
+                               'CAMERA_FRAMERATE = %g; images repeat between frames. It drops '
+                               'to about 15 fps while VIO runs. Set CAMERA_FRAMERATE = %d or '
+                               'lower in myconfig.py.', rate, self.framerate,
+                               max(1, math.floor(rate)))
+                self.warned_rate = True
+        elif self.warned_rate:
+            logger.info('MightyCamera: frame rate back to %.1f fps', rate)
+            self.warned_rate = False
 
     def on_image(self, image: Any) -> None:
         """SDK callback: keep only the newest primary frame; no decoding here."""
@@ -444,14 +529,22 @@ class MightyCamera:
             self.new_frame.set()
 
     def poll(self) -> bool:
-        """Decode the newest pending frame into self.frame; True if it updated."""
+        """Decode the newest pending frame into self.frame; True if it updated.
+
+        With a framerate, a frame that arrives before the next one is due
+        stays pending (newer frames replace it) instead of being published.
+        """
+        now = time.monotonic()
+        self.check_rate(now)
+        if self.seconds_until_due(now) > 0:
+            return False
         with self.lock:
             image, self.pending = self.pending, None
             self.new_frame.clear()
             received_at = self.received_at
         if image is None:
             if (received_at is not None and not self.warned_stale
-                    and time.monotonic() - received_at > self.stale_secs):
+                    and now - received_at > self.stale_secs):
                 logger.warning('MightyCamera: no new image for over %g s; repeating the last one',
                                self.stale_secs)
                 self.warned_stale = True
@@ -472,6 +565,7 @@ class MightyCamera:
             if picture.size != self.size:
                 picture = picture.resize(self.size, Image.Resampling.BOX)
             self.frame = np.asarray(picture, dtype=np.uint8)
+            self.last_published = now
             return True
         except (OSError, ValueError, KeyError, TypeError) as exc:
             if not self.warned_decode:
@@ -482,6 +576,10 @@ class MightyCamera:
     def update(self) -> None:
         while self.running:
             self.new_frame.wait(0.1)
+            wait = self.seconds_until_due(time.monotonic())
+            if wait > 0:
+                time.sleep(min(wait, 0.1))
+                continue
             self.poll()
 
     def run_threaded(self) -> Optional[np.ndarray]:
@@ -510,7 +608,8 @@ class MightyCamera:
 def snapshot(args: argparse.Namespace) -> int:
     try:
         camera = MightyCamera(url=args.url, image_w=args.width, image_h=args.height,
-                              image_d=args.depth, warmup_secs=args.warmup)
+                              image_d=args.depth, warmup_secs=args.warmup,
+                              framerate=args.framerate, fps_check_secs=args.fps_check)
     except CameraError as exc:
         print(exc, file=sys.stderr)
         return 1
@@ -546,6 +645,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     snap.add_argument('--height', type=int, default=None, help='IMAGE_H to test (default: full frame)')
     snap.add_argument('--depth', type=int, choices=(1, 3), default=3)
     snap.add_argument('--warmup', type=float, default=5.0)
+    snap.add_argument('--framerate', type=float, default=None,
+                      help='CAMERA_FRAMERATE to test (default: no frame-rate check)')
+    snap.add_argument('--fps-check', type=float, default=2.0,
+                      help='seconds to measure the rate for the --framerate check')
     args = parser.parse_args(argv)
     return snapshot(args)
 

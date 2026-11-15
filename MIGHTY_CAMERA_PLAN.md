@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 5 / 9 commits verified**
+**Progress: 5 / 10 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -47,7 +47,8 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | D9 | 2026-11-14 | Reuse `MIGHTY_URL`. Add only `MIGHTY_CAMERA_WARMUP_SECS`. | Claude | Proposed |
 | D10 | 2026-11-14 | Claude edits code on the Mac and commits each step. Ed reviews and pushes, then the car pulls for testing. Ed first asked to commit himself, then said: "you should create the commits before I push". | Ed | Decided |
 | D12 | 2026-11-14 | How a size is checked, and what the error says (implements D6). The camera's size comes from the first frame received during warm-up. With 640×400, the valid sizes are 8k×5k for k = 1…80 (e.g. 80×50, 160×100, 320×200, 640×400). A requested size is invalid if it is non-positive, if its aspect ratio differs (`IMAGE_W * native_h != IMAGE_H * native_w`), or if it is larger than the frames. **Suggested size** (Ed, 2026-11-14: "choose the one with the most pixels that fits one or both requested dimensions… and also suggest full frame"): there are two candidates. One is the largest valid size whose width is ≤ `IMAGE_W`, which equals `IMAGE_W` when it can. The other is the largest valid size whose height is ≤ `IMAGE_H`. Both are capped at the camera's size, and a dimension with no valid size below it gives no candidate; if neither gives one, the smallest valid size is suggested. The suggestion is the candidate with more pixels; on a tie, the width-based one wins. The full frame is always offered as well, unless it is the suggestion itself. The error names the request, the camera's size and shape, and gives both as lines to paste into `myconfig.py`. As implemented in commit 4, the message for the default 160×120 reads: *"MightyCamera cannot return IMAGE_W=160, IMAGE_H=120 without stretching: the camera sends 640x400 (16:10). In myconfig.py set IMAGE_W = 192 and IMAGE_H = 120 (keeps your height), or IMAGE_W = 640 and IMAGE_H = 400 (the full frame). Any 16:10 size up to 640x400 works."* The labels are "keeps your width/height", "the largest that fits your width/height", "the smallest size" and "the full frame". If the camera's size changes mid-run, those frames are dropped, with one logged error, and are never stretched. | Claude | Proposed |
-| D13 | 2026-11-14 | `get_camera` hands `CAMERA_TYPE = "MIGHTY"` to a helper, `get_mighty_camera(cfg)`, in `templates/complete.py`. The `path_follow` and `cv_control` templates reach the same helper through `add_camera`. The helper reads `MIGHTY_URL` and `MIGHTY_CAMERA_WARMUP_SECS` with `getattr` defaults (`http://192.168.7.1`, 5.0). A car directory created before these settings existed still works, so commits 6–8 only add the settings and comments to each `cfg_*.py`. | Claude | Proposed |
+| D13 | 2026-11-14 | `get_camera` hands `CAMERA_TYPE = "MIGHTY"` to a helper, `get_mighty_camera(cfg)`, in `templates/complete.py`. The `path_follow` and `cv_control` templates reach the same helper through `add_camera`. The helper reads `MIGHTY_URL` and `MIGHTY_CAMERA_WARMUP_SECS` with `getattr` defaults (`http://192.168.7.1`, 5.0). A car directory created before these settings existed still works, so commits 7–9 only add the settings and comments to each `cfg_*.py`. | Claude | Proposed |
+| D14 | 2026-11-14 | **Frame-rate check.** The Mighty sets its own frame rate, and nothing can change it (F12). So `MightyCamera` checks `CAMERA_FRAMERATE` against the rate it actually receives. **Startup:** after the first frame, it counts frames for `MIGHTY_CAMERA_FPS_CHECK_SECS` (default 2.0 s). If `CAMERA_FRAMERATE` is above the measured rate rounded down, startup fails with a `CameraError`. The message names the measured rate, says that VIO lowers it, and gives the rate rounded down as the `myconfig.py` value to use. Below 1 fps it says to check the camera instead. **Lower rates are honoured:** the camera publishes at most `CAMERA_FRAMERATE`, decoding a frame only when at least 0.9 periods have passed. A frame that arrives too early waits rather than being dropped, so camera jitter can't halve the rate. **During a run:** every 5 s it compares the received rate with the same rule. If the rate falls short, which is what happens once `path_follow` starts VIO after the camera's check, it logs one **warning** rather than an error. When the rate recovers, it logs that it has. **No check** when the config has no `CAMERA_FRAMERATE`. Ed accepted the proposal, the extra 2 s of startup, and the warning: "Yes, add it as commit 6; warning is fine". | Ed | Decided |
 | D11 | 2026-11-14 | All work goes on `mighty-camera-image`, branched from `zlite/mighty-camera-gps`. It ends with a PR into `zlite/mighty-camera-gps` for Chris to review and merge. `c740dab4` moved onto this branch, and the local `zlite/mighty-camera-gps` was reset to match origin (`a0c3b63e`). | Ed | Decided |
 
 ## Findings
@@ -64,6 +65,8 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F9 | 2026-11-14 | `test_scripts.py::test_bad_command_fails` fails on the Mac with or without this branch's changes. It is not related to Mighty, and this plan leaves it alone. | `pytest` on Mac, with changes stashed and restored |
 | F10 | 2026-11-14 | Standing still on the bench, VIO went OFF → INITIALIZING → TRACKING (confidence 0.66, 183 features) within about 2 s of `start_vio`. About 1 s later it dropped to DEGRADED (state 3, flag `LOW_TRANSLATION_OBSERVABILITY`) and stayed there for the remaining 35 s, while poses kept arriving. `MightyPose` accepts only state 2, so `mighty/valid` was False from then on. This behaviour predates this plan, which leaves it unchanged. It means a parked car shows `fresh` only briefly; the camera has to move to show sustained tracking. | 40 s `path_follow` run on murmurpi64, `logs/mighty-timing-*.jsonl` |
 | F11 | 2026-11-14 | The camera's frame rate depends on VIO. With VIO off it streamed about 18 fps (F2). With VIO left running in DEGRADED after the commit 3 drive, the camera reported `fps_current` 15–16, and a plain SDK client received 14.0 fps. Over three runs `MightyCamera` received 13.4–15.3 fps; one earlier first run gave 11.6. So the part costs no measurable rate. | Snapshot CLI and plain SDK client on murmurpi64 |
+| F12 | 2026-11-14 | The camera's frame rate cannot be set or read through config. All 18 likely key names tried with `config_get` (`fps`, `camera_fps`, `preview_fps`, `stream_fps`, `framerate`, `frame_rate`, …) returned "unknown config key". The SDK and its README document no rate control; `calib` and `apriltags` are the only keys they name. The only rate the camera reports is `fps_current` in VIO status. | Read-only `config_get` probe on murmurpi64; `mighty_sdk` source and README |
+| F13 | 2026-11-14 | With VIO running, the received rate varies from one 5 s window to the next: 13.4, 14.0, 14.4, 14.5, 14.8, 14.9, 15.0, 15.1 and 15.3 fps were all seen. A `CAMERA_FRAMERATE` equal to the startup suggestion (e.g. 14) can therefore draw the runtime warning once, when a window happens to dip below it. | Snapshot CLI runs on murmurpi64 |
 | F7 | 2026-11-14 | `templates/path_follow.py` has an unused `from distutils.log import debug`. It stops `test_path_follow_mighty.py` from importing on the Mac's Python 3.12+ venv. The test passes on the car (15 passed) only because setuptools provides a `distutils` shim. | `pytest` on Mac and car |
 
 ## Design
@@ -204,17 +207,51 @@ Each box is ticked only after the checks listed under it pass (D2).
   - *Verified 2026-11-14 on murmurpi64 at `de143d3e`:* the Mighty, template
     and look-ahead tests, including `test_template.py`, passed on the car: 70
     passed.
-- [ ] **6. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
+- [ ] **6. Frame-rate check (D14).** `MightyCamera` gains `framerate`
+  (`CAMERA_FRAMERATE`) and `fps_check_secs` (`MIGHTY_CAMERA_FPS_CHECK_SECS`).
+  `get_mighty_camera` passes them, `cfg_complete.py` documents them, and the
+  `snapshot` CLI gains `--framerate`.
+  - *Verify:* unit tests:
+    - the error rule and its message;
+    - startup failing with the suggested rate and releasing the link;
+    - measuring the rate;
+    - publishing at most `CAMERA_FRAMERATE` without dropping frames when the
+      camera matches it;
+    - the runtime warning appearing once and clearing once the rate recovers;
+    - invalid arguments;
+    - no check when `CAMERA_FRAMERATE` is absent.
+  - *Verify:* template tests, for `complete`: the default
+    `CAMERA_FRAMERATE = 20` fails, a supported rate passes, and the rate is
+    passed through.
+  - *Verify:* the tests pass on the Mac and on the car.
+  - *Verify:* on the car, `snapshot --width 160 --height 100 --framerate 20`
+    prints the D14 error with the camera's current rate.
+    `--framerate` set at or below the suggestion saves a frame.
+  - *Mac, 2026-11-14:*
+    - `test_mighty_camera.py` gains 13 tests for the rule, startup, pacing,
+      the warning and the CLI.
+    - `test_mighty_templates.py` gains 2 and updates the rest: those tests
+      now fix the measured rate at 17.8 fps and use `CAMERA_FRAMERATE = 15`.
+    - All Mighty tests pass: 81 passed.
+    - `mypy --check-untyped-defs` is clean.
+    - The full suite gives 199 passed, plus the unrelated F9 failure.
+  - *Car pre-check, 2026-11-14 (before commit, throwaway copy in `/tmp`):*
+    - `--framerate 20` printed *"MightyCamera cannot deliver CAMERA_FRAMERATE
+      = 20: the camera is sending 14.5 fps. … In myconfig.py set
+      CAMERA_FRAMERATE = 14, or anything lower."* and exited 1.
+    - `--framerate 13` saved a frame, receiving 14.4 fps.
+    - Still pending: the same checks from the committed code after the push.
+- [ ] **7. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
   types list and the warm-up setting. `MIGHTY_URL` is already there.
   - *Verify:* `test_path_follow_mighty.py` gains a case with `HAVE_MIGHTY` and
     `CAMERA_TYPE="MIGHTY"` set, checking that both parts share one client.
-- [ ] **7. `cv_control` template.** Updates `cfg_cv_control.py`; the template
+- [ ] **8. `cv_control` template.** Updates `cfg_cv_control.py`; the template
   already goes through `add_camera`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
-- [ ] **8. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
+- [ ] **9. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
   `templates/basic.py`, and updates `cfg_basic.py`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
-- [ ] **9. Docs.** Adds a camera section to `docs/mighty.md` covering config,
+- [ ] **10. Docs.** Adds a camera section to `docs/mighty.md` covering config,
   image format, the allowed sizes and the size error (D12), sharing the connection, and a
   self-contained hardware runbook.
   - *Verify:* Claude runs the runbook as written on murmurpi64.

@@ -12,8 +12,8 @@ from PIL import Image
 from donkeycar.parts.camera import CameraError
 from donkeycar.parts import mighty
 from donkeycar.parts.mighty import (MightyCamera, MightyLink, MightyPose, RAW_BGR24, RAW_GRAY8,
-                                    image_size_error, primary_image, size_fits,
-                                    suggest_image_sizes)
+                                    framerate_error, image_size_error, primary_image,
+                                    size_fits, suggest_image_sizes)
 
 NATIVE = (640, 400)
 URL = 'http://192.168.7.1'
@@ -260,6 +260,128 @@ class CameraTests(unittest.TestCase):
                 MightyCamera(URL, image_w=160, image_h=100)
 
 
+class FramerateRuleTests(unittest.TestCase):
+    def test_rates_at_or_below_the_measured_whole_number_pass(self):
+        for requested, measured in [(17, 17.8), (15, 17.8), (0.5, 17.8), (14, 14.0)]:
+            with self.subTest(requested=requested, measured=measured):
+                self.assertIsNone(framerate_error(requested, measured))
+
+    def test_default_rate_suggests_the_measured_rate_rounded_down(self):
+        self.assertEqual(framerate_error(20, 17.8),
+                         'MightyCamera cannot deliver CAMERA_FRAMERATE = 20: the camera is sending '
+                         '17.8 fps. The camera sets its own rate, and it drops to about 15 fps '
+                         'while VIO runs. In myconfig.py set CAMERA_FRAMERATE = 17, or anything '
+                         'lower.')
+        self.assertIn('CAMERA_FRAMERATE = 14,', framerate_error(15, 14.8))
+        self.assertIn('CAMERA_FRAMERATE = 17,', framerate_error(17.5, 17.8))
+
+    def test_a_stalled_camera_says_to_check_it(self):
+        message = framerate_error(20, 0.4)
+        self.assertIn('sending only 0.4 fps', message)
+        self.assertIn('Check the camera connection', message)
+
+
+class FramerateCameraTests(unittest.TestCase):
+    """The frame-rate check and pacing, with a controllable clock (plan D14)."""
+    def setUp(self):
+        self.clients = []
+
+        def make_client(*args, **kwargs):
+            client = FakeClient()
+            self.clients.append(client)
+            return client
+
+        self.sdk = SimpleNamespace(MightyClient=MagicMock(side_effect=make_client),
+                                   MightyWebDevice=MagicMock())
+        patch.dict('sys.modules', mighty_sdk=self.sdk).start()
+        self.now = 100.0
+        patch('donkeycar.parts.mighty.time.monotonic', side_effect=lambda: self.now).start()
+        self.addCleanup(patch.stopall)
+        self.addCleanup(self.assertEqual, MightyLink._links, {})
+
+    def camera(self, framerate, measured=17.8):
+        with patch.object(MightyCamera, 'measure_fps', return_value=measured) as measure:
+            camera = MightyCamera(URL, image_w=160, image_h=100, image_d=1,
+                                  warmup_secs=1.0, framerate=framerate, fps_check_secs=0.25)
+        measure.assert_called_once_with(0.25)
+        self.addCleanup(camera.shutdown)
+        return camera
+
+    def emit(self, value=128, count=1):
+        for _ in range(count):
+            self.clients[0].emit(jpeg(value=value))
+
+    def test_too_high_a_rate_fails_at_startup_and_releases(self):
+        with self.assertRaisesRegex(CameraError, 'CAMERA_FRAMERATE = 17, or anything lower'):
+            self.camera(framerate=20)
+        self.clients[0].disconnect.assert_called_once()
+
+    def test_supported_rate_starts(self):
+        camera = self.camera(framerate=17)
+        self.assertEqual(camera.measured_fps, 17.8)
+        self.assertEqual(camera.run_threaded().shape, (100, 160))
+
+    def test_measure_fps_counts_frames_over_the_window(self):
+        camera = self.camera(framerate=10)
+
+        def sleep(seconds):
+            self.emit(count=36)
+            self.now += seconds
+
+        with patch('donkeycar.parts.mighty.time.sleep', side_effect=sleep):
+            self.assertAlmostEqual(camera.measure_fps(2.0), 18.0)
+
+    def test_publishes_at_most_framerate_and_keeps_early_frames(self):
+        camera = self.camera(framerate=10)  # due every 0.09 s after a publish
+        self.emit(value=40)
+        self.now += 0.05
+        self.assertFalse(camera.poll())
+        self.emit(value=200)  # newer frame replaces the early one
+        self.now += 0.04
+        self.assertGreater(camera.seconds_until_due(self.now - 0.001), 0)
+        self.assertTrue(camera.poll())
+        self.assertAlmostEqual(float(camera.run_threaded().mean()), 200, delta=3)
+
+    def test_a_camera_matching_framerate_loses_no_frames(self):
+        camera = self.camera(framerate=15)
+        published = 0
+        for jitter in [0.0, -0.006, 0.006, -0.006, 0.0, 0.004, -0.005, 0.0]:
+            self.now += 1 / 15 + jitter
+            self.emit()
+            published += camera.poll()
+        self.assertEqual(published, 8)
+
+    def test_no_framerate_means_no_pacing(self):
+        with patch.object(MightyCamera, 'measure_fps') as measure:
+            camera = MightyCamera(URL, image_w=160, image_h=100, warmup_secs=1.0)
+        self.addCleanup(camera.shutdown)
+        measure.assert_not_called()
+        self.emit()
+        self.assertTrue(camera.poll())
+        self.emit()
+        self.assertTrue(camera.poll())
+
+    def test_slow_camera_warns_once_then_recovers(self):
+        camera = self.camera(framerate=17)
+        camera.poll()  # opens the first rate window
+        with self.assertLogs('donkeycar.parts.mighty', 'INFO') as logs:
+            for rate in (14, 14, 18):
+                self.emit(count=rate * 5)
+                self.now += 5
+                camera.poll()
+        warnings = [r for r in logs.records if r.levelname == 'WARNING']
+        self.assertEqual(len(warnings), 1)
+        self.assertIn('now sending 14.0 fps, below CAMERA_FRAMERATE = 17', warnings[0].getMessage())
+        self.assertIn('Set CAMERA_FRAMERATE = 14 or lower', warnings[0].getMessage())
+        self.assertTrue(any('frame rate back to 18.0 fps' in r.getMessage() for r in logs.records))
+
+    def test_invalid_rate_arguments(self):
+        for kwargs in [dict(framerate=0), dict(framerate=-5), dict(framerate=float('nan')),
+                       dict(fps_check_secs=0), dict(fps_check_secs=float('inf'))]:
+            with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                MightyCamera(URL, **kwargs)
+
+
 class SnapshotCliTests(unittest.TestCase):
     def setUp(self):
         self.sdk = SimpleNamespace(MightyClient=MagicMock(side_effect=lambda *a, **k: FakeClient()),
@@ -294,6 +416,16 @@ class SnapshotCliTests(unittest.TestCase):
             code = mighty.main(['snapshot', '--out', out, '--width', '160', '--height', '120'])
         self.assertEqual(code, 1)
         self.assertIn('IMAGE_W = 192 and IMAGE_H = 120', str(printed.call_args[0][0]))
+        self.assertFalse(os.path.exists(out))
+
+    def test_snapshot_framerate_check_prints_the_fix(self):
+        out = os.path.join(self.temp.name, 'never.jpg')
+        with patch('builtins.print') as printed, \
+                patch.object(MightyCamera, 'measure_fps', return_value=14.8):
+            code = mighty.main(['snapshot', '--out', out, '--width', '160', '--height', '100',
+                                '--framerate', '20'])
+        self.assertEqual(code, 1)
+        self.assertIn('CAMERA_FRAMERATE = 14, or anything lower', str(printed.call_args[0][0]))
         self.assertFalse(os.path.exists(out))
 
 

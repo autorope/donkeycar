@@ -1,4 +1,4 @@
-"""CAMERA_TYPE = "MIGHTY" in each template, with the Mighty SDK mocked (plan commits 5-8)."""
+"""CAMERA_TYPE = "MIGHTY" in each template, with the Mighty SDK mocked (plan commits 5, 6 and 7-9)."""
 import os
 from tempfile import gettempdir
 from types import SimpleNamespace
@@ -23,8 +23,14 @@ class VehicleGraph:
         self.parts.append(dict(part=part, inputs=inputs or [], outputs=outputs or [], **kwargs))
 
 
+MEASURED_FPS = 17.8
+
+
 class MightyTemplateCase(unittest.TestCase):
-    """Mocks the SDK with fake clients that deliver one 640x400 frame on connect."""
+    """Mocks the SDK with fake clients that deliver one 640x400 frame on connect.
+
+    The startup frame-rate measurement is fixed at MEASURED_FPS.
+    """
     def setUp(self):
         self.clients = []
 
@@ -38,6 +44,8 @@ class MightyTemplateCase(unittest.TestCase):
         patcher = patch.dict('sys.modules', mighty_sdk=self.sdk)
         patcher.start()
         self.addCleanup(patcher.stop)
+        self.measure = patch.object(MightyCamera, 'measure_fps', return_value=MEASURED_FPS).start()
+        self.addCleanup(patch.stopall)
         self.addCleanup(self.assertEqual, MightyLink._links, {})
 
     def car_config(self, template, **settings):
@@ -54,13 +62,15 @@ class MightyTemplateCase(unittest.TestCase):
 
 class CompleteTemplateTests(MightyTemplateCase):
     def config(self, **settings):
-        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=160, IMAGE_H=100), **settings)
+        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=160, IMAGE_H=100,
+                             CAMERA_FRAMERATE=15), **settings)
         return self.car_config('complete', **settings)
 
     def test_template_config_has_the_mighty_settings(self):
         cfg = self.config()
         self.assertEqual(cfg.MIGHTY_URL, URL)
         self.assertEqual(cfg.MIGHTY_CAMERA_WARMUP_SECS, 5.0)
+        self.assertEqual(cfg.MIGHTY_CAMERA_FPS_CHECK_SECS, 2.0)
 
     def test_get_camera_builds_a_mighty_camera_from_config(self):
         cfg = self.config(IMAGE_DEPTH=1, MIGHTY_CAMERA_WARMUP_SECS=2.5)
@@ -70,6 +80,8 @@ class CompleteTemplateTests(MightyTemplateCase):
         self.assertEqual(camera.url, URL)
         self.assertEqual(camera.size, (160, 100))
         self.assertEqual(camera.run_threaded().shape, (100, 160))
+        self.assertEqual(camera.framerate, 15)
+        self.measure.assert_called_once_with(2.0)
         self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL)
 
     def test_settings_default_when_an_older_config_lacks_them(self):
@@ -79,6 +91,18 @@ class CompleteTemplateTests(MightyTemplateCase):
         self.addCleanup(camera.shutdown)
         self.assertEqual(camera.url, URL)
         self.assertEqual(camera.run_threaded().shape, (200, 320, 3))
+        self.assertIsNone(camera.framerate)
+        self.measure.assert_not_called()
+
+    def test_template_default_framerate_fails_with_the_fix(self):
+        cfg = self.config(CAMERA_FRAMERATE=20)
+        with self.assertRaisesRegex(CameraError, 'sending 17.8 fps.*CAMERA_FRAMERATE = 17,'):
+            complete.get_camera(cfg)
+
+    def test_fps_check_secs_is_passed_through(self):
+        camera = complete.get_camera(self.config(MIGHTY_CAMERA_FPS_CHECK_SECS=0.5))
+        self.addCleanup(camera.shutdown)
+        self.measure.assert_called_once_with(0.5)
 
     def test_template_default_size_fails_with_the_fix(self):
         cfg = self.config(IMAGE_H=120)

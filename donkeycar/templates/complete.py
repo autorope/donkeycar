@@ -830,13 +830,16 @@ def get_mighty_camera(cfg):
     Build the MightyCamera image part for CAMERA_TYPE = "MIGHTY".
 
     The Mighty settings default when absent so car directories created from
-    an older template still work. It shares one connection with the Mighty
-    pose reader when HAVE_MIGHTY is also set.
+    an older template still work; without CAMERA_FRAMERATE there is no
+    frame-rate check. It shares one connection with the Mighty pose reader
+    when HAVE_MIGHTY is also set.
     """
     from donkeycar.parts.mighty import MightyCamera
     return MightyCamera(url=getattr(cfg, 'MIGHTY_URL', 'http://192.168.7.1'),
                         image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
-                        warmup_secs=getattr(cfg, 'MIGHTY_CAMERA_WARMUP_SECS', 5.0))
+                        warmup_secs=getattr(cfg, 'MIGHTY_CAMERA_WARMUP_SECS', 5.0),
+                        framerate=getattr(cfg, 'CAMERA_FRAMERATE', None),
+                        fps_check_secs=getattr(cfg, 'MIGHTY_CAMERA_FPS_CHECK_SECS', 2.0))
 
 
 def add_camera(V, cfg, camera_type):
