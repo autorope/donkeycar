@@ -86,6 +86,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F24 | 2026-11-14 | `cv_control`'s default autopilot, `LineFollower`, finds the line by colour. Its pixels must fall in HSV `COLOR_THRESHOLD_LOW` (0, 50, 50) to `COLOR_THRESHOLD_HIGH` (50, 255, 255), so saturation must be at least 50. The Mighty's frames are grey (F2), so their saturation is 0 and the mask is always empty: the default line follower cannot follow tape with `CAMERA_TYPE = "MIGHTY"`. Following tape would need a controller or thresholds based on brightness. This plan only documents it, and leaves the line follower unchanged. | `cfg_cv_control.py`; test `test_mono_frames_never_match_the_default_line_colour`; a real 320×200 frame on murmurpi64: saturation at most 0, 0 mask pixels |
 | F25 | 2026-11-15 | `LineFollower.run` crashes on a 2-D (H, W) image with `IndexError: too many indices for array`. Depth 1 output is 2-D, so `cv_control` with any depth 1 camera crashes once autopilot is engaged. | `LineFollower` on a 2-D frame, on murmurpi64 |
 | F26 | 2026-11-15 | The Keras autopilot could not be tested at depth 1: building `KerasLinear` fails with `NameError: name 'Input' is not defined` on both the Mac `.venv` and the car's `~/env`, so neither has a working Keras. From the code, a 2-D frame becomes (1, H, W) at inference while a depth 1 model expects (1, H, W, 1). That is a question for donkeycar's depth 1 path generally, not specific to the Mighty, and is not in this plan. | `KerasLinear(input_shape=(100, 160, 1))` on Mac and car |
+| F27 | 2026-11-15 | In runbook step 6 (`path_follow`, 640×400, depth 1, `CAMERA_FRAMERATE = 12`, `HAVE_MIGHTY` starting VIO, and the web UI's `/video` stream being read), the camera stopped sending images for over 1 s once. Its rate then fell to 10.5 fps, recovered to 13.4, and fell to 8.7 fps. The startup check had measured 14.4 fps. The runtime warnings fired once each as designed, and the drive kept running. The cause is not isolated: VIO starting (the camera resets, F10), encoding the 640×400 web stream on the Pi, or the SDK's CPU use (F16) are all candidates. A `CAMERA_FRAMERATE` that passes at startup can therefore still be too high once VIO runs. The docs now say so. | Runbook step 6 on murmurpi64 |
 
 ## Design
 
@@ -498,6 +499,39 @@ Each box is ticked only after the checks listed under it pass (D2).
     and sees the live image in the web UI at `http://murmurpi64.local:8887`.
   - *Verify:* with `HAVE_MIGHTY = True` also set, the image and
     `Mighty pose stream: fresh` appear together.
+  - *Mac, 2026-11-15:* `docs/mighty.md` is retitled "MightyCamera: native
+    pose and image camera" and gains:
+    - a `MightyLink` paragraph;
+    - `MIGHTY_READ_CHUNK_BYTES` and the `MIGHTY` option in Setup;
+    - an "Image camera" section covering:
+      - template support (`complete`, `path_follow`; `cv_control` refused;
+        `basic` not supported);
+      - what the camera gives, and the size, depth and frame-rate rules,
+        with the real combined error;
+      - the runtime warnings;
+      - configuration;
+      - why the stream is read in 1 KB chunks;
+      - a 7-step runbook.
+    - The `read1` SDK-patch note now says the patch is no longer needed.
+    - The tests paragraph lists the camera tests.
+  - *Runbook run by Claude on murmurpi64, 2026-11-15, at `0a4a59f5`* (the
+    docs commit changes no code):
+    - Step 2: the SDK path printed and the camera answered `200`.
+    - Step 3: a full frame saved at 12.8 fps received, 13.0 published.
+    - Step 4: the three-part error and exit status 1, with no file written.
+    - Step 5: ready at 13.9 fps; a 160×100 frame saved at 13.5 received,
+      12.3 published.
+    - Step 6 in `~/mycar_mighty_path_follow` (640×400, depth 1, 12 fps,
+      `HAVE_MIGHTY`):
+      - "MightyCamera ready … 14.4 fps, publishing up to 12 fps";
+      - `ss` showed 1 connection;
+      - `/video` served an MJPEG stream (968 KB in 5 s) and `/drive`
+        returned 200;
+      - the drive exited cleanly;
+      - the rate warnings described in F27.
+
+    The expected output in the docs is these real lines. Still pending:
+    Ed's own check in the web UI, after the push.
 
 ## Not in this plan
 
