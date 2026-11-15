@@ -69,7 +69,7 @@ class MightyTemplateCase(unittest.TestCase):
 
 class CompleteTemplateTests(MightyTemplateCase):
     def config(self, **settings):
-        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=160, IMAGE_H=100,
+        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=160, IMAGE_H=100, IMAGE_DEPTH=1,
                              CAMERA_FRAMERATE=15), **settings)
         return self.car_config('complete', **settings)
 
@@ -99,12 +99,12 @@ class CompleteTemplateTests(MightyTemplateCase):
 
     def test_settings_default_when_an_older_config_lacks_them(self):
         cfg = SimpleNamespace(DONKEY_GYM=False, CAMERA_TYPE='MIGHTY',
-                              IMAGE_W=320, IMAGE_H=200, IMAGE_DEPTH=3)
+                              IMAGE_W=320, IMAGE_H=200, IMAGE_DEPTH=1)
         camera = complete.get_camera(cfg)
         self.addCleanup(camera.shutdown)
         self.assertEqual(camera.url, URL)
         self.assertEqual(camera.link.read_chunk_size, 1024)
-        self.assertEqual(camera.run_threaded().shape, (200, 320, 3))
+        self.assertEqual(camera.run_threaded().shape, (200, 320))
         self.assertIsNone(camera.framerate)
         self.measure.assert_not_called()
 
@@ -132,6 +132,19 @@ class CompleteTemplateTests(MightyTemplateCase):
         self.assertEqual(row['outputs'], ['cam/image_array'])
         self.assertTrue(row['threaded'])
 
+    def test_template_defaults_give_every_fix_in_one_error(self):
+        # complete's own defaults: 160x120, IMAGE_DEPTH 3, CAMERA_FRAMERATE 20.
+        cfg = self.car_config('complete', CAMERA_TYPE='MIGHTY')
+        self.assertEqual((cfg.IMAGE_W, cfg.IMAGE_H, cfg.IMAGE_DEPTH, cfg.CAMERA_FRAMERATE),
+                         (160, 120, 3, 20))
+        with self.assertRaises(CameraError) as caught:
+            complete.get_camera(cfg)
+        message = str(caught.exception)
+        self.assertIn('3 settings in myconfig.py need changing', message)
+        for fix in ['IMAGE_W = 192 and IMAGE_H = 120', 'set IMAGE_DEPTH = 1',
+                    'CAMERA_FRAMERATE = 18,']:
+            self.assertIn(fix, message)
+
     def test_drive_runs_with_the_mighty_camera(self):
         cfg = self.config(USE_SSD1306_128_32=False, DRIVE_TRAIN_TYPE='None')
         cfg.MAX_LOOPS = 10
@@ -144,7 +157,7 @@ class CompleteTemplateTests(MightyTemplateCase):
 
 class CvControlTemplateTests(MightyTemplateCase):
     def config(self, **settings):
-        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=320, IMAGE_H=200,
+        settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=320, IMAGE_H=200, IMAGE_DEPTH=1,
                              CAMERA_FRAMERATE=12), **settings)
         return self.car_config('cv_control', **settings)
 
@@ -190,7 +203,8 @@ class CvControlTemplateTests(MightyTemplateCase):
         cfg = self.config()
         camera = complete.get_camera(cfg)
         self.addCleanup(camera.shutdown)
-        hsv = cv2.cvtColor(camera.run_threaded(), cv2.COLOR_RGB2HSV)
+        grey = camera.run_threaded()  # depth 1: the camera refuses 3 (D16)
+        hsv = cv2.cvtColor(np.stack([grey] * 3, -1), cv2.COLOR_RGB2HSV)
         self.assertEqual(int(hsv[..., 1].max()), 0)
         mask = cv2.inRange(hsv, np.array(cfg.COLOR_THRESHOLD_LOW), np.array(cfg.COLOR_THRESHOLD_HIGH))
         self.assertEqual(int(mask.max()), 0)

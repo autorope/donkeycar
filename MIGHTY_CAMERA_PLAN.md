@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 9 / 11 commits verified**
+**Progress: 9 / 13 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -50,6 +50,9 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | D13 | 2026-11-14 | `get_camera` hands `CAMERA_TYPE = "MIGHTY"` to a helper, `get_mighty_camera(cfg)`, in `templates/complete.py`. The `path_follow` and `cv_control` templates reach the same helper through `add_camera`. The helper reads `MIGHTY_URL` and `MIGHTY_CAMERA_WARMUP_SECS` with `getattr` defaults (`http://192.168.7.1`, 5.0). A car directory created before these settings existed still works, so commits 8–10 only add the settings and comments to each `cfg_*.py`. | Claude | Proposed |
 | D14 | 2026-11-14 | **Frame-rate check.** The Mighty sets its own frame rate, and nothing can change it (F12). So `MightyCamera` checks `CAMERA_FRAMERATE` against the rate it actually receives. **Startup:** after the first frame, it counts frames for `MIGHTY_CAMERA_FPS_CHECK_SECS` (default 2.0 s). If `CAMERA_FRAMERATE` is more than 5% above the measured rate, startup fails with a `CameraError`. The message names the measured rate, says that VIO lowers it, and gives the largest whole rate within 5% (floor(measured × 1.05)) as the `myconfig.py` value to use. The rate is measured from the camera's capture timestamps, falling back to frames counted over the window. *Amended after Ed's car run:* the first version rounded the measurement down with no tolerance and timed frames by Pi arrival. It rejected `CAMERA_FRAMERATE = 15` while printing "the camera is sending 15.0 fps" (F14). Below 1 fps it says to check the camera instead. **Lower rates are honoured:** the camera publishes at most `CAMERA_FRAMERATE`, decoding a frame only when at least 0.9 periods have passed. A frame that arrives too early waits rather than being dropped, so camera jitter can't halve the rate. **During a run:** every 5 s it compares the received rate with the same rule. If the rate falls short, which is what happens once `path_follow` starts VIO after the camera's check, it logs one **warning** rather than an error. When the rate recovers, it logs that it has. **No check** when the config has no `CAMERA_FRAMERATE`. Ed accepted the proposal, the extra 2 s of startup, and the warning: "Yes, add it as commit 6; warning is fine". | Ed | Decided |
 | D15 | 2026-11-14 | Stop the SDK delivering frames in bursts of three (F15). The fix is to create `MightyWebDevice` in `MightyLink` with a small `read_chunk_size`, rather than patching the SDK. This affects poses as well as images. Ed: "We should add commit 7." The default is 1024 bytes, which gave the steadiest poses at no extra CPU cost (F15, F16). It can be changed with `MIGHTY_READ_CHUNK_BYTES`. | Ed | Decided |
+| D16 | 2026-11-15 | **Refuse a depth the camera cannot give.** The Mighty is monochrome. Its SDK README says "Mono camera frames…", and the JPEGs decode with identical channels (F2). So `IMAGE_DEPTH = 3` would be colour-shaped grey, and startup fails with: "set IMAGE_DEPTH = 1". The camera counts as monochrome when the first frame is raw GRAY8, a greyscale JPEG, or has three channels within 2 levels of each other. Raw RGB24/BGR24, or a JPEG whose channels differ, counts as colour, so a future colour camera still works at depth 3. Depth 1 output stays 2-D (H, W), as with `PiCamera`. Ed: "If not we should not start and produce an error that says what the IMAGE_DEPTH setting should be." | Ed | Decided |
+| D17 | 2026-11-15 | **One startup error for every configuration problem.** Every template's defaults fail the size, depth and frame-rate checks together (160×120 or 320×240, depth 3, 20 fps). Reporting them one at a time would take three restarts, so `MightyCamera` checks size and depth from the first frame, measures the frame rate anyway, and raises a single `CameraError`. One problem gives the message as before; several are numbered. Ed did not answer this part of the proposal. | Claude | Proposed |
+| D18 | 2026-11-15 | **`cv_control` refuses a monochrome camera.** Its default `LineFollower` finds the line by colour (F24) and crashes on 2-D frames (F25). So `cv_control.drive` refuses to start, before connecting, when the controller is that `LineFollower` and the camera is monochrome (`CAMERA_TYPE = "MIGHTY"`) or `IMAGE_DEPTH = 1`. A custom `CV_CONTROLLER_*` is allowed through. A brightness-based line follower is left for later. Ed: "cv_control cannot work with monochrome, so it should just not start if it is monochrome (or we have to change the algorithm, but that would be for later)." | Ed | Decided |
 | D11 | 2026-11-14 | All work goes on `mighty-camera-image`, branched from `zlite/mighty-camera-gps`. It ends with a PR into `zlite/mighty-camera-gps` for Chris to review and merge. `c740dab4` moved onto this branch, and the local `zlite/mighty-camera-gps` was reset to match origin (`a0c3b63e`). | Ed | Decided |
 
 ## Findings
@@ -80,6 +83,8 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F22 | 2026-11-14 | Giving any parameter of `MightyPose.__init__` a type annotation makes `mypy` check the body. Its attributes initialised to `None` (`latest`, `received_at`, `state`, `last_valid`) then failed on later assignments, so commit 7 gave them `Optional` types. | `mypy --check-untyped-defs` on the Mac |
 | F23 | 2026-11-14 | The camera's own rate drifts down over a session. In the evening, with VIO still DEGRADED from the commit 3 drive hours earlier (flag 2, about 146 features), the camera reported `fps_current` 14 (it had reported 15–16 earlier) and delivered 13.2–13.8 fps. Ed's `path_follow` start refused `CAMERA_FRAMERATE = 15` at 12.8–13.8 fps, and 12 started. The drop is on the camera side, not the Pi's, since `fps_current` is the camera's own figure. The cause is unknown; heat, or the long-running VIO session, are guesses. A `CAMERA_FRAMERATE` near the edge can therefore pass on one start and fail on a later one; leaving a few fps of margin avoids that. | VIO status and snapshot runs on murmurpi64; Ed's `path_follow` run |
 | F24 | 2026-11-14 | `cv_control`'s default autopilot, `LineFollower`, finds the line by colour. Its pixels must fall in HSV `COLOR_THRESHOLD_LOW` (0, 50, 50) to `COLOR_THRESHOLD_HIGH` (50, 255, 255), so saturation must be at least 50. The Mighty's frames are grey (F2), so their saturation is 0 and the mask is always empty: the default line follower cannot follow tape with `CAMERA_TYPE = "MIGHTY"`. Following tape would need a controller or thresholds based on brightness. This plan only documents it, and leaves the line follower unchanged. | `cfg_cv_control.py`; test `test_mono_frames_never_match_the_default_line_colour`; a real 320×200 frame on murmurpi64: saturation at most 0, 0 mask pixels |
+| F25 | 2026-11-15 | `LineFollower.run` crashes on a 2-D (H, W) image with `IndexError: too many indices for array`. Depth 1 output is 2-D, so `cv_control` with any depth 1 camera crashes once autopilot is engaged. | `LineFollower` on a 2-D frame, on murmurpi64 |
+| F26 | 2026-11-15 | The Keras autopilot could not be tested at depth 1: building `KerasLinear` fails with `NameError: name 'Input' is not defined` on both the Mac `.venv` and the car's `~/env`, so neither has a working Keras. From the code, a 2-D frame becomes (1, H, W) at inference while a depth 1 model expects (1, H, W, 1). That is a question for donkeycar's depth 1 path generally, not specific to the Mighty, and is not in this plan. | `KerasLinear(input_shape=(100, 160, 1))` on Mac and car |
 
 ## Design
 
@@ -383,10 +388,66 @@ Each box is ticked only after the checks listed under it pass (D2).
     - `cv_control` itself was not run on the car. `~/mycar` uses that
       template for Ed's MCP server, and the line follower couldn't see tape
       anyway (F24).
-- [ ] **10. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
+- [ ] **10. `IMAGE_DEPTH` check and one combined startup error (D16, D17).**
+  - `MightyCamera` decides from the first frame whether the camera is
+    monochrome, and refuses `IMAGE_DEPTH = 3` if so.
+  - Size, depth and frame-rate problems are reported together in one
+    `CameraError`.
+  - Its `image_d` default and the `snapshot` CLI's `--depth` default become
+    1.
+  - The comments in `cfg_complete.py`, `cfg_path_follow.py` and
+    `cfg_cv_control.py` say `IMAGE_DEPTH` must be 1.
+  - *Verify:* unit tests:
+    - the monochrome test (GRAY8, grey JPEG, grey RGB, a real colour frame);
+    - the depth error and its wording;
+    - a colour raw frame still giving RGB at depth 3;
+    - one problem reported alone, and several numbered in one error;
+    - the frame rate measured even when size or depth are wrong;
+    - the CLI default.
+  - *Verify:* template tests use `IMAGE_DEPTH = 1`, and the template defaults
+    (wrong size, depth 3, 20 fps) give one error naming all three fixes.
+  - *Verify:* the tests pass on the Mac and on the car.
+  - *Verify:* on the car, `snapshot --depth 3` prints the depth error, and
+    `--width 160 --height 120 --depth 3 --framerate 20` prints all three
+    fixes in one error.
+  - *Mac, 2026-11-15:*
+    - New tests cover:
+      - monochrome detection (grey, grey RGB, a grey JPEG, JPEG rounding,
+        colour);
+      - the depth rule;
+      - single and numbered errors;
+      - depth 3 refused for a grey camera and kept for a colour raw frame;
+      - the template defaults giving one error with all three fixes, at the
+        camera level and through `complete.get_camera`;
+      - `snapshot --depth 3`.
+    - Existing tests moved to `IMAGE_DEPTH = 1` and 2-D shapes.
+    - The full suite gives 229 passed, plus the F9 failure; `mypy` is clean.
+  - *Car pre-check, 2026-11-15 (before commit, `/tmp` copy):*
+    - `--depth 3` printed the depth error.
+    - `--width 160 --height 120 --depth 3 --framerate 20` printed "cannot
+      start: 3 settings in myconfig.py need changing", then the size fix
+      (192×120 or 640×400), the depth fix (1), and the rate fix (15, at
+      14.8 fps).
+    - At depth 1, 160×100 and 12 fps it started, logging "monochrome
+      frames", and saved a 160×100 mode `L` image.
+    - Still pending: the same checks from the committed code after the push.
+  - *Car directories:* `~/mycar_mighty_path_follow` and
+    `~/mycar_mighty_complete` don't set `IMAGE_DEPTH`, so they get the
+    template's 3 and will refuse to start after this commit until Ed adds
+    `IMAGE_DEPTH = 1`.
+- [ ] **11. `cv_control` refuses a monochrome camera (D18).** `cv_control.drive`
+  checks before building any part. With the default colour `LineFollower`,
+  `CAMERA_TYPE = "MIGHTY"` or `IMAGE_DEPTH = 1` fails with an error saying
+  why, and what to use instead.
+  - *Verify:* template tests:
+    - `MIGHTY` is refused without connecting to the camera;
+    - `IMAGE_DEPTH = 1` is refused;
+    - a custom `CV_CONTROLLER_*` is allowed through.
+  - *Verify:* the tests pass on the Mac and on the car.
+- [ ] **12. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
   `templates/basic.py`, and updates `cfg_basic.py`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
-- [ ] **11. Docs.** Adds a camera section to `docs/mighty.md` covering config,
+- [ ] **13. Docs.** Adds a camera section to `docs/mighty.md` covering config,
   image format, the allowed sizes and the size error (D12), sharing the connection, and a
   self-contained hardware runbook.
   - *Verify:* Claude runs the runbook as written on murmurpi64.
@@ -401,4 +462,6 @@ Each box is ticked only after the checks listed under it pass (D2).
   that don't match the camera's shape rather than reshaping the image.
 - Publishing depth (`DPT `), stereo pairs or the right camera.
 - Changes to the pose transform, gates or look-ahead controller.
+- A line follower that works on brightness, for monochrome cameras (D18).
+- Keras autopilots at `IMAGE_DEPTH = 1` (F26).
 - Editing any car directory (`~/mycar*`). Ed makes those config changes.

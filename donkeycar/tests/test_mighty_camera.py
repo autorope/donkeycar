@@ -12,8 +12,9 @@ from PIL import Image
 from donkeycar.parts.camera import CameraError
 from donkeycar.parts import mighty
 from donkeycar.parts.mighty import (MightyCamera, MightyLink, MightyPose, RAW_BGR24, RAW_GRAY8,
-                                    framerate_error, image_size_error, primary_image,
-                                    size_fits, suggest_image_sizes, supported_framerate)
+                                    RAW_RGB24, framerate_error, image_depth_error,
+                                    image_size_error, is_monochrome, primary_image, size_fits,
+                                    startup_error, suggest_image_sizes, supported_framerate)
 
 NATIVE = (640, 400)
 URL = 'http://192.168.7.1'
@@ -141,12 +142,30 @@ class CameraTests(unittest.TestCase):
         self.addCleanup(camera.shutdown)
         return camera
 
-    def test_depth_three_is_rgb_at_the_configured_size(self):
-        frame = self.camera(image_d=3).run_threaded()
+    def test_depth_three_is_refused_for_a_monochrome_camera(self):
+        with self.assertRaises(CameraError) as caught:
+            MightyCamera(URL, image_w=160, image_h=100, image_d=3, warmup_secs=1.0)
+        self.assertEqual(str(caught.exception),
+                         'MightyCamera cannot return IMAGE_DEPTH = 3: the camera is monochrome, '
+                         'so there is no colour to return. In myconfig.py set IMAGE_DEPTH = 1.')
+        self.clients[0].disconnect.assert_called_once()
+
+    def test_depth_three_is_rgb_from_a_colour_camera(self):
+        rgb = np.zeros((400, 640, 3), np.uint8)
+        rgb[..., 0] = 200  # red
+        self.initial = [{'kind': 'raw', 'width': 640, 'height': 400, 'format': RAW_RGB24,
+                         'data': rgb.tobytes()}]
+        camera = self.camera(image_d=3)
+        self.assertFalse(camera.monochrome)
+        frame = camera.run_threaded()
         self.assertEqual(frame.shape, (100, 160, 3))
         self.assertEqual(frame.dtype, np.uint8)
-        self.assertTrue((frame[..., 0] == frame[..., 1]).all())
-        self.assertTrue((frame[..., 1] == frame[..., 2]).all())
+        self.assertEqual(tuple(int(v) for v in frame[0, 0]), (200, 0, 0))
+
+    def test_default_depth_is_one(self):
+        camera = self.camera()
+        self.assertTrue(camera.monochrome)
+        self.assertEqual(camera.run_threaded().shape, (100, 160))
 
     def test_depth_one_is_mono(self):
         frame = self.camera(image_d=1).run_threaded()
@@ -155,7 +174,7 @@ class CameraTests(unittest.TestCase):
     def test_full_frame_when_size_is_none(self):
         camera = self.camera(image_w=None, image_h=None)
         self.assertEqual(camera.size, NATIVE)
-        self.assertEqual(camera.run_threaded().shape, (400, 640, 3))
+        self.assertEqual(camera.run_threaded().shape, (400, 640))
 
     def test_scaling_keeps_geometry(self):
         self.initial = [jpeg(split=320)]
@@ -269,6 +288,33 @@ class CameraTests(unittest.TestCase):
         with patch.dict('sys.modules', mighty_sdk=None):
             with self.assertRaisesRegex(ImportError, 'mighty-protocol'):
                 MightyCamera(URL, image_w=160, image_h=100)
+
+
+class DepthAndCombinedErrorTests(unittest.TestCase):
+    def test_monochrome_detection(self):
+        grey = np.full((40, 64), 90, np.uint8)
+        self.assertTrue(is_monochrome(Image.fromarray(grey, 'L')))
+        self.assertTrue(is_monochrome(Image.fromarray(np.stack([grey] * 3, -1), 'RGB')))
+        with Image.open(BytesIO(jpeg()['data'])) as frame:  # grey saved as an RGB JPEG
+            self.assertEqual(frame.mode, 'RGB')
+            self.assertTrue(is_monochrome(frame))
+        near = np.stack([grey, grey + 2, grey + 1], -1)  # JPEG rounding
+        self.assertTrue(is_monochrome(Image.fromarray(near, 'RGB')))
+        colour = np.stack([grey, grey, grey + 40], -1)
+        self.assertFalse(is_monochrome(Image.fromarray(colour, 'RGB')))
+
+    def test_depth_rule(self):
+        self.assertIsNotNone(image_depth_error(3, monochrome=True))
+        for depth, monochrome in [(1, True), (1, False), (3, False)]:
+            self.assertIsNone(image_depth_error(depth, monochrome))
+
+    def test_one_problem_is_reported_as_is(self):
+        self.assertEqual(startup_error(['only this']), 'only this')
+
+    def test_several_problems_are_numbered_in_one_error(self):
+        self.assertEqual(startup_error(['size fix', 'depth fix', 'rate fix']),
+                         'MightyCamera cannot start: 3 settings in myconfig.py need changing.\n'
+                         '  1. size fix\n  2. depth fix\n  3. rate fix')
 
 
 class FramerateRuleTests(unittest.TestCase):
@@ -440,6 +486,24 @@ class FramerateCameraTests(unittest.TestCase):
             camera.poll()
         warning.assert_not_called()
 
+    def test_template_defaults_give_every_fix_in_one_error(self):
+        # Size, depth and frame rate all wrong, as in every template's defaults:
+        # the rate is still measured, and all three fixes come in one error.
+        with self.assertRaises(CameraError) as caught:
+            with patch.object(MightyCamera, 'measure_fps', return_value=13.5) as measure:
+                MightyCamera(URL, image_w=160, image_h=120, image_d=3, warmup_secs=1.0,
+                             framerate=20, fps_check_secs=0.25)
+        measure.assert_called_once_with(0.25)
+        message = str(caught.exception)
+        self.assertTrue(message.startswith('MightyCamera cannot start: 3 settings'))
+        for fix in ['1. MightyCamera cannot return IMAGE_W=160, IMAGE_H=120',
+                    'IMAGE_W = 192 and IMAGE_H = 120',
+                    '2. MightyCamera cannot return IMAGE_DEPTH = 3', 'set IMAGE_DEPTH = 1',
+                    '3. MightyCamera cannot deliver CAMERA_FRAMERATE = 20',
+                    'CAMERA_FRAMERATE = 14,']:
+            self.assertIn(fix, message)
+        self.clients[0].disconnect.assert_called_once()
+
     def test_invalid_rate_arguments(self):
         for kwargs in [dict(framerate=0), dict(framerate=-5), dict(framerate=float('nan')),
                        dict(fps_check_secs=0), dict(fps_check_secs=float('inf'))]:
@@ -468,7 +532,7 @@ class SnapshotCliTests(unittest.TestCase):
         with Image.open(out) as saved:
             self.assertEqual(saved.size, (160, 100))
         report = printed.call_args[0][0]
-        self.assertIn('Camera frames 640x400 (16:10); saved 160x100 depth 3', report)
+        self.assertIn('Camera frames 640x400 (16:10); saved 160x100 depth 1', report)
         self.assertIn('distinct images published per second', report)
         self.sdk.MightyWebDevice.assert_called_once_with(base_url=URL, read_chunk_size=1024)
 
@@ -492,6 +556,15 @@ class SnapshotCliTests(unittest.TestCase):
             code = mighty.main(['snapshot', '--out', out, '--width', '160', '--height', '120'])
         self.assertEqual(code, 1)
         self.assertIn('IMAGE_W = 192 and IMAGE_H = 120', str(printed.call_args[0][0]))
+        self.assertFalse(os.path.exists(out))
+
+    def test_snapshot_depth_three_prints_the_fix(self):
+        out = os.path.join(self.temp.name, 'never.jpg')
+        with patch('builtins.print') as printed:
+            code = mighty.main(['snapshot', '--out', out, '--width', '160', '--height', '100',
+                                '--depth', '3'])
+        self.assertEqual(code, 1)
+        self.assertIn('set IMAGE_DEPTH = 1', str(printed.call_args[0][0]))
         self.assertFalse(os.path.exists(out))
 
     def test_snapshot_framerate_check_prints_the_fix(self):

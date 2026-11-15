@@ -698,6 +698,7 @@ MIGHTY_READ_CHUNK_BYTES = 1024  # SDK stream read size; 65536 (the SDK default) 
 # HAVE_MIGHTY too, poses and images share one connection. Frames are 640x400
 # mono and are scaled down, never stretched: IMAGE_W x IMAGE_H must be 16:10 and
 # no larger (e.g. 160x100, 320x200), or startup fails with the closest sizes.
+# The camera is monochrome: set IMAGE_DEPTH = 1 (3 is refused).
 # The camera sets its own frame rate (about 18 fps, 12-15 while VIO runs):
 # startup measures it and fails if CAMERA_FRAMERATE (DRIVE_LOOP_HZ by default)
 # is higher, naming the rate to use; leave a few fps of margin.

@@ -373,6 +373,40 @@ def framerate_error(requested: float, measured: float) -> Optional[str]:
             f'CAMERA_FRAMERATE = {supported}, or anything lower.')
 
 
+MONO_TOLERANCE = 2  # grey levels JPEG rounding may leave between equal channels
+
+
+def is_monochrome(picture: Image.Image) -> bool:
+    """True when a frame carries no colour (plan D16).
+
+    Greyscale modes are monochrome; an RGB frame is monochrome when its three
+    channels agree to within MONO_TOLERANCE everywhere, as the Mighty's JPEGs
+    do (F2). Real colour frames differ by far more.
+    """
+    if picture.mode in ('1', 'L', 'LA', 'I', 'I;16', 'F'):
+        return True
+    rgb = np.asarray(picture.convert('RGB'), dtype=np.int16)
+    return bool(np.abs(rgb[..., 0] - rgb[..., 1]).max() <= MONO_TOLERANCE
+                and np.abs(rgb[..., 1] - rgb[..., 2]).max() <= MONO_TOLERANCE)
+
+
+def image_depth_error(depth: int, monochrome: bool) -> Optional[str]:
+    """None if the camera can give IMAGE_DEPTH, else the fix (plan D16)."""
+    if depth == 3 and monochrome:
+        return ('MightyCamera cannot return IMAGE_DEPTH = 3: the camera is monochrome, '
+                'so there is no colour to return. In myconfig.py set IMAGE_DEPTH = 1.')
+    return None
+
+
+def startup_error(problems: Sequence[str]) -> str:
+    """One message for every configuration problem found at startup (plan D17)."""
+    if len(problems) == 1:
+        return problems[0]
+    numbered = '\n'.join(f'  {n}. {problem}' for n, problem in enumerate(problems, 1))
+    return (f'MightyCamera cannot start: {len(problems)} settings in myconfig.py need '
+            f'changing.\n{numbered}')
+
+
 def primary_image(image: Any) -> Optional[dict[str, Any]]:
     """The mono/primary member of an SDK image event, as the SDK selects it.
 
@@ -429,7 +463,9 @@ class MightyCamera:
     share the connection. Frames are scaled down without changing their aspect
     ratio: a size the camera cannot return raises CameraError naming the
     myconfig.py change that fixes it. image_w/image_h of None mean the full
-    frame. Output is uint8 RGB (H, W, 3) for image_d=3, or (H, W) for 1.
+    frame. Output is uint8 (H, W) for image_d=1, or RGB (H, W, 3) for 3; a
+    monochrome camera (the Mighty) refuses 3, since it has no colour to give.
+    Size, depth and frame-rate problems are all reported in one CameraError.
 
     The camera sets its own frame rate. With a framerate (CAMERA_FRAMERATE),
     startup measures the received rate for fps_check_secs and fails if the
@@ -441,7 +477,7 @@ class MightyCamera:
 
     def __init__(self, url: str = 'http://192.168.7.1',
                  image_w: Optional[int] = 160, image_h: Optional[int] = 120,
-                 image_d: int = 3, warmup_secs: float = 5.0,
+                 image_d: int = 1, warmup_secs: float = 5.0,
                  stale_secs: float = 1.0, framerate: Optional[float] = None,
                  fps_check_secs: float = 2.0,
                  read_chunk_size: int = READ_CHUNK_BYTES) -> None:
@@ -486,24 +522,34 @@ class MightyCamera:
             with self.lock:
                 first = self.pending
             assert first is not None
-            self.native: Size = open_image(first).size
+            try:
+                picture = open_image(first)
+                self.native: Size = picture.size
+                self.monochrome = is_monochrome(picture)
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                raise CameraError(f'MightyCamera could not decode its first image '
+                                  f'from {url}: {exc}') from exc
             self.size: Size = (image_w if image_w is not None else self.native[0],
                                image_h if image_h is not None else self.native[1])
-            error = image_size_error(self.size[0], self.size[1], self.native)
-            if error:
-                raise CameraError(error)
-            if not self.poll():
-                raise CameraError(f'MightyCamera could not decode its first image from {url}')
+            # Check everything before failing, so one restart fixes it all (D17).
+            problems = [error for error in (
+                image_size_error(self.size[0], self.size[1], self.native),
+                image_depth_error(image_d, self.monochrome)) if error]
             if framerate is not None:
                 self.measured_fps = self.measure_fps(fps_check_secs)
                 error = framerate_error(framerate, self.measured_fps)
                 if error:
-                    raise CameraError(error)
+                    problems.append(error)
+            if problems:
+                raise CameraError(startup_error(problems))
+            if not self.poll():
+                raise CameraError(f'MightyCamera could not decode its first image from {url}')
         except BaseException:
             self.release()
             raise
-        logger.info('MightyCamera ready: %dx%d depth %d from %dx%d frames%s',
+        logger.info('MightyCamera ready: %dx%d depth %d from %dx%d %s frames%s',
                     self.size[0], self.size[1], image_d, *self.native,
+                    'monochrome' if self.monochrome else 'colour',
                     '' if framerate is None else
                     f'; camera at {self.measured_fps:.1f} fps, publishing up to {framerate:g} fps')
 
@@ -692,7 +738,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     snap.add_argument('--seconds', type=float, default=5.0, help='how long to count frames')
     snap.add_argument('--width', type=int, default=None, help='IMAGE_W to test (default: full frame)')
     snap.add_argument('--height', type=int, default=None, help='IMAGE_H to test (default: full frame)')
-    snap.add_argument('--depth', type=int, choices=(1, 3), default=3)
+    snap.add_argument('--depth', type=int, choices=(1, 3), default=1,
+                      help='IMAGE_DEPTH to test; the Mighty is monochrome, so 1')
     snap.add_argument('--warmup', type=float, default=5.0)
     snap.add_argument('--framerate', type=float, default=None,
                       help='CAMERA_FRAMERATE to test (default: no frame-rate check)')

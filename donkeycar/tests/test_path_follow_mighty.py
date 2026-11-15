@@ -123,7 +123,7 @@ class TemplateTests(unittest.TestCase):
 
     def mighty_camera_config(self):
         self.cfg.CAMERA_TYPE = 'MIGHTY'
-        self.cfg.IMAGE_W, self.cfg.IMAGE_H = 160, 100
+        self.cfg.IMAGE_W, self.cfg.IMAGE_H, self.cfg.IMAGE_DEPTH = 160, 100, 1
         self.cfg.CAMERA_FRAMERATE = 12
         self.cfg.BGR2RGB = False
         self.addCleanup(MightyLink._links.clear)
@@ -143,7 +143,7 @@ class TemplateTests(unittest.TestCase):
         [pose] = [p for p in vehicle.parts if isinstance(p['part'], MightyPose)]
         self.assertEqual(camera['outputs'], ['cam/image_array'])
         self.assertTrue(camera['threaded'])
-        self.assertEqual(camera['part'].run_threaded().shape, (100, 160, 3))
+        self.assertEqual(camera['part'].run_threaded().shape, (100, 160))
         self.assertIs(camera['part'].client, pose['part'].client)
         self.assertEqual(len(self.clients), 1)
         self.sdk.MightyWebDevice.assert_called_once_with(base_url='http://192.168.7.1',

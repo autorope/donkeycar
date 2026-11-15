@@ -82,7 +82,7 @@ OAKD_RGB_SENSOR_CROP_Y = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
 # Mighty camera specific settings (CAMERA_TYPE = "MIGHTY"); see docs/mighty.md.
 # Frames are 640x400 mono and are scaled down, never stretched: IMAGE_W x IMAGE_H
 # must be 16:10 and no larger (e.g. 160x100, 320x200), or startup fails with
-# the closest sizes to use. IMAGE_DEPTH 3 repeats the grey in all channels.
+# the closest sizes to use. The camera is monochrome: set IMAGE_DEPTH = 1.
 # The camera sets its own frame rate (about 18 fps, about 15 while VIO runs):
 # startup measures it and fails if CAMERA_FRAMERATE is higher, naming the rate
 # to use; lower values publish at most CAMERA_FRAMERATE images per second.

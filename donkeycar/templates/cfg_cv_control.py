@@ -51,9 +51,10 @@ PATH_MASK = "~/mycar/data/tub_1_20-03-12/*.jpg"
 # match, so with this camera it needs a controller that works on brightness.
 # IMAGE_W x IMAGE_H must be 16:10 and no larger, e.g. 320x200 instead of the
 # default 320x240, or startup fails with the closest sizes; SCAN_Y and
-# TARGET_PIXEL are in pixels of that image. The camera sets its own frame rate
-# (about 18 fps, 12-15 while VIO runs): startup fails if CAMERA_FRAMERATE
-# (DRIVE_LOOP_HZ by default) is higher, naming the rate to use.
+# TARGET_PIXEL are in pixels of that image. IMAGE_DEPTH must be 1, since the
+# camera is monochrome. The camera sets its own frame rate (about 18 fps,
+# 12-15 while VIO runs): startup fails if CAMERA_FRAMERATE (DRIVE_LOOP_HZ by
+# default) is higher, naming the rate to use.
 MIGHTY_URL = 'http://192.168.7.1'   # the camera's USB Ethernet address
 MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
 MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0  # how long startup measures the frame rate
