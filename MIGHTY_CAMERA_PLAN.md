@@ -485,6 +485,10 @@ Each box is ticked only after the checks listed under it pass (D2).
     - The car directory's `myconfig.py`, `manage.py` and `config.py` kept
       their checksums: nothing there changed. Its `manage.py` is still the
       old copy until Ed runs `donkey update --template cv_control`.
+    - Ed then ran `donkey update --template cv_control` in that directory.
+      Its `manage.py` now matches the template byte for byte, and
+      `python manage.py drive` refuses with the same error and no camera
+      connection. `myconfig.py` kept `MIGHTY` and `IMAGE_DEPTH = 1`.
 - [ ] **12. `basic` template.** Adds a `MIGHTY` branch to the camera chain in
   `templates/basic.py`, and updates `cfg_basic.py`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
