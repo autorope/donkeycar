@@ -96,7 +96,7 @@ class CompleteTemplateTests(MightyTemplateCase):
 
     def test_template_default_framerate_fails_with_the_fix(self):
         cfg = self.config(CAMERA_FRAMERATE=20)
-        with self.assertRaisesRegex(CameraError, 'sending 17.8 fps.*CAMERA_FRAMERATE = 17,'):
+        with self.assertRaisesRegex(CameraError, 'sending 17.8 fps.*CAMERA_FRAMERATE = 18,'):
             complete.get_camera(cfg)
 
     def test_fps_check_secs_is_passed_through(self):

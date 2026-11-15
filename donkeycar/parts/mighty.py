@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import deque
 from copy import deepcopy
 from io import BytesIO
 import logging
@@ -326,15 +327,24 @@ def image_size_error(width: int, height: int, native: Size) -> Optional[str]:
             f'Any {ratio} size up to {native_w}x{native_h} works.')
 
 
+FRAMERATE_TOLERANCE = 0.05  # measurement noise and camera jitter, as a fraction
+
+
+def supported_framerate(measured: float) -> int:
+    """The largest whole CAMERA_FRAMERATE the camera keeps up with (plan D14)."""
+    return math.floor(measured * (1 + FRAMERATE_TOLERANCE) + 1e-9)
+
+
 def framerate_error(requested: float, measured: float) -> Optional[str]:
     """None if the camera keeps up with CAMERA_FRAMERATE, else the fix (plan D14).
 
-    The camera sets its own rate, so the most donkeycar can ask for is the
-    measured rate rounded down to a whole frame per second.
+    The camera sets its own rate, so CAMERA_FRAMERATE may be at most the
+    measured rate plus FRAMERATE_TOLERANCE; the fix names the largest whole
+    rate within that.
     """
-    supported = math.floor(measured)
-    if requested <= supported:
+    if requested <= measured * (1 + FRAMERATE_TOLERANCE) + 1e-9:
         return None
+    supported = supported_framerate(measured)
     if supported < 1:
         return (f'MightyCamera is sending only {measured:.1f} fps, too slow for '
                 f'CAMERA_FRAMERATE = {requested:g}. Check the camera connection; '
@@ -429,13 +439,15 @@ class MightyCamera:
         self.framerate = framerate
         self.measured_fps: Optional[float] = None
         self.last_published: Optional[float] = None
-        self.rate_window: Optional[tuple[float, int]] = None
+        self.rate_window: Optional[float] = None
         self.warned_rate = False
         self.lock = threading.Lock()
         self.new_frame = threading.Event()
         self.pending: Optional[dict[str, Any]] = None
         self.received_at: Optional[float] = None
         self.frames_received = 0
+        # (Pi arrival time, camera capture timestamp_ns or None), newest last.
+        self.arrivals: deque[tuple[float, Optional[int]]] = deque(maxlen=256)
         self.frame: Optional[np.ndarray] = None
         self.running = True
         self.released = False
@@ -477,12 +489,25 @@ class MightyCamera:
 
     def measure_fps(self, seconds: float) -> float:
         """Frames per second received over the next `seconds`."""
-        with self.lock:
-            count, started = self.frames_received, time.monotonic()
+        started = time.monotonic()
         time.sleep(seconds)
+        return self.rate_since(started)
+
+    def rate_since(self, started: float) -> float:
+        """Frame rate of the frames that arrived since `started` (plan D14).
+
+        The SDK hands frames over in bursts, so Pi arrival times say little
+        about the rate (F14). The camera's capture timestamps are used instead:
+        (n - 1) intervals over the first-to-last capture time. Without usable
+        timestamps it falls back to frames counted over the elapsed time.
+        """
         with self.lock:
-            count, ended = self.frames_received - count, time.monotonic()
-        return count / (ended - started) if ended > started else 0.0
+            ended = time.monotonic()
+            frames = [stamp for arrived, stamp in self.arrivals if arrived > started]
+        stamps = [stamp for stamp in frames if stamp is not None]
+        if len(stamps) == len(frames) >= 2 and stamps[-1] > stamps[0]:
+            return (len(stamps) - 1) / ((stamps[-1] - stamps[0]) / 1e9)
+        return len(frames) / (ended - started) if ended > started else 0.0
 
     def seconds_until_due(self, now: float) -> float:
         """How long until the next image may be published under framerate."""
@@ -494,24 +519,20 @@ class MightyCamera:
         """Every RATE_WINDOW_SECS, warn once if the camera falls below framerate."""
         if self.framerate is None:
             return
-        with self.lock:
-            received = self.frames_received
         if self.rate_window is None:
-            self.rate_window = (now, received)
+            self.rate_window = now
             return
-        started, count = self.rate_window
-        elapsed = now - started
-        if elapsed < self.RATE_WINDOW_SECS:
+        if now - self.rate_window < self.RATE_WINDOW_SECS:
             return
-        self.rate_window = (now, received)
-        rate = (received - count) / elapsed
+        rate = self.rate_since(self.rate_window)
+        self.rate_window = now
         if framerate_error(self.framerate, rate):
             if not self.warned_rate:
                 logger.warning('MightyCamera: the camera is now sending %.1f fps, below '
                                'CAMERA_FRAMERATE = %g; images repeat between frames. It drops '
                                'to about 15 fps while VIO runs. Set CAMERA_FRAMERATE = %d or '
                                'lower in myconfig.py.', rate, self.framerate,
-                               max(1, math.floor(rate)))
+                               max(1, supported_framerate(rate)))
                 self.warned_rate = True
         elif self.warned_rate:
             logger.info('MightyCamera: frame rate back to %.1f fps', rate)
@@ -526,6 +547,9 @@ class MightyCamera:
             self.pending = selected
             self.received_at = time.monotonic()
             self.frames_received += 1
+            stamp = selected.get('timestamp_ns')
+            self.arrivals.append((self.received_at,
+                                  stamp if isinstance(stamp, int) and stamp > 0 else None))
             self.new_frame.set()
 
     def poll(self) -> bool:
