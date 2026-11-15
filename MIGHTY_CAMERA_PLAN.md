@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 3 / 9 commits verified**
+**Progress: 4 / 9 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -133,7 +133,7 @@ Each box is ticked only after the checks listed under it pass (D2).
     - It logged `Mighty pose stream: fresh` with `valid=True`.
     - Shutdown was clean: no traceback, and no process left running.
     - Tracking then degraded with the camera standing still (F10).
-- [ ] **4. Add the `MightyCamera` part, unit tests, and a `snapshot` CLI.**
+- [x] **4. Add the `MightyCamera` part, unit tests, and a `snapshot` CLI.**
   - The CLI runs as
     `python -m donkeycar.parts.mighty snapshot --url ... --out frame.jpg --seconds 5`.
     It saves one frame and prints the measured fps.
@@ -175,7 +175,15 @@ Each box is ticked only after the checks listed under it pass (D2).
     - At 160×120 it printed the D12 message exactly and exited 1.
     - Over three runs it received 13.4–15.3 fps, against 14.0 fps for a
       plain SDK client with VIO running.
-    - Still pending: the same checks from the committed code after the push.
+  - *Verified 2026-11-14 on murmurpi64 at `47f71e0b`:* Ed pushed, and the
+    car pulled.
+    - The tests passed on the car: 61 passed.
+    - `snapshot --width 160 --height 120` printed the D12 message and exited
+      1.
+    - At 160×100 it saved a frame and received 14.9 fps.
+    - With no size given, it saved a 640×400 RGB frame and received 15.0 fps.
+    - A plain SDK client measured 14.8 fps right afterwards, with VIO still
+      DEGRADED.
 - [ ] **5. `complete` template.** Adds a `MIGHTY` branch to `get_camera()` in
   `templates/complete.py`, and updates `cfg_complete.py`.
   - *Verify:* a test that `get_camera` builds a `MightyCamera` from config,
