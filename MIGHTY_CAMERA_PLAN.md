@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 11 / 13 commits verified**
+**Progress: 11 / 14 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -87,6 +87,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F25 | 2026-11-15 | `LineFollower.run` crashes on a 2-D (H, W) image with `IndexError: too many indices for array`. Depth 1 output is 2-D, so `cv_control` with any depth 1 camera crashes once autopilot is engaged. | `LineFollower` on a 2-D frame, on murmurpi64 |
 | F26 | 2026-11-15 | The Keras autopilot could not be tested at depth 1: building `KerasLinear` fails with `NameError: name 'Input' is not defined` on both the Mac `.venv` and the car's `~/env`, so neither has a working Keras. From the code, a 2-D frame becomes (1, H, W) at inference while a depth 1 model expects (1, H, W, 1). That is a question for donkeycar's depth 1 path generally, not specific to the Mighty, and is not in this plan. | `KerasLinear(input_shape=(100, 160, 1))` on Mac and car |
 | F27 | 2026-11-15 | In runbook step 6 (`path_follow`, 640×400, depth 1, `CAMERA_FRAMERATE = 12`, `HAVE_MIGHTY` starting VIO, and the web UI's `/video` stream being read), the camera stopped sending images for over 1 s once. Its rate then fell to 10.5 fps, recovered to 13.4, and fell to 8.7 fps. The startup check had measured 14.4 fps. The runtime warnings fired once each as designed, and the drive kept running. The cause is not isolated: VIO starting (the camera resets, F10), encoding the 640×400 web stream on the Pi, or the SDK's CPU use (F16) are all candidates. A `CAMERA_FRAMERATE` that passes at startup can therefore still be too high once VIO runs. The docs now say so. | Runbook step 6 on murmurpi64 |
+| F28 | 2026-11-15 | Plugged into the Pi over USB, the Mighty is a wired Ethernet device whose DHCP offers a default route and DNS. NetworkManager prefers it to WiFi, so the car drops off WiFi (Ed's report). On murmurpi64 (Debian 13), its connection is named `netplan-eth0` (TYPE `ethernet`, DEVICE `usb0`), not Ed's example "Wired connection 2". So the docs find the connection by TYPE and DEVICE, not by name. That Pi already had `ipv4.never-default` and `ipv4.ignore-auto-dns` set to `yes` (the IPv6 pair `no`), and its only default route was via `wlan0`. | Ed; read-only `nmcli` and `ip route` on murmurpi64 |
 
 ## Design
 
@@ -551,6 +552,27 @@ Each box is ticked only after the checks listed under it pass (D2).
     the Mighty, timing and template tests passed (117 passed), and the class
     docstring is importable there ("Decides which Mighty poses are in order,
     and logs their timing to a file."). Still pending: Ed's reading.
+- [ ] **14. Document keeping the Pi on WiFi with the camera plugged in.**
+  Ed: "the mighty camera acts as a wired ethernet device over usb. This has
+  higher priority than the WiFi, so the car loses its WiFi connection … So we
+  need to document that." `docs/mighty.md` gains a Setup subsection
+  (linked from Setup and from the runbook's prerequisites):
+  - find the camera's connection: TYPE `ethernet`, DEVICE `usbN`, with an
+    `nmcli -t … | awk` one-liner that puts its name in `$CAM`;
+  - set `ipv4/ipv6.never-default yes` and `ipv4/ipv6.ignore-auto-dns yes`,
+    then `nmcli connection up`;
+  - check the four settings, a single `default` route via `wlan0`, and the
+    camera still answering.
+  - *Verify:* Ed follows the steps on a Pi where the camera takes WiFi away,
+    and the car stays on WiFi.
+  - *Car, 2026-11-15 (read-only; Claude changed no network settings, since
+    SSH runs over that WiFi):*
+    - The one-liner printed `netplan-eth0`, the camera's connection on
+      `usb0`.
+    - `ipv4.never-default` and `ipv4.ignore-auto-dns` were already `yes`;
+      the IPv6 pair was `no`.
+    - The only default route was via `wlan0`, and the camera answered `200`
+      (F28).
 
 ## Not in this plan
 

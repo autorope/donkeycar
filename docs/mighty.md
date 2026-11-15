@@ -47,7 +47,10 @@ CAMERA_TYPE = 'MOCK'  # or 'MIGHTY' to use the Mighty's own images; see below
 AUTO_RECORD_ON_THROTTLE = False
 ```
 
-Connect the camera over USB Ethernet and run `python manage.py drive`.
+Connect the camera over USB Ethernet and run `python manage.py drive`. On a
+Pi that reaches the network over WiFi, first make sure the camera cannot take
+over the network: see
+[Keep the Pi on WiFi with the camera plugged in](#keep-the-pi-on-wifi-with-the-camera-plugged-in).
 If the camera rejects the VIO start request, start VIO in its visualizer.
 `Mighty pose stream: fresh` confirms receipt of current tracking data;
 `DriveTelemetry ... valid=True` additionally confirms valid position,
@@ -64,6 +67,90 @@ not provide map persistence or automatically recover alignment.
 0 means +X, 90 means +Y. The transform normalizes the body quaternion and
 projects this forward axis onto the ground plane. Invalid or near-vertical
 forward projections cannot supply a driving pose.
+
+### Keep the Pi on WiFi with the camera plugged in
+
+Over USB, the Mighty appears to the Pi as a wired Ethernet device, and its
+DHCP offers the Pi a default route and DNS servers. NetworkManager prefers
+wired connections to WiFi, so once the camera is plugged in, the Pi can send
+its traffic (and DNS lookups) to the camera instead of the WiFi network. The
+car then drops off WiFi, and SSH and the web UI stop working. The fix is to
+tell the camera's connection never to become the default route and to ignore
+its DNS servers. The camera stays reachable at `http://192.168.7.1`, because
+that address is on the camera's own link.
+
+Do this once per Pi. NetworkManager keeps the setting across reboots and
+re-plugs. Run every command on the Pi.
+
+- If the Pi has already dropped off WiFi, unplug the camera. WiFi should
+  return.
+- NetworkManager should keep the camera's connection profile while it is
+  unplugged, so steps 1 and 2 still find it.
+- If they don't, use the Pi's own keyboard and screen with the camera plugged
+  in.
+
+**1. Find the camera's connection.** It is the one whose TYPE is `ethernet`
+and whose DEVICE is `usb` followed by a number (`usb0`, `usb1`, …):
+
+```sh
+nmcli connection show
+```
+
+Example from a Pi running Debian 13. Here the camera's connection is
+`netplan-eth0`. On Raspberry Pi OS it is often named like `Wired connection 2`.
+The name differs from Pi to Pi, so go by TYPE and DEVICE:
+
+```text
+NAME                    UUID                                  TYPE      DEVICE
+netplan-wlan0-RAMIEL77  cf73f240-41a1-3914-8b9d-cf0b68c69aa7  wifi      wlan0
+netplan-eth0            75a1216a-9d1a-30cd-8aca-ace5526ec021  ethernet  usb0
+lo                      af41fadc-cd85-403b-955b-937a02fdd035  loopback  lo
+```
+
+**2. Put its name in a shell variable.** This prints the name of the
+`ethernet` connection on a `usb` device:
+
+```sh
+CAM=$(nmcli -t -f NAME,TYPE,DEVICE connection show | awk -F: '$2 == "802-3-ethernet" && $3 ~ /^usb/ {print $1}')
+echo "camera connection: [$CAM]"
+```
+
+Expected: one name between the brackets, e.g. `camera connection:
+[netplan-eth0]`. If it is empty, the camera has never been plugged in to this
+Pi: plug it in and repeat. If it prints more than one name, set `CAM` by hand
+to the camera's name from step 1, e.g. `CAM="Wired connection 2"`.
+
+**3. Stop it taking the default route or DNS, and re-apply it.**
+
+```sh
+sudo nmcli connection modify "$CAM" \
+  ipv4.never-default yes \
+  ipv6.never-default yes \
+  ipv4.ignore-auto-dns yes \
+  ipv6.ignore-auto-dns yes
+sudo nmcli connection up "$CAM"
+```
+
+`nmcli connection up` needs the camera plugged in. Re-applying the camera's
+connection does not touch the WiFi connection, so it is safe over SSH.
+
+**4. Check.**
+
+```sh
+nmcli -f ipv4.never-default,ipv6.never-default,ipv4.ignore-auto-dns,ipv6.ignore-auto-dns connection show "$CAM"
+ip route | grep '^default'
+curl -s -o /dev/null -w "%{http_code}\n" http://192.168.7.1/
+```
+
+Expected: each of the four settings listed with `yes`. Exactly one
+`default` line, and it uses the WiFi device (`dev wlan0`), not `usbN`. Then
+`200` from the camera. The last two lines from murmurpi64, with the camera
+plugged in:
+
+```text
+default via 10.0.0.1 dev wlan0 proto dhcp src 10.0.0.32 metric 600
+200
+```
 
 ## Image camera (`CAMERA_TYPE = "MIGHTY"`)
 
@@ -164,6 +251,8 @@ standalone; the expected output below was recorded on murmurpi64 on
 
 - The Mighty is plugged into the Pi over USB and powered. It serves
   `http://192.168.7.1` over USB Ethernet.
+- The camera's connection cannot take the Pi off WiFi; see
+  [Keep the Pi on WiFi with the camera plugged in](#keep-the-pi-on-wifi-with-the-camera-plugged-in).
 - The donkeycar checkout on the Pi is on a branch that has this camera:
   `mighty-camera-image`, or `zlite/mighty-camera-gps` once that is merged.
 - The donkeycar Python environment has the Mighty SDK (`mighty-protocol`)
