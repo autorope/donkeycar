@@ -310,10 +310,34 @@ Each box is ticked only after the checks listed under it pass (D2).
     - Ed ran `mycar_mighty_path_follow` (640×400, `HAVE_MIGHTY = True`) on
       this code. It started at `CAMERA_FRAMERATE = 12` after 15 was refused
       at 12.8–13.8 fps (F23).
-- [ ] **8. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
-  types list and the warm-up setting. `MIGHTY_URL` is already there.
+- [ ] **8. `path_follow` template.** Updates `cfg_path_follow.py`:
+  - `MIGHTY` joins the camera types list;
+  - `MIGHTY_READ_CHUNK_BYTES` joins the pose settings, since `add_mighty`
+    already reads it from commit 7;
+  - a camera block explains the 16:10 size rule, the frame-rate check (the
+    template's `CAMERA_FRAMERATE = DRIVE_LOOP_HZ` is 20, more than the camera
+    delivers) and sharing with poses, and adds `MIGHTY_CAMERA_WARMUP_SECS`
+    and `MIGHTY_CAMERA_FPS_CHECK_SECS`.
+
+  `MIGHTY_URL` is already there.
   - *Verify:* `test_path_follow_mighty.py` gains a case with `HAVE_MIGHTY` and
     `CAMERA_TYPE="MIGHTY"` set, checking that both parts share one client.
+  - *Verify:* on the car, a `manage.py drive` run of
+    `~/mycar_mighty_path_follow` holds exactly one TCP connection to the
+    camera, checked with `ss`.
+  - *Mac, 2026-11-14:* `test_path_follow_mighty.py`'s `build()` can now run
+    `add_camera` for real against fake SDK clients. 4 new tests:
+    - the config documents the camera settings;
+    - `HAVE_MIGHTY` plus `CAMERA_TYPE="MIGHTY"` builds one client and one
+      `MightyWebDevice` (1024-byte reads) shared by `MightyPose` and
+      `MightyCamera`, which publishes a threaded 160×100 `cam/image_array`;
+      shutting the camera down keeps the connection, and shutting the pose
+      reader down closes it;
+    - the camera alone, with no pose reader;
+    - the default `CAMERA_FRAMERATE = 20` fails with the rate to use.
+
+    All 11 `path_follow` tests pass. The full suite gives 216 passed, plus
+    the F9 failure.
 - [ ] **9. `cv_control` template.** Updates `cfg_cv_control.py`; the template
   already goes through `add_camera`.
   - *Verify:* a template test with `CAMERA_TYPE="MIGHTY"`.
