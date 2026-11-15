@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 11 / 12 commits verified**
+**Progress: 11 / 13 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -532,6 +532,18 @@ Each box is ticked only after the checks listed under it pass (D2).
 
     The expected output in the docs is these real lines. Still pending:
     Ed's own check in the web UI, after the push.
+- [ ] **13. Docstrings for `MightyTiming`.** Ed: "It's not clear what class
+  MightyTiming does; can you add a clear doc string?" This commit adds
+  docstrings only, with no behaviour change:
+  - The class docstring describes its two jobs: the ordering gate (`pose()`
+    returning True decides whether `MightyPose` keeps a pose, and `reset()`
+    starts a new epoch) and the JSONL timing log.
+  - It explains `excess_delay_ms` and the other fields, the bounded
+    non-blocking queue, and thread safety.
+  - Each method has a docstring, and the module docstring is updated.
+  - *Verify:* Ed reads it and finds it clear.
+  - *Verify:* `test_mighty_timing.py` and `test_mighty.py` pass on the Mac
+    and on the car. On the Mac, 2026-11-15: 26 passed.
 
 ## Not in this plan
 
