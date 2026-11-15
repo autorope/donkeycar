@@ -818,9 +818,25 @@ def get_camera(cfg):
         elif cfg.CAMERA_TYPE == "MOCK":
             from donkeycar.parts.camera import MockCamera
             cam = MockCamera(image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH)
+        elif cfg.CAMERA_TYPE == "MIGHTY":
+            cam = get_mighty_camera(cfg)
         else:
             raise (Exception("Unkown camera type: %s" % cfg.CAMERA_TYPE))
     return cam
+
+
+def get_mighty_camera(cfg):
+    """
+    Build the MightyCamera image part for CAMERA_TYPE = "MIGHTY".
+
+    The Mighty settings default when absent so car directories created from
+    an older template still work. It shares one connection with the Mighty
+    pose reader when HAVE_MIGHTY is also set.
+    """
+    from donkeycar.parts.mighty import MightyCamera
+    return MightyCamera(url=getattr(cfg, 'MIGHTY_URL', 'http://192.168.7.1'),
+                        image_w=cfg.IMAGE_W, image_h=cfg.IMAGE_H, image_d=cfg.IMAGE_DEPTH,
+                        warmup_secs=getattr(cfg, 'MIGHTY_CAMERA_WARMUP_SECS', 5.0))
 
 
 def add_camera(V, cfg, camera_type):

@@ -47,6 +47,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | D9 | 2026-11-14 | Reuse `MIGHTY_URL`. Add only `MIGHTY_CAMERA_WARMUP_SECS`. | Claude | Proposed |
 | D10 | 2026-11-14 | Claude edits code on the Mac and commits each step. Ed reviews and pushes, then the car pulls for testing. Ed first asked to commit himself, then said: "you should create the commits before I push". | Ed | Decided |
 | D12 | 2026-11-14 | How a size is checked, and what the error says (implements D6). The camera's size comes from the first frame received during warm-up. With 640×400, the valid sizes are 8k×5k for k = 1…80 (e.g. 80×50, 160×100, 320×200, 640×400). A requested size is invalid if it is non-positive, if its aspect ratio differs (`IMAGE_W * native_h != IMAGE_H * native_w`), or if it is larger than the frames. **Suggested size** (Ed, 2026-11-14: "choose the one with the most pixels that fits one or both requested dimensions… and also suggest full frame"): there are two candidates. One is the largest valid size whose width is ≤ `IMAGE_W`, which equals `IMAGE_W` when it can. The other is the largest valid size whose height is ≤ `IMAGE_H`. Both are capped at the camera's size, and a dimension with no valid size below it gives no candidate; if neither gives one, the smallest valid size is suggested. The suggestion is the candidate with more pixels; on a tie, the width-based one wins. The full frame is always offered as well, unless it is the suggestion itself. The error names the request, the camera's size and shape, and gives both as lines to paste into `myconfig.py`. As implemented in commit 4, the message for the default 160×120 reads: *"MightyCamera cannot return IMAGE_W=160, IMAGE_H=120 without stretching: the camera sends 640x400 (16:10). In myconfig.py set IMAGE_W = 192 and IMAGE_H = 120 (keeps your height), or IMAGE_W = 640 and IMAGE_H = 400 (the full frame). Any 16:10 size up to 640x400 works."* The labels are "keeps your width/height", "the largest that fits your width/height", "the smallest size" and "the full frame". If the camera's size changes mid-run, those frames are dropped, with one logged error, and are never stretched. | Claude | Proposed |
+| D13 | 2026-11-14 | `get_camera` hands `CAMERA_TYPE = "MIGHTY"` to a helper, `get_mighty_camera(cfg)`, in `templates/complete.py`. The `path_follow` and `cv_control` templates reach the same helper through `add_camera`. The helper reads `MIGHTY_URL` and `MIGHTY_CAMERA_WARMUP_SECS` with `getattr` defaults (`http://192.168.7.1`, 5.0). A car directory created before these settings existed still works, so commits 6–8 only add the settings and comments to each `cfg_*.py`. | Claude | Proposed |
 | D11 | 2026-11-14 | All work goes on `mighty-camera-image`, branched from `zlite/mighty-camera-gps`. It ends with a PR into `zlite/mighty-camera-gps` for Chris to review and merge. `c740dab4` moved onto this branch, and the local `zlite/mighty-camera-gps` was reset to match origin (`a0c3b63e`). | Ed | Decided |
 
 ## Findings
@@ -188,6 +189,19 @@ Each box is ticked only after the checks listed under it pass (D2).
   `templates/complete.py`, and updates `cfg_complete.py`.
   - *Verify:* a test that `get_camera` builds a `MightyCamera` from config,
     with the SDK mocked.
+  - *Mac, 2026-11-14:* the new `test_mighty_templates.py` has 6 tests for
+    `complete`, all passing. They use a car directory created by
+    `donkey createcar`, with the SDK mocked, and cover:
+    - the config has the new settings;
+    - `get_camera` builds a camera with the configured URL, size and depth;
+    - a config missing the `MIGHTY_*` settings falls back to defaults;
+    - the default 160×120 fails with the fix;
+    - `add_camera` publishes a threaded `cam/image_array`;
+    - a 10-loop `complete.drive()` connects, then unsubscribes and
+      disconnects at shutdown.
+
+    The full suite gives 185 passed, plus the same unrelated F9 failure.
+    Still pending: the tests on the car.
 - [ ] **6. `path_follow` template.** Updates `cfg_path_follow.py`: the camera
   types list and the warm-up setting. `MIGHTY_URL` is already there.
   - *Verify:* `test_path_follow_mighty.py` gains a case with `HAVE_MIGHTY` and

@@ -34,6 +34,7 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 # 'CSIC': High-speed CSI camera (e.g. Arducam)
 # 'D435': Intel Realsense D435
 # 'OAKD': Luxonis OAK-D
+# 'MIGHTY': Mighty camera over USB Ethernet; IMAGE_W x IMAGE_H must be 16:10, e.g. 160x100
 # 'MOCK': Simulation/Testing or when using GPS path following
 CAMERA_TYPE = "PICAM"
 
@@ -77,6 +78,13 @@ OAKD_RGB_ISP_SCALE_NUM = 1      # Used when OAKD_RGB_OUTPUT_MODE == "isp"
 OAKD_RGB_ISP_SCALE_DEN = 6      # Used when OAKD_RGB_OUTPUT_MODE == "isp"
 OAKD_RGB_SENSOR_CROP_X = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
 OAKD_RGB_SENSOR_CROP_Y = None   # Used when OAKD_RGB_OUTPUT_MODE == "video"
+
+# Mighty camera specific settings (CAMERA_TYPE = "MIGHTY"); see docs/mighty.md.
+# Frames are 640x400 mono and are scaled down, never stretched: IMAGE_W x IMAGE_H
+# must be 16:10 and no larger (e.g. 160x100, 320x200), or startup fails with
+# the closest sizes to use. IMAGE_DEPTH 3 repeats the grey in all channels.
+MIGHTY_URL = 'http://192.168.7.1'   # the camera's USB Ethernet address
+MIGHTY_CAMERA_WARMUP_SECS = 5.0     # fail at startup if no image arrives by then
 
 
 # ------------------------------------------------------------------------------
