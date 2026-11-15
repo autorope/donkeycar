@@ -1,13 +1,20 @@
-"""MightyCamera raw body poses and a separate planar pose transform."""
+"""MightyCamera parts: shared SDK link, raw body poses, planar pose transform and images."""
 from __future__ import annotations
 
+import argparse
 from copy import deepcopy
+from io import BytesIO
 import logging
 import math
+import sys
 import threading
 import time
-from typing import Any, Callable, ClassVar
+from typing import Any, Callable, ClassVar, Optional, Sequence
 
+import numpy as np
+from PIL import Image
+
+from donkeycar.parts.camera import CameraError
 from donkeycar.parts.mighty_timing import MightyTiming
 
 logger = logging.getLogger(__name__)
@@ -241,3 +248,308 @@ class PoseDriveGate:
         if mode != 'user' and not valid:
             return 0.0, 0.0
         return steering, throttle
+
+
+# Raw pixel formats from mighty_protocol.RAW_FORMAT that MightyCamera accepts.
+RAW_GRAY8, RAW_RGB24, RAW_BGR24 = 1, 2, 3
+ASPECT_NAMES = {(8, 5): '16:10'}
+
+Size = tuple[int, int]
+
+
+def aspect(width: int, height: int) -> Size:
+    """Reduce a frame size to its smallest whole-number aspect ratio."""
+    divisor = math.gcd(width, height)
+    return width // divisor, height // divisor
+
+
+def aspect_name(width: int, height: int) -> str:
+    ratio = aspect(width, height)
+    return ASPECT_NAMES.get(ratio, f'{ratio[0]}:{ratio[1]}')
+
+
+def size_fits(width: int, height: int, native: Size) -> bool:
+    """True when width x height is the camera's shape, no larger than its frames."""
+    native_w, native_h = native
+    return (0 < width <= native_w and 0 < height <= native_h
+            and width * native_h == height * native_w)
+
+
+def suggest_image_sizes(width: int, height: int, native: Size) -> list[tuple[Size, str]]:
+    """Sizes to offer when width x height cannot be returned (plan D12).
+
+    One candidate is the largest valid size whose width fits IMAGE_W, the other
+    the largest whose height fits IMAGE_H, both capped at the frame size. The
+    suggestion is the candidate with more pixels (the width one on a tie), or
+    the smallest valid size when neither dimension admits one. The full frame
+    is always offered too, unless it is already the suggestion.
+    """
+    native_w, native_h = native
+    step_w, step_h = aspect(native_w, native_h)
+    most = native_w // step_w
+    candidates: list[tuple[Size, str]] = []
+    k = min(width // step_w, most)
+    if k >= 1:
+        exact = k * step_w == width
+        candidates.append(((k * step_w, k * step_h),
+                           'keeps your width' if exact else 'the largest that fits your width'))
+    k = min(height // step_h, most)
+    if k >= 1:
+        exact = k * step_h == height
+        candidates.append(((k * step_w, k * step_h),
+                           'keeps your height' if exact else 'the largest that fits your height'))
+    if not candidates:
+        candidates.append(((step_w, step_h), 'the smallest size'))
+    best = max(candidates, key=lambda c: c[0][0] * c[0][1])
+    if best[0] == native:
+        return [(native, 'the full frame')]
+    return [best, (native, 'the full frame')]
+
+
+def image_size_error(width: int, height: int, native: Size) -> Optional[str]:
+    """None if the camera can return width x height, else the myconfig.py fix."""
+    if size_fits(width, height, native):
+        return None
+    native_w, native_h = native
+    if width <= 0 or height <= 0:
+        why = 'because it is not a positive size'
+    elif width * native_h != height * native_w:
+        why = 'without stretching'
+    else:
+        why = "because it is larger than the camera's frames"
+    ratio = aspect_name(native_w, native_h)
+    fixes = ', or '.join(f'IMAGE_W = {w} and IMAGE_H = {h} ({reason})'
+                         for (w, h), reason in suggest_image_sizes(width, height, native))
+    return (f'MightyCamera cannot return IMAGE_W={width}, IMAGE_H={height} {why}: '
+            f'the camera sends {native_w}x{native_h} ({ratio}). '
+            f'In myconfig.py set {fixes}. '
+            f'Any {ratio} size up to {native_w}x{native_h} works.')
+
+
+def primary_image(image: Any) -> Optional[dict[str, Any]]:
+    """The mono/primary member of an SDK image event, as the SDK selects it.
+
+    Dropped frames and loop-closure reference JPEGs are ignored; a stereo pair
+    yields its cam0/preview/left member.
+    """
+    if not isinstance(image, dict) or image.get('dropped'):
+        return None
+    kind = image.get('kind')
+    if kind == 'jpg':
+        return None if image.get('is_reference') else image
+    if kind == 'raw':
+        return image
+    if kind not in ('stereo_raw', 'stereo_jpg'):
+        return None
+    members = [m for m in (image.get('left'), image.get('right')) if isinstance(m, dict)]
+    for member in members:
+        channel = str(member.get('channel_alias') or member.get('channel') or '').strip().lower()
+        if channel in ('cam0', 'preview', 'left'):
+            return member
+    return members[0] if members else None
+
+
+def open_image(image: dict[str, Any]) -> Image.Image:
+    """A PIL image for a jpg or raw (GRAY8/RGB24/BGR24) SDK image.
+
+    JPEGs are opened lazily, so their size is known before any decoding.
+    """
+    kind = image.get('kind')
+    data = bytes(image.get('data') or b'')
+    if kind == 'jpg':
+        if not data:
+            raise ValueError('empty JPEG image')
+        return Image.open(BytesIO(data))
+    if kind != 'raw':
+        raise ValueError(f'unsupported image kind {kind!r}')
+    width, height, fmt = int(image['width']), int(image['height']), image.get('format')
+    if fmt == RAW_GRAY8:
+        return Image.frombytes('L', (width, height), data)
+    if fmt in (RAW_RGB24, RAW_BGR24):
+        rgb = Image.frombytes('RGB', (width, height), data)
+        if fmt == RAW_BGR24:
+            blue, green, red = rgb.split()
+            rgb = Image.merge('RGB', (red, green, blue))
+        return rgb
+    raise ValueError(f'unsupported raw image format {fmt!r}')
+
+
+class MightyCamera:
+    """Image camera part: publishes the Mighty's primary image as cam/image_array.
+
+    The SDK callback only keeps the newest frame; decoding happens in this
+    part's own thread (or in run()), so it never delays pose packets that
+    share the connection. Frames are scaled down without changing their aspect
+    ratio: a size the camera cannot return raises CameraError naming the
+    myconfig.py change that fixes it. image_w/image_h of None mean the full
+    frame. Output is uint8 RGB (H, W, 3) for image_d=3, or (H, W) for 1.
+    """
+    def __init__(self, url: str = 'http://192.168.7.1',
+                 image_w: Optional[int] = 160, image_h: Optional[int] = 120,
+                 image_d: int = 3, warmup_secs: float = 5.0,
+                 stale_secs: float = 1.0) -> None:
+        if image_d not in (1, 3):
+            raise ValueError('MightyCamera image_d must be 1 (mono) or 3 (RGB)')
+        if not all(math.isfinite(v) and v > 0 for v in (warmup_secs, stale_secs)):
+            raise ValueError('MightyCamera warmup_secs and stale_secs must be finite and positive')
+        self.url = url
+        self.image_d = image_d
+        self.stale_secs = stale_secs
+        self.lock = threading.Lock()
+        self.new_frame = threading.Event()
+        self.pending: Optional[dict[str, Any]] = None
+        self.received_at: Optional[float] = None
+        self.frames_received = 0
+        self.frame: Optional[np.ndarray] = None
+        self.running = True
+        self.released = False
+        self.warned_stale = False
+        self.warned_size = False
+        self.warned_decode = False
+        self.link = MightyLink.acquire(url)
+        self.client = self.link.client
+        self.unsubscribers: list[Callable[[], None]] = [self.client.on_image(self.on_image)]
+        try:
+            self.link.connect()
+            if not self.new_frame.wait(warmup_secs):
+                raise CameraError(
+                    f'MightyCamera received no image from {url} within {warmup_secs:g} s. '
+                    f'Check the USB cable and that {url} opens in a browser on this machine.')
+            with self.lock:
+                first = self.pending
+            assert first is not None
+            self.native: Size = open_image(first).size
+            self.size: Size = (image_w if image_w is not None else self.native[0],
+                               image_h if image_h is not None else self.native[1])
+            error = image_size_error(self.size[0], self.size[1], self.native)
+            if error:
+                raise CameraError(error)
+            if not self.poll():
+                raise CameraError(f'MightyCamera could not decode its first image from {url}')
+        except BaseException:
+            self.release()
+            raise
+        logger.info('MightyCamera ready: %dx%d depth %d from %dx%d frames',
+                    self.size[0], self.size[1], image_d, *self.native)
+
+    def on_image(self, image: Any) -> None:
+        """SDK callback: keep only the newest primary frame; no decoding here."""
+        selected = primary_image(image)
+        if selected is None:
+            return
+        with self.lock:
+            self.pending = selected
+            self.received_at = time.monotonic()
+            self.frames_received += 1
+            self.new_frame.set()
+
+    def poll(self) -> bool:
+        """Decode the newest pending frame into self.frame; True if it updated."""
+        with self.lock:
+            image, self.pending = self.pending, None
+            self.new_frame.clear()
+            received_at = self.received_at
+        if image is None:
+            if (received_at is not None and not self.warned_stale
+                    and time.monotonic() - received_at > self.stale_secs):
+                logger.warning('MightyCamera: no new image for over %g s; repeating the last one',
+                               self.stale_secs)
+                self.warned_stale = True
+            return False
+        if self.warned_stale:
+            logger.info('MightyCamera: images resumed')
+            self.warned_stale = False
+        try:
+            picture = open_image(image)
+            if picture.size != self.native:
+                if not self.warned_size:
+                    logger.error('MightyCamera: frames changed from %dx%d to %dx%d; dropping them '
+                                 'rather than stretching. Restart to use the new size.',
+                                 *self.native, *picture.size)
+                    self.warned_size = True
+                return False
+            picture = picture.convert('L' if self.image_d == 1 else 'RGB')
+            if picture.size != self.size:
+                picture = picture.resize(self.size, Image.Resampling.BOX)
+            self.frame = np.asarray(picture, dtype=np.uint8)
+            return True
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            if not self.warned_decode:
+                logger.error('MightyCamera: cannot decode image: %s', exc)
+                self.warned_decode = True
+            return False
+
+    def update(self) -> None:
+        while self.running:
+            self.new_frame.wait(0.1)
+            self.poll()
+
+    def run_threaded(self) -> Optional[np.ndarray]:
+        return self.frame
+
+    def run(self) -> Optional[np.ndarray]:
+        self.poll()
+        return self.frame
+
+    def release(self) -> None:
+        """Unsubscribe and give up this part's share of the link, once."""
+        with self.lock:
+            if self.released:
+                return
+            self.released = True
+        for unsubscribe in self.unsubscribers:
+            if callable(unsubscribe):
+                unsubscribe()
+        self.link.release()
+
+    def shutdown(self) -> None:
+        self.running = False
+        self.release()
+
+
+def snapshot(args: argparse.Namespace) -> int:
+    try:
+        camera = MightyCamera(url=args.url, image_w=args.width, image_h=args.height,
+                              image_d=args.depth, warmup_secs=args.warmup)
+    except CameraError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    try:
+        start, started = camera.frames_received, time.monotonic()
+        thread = threading.Thread(target=camera.update, daemon=True)
+        thread.start()
+        time.sleep(args.seconds)
+        elapsed = time.monotonic() - started
+        fps = (camera.frames_received - start) / elapsed
+        camera.running = False
+        thread.join(1.0)
+        assert camera.frame is not None
+        Image.fromarray(camera.frame).save(args.out)
+        print(f'Camera frames {camera.native[0]}x{camera.native[1]} '
+              f'({aspect_name(*camera.native)}); saved {camera.size[0]}x{camera.size[1]} '
+              f'depth {camera.image_d} to {args.out}; '
+              f'{fps:.1f} fps received over {elapsed:.1f} s')
+        return 0
+    finally:
+        camera.shutdown()
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    parser = argparse.ArgumentParser(prog='python -m donkeycar.parts.mighty',
+                                     description='MightyCamera hardware checks.')
+    commands = parser.add_subparsers(dest='command', required=True)
+    snap = commands.add_parser('snapshot', help='save one frame and report the received frame rate')
+    snap.add_argument('--url', default='http://192.168.7.1')
+    snap.add_argument('--out', default='mighty-snapshot.jpg')
+    snap.add_argument('--seconds', type=float, default=5.0, help='how long to count frames')
+    snap.add_argument('--width', type=int, default=None, help='IMAGE_W to test (default: full frame)')
+    snap.add_argument('--height', type=int, default=None, help='IMAGE_H to test (default: full frame)')
+    snap.add_argument('--depth', type=int, choices=(1, 3), default=3)
+    snap.add_argument('--warmup', type=float, default=5.0)
+    args = parser.parse_args(argv)
+    return snapshot(args)
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
+    sys.exit(main())

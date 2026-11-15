@@ -46,7 +46,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | D8 | 2026-11-14 | Fail fast like `CvCam`: raise `CameraError` if no frame arrives within `MIGHTY_CAMERA_WARMUP_SECS` (default 5.0). After that, return the last frame and log one warning once frames stop arriving for longer than 1 s. | Claude | Proposed |
 | D9 | 2026-11-14 | Reuse `MIGHTY_URL`. Add only `MIGHTY_CAMERA_WARMUP_SECS`. | Claude | Proposed |
 | D10 | 2026-11-14 | Claude edits code on the Mac and commits each step. Ed reviews and pushes, then the car pulls for testing. Ed first asked to commit himself, then said: "you should create the commits before I push". | Ed | Decided |
-| D12 | 2026-11-14 | How a size is checked, and what the error says (implements D6). The camera's size comes from the first frame received during warm-up. With 640×400, the valid sizes are 8k×5k for k = 1…80 (e.g. 80×50, 160×100, 320×200, 640×400). A requested size is invalid if it is non-positive, if its aspect ratio differs (`IMAGE_W * native_h != IMAGE_H * native_w`), or if it is larger than the frames. **Suggested size** (Ed, 2026-11-14: "choose the one with the most pixels that fits one or both requested dimensions… and also suggest full frame"): there are two candidates. One is the largest valid size whose width is ≤ `IMAGE_W`, which equals `IMAGE_W` when it can. The other is the largest valid size whose height is ≤ `IMAGE_H`. Both are capped at the camera's size, and a dimension with no valid size below it gives no candidate; if neither gives one, the smallest valid size is suggested. The suggestion is the candidate with more pixels; on a tie, the width-based one wins. The full frame is always offered as well, unless it is the suggestion itself. The error names the request, the camera's size and shape, and gives both as lines to paste into `myconfig.py`. For the default 160×120 it reads: *"MightyCamera cannot return IMAGE_W=160, IMAGE_H=120 without stretching: the camera sends 640x400 (16:10). In myconfig.py set `IMAGE_W = 192` and `IMAGE_H = 120` (keeps your height), or `IMAGE_W = 640` and `IMAGE_H = 400` for the full frame. Any 16:10 size up to 640x400 works."* If the camera's size changes mid-run, those frames are dropped, with one logged error, and are never stretched. | Claude | Proposed |
+| D12 | 2026-11-14 | How a size is checked, and what the error says (implements D6). The camera's size comes from the first frame received during warm-up. With 640×400, the valid sizes are 8k×5k for k = 1…80 (e.g. 80×50, 160×100, 320×200, 640×400). A requested size is invalid if it is non-positive, if its aspect ratio differs (`IMAGE_W * native_h != IMAGE_H * native_w`), or if it is larger than the frames. **Suggested size** (Ed, 2026-11-14: "choose the one with the most pixels that fits one or both requested dimensions… and also suggest full frame"): there are two candidates. One is the largest valid size whose width is ≤ `IMAGE_W`, which equals `IMAGE_W` when it can. The other is the largest valid size whose height is ≤ `IMAGE_H`. Both are capped at the camera's size, and a dimension with no valid size below it gives no candidate; if neither gives one, the smallest valid size is suggested. The suggestion is the candidate with more pixels; on a tie, the width-based one wins. The full frame is always offered as well, unless it is the suggestion itself. The error names the request, the camera's size and shape, and gives both as lines to paste into `myconfig.py`. As implemented in commit 4, the message for the default 160×120 reads: *"MightyCamera cannot return IMAGE_W=160, IMAGE_H=120 without stretching: the camera sends 640x400 (16:10). In myconfig.py set IMAGE_W = 192 and IMAGE_H = 120 (keeps your height), or IMAGE_W = 640 and IMAGE_H = 400 (the full frame). Any 16:10 size up to 640x400 works."* The labels are "keeps your width/height", "the largest that fits your width/height", "the smallest size" and "the full frame". If the camera's size changes mid-run, those frames are dropped, with one logged error, and are never stretched. | Claude | Proposed |
 | D11 | 2026-11-14 | All work goes on `mighty-camera-image`, branched from `zlite/mighty-camera-gps`. It ends with a PR into `zlite/mighty-camera-gps` for Chris to review and merge. `c740dab4` moved onto this branch, and the local `zlite/mighty-camera-gps` was reset to match origin (`a0c3b63e`). | Ed | Decided |
 
 ## Findings
@@ -62,15 +62,20 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F8 | 2026-11-14 | The SDK has no resolution setting. `config_get` and `config_set` take free-form keys, and none is listed for image size. Only the frames themselves carry `width` and `height` (and, for JPEG, the encoded size). The camera's size must therefore be read from a received frame. | `mighty_sdk/client.py`, `mighty_protocol.py` |
 | F9 | 2026-11-14 | `test_scripts.py::test_bad_command_fails` fails on the Mac with or without this branch's changes. It is not related to Mighty, and this plan leaves it alone. | `pytest` on Mac, with changes stashed and restored |
 | F10 | 2026-11-14 | Standing still on the bench, VIO went OFF → INITIALIZING → TRACKING (confidence 0.66, 183 features) within about 2 s of `start_vio`. About 1 s later it dropped to DEGRADED (state 3, flag `LOW_TRANSLATION_OBSERVABILITY`) and stayed there for the remaining 35 s, while poses kept arriving. `MightyPose` accepts only state 2, so `mighty/valid` was False from then on. This behaviour predates this plan, which leaves it unchanged. It means a parked car shows `fresh` only briefly; the camera has to move to show sustained tracking. | 40 s `path_follow` run on murmurpi64, `logs/mighty-timing-*.jsonl` |
+| F11 | 2026-11-14 | The camera's frame rate depends on VIO. With VIO off it streamed about 18 fps (F2). With VIO left running in DEGRADED after the commit 3 drive, the camera reported `fps_current` 15–16, and a plain SDK client received 14.0 fps. Over three runs `MightyCamera` received 13.4–15.3 fps; one earlier first run gave 11.6. So the part costs no measurable rate. | Snapshot CLI and plain SDK client on murmurpi64 |
 | F7 | 2026-11-14 | `templates/path_follow.py` has an unused `from distutils.log import debug`. It stops `test_path_follow_mighty.py` from importing on the Mac's Python 3.12+ venv. The test passes on the car (15 passed) only because setuptools provides a `distutils` shim. | `pytest` on Mac and car |
 
 ## Design
 
 - **`MightyCamera`** (D4, D7, D8) is a threaded part with the usual `update`,
   `run_threaded`, `run` and `shutdown`.
-  - It uses the SDK's `select_primary_image` / `image_to_raw`. It accepts
-    `jpg`, the `stereo_*` primary (`cam0`/left) and raw `GRAY8`, `RGB24` and
-    `BGR24`.
+  - It accepts `jpg`, the `stereo_*` primary (`cam0`/left) and raw `GRAY8`,
+    `RGB24` and `BGR24`. Frame selection copies the SDK's
+    `select_primary_image` rules: dropped frames and reference JPEGs are
+    skipped. Decoding uses PIL directly instead of the SDK's `image_to_raw`,
+    which can only decode JPEG to `gray8`, `rgb24` or `rgba32` and re-imports
+    PIL on every call. Doing it here also keeps the part testable with the SDK
+    mocked.
   - Each decode takes only the newest frame; older frames are dropped and
     never queued.
   - It checks the configured size against the first frame (D6, D12). An
@@ -152,11 +157,25 @@ Each box is ticked only after the checks listed under it pass (D2).
     - Larger than the frames is rejected, as are zero and negative sizes.
     - A mid-run size change drops the frame and logs one error.
   - *Verify:* the tests pass on the Mac and on the car.
-  - *Verify:* the CLI on the car saves a viewable frame and reports about
-    18 fps (F2).
+  - *Verify:* the CLI on the car saves a viewable frame and reports roughly
+    the same fps as a plain SDK client measured at the same time. This
+    replaces "about 18 fps": the camera's own rate depends on VIO (F11).
   - *Verify:* on the car, the CLI given `--width 160 --height 120` prints the
     D12 error. Given `--width 160 --height 100`, it saves an undistorted
     frame.
+  - *Mac, 2026-11-14:*
+    - The new `test_mighty_camera.py` has 25 tests, all passing.
+    - All Mighty, timing, `path_follow` and look-ahead tests pass: 61 passed.
+    - `mypy --check-untyped-defs` is clean on `parts/mighty.py`.
+    - The full suite gives 179 passed, plus the same unrelated F9 failure.
+  - *Car pre-check, 2026-11-14 (before commit):* the uncommitted `mighty.py`
+    ran from a throwaway copy in `/tmp`, with the car's checkout untouched.
+    - With no size given, the CLI saved a 640×400 frame.
+    - At 160×100 it saved an undistorted frame (viewed).
+    - At 160×120 it printed the D12 message exactly and exited 1.
+    - Over three runs it received 13.4–15.3 fps, against 14.0 fps for a
+      plain SDK client with VIO running.
+    - Still pending: the same checks from the committed code after the push.
 - [ ] **5. `complete` template.** Adds a `MIGHTY` branch to `get_camera()` in
   `templates/complete.py`, and updates `cfg_complete.py`.
   - *Verify:* a test that `get_camera` builds a `MightyCamera` from config,
