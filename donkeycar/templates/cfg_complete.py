@@ -23,6 +23,14 @@ CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))
 DATA_PATH = os.path.join(CAR_PATH, 'data')
 MODELS_PATH = os.path.join(CAR_PATH, 'models')
 
+# VEHICLE LOOP
+# Defined first because other settings default to it (e.g. CAMERA_FRAMERATE).
+# The main loop frequency (Hz). Hardware is updated this many times per second.
+DRIVE_LOOP_HZ = 20
+
+# Max loops to run before quitting (useful for testing, None = infinite).
+MAX_LOOPS = None
+
 # ------------------------------------------------------------------------------
 # CAMERA SETUP
 # ------------------------------------------------------------------------------
@@ -45,8 +53,8 @@ IMAGE_H = 120
 # The depth of the image. 3 for RGB, 1 for Greyscale.
 IMAGE_DEPTH = 3
 
-# The framerate of the camera. Should generally match DRIVE_LOOP_HZ.
-CAMERA_FRAMERATE = 20
+# The framerate of the camera. Defaults to the vehicle loop rate.
+CAMERA_FRAMERATE = DRIVE_LOOP_HZ
 
 # Flip the image vertically (useful if camera is mounted upside down).
 CAMERA_VFLIP = False
@@ -710,14 +718,6 @@ SCALE_HEIGHT = None
 # 3. MODES, FEATURES & OPERATION
 #    (Driving modes, Web/Joystick control, Simulation, Logging)
 # ==============================================================================
-
-# VEHICLE LOOP
-# The main loop frequency (Hz). Hardware is updated this many times per second.
-DRIVE_LOOP_HZ = 20
-
-# Max loops to run before quitting (useful for testing, None = infinite).
-MAX_LOOPS = None
-
 
 # AUTOMATION & BEHAVIORS
 

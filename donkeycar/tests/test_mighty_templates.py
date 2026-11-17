@@ -84,6 +84,26 @@ class MightyTemplateCase(unittest.TestCase):
         return [row for row in vehicle.parts if isinstance(row['part'], MightyCamera)]
 
 
+class TemplateLoopSettingsTests(unittest.TestCase):
+    """DRIVE_LOOP_HZ comes first and CAMERA_FRAMERATE defaults to it, so the
+    Mighty frame-rate check (D14, D20) sees the loop rate unless overridden."""
+    TEMPLATES = os.path.join(os.path.dirname(complete.__file__))
+
+    def test_camera_framerate_defaults_to_the_loop_rate(self):
+        for name in ['cfg_complete.py', 'cfg_path_follow.py', 'cfg_cv_control.py',
+                     'cfg_basic.py', 'cfg_simulator.py']:
+            with self.subTest(template=name):
+                with open(os.path.join(self.TEMPLATES, name)) as source:
+                    lines = [line.split('#')[0].strip() for line in source]
+                loop = lines.index('DRIVE_LOOP_HZ = 20')
+                camera = next(i for i, line in enumerate(lines)
+                              if line.startswith('CAMERA_FRAMERATE ='))
+                self.assertEqual(lines[camera], 'CAMERA_FRAMERATE = DRIVE_LOOP_HZ')
+                self.assertLess(loop, camera)
+                self.assertTrue(any(line.startswith('MAX_LOOPS =')
+                                    for line in lines[loop:camera]))
+
+
 class CompleteTemplateTests(MightyTemplateCase):
     def config(self, **settings):
         settings = dict(dict(CAMERA_TYPE='MIGHTY', IMAGE_W=160, IMAGE_H=100, IMAGE_DEPTH=1,

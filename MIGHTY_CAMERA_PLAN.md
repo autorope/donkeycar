@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 15 / 18 commits verified**
+**Progress: 15 / 19 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -721,6 +721,30 @@ tests.
       reopening, and 0 and 0 after release.
     - PR #1255's "Checkout and test" jobs succeeded on macOS and Ubuntu, in
       the PR run (44193706720) and the push run (44193697656).
+- [ ] **19. `cfg_complete.py`: vehicle loop settings first, and
+  `CAMERA_FRAMERATE = DRIVE_LOOP_HZ`.** Ed: "We need these near the top on the
+  config because we may use these for other config. For instance, the
+  default CAMERA_FRAMERATE should be DRIVE_LOOP_HZ."
+  - This branch had not moved them. `main`'s "Reorganized and cleaned up
+    config file (#1220)" put `DRIVE_LOOP_HZ` and `MAX_LOOPS` in section 3
+    (about line 716) and hard-coded `CAMERA_FRAMERATE = 20`. The other
+    templates (`path_follow`, `cv_control`, `basic`, `simulator`) already
+    define them first, with `CAMERA_FRAMERATE = DRIVE_LOOP_HZ`.
+  - The "VEHICLE LOOP" block moves to just after PATHS, before CAMERA SETUP,
+    with a comment saying why. `CAMERA_FRAMERATE = DRIVE_LOOP_HZ`. The
+    values are unchanged (20, None, 20).
+  - New test `TemplateLoopSettingsTests`: in those five templates,
+    `DRIVE_LOOP_HZ = 20` comes first, then `MAX_LOOPS`, then
+    `CAMERA_FRAMERATE = DRIVE_LOOP_HZ`.
+  - *Verify:* the test fails against the old `cfg_complete.py` and passes
+    with the change.
+  - *Verify:* the CI-equivalent suite and the car tests pass.
+  - *Verify:* PR #1255's CI passes.
+  - *Mac, 2026-11-17:*
+    - Against origin's `cfg_complete.py`, the test failed for
+      `cfg_complete.py` only.
+    - With the change, it passed for all five templates.
+    - CI-equivalent suite: 288 passed, 28 skipped, 1 xpassed, 0 failed.
 
 ## Not in this plan
 
