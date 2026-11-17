@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 13 / 17 commits verified**
+**Progress: 14 / 17 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -650,7 +650,7 @@ tests.
   - *Verified 2026-11-17 on murmurpi64 at `c7701fb9`:* the car was up to date
     with origin. The Mighty, template and look-ahead tests passed (122
     passed), including the 4 new tests.
-- [ ] **17. Stop the template tests holding port 8887 (F29).**
+- [x] **17. Stop the template tests holding port 8887 (F29).**
   `test_mighty_templates.py`'s `car_config` now writes `WEB_CONTROL_PORT = 0`
   unless a test sets it, so in-process `drive()` runs bind any free port.
   - *Verify:* a probe test binding 8887 after the Mighty tests passes, where
@@ -665,6 +665,14 @@ tests.
       `pip install -e ".[pc,dev]"` (TensorFlow 2.19.1, albumentations 2.0.8),
       activated, then `python -m pytest`, gave 282 passed, 28 skipped,
       1 xpassed and 0 failed.
+  - *Ed, 2026-11-17:* he recreated his own `.venv`, activated it and ran
+    `python -m pytest`: 295 passed, 15 skipped, 1 xfailed (`KerasLSTM`, a
+    non-strict xfail) and 0 failed.
+  - *Verified 2026-11-17 on GitHub at `c7701fb9`:* both "Checkout and test"
+    jobs (macOS and Ubuntu, Python 3.12) succeeded in the PR run
+    (44179374322) and the push run (44179361363). Before this commit both
+    had failed on `test_drivesim`.
+  - *Car, 2026-11-17, at `c7701fb9`:* 122 tests passed (see commit 16).
 
 ## Not in this plan
 
