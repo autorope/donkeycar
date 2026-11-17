@@ -187,7 +187,7 @@ error, so a single restart fixes them all.
 | --- | --- | --- |
 | `IMAGE_W`, `IMAGE_H` | Exactly 16:10 and no larger than 640×400. Valid sizes are 8k×5k, e.g. 80×50, 160×100, 192×120, 320×200, 640×400. | The error suggests the valid size with the most pixels that keeps your width or your height, plus the full frame. |
 | `IMAGE_DEPTH` | 1. Output is a 2-D (H, W) `uint8` array. | "set IMAGE_DEPTH = 1" |
-| `CAMERA_FRAMERATE` | At most 5% above the rate measured at startup (from the camera's capture timestamps). | The error names the largest whole rate that passes. Leave a few fps of margin, because the rate drops once VIO runs. |
+| `CAMERA_FRAMERATE` (a minimum) | At most 5% above the rate measured at startup (from the camera's capture timestamps). | The error names the largest whole rate that passes. Leave a few fps of margin, because the rate drops once VIO runs. |
 
 Every template's defaults fail all three: for example 160×120, depth 3 and
 20 fps. The error then reads (rates vary from run to run):
@@ -199,12 +199,15 @@ MightyCamera cannot start: 3 settings in myconfig.py need changing.
   3. MightyCamera cannot deliver CAMERA_FRAMERATE = 20: the camera is sending 14.3 fps. The camera sets its own rate, and it drops to about 15 fps while VIO runs. In myconfig.py set CAMERA_FRAMERATE = 15, or anything lower.
 ```
 
-While driving, the camera publishes at most `CAMERA_FRAMERATE` images per
-second. A frame that arrives slightly early waits rather than being dropped.
-Two conditions log a warning and keep running rather than stopping the car:
+`CAMERA_FRAMERATE` is the **minimum** rate the car needs, not a cap. Once
+started, the camera publishes every frame as it arrives, however much faster
+than `CAMERA_FRAMERATE` that is. Two conditions log a warning and keep
+running rather than stopping the car:
 
 - the camera's rate falls below `CAMERA_FRAMERATE` over a 5 s window, as it
-  does when `path_follow` starts VIO after the check;
+  does when `path_follow` starts VIO after the check. The warning suggests a
+  lower rate but changes nothing: the configured minimum and publishing stay
+  as they were;
 - no new image arrives for 1 s, in which case the last image repeats.
 
 A mid-run change in frame size drops those frames and logs one error.
@@ -219,7 +222,7 @@ CAMERA_TYPE = "MIGHTY"
 IMAGE_W = 160                        # 16:10: 160x100, 320x200, 640x400, ...
 IMAGE_H = 100
 IMAGE_DEPTH = 1                      # the camera is monochrome
-CAMERA_FRAMERATE = 12                # below the camera's rate, with margin
+CAMERA_FRAMERATE = 12                # minimum rate; below the camera's, with margin
 MIGHTY_URL = 'http://192.168.7.1'    # shared with HAVE_MIGHTY
 MIGHTY_CAMERA_WARMUP_SECS = 5.0      # fail at startup if no image arrives by then
 MIGHTY_CAMERA_FPS_CHECK_SECS = 2.0   # how long startup measures the frame rate
@@ -315,10 +318,13 @@ python -m donkeycar.parts.mighty snapshot --width 160 --height 100 --framerate 1
 Expected (rates vary):
 
 ```text
-INFO:__main__:MightyCamera ready: 160x100 depth 1 from 640x400 monochrome frames; camera at 13.9 fps, publishing up to 12 fps
-Camera frames 640x400 (16:10); saved 160x100 depth 1 to /tmp/mighty-160x100.jpg; 13.5 fps received, 12.3 distinct images published per second over 5.0 s
+INFO:__main__:MightyCamera ready: 160x100 depth 1 from 640x400 monochrome frames; camera at 20.1 fps, CAMERA_FRAMERATE minimum 12 fps
+Camera frames 640x400 (16:10); saved 160x100 depth 1 to /tmp/mighty-160x100.jpg; 20.2 fps received, 20.2 distinct images published per second over 5.0 s
 ```
 
+This run had VIO off, so the camera sent 20 fps; with VIO running, expect
+about 12–16. "distinct images published" should match "fps received" even
+though it is above 12, because `CAMERA_FRAMERATE` is a minimum, not a cap.
 If the frame-rate check fails here, the camera is running slower than 12 fps.
 Use the rate the error suggests.
 
@@ -332,12 +338,13 @@ python manage.py drive
 ```
 
 Expected in the log: `MightyCamera ready: ... monochrome frames; camera at
-... fps, publishing up to 12 fps`. With `HAVE_MIGHTY`, starting VIO can also
+... fps, CAMERA_FRAMERATE minimum 12 fps`. With `HAVE_MIGHTY`, starting VIO can also
 log warnings while the drive keeps running. In the recorded run, these were
 `MightyCamera: no new image for over 1 s; repeating the last one`,
 `MightyCamera: images resumed`, and `MightyCamera: the camera is now sending
-10.5 fps, below CAMERA_FRAMERATE = 12; ...`. Lower `CAMERA_FRAMERATE` if the
-rate warnings persist. Open `http://murmurpi64.local:8887` (your
+10.5 fps, below CAMERA_FRAMERATE = 12, ...`. (That run predates D20, so its
+warning text differed slightly.) The warnings are advisory. Lower
+`CAMERA_FRAMERATE` if they persist and the car needs that rate guaranteed. Open `http://murmurpi64.local:8887` (your
 Pi's hostname) on the Mac: the web UI shows the live grey image. With
 `HAVE_MIGHTY = True` too, `ss -tn | grep -c 192.168.7.1:80`, run in a second
 shell on the Pi, prints `1`, meaning one connection shared by poses and
@@ -425,7 +432,7 @@ invalid data, timestamp ordering and reset, validity gates, look-ahead driving,
 and template construction with Mighty alone, GPS alone, and both sources
 (including GPS/IMU fusion). Hardware helpers are mocked; no driving is started.
 Further tests cover the image camera: the shared connection, the size, depth
-and frame-rate rules and their messages, frame selection and pacing, the
+and frame-rate rules and their messages, frame selection and publishing above the minimum rate, the
 `snapshot` CLI, the `complete`, `path_follow` and `cv_control` templates, and
 the read chunk size (`test_mighty.py`, `test_mighty_camera.py`,
 `test_mighty_templates.py`, `test_path_follow_mighty.py`).

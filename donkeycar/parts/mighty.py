@@ -360,9 +360,9 @@ def supported_framerate(measured: float) -> int:
 def framerate_error(requested: float, measured: float) -> Optional[str]:
     """None if the camera keeps up with CAMERA_FRAMERATE, else the fix (plan D14).
 
-    The camera sets its own rate, so CAMERA_FRAMERATE may be at most the
-    measured rate plus FRAMERATE_TOLERANCE; the fix names the largest whole
-    rate within that.
+    CAMERA_FRAMERATE is the minimum rate the car needs (plan D20). The camera
+    sets its own rate, so CAMERA_FRAMERATE may be at most the measured rate
+    plus FRAMERATE_TOLERANCE; the fix names the largest whole rate within that.
     """
     if requested <= measured * (1 + FRAMERATE_TOLERANCE) + 1e-9:
         return None
@@ -471,13 +471,14 @@ class MightyCamera:
     monochrome camera (the Mighty) refuses 3, since it has no colour to give.
     Size, depth and frame-rate problems are all reported in one CameraError.
 
-    The camera sets its own frame rate. With a framerate (CAMERA_FRAMERATE),
-    startup measures the received rate for fps_check_secs and fails if the
-    camera cannot keep up; images are then published at most that often, and
-    a rate that later falls short (VIO starting, say) logs one warning.
+    The camera sets its own frame rate. A framerate (CAMERA_FRAMERATE) is the
+    *minimum* rate the car needs, not a cap (plan D20): startup measures the
+    received rate for fps_check_secs and fails if the camera cannot reach it.
+    Every frame is then published as it arrives, however fast. A rate that
+    later falls short (VIO starting, say) logs one advisory warning; the
+    configured minimum is not changed.
     """
     RATE_WINDOW_SECS: ClassVar[float] = 5.0
-    DUE_FRACTION: ClassVar[float] = 0.9  # of a period; absorbs camera jitter
 
     def __init__(self, url: str = 'http://192.168.7.1',
                  image_w: Optional[int] = 160, image_h: Optional[int] = 120,
@@ -497,7 +498,6 @@ class MightyCamera:
         self.stale_secs = stale_secs
         self.framerate = framerate
         self.measured_fps: Optional[float] = None
-        self.last_published: Optional[float] = None
         self.rate_window: Optional[float] = None
         self.warned_rate = False
         self.lock = threading.Lock()
@@ -555,7 +555,8 @@ class MightyCamera:
                     self.size[0], self.size[1], image_d, *self.native,
                     'monochrome' if self.monochrome else 'colour',
                     '' if framerate is None else
-                    f'; camera at {self.measured_fps:.1f} fps, publishing up to {framerate:g} fps')
+                    f'; camera at {self.measured_fps:.1f} fps, '
+                    f'CAMERA_FRAMERATE minimum {framerate:g} fps')
 
     def measure_fps(self, seconds: float) -> float:
         """Frames per second received over the next `seconds`."""
@@ -579,14 +580,12 @@ class MightyCamera:
             return (len(stamps) - 1) / ((stamps[-1] - stamps[0]) / 1e9)
         return len(frames) / (ended - started) if ended > started else 0.0
 
-    def seconds_until_due(self, now: float) -> float:
-        """How long until the next image may be published under framerate."""
-        if self.framerate is None or self.last_published is None:
-            return 0.0
-        return self.last_published + self.DUE_FRACTION / self.framerate - now
-
     def check_rate(self, now: float) -> None:
-        """Every RATE_WINDOW_SECS, warn once if the camera falls below framerate."""
+        """Every RATE_WINDOW_SECS, warn once if the camera falls below framerate.
+
+        Advisory only: the warning names a rate that would pass, but the
+        configured minimum and publishing are left unchanged.
+        """
         if self.framerate is None:
             return
         if self.rate_window is None:
@@ -599,9 +598,10 @@ class MightyCamera:
         if framerate_error(self.framerate, rate):
             if not self.warned_rate:
                 logger.warning('MightyCamera: the camera is now sending %.1f fps, below '
-                               'CAMERA_FRAMERATE = %g; images repeat between frames. It drops '
-                               'to about 15 fps while VIO runs. Set CAMERA_FRAMERATE = %d or '
-                               'lower in myconfig.py.', rate, self.framerate,
+                               'CAMERA_FRAMERATE = %g, the minimum it started with; images '
+                               'repeat between frames. It drops to about 15 fps while VIO '
+                               'runs. To avoid this, set CAMERA_FRAMERATE = %d or lower in '
+                               'myconfig.py.', rate, self.framerate,
                                max(1, supported_framerate(rate)))
                 self.warned_rate = True
         elif self.warned_rate:
@@ -625,13 +625,10 @@ class MightyCamera:
     def poll(self) -> bool:
         """Decode the newest pending frame into self.frame; True if it updated.
 
-        With a framerate, a frame that arrives before the next one is due
-        stays pending (newer frames replace it) instead of being published.
+        Frames are published as they arrive, never held back to a rate.
         """
         now = time.monotonic()
         self.check_rate(now)
-        if self.seconds_until_due(now) > 0:
-            return False
         with self.lock:
             image, self.pending = self.pending, None
             self.new_frame.clear()
@@ -659,7 +656,6 @@ class MightyCamera:
             if picture.size != self.size:
                 picture = picture.resize(self.size, Image.Resampling.BOX)
             self.frame = np.asarray(picture, dtype=np.uint8)
-            self.last_published = now
             self.frames_published += 1
             return True
         except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -671,10 +667,6 @@ class MightyCamera:
     def update(self) -> None:
         while self.running:
             self.new_frame.wait(0.1)
-            wait = self.seconds_until_due(time.monotonic())
-            if wait > 0:
-                time.sleep(min(wait, 0.1))
-                continue
             self.poll()
 
     def run_threaded(self) -> Optional[np.ndarray]:

@@ -352,7 +352,7 @@ class FramerateRuleTests(unittest.TestCase):
 
 
 class FramerateCameraTests(unittest.TestCase):
-    """The frame-rate check and pacing, with a controllable clock (plan D14)."""
+    """The frame-rate check and publishing, with a controllable clock (plans D14, D20)."""
     def setUp(self):
         self.clients = []
 
@@ -433,16 +433,17 @@ class FramerateCameraTests(unittest.TestCase):
         with patch('donkeycar.parts.mighty.time.sleep', side_effect=sleep):
             self.assertAlmostEqual(camera.measure_fps(2.0), 0.5, places=3)
 
-    def test_publishes_at_most_framerate_and_keeps_early_frames(self):
-        camera = self.camera(framerate=10)  # due every 0.09 s after a publish
-        self.emit(value=40)
-        self.now += 0.05
-        self.assertFalse(camera.poll())
-        self.emit(value=200)  # newer frame replaces the early one
-        self.now += 0.04
-        self.assertGreater(camera.seconds_until_due(self.now - 0.001), 0)
-        self.assertTrue(camera.poll())
+    def test_framerate_is_a_minimum_not_a_cap(self):
+        # D20: frames arriving faster than CAMERA_FRAMERATE are all published.
+        camera = self.camera(framerate=10)
+        published = 0
+        for value in (40, 120, 200):
+            self.now += 0.02  # 50 fps, five times CAMERA_FRAMERATE
+            self.emit(value=value)
+            published += camera.poll()
+        self.assertEqual(published, 3)
         self.assertAlmostEqual(float(camera.run_threaded().mean()), 200, delta=3)
+        self.assertFalse(hasattr(camera, 'seconds_until_due'))
 
     def test_a_camera_matching_framerate_loses_no_frames(self):
         camera = self.camera(framerate=15)
@@ -453,7 +454,18 @@ class FramerateCameraTests(unittest.TestCase):
             published += camera.poll()
         self.assertEqual(published, 8)
 
-    def test_no_framerate_means_no_pacing(self):
+    def test_slow_camera_warning_leaves_the_minimum_and_publishing_alone(self):
+        camera = self.camera(framerate=17)
+        camera.poll()  # opens the first rate window
+        with self.assertLogs('donkeycar.parts.mighty', 'WARNING'):
+            self.emit(count=50)  # 10 fps over 5 s
+            self.now += 5
+            camera.poll()
+        self.assertEqual(camera.framerate, 17)
+        self.emit(value=60)
+        self.assertTrue(camera.poll())
+
+    def test_no_framerate_means_no_check(self):
         with patch.object(MightyCamera, 'measure_fps') as measure:
             camera = MightyCamera(URL, image_w=160, image_h=100, warmup_secs=1.0)
         self.addCleanup(camera.shutdown)
@@ -473,8 +485,9 @@ class FramerateCameraTests(unittest.TestCase):
                 camera.poll()
         warnings = [r for r in logs.records if r.levelname == 'WARNING']
         self.assertEqual(len(warnings), 1)
-        self.assertIn('now sending 14.0 fps, below CAMERA_FRAMERATE = 17', warnings[0].getMessage())
-        self.assertIn('Set CAMERA_FRAMERATE = 14 or lower', warnings[0].getMessage())
+        self.assertIn('now sending 14.0 fps, below CAMERA_FRAMERATE = 17, the minimum it '
+                      'started with', warnings[0].getMessage())
+        self.assertIn('set CAMERA_FRAMERATE = 14 or lower', warnings[0].getMessage())
         self.assertTrue(any('frame rate back to 17.0 fps' in r.getMessage() for r in logs.records))
 
     def test_a_rate_just_under_framerate_does_not_warn(self):
