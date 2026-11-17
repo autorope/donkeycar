@@ -116,7 +116,11 @@ class MightyPose:
         self.link = MightyLink.acquire(url, read_chunk_size)
         self.client = self.link.client
         self.released = False
-        self.timing = MightyTiming(log_directory)
+        try:
+            self.timing = MightyTiming(log_directory)
+        except BaseException:
+            self.link.release()
+            raise
         self.pose_lock = threading.Lock()
         self.latest: Optional[dict[str, Any]] = None
         self.received_at: Optional[float] = None
