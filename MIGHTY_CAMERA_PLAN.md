@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 14 / 18 commits verified**
+**Progress: 15 / 18 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -676,7 +676,7 @@ tests.
     (44179374322) and the push run (44179361363). Before this commit both
     had failed on `test_drivesim`.
   - *Car, 2026-11-17, at `c7701fb9`:* 122 tests passed (see commit 16).
-- [ ] **18. A failed camera start closes the stream it opened (D22, F30).**
+- [x] **18. A failed camera start closes the stream it opened (D22, F30).**
   - `MightyLink.connect()` now returns whether it opened the stream, and the
     new `MightyLink.close_stream()` closes it while keeping the link and its
     users.
@@ -713,6 +713,14 @@ tests.
     its size check left 0 TCP connections to the camera and 0
     `MightyClientLoop` threads. The share then reopened the stream (1
     connection, 1 thread), and releasing it returned both to 0.
+  - *Verified 2026-11-17 at `9820138b`:*
+    - On murmurpi64, the car was up to date with origin and 127 tests
+      passed.
+    - The same hardware check, run from the car's own checkout, gave 0
+      connections and 0 threads after the failed start, 1 and 1 after
+      reopening, and 0 and 0 after release.
+    - PR #1255's "Checkout and test" jobs succeeded on macOS and Ubuntu, in
+      the PR run (44193706720) and the push run (44193697656).
 
 ## Not in this plan
 
