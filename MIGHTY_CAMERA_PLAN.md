@@ -1,6 +1,6 @@
 # MightyCamera as an image camera (`CAMERA_TYPE = "MIGHTY"`)
 
-**Progress: 15 / 19 commits verified**
+**Progress: 16 / 19 commits verified**
 
 Branch: `mighty-camera-image`, branched from `zlite/mighty-camera-gps`
 (`a0c3b63e`). When the work is done it is opened as a PR into
@@ -57,6 +57,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | D20 | 2026-11-17 | **`CAMERA_FRAMERATE` is a minimum, not a maximum.** Ed: "I am ok with publishing faster than CAMERA_FRAMERATE. We should consider this a minimum, not a maximum." `MightyCamera` publishes every frame as it arrives; the 0.9-period pacing from D14 (`seconds_until_due`, `DUE_FRACTION`) is removed. The startup check stays the same: fail if the camera cannot reach `CAMERA_FRAMERATE` (within 5%) and name the rate to use. It never forces output slower than the camera. The runtime warning stays, as advice only: it suggests a lower rate, but the configured minimum and publishing are unchanged. The startup log says "CAMERA_FRAMERATE minimum N fps" instead of "publishing up to N fps". | Ed | Decided |
 | D21 | 2026-11-17 | **Defer construction-failure cleanup in `path_follow` (F30) to a later PR.** Claude wrote it as commit 18 (`c7d1a58d`): construction moved into `add_parts()`, with `drive()` running `shutdown_parts(V)` on any exception before re-raising, plus 4 tests. Ed: "That last commit … is too big a change for this PR. I will need to do another time. Please revert that commit." It had not been pushed, so it was dropped from `mighty-camera-image` (`git reset --hard`) instead of reverted, keeping the PR free of the change and its undo. It is kept on the local branch `claude/path-follow-construction-cleanup` (Ed's Mac only, not pushed) for that later PR. | Ed | Decided |
 | D22 | 2026-11-17 | **Fix the costly part of F30 in `mighty.py` alone.** A camera that opened the stream and then fails to start closes it again (`MightyLink.close_stream()`) when another part (the pose reader) still shares the link, leaving the link as it found it. That part reopens the stream itself in `update()` if the vehicle starts. This stops the open HTTP stream and the SDK's CPU-heavy reader thread (F16) without touching `MightyPose` or the templates. The pose reader's idle timing writer thread, its log file and its now-inert callbacks remain until the process exits; removing those too (option 2: `MightyPose` creating them in `update()`) was not chosen. Ed: "yes, add option 1 as a commit". | Ed | Decided |
+| D23 | 2026-11-17 | **Keep commit 19 as it is**, `CAMERA_FRAMERATE = DRIVE_LOOP_HZ` included, despite F31. It matches the `path_follow`, `cv_control`, `basic` and `simulator` templates. Changing how `myconfig.py` is loaded was offered as a separate PR and not taken up here. Ed: "keep commit 19 as it is". | Ed | Decided |
 | D11 | 2026-11-14 | All work goes on `mighty-camera-image`, branched from `zlite/mighty-camera-gps`. It ends with a PR into `zlite/mighty-camera-gps` for Chris to review and merge. `c740dab4` moved onto this branch, and the local `zlite/mighty-camera-gps` was reset to match origin (`a0c3b63e`). | Ed | Decided |
 
 ## Findings
@@ -93,6 +94,7 @@ merge it (D11). Today the Mighty camera only feeds poses to
 | F28 | 2026-11-15 | Plugged into the Pi over USB, the Mighty is a wired Ethernet device whose DHCP offers a default route and DNS. NetworkManager prefers it to WiFi, so the car drops off WiFi (Ed's report). On murmurpi64 (Debian 13), its connection is named `netplan-eth0` (TYPE `ethernet`, DEVICE `usb0`), not Ed's example "Wired connection 2". So the docs find the connection by TYPE and DEVICE, not by name. That Pi already had `ipv4.never-default` and `ipv4.ignore-auto-dns` set to `yes` (the IPv6 pair `no`), and its only default route was via `wlan0`. | Ed; read-only `nmcli` and `ip route` on murmurpi64 |
 | F29 | 2026-11-17 | **PR #1255's CI failed** on macOS and Ubuntu: `test_scripts.py::test_drivesim` failed with `OSError: Address already in use` (267 passed). Two template tests ran a real `complete.drive()` / `cv_control.drive()` in the pytest process, which starts `LocalWebController` on `WEB_CONTROL_PORT` 8887 in a thread that is never stopped. `test_mighty_templates.py` runs before `test_scripts.py`, so the port was still held when `test_drivesim`'s `donkey` subprocess tried to bind it. The older in-process drive test is in `test_template.py`, which runs after it, so it never collided. On the Mac `.venv`, `test_drivesim` is skipped (no TensorFlow), which hid the failure. Reproduced with a probe test binding 8887 after the template tests. Fixed in commit 17 (`WEB_CONTROL_PORT = 0` in the template tests' configs). | `gh pr checks 1255`, CI logs, local CI-equivalent run |
 | F30 | 2026-11-17 | **Partly fixed (D22); the rest deferred (D21): a failed camera start leaks the pose reader.** Found by Ed's review. In `path_follow` with `HAVE_MIGHTY`, `add_mighty` adds `MightyPose` (a link share, SDK callbacks, a timing writer thread) before `add_camera`, and `MightyCamera` connects the shared link in its constructor. When the camera then raises (size, depth or frame-rate check), it releases only its own share. The connection stays open under the pose reader's share, with the reader's callbacks and writer thread alive, and because the exception escapes before `Vehicle.start()`, no part's `shutdown()` runs. A process that exits on the error loses nothing, but code that catches it (tests, a supervisor) keeps them. A fix with tests exists on `claude/path-follow-construction-cleanup`; those tests failed against the current template. | Ed's review of `parts/mighty.py`; tests on the deferred branch **2026-11-17:** commit 18 (D22) makes the camera close the stream it opened. Only the pose reader's idle writer thread, log file and inert callbacks remain. |
+| F31 | 2026-11-17 | **`myconfig.py` cannot refer to `config.py` settings.** Ed's recreated `~/mycar_mighty_path_follow` failed at startup with `NameError: name 'DRIVE_LOOP_HZ' is not defined` at `myconfig.py` line 38, `CAMERA_FRAMERATE = DRIVE_LOOP_HZ`; line 27 (`DRIVE_LOOP_HZ`) was still commented out. `donkey createcar` builds `myconfig.py` as the template's header plus a commented copy of `config.py`, as Ed expected. But `load_config()` runs `myconfig.py` in a fresh, empty namespace (`types.ModuleType('config')`) and then copies its upper-case names over `config.py`'s. So an uncommented line can only use names defined earlier in `myconfig.py` itself. This has not changed: the same loading is in `861538d6` (2020-04), `4580ec74` (2020-10) and `8b96b7a6` (2024-05), and `CAMERA_FRAMERATE = DRIVE_LOOP_HZ` has been in `cfg_basic` since 2020-10, `cfg_path_follow` since 2022-10 and `cfg_cv_control` since 2023-02. Commit 19 brings the same line to `cfg_complete` (D23). Relatedly, derived defaults are computed once from `config.py`: overriding only `DRIVE_LOOP_HZ` in `myconfig.py` leaves `CAMERA_FRAMERATE` at 20. The fix for the car is a number, e.g. `CAMERA_FRAMERATE = 12`. | Ed's traceback; `donkeycar/config.py`, `management/base.py` and their history |
 
 ## Design
 
@@ -721,7 +723,7 @@ tests.
       reopening, and 0 and 0 after release.
     - PR #1255's "Checkout and test" jobs succeeded on macOS and Ubuntu, in
       the PR run (44193706720) and the push run (44193697656).
-- [ ] **19. `cfg_complete.py`: vehicle loop settings first, and
+- [x] **19. `cfg_complete.py`: vehicle loop settings first, and
   `CAMERA_FRAMERATE = DRIVE_LOOP_HZ`.** Ed: "We need these near the top on the
   config because we may use these for other config. For instance, the
   default CAMERA_FRAMERATE should be DRIVE_LOOP_HZ."
@@ -745,6 +747,14 @@ tests.
       `cfg_complete.py` only.
     - With the change, it passed for all five templates.
     - CI-equivalent suite: 288 passed, 28 skipped, 1 xpassed, 0 failed.
+  - *Verified 2026-11-17 at `a88855df`:*
+    - On murmurpi64, the car was up to date with origin and 128 tests
+      passed.
+    - `cfg_complete.py` there evaluates to `DRIVE_LOOP_HZ` 20, `MAX_LOOPS`
+      None and `CAMERA_FRAMERATE` 20.
+    - PR #1255's "Checkout and test" jobs succeeded on macOS and Ubuntu, in
+      the PR run (44199003931) and the push run (44198997056).
+  - Kept as is after F31 (D23).
 
 ## Not in this plan
 
